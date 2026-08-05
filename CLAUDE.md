@@ -22,10 +22,26 @@ net, not a policy:
   `samples/README.md` for the unresolved sanitisation question.
 * **No Ghidra projects.** They embed an imported copy of the firmware.
 
-Binaries live outside this repository, in a private working directory that also holds the
-remote dumps. Point `HARMONY_LAB` at it; the test suite and `bin/setup-ghidra.sh` both read
-that variable and skip cleanly when it is unset. That directory has its own `CLAUDE.md`
-describing what is in it. Analysis happens there; only shareable output lands here.
+Binaries live outside this repository, in a `lab` directory alongside it:
+
+```
+harmony/
+  harmony-explorations/     this repo: code and documents, publishable
+  lab/                      private, never in git
+    dumps/<person>/<remote>/  concordance dumps, with a META.md each
+    firmware/packages/        original Logitech .hfw files
+    firmware/derived/         binaries decoded out of them
+    ghidra/                   Ghidra projects
+    work/                     scratch
+```
+
+The tooling finds `../lab` automatically, so no environment variable is needed in a normal
+checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present. That
+directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
+
+`tools/corpus.py` inventories the dumps and, importantly, reports which ones have no
+description recorded. Phase 1 needs labelled samples, and a dump whose contributor has moved
+on is far harder to label later than one described on arrival.
 
 ## Never write to a remote
 
@@ -113,10 +129,11 @@ reads are scattered everywhere. Decode arch 14, then port. Use the 700 image rat
 ## Commands
 
 ```
-make test          run the suite; set HARMONY_LAB to include the image-backed tests
+make test          run the suite; image-backed tests need a lab directory
 make test-verbose  one line per test
 make lint          byte-compile everything
 make prose         check documents for em-dashes and en-dashes
+make corpus        inventory the dumps, and flag the undescribed ones
 make ghidra        build or refresh the Ghidra project
 ```
 
@@ -125,6 +142,7 @@ tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
 tools/gspm_parse.py    <file> [--json]
 tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
+tools/corpus.py        [lab_directory] [--json]
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three

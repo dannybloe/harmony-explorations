@@ -63,7 +63,7 @@ docs/config-format.md       the GSPM config format spec, grows as sections are l
 docs/forum-post.md          public write-up, as posted to harmony-decompiler
 docs/emulator-design.md     design for the PIC18 harness, not yet built
 src/harmony/                the library: one shared PIC18 decoder, plus format readers
-tools/                      command line wrappers around the library
+tools/                      command line wrappers around the library, plus corpus.py
 tests/                      a regression test per documented finding
 reference/                  checksums, derived metadata, concordance notes
 bin/setup-ghidra.sh         build or refresh the Ghidra project
@@ -108,10 +108,13 @@ print(best)            # check the margin over ranked[1] before trusting it
 ### Tests
 
 ```sh
-make test                                   # skips tests that need binaries
-HARMONY_LAB=/path/to/binaries make test     # runs everything
-make lint prose                             # syntax, and the document conventions
+make test          # image-backed tests need a lab directory, see below
+make lint prose    # syntax, and the document conventions
 ```
+
+Binaries are not in this repository, so anything needing them looks for a `lab` directory
+alongside the checkout, or wherever `HARMONY_LAB` points, and skips cleanly when there is
+none. `make corpus` inventories the dumps in it.
 
 Every documented finding has a test, so a refactor that breaks a conclusion is visible
 rather than silent. That matters here more than usual: the analysis was AI-produced, so the
@@ -120,7 +123,7 @@ claims are made executable rather than only written down.
 ### Ghidra
 
 ```sh
-HARMONY_LAB=/path/to/binaries make ghidra
+make ghidra
 ```
 
 Imports as `PIC-18:LE:24:PIC-18` at the right base, then seeds the listing from

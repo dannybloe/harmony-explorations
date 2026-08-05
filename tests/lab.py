@@ -5,18 +5,29 @@ Firmware and config binaries are not in this repository: they are proprietary, a
 archived packages they came from also contain a third party's account details. So tests
 that need them look for a local copy and skip cleanly when there is none.
 
-Point HARMONY_LAB at a directory holding the files named in reference/checksums.md:
+Set HARMONY_LAB to the private working directory. If it is unset, a `lab` directory
+alongside the repository is used when one exists:
 
-    export HARMONY_LAB=/path/to/your/binaries
+    export HARMONY_LAB=/path/to/lab
     make test
+
+Files are located by name anywhere beneath that directory, so the corpus can be arranged
+however suits it. See reference/checksums.md for what the names refer to.
 """
 import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_HERE, '..', 'src'))
 
-LAB = os.environ.get('HARMONY_LAB')
+
+def _default_lab():
+    sibling = os.path.normpath(os.path.join(_HERE, '..', '..', 'lab'))
+    return sibling if os.path.isdir(sibling) else None
+
+
+LAB = os.environ.get('HARMONY_LAB') or _default_lab()
 
 # Logical name -> filename, as named in reference/checksums.md.
 IMAGES = {
@@ -30,19 +41,35 @@ IMAGES = {
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
 }
 
+_cache = {}
+
+
+def _find(filename):
+    """First match for `filename` anywhere under LAB, or None."""
+    if filename in _cache:
+        return _cache[filename]
+    found = None
+    if LAB and os.path.isdir(LAB):
+        for root, dirs, files in os.walk(LAB):
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            if filename in files:
+                found = os.path.join(root, filename)
+                break
+    _cache[filename] = found
+    return found
+
 
 def path(name):
-    if not LAB:
-        return None
-    candidate = os.path.join(LAB, IMAGES[name])
-    return candidate if os.path.exists(candidate) else None
+    """Absolute path to a named image, or None when it is not available."""
+    return _find(IMAGES[name])
 
 
 def load(name):
-    """Return the bytes of a named image, or raise SkipTest if unavailable."""
+    """Bytes of a named image, or raise SkipTest when it is not available."""
     p = path(name)
     if not p:
         raise unittest.SkipTest(
-            'set HARMONY_LAB to a directory containing %s' % IMAGES[name])
+            'no %s found; set HARMONY_LAB (searched: %s)'
+            % (IMAGES[name], LAB or 'nothing, HARMONY_LAB unset'))
     with open(p, 'rb') as fh:
         return fh.read()
