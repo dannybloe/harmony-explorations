@@ -30,11 +30,11 @@ numeric claim was checked against at least two independent samples where possibl
 
 **Authorship and provenance.** This document was produced by Claude (Anthropic's AI) from
 the source material listed above. No insider information and **no writes to any remote**. It
-was pure offline analysis of files until section 19, which adds exactly one hardware
-measurement: the Harmony 600 was plugged in and enumerated read only with `ioreg`, which
-reports what the operating system learns at enumeration and nothing else. No command was sent
-to the remote and no protocol code was involved. Every other claim in this document is offline
-analysis, which means it is independently checkable and should be checked. Verification method is shown alongside the conclusions
+was pure offline analysis of files until section 19, which now also rests on hardware. The
+programmed Harmony 600 was enumerated read only, and then three read commands were sent to it from
+this project's own host code: GET_VERSION, READ_MISC and READ_FLASH. **Nothing has been written to a
+remote, by any path.** Every other claim in this document is offline analysis, which means it is
+independently checkable and should be checked. Verification method is shown alongside the conclusions
 rather than just asserted, most importantly the calibration table in section 5 and the
 numeric closure in section 13. The highest-risk item used to be that the SFR map assumed the
 standard PIC18 high-end register layout rather than the PIC18F67J50 map specifically. That
@@ -43,11 +43,16 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Nine have been found and corrected so far. The two newest are the SFR map, which was the generic
-PIC18 layout rather than this family's and is section 18, and READ_FLASH's response, which was
-published as located when only the request had been. That last one has a lesson worth more than
-the fact: it came from following shared variables instead of following control flow, so the code
-found proved what the variables were and nothing about which command was running. Section 19.
+Eleven have been found and corrected so far. The two newest both came from the first hardware run
+and share a shape worth more than either fact: an acknowledgement's length nibble is `0` while its
+command byte follows anyway, and a flash chunk's first payload byte is a sequence number rather than
+data. In both cases a test existed and passed, because the test encoded the same assumption as the
+code. Circular, not weak. Section 19.
+
+Before those, the SFR map was the generic PIC18 layout rather than this family's, section 18, and
+READ_FLASH's response was published as located when only the request had been. That one's lesson: it
+came from following shared variables instead of control flow, so the code found proved what the
+variables held and nothing about which command was running. Section 19.
 
 The most consequential is that key codes were read as
 `0x80 | (row << 3) | col`, a matrix address with bit 7 as a flag, when the top two bits are the
@@ -1979,6 +1984,46 @@ why walking the call graph would not have found them either.
 **The checksum algorithm is not derived**, and the second search above is a useful constraint on
 what it can be rather than a step towards it. Step 6 starts from the code around these two
 addresses.
+
+### What the first hardware run changed
+
+Three commands have now been sent to the programmed Harmony 600 from our own host code, read only.
+The layouts are in `docs/usb-protocol.md` section 4; what belongs here is what the run says about the
+method.
+
+**The strongest result is the one with an external answer.** 256 bytes read from flash `0x030000`
+are byte-identical to the lab dump of that same unit, which concordance made months earlier. A read
+that returns plausible bytes proves nothing at all, and almost every mistake available here returns
+plausible bytes: a wrong length nibble, a byte-swapped address, an off-by-one chunk boundary. Only a
+comparison against an independently obtained answer separates those from a correct read.
+
+**Two things this project had inferred were wrong, and both were wrong in the same way.** An
+acknowledgement's length nibble is `0` while its command byte follows it anyway, and a data chunk's
+first payload byte is a sequence number rather than data. In both cases a test existed and passed,
+because the test encoded the same assumption as the code. That is the failure mode of testing against
+a document rather than a device, and it is worth stating plainly: the tests were not weak, they were
+circular. The tell was available in advance, though, and was written down: the first version of the
+chunk test used code `0xFA`, which decodes as an acknowledgement, and choosing an arbitrary value for
+an unestablished field is itself the warning.
+
+**One result could not have been faked.** `READ_MISC` selector `0x07` reading data address `0x1C1`
+returns 10, and 10 is the state that `READ_MISC` itself sets. So the read observes the command
+performing the read, at an address predicted from the disassembly, holding the value the disassembly
+says it holds at that instant. Compare the alternative evidence for "this is a RAM read", which
+would have been that the byte looked reasonable.
+
+**And the same address through selector `0x06` returns 0.** libconcord's header calls `0x06`
+`MISC_RAM`. Both selectors are serviced and they are not the same accessor, so adopting the upstream
+number would have produced a read of the wrong thing that still returned a plausible byte, which is
+precisely the case the project's derive-rather-than-adopt rule exists for. This is the first time
+that rule has been vindicated by measurement rather than by argument.
+
+**GET_VERSION's twelve bytes are now five identified, one candidate, six unknown**, by comparing the
+block against `concordance -i` on the same remote. The flash id pair and the packed nibble byte were
+already characterised from the image, so those two are agreements between a disassembly and a device.
+It rests on one remote, which is below this project's usual bar of two independent samples, and it is
+marked as such: the Harmony One would differ in skin, firmware, hardware version and flash part, and
+its concordance output is already in the lab.
 
 ### An honest gap
 

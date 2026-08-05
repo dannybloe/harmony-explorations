@@ -11,10 +11,12 @@ import assert from 'node:assert/strict';
 
 import {
   ERASE_FLASH,
+  FLASH_DATA,
   HarmonyRemote,
   MISC_RAM,
   READ_FLASH,
   RemoteError,
+  decodeReply,
   isHarmony,
   skinId,
   transportOver,
@@ -91,46 +93,47 @@ test('a version block is twelve bytes', async () => {
 });
 
 /**
- * A data chunk, under the response encoding: a code in the high nibble and a length in the low
- * one, so nibble `A` for 63 bytes.
+ * A `READ_FLASH` data chunk as the remote actually sends it: `0x6A`, then a sequence byte, then 62
+ * bytes of data.
  *
- * **Which high nibble READ_FLASH uses is not established.** `docs/usb-protocol.md` withdrew the
- * attribution of the 63 byte chunking code to READ_FLASH and has not restored it, so this is an
- * arbitrary code that is merely not one of the three that are known: `0xF0` acknowledgement,
- * `0xC2` misc reply, `0x28` version. Picking `0xFA` here, which was the first guess, was itself
- * the bug the test caught: `0xFA & 0xF0` is `0xF0`, so it decoded as an acknowledgement. What
- * these tests establish is the assembly behaviour, not the code.
+ * **Measured, and it replaced a guess.** This was `0x0A` with no sequence byte, chosen because the
+ * code was unestablished, and before that `0xFA`, which was worse: `0xFA & 0xF0` is `0xF0`, so it
+ * decoded as an acknowledgement. Both are the same lesson. A test written against an unknown is
+ * asserting the author's expectation, and the only way out of that is to ask the device.
  */
-const DATA_CHUNK_CODE_UNESTABLISHED = 0x0a;
+function flashChunk(sequence: number, data: number[]): Uint8Array {
+  const nibble = data.length + 1 === 63 ? 0xa : data.length + 1;
+  return report(FLASH_DATA | nibble, sequence, ...data);
+}
+
+/** The end of a flash read: nibble 0, and the command byte follows it regardless. */
+const FLASH_DONE = report(0xf0, READ_FLASH);
 
 test('a flash read assembles its chunks and stops at the count asked for', async () => {
   // The remote sends 63 byte chunks. The last one overshoots the request, and the extra bytes are
   // dropped rather than returned: a caller asking for 100 bytes and getting 126 would write 26
   // bytes of somebody else's data into whatever it was filling.
-  const first = report(DATA_CHUNK_CODE_UNESTABLISHED, ...new Array(63).fill(0xaa));
-  const second = report(DATA_CHUNK_CODE_UNESTABLISHED, ...new Array(63).fill(0xbb));
+  const first = flashChunk(0x01, new Array(62).fill(0xaa));
+  const second = flashChunk(0x12, new Array(62).fill(0xbb));
   const { transport, written } = scriptedRemote([first, second], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
   const data = await remote.readFlash(0x030000, 100);
   assert.equal(data.length, 100);
-  assert.equal(data[62], 0xaa);
-  assert.equal(data[63], 0xbb);
+  assert.equal(data[61], 0xaa);
+  assert.equal(data[62], 0xbb, 'the second chunk continues where the first stopped');
   assert.deepEqual([...(written[0] as Uint8Array).subarray(0, 6)], [0x55, 0x03, 0x00, 0x00, 0x00, 0x64]);
 });
 
 test('a flash read that comes up short says so instead of returning zeros', async () => {
   // A short read padded with zeros is the worst outcome available: it parses, it verifies nothing,
   // and it looks like a config.
-  const { transport } = scriptedRemote(
-    [report(DATA_CHUNK_CODE_UNESTABLISHED, ...new Array(63).fill(0xaa))],
-    0,
-  );
+  const { transport } = scriptedRemote([flashChunk(0x01, new Array(62).fill(0xaa))], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
-  await assert.rejects(() => remote.readFlash(0x030000, 200), /returned 63 of 200 bytes/);
+  await assert.rejects(() => remote.readFlash(0x030000, 200), /returned 62 of 200 bytes/);
 });
 
 test('a flash read ends cleanly when the remote acknowledges instead of sending more', async () => {
-  const { transport } = scriptedRemote([report(0xf1, READ_FLASH)], 0);
+  const { transport } = scriptedRemote([FLASH_DONE], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
   await assert.rejects(() => remote.readFlash(0x030000, 63), /returned 0 of 63 bytes/);
 });
@@ -147,10 +150,7 @@ test('a flash read of a region the firmware rejects never reaches the wire', asy
 test('an internal memory read is bounded to the window the firmware bounds it to', async () => {
   // The validator clamps the 16-bit offset to 0xFFC0, which is 0x10000 minus a full report. Asking
   // for more would be silently clamped by the device, so it is refused here where it can be seen.
-  const { transport } = scriptedRemote(
-    [report(DATA_CHUNK_CODE_UNESTABLISHED, ...new Array(63).fill(0x11))],
-    0,
-  );
+  const { transport } = scriptedRemote([flashChunk(0x01, new Array(62).fill(0x11))], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
   await assert.rejects(
     () => remote.readInternalMemory(0xfe, 0xffc1, 8),
@@ -159,10 +159,7 @@ test('an internal memory read is bounded to the window the firmware bounds it to
 });
 
 test('an internal memory read puts the sub-selector in the top address byte', async () => {
-  const { transport, written } = scriptedRemote(
-    [report(DATA_CHUNK_CODE_UNESTABLISHED, ...new Array(63).fill(0x11))],
-    0,
-  );
+  const { transport, written } = scriptedRemote([flashChunk(0x01, new Array(62).fill(0x11))], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
   await remote.readFlash(0xfe0000, 8).catch(() => undefined);
   assert.deepEqual([...(written[0] as Uint8Array).subarray(0, 4)], [0x55, 0xfe, 0x00, 0x00]);
@@ -186,7 +183,7 @@ test('every write method refuses before it touches the transport', async () => {
 });
 
 test('an erase request is never built for an address outside the region', async () => {
-  const { transport, written } = scriptedRemote([report(0xf1, ERASE_FLASH)], 0);
+  const { transport, written } = scriptedRemote([report(0xf0, ERASE_FLASH)], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
   await assert.rejects(() =>
     remote.eraseFlash(
@@ -248,4 +245,39 @@ test('RemoteError is what a caller can catch', () => {
   // Exported deliberately: an application that cannot distinguish a protocol failure from a
   // programming error will report the wrong thing to the person holding the remote.
   assert.ok(new RemoteError('x') instanceof Error);
+});
+
+test('a dropped chunk is an error, not a hole in the middle of a config', async () => {
+  // The sequence byte advances by 0x11 per chunk, so a missing report is detectable. Unchecked it
+  // would be silent corruption inside a config, which recompiles and verifies nothing.
+  const { transport } = scriptedRemote(
+    [flashChunk(0x01, new Array(62).fill(0xaa)), flashChunk(0x23, new Array(62).fill(0xcc))],
+    0,
+  );
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
+  await assert.rejects(
+    () => remote.readFlash(0x030000, 124),
+    /out of sequence: expected 0x12, got 0x23 after 62 bytes/,
+  );
+});
+
+test('the first chunk has to be sequence 0x01', async () => {
+  const { transport } = scriptedRemote([flashChunk(0x12, new Array(62).fill(0xaa))], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
+  await assert.rejects(() => remote.readFlash(0x030000, 62), /expected 0x1, got 0x12/);
+});
+
+test('an acknowledgement declares no payload and carries its command anyway', () => {
+  // The device's own encoding, measured: `f0 50`, not `f1 50`. Reading the command byte from the
+  // declared payload made the real reply decode as an acknowledgement with no command in it.
+  const decoded = decodeReply(report(0xf0, READ_FLASH));
+  assert.deepEqual(decoded, { kind: 'ack', command: 0x50, commandName: 'READ_FLASH' });
+});
+
+test('a flash chunk decodes into its sequence and its data separately', () => {
+  const decoded = decodeReply(flashChunk(0x23, [1, 2, 3]));
+  assert.equal(decoded.kind, 'flash-data');
+  if (decoded.kind !== 'flash-data') return;
+  assert.equal(decoded.sequence, 0x23);
+  assert.deepEqual([...decoded.data], [1, 2, 3]);
 });

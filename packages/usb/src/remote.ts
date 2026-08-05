@@ -1,13 +1,14 @@
 /**
  * The command layer: a remote, and the read operations version 1 of the application needs.
  *
- * Status, stated up front because it matters more than anything else in this file: **none of this
- * has run against a remote.** It is written from `docs/usb-protocol.md`, whose request side is
- * derived from the firmware and corroborated, and whose response side is derived but thinner. In
- * particular the chunking of `READ_FLASH`'s reply is a reading, not a measurement: the document
- * withdrew the attribution of the 63 byte chunking code to `READ_FLASH` and has not restored it.
- * So `readFlash` below is the best current reading of an asynchronous, chunked reply, and the
- * first hardware run is expected to correct it. Marked, rather than presented as settled.
+ * Status: **`getVersion`, `readRam` and `readFlash` have run against a Harmony 600 and are measured,
+ * not inferred.** The verification that matters is `readFlash`: 256 bytes read off the remote are
+ * byte-identical to the lab dump of that same unit, which is an answer obtained without this code.
+ * The first run also corrected two things this file had assumed, both recorded in `protocol.ts`
+ * where they belong: an acknowledgement's length nibble is `0` with the command byte following
+ * anyway, and a data chunk is `0x6A` with a sequence byte ahead of 62 data bytes.
+ *
+ * `readInternalMemory` and every write path have still never touched a device.
  *
  * The one thing the firmware makes certain is that **replies are asynchronous**: a handler parses
  * its arguments, sets a state, and returns; the main loop acts on the state later. So every read
@@ -18,6 +19,7 @@ import {
   GET_VERSION,
   MISC_RAM,
   READ_FLASH,
+  nextFlashSequence,
   VERSION_FIELD_COUNT,
   decodeReply,
   getVersionRequest,
@@ -79,13 +81,13 @@ export class HarmonyRemote {
    * The twelve byte version block.
    *
    * Twelve because two independent counts agree: the firmware stores through its output pointer at
-   * exactly twelve sites, and the executor copies twelve bytes. Ten of the fields are not named.
-   * Two are characterised: one is a 16-bit value read over SPI with the chip select low, which is
-   * the flash id, and one packs two values into a single byte as two nibbles.
+   * exactly twelve sites, and the executor copies twelve bytes. A read of a Harmony 600 compared
+   * against `concordance -i` on the same unit identifies five of them and leaves six unidentified,
+   * with one candidate; see `docs/usb-protocol.md` for the mapping and its caveat, which is that it
+   * rests on a single remote.
    *
-   * Named fields are deliberately absent from the return value. Guessing at an order taken from
-   * elsewhere would put ten labels on bytes nobody has identified, and a wrong label is worse than
-   * no label: it gets believed.
+   * Raw bytes, not a labelled object, and that stays true until a second remote agrees. Ten labels
+   * on bytes nobody has identified would be worse than none, because they would be believed.
    */
   async getVersion(): Promise<Uint8Array> {
     const reply = await this.exchange(getVersionRequest());
@@ -119,12 +121,19 @@ export class HarmonyRemote {
   /**
    * Read `count` bytes of flash from `address`.
    *
-   * The reply arrives as a series of reports, so this accumulates payloads until it has enough or
-   * until the remote goes quiet. Two things about it are readings rather than measurements, and
-   * both are the sort that a first hardware run settles in minutes: whether the final short chunk
-   * is signalled by its length or by the state simply clearing, and whether the count on the wire
-   * is biased by one. Neither is guessed at here. This asks for what it wants, takes what arrives,
-   * and refuses to invent the difference.
+   * Measured against a Harmony 600, and verified the only way worth verifying a read: 256 bytes off
+   * the remote came back byte-identical to the lab dump of that same unit, which is an answer
+   * obtained without this code.
+   *
+   * The reply is a series of `0x6A` chunks, each 62 bytes of data behind a sequence byte, then
+   * `0xF0 0x50` to say the command is finished. The sequence is checked, because a dropped report
+   * over HID is the failure this transfer actually has, and unchecked it would be silent corruption
+   * in the middle of a config rather than an error.
+   *
+   * One thing that was open is now closed by arithmetic rather than by proximity: the firmware
+   * compares the remaining count against 63, 63 is the payload the largest length nibble can
+   * describe, and one of those 63 bytes is the sequence, so a full chunk carries 62. The device
+   * sent exactly the number of bytes asked for, so the count on the wire is not biased by one.
    */
   async readFlash(address: number, count: number): Promise<Uint8Array> {
     regionOf(address); // throws for a top byte the firmware's own validator rejects
@@ -133,6 +142,7 @@ export class HarmonyRemote {
     const out = new Uint8Array(count);
     let filled = 0;
     let idle = 0;
+    let sequence: number | undefined;
     while (filled < count && idle < this.idlePolls) {
       const report = await this.transport.read(this.timeoutMs);
       if (report === undefined) {
@@ -142,11 +152,19 @@ export class HarmonyRemote {
       idle = 0;
       const reply = decodeReply(report);
       if (reply.kind === 'ack' && reply.command === READ_FLASH) break;
-      if (reply.kind !== 'data') {
+      if (reply.kind !== 'flash-data') {
         throw new RemoteError(`a flash read answered with a ${reply.kind} reply`);
       }
-      const take = Math.min(reply.payload.length, count - filled);
-      out.set(reply.payload.subarray(0, take), filled);
+      const expected = sequence === undefined ? 0x01 : nextFlashSequence(sequence);
+      if (reply.sequence !== expected) {
+        throw new RemoteError(
+          `flash chunk out of sequence: expected 0x${expected.toString(16)}, ` +
+            `got 0x${reply.sequence.toString(16)} after ${filled} bytes`,
+        );
+      }
+      sequence = reply.sequence;
+      const take = Math.min(reply.data.length, count - filled);
+      out.set(reply.data.subarray(0, take), filled);
       filled += take;
     }
     if (filled !== count) {

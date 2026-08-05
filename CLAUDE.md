@@ -367,19 +367,22 @@ step 3 is done as far as the firmware can take it: the corpus spans four archite
 container parser is general across all of them and now exists twice, in Python and TypeScript, held
 equal by golden vectors, and `docs/usb-protocol.md` covers both directions of every command.
 
-**Nothing has been sent to a remote yet.** `node-hid` is installed and approved and enumeration
-works, so the next step is the first command on the wire, which is the owner's call to make with a
-remote in hand. These wait for it:
+**Three read commands have run against the programmed Harmony 600**, from our own host code:
+GET_VERSION, READ_MISC and READ_FLASH. The flash read is byte-identical to the lab dump of that unit
+over 256 bytes, which is verification against an answer obtained without this code. Nothing has been
+written to a remote. `docs/usb-protocol.md` section 4 is the measured part. What still waits:
 
-* the concordance cross-check on the same remote,
+* **a second remote for the GET_VERSION field mapping.** Five of twelve fields are identified against
+  `concordance -i`, on one remote, which is below the two-sample bar. The Harmony One differs in
+  skin, firmware, hardware version and flash part, and its concordance output is already in the lab,
+* the concordance cross-check of a full config read on the same remote,
 * a complete firmware dump of both bench remotes, since concordance truncates the 600 at 65536 of
   70336 bytes,
 * `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
   reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
 * naming ten of GET_VERSION's twelve fields,
-* telling the internal memory sub-selectors `0xFE` and `0xFF` apart,
-* and the response side generally: `READ_FLASH`'s reply code is not established, so `packages/usb`
-  accepts any reply that is not one of the three known codes as data.
+* telling the internal memory sub-selectors `0xFE` and `0xFF` apart, which nothing has been sent
+  down yet and which is the route to `MCU_ID`.
 
 Step 5 is next: **the read only application.** Electron shell with no network access at all,
 enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a

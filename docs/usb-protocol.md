@@ -1,16 +1,19 @@
 # The Harmony USB protocol, from the firmware
 
-**Status: the firmware side is done.** The transport is complete, quoted from the device's own
-descriptors and confirmed against the Harmony 600 on the bench. The command layer has its
-dispatch table, its length nibble mapping, its state machine, and **the request and response
-layout of every command**. Live RAM over USB is confirmed in both directions, and event injection
-is not available.
+**Status: derived from the firmware, and now read back off a remote.** The transport is complete and
+quoted from the device's own descriptors. The command layer has its dispatch table, its length
+nibble mapping, its state machine, and the request and response layout of every command. Live RAM
+over USB works and event injection does not exist.
 
-What is left needs a host implementation rather than more disassembly: naming ten of
-GET_VERSION's twelve fields, telling the two internal-memory sub-selectors apart, and the
-cross-check against a concordance run on the same remote. Section 3 lists them. This document is
-the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was established
-rather than at the end.
+**Section 4 is the part a host measured**, on the programmed Harmony 600, read only. Three commands
+have run: GET_VERSION, READ_MISC and READ_FLASH. The flash read is verified the only way worth
+verifying a read, against 256 bytes of a dump made months earlier by other software, and it is
+byte-identical. That run also corrected two things this document had inferred, both marked in place.
+
+What is left is in "Still open" below: six of GET_VERSION's twelve bytes, a second remote to confirm
+the other six, and the internal program memory path that leads to `MCU_ID`, which nothing has yet
+been sent down. This document is the deliverable of step 3 of `docs/roadmap.md`, and it was written
+as each part was established rather than at the end.
 
 Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
 (architecture 14). The Harmony 600 0.2 dump is truncated by concordance at 65536 of 70336
@@ -312,6 +315,13 @@ can send directly.
 **An acknowledgement is `0xF0` followed by the command's own byte.** Two samples, `0xA0` for
 WRITE_MISC and `0xD0` for ERASE_FLASH, both built the same way by appending two bytes and
 returning. So a host can treat `0xF0 cmd` as "done, no payload" without a per command table.
+
+**Measured addition: the acknowledgement's length nibble is `0`, and the command byte follows it
+anyway.** A Harmony 600 ends a `READ_FLASH` with `f0 50`, not `f1 50`. So the low nibble is a
+payload length for a request and for a data chunk, and is not one for an acknowledgement. A host
+that computes the acknowledged command's position from the nibble finds nothing there;
+`packages/usb` did exactly that until the device said otherwise, and its passing test was asserting
+the assumption rather than the protocol.
 
 Two of the rows are absences, and both are coherent rather than gaps in the reading.
 **WRITE_FLASH's executor is a single `RETURN`**, because the work is not in the state machine at
@@ -668,6 +678,82 @@ selector into, so the sharing that caused the retraction above is confirmed to b
 the chunk is the 63 seen at `0x0C9B2` is exactly the question that must not be answered by
 proximity: it needs following control flow into whatever sets `0xED3` on this path. Not done.
 
+## 4. Measured against the bench Harmony 600
+
+Everything above was derived from firmware images. This section is what a host actually observed on
+the wire, from `packages/usb`, on the programmed Harmony 600: skin 71, firmware 0.2, arch 14,
+`0x046D:0xC122`, `bcdDevice 0x1071`. Read only, no writes of any kind.
+
+### The flash read, against an answer obtained without it
+
+256 bytes read from `0x030000` are **byte-identical to the lab dump of that same unit**. That is the
+verification that matters: a read returning plausible bytes proves nothing, and the dump was made by
+concordance months earlier, so it is an independent answer. Pinned in
+`packages/usb/test/hardware.test.ts`, behind `HARMONY_HARDWARE_TESTS=1` so a routine test run does
+not claim a remote.
+
+The reply layout, which was not established from the images:
+
+```
+6a 01 <62 data bytes>      chunk 1
+6a 12 <62 data bytes>      chunk 2
+6a 23 <62 data bytes>      chunk 3
+...
+67 45 <6 data bytes>       a short chunk, literal nibble
+63 56 <2 data bytes>
+f0 50                      done
+```
+
+* **The code is `0x60`.** The withdrawn attribution is now settled from the outside rather than by
+  proximity in the disassembly.
+* **The nibble is the payload length, and the first payload byte is a sequence number**, so a full
+  chunk carries 62 data bytes, not 63. That closes the 63 the firmware compares against: 63 is the
+  largest payload a length nibble can describe, and one of those bytes is the sequence.
+* **The sequence advances by `0x11`**: `0x01`, `0x12`, `0x23`, `0x34`, `0x45`, `0x56`. So the low
+  nibble is this chunk's number and the high nibble the previous one's. Worth checking in a host: a
+  dropped report over HID is this transfer's real failure mode, and unchecked it is silent
+  corruption inside a config rather than an error.
+* **The count on the wire is not biased by one.** 256 requested, 256 delivered, as
+  62+62+62+62+6+2. The `INCF` that suggested a bias belongs to something else.
+
+### GET_VERSION's twelve bytes, five of them identified
+
+The block from this remote was `02 11 1c 15 e0 47 0c 02 00 00 02 02`, and `concordance -i` on the
+same unit prints skin 71, firmware 0.2, hardware 1.1.0, external flash `15:1C`, protocol 14.
+
+| Field | Value | Reading |
+|---|---|---|
+| 0 | `0x02` | firmware version `0.2`, as two nibbles |
+| 1 | `0x11` | hardware version `1.1`, as two nibbles |
+| 2 | `0x1c` | flash device id |
+| 3 | `0x15` | flash manufacturer id, so the pair is concordance's `15:1C` |
+| 4 | `0xe0` | **candidate:** protocol 14 in the high nibble, since `0xE0 >> 4` is 14 |
+| 5 | `0x47` | skin, 71 decimal, which `bcdDevice` says independently |
+| 6 to 11 | `0c 02 00 00 02 02` | not identified |
+
+Fields 2 and 3 are the 16-bit SPI read the firmware performs with the chip select low, which was
+already characterised as "the flash id" from the image; now it has a value that matches a second
+source. Field 1 is the byte built by the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence, which was already
+characterised as packing two values into one byte.
+
+**One remote, so this is a correspondence and not yet a fact.** Five fields matching printed values
+by position could still contain a coincidence, and field 4 is a guess with one bit of evidence.
+Reading the Harmony One, which differs in skin, firmware, hardware version and flash part, is what
+would settle it, and its `concordance -i` output is already in the lab.
+
+### Live RAM, and upstream's selector confirmed wrong for this architecture
+
+`READ_MISC` selector `0x07` at data address `0x1C1`, the 600's command state variable, returns
+**10**. Ten is the state `READ_MISC` itself sets. So the read observes the command that is doing the
+reading, which is a closure that no amount of plausible-looking bytes could fake: it is live memory
+of a running remote, at an address predicted from the disassembly, holding the value the
+disassembly says it should hold at that instant.
+
+Other addresses return different values, so it is not a stuck byte. And the same address through
+selector `0x06`, which is what libconcord's header calls `MISC_RAM`, returns `0` instead of `10`.
+Both selectors are serviced and they are not the same accessor, which is what deriving rather than
+adopting bought here.
+
 ### Answered since this list was first written
 
 Recorded rather than deleted, because three of the four were open questions this step was set up
@@ -684,21 +770,17 @@ to settle, and a list that only ever grows is not a status.
 
 ### Still open
 
-* What GET_VERSION's twelve bytes each are. Two are characterised; the other ten need their
-  accessors followed, or a comparison against a concordance run on the same remote, which is the
-  cross-check this step wants regardless.
-* Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
-  not.
-* **Which code a `READ_FLASH` data chunk carries.** The chunking is understood and the attribution
-  of the code at `0x0C9B2` stays withdrawn, so `packages/usb` accepts any reply that is not one of
-  the three known codes as data, and its tests say in as many words that they establish the
-  assembly behaviour rather than the code. The first hardware read settles it.
-* Whether the final short chunk is signalled by its length or only by the state clearing, and
-  whether the count on the wire is biased by one. The `INCF` on the short path implies the bias,
-  which rests on a single instruction.
-* Which of `0xFE` and `0xFF` is which. The region itself is identified: internal program
-  memory, read by table read. The sub-selector is one bit and both values reach the same body.
+* **Six of GET_VERSION's twelve bytes**, and confirming the other six on a second remote. Fields
+  `0x0c 0x02 0x00 0x00 0x02 0x02` on the 600 are unidentified, and concordance prints values this
+  block could plausibly carry that are not yet placed: firmware type 0, the third component of
+  hardware version 1.1.0, and `IRL, ORL, FRL: 0, 0, 0`.
+* Which of `0xFE` and `0xFF` is which for internal program memory, and how the 24-bit address maps
+  onto the part's program memory. Nothing has been sent down that path yet, so `MCU_ID` is still
+  unmeasured.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
+* Whether `0x28`, GET_VERSION's code, means anything in its low nibble. It is not a payload length:
+  it would say 15 where the firmware copies 12, and the acknowledgement shows the nibble is not a
+  length for every response.
 
 ## Corroboration used, after the fact
 

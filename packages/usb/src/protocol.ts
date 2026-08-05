@@ -225,8 +225,41 @@ export function regionOf(address: number): Region {
   return validateRegionByte((address >>> 16) & 0xff);
 }
 
-/** `0xF0 cmd` is a bare acknowledgement, naming the command it acknowledges. */
+/**
+ * `0xF0 cmd` is a bare acknowledgement, naming the command it acknowledges.
+ *
+ * **Measured, and it corrects an assumption made here first.** The length nibble is `0`, and the
+ * command byte follows anyway. So `0xF0` arrives as `f0 50` at the end of a `READ_FLASH`, not as
+ * `f1 50`. This module used to compute the acknowledged command's position from the nibble, which
+ * meant the real reply decoded as "acknowledgement with no command byte"; the test that passed was
+ * asserting the assumption rather than the device. Responses reuse the request encoding for their
+ * code, and for data chunks they use it for the length too, but an acknowledgement does not.
+ */
 export const ACK = 0xf0;
+
+/**
+ * The code a `READ_FLASH` data chunk carries, which was unestablished until it was measured.
+ *
+ * The reply is a series of `0x6A` reports: nibble `A`, so 63 payload bytes, of which **the first is
+ * a sequence byte and 62 are data**. That resolves the firmware's 63 by arithmetic rather than by
+ * proximity: the chunking code compares the remaining count against 63, and 63 is the payload the
+ * largest length nibble can describe, and one of those bytes is the sequence. The final short chunk
+ * carries a literal nibble, then `0xF0 0x50` ends the command.
+ */
+export const FLASH_DATA = 0x60;
+
+/**
+ * A chunk's sequence byte advances by `0x11` per chunk: `0x01`, `0x12`, `0x23`, `0x34` and so on.
+ *
+ * So the low nibble is this chunk's number and the high nibble is the previous one's, both wrapping
+ * at 16. Checking it is what turns a dropped report from silent corruption into an error, and a
+ * dropped report is the failure mode a chunked transfer over HID actually has.
+ */
+export const FLASH_SEQUENCE_STEP = 0x11;
+
+export function nextFlashSequence(previous: number): number {
+  return (previous + FLASH_SEQUENCE_STEP) & 0xff;
+}
 /** `READ_MISC` replies with this: two payload bytes, the selector echoed and one data byte. */
 export const MISC_REPLY = 0xc2;
 /** `GET_VERSION` replies with this, then twelve bytes. */
@@ -238,17 +271,18 @@ export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
   | { kind: 'misc'; selector: number; value: number }
   | { kind: 'version'; fields: Uint8Array }
+  | { kind: 'flash-data'; sequence: number; data: Uint8Array }
   | { kind: 'data'; code: number; payload: Uint8Array };
 
 /**
  * Decode one 64 byte report from the remote.
  *
- * Responses use the same encoding as requests, a code in the high nibble and a length in the low
- * one, which is what lets this be one function rather than a table of per command parsers. The
- * one loose end is recorded rather than smoothed over: `0x28` under the request mapping would be
- * nibble 8, meaning 15 payload bytes, while the executor copies 12. Either the response nibble is
- * not the request mapping or three more bytes follow, and it is not resolved, so the version
- * reply is cut to twelve fields by the count the firmware copies rather than by the nibble.
+ * Responses reuse the request encoding for their code, in the high nibble, which is what lets this
+ * be one function rather than a table of per command parsers. **They do not all reuse it for the
+ * length**, and that is measured rather than assumed now: a data chunk's nibble is its payload
+ * length, an acknowledgement's nibble is `0` with a command byte following it anyway, and
+ * GET_VERSION's `0x28` would mean 15 under the request mapping while the firmware copies 12. So the
+ * nibble is trusted for data and ignored for the other two.
  */
 export function decodeReply(report: Uint8Array): Reply {
   const first = report[0];
@@ -257,9 +291,15 @@ export function decodeReply(report: Uint8Array): Reply {
   const payload = report.subarray(1, 1 + payloadLengthForNibble(first & 0x0f));
 
   if (code === ACK) {
-    const command = payload[0];
+    // Read past the declared payload on purpose: the nibble says zero and the byte is there.
+    const command = report[1];
     if (command === undefined) throw new ProtocolError('acknowledgement with no command byte');
     return { kind: 'ack', command, commandName: COMMAND_NAMES[command] };
+  }
+  if (code === FLASH_DATA) {
+    const sequence = payload[0];
+    if (sequence === undefined) throw new ProtocolError('flash data chunk with no sequence byte');
+    return { kind: 'flash-data', sequence, data: payload.subarray(1) };
   }
   if (first === MISC_REPLY) {
     const selector = payload[0];
