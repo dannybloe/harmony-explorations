@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks all clean
 
 help:
 	@echo "test         run the Python test suite (needs a lab directory for image-backed tests)"
@@ -28,6 +28,7 @@ help:
 	@echo "ghidra       build or refresh the Ghidra project (needs a lab directory)"
 	@echo "ts           typecheck and test the TypeScript packages"
 	@echo "audit        check the npm dependency tree for known vulnerabilities"
+	@echo "hooks        install the pre-commit hook (per clone, so run it once after cloning)"
 	@echo "all          everything above except ghidra"
 
 test:
@@ -70,6 +71,13 @@ ts-test:
 
 audit:
 	@$(PNPM) audit
+
+# Git does not commit .git/hooks, so the hook lives in .githooks and this points git at it.
+# Per clone, which is why the same checks are also reachable from `make` targets: a fresh
+# checkout that never runs this is unprotected, and nobody notices until it matters.
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
 all: lint prose test ts audit
 

@@ -138,7 +138,15 @@ print(best)            # check the margin over ranked[1] before trusting it
 ```sh
 make test          # image-backed tests need a lab directory, see below
 make lint prose    # syntax, and the document conventions
+make ts            # the TypeScript packages: typecheck and test
+make hooks         # install the pre-commit checks, once per clone
+make all           # everything except Ghidra
 ```
+
+The application side is TypeScript, and its dependency tree is deliberately two packages: the
+compiler and its type definitions. Node 24 runs the test files directly by stripping the types,
+so there is no test runner to install. Node 24 or newer, and `pnpm`, are needed for that half;
+the research tooling above still needs nothing but Python 3.
 
 Binaries are not in this repository, so anything needing them looks for a `lab` directory
 alongside the checkout, or wherever `HARMONY_LAB` points, and skips cleanly when there is

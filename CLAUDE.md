@@ -54,6 +54,11 @@ net, not a policy:
   `samples/README.md` for the unresolved sanitisation question.
 * **No Ghidra projects.** They embed an imported copy of the firmware.
 
+`.githooks/pre-commit` is the second line: it checks **staged content**, so a rename, a
+`git add -f`, or an extension the `.gitignore` does not list gets caught anyway, and so does
+anything shaped like an account GUID or an identity field with a value in it. Install it with
+`make hooks`, which is per clone, so a fresh checkout has no hooks until someone runs it.
+
 Binaries live outside this repository, in a `lab` directory alongside it:
 
 ```
@@ -248,6 +253,7 @@ make corpus        inventory the dumps, and flag the undescribed ones
 make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
+make hooks         install .githooks/pre-commit, once per clone
 make all           everything except ghidra
 ```
 

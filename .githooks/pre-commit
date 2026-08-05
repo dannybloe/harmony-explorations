@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# Pre-commit checks for a public repository holding work on proprietary binaries.
+#
+# Install with `make hooks`, which points core.hooksPath here. That is per clone, so a fresh
+# checkout has no hooks until someone runs it; the checks therefore also run in `make all`
+# rather than living only here.
+#
+# What this is for, in order of how much it would hurt to get wrong:
+#
+#   1. A firmware or config binary, or a concordance dump, entering a public repository. The
+#      .gitignore blocks the obvious names, but a rename, a `git add -f`, or a new extension
+#      walks straight past it. This checks what is actually staged.
+#   2. A third party's identity in a committed file. The archived .hfw packages carry a
+#      stranger's Logitech UserId, account GUIDs and a session cookie.
+#   3. Em-dashes and en-dashes in documents, which is a house convention.
+#   4. Dependency versions specified as a range rather than pinned.
+#
+# Everything is checked against staged content (`git show :file`), not the working tree, so
+# that a partially staged file cannot pass on the strength of an unstaged fix.
+#
+# Bypass with `git commit --no-verify`. There is no honest way to prevent that, and a check
+# that cannot be bypassed gets uninstalled instead.
+
+set -e
+
+fail=0
+note() { printf 'pre-commit: %s\n' "$1" >&2; fail=1; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -n "$staged" ] || exit 0
+
+# 1. Extensions that are proprietary binaries or personal dumps by definition. Mirrors
+#    .gitignore, deliberately duplicated: this catches the case where .gitignore was edited in
+#    the same commit that adds the file.
+for f in $staged; do
+	case "$f" in
+	*.bin | *.hfw | *.EZHex | *.EZUp | *.EzHex | *.EzUpgrade | *.gpr | *-info.txt | *-safe.bin)
+		note "$f is a firmware, config or dump file and cannot be committed" ;;
+	esac
+done
+
+# 2. A third party's identity. The GUID pattern is what an account id looks like; the tags are
+#    what Data.xml calls them. Both are checked with a value present, so prose that merely
+#    names the fields (CLAUDE.md does) does not trip the check.
+guid='[0-9a-fA-F]\{8\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{12\}'
+for f in $staged; do
+	blob=$(git show ":$f" 2>/dev/null || true)
+	[ -n "$blob" ] || continue
+	if printf '%s' "$blob" | grep -qI "$guid"; then
+		note "$f contains something shaped like an account GUID"
+	fi
+	if printf '%s' "$blob" | grep -qIE '<(UserId|CookieKeyValue|ServerID)>[^<]|ASPSESSIONID[A-Z]'; then
+		note "$f contains an identity or session field with a value in it"
+	fi
+done
+
+# 3. Em-dashes and en-dashes in documents.
+for f in $staged; do
+	case "$f" in
+	*.md) ;;
+	*) continue ;;
+	esac
+	n=$(git show ":$f" | python3 -c \
+		"import sys; d=sys.stdin.read(); print(sum(d.count(c) for c in '—–'))")
+	[ "$n" = "0" ] || note "$f has $n em-dash or en-dash characters"
+done
+
+# 4. Dependency ranges. Only when a manifest or the lock file is in the commit, so the usual
+#    commit pays nothing for this. The rule and its reasoning live in the test itself.
+case "$staged" in
+*package.json* | *pnpm-lock.yaml*)
+	if command -v node >/dev/null 2>&1; then
+		node --test packages/lab/test/dependencies.test.ts >/dev/null 2>&1 ||
+			note "a dependency is specified as a range: run node --test packages/lab/test/dependencies.test.ts"
+	fi
+	;;
+esac
+
+exit $fail
