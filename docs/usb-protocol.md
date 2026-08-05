@@ -7,7 +7,7 @@ layout of every command**. Live RAM over USB is confirmed in both directions, an
 is not available.
 
 What is left needs a host implementation rather than more disassembly: naming ten of
-GET_VERSION's twelve fields, identifying the two special `READ_FLASH` regions, and the
+GET_VERSION's twelve fields, telling the two internal-memory sub-selectors apart, and the
 cross-check against a concordance run on the same remote. Section 3 lists them. This document is
 the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was established
 rather than at the end.
@@ -559,11 +559,33 @@ and 0 for rejected:
   window. That path calls `0x1B50A` with the address triple instead of the flash reader.
 * anything else: rejected.
 
-That is the answer to the region question in `docs/roadmap.md` step 3, at least in shape.
-**Which region is which is not established**: the sub-selector is one bit, so `0xFE` and `0xFF`
-are two regions, and `0x1B50A` has not been read. The protocol is known to name four,
-`MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH`, so either not all four are reachable on
-arch 14 or the mapping is not one selector per region.
+**And the special region is the MCU's own program memory.** Inside the read path, at `0x0CA74`:
+
+```
+0ca74: d5 51       MOVF 0xed5,W        ; the region marker the validator set
+0ca76: 32 e0       BZ 0x0cadc          ; 0: the config flash, over SPI
+0ca78: fe 0a       XORLW 0xfe
+0ca7a: 01 e0       BZ 0x0ca7e          ; 0xFE: here
+0ca7c: 4b d0       BRA 0x0cb14         ; anything else: out
+0ca7e: ce ce 60 fd MOVFF 0xece,0xd60   ; the 24-bit address, moved along
+0ca8a: 60 cd 0a f3 MOVFF 0xd60,0x30a
+0ca96: ac ec da f0 CALL 0x1b558        ; and this one does TBLRD*+
+```
+
+`0x1B558` is the internal read primitive, a table read. It is one of three siblings that share
+the same address setup: `0x1B50A` sets `EECON1` to `FREE | WREN` and erases, `0x1B53C` sets it to
+`WREN` and writes, `0x1B558` reads. So **a `READ_FLASH` with a top address byte of `0xFE` or
+`0xFF` reads internal program memory by table read**, not the external config flash.
+
+That is worth having for a reason beyond completeness. On a PIC18 J-series part the device id
+words and the configuration words live at the top of program memory and are reachable only by
+table read, which makes this the route to the **`MCU_ID`** that `docs/roadmap.md` wants in order to
+measure the arch 12 part number rather than infer it.
+
+Two things still not established: which of `0xFE` and `0xFF` is which, since the validator keeps
+the low bit of byte 1 as a sub-selector and both reach the same body, and how the 24-bit address
+maps onto the part's program memory. Both are cheap once a host implementation can issue the
+command and compare against the datasheet's device id.
 
 **Somewhere in the flash machinery, a 16-bit remaining count is chunked at 63 bytes.** This was
 published as READ_FLASH's response chunking, and that attribution stays **withdrawn**: which
@@ -661,7 +683,8 @@ proximity: it needs following control flow into whatever sets `0xED3` on this pa
 
 * Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
   not.
-* Which region `0xFE` and `0xFF` select, which means reading `0x1B50A`.
+* Which of `0xFE` and `0xFF` is which. The region itself is identified: internal program
+  memory, read by table read. The sub-selector is one bit and both values reach the same body.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 
 ## Corroboration used, after the fact

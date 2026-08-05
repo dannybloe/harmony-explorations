@@ -656,6 +656,24 @@ class TestReadFlash(unittest.TestCase):
         """The loop ends the command by clearing the same variable READ_FLASH set to 4."""
         self.assertEqual(state_variable('h700_code'), 0xEC9)
 
+    def test_the_special_region_is_internal_program_memory(self):
+        """
+        Inside the read path the region marker branches, and the 0xFE branch calls 0x1B558,
+        which does TBLRD*+. So the special region is the MCU's own program memory read by table
+        read, not the external config flash. Its siblings 0x1B50A and 0x1B53C erase and write the
+        same memory, which is how the earlier misattribution happened.
+        """
+        code = lab.load('h700_code')
+        self.assertEqual(self.literal_at(0x0CA78), 0xFE)
+        call = isa.decode(code, 0x0CA96 - self.BASE, self.BASE)
+        self.assertEqual((call.mnemonic, call.fields['target']), ('CALL', 0x1B558))
+        self.assertEqual(isa.decode(code, 0x1B566 - self.BASE, self.BASE).mnemonic, 'TBLRD*+')
+
+    def test_the_internal_memory_primitives_are_told_apart_by_eecon1(self):
+        """FREE | WREN erases, WREN alone writes. The read sibling touches EECON1 not at all."""
+        self.assertEqual(self.literal_at(0x1B518), 0x14)   # 0x1B50A, erase
+        self.assertEqual(self.literal_at(0x1B54A), 0x04)   # 0x1B53C, write
+
     def test_something_in_the_flash_path_chunks_at_the_payload_size(self):
         """
         A 16-bit remaining count compared against 63 and moved 63 bytes at a time, on the same

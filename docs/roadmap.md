@@ -243,10 +243,12 @@ Still to do, in the order the application needs them:
   the rails. `0x09` is accepted and does nothing, and `0x03` is not serviced, so on upstream's
   naming there is **no event injection** on arch 14 and the button mapping experiment stays a
   human at the keypad.
-* Work out which `READ_FLASH` PROM type covers which address range: `MCU_FLASH 0x01`,
-  `MCU_EEPROM 0x02`, `MCU_ID 0x03`, `EXT_FLASH 0x04`. Arch 12 runs from external NOR mapped into
-  program space, arch 14 from internal flash because its SPI part is not executable, so the two
-  are unlikely to use the same selector.
+* **Answered in shape.** `READ_FLASH`'s top address byte is the selector. Below `0x20` is the
+  external config flash over SPI. `0xFE` and `0xFF` reach **internal program memory** by table
+  read, which is where a PIC18 J-series part keeps its device id and configuration words, so that
+  is the route to the `MCU_ID` that would measure the arch 12 part number instead of inferring it.
+  Anything else is refused. Which of `0xFE` and `0xFF` is which is not established, and the four
+  named PROM types do not map one-to-one onto what arch 14 implements.
 * **First deliverable of our own read path: a complete firmware dump of both remotes on the
   bench.** Right now the only arch 14 image we can disassemble is the 700 2.8 package, used as a
   proxy, because concordance truncates the 600 dump at 65536 bytes of a 70336 byte image and
