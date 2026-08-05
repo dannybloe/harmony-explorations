@@ -258,6 +258,30 @@ can send directly.
 The item selector and a 16-bit parameter, then deferred execution. WRITE_MISC at `0x0C364` is
 the same shape with a value to write.
 
+### READ_FLASH takes five bytes, and the first one is a selector
+
+```
+0c266: state = 4
+0c26c: read byte -> 0xED0
+0c278: read byte -> 0xECF
+0c284: read byte -> 0xECE
+0c290: read byte -> 0xED2
+0c29c: read byte -> 0xED1
+0c2a8: CALL 0x13DFE
+```
+
+Five argument bytes, and `0x13DFE` immediately switches on the **first** of them, testing it
+against `0xFE` and `0xFF` (it clears bit 0 before comparing against `0xFE`, so the two are one
+case) and then against `0x00`. So byte 1 is not a plain address byte.
+
+**Unconfirmed reading**, recorded as a lead: bytes 1 to 3 are a 24-bit address and bytes 4 and
+5 a 16-bit length, both most significant first, with certain values of the top address byte
+selecting a region that is not the main flash. That would answer the `READ_FLASH` region
+question in `docs/roadmap.md` step 3, and it fits READ_MISC, which parses its 16-bit parameter
+into the same `0xECF` and `0xECE` pair while putting its item selector in a variable of its
+own. It is not established: the switch at `0x13DFE` has not been followed, and no reading here
+has been checked against a live remote.
+
 ### Still open
 
 * Which `MISC` items the firmware services, and in particular whether `MISC_RAM` reads work
