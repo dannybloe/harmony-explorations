@@ -404,6 +404,35 @@ class TestGetVersion(unittest.TestCase):
     def test_twelve_bytes_are_copied(self):
         self.assertEqual(self.literal_at(0x0C92A), 0x0C)
 
+    def test_twelve_fields_are_stored_and_twelve_are_copied(self):
+        """
+        The closure: 0x1422C stores through the pointer at 0xEDD exactly twelve times, and the
+        executor copies twelve bytes. Neither count was derived from the other.
+        """
+        stores = trace.trace(lab.load('h700_code'), self.BASE, (0xEDD,))[0xEDD]
+        adds = [a for a in stores if a.kind.startswith('ADDWF')]
+        self.assertEqual(len(adds), 12)
+        self.assertEqual(self.literal_at(0x0C92A), 12)
+
+    def test_one_field_is_a_sixteen_bit_value_read_over_spi(self):
+        """
+        Chip select low, a call, then a 16-bit result out of PROD. A 16-bit value from the flash
+        chip is its id, which the corpus records per remote as a two byte pair.
+        """
+        code = lab.load('h700_code')
+        self.assertEqual(disasm.format_instr(isa.decode(code, 0x14244 - self.BASE, self.BASE)),
+                         'BCF LATF,7')
+        for addr, src in ((0x1424A, 0xFF3), (0x1424E, 0xFF4)):   # PRODL, PRODH
+            self.assertEqual(isa.decode(code, addr - self.BASE, self.BASE).fields['src'], src)
+
+    def test_one_field_packs_two_nibbles(self):
+        """SWAPF then ANDLW 0xf0 then IORWF: two four-bit fields in one of the twelve bytes."""
+        code = lab.load('h700_code')
+        self.assertEqual(isa.decode(code, 0x14268 - self.BASE, self.BASE).mnemonic, 'SWAPF')
+        andlw = isa.decode(code, 0x1426A - self.BASE, self.BASE)
+        self.assertEqual((andlw.mnemonic, andlw.fields['k']), ('ANDLW', 0xF0))
+        self.assertEqual(isa.decode(code, 0x1426C - self.BASE, self.BASE).mnemonic, 'IORWF')
+
     def test_the_response_code_length_nibble_does_not_match_the_copy(self):
         """
         Recorded because it is unresolved, not because it is understood. Under the request

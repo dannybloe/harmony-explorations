@@ -345,10 +345,28 @@ The executor is state 1, `0x0C906`:
 0c930: 10 e2       BC 0x0c952
 ```
 
-**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds. What the 12
-bytes are is not derived; concordance's `GET_VERSION` yields firmware, hardware, skin, flash id,
-protocol and architecture, so those are the obvious candidates and the obvious thing to check
-against a real remote once there is a host implementation.
+**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds.
+
+**It is twelve fields, and the count closes.** `0x1422C` takes the pointer in `0xEDD` and
+`0xEDE` as a base and stores through it with `ADDWF 0xedd,W` at exactly **twelve** sites, from
+`0x142C0` to `0x143AE`, one per field, with `0xD1C` as the running offset. Twelve stores, twelve
+bytes copied by the executor's loop, and neither number was derived from the other.
+
+Each field comes from its own small accessor. Two of them say something about what they are
+without any further work:
+
+* `0x14244` clears `LATF` bit 7, the external flash chip select, then calls `0x10974` and takes a
+  **16-bit** result out of `PROD`. A 16-bit value read over SPI from the flash chip is the flash
+  id, which the corpus already records per remote as a manufacturer and device byte pair.
+* `0x14268` takes two separately fetched values and packs them into one byte, `SWAPF` then
+  `ANDLW 0xf0` then `IORWF`, so one of the twelve bytes is **two four-bit fields**. A major and
+  minor version pair is the obvious candidate.
+
+Naming the other ten means following their accessors, which is a separate piece of work and is
+not done. concordance's `GET_VERSION` yields firmware, hardware, skin, flash id, protocol and
+architecture, so those are the candidates, and the honest way to settle it is to compare our
+twelve bytes against a concordance run on the same remote once there is a host implementation.
+Which is the cross-check roadmap step 3 asks for anyway.
 
 One loose end, recorded rather than smoothed over: `0x28` under the request encoding would be
 code `0x20` with length nibble 8, and nibble 8 means **15** payload bytes, not 12. Either the
@@ -612,7 +630,9 @@ proximity: it needs following control flow into whatever sets `0xED3` on this pa
   remote from the host.
 * The response layout of each command, which means reading the main loop's state handlers
   rather than the parsers.
-* What GET_VERSION's twelve bytes are, which means reading `0x1422C`.
+* What GET_VERSION's twelve bytes each are. The block is twelve fields and two of them are
+  characterised; the other ten need their accessors followed, or a comparison against a
+  concordance run on the same remote, which is the cross-check this step wants regardless.
 * The response side of WRITE_FLASH, ERASE_FLASH and START_IRCAP. Their requests are done.
 * Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
   not.
