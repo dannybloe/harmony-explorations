@@ -1147,14 +1147,52 @@ variables" and nothing more until that routine is found.
 
 ## 16. The Harmony 700 pair, and what a controlled sample buys
 
-The second of dmrzzz's two Harmony 700 dumps is now in the corpus, so the corpus has its first
-**controlled pair**: two configs of one remote with a change between them. Everything else
-available is either two different remotes, where nearly everything differs, or the four arch 8
-configs, which differ from each other in 73 to 84 percent of their bytes with no record of why.
+Both of dmrzzz's Harmony 700 dumps are in the corpus, so the corpus has its first **controlled
+pair**: two configs of one remote, with the owner's own written account of what differs.
+Everything else available is either two different remotes, where nearly everything differs, or
+the four arch 8 configs, which differ from each other in 73 to 84 percent of their bytes with no
+record of why.
 
-The written description of what changed is **still missing**, and it is worth asking for. What
-follows is derived from the bytes alone, which establishes where the change is but not what it
-was.
+Source, with the permission explicit in it, is
+<https://github.com/trelowney/harmony-decompiler/issues/9>. The issue body of 2026-08-04 carries
+the current dump; a comment 22 minutes later carries an older one recovered from the owner's
+version control, with the diff of the notes file they keep beside the dumps. Both are posted
+under "I have had a look at what is in it and I am happy to publish it".
+
+**Which file is which.** The comment states its attachment is the older dump, and that file's own
+timestamp is 2024-10-12 against 2026-08-04 for the other, so `harmony700-2.EZHex` is the earlier
+of the two. Everything below is stated in that direction, older to newer.
+
+### What changed, in the owner's words
+
+Their notes diff, abbreviated to the lines that moved. This is an activity called "Watch TV" and
+one called "Watch Bluray" on a six device installation:
+
+```diff
+   * Netflix = (Receiver: InputAv1, TV: Netflix)
++  * NintendoSwitch = (Receiver: InputHdmi4, TV: InputHdmi2)
+ * Standard Buttons
++  * UpArrow = Receiver: InputAv1
+ * Additional Buttons
+-  * Netflix (Sequence)
++  * Nintendo Switch (Sequence)
++  * Home = TV: Home
+-  * Home = TV
++  * TV Vol+ = TV: VolumeUp
++  * TV Vol- = TV: VolumeDown
+```
+
+So: one new sequence, one new standard button assignment, two new additional buttons, one
+respecified, one sequence dropped from the additional buttons while staying a sequence, and some
+repositioning in the Bluray activity. No device added, removed or changed.
+
+The owner's own caveat is worth carrying: "Accuracy not guaranteed, but this comes from an svn
+history". The notes are a record of intent rather than a dump of the config, so they say what was
+meant, and the bytes say what was emitted.
+
+**One thing does not follow the description.** All of that was added, and yet the newer config is
+**58 bytes smaller**. Whatever the generator does, config size is not a running total of what the
+configuration contains.
 
 ### Establishing that it is the same remote
 
@@ -1172,13 +1210,14 @@ Four independent agreements, none of which a different remote would produce:
 
 ### Where the change is
 
-The payload is 58 bytes longer. The layout moved by a constant either side of one section:
+The payload shrank by 58 bytes. The layout moved by a constant either side of one section, and
+only one section changed size:
 
-| Base slots | shift | note |
+| Base slots | shift, older to newer | note |
 |---|---|---|
-| 0 to 8 | +50 | so something before slot 0 grew by 50 bytes |
-| 8 | grew +8 | 3592 to 3600 bytes, the only section whose size changed |
-| 9 to 17 | +58 | the 50 above plus slot 8's 8 new bytes |
+| 0 to 8 | 50 bytes earlier | so the region ahead of slot 0 lost 50 bytes |
+| 8 | shrank by 8 | 3600 to 3592 bytes, the only section whose size changed |
+| 9 to 17 | 58 bytes earlier | the 50 above plus slot 8's 8 bytes |
 
 Per section, after realigning for those shifts:
 
@@ -1203,9 +1242,29 @@ Per section, after realigning for those shifts:
 | 16 | 1 | 0 | |
 | 17 | 598324 | 89% | the bulk |
 
-So the change is localised to **slot 8, plus 50 bytes in the region before slot 0** which no
-pointer in the table addresses. Slot 8 diverges 34 bytes in and does not resynchronise, so it was
-regenerated rather than patched.
+**The change is not localised, and it is worth being precise about that**, because the size table
+above invites the opposite reading. Only slot 8 changed *size*. By content the config splits three
+ways:
+
+* **Untouched.** Slots 0, 1, 2 and 16, the whole header apart from `end_addr` and the pointer
+  table, and the entire key table. Slot 4 differs in one byte of 1193 and slot 6 in 1.3 percent.
+* **Displaced only.** The six pointer arrays, whose entries moved by exactly the layout shift.
+* **Rewritten wholesale, at unchanged size.** Slot 9, 2920 bytes and 90 percent different. Slot
+  17, 598324 bytes and 89 percent different. The 254 KiB region ahead of slot 0, 46 percent
+  different, which no pointer in the table addresses. None of these is explained by displacement:
+  read as 2, 3 or 4 byte values, almost none of their values moved by the layout shift, so this is
+  different content rather than the same content at new addresses.
+
+Slot 8 belongs to a fourth case, changing both size and content: it diverges 34 bytes in and never
+resynchronises, so it was regenerated rather than patched.
+
+That corroborates something already recorded here from the arch 8 set, where three configs
+generated about ten minutes apart differ in 73 to 84 percent of their bytes: **Logitech's
+generator does not emit minimal diffs.** A pair like this one narrows the search enormously
+compared to two unrelated configs, but it does not hand over a small edit. The consequence for the
+application is the one already in `docs/roadmap.md`: an editor here must make minimal diffs against
+an existing config, because reproducing what Logitech's generator would have emitted is not
+achievable.
 
 ### That the six arrays hold real pointers
 
@@ -1258,14 +1317,53 @@ mapping does not predict. `gspm.base_slot` raises for an architecture whose inse
 been established rather than assuming none, so arch 7, 15 and the rest are refusals and not silent
 wrong answers.
 
-### Still missing
+### Three negatives, which are the most solid thing here
 
-The written description of what changed between the two dumps. With it, slot 8 and those 50 bytes
-get a name from the outside rather than from the firmware, which is the cheapest section label
-available and the only route that does not need the consuming routine found first.
+A described change plus an unchanged structure rules things out, and ruling out is worth as much
+as a label.
 
-Two dumps taken at different times would also settle the `version word` in section slot 1, since
-it either moved or it did not. Here it did not: both read 3394.
+**The key table does not hold button assignments.** It is byte identical between the two dumps,
+all 163 records including their middle field, while the described change reassigns `UpArrow`, adds
+`TV Vol+` and `TV Vol-`, and respecifies `Home`. Whatever `LWJL` is, it is not the button to action
+map. That sharpens the caution in section 8 and it matters for the button mapping problem
+harmony-decompiler is blocked on: the table is a property of the remote, not of the configuration
+loaded onto it.
+
+**Nothing indexed by the six pointer arrays is per button or per sequence.** Every one of the six
+counts is identical across the pair: 6, 17, 8037, 5711, 9 and 9. Adding a sequence and three
+button assignments changed none of them. Whatever those thousands of entries address, it is not
+allocated per assignment.
+
+**No device data moved.** Slot 0, the named state variable tree, is byte identical across all 2328
+bytes, consistent with a change that touched no device. This is the pair's calibration case for
+slot 0: a change that should not affect it did not.
+
+### A lead on slot 8, and why it stays a lead
+
+Slot 8 is the only section that changed size, and the change was button assignments plus one
+sequence, so per assignment records are the obvious candidate. Its first bytes support it: a
+leading `0x0B`, then three byte groups whose third byte is `0x7E` or `0x7F`:
+
+```
+0b  12 00 7e  02 00 7f  03 00 7f  04 00 7f  05 00 7f  0e 00 7e  32 01 7f  ...
+```
+
+Which is the shape of an opcode with a 16 bit operand, and harmony-decompiler reports a config
+interpreter in the 525's firmware behaving as an accumulator machine, so action lists as bytecode
+is their reading too.
+
+It stays a lead, and deliberately so. Slots 9 and 17 were rewritten just as thoroughly without
+changing size, so slot 8 is singled out by its size change alone, which is weak evidence on its
+own. Naming a section from what its bytes look like is the failure mode
+`.claude/skills/trace-section/SKILL.md` exists to prevent. The label has to come from the firmware
+routine that reads the pointer, and on arch 14 those routines are enumerable through the SPI
+primitive at `0x1B9AC`. Slot 8 is now the first one to go after.
+
+### What the pair also settled
+
+The `version word` in section slot 1 did not move: both dumps read 3394, across roughly two years
+and a configuration change. So it is not a timestamp and not a revision counter for the config
+itself.
 
 ## References
 

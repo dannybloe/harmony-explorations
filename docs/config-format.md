@@ -145,8 +145,19 @@ Known so far:
 | 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | thirteen samples, below |
 | 1 | seven byte record stating the architecture | thirteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
+| 8 | **unconfirmed candidate**: per assignment records, possibly bytecode | one controlled pair |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
+
+Slot 8 is a candidate and not a label. It is the only section whose size changed across a pair of
+configs from one remote whose owner recorded the change as one new sequence plus a few button
+reassignments, and it opens with three byte groups whose third byte is `0x7E` or `0x7F`, which has
+the shape of an opcode with a 16 bit operand. Two other sections were rewritten just as heavily
+without changing size, so the evidence singling out slot 8 is thin. A label has to come from the
+firmware routine that reads the pointer. See [findings.md](findings.md) section 16.
+
+Established negatively, which is firmer: **the key table is not the button to action map.** It is
+byte identical across that pair while the described change reassigned buttons.
 
 ### Slot 0: the only `0xFEED` frame
 

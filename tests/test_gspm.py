@@ -348,10 +348,16 @@ class TestPointerArraySections(unittest.TestCase):
 
 class TestTheHarmony700Pair(unittest.TestCase):
     """
-    Two configs of the same Harmony 700, posted together by their owner. The pair is the only
-    controlled sample in the corpus: same remote, same devices, one change between them. What
-    it pins is that the pointer arrays hold real pointers, because every entry moves by exactly
-    the layout shift and that shift is known independently from the header's own pointer table.
+    Two configs of the same Harmony 700, posted together by their owner in harmony-decompiler
+    issue 9, with their own written account of what differs: one new sequence, one reassigned
+    standard button, two new additional buttons, and no device changed. `h700_config_2` is the
+    older of the two.
+
+    A described change against an unchanged structure is what makes negatives possible, and the
+    negatives here are firmer than any label: the key table cannot be the button to action map,
+    and nothing the pointer arrays index is allocated per assignment. The pair also pins that
+    those arrays hold real pointers, since every entry moves by exactly the layout shift and
+    that shift is known independently from the header's own pointer table.
     """
 
     def setUp(self):
@@ -378,10 +384,70 @@ class TestTheHarmony700Pair(unittest.TestCase):
         changed = [i for i in range(self.a.pointer_count)
                    if self.a.section_length(i) != self.b.section_length(i)]
         self.assertEqual(changed, [8])
+        # `b` is the older dump, so the newer one is eight bytes shorter here and 58 shorter
+        # overall, despite the owner's notes describing only additions.
         self.assertEqual(self.b.section_length(8) - self.a.section_length(8), 8)
+        self.assertEqual(len(self.b.blob) - len(self.a.blob), 58)
+
+    def test_the_key_table_does_not_hold_button_assignments(self):
+        """
+        The owner's notes say this change reassigned UpArrow and added TV Vol+ and TV Vol-. The
+        key table is byte identical across the pair, so it cannot be the button to action map.
+        A negative, and the most solid conclusion the pair supports.
+        """
+        end_a = self.a.marker_offset + 5 + 4 * len(self.a.keys)
+        end_b = self.b.marker_offset + 5 + 4 * len(self.b.keys)
+        self.assertEqual(self.a.blob[self.a.marker_offset:end_a],
+                         self.b.blob[self.b.marker_offset:end_b])
+        self.assertEqual(len(self.a.keys), 163)
+
+    def test_no_pointer_array_count_changed(self):
+        """So nothing those arrays index is allocated per button or per sequence."""
+        self.assertEqual([len(self.a.pointer_array(s)) for s in self.a.pointer_array_slots],
+                         [len(self.b.pointer_array(s)) for s in self.b.pointer_array_slots])
+        self.assertEqual([len(self.a.pointer_array(s)) for s in self.a.pointer_array_slots],
+                         [6, 17, 8037, 5711, 9, 9])
+
+    def test_the_sections_rewritten_wholesale_are_not_merely_displaced(self):
+        """
+        Slots 9 and 17 differ in about 90 percent of their bytes at unchanged size. Read as 2, 3
+        or 4 byte values almost none of them moved by the layout shift, so that is new content
+        rather than the same content at new addresses. This is what stops "only one section
+        changed size" being read as "only one section changed".
+        """
+        for slot in (9, 17):
+            with self.subTest(slot=slot):
+                length = self.a.section_length(slot)
+                self.assertEqual(length, self.b.section_length(slot))
+                oa = self.a.blob_offset_of(self.a.sections[slot].address)
+                ob = self.b.blob_offset_of(self.b.sections[slot].address)
+                differing = sum(1 for x, y in zip(self.a.blob[oa:oa + length],
+                                                  self.b.blob[ob:ob + length]) if x != y)
+                self.assertGreater(differing / length, 0.85)
+                for stride in (2, 3, 4):
+                    moved = 0
+                    for k in range(length // stride):
+                        x = int.from_bytes(self.a.blob[oa+k*stride:oa+(k+1)*stride], 'little')
+                        y = int.from_bytes(self.b.blob[ob+k*stride:ob+(k+1)*stride], 'little')
+                        if x - y in (50, 58):
+                            moved += 1
+                    self.assertLess(moved / (length // stride), 0.01,
+                                    'stride %d looks displaced rather than rewritten' % stride)
+
+    def test_the_state_variable_section_survived_a_change_that_touched_no_device(self):
+        """The pair's calibration case for slot 0: it should not have moved, and it did not."""
+        length = self.a.section_length(0)
+        oa = self.a.blob_offset_of(self.a.sections[0].address)
+        ob = self.b.blob_offset_of(self.b.sections[0].address)
+        self.assertEqual(self.a.blob[oa:oa + length], self.b.blob[ob:ob + length])
+
+    def test_the_version_word_is_not_a_timestamp_or_a_revision(self):
+        """Two dumps of one remote about two years apart, with a change between them."""
+        self.assertEqual(self.a.version_word, self.b.version_word)
+        self.assertEqual(self.a.version_word, 3394)
 
     def test_the_layout_shift_is_uniform_either_side_of_it(self):
-        """+50 up to the section that grew, +58 after it, which is 50 plus its 8 new bytes."""
+        """50 bytes up to the section whose size changed, 58 after it, which is 50 plus its 8."""
         shifts = {}
         for i in range(self.a.pointer_count):
             if self.a.sections[i].is_null:

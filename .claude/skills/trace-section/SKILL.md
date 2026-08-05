@@ -33,8 +33,16 @@ that only makes sense in one is a misread. Arch 14 now has two: the Harmony 600 
 Harmony 700 config, the latter from the same model as the reference firmware image.
 
 Two configs of the **same remote** with a known difference between them beat two configs of two
-remotes by a wide margin, because then the bytes that moved are the change. The corpus has no
-such pair yet; `docs/roadmap.md` step 6 records the one that is obtainable and how.
+remotes by a wide margin. The corpus has one such pair, the two Harmony 700 configs, with their
+owner's written account of the change. Use it, but read `docs/findings.md` section 16 first: it
+narrows the search a great deal and it still does not hand over a small edit, because Logitech's
+generator rewrites whole sections that the change did not touch. Only one section changed *size*,
+which is not the same as only one section changing.
+
+The pair's most reliable output is negative. It established that the key table is **not** the
+button to action map, and that nothing the six pointer arrays index is allocated per assignment.
+Prefer that kind of conclusion: a described change that leaves a structure untouched rules the
+structure out, and ruling out is cheap and does not decay.
 
 Look at the bytes the pointer lands on before touching the firmware. Only **slot 0** is
 `0xFEED` framed, so for every other slot the size comes from the distance to the next

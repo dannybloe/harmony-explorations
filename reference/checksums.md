@@ -89,8 +89,9 @@ samples from the same model as the arch 14 firmware image analysed here, and the
 That is what `docs/findings.md` section 16 rests on, and it is worth more than a fifth
 architecture would be.
 
-The written description of what changed between them, which their owner posted alongside, is
-not here and is worth obtaining.
+`harmony700-2.EZHex` is the older of the two. Their owner posted a written account of what
+differs alongside them, which is what makes the pair a controlled sample rather than two files:
+<https://github.com/trelowney/harmony-decompiler/issues/9>.
 
 Note the 600 firmware file listed under derived binaries is **truncated**: the real image is
 70336 bytes and concordance returns only the first 65536. Use the 700 image for arch 14 work,
