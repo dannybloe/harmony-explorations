@@ -998,6 +998,32 @@ started at `0x002000`, so two windows 8192 bytes apart were laid on top of each 
 same region as the dump gives 65536 of 65536. Nothing was wrong with either the dump or the read, and
 a mismatch whose first difference is at offset zero should have suggested alignment before corruption.
 
+#### Every bench remote, checked against its own backups
+
+The question this answered was whether there is enough on disk to restore these remotes if something
+goes wrong. A directory listing cannot answer it, so each stored file was read back off the device it
+came from and compared. All three units, read only:
+
+| | user config | application firmware | safe mode region | internal pages |
+|---|---|---|---|---|
+| One, operational | 1672832 of 1672832 | 60050 of 60050 | 65536 of 65536 | both, complete |
+| One, spare | 1232237 of 1232237 | 60050 of 60050 | 65536 of 65536 | both, complete |
+| Harmony 600 | 738149 of 738149 | 70336, own checksum | the image at `0xFE` `+0x1000`, own checksum | both, complete |
+
+No differences anywhere. The two Ones run bit for bit the same application firmware as the archived
+3.4 package, and the same `0xFE` internal page as each other.
+
+Three things this changes, none of them about bytes:
+
+* **A backup nobody has compared against the device is an assumption.** These are not assumptions
+  now. That is a different statement from "the files exist", which is all that could be said before.
+* **The 600's recovery file was the wrong file**, see `docs/findings.md` section 23, and only a
+  comparison against the device could have shown it.
+* **Restoring is still untested.** Nothing has ever been written to a remote and the flash write data
+  path does not exist, so every one of these backups is verified as a *copy* and unverified as a
+  *restore*. That gap is procedural rather than a gap in the data, and it is why the spare is the
+  only write target when writing arrives.
+
 #### How the prediction did
 
 Recorded above before any of this was read:

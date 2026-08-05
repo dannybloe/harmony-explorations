@@ -421,6 +421,11 @@ What still waits:
 pages, 70336 bytes, and its own header checksum verifies over all of them where the 65536 byte
 concordance dump does not. The 65534 bytes both can express agree byte for byte.
 
+**All three bench remotes are fully read and verified against their own backups**, read only: user
+config, application firmware, safe mode and both internal pages, with no differences anywhere. The
+two Ones run bit for bit the archived 3.4 image. What is verified is that each backup is a faithful
+copy; **restoring from one has never been tried**, because nothing has ever been written to a remote.
+
 **The operational One is fully read and fully verified**, and that is the answer to "do we have
 enough to restore it". Flash `0x000000` to `0x010000` matches its own safe mode dump, 65536 of 65536.
 The application firmware at `0x020000`, 60050 bytes, matches the image decoded from the 3.4 package,
