@@ -90,7 +90,9 @@ document:
   the library, not by the user interface.
 * Three remotes are on the bench: a programmed Harmony One, a Harmony 600, and a **spare
   unprogrammed Harmony One**. The spare is the only write target until a write has been
-  demonstrated repeatable on it.
+  demonstrated repeatable on it. The spare is arch 12, so **arch 14 has no write target at all**
+  and writing to it stays blocked until a second arch 14 remote exists. Reading arch 14 is
+  unaffected: the 600 on the bench is arch 14.
 * No write proceeds without a verified original dump of that exact unit in the lab, and without
   the config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash
   id.

@@ -203,6 +203,22 @@ Still to do, in the order the application needs them:
 * Per command request and response layouts, which means reading the main loop's state
   handlers rather than the packet parsers. `READ_FLASH` first, since the read path is what
   version 1 of the application is.
+* **Two cheap ways to stop depending on the 700 image for arch 14.** The Harmony 700 is not
+  on the bench, the Harmony 600 is, and the 600 is also arch 14, so hardware testing was
+  never the problem. The problem is that the 600 dump is truncated at `0x19000`, which is why
+  a remote nobody here owns is the arch 14 reading reference. It turns out to matter less
+  than it looks: the command parser and the USB device layer are both **below** the cut, so
+  every protocol claim above was derived from the 600's own firmware as well. What rests on
+  the 700 alone is everything above `0x19000`: the descriptor block at `0x1B7C6`, the
+  interrupt service at `0x1AD80`, the SPI primitive at `0x1B9AC`, the keypad scanner at
+  `0x190A6`, the infrared modulator at `0x194A4` and the reset combination at `0x19120`.
+  1. **Read the 600's live USB descriptors.** Pure enumeration, no protocol code, no risk,
+     and it measures the endpoint numbers and `bcdDevice` instead of inferring them from the
+     700. Predicted `0x1071`, since that remote is skin 71.
+  2. **Look for a Harmony 600 firmware package.** The archive has only the One 3.4 and the
+     700 2.8. A 600 `.hfw` would give an untruncated image of the exact model on the bench
+     and retire the proxy outright, which is cheaper than any amount of careful reasoning
+     about whether the 700 is representative.
 * Answer specifically: does the firmware service `MISC_RAM` reads in normal mode, and does it
   implement `MISC_QUEUE_ACTION` or `MISC_QUEUE_EVENT`.
 * Work out which `READ_FLASH` PROM type covers which address range: `MCU_FLASH 0x01`,
@@ -301,6 +317,13 @@ Not optional, and they belong in the code rather than in a document:
   library, not by the UI.
 * The programmed Harmony One and the Harmony 600 are read only in practice. The spare
   unprogrammed One is the only write target until a write has been demonstrated repeatable there.
+* **There is no spare for architecture 14, and that blocks writing to it entirely.** The spare
+  is a Harmony One, so it is arch 12. Writing to the 600 means writing to the only 600 on the
+  bench, with Logitech's recovery servers gone, which the rail above already forbids and which
+  no amount of read-back verification makes acceptable. So arch 14 writing waits for a second
+  arch 14 remote, a 600 or a 700, bought used. Not urgent, since version 1 of the application
+  is read only, but worth arranging before the moment it is wanted rather than at it: these
+  are discontinued devices and the supply only shrinks.
 * No write proceeds unless a verified original dump of that exact unit exists in the lab, with a
   matching checksum, and unless the config's `INTENDEDVERSION` matches the connected remote's
   protocol, skin, board and flash id.
