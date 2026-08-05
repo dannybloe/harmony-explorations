@@ -192,6 +192,13 @@ reads are scattered everywhere. Decode arch 14, then port. Use the 700 image rat
 
 ## Commands
 
+Two project skills carry the rituals that are easy to half-perform:
+
+* **`trace-section`**, the method for labelling a config section by finding the firmware code
+  that consumes its pointer, with the pitfalls that have already cost time here.
+* **`finding`**, the verification gate plus the three places a confirmed fact must land, and the
+  convention for correcting an earlier claim in place.
+
 ```
 make test          run the suite; image-backed tests need a lab directory
 make test-verbose  one line per test
