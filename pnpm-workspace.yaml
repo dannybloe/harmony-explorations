@@ -1,3 +1,14 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+
+# pnpm blocks dependency build scripts by default, which is the right default: an install script
+# runs arbitrary code on this machine with no review. Each entry here is a decision taken on
+# purpose, with the reason next to it.
+#
+# node-hid is a native module and its install step fetches or builds the binding for this
+# platform. There is no way to talk HID from Node without it, so this is the price of reading a
+# remote at all. What was checked before approving: two dependencies (node-addon-api and
+# pkg-prebuilds), maintained under the node-hid organisation, no advisories.
+allowBuilds:
+  node-hid: true

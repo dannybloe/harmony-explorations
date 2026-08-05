@@ -37,23 +37,26 @@ export function skinId(bcdDevice: number): number {
 }
 
 /**
- * The shape of a node-hid device, written out rather than imported.
+ * The shape of a node-hid device, written out rather than imported from it.
  *
- * `node-hid` is deliberately not a dependency of this package yet. It is a native module, so
- * installing it means allowing a package's build script to run, which is a supply chain decision
- * for a human to take rather than a side effect of writing this file. Until it is taken, the
- * adapter below resolves the module at runtime and this interface is what it is checked against,
- * so the code is written and reviewed without anything being installed.
+ * `node-hid` is installed now, and its own types would do. This interface stays anyway, for one
+ * reason: it is what the tests construct. A three method object literal can stand in for a remote,
+ * so the mapping from node-hid's synchronous, array based API onto this async, byte based one is
+ * checked without a device, and so is a short write, which is the failure that would otherwise turn
+ * a truncated command into a command with different arguments.
  */
 export interface HidDeviceLike {
   write(data: number[] | Uint8Array): number;
-  read(timeoutMs: number): number[] | undefined;
+  /**
+   * node-hid's blocking read with a deadline, which is the one this protocol wants.
+   *
+   * Not `read`, which takes a callback, and not `readSync`, which blocks forever. Replies here are
+   * asynchronous by design: the firmware parses a command, sets a state and returns, so a read
+   * that cannot time out is a read that hangs whenever a command produces no reply at all, and
+   * three of the commands produce none.
+   */
+  readTimeout(timeoutMs: number): number[];
   close(): void;
-}
-
-export interface HidModuleLike {
-  devices(): Array<{ vendorId: number; productId: number; path?: string | undefined }>;
-  HID: new (path: string) => HidDeviceLike;
 }
 
 /**
@@ -71,8 +74,10 @@ export function transportOver(device: HidDeviceLike): Transport {
       }
     },
     async read(timeoutMs: number): Promise<Uint8Array | undefined> {
-      const data = device.read(timeoutMs);
-      return data === undefined ? undefined : new Uint8Array(data);
+      // node-hid signals "nothing arrived" with an empty array rather than undefined, and an empty
+      // report is not a report: decoding one would read a command byte that is not there.
+      const data = device.readTimeout(timeoutMs);
+      return data === undefined || data.length === 0 ? undefined : new Uint8Array(data);
     },
     async close(): Promise<void> {
       device.close();
@@ -80,29 +85,50 @@ export function transportOver(device: HidDeviceLike): Transport {
   };
 }
 
+export interface FoundRemote {
+  readonly vendorId: number;
+  readonly productId: number;
+  readonly path: string | undefined;
+  readonly product: string | undefined;
+  readonly manufacturer: string | undefined;
+}
+
+/**
+ * Every attached Harmony, without opening any of them.
+ *
+ * Enumeration only, and that distinction is the whole reason this is a separate function from
+ * `openHarmony`. Listing devices reads what the operating system already knows; opening one claims
+ * it away from anything else and starts a conversation with an irreplaceable device. Code that only
+ * needs to know whether a remote is plugged in should never reach for the second.
+ *
+ * The import is dynamic so that merely importing this module does not load a native binding, which
+ * matters for a test run and for an Electron main process that may never touch USB.
+ */
+export async function listHarmony(): Promise<FoundRemote[]> {
+  const hid = await import('node-hid');
+  return hid
+    .devices()
+    .filter((d) => isHarmony(d.vendorId, d.productId))
+    .map((d) => ({
+      vendorId: d.vendorId,
+      productId: d.productId,
+      path: d.path,
+      product: d.product,
+      manufacturer: d.manufacturer,
+    }));
+}
+
 /**
  * Find and open the first attached Harmony.
  *
  * Opening a device claims it, so this is the first thing in the project that does more than look.
- * It is still read only in intent: the write paths are refused by `rails.ts`, not by whether the
- * device is open.
- *
- * `node-hid` is resolved through a variable specifier on purpose, so that this module compiles and
- * this package's tests run without it installed. The cost is that the import is untyped at the
- * boundary, which is why it is immediately narrowed to `HidModuleLike`.
+ * It is still read only in intent, and the intent is not what enforces it: the write paths are
+ * refused by `rails.ts` whether or not the device is open.
  */
 export async function openHarmony(): Promise<Transport> {
-  const specifier: string = 'node-hid';
-  let hid: HidModuleLike;
-  try {
-    hid = (await import(specifier)) as unknown as HidModuleLike;
-  } catch (error) {
-    throw new TransportError(
-      `node-hid is not installed, so no remote can be opened (${String(error)})`,
-    );
-  }
-  const found = hid.devices().find((d) => isHarmony(d.vendorId, d.productId));
+  const found = (await listHarmony())[0];
   if (found === undefined) throw new TransportError('no Harmony remote found on the USB bus');
   if (found.path === undefined) throw new TransportError('the remote reported no device path');
+  const hid = await import('node-hid');
   return transportOver(new hid.HID(found.path));
 }

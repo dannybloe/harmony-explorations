@@ -11,6 +11,9 @@
   "scripts": {
     "typecheck": "tsc --build"
   },
+  "dependencies": {
+    "node-hid": "3.4.0"
+  },
   "devDependencies": {
     "@harmony/lab": "workspace:*"
   }

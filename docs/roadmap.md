@@ -3,9 +3,13 @@
 This is the authoritative sequence. [plan.md](plan.md) is the earlier proposal this grew out of
 and is kept for its arguments, not as the plan of record.
 
-Status, 2026-08-05: steps 1 and 2 are done, step 3 is in progress. Its transport layer is
-complete and confirmed against hardware, and its command layer has the dispatch table, the
-length nibble mapping, the state machine, READ_FLASH and READ_MISC.
+Status, 2026-08-05: steps 1, 2 and 4 are done, and step 3 is done as far as the firmware images can
+take it. Both directions of every command are documented, the container codec exists in TypeScript
+and is proven equal to the Python one field for field on thirteen samples, and the command layer and
+its write rails are written and tested against a scripted remote. `node-hid` is installed and
+enumeration works. **What has not happened is the first command sent to a remote**, which is what
+settles the response side and unblocks the firmware dumps, `MCU_ID`, and ten of GET_VERSION's twelve
+fields.
 
 ## Context
 
@@ -153,9 +157,9 @@ dependency is added without looking at what it pulls in: that is what rejected `
 of them, monorepo standing with the codec ported and proven equal by golden vectors, and the USB
 command layer written from the firmware with its rails.
 
-**M1 Explorer, read only.** *Blocked on one thing: approving `node-hid`'s build script, which is
-what allows a remote to be opened at all.* The app finds the remote, reads its config, and shows the
-container,
+**M1 Explorer, read only.** *Next. The transport is in place and enumeration works; what has not
+happened yet is the first command sent to a remote, which will settle the response side.* The app
+finds the remote, reads its config, and shows the container,
 the section table with whatever labels exist, an annotated hex view, and an IR code export.
 
 **M2 Round trip codec.** Decompile and recompile byte-identical across the whole corpus, and the
@@ -317,11 +321,15 @@ Still to do, in the order the application needs them:
   interface, and the tests are refusals: with the flag off every write path refuses even with
   everything else in order, and with the flag on in a subprocess each remaining condition still
   refuses on its own.
-* **`node-hid` is not installed, and that is a decision waiting for the owner.** It is a native
-  module, so installing it means allowing a package's build script to run, which pnpm 11 blocks by
-  default. The transport is therefore written against a structural interface and resolves the
-  module at runtime, so the adapter is written and reviewed with nothing installed. Approving that
-  build is the last step before a remote can be read.
+* **`node-hid` is installed and its build script is approved**, by the owner, after looking at what
+  it pulls in: two dependencies, `node-addon-api` and `pkg-prebuilds`, maintained under the
+  node-hid organisation, no advisories. `pnpm-workspace.yaml` carries the approval with the reason
+  next to it, because pnpm blocks dependency build scripts by default and that default is right: an
+  install script runs arbitrary code with no review.
+* `listHarmony` and `packages/usb/bin/list-remotes.ts` enumerate without opening anything, which is
+  the distinction that matters: listing reads what the operating system already knows, opening
+  claims an irreplaceable device. `packages/usb/test/hardware.test.ts` is the only test that touches
+  real USB, it only looks, and it skips when no remote is attached rather than passing.
 * Nothing in `packages/usb` has run against a remote. What that leaves open is recorded in
   `remote.ts` itself rather than presented as settled: `READ_FLASH`'s reply code is not
   established, nor whether the final short chunk is signalled by its length or by the state

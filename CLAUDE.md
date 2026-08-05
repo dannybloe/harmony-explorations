@@ -156,9 +156,16 @@ apps/studio/                    Electron: the application, planned
 enforced by a user interface is enforced until somebody writes a script. `WRITES_ENABLED` is off
 unless `HARMONY_ENABLE_WRITES=1`, and the tests are refusals: with the flag off every write path
 refuses with everything else in order, and with the flag on in a subprocess each remaining
-condition still refuses by itself. `node-hid` is deliberately **not** installed, because it is a
-native module and approving its build script is the owner's decision, so `transport.ts` resolves it
-at runtime against a structural interface.
+condition still refuses by itself. `node-hid` is installed and its build script is
+approved in `pnpm-workspace.yaml`, with the reason recorded there; pnpm blocks such scripts by
+default and that default is right, so **any further approval is the owner's decision, not a side
+effect of a commit.**
+
+**Enumerating is not opening.** `listHarmony` and `packages/usb/bin/list-remotes.ts` ask the
+operating system what is attached; `openHarmony` claims an irreplaceable device. Anything that only
+needs to know whether a remote is plugged in uses the first. `packages/usb/test/hardware.test.ts` is
+the only test that touches USB, it only looks, and it skips rather than passes when nothing is
+attached.
 
 **The test runner is Node's own, not `vitest`.** Node 24 strips the types and runs a `.ts` test
 file directly, so the dependency tree is `typescript` plus `@types/node` and nothing else, where
@@ -276,6 +283,7 @@ tools/corpus.py        [lab_directory] [--json]
 tools/golden.py        [--write]   golden vectors for the Python/TypeScript comparison
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
+node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three
@@ -359,9 +367,9 @@ step 3 is done as far as the firmware can take it: the corpus spans four archite
 container parser is general across all of them and now exists twice, in Python and TypeScript, held
 equal by golden vectors, and `docs/usb-protocol.md` covers both directions of every command.
 
-**One decision is waiting, and everything hardware related sits behind it.** `node-hid` is a native
-module, so installing it means approving a build script, which pnpm 11 blocks by default. Until
-that is approved, no remote can be opened, and these stay blocked:
+**Nothing has been sent to a remote yet.** `node-hid` is installed and approved and enumeration
+works, so the next step is the first command on the wire, which is the owner's call to make with a
+remote in hand. These wait for it:
 
 * the concordance cross-check on the same remote,
 * a complete firmware dump of both bench remotes, since concordance truncates the 600 at 65536 of
@@ -369,7 +377,9 @@ that is approved, no remote can be opened, and these stay blocked:
 * `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
   reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
 * naming ten of GET_VERSION's twelve fields,
-* telling the internal memory sub-selectors `0xFE` and `0xFF` apart.
+* telling the internal memory sub-selectors `0xFE` and `0xFF` apart,
+* and the response side generally: `READ_FLASH`'s reply code is not established, so `packages/usb`
+  accepts any reply that is not one of the three known codes as data.
 
 Step 5 is next: **the read only application.** Electron shell with no network access at all,
 enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a

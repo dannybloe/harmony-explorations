@@ -208,7 +208,7 @@ test('the transport adapter reports a short write rather than losing bytes', asy
   // into a command with different arguments, which the device would happily execute.
   const transport = transportOver({
     write: () => 32,
-    read: () => undefined,
+    readTimeout: () => [],
     close: () => {},
   });
   await assert.rejects(() => transport.write(new Uint8Array(64)), /wrote 32 of 64 bytes/);
@@ -221,7 +221,7 @@ test('the transport adapter passes reports through both ways', async () => {
       seen.push(Array.from(data));
       return Array.from(data).length;
     },
-    read: () => [0xf1, 0xd0],
+    readTimeout: () => [0xf1, 0xd0],
     close: () => {},
   });
   await transport.write(new Uint8Array([1, 2, 3]));
