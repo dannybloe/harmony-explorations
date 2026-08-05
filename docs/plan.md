@@ -1,7 +1,11 @@
 # Plan: from here to generating configs
 
-Extracted from the write-up posted to harmony-decompiler discussion #7. Kept here because it
-is the project's actual roadmap, and the rest of the documents reference it.
+**Superseded by [roadmap.md](roadmap.md), which is the plan of record.** This document is the
+earlier proposal, extracted from the write-up posted to harmony-decompiler discussion #7, and it
+is kept because its arguments are still the reasoning behind the sequence: the firmware is the
+spec, arch 14 first, extract before you generate. Where the two differ, the roadmap wins. The
+substantive change is ordering: this document treats the user-facing application as the last
+phase, and the roadmap treats it as the goal that every phase reports to.
 
 A starting point to argue with, not a decree. It is built around one strategic
 shift and one piece of tooling that I think changes the economics of the whole project.

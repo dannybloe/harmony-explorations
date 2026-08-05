@@ -1,12 +1,44 @@
 # Working brief
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
-Read `README.md` first for orientation, then `docs/findings.md` for the technical detail.
+Read `README.md` first for orientation, then `docs/roadmap.md` for the sequence and
+`docs/findings.md` for the technical detail.
 
-The goal is **generating config files**, not modifying firmware. A config is a program in a
+**The end goal is an application**: local, cross-platform, self-contained, which reads a config
+off a remote, edits devices and activities, learns new IR codes and writes the result back. The
+reverse engineering is the cost of that application. `docs/roadmap.md` is the plan of record and
+sequences the format work by what the application needs next; `docs/plan.md` is the earlier
+proposal, kept for its arguments.
+
+The route is **generating config files**, not modifying firmware. A config is a program in a
 data format and the firmware is its interpreter, so the firmware is the authoritative spec for
 every config field. Reading it turns format work from inference into fact-finding. Never
 propose firmware modification as a route to anything.
+
+## Decisions already taken, do not relitigate
+
+1. **Licence stays MIT.** libconcord and harmony-decompiler are GPLv3, so their code is not
+   copied or ported here. Running concordance as a program has no licensing consequence, and
+   protocol facts are not copyrightable expression.
+2. **The USB protocol is derived clean-room from the firmware**, with
+   `concordance/specs/protocol.txt` as corroboration and concordance kept as a cross-check
+   oracle. Both are also technically necessary: concordance has two known defects on these
+   architectures.
+3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
+   the application's language, for the same reason there is one opcode table.
+4. **Monorepo**, so the spec and the codec cannot drift apart.
+5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
+   IR cross learning between the two remotes, and live RAM polling over USB do most of what the
+   emulator was wanted for, at a fraction of the build.
+6. **Safety rails are absolute.** See "Never write to a remote" below.
+7. **Own derivation first.** Upstream findings are hypotheses to test. The format's original
+   designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
+   reserve for when we are genuinely stuck.
+8. **Version 1 of the application is read only.** Write code exists behind a flag that is off.
+
+Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the two remotes on the bench,
+with the 700 2.8 image as the arch 14 reference. Arch 8 and arch 9 samples are controls for
+container claims, not targets. Other models are iterated on later.
 
 ## This repository is public
 
@@ -45,10 +77,27 @@ on is far harder to label later than one described on arrival.
 
 ## Never write to a remote
 
-Read paths only. These devices are irreplaceable and Logitech's recovery servers are gone.
-Note that patching a concordance architecture constant to fix the firmware dump also redirects
-`erase_firmware()` and `write_firmware_to_remote(direct=1)`, so a patched build must be treated
-as read-only.
+Read paths only, for now. These devices are irreplaceable and Logitech's recovery servers are
+gone. Note that patching a concordance architecture constant to fix the firmware dump also
+redirects `erase_firmware()` and `write_firmware_to_remote(direct=1)`, so a patched build must be
+treated as read-only.
+
+Writing is a later milestone, and when it arrives the rails live in the code rather than in a
+document:
+
+* **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the
+  detected architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by
+  the library, not by the user interface.
+* Three remotes are on the bench: a programmed Harmony One, a Harmony 600, and a **spare
+  unprogrammed Harmony One**. The spare is the only write target until a write has been
+  demonstrated repeatable on it.
+* No write proceeds without a verified original dump of that exact unit in the lab, and without
+  the config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash
+  id.
+* Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch
+  is a failure, not a warning.
+* Recovery paths first: the safe mode config dumped per unit (`*-safe.bin`) and the hardwired
+  reset key combination at `0x19120`.
 
 ## Documents must not contain em-dashes or en-dashes
 
@@ -65,19 +114,28 @@ All current documents report zero.
 
 ```
 README.md                       front page: status, headline findings, quickstart
+docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
 docs/findings.md                authoritative technical reference, narrative
-docs/config-format.md           the GSPM spec, structured, for tools to track
-docs/plan.md                    the roadmap: phases, milestones, unknowns
-docs/emulator-design.md         design for the emulator harness, not yet built
-src/harmony/                    the library, see below
+docs/config-format.md           the config format spec, structured, for tools to track
+docs/plan.md                    the earlier proposal, superseded, kept for its arguments
+docs/emulator-design.md         design for the emulator harness, deferred, not built
+src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding
-reference/checksums.md          provenance and load addresses
+reference/checksums.md          provenance, load addresses, public sample checksums
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
 samples/                        empty by policy
+```
+
+Planned, not yet present, per `docs/roadmap.md` step 4:
+
+```
+packages/codec/                 TS: the one config codec, container through compiler
+packages/usb/                   TS: HID transport plus the Harmony command protocol
+apps/studio/                    Electron: the application
 ```
 
 The library:
@@ -115,7 +173,13 @@ that is not executable is only an assertion.
 | Entry point | `0x02EA38` (One 3.4) | `0x01BB38` (700 2.8), `0x01A26E` (600 0.2) |
 | Config storage | parallel NOR, memory-mapped, executes in place | SPI serial, not mapped, copied to internal flash |
 | User config at | flash `0x040000` | flash `0x030000` |
-| GSPM format / pointer slots | `0x1600` (1.6) / 21 | `0x1400` (1.4) / 19 |
+| Container format / pointer slots | `0x1600` (1.6) / 21 | `0x1400` (1.4) / 19 |
+
+Container cookies, since the container is one format across architectures: `TPTP`/`DKDK` on
+arch 8, `AHCM`/`MCHA` on arch 9, `GSPM`/`PTYY` on arch 12 and 14, and `BMBM` on arch 7 per
+concordance's table, unverified here. The marker after the pointer table is `WLWL`, `CMAH` and
+`LWJL` respectively. `format` is not an architecture identifier: arch 9 and arch 14 both carry
+`0x1400`.
 
 Ghidra language: `PIC-18:LE:24:PIC-18`, generic variant only, so SFRs are unnamed.
 `analyzeHeadless` rejects relative project paths.
@@ -176,7 +240,9 @@ over the runner-up before trusting its answer.
 Output here is AI-produced and published as such, so claims are expected to be checkable.
 Established norms:
 
-* Prefer two independent samples. The GSPM container is validated against four.
+* Prefer two independent samples. The container is validated against nine, spanning four
+  architectures, five base addresses, three format versions and four pointer table lengths.
+  Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
   a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 * When deriving something like a load address, include a calibration case where the answer is
@@ -187,18 +253,20 @@ Established norms:
 
 ## Next up
 
-Priority order, with detail in `docs/plan.md`:
+Full detail in `docs/roadmap.md`, which tracks its own progress. Steps 1 and 2 are done: the
+corpus now spans four architectures, and the container parser is general across all of them.
 
-1. **Label the GSPM section pointers by function.** Method proven: the firmware copies each
-   config pointer into a per-subsystem RAM variable, so finding the consumer labels the section.
-   The IR section was identified exactly this way via `0x3BD/0x3BE`.
-2. **The config trailer checksum algorithm.** Located but not derived. On the critical path,
-   since nothing can be uploaded without it.
-3. **The other three IR encoding classes.** The dispatcher at `0x12F08` routes four selectors;
-   only selector 2 is traced.
-4. **The encoder at `0x17E00-0x18400`**, which turns config records into the ring buffer command
-   stream.
-5. **A PIC18 emulator harness.** Argued as the highest-leverage item: it makes config generation
-   an automated test instead of an experiment on irreplaceable hardware.
-6. **An IR code extractor**, which needs only read-side understanding and delivers value
-   immediately, since the codes people cannot recreate are already on their own remotes.
+Step 3 is current: **the USB protocol, clean-room from the firmware.** Deliverable is
+`docs/usb-protocol.md` covering each command's request and response layout, the length nibble
+mapping the firmware actually implements, and which of `MISC_RAM`, `MISC_QUEUE_ACTION` and
+`MISC_QUEUE_EVENT` it services. First payoff of our own read path is a complete firmware dump of
+both remotes on the bench plus their `MCU_ID`, since concordance truncates the 600 at 65536 of
+70336 bytes and the arch 12 part number is currently inferred rather than measured. While in the
+firmware, locate the routine that validates a config on boot, because the trailer checksum lives
+there.
+
+Then, in order: the TypeScript codec and the read-only application (steps 4 and 5), then the
+first reverse engineering block proper (step 6): label the section pointers by function using the
+proven consumer method plus live RAM polling, extract the IR database, derive the trailer
+checksum, and run the button mapping experiment by polling the keypad scanner's RAM variable
+while pressing every key.

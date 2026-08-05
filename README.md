@@ -7,23 +7,34 @@ Logitech's servers are gone, so a config already on a remote can be read off it,
 can generate a new one. The goal here is to change that. Related effort:
 [trelowney/harmony-decompiler](https://github.com/trelowney/harmony-decompiler).
 
-**The goal is generating config files, not modifying firmware.** Firmware analysis is a means
+**Where this is going: a local, cross-platform application** that reads a config off a remote,
+edits its devices and activities, learns new infrared codes and writes the result back. Self
+contained, so the reading, the codec and the USB layer all live here rather than in a
+dependency, and nothing goes near a network. [docs/roadmap.md](docs/roadmap.md) is the plan of
+record and says which format question is being answered next, and why that one.
+
+**The route is generating config files, not modifying firmware.** Firmware analysis is a means
 to an end: a config file is a program in a data format, the firmware is the interpreter, so
 the firmware is the authoritative specification for every config field. Reading it turns
 format reverse engineering from inference into fact-finding.
 
 ## Status
 
-Covers two architectures, from two remotes and three firmware images:
+The work targets two architectures, the two remotes on the bench:
 
 * **arch 12** ("Gin"), Harmony One
 * **arch 14**, Harmony 600 and Harmony 700
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
-header and its checksum, the GSPM config container, the keypad scanner, and the complete
+header and its checksum, the config container, the keypad scanner, and the complete
 infrared path from config pointer to LED including the SPI storage layer.
 
-Not established: the config format itself, beyond the container and one small table. The IR
+The container is now validated across **four** architectures, because two publicly shared
+sample sets (arch 8 and arch 9) were added as controls. Nine samples, five base addresses,
+three format versions, four pointer table lengths, all consistency checks passing. It turns out
+to be one format with a per architecture cookie rather than one format per architecture.
+
+Not established: the config format itself, beyond the container and two small tables. The IR
 device database, activities, menus and display are still opaque. That is the bulk of the
 remaining work. See [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
@@ -58,11 +69,12 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 ## Layout
 
 ```
+docs/roadmap.md             the plan of record: decisions, milestones, current step
 docs/findings.md            the authoritative technical reference
-docs/config-format.md       the GSPM config format spec, grows as sections are labelled
-docs/plan.md                the roadmap: phases, milestones, known unknowns
-docs/emulator-design.md     design for the PIC18 harness, not yet built
-src/harmony/                the library: one shared PIC18 decoder, plus format readers
+docs/config-format.md       the config format spec, grows as sections are labelled
+docs/plan.md                the earlier proposal, superseded, kept for its arguments
+docs/emulator-design.md     design for the PIC18 harness, deferred rather than dropped
+src/harmony/                the research library: one shared PIC18 decoder, plus readers
 tools/                      command line wrappers around the library, plus corpus.py
 tests/                      a regression test per documented finding
 reference/                  checksums, derived metadata, concordance notes
@@ -151,17 +163,20 @@ If this project ever mirrors firmware files, **strip `Data.xml` of the account f
 ## Provenance
 
 The analysis and tools here were produced by Claude (Anthropic's AI), working from concordance
-dumps of two remotes and two archived Logitech firmware packages. No insider information, no
-hardware probing, and nothing was ever written to a remote.
+dumps of three remotes, two archived Logitech firmware packages, and five configs that other
+people published for other architectures. No insider information, no hardware probing, and
+nothing was ever written to a remote.
 
 That is worth stating plainly because it should affect how you read the findings. All of it is
 offline analysis of files, so all of it is independently checkable, and it should be checked.
 The write-ups show their verification method rather than only their conclusions, and they
 record the places where earlier conclusions were wrong and got corrected, on purpose, so the
-rest can be calibrated against them. Four so far, all documented in
+rest can be calibrated against them. Five so far, all documented in
 [docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
 described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
-are nested inside the GSPM layer. That advised people away from reusable work.
+are nested inside the GSPM layer. That advised people away from reusable work. The most recent
+is instructive in a different way: a rule for deriving the container's section marker from its
+cookie was wrong, and still produced the correct answer on the only sample that exercised it.
 
 Items most worth verifying before relying on them: the SFR map assumes the standard PIC18
 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch 12 part
