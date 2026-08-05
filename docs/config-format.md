@@ -4,11 +4,23 @@ Living specification. This is the deliverable other tools consume, so it is kept
 from the narrative in [findings.md](findings.md). Anything stated here is confirmed against at
 least two independent samples unless marked otherwise.
 
-Applies to architectures 12 (Harmony One) and 14 (Harmony 600, 700). Architecture 15 and the
-older `0xFEED`/`0xBEEF` framed container used by the Harmony 525 class are **different formats**
-and need separate specs. Do not reuse a parser across them.
+Applies to architectures 12 (Harmony One) and 14 (Harmony 600, 700). Architecture 15 has not
+been examined.
 
-## Container
+**The 525's container is nested inside this one**, so parsers are shareable. GSPM is an outer
+layer carrying an absolute pointer table; each section it points at is a `0xFEED`/`0xBEEF`
+framed block, which is the container documented for the Harmony 525 class in
+harmony-decompiler discussion #1.
+
+```
+GSPM header                    arch 12/14 only, absolute pointer table
+  section 0   FEED ... BEEF    per-section frame, as on the 525
+  section 1   FEED ... BEEF
+  ...
+u16 checksum + "PTYY"
+```
+
+## Outer container
 
 Validated against four samples at four base addresses: `0x002000`, `0x020000`, `0x030000` and
 `0x040000`, covering both format versions and both pointer table lengths.

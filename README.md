@@ -158,8 +158,10 @@ That is worth stating plainly because it should affect how you read the findings
 offline analysis of files, so all of it is independently checkable, and it should be checked.
 The write-ups show their verification method rather than only their conclusions, and they
 record the places where earlier conclusions were wrong and got corrected, on purpose, so the
-rest can be calibrated against them. Three so far, all documented in
-[docs/findings.md](docs/findings.md).
+rest can be calibrated against them. Four so far, all documented in
+[docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
+described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
+are nested inside the GSPM layer. That advised people away from reusable work.
 
 Items most worth verifying before relying on them: the SFR map assumes the standard PIC18
 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch 12 part

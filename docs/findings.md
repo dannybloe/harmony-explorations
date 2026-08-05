@@ -27,7 +27,10 @@ PIC18 high-end register layout rather than the PIC18F67J50 datasheet specificall
 12 part number is inferred, not read off a board. Errors are documented where they occurred
 rather than quietly fixed, so the rest can be calibrated against them.
 
-Three have been found and corrected so far. `SUBFWB` and `SUBWFB` were swapped in the
+Four have been found and corrected so far. The claim that arch 12 and 14 use a container
+unrelated to the Harmony 525's was wrong: the 525's `0xFEED`/`0xBEEF` frames are nested
+inside the GSPM layer, one per section, so the two are compatible rather than alternatives.
+See section 7 for how that error was made, which is more instructive than the fact of it. `SUBFWB` and `SUBWFB` were swapped in the
 disassembler, which inverted an arithmetic expression in the infrared scaling block. A hand
 count of LWJL codes was wrong, 107 rather than 108. And `BTFSC` and `BTFSS` were swapped,
 which inverted the stated polarity of every bit test: the infrared enable mask, the keypad
@@ -320,12 +323,42 @@ In the One's 1.6 MB user config all 21 pointers land inside the first 310 KiB; t
 remaining 1.36 MB is reached indirectly, presumably the IR code database and the
 touchscreen bitmaps.
 
-### This is not the Harmony 525 container
+### The 525 container is inside this one
 
-Discussion #1 documents a `0xFEED`/`0xBEEF` framed container with 17 sections and
-`<u8/u16 count>` pointer tables. Neither the One nor the 600 has any `FEED`/`BEEF`
-framing. Arch 12 and 14 use the flat absolute-pointer GSPM header instead, and need a
-separate parser.
+**Corrected.** An earlier version of this document claimed that arch 12 and 14 have no
+`0xFEED`/`0xBEEF` framing and therefore need a parser unrelated to the 525's. That was
+wrong, and wrong in the direction that mattered: it told people not to reuse work that is
+in fact directly reusable.
+
+The two are **nested**, not alternatives. GSPM is an outer layer carrying the pointer table.
+Each section that table points at begins with `0xFEED` and ends with `0xBEEF`, which is the
+container discussion #1 documents for the 525 class.
+
+Section slot 0 of the Harmony One user config, at blob offset `0x036197`:
+
+```
+036197  ed fe 15 01 00  a7 08 00 00 00 00 00  52 6f 6f 74     ....... .......Root
+        ^^^^^ ^^^^^                                           FEED, u16 length 0x0115
+...
+0362ac  ef be                                                 BEEF
+```
+
+So the layering is:
+
+```
+GSPM header                    arch 12/14 only, absolute pointer table
+  section 0   FEED ... BEEF    the 525's container, one frame per section
+  section 1   FEED ... BEEF
+  ...
+u16 checksum + "PTYY"
+```
+
+How the error happened, since it is instructive: the check performed was a count of
+`0xFEED` occurrences across the whole 1.6 MB config, which came to 47. That was compared
+against the roughly 25 hits two random bytes would produce in that much data, judged to be
+the same order of magnitude, and dismissed as coincidence. The count was never correlated
+with the section pointer addresses, which is where every one of those hits actually sits.
+Counting an artefact is not the same as locating it.
 
 ### Architecture codenames
 

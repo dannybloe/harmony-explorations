@@ -325,13 +325,39 @@ is smaller than the arch 14 firmware region. The area runs up to the safe-mode c
 locally, use the read path only (`concordance -f`). Do not run any erase or write
 operation against a remote with a patched architecture table.
 
-## 7. The GSPM config container (relevant to #1)
+## 7. The GSPM config container, and how it relates to the 525 (relevant to #1)
 
-Worth flagging before anyone tries to reuse the 525 parser: neither the One nor the 600
-has any `0xFEED`/`0xBEEF` framing at all. Completely different container. I have now
-validated this layout against **four** samples at four different base addresses: the
-One's safe-mode config (`0x002000`), the One's user config (`0x040000`), the 700's
-`Region_3` (`0x020000`), and the 600's user config (`0x030000`).
+**Good news for #1: your 525 container work is directly reusable, because it is nested
+inside this one.** GSPM is an outer layer carrying an absolute pointer table, and each
+section that table points at is a `0xFEED`/`0xBEEF` framed block, exactly the container
+documented in #1.
+
+```
+GSPM header                    arch 12/14 only, absolute pointer table
+  section 0   FEED ... BEEF    per-section frame, as on the 525
+  section 1   FEED ... BEEF
+  ...
+u16 checksum + "PTYY"
+```
+
+Section slot 0 of my Harmony One user config, at blob offset `0x036197`:
+
+```
+036197  ed fe 15 01 00  a7 08 00 00 00 00 00  52 6f 6f 74     ....... .......Root
+        ^^^^^ ^^^^^                                           FEED, u16 length 0x0115
+0362ac  ef be                                                 BEEF
+```
+
+I had this backwards at first and said in an earlier draft that arch 12 and 14 have no
+`FEED`/`BEEF` framing and need an unrelated parser. Worth explaining how, because it is an
+easy trap: I counted `0xFEED` occurrences across the whole 1.6 MB config, got 47, compared
+that against the roughly 25 two random bytes would give in that much data, called it the same
+order of magnitude and dismissed it. I never checked *where* those hits were. Every one of
+them is at a section pointer. Counting an artefact is not locating it.
+
+The outer layout below is validated against **four** samples at four different base
+addresses: the One's safe-mode config (`0x002000`), the One's user config (`0x040000`), the
+700's `Region_3` (`0x020000`), and the 600's user config (`0x030000`).
 
 ```
 0x00  char[4]  "GSPM"        magic (equals the arch 12/14 cookie 0x4D505347)
@@ -800,6 +826,14 @@ owner agrees.
 
 Everything is in a public repository rather than a zip, so it stays current and can be
 forked and corrected: **<https://github.com/dannybloe/harmony-explorations>**
+
+To be clear about what that repo is and is not: it is a scratchpad I set up to see how far I
+can get on the reverse engineering myself, working through it with Claude. It is not a rival
+to harmony-decompiler and I am not trying to pull effort away from it. The intent is the
+opposite: work things out there, then bring whatever holds up back here as findings, patches
+or spec text that @trelowney and others can use or reject. Treat it as a source of leads,
+with the caveat that everything in it is AI-produced and needs the verification described
+above.
 
 ```
 docs/findings.md            the full technical reference this post condenses
