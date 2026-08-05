@@ -239,6 +239,12 @@ slot 18. So a section labelled on arch 14 transfers to the One by index, through
 Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
 pointers, and base 18 and 19 are NULL on all four architectures.
 
+**Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
+`0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
+seven byte field assignment is believed; the assignment itself is the only one of 336 candidates
+that fits the corpus. `docs/findings.md` section 21. Do not use it to order two configs of the same
+remote: it contradicts the recorded direction of the Harmony 700 pair and that is unresolved.
+
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
 dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that

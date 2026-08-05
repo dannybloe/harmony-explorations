@@ -10,6 +10,8 @@ The two non-GSPM architectures are here on purpose. `docs/config-format.md` clai
 one container with a per-architecture cookie rather than a family resemblance, and arch 8 and
 arch 9 are the samples that can falsify that claim. They currently confirm it.
 """
+import datetime
+import itertools
 import unittest
 
 import lab
@@ -164,6 +166,137 @@ class TestPointerTableLength(unittest.TestCase):
                 last = c.sections[-1]
                 o = gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * last.slot + 1
                 self.assertEqual(o + gspm.POINTER_SIZE, c.marker_offset)
+
+
+class TestSlot3Timestamp(unittest.TestCase):
+    """
+    Base slot 3 is an eleven byte framed record holding when the config was built.
+
+    The reason to believe the field assignment is that it is the only one that works, so the test
+    that matters here is the search itself rather than a table of expected dates. A table would
+    only restate the parser.
+    """
+
+    def records(self):
+        for name in EXPECTED:
+            data = lab.load(name)
+            if data is None:
+                continue
+            c = gspm.parse(data)
+            o = c.sections[gspm.CLOCK_RECORD_SLOT].address - c.flash_base
+            yield name, c, o, bytes(c.blob[o + 2:o + 9])
+
+    def test_every_sample_carries_the_record(self):
+        for name, c, o, _ in self.records():
+            with self.subTest(image=name):
+                self.assertEqual(c.blob[o:o + 2], gspm.CLOCK_COOKIE)
+                self.assertEqual(c.blob[o + 9:o + 11], gspm.CLOCK_END)
+                self.assertIsNotNone(c.built_at)
+
+    def test_the_cookie_pair_occurs_exactly_once_in_the_blob(self):
+        """Unlike slot 0's 0xFEED, which turns up by chance about once per 64 KiB.
+
+        That is why this record needs no length field to be recognised: the pair, nine bytes
+        apart, is unique in every blob including the One's 1.6 MB one.
+        """
+        for name, c, o, _ in self.records():
+            with self.subTest(image=name):
+                hits = []
+                i = c.blob.find(gspm.CLOCK_COOKIE)
+                while i >= 0:
+                    if c.blob[i + 9:i + 11] == gspm.CLOCK_END:
+                        hits.append(i)
+                    i = c.blob.find(gspm.CLOCK_COOKIE, i + 1)
+                self.assertEqual(hits, [o])
+
+    def test_the_day_of_week_byte_closes_on_the_epoch(self):
+        """Days since 1 January 2000 modulo 7, computed without going through the parser.
+
+        This is the independent closure: the weekday encoding and the year offset are two
+        different fields that agree on one anchor, and 1 January 2000 was a Saturday, which is
+        why 0 means Saturday.
+        """
+        self.assertEqual(gspm.CLOCK_EPOCH.strftime('%A'), 'Saturday')
+        for name, c, _, raw in self.records():
+            with self.subTest(image=name):
+                second, minute, hour, day, dow, month, year = raw
+                d = datetime.date(2000 + year, month + 1, day)
+                self.assertEqual((d - gspm.CLOCK_EPOCH).days % 7, dow)
+
+    def test_the_field_assignment_is_the_only_one_that_fits(self):
+        """The search, not the answer.
+
+        Of the 24 permutations of the four date bytes, times two month bases, times seven
+        weekday offsets, exactly one assignment is consistent with every sample. Reorder the
+        fields in `gspm.clock_record` and this fails, which a table of expected dates would not
+        do in any informative way.
+        """
+        raws = [raw for _, _, _, raw in self.records()]
+        self.assertGreaterEqual(len(raws), 9, 'not enough samples for the search to mean anything')
+        solutions = []
+        for day_i, mon_i, yr_i, dow_i in itertools.permutations(range(3, 7)):
+            for mbase in (0, 1):
+                for dbase in range(7):
+                    ok = True
+                    for r in raws:
+                        month = r[mon_i] - mbase + 1
+                        if not 1 <= month <= 12:
+                            ok = False
+                            break
+                        try:
+                            d = datetime.date(2000 + r[yr_i], month, r[day_i])
+                        except ValueError:
+                            ok = False
+                            break
+                        if (d.weekday() + dbase) % 7 != r[dow_i]:
+                            ok = False
+                            break
+                    if ok:
+                        solutions.append((day_i, mon_i, yr_i, dow_i, mbase, dbase))
+        self.assertEqual(solutions, [(3, 5, 6, 4, 0, 2)],
+                         'the field assignment is no longer uniquely determined')
+
+    def test_the_two_one_factory_configs_agree_to_the_second(self):
+        """One dumped off a remote, one extracted from firmware 3.4, same build.
+
+        Two files obtained by completely different routes agreeing on a timestamp to the second
+        is a check on the reading that no single file can give.
+        """
+        a, b = (lab.load('one_safemode'), lab.load('one34_region2'))
+        if a is None or b is None:
+            self.skipTest('need both One factory configs')
+        self.assertEqual(gspm.parse(a).built_at, gspm.parse(b).built_at)
+        self.assertEqual(gspm.parse(a).built_at, datetime.datetime(2007, 10, 24, 2, 22, 8))
+
+    def test_the_arch8_cluster_shares_a_date(self):
+        """Three of the four arch 8 configs were generated in one sitting, and it shows.
+
+        Recorded here from an external source before this record could be read, which makes it a
+        prediction the record either meets or does not.
+        """
+        got = {}
+        for name in ('arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d'):
+            data = lab.load(name)
+            if data is None:
+                self.skipTest('need the arch 8 set')
+            got[name] = gspm.parse(data).built_at
+        cluster = [got['arch8_config_b'], got['arch8_config_c'], got['arch8_config_d']]
+        self.assertEqual(len({t.date() for t in cluster}), 1, 'b, c and d share a date')
+        self.assertNotEqual(got['arch8_config_a'].date(), cluster[0].date())
+        span = max(cluster) - min(cluster)
+        self.assertLess(span, datetime.timedelta(hours=1))
+
+    def test_a_day_of_week_that_disagrees_is_refused(self):
+        """The check is in the parser, not only in this file, so a bad record reads as absent."""
+        data = lab.load('one_config')
+        if data is None:
+            self.skipTest('need a config')
+        c = gspm.parse(data)
+        o = c.blob_offset + c.sections[gspm.CLOCK_RECORD_SLOT].address - c.flash_base
+        broken = bytearray(data)
+        broken[o + 6] = (broken[o + 6] + 1) % 7      # the day of week byte, still in range
+        self.assertIsNone(gspm.parse(bytes(broken)).built_at)
+        self.assertFalse(gspm.parse(bytes(broken)).checks['slot3_is_a_timestamp'])
 
 
 class TestKeyTableAcrossArchitectures(unittest.TestCase):

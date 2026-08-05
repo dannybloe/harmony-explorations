@@ -13,7 +13,7 @@
  *     `base = endAddr - (offsetOfEndMarker - offsetOfMagic)`.
  *   * The pointer table length differs per architecture and is not stated in the header, but it
  *     follows from where the marker after the table sits:
- *     `count = (markerOffset - 3 - 0x0C) / 4`.
+ *     `count = (markerOffset - 0x0B) / 4`.
  *   * That marker is itself found from the data: it is the first four uppercase letters preceded
  *     by zero padding. Which four letters they are is a per architecture fact and not derivable,
  *     so it is recorded per family and asserted rather than computed.
@@ -105,10 +105,39 @@ export const ARCH_RECORD_SLOT = 1;
 export const ARCH_RECORD_LENGTH = 7;
 
 /**
+ * Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator are
+ * their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly once in
+ * every one of the thirteen samples, so it identifies the record without needing a length to
+ * validate it.
+ *
+ * ```
+ * +0x00  u16  0xADDF
+ * +0x02  u8   second, minute, hour, day of month, day of week, month (0 = January)
+ * +0x08  u8   year, offset from 2000
+ * +0x09  u16  0xEFBF
+ * ```
+ *
+ * The field assignment is not a reading, it is a search result: of the 48 permutations of the four
+ * date bytes times two month bases times seven weekday offsets, exactly one is consistent with
+ * every sample. See `docs/findings.md` section 21.
+ */
+export const CLOCK_RECORD_SLOT = 3;
+const CLOCK_COOKIE = new Uint8Array([0xdf, 0xad]);
+const CLOCK_END = new Uint8Array([0xbf, 0xef]);
+export const CLOCK_RECORD_LENGTH = 11;
+/**
+ * Day of week is stored as days since 1 January 2000 modulo 7, which is why 0 means Saturday: that
+ * date was one. The same epoch explains the year offset, so two fields agree on one anchor.
+ */
+const CLOCK_EPOCH_MS = Date.UTC(2000, 0, 1);
+const MS_PER_DAY = 86400000;
+
+/**
  * The pointer table is one table across architectures, with per architecture insertions rather
- * than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 19 slots. Arch 8
- * adds a NULL at slot 8, so everything from there on shifts up by one. Arch 12 adds that same
- * NULL plus a real section at slot 18, and the trailing NULL lands at 20.
+ * than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 20 slots, whose last
+ * two, base 18 and base 19, are NULL in every sample. Arch 8 adds a NULL at slot 8, so everything
+ * from there on shifts up by one and it carries 21. Arch 12 adds that same NULL plus a real section
+ * at slot 18, so it carries 22 and the two trailing NULLs land at 20 and 21.
  *
  * Worth having because the project decodes arch 14, where every config read passes through one
  * SPI primitive, while the popular remote is the arch 12 Harmony One. A section labelled on one
@@ -130,7 +159,7 @@ function insertions(architecture: number): readonly number[] {
 }
 
 /**
- * Map a slot on `architecture` to the same section's slot in the 19 slot base layout.
+ * Map a slot on `architecture` to the same section's slot in the 20 slot base layout.
  *
  * Returns undefined for a slot that architecture inserted and the base layout does not have, and
  * throws for an architecture whose insertions have not been established.
@@ -265,6 +294,8 @@ export class Container {
   versionWord: number | undefined = undefined;
   /** Slot 0's 0xFEED frame, undefined when absent. */
   frameLength: number | undefined = undefined;
+  /** Slot 3's timestamp as `YYYY-MM-DDTHH:MM:SS`, see `CLOCK_RECORD_SLOT`. */
+  builtAt: string | undefined = undefined;
   keys: KeyRecord[] = [];
   checks: Record<string, boolean> = {};
 
@@ -528,6 +559,39 @@ export function frameLength(blob: Uint8Array, off: number): number | undefined {
 }
 
 /** Parse the first Harmony config container found in `data`. */
+/**
+ * The timestamp in the slot 3 record at `off`, as `YYYY-MM-DDTHH:MM:SS`, or undefined if there is
+ * not one there.
+ *
+ * A string rather than a `Date`, and formatted by hand rather than through `toISOString`, because
+ * the value carries no timezone: it is whatever clock wrote it. Going through `Date` would attach
+ * one and then the golden vectors would depend on where the tests run.
+ *
+ * Undefined rather than an error for anything that does not fit, including a stored day of week
+ * that disagrees with the date. That check is the reason to trust the reading at all, so it stays
+ * in the parser rather than only in a test.
+ */
+export function clockRecord(blob: Uint8Array, off: number): string | undefined {
+  if (!matchesAt(blob, off, CLOCK_COOKIE)) return undefined;
+  if (!matchesAt(blob, off + 9, CLOCK_END)) return undefined;
+  const second = u8(blob, off + 2);
+  const minute = u8(blob, off + 3);
+  const hour = u8(blob, off + 4);
+  const day = u8(blob, off + 5);
+  const dow = u8(blob, off + 6);
+  const month = u8(blob, off + 7);
+  const year = 2000 + u8(blob, off + 8);
+  if (month > 11 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return undefined;
+  const utc = Date.UTC(year, month, day, hour, minute, second);
+  const back = new Date(utc);
+  // Rejects a day that its month does not have, which Date.UTC would roll over instead.
+  if (back.getUTCMonth() !== month || back.getUTCDate() !== day) return undefined;
+  const days = Math.floor((Date.UTC(year, month, day) - CLOCK_EPOCH_MS) / MS_PER_DAY);
+  if (((days % 7) + 7) % 7 !== dow) return undefined;
+  const p = (n: number, w = 2): string => String(n).padStart(w, '0');
+  return `${p(year, 4)}-${p(month + 1)}-${p(day)}T${p(hour)}:${p(minute)}:${p(second)}`;
+}
+
 export function parse(data: Uint8Array): Container {
   const { family, offset: start } = findMagic(data);
   const endMarker = indexOf(data, bytesOf(family.endMarker), start);
@@ -592,6 +656,14 @@ export function parse(data: Uint8Array): Container {
     }
   }
 
+  const clockSection = sections[CLOCK_RECORD_SLOT];
+  if (clockSection !== undefined) {
+    const o = clockSection.address !== 0 ? clockSection.address - flashBase : -1;
+    if (o >= 0 && o + CLOCK_RECORD_LENGTH <= blob.length) {
+      container.builtAt = clockRecord(blob, o);
+    }
+  }
+
   const endOff = endAddr - flashBase;
   container.checks = {
     end_addr_points_at_end_marker: matchesAt(blob, endOff, bytesOf(family.endMarker)),
@@ -609,6 +681,10 @@ export function parse(data: Uint8Array): Container {
     ),
     slot0_is_a_feed_frame: container.frameLength !== undefined,
     slot1_states_the_architecture: container.architecture !== undefined,
+    // Passing this means the stored day of week agrees with the date, so it is a closure and not
+    // just a shape match. Slots 1 and 3 sit below the first insertion at 8, so a base slot number
+    // indexes them directly on all four architectures.
+    slot3_is_a_timestamp: container.builtAt !== undefined,
   };
 
   if (family.keyTableAtMarker) {
@@ -645,6 +721,7 @@ export function summary(c: Container): Record<string, unknown> {
     architecture: c.architecture ?? null,
     version_word: c.versionWord ?? null,
     frame_length: c.frameLength ?? null,
+    built_at: c.builtAt ?? null,
     trailer_checksum: c.trailerChecksum,
     checks: c.checks,
     sections: c.sections.map((s) => {

@@ -24,6 +24,7 @@ Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
 
 from __future__ import annotations
 
+import datetime
 import struct
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
@@ -89,6 +90,27 @@ FRAME_PROLOGUE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 # container was extracted from on three more.
 ARCH_RECORD_SLOT = 1
 ARCH_RECORD_LENGTH = 7
+
+# Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator
+# are their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly
+# once in every one of the thirteen samples, so it identifies the record without needing a length
+# to validate it.
+#
+#     +0x00  u16  0xADDF
+#     +0x02  u8   second, minute, hour, day of month, day of week, month (0 = January)
+#     +0x08  u8   year, offset from 2000
+#     +0x09  u16  0xEFBF
+#
+# The field assignment is not a reading, it is a search result: of the 48 permutations of the four
+# date bytes times two month bases times seven weekday offsets, exactly one is consistent with
+# every sample. See `docs/findings.md` section 21.
+CLOCK_RECORD_SLOT = 3
+CLOCK_COOKIE = b'\xdf\xad'
+CLOCK_END = b'\xbf\xef'
+CLOCK_RECORD_LENGTH = 11
+# Day of week is stored as days since this date modulo 7, which is why 0 means Saturday: this
+# date was one. The same epoch explains the year offset, so two fields agree on one anchor.
+CLOCK_EPOCH = datetime.date(2000, 1, 1)
 
 # The pointer table is one table across architectures, with per architecture insertions rather
 # than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 20 slots, whose
@@ -226,6 +248,7 @@ class Container:
     architecture: Optional[int] = None    # stated by slot 1, see ARCH_RECORD_SLOT
     version_word: Optional[int] = None    # the u16 beside it, meaning not established
     frame_length: Optional[int] = None    # slot 0's 0xFEED frame, None when absent
+    built_at: Optional[datetime.datetime] = None   # slot 3's timestamp, see CLOCK_RECORD_SLOT
     blob: bytes = b''                     # the container itself, cookie through end marker
     sections: List[Section] = field(default_factory=list)
     keys: List[KeyRecord] = field(default_factory=list)
@@ -426,6 +449,28 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
     return length
 
 
+def clock_record(blob: bytes, off: int) -> Optional[datetime.datetime]:
+    """The timestamp in the slot 3 record at `off`, or None if there is not one there.
+
+    Returns None rather than raising for anything that does not fit, including a stored day of
+    week that disagrees with the date. That check is the reason to trust the reading at all, so
+    it stays in the parser rather than only in a test: a record that fails it is not a record
+    this code understands.
+    """
+    if blob[off:off + 2] != CLOCK_COOKIE:
+        return None
+    if blob[off + 9:off + 11] != CLOCK_END:
+        return None
+    second, minute, hour, day, dow, month, year = blob[off + 2:off + 9]
+    try:
+        stamp = datetime.datetime(2000 + year, month + 1, day, hour, minute, second)
+    except ValueError:
+        return None
+    if (stamp.date() - CLOCK_EPOCH).days % 7 != dow:
+        return None
+    return stamp
+
+
 def parse(data: bytes) -> Container:
     """Parse the first Harmony config container found in `data`."""
     family, start = find_magic(data)
@@ -487,6 +532,12 @@ def parse(data: bytes) -> Container:
                 container.architecture = blob[o]
             container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
 
+    if len(container.sections) > CLOCK_RECORD_SLOT:
+        clock_addr = container.sections[CLOCK_RECORD_SLOT].address
+        o = clock_addr - flash_base if clock_addr else -1
+        if 0 <= o and o + CLOCK_RECORD_LENGTH <= len(blob):
+            container.built_at = clock_record(blob, o)
+
     end_off = end_addr - flash_base
     container.checks = {
         'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
@@ -504,6 +555,10 @@ def parse(data: bytes) -> Container:
             for s in container.sections),
         'slot0_is_a_feed_frame': container.frame_length is not None,
         'slot1_states_the_architecture': container.architecture is not None,
+        # Passing this means the stored day of week agrees with the date, so it is a closure and
+        # not just a shape match. Slots 1 and 3 sit below the first insertion at 8, so a base
+        # slot number indexes them directly on all four architectures.
+        'slot3_is_a_timestamp': container.built_at is not None,
     }
 
     if family.key_table_at_marker:
@@ -541,6 +596,7 @@ def summary(c: Container) -> Dict[str, object]:
         'architecture': c.architecture,
         'version_word': c.version_word,
         'frame_length': c.frame_length,
+        'built_at': c.built_at.isoformat() if c.built_at is not None else None,
         'trailer_checksum': c.trailer_checksum,
         'checks': c.checks,
         # Both offsets, because they differ by the length of whatever the container is wrapped
@@ -578,6 +634,8 @@ def report(c: Container):
     yield 'pointer slots    %d        (%s at 0x%02X%s)' % (
         c.pointer_count, c.marker.decode('ascii', 'replace'), c.marker_offset,
         ', key table' if c.has_key_table else ', contents not established')
+    yield 'built at        %s   (slot %d timestamp)' % (
+        c.built_at.isoformat(sep=' ') if c.built_at else 'unstated', CLOCK_RECORD_SLOT)
     yield 'trailer checksum 0x%04X   (algorithm not yet derived)' % c.trailer_checksum
     for name, ok in c.checks.items():
         yield '  check %-28s %s' % (name, 'PASS' if ok else 'FAIL')

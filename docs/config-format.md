@@ -261,6 +261,47 @@ The NULL slots are per architecture rather than per config, in every sample of e
 slot terms that is one statement rather than three, since **base slots 18 and 19 are NULL on all
 four architectures** and the rest is where each architecture's insertions put them.
 
+### Slot 3: when the config was built
+
+An eleven byte framed record:
+
+```
++0x00  u16      0xADDF         cookie
++0x02  u8       second         0 to 59
++0x03  u8       minute
++0x04  u8       hour           24 hour
++0x05  u8       day of month   1 to 31
++0x06  u8       day of week    0 = Saturday, 1 = Sunday, ... 6 = Friday
++0x07  u8       month          0 = January
++0x08  u8       year           offset from 2000
++0x09  u16      0xEFBF         terminator
+```
+
+Confirmed on thirteen samples across all four architectures, and the field assignment is a search
+result rather than a reading: of the 24 permutations of the four date bytes, times two month
+bases, times seven weekday offsets, **exactly one is consistent with every sample**. See
+`docs/findings.md` section 21.
+
+The day of week is not an independent field. It equals **days since 1 January 2000, modulo 7**,
+which is why 0 means Saturday: that date was one. So the weekday encoding and the year offset
+agree on a single epoch, and that agreement is the numeric closure behind this whole reading. A
+record whose weekday disagrees with its date is refused rather than reported, in both parsers.
+
+The cookie pair is **unique in every blob**, unlike slot 0's `0xFEED`, which occurs about once
+per 64 KiB by chance. So this record can be located without a length field.
+
+What the firmware does with it is **not established**, so this is not a section label. What is
+established is what the bytes are.
+
+Two things worth having for free:
+
+* Every config in the corpus can now be dated, which is provenance nobody has to record by hand.
+  The two Harmony One factory configs, one dumped off a remote and one extracted from firmware
+  3.4, agree to the second at 2007-10-24 02:22:08, and the factory config inside Harmony 700
+  firmware 2.8 reads 2009-04-15, both matching when those models shipped.
+* The application gets a "built on" field for a config it reads over USB, where there is no EZHex
+  header to take one from.
+
 ### Six sections are arrays of three byte pointers
 
 Recognised structurally rather than tabulated. A section is such an array when a `u8` or `u16`

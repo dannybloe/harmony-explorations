@@ -43,7 +43,12 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twelve have been found and corrected so far. The newest is the oldest defect here: the container's
+Thirteen have been found and corrected so far. The newest is small and worth keeping because it
+shows where a number came from: three arch 8 configs were recorded here as "generated about ten
+minutes apart", a figure that came from outside rather than from the configs. They carry their own
+build timestamps, and those say 33 and 25 minutes. The conclusion drawn from it stands, section 21.
+
+Before it, the oldest defect here: the container's
 section table starts at `0x0B` rather than `0x0C`, an item is a spare byte plus a three byte
 address, and the three bytes both parsers dismissed as padding are the final section's address. So
 every container had been read one slot short since the first day, in both implementations, with
@@ -1221,9 +1226,17 @@ the current dump; a comment 22 minutes later carries an older one recovered from
 version control, with the diff of the notes file they keep beside the dumps. Both are posted
 under "I have had a look at what is in it and I am happy to publish it".
 
-**Which file is which.** The comment states its attachment is the older dump, and that file's own
-timestamp is 2024-10-12 against 2026-08-04 for the other, so `harmony700-2.EZHex` is the earlier
-of the two. Everything below is stated in that direction, older to newer.
+**Which file is which, and this is now in question.** The comment states its attachment is the
+older dump, and that file's own timestamp is 2024-10-12 against 2026-08-04 for the other, so
+`harmony700-2.EZHex` was taken as the earlier of the two. Everything below is stated in that
+direction, older to newer.
+
+Section 21 contradicts it. Each config carries its own build timestamp, and they read 2021-07-30
+for `harmony700.EZHex` against 2023-04-22 for `harmony700-2.EZHex`, which is the opposite order.
+The discrepancy is unresolved and section 21 sets out what does and does not bear on it. Nothing
+below has been rewritten, because the direction here rests on the owner's own statement, which is
+better evidence about provenance than a byte is. But **every "older to newer" in this section is
+provisional until that is settled**, and the direction can be read the other way throughout.
 
 ### What changed, in the owner's words
 
@@ -1321,7 +1334,8 @@ Slot 8 belongs to a fourth case, changing both size and content: it diverges 34 
 resynchronises, so it was regenerated rather than patched.
 
 That corroborates something already recorded here from the arch 8 set, where three configs
-generated about ten minutes apart differ in 73 to 84 percent of their bytes: **Logitech's
+generated within about half an hour of each other differ in 73 to 84 percent of their bytes:
+**Logitech's
 generator does not emit minimal diffs.** A pair like this one narrows the search enormously
 compared to two unrelated configs, but it does not hand over a small edit. The consequence for the
 application is the one already in `docs/roadmap.md`: an editor here must make minimal diffs against
@@ -2161,6 +2175,114 @@ resolving it.**
 
 `tests/test_gspm.py` class `TestPointerTableLength` and
 `packages/codec/test/gspm.test.ts` hold this, in both implementations, over every sample.
+
+## 21. Slot 3 says when the config was built, and the weekday proves it
+
+Base slot 3 is an eleven byte record framed by a cookie pair of its own, `0xADDF` opening and
+`0xEFBF` nine bytes later. It holds a timestamp. Layout is in `docs/config-format.md`.
+
+This one is worth reading for the method rather than the fact, because the fact is small and the
+method is the difference between a decode and a guess.
+
+### The field assignment was searched for, not read
+
+Three of the seven bytes were obvious from their ranges alone across the corpus: `0..48`, `3..58`
+and `0..23` are seconds, minutes and hours, and nothing else has those bounds. That left four
+bytes and no way to tell day from month from year from weekday by inspection, because several
+samples happen to carry `06 06` in adjacent positions and month, weekday and day are all small
+numbers.
+
+So it was not read. The assignment was searched: every one of the 24 permutations of those four
+bytes, times a zero based or one based month, times each of the seven possible weekday offsets.
+For each candidate, every sample's date was constructed and its weekday computed and compared.
+
+**Exactly one of the 336 candidates survives all twelve distinct samples.** A single sample admits
+many; a handful admits several; the whole corpus admits one. The test in `tests/test_gspm.py` is
+that search rather than a table of expected dates, so reordering the fields in the parser fails it
+and a table would not.
+
+### The closure
+
+The surviving assignment says the weekday byte is `0` for a Saturday. That looks arbitrary until
+you notice the year is stored as an offset from 2000, and that **1 January 2000 was a Saturday**.
+The weekday byte is days since that date modulo 7:
+
+```
+(date - 2000-01-01).days % 7 == stored weekday      thirteen samples, four architectures
+```
+
+Two different fields, one anchor, no free parameters. That is the same kind of agreement as the IR
+carrier finding in section 12, and it is the reason to believe a seven byte decode derived from a
+corpus of thirteen. The check is in both parsers rather than only in the tests: a record whose
+weekday disagrees with its date reads as absent.
+
+### What it dates, and two things that confirm it
+
+| Sample | arch | built at |
+|---|---|---|
+| One safe mode config, dumped off a remote | 12 | 2007-10-24 02:22:08 |
+| One safe mode config, extracted from firmware 3.4 | 12 | 2007-10-24 02:22:08 |
+| Factory config inside 700 firmware 2.8 | 14 | 2009-04-15 01:58:02 |
+| Harmony 700 user config | 14 | 2021-07-30 14:30:00 |
+| Harmony 700 user config, second | 14 | 2023-04-22 00:03:06 |
+| Harmony One user config, programmed unit | 12 | 2023-07-07 10:46:47 |
+| Harmony 600 user config | 14 | 2023-07-15 12:29:04 |
+| Harmony One user config, spare unit | 12 | 2023-07-28 13:27:33 |
+| Harmony 525 config | 9 | 2024-01-21 20:20:44 |
+| arch 8 config a | 8 | 2024-06-19 23:36:03 |
+| arch 8 configs b, c, d | 8 | 2024-06-25 17:43:46, 18:16:36, 18:41:48 |
+
+The first two rows are the check that no single file could give: **two files obtained by completely
+different routes, a dump off a remote and a region extracted from a firmware package, agree to the
+second.** They are the same build, so they should, and they do.
+
+The 2007 and 2009 dates land on when the Harmony One and the Harmony 700 shipped, which the
+reading was not fitted to.
+
+### A correction: the arch 8 cluster is about thirty minutes, not ten
+
+This document has said since section 15 that three of the four arch 8 configs were "generated about
+ten minutes apart". That figure did not come from the configs. The configs now say 17:43:46,
+18:16:36 and 18:41:48 on 2024-06-25, so **33 and 25 minutes apart**, with the fourth six days
+earlier on 2024-06-19.
+
+The point being made survives and is slightly strengthened: three configs generated within an hour
+of each other, by one person in one sitting, differ in 73 to 84 percent of their bytes. Logitech's
+generator does not emit minimal diffs. The correction is to the number, not the conclusion.
+
+### A discrepancy this opens, which is not resolved
+
+Section 16 states the direction of the Harmony 700 controlled pair, older to newer, and everything
+in that section is stated in that direction. It rests on the owner's own words, that the comment
+attachment is the older dump, plus file timestamps of 2024-10-12 against 2026-08-04.
+
+The records disagree. `harmony700.EZHex` reads 2021-07-30 and `harmony700-2.EZHex` reads
+2023-04-22, which puts the file section 16 calls the older one **21 months later**.
+
+What can be said:
+
+* It is not a decoding artefact. Both dates pass the weekday closure, both are plausible, and the
+  reading is the unique one across the whole corpus.
+* Content volume does not settle it. Both configs hold **8037 action list entries and 19651
+  instructions**, and all six pointer arrays match in entry count and section length. The only
+  difference is 58 bytes of payload.
+* One weak indication favours the record. The owner's notes diff, quoted in section 16, is a list
+  of additions: a new sequence, a new standard button, two new additional buttons. Under the
+  record's ordering the payload grows by 58 bytes from older to newer, which fits additions; under
+  section 16's ordering it shrinks. Weak, because this project has already established that the
+  generator reshuffles rather than appends, and 58 bytes out of 979 KB is noise either way.
+* A file timestamp is evidence about a file, not about a config. A config generated in 2023 can sit
+  in a directory until 2026, and a remote can be left programmed with an older config than the
+  newest one its owner generated.
+
+So there are two live possibilities and no way to choose between them here: either the pair's
+direction is inverted, or the record is not written when the config is generated. Both would matter,
+the first to every statement in section 16 and the second to what the timestamp actually means.
+Section 16 is marked accordingly and is **not** rewritten. Asking the owner settles it in one
+message and is the obvious next step, since the corpus cannot.
+
+Until then, nothing in this project should treat the record as establishing an order between two
+configs of the same remote.
 
 ## References
 

@@ -36,10 +36,12 @@ turns out to be one format with a per architecture cookie rather than one format
 architecture, and the **pointer table is one table too**, with a couple of per architecture
 insertions, so a section labelled on one architecture transfers to the others by index.
 
-Eight of the nineteen to twenty one sections now have something said about them. A config
+Nine of the twenty to twenty two sections now have something said about them. A config
 **states its own architecture** in section slot 1, which is what lets a config read over USB be
 parsed without the file header Logitech's software supplied. Slot 0 is the container's only
-`0xFEED`/`0xBEEF` frame. Six more are count prefixed arrays of three byte flash pointers, proved
+`0xFEED`/`0xBEEF` frame, and slot 3 is a second framed record holding **the date and time the
+config was built**, decoded by a search that only one field assignment survives and confirmed by a
+weekday byte that is days since 1 January 2000 modulo 7. Six more are count prefixed arrays of three byte flash pointers, proved
 to be pointers by a controlled pair of configs from one remote in which every entry moved by
 exactly the layout shift. One of those six is the **action list table**: on the Harmony 700 it
 addresses 8037 lists holding 19651 instructions, and all but four consecutive entries sit exactly

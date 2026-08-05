@@ -18,6 +18,8 @@ import {
   ACTION_LIST_TABLE_SLOT,
   EVENT_NONE,
   EVENT_PRESS,
+  CLOCK_RECORD_LENGTH,
+  CLOCK_RECORD_SLOT,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   archSlot,
@@ -296,4 +298,62 @@ test('a disagreeing pair of architecture bytes is not reported as an architectur
   const c = parse(broken);
   assert.equal(c.architecture, undefined);
   assert.equal(c.checks['slot1_states_the_architecture'], false);
+});
+
+test('every sample carries a slot 3 timestamp, and the cookie pair is unique in the blob', () => {
+  // Unlike slot 0's 0xFEED, which turns up by chance about once per 64 KiB, this pair nine bytes
+  // apart occurs exactly once in every blob including the One's 1.6 MB one. That is why the
+  // record needs no length field to be recognised.
+  const samples = available();
+  assert.ok(samples.length >= 9, 'not enough samples for this to mean anything');
+  for (const { name, container } of samples) {
+    assert.notEqual(container.builtAt, undefined, `${name} has no timestamp`);
+    const off = container.blobOffsetOf(
+      container.sections[CLOCK_RECORD_SLOT]?.address as number,
+    ) as number;
+    const hits: number[] = [];
+    for (let i = 0; i + CLOCK_RECORD_LENGTH <= container.blob.length; i += 1) {
+      if (container.blob[i] === 0xdf && container.blob[i + 1] === 0xad &&
+          container.blob[i + 9] === 0xbf && container.blob[i + 10] === 0xef) {
+        hits.push(i);
+      }
+    }
+    assert.deepEqual(hits, [off], `${name} cookie pair is not unique`);
+  }
+});
+
+test('the two One factory configs agree on their timestamp to the second', () => {
+  // One dumped off a remote, one extracted from firmware 3.4, so this is two files obtained by
+  // completely different routes agreeing on a value that neither alone could confirm.
+  const a = load('one_safemode');
+  const b = load('one34_region2');
+  if (a === undefined || b === undefined) return;
+  assert.equal(parse(a).builtAt, parse(b).builtAt);
+  assert.equal(parse(a).builtAt, '2007-10-24T02:22:08');
+});
+
+test('a day of week that disagrees with the date is refused', () => {
+  // The check lives in the parser, so a record that fails it reads as absent rather than as a
+  // date nobody verified. Mirrors the same test in tests/test_gspm.py.
+  const original = load('one_config');
+  if (original === undefined) return;
+  const good = parse(original);
+  const off = good.fileOffset(good.sections[CLOCK_RECORD_SLOT]?.address as number) as number;
+  const broken = new Uint8Array(original);
+  broken[off + 6] = ((broken[off + 6] as number) + 1) % 7;
+  const c = parse(broken);
+  assert.equal(c.builtAt, undefined);
+  assert.equal(c.checks['slot3_is_a_timestamp'], false);
+});
+
+test('the timestamp is a bare local time, with no timezone attached', () => {
+  // Formatted by hand rather than through Date.prototype.toISOString, because the value carries
+  // no zone: it is whatever clock wrote it. Going through Date would attach one and the golden
+  // vectors would then depend on where the tests run, which is the sort of failure that only
+  // shows up on somebody else's machine.
+  const data = load('one_config');
+  if (data === undefined) return;
+  const at = parse(data).builtAt as string;
+  assert.match(at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+  assert.ok(!at.endsWith('Z'), 'no zone designator');
 });

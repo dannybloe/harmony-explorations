@@ -6,10 +6,20 @@ and is kept for its arguments, not as the plan of record.
 Status, 2026-08-05: steps 1, 2 and 4 are done, and step 3 is done as far as the firmware images can
 take it. Both directions of every command are documented, the container codec exists in TypeScript
 and is proven equal to the Python one field for field on thirteen samples, and the command layer and
-its write rails are written and tested against a scripted remote. `node-hid` is installed and
-enumeration works. **What has not happened is the first command sent to a remote**, which is what
-settles the response side and unblocks the firmware dumps, `MCU_ID`, and ten of GET_VERSION's twelve
-fields.
+its write rails are written and tested against a scripted remote.
+
+**The read path now works against both bench remotes**, on both architectures, from this project's
+own host code: 256 bytes of config flash come back byte identical to each unit's lab dump, live RAM
+reads work, and six fields of the version block were predicted before being measured and held.
+Nothing has been written to a remote. Two negative results came out of it: reads of internal program
+memory restart a remote when the transfer ends in a one byte chunk, and `MCU_ID` is not reachable
+through that window. Section 19 of `docs/findings.md` and section 4 of `docs/usb-protocol.md`.
+
+Two container findings landed after that, both corrections rather than additions: the section table
+starts at `0x0B` and had been parsed one slot short since the first day, and section slot 3 holds the
+config's build timestamp. Sections 20 and 21.
+
+Next is step 5, the read only application.
 
 ## Context
 
@@ -93,8 +103,9 @@ because the 600 dump is truncated by concordance. Other models are iterated on l
   **Done in step 2.** The container is now general and the claim held.
 * Five extra config samples are available in the sibling `harmony-decompiler/samples` checkout,
   already published with permission, `UserId` 0, no account data: four arch 8 and one arch 9.
-* Three of the four arch 8 configs were generated about ten minutes apart and still differ in 73
-  to 84 percent of their bytes, first difference at offset `0x000004`. **A small logical change
+* Three of the four arch 8 configs were generated within about half an hour of each other, per
+  their own build timestamps, and still differ in 73 to 84 percent of their bytes, first
+  difference at offset `0x000004`. **A small logical change
   reshuffles the whole image.** Consequence for the app: byte-identical round tripping is
   achievable, but reproducing what Logitech's generator would have emitted is not, so the editor
   must make minimal diffs against an existing config rather than regenerate one.
