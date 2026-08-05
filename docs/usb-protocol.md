@@ -24,18 +24,19 @@ partly that concordance has two documented defects on exactly these two architec
 Every byte of every command crosses one of two interrupt endpoints, 64 bytes at a time. The
 remote states all of it at enumeration, so this section is quotation rather than inference.
 
-| | Harmony One 3.4 | Harmony 700 2.8 |
-|---|---|---|
-| Descriptor block at | `0x2E38E` | `0x1B7C6` |
-| USB version | 2.00 | 2.00 |
-| Vendor and product | `046D:C121` | `046D:C122` |
-| `bcdDevice` | `0x1054` | `0x1066` |
-| Interface class | 3 (HID), subclass 0, protocol 0 | same |
-| Control endpoint packet size | 8 | 8 |
-| Endpoint 1 | interrupt IN, 64 bytes, 1 ms | same |
-| Endpoint 2 | interrupt OUT, 64 bytes, 1 ms | same |
-| Report descriptor | 33 bytes at `0x2E42D` | 33 bytes at `0x1B865` |
-| Product string | `Harmony Remote 0-3.4.0` | `Harmony Remote 0-2.8.0` |
+| | Harmony One 3.4 | Harmony 700 2.8 | Harmony 600 0.2 |
+|---|---|---|---|
+| Source | image | image | **live device** |
+| Descriptor block at | `0x2E38E` | `0x1B7C6` | past the dump's truncation |
+| USB version | 2.00 | 2.00 | 2.00 |
+| Vendor and product | `046D:C121` | `046D:C122` | `046D:C122` |
+| `bcdDevice` | `0x1054` | `0x1066` | `0x1071` |
+| Interface class | 3 (HID), subclass 0, protocol 0 | same | same |
+| Control endpoint packet size | 8 | 8 | 8 |
+| Endpoint 1 | interrupt IN, 64 bytes, 1 ms | same | same |
+| Endpoint 2 | interrupt OUT, 64 bytes, 1 ms | same | same |
+| Report descriptor | 33 bytes at `0x2E42D` | 33 bytes at `0x1B865` | 33 bytes, identical to the 700's |
+| Product string | `Harmony Remote 0-3.4.0` | `Harmony Remote 0-2.8.0` | `Harmony Remote 0-0.2.0` |
 
 Read it with:
 
@@ -76,6 +77,34 @@ A third check confirms the block belongs to the image it was found in rather tha
 other firmware sharing the file: the product string states the firmware version, 2.8.0 and
 3.4.0, which was already known from the package each image was extracted from.
 
+### Confirmed against the bench remote
+
+The Harmony 600 was plugged into a Mac and enumerated read only, with `ioreg`. No command was
+sent to it and no protocol code was involved: this is what the operating system learns at
+enumeration and nothing more.
+
+That matters more than an extra sample usually would, because the 600's firmware dump is
+truncated before its descriptor block, so everything in this section was previously read from
+a remote nobody here owns. It is now measured on the arch 14 remote that will actually be
+tested against.
+
+Every field agrees, including `iManufacturer 1, iProduct 2, iSerialNumber 0`, one
+configuration, full speed, `bMaxPacketSize0 8`, class and subclass and protocol all as the
+images have them, one HID interface with **two** endpoints, 64 byte input and output reports
+and a 1 ms report interval.
+
+Two of them are worth stating separately.
+
+**`bcdDevice` came back `0x1071`, which was the prediction, and the 600 is skin 71.** The
+reading of the field was derived from two images and then predicted a third value before it
+was measured.
+
+**The 33 byte report descriptor is byte for byte the 700's**, `81 06` included. So the input
+item flag difference described below really does track the architecture rather than the
+individual model or firmware version: the live arch 14 remote matches the other arch 14
+image, not the arch 12 one. The measured bytes are pinned in `tests/test_usbdesc.py`, which
+turns the measurement into a regression test.
+
 ### `bcdDevice` carries the skin
 
 The low byte of the device release number, read as BCD, is the remote's skin number. `0x1054`
@@ -89,10 +118,9 @@ is read. It is directly load bearing for the write rails in `docs/roadmap.md`, w
 must refuse to proceed unless the config's `INTENDEDVERSION` matches the connected remote's
 skin.
 
-Prediction, which is cheap to check and not yet checked: the Harmony 600 should report
-`bcdDevice 0x1071`, because that remote is skin 71. Its firmware dump is truncated before
-the descriptor block, so this needs either a complete dump or a look at the live device's
-descriptors.
+This was recorded here as a prediction before it was checked: the Harmony 600 should report
+`bcdDevice 0x1071`, because that remote is skin 71. **Measured, and it does.** Three samples
+now, three skins, two architectures.
 
 ### The one byte the two architectures disagree on
 

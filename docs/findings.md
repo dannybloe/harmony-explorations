@@ -29,9 +29,12 @@ Everything below is derived from those files plus the concordance source tree. E
 numeric claim was checked against at least two independent samples where possible.
 
 **Authorship and provenance.** This document was produced by Claude (Anthropic's AI) from
-the source material listed above. No insider information, no hardware probing, no writes to
-any remote: it is offline analysis of files, which means every claim in it is independently
-checkable and should be checked. Verification method is shown alongside the conclusions
+the source material listed above. No insider information and **no writes to any remote**. It
+was pure offline analysis of files until section 19, which adds exactly one hardware
+measurement: the Harmony 600 was plugged in and enumerated read only with `ioreg`, which
+reports what the operating system learns at enumeration and nothing else. No command was sent
+to the remote and no protocol code was involved. Every other claim in this document is offline
+analysis, which means it is independently checkable and should be checked. Verification method is shown alongside the conclusions
 rather than just asserted, most importantly the calibration table in section 5 and the
 numeric closure in section 13. The highest-risk item used to be that the SFR map assumed the
 standard PIC18 high-end register layout rather than the PIC18F67J50 map specifically. That
@@ -1729,6 +1732,32 @@ So the firmware accepts flash data only after it has agreed to a write. That is 
 plainly because the write rails in `docs/roadmap.md` are host side, and it is useful to know
 which of them the device also enforces. This one it does. It does not follow that any other
 rail is enforced, and nothing here has been tested against hardware.
+
+### A prediction, then a measurement
+
+The transport section of `docs/usb-protocol.md` said, before anything was checked, that the
+Harmony 600 should report `bcdDevice 0x1071`. The reasoning was two images, `0x1054` on a
+remote known to be skin 54 and `0x1066` on one known to be skin 66, so the low byte read as
+BCD is the skin, so the 600 at skin 71 should say `0x1071`. Written down as a prediction
+because the 600's own dump is truncated before its descriptor block and could not settle it.
+
+The remote was then plugged in and enumerated. `bcdDevice 4209`, which is `0x1071`.
+
+Everything else agreed too: product `0xC122`, shared with the 700 as claimed, one HID
+interface with two endpoints, 64 byte input and output reports, a 1 ms interval, full speed,
+`bMaxPacketSize0 8`, and the string `Harmony Remote 0-0.2.0` in the same shape as the other
+two with this remote's firmware version in it.
+
+The most useful part was not the prediction. **The 33 byte HID report descriptor came back
+byte for byte identical to the 700 image's, `81 06` included**, where the arch 12 image has
+`81 02`. That one flag difference was recorded earlier as a curiosity and a fingerprint; it is
+now known to track the architecture rather than the model or the firmware version, because a
+third arch 14 device with a wildly different firmware version, 0.2 against 2.8, sides with the
+other arch 14 image. It also means the 700, which is not on the bench, is a sound reading
+proxy for the 600 at least this far.
+
+Recorded as one hardware measurement in an otherwise offline document, and pinned in
+`tests/test_usbdesc.py` so the image and the measurement cannot drift apart silently.
 
 ### An honest gap
 

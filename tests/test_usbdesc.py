@@ -16,6 +16,17 @@ from harmony import usbdesc
 
 BASES = {'h700_code': 0x9000, 'one34_code': 0x20000}
 
+# The HID report descriptor of the Harmony 600 on the bench, read out of the live device with
+# `ioreg -rc IOHIDInterface`, so a hardware measurement rather than an image. Enumeration
+# only: no command was sent to the remote.
+#
+# It is here because the 600's firmware dump is truncated before its descriptor block, so
+# these 33 bytes are the only direct evidence of what an arch 14 remote on this bench actually
+# reports. Alongside it, the device reported bcdDevice 0x1071, product 0xC122, 64 byte input
+# and output reports and a 1 ms interval, all of which the images predicted.
+HARMONY_600_LIVE_REPORT_DESCRIPTOR = bytes.fromhex(
+    '0600ff0901a101150026ff007508a102090295408106c0a102090595409102c0c0')
+
 
 def summary(name):
     return usbdesc.summary(lab.load(name), BASES[name])
@@ -154,13 +165,56 @@ class TestBcdDeviceCarriesTheSkin(unittest.TestCase):
     def test_bcd_decoding_rejects_a_plain_hex_reading(self):
         """0x66 read as hex is 102, and there is no skin 102. BCD is the only reading."""
         self.assertEqual(usbdesc.skin_id(0x1066), 66)
-        self.assertEqual(usbdesc.skin_id(0x1071), 71)   # what the 600 should carry
+        # Predicted for the 600 from the other two, then measured on the live device: 0x1071.
+        self.assertEqual(usbdesc.skin_id(0x1071), 71)
 
     def test_product_ids(self):
         self.assertEqual(summary('one34_code')['product'], 0xC121)
         self.assertEqual(summary('h700_code')['product'], 0xC122)
         for name in BASES:
             self.assertEqual(summary(name)['vendor'], 0x046D, name)
+
+
+class TestTheLiveArch14RemoteMatchesTheArch14Image(unittest.TestCase):
+    """
+    The one place in this project where an image claim is checked against hardware.
+
+    The 700 image is the arch 14 reading reference because the 600 dump is truncated, and the
+    700 is not on the bench. So the question that matters is whether the 600 behaves like the
+    700, and for the report descriptor the answer is byte for byte yes.
+    """
+
+    def test_the_700_image_carries_exactly_what_the_600_reports(self):
+        info = summary('h700_code')
+        offset = info['report_descriptor_at'] - BASES['h700_code']
+        from_image = lab.load('h700_code')[offset:offset + 33]
+        self.assertEqual(from_image, HARMONY_600_LIVE_REPORT_DESCRIPTOR)
+
+    def test_the_arch_12_image_differs_from_the_live_arch_14_remote(self):
+        """
+        And in exactly the one byte, the input item flag. If this ever came out as zero
+        differences the two architectures would be indistinguishable here, and if it came out
+        as more than one the claim that the descriptors are otherwise shared would be wrong.
+        """
+        info = summary('one34_code')
+        offset = info['report_descriptor_at'] - BASES['one34_code']
+        from_image = lab.load('one34_code')[offset:offset + 33]
+        differing = [i for i, (a, b) in
+                     enumerate(zip(from_image, HARMONY_600_LIVE_REPORT_DESCRIPTOR)) if a != b]
+        self.assertEqual(differing, [21])
+        self.assertEqual(from_image[21], 0x02, 'arch 12 declares the input report Absolute')
+        self.assertEqual(HARMONY_600_LIVE_REPORT_DESCRIPTOR[21], 0x06, 'arch 14, Relative')
+
+    def test_the_measured_descriptor_is_the_declared_length(self):
+        self.assertEqual(len(HARMONY_600_LIVE_REPORT_DESCRIPTOR), 33)
+        self.assertEqual(summary('h700_code')['report_descriptor_length'], 33)
+
+    def test_the_measured_descriptor_declares_the_same_geometry(self):
+        report = usbdesc.report_geometry(HARMONY_600_LIVE_REPORT_DESCRIPTOR)
+        self.assertEqual(report['usage_page'], 0xFF00)
+        self.assertEqual(report['input_bytes'], 64)
+        self.assertEqual(report['output_bytes'], 64)
+        self.assertFalse(report['has_report_id'])
 
 
 class TestTheStringsNameTheFirmwareVersion(unittest.TestCase):

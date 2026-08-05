@@ -212,9 +212,10 @@ Still to do, in the order the application needs them:
   the 700 alone is everything above `0x19000`: the descriptor block at `0x1B7C6`, the
   interrupt service at `0x1AD80`, the SPI primitive at `0x1B9AC`, the keypad scanner at
   `0x190A6`, the infrared modulator at `0x194A4` and the reset combination at `0x19120`.
-  1. **Read the 600's live USB descriptors.** Pure enumeration, no protocol code, no risk,
-     and it measures the endpoint numbers and `bcdDevice` instead of inferring them from the
-     700. Predicted `0x1071`, since that remote is skin 71.
+  1. **Done.** The 600's live descriptors were read with `ioreg`, enumeration only. Predicted
+     `bcdDevice 0x1071` and got it, and the 33 byte HID report descriptor came back byte for
+     byte identical to the 700 image's, which makes the 700 a sound proxy for the 600 at
+     least as far as the transport goes. `docs/findings.md` section 19.
   2. **Look for a Harmony 600 firmware package.** The archive has only the One 3.4 and the
      700 2.8. A 600 `.hfw` would give an untruncated image of the exact model on the bench
      and retire the proxy outright, which is cheaper than any amount of careful reasoning
