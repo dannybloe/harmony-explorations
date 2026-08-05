@@ -22,17 +22,21 @@ The chain is followed as straight-line code and stops at the first instruction t
 neither part of the pattern nor the branch that skips a case, so the default branch that
 follows the last case is not included: ask for it separately.
 
-**Nothing here tells you where a chain ends.** The walk stops when the pattern stops, and if
-the code after a chain has the same shape it will keep going. Pointed at the state dispatch at
-`0x0C720` in the 700 image it returned 32 cases, and whether all 32 are one switch is not
-established: the disassembly there is continuous, so they may well be.
+Two traps, both hit here already.
 
-A repeated case value ends the walk, since a switch cannot test the same value twice, so a
-repeat means the running XOR has stopped tracking anything real. That catches one failure mode
-and not this one. The defence that works is the caller's: **if the case values are not
-plausible values for the variable being switched on, disassemble the chain and read it.** The
-command table was trusted because its eight values are seven known command bytes and no
-duplicates; the 32 case result was not trusted, for the opposite reason.
+**The default `limit` will truncate a long switch, silently.** The state dispatch in the 700
+image is one chain of **70** cases running from `0x0C720` to `0x0C8FE`. Asked for it with the
+default it returned 32, which looked like the tool over-running into unrelated code and was
+written up that way. It was the limit. Pass a generous `limit` and check whether the walk
+stopped because the pattern ended or because it ran out.
+
+**Nothing here tells you where a chain really ends**, since code after one may have the same
+shape. A repeated case value ends the walk, because a switch cannot test the same value twice,
+so a repeat means the running XOR has stopped tracking anything real. That is a partial
+defence. The one that works is the caller's: **if the case values are not plausible for the
+variable being switched on, disassemble the chain and read it.** And the value of a case
+depends on where the walk started, so starting one comparison too late shifts every case
+value, and both readings can look plausible. Find the instruction that loads W.
 """
 
 from __future__ import annotations

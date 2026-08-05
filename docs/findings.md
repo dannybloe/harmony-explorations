@@ -1828,8 +1828,65 @@ variable, and the command completes by returning the state machine to idle.
 
 The chunk size comes out of `0xED3`, which is the same variable READ_MISC parses its item
 selector into. So the sharing that caused the retraction is not hypothetical, it is confirmed in
-the very next routine. Whether that chunk is the 63 seen at `0x0C9B2` is exactly the question
-that must not be settled by proximity, and it is not settled here.
+the very next routine.
+
+### And then the state machine turned out to be one table
+
+Deriving the state dispatch properly settled the rest of it, and revealed that a claim two
+paragraphs up was made too early. The main loop's dispatch is **one `XORLW` chain of 70 cases**
+from `0x0C720` to `0x0C8FE`, values `0x01` to `0xD6`, all distinct, reaching 31 bodies. States 2
+and `0x0B` are special cased with ordinary comparisons just before it.
+
+Asked for that chain earlier, the decoder returned 32 cases and I wrote that up as the tool
+over-running into unrelated code and declared the result untrustworthy. **It was the default
+`limit` of 32.** The chain is real and continuous, the values are coherent, and the honest
+version is that I mistook my own truncation for a defect in the analysis. The docstring in
+`chains.py` now says so, along with the second trap the same episode exposed: a case value
+depends on where the walk starts, so beginning one comparison too late shifts every value and
+both readings can look plausible.
+
+With the table in hand:
+
+* every command state has an executor, and `0x0C982` is READ_FLASH's
+* **the 63 byte chunking is READ_FLASH's after all.** `0x0C9B2` is reached from `0x0C988`, two
+  instructions after the state 4 body. So that attribution is restored, this time by control
+  flow from the dispatch rather than by finding code touching the same variables
+* state 4 also has a **second** dispatch site, the seven case chain at `0x0D388`, which sends it
+  to `0x0D3A8`. Both are real. That `0x0C982` starts a chunk and `0x0D3A8` finishes one is what
+  the two bodies suggest, and it is inference
+
+### Live RAM over USB, and a number worth not adopting
+
+READ_MISC's executor is state 10 at `0x0CB92`. It replies `0xC2`, echoes the selector, then the
+data, and dispatches on the selector to **exactly four** bodies: `0x01`, `0x06`, `0x07` and
+`0x0C`.
+
+`0xC2` is itself a small finding: responses reuse the request encoding, a code in the high nibble
+and a payload length in the low one, so `0xC2` means two payload bytes, the selector and one data
+byte. WRITE_MISC replies `0xF0` then `0xA0`, a bare acknowledgement naming what it acknowledges.
+
+Selector `0x07`:
+
+```
+0cbf4: ce ce e9 ff MOVFF 0xece,FSR0L
+0cbf8: cf ce ea ff MOVFF 0xecf,FSR0H
+0cbfc: ef cf 64 fd MOVFF INDF0,0xd64
+```
+
+The 16-bit parameter becomes `FSR0` and the byte at that data address comes back. **Live RAM of a
+running remote is readable over USB.** That is the capability the roadmap wants in place of the
+deferred emulator, and it makes the button mapping experiment reachable: poll the keypad
+scanner's index variable while pressing every key.
+
+**And it is `0x07`, not the `0x06` libconcord's header calls `MISC_RAM`.** On arch 14, `0x06` is
+a different accessor, going through `0x1AB8A`. Whether the upstream number is right for the
+architecture it was written against is not established here. This is the clearest return the
+project's "derive rather than adopt" rule has paid: `0x06` taken on faith would have read the
+wrong thing and still returned a plausible byte, which is the failure mode that does not
+announce itself.
+
+Still open: `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT`, which would be writes. WRITE_MISC's
+executor only acknowledges, so its selector handling is somewhere else and has not been found.
 
 63 matching the largest payload the length nibble can describe survives as an agreement between
 two parts of the firmware. What does not survive is calling it the fourth confirmation of the

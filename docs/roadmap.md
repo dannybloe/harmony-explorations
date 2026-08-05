@@ -223,8 +223,12 @@ Still to do, in the order the application needs them:
      700 2.8. A 600 `.hfw` would give an untruncated image of the exact model on the bench
      and retire the proxy outright, which is cheaper than any amount of careful reasoning
      about whether the 700 is representative.
-* Answer specifically: does the firmware service `MISC_RAM` reads in normal mode, and does it
-  implement `MISC_QUEUE_ACTION` or `MISC_QUEUE_EVENT`.
+* **Answered, half of it.** `READ_MISC` services exactly four selectors, and the one that reads
+  an arbitrary data address through `FSR0` is **`0x07`**, not the `0x06` libconcord's header
+  calls `MISC_RAM`. So live RAM of a running remote is readable over USB, which is what replaces
+  the deferred emulator, and the upstream number would have read the wrong thing while still
+  returning a plausible byte. `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` are writes and are
+  still open: `WRITE_MISC`'s executor only acknowledges, so its selector handling is elsewhere.
 * Work out which `READ_FLASH` PROM type covers which address range: `MCU_FLASH 0x01`,
   `MCU_EEPROM 0x02`, `MCU_ID 0x03`, `EXT_FLASH 0x04`. Arch 12 runs from external NOR mapped into
   program space, arch 14 from internal flash because its SPI part is not executable, so the two

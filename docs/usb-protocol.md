@@ -292,7 +292,10 @@ that payload byte selects the kind of reset. Sub-command `0x05` is the one that 
 `0x0BDA8`, which is what makes that row an internal continuation rather than a command a host
 can send directly.
 
-### READ_MISC takes three bytes
+### READ_MISC, and live RAM over USB
+
+**Request: `0xB0 | length nibble`, then three bytes**: an item selector, then a 16-bit
+parameter, high byte first.
 
 ```
 0c4ce: state = 10
@@ -302,8 +305,58 @@ can send directly.
 0c4f8: mark the packet handled, return
 ```
 
-The item selector and a 16-bit parameter, then deferred execution. WRITE_MISC at `0x0C364` is
-the same shape with a value to write.
+The executor is state 10, `0x0CB92`. It replies with `0xC2`, then echoes the selector, then the
+data:
+
+```
+0cb94: c2 0e       MOVLW 0xc2         ; the response code
+0cb96: 58 6f       MOVWF 0x358
+0cb9c: 6d ec b9 f0 CALL 0x172da       ; append it to the IN report
+0cba0: d3 ce 58 f3 MOVFF 0xed3,0x358  ; then the selector back
+0cba8: 6d ec b9 f0 CALL 0x172da
+0cbb4: d3 51       MOVF 0xed3,W       ; then dispatch on the selector
+```
+
+`0xC2` is worth noticing: **responses use the same encoding as requests**, a code in the high
+nibble and a payload length in the low one, so `0xC2` is two payload bytes, the selector and one
+data byte. WRITE_MISC's executor at `0x0CB6E` replies `0xF0` then `0xA0`, which reads as a bare
+acknowledgement naming the command it acknowledges.
+
+**Exactly four selectors are serviced**, and the numbering is not what upstream's header would
+suggest:
+
+| Selector | Body | What it does |
+|---|---|---|
+| `0x01` | `0x0CBC8` | calls `0x17DCA`, then `0x17E28`, returns a 16-bit value in `PROD` |
+| `0x06` | `0x0CBE6` | passes the parameter's high byte to `0x1AB8A`, returns one byte |
+| `0x07` | `0x0CBF4` | **reads RAM.** See below |
+| `0x0C` | `0x0CC02` | not read yet |
+
+Anything else falls through the chain.
+
+**Selector `0x07` is an arbitrary data memory read:**
+
+```
+0cbf4: ce ce e9 ff MOVFF 0xece,FSR0L
+0cbf8: cf ce ea ff MOVFF 0xecf,FSR0H
+0cbfc: ef cf 64 fd MOVFF INDF0,0xd64
+```
+
+The 16-bit parameter becomes `FSR0` and the byte at that data address is what comes back. So
+**live RAM of a running remote is readable over USB**, which is the capability
+`docs/roadmap.md` wants in place of the deferred emulator: poll a variable while operating the
+remote by hand. It also means the button mapping experiment is reachable, by watching the keypad
+scanner's index variable while pressing every key.
+
+**It is selector `0x07` here, not `0x06`.** libconcord's header names `MISC_RAM` as `0x06`, and
+`0x06` on arch 14 is a different accessor that goes through `0x1AB8A`. Whether the upstream
+number is right for another architecture is not established, and this is exactly why the project
+doctrine derives rather than adopts: taking `0x06` on faith would have produced a read of the
+wrong thing that still returned a plausible byte.
+
+Not yet answered: `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT`, which would be writes rather than
+reads. WRITE_MISC's executor only acknowledges, so its selector handling is elsewhere and has
+not been found.
 
 ### READ_FLASH
 
@@ -385,13 +438,41 @@ still to send, which is a common enough convention but rests on that single inst
 Whether the count on the wire is already biased that way, or is decremented once on arrival,
 is not established.
 
-### The response loop, found the right way
+### The state machine, in full
 
-Following the state machine instead of the variables works. State 4 is not compared anywhere
-with the `SUBWF` form that most of the state machine uses; it is a case in an `XORLW` chain at
-`0x0D388`, whose seven cases are 2, 4, 5, 6, `0x0B`, `0x20` and `0x35`, all plausible small
-state values, which is the sanity check that chain decoding needs. **State 4 goes to
-`0x0D3A8`**, and its body is READ_FLASH's per chunk step:
+The main loop's dispatch on the state variable is **one chain of 70 cases** running from
+`0x0C720` to `0x0C8FE`, with values from `0x01` to `0xD6`, all distinct, reaching 31 distinct
+bodies. States 2 and `0x0B` are special cased just before it, with ordinary `SUBWF`
+comparisons, and go to `0x0D30C`.
+
+The seven command states and their executors, in the 700 2.8 image:
+
+| State | Command | Executor |
+|---|---|---|
+| 1 | GET_VERSION | `0x0C906` |
+| 2 | WRITE_FLASH | `0x0D30C`, via the special case before the chain |
+| 4 | READ_FLASH | `0x0C982` |
+| 5 | START_IRCAP | `0x0CB1E` |
+| 8 | ERASE_FLASH | `0x0CB4A` |
+| 9 | WRITE_MISC | `0x0CB6E` |
+| 10 | READ_MISC | `0x0CB92` |
+| 13 | the internal case | `0x0CC46` |
+
+That table is the way in to every remaining command, and it is what should have been derived
+before anything else in this section.
+
+**The 63 byte chunking is READ_FLASH's after all.** State 4 goes to `0x0C982`, and the
+comparison against `0x3F` at `0x0C9B2` is reached from `0x0C988` two instructions later. So the
+attribution withdrawn above is restored, this time by control flow from the state dispatch
+rather than by finding code that touches the same variables. 63 payload bytes is what length
+nibble `0xA` encodes, so the response fills a report exactly.
+
+### A second dispatch site for state 4
+
+There is also an `XORLW` chain at `0x0D388`, seven cases, 2, 4, 5, 6, `0x0B`, `0x20` and `0x35`,
+in which **state 4 goes to `0x0D3A8`** instead. Both are real dispatch sites on the same
+variable, reached from different places. What each body does suggests the division, and that
+much is inference: `0x0C982` starts a chunk, `0x0D3A8` finishes one. Its body:
 
 ```
 0d3a8: 10 0e       MOVLW 0x10

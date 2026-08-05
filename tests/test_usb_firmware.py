@@ -223,6 +223,106 @@ class TestTheLengthNibbleMapping(unittest.TestCase):
         self.assertEqual(max(self.EXPECTED.values()) + 1, 64)
 
 
+class TestTheStateMachine(unittest.TestCase):
+    """
+    The main loop's dispatch on the state variable, which is the way in to every command.
+
+    One chain of 70 cases in the 700 image. Asked for it with the default limit it returned 32,
+    which looked like the decoder over-running and was written up that way; it was the limit.
+    Hence the explicit limit here and the assertion on the count.
+    """
+
+    BASE = 0x9000
+    CHAIN = 0x0C720
+    EXECUTORS = {0x01: 0x0C906, 0x04: 0x0C982, 0x05: 0x0CB1E,
+                 0x08: 0x0CB4A, 0x09: 0x0CB6E, 0x0A: 0x0CB92, 0x0D: 0x0CC46}
+
+    @classmethod
+    def table(cls):
+        cases = chains.xor_chain(lab.load('h700_code'), cls.BASE, cls.CHAIN, limit=400)
+        return {case.value: case.target for case in cases}
+
+    def test_the_chain_is_seventy_distinct_cases(self):
+        cases = chains.xor_chain(lab.load('h700_code'), self.BASE, self.CHAIN, limit=400)
+        self.assertEqual(len(cases), 70)
+        self.assertEqual(len(set(c.value for c in cases)), 70, 'no duplicate cases')
+        self.assertEqual(cases[-1].at, 0x0C8FE)
+
+    def test_every_command_state_has_an_executor(self):
+        table = self.table()
+        for state, executor in self.EXECUTORS.items():
+            self.assertEqual(table[state], executor, 'state 0x%02X' % state)
+
+    def test_write_flash_is_the_state_the_chain_does_not_carry(self):
+        """
+        State 2 is special cased with an ordinary comparison before the chain, so it is absent
+        from the table rather than missing from the firmware.
+        """
+        self.assertNotIn(0x02, self.table())
+
+    def test_read_flash_reaches_the_chunker(self):
+        """
+        The attribution that was withdrawn and is now restored: state 4's executor is two
+        instructions from the branch that reaches the 63 byte comparison.
+        """
+        code = lab.load('h700_code')
+        branch = isa.decode(code, 0x0C988 - self.BASE, self.BASE)
+        self.assertEqual(branch.mnemonic, 'BNZ')
+        self.assertEqual(branch.fields['target'], 0x0C9B2)
+        self.assertEqual(self.table()[0x04], 0x0C982)
+
+
+class TestReadMisc(unittest.TestCase):
+    """
+    The command that makes live RAM readable over USB, which is what replaces the deferred
+    emulator for section labelling and the button mapping experiment.
+    """
+
+    BASE = 0x9000
+    EXECUTOR = 0x0CB92
+    SELECTOR_CHAIN = 0x0CBB6
+    RAM_SELECTOR = 0x07
+
+    def text(self, addr, bsr=0xE):
+        return disasm.format_instr(isa.decode(lab.load('h700_code'), addr - self.BASE,
+                                              self.BASE), bsr=bsr)
+
+    def selectors(self):
+        return chains.chain_table(lab.load('h700_code'), self.BASE, self.SELECTOR_CHAIN)
+
+    def test_exactly_four_selectors_are_serviced(self):
+        self.assertEqual(self.selectors(), {0x01: 0x0CBC8, 0x06: 0x0CBE6,
+                                            0x07: 0x0CBF4, 0x0C: 0x0CC02})
+
+    def test_the_ram_selector_is_seven_and_not_the_upstream_six(self):
+        """
+        libconcord's header names MISC_RAM as 0x06. On arch 14 the selector that reads an
+        arbitrary data address is 0x07, and 0x06 is a different accessor. Taking the upstream
+        number on faith would have read the wrong thing and still returned a plausible byte.
+        """
+        self.assertIn(self.RAM_SELECTOR, self.selectors())
+        self.assertNotEqual(self.selectors()[self.RAM_SELECTOR],
+                            self.selectors()[0x06])
+
+    def test_the_ram_selector_turns_the_parameter_into_fsr0_and_returns_the_byte(self):
+        self.assertEqual(self.text(0x0CBF4), 'MOVFF 0xece,FSR0L')
+        self.assertEqual(self.text(0x0CBF8), 'MOVFF 0xecf,FSR0H')
+        self.assertEqual(self.text(0x0CBFC), 'MOVFF INDF0,0xd64')
+
+    def test_the_response_echoes_the_selector_after_a_code_byte(self):
+        """
+        0xC2 then the selector then the data. The response reuses the request's encoding, a
+        code in the high nibble and a payload length in the low one, so 0xC2 is two payload
+        bytes: the selector and one byte of data.
+        """
+        self.assertEqual(self.text(0x0CB94), 'MOVLW 0xc2')
+        self.assertEqual(self.text(0x0CBA0), 'MOVFF 0xed3,0x358')
+        self.assertEqual(0xC2 & 0x0F, 2)
+
+    def test_the_executor_is_the_state_ten_body(self):
+        self.assertEqual(TestTheStateMachine.table()[0x0A], self.EXECUTOR)
+
+
 class TestReadFlash(unittest.TestCase):
     """
     The one command version 1 of the application actually needs.
@@ -316,18 +416,20 @@ class TestReadFlash(unittest.TestCase):
         self.assertEqual(bound, 0xFFC0)
         self.assertEqual(0x10000 - bound, 64)
 
-    STATE_CHAIN = 0x0D388       # the chain that dispatches the small states
-    STATE_4_BODY = 0x0D3A8      # READ_FLASH's per chunk step
+    STATE_CHAIN = 0x0D388       # a second dispatch site on the state variable
+    STATE_4_BODY = 0x0D3A8      # READ_FLASH's per chunk step, from that site
 
-    def test_state_four_is_dispatched_from_the_small_state_chain(self):
+    def test_state_four_is_dispatched_from_two_places(self):
         """
-        Attribution by control flow, which is what the earlier mistake lacked. The chain's
-        seven cases are all plausible small state values, so the decode is trustworthy here in
-        a way the 32 case result elsewhere is not.
+        Attribution by control flow, which is what the earlier mistake lacked. Both sites are
+        real: the main state machine sends state 4 to 0x0C982, and a second chain at 0x0D388
+        sends it to 0x0D3A8. Which body does what is inference; that both are reached is not.
         """
-        table = chains.chain_table(lab.load('h700_code'), self.BASE, self.STATE_CHAIN)
-        self.assertEqual(sorted(table), [0x02, 0x04, 0x05, 0x06, 0x0B, 0x20, 0x35])
-        self.assertEqual(table[0x04], self.STATE_4_BODY)
+        code = lab.load('h700_code')
+        second = chains.chain_table(code, self.BASE, self.STATE_CHAIN)
+        self.assertEqual(sorted(second), [0x02, 0x04, 0x05, 0x06, 0x0B, 0x20, 0x35])
+        self.assertEqual(second[0x04], self.STATE_4_BODY)
+        self.assertEqual(TestTheStateMachine.table()[0x04], 0x0C982)
 
     def test_the_count_pair_is_the_remaining_count(self):
         """
