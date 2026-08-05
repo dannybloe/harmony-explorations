@@ -1,7 +1,7 @@
 """
 The config container, against every sample available.
 
-Twelve samples across four architectures, five base addresses and three format versions. The
+Thirteen samples across four architectures, five base addresses and three format versions. The
 point is that the parser derives the base address, the pointer count and the marker position
 from the data rather than from a per-model table, so these assertions check that derivation
 rather than a hardcoded lookup.
@@ -24,6 +24,7 @@ EXPECTED = {
     'one_config_unprogrammed': (b'GSPM', 0x040000, '1.6', 21, b'LWJL', 55),
     'h600_config': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 162),
     'h700_config': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 163),
+    'h700_config_2': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 163),
     'h525_config': (b'AHCM', 0x020000, '1.4', 19, b'CMAH', 0),
     'arch8_config_a': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
     'arch8_config_b': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
@@ -43,6 +44,7 @@ KNOWN_ARCHITECTURE = {
     'one_config_unprogrammed': 12,
     'h600_config': 14,
     'h700_config': 14,
+    'h700_config_2': 14,
     'h525_config': 9,
     'arch8_config_a': 8,
     'arch8_config_b': 8,
@@ -295,6 +297,172 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         self.assertIsNone(gspm.frame_length(
             bytes(data[c.blob_offset:c.blob_offset + c.length]),
             c.blob_offset_of(c.sections[0].address)))
+
+
+class TestPointerArraySections(unittest.TestCase):
+    """
+    Six sections per architecture are a count followed by that many three byte absolute flash
+    pointers. They are recognised structurally, not tabulated: the count is a u8 or a u16 and
+    is accepted only when `width + 3 * count` accounts for the section exactly.
+    """
+
+    # Slot numbers in the 19 slot base layout, so one expectation covers all architectures.
+    BASE_SLOTS = [5, 7, 10, 11, 12, 15]
+
+    CONFIGS = ('h700_config', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d')
+
+    def test_the_same_six_sections_are_arrays_in_every_config(self):
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                found = [gspm.base_slot(c.architecture, s) for s in c.pointer_array_slots]
+                self.assertEqual(found, self.BASE_SLOTS)
+
+    def test_every_entry_is_an_address_inside_the_config(self):
+        """A three byte value that lands outside the config would mean the reading is wrong."""
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for slot in c.pointer_array_slots:
+                    for addr in c.pointer_array(slot):
+                        self.assertTrue(c.flash_base <= addr <= c.end_addr,
+                                        'slot %d has 0x%06X outside 0x%06X..0x%06X'
+                                        % (slot, addr, c.flash_base, c.end_addr))
+
+    def test_entries_ascend(self):
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for slot in c.pointer_array_slots:
+                    entries = c.pointer_array(slot)
+                    self.assertEqual(entries, sorted(entries), 'slot %d' % slot)
+
+    def test_a_section_that_is_not_an_array_reads_as_none(self):
+        """The recogniser has to reject, or finding six slots means nothing."""
+        c = gspm.parse(lab.load('h700_config'))
+        for slot in (0, 1, 2, 3, 4, 6, 8, 9, 13, 14, 16, 17, 18):
+            self.assertIsNone(c.pointer_array(slot), 'slot %d' % slot)
+
+
+class TestTheHarmony700Pair(unittest.TestCase):
+    """
+    Two configs of the same Harmony 700, posted together by their owner. The pair is the only
+    controlled sample in the corpus: same remote, same devices, one change between them. What
+    it pins is that the pointer arrays hold real pointers, because every entry moves by exactly
+    the layout shift and that shift is known independently from the header's own pointer table.
+    """
+
+    def setUp(self):
+        self.a = gspm.parse(lab.load('h700_config'))
+        self.b = gspm.parse(lab.load('h700_config_2'))
+
+    def test_the_pair_is_the_same_remote(self):
+        for attr in ('architecture', 'version_word', 'flash_base', 'pointer_count',
+                     'format_raw', 'frame_length'):
+            self.assertEqual(getattr(self.a, attr), getattr(self.b, attr), attr)
+        # Slot 0 holds the named state variables, so an identical slot 0 means an identical
+        # set of devices with identical roles. This is what makes them the same installation
+        # rather than merely the same model.
+        la = self.a.section_length(0)
+        self.assertEqual(la, self.b.section_length(0))
+        pa = self.a.blob[self.a.blob_offset_of(self.a.sections[0].address):][:la]
+        pb = self.b.blob[self.b.blob_offset_of(self.b.sections[0].address):][:la]
+        self.assertEqual(pa, pb, 'the state variable section is byte identical')
+        # And the key table, byte for byte, so no button was remapped.
+        self.assertEqual([(k.event_code, k.index, k.flags) for k in self.a.keys],
+                         [(k.event_code, k.index, k.flags) for k in self.b.keys])
+
+    def test_exactly_one_section_changed_size(self):
+        changed = [i for i in range(self.a.pointer_count)
+                   if self.a.section_length(i) != self.b.section_length(i)]
+        self.assertEqual(changed, [8])
+        self.assertEqual(self.b.section_length(8) - self.a.section_length(8), 8)
+
+    def test_the_layout_shift_is_uniform_either_side_of_it(self):
+        """+50 up to the section that grew, +58 after it, which is 50 plus its 8 new bytes."""
+        shifts = {}
+        for i in range(self.a.pointer_count):
+            if self.a.sections[i].is_null:
+                continue
+            shifts.setdefault(
+                self.b.sections[i].address - self.a.sections[i].address, []).append(i)
+        self.assertEqual(sorted(shifts), [50, 58])
+        self.assertEqual(shifts[50], list(range(0, 9)))
+        self.assertEqual(shifts[58], list(range(9, 18)))
+
+    def test_every_pointer_array_entry_moves_by_the_layout_shift(self):
+        """
+        The closure that makes these arrays pointers rather than a coincidence: the shift is
+        derived from the header's pointer table, and the entries of six unrelated sections
+        reproduce it. Slot 10 is excluded because it addresses the region that was rewritten,
+        where targets moved by varying amounts rather than by the layout shift alone.
+        """
+        for slot in self.a.pointer_array_slots:
+            if slot == 10:
+                continue
+            with self.subTest(slot=slot):
+                deltas = {y - x for x, y in zip(self.a.pointer_array(slot),
+                                                self.b.pointer_array(slot))}
+                self.assertEqual(len(deltas), 1, 'slot %d has mixed deltas' % slot)
+                self.assertIn(deltas.pop(), (50, 58))
+
+    def test_slot10_addresses_the_region_that_was_rewritten(self):
+        """Stated as the exception it is, rather than left as an unexplained failure."""
+        deltas = {y - x for x, y in zip(self.a.pointer_array(10), self.b.pointer_array(10))}
+        self.assertGreater(len(deltas), 1)
+        self.assertEqual(len(self.a.pointer_array(10)), 8037)
+
+
+class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
+    """
+    The pointer table is one table with per architecture insertions, so a section labelled on
+    one architecture transfers to the others by index. That matters because the format work is
+    done on arch 14, where every config read passes through a single SPI primitive, while the
+    popular remote is the arch 12 Harmony One.
+    """
+
+    def test_the_mapping_collapses_every_fingerprint_onto_the_base_layout(self):
+        """
+        Two independent fingerprints, the six pointer array slots and the single one byte
+        section, both land on the same base slots for all four architectures. Two anchors that
+        agree is what makes this an alignment rather than an arithmetic coincidence.
+        """
+        for name in ('h700_config', 'h600_config', 'h525_config', 'one_config',
+                     'one_config_unprogrammed', 'arch8_config_a'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                arrays = [gspm.base_slot(c.architecture, s) for s in c.pointer_array_slots]
+                one_byte = [gspm.base_slot(c.architecture, i)
+                            for i in range(c.pointer_count) if c.section_length(i) == 1]
+                self.assertEqual(arrays, [5, 7, 10, 11, 12, 15])
+                self.assertEqual(one_byte, [16])
+
+    def test_the_base_layouts_trailing_slot_is_null_on_every_architecture(self):
+        """A third anchor, and it is free: base slot 18 is NULL in all four."""
+        for name in ('h700_config', 'h525_config', 'one_config', 'arch8_config_a'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                self.assertTrue(c.sections[gspm.arch_slot(c.architecture, 18)].is_null)
+
+    def test_inserted_slots_are_null_except_the_one_arch12_uses(self):
+        c12 = gspm.parse(lab.load('one_config'))
+        self.assertTrue(c12.sections[8].is_null)
+        self.assertFalse(c12.sections[18].is_null)
+        self.assertIsNone(gspm.base_slot(12, 18))
+        c8 = gspm.parse(lab.load('arch8_config_a'))
+        self.assertTrue(c8.sections[8].is_null)
+
+    def test_the_mapping_round_trips(self):
+        for arch in (8, 9, 12, 14):
+            for base in range(19):
+                with self.subTest(arch=arch, base=base):
+                    self.assertEqual(gspm.base_slot(arch, gspm.arch_slot(arch, base)), base)
+
+    def test_an_unknown_architecture_refuses_rather_than_guesses(self):
+        with self.assertRaises(gspm.GspmError):
+            gspm.base_slot(7, 0)
 
 
 class TestArch12SafeModeConfig(unittest.TestCase):

@@ -73,6 +73,49 @@ FRAME_PROLOGUE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 ARCH_RECORD_SLOT = 1
 ARCH_RECORD_LENGTH = 7
 
+# The pointer table is one table across architectures, with per architecture insertions rather
+# than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 19 slots. Arch 8
+# adds a NULL at slot 8, so everything from there on shifts up by one. Arch 12 adds that same
+# NULL plus a real section at slot 18, and the trailing NULL lands at 20.
+#
+# The evidence is in `docs/findings.md`: the six pointer array slots and the distinctive one
+# byte section both land where this mapping predicts, in all nine config samples.
+#
+# Worth having because the project decodes arch 14, where every config read passes through one
+# SPI primitive, while the popular remote is the arch 12 Harmony One. A section labelled on one
+# transfers to the other through this table rather than through a second investigation.
+INSERTED_SLOTS: Dict[int, Tuple[int, ...]] = {
+    9: (),
+    14: (),
+    8: (8,),
+    12: (8, 18),
+}
+
+
+def base_slot(architecture: int, slot: int) -> Optional[int]:
+    """Map a slot on `architecture` to the same section's slot in the 19 slot base layout.
+
+    Returns None for a slot that architecture inserted and the base layout does not have, and
+    raises for an architecture whose insertions have not been established.
+    """
+    if architecture not in INSERTED_SLOTS:
+        raise GspmError('slot alignment not established for architecture %s' % architecture)
+    inserted = INSERTED_SLOTS[architecture]
+    if slot in inserted:
+        return None
+    return slot - sum(1 for i in inserted if i < slot)
+
+
+def arch_slot(architecture: int, base: int) -> int:
+    """Inverse of `base_slot`: where the base layout's slot sits on `architecture`."""
+    if architecture not in INSERTED_SLOTS:
+        raise GspmError('slot alignment not established for architecture %s' % architecture)
+    slot = base
+    for i in sorted(INSERTED_SLOTS[architecture]):
+        if i <= slot:
+            slot += 1
+    return slot
+
 
 @dataclass
 class KeyRecord:
@@ -120,6 +163,7 @@ class Container:
     architecture: Optional[int] = None    # stated by slot 1, see ARCH_RECORD_SLOT
     version_word: Optional[int] = None    # the u16 beside it, meaning not established
     frame_length: Optional[int] = None    # slot 0's 0xFEED frame, None when absent
+    blob: bytes = b''                     # the container itself, cookie through end marker
     sections: List[Section] = field(default_factory=list)
     keys: List[KeyRecord] = field(default_factory=list)
     checks: Dict[str, bool] = field(default_factory=dict)
@@ -154,6 +198,50 @@ class Container:
     @property
     def all_checks_pass(self) -> bool:
         return all(self.checks.values())
+
+    def section_length(self, slot: int) -> Optional[int]:
+        """Bytes from this section's start to the next non NULL one, or to the end marker.
+
+        The header does not state section lengths, so they come from the layout: the non NULL
+        pointers ascend with the slot number in every sample, which is what makes this well
+        defined. NULL slots have no length.
+        """
+        if slot >= len(self.sections) or self.sections[slot].is_null:
+            return None
+        start = self.sections[slot].address
+        following = [s.address for s in self.sections[slot + 1:] if s.address]
+        return (following[0] if following else self.end_addr) - start
+
+    def pointer_array(self, slot: int) -> Optional[List[int]]:
+        """Read a section as a count followed by that many three byte flash pointers.
+
+        Six sections per architecture are arrays of this shape, and they are recognised rather
+        than tabulated: the count is a `u8` or a `u16` and is accepted only when
+        `width + 3 * count` accounts for the section exactly. That test is strict enough to
+        pick out the same six slots in all nine config samples and no others.
+
+        Three bytes rather than four because 24 bits covers the whole config region with room
+        to spare, and Logitech evidently cared: slot 10 of the Harmony 700 config holds 8037
+        of them, so the fourth byte would have cost 8 KiB in that section alone.
+
+        Returns None when the section is not this shape, or when there is no blob to read.
+        """
+        length = self.section_length(slot)
+        if length is None or not self.blob:
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        for width in (1, 2):
+            count = int.from_bytes(self.blob[off:off + width], 'little')
+            if count and width + 3 * count == length:
+                base = off + width
+                return [int.from_bytes(self.blob[base + 3 * k:base + 3 * k + 3], 'little')
+                        for k in range(count)]
+        return None
+
+    @property
+    def pointer_array_slots(self) -> List[int]:
+        """Which slots read as pointer arrays. A per architecture fingerprint in practice."""
+        return [i for i in range(len(self.sections)) if self.pointer_array(i) is not None]
 
 
 class GspmError(ValueError):
@@ -247,6 +335,7 @@ def parse(data: bytes) -> Container:
         marker=bytes(blob[marker_offset:marker_offset + 4]),
         family=family,
         trailer_checksum=struct.unpack_from('<H', blob, len(blob) - 6)[0],
+        blob=blob,
         sections=[Section(i, p) for i, p in enumerate(pointers)],
     )
 
@@ -316,9 +405,21 @@ def report(c: Container):
     yield 'sections:'
     for s in c.sections:
         if s.is_null:
-            yield '   [%2d] NULL' % s.slot
-        else:
-            yield '   [%2d] 0x%06X  blob+0x%06X' % (s.slot, s.address, s.address - c.flash_base)
+            base = c.architecture is not None and base_slot(c.architecture, s.slot)
+            yield '   [%2d] NULL%s' % (s.slot, '' if base is None else '   base slot %s' % base)
+            continue
+        # The base slot is what a section is called in `docs/config-format.md`, and the pointer
+        # array reading is the most useful orientation there is on an unfamiliar config.
+        try:
+            base = '' if c.architecture is None else '  base %-2s' % base_slot(
+                c.architecture, s.slot)
+        except GspmError:
+            base = ''
+        entries = c.pointer_array(s.slot)
+        kind = '' if entries is None else '  array of %d pointers' % len(entries)
+        yield '   [%2d] 0x%06X  blob+0x%06X  %7s bytes%s%s' % (
+            s.slot, s.address, s.address - c.flash_base,
+            c.section_length(s.slot), base, kind)
     matrix = [k for k in c.keys if k.is_matrix]
     yield 'LWJL: count=%d  (%d matrix codes, %d non-matrix)' % (
         len(c.keys), len(matrix), len(c.keys) - len(matrix))

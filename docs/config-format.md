@@ -133,12 +133,19 @@ number 1: the table "is probably pointing to data for each of the various subsys
 sending, state variables, menus, action lists etc)". That is a hint about what to expect, not
 evidence about which slot is which.
 
+**Slot numbers below are base layout slots.** The pointer table is one table across
+architectures with per architecture insertions, so a slot number only means something once it is
+said which layout it belongs to. See "One table, four architectures" further down; arch 9 and
+arch 14 use the base layout directly.
+
 Known so far:
 
 | Slot | Meaning | Evidence |
 |---|---|---|
-| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | twelve samples, below |
-| 1 | seven byte record stating the architecture | twelve samples, below |
+| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | thirteen samples, below |
+| 1 | seven byte record stating the architecture | thirteen samples, below |
+| 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
+| 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
 
 ### Slot 0: the only `0xFEED` frame
@@ -220,8 +227,75 @@ Observed pointer values, for orientation:
 | 19, 20 | `0x0042BC`, NULL | `0x08C078`, NULL | n/a, 19 slots only | n/a, 19 slots only |
 
 The non-NULL pointers ascend with the slot number in every sample, so sections are laid out in
-slot order. The NULL slots are per architecture rather than per config: slot 18 on arch 14, and
-slots 8 and 20 on arch 12, in both samples of each.
+slot order. That is what makes a section length well defined, since the header does not state
+one: a section runs to the next non-NULL pointer, and the last runs to the trailer.
+
+The NULL slots are per architecture rather than per config: slot 18 on arch 9 and arch 14, slots
+8 and 19 on arch 8, slots 8 and 20 on arch 12, in every sample of each.
+
+### Six sections are arrays of three byte pointers
+
+Recognised structurally rather than tabulated. A section is such an array when a `u8` or `u16`
+count at its start satisfies `width + 3 * count == section_length` exactly:
+
+```
++0x00  u8 or u16   count
+       u24[count]  absolute flash addresses, little endian, ascending
+```
+
+Three bytes, not four, because 24 bits covers the config region with room to spare and the
+arrays are large: slot 10 of the Harmony 700 config holds 8037 entries, where a fourth byte
+would cost 8 KiB in that one section.
+
+That test picks out **the same six base slots in all nine config samples** across four
+architectures, and rejects every other section. Every entry lands inside the container, and
+every array ascends.
+
+The confirmation that these are pointers rather than a shape that happens to fit is the Harmony
+700 pair: two configs of one remote where the whole layout shifted by 50 bytes and then 58. In
+five of the six arrays every single entry moved by exactly that shift, and the shift is known
+independently, from the container's own pointer table. Slot 10 is the exception, and it is an
+informative one: its entries moved by fourteen different deltas, because it addresses the region
+that was rewritten rather than merely displaced.
+
+| Base slot | count width | entries, 700 | 600 | 525 | One | arch 8 |
+|---|---|---|---|---|---|---|
+| 5 | `u8` | 6 | 4 | 4 | 5 | 3 |
+| 7 | `u16` | 17 | 15 | 5 | 18 | 14 |
+| 10 | `u16` | 8037 | 4955 | 487 | 4277 | 1318 |
+| 11 | `u16` | 5711 | 3810 | 22 | 59 | 28 |
+| 12 | `u8` | 9 | 5 | 5 | 30 | 19 |
+| 15 | `u8` | 9 | 9 | 5 | 11 | 9 |
+
+What they point at is **not yet established**. The counts are suggestive (slot 10's thousands of
+entries against slot 5's handful) but a count is not a label, and a label has to come from the
+firmware routine that reads the section.
+
+### One table, four architectures
+
+The pointer table is the same table everywhere, with per architecture insertions rather than per
+architecture meanings:
+
+| Architecture | slots | insertions relative to the base layout |
+|---|---|---|
+| 9, 14 | 19 | none, this is the base layout |
+| 8 | 20 | a NULL at slot 8 |
+| 12 | 21 | a NULL at slot 8, and a real section at slot 18 |
+
+So a base slot `b` sits at `b`, at `b + 1` for `b >= 8`, and arch 12 additionally pushes
+`b >= 17` up by one more. `src/harmony/gspm.py` implements this as `base_slot` and `arch_slot`,
+and refuses rather than guesses for an architecture whose insertions are not established.
+
+Three independent fingerprints agree on this alignment across nine configs: the six pointer array
+slots land on base slots 5, 7, 10, 11, 12 and 15; the single **one byte** section lands on base
+slot 16; and base slot 18 is NULL. Any one of those alone would be arithmetic, and all three
+agreeing is an alignment.
+
+Why it is worth having: format work is done on arch 14, because there every config byte read
+passes through one SPI primitive, while the remote most people own is the arch 12 Harmony One. A
+section labelled on arch 14 transfers through this table instead of through a second
+investigation. The one section arch 12 has and the base layout does not, its slot 18, is 2 bytes
+in both One samples.
 
 In the 1.6 MB Harmony One user config all 21 pointers land within the first 310 KiB. The
 remaining 1.36 MB is reached indirectly, presumably the IR code database and the touchscreen

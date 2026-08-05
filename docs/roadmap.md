@@ -225,13 +225,14 @@ are stale and need correcting, because later policy decisions read them.
 * Statically: find every RAM location a config-derived pointer is copied into, then find its
   consumers, exactly as `0x3BD`/`0x3BE` was resolved into the IR subsystem pointer. Prior from
   the designer: IR sending, state variables, menus, action lists.
-* **Cheapest of the three, and it needs one message rather than any code: get the second dmrzzz
-  Harmony 700 dump.** Two dumps of the same remote with a written description of what changed
-  between them were posted; the corpus has one. A documented difference is a controlled
-  experiment already run, and diffing the pair labels sections without having to find the
-  consuming firmware routine first. Nothing else available comes close: the other pairs are
-  different remotes, and the four arch 8 configs differ in 73 to 84 percent of their bytes with
-  no record of why. See `docs/findings.md` section 15.
+* **The controlled pair is in hand and has already paid, but its description is not.** Both of
+  dmrzzz's Harmony 700 dumps are in the corpus. Diffing them localised the change to section slot
+  8 plus 50 bytes ahead of slot 0, proved that six sections per architecture are arrays of three
+  byte flash pointers, and exposed a single pointer table across all four architectures, so labels
+  transfer from arch 14 to the arch 12 One by index. Written up in `docs/findings.md` section 16.
+  What is still missing is the **written account of what changed**, which their owner posted
+  alongside the files. With it, slot 8 gets a name from the outside, and that is the only route to
+  a section label that does not need the consuming firmware routine found first. One message.
 * Dynamically: poll those RAM slots over USB while operating the remote by hand, and see which
   pointer is live for which on-screen activity or device. This is the poor version of the
   emulator's read trace and it costs a day rather than a month.

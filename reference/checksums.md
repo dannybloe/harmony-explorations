@@ -38,7 +38,7 @@ anyone else's hardware. They are listed for the record, not as verification targ
 
 ## Publicly shared config samples
 
-Unlike everything else here, these six files are already public, posted by their owners. They
+Unlike everything else here, these seven files are already public, posted by their owners. They
 are used as controls for claims about the container: a rule that survives architectures nobody
 tuned it for is a rule about the format. They still live in the lab rather than in this
 repository, because the policy is that no config binaries are committed regardless of
@@ -75,27 +75,26 @@ python3 -c "import sys; sys.path.insert(0, 'src'); from harmony import ezfile; \
 print(ezfile.parse_ezhex(open(sys.argv[1], 'rb').read()).xml)" <file>
 ```
 
-Note the 600 file is **truncated**: the real image is 70336 bytes and concordance returns only
-the first 65536. Use the 700 image for arch 14 work, since it is complete.
-
-One architecture 14 config (Harmony 700), posted publicly by
+Two architecture 14 configs of the **same Harmony 700**, posted publicly by
 [@dmrzzz](https://github.com/dmrzzz) in the harmony-decompiler discussion:
 
 | File | SHA-256 |
 |---|---|
 | `harmony700.EZHex` | `86ff26c8e2aae0c891809a8d7b0129b09cf8c4d57d8763a65878da8b62e04c3d` |
+| `harmony700-2.EZHex` | `286aafc4e5255abee904d77feb8dada29689cc80559df0793484349ab2d631d7` |
 
-982340 bytes, skin 66, `UserId` 0, no session data. This is the only config sample from the
-same model as the arch 14 firmware image analysed here, which is why it carries more than its
-share of `docs/findings.md` section 15.
+982340 and 982398 bytes, skin 66, `UserId` 0, no session data. These are the only config
+samples from the same model as the arch 14 firmware image analysed here, and the only
+**controlled pair** in the corpus: one remote, one installation, one change between the two.
+That is what `docs/findings.md` section 16 rests on, and it is worth more than a fifth
+architecture would be.
 
-**A second dump of the same remote exists and is not here.** trelowney's status update of
-2026-08-04 records that dmrzzz posted two, with a written description of what changed between
-them. Two dumps of one remote with a documented difference is a controlled experiment, and it
-is the most valuable sample the corpus could gain: the bytes that moved are the bytes that
-implement the described change. Everything else available is either two different remotes or,
-in the arch 8 set, four configs differing in 73 to 84 percent of their bytes with no
-explanation of why.
+The written description of what changed between them, which their owner posted alongside, is
+not here and is worth obtaining.
+
+Note the 600 firmware file listed under derived binaries is **truncated**: the real image is
+70336 bytes and concordance returns only the first 65536. Use the 700 image for arch 14 work,
+since it is complete.
 
 ## Load addresses
 

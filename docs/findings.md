@@ -1145,22 +1145,127 @@ like is the thing `.claude/skills/trace-section/SKILL.md` exists to prevent: the
 from the firmware routine that consumes the pointer. This is a strong candidate for "state
 variables" and nothing more until that routine is found.
 
-### The sample the corpus is still missing
+## 16. The Harmony 700 pair, and what a controlled sample buys
 
-trelowney's status update of 2026-08-04 records that dmrzzz posted **two** dumps of the same
-Harmony 700, with a written description of what changed between them. Only one of the two is in
-the corpus.
+The second of dmrzzz's two Harmony 700 dumps is now in the corpus, so the corpus has its first
+**controlled pair**: two configs of one remote with a change between them. Everything else
+available is either two different remotes, where nearly everything differs, or the four arch 8
+configs, which differ from each other in 73 to 84 percent of their bytes with no record of why.
 
-That pair would be the most valuable sample here, ahead of a fifth architecture. Two dumps of one
-remote with a documented difference is a controlled experiment somebody else has already run: the
-bytes that moved are the bytes that implement the described change, which is the cheapest route
-to a section label that exists and the only one that does not require finding the consuming
-firmware routine first. What the corpus has instead is pairs of different remotes, where nearly
-everything differs, and the four arch 8 configs, which differ from each other in 73 to 84 percent
-of their bytes with no record of why.
+The written description of what changed is **still missing**, and it is worth asking for. What
+follows is derived from the bytes alone, which establishes where the change is but not what it
+was.
 
-It would also settle what the `version word` above is, since a second dump of one remote taken at
-a different time either moves it or does not.
+### Establishing that it is the same remote
+
+Four independent agreements, none of which a different remote would produce:
+
+* The XML headers are **byte identical apart from `BINARYDATASIZE`**. Same skin 66, same flash
+  `0x15:0x1C`, same board `0.0.0`, same protocol 14, same `CHECKSUM` value of 15.
+* The same `version word` 3394 in section slot 1.
+* **Section slot 0 is byte identical**, all 2328 bytes. That is the named state variable tree, so
+  the two configs describe the same six devices with the same roles, the same input counts and the
+  same delay settings. This is the decisive one: it makes them the same installation rather than
+  merely the same model.
+* The **key table is byte identical**, all 163 records including their `index` fields, so nothing
+  was remapped to a different button.
+
+### Where the change is
+
+The payload is 58 bytes longer. The layout moved by a constant either side of one section:
+
+| Base slots | shift | note |
+|---|---|---|
+| 0 to 8 | +50 | so something before slot 0 grew by 50 bytes |
+| 8 | grew +8 | 3592 to 3600 bytes, the only section whose size changed |
+| 9 to 17 | +58 | the 50 above plus slot 8's 8 new bytes |
+
+Per section, after realigning for those shifts:
+
+| Slot | bytes | differing | reading |
+|---|---|---|---|
+| 0 | 2328 | 0 | the state variable tree, untouched |
+| 1 | 7 | 0 | the architecture record |
+| 2 | 8 | 0 | |
+| 3 | 14 | 7 | |
+| 4 | 1193 | 1 | one byte |
+| 5 | 19 | 7 | a pointer array, all six entries +50 |
+| 6 | 74011 | 938, 1.3% | |
+| 7 | 53 | 21 | a pointer array, all 17 entries +50 |
+| 8 | 3592 to 3600 | rewritten | diverges at +0x22 and does not realign |
+| 9 | 2920 | 90% | |
+| 10 | 24113 | 40% | a pointer array of 8037 entries, 14 distinct deltas |
+| 11 | 17135 | 40% | a pointer array, all 5711 entries +50 |
+| 12 | 28 | 16 | a pointer array, all nine entries +50 |
+| 13 | 290 | 32% | |
+| 14 | 215 | 19% | |
+| 15 | 28 | 9 | a pointer array, all nine entries +58 |
+| 16 | 1 | 0 | |
+| 17 | 598324 | 89% | the bulk |
+
+So the change is localised to **slot 8, plus 50 bytes in the region before slot 0** which no
+pointer in the table addresses. Slot 8 diverges 34 bytes in and does not resynchronise, so it was
+regenerated rather than patched.
+
+### That the six arrays hold real pointers
+
+The pair is what turns "these sections fit the shape of a pointer array" into a fact. In five of
+the six arrays, **every entry moved by exactly the layout shift**, +50 or +58 according to which
+side of slot 8 its target sits on. The shift is known independently, from the container's own
+pointer table in the header, so this is two unrelated parts of the file agreeing. A section that
+merely happened to satisfy `width + 3 * count == length` would have no reason to.
+
+Slot 10 is the exception and it argues the same way. Its 8037 entries moved by **fourteen
+different deltas**, not one, because they address the 254 KiB region ahead of slot 0 that was
+rewritten rather than displaced. A table of offsets into a rebuilt region is exactly what that
+looks like; a coincidence would not have produced a small set of consistent deltas either.
+
+The pointer width is three bytes, which is a deliberate saving rather than an oddity: 24 bits
+covers a config region that tops out around 1.4 MB, and at 8037 entries a fourth byte would cost
+8 KiB in slot 10 alone.
+
+### One pointer table across four architectures
+
+Recognising the arrays made an alignment visible. Arch 9 and arch 14 carry arrays at slots 5, 7,
+10, 11, 12 and 15. Arch 8 and arch 12 carry them at 5, 7, **11, 12, 13 and 16**, and those are
+precisely the architectures whose slot 8 is NULL. So the table is one table with a NULL inserted
+at slot 8 on arch 8 and arch 12:
+
+| Architecture | slots | insertions | trailing NULL lands at |
+|---|---|---|---|
+| 9, 14 | 19 | none, the base layout | 18 |
+| 8 | 20 | NULL at 8 | 19 |
+| 12 | 21 | NULL at 8, real section at 18 | 20 |
+
+Three fingerprints agree, which is what makes this an alignment rather than arithmetic that
+happens to fit:
+
+* the six pointer array slots all map to base slots 5, 7, 10, 11, 12, 15;
+* the single **one byte** section maps to base slot 16 on all four architectures;
+* base slot 18 is NULL on all four.
+
+Each holds in every sample: two arch 14 configs, two arch 12, four arch 8, one arch 9.
+
+**This is the most useful consequence in this section.** The format work is done on arch 14
+because there every config byte read passes through the single SPI primitive at `0x1B9AC`, while
+the remote most people own is the arch 12 Harmony One. Section labels now transfer between them
+through `gspm.base_slot` and `gspm.arch_slot` rather than through a second investigation. It also
+means the arch 9 sample, which was kept only as a control, is a full participant: it uses the base
+layout unmodified.
+
+What would falsify it: an architecture whose pointer arrays or one byte section land somewhere the
+mapping does not predict. `gspm.base_slot` raises for an architecture whose insertions have not
+been established rather than assuming none, so arch 7, 15 and the rest are refusals and not silent
+wrong answers.
+
+### Still missing
+
+The written description of what changed between the two dumps. With it, slot 8 and those 50 bytes
+get a name from the outside rather than from the firmware, which is the cheapest section label
+available and the only route that does not need the consuming routine found first.
+
+Two dumps taken at different times would also settle the `version word` in section slot 1, since
+it either moved or it did not. Here it did not: both read 3394.
 
 ## References
 

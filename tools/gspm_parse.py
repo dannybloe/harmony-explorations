@@ -44,7 +44,13 @@ def main():
             'sections': [
                 {'slot': s.slot, 'address': s.address,
                  'blob_offset': container.blob_offset_of(s.address),
-                 'file_offset': container.file_offset(s.address)}
+                 'file_offset': container.file_offset(s.address),
+                 'length': container.section_length(s.slot),
+                 # Entries are omitted: the largest array seen holds 8037 of them, which would
+                 # bury everything else. The count is what orients you.
+                 'pointer_array_entries': (
+                     len(container.pointer_array(s.slot))
+                     if container.pointer_array(s.slot) is not None else None)}
                 for s in container.sections],
             'keys': [
                 {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,

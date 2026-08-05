@@ -179,7 +179,15 @@ Container cookies, since the container is one format across architectures: `TPTP
 arch 8, `AHCM`/`MCHA` on arch 9, `GSPM`/`PTYY` on arch 12 and 14, and `BMBM` on arch 7 per
 concordance's table, unverified here. The marker after the pointer table is `WLWL`, `CMAH` and
 `LWJL` respectively. `format` is not an architecture identifier: arch 9 and arch 14 both carry
-`0x1400`.
+`0x1400`. **The architecture is stated by the config**, in section slot 1, which is the only
+way to tell arch 12 from arch 14 without the EZHex header.
+
+**The pointer table is one table across architectures too.** Arch 9 and 14 carry the base
+layout of 19 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
+slot 18. So a section labelled on arch 14 transfers to the One by index, through
+`gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `docs/config-format.md` are base slots.
+Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
+pointers.
 
 Ghidra language: `PIC-18:LE:24:PIC-18`, generic variant only, so SFRs are unnamed.
 `analyzeHeadless` rejects relative project paths.
