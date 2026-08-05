@@ -144,7 +144,8 @@ The library:
 ```
 harmony/pic18/isa.py       THE opcode table and decoder. Single source of truth.
 harmony/pic18/disasm.py    text formatting, SFR names, bank and ADSHR tracking
-harmony/pic18/trace.py     find every access to a data address
+harmony/pic18/trace.py     find every access to a data address, and every call to a routine
+harmony/pic18/chains.py    decode an XORLW switch chain, whose literals are not its cases
 harmony/pic18/loadaddr.py  determine the base address of an unknown image
 harmony/firmware.py        image header, checksum, size recovery from truncated dumps
 harmony/gspm.py            the config container
@@ -223,6 +224,7 @@ tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
 tools/gspm_parse.py    <file> [--json]
 tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
+tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 ```
@@ -263,6 +265,10 @@ over the runner-up before trusting its answer.
 * **`WDTCON` bit 4 is `ADSHR`, and it changes what ten addresses mean.** Setting it swaps a
   shadow register in, so the same address is `ADCON1` or `ANCON0` depending on a bit set two
   instructions earlier. `disasm.py` tracks it; a hand reading of a listing must too.
+* **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
+  chain that XORs with the difference to the next case, so the case value is the running XOR
+  of every literal so far. Reading them literally gave `0x20` twice, and a duplicate case is
+  the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.

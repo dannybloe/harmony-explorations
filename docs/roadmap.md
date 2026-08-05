@@ -178,10 +178,31 @@ are stale and need correcting, because later policy decisions read them.
 
 ### Step 3: the USB protocol, clean room
 
-* Find and document the USB HID command dispatcher in the Harmony 700 2.8 image and in the
-  Harmony One 3.4 image, using `tools/pic18_disasm.py` and `tools/pic18_trace.py`. Deliverable is
-  a new `docs/usb-protocol.md` covering, per command: request layout, response layout, the length
-  nibble mapping actually implemented, and which commands the firmware ignores.
+**In progress.** `docs/usb-protocol.md` exists and holds the transport in full plus the
+command layer's structure. Done so far, all of it against three images rather than the two
+this step asked for, the truncated 600 dump having turned out to reach far enough for the
+protocol code:
+
+* The transport, quoted from the descriptor block: two interrupt endpoints, IN on 1 and OUT
+  on **2**, 64 byte reports each way, no report ids, vendor usage page. `harmony/usbdesc.py`
+  and `tools/usbdesc.py` read it out of any image.
+* `bcdDevice` carries the skin in BCD, which is the only thing that separates a 600 from a
+  700 before a config is read, since both are product id `0xC122`. Load bearing for the
+  write rail that requires `INTENDEDVERSION` to match the connected remote.
+* The endpoint setup: `UCFG`, `UEP1`, `UEP2`, no ping-pong buffering, and the two report
+  buffers at `0x0428` and `0x0468`.
+* The command entry point, the dispatch table for seven commands in all three images, the
+  state machine the dispatch is gated on, and the non-linear length nibble mapping.
+* Two new tools that this step needed and the project lacked: `tools/pic18_xref.py`, which
+  answers "what calls this routine" where `pic18_trace.py` answers "what touches this
+  variable", and `harmony/pic18/chains.py`, which decodes the compiler's `XORLW` switch
+  chains correctly.
+
+Still to do, in the order the application needs them:
+
+* Per command request and response layouts, which means reading the main loop's state
+  handlers rather than the packet parsers. `READ_FLASH` first, since the read path is what
+  version 1 of the application is.
 * Answer specifically: does the firmware service `MISC_RAM` reads in normal mode, and does it
   implement `MISC_QUEUE_ACTION` or `MISC_QUEUE_EVENT`.
 * Work out which `READ_FLASH` PROM type covers which address range: `MCU_FLASH 0x01`,

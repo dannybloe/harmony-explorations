@@ -1641,6 +1641,104 @@ Also fixed while in there: `trace.report` crashed on any address that had hits, 
 formatted a namedtuple with `%s`. So `pic18_trace.py`, described in the project brief as the
 highest-value tool here, could only report addresses with no accesses at all.
 
+## 19. The USB command layer, and a switch that lies about its case values
+
+The protocol itself lives in `docs/usb-protocol.md`, which is the spec other tools consume.
+This section is the reasoning: how it was found, and the two places it could have been read
+wrongly.
+
+### Route in
+
+The USB registers on this family are at `0xF4C` to `0xF65`, which nothing knew until section
+18. Tracing them split the driver into two clusters immediately: `0x16E00` to `0x17300` writes
+`UCFG`, `UEP1`, `UEP2` and sets `USBEN`, so initialisation and attach, and `0x1AD80` to
+`0x1AF00` reads `UIR` eight times with a bit test after each, so the interrupt service.
+
+Neither leads to the protocol, because the report buffers live in the buffer descriptor table
+and are only ever reached through FSR, which `pic18_trace.py` cannot see. What worked was
+going at the accessors: the buffer descriptor registers **are** ordinary banked addresses, so
+tracing `0x410` to `0x413` found the four instructions that hand endpoint 2 OUT to the
+hardware, and reading the literals off them gave the buffer address, `0x0428`. Then
+`pic18_xref.py`, written for this, walked callers from the accessor that returns that address
+up to the command entry point at `0x0BD0A`.
+
+That tool did not exist before this section. `pic18_trace.py` answers "what touches this
+variable"; there was no way to ask "what calls this routine", which is the question that
+connects a generated helper to the logic that uses it.
+
+### The switch that lies
+
+The command table is a chain of `XORLW` comparisons, which is how this compiler emits a switch
+on a processor with no compare-against-literal instruction. The literals are **not** the case
+values. Each one is the XOR of the previous case with the next, so the case value is the
+running XOR of every literal so far:
+
+```
+0bdcc: MOVF  0xd00,W
+0bdce: XORLW 0x05    ; case 0x05
+0bdd0: BNZ   0x0bdd4
+0bdd2: BRA   0x0c500
+0bdd4: XORLW 0xb5    ; 0x05 ^ 0xb5 = 0xb0, so case 0xb0, not case 0xb5
+0bdd6: BNZ   0x0bdda
+0bdd8: BRA   0x0c4ce
+```
+
+Read as case values, the literals give `0x05, 0xB5, 0x10, 0x70, 0xA0, 0x20, 0x60, 0x20`.
+Read correctly, they give `0x05, 0xB0, 0xA0, 0xD0, 0x70, 0x50, 0x30, 0x10`, which are seven
+known command bytes plus one internal case. The wrong reading contains a duplicate, `0x20`
+twice, which is the tell: a switch cannot have two identical cases. That is the only warning
+the wrong reading gives, and it would be easy to miss.
+
+So the chain is decoded programmatically in `harmony/pic18/chains.py` rather than by hand,
+for the same reason there is one opcode table. The remaining `MISC` sub-command chains will go
+through it too.
+
+### What closes the reading
+
+Three things, none of which the derivation was aimed at.
+
+**The length nibble ends exactly at the report size.** Nibbles 0 to 7 mean 0 to 7 payload
+bytes, and 8, 9 and `0xA` mean 15, 31 and 63. Those are 2^4-1, 2^5-1 and 2^6-1, and 63 payload
+bytes plus the one command byte is 64, which is the report size the USB descriptors declare in
+section 1 of the protocol document. Two independent parts of the firmware agreeing on 64.
+
+**The state numbers are identical across both architectures while the state variable is
+not.** Every command handler opens by assigning a state and then just parses its arguments,
+leaving the work to the main loop. WRITE_FLASH is 2, READ_FLASH 4, START_IRCAP 5,
+ERASE_FLASH 8, WRITE_MISC 9, READ_MISC 10, GET_VERSION 1, in the 700, the 600 and the One
+alike. The variable holding it is at `0xEC9`, `0x1C1` and `0x284` respectively. Same protocol
+implementation compiled for three different memory maps, rather than three implementations
+that happen to agree.
+
+**Endpoint 1 OUT is absent three times over.** The endpoint descriptors declare IN on
+endpoint 1 and OUT on endpoint 2. `UEP1 = 0x1A` has `EPOUTEN` clear. And the buffer descriptor
+for endpoint 1 OUT, at `0x408`, has no direct access anywhere in the image, while its three
+neighbours at `0x40C`, `0x410` and `0x400` have between them dozens. Indirect access through
+FSR would be invisible, so that third point is weaker than the other two on its own; taken
+with them it is confirmation. Three independent statements of the same asymmetry, which
+matters because a host that assumes endpoint 1 in both directions will not talk to the remote
+at all.
+
+### The state gate, and why it is a safety property
+
+The dispatch is itself gated on the state, so the table above is the **idle** table. In state
+2 a different two entry chain runs, handling `0x40` and `0xF0`, and `0x40` is
+WRITE_FLASH_DATA. WRITE_FLASH sets state 2 as its first instruction.
+
+So the firmware accepts flash data only after it has agreed to a write. That is worth stating
+plainly because the write rails in `docs/roadmap.md` are host side, and it is useful to know
+which of them the device also enforces. This one it does. It does not follow that any other
+rail is enforced, and nothing here has been tested against hardware.
+
+### An honest gap
+
+The four sub-commands of the `0xE0` escape are `0x01`, `0x02`, `0x03` and `0x05`. What each
+does is not established beyond the first few instructions of each path, and the `0x05` one is
+the odd one, since it feeds the internal case of the main table rather than doing anything
+itself. The `0x05` case is present in both arch 14 images and absent from the arch 12 one,
+which tracks the architecture rather than the firmware version, the 600 being 0.2 against the
+700's 2.8. No explanation is offered for that yet.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

@@ -91,6 +91,45 @@ def trace(code: bytes, base: int, targets: Iterable[int]) -> Dict[int, List[Acce
     return hits
 
 
+class Xref(collections.namedtuple('Xref', 'addr mnemonic')):
+    """One control transfer to a code address, at code address `addr`."""
+
+    def __str__(self) -> str:
+        return '0x%05X  %s' % (self.addr, self.mnemonic)
+
+
+def xrefs(code: bytes, base: int, targets: Iterable[int]) -> Dict[int, List[Xref]]:
+    """Return {code_address: [Xref, ...]}: every branch or call reaching each address.
+
+    The counterpart to `trace` for code rather than data. `trace` walks a data flow towards
+    the hardware; this walks a call graph backwards from a routine to whatever uses it,
+    which is how a generated USB helper gets connected to the protocol logic that calls it.
+
+    Only direct transfers are seen. A computed jump, meaning a write to PCL or a table read
+    into PCLATH, is invisible, so an address with no xrefs is not proof it is unreachable.
+    """
+    wanted = set(targets)
+    hits: Dict[int, List[Xref]] = {t: [] for t in wanted}
+    for addr, instr in isa.iter_instructions(code, base):
+        if instr.category not in (isa.REL8, isa.REL11, isa.ABS20):
+            continue
+        target = instr.fields['target']
+        if target in wanted:
+            hits[target].append(Xref(addr, instr.mnemonic))
+    return hits
+
+
+def report_xrefs(hits: Dict[int, List[Xref]], targets: Iterable[int]) -> Iterable[str]:
+    """Render an xref result as text."""
+    for t in targets:
+        found = hits.get(t, [])
+        yield '=== code 0x%05X: %d references ===' % (t, len(found))
+        for xref in found:
+            yield '   ' + str(xref)
+        if not found:
+            yield '   none found (a computed jump through PCL is not detected)'
+
+
 def report(hits: Dict[int, List[Access]], targets: Iterable[int]) -> Iterable[str]:
     """Render a trace result as text."""
     for t in targets:
