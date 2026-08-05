@@ -67,7 +67,7 @@ All current documents report zero.
 README.md                       front page: status, headline findings, quickstart
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the GSPM spec, structured, for tools to track
-docs/forum-post.md              the public write-up as posted
+docs/plan.md                    the roadmap: phases, milestones, unknowns
 docs/emulator-design.md         design for the emulator harness, not yet built
 src/harmony/                    the library, see below
 tools/                          thin command line wrappers, no logic of their own
@@ -187,7 +187,7 @@ Established norms:
 
 ## Next up
 
-Priority order, with detail in `docs/forum-post.md` section 13:
+Priority order, with detail in `docs/plan.md`:
 
 1. **Label the GSPM section pointers by function.** Method proven: the firmware copies each
    config pointer into a per-subsystem RAM variable, so finding the consumer labels the section.

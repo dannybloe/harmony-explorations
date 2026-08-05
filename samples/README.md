@@ -3,7 +3,7 @@
 Empty on purpose.
 
 A corpus of config dumps is genuinely needed. Phase 1 of the plan in
-[../docs/forum-post.md](../docs/forum-post.md) depends on it, and a dump paired with a
+[../docs/plan.md](../docs/plan.md) depends on it, and a dump paired with a
 description of what it contains (which devices, which activities, which buttons do what) is
 far more useful than a dump alone, because the description is ground truth to decode against.
 

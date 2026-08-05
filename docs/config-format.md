@@ -68,7 +68,7 @@ Both rules are implemented in `tools/gspm_parse.py`.
 ## Sections
 
 Slot meanings are **not yet known**. This is the single highest-value gap, and there is a
-proven method for closing it, described in the plan in [forum-post.md](forum-post.md) as
+proven method for closing it, described in [plan.md](plan.md) as
 Phase 1: the firmware copies each config pointer into a per-subsystem RAM variable, so finding
 the consumer of that variable labels the section by function. The infrared section was
 identified exactly this way.

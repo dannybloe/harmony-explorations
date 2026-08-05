@@ -60,7 +60,7 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 ```
 docs/findings.md            the authoritative technical reference
 docs/config-format.md       the GSPM config format spec, grows as sections are labelled
-docs/forum-post.md          public write-up, as posted to harmony-decompiler
+docs/plan.md                the roadmap: phases, milestones, known unknowns
 docs/emulator-design.md     design for the PIC18 harness, not yet built
 src/harmony/                the library: one shared PIC18 decoder, plus format readers
 tools/                      command line wrappers around the library, plus corpus.py
