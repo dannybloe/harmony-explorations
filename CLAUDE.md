@@ -152,9 +152,19 @@ file directly, so the dependency tree is `typescript` plus `@types/node` and not
 `vitest` brings 71 packages including a CSS toolchain. Two consequences that are enforced rather
 than remembered: `erasableSyntaxOnly` is on, so no enums, namespaces or parameter properties, and
 `node:test` cannot skip from inside a test, so `packages/lab` hands back a skip option
-(`skipUnless`) that the test declares up front. Never add a dependency without checking what it
-pulls in; `make audit` is the floor, not the whole check. `package.json` carries version ranges
-and `pnpm-lock.yaml` is committed, which is what keeps a range from becoming an unreviewed update.
+(`skipUnless`) that the test declares up front.
+
+**Every npm dependency is pinned to an exact version. No `^`, no `~`, ever**, in any
+`package.json` in the workspace, and that includes transitive additions and anything an
+`apps/studio` later wants. A range means the bytes that get installed are decided by whoever
+published last, not by whoever reviewed the change; a lock file narrows that window but does not
+close it, since any `pnpm add` or lock refresh silently moves the range. Pinning makes a
+dependency update a diff someone has to approve. `pnpm-lock.yaml` is committed as well, so the
+transitive tree is pinned too.
+
+Never add a dependency without checking what it pulls in: `make audit` is the floor, not the
+check. `vitest` was rejected on exactly this basis, and `node-hid` was accepted after looking
+(two dependencies, `node-addon-api` and `pkg-prebuilds`).
 
 The library:
 

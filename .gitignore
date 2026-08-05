@@ -37,9 +37,8 @@ work/
 __pycache__/
 .DS_Store
 
-# Node. pnpm-lock.yaml is committed on purpose: it is what makes the version ranges in
-# package.json resolve to the same bytes on every machine, which is the only thing standing
-# between a range and an unreviewed dependency update.
+# Node. pnpm-lock.yaml is committed on purpose: direct dependencies are pinned exactly in
+# package.json, and the lock file pins the transitive tree the same way.
 node_modules/
 dist/
 *.tsbuildinfo

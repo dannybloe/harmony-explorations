@@ -141,8 +141,11 @@ mirroring `tests/lab.py`. The two fixture tables are asserted equal, because a g
 other suite cannot find is a test that passes without checking anything. Fixtures never enter
 git; checksums go in `reference/checksums.md`.
 
-`pnpm-lock.yaml` is committed. `package.json` carries ranges, so the lock file is the only thing
-between a range and an unreviewed dependency update.
+**Every dependency is pinned to an exact version**, with no `^` or `~` anywhere, and
+`pnpm-lock.yaml` is committed on top of that. A range hands the choice of which bytes get
+installed to whoever published most recently; a lock file narrows that but does not close it,
+because any `pnpm add` moves the range. Pinning makes a dependency update a reviewable diff. No
+dependency is added without looking at what it pulls in: that is what rejected `vitest`.
 
 ## Milestones
 
