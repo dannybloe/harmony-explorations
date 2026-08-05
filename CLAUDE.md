@@ -270,10 +270,17 @@ over the runner-up before trusting its answer.
 * **`WDTCON` bit 4 is `ADSHR`, and it changes what ten addresses mean.** Setting it swaps a
   shadow register in, so the same address is `ADCON1` or `ANCON0` depending on a bit set two
   instructions earlier. `disasm.py` tracks it; a hand reading of a listing must too.
+* **Follow control flow, not variables, when attributing code to a command.** The USB command
+  handlers parse their arguments into shared variables, so finding code that uses those
+  variables proves what the variables hold and nothing about which command runs it. That
+  mistake put READ_FLASH's response in `docs/usb-protocol.md` when only its request had been
+  found, twice in one commit. Start from the dispatch table or the state machine.
 * **An `XORLW` chain's literals are not its case values.** The compiler emits a switch as a
   chain that XORs with the difference to the next case, so the case value is the running XOR
   of every literal so far. Reading them literally gave `0x20` twice, and a duplicate case is
-  the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand.
+  the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand. That module
+  cannot tell where a chain ends either, so check the case values are plausible for the
+  variable being switched on before believing the table.
 * **`system_profiler SPUSBDataType` returns nothing at all on this machine**, not even for
   unrelated devices, and it exits 0 while doing it. So any script that greps it for a remote
   concludes "not connected" and is believed. That already produced one false negative here: a

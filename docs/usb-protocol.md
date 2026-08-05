@@ -322,21 +322,29 @@ The one command version 1 of the application actually needs. Addresses are the 7
 So the address is 24 bits and the count 16 bits, both most significant first. The length nibble
 of the command byte should therefore be 5.
 
-The address is an address because it becomes one, which is better than an inference:
+The address is an address because it becomes one, which is better than an inference. At
+`0x13EBA` the three variables are copied into `TBLPTRL`, `TBLPTRH` and `TBLPTRU`, which also
+fixes the byte order:
 
 ```
-13eb8: 8e 9e       BCF LATF,7           ; assert the flash chip select
 13eba: ce ce f6 ff MOVFF 0xece,TBLPTRL
 13ebe: cf ce f7 ff MOVFF 0xecf,TBLPTRH
 13ec2: d0 ce f8 ff MOVFF 0xed0,TBLPTRU
-13ec6: cc ec c6 f0 CALL 0x18d98         ; the SPI transfer
-13eca: 16 ec 85 f0 CALL 0x10a2c
-13ece: 8e 8e       BSF LATF,7           ; release the chip select
 ```
 
-`LATF` bit 7 is the external flash chip select, established independently in
-`docs/findings.md` section 13, so this is the config flash and not an internal table read
-despite the register names.
+**Correction.** This block was published here as READ_FLASH's read path, bracketed by the
+external flash chip select. It is not established that it belongs to READ_FLASH. The routine
+containing it, `0x13E90`, has exactly one caller, `0x0C6F2`, which is behind a flag test, and
+its other branch calls `0x1B50A`, which sets `EECON1` to `FREE | WREN`. Those are the internal
+flash erase enable and write enable bits, so that branch erases rather than reads, and a
+routine whose two branches are a read and an erase is not a reading of a read path. `0x13E90`
+is more likely part of the erase or write machinery, which on arch 14 has to prepare internal
+flash because the config is copied there to execute.
+
+What survives the correction: the three bytes are an address, since they are loaded into
+`TBLPTR` somewhere, and the variables are shared, both READ_FLASH and WRITE_FLASH parsing into
+them. What does not: that this particular block is what READ_FLASH does, and with it the claim
+that READ_FLASH's read has been located at all. It has not.
 
 **Byte 1 is validated, and that is where the regions are.** `0x13DFE` returns 1 for accepted
 and 0 for rejected:
@@ -354,8 +362,11 @@ are two regions, and `0x1B50A` has not been read. The protocol is known to name 
 `MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH`, so either not all four are reachable on
 arch 14 or the mapping is not one selector per region.
 
-**The response is chunked at 63 bytes.** The remaining count is compared against `0x3F` and
-sent in pieces of that size:
+**Somewhere in the flash machinery, a 16-bit remaining count is chunked at 63 bytes.** This was
+published as READ_FLASH's response chunking, and that attribution is **withdrawn** for the same
+reason as the block above: which command reaches `0x0C9B2` was never established. What the code
+there does is not in doubt, and it is the same variable pair that READ_FLASH parses its last two
+bytes into, so those two bytes being a count is a strong inference. It is an inference.
 
 ```
 0c9b4: 3f 0e       MOVLW 0x3f
@@ -365,13 +376,19 @@ sent in pieces of that size:
 0c9be: d1 29       INCF 0xed1,W       ; otherwise what is left, plus one
 ```
 
-63 is exactly what length nibble `0xA` encodes, so this is the third independent part of the
-firmware to agree on the 64 byte report, after the descriptors and the length nibble mapping.
+63 is exactly what length nibble `0xA` encodes, which remains a real agreement between two
+parts of the firmware even with the attribution withdrawn: something in the flash path moves
+data in units that match the largest payload the command byte can describe.
 
 The `INCF` on the short path implies the counter holds one **less** than the number of bytes
 still to send, which is a common enough convention but rests on that single instruction here.
 Whether the count on the wire is already biased that way, or is decremented once on arrival,
 is not established.
+
+So the honest state of READ_FLASH: the request layout is derived, the address is proven to be
+an address, byte 1's validation and the region split are derived from the validator the parser
+itself calls, and **the response side is not located.** Finding it means following the state
+machine from state 4 rather than following the variables, which is the next thing to do.
 
 ### Still open
 

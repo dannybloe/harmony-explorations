@@ -43,7 +43,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Seven have been found and corrected so far. The most consequential is that key codes were read as
+Nine have been found and corrected so far. The two newest are the SFR map, which was the generic
+PIC18 layout rather than this family's and is section 18, and READ_FLASH's response, which was
+published as located when only the request had been. That last one has a lesson worth more than
+the fact: it came from following shared variables instead of following control flow, so the code
+found proved what the variables were and nothing about which command was running. Section 19.
+
+The most consequential is that key codes were read as
 `0x80 | (row << 3) | col`, a matrix address with bit 7 as a flag, when the top two bits are the
 event type and the rest is the keypad scanner's own scan code; that one had generated a whole
 paragraph of wrong reasoning about the 600's table not being able to describe its own keypad, and
@@ -1782,15 +1788,34 @@ doubling as a region selector. Following the switch confirmed it, and the confir
 kind worth preferring, because the firmware demonstrates the meaning rather than being
 consistent with it.
 
-The three address bytes are copied into `TBLPTRL`, `TBLPTRH` and `TBLPTRU`, bracketed by
-`BCF LATF,7` and `BSF LATF,7`. That fixes three things at once: the bytes are an address, the
-wire order is most significant first, and the target is the external config flash, because
-`LATF` bit 7 was established as its chip select in section 13 by a completely separate route.
+The three address bytes are copied into `TBLPTRL`, `TBLPTRH` and `TBLPTRU`. That fixes two
+things: the bytes are an address, and the wire order is most significant first.
 
-The count pair is compared against `0x3F` and the response goes out in 63 byte pieces. Which is
-the fourth time this document has landed on 64: the report descriptors declare a 64 byte report,
-the length nibble maps `0xA` to 63 payload bytes, 63 plus the command byte is 64, and now the
-read chunk is 63 too.
+**Correction, made one commit later.** The paragraph above originally said a third thing, that
+the target is the external config flash, because the `TBLPTR` load sits between `BCF LATF,7`
+and `BSF LATF,7` and `LATF` bit 7 is the flash chip select from section 13. The chip select
+bracket is real. Attributing it to READ_FLASH was not checked, and it does not survive
+checking: the routine it lives in, `0x13E90`, has one caller, behind a flag test, and its other
+branch calls `0x1B50A`, which sets `EECON1` to `FREE | WREN`. Those are the internal flash
+erase enable and write enable bits. A routine whose two branches are a read and an erase is not
+a read path, so `0x13E90` is more likely the erase or write machinery, which on arch 14 has to
+prepare internal flash because the config is copied there to run.
+
+The same correction takes the response chunking with it. A 16-bit remaining count is compared
+against `0x3F` and data moves in 63 byte pieces, on the same variable pair READ_FLASH parses
+its last two bytes into, so those bytes being a count is a strong inference. But which command
+reaches that code was never established, and calling it READ_FLASH's response was the same
+mistake twice in one commit.
+
+What the mistake was, precisely: **following variables instead of following control flow.**
+The argument variables are shared between commands, so finding code that uses them proves what
+the variables are and nothing about which command is running. The request side is safe because
+the parser is reached from the dispatch table, so its ownership is known. Locating the response
+means starting from state 4 in the state machine instead.
+
+63 matching the largest payload the length nibble can describe survives as an agreement between
+two parts of the firmware. What does not survive is calling it the fourth confirmation of the
+64 byte report, since the third and fourth were the same observation counted twice.
 
 Byte 1 is also validated, and that is where the regions turned out to live. Below `0x20` is an
 ordinary flash address. `0xFE` and `0xFF` select something else, with the low bit kept as a

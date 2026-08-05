@@ -229,6 +229,12 @@ class TestReadFlash(unittest.TestCase):
 
     Addresses are the 700 2.8 image. The argument variables are named by what they turn out to
     hold: the address triple is loaded straight into TBLPTR, which settles it.
+
+    Scope note, after a correction. Everything here is about the **request**: the parser, the
+    validator it calls, and the proof that the address triple is an address. The response side
+    was published as located and is not: see the correction in docs/usb-protocol.md. The two
+    tests below that touch 0x13E90 and 0x0C9B2 assert what that code does, not which command
+    it serves.
     """
 
     BASE = 0x9000
@@ -277,11 +283,14 @@ class TestReadFlash(unittest.TestCase):
         self.assertEqual(self.movff_at(0x13EBE), (self.ADDRESS_MID, 0xFF7))   # TBLPTRH
         self.assertEqual(self.movff_at(0x13EC2), (self.ADDRESS_HIGH, 0xFF8))  # TBLPTRU
 
-    def test_the_chip_select_brackets_the_read(self):
+    def test_the_chip_select_brackets_the_transfer(self):
         """
         LATF bit 7 is the external flash chip select, established in findings section 13. It
-        goes low before the address is loaded and high after the transfer, which is what makes
-        this the config flash read path rather than an internal table read.
+        goes low before the address is loaded and high after the transfer.
+
+        Which command this serves is NOT asserted. The routine's other branch calls 0x1B50A,
+        which sets EECON1 to FREE | WREN, an erase, so this is probably not a read path at all.
+        Pinned because the bracket itself is a fact worth keeping while the ownership is open.
         """
         code = lab.load('h700_code')
         before = disasm.format_instr(isa.decode(code, 0x13EB8 - self.BASE, self.BASE))
@@ -307,11 +316,13 @@ class TestReadFlash(unittest.TestCase):
         self.assertEqual(bound, 0xFFC0)
         self.assertEqual(0x10000 - bound, 64)
 
-    def test_the_count_is_chunked_at_the_payload_size(self):
+    def test_something_in_the_flash_path_chunks_at_the_payload_size(self):
         """
-        The remaining count is a 16-bit pair compared against 63 and sent 63 bytes at a time,
-        and 63 is exactly what length nibble 0xA encodes. Third independent agreement on the
-        64 byte report, after the descriptors and the length nibble mapping itself.
+        A 16-bit remaining count compared against 63 and moved 63 bytes at a time, on the same
+        variable pair READ_FLASH parses its last two bytes into. 63 is exactly what length
+        nibble 0xA encodes, so two parts of the firmware agree on the payload size.
+
+        Not asserted: that this is READ_FLASH's response. That attribution was withdrawn.
         """
         self.assertEqual(self.literal_at(0x0C9B4), 0x3F)
         self.assertEqual(self.literal_at(0x0C9C6), 0x3F)
