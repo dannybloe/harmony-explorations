@@ -181,14 +181,19 @@ class TestArch14UsesSpi(unittest.TestCase):
 
     def test_config_reads_go_through_the_mssp(self):
         """
-        0x1B9AC clocks a byte in through SSPBUF. That is hardware SPI, which means the arch
-        14 config is not memory mapped, which in turn is why the firmware has to be copied
-        into internal flash to run.
+        0x1B9AC clocks a byte in through SSP1BUF. That is hardware SPI, which means the
+        arch 14 config is not memory mapped, which in turn is why the firmware has to be
+        copied into internal flash to run.
+
+        The register was called SSPBUF here until the SFR table was rebuilt from the
+        PIC18F67J50 map. The address is the same 0xFC9; the part has two synchronous serial
+        ports, so the ports are now numbered and the config flash hangs off port 1.
         """
         code = lab.load('h700_code')
         text = '\n'.join(disasm.disassemble(code, self.BASE, 0x1B9AC, 4))
-        self.assertIn('SETF SSPBUF', text)
-        self.assertIn('MOVF SSPBUF,W', text)
+        self.assertIn('SETF SSP1BUF', text)
+        self.assertIn('MOVF SSP1BUF,W', text)
+        self.assertIn('BTFSS SSP1STAT,0', text)
 
     def test_chip_select_is_latf_bit_7(self):
         code = lab.load('h700_code')

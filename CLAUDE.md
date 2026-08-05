@@ -250,6 +250,16 @@ over the runner-up before trusting its answer.
   swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
   and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
   including a semantic check that does not depend on the datasheet.
+* **The SFR map is the PIC18F67J50 / 87J50 one, never the generic PIC18 map.** This family
+  moves the whole capture, compare and analogue block, and puts the USB registers at `0xF4C`
+  to `0xF65` where classic parts put the parallel port. `UCON` is `0xF65`, `WDTCON` is
+  `0xFC0`, `CCP1CON` is `0xFBB`. The table here was the generic map until it was checked, and
+  eight of 93 names were wrong. Authoritative source, installed locally:
+  `$(brew --prefix)/share/gputils/header/p18f67j50.inc` and `p18f87j50.inc`. `docs/findings.md`
+  section 18.
+* **`WDTCON` bit 4 is `ADSHR`, and it changes what ten addresses mean.** Setting it swaps a
+  shadow register in, so the same address is `ADCON1` or `ANCON0` depending on a bit set two
+  instructions earlier. `disasm.py` tracks it; a hand reading of a listing must too.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.

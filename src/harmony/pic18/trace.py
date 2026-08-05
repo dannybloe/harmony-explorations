@@ -98,6 +98,8 @@ def report(hits: Dict[int, List[Access]], targets: Iterable[int]) -> Iterable[st
         yield '=== data 0x%03X (bank %d offset 0x%02X): %d accesses ===' % (
             t, t >> 8, t & 0xFF, len(found))
         for access in found:
-            yield '   %s' % access
+            # str() rather than '%s' %: Access is a namedtuple, so the % operator would
+            # take it as an argument tuple and fail with "not all arguments converted".
+            yield '   ' + str(access)
         if not found:
             yield '   none found (indirect access through FSR is not detected)'

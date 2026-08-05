@@ -332,25 +332,81 @@ def iter_instructions(code: bytes, base: int = 0, start: int = 0, end: Optional[
 # Special function registers
 # --------------------------------------------------------------------------------------
 
-# Standard PIC18 high-end SFR map. Confirm against the PIC18F67J50 datasheet before
-# relying on any single entry: this is the least independently verified table here.
+# The PIC18F67J50 / PIC18F87J50 SFR map, which is NOT the generic high-end PIC18 map.
+#
+# It was the generic map until it was checked, and eight of its 93 entries were wrong: this
+# family moves the whole CCP and ADC block, so 0xFBD reads as CCP1CON on a PIC18F4550 and is
+# CCPR1H here, and 0xFC0 is WDTCON rather than ADCON2. Worse, the USB registers sit at
+# 0xF4C to 0xF65 on this family against 0xF66 to 0xF7F on the classic parts, so the entire
+# USB block would have been mislabelled as parallel port and CCP registers. Nothing
+# published had depended on the wrong names, which was luck rather than process.
+#
+# Provenance: the gputils 1.5.2 register maps `p18f67j50.inc` and `p18f87j50.inc`, merged.
+# Addresses and register names are hardware facts, checkable against the Microchip
+# datasheet register file summary for either part.
+#
+# The two parts share one map, and the 80-pin PIC18F87J50 (the arch 12 candidate) adds
+# exactly six registers the 64-pin PIC18F67J50 lacks: PORTH, PORTJ, LATH, LATJ, TRISH and
+# TRISJ. They are included here, so a name resolving to one of those six on an arch 14
+# image means the address was not an SFR access at all.
 SFR: Dict[int, str] = {
+    # Parallel master port, and the USB module interleaved with it
+    0xF40: 'PMSTAT', 0xF41: 'PMSTATH', 0xF42: 'PMEL', 0xF43: 'PMEH',
+    0xF44: 'PMDIN2L', 0xF45: 'PMDIN2H', 0xF46: 'PMDOUT2L', 0xF47: 'PMDOUT2H',
+    0xF48: 'PMMODEL', 0xF49: 'PMMODEH', 0xF4A: 'PMCONL', 0xF4B: 'PMCONH',
+    0xF4C: 'UEP0', 0xF4D: 'UEP1', 0xF4E: 'UEP2', 0xF4F: 'UEP3',
+    0xF50: 'UEP4', 0xF51: 'UEP5', 0xF52: 'UEP6', 0xF53: 'UEP7',
+    0xF54: 'UEP8', 0xF55: 'UEP9', 0xF56: 'UEP10', 0xF57: 'UEP11',
+    0xF58: 'UEP12', 0xF59: 'UEP13', 0xF5A: 'UEP14', 0xF5B: 'UEP15',
+    0xF5C: 'UIE', 0xF5D: 'UEIE', 0xF5E: 'UADDR', 0xF5F: 'UCFG',
+    0xF60: 'UFRML', 0xF61: 'UFRMH', 0xF62: 'UIR', 0xF63: 'UEIR',
+    0xF64: 'USTAT', 0xF65: 'UCON',
+    0xF66: 'PMDIN1L', 0xF67: 'PMDIN1H', 0xF68: 'PMADDRL', 0xF69: 'PMADDRH',
+    0xF6A: 'CMSTAT',
+    # Second synchronous serial port
+    0xF6B: 'SSP2CON2', 0xF6C: 'SSP2CON1', 0xF6D: 'SSP2STAT', 0xF6E: 'SSP2ADD',
+    0xF6F: 'SSP2BUF',
+    # Capture/compare/PWM 4 and 5, timers 3 and 4, second USART
+    0xF70: 'CCP5CON', 0xF71: 'CCPR5L', 0xF72: 'CCPR5H',
+    0xF73: 'CCP4CON', 0xF74: 'CCPR4L', 0xF75: 'CCPR4H',
+    0xF76: 'T4CON', 0xF77: 'CVRCON', 0xF78: 'TMR4',
+    0xF79: 'T3CON', 0xF7A: 'TMR3L', 0xF7B: 'TMR3H',
+    0xF7C: 'BAUDCON2', 0xF7D: 'SPBRGH2', 0xF7E: 'BAUDCON1', 0xF7F: 'SPBRGH1',
+    # Ports. H and J exist only on the 80-pin part.
     0xF80: 'PORTA', 0xF81: 'PORTB', 0xF82: 'PORTC', 0xF83: 'PORTD', 0xF84: 'PORTE',
-    0xF85: 'PORTF', 0xF86: 'PORTG',
+    0xF85: 'PORTF', 0xF86: 'PORTG', 0xF87: 'PORTH', 0xF88: 'PORTJ',
     0xF89: 'LATA', 0xF8A: 'LATB', 0xF8B: 'LATC', 0xF8C: 'LATD', 0xF8D: 'LATE',
-    0xF8E: 'LATF', 0xF8F: 'LATG',
+    0xF8E: 'LATF', 0xF8F: 'LATG', 0xF90: 'LATH', 0xF91: 'LATJ',
     0xF92: 'TRISA', 0xF93: 'TRISB', 0xF94: 'TRISC', 0xF95: 'TRISD', 0xF96: 'TRISE',
-    0xF97: 'TRISF', 0xF98: 'TRISG',
+    0xF97: 'TRISF', 0xF98: 'TRISG', 0xF99: 'TRISH', 0xF9A: 'TRISJ',
+    0xF9B: 'OSCTUNE',
+    # Interrupts, flash self programming, first USART
+    0xF9C: 'RCSTA2',
     0xF9D: 'PIE1', 0xF9E: 'PIR1', 0xF9F: 'IPR1',
     0xFA0: 'PIE2', 0xFA1: 'PIR2', 0xFA2: 'IPR2',
-    0xFBA: 'CCP2CON', 0xFBB: 'CCPR2L', 0xFBC: 'CCPR2H',
-    0xFBD: 'CCP1CON', 0xFBE: 'CCPR1L', 0xFBF: 'CCPR1H',
-    0xFC0: 'ADCON2', 0xFC1: 'ADCON1', 0xFC2: 'ADCON0',
+    0xFA3: 'PIE3', 0xFA4: 'PIR3', 0xFA5: 'IPR3',
+    0xFA6: 'EECON1', 0xFA7: 'EECON2',
+    0xFA8: 'TXSTA2', 0xFA9: 'TXREG2', 0xFAA: 'RCREG2', 0xFAB: 'SPBRG2',
+    0xFAC: 'RCSTA1', 0xFAD: 'TXSTA1', 0xFAE: 'TXREG1', 0xFAF: 'RCREG1',
+    0xFB0: 'SPBRG1',
+    # Capture/compare/PWM 1 to 3. Not the infrared carrier: that is generated in software
+    # at 0x194A4, toggling PORTC bit 2 between measured delays.
+    0xFB1: 'CCP3CON', 0xFB2: 'CCPR3L', 0xFB3: 'CCPR3H',
+    0xFB4: 'ECCP3DEL', 0xFB5: 'ECCP3AS',
+    0xFB6: 'CCP2CON', 0xFB7: 'CCPR2L', 0xFB8: 'CCPR2H',
+    0xFB9: 'ECCP2DEL', 0xFBA: 'ECCP2AS',
+    0xFBB: 'CCP1CON', 0xFBC: 'CCPR1L', 0xFBD: 'CCPR1H',
+    0xFBE: 'ECCP1DEL', 0xFBF: 'ECCP1AS',
+    # Watchdog, analogue, first synchronous serial port. The config flash of the 600 and
+    # 700 is read over SSP1.
+    0xFC0: 'WDTCON', 0xFC1: 'ADCON1', 0xFC2: 'ADCON0',
     0xFC3: 'ADRESL', 0xFC4: 'ADRESH',
-    0xFC6: 'SSPCON1', 0xFC7: 'SSPSTAT', 0xFC9: 'SSPBUF',
+    0xFC5: 'SSP1CON2', 0xFC6: 'SSP1CON1', 0xFC7: 'SSP1STAT', 0xFC8: 'SSP1ADD',
+    0xFC9: 'SSP1BUF',
+    # Timers 1 and 2, comparators, oscillator
     0xFCA: 'T2CON', 0xFCB: 'PR2', 0xFCC: 'TMR2',
     0xFCD: 'T1CON', 0xFCE: 'TMR1L', 0xFCF: 'TMR1H',
-    0xFD0: 'RCON', 0xFD1: 'WDTCON', 0xFD3: 'OSCCON',
+    0xFD0: 'RCON', 0xFD1: 'CM2CON', 0xFD2: 'CM1CON', 0xFD3: 'OSCCON',
     0xFD5: 'T0CON', 0xFD6: 'TMR0L', 0xFD7: 'TMR0H', 0xFD8: 'STATUS',
     0xFD9: 'FSR2L', 0xFDA: 'FSR2H', 0xFDB: 'PLUSW2', 0xFDC: 'PREINC2',
     0xFDD: 'POSTDEC2', 0xFDE: 'POSTINC2', 0xFDF: 'INDF2',
@@ -365,22 +421,67 @@ SFR: Dict[int, str] = {
     0xFFC: 'STKPTR', 0xFFD: 'TOSL', 0xFFE: 'TOSH', 0xFFF: 'TOSU',
 }
 
+# Ten SFR addresses carry a second register, selected by ADSHR. Setting WDTCON<4> swaps
+# the shadow register in at the same address; clearing it swaps the primary back. So a
+# disassembly that ignores the bit reports the wrong register for these ten addresses.
+#
+# The firmware proves the mechanism rather than merely using it. In the 700 2.8 image at
+# 0x1B8BC, initialisation writes 0xFC1 and 0xFC2 twice with different values, once on each
+# side of `BSF WDTCON,4`, and the shadow values (0xF8 and 0xFF, every pin digital) are
+# exactly what ANCON0 and ANCON1 are set to at reset while ADCON0 and ADCON1 get plausible
+# converter settings:
+#
+#     1b8bc: CLRF  ADCON0        1b8c2: BSF   WDTCON,4
+#     1b8be: MOVLW 0x86          1b8c4: MOVLW 0xf8
+#     1b8c0: MOVWF ADCON1        1b8c6: MOVWF ANCON0
+#                                1b8c8: SETF  ANCON1
+#                                1b8cc: BCF   WDTCON,4
+#
+# ANCON0 and ANCON1 are therefore confirmed here. The other eight are the remaining
+# alias pairs in the same register map, unexercised by any image read so far.
+ADSHR_REGISTER = 0xFC0  # WDTCON
+ADSHR_BIT = 4
+
+SFR_SHADOW: Dict[int, str] = {
+    0xFC1: 'ANCON0',    # confirmed from the 700 image
+    0xFC2: 'ANCON1',    # confirmed from the 700 image
+    0xFCB: 'MEMCON',    # 80-pin part only, the external memory bus of the arch 12 remote
+    0xFCC: 'PADCFG1',
+    0xFCD: 'ODCON3',
+    0xFCE: 'ODCON2',
+    0xFCF: 'ODCON1',
+    0xFD1: 'CM2CON1',
+    0xFD2: 'CM1CON1',
+    0xFD3: 'REFOCON',
+}
+
 # In the access bank (a=0), offsets from this value upwards address the SFR page rather
 # than bank 0 general purpose registers.
 ACCESS_BANK_SFR_START = 0x60
 
 
-def resolve_file(f: int, a: int, bsr: Optional[int] = None) -> tuple[Optional[int], str]:
+def sfr_name(addr: int, adshr: bool = False) -> str:
+    """Name an SFR address, honouring the ADSHR shadow set when that bit is set."""
+    if adshr and addr in SFR_SHADOW:
+        return SFR_SHADOW[addr]
+    return SFR.get(addr, 'sfr%03X' % addr)
+
+
+def resolve_file(f: int, a: int, bsr: Optional[int] = None,
+                 adshr: bool = False) -> tuple[Optional[int], str]:
     """Resolve a file operand to (data_address, display_name).
 
     With a=0 the operand is in the access bank: below `ACCESS_BANK_SFR_START` it is a
     bank 0 GPR, at or above it the SFR page. With a=1 the bank comes from BSR, which a
     linear scan can only know if it has seen a `MOVLB`; pass `bsr=None` when unknown.
+
+    `adshr` names the shadow register at the ten shared addresses. The address returned is
+    the same either way, since the two views share it.
     """
     if a == 0:
         if f >= ACCESS_BANK_SFR_START:
             addr = 0xF00 | f
-            return addr, SFR.get(addr, 'sfr%03X' % addr)
+            return addr, sfr_name(addr, adshr)
         return f, '0x%02x' % f
     if bsr is None:
         return None, '0x%02x,B' % f

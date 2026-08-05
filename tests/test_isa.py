@@ -132,5 +132,79 @@ class TestKnownInstructions(unittest.TestCase):
         self.assertEqual(dec(0x010D).fields['k'], 0xD)
 
 
+class TestSfrMapIsTheJ50FamilyNotTheGenericOne(unittest.TestCase):
+    """
+    The SFR table was the generic high-end PIC18 map and eight names were wrong here.
+
+    Each address below sits at a different register on a classic part such as the
+    PIC18F4550, so a regression to the generic map fails this test rather than quietly
+    producing a readable but wrong listing. The USB block matters most: it is twenty six
+    registers, and on the classic map those addresses are parallel port and CCP registers,
+    so a whole USB driver would read as something else entirely.
+    """
+
+    def test_usb_registers_are_where_this_family_puts_them(self):
+        self.assertEqual(isa.SFR[0xF65], 'UCON')     # 0xF6D on the classic map
+        self.assertEqual(isa.SFR[0xF64], 'USTAT')
+        self.assertEqual(isa.SFR[0xF62], 'UIR')
+        self.assertEqual(isa.SFR[0xF5F], 'UCFG')
+        self.assertEqual(isa.SFR[0xF5E], 'UADDR')
+        self.assertEqual(isa.SFR[0xF4C], 'UEP0')     # 0xF70 on the classic map
+        self.assertEqual(isa.SFR[0xF5B], 'UEP15')
+
+    def test_the_moved_ccp_and_analogue_block(self):
+        self.assertEqual(isa.SFR[0xFBB], 'CCP1CON')  # generic map says CCPR2L
+        self.assertEqual(isa.SFR[0xFBC], 'CCPR1L')   # generic map says CCPR2H
+        self.assertEqual(isa.SFR[0xFBD], 'CCPR1H')   # generic map says CCP1CON
+        self.assertEqual(isa.SFR[0xFC0], 'WDTCON')   # generic map says ADCON2
+        self.assertEqual(isa.SFR[0xFD1], 'CM2CON')   # generic map says WDTCON
+
+    def test_no_adcon2_on_this_family(self):
+        """A part with WDTCON at 0xFC0 has no room for ADCON2, so the name must be gone."""
+        self.assertNotIn('ADCON2', isa.SFR.values())
+
+    def test_the_eighty_pin_extras_are_present(self):
+        """PORTH, PORTJ and their latch and direction registers exist on the 87J50 only."""
+        for addr, name in ((0xF87, 'PORTH'), (0xF88, 'PORTJ'), (0xF90, 'LATH'),
+                           (0xF91, 'LATJ'), (0xF99, 'TRISH'), (0xF9A, 'TRISJ')):
+            self.assertEqual(isa.SFR[addr], name)
+
+
+class TestAdshrSelectsAShadowRegister(unittest.TestCase):
+    """
+    WDTCON bit 4 swaps a second register in at ten addresses.
+
+    Confirmed from the 700 2.8 image at 0x1B8BC, which writes 0xFC1 and 0xFC2 on both
+    sides of the bit with different values. Without this, initialisation appears to write
+    ADCON1 twice and contradict itself.
+    """
+
+    def test_the_bit_is_wdtcon_four(self):
+        self.assertEqual(isa.ADSHR_REGISTER, 0xFC0)
+        self.assertEqual(isa.SFR[isa.ADSHR_REGISTER], 'WDTCON')
+        self.assertEqual(isa.ADSHR_BIT, 4)
+
+    def test_shadow_names_replace_primary_names_at_the_shared_addresses(self):
+        self.assertEqual(isa.sfr_name(0xFC1, adshr=False), 'ADCON1')
+        self.assertEqual(isa.sfr_name(0xFC1, adshr=True), 'ANCON0')
+        self.assertEqual(isa.sfr_name(0xFC2, adshr=False), 'ADCON0')
+        self.assertEqual(isa.sfr_name(0xFC2, adshr=True), 'ANCON1')
+
+    def test_unshared_addresses_ignore_the_bit(self):
+        self.assertEqual(isa.sfr_name(0xF65, adshr=True), 'UCON')
+
+    def test_every_shadow_address_also_has_a_primary_register(self):
+        for addr in isa.SFR_SHADOW:
+            self.assertIn(addr, isa.SFR, hex(addr))
+
+    def test_resolve_file_passes_the_bit_through(self):
+        # MOVWF 0xC1 with a=0 is 0x6EC1: the access bank, so the SFR page.
+        instr = dec(0x6EC1)
+        self.assertEqual(isa.resolve_file(instr.fields['f'], instr.fields['a'],
+                                          adshr=False), (0xFC1, 'ADCON1'))
+        self.assertEqual(isa.resolve_file(instr.fields['f'], instr.fields['a'],
+                                          adshr=True), (0xFC1, 'ANCON0'))
+
+
 if __name__ == '__main__':
     unittest.main()

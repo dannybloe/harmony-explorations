@@ -33,10 +33,12 @@ the source material listed above. No insider information, no hardware probing, n
 any remote: it is offline analysis of files, which means every claim in it is independently
 checkable and should be checked. Verification method is shown alongside the conclusions
 rather than just asserted, most importantly the calibration table in section 5 and the
-numeric closure in section 13. Highest-risk items, in order: the SFR map assumes the standard
-PIC18 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch
-12 part number is inferred, not read off a board. Errors are documented where they occurred
-rather than quietly fixed, so the rest can be calibrated against them.
+numeric closure in section 13. The highest-risk item used to be that the SFR map assumed the
+standard PIC18 high-end register layout rather than the PIC18F67J50 map specifically. That
+risk was real: eight of 93 names were wrong, and the whole USB register block was at the
+wrong addresses. Section 18 has the correction. The remaining one is that the arch 12 part
+number is inferred, not read off a board. Errors are documented where they occurred rather
+than quietly fixed, so the rest can be calibrated against them.
 
 Seven have been found and corrected so far. The most consequential is that key codes were read as
 `0x80 | (row << 3) | col`, a matrix address with bit 7 as a flag, when the top two bits are the
@@ -786,19 +788,25 @@ The encoder gets its data through two accessors, `0x10A46` (one byte, 95 referen
 `0x18DBC` is `GOTO 0x1B9AC`, and:
 
 ```
-1b9ac: c9 68       SETF SSPBUF        ; clock out 0xFF to clock a byte in
-1b9ae: c7 a0 BTFSS 0xc7,0
-1b9b0: fe d7       BRA 0x1b9ae        ; wait
-1b9b2: c9 50       MOVF SSPBUF,W      ; the byte
+1b9ac: c9 68       SETF SSP1BUF         ; clock out 0xFF to clock a byte in
+1b9ae: c7 a0       BTFSS SSP1STAT,0     ; BF, so wait for the byte to arrive
+1b9b0: fe d7       BRA 0x1b9ae
+1b9b2: c9 50       MOVF SSP1BUF,W       ; the byte
 ```
 
 and the matching output primitive `0x1B984`:
 
 ```
-1b984: 9e 96       BCF PIR1,3         ; SSPIF
-1b986: c6 9e       BCF SSPCON1,7      ; WCOL
-1b988: c6 c3 c9 ff MOVFF 0x3c6,SSPBUF ; start transfer
+1b984: 9e 96       BCF PIR1,3           ; SSPIF
+1b986: c6 9e       BCF SSP1CON1,7       ; WCOL
+1b988: c6 c3 c9 ff MOVFF 0x3c6,SSP1BUF  ; start transfer
+1b98c: c6 be       BTFSC SSP1CON1,7     ; and check WCOL again afterwards
 ```
+
+These listings said `SSPBUF`, `SSPSTAT` and `SSPCON1` when first published. The registers
+and the addresses are unchanged; the part has two synchronous serial ports and the
+disassembler now numbers them, so the config flash reads over port 1. See section 18 for
+why the register table was rebuilt.
 
 That is the PIC18 **hardware MSSP in SPI mode**. `0x18CEC` is `BSF LATF,7` then
 `BCF LATF,7`, so **LATF bit 7 is the flash chip select**. `0x18D98` shifts
@@ -1519,6 +1527,119 @@ before anyone leans on it: arch 14's third most common opcode is `0x6C`, 2832 oc
 one instruction set with per architecture extensions rather than two encodings, but the meanings
 have to be read out of the arch 14 firmware. That is now the most valuable thing to look for while
 in there.
+
+## 18. The register map was the wrong one, and there is a shadow register set
+
+This section is a correction, and the correction was pre-announced: the intro has listed the
+SFR map as the highest-risk item in this document since it was written, because the table in
+`src/harmony/pic18/isa.py` was the generic high-end PIC18 layout rather than the map of the
+part actually in these remotes. Going into the USB work meant needing the USB registers, and
+that is the point at which the risk was checked instead of restated.
+
+**Eight of 93 names were wrong.** The PIC18F67J50 and PIC18F87J50 move the whole capture,
+compare and analogue block relative to a classic part such as the PIC18F4550:
+
+| Address | Was named | Actually is |
+|---|---|---|
+| `0xFBA` | CCP2CON | ECCP2AS |
+| `0xFBB` | CCPR2L | CCP1CON |
+| `0xFBC` | CCPR2H | CCPR1L |
+| `0xFBD` | CCP1CON | CCPR1H |
+| `0xFBE` | CCPR1L | ECCP1DEL |
+| `0xFBF` | CCPR1H | ECCP1AS |
+| `0xFC0` | ADCON2 | WDTCON |
+| `0xFD1` | WDTCON | CM2CON |
+
+Capture and compare module 2 is at `0xFB6` to `0xFBA` on this family, so the old table's
+`CCP2CON` and `CCPR2L` names were pointing at module 1's registers, and its `CCP1CON` was
+pointing at a data register.
+
+**The USB block was worse than wrong, it was absent.** On this family the USB registers sit
+at `0xF4C` to `0xF65`, where the generic map puts the parallel master port and the capture
+and compare registers. So `UCON` is `0xF65`, not the `0xF6D` of the classic parts, and any
+attempt to read the USB driver with the old table would have labelled twenty six USB
+registers as something else entirely and produced a listing that read perfectly.
+
+Nothing published had depended on the eight wrong names, which was luck rather than process:
+the only SFR names quoted in this document were port, interrupt and serial port registers,
+which the two maps agree on. The listings in section 13 now say `SSP1BUF` where they said
+`SSPBUF`, at the same address `0xFC9`. That is a naming change and not a correction: the part
+has two synchronous serial ports, so they are numbered, and the config flash hangs off port
+one.
+
+Provenance for the new table is the gputils 1.5.2 register maps `p18f67j50.inc` and
+`p18f87j50.inc`, merged, which is checkable against the register file summary in either
+datasheet. Addresses and register names are hardware facts.
+
+### The 80-pin part adds exactly six registers
+
+Merging the two maps is safe because they differ in six entries, all of them the extra port
+on the larger package: `PORTH`, `PORTJ`, `LATH`, `LATJ`, `TRISH`, `TRISJ`. A useful side
+effect for reading the arch 12 image: those six names resolving anywhere in an arch 14 image
+would mean the address was not an SFR access at all.
+
+### ADSHR: ten addresses carry two registers
+
+The more interesting half. `WDTCON` bit 4 is `ADSHR`, and setting it swaps a second register
+in at ten shared addresses. A disassembly that ignores the bit reports the wrong register
+there, with no sign that anything is wrong.
+
+The firmware does not merely use the mechanism, it demonstrates it. Port initialisation in
+the 700 2.8 image writes the same two addresses twice, once on each side of the bit:
+
+```
+1b8bc: c2 6a       CLRF ADCON0
+1b8be: 86 0e       MOVLW 0x86
+1b8c0: c1 6e       MOVWF ADCON1        ; converter settings
+1b8c2: c0 88       BSF WDTCON,4        ; ADSHR = 1
+1b8c4: f8 0e       MOVLW 0xf8
+1b8c6: c1 6e       MOVWF ANCON0        ; same address as ADCON1
+1b8c8: c2 68       SETF ANCON1         ; same address as ADCON0
+1b8ca: c0 8e       BSF WDTCON,7        ; REGSLP, unrelated
+1b8cc: c0 98       BCF WDTCON,4        ; ADSHR = 0
+```
+
+Read without `ADSHR`, this block writes `ADCON1` twice with different values two
+instructions apart and contradicts itself. Read with it, the shadow values are exactly what
+`ANCON0` and `ANCON1` are set to when every pin is configured digital, `0xF8` and `0xFF`,
+while `ADCON0` and `ADCON1` get plausible converter settings. That closure confirms both the
+mechanism and those two register identities from the image alone.
+
+The ten shared addresses, primary name first: `0xFC1` ADCON1 / **ANCON0**, `0xFC2` ADCON0 /
+**ANCON1**, `0xFCB` PR2 / MEMCON, `0xFCC` TMR2 / PADCFG1, `0xFCD` T1CON / ODCON3, `0xFCE`
+TMR1L / ODCON2, `0xFCF` TMR1H / ODCON1, `0xFD1` CM2CON / CM2CON1, `0xFD2` CM1CON / CM1CON1,
+`0xFD3` OSCCON / REFOCON. Only the two in bold are confirmed from an image; the rest are the
+remaining alias pairs in the same register map and are unexercised by anything read so far.
+
+`MEMCON` is the external memory bus controller, which exists only on the 80-pin part, and
+the arch 12 remote is the one whose config is memory-mapped. That makes `0xFCB` under
+`ADSHR` a place worth watching in the One image. It is not usable as proof of the part
+number, because the same address is `PR2` in the primary view and Timer 2 is a far more
+ordinary thing for this firmware to touch.
+
+The disassembler now tracks `ADSHR` the way it tracks `BSR`, with one difference recorded in
+the code: `BSR` is invalidated at every branch, because a linear scan cannot follow it,
+while `ADSHR` is an ordinary register bit that survives control flow. It is assumed clear at
+an arbitrary entry point, which is what it is after reset, and every window in the image so
+far is a few instructions long and closes with a matching `BCF`.
+
+Three other sites set and clear the bit with **nothing in between**: `0xF93C`, `0xFB2A` and
+one at `0x1B896` that only clears it. A set immediately followed by a clear cannot be
+selecting a register, so something else is going on, plausibly an erratum workaround, since
+the surrounding code at `0xF93C` is an analogue channel select. Recorded as unexplained
+rather than explained away.
+
+### What this cost and what it bought
+
+Cost: nothing published, one afternoon. Bought: `tests/test_isa.py` now fails if the table
+regresses towards the generic map, checking the USB block, the moved capture and compare
+block, the absence of `ADCON2` on a part that has `WDTCON` at `0xFC0`, and the six 80-pin
+extras. `tests/test_disasm.py` pins the `ADSHR` window above, byte for byte, as a listing
+whose only coherent reading needs the bit.
+
+Also fixed while in there: `trace.report` crashed on any address that had hits, because it
+formatted a namedtuple with `%s`. So `pic18_trace.py`, described in the project brief as the
+highest-value tool here, could only report addresses with no accesses at all.
 
 ## References
 
