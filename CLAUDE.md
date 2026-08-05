@@ -117,6 +117,7 @@ README.md                       front page: status, headline findings, quickstar
 docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track
+docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -142,12 +143,13 @@ The library:
 
 ```
 harmony/pic18/isa.py       THE opcode table and decoder. Single source of truth.
-harmony/pic18/disasm.py    text formatting, SFR name resolution, bank tracking
+harmony/pic18/disasm.py    text formatting, SFR names, bank and ADSHR tracking
 harmony/pic18/trace.py     find every access to a data address
 harmony/pic18/loadaddr.py  determine the base address of an unknown image
 harmony/firmware.py        image header, checksum, size recovery from truncated dumps
 harmony/gspm.py            the config container
 harmony/ezfile.py          .hfw / EZUp / EZHex readers, and the Data.xml scrubber
+harmony/usbdesc.py         find and decode the USB descriptor block in an image
 ```
 
 **Never add a second opcode table.** Everything decodes through `isa.py`. The reason is in
@@ -222,6 +224,7 @@ tools/gspm_parse.py    <file> [--json]
 tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/corpus.py        [lab_directory] [--json]
+tools/usbdesc.py       <file> <base> [--raw] [--json]
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three
