@@ -2,10 +2,11 @@
 
 **Status: in progress.** The transport is complete, quoted from the device's own descriptors and
 confirmed against the Harmony 600 on the bench. The command layer has its dispatch table, its
-length nibble mapping, its state machine, and the request and response layouts of the three
-commands a read-only application needs: `GET_VERSION`, `READ_FLASH` and `READ_MISC`. Live RAM
-over USB is confirmed. `WRITE_FLASH`, `ERASE_FLASH` and `START_IRCAP` are not laid out, and the
-`MISC` write sub-commands are open. Section 3 lists what is missing. This document is the
+length nibble mapping, its state machine, **the request layout of every command**, and the
+response layout of the three a read-only application needs: `GET_VERSION`, `READ_FLASH` and
+`READ_MISC`. Live RAM over USB is confirmed, in both directions. Event injection is not
+available. What remains is response layouts for the three write-side commands, and two
+identification questions. Section 3 lists them. This document is the
 deliverable of step 3 of `docs/roadmap.md`, and it is being written as each part is
 established rather than at the end.
 
@@ -294,6 +295,35 @@ that payload byte selects the kind of reset. Sub-command `0x05` is the one that 
 `0x0BDA8`, which is what makes that row an internal continuation rather than a command a host
 can send directly.
 
+### Every command's request, in one table
+
+Derived by walking each parser from its dispatch target and recording where each byte read
+from the packet is stored. Each parser is bounded by the next parser's entry address, which is
+a branch target and therefore a hard limit for the linear prologue. An earlier version of this
+scan had no such bound and ran one handler into the next, reporting eight argument bytes for
+READ_FLASH instead of five.
+
+| Command | Bytes | Layout |
+|---|---|---|
+| `0x10` GET_VERSION | none established | parsed inline in the callback, see below |
+| `0x30` WRITE_FLASH | 5 | 24-bit address, 16-bit count. **Identical to READ_FLASH** |
+| `0x50` READ_FLASH | 5 | 24-bit address, 16-bit count |
+| `0x70` START_IRCAP | **0** | no arguments at all |
+| `0xA0` WRITE_MISC | 5 | selector, 16-bit address, 16-bit value |
+| `0xB0` READ_MISC | 3 | selector, 16-bit address |
+| `0xD0` ERASE_FLASH | **3** | 24-bit address only, no count |
+| `0x05` internal | 3 | three bytes, unidentified |
+
+Two of those are worth stating on their own.
+
+**WRITE_FLASH takes the same five bytes as READ_FLASH**, into the same variables, so a host
+implementation can share the encoder, and the validator at `0x13DFE` is called by both, so the
+region rules below apply to writes too.
+
+**ERASE_FLASH takes an address and no length.** The erase granularity is therefore whatever the
+hardware sector size is, not something the host chooses. That matters for the write rails: an
+erase cannot be scoped by the caller, so scoping has to come from refusing addresses.
+
 ### GET_VERSION
 
 **Request: `0x10 | length nibble`.** The parser is inline in the USB callback at `0x0BDFE`
@@ -387,9 +417,53 @@ number is right for another architecture is not established, and this is exactly
 doctrine derives rather than adopts: taking `0x06` on faith would have produced a read of the
 wrong thing that still returned a plausible byte.
 
-Not yet answered: `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT`, which would be writes rather than
-reads. WRITE_MISC's executor only acknowledges, so its selector handling is elsewhere and has
-not been found.
+### WRITE_MISC, and the answer on event injection
+
+**Request: `0xA0 | length nibble`, then five bytes**: a selector, a 16-bit address and a 16-bit
+value. WRITE_MISC parses into bank 13 variables where READ_MISC uses bank 14, so the two are not
+mirror images in the firmware even though they are in the protocol. Its executor at `0x0CB6E`
+only acknowledges, replying `0xF0` then `0xA0`; the work is done at parse time, and the selector
+chain is at `0x0C3AA`.
+
+**Nine selectors are serviced**: `0x01`, `0x02`, `0x05`, `0x06`, `0x07`, `0x08`, `0x09`, `0x0A`,
+`0x0B`. Three of them settle open questions.
+
+**Selector `0x07` writes RAM**, exactly mirroring the read:
+
+```
+0c414: 5e cd e9 ff MOVFF 0xd5e,FSR0L
+0c418: 5f cd ea ff MOVFF 0xd5f,FSR0H
+0c41c: 61 cd ef ff MOVFF 0xd61,INDF0
+```
+
+So an arbitrary byte can be written into the data memory of a running remote over USB. It is not
+a flash write and nothing survives a power cycle, but it is a write to a live device and this
+project is read only, so it belongs in the rails rather than in the toolkit. See
+`docs/roadmap.md`.
+
+**Selector `0x09` is accepted and does nothing:**
+
+```
+0c440: 0d 01       MOVLB 0xd
+0c442: 01 0e       MOVLW 0x01
+0c444: 02 6f       MOVWF 0xd02      ; just the "packet handled" flag
+0c446: 42 d0       BRA 0x0c4cc      ; and out
+```
+
+**And `0x03` is not in the chain at all.** libconcord's header names `MISC_QUEUE_ACTION` as
+`0x03` and `MISC_QUEUE_EVENT` as `0x09`. On the strength of those names, arch 14 does not
+implement action queueing, and implements event queueing as a no-op that reports success. Either
+way **there is no event injection here**, so driving the remote from the host is not available
+and the button mapping experiment has to be done by hand at the keypad, as the roadmap already
+assumed.
+
+That conclusion carries the same caveat as everywhere else in this document: the names are
+upstream's, and upstream's `MISC_RAM 0x06` was already wrong for this architecture. What is
+established from the image is that `0x09` is a no-op and `0x03` is unhandled. Which capability
+those two numbers were meant to be is upstream's claim, not a finding here.
+
+Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`,
+so it is a second address space of some kind. Not identified.
 
 ### READ_FLASH
 
@@ -538,10 +612,8 @@ proximity: it needs following control flow into whatever sets `0xED3` on this pa
   remote from the host.
 * The response layout of each command, which means reading the main loop's state handlers
   rather than the parsers.
-* The request layout of WRITE_FLASH, ERASE_FLASH and START_IRCAP, each of which is a few
-  instructions in the same shape as READ_MISC above. READ_FLASH, READ_MISC and GET_VERSION are
-  done.
 * What GET_VERSION's twelve bytes are, which means reading `0x1422C`.
+* The response side of WRITE_FLASH, ERASE_FLASH and START_IRCAP. Their requests are done.
 * Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
   not.
 * Which region `0xFE` and `0xFF` select, which means reading `0x1B50A`.

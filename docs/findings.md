@@ -1885,8 +1885,44 @@ project's "derive rather than adopt" rule has paid: `0x06` taken on faith would 
 wrong thing and still returned a plausible byte, which is the failure mode that does not
 announce itself.
 
-Still open: `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT`, which would be writes. WRITE_MISC's
-executor only acknowledges, so its selector handling is somewhere else and has not been found.
+### The rest of the layouts, and no event injection
+
+WRITE_MISC's selector chain turned out to be at parse time, `0x0C3AA`, which is why the executor
+looked empty: it only acknowledges. **Nine selectors**, `0x01`, `0x02`, `0x05` to `0x0B`, and
+three of them close open questions.
+
+`0x07` **writes** an arbitrary data address, exactly mirroring the read:
+`MOVFF 0xd5e,FSR0L`, `MOVFF 0xd5f,FSR0H`, `MOVFF 0xd61,INDF0`. Volatile, so it cannot brick a
+remote, but it is a write to a live device and it is now in the safety rails in
+`docs/roadmap.md` and `CLAUDE.md` rather than in the toolkit.
+
+`0x09` sets the packet-handled flag and branches out, doing nothing. `0x03` is not in the chain
+at all. libconcord names those `MISC_QUEUE_EVENT` and `MISC_QUEUE_ACTION`, so on that naming
+**there is no event injection on arch 14**: driving the remote from the host is not available and
+the button mapping experiment stays a human at the keypad, which is what the roadmap assumed.
+The caveat is the same one this whole section keeps earning: the names are upstream's, and
+upstream's `MISC_RAM 0x06` was wrong here. What the image establishes is that `0x09` is a no-op
+and `0x03` is unhandled.
+
+The remaining request layouts came out of one derivation, each parser bounded by the next
+parser's entry address:
+
+| Command | Bytes | Layout |
+|---|---|---|
+| `0x30` WRITE_FLASH | 5 | 24-bit address, 16-bit count, **identical to READ_FLASH** |
+| `0x70` START_IRCAP | 0 | no arguments |
+| `0xA0` WRITE_MISC | 5 | selector, 16-bit address, 16-bit value |
+| `0xD0` ERASE_FLASH | 3 | 24-bit address, **no count** |
+
+The first version of that scan had no bound and ran each handler into the next, reporting eight
+argument bytes for READ_FLASH where five had already been derived by hand. The five were right.
+Catching it took comparing a scan against a hand reading of the same code, which is the argument
+for doing one of each rather than trusting either alone.
+
+Two of those rows have consequences beyond the protocol. WRITE_FLASH and READ_FLASH share their
+encoding and their validator, so region rules apply to writes as well as reads. And ERASE_FLASH
+takes no count, so an erase cannot be scoped by the caller and the only available bound is
+refusing the address.
 
 63 matching the largest payload the length nibble can describe survives as an agreement between
 two parts of the firmware. What does not survive is calling it the fourth confirmation of the

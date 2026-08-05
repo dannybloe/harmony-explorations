@@ -272,6 +272,118 @@ class TestTheStateMachine(unittest.TestCase):
         self.assertEqual(self.table()[0x04], 0x0C982)
 
 
+class TestEveryCommandsRequestLayout(unittest.TestCase):
+    """
+    How many bytes each command parses, and where each one goes.
+
+    Each parser is bounded by the next parser's entry address, which is a branch target and so a
+    hard limit for a linear prologue. Without that bound the scan ran one handler into the next
+    and reported eight argument bytes for READ_FLASH instead of five, which is why the bound is
+    part of the derivation rather than a tidy-up.
+
+    GET_VERSION is excluded: it is parsed inline in the USB callback with branches, so it has no
+    handler boundary to bound it with.
+    """
+
+    BASE = 0x9000
+    BYTE_READER = 0x172C6
+    EXPECTED = {
+        0x30: [0xED0, 0xECF, 0xECE, 0xED2, 0xED1],   # WRITE_FLASH: address, count
+        0x50: [0xED0, 0xECF, 0xECE, 0xED2, 0xED1],   # READ_FLASH: the same five
+        0x70: [],                                     # START_IRCAP: no arguments
+        0xA0: [0xD5D, 0xD5F, 0xD5E, 0xD61, 0xD60],   # WRITE_MISC: selector, address, value
+        0xB0: [0xED3, 0xECF, 0xECE],                 # READ_MISC: selector, address
+        0xD0: [0xED0, 0xECF, 0xECE],                 # ERASE_FLASH: address only
+        0x05: [0xD65, 0xD66, 0xD67],                 # the internal case
+    }
+
+    def arguments(self, command):
+        table = dispatch('h700_code')
+        handler = table[command]
+        later = sorted(a for a in table.values() if a > handler)
+        stop = later[0] if later else handler + 0x80
+        code = lab.load('h700_code')
+        addr, bank, out, after = handler, None, [], False
+        while addr < stop:
+            instr = isa.decode(code, addr - self.BASE, self.BASE)
+            if instr.category == isa.BANKSEL:
+                bank = instr.fields['k']
+            elif (instr.category == isa.ABS20 and instr.mnemonic == 'CALL'
+                    and instr.fields['target'] == self.BYTE_READER):
+                after = True
+            elif after and instr.mnemonic == 'MOVWF' and bank is not None:
+                out.append((bank << 8) | instr.fields['f'])
+                after = False
+            addr += 2 * instr.words
+        return out
+
+    def test_layouts(self):
+        for command, expected in self.EXPECTED.items():
+            self.assertEqual(self.arguments(command), expected,
+                             COMMANDS.get(command, 'internal'))
+
+    def test_write_flash_and_read_flash_take_the_same_five_bytes(self):
+        """So a host implementation encodes both the same way, and both are validated alike."""
+        self.assertEqual(self.arguments(0x30), self.arguments(0x50))
+
+    def test_erase_flash_takes_no_count(self):
+        """
+        Three bytes, an address and nothing else, so the erase granularity is the hardware's.
+        A safety rail consequence: an erase cannot be scoped by the caller, only refused.
+        """
+        self.assertEqual(len(self.arguments(0xD0)), 3)
+
+    def test_start_ircap_takes_nothing(self):
+        self.assertEqual(self.arguments(0x70), [])
+
+
+class TestWriteMisc(unittest.TestCase):
+    """
+    Nine selectors, and three of them settle open questions: an arbitrary RAM write, a no-op
+    where upstream names event queueing, and no action queueing at all.
+    """
+
+    BASE = 0x9000
+    SELECTOR_CHAIN = 0x0C3AA
+    RAM_WRITE = 0x07
+
+    def selectors(self):
+        return chains.chain_table(lab.load('h700_code'), self.BASE, self.SELECTOR_CHAIN)
+
+    def text(self, addr):
+        return disasm.format_instr(isa.decode(lab.load('h700_code'), addr - self.BASE,
+                                              self.BASE), bsr=0xD)
+
+    def test_nine_selectors(self):
+        self.assertEqual(sorted(self.selectors()),
+                         [0x01, 0x02, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B])
+
+    def test_selector_seven_writes_an_arbitrary_data_address(self):
+        """
+        The mirror of the RAM read. A write to a live remote, so it belongs behind the write
+        flag; this test exists so that fact cannot be lost, not to encourage using it.
+        """
+        self.assertEqual(self.selectors()[self.RAM_WRITE], 0x0C414)
+        self.assertEqual(self.text(0x0C414), 'MOVFF 0xd5e,FSR0L')
+        self.assertEqual(self.text(0x0C418), 'MOVFF 0xd5f,FSR0H')
+        self.assertEqual(self.text(0x0C41C), 'MOVFF 0xd61,INDF0')
+
+    def test_selector_nine_is_a_no_op(self):
+        """
+        It sets the packet-handled flag and branches out. Upstream names 0x09
+        MISC_QUEUE_EVENT, so on that naming there is no event injection on arch 14.
+        """
+        self.assertEqual(self.selectors()[0x09], 0x0C440)
+        self.assertEqual(self.text(0x0C442), 'MOVLW 0x01')
+        self.assertEqual(self.text(0x0C444), 'MOVWF 0xd02')
+        self.assertEqual(isa.decode(lab.load('h700_code'), 0x0C446 - self.BASE,
+                                    self.BASE).mnemonic, 'BRA')
+
+    def test_selector_three_is_not_serviced(self):
+        """Upstream names 0x03 MISC_QUEUE_ACTION. It is absent from the chain."""
+        self.assertNotIn(0x03, self.selectors())
+
+
 class TestGetVersion(unittest.TestCase):
     """Response code then twelve bytes out of a block another routine fills."""
 

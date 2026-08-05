@@ -238,7 +238,11 @@ Still to do, in the order the application needs them:
   calls `MISC_RAM`. So live RAM of a running remote is readable over USB, which is what replaces
   the deferred emulator, and the upstream number would have read the wrong thing while still
   returning a plausible byte. `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` are writes and are
-  still open: `WRITE_MISC`'s executor only acknowledges, so its selector handling is elsewhere.
+  answered too, and negatively. `WRITE_MISC`'s selector chain is at parse time and services nine
+  selectors. `0x07` **writes** an arbitrary data address, the mirror of the read, which is now in
+  the rails. `0x09` is accepted and does nothing, and `0x03` is not serviced, so on upstream's
+  naming there is **no event injection** on arch 14 and the button mapping experiment stays a
+  human at the keypad.
 * Work out which `READ_FLASH` PROM type covers which address range: `MCU_FLASH 0x01`,
   `MCU_EEPROM 0x02`, `MCU_ID 0x03`, `EXT_FLASH 0x04`. Arch 12 runs from external NOR mapped into
   program space, arch 14 from internal flash because its SPI part is not executable, so the two

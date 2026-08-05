@@ -100,6 +100,11 @@ document:
   is a failure, not a warning.
 * Recovery paths first: the safe mode config dumped per unit (`*-safe.bin`) and the hardwired
   reset key combination at `0x19120`.
+* **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes an arbitrary byte
+  into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
+  emulator. Volatile, so it cannot brick anything, but it is still a write to a live device and
+  it sits behind the same flag. `ERASE_FLASH` takes an address and **no** count, so an erase
+  cannot be scoped by the caller, only refused.
 
 ## Documents must not contain em-dashes or en-dashes
 
