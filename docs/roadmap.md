@@ -118,15 +118,31 @@ because the 600 dump is truncated by concordance. Other models are iterated on l
 src/harmony/            unchanged: PIC18 disassembler, tracer, load address, emulator later
 tools/                  unchanged: reverse engineering command line
 packages/codec/         TS: EZHex container, GSPM/AHCM/TPTP, records, round trip compiler
+packages/lab/           TS: locates the private lab directory, so TS tests can skip cleanly
 packages/usb/           TS: HID transport plus the Harmony command protocol
 apps/studio/            Electron: the UI
 tests/                  Python reverse engineering tests stay; TS tests live with their package
 docs/                   plus docs/usb-protocol.md and this roadmap
 ```
 
-Conventions: pnpm workspaces, `.nvmrc`, TypeScript strict, `vitest`. TS tests that need real
-dumps resolve `../lab` or `HARMONY_LAB` and skip cleanly when absent, mirroring `tests/lab.py`.
-Fixtures never enter git; checksums go in `reference/checksums.md`.
+Conventions: pnpm workspaces, `.nvmrc`, TypeScript strict, and **Node's own test runner rather
+than `vitest`**, which this plan named until the dependency tree was actually looked at. `vitest`
+installs 71 packages including `vite`, `rolldown`, `lightningcss` and `postcss`, a CSS toolchain,
+to run tests that read bytes out of firmware images. Node 24 runs TypeScript test files directly
+by stripping the types, so the whole tree is the compiler and its type definitions: three
+packages, and `make audit` reports on them. The cost is real but small: type stripping cannot
+erase enums, namespaces or parameter properties, so `erasableSyntaxOnly` is on and the compiler
+refuses them, and `node:test` has no skip-from-inside-the-test, so `packages/lab` returns a skip
+option instead. Revisit if `apps/studio` wants a browser-side runner; that is a decision for the
+package that needs it, not for the workspace.
+
+TS tests that need real dumps resolve `../lab` or `HARMONY_LAB` and skip cleanly when absent,
+mirroring `tests/lab.py`. The two fixture tables are asserted equal, because a golden vector the
+other suite cannot find is a test that passes without checking anything. Fixtures never enter
+git; checksums go in `reference/checksums.md`.
+
+`pnpm-lock.yaml` is committed. `package.json` carries ranges, so the lock file is the only thing
+between a range and an unreviewed dependency update.
 
 ## Milestones
 
@@ -268,8 +284,10 @@ Still to do, in the order the application needs them:
 
 ### Step 4: monorepo and the TS codec
 
-* Stand up pnpm workspaces, `packages/codec`, `packages/usb`, `apps/studio`, `vitest`, and a lab
-  fixture resolver.
+* **Done.** Stand up pnpm workspaces, `packages/codec`, `packages/lab` as the fixture resolver,
+  and the test and typecheck commands. `packages/usb` and `apps/studio` arrive with the work that
+  needs them, because a project with no input files is a build error rather than a placeholder.
+  See the conventions above for why the test runner is `node:test` and not `vitest`.
 * Port the 461 lines of container logic to `packages/codec`: EZHex/EZUp container, XML header with
   `BINARYDATASIZE` and the `0x69`-seeded XOR checksum, GSPM family header, derived base address,
   derived pointer count, LWJL, the IR parameter block.
@@ -367,8 +385,10 @@ Not optional, and they belong in the code rather than in a document:
 
 * `make test`, `make lint`, `make prose`, `make corpus` keep working unchanged; the Python suite
   gains arch 8 and arch 9 container cases.
-* `pnpm test` runs the TS suite. Every finding that lands in `packages/codec` also lands as a test
-  over a lab fixture, and skips cleanly without a lab.
+* `make ts` typechecks and runs the TS suite (`pnpm run typecheck`, `pnpm test`). Every finding
+  that lands in `packages/codec` also lands as a test over a lab fixture, and skips cleanly
+  without a lab. `make audit` reports known vulnerabilities in the dependency tree, and `make all`
+  runs everything but Ghidra.
 * Golden vectors shared between the Python and TS suites during the port window, so equivalence is
   proven rather than assumed.
 * Round trip harness: for every config in the corpus, decompile then recompile and assert byte

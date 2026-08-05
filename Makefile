@@ -9,6 +9,7 @@
 # checkout no environment variable is needed.
 
 PYTHON  ?= python3
+PNPM    ?= pnpm
 SRC     := src
 TESTS   := tests
 GHIDRA  ?= /opt/homebrew/Cellar/ghidra/12.1.2/libexec
@@ -16,15 +17,18 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit all clean
 
 help:
-	@echo "test         run the test suite (needs a lab directory for image-backed tests)"
+	@echo "test         run the Python test suite (needs a lab directory for image-backed tests)"
 	@echo "test-verbose same, one line per test"
 	@echo "lint         byte-compile everything, catching syntax errors"
 	@echo "prose        check documents for em-dashes and en-dashes"
 	@echo "corpus      inventory the dumps in the lab directory"
 	@echo "ghidra       build or refresh the Ghidra project (needs a lab directory)"
+	@echo "ts           typecheck and test the TypeScript packages"
+	@echo "audit        check the npm dependency tree for known vulnerabilities"
+	@echo "all          everything above except ghidra"
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TESTS)
@@ -51,6 +55,23 @@ corpus:
 
 ghidra:
 	@JAVA_HOME=$(JAVA_21) GHIDRA_HOME=$(GHIDRA) ./bin/setup-ghidra.sh
+
+# The TypeScript side. The test runner is Node's own, so the whole dependency tree is the
+# compiler plus its type definitions: nothing else is installed and nothing else can go stale.
+# Node's type stripping runs the sources directly, so `ts-test` does not need `ts-typecheck`
+# first; they check different things and both are wanted.
+ts: ts-typecheck ts-test
+
+ts-typecheck:
+	@$(PNPM) run typecheck && echo "typechecks clean"
+
+ts-test:
+	@$(PNPM) test
+
+audit:
+	@$(PNPM) audit
+
+all: lint prose test ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

@@ -138,13 +138,23 @@ bin/setup-ghidra.sh             build or refresh the Ghidra project
 samples/                        empty by policy
 ```
 
-Planned, not yet present, per `docs/roadmap.md` step 4:
+The TypeScript workspace, per `docs/roadmap.md` step 4:
 
 ```
 packages/codec/                 TS: the one config codec, container through compiler
-packages/usb/                   TS: HID transport plus the Harmony command protocol
-apps/studio/                    Electron: the application
+packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
+packages/usb/                   TS: HID transport plus the Harmony command protocol, planned
+apps/studio/                    Electron: the application, planned
 ```
+
+**The test runner is Node's own, not `vitest`.** Node 24 strips the types and runs a `.ts` test
+file directly, so the dependency tree is `typescript` plus `@types/node` and nothing else, where
+`vitest` brings 71 packages including a CSS toolchain. Two consequences that are enforced rather
+than remembered: `erasableSyntaxOnly` is on, so no enums, namespaces or parameter properties, and
+`node:test` cannot skip from inside a test, so `packages/lab` hands back a skip option
+(`skipUnless`) that the test declares up front. Never add a dependency without checking what it
+pulls in; `make audit` is the floor, not the whole check. `package.json` carries version ranges
+and `pnpm-lock.yaml` is committed, which is what keeps a range from becoming an unreviewed update.
 
 The library:
 
@@ -226,6 +236,9 @@ make lint          byte-compile everything
 make prose         check documents for em-dashes and en-dashes
 make corpus        inventory the dumps, and flag the undescribed ones
 make ghidra        build or refresh the Ghidra project
+make ts            typecheck and test the TypeScript packages
+make audit         check the npm dependency tree for known vulnerabilities
+make all           everything except ghidra
 ```
 
 ```

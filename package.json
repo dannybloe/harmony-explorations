@@ -1,0 +1,21 @@
+{
+  "name": "harmony-explorations",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Harmony config format research, and the application it is for",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test": "node --test 'packages/*/test/**/*.test.ts'",
+    "test:watch": "node --test --watch 'packages/*/test/**/*.test.ts'",
+    "typecheck": "tsc --build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "~5.9.3"
+  }
+}

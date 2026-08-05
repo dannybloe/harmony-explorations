@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/lab" },
+    { "path": "./packages/codec" }
+  ]
+}

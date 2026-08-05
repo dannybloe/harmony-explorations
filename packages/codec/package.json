@@ -1,0 +1,14 @@
+{
+  "name": "@harmony/codec",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The one Harmony config codec: container, sections, records",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}

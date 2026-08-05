@@ -36,3 +36,10 @@ work/
 *.pyc
 __pycache__/
 .DS_Store
+
+# Node. pnpm-lock.yaml is committed on purpose: it is what makes the version ranges in
+# package.json resolve to the same bytes on every machine, which is the only thing standing
+# between a range and an unreviewed dependency update.
+node_modules/
+dist/
+*.tsbuildinfo

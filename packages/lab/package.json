@@ -1,0 +1,14 @@
+{
+  "name": "@harmony/lab",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Locates the private lab directory, so tests skip cleanly without it",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}
