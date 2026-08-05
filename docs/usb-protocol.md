@@ -918,6 +918,28 @@ offset at `0xFFC0` and a 62 byte read from there ends at `0xFFFD`, so **the last
 page cannot be read** by this path. They came from the truncated dump instead, and they are inside
 the checksum that verifies.
 
+#### A third prediction, for the second Harmony One
+
+The One's internal dump rests on its own three checksums and nothing else, because arch 12 keeps no
+copy of that memory in any package. A second Harmony One running the same firmware would supply what
+the 600 had all along: an independent copy.
+
+Written down before it is attached.
+
+| Predicted | What it would settle |
+|---|---|
+| both pages byte identical to the spare's, **except** the identity block at `0xFF` `+0xF400`, the record at `+0xF640` and the four bytes at `+0xF580` | that the pages are firmware, not per unit state |
+| its own three GUIDs from `concordance -i`, at `+0x00`, `+0x10`, `+0x20` | the identity block on a third unit |
+| version block fields 8 and 9 both unchanged, `0x34` and `0x16` | that field 9 tracks the image and not the unit |
+
+The first row is the one with teeth, because it predicts an exact set of exceptions. Anything
+differing outside those three regions falsifies "this is the firmware" and means part of what was
+read is per unit state that happens to look like code.
+
+One thing it cannot settle: whether the serial field is genuinely unused. It is `0xEE` filled on the
+spare One and on the 600, and the spare has never been programmed, so a programmed unit with a real
+serial there would be informative and a third `0xEE` would make it look like a field nobody writes.
+
 #### How the prediction did
 
 Recorded above before any of this was read:
