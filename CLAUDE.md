@@ -414,6 +414,18 @@ What still waits:
 pages, 70336 bytes, and its own header checksum verifies over all of them where the 65536 byte
 concordance dump does not. The 65534 bytes both can express agree byte for byte.
 
+**The operational One is fully read and fully verified**, and that is the answer to "do we have
+enough to restore it". Flash `0x000000` to `0x010000` matches its own safe mode dump, 65536 of 65536.
+The application firmware at `0x020000`, 60050 bytes, matches the image decoded from the 3.4 package,
+60050 of 60050, and verifies its own header checksum. The user config at `0x040000` matches its own
+`.EZHex`, 1672832 of 1672832. `0x010000` to `0x020000` and the tail above the firmware are erased.
+On arch 12 the application runs from **external NOR**, so `READ_FLASH` at `0x020000` is how you get
+it; internal memory holds the bootloader and support images, not the application.
+
+**The 600 is the least covered unit**: its internal `0xFE` page below `0x9000` and its `0xFF` page
+between `0xA300` and `0xF000` have never been read, and that is where its bootloader and safe mode
+code live.
+
 **The One's internal memory is dumped too**, both pages, `one-3.4-internal-page-fe.bin` and `-ff.bin`.
 It holds three images with the `48 47` header and all three verify their own checksums: 45356 bytes
 at `0xFE+0x1000`, 8438 at `0xFF+0x0000`, 634 at `0xFF+0xE000`. This is code no `.hfw` contains, since

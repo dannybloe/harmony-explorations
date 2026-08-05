@@ -76,32 +76,38 @@ test('a flash read matches the lab dump of the same remote, byte for byte', asyn
     return;
   }
   // Whichever bench remote is attached, compared against that unit's own dump. Two Harmony Ones
-  // exist and only the spare's dump is named here, so a programmed One reads as the wrong unit and
-  // skips rather than failing: this test is about the read path, not about identifying a remote.
+  // exist and they enumerate identically, so the unit is identified by which dump the read matches
+  // rather than by the product id. An earlier version picked the spare's dump for any One and
+  // failed on the other one, which is a test reporting on the wrong thing.
   const product = await attached();
   if (product !== HARMONY_600 && product !== HARMONY_ONE) {
     t.skip('exactly one bench remote has to be attached');
     return;
   }
-  const which = product === HARMONY_600 ? 'h600_config' : 'one_config_unprogrammed';
-  const dump = load(which);
-  if (dump === undefined) {
-    t.skip(`no lab dump named ${which} to compare against`);
-    return;
-  }
+  const candidates = product === HARMONY_600
+    ? ['h600_config']
+    : ['one_config', 'one_config_unprogrammed'];
 
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
   const remote = new HarmonyRemote(await openHarmony({ productId: product }), { timeoutMs: 500 });
   try {
     const read = await remote.readFlash(product === HARMONY_600 ? 0x030000 : 0x040000, 256);
-    // The container sits behind the EZHex XML header in the dump, so find it rather than assume an
-    // offset: conflating a file offset with a flash offset is a mistake this project has made.
-    const at = dump.findIndex(
-      (_b, i) =>
-        dump[i] === 0x47 && dump[i + 1] === 0x53 && dump[i + 2] === 0x50 && dump[i + 3] === 0x4d,
-    );
-    assert.ok(at >= 0, 'no GSPM container in the lab dump');
-    assert.deepEqual([...read], [...dump.subarray(at, at + read.length)]);
+    let matched: string | undefined;
+    for (const name of candidates) {
+      const dump = load(name);
+      if (dump === undefined) continue;
+      // The container sits behind the EZHex XML header in the dump, so find it rather than assume
+      // an offset: conflating a file offset with a flash offset is a mistake this project has made.
+      const at = dump.findIndex(
+        (_b, i) =>
+          dump[i] === 0x47 && dump[i + 1] === 0x53 && dump[i + 2] === 0x50 && dump[i + 3] === 0x4d,
+      );
+      if (at < 0) continue;
+      if (read.every((b, i) => b === dump[at + i])) matched = name;
+    }
+    assert.ok(matched !== undefined,
+      `the read matches none of the stored dumps (${candidates.join(', ')}), so either the ` +
+      'remote is a unit this lab has no dump of, or the read path is wrong');
   } finally {
     await remote.close();
   }
@@ -195,6 +201,33 @@ test('the 0xFF page carries image headers and a 64 byte identity block', async (
     assert.ok(block.subarray(0, 64).some((b) => b !== 0xff), 'identity block reads as erased');
     const erasedAround = await remote.readInternalMemory(0xff, 0xf480, 62);
     assert.ok(erasedAround.every((b) => b === 0xff), 'the region after the block is not erased');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('the firmware on the remote is the firmware in the archived package', async (t) => {
+  if (!HARDWARE || (await attached()) !== HARMONY_ONE) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a Harmony One attached');
+    return;
+  }
+  const image = load('one34_code');
+  if (image === undefined) {
+    t.skip('no decoded 3.4 image to compare against');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 2000 });
+  try {
+    // On arch 12 the application runs from external NOR at 0x020000, not from internal memory, and
+    // 0x020000 is inside the range READ_FLASH accepts. This is the widest check in the suite: 60050
+    // bytes off the device against an image decoded from a firmware package nobody here produced.
+    const read = new Uint8Array(image.length);
+    for (let off = 0; off < image.length; off += 16384) {
+      const n = Math.min(16384, image.length - off);
+      read.set(await remote.readFlash(0x020000 + off, n), off);
+    }
+    assert.deepEqual([...read], [...image], 'the remote is running a different build');
   } finally {
     await remote.close();
   }

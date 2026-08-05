@@ -33,16 +33,21 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `one-safemode-gspm-base0x2000-raw64k.bin` | `b21dff3e9588fab528e0af623a2e061de950092f74befe81f10b1e898cb17335` | `concordance --dump-safemode` from a Harmony One running fw 3.4 |
 | `600-0.2-code-base0x9000-TRUNCATED64k.bin` | `3c923a93216fabdb4f0ba19f7b5123192054c7c84e878e88a9d99d276a5e4db1` | `concordance --dump-safemode` from a Harmony 600 running fw 0.2 |
 | `600-0.2-code-base0x9000-COMPLETE.bin` | `8cf8422a3ec3ce6d8a313af72c4fb2eb3215884352fdedbb7ff060ed8f897841` | the same image, complete, read off the remote by `packages/usb` |
-| `one-3.4-internal-page-fe.bin` | `bc3b18dc0cdf913b7a21f1b46a072d3f9e78b8ddf9e8d3dae26db4008946cf96` | the Harmony One's `0xFE` internal page, read off the spare remote |
-| `one-3.4-internal-page-ff.bin` | not listed | the `0xFF` page, which holds that unit's identity block |
+| `one-3.4-internal-page-fe.bin` | `bc3b18dc0cdf913b7a21f1b46a072d3f9e78b8ddf9e8d3dae26db4008946cf96` | the Harmony One's `0xFE` internal page, **read off two separate remotes and byte identical** |
+| `one-3.4-internal-page-ff-spare.bin` | not listed | the `0xFF` page of the spare unit |
+| `one-3.4-internal-page-ff-oneop.bin` | not listed | the `0xFF` page of the operational unit |
 
-The last four come from specific physical remotes, so their checksums will not reproduce on
-anyone else's hardware. They are listed for the record, not as verification targets.
+Those come from specific physical remotes, so their checksums will not reproduce on anyone else's
+hardware. They are listed for the record, not as verification targets, with **one exception**:
+`one-3.4-internal-page-fe.bin` was read off two different Harmony Ones running firmware 3.4 and the
+two reads are byte identical over all 65534 bytes, so it is a property of the firmware rather than
+of a unit. Any Harmony One on 3.4 should reproduce it.
 
-**The One's `0xFF` page has no checksum here on purpose.** It holds the 64 byte identity block with
-that remote's serial GUIDs, and a checksum of it is a fingerprint of one specific device. The `0xFE`
-page is code, carries no identity, and is listed like the other per unit dumps: for the record, not
-as something anyone else can reproduce.
+**Neither `0xFF` page has a checksum here, on purpose.** They hold the 64 byte identity block with
+each remote's serial GUIDs, and a checksum of one is a fingerprint of one specific device. Comparing
+the two units showed the `0xFF` pages differ in 39 bytes and nowhere else: 32 inside the identity
+block, two at `+0xF582` and seven at `+0xF643`. Everything else on that page, and the whole `0xFE`
+page, is the same firmware.
 
 Both One pages are 65534 bytes rather than 65536. The firmware clamps the read offset at `0xFFC0`
 and a 62 byte read from there ends at `0xFFFD`, so the last two bytes of each page cannot be read at

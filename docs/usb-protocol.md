@@ -842,7 +842,8 @@ and `firmware.parse_header` reads all three without complaint:
 The `0xFF` `+0xE000` one opens with a run of `BRA` instructions, which is a jump table, so it is a
 callable library rather than a standalone program.
 
-**The `0xFF` page holds a 64 byte identity block at `+0xF400`**, and everything else from `0xF000` to
+**The `0xFF` page holds a 64 byte identity block at `+0xF400`**, confirmed on three remotes across
+both architectures, and everything else from `0xF000` to
 the `0xFFC0` bound is erased apart from four bytes at `+0xF580` and an eleven byte record at
 `+0xF640`. The identity block is four 16 byte fields:
 
@@ -939,6 +940,58 @@ read is per unit state that happens to look like code.
 One thing it cannot settle: whether the serial field is genuinely unused. It is `0xEE` filled on the
 spare One and on the 600, and the spare has never been programmed, so a programmed unit with a real
 serial there would be informative and a third `0xEE` would make it look like a field nobody writes.
+
+#### The second One, measured
+
+| Predicted | Measured |
+|---|---|
+| both pages identical except three regions | `0xFE` identical over all 65534 bytes; `0xFF` differs in **39 bytes and nowhere else** |
+| its three GUIDs at `+0x00`, `+0x10`, `+0x20` | all three, same offsets, same mixed endian order as the spare |
+| fields 8 and 9 unchanged, `0x34` and `0x16` | the version block is identical to the spare's, byte for byte |
+
+The 39 differing bytes are 32 inside the identity block, two at `+0xF582` and seven at `+0xF643`,
+which is the predicted set of exceptions and nothing outside it. So **the internal pages are
+firmware**, and section 23's caveat that the One's dump had no second copy to check against is
+answered: it has one now, another physical remote.
+
+Two things fell out of it.
+
+**The serial field is one nobody writes.** It is `0xEE` filled on all three remotes now, including
+both programmed ones, so the earlier reading that a blank meant "never programmed" was wrong: the
+spare being unprogrammed had nothing to do with it. The GUIDs that do carry values are the second
+and third.
+
+**Their byte order tracks the architecture.** Both Harmony Ones store the second and third GUID in
+mixed endian and the Harmony 600 stores them big endian, which one remote per architecture could not
+have separated from a per unit quirk.
+
+#### The arch 12 flash map, read end to end
+
+Asked whether the operational One's firmware had been downloaded, the honest answer at that point was
+no. Everything read so far was **internal** memory, and on arch 12 the application does not run from
+there: it runs from external NOR at `0x020000`. That address is inside the range `READ_FLASH` accepts,
+top byte below `0x20`, and it had simply never been asked for. Every config read had gone to
+`0x040000`.
+
+It reads. The whole of the One's low flash, measured on the operational unit:
+
+| Flash | Contents | Checked against |
+|---|---|---|
+| `0x000000` to `0x010000` | the safe mode region, with a `GSPM` container at `0x002000` | that unit's own `--dump-safemode`, **65536 of 65536** |
+| `0x010000` to `0x020000` | erased, all `0xFF` | |
+| `0x020000` to `0x02EA92` | the application firmware, 60050 bytes, version 3.4 | the image decoded from the 3.4 `.hfw`, **60050 of 60050**, and its own header checksum |
+| `0x02EA92` to `0x040000` | erased, all `0xFF` | |
+| `0x040000` onward | the user config, 1672832 bytes | that unit's own `.EZHex`, **1672832 of 1672832** |
+
+So the firmware running on the remote is bit for bit the firmware in the archived package, which is
+worth having on both sides: it confirms the read path over 60 KiB against an answer obtained without
+it, and it confirms that the archived package is what the device is actually running.
+
+**One number in that table came from a mistake worth recording.** The safe mode comparison first
+reported 13586 differing bytes. `concordance --dump-safemode` starts at flash zero and the read
+started at `0x002000`, so two windows 8192 bytes apart were laid on top of each other. Reading the
+same region as the dump gives 65536 of 65536. Nothing was wrong with either the dump or the read, and
+a mismatch whose first difference is at offset zero should have suggested alignment before corruption.
 
 #### How the prediction did
 

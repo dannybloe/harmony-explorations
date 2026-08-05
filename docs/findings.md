@@ -2434,6 +2434,12 @@ three of them:
 Three independent images each validating their own contents. Below the first sits the bootloader,
 from the reset vector at zero to `+0x1000`, with no header of its own.
 
+**A second Harmony One has since supplied the copy this lacked.** Its `0xFE` page is byte identical
+over all 65534 bytes and its `0xFF` page differs in 39 bytes, all of them inside the three regions
+predicted in advance: the identity block, two bytes at `+0xF582` and seven at `+0xF643`. So these
+pages are firmware rather than per unit state that happens to look like code, which is a claim one
+remote could not support however well its checksums verified.
+
 **That middle row places version block field 9.** Section 4 of `docs/usb-protocol.md` had it as
 unexplained, with the remark that `0x16` on the One "is the only value in the block that has no
 counterpart anywhere in concordance's output". True, and the counterpart was never going to be in
