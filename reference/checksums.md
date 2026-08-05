@@ -36,6 +36,8 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `one-3.4-internal-page-fe.bin` | `bc3b18dc0cdf913b7a21f1b46a072d3f9e78b8ddf9e8d3dae26db4008946cf96` | the Harmony One's `0xFE` internal page, **read off two separate remotes and byte identical** |
 | `one-3.4-internal-page-ff-spare.bin` | not listed | the `0xFF` page of the spare unit |
 | `one-3.4-internal-page-ff-oneop.bin` | not listed | the `0xFF` page of the operational unit |
+| `600-0.2-internal-page-fe.bin` | `d5c7abdfe4f7e41031cf294c77347730c7f99871316720514ec2640b656f1e0f` | the Harmony 600's `0xFE` page: bootloader, safe mode image, application firmware |
+| `600-0.2-internal-page-ff.bin` | not listed | the 600's `0xFF` page, which holds its identity block |
 
 Those come from specific physical remotes, so their checksums will not reproduce on anyone else's
 hardware. They are listed for the record, not as verification targets, with **one exception**:
@@ -49,7 +51,13 @@ the two units showed the `0xFF` pages differ in 39 bytes and nowhere else: 32 in
 block, two at `+0xF582` and seven at `+0xF643`. Everything else on that page, and the whole `0xFE`
 page, is the same firmware.
 
-Both One pages are 65534 bytes rather than 65536. The firmware clamps the read offset at `0xFFC0`
+**The 600's `*-safe.bin` is not a safe mode image.** It is byte identical to
+`600-0.2-code-base0x9000-TRUNCATED64k.bin`, that is, the application firmware from program `0x9000`
+cut off at 64 KiB. The 600's real safe mode is the 24320 byte image at internal `0xFE+0x1000`, inside
+`600-0.2-internal-page-fe.bin`. On the One the file with the same suffix does hold the safe mode
+container, so the suffix means different things per architecture.
+
+All internal pages are 65534 bytes rather than 65536. The firmware clamps the read offset at `0xFFC0`
 and a 62 byte read from there ends at `0xFFFD`, so the last two bytes of each page cannot be read at
 all. Three images inside them verify their own header checksums regardless, since none of them
 extends that far.

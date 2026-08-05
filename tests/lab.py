@@ -45,6 +45,10 @@ IMAGES = {
     # application from external NOR. The 0xFF page is deliberately absent from this table, since
     # it holds that unit's identity block.
     'one_internal_fe': 'one-3.4-internal-page-fe.bin',
+    # The 600's 0xFE page: bootloader, the safe mode image at +0x1000 that nothing had read before,
+    # and the application firmware from +0x9000. Its 0xFF page is absent for the same reason as the
+    # Ones': it holds the identity block.
+    'h600_internal_fe': '600-0.2-internal-page-fe.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
     # Config dumps out of the corpus. The two public sample sets are mirrored from

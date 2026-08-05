@@ -758,7 +758,7 @@ bytes exactly as predicted.
 | 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
 | 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
 | 7 | `0x02` | `0x34` | equals field 0 on both |
-| 8 | `0x00` | `0x34` | unidentified. Equals field 0 on the One and not on the 600 |
+| 8 | `0x00` | `0x34` | **the version of the image at `0xFF` `+0xE000`** |
 | 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000` in internal memory** |
 | 10 | `0x02` | `0x34` | equals field 0 on both |
 | 11 | `0x02` | `0x34` | equals field 0 on both |
@@ -769,7 +769,7 @@ the chip select low, characterised as "the flash id" from the image alone; field
 packed nibble shape the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence builds. So two of the six are
 agreements between a disassembly and a device.
 
-**Field 9 is placed, and by the thing this paragraph used to say did not exist.** It read: "`0x16` on
+**Fields 8 and 9 are both placed now, and by the thing this paragraph used to say did not exist.** It read: "`0x16` on
 the One is the only value in the block that has no counterpart anywhere in concordance's output".
 The counterpart is not in concordance's output, it is in the remote. Reading the One's internal
 memory in full turned up three images carrying the `48 47` header, and the one at `0xFF` `+0x0000`
@@ -777,14 +777,19 @@ has `0x16` in its header's version byte. On the 600 that address holds no image,
 600's field 9 is `0x00`. Two remotes, a distinctive value in a block otherwise full of `0x34`, and an
 absence matching an absence.
 
+**Field 8 was settled the same way, by the two reads named as the test.** Both candidate addresses
+were then read on the 600. It has an image at `0xFE` `+0x1000`, the safe mode one, 24320 bytes at
+version `0x02`, and its checksum verifies. And it has **nothing at all at `0xFF` `+0xE000`**, which is
+erased. Field 8 is `0x00`. So field 8 is the version of the image at `0xFF` `+0xE000`, and the
+alternative is ruled out rather than merely unfavoured: if field 8 named the safe mode image, the 600
+would report `0x02` there, and it does not.
+
 **What is still not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a
-reading: three copies of the firmware version is a strange thing for a version block to carry, and
-the likelier explanation is that they version other components which happen to match on both of these
-remotes. Field 8 is `0x34` on the One and `0x00` on the 600, so it behaves like field 9: a version
-that is present on one remote and absent on the other. The One has two more images versioned `0x34`,
-at `0xFE` `+0x1000` and `0xFF` `+0xE000`, and **neither of those addresses has been read on the 600**.
-If field 8 names one of them, the 600 has no image there. That is the next thing to read, and it is
-two reads.
+reading. Three copies of the firmware version is a strange thing for a version block to carry, and
+the likelier explanation is that they version other components which happen to match. One candidate
+is now visible: the safe mode image at `0xFE` `+0x1000` carries the same version as the application
+on both remotes, `0x34` and `0x02`, so a field naming it would be indistinguishable from a field
+naming the application. That is exactly why nothing is claimed.
 
 Concordance prints three things this block could plausibly carry that are still unplaced: firmware
 type, the third component of the hardware version, and `IRL, ORL, FRL`.

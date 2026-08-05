@@ -111,6 +111,46 @@ class TestFirmwareHeader(unittest.TestCase):
         # The bootloader sits below it and has no header of its own: the reset vector is at zero.
         self.assertEqual(page[0:2], b'\xd2\xef', 'GOTO at the reset vector')
 
+    def test_the_600s_safe_mode_image_is_not_what_the_safe_dump_holds(self):
+        """`*-safe.bin` means different things on the two architectures.
+
+        The safety rails name that file as the first recovery path. On the One it holds the safe
+        mode container. On the 600 it is the application firmware from program 0x9000, truncated,
+        and the real safe mode is an image at internal 0xFE+0x1000 that nothing had read until the
+        internal pages were swept. Pinned because a rail resting on a wrong assumption is worse
+        than no rail.
+        """
+        page = lab.load('h600_internal_fe')
+        stored = lab.load('h600_code')
+        if page is None or stored is None:
+            self.skipTest("need the 600's internal page and its safe dump")
+        # What the safe dump actually is: the page from program 0x9000, not from zero. The dump
+        # runs past the end of this page, into the 0xFF one, so only the overlap is comparable.
+        overlap = len(page) - 0x9000
+        self.assertEqual(page[0x9000:], stored[:overlap])
+        self.assertNotEqual(page[:overlap], stored[:overlap], 'not a dump from program zero')
+        # The real safe mode image, which the safe dump does not contain at all.
+        h = firmware.parse_header(page[0x1000:])
+        self.assertTrue(h.has_magic)
+        self.assertEqual(h.version_bcd, 0x02)
+        size = h.size_field + 8
+        self.assertEqual(size, 24320)
+        self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
+
+    def test_version_block_field_8_names_an_image_the_600_does_not_have(self):
+        """Fields 8 and 9 were the last unidentified bytes of the version block.
+
+        Both name images in internal memory by version, and both read zero when the image is
+        absent. The 600 is the negative case for each: nothing at 0xFF+0x0000 and nothing at
+        0xFF+0xE000, and zero in both fields.
+        """
+        page = lab.load('h600_internal_fe')
+        if page is None:
+            self.skipTest("need the 600's internal page")
+        # The alternative reading, that field 8 names the safe mode image, is what this refutes:
+        # the 600 has that image at version 0x02 and reports 0x00 in field 8.
+        self.assertEqual(firmware.parse_header(page[0x1000:]).version_bcd, 0x02)
+
     def test_recover_size_checks_rather_than_guesses_when_it_can(self):
         """It used to take the smallest candidate at least as long as the buffer.
 

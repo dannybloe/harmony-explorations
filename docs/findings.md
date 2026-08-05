@@ -2451,6 +2451,35 @@ Field 8 behaves the same way, `0x34` on the One against `0x00` on the 600, and t
 images versioned `0x34`. Neither of their addresses has been read on the 600, so the obvious test is
 two reads.
 
+### The 600's own pages, and a recovery path that was not what it said
+
+Both of the 600's pages were swept in full afterwards, which finished the map and turned up two
+things worth more than the bytes.
+
+**Field 8 fell out of it.** The section above left field 8 open with a named test: the One has images
+versioned `0x34` at `0xFE` `+0x1000` and `0xFF` `+0xE000`, the 600 reports `0x00`, so read those two
+addresses on the 600. The 600 has a safe mode image at `0xFE` `+0x1000`, 24320 bytes at version
+`0x02`, checksum verifying, and **nothing at `0xFF` `+0xE000`**. So field 8 is the version of the
+image at `0xFF` `+0xE000`, exactly parallel to field 9 and the image at `0xFF` `+0x0000`. The
+alternative is refuted rather than merely unfavoured: a field naming the safe mode image would read
+`0x02` on the 600.
+
+That closes "fields 8 and 9 of the version block", which has been on the open list since the block
+was first read.
+
+**And `-safe.bin` does not mean the same thing on the two architectures.** The safety rails in
+`CLAUDE.md` name the per unit `*-safe.bin` as the first recovery path. On the One that file is flash
+`0x000000` to `0x010000`, it contains the safe mode `GSPM` container at `0x002000`, and it has now
+been verified against the device byte for byte. On the 600 the file with the same suffix is **the
+application firmware from program `0x9000`, truncated at 64 KiB**, byte identical to the file this
+project already called `600-0.2-code-base0x9000-TRUNCATED64k.bin`. It is not a safe mode image and it
+never was.
+
+The 600's actual safe mode is the 24320 byte image at internal `0xFE` `+0x1000`, which nothing had
+read until now, because arch 14 keeps safe mode in internal flash where arch 12 keeps it in external
+NOR. A rail that said "restore from the safe dump" would have restored the application over the
+application and left the recovery path untouched. The rail is corrected and the image is in the lab.
+
 ### What it does not settle
 
 `MCU_ID` is still out of reach, per section 22, so the arch 12 part number stays inferred. The last

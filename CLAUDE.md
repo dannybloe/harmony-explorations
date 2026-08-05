@@ -103,8 +103,15 @@ document:
   id.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch
   is a failure, not a warning.
-* Recovery paths first: the safe mode config dumped per unit (`*-safe.bin`) and the hardwired
-  reset key combination at `0x19120`.
+* Recovery paths first, and **check what the file actually holds before trusting its name**. On
+  arch 12 `*-safe.bin` is flash `0x000000` to `0x010000`, which contains the safe mode `GSPM`
+  container at `0x002000`, and the One's has been verified against the device byte for byte. On
+  **arch 14 the file called `-safe.bin` is not a safe mode image at all**: the 600's is the
+  application firmware from program `0x9000`, truncated at 64 KiB, byte identical to
+  `600-0.2-code-base0x9000-TRUNCATED64k.bin`. Its real safe mode is the 24320 byte image at
+  internal `0xFE+0x1000`, which verifies its own checksum and was first read in August 2026. A rail
+  that says "restore from the safe dump" would have restored the wrong thing on arch 14.
+  The hardwired reset key combination at `0x19120` is the other path.
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes an arbitrary byte
   into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
   emulator. Volatile, so it cannot brick anything, but it is still a write to a live device and
@@ -404,7 +411,7 @@ three GUIDs `concordance -i` reports, so that block is personal data and never g
 
 What still waits:
 
-* fields 8 and 9 of the version block, and what fields 7, 10 and 11 are versions of,
+* what fields 7, 10 and 11 of the version block are versions of, fields 8 and 9 being placed,
 * the concordance cross-check of a full config read on the same remote,
 * `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
   reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
@@ -422,9 +429,14 @@ The application firmware at `0x020000`, 60050 bytes, matches the image decoded f
 On arch 12 the application runs from **external NOR**, so `READ_FLASH` at `0x020000` is how you get
 it; internal memory holds the bootloader and support images, not the application.
 
-**The 600 is the least covered unit**: its internal `0xFE` page below `0x9000` and its `0xFF` page
-between `0xA300` and `0xF000` have never been read, and that is where its bootloader and safe mode
-code live.
+**The 600 is now covered too.** Both internal pages swept, its config verified against its own
+`.EZHex` at 738149 of 738149 bytes, and its safe mode found: a 24320 byte image at `0xFE+0x1000`,
+version 0.2, checksum verifying, which nothing had read before. Its `0xFF` page carries no image at
+all, only the identity block.
+
+**Version block fields 8 and 9 are placed**, which closes that open item. Field 9 is the version of
+the image at `0xFF+0x0000` and field 8 the version of the image at `0xFF+0xE000`; both read `0x00`
+when the image is absent, and the 600 is the negative case for both.
 
 **The One's internal memory is dumped too**, both pages, `one-3.4-internal-page-fe.bin` and `-ff.bin`.
 It holds three images with the `48 47` header and all three verify their own checksums: 45356 bytes
