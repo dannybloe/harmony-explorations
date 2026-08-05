@@ -42,3 +42,8 @@ __pycache__/
 node_modules/
 dist/
 *.tsbuildinfo
+
+# IDE project state. WebStorm's workspace.xml carries local paths and a per-install GUID, which
+# is also why the pre-commit hook noticed it before this line existed.
+.idea/
+.vscode/

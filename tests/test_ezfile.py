@@ -15,6 +15,10 @@ class TestScrubDataXml(unittest.TestCase):
 
     # Fabricated values in the real fields' shape. Deliberately not the values from an
     # actual package: those belong to a real person, and this file is public.
+    #
+    # pre-commit-allow-identity-sample: the shape is the point. `.githooks/pre-commit` refuses
+    # identity fields carrying a value, and it is right to; a scrubber tested against data that
+    # does not look like the real thing is testing nothing. Every value below is invented.
     SAMPLE = (
         '<Data><POSTOPTIONS><HEADERS><HEADER><KEY>Cookie</KEY>'
         '<VALUE>SKIN%5FID=Harmony; CookieKeyValue=%7BAAAAAAAA%2DBBBB%7D; '
@@ -104,8 +108,12 @@ class TestEzHexHeader(unittest.TestCase):
     a file, and a mismatch is refused by the device.
     """
 
+    # The two Harmony 700 configs were missing here until the TypeScript port wrote the same list
+    # out a second time and the absence became visible. They verify like the rest, so it was a
+    # coverage gap and not a property of those files.
     CONFIGS = ('h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-               'arch8_config_d', 'one_config', 'one_config_unprogrammed', 'h600_config')
+               'arch8_config_d', 'one_config', 'one_config_unprogrammed', 'h600_config',
+               'h700_config', 'h700_config_2')
 
     def test_every_config_verifies_its_own_split(self):
         for name in self.CONFIGS:

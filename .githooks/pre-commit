@@ -43,10 +43,19 @@ done
 # 2. A third party's identity. The GUID pattern is what an account id looks like; the tags are
 #    what Data.xml calls them. Both are checked with a value present, so prose that merely
 #    names the fields (CLAUDE.md does) does not trip the check.
+#
+#    One legitimate exception exists and it is not rare enough to ignore: the scrubber's own
+#    test needs fabricated values in the real fields' shape, or it is testing nothing. A file
+#    carrying the marker below is exempt from this check, and the marker is deliberately
+#    something you have to type on purpose next to a written reason. Note what it does not
+#    exempt: check 1 still refuses binaries in such a file, and the marker is visible in the
+#    diff, which is the point.
+allow='pre-commit-allow-identity-sample'
 guid='[0-9a-fA-F]\{8\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{4\}-[0-9a-fA-F]\{12\}'
 for f in $staged; do
 	blob=$(git show ":$f" 2>/dev/null || true)
 	[ -n "$blob" ] || continue
+	if printf '%s' "$blob" | grep -qF "$allow"; then continue; fi
 	if printf '%s' "$blob" | grep -qI "$guid"; then
 		note "$f contains something shaped like an account GUID"
 	fi
