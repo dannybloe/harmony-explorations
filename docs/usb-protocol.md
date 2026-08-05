@@ -363,10 +363,10 @@ are two regions, and `0x1B50A` has not been read. The protocol is known to name 
 arch 14 or the mapping is not one selector per region.
 
 **Somewhere in the flash machinery, a 16-bit remaining count is chunked at 63 bytes.** This was
-published as READ_FLASH's response chunking, and that attribution is **withdrawn** for the same
-reason as the block above: which command reaches `0x0C9B2` was never established. What the code
-there does is not in doubt, and it is the same variable pair that READ_FLASH parses its last two
-bytes into, so those two bytes being a count is a strong inference. It is an inference.
+published as READ_FLASH's response chunking, and that attribution stays **withdrawn**: which
+command reaches `0x0C9B2` has still not been established. What the code there does is not in
+doubt. That the count pair is READ_FLASH's count is now established, but by the state machine
+below rather than by this code.
 
 ```
 0c9b4: 3f 0e       MOVLW 0x3f
@@ -385,10 +385,35 @@ still to send, which is a common enough convention but rests on that single inst
 Whether the count on the wire is already biased that way, or is decremented once on arrival,
 is not established.
 
-So the honest state of READ_FLASH: the request layout is derived, the address is proven to be
-an address, byte 1's validation and the region split are derived from the validator the parser
-itself calls, and **the response side is not located.** Finding it means following the state
-machine from state 4 rather than following the variables, which is the next thing to do.
+### The response loop, found the right way
+
+Following the state machine instead of the variables works. State 4 is not compared anywhere
+with the `SUBWF` form that most of the state machine uses; it is a case in an `XORLW` chain at
+`0x0D388`, whose seven cases are 2, 4, 5, 6, `0x0B`, `0x20` and `0x35`, all plausible small
+state values, which is the sanity check that chain decoding needs. **State 4 goes to
+`0x0D3A8`**, and its body is READ_FLASH's per chunk step:
+
+```
+0d3a8: 10 0e       MOVLW 0x10
+0d3ac: d4 27       ADDWF 0xed4,F     ; a counter, advanced 0x10 per pass, purpose unknown
+0d3b0: d1 51       MOVF 0xed1,W
+0d3b2: d2 11       IORWF 0xed2,W     ; is the remaining count zero?
+0d3b4: 03 e1       BNZ 0x0d3bc
+0d3b6: c9 6b       CLRF 0xec9        ; yes: state 0, the command is finished
+0d3ba: 12 00       RETURN
+0d3bc: d3 51       MOVF 0xed3,W      ; the size of the chunk just sent
+0d3c8: d1 5f       SUBWF 0xed1,F     ; remaining -= chunk, 16 bits
+0d3cc: d2 5b       SUBWFB 0xed2,F
+```
+
+So **bytes 4 and 5 are a 16-bit count**, and this time by control flow from the dispatch rather
+than by variable following: the pair is decremented by each chunk and the command completes,
+returning the state machine to idle, when it reaches zero.
+
+The chunk size comes from `0xED3`, which is also the variable READ_MISC parses its item
+selector into, so the sharing that caused the retraction above is confirmed to be real. Whether
+the chunk is the 63 seen at `0x0C9B2` is exactly the question that must not be answered by
+proximity: it needs following control flow into whatever sets `0xED3` on this path. Not done.
 
 ### Still open
 

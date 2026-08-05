@@ -316,6 +316,40 @@ class TestReadFlash(unittest.TestCase):
         self.assertEqual(bound, 0xFFC0)
         self.assertEqual(0x10000 - bound, 64)
 
+    STATE_CHAIN = 0x0D388       # the chain that dispatches the small states
+    STATE_4_BODY = 0x0D3A8      # READ_FLASH's per chunk step
+
+    def test_state_four_is_dispatched_from_the_small_state_chain(self):
+        """
+        Attribution by control flow, which is what the earlier mistake lacked. The chain's
+        seven cases are all plausible small state values, so the decode is trustworthy here in
+        a way the 32 case result elsewhere is not.
+        """
+        table = chains.chain_table(lab.load('h700_code'), self.BASE, self.STATE_CHAIN)
+        self.assertEqual(sorted(table), [0x02, 0x04, 0x05, 0x06, 0x0B, 0x20, 0x35])
+        self.assertEqual(table[0x04], self.STATE_4_BODY)
+
+    def test_the_count_pair_is_the_remaining_count(self):
+        """
+        In READ_FLASH's own state body: the two bytes are OR'd to test for zero, the command
+        ends by clearing the state when they reach it, and otherwise the chunk size is
+        subtracted from them as a 16-bit quantity.
+        """
+        code = lab.load('h700_code')
+
+        def text(addr):
+            return disasm.format_instr(isa.decode(code, addr - self.BASE, self.BASE), bsr=0xE)
+
+        self.assertEqual(text(0x0D3B0), 'MOVF 0xed1,W')
+        self.assertEqual(text(0x0D3B2), 'IORWF 0xed2,W')     # zero test over both bytes
+        self.assertEqual(text(0x0D3B8), 'CLRF 0xec9')        # finished, back to idle
+        self.assertEqual(text(0x0D3C8), 'SUBWF 0xed1,F')     # remaining -= chunk
+        self.assertEqual(text(0x0D3CC), 'SUBWFB 0xed2,F')
+
+    def test_the_state_cleared_at_the_end_is_the_one_the_handlers_set(self):
+        """The loop ends the command by clearing the same variable READ_FLASH set to 4."""
+        self.assertEqual(state_variable('h700_code'), 0xEC9)
+
     def test_something_in_the_flash_path_chunks_at_the_payload_size(self):
         """
         A 16-bit remaining count compared against 63 and moved 63 bytes at a time, on the same

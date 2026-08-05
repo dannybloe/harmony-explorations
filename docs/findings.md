@@ -1810,8 +1810,26 @@ mistake twice in one commit.
 What the mistake was, precisely: **following variables instead of following control flow.**
 The argument variables are shared between commands, so finding code that uses them proves what
 the variables are and nothing about which command is running. The request side is safe because
-the parser is reached from the dispatch table, so its ownership is known. Locating the response
-means starting from state 4 in the state machine instead.
+the parser is reached from the dispatch table, so its ownership is known.
+
+### Doing it the right way, immediately afterwards
+
+Starting from the state machine instead found it. State 4 is not compared anywhere with the
+`SUBWF` form most of the machine uses, so it took a second look: it is a case in an `XORLW`
+chain at `0x0D388`. That chain's seven cases are 2, 4, 5, 6, `0x0B`, `0x20` and `0x35`, which
+are plausible small state values, and that plausibility check is the whole reason to trust this
+decode when the 32 case result elsewhere in the same firmware is not trusted.
+
+State 4 goes to `0x0D3A8`, and the body is READ_FLASH's per chunk step. It ORs the two count
+bytes together to test for zero, clears the state variable and returns when they reach it, and
+otherwise subtracts the chunk size from them as a 16-bit quantity. So **bytes 4 and 5 of the
+request are a 16-bit count**, established from the dispatch this time rather than from a shared
+variable, and the command completes by returning the state machine to idle.
+
+The chunk size comes out of `0xED3`, which is the same variable READ_MISC parses its item
+selector into. So the sharing that caused the retraction is not hypothetical, it is confirmed in
+the very next routine. Whether that chunk is the 63 seen at `0x0C9B2` is exactly the question
+that must not be settled by proximity, and it is not settled here.
 
 63 matching the largest payload the length nibble can describe survives as an agreement between
 two parts of the firmware. What does not survive is calling it the fourth confirmation of the
