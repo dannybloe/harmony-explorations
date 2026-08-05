@@ -20,11 +20,10 @@ Source material:
   concordance issue 66, and one architecture 9 config (Harmony 525) published by trelowney.
   Both sets were published by their owners with the account fields already at zero. See
   section 14.
-* A **Harmony 700 config** contributed to this project, architecture 14, skin 66. The second
-  arch 14 config and the only one from the same model as the 700 firmware image disassembled
-  here. Its provenance and publication permission are not yet settled, so nothing in this
-  document rests on it alone: section 15 states which samples carry each claim, and the
-  contributor is credited once they have been asked whether they want to be.
+* A **Harmony 700 config**, architecture 14, skin 66, posted publicly by
+  [@dmrzzz](https://github.com/dmrzzz). The second arch 14 config and the only one from the
+  same model as the 700 firmware image disassembled here, which is why it carries more than
+  its share of section 15.
 
 Everything below is derived from those files plus the concordance source tree. Every
 numeric claim was checked against at least two independent samples where possible.
@@ -1031,7 +1030,7 @@ argument for deriving boundaries rather than measuring them by hand.
 
 ## 15. A config states its own architecture, and slot 0 is the only frame
 
-Both of these came out of adding a **Harmony 700 config** contributed to this project. It
+Both of these came out of adding a **Harmony 700 config**, posted publicly by dmrzzz. It
 matters disproportionately for one reason: the arch 14 firmware image this project disassembles is the
 Harmony 700 2.8 image, and until this file arrived the architecture had exactly one config
 sample, the Harmony 600 dump. The section labelling method needs two configs of the same
@@ -1145,6 +1144,23 @@ It is deliberately **not** recorded as a section label. Naming a section from wh
 like is the thing `.claude/skills/trace-section/SKILL.md` exists to prevent: the label has to come
 from the firmware routine that consumes the pointer. This is a strong candidate for "state
 variables" and nothing more until that routine is found.
+
+### The sample the corpus is still missing
+
+trelowney's status update of 2026-08-04 records that dmrzzz posted **two** dumps of the same
+Harmony 700, with a written description of what changed between them. Only one of the two is in
+the corpus.
+
+That pair would be the most valuable sample here, ahead of a fifth architecture. Two dumps of one
+remote with a documented difference is a controlled experiment somebody else has already run: the
+bytes that moved are the bytes that implement the described change, which is the cheapest route
+to a section label that exists and the only one that does not require finding the consuming
+firmware routine first. What the corpus has instead is pairs of different remotes, where nearly
+everything differs, and the four arch 8 configs, which differ from each other in 73 to 84 percent
+of their bytes with no record of why.
+
+It would also settle what the `version word` above is, since a second dump of one remote taken at
+a different time either moves it or does not.
 
 ## References
 

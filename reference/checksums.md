@@ -38,7 +38,7 @@ anyone else's hardware. They are listed for the record, not as verification targ
 
 ## Publicly shared config samples
 
-Unlike everything else here, these five files are already public, posted by their owners. They
+Unlike everything else here, these six files are already public, posted by their owners. They
 are used as controls for claims about the container: a rule that survives architectures nobody
 tuned it for is a rule about the format. They still live in the lab rather than in this
 repository, because the policy is that no config binaries are committed regardless of
@@ -78,21 +78,24 @@ print(ezfile.parse_ezhex(open(sys.argv[1], 'rb').read()).xml)" <file>
 Note the 600 file is **truncated**: the real image is 70336 bytes and concordance returns only
 the first 65536. Use the 700 image for arch 14 work, since it is complete.
 
-## Privately contributed config samples
+One architecture 14 config (Harmony 700), posted publicly by
+[@dmrzzz](https://github.com/dmrzzz) in the harmony-decompiler discussion:
 
-Not public, and not to be republished. Listed here so that a copy in a lab can be verified as
-the same file the documented findings were derived from.
+| File | SHA-256 |
+|---|---|
+| `harmony700.EZHex` | `86ff26c8e2aae0c891809a8d7b0129b09cf8c4d57d8763a65878da8b62e04c3d` |
 
-| File | SHA-256 | Provenance |
-|---|---|---|
-| `harmony700.EZHex` | `86ff26c8e2aae0c891809a8d7b0129b09cf8c4d57d8763a65878da8b62e04c3d` | a Harmony 700 config contributed to this project, architecture 14, skin 66, 982340 bytes |
+982340 bytes, skin 66, `UserId` 0, no session data. This is the only config sample from the
+same model as the arch 14 firmware image analysed here, which is why it carries more than its
+share of `docs/findings.md` section 15.
 
-The lab holds a `META.md` beside it with the full provenance. That record is deliberately not
-mirrored here: its permission status is unresolved, so the contributor is not named in this
-repository until they have been asked whether they want to be. Everything published from this
-file is format structure independently confirmed on other samples, which is checked by the
-tests rather than promised: `tests/test_gspm.py` carries each claim on twelve samples across
-four architectures.
+**A second dump of the same remote exists and is not here.** trelowney's status update of
+2026-08-04 records that dmrzzz posted two, with a written description of what changed between
+them. Two dumps of one remote with a documented difference is a controlled experiment, and it
+is the most valuable sample the corpus could gain: the bytes that moved are the bytes that
+implement the described change. Everything else available is either two different remotes or,
+in the arch 8 set, four configs differing in 73 to 84 percent of their bytes with no
+explanation of why.
 
 ## Load addresses
 

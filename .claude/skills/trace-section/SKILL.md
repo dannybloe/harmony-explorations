@@ -32,6 +32,10 @@ architecture, because a slot that points at the same structure in both is a sect
 that only makes sense in one is a misread. Arch 14 now has two: the Harmony 600 dump and the
 Harmony 700 config, the latter from the same model as the reference firmware image.
 
+Two configs of the **same remote** with a known difference between them beat two configs of two
+remotes by a wide margin, because then the bytes that moved are the change. The corpus has no
+such pair yet; `docs/roadmap.md` step 6 records the one that is obtainable and how.
+
 Look at the bytes the pointer lands on before touching the firmware. Only **slot 0** is
 `0xFEED` framed, so for every other slot the size comes from the distance to the next
 non-NULL pointer, and the pointers ascend with the slot number. The size alone often rules out
