@@ -38,8 +38,12 @@ INFO_FIELDS = {
     'External Flash': 'flash',
     'Config Flash Used': 'flash_used',
 }
-# A META.md counts as described once these placeholders are gone from its content section.
-UNDESCRIBED_MARKERS = ('Not yet recorded', 'not yet recorded', '<')
+# A META.md counts as described once these template placeholders are gone from its content
+# section. Code spans and fenced blocks are stripped before the check, because real content
+# legitimately contains angle brackets, for example `<id>` in a variable name pattern.
+UNDESCRIBED_MARKERS = ('Not yet recorded', 'not yet recorded')
+PLACEHOLDER = re.compile(r'<[a-z][^>]{3,}>')          # prose placeholder like <make and model>
+CODE_SPAN = re.compile(r'`[^`]*`|```.*?```', re.S)
 
 
 def find_lab(argv):
@@ -94,7 +98,8 @@ def meta_state(directory):
     if len(section) < 2:
         return 'META.md, no description section'
     body = re.split(r'^##\s', section[1], flags=re.M)[0]
-    if any(marker in body for marker in UNDESCRIBED_MARKERS):
+    prose = CODE_SPAN.sub('', body)
+    if any(marker in prose for marker in UNDESCRIBED_MARKERS) or PLACEHOLDER.search(prose):
         return 'META.md, NOT described'
     return 'described'
 
