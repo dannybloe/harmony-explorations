@@ -96,18 +96,29 @@ def recover_size(code: bytes) -> Optional[int]:
     """The image's true length, from the size field, even if `code` is truncated.
 
     The field holds `(size - 8) & 0xFFFF`, so the top bits are lost and the answer is
-    ambiguous modulo 64 KiB. Candidates are resolved by requiring the result to be at
-    least as long as what we actually have, and by preferring the smallest such candidate.
-    Returns None if nothing plausible fits.
+    ambiguous modulo 64 KiB.
 
-    For the truncated Harmony 600 dump this yields 0x112C0 (70336 bytes) from a 65536-byte
-    file, which agrees independently with the highest observed branch target.
+    A candidate that lies inside `code` can be **checked** rather than guessed at, because the
+    header carries a checksum over the whole image: the right length is the one whose checksum
+    verifies. That is tried first, smallest candidate up, and it is the only branch that returns
+    an answer with evidence behind it.
+
+    Only when no candidate can be checked, which is the truncated case the function was written
+    for, does it fall back to the rule it used to apply always: the smallest candidate at least
+    as long as what we have. That rule is wrong for a buffer holding more than the image, which
+    is what a live read of the surrounding memory produces. It reported 135872 for the Harmony
+    600 read off the device, where the checked answer is 70336.
+
+    Returns None if nothing plausible fits.
     """
     if len(code) < 6:
         return None
     size_field = struct.unpack_from('<H', code, 4)[0]
-    for high in range(0, 8):
-        candidate = (high << 16) + size_field + 8
+    candidates = [(high << 16) + size_field + 8 for high in range(0, 8)]
+    for candidate in candidates:
+        if candidate <= len(code) and verify_checksum(code[:candidate]):
+            return candidate
+    for candidate in candidates:
         if candidate >= len(code):
             return candidate
     return None

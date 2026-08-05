@@ -32,9 +32,17 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `700-2.8-Region_3-gspm-base0x20000.bin` | `cd5073d0f3b99c4a58fb72a3e790594c68da6ba48b350236b392555297989bea` | the raw payload after the XML header of `Region_3.EZHex`, same package |
 | `one-safemode-gspm-base0x2000-raw64k.bin` | `b21dff3e9588fab528e0af623a2e061de950092f74befe81f10b1e898cb17335` | `concordance --dump-safemode` from a Harmony One running fw 3.4 |
 | `600-0.2-code-base0x9000-TRUNCATED64k.bin` | `3c923a93216fabdb4f0ba19f7b5123192054c7c84e878e88a9d99d276a5e4db1` | `concordance --dump-safemode` from a Harmony 600 running fw 0.2 |
+| `600-0.2-code-base0x9000-COMPLETE.bin` | `8cf8422a3ec3ce6d8a313af72c4fb2eb3215884352fdedbb7ff060ed8f897841` | the same image, complete, read off the remote by `packages/usb` |
 
-The last two come from specific physical remotes, so their checksums will not reproduce on
+The last three come from specific physical remotes, so their checksums will not reproduce on
 anyone else's hardware. They are listed for the record, not as verification targets.
+
+`600-0.2-code-base0x9000-COMPLETE.bin` supersedes the truncated one and is 70336 bytes against
+65536. It is the first binary here that this project produced rather than decoded from somebody
+else's file, and unlike the others it is checkable without trusting the reader that made it: the
+image's own header checksum verifies over all 70336 bytes, and the 65534 bytes both files can
+express agree byte for byte. The truncated file stays listed, because the agreement between the
+two is the evidence.
 
 ## Publicly shared config samples
 

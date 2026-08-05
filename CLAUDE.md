@@ -258,8 +258,10 @@ Ghidra language: `PIC-18:LE:24:PIC-18`, generic variant only, so SFRs are unname
 **Prefer arch 14 (the 700 image) over arch 12 for format work**, even though the One is the
 more popular remote. On arch 14 every config byte read passes through one SPI primitive at
 `0x1B9AC`, a single instrumentable choke point. On arch 12 the config is memory-mapped and
-reads are scattered everywhere. Decode arch 14, then port. Use the 700 image rather than the
-600 dump, because the 600 dump is truncated by concordance.
+reads are scattered everywhere. Decode arch 14, then port. **Use `600-0.2-code-base0x9000-COMPLETE.bin`
+for the bench remote**: the 600 image is no longer truncated, it was read off the remote and its own
+header checksum verifies over all 70336 bytes. The 700 2.8 image stays the reference for anything
+about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
@@ -404,13 +406,14 @@ What still waits:
 
 * fields 8 and 9 of the version block, and what fields 7, 10 and 11 are versions of,
 * the concordance cross-check of a full config read on the same remote,
-* a complete firmware dump of both bench remotes, since concordance truncates the 600 at 65536 of
-  70336 bytes,
 * `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
   reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
-* naming ten of GET_VERSION's twelve fields,
-* a firmware dump of both bench remotes, which is now a matter of many small reads rather than an
-  unknown.
+* naming ten of GET_VERSION's twelve fields.
+
+**The Harmony 600's firmware is no longer truncated.** Read off the remote across both internal
+pages, 70336 bytes, and its own header checksum verifies over all of them where the 65536 byte
+concordance dump does not. The 65534 bytes both can express agree byte for byte. The One's internal
+memory is readable the same way and has not been dumped in full yet.
 
 Step 5 is next: **the read only application.** Electron shell with no network access at all,
 enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a

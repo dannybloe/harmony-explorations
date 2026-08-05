@@ -19,9 +19,10 @@ This document is the deliverable of step 3 of `docs/roadmap.md`, and it was writ
 established rather than at the end.
 
 Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
-(architecture 14). The Harmony 600 0.2 dump is truncated by concordance at 65536 of 70336
-bytes, and several of the things this document needs are past the cut, so the 600 is
-confirmed against the live remote instead where that is possible.
+(architecture 14). The Harmony 600 0.2 dump was truncated by concordance at 65536 of 70336 bytes
+while most of this document was written, so several things here were confirmed against the live
+remote instead. **That image is complete now**, read off the remote by the command layer this
+document describes and checked by its own header checksum, section 4.
 
 Method, and why it matters here: everything is derived from the firmware images.
 `concordance/specs/protocol.txt` and the libconcord source are consulted **after** a fact is
@@ -871,6 +872,39 @@ with them. That is one of the open items at the end of this document, and it wou
 trusting this read path but by 65536 bytes of it agreeing with an answer obtained without it.
 
 Reads needed: 462 through `0xFE` and 674 through `0xFF`, at 62 bytes each.
+
+#### The 600, measured, and the firmware that came with it
+
+All three held.
+
+| Predicted | Measured |
+|---|---|
+| `0xFE` maps from program zero, PIC18 vectors | `84 ef 07 f0` at `0x0000`, `00 ef 4a f0` at `0x0008` |
+| identity block at `0xFF` `+0xF400`, three GUIDs from `concordance -i` | all three present, at `+0x00`, `+0x10`, `+0x20` |
+| `0xFE` `+0x9000` is the application firmware | a `48 47` image header, exactly there |
+
+So the paging is a property of the command rather than of the model, and **the identity block sits
+at the same offset on both architectures**, which one remote could not have established. One
+difference worth recording rather than explaining: the One's second and third GUIDs match in mixed
+endian byte order and the 600's in big endian.
+
+The firmware read follows from the third row. 1136 reads of 62 bytes, five seconds, program `0x09000`
+to `0x1A2C0` across both pages. Against the truncated dump made by other software months earlier:
+
+```
+0xFE page vs dump    28670 bytes compared, 28670 identical, 0 differ
+0xFF page vs dump    36864 bytes compared, 36864 identical, 0 differ
+unreachable          2 bytes, program 0x0FFFE and 0x0FFFF, the offset clamp
+```
+
+**65534 of 65536, no differences**, and the 4800 bytes concordance never returned arrive with them.
+The image's own header checksum then verifies over all 70336 bytes, where the truncated file verifies
+at no candidate length. `docs/findings.md` section 23.
+
+The two unreachable bytes are a protocol fact worth stating on its own: the firmware clamps the read
+offset at `0xFFC0` and a 62 byte read from there ends at `0xFFFD`, so **the last two bytes of each
+page cannot be read** by this path. They came from the truncated dump instead, and they are inside
+the checksum that verifies.
 
 #### How the prediction did
 

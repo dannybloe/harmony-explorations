@@ -19,6 +19,10 @@ Two container findings landed after that, both corrections rather than additions
 starts at `0x0B` and had been parsed one slot short since the first day, and section slot 3 holds the
 config's build timestamp. Sections 20 and 21.
 
+Then the internal read window turned out to be two pages rather than one, which corrected a measured
+claim and, on the 600, **completed a firmware image this project has worked around for months**:
+70336 bytes, its own checksum verifying, against concordance's truncated 65536. Sections 22 and 23.
+
 Next is step 5, the read only application.
 
 ## Context
@@ -35,8 +39,9 @@ format questions get answered in the order the application needs them. It also r
 decisions taken in the planning session, because several of them are one-way doors.
 
 Scope for now is deliberately narrow: the Harmony One (arch 12) and the Harmony 600 (arch 14),
-both of which the owner has on the desk, with the Harmony 700 2.8 image as the arch 14 reference
-because the 600 dump is truncated by concordance. Other models are iterated on later.
+both of which the owner has on the desk. The Harmony 700 2.8 image was the arch 14 reference while
+the 600 dump was truncated; the 600's own image is complete now, read off the remote, so the 700
+image is a second sample rather than a stand in. Other models are iterated on later.
 
 ## Decisions taken
 
@@ -287,13 +292,15 @@ Still to do, in the order the application needs them:
   is the route to the `MCU_ID` that would measure the arch 12 part number instead of inferring it.
   Anything else is refused. Which of `0xFE` and `0xFF` is which is not established, and the four
   named PROM types do not map one-to-one onto what arch 14 implements.
-* **First deliverable of our own read path: a complete firmware dump of both remotes on the
-  bench.** Right now the only arch 14 image we can disassemble is the 700 2.8 package, used as a
-  proxy, because concordance truncates the 600 dump at 65536 bytes of a 70336 byte image and
-  loses the entry point. Reading it ourselves gives the firmware actually running on the test
-  hardware, plus the `MCU_ID`, which would settle the arch 12 part number that is currently
-  inferred rather than measured. Read-only, and it does not replace the archived `.hfw` packages,
-  which cover models nobody here owns.
+* **Done for the 600.** The first deliverable of our own read path was a complete firmware dump of
+  the bench remotes. The 600's is read: 70336 bytes across both internal pages, where concordance
+  truncated at 65536 and lost the entry point. It is not believed because the reader says so, it is
+  believed because the image's own header checksum verifies over all 70336 bytes and the 65534 bytes
+  the truncated dump can also express agree byte for byte. `docs/findings.md` section 23. The One's
+  internal memory reads the same way and has not been swept in full yet. `MCU_ID` turned out not to
+  be reachable through this path at all, so the arch 12 part number stays inferred. Read only
+  throughout, and none of this replaces the archived `.hfw` packages, which cover models nobody here
+  owns.
 * **Done.** The routine that validates a config on boot is located in both images: the cookie
   check at `0x16492` (700 2.8) and `0x28DAC` (One 3.4), the end marker check at `0x1652C` and
   `0x28E18`. Found by searching for the marker spelled as four `MOVLW` instructions, because

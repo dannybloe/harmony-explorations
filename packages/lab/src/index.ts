@@ -37,6 +37,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h700_code: '700-2.8-Region_2-code-base0x9000.bin',
   h700_gspm: '700-2.8-Region_3-gspm-base0x20000.bin',
   h600_code: '600-0.2-code-base0x9000-TRUNCATED64k.bin',
+  // The same image, complete, read off the remote across both internal pages. Kept alongside the
+  // truncated one rather than replacing it: the agreement between the two is the evidence.
+  h600_code_complete: '600-0.2-code-base0x9000-COMPLETE.bin',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h525_config: 'config.EZHex',

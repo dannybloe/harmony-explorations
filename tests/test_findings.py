@@ -54,6 +54,58 @@ class TestFirmwareHeader(unittest.TestCase):
     def test_checksum_fails_on_the_truncated_image(self):
         self.assertFalse(firmware.verify_checksum(lab.load('h600_code')))
 
+    def test_the_complete_600_image_verifies_where_the_truncated_one_does_not(self):
+        """The 600's firmware, read off the remote, checked by the image's own header.
+
+        This is the pair that makes the read trustworthy. The truncated dump fails its checksum
+        at every candidate length; the complete image passes at exactly one, 70336 bytes, which
+        is the length the size field encodes. A 16 bit checksum over 70 KiB does not agree by
+        accident, and the wrong lengths show what disagreement looks like.
+        """
+        code = lab.load('h600_code_complete')
+        if code is None:
+            self.skipTest('the complete 600 image is not in this lab')
+        self.assertEqual(len(code), 0x112C0, '70336 bytes')
+        self.assertTrue(firmware.verify_checksum(code))
+        h = firmware.parse_header(code, base=0x9000)
+        self.assertEqual(h.size_field, (len(code) - 8) & 0xFFFF)
+        self.assertEqual(h.entry_point, 0x1A26E, 'the entry point CLAUDE.md records for the 600')
+        # And it was past the truncation, which is why it could not be disassembled before.
+        self.assertGreater(h.entry_point, 0x9000 + 65536)
+        for wrong in (0x12C0, 0x212C0):
+            if wrong <= len(code):
+                self.assertFalse(firmware.verify_checksum(code[:wrong]),
+                                 'a wrong length must not verify')
+
+    def test_the_two_600_images_agree_wherever_both_have_bytes(self):
+        """65534 of 65536, and the two that differ are the two nobody can read.
+
+        The offset clamp at 0xFFC0 puts program 0x0FFFE and 0x0FFFF out of reach of a 62 byte
+        read, so the complete image takes those from the truncated dump. Everything else was
+        obtained twice, by different software years apart.
+        """
+        old = lab.load('h600_code')
+        new = lab.load('h600_code_complete')
+        if old is None or new is None:
+            self.skipTest('need both 600 images')
+        self.assertEqual(old, new[:len(old)], 'the complete image contains the truncated one')
+
+    def test_recover_size_checks_rather_than_guesses_when_it_can(self):
+        """It used to take the smallest candidate at least as long as the buffer.
+
+        Right for a truncated file, wrong for a buffer holding more than the image, which is what
+        reading the memory around an image produces: it answered 135872 for the 600. A candidate
+        inside the buffer can have its checksum verified instead.
+        """
+        code = lab.load('h600_code_complete')
+        if code is None:
+            self.skipTest('the complete 600 image is not in this lab')
+        self.assertEqual(firmware.recover_size(code), 0x112C0)
+        self.assertEqual(firmware.recover_size(code + b'\xff' * 4096), 0x112C0,
+                         'trailing bytes must not push the answer to the next 64 KiB')
+        self.assertEqual(firmware.recover_size(lab.load('h600_code')), 0x112C0,
+                         'the truncated case still works, by the fallback rule')
+
 
 class TestCycleDelayRoutine(unittest.TestCase):
     """

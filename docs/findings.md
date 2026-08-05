@@ -2365,6 +2365,65 @@ readable**, 128 KiB at 62 bytes a read, which turns the internal half of "a comp
 both bench remotes" from an unknown into about two thousand reads. What is up there is code that no
 image in the corpus contains, because on arch 12 the application runs from external NOR.
 
+## 23. The Harmony 600's firmware, complete, and checked by its own checksum
+
+The 600's firmware image has been truncated for as long as this project has existed. `concordance
+--dump-safemode` returns 65536 bytes of a 70336 byte image, so the last 4800 bytes were missing and
+with them the entry point at `0x1A26E`, which is why every arch 14 disassembly here has used the
+Harmony 700 2.8 package as a stand in for the remote actually on the bench.
+
+It is read now, off the remote, by this project's own code. **70336 bytes, and the image's own
+header checksum verifies over all of them.**
+
+### How, in one paragraph
+
+Arch 14 runs its application from internal flash with an exec base of `0x9000`, where arch 12 runs
+from external NOR. Section 22 established that the internal read window is two 64 KiB pages rather
+than one. Those two facts together put the whole image inside reach: program `0x09000` to `0x0FFFE`
+through sub-selector `0xFE`, and `0x10000` to `0x1A2C0` through `0xFF`. That is 1136 reads of 62
+bytes, and it takes five seconds.
+
+### Why it is believed
+
+Three things, and the first is the one that matters.
+
+**The image validates itself.** `src/harmony/firmware.py` already knew the header format and its
+checksum, from images decoded out of `.hfw` packages. The size field holds `(size - 8) & 0xFFFF`, so
+it is ambiguous modulo 64 KiB, and the candidates are 4800, 70336 and 135872 bytes. Only 70336
+verifies: stored `0x6A2B`, computed `0x6A2B`. The truncated file does not verify at any candidate.
+A 16 bit checksum over 70 KiB agreeing by chance is a one in 65536 event, and the wrong-length
+candidates demonstrate what a mismatch looks like.
+
+**65534 bytes agree with a dump made by other software.** Everything the truncated file can express
+was re-read off the device and compared: zero differences. Two bytes could not be compared, program
+`0x0FFFE` and `0x0FFFF`, because the firmware clamps the read offset at `0xFFC0` and a 62 byte read
+from there ends at `0xFFFD`. Those two are taken from the truncated dump, which is the only place
+they exist, and they are inside the checksum that verifies.
+
+**The recovered tail is plausible on its own terms.** 4698 of its 4864 bytes are not erased flash,
+the last non-erased byte sits at `0x1A297`, and the image ends at `0x1A2C0`. The entry point the
+header has always pointed at, `0x1A26E`, is inside the recovered region, so the code it names is
+readable here for the first time.
+
+### A defect this exposed in our own tooling
+
+`firmware.recover_size` resolved the modulo 64 KiB ambiguity by taking the smallest candidate at
+least as long as the buffer it was given. That is right for a truncated file, which is what it was
+written for, and wrong for a buffer holding more than the image, which is what a live read of the
+surrounding memory produces: it answered 135872 for the 600.
+
+It now **checks** instead of guessing. A candidate that lies inside the buffer can have its checksum
+verified, so the function tries that first, smallest up, and only falls back to the old rule when no
+candidate can be checked. Both cases now answer 70336. A heuristic that had a closure available and
+was not using it is a small thing, but it is the same shape as the mistake in section 22: an answer
+produced without evidence, in a place where evidence was cheap.
+
+### What it does not settle
+
+`MCU_ID` is still out of reach, per section 22, so the arch 12 part number stays inferred. The One's
+internal memory is readable the same way and has not been swept in full. And the 700 2.8 image
+remains worth keeping: it is a second arch 14 sample and the only one for that model.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
