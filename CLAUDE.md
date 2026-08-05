@@ -148,9 +148,17 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 ```
 packages/codec/                 TS: the one config codec, container through compiler
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
-packages/usb/                   TS: HID transport plus the Harmony command protocol, planned
+packages/usb/                   TS: the command protocol and the write rails, no hardware run yet
 apps/studio/                    Electron: the application, planned
 ```
+
+**The write rails live in `packages/usb/src/rails.ts`, and that is where they stay.** A rail
+enforced by a user interface is enforced until somebody writes a script. `WRITES_ENABLED` is off
+unless `HARMONY_ENABLE_WRITES=1`, and the tests are refusals: with the flag off every write path
+refuses with everything else in order, and with the flag on in a subprocess each remaining
+condition still refuses by itself. `node-hid` is deliberately **not** installed, because it is a
+native module and approving its build script is the owner's decision, so `transport.ts` resolves it
+at runtime against a structural interface.
 
 **The test runner is Node's own, not `vitest`.** Node 24 strips the types and runs a `.ts` test
 file directly, so the dependency tree is `typescript` plus `@types/node` and nothing else, where

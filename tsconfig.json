@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/lab" },
-    { "path": "./packages/codec" }
+    { "path": "./packages/codec" },
+    { "path": "./packages/usb" }
   ]
 }

@@ -306,9 +306,22 @@ Still to do, in the order the application needs them:
 * Retire the Python container parser once the application actually uses the TypeScript one. Not
   yet: `tools/golden.py` generates the vectors from it, and the reverse engineering tools read
   configs through it.
-* `packages/usb`: HID transport over `node-hid`, the command layer from `docs/usb-protocol.md`,
-  read paths and RAM reads enabled, write and erase paths implemented but gated behind a build
-  flag that is off by default.
+* **Done, except for touching a remote.** `packages/usb` carries the command layer from
+  `docs/usb-protocol.md` and the rails, both tested against a scripted remote that behaves the way
+  the firmware is documented to: asynchronously, so a host that assumes a reply is already waiting
+  fails in the test rather than on the bench. Writes are refused in the library, not in a user
+  interface, and the tests are refusals: with the flag off every write path refuses even with
+  everything else in order, and with the flag on in a subprocess each remaining condition still
+  refuses on its own.
+* **`node-hid` is not installed, and that is a decision waiting for the owner.** It is a native
+  module, so installing it means allowing a package's build script to run, which pnpm 11 blocks by
+  default. The transport is therefore written against a structural interface and resolves the
+  module at runtime, so the adapter is written and reviewed with nothing installed. Approving that
+  build is the last step before a remote can be read.
+* Nothing in `packages/usb` has run against a remote. What that leaves open is recorded in
+  `remote.ts` itself rather than presented as settled: `READ_FLASH`'s reply code is not
+  established, nor whether the final short chunk is signalled by its length or by the state
+  clearing, nor whether the count on the wire is biased by one.
 
 ### Step 5: M1, the explorer
 

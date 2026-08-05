@@ -668,21 +668,34 @@ selector into, so the sharing that caused the retraction above is confirmed to b
 the chunk is the 63 seen at `0x0C9B2` is exactly the question that must not be answered by
 proximity: it needs following control flow into whatever sets `0xED3` on this path. Not done.
 
+### Answered since this list was first written
+
+Recorded rather than deleted, because three of the four were open questions this step was set up
+to settle, and a list that only ever grows is not a status.
+
+* **Which `MISC` items the firmware services**, and whether `MISC_RAM` works in normal mode: yes,
+  four read selectors and nine write ones, and RAM is selector `0x07` and not upstream's `0x06`.
+* **Whether `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` exist**: `0x03` is unhandled and `0x09` is a
+  no-op that reports success, so there is no event injection.
+* **The response layout of each command**: the table above, from the state handlers rather than the
+  parsers.
+* **GET_VERSION's block is twelve fields**, by two independent counts. Ten of them are still
+  unnamed, which is the entry below.
+
 ### Still open
 
-* Which `MISC` items the firmware services, and in particular whether `MISC_RAM` reads work
-  in normal mode, which is what would give live RAM of a running remote over USB. The
-  selector is `0xED3` and its consumers are around `0x0CA00` to `0x0CC00`.
-* Whether `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` exist, which would allow driving the
-  remote from the host.
-* The response layout of each command, which means reading the main loop's state handlers
-  rather than the parsers.
-* What GET_VERSION's twelve bytes each are. The block is twelve fields and two of them are
-  characterised; the other ten need their accessors followed, or a comparison against a
-  concordance run on the same remote, which is the cross-check this step wants regardless.
-
+* What GET_VERSION's twelve bytes each are. Two are characterised; the other ten need their
+  accessors followed, or a comparison against a concordance run on the same remote, which is the
+  cross-check this step wants regardless.
 * Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
   not.
+* **Which code a `READ_FLASH` data chunk carries.** The chunking is understood and the attribution
+  of the code at `0x0C9B2` stays withdrawn, so `packages/usb` accepts any reply that is not one of
+  the three known codes as data, and its tests say in as many words that they establish the
+  assembly behaviour rather than the code. The first hardware read settles it.
+* Whether the final short chunk is signalled by its length or only by the state clearing, and
+  whether the count on the wire is biased by one. The `INCF` on the short path implies the bias,
+  which rests on a single instruction.
 * Which of `0xFE` and `0xFF` is which. The region itself is identified: internal program
   memory, read by table read. The sub-selector is one bit and both values reach the same body.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.

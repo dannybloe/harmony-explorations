@@ -23,6 +23,12 @@ importers:
 
   packages/lab: {}
 
+  packages/usb:
+    devDependencies:
+      '@harmony/lab':
+        specifier: workspace:*
+        version: link:../lab
+
 packages:
 
   '@types/node@24.13.3':

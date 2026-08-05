@@ -1,0 +1,17 @@
+{
+  "name": "@harmony/usb",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HID transport and the Harmony command protocol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  },
+  "devDependencies": {
+    "@harmony/lab": "workspace:*"
+  }
+}
