@@ -457,7 +457,12 @@ the 0.1 us storage unit and the clock.
 
 1. What are the 19, 20 or 21 section slots? Method in [roadmap.md](roadmap.md) step 6.
 2. The trailer checksum algorithm. On the critical path: nothing can be uploaded without it.
-   The firmware routine that validates a config on boot is where to look.
+   The firmware routine that validates a config on boot is where to look, and **it is now
+   located**: the cookie check is at `0x16492` in the Harmony 700 2.8 image and `0x28DAC` in the
+   Harmony One 3.4 image, the end marker check at `0x1652C` and `0x28E18`. One constraint is
+   already in hand: the 700 image contains exactly one 16-bit accumulate in total, nowhere near
+   a config read, so the checksum is not a plain 16-bit sum accumulated that way.
+   `docs/findings.md` section 19.
 3. Three of the four IR encoding classes. The dispatcher routes four selectors; only one is
    traced.
 4. The key table's semantic difference between architectures, and the meaning of `flags`

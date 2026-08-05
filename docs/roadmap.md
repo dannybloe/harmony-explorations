@@ -250,8 +250,13 @@ Still to do, in the order the application needs them:
   hardware, plus the `MCU_ID`, which would settle the arch 12 part number that is currently
   inferred rather than measured. Read-only, and it does not replace the archived `.hfw` packages,
   which cover models nobody here owns.
-* Also locate the routine that validates a config on boot, because that is where the trailer
-  checksum algorithm lives. Note it now, derive it in step 6.
+* **Done.** The routine that validates a config on boot is located in both images: the cookie
+  check at `0x16492` (700 2.8) and `0x28DAC` (One 3.4), the end marker check at `0x1652C` and
+  `0x28E18`. Found by searching for the marker spelled as four `MOVLW` instructions, because
+  neither image carries it as text and neither address has a direct caller. One constraint on the
+  algorithm came free: the 700 image contains exactly one 16-bit accumulate anywhere, nowhere
+  near a config read, so the checksum is not a plain 16-bit sum accumulated that way. Derived in
+  step 6.
 * Cross-check the documented protocol against a concordance run on the owner's remotes: same
   bytes on the wire, same answers.
 

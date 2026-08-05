@@ -1903,6 +1903,47 @@ the routine those reads go to has not been read. So the shape of the region mech
 established and the mapping onto `MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH` is not.
 Either not all four are reachable on arch 14, or a region is selected some other way as well.
 
+### The config validator, and three searches that failed first
+
+Roadmap step 3 asks for the boot-time config validator to be **located**, not derived, because
+the trailer checksum lives there and is wanted in step 6. It is found, in both images:
+
+| | cookie check | end marker check |
+|---|---|---|
+| Harmony 700 2.8 | `0x16492` | `0x1652C` |
+| Harmony One 3.4 | `0x28DAC` | `0x28E18` |
+
+```
+16492: 47 0e       MOVLW 0x47        ; 'G'
+16496: 00 19       XORWF 0xd00,W
+16498: 08 e1       BNZ 0x164aa       ; bail out on the first mismatch
+1649a: 53 0e       MOVLW 0x53        ; 'S'
+164a0: 50 0e       MOVLW 0x50        ; 'P'
+164a6: 4d 0e       MOVLW 0x4d        ; 'M'
+164ac: 07 d1       BRA 0x166bc       ; rejected
+```
+
+Worth recording how it was found, because three earlier searches came back empty and each empty
+result was itself a fact:
+
+1. **The markers are not in either image as text.** `GSPM`, `PTYY` and `WLWL` are all absent as
+   ASCII. So the obvious search finds nothing, and the compiler has instead emitted them as four
+   consecutive `MOVLW` instructions, which is what the successful search looked for.
+2. **There is no 16-bit accumulate anywhere near a config byte read.** The whole 700 image
+   contains exactly **one** `ADDWF` followed by `ADDWFC`, and it is nowhere near the config
+   accessors. So whatever the trailer checksum is, it is not a plain 16-bit sum accumulated that
+   way.
+3. Broadening to `XORWF` and to `ADDWF` with a separate carry propagate gave 27 and 14 candidates
+   near a config read, none distinctive, and most of the `XORWF` hits are comparisons rather than
+   accumulation. Not resolved, and not resolvable by pattern alone.
+
+Neither validator address has a direct caller, so both are reached by a computed jump, which is
+why walking the call graph would not have found them either.
+
+**The checksum algorithm is not derived**, and the second search above is a useful constraint on
+what it can be rather than a step towards it. Step 6 starts from the code around these two
+addresses.
+
 ### An honest gap
 
 The four sub-commands of the `0xE0` escape are `0x01`, `0x02`, `0x03` and `0x05`. What each
