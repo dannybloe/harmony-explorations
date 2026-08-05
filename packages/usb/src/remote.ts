@@ -196,10 +196,12 @@ export class HarmonyRemote {
   /**
    * The MCU's own program memory, which is where a PIC18 J-series part keeps its device id.
    *
-   * A `READ_FLASH` whose top address byte is `0xFE` or `0xFF` reads internal program memory by
-   * table read instead of the external config flash. Which of the two values selects what is not
-   * established: the validator keeps the low bit of the byte as a sub-selector and both reach the
-   * same body. Telling them apart is one of the things this method exists to do.
+   * A `READ_FLASH` whose top address byte is `0xFE` or `0xFF` reads internal memory by table read
+   * instead of the external config flash. **The two are separate 64 KiB pages and both read**,
+   * measured at six offsets: `0xFE` maps from program address zero, where the three PIC18 vectors
+   * are, and `0xFF` is a different page whose top holds the remote's identity block. An earlier
+   * measurement here had that backwards and recorded `0xFE` as returning nothing, which came from a
+   * single probe rather than from the device. `docs/findings.md` section 22.
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
     if (count > FLASH_CHUNK_DATA) {

@@ -43,13 +43,19 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirteen have been found and corrected so far. The newest is small and worth keeping because it
-shows where a number came from: three arch 8 configs were recorded here as "generated about ten
-minutes apart", a figure that came from outside rather than from the configs. They carry their own
-build timestamps, and those say 33 and 25 minutes. The conclusion drawn from it stands, section 21.
+Fourteen have been found and corrected so far. The newest is the sharpest: this document recorded
+that a `READ_FLASH` through sub-selector `0xFE` "returns nothing at all", on the strength of one
+probe at one offset that produced no reply. It reads fine, and it is the one that maps from program
+address zero. **A null result from a single probe is a fact about that probe**, and writing it up as
+a property of the selector turned a missing measurement into a finding. Section 22.
 
-Before it, the oldest defect here: the container's
-section table starts at `0x0B` rather than `0x0C`, an item is a spare byte plus a three byte
+Before it, one that shows where a number came from: three arch 8 configs were recorded here as
+"generated about ten minutes apart", a figure that came from outside rather than from the configs.
+They carry their own build timestamps, and those say 33 and 25 minutes. The conclusion drawn from it
+stands, section 21.
+
+Before that, the oldest defect here: the container's section table starts at `0x0B` rather than
+`0x0C`, an item is a spare byte plus a three byte
 address, and the three bytes both parsers dismissed as padding are the final section's address. So
 every container had been read one slot short since the first day, in both implementations, with
 every consistency check passing. It decoded correctly regardless, because that slot is NULL in all
@@ -2283,6 +2289,81 @@ message and is the obvious next step, since the corpus cannot.
 
 Until then, nothing in this project should treat the record as establishing an order between two
 configs of the same remote.
+
+## 22. The internal read window is two pages, and one of them holds the remote's identity
+
+Measured on the spare unprogrammed Harmony One, read only. `docs/usb-protocol.md` section 4 has the
+tables; this is what it corrects and what it settles.
+
+### The correction
+
+This project recorded, from a measurement, that a `READ_FLASH` with top address byte `0xFF` returns
+internal program memory and that the same read with `0xFE` **returns nothing at all**. Both halves
+are wrong, and they are wrong the other way round. The same offset through both sub-selectors, at six
+offsets, returns different bytes every time, and it is `0xFE` that maps from program address zero.
+
+The failure is worth naming because it is not an arithmetic slip. One probe was run at one offset
+through one selector, it returned data, and the other selector was recorded as returning nothing on
+the strength of a single attempt that produced no reply. **A null result from one probe is a fact
+about that probe.** Calling it a property of the selector turned a missing measurement into a
+documented finding, and the wording, "returns nothing at all", made it sound like the strongest kind
+of negative rather than the weakest.
+
+The two pages are pinned in `packages/usb/test/hardware.test.ts` now, as a difference rather than as
+a value: the same offset through the two selectors must not return the same bytes.
+
+### What the pages hold
+
+`0xFE` is program memory from address zero, which the three PIC18 vectors confirm. Above that, three
+separate offsets carry the **`48 47` image header this project already parses** in
+`src/harmony/firmware.py`, so they are packaged images and not loose code, and `parse_header` reads
+all three: one at `0xFE` `+0x1000`, one at `0xFF` `+0x0000`, one at `0xFF` `+0xE000`. The last opens
+with a run of `BRA` instructions, so it is a jump table into a callable library.
+
+The `0xFF` page ends in per unit data. From `0xF000` to the `0xFFC0` bound everything is erased except
+a 64 byte block at `+0xF400`, four bytes at `+0xF580` and eleven bytes at `+0xF640`.
+
+### The closure
+
+The 64 byte block is four 16 byte fields, and `concordance -i` prints three GUIDs for a connected
+remote. The lab holds that output for this exact unit, taken months earlier by other software.
+
+**All three appear in the block, in the same order, at `+0x00`, `+0x10` and `+0x20`**, the latter two
+in mixed endian byte order, with sixteen zero bytes at `+0x30`. An address named in advance returning
+three values obtained without this code, in order, is not a coincidence that needs arguing about.
+
+The first field is `0xEE` filled, and `concordance -i` reports this unit's serial as all E's. That is
+the expected answer for the never programmed spare, and it means both readers of that location agree
+it is unset. A blank is a weaker match than a random GUID would be, taken alone; the other two fields
+are what make it decisive.
+
+The values are not published. A remote's serial GUIDs are personal data under this repository's own
+rules, so the tests assert the block's shape and never its contents.
+
+### The prediction, and how it did
+
+Committed before any of it was read, in `36fa23e`:
+
+| Predicted | Outcome |
+|---|---|
+| `0xE000` a library or support image | confirmed, an image header and a jump table |
+| `0xF400` a per unit identifier, 64 bytes | confirmed, and exactly 64 bytes |
+| `0xF640` a manufacturing identifier, 64 bytes | partly, a record is there but eleven bytes and unidentified |
+
+Three offsets named in advance, in four kilobytes that are otherwise erased, all three holding non
+code data. The eleven bytes at `+0xF640` are `09 00 20 11 02 18 e0 3c 00 67 01` and nothing here
+explains them.
+
+### What it changes downstream
+
+`MCU_ID` stays unreachable and the reason changes. The window is 128 KiB in two pages rather than the
+64 KiB this project claimed, and a PIC18 keeps its device id at `0x3FFFFE`, outside either. The
+conclusion is unaffected; the justification was wrong and is corrected in place.
+
+The useful consequence is the other direction. **The whole of the One's internal memory is now
+readable**, 128 KiB at 62 bytes a read, which turns the internal half of "a complete firmware dump of
+both bench remotes" from an unknown into about two thousand reads. What is up there is code that no
+image in the corpus contains, because on arch 12 the application runs from external NOR.
 
 ## References
 

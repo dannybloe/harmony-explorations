@@ -9,22 +9,32 @@ The project is read only, and these remotes are irreplaceable with Logitech's re
 gone. So a hardware measurement is worth having and is also the easiest place to do permanent
 damage. This skill is the ritual that separates the two.
 
-## The rails, which are not negotiable
+## The rails
 
-**Enumeration only.** Read what the operating system learns when the device is plugged in.
-Nothing else.
+**Never write, never erase, never reset.** See "Never write to a remote" in `CLAUDE.md`. That one is
+absolute and is enforced in `packages/usb/src/rails.ts` rather than here.
 
-* **Never open or claim the device.** libusb caches configuration, interface and endpoint
-  descriptors during enumeration, so all of them are readable without an open handle and
-  without a single transfer reaching the remote.
-* **Never send a command.** Not `GET_VERSION`, not a `READ_FLASH`, not a "harmless" one. A
-  read command is still a command, and the command layer is unverified against hardware.
-* **Never write, never erase, never reset.** See "Never write to a remote" in `CLAUDE.md`.
-* If a measurement seems to need opening the device, it belongs in `packages/usb` behind the
-  write flag where the rails live in code, not in a research tool. Stop and say so.
+**Prefer enumeration.** Anything that only needs to know what is attached, or what the descriptors
+say, must not open the device. libusb caches configuration, interface and endpoint descriptors during
+enumeration, so all of them are readable without an open handle and without a single transfer
+reaching the remote. `listHarmony`, `packages/usb/bin/list-remotes.ts` and `tools/usbprobe.py` are
+that path and must never grow one that sends a command.
 
-Sending commands to a remote becomes a real activity later, at roadmap step 5, on a config
-read path with the safety rails implemented. It is not this.
+**Read commands are allowed, through the library.** This section used to say never send a command at
+all, on the grounds that the command layer was unverified against hardware. It is verified now:
+`GET_VERSION`, `READ_MISC` and `READ_FLASH` have run on both bench remotes and a flash read matches
+each unit's own dump byte for byte. A stale rail is worse than no rail, because the first person to
+need the forbidden thing learns to ignore the document. So the rule is the narrower one it should
+always have been:
+
+* Go through `packages/usb`, never a one off script that opens the device itself. The refusals live
+  there.
+* **Cap an internal memory read at one chunk.** A transfer of this region that ends in a one byte
+  final chunk restarts the remote. `readInternalMemory` refuses more than 62 bytes for that reason.
+* Health check between provocations: read something with a known answer, usually a config window
+  against the lab dump, and stop at the first failure to recover.
+* One remote at a time, and identify which one before trusting any per unit number. Two Harmony Ones
+  are on the bench and they are not interchangeable.
 
 ## What works on this machine, and what silently does not
 
@@ -93,5 +103,7 @@ Follow the `finding` skill for the write-up, plus three things specific to hardw
 Ask before assuming there will be another chance; a remote goes back in a drawer.
 
 * Identity and descriptors, per above.
-* Nothing else, yet. Everything more interesting needs the command layer, which needs the
-  safety rails, which is roadmap step 5.
+* A config read compared against that unit's lab dump, which is the cheapest proof the whole read
+  path still works.
+* Anything read only that a document has predicted in advance. Writing the prediction down and
+  committing it first costs one commit and is what makes the answer worth having.

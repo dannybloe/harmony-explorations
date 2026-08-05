@@ -393,8 +393,12 @@ afterwards. Ruled out: ordering, chunk count, and the size 63 by itself. `packag
 internal read at one chunk. **This is the one path where read only is not the same as harmless**, and
 the cap is a workaround, not an explanation.
 
-**`MCU_ID` is not reachable** and that is now a finding rather than a task: the internal read window is
-the first 64 KiB and a PIC18 keeps its device id at `0x3FFFFE`. The arch 12 part number stays inferred.
+**`MCU_ID` is not reachable** and that is now a finding rather than a task: a PIC18 keeps its device id
+at `0x3FFFFE` and the internal read window is two 64 KiB pages, `0xFE` and `0xFF`, so 128 KiB total.
+The arch 12 part number stays inferred. **Both sub-selectors read**, which corrects an earlier
+measurement that had `0xFF` reading program memory and `0xFE` returning nothing; it is `0xFE` that maps
+from program address zero. The `0xFF` page carries a 64 byte identity block at `+0xF400` holding the
+three GUIDs `concordance -i` reports, so that block is personal data and never gets published.
 
 What still waits:
 

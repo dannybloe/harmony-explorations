@@ -776,14 +776,29 @@ that has no counterpart anywhere in concordance's output. Concordance prints thr
 could plausibly carry that are still unplaced: firmware type, the third component of the hardware
 version, and `IRL, ORL, FRL`.
 
-### Internal program memory: `0xFF` reads it, `0xFE` does not, and `MCU_ID` is out of reach
+### Internal memory: `0xFE` and `0xFF` are two pages, not one selector and a dud
 
-Sent to the Harmony One. **A `READ_FLASH` with top address byte `0xFF` returns internal program
-memory; the same read with `0xFE` returns nothing at all.** That answers which of the two the
-sub-selector wants, which the images could not: both values reach the same body, and only one of them
-produces data.
+**Corrected.** This section said, from a measurement, that "a `READ_FLASH` with top address byte
+`0xFF` returns internal program memory; the same read with `0xFE` returns nothing at all". Both
+halves of that are wrong, and they are wrong the other way round.
 
-The window maps one to one from program address zero, and what is there says so:
+Measured again on the spare unprogrammed Harmony One, the same offset through both sub-selectors,
+six offsets, 62 bytes each:
+
+| Offset | `0xFE` | `0xFF` |
+|---|---|---|
+| `0x0000` | the reset vector, PIC18 code | a `48 47` image header |
+| `0x0040` | code | data |
+| `0x1000` | a `48 47` image header | erased |
+| `0x8000` | code | erased |
+| `0xE000` | erased | a `48 47` image header |
+| `0xF400` | erased | 64 bytes of per unit identity |
+
+**Every pair differs, and neither selector returns nothing.** They are two separate 64 KiB pages,
+and the earlier reading came from a single read at offset zero through one selector, with the other
+attributed a null result it never gave.
+
+It is `0xFE` that maps one to one from program address zero, and what is there says so:
 
 ```
 d2 ef 07 f0   GOTO, at program address 0x0000, the reset vector
@@ -799,11 +814,65 @@ its own address zero, not a window onto something else. **This is code no image 
 contains**, because on arch 12 the application runs from external NOR at `0x020000`; what is here is
 whatever bootstraps that.
 
-**`MCU_ID` is not reachable this way.** The address is 24 bits with the top byte spent on the region
-selector, and the firmware bounds the remaining 16 to `0xFFC0`, so the reachable window is the first
-64 KiB of program memory. A PIC18 keeps its device id at `0x3FFFFE`, far outside it. So the arch 12
-part number stays inferred, and the route to measuring it is not this one. Recorded as a negative
-result rather than left as a task, because the task as written cannot be done.
+#### What the two pages hold
+
+Three of the offsets probed carry the **`48 47` image header this project already parses**, the one
+`src/harmony/firmware.py` reads at offset 8. So they are not loose code, they are packaged images,
+and `firmware.parse_header` reads all three without complaint:
+
+| Image at | size field | version | entry point |
+|---|---|---|---|
+| `0xFE` `+0x1000` | 45348 | 3.4 | `0xC0C4` |
+| `0xFF` `+0x0000` | 8430 | 1.6 | none in the header |
+| `0xFF` `+0xE000` | 626 | 3.4 | none in the header |
+
+The `0xFF` `+0xE000` one opens with a run of `BRA` instructions, which is a jump table, so it is a
+callable library rather than a standalone program.
+
+**The `0xFF` page holds a 64 byte identity block at `+0xF400`**, and everything else from `0xF000` to
+the `0xFFC0` bound is erased apart from four bytes at `+0xF580` and an eleven byte record at
+`+0xF640`. The identity block is four 16 byte fields:
+
+```
++0x00  the unit serial, all 0xEE on this remote, which is the unprogrammed spare
++0x10  a GUID
++0x20  a GUID
++0x30  sixteen zero bytes
+```
+
+**Closure, and it is a strong one.** `concordance -i` prints three GUIDs for a connected remote, and
+the lab holds that output for this exact unit from months earlier. All three appear in this block, in
+the same order, at `+0x00`, `+0x10` and `+0x20`, the latter two in mixed endian byte order. So an
+address predicted in advance returns three values obtained without this code, in order. The values
+themselves are not published here, per `CLAUDE.md`: a remote's serial GUIDs are personal data.
+
+That the first field is `0xEE` filled is itself consistent. This is the never programmed spare, and
+`concordance -i` reports its serial as all E's, so both readers of that location agree it is unset.
+
+#### How the prediction did
+
+Recorded above before any of this was read:
+
+| Predicted | Outcome |
+|---|---|
+| `0xE000` a library or support image | **confirmed**, an image header and a jump table |
+| `0xF400` a per unit identifier, 64 bytes | **confirmed**, exactly 64 non-erased bytes, three known GUIDs in it |
+| `0xF640` a manufacturing identifier, 64 bytes | **partly**: a record is there, but eleven bytes, not 64, and unidentified |
+
+Three offsets named in advance, in a region that is otherwise erased for four kilobytes around them,
+all three holding non-code data. The eleven bytes at `+0xF640` are `09 00 20 11 02 18 e0 3c 00 67 01`
+and nothing in the corpus explains them yet.
+
+**`MCU_ID` is not reachable this way.** The conclusion survives the correction above but its reason
+changes, so both are stated. The address is 24 bits with the top byte spent on the selector, and the
+firmware bounds the remaining 16 to `0xFFC0`. That was read here as a single 64 KiB window; it is two,
+one per sub-selector, so **128 KiB is reachable, not 64**. A PIC18 keeps its device id at `0x3FFFFE`,
+outside either. So the arch 12 part number stays inferred and the route to measuring it is still not
+this one, but the window is twice the size this document claimed.
+
+A consequence worth naming: 128 KiB of internal memory is now readable in full, at 62 bytes a read.
+That is the internal half of the complete firmware dump on the open list below, and it is a matter of
+about two thousand reads rather than an unknown.
 
 #### A prediction about three offsets inside that window, written down before reading them
 
@@ -890,7 +959,7 @@ to settle, and a list that only ever grows is not a status.
   hardware version, and `IRL, ORL, FRL`, none of which is placed.
 * **Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is
   exempt.** Narrowed to that by experiment, capped rather than understood.
-* **Another route to `MCU_ID`**, since the internal read window is the first 64 KiB and the device id
+* **Another route to `MCU_ID`**, since the internal read window is two 64 KiB pages and the device id
   is at `0x3FFFFE`. The arch 12 part number stays inferred until one is found.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 * Whether `0x28`, GET_VERSION's code, means anything in its low nibble. It is not a payload length:

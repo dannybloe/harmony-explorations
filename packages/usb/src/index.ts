@@ -5,7 +5,8 @@
  * rule lives in the library where every caller meets it instead of in a user interface where only
  * the impatient do.
  *
- * Nothing here has been run against a remote yet. See `remote.ts` for what that leaves open.
+ * The read paths have run against both bench remotes, on both architectures. See `remote.ts` for
+ * what is measured and what is still inferred. Nothing here has ever written to a remote.
  */
 export * from './protocol.ts';
 export * from './rails.ts';
