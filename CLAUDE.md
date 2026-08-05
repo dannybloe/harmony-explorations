@@ -354,20 +354,31 @@ Established norms:
 
 ## Next up
 
-Full detail in `docs/roadmap.md`, which tracks its own progress. Steps 1 and 2 are done: the
-corpus now spans four architectures, and the container parser is general across all of them.
+Full detail in `docs/roadmap.md`, which tracks its own progress. Steps 1, 2 and 4 are done, and
+step 3 is done as far as the firmware can take it: the corpus spans four architectures, the
+container parser is general across all of them and now exists twice, in Python and TypeScript, held
+equal by golden vectors, and `docs/usb-protocol.md` covers both directions of every command.
 
-Step 3 is current: **the USB protocol, clean-room from the firmware.** Deliverable is
-`docs/usb-protocol.md` covering each command's request and response layout, the length nibble
-mapping the firmware actually implements, and which of `MISC_RAM`, `MISC_QUEUE_ACTION` and
-`MISC_QUEUE_EVENT` it services. First payoff of our own read path is a complete firmware dump of
-both remotes on the bench plus their `MCU_ID`, since concordance truncates the 600 at 65536 of
-70336 bytes and the arch 12 part number is currently inferred rather than measured. While in the
-firmware, locate the routine that validates a config on boot, because the trailer checksum lives
-there.
+**One decision is waiting, and everything hardware related sits behind it.** `node-hid` is a native
+module, so installing it means approving a build script, which pnpm 11 blocks by default. Until
+that is approved, no remote can be opened, and these stay blocked:
 
-Then, in order: the TypeScript codec and the read-only application (steps 4 and 5), then the
-first reverse engineering block proper (step 6): label the section pointers by function using the
-proven consumer method plus live RAM polling, extract the IR database, derive the trailer
-checksum, and run the button mapping experiment by polling the keypad scanner's RAM variable
+* the concordance cross-check on the same remote,
+* a complete firmware dump of both bench remotes, since concordance truncates the 600 at 65536 of
+  70336 bytes,
+* `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
+  reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
+* naming ten of GET_VERSION's twelve fields,
+* telling the internal memory sub-selectors `0xFE` and `0xFF` apart.
+
+Step 5 is next: **the read only application.** Electron shell with no network access at all,
+enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a
+config read with progress, the container summary, the section table, an annotated hex view, and
+every read config saved into the lab corpus automatically, because a dump taken before an
+experiment is the only cheap insurance there is.
+
+Then the first reverse engineering block proper (step 6): label the section pointers by function
+using the proven consumer method plus live RAM polling, read the action list opcode table out of
+the arch 14 firmware, extract the IR database, derive the trailer checksum from the boot validator
+already located, and run the button mapping experiment by polling the keypad scanner's RAM variable
 while pressing every key.

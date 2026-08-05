@@ -149,9 +149,13 @@ dependency is added without looking at what it pulls in: that is what rejected `
 
 ## Milestones
 
-**M0 Infrastructure.** Corpus widened, container generalised, monorepo standing up.
+**M0 Infrastructure. Done.** Corpus widened to four architectures, container generalised across all
+of them, monorepo standing with the codec ported and proven equal by golden vectors, and the USB
+command layer written from the firmware with its rails.
 
-**M1 Explorer, read only.** The app finds the remote, reads its config, and shows the container,
+**M1 Explorer, read only.** *Blocked on one thing: approving `node-hid`'s build script, which is
+what allows a remote to be opened at all.* The app finds the remote, reads its config, and shows the
+container,
 the section table with whatever labels exist, an annotated hex view, and an IR code export.
 
 **M2 Round trip codec.** Decompile and recompile byte-identical across the whole corpus, and the
