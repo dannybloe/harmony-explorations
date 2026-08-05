@@ -3,7 +3,9 @@
 This is the authoritative sequence. [plan.md](plan.md) is the earlier proposal this grew out of
 and is kept for its arguments, not as the plan of record.
 
-Status, 2026-08-05: steps 1 and 2 are done, step 3 is next.
+Status, 2026-08-05: steps 1 and 2 are done, step 3 is in progress. Its transport layer is
+complete and confirmed against hardware, and its command layer has the dispatch table, the
+length nibble mapping, the state machine, READ_FLASH and READ_MISC.
 
 ## Context
 
@@ -67,11 +69,19 @@ because the 600 dump is truncated by concordance. Other models are iterated on l
   `READ_FLASH 0x50`, `START_IRCAP 0x70`, `STOP_IRCAP 0x80`, `WRITE_MISC 0xA0`, `READ_MISC 0xB0`,
   `ERASE_FLASH 0xD3`, `RESET 0xE1`, plus a length nibble whose mapping is non-linear and differs
   between mode 0 (safe mode) and the other modes.
+  **Now derived from the firmware**, with two differences from the list above: the dispatch is on
+  the high nibble, so `ERASE_FLASH` is `0xD0` and `RESET` is `0xE0` with a sub-command byte, and
+  `STOP_IRCAP 0x80` is not dispatched at all in the idle table. The mapping is `0` to `7`
+  literally, then `8`, `9` and `A` to 15, 31 and 63. Safe mode is a separate firmware and
+  unchecked.
 * `READ_MISC`/`WRITE_MISC` carry a `MISC_RAM 0x06` sub-command, exposed upstream as
   `ReadRam`/`WriteRam`. **Live RAM of a running remote is readable over USB.** The header also
   defines `MISC_QUEUE_ACTION 0x03` and `MISC_QUEUE_EVENT 0x09`, which concordance never uses;
   whether the firmware services them is an open question worth answering, because event
   injection would let us drive the remote from the host.
+  **Superseded in part.** The RAM read is confirmed on arch 14 and **its selector is `0x07`, not
+  `0x06`**: see `docs/usb-protocol.md`. Read `0x06` above as the upstream claim it was, not as a
+  fact about these remotes. The queue sub-commands are still open.
 * Our parsers reject the two extra sample sets: `gspm.parse` and `ezfile.decode_payload` hardcode
   the `GSPM` magic, so `AHCM` (arch 9, Harmony 525) and `TPTP` (arch 8, 720/785/88x) both fail.
   The claim in `docs/config-format.md` that the container is shared across architectures is
