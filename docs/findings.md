@@ -1774,6 +1774,35 @@ watcher polling it reported no remote for six minutes while the remote was plugg
 useful measurements are all available without opening the device, which is what makes them
 safe to take at all while the project is read only.
 
+### READ_FLASH, and a lead that survived
+
+The previous version of this section recorded the READ_FLASH argument layout as an unconfirmed
+lead: bytes 1 to 3 a 24-bit address and bytes 4 and 5 a 16-bit count, with the top address byte
+doubling as a region selector. Following the switch confirmed it, and the confirmation is the
+kind worth preferring, because the firmware demonstrates the meaning rather than being
+consistent with it.
+
+The three address bytes are copied into `TBLPTRL`, `TBLPTRH` and `TBLPTRU`, bracketed by
+`BCF LATF,7` and `BSF LATF,7`. That fixes three things at once: the bytes are an address, the
+wire order is most significant first, and the target is the external config flash, because
+`LATF` bit 7 was established as its chip select in section 13 by a completely separate route.
+
+The count pair is compared against `0x3F` and the response goes out in 63 byte pieces. Which is
+the fourth time this document has landed on 64: the report descriptors declare a 64 byte report,
+the length nibble maps `0xA` to 63 payload bytes, 63 plus the command byte is 64, and now the
+read chunk is 63 too.
+
+Byte 1 is also validated, and that is where the regions turned out to live. Below `0x20` is an
+ordinary flash address. `0xFE` and `0xFF` select something else, with the low bit kept as a
+sub-selector and the remaining 16 bits bounded to `0xFFC0`, exactly 64 short of the end of a
+64 KiB window. Anything else is refused.
+
+**What that does not settle**, and the distinction matters because `docs/roadmap.md` asks the
+question in terms of four named regions: one sub-selector bit gives two regions, not four, and
+the routine those reads go to has not been read. So the shape of the region mechanism is
+established and the mapping onto `MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH` is not.
+Either not all four are reachable on arch 14, or a region is selected some other way as well.
+
 ### An honest gap
 
 The four sub-commands of the `0xE0` escape are `0x01`, `0x02`, `0x03` and `0x05`. What each

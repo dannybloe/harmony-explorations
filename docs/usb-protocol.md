@@ -305,29 +305,73 @@ can send directly.
 The item selector and a 16-bit parameter, then deferred execution. WRITE_MISC at `0x0C364` is
 the same shape with a value to write.
 
-### READ_FLASH takes five bytes, and the first one is a selector
+### READ_FLASH
+
+The one command version 1 of the application actually needs. Addresses are the 700 2.8 image.
+
+**Request: `0x50 | length nibble`, then five bytes.**
+
+| Byte | Meaning |
+|---|---|
+| 1 | address, most significant byte, **and the region selector** |
+| 2 | address, middle byte |
+| 3 | address, least significant byte |
+| 4 | count, high byte |
+| 5 | count, low byte |
+
+So the address is 24 bits and the count 16 bits, both most significant first. The length nibble
+of the command byte should therefore be 5.
+
+The address is an address because it becomes one, which is better than an inference:
 
 ```
-0c266: state = 4
-0c26c: read byte -> 0xED0
-0c278: read byte -> 0xECF
-0c284: read byte -> 0xECE
-0c290: read byte -> 0xED2
-0c29c: read byte -> 0xED1
-0c2a8: CALL 0x13DFE
+13eb8: 8e 9e       BCF LATF,7           ; assert the flash chip select
+13eba: ce ce f6 ff MOVFF 0xece,TBLPTRL
+13ebe: cf ce f7 ff MOVFF 0xecf,TBLPTRH
+13ec2: d0 ce f8 ff MOVFF 0xed0,TBLPTRU
+13ec6: cc ec c6 f0 CALL 0x18d98         ; the SPI transfer
+13eca: 16 ec 85 f0 CALL 0x10a2c
+13ece: 8e 8e       BSF LATF,7           ; release the chip select
 ```
 
-Five argument bytes, and `0x13DFE` immediately switches on the **first** of them, testing it
-against `0xFE` and `0xFF` (it clears bit 0 before comparing against `0xFE`, so the two are one
-case) and then against `0x00`. So byte 1 is not a plain address byte.
+`LATF` bit 7 is the external flash chip select, established independently in
+`docs/findings.md` section 13, so this is the config flash and not an internal table read
+despite the register names.
 
-**Unconfirmed reading**, recorded as a lead: bytes 1 to 3 are a 24-bit address and bytes 4 and
-5 a 16-bit length, both most significant first, with certain values of the top address byte
-selecting a region that is not the main flash. That would answer the `READ_FLASH` region
-question in `docs/roadmap.md` step 3, and it fits READ_MISC, which parses its 16-bit parameter
-into the same `0xECF` and `0xECE` pair while putting its item selector in a variable of its
-own. It is not established: the switch at `0x13DFE` has not been followed, and no reading here
-has been checked against a live remote.
+**Byte 1 is validated, and that is where the regions are.** `0x13DFE` returns 1 for accepted
+and 0 for rejected:
+
+* below `0x20`: an ordinary config flash address, and the region marker is cleared
+* `0xFE` or `0xFF`: a region that is not the config flash. The marker is set to `0xFE`, the
+  low bit of byte 1 is kept as a sub-selector, and the remaining 16 bits are bounded to
+  `0xFFC0`, which is `0x10000` minus 64, so an offset plus a full report cannot leave the
+  window. That path calls `0x1B50A` with the address triple instead of the flash reader.
+* anything else: rejected.
+
+That is the answer to the region question in `docs/roadmap.md` step 3, at least in shape.
+**Which region is which is not established**: the sub-selector is one bit, so `0xFE` and `0xFF`
+are two regions, and `0x1B50A` has not been read. The protocol is known to name four,
+`MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH`, so either not all four are reachable on
+arch 14 or the mapping is not one selector per region.
+
+**The response is chunked at 63 bytes.** The remaining count is compared against `0x3F` and
+sent in pieces of that size:
+
+```
+0c9b4: 3f 0e       MOVLW 0x3f
+0c9b6: d1 5d       SUBWF 0xed1,W      ; 16-bit compare of the remaining count
+0c9ba: d2 59       SUBWFB 0xed2,W
+0c9bc: 24 e2       BC 0x0ca06         ; a full 63 byte chunk
+0c9be: d1 29       INCF 0xed1,W       ; otherwise what is left, plus one
+```
+
+63 is exactly what length nibble `0xA` encodes, so this is the third independent part of the
+firmware to agree on the 64 byte report, after the descriptors and the length nibble mapping.
+
+The `INCF` on the short path implies the counter holds one **less** than the number of bytes
+still to send, which is a common enough convention but rests on that single instruction here.
+Whether the count on the wire is already biased that way, or is decremented once on arrival,
+is not established.
 
 ### Still open
 
@@ -338,8 +382,9 @@ has been checked against a live remote.
   remote from the host.
 * The response layout of each command, which means reading the main loop's state handlers
   rather than the parsers.
-* The request layout of GET_VERSION, READ_FLASH, WRITE_FLASH, ERASE_FLASH and START_IRCAP,
-  each of which is a few instructions in the same shape as READ_MISC above.
+* The request layout of GET_VERSION, WRITE_FLASH, ERASE_FLASH and START_IRCAP, each of which
+  is a few instructions in the same shape as READ_MISC above. READ_FLASH is done.
+* Which region `0xFE` and `0xFF` select, which means reading `0x1B50A`.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 
 ## Corroboration used, after the fact

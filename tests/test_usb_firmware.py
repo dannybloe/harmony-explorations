@@ -12,7 +12,7 @@ is what makes this a regression test.
 import unittest
 
 import lab
-from harmony.pic18 import chains, isa, trace
+from harmony.pic18 import chains, disasm, isa, trace
 
 # image -> (base, command dispatch chain, length nibble chain)
 IMAGES = {
@@ -221,6 +221,102 @@ class TestTheLengthNibbleMapping(unittest.TestCase):
 
     def test_the_longest_payload_fills_the_report(self):
         self.assertEqual(max(self.EXPECTED.values()) + 1, 64)
+
+
+class TestReadFlash(unittest.TestCase):
+    """
+    The one command version 1 of the application actually needs.
+
+    Addresses are the 700 2.8 image. The argument variables are named by what they turn out to
+    hold: the address triple is loaded straight into TBLPTR, which settles it.
+    """
+
+    BASE = 0x9000
+    BYTE_READER = 0x172C6       # returns the next byte of the packet in W
+    ADDRESS_HIGH = 0xED0        # doubles as the region selector
+    ADDRESS_MID = 0xECF
+    ADDRESS_LOW = 0xECE
+    COUNT_HIGH = 0xED2
+    COUNT_LOW = 0xED1
+
+    def parsed_argument_order(self, handler, within=40):
+        """Where each byte read from the packet is stored, in order."""
+        code = lab.load('h700_code')
+        addr, bank, out, after_read = handler, None, [], False
+        for _ in range(within):
+            instr = isa.decode(code, addr - self.BASE, self.BASE)
+            if instr.category == isa.BANKSEL:
+                bank = instr.fields['k']
+            elif (instr.category == isa.ABS20 and instr.mnemonic == 'CALL'
+                    and instr.fields['target'] == self.BYTE_READER):
+                after_read = True
+            elif after_read and instr.mnemonic == 'MOVWF' and bank is not None:
+                out.append((bank << 8) | instr.fields['f'])
+                after_read = False
+            addr += 2 * instr.words
+        return out
+
+    def literal_at(self, addr):
+        return isa.decode(lab.load('h700_code'), addr - self.BASE, self.BASE).fields['k']
+
+    def movff_at(self, addr):
+        f = isa.decode(lab.load('h700_code'), addr - self.BASE, self.BASE).fields
+        return f['src'], f['dst']
+
+    def test_five_argument_bytes_in_this_order(self):
+        order = self.parsed_argument_order(dispatch('h700_code')[0x50])
+        self.assertEqual(order, [self.ADDRESS_HIGH, self.ADDRESS_MID, self.ADDRESS_LOW,
+                                self.COUNT_HIGH, self.COUNT_LOW])
+
+    def test_the_address_triple_is_an_address_because_it_becomes_tblptr(self):
+        """
+        Not an inference: the three bytes are copied into TBLPTRL, TBLPTRH and TBLPTRU. Which
+        also fixes the byte order, most significant first on the wire.
+        """
+        self.assertEqual(self.movff_at(0x13EBA), (self.ADDRESS_LOW, 0xFF6))   # TBLPTRL
+        self.assertEqual(self.movff_at(0x13EBE), (self.ADDRESS_MID, 0xFF7))   # TBLPTRH
+        self.assertEqual(self.movff_at(0x13EC2), (self.ADDRESS_HIGH, 0xFF8))  # TBLPTRU
+
+    def test_the_chip_select_brackets_the_read(self):
+        """
+        LATF bit 7 is the external flash chip select, established in findings section 13. It
+        goes low before the address is loaded and high after the transfer, which is what makes
+        this the config flash read path rather than an internal table read.
+        """
+        code = lab.load('h700_code')
+        before = disasm.format_instr(isa.decode(code, 0x13EB8 - self.BASE, self.BASE))
+        after = disasm.format_instr(isa.decode(code, 0x13ECE - self.BASE, self.BASE))
+        self.assertEqual(before, 'BCF LATF,7')
+        self.assertEqual(after, 'BSF LATF,7')
+
+    def test_the_validator_rejects_out_of_range_selectors(self):
+        """
+        0x13DFE returns 1 or 0. The high address byte is accepted below 0x20, or as 0xFE and
+        0xFF which select a region that is not the config flash, and rejected otherwise.
+        """
+        self.assertEqual(self.literal_at(0x13E0C), 0xFE)   # the special region test
+        self.assertEqual(self.literal_at(0x13E38), 0x20)   # the ordinary address bound
+        for addr, value in ((0x13E84, 1), (0x13E86, 0), (0x13E8C, 1), (0x13E8E, 0)):
+            instr = isa.decode(lab.load('h700_code'), addr - self.BASE, self.BASE)
+            self.assertEqual(instr.mnemonic, 'RETLW', hex(addr))
+            self.assertEqual(instr.fields['k'], value, hex(addr))
+
+    def test_the_special_region_leaves_room_for_one_report(self):
+        """0xFFC0 is 0x10000 minus 64, so an offset plus a full read cannot leave the window."""
+        bound = (self.literal_at(0x13E70) << 8) | self.literal_at(0x13E6C)
+        self.assertEqual(bound, 0xFFC0)
+        self.assertEqual(0x10000 - bound, 64)
+
+    def test_the_count_is_chunked_at_the_payload_size(self):
+        """
+        The remaining count is a 16-bit pair compared against 63 and sent 63 bytes at a time,
+        and 63 is exactly what length nibble 0xA encodes. Third independent agreement on the
+        64 byte report, after the descriptors and the length nibble mapping itself.
+        """
+        self.assertEqual(self.literal_at(0x0C9B4), 0x3F)
+        self.assertEqual(self.literal_at(0x0C9C6), 0x3F)
+        self.assertEqual(TestTheLengthNibbleMapping.EXPECTED[0x0A], 0x3F)
+        self.assertEqual(0x3F + 1, 64)
 
 
 class TestTheEndpointSetup(unittest.TestCase):
