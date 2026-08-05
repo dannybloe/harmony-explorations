@@ -1,14 +1,16 @@
 # The Harmony USB protocol, from the firmware
 
-**Status: in progress.** The transport is complete, quoted from the device's own descriptors and
-confirmed against the Harmony 600 on the bench. The command layer has its dispatch table, its
-length nibble mapping, its state machine, **the request layout of every command**, and the
-response layout of the three a read-only application needs: `GET_VERSION`, `READ_FLASH` and
-`READ_MISC`. Live RAM over USB is confirmed, in both directions. Event injection is not
-available. What remains is response layouts for the three write-side commands, and two
-identification questions. Section 3 lists them. This document is the
-deliverable of step 3 of `docs/roadmap.md`, and it is being written as each part is
-established rather than at the end.
+**Status: the firmware side is done.** The transport is complete, quoted from the device's own
+descriptors and confirmed against the Harmony 600 on the bench. The command layer has its
+dispatch table, its length nibble mapping, its state machine, and **the request and response
+layout of every command**. Live RAM over USB is confirmed in both directions, and event injection
+is not available.
+
+What is left needs a host implementation rather than more disassembly: naming ten of
+GET_VERSION's twelve fields, identifying the two special `READ_FLASH` regions, and the
+cross-check against a concordance run on the same remote. Section 3 lists them. This document is
+the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was established
+rather than at the end.
 
 Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
 (architecture 14). The Harmony 600 0.2 dump is truncated by concordance at 65536 of 70336
@@ -294,6 +296,29 @@ that payload byte selects the kind of reset. Sub-command `0x05` is the one that 
 `0x05` row of the table above, by storing `0x05` into the state variable's dispatch input at
 `0x0BDA8`, which is what makes that row an internal continuation rather than a command a host
 can send directly.
+
+### Every command's response, in one table
+
+| Command | Response | Where |
+|---|---|---|
+| `0x10` GET_VERSION | `0x28` then 12 bytes | `0x0C906` |
+| `0x30` WRITE_FLASH | none from the executor, which is a bare `RETURN` | `0x0D30C` |
+| `0x50` READ_FLASH | data in chunks of 63, ending by clearing the state | `0x0C982`, `0x0D3A8` |
+| `0x70` START_IRCAP | none of its own; branches straight to the transmitter | `0x0CB1E` |
+| `0xA0` WRITE_MISC | `0xF0` `0xA0` | `0x0CB6E` |
+| `0xB0` READ_MISC | `0xC2`, the selector, then one byte | `0x0CB92` |
+| `0xD0` ERASE_FLASH | `0xF0` `0xD0` | `0x0CB4A` |
+
+**An acknowledgement is `0xF0` followed by the command's own byte.** Two samples, `0xA0` for
+WRITE_MISC and `0xD0` for ERASE_FLASH, both built the same way by appending two bytes and
+returning. So a host can treat `0xF0 cmd` as "done, no payload" without a per command table.
+
+Two of the rows are absences, and both are coherent rather than gaps in the reading.
+**WRITE_FLASH's executor is a single `RETURN`**, because the work is not in the state machine at
+all: after WRITE_FLASH sets state 2, the data arrives as `0x40` packets handled in the USB
+callback. And **START_IRCAP branches straight to `0x0D2E0`**, which is the shared response
+transmitter, checking a pending byte count and submitting the IN report, so it emits whatever was
+queued and nothing of its own.
 
 ### Every command's request, in one table
 
@@ -633,7 +658,7 @@ proximity: it needs following control flow into whatever sets `0xED3` on this pa
 * What GET_VERSION's twelve bytes each are. The block is twelve fields and two of them are
   characterised; the other ten need their accessors followed, or a comparison against a
   concordance run on the same remote, which is the cross-check this step wants regardless.
-* The response side of WRITE_FLASH, ERASE_FLASH and START_IRCAP. Their requests are done.
+
 * Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
   not.
 * Which region `0xFE` and `0xFF` select, which means reading `0x1B50A`.

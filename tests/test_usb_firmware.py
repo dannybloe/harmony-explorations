@@ -337,6 +337,39 @@ class TestEveryCommandsRequestLayout(unittest.TestCase):
         self.assertEqual(self.arguments(0x70), [])
 
 
+class TestTheAcknowledgementShape(unittest.TestCase):
+    """
+    An acknowledgement is 0xF0 followed by the command's own byte, so a host needs no per command
+    table to recognise "done, no payload".
+    """
+
+    BASE = 0x9000
+    # command -> (address of the MOVLW 0xF0, address of the MOVLW of the command byte)
+    ACKS = {0xA0: (0x0CB70, 0x0CB7E), 0xD0: (0x0CB4C, 0x0CB5A)}
+
+    def literal_at(self, addr):
+        return isa.decode(lab.load('h700_code'), addr - self.BASE, self.BASE).fields['k']
+
+    def test_both_acknowledgements_are_f0_then_the_command(self):
+        for command, (first, second) in self.ACKS.items():
+            self.assertEqual(self.literal_at(first), 0xF0, COMMANDS[command])
+            self.assertEqual(self.literal_at(second), command, COMMANDS[command])
+
+    def test_write_flash_has_no_executor_body(self):
+        """
+        A bare RETURN, because the work is not in the state machine: the data arrives as 0x40
+        packets handled in the USB callback once WRITE_FLASH has set state 2.
+        """
+        instr = isa.decode(lab.load('h700_code'), 0x0D30C - self.BASE, self.BASE)
+        self.assertEqual(instr.mnemonic, 'RETURN')
+
+    def test_start_ircap_delegates_to_the_shared_transmitter(self):
+        instr = isa.decode(lab.load('h700_code'), 0x0CB1E - self.BASE, self.BASE)
+        self.assertEqual(instr.mnemonic, 'BRA')
+        self.assertEqual(instr.fields['target'], 0x0D2E0)
+        self.assertEqual(TestTheStateMachine.table()[0x05], 0x0CB1E)
+
+
 class TestWriteMisc(unittest.TestCase):
     """
     Nine selectors, and three of them settle open questions: an arbitrary RAM write, a no-op
