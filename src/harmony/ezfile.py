@@ -18,6 +18,12 @@ reproducible rather than something you retype into a shell each time.
     the XML ends. Some EZHex files instead use `<DATA>` elements like EZUp, so both are
     handled by sniffing.
 
+    A config EZHex declares its own payload length and a checksum, so the split is
+    verifiable rather than guessed: `<BINARYDATASIZE>` is the exact payload length and
+    `<CHECKSUM>` is an XOR of every payload byte seeded with `0x69`. `parse_ezhex` checks
+    both. The header also carries `<INTENDEDVERSION>`, which pins the protocol, skin, board
+    and flash id a remote must report before it will accept the file.
+
 Privacy warning: `Data.xml` inside the archived `.hfw` packages contains the account and
 session details of whoever originally downloaded the firmware (`UserId`,
 `CookieKeyValue`, `ServerID`, `ASPSESSIONID`). `scrub_data_xml` removes them. Do not
@@ -29,11 +35,17 @@ from __future__ import annotations
 import binascii
 import re
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
+from . import gspm
 
 _DATA_ELEMENT = re.compile(rb'<DATA>([0-9A-Fa-f]+)</DATA>')
 _GSPM = b'GSPM'
+_CONTAINER_MAGICS = tuple(f.magic for f in gspm.FAMILIES)
+
+CHECKSUM_SEED = 0x69
+INTENDED_VERSION_FIELDS = ('PROTOCOL', 'SKIN', 'FLASH', 'BOARD')
 
 # Fields in Data.xml that carry the original downloader's identity or session.
 SENSITIVE_XML_FIELDS = ('UserId', 'CookieKeyValue', 'ServerID', 'ASPSESSIONID')
@@ -48,11 +60,93 @@ class Region:
     """One firmware or config region out of an update package."""
     name: str
     payload: bytes
-    encoding: str          # 'hex-data-elements' or 'raw-after-xml'
+    encoding: str          # 'hex-data-elements', 'raw-after-xml' or 'declared-length'
+
+    @property
+    def container_magic(self) -> Optional[bytes]:
+        """The container cookie this payload starts with, if it is a known one."""
+        head = self.payload[:4]
+        return head if head in _CONTAINER_MAGICS else None
 
     @property
     def looks_like_gspm(self) -> bool:
+        """Specifically a GSPM container, so architecture 12 or 14."""
         return self.payload[:4] == _GSPM
+
+
+@dataclass
+class EzHex:
+    """An EZHex config file split into its declared parts, with the split verified."""
+    name: str
+    xml: str
+    payload: bytes
+    declared_size: Optional[int]
+    declared_checksum: Optional[int]
+    intended_version: Dict[str, str] = field(default_factory=dict)
+    checks: Dict[str, bool] = field(default_factory=dict)
+
+    @property
+    def all_checks_pass(self) -> bool:
+        return all(self.checks.values())
+
+
+def payload_checksum(payload: bytes) -> int:
+    """The `<CHECKSUM>` an EZHex header carries: XOR of every byte, seeded 0x69."""
+    value = CHECKSUM_SEED
+    for byte in payload:
+        value ^= byte
+    return value
+
+
+def _xml_int(blob: bytes, tag: str) -> Optional[int]:
+    match = re.search(rb'<%s>(\d+)</%s>' % (tag.encode(), tag.encode()), blob)
+    return int(match.group(1)) if match else None
+
+
+def parse_ezhex(blob: bytes, name: str = '<blob>') -> EzHex:
+    """Split an EZHex file into XML header and payload, verifying the declared length.
+
+    The payload is the last `BINARYDATASIZE` bytes of the file, which is what the remote
+    itself relies on, and the two byte `\\r\\n` separator before it is checked rather than
+    assumed. Falls back to locating a container cookie when the header declares no size.
+    """
+    size = _xml_int(blob, 'BINARYDATASIZE')
+    declared_checksum = _xml_int(blob, 'CHECKSUM')
+    if size is not None and 0 < size <= len(blob):
+        split = len(blob) - size
+        payload = blob[split:]
+    else:
+        found = [blob.find(m) for m in _CONTAINER_MAGICS]
+        found = [f for f in found if f >= 0]
+        if not found:
+            raise EzFileError('%s: no BINARYDATASIZE and no container magic' % name)
+        split = min(found)
+        payload = blob[split:]
+
+    ez = EzHex(
+        name=name,
+        xml=blob[:split].decode('utf-8', 'replace'),
+        payload=payload,
+        declared_size=size,
+        declared_checksum=declared_checksum,
+    )
+    version_block = re.search(rb'<INTENDEDVERSION>(.*?)</INTENDEDVERSION>', blob, re.S)
+    if version_block:
+        for fld in INTENDED_VERSION_FIELDS:
+            m = re.search(rb'<%s>(.*?)</%s>' % (fld.encode(), fld.encode()),
+                          version_block.group(1), re.S)
+            if m:
+                ez.intended_version[fld] = m.group(1).decode('utf-8', 'replace').strip()
+    ez.checks = {
+        'declares_a_payload_size': size is not None,
+        'payload_length_matches_declaration': size == len(payload),
+        'separator_before_payload_is_crlf': blob[split - 2:split] == b'\r\n',
+        'checksum_matches_declaration': (
+            declared_checksum is not None
+            and payload_checksum(payload) == declared_checksum),
+        'payload_starts_with_a_known_container': payload[:4] in _CONTAINER_MAGICS,
+    }
+    return ez
 
 
 def decode_payload(blob: bytes, name: str = '<blob>') -> Region:
@@ -65,13 +159,17 @@ def decode_payload(blob: bytes, name: str = '<blob>') -> Region:
             raise EzFileError('%s: bad hex in <DATA> elements: %s' % (name, exc))
         return Region(name, payload, 'hex-data-elements')
 
-    # No hex elements, so the payload is raw bytes after the XML header. Locate it by the
-    # GSPM magic, which is what these files carry.
-    start = blob.find(_GSPM)
-    if start < 0:
+    # No hex elements, so the payload is raw bytes after the XML header. A config EZHex
+    # declares its own length, which is exact; otherwise fall back to the container cookie.
+    if _xml_int(blob, 'BINARYDATASIZE') is not None:
+        ez = parse_ezhex(blob, name)
+        return Region(name, ez.payload, 'declared-length')
+    found = [blob.find(m) for m in _CONTAINER_MAGICS]
+    found = [f for f in found if f >= 0]
+    if not found:
         raise EzFileError(
-            '%s: no <DATA> elements and no GSPM magic, unrecognised container' % name)
-    return Region(name, blob[start:], 'raw-after-xml')
+            '%s: no <DATA> elements and no container magic, unrecognised container' % name)
+    return Region(name, blob[min(found):], 'raw-after-xml')
 
 
 def read_hfw(path: str) -> Dict[str, Region]:
@@ -130,7 +228,6 @@ def split_arch12_region2(payload: bytes) -> tuple[bytes, bytes]:
     """
     if payload[:4] != _GSPM:
         raise EzFileError('payload does not start with a GSPM container, nothing to split')
-    from . import gspm
     container = gspm.parse(payload)
     return payload[:container.length], payload[container.length:]
 

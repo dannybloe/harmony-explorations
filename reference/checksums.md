@@ -36,6 +36,45 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 The last two come from specific physical remotes, so their checksums will not reproduce on
 anyone else's hardware. They are listed for the record, not as verification targets.
 
+## Publicly shared config samples
+
+Unlike everything else here, these five files are already public, posted by their owners. They
+are used as controls for claims about the container: a rule that survives architectures nobody
+tuned it for is a rule about the format. They still live in the lab rather than in this
+repository, because the policy is that no config binaries are committed regardless of
+provenance.
+
+Four architecture 8 configs (720/785/88x class), shared by
+[@guyman70718](https://github.com/guyman70718) on 2025-09-18 as `EZHex.Samples.zip` in
+<https://github.com/jaymzh/concordance/issues/66>, mirrored in `samples/arch8/` of
+harmony-decompiler:
+
+| File | SHA-256 |
+|---|---|
+| `Update.EZHex` | `e25b6c0d500a329e9cf4ea069bfdafe7237be33908667d74093f8898cea62f93` |
+| `Update-1.EZHex` | `5b28a88347f13b117cd7219697a8467284e9673b5b57ff27632ba59824029d25` |
+| `Update-2.EZHex` | `ca582add1839b17b7ba6e689ca19715ade63a3c6af7592288dd334f89e8155b8` |
+| `Update-3.EZHex` | `74d2a7383c4632d41a7a32d2c1168871bb5ba2fa06bf3ac279587d30a3780b5a` |
+
+One architecture 9 config (Harmony 525), dumped on 2026-08-02 and published by
+[@trelowney](https://github.com/trelowney) in `samples/harmony525/`:
+
+| File | SHA-256 |
+|---|---|
+| `config.EZHex` | `c6082ebbd4e53c3c26ac41445bcf6bf5f535e7bfaef36ea06640a659925d3220` |
+| `config.bin` | `bba8f7f0efd12684112c0663759e0a035438c244dea31e5d73ad156a2c78e555` |
+| `header.xml` | `72a49968cdbfb4427aa19a855b94e5a0ebc6ed19129e57d8c1499e81f7c49662` |
+
+`config.bin` and `header.xml` are the two halves of `config.EZHex` and are redundant; they are
+listed because the upstream sample set includes them. Both sets carry `UserId` 0 and no serial
+number or account data, which their publishers checked and which is worth re-checking rather
+than assuming:
+
+```sh
+python3 -c "import sys; sys.path.insert(0, 'src'); from harmony import ezfile; \
+print(ezfile.parse_ezhex(open(sys.argv[1], 'rb').read()).xml)" <file>
+```
+
 Note the 600 file is **truncated**: the real image is 70336 bytes and concordance returns only
 the first 65536. Use the 700 image for arch 14 work, since it is complete.
 

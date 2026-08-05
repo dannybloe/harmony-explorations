@@ -39,6 +39,17 @@ IMAGES = {
     'h600_code': '600-0.2-code-base0x9000-TRUNCATED64k.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
+    # Config dumps out of the corpus. The two public sample sets are mirrored from
+    # harmony-decompiler; the rest are dumps of specific remotes, so their file names are
+    # whatever the contributor's concordance run produced.
+    'h525_config': 'config.EZHex',
+    'arch8_config_a': 'Update.EZHex',
+    'arch8_config_b': 'Update-1.EZHex',
+    'arch8_config_c': 'Update-2.EZHex',
+    'arch8_config_d': 'Update-3.EZHex',
+    'one_config': 'harmony-one-programmed-config.EZHex',
+    'one_config_unprogrammed': 'harmony-one-config.EZHex',
+    'h600_config': 'harmony-600-programmed-config.EZHex',
 }
 
 _cache = {}

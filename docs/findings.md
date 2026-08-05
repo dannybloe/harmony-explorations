@@ -13,6 +13,13 @@ Source material:
 * `harmony_one_firmware_3_4.hfw` and `harmony_700_firmware_2_8.hfw`, retrieved from
   harmonyremoterepair.com. The One image is exactly the version running on the
   dumped remote.
+* A **second Harmony One** of the same model, firmware and skin, unprogrammed. The pair is
+  worth more than two unrelated dumps.
+* **Five publicly shared configs from other architectures**, used as controls rather than as
+  targets: four architecture 8 configs (720/785/88x class) shared by guyman70718 in
+  concordance issue 66, and one architecture 9 config (Harmony 525) published by trelowney.
+  Both sets were published by their owners with the account fields already at zero. See
+  section 14.
 
 Everything below is derived from those files plus the concordance source tree. Every
 numeric claim was checked against at least two independent samples where possible.
@@ -27,7 +34,7 @@ PIC18 high-end register layout rather than the PIC18F67J50 datasheet specificall
 12 part number is inferred, not read off a board. Errors are documented where they occurred
 rather than quietly fixed, so the rest can be calibrated against them.
 
-Four have been found and corrected so far. The claim that arch 12 and 14 use a container
+Five have been found and corrected so far. The claim that arch 12 and 14 use a container
 unrelated to the Harmony 525's was wrong: the 525's `0xFEED`/`0xBEEF` frames are nested
 inside the GSPM layer, one per section, so the two are compatible rather than alternatives.
 See section 7 for how that error was made, which is more instructive than the fact of it. `SUBFWB` and `SUBWFB` were swapped in the
@@ -35,9 +42,11 @@ disassembler, which inverted an arithmetic expression in the infrared scaling bl
 count of LWJL codes was wrong, 107 rather than 108. And `BTFSC` and `BTFSS` were swapped,
 which inverted the stated polarity of every bit test: the infrared enable mask, the keypad
 columns and the reset key combination are all active low, not active high as first written.
-None of those changed a structural conclusion, but all three produced readable listings rather
-than obvious failures, which is why the encodings are now asserted in `tests/test_isa.py` and
-every documented finding has a regression test.
+And a rule for deriving the container's section marker from the cookie was wrong while still
+producing the right answer on the only sample that exercised it, which is the most dangerous
+shape an error can have; see section 14. None of those changed a structural conclusion, but they
+produced readable listings rather than obvious failures, which is why the encodings are now
+asserted in `tests/test_isa.py` and every documented finding has a regression test.
 
 ---
 
@@ -899,6 +908,114 @@ By contrast the One's LWJL has 52 matrix entries over 7 rows by 8 columns, which
 LWJL sections genuinely differ in meaning, and there must be a translation somewhere
 between the scanner's linear index and the event codes the config uses. Finding that
 translation is now the concrete next step for the button mapping problem.
+
+## 14. The container is one format across four architectures
+
+Section 7 established the container against four samples, all of them arch 12 or arch 14. That
+is enough to describe those two architectures and not enough to say anything about the format.
+Adding the two publicly shared sample sets closes that gap, because a rule that survives
+architectures nobody tuned it for is a rule about the format.
+
+Corpus now used for container claims, nine samples:
+
+| Sample | Arch | Cookie | Base | Format | Slots | Marker | Key records |
+|---|---|---|---|---|---|---|---|
+| One safe-mode config | 12 | `GSPM` | `0x002000` | 1.6 | 21 | `LWJL` `0x63` | 2 |
+| One 3.4 `Region_2` prefix | 12 | `GSPM` | `0x002000` | 1.6 | 21 | `LWJL` `0x63` | 2 |
+| One user config | 12 | `GSPM` | `0x040000` | 1.6 | 21 | `LWJL` `0x63` | 55 |
+| One user config, second unit | 12 | `GSPM` | `0x040000` | 1.6 | 21 | `LWJL` `0x63` | 55 |
+| 700 `Region_3` | 14 | `GSPM` | `0x020000` | 1.4 | 19 | `LWJL` `0x5B` | 0 |
+| 600 user config | 14 | `GSPM` | `0x030000` | 1.4 | 19 | `LWJL` `0x5B` | 162 |
+| 88x class, four configs | 8 | `TPTP` | `0x020000` | 1.5 | 20 | `WLWL` `0x5F` | 56 |
+| 525 config | 9 | `AHCM` | `0x020000` | 1.4 | 19 | `CMAH` `0x5B` | 0 |
+
+All five consistency checks pass on all nine: `end_addr` lands exactly on the end marker, the
+padding before the marker is zero, the marker is the one expected for that cookie, the slot
+count is one of the known lengths, and every non-null pointer lands inside the blob.
+
+What that buys, concretely:
+
+* The **base address derivation** now holds across five different base addresses and four
+  cookies, so it is a property of the header rather than a coincidence of two models.
+* The **slot count derivation** holds across four table lengths, 19 to 21.
+* The `format` field is **not** an architecture identifier. Arch 9 and arch 14 both carry
+  `0x1400`. Whatever it versions, it is not the architecture, and the cookie is what identifies
+  that.
+
+### The cookies come from the same table concordance already had
+
+`libconcord/remote_info.h` carries a per architecture cookie: `BMBM` for arch 7, `TPTP` for
+arch 8, `AHCM` for arch 9, `GSPM` for arch 12, 14, 16 and 17, and a two byte value for arch 2
+and arch 3. Those are the container magics. Nobody appears to have connected the two, probably
+because the cookie is used there only as a validity check on a config being uploaded.
+
+Only the three verified here are in the parser. Arch 7's end marker is unknown because no arch 7
+sample exists in the corpus, and guessing it would produce exactly the kind of plausible wrong
+answer this project keeps having to correct.
+
+### `WLWL` is a key table, `CMAH` is not established
+
+`WLWL` on arch 8 is followed by a count byte of 56 and then 56 records in the same
+`{u8 event_code; u16 index; u8 flags}` layout as `LWJL`. The codes are dominated by the
+`0x80 | (row << 3) | col` matrix form and include the same three non-matrix codes the One has,
+`0x06`, `0x07` and `0x2D`. So it is the same section under a different name.
+
+On arch 9 the byte in the count position after `CMAH` is zero. That is consistent with an empty
+table and equally consistent with `CMAH` being a plain header terminator, so nothing is claimed:
+the parser records per family whether a key table starts at the marker, and arch 9 is marked as
+not established.
+
+**Correction.** An intermediate version of the parser derived that from the data instead, on the
+theory that a marker equal to the cookie reversed terminates the header. That theory came from
+seeing `AHCM` and `MCHA` and pattern matching too fast: the marker on arch 9 is `CMAH`, and
+`AHCM` reversed is `MCHA`, which is the *end* marker. The rule was wrong even though it produced
+the right answer for the wrong reason on the one sample that exercised it. Markers are now a
+recorded per architecture fact, asserted against the data rather than computed from it.
+
+### Arch 8 and arch 12 share a canonical key ordering, with one transposition
+
+47 event codes appear in both the One's 55-entry table and arch 8's 56-entry table. On that
+shared subset, the two architectures list them in the same order, with a single adjacent
+transposition: the One has `0x06 0x8E 0x07`, arch 8 has `0x06 0x07 0x8E`. Remove `0x8E` from
+both and the sequences are byte-identical.
+
+```
+One,   shared subset: 88 8B 8A 8D 8C 8F 06 8E 07 81 83 82 85 87 86 98 ...
+arch 8, shared subset: 88 8B 8A 8D 8C 8F 06 07 8E 81 83 82 85 87 86 98 ...
+```
+
+Codes unique to one side are presumably the physical difference between the remotes: `0x84`
+`0x89` `0x93` `0x9C` `0x9E` `0xA7` `0xAF` `0xB1` on the One, `0xA9` `0xB6` `0xB8` `0xB9` `0xBA`
+`0xBB` `0xBD` `0xBE` `0xBF` on arch 8.
+
+Why this matters more than it looks. The order is not sorted, not grouped by row in any obvious
+way, and yet two architectures separated by several hardware generations agree on it. The
+straightforward reading is that this is Logitech's canonical key ordering, carried forward
+across models. If that holds, then establishing which physical button each code belongs to on
+**one** remote transfers most of the way to the others, and that is the problem
+harmony-decompiler is currently blocked on after three failed attempts. Independent support:
+they report the same relationship between arch 8 and arch 9, 41 shared codes of 51, in order.
+
+The four arch 8 configs also carry a byte-identical key table, which is worth stating because
+those same four files differ from each other in 73 to 84 percent of their bytes.
+
+### The EZHex wrapper verifies its own split
+
+Config files are an XML header, a two byte `\r\n`, then the container. The header states
+`BINARYDATASIZE`, the exact payload length, and `CHECKSUM`, an XOR of every payload byte seeded
+with `0x69`. Both verify on all eight config samples, so the split point is checked rather than
+sniffed, and `src/harmony/ezfile.py` now uses the declared length in preference to searching for
+a magic.
+
+`INTENDEDVERSION` carries `PROTOCOL`, `SKIN`, `FLASH` and `BOARD`. That is what a remote compares
+against before accepting a config, which makes it part of the eventual write path rather than a
+curiosity.
+
+**Small correction to upstream, recorded for calibration.** harmony-decompiler's sample README
+gives the 525's header as 3153 bytes plus a 2 byte separator, which totals two more than the
+file holds. The XML text is 3151 bytes and the 3153 already includes the separator. The
+derivation `payload = last BINARYDATASIZE bytes` avoids the question entirely, which is the
+argument for deriving boundaries rather than measuring them by hand.
 
 ## References
 

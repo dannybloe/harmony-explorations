@@ -1,15 +1,21 @@
 """
-Parser for the GSPM config container used by Harmony architectures 12 and 14.
+Parser for the Harmony config container: `GSPM` and its relatives.
 
-The format is specified in `docs/config-format.md`. Two properties make parsing
-self-configuring, so no per-model table is needed:
+The format is specified in `docs/config-format.md`. It is one container with a per
+architecture four letter cookie rather than one format per architecture, which is why this
+module is written against the shape and not against a model table:
 
   * The flash base address the blob was linked for is recoverable from the header's
-    absolute `end_addr` field, because `end_addr` points at the trailing `PTYY` marker:
-    `base = end_addr - (offset_of_PTYY - offset_of_GSPM)`.
-  * The pointer table length differs per architecture (21 on arch 12, 19 on arch 14) and
-    is not stated in the header, but it follows from where the first section magic sits:
-    `count = (offset_of_LWJL - 3 - 0x0C) / 4`.
+    absolute `end_addr` field, because `end_addr` points at the trailing end marker:
+    `base = end_addr - (offset_of_end_marker - offset_of_magic)`.
+  * The pointer table length differs per architecture and is not stated in the header, but
+    it follows from where the marker after the table sits:
+    `count = (marker_offset - 3 - 0x0C) / 4`.
+  * That marker is itself found from the data: it is the first four uppercase letters
+    preceded by zero padding. Which four letters they are is a per architecture fact and
+    not derivable, so it is recorded per family and asserted rather than computed. `LWJL`
+    and `WLWL` are followed by a key table; whether `CMAH` is has not been established,
+    because the byte where a count would sit is zero in the only arch 9 sample.
 
 Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
 """
@@ -18,14 +24,35 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
-MAGIC = b'GSPM'
+
+@dataclass(frozen=True)
+class Family:
+    """One container cookie and the end marker that goes with it."""
+    magic: bytes
+    end_marker: bytes
+    architectures: str
+    header_marker: bytes         # observed marker after the pointer table
+    key_table_at_marker: bool    # whether a key table starts at that marker
+
+
+# Verified against samples. The cookies themselves also appear in concordance's per
+# architecture table, where arch 7 (the older 6xx) is listed as `BMBM`; no arch 7 sample has
+# been seen here, so its end marker is unknown and it is deliberately absent. Archs 2 and 3
+# use a two byte cookie and are a different layout entirely.
+FAMILIES: Tuple[Family, ...] = (
+    Family(b'GSPM', b'PTYY', '12 (One), 14 (600, 700)', b'LWJL', True),
+    Family(b'TPTP', b'DKDK', '8 (720, 785, 88x)', b'WLWL', True),
+    Family(b'AHCM', b'MCHA', '9 (36x, 51x, 52x, 55x)', b'CMAH', False),
+)
+
+MAGIC = b'GSPM'                  # the architectures this project targets
 END_MARKER = b'PTYY'
-FIRST_SECTION = b'LWJL'
 
 HEADER_PTR_OFFSET = 0x0C
-KNOWN_POINTER_COUNTS = (19, 21)
+MARKER_SEARCH_LIMIT = 0x200
+KNOWN_POINTER_COUNTS = (19, 20, 21)
 
 
 @dataclass
@@ -67,11 +94,17 @@ class Container:
     end_addr: int
     format_raw: int
     pointer_count: int
-    lwjl_offset: int
+    marker_offset: int
+    marker: bytes
+    family: Family
     trailer_checksum: int
     sections: List[Section] = field(default_factory=list)
     keys: List[KeyRecord] = field(default_factory=list)
     checks: Dict[str, bool] = field(default_factory=dict)
+
+    @property
+    def has_key_table(self) -> bool:
+        return self.family.key_table_at_marker
 
     @property
     def format_version(self) -> str:
@@ -93,14 +126,39 @@ class GspmError(ValueError):
     pass
 
 
+def find_magic(data: bytes) -> Tuple[Family, int]:
+    """Locate the earliest known container cookie in `data`."""
+    hits = [(data.find(f.magic), f) for f in FAMILIES]
+    hits = [(off, f) for off, f in hits if off >= 0]
+    if not hits:
+        raise GspmError('no known container magic found (looked for %s)'
+                        % ', '.join(f.magic.decode() for f in FAMILIES))
+    off, family = min(hits, key=lambda h: h[0])
+    return family, off
+
+
+def find_marker(blob: bytes) -> int:
+    """Offset of the four letter marker that follows the pointer table.
+
+    Derived rather than looked up: it is the first run of four uppercase letters that is
+    preceded by three zero bytes. That holds whether the padding is three bytes or seven,
+    which is the difference between the architectures seen so far.
+    """
+    for off in range(HEADER_PTR_OFFSET + 4, min(len(blob) - 4, MARKER_SEARCH_LIMIT)):
+        if blob[off - 3:off] != b'\0\0\0':
+            continue
+        if all(0x41 <= c <= 0x5A for c in blob[off:off + 4]):
+            return off
+    raise GspmError('no four letter marker found after the pointer table')
+
+
 def parse(data: bytes) -> Container:
-    """Parse the first GSPM container found in `data`."""
-    start = data.find(MAGIC)
-    if start < 0:
-        raise GspmError('no GSPM magic found')
-    end_marker = data.find(END_MARKER, start)
+    """Parse the first Harmony config container found in `data`."""
+    family, start = find_magic(data)
+    end_marker = data.find(family.end_marker, start)
     if end_marker < 0:
-        raise GspmError('no PTYY end marker found after GSPM')
+        raise GspmError('no %s end marker found after %s'
+                        % (family.end_marker.decode(), family.magic.decode()))
 
     blob = data[start:end_marker + 4]
     if len(blob) < 0x68:
@@ -109,10 +167,8 @@ def parse(data: bytes) -> Container:
     end_addr, format_raw = struct.unpack_from('<II', blob, 4)
     flash_base = end_addr - (end_marker - start)
 
-    lwjl = blob.find(FIRST_SECTION)
-    if lwjl < 0:
-        raise GspmError('no LWJL section magic found')
-    pointer_count = (lwjl - 3 - HEADER_PTR_OFFSET) // 4
+    marker_offset = find_marker(blob)
+    pointer_count = (marker_offset - 3 - HEADER_PTR_OFFSET) // 4
     if pointer_count < 1:
         raise GspmError('implausible pointer count %d' % pointer_count)
 
@@ -125,29 +181,33 @@ def parse(data: bytes) -> Container:
         end_addr=end_addr,
         format_raw=format_raw,
         pointer_count=pointer_count,
-        lwjl_offset=lwjl,
+        marker_offset=marker_offset,
+        marker=bytes(blob[marker_offset:marker_offset + 4]),
+        family=family,
         trailer_checksum=struct.unpack_from('<H', blob, len(blob) - 6)[0],
         sections=[Section(i, p) for i, p in enumerate(pointers)],
     )
 
     end_off = end_addr - flash_base
     container.checks = {
-        'end_addr_points_at_PTYY': blob[end_off:end_off + 4] == END_MARKER,
-        'padding_before_lwjl_is_zero': blob[lwjl - 3:lwjl] == b'\0\0\0',
+        'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
+        'padding_before_marker_is_zero': blob[marker_offset - 3:marker_offset] == b'\0\0\0',
+        'marker_as_expected_for_family': container.marker == family.header_marker,
         'pointer_count_known': pointer_count in KNOWN_POINTER_COUNTS,
         'sections_within_blob': all(
             s.is_null or 0 <= s.address - flash_base < len(blob)
             for s in container.sections),
     }
 
-    count = blob[lwjl + 4]
-    for k in range(count):
-        o = lwjl + 5 + 4 * k
-        if o + 4 > len(blob):
-            break
-        code = blob[o]
-        idx = struct.unpack_from('<H', blob, o + 1)[0]
-        container.keys.append(KeyRecord(k, code, idx, blob[o + 3]))
+    if family.key_table_at_marker:
+        count = blob[marker_offset + 4]
+        for k in range(count):
+            o = marker_offset + 5 + 4 * k
+            if o + 4 > len(blob):
+                break
+            code = blob[o]
+            idx = struct.unpack_from('<H', blob, o + 1)[0]
+            container.keys.append(KeyRecord(k, code, idx, blob[o + 3]))
 
     return container
 
@@ -155,10 +215,14 @@ def parse(data: bytes) -> Container:
 def report(c: Container):
     """Render a parse result as text."""
     yield 'blob at file offset 0x%X, length %d (0x%X)' % (c.blob_offset, c.length, c.length)
+    yield 'container        %s ... %s   (architecture %s)' % (
+        c.family.magic.decode(), c.family.end_marker.decode(), c.family.architectures)
     yield 'flash base       0x%06X   (recovered from end_addr)' % c.flash_base
     yield 'end_addr         0x%06X' % c.end_addr
     yield 'format version   %s   (raw 0x%04X)' % (c.format_version, c.format_raw)
-    yield 'pointer slots    %d        (LWJL at 0x%02X)' % (c.pointer_count, c.lwjl_offset)
+    yield 'pointer slots    %d        (%s at 0x%02X%s)' % (
+        c.pointer_count, c.marker.decode('ascii', 'replace'), c.marker_offset,
+        ', key table' if c.has_key_table else ', contents not established')
     yield 'trailer checksum 0x%04X   (algorithm not yet derived)' % c.trailer_checksum
     for name, ok in c.checks.items():
         yield '  check %-28s %s' % (name, 'PASS' if ok else 'FAIL')

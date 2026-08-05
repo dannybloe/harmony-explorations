@@ -13,8 +13,12 @@ captured on arrival.
 
 Reads:
   * `*-info.txt`   concordance identity output, for the device details
-  * `*.EZHex`      the config payload, parsed as a GSPM container
+  * `*.EZHex`      the config payload, parsed as a config container
   * `META.md`      the provenance and description record, if present
+
+A dump directory normally has all three. Publicly shared sample configs arrive without a
+concordance run attached, so a directory with a `META.md` and a config counts too, and the
+device details then come out of the config's own XML header instead.
 
 Usage:
     corpus.py [lab_directory] [--json]
@@ -27,7 +31,11 @@ import re
 import sys
 
 import _bootstrap  # noqa: F401
-from harmony import gspm
+from harmony import ezfile, gspm
+
+# The XML header of a config declares what remote it was built for. Enough to fill the
+# inventory when no concordance identity output came with the file.
+HEADER_FIELDS = {'PROTOCOL': 'arch', 'SKIN': 'skin', 'BOARD': 'hardware', 'FLASH': 'flash'}
 
 INFO_FIELDS = {
     'Model': 'model',
@@ -70,6 +78,22 @@ def parse_info(path):
     return out
 
 
+def parse_config_header(path):
+    """Device details out of a config's own XML header, for files with no info.txt."""
+    out = {}
+    try:
+        with open(path, 'rb') as fh:
+            ez = ezfile.parse_ezhex(fh.read(), os.path.basename(path))
+    except Exception:                             # noqa: BLE001  best effort only
+        return out
+    for tag, key in HEADER_FIELDS.items():
+        if tag in ez.intended_version:
+            out[key] = ez.intended_version[tag]
+    if 'arch' in out:
+        out['model'] = 'unstated, protocol %s' % out['arch']
+    return out
+
+
 def describe_config(path):
     """Parse the config payload of a dump, returning a summary or an error string."""
     try:
@@ -79,11 +103,12 @@ def describe_config(path):
     except Exception as exc:                      # noqa: BLE001  report, do not crash
         return {'error': '%s: %s' % (type(exc).__name__, exc)}
     return {
+        'container': c.family.magic.decode(),
         'payload_bytes': c.length,
         'flash_base': '0x%06X' % c.flash_base,
         'format': c.format_version,
         'pointer_slots': c.pointer_count,
-        'lwjl_entries': len(c.keys),
+        'key_entries': len(c.keys),
         'checks_pass': c.all_checks_pass,
     }
 
@@ -111,16 +136,19 @@ def scan(lab):
     for root, dirs, files in os.walk(root_to_walk):
         dirs[:] = [d for d in dirs if not d.startswith('.')]
         info = [f for f in files if f.endswith('-info.txt')]
-        if not info:
+        cfg = sorted(f for f in files if f.lower().endswith('.ezhex'))
+        if not info and not (cfg and 'META.md' in files):
             continue
         entry = {
             'path': os.path.relpath(root, lab),
             'contributor': os.path.basename(os.path.dirname(root)),
-            'device': parse_info(os.path.join(root, info[0])),
+            'device': (parse_info(os.path.join(root, info[0])) if info
+                       else parse_config_header(os.path.join(root, cfg[0]))),
+            'identity_from': 'concordance' if info else 'config header',
             'meta': meta_state(root),
+            'configs': len(cfg),
             'config': None,
         }
-        cfg = [f for f in files if f.lower().endswith('.ezhex')]
         if cfg:
             entry['config'] = describe_config(os.path.join(root, cfg[0]))
         dumps.append(entry)
@@ -142,17 +170,19 @@ def main():
         print('Nothing found. Expected directories containing a concordance *-info.txt.')
         return 0
 
-    header = '%-34s %-20s %-5s %-9s %-11s %s' % (
-        'dump', 'model', 'arch', 'firmware', 'config', 'description')
+    header = '%-34s %-22s %-5s %-9s %-6s %-11s %s' % (
+        'dump', 'model', 'arch', 'firmware', 'cont.', 'config', 'description')
     print(header)
     print('-' * len(header))
     for d in dumps:
         dev, cfg = d['device'], d['config'] or {}
         size = ('%d' % cfg['payload_bytes']) if 'payload_bytes' in cfg else (
             'parse failed' if cfg else 'none')
-        print('%-34s %-20s %-5s %-9s %-11s %s' % (
-            d['path'][:34], dev.get('model', '?')[:20], dev.get('arch', '?'),
-            dev.get('firmware', '?'), size, d['meta']))
+        if d.get('configs', 0) > 1:
+            size += ' x%d' % d['configs']
+        print('%-34s %-22s %-5s %-9s %-6s %-11s %s' % (
+            d['path'][:34], dev.get('model', '?')[:22], dev.get('arch', '?'),
+            dev.get('firmware', '?'), cfg.get('container', '?'), size, d['meta']))
 
     print()
     for d in dumps:
@@ -162,7 +192,8 @@ def main():
         elif cfg and not cfg.get('checks_pass'):
             print('  %s: config parsed but a consistency check failed' % d['path'])
 
-    arches = sorted({d['device'].get('arch', '?') for d in dumps})
+    arches = sorted({d['device'].get('arch', '?') for d in dumps},
+                    key=lambda a: (not a.isdigit(), int(a) if a.isdigit() else a))
     undescribed = [d['path'] for d in dumps if d['meta'] != 'described']
     print('architectures covered: %s' % ', '.join(arches))
     if undescribed:

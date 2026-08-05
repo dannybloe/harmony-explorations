@@ -96,6 +96,57 @@ class TestArch12RegionSplit(unittest.TestCase):
         self.assertTrue(firmware.verify_checksum(code))
 
 
+class TestEzHexHeader(unittest.TestCase):
+    """
+    A config EZHex is self-verifying: the header states the payload length and a checksum, so
+    the split between XML and payload is checkable rather than guessed. That matters for the
+    write path, because `INTENDEDVERSION` is what a remote compares against before accepting
+    a file, and a mismatch is refused by the device.
+    """
+
+    CONFIGS = ('h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+               'arch8_config_d', 'one_config', 'one_config_unprogrammed', 'h600_config')
+
+    def test_every_config_verifies_its_own_split(self):
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                ez = ezfile.parse_ezhex(lab.load(name), name)
+                for check, ok in ez.checks.items():
+                    self.assertTrue(ok, '%s failed %s' % (name, check))
+
+    def test_checksum_is_an_xor_seeded_0x69(self):
+        """Independent of the header: recompute and compare against the declared value."""
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                ez = ezfile.parse_ezhex(lab.load(name), name)
+                self.assertEqual(ezfile.payload_checksum(ez.payload), ez.declared_checksum)
+
+    def test_a_flipped_payload_byte_breaks_the_checksum(self):
+        """A checksum that cannot fail is not a check."""
+        blob = bytearray(lab.load('h525_config'))
+        blob[-10] ^= 0x01
+        ez = ezfile.parse_ezhex(bytes(blob), 'mutated')
+        self.assertFalse(ez.checks['checksum_matches_declaration'])
+        self.assertTrue(ez.checks['payload_length_matches_declaration'])
+
+    def test_intended_version_pins_the_target_remote(self):
+        ez = ezfile.parse_ezhex(lab.load('h525_config'), 'h525')
+        self.assertEqual(ez.intended_version,
+                         {'PROTOCOL': '9', 'SKIN': '22', 'FLASH': '0xFF:0x12',
+                          'BOARD': '2.5.0'})
+        ez = ezfile.parse_ezhex(lab.load('arch8_config_a'), 'arch8')
+        self.assertEqual(ez.intended_version['PROTOCOL'], '8')
+        self.assertEqual(ez.intended_version['SKIN'], '15')
+
+    def test_payload_is_the_container_the_parser_then_reads(self):
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                ez = ezfile.parse_ezhex(lab.load(name), name)
+                c = gspm.parse(ez.payload)
+                self.assertEqual(c.blob_offset, 0, 'payload starts at the container')
+                self.assertEqual(c.length, len(ez.payload))
+
+
 class TestLoadImage(unittest.TestCase):
     def test_load_image_unwraps_a_single_region_package(self):
         lab.load('one_hfw')
