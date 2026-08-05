@@ -239,7 +239,13 @@ over the runner-up before trusting its answer.
   which silently changed the meaning of a whole block. Verify against the datasheet before
   adding mnemonics.
 * **Count programmatically, never by eye.** A hand count of LWJL codes gave 107/55 when the
-  real figure is 108/54.
+  figure was 108/54. Both numbers were counting the wrong thing anyway, see the next entry.
+* **A key code is an event type plus a scan code**, mask `0xC0` and `0x3F`, not
+  `0x80 | (row << 3) | col`. The wrong split made the arch 14 table look like 108 matrix codes
+  against 54 non matrix ones, which describes no possible keypad, and a paragraph of the analysis
+  was built on explaining that away. It is 54 scan codes times three event types, press, release
+  and repeat. `docs/findings.md` section 17. When a structure refuses to make sense, suspect the
+  field split before inventing a reason.
 * **Bit test polarity.** `BTFSS` is `0xA0-0xAF` and `BTFSC` is `0xB0-0xBF`. These were once
   swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
   and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,

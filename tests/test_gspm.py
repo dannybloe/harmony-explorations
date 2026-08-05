@@ -121,12 +121,12 @@ class TestKeyTableAcrossArchitectures(unittest.TestCase):
     the byte where a count would sit is zero, so nothing is claimed for it.
     """
 
-    def test_arch8_and_arch12_share_their_non_matrix_codes(self):
+    def test_arch8_and_arch12_share_their_codes_with_no_event_bits(self):
         arch8 = gspm.parse(lab.load('arch8_config_a'))
         one = gspm.parse(lab.load('one_config'))
-        non_matrix = lambda c: sorted(k.event_code for k in c.keys if not k.is_matrix)
-        self.assertEqual(non_matrix(arch8), [0x06, 0x07, 0x2D])
-        self.assertEqual(non_matrix(one), [0x06, 0x07, 0x2D])
+        virtual = lambda c: sorted(k.event_code for k in c.keys if not k.is_keypad)
+        self.assertEqual(virtual(arch8), [0x06, 0x07, 0x2D])
+        self.assertEqual(virtual(one), [0x06, 0x07, 0x2D])
 
     def test_arch8_and_arch12_share_a_canonical_code_ordering(self):
         """
@@ -297,6 +297,148 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         self.assertIsNone(gspm.frame_length(
             bytes(data[c.blob_offset:c.blob_offset + c.length]),
             c.blob_offset_of(c.sections[0].address)))
+
+
+class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
+    """
+    Corrects a reading this project published: that a key code is `0x80 | (row << 3) | col`
+    with bit 7 marking a matrix key. It is an event type in the top two bits and the scanner's
+    own scan code in the rest. Three agreements, in `docs/findings.md` section 17.
+    """
+
+    def test_arch14_is_54_scan_codes_times_three_event_types(self):
+        """
+        The closure. 54 times 3 is 162, which is exactly the 600's record count, and the 700
+        has one more record, a code with no event bits at all. Under the old reading the same
+        table looked like 108 matrix codes against 54 non matrix ones, which described no
+        possible keypad.
+        """
+        for name, virtual in (('h600_config', []), ('h700_config', [0x06])):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                by_event = {}
+                for k in c.keys:
+                    by_event.setdefault(k.event_type, set()).add(k.scan_code)
+                for ev in (gspm.EVENT_RELEASE, gspm.EVENT_PRESS, gspm.EVENT_REPEAT):
+                    self.assertEqual(sorted(by_event[ev]), list(range(1, 55)),
+                                     gspm.EVENT_NAMES[ev])
+                self.assertEqual(sorted(k.event_code for k in c.keys if not k.is_keypad),
+                                 virtual)
+                self.assertEqual(len(c.keys), 54 * 3 + len(virtual))
+
+    def test_the_scan_codes_fit_the_keypad_scanners_own_range(self):
+        """
+        Second agreement, and it comes from the firmware rather than the config: the arch 14
+        keypad scanner at 0x190A6 returns a linear index 1 to 56, and the table uses 1 to 54.
+        The old reading produced rows 0 to 6 and 8 to 14, which is not a range at all.
+        """
+        c = gspm.parse(lab.load('h700_config'))
+        scans = {k.scan_code for k in c.keys if k.is_keypad}
+        self.assertEqual(min(scans), 1)
+        self.assertLessEqual(max(scans), 56)
+        self.assertEqual(len(scans), 54)
+
+    def test_every_arch14_scan_code_appears_in_all_three_event_classes(self):
+        """
+        Third agreement. If bit 7 addressed the keypad, a code and that code with bit 7 set
+        would be different keys and there would be no reason for the sets to coincide.
+        """
+        for name in ('h700_config', 'h600_config'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                sets = {}
+                for k in c.keys:
+                    if k.is_keypad:
+                        sets.setdefault(k.event_type, set()).add(k.scan_code)
+                self.assertEqual(len(sets), 3)
+                self.assertEqual(len(set.intersection(*sets.values())), 54)
+
+    def test_arch12_and_arch8_record_presses_only(self):
+        """A real difference between architectures rather than an artefact of the reading."""
+        for name, presses in (('one_config', 52), ('arch8_config_a', 53)):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                events = {k.event_type for k in c.keys}
+                self.assertEqual(events, {gspm.EVENT_NONE, gspm.EVENT_PRESS})
+                self.assertEqual(sum(1 for k in c.keys if k.event_type == gspm.EVENT_PRESS),
+                                 presses)
+
+    def test_the_safe_mode_config_binds_two_presses(self):
+        c = gspm.parse(lab.load('one_safemode'))
+        self.assertEqual([(k.event_name, k.scan_code) for k in c.keys],
+                         [('press', 47), ('press', 46)])
+
+
+class TestActionLists(unittest.TestCase):
+    """
+    Base slot 10 is a table of addresses of action lists, and a list is a count followed by
+    that many three byte instructions. See `docs/findings.md` section 17.
+    """
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a')
+
+    def test_the_table_and_the_counts_agree_on_the_packing(self):
+        """
+        The closure that carries the reading: addresses come from the pointer table, counts
+        come from the lists, and all but four consecutive pairs sit exactly `1 + 3 * count`
+        apart. Two unrelated parts of the file telling the same story.
+        """
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                fit, of = c.action_list_packing()
+                self.assertEqual(of - fit, 4, '%s: %d of %d packed' % (name, fit, of))
+
+    def test_the_four_exceptions_are_run_boundaries(self):
+        """
+        Not noise: the lists are packed into exactly five contiguous runs, so there are four
+        places where the next list is somewhere else entirely rather than the next byte.
+        """
+        c = gspm.parse(lab.load('h700_config'))
+        table = c.pointer_array(gspm.arch_slot(c.architecture, 10))
+        gaps = []
+        for k in range(len(table) - 1):
+            count = c.blob[c.blob_offset_of(table[k])]
+            if table[k + 1] - table[k] != 1 + 3 * count:
+                gaps.append(table[k + 1] - table[k])
+        self.assertEqual(len(gaps), 4)
+        # Every exception is a forward jump of many kilobytes, not an off by one.
+        for gap in gaps:
+            self.assertGreater(gap, 20000)
+
+    def test_the_525_reproduces_the_count_reported_upstream(self):
+        """
+        harmony-decompiler discussion 5 reports 487 action lists for this sample and that 482
+        of the 486 consecutive pairs are packed. Both come out of our own parser and our own
+        slot numbering, which is worth pinning: it cross checks their reading and ours at once.
+        """
+        c = gspm.parse(lab.load('h525_config'))
+        self.assertEqual(len(c.action_lists()), 487)
+        self.assertEqual(c.action_list_packing(), (482, 486))
+
+    def test_every_list_parses_and_the_instruction_count_is_plausible(self):
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                lists = c.action_lists()
+                self.assertIsNotNone(lists)
+                self.assertTrue(all(len(l) >= 1 for l in lists), 'an empty action list')
+                self.assertLess(max(len(l) for l in lists), 32, 'implausibly long list')
+
+    def test_the_opcode_inventory_differs_between_architectures(self):
+        """
+        Which is a finding rather than a wrinkle: arch 14 leans on opcodes the arch 9 sample
+        never uses, so an opcode table derived from the 525 alone does not cover our targets.
+        """
+        ops = {}
+        for name in ('h700_config', 'h525_config'):
+            c = gspm.parse(lab.load(name))
+            ops[name] = {i.opcode for l in c.action_lists() for i in l}
+        self.assertIn(0x6C, ops['h700_config'])
+        self.assertNotIn(0x6C, ops['h525_config'])
+        # And they do overlap, so this is not two unrelated encodings.
+        self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
 
 
 class TestPointerArraySections(unittest.TestCase):

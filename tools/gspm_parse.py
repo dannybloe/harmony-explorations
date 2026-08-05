@@ -54,7 +54,7 @@ def main():
                 for s in container.sections],
             'keys': [
                 {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,
-                 'flags': k.flags, 'row': k.row, 'col': k.col}
+                 'flags': k.flags, 'event': k.event_name, 'scan': k.scan_code}
                 for k in container.keys],
         }
         print(json.dumps(out, indent=2))

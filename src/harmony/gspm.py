@@ -117,6 +117,18 @@ def arch_slot(architecture: int, base: int) -> int:
     return slot
 
 
+# An event code is an event type in the top two bits plus a scan code in the rest. NOT a
+# matrix address with 0x80 as an "is a key" flag, which is what this file said until the
+# reading below was checked; see `docs/findings.md` section 17 for the correction and its
+# evidence. The old reading split the arch 14 table into 108 "matrix" and 54 "non matrix"
+# codes, which is really 54 press plus 54 repeat against 54 release.
+EVENT_MASK = 0xC0
+SCAN_MASK = 0x3F
+EVENT_NONE, EVENT_RELEASE, EVENT_PRESS, EVENT_REPEAT = 0x00, 0x40, 0x80, 0xC0
+EVENT_NAMES = {EVENT_NONE: 'none', EVENT_RELEASE: 'release',
+               EVENT_PRESS: 'press', EVENT_REPEAT: 'repeat'}
+
+
 @dataclass
 class KeyRecord:
     """One LWJL entry."""
@@ -126,16 +138,44 @@ class KeyRecord:
     flags: int
 
     @property
-    def is_matrix(self) -> bool:
-        return bool(self.event_code & 0x80)
+    def event_type(self) -> int:
+        """`EVENT_PRESS`, `EVENT_RELEASE`, `EVENT_REPEAT`, or `EVENT_NONE`."""
+        return self.event_code & EVENT_MASK
 
     @property
-    def row(self) -> Optional[int]:
-        return (self.event_code >> 3) & 0x0F if self.is_matrix else None
+    def event_name(self) -> str:
+        return EVENT_NAMES[self.event_type]
 
     @property
-    def col(self) -> Optional[int]:
-        return self.event_code & 0x07 if self.is_matrix else None
+    def scan_code(self) -> int:
+        """The keypad scanner's own linear index, or a virtual event's number.
+
+        On arch 14 these run 1 to 54 within the scanner's range of 1 to 56, which is one of
+        the three agreements that established this reading.
+        """
+        return self.event_code & SCAN_MASK
+
+    @property
+    def is_keypad(self) -> bool:
+        """False for the handful of codes that carry no event bits at all."""
+        return self.event_type != EVENT_NONE
+
+
+# Base slot 10 is a table of addresses of action lists, and a list is a count followed by
+# that many three byte instructions. Established in `docs/findings.md` section 17.
+ACTION_LIST_TABLE_SLOT = 10
+INSTRUCTION_LENGTH = 3
+
+
+@dataclass
+class Instruction:
+    """One action list instruction: a 16 bit operand and an opcode byte.
+
+    Opcode meanings are not established here. The inventory differs by architecture, which is
+    itself a finding: arch 14 leans on opcodes that do not appear in the arch 9 sample at all.
+    """
+    operand: int
+    opcode: int
 
 
 @dataclass
@@ -242,6 +282,63 @@ class Container:
     def pointer_array_slots(self) -> List[int]:
         """Which slots read as pointer arrays. A per architecture fingerprint in practice."""
         return [i for i in range(len(self.sections)) if self.pointer_array(i) is not None]
+
+    def action_list(self, address: int) -> Optional[List[Instruction]]:
+        """The action list at an absolute flash address: a count, then that many instructions.
+
+        ```
+        +0x00  u8   count
+               { u16 operand; u8 opcode }[count]
+        ```
+
+        Returns None when the address is outside the container. Nothing else is validated,
+        because there is nothing to validate against: what makes this reading believable is
+        that consecutive entries of the table sit `1 + 3 * count` apart, which
+        `action_lists` checks in aggregate rather than per list.
+        """
+        off = self.blob_offset_of(address)
+        if off is None or not self.blob or not 0 <= off < len(self.blob):
+            return None
+        count = self.blob[off]
+        end = off + 1 + INSTRUCTION_LENGTH * count
+        if end > len(self.blob):
+            return None
+        return [Instruction(
+            operand=int.from_bytes(self.blob[off + 1 + 3 * k:off + 3 + 3 * k], 'little'),
+            opcode=self.blob[off + 3 + 3 * k])
+            for k in range(count)]
+
+    def action_lists(self) -> Optional[List[List[Instruction]]]:
+        """Every action list the table at base slot 10 addresses, in table order."""
+        if self.architecture is None:
+            return None
+        try:
+            slot = arch_slot(self.architecture, ACTION_LIST_TABLE_SLOT)
+        except GspmError:
+            return None
+        table = self.pointer_array(slot) if slot < len(self.sections) else None
+        if table is None:
+            return None
+        lists = [self.action_list(a) for a in table]
+        return None if any(l is None for l in lists) else lists
+
+    def action_list_packing(self) -> Tuple[int, int]:
+        """How many consecutive table entries sit exactly `1 + 3 * count` apart, and of how many.
+
+        This is the check that carries the whole reading: the addresses come from the pointer
+        table and the counts come from the lists themselves, so agreement between them is two
+        unrelated parts of the file telling the same story. Across the corpus it holds for all
+        but exactly four pairs per config, and those four are the boundaries between the runs
+        the lists are packed into.
+        """
+        slot = arch_slot(self.architecture, ACTION_LIST_TABLE_SLOT)
+        table = self.pointer_array(slot)
+        fit = 0
+        for k in range(len(table) - 1):
+            count = self.blob[self.blob_offset_of(table[k])]
+            if table[k + 1] - table[k] == 1 + INSTRUCTION_LENGTH * count:
+                fit += 1
+        return fit, max(0, len(table) - 1)
 
 
 class GspmError(ValueError):
@@ -417,16 +514,25 @@ def report(c: Container):
             base = ''
         entries = c.pointer_array(s.slot)
         kind = '' if entries is None else '  array of %d pointers' % len(entries)
+        if entries is not None and c.architecture is not None:
+            try:
+                if base_slot(c.architecture, s.slot) == ACTION_LIST_TABLE_SLOT:
+                    fit, of = c.action_list_packing()
+                    kind += ', action lists (%d of %d packed)' % (fit, of)
+            except GspmError:
+                pass
         yield '   [%2d] 0x%06X  blob+0x%06X  %7s bytes%s%s' % (
             s.slot, s.address, s.address - c.flash_base,
             c.section_length(s.slot), base, kind)
-    matrix = [k for k in c.keys if k.is_matrix]
-    yield 'LWJL: count=%d  (%d matrix codes, %d non-matrix)' % (
-        len(c.keys), len(matrix), len(c.keys) - len(matrix))
-    rows: Dict[int, set] = {}
-    for k in matrix:
-        rows.setdefault(k.row, set()).add(k.col)
-    if rows:
-        yield '  matrix rows: %s' % {r: sorted(v) for r, v in sorted(rows.items())}
     if c.keys:
+        yield '%s: count=%d' % (c.marker.decode('ascii', 'replace'), len(c.keys))
+        by_event: Dict[int, List[int]] = {}
+        for k in c.keys:
+            by_event.setdefault(k.event_type, []).append(k.scan_code)
+        for ev in sorted(by_event):
+            scans = sorted(by_event[ev])
+            span = ('%d..%d contiguous' % (scans[0], scans[-1])
+                    if scans == list(range(scans[0], scans[-1] + 1))
+                    else ' '.join(str(s) for s in scans))
+            yield '  %-8s %3d scan codes: %s' % (EVENT_NAMES[ev], len(scans), span)
         yield '  codes in order: %s' % ' '.join('0x%02X' % k.event_code for k in c.keys)

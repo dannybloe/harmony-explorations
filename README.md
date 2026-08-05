@@ -41,7 +41,14 @@ Eight of the nineteen to twenty one sections now have something said about them.
 parsed without the file header Logitech's software supplied. Slot 0 is the container's only
 `0xFEED`/`0xBEEF` frame. Six more are count prefixed arrays of three byte flash pointers, proved
 to be pointers by a controlled pair of configs from one remote in which every entry moved by
-exactly the layout shift.
+exactly the layout shift. One of those six is the **action list table**: on the Harmony 700 it
+addresses 8037 lists holding 19651 instructions, and all but four consecutive entries sit exactly
+`1 + 3 * count` apart, which is the pointer table and the lists' own count fields agreeing.
+
+The key table is decoded: an event code is an **event type plus the keypad scanner's scan code**,
+not the matrix address it was read as here for a while. That correction turned the Harmony 600's
+table from something that provably could not describe its own keypad into 54 keys times three
+event types, exactly.
 
 Not established: the config format itself, beyond the container and two small tables. The IR
 device database, activities, menus and display are still opaque. That is the bulk of the
@@ -180,12 +187,15 @@ That is worth stating plainly because it should affect how you read the findings
 offline analysis of files, so all of it is independently checkable, and it should be checked.
 The write-ups show their verification method rather than only their conclusions, and they
 record the places where earlier conclusions were wrong and got corrected, on purpose, so the
-rest can be calibrated against them. Five so far, all documented in
+rest can be calibrated against them. Seven so far, all documented in
 [docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
 described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
-are nested inside the GSPM layer. That advised people away from reusable work. The most recent
-is instructive in a different way: a rule for deriving the container's section marker from its
-cookie was wrong, and still produced the correct answer on the only sample that exercised it.
+are nested inside the GSPM layer. That advised people away from reusable work. One is instructive
+in a different way: a rule for deriving the container's section marker from its cookie was wrong,
+and still produced the correct answer on the only sample that exercised it. The largest was a
+field split. Key codes were read as a matrix address with a flag bit, when the top two bits are
+an event type, and rather than treat the resulting nonsense as a signal, the analysis built a
+paragraph of explanation on top of it.
 
 Items most worth verifying before relying on them: the SFR map assumes the standard PIC18
 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch 12 part

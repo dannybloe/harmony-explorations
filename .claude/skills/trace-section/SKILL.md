@@ -100,8 +100,10 @@ to generate candidates, never as evidence.
   check the margin over the runner-up.
 * **Do not trust the 600 dump for disassembly.** concordance truncates it at 65536 of 70336
   bytes and the entry point is in the missing tail. Use the 700 image.
-* **The 600's key table is not its physical key matrix.** 108 matrix codes cannot describe 56
-  physical positions. Anything that assumes otherwise is already wrong.
+* **A key code is an event type plus a scan code**, `0xC0` and `0x3F`, not a matrix address with
+  bit 7 as a flag. That misreading stood here for a while and produced a whole paragraph of wrong
+  reasoning about the 600's table being unable to describe its own keypad. It can: 54 scan codes
+  times three event types. See `docs/findings.md` section 17.
 
 ## When the static route stalls
 

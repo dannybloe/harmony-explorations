@@ -232,10 +232,26 @@ are stale and need correcting, because later policy decisions read them.
   the three byte pointer arrays, the single pointer table across all four architectures, and two
   negatives worth more than a guess: the key table is not the button to action map, and nothing the
   pointer arrays index is allocated per assignment.
-* **First target is section slot 8**, the only section whose size changed under that described
+* **First target is the action list opcode table, in the arch 14 firmware.** Base slot 10 is
+  established as the action list address table, so the lists are readable now and their meanings
+  are not. harmony-decompiler publishes a partial opcode table derived from the arch 9 firmware,
+  and our own data says it does not transfer as it stands: arch 14's third most common opcode is
+  `0x6C`, which never appears in the arch 9 sample. So this has to be read out of the 700 image,
+  and it is the single highest value thing to do while in there.
+* **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is
   reachable through the SPI primitive at `0x1B9AC`.
+* **Also cheap, and it closes a loose end:** re-read the keypad scanner at `0x190A6` to settle
+  whether its 14 masks are 14 rows or a binary column search over 8 columns. `docs/findings.md`
+  section 17 explains why the second reading is likely and why it does not affect the scan codes.
+* **Upstream hypotheses worth testing while in the firmware**, from harmony-decompiler
+  discussions 5, 6 and 7. None adopted, all cheap to check against our own images: that `LATE`
+  bit 2 is the external flash chip select and `TBLPTR` a 24 bit cursor into it (their arch 9,
+  our equivalent is the SPI path); that a key event code binds to an action list index somewhere,
+  which cannot be the key table because ours is byte identical across a pair whose buttons were
+  reassigned; and that the codes carrying no event bits are non keypad event producers, which on
+  arch 9 they report as five specific values while ours are `0x06`, `0x07` and `0x2D`.
 * Dynamically: poll those RAM slots over USB while operating the remote by hand, and see which
   pointer is live for which on-screen activity or device. This is the poor version of the
   emulator's read trace and it costs a day rather than a month.
@@ -243,7 +259,10 @@ are stale and need correcting, because later policy decisions read them.
   of configs they already own, into documented JSON in the explorer.
 * Then the trailer checksum, from the boot validation routine located in step 3.
 * Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
-  both remotes, and publish the resulting table. This also unblocks upstream.
+  both remotes, and publish the resulting table. This also unblocks upstream. It got considerably
+  cheaper: the config's scan codes are now known to be the scanner's own 1 to 56 index, so the
+  experiment produces the mapping directly rather than needing a translation layer found first.
+  Only 54 of the 56 indices are used on arch 14, so two of them are also an answer.
 
 ### Step 7: keep the documents honest
 

@@ -145,6 +145,7 @@ Known so far:
 | 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | thirteen samples, below |
 | 1 | seven byte record stating the architecture | thirteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
+| 10 | of those, the **action list address table** | nine configs, below |
 | 8 | **unconfirmed candidate**: per assignment records, possibly bytecode | one controlled pair |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
@@ -278,9 +279,53 @@ that was rewritten rather than merely displaced.
 | 12 | `u8` | 9 | 5 | 5 | 30 | 19 |
 | 15 | `u8` | 9 | 9 | 5 | 11 | 9 |
 
-What they point at is **not yet established**. The counts are suggestive (slot 10's thousands of
-entries against slot 5's handful) but a count is not a label, and a label has to come from the
-firmware routine that reads the section.
+What most of them point at is **not yet established**. The counts are suggestive (slot 10's
+thousands of entries against slot 5's handful) but a count is not a label. Two things are known:
+
+* **Base slots 5, 7 and 15 index the section immediately before them.** Every entry of base slot 5
+  lands inside base slot 4, every entry of base slot 7 inside base slot 6, every entry of base slot
+  15 inside base slot 14. All entries, all five configs measured, four architectures. Base slots
+  10, 11 and 12 point elsewhere, mostly into the large region ahead of slot 0.
+* **Base slot 10 is the action list address table**, below.
+
+### Base slot 10: action lists
+
+Each entry addresses an action list, and a list is:
+
+```
++0x00  u8    count
+       { u16 operand; u8 opcode }[count]
+```
+
+So a list occupies `1 + 3 * count` bytes, and the lists are packed back to back: in every config
+measured, all but exactly **four** consecutive table entries sit exactly `1 + 3 * count` apart.
+
+| Sample | lists | instructions | packed pairs |
+|---|---|---|---|
+| 700 user config, arch 14 | 8037 | 19651 | 8032 of 8036 |
+| 600 user config, arch 14 | 4955 | 12194 | 4950 of 4954 |
+| One user config, arch 12 | 4277 | 11640 | 4272 of 4276 |
+| 88x class config, arch 8 | 1318 | 3311 | 1313 of 1317 |
+| 525 config, arch 9 | 487 | 1043 | 482 of 486 |
+
+The four exceptions per config are not noise. The lists are packed into exactly **five contiguous
+runs**, so there are four places where the next list is elsewhere entirely; each of those gaps is
+tens of kilobytes, never an off by one.
+
+That agreement is what makes the reading believable rather than merely consistent: the addresses
+come from the pointer table and the counts come from the lists, so they are unrelated parts of the
+file that turn out to describe the same layout. On the 525 the numbers also match what
+harmony-decompiler reports independently, 487 lists with 482 of 486 packed.
+
+**Opcode meanings are not established here.** The inventory differs by architecture, which matters
+for planning: arch 14's most common opcodes include `0x6C`, which never appears in the arch 9
+sample, so an opcode table derived from the 525 does not cover the remotes on the bench. Counts of
+the most frequent bytes, for orientation only:
+
+| Sample | most frequent opcodes |
+|---|---|
+| 700, arch 14 | `0x7C` 7272, `0x7A` 2875, `0x6C` 2832, `0x7F` 2795, `0x1F` 1215 |
+| 525, arch 9 | `0x7F` 235, `0x7C` 203, `0x7D` 200, `0x7E` 134, `0x75` 60 |
 
 ### One table, four architectures
 
@@ -314,32 +359,47 @@ bitmaps.
 
 ## The key table: `LWJL`, `WLWL`
 
-Record layout is consistent across architectures, but the **meaning is not**, and this is
-unresolved.
+```
+u8   event_code    event type in the top two bits, scan code in the rest
+u16  ?             values are small and architecture dependent, meaning not established
+u8   flags         meaning not established
+```
 
-```
-u8   event_code
-u16  index
-u8   flags
-```
+An **event code is not a matrix address.** The top two bits are the event type and the rest is
+the keypad scanner's own scan code:
+
+| Bits 7,6 | Event |
+|---|---|
+| `00` | none, the handful of codes that are not keypad events at all |
+| `01` | release |
+| `10` | press |
+| `11` | repeat |
+
+Corrected: this document previously stated `0x80 | (row << 3) | col` with bit 7 marking a matrix
+key, which made the arch 14 table describe a keypad that cannot exist. See
+[findings.md](findings.md) section 17 for the three agreements that settle it.
 
 | Sample | count | Shape |
 |---|---|---|
-| One user config, arch 12 | 55 | 52 matrix codes over 7 rows by 8 columns, plus 3 non-matrix (`0x06`, `0x07`, `0x2D`). `index` runs 0,1,2..54 sequentially. `flags` is `0x7F` throughout. |
-| 600 user config, arch 14 | 162 | 108 matrix codes spanning rows 0 to 6 and 8 to 14, plus 54 contiguous non-matrix codes `0x41` to `0x76`. `index` is 0 on every record. `flags` is `0x00` or `0x07`. |
-| 88x class config, arch 8 | 56 | 53 matrix codes, plus the same 3 non-matrix codes as the One. `index` is mostly 0 to 3 with one large outlier. `flags` is `0x00`, `0x73` or `0x7F`. Identical in all four arch 8 samples. |
-| One safe-mode config | 2 | codes `0xAF`, `0xAE`, `flags` `0x00`. Looks like a two-button recovery UI. |
+| 700 user config, arch 14 | 163 | scan codes 1 to 54 in each of release, press and repeat, plus `0x06` with no event bits. `flags` is `0x00` or `0xA8`. |
+| 600 user config, arch 14 | 162 | exactly 54 scan codes times 3 event types, nothing else. `flags` is `0x00` or `0x07`. |
+| One user config, arch 12 | 55 | 52 press codes plus `0x06`, `0x07`, `0x2D` with no event bits. No release or repeat entries at all. `flags` is `0x7F` throughout. |
+| 88x class config, arch 8 | 56 | 53 press codes plus the same three. Identical in all four arch 8 samples. |
+| One safe-mode config | 2 | press of scan 47 and scan 46. A two button recovery UI. |
 | 700 `Region_3` | 0 | empty |
 | 525 config, arch 9 | n/a | the byte where a count would sit after `CMAH` is zero, so no table is claimed there |
 
-Matrix codes appear to encode `0x80 | (row << 3) | col`.
+So arch 14 enumerates all three event types for every key while arch 12 and arch 8 record presses
+only. That is a real difference between the architectures rather than an artefact of the reading.
 
 ### Arch 8 and arch 12 share a canonical code ordering
 
-47 codes appear in both the One's table and the arch 8 table, and on that shared subset the
-two list them in the **same order**, with exactly one adjacent transposition: the One has
-`0x06 0x8E 0x07` where arch 8 has `0x06 0x07 0x8E`. Remove `0x8E` and the two sequences are
-identical. Pinned in `tests/test_gspm.py`.
+47 `(event, scan)` pairs appear in both the One's table and the arch 8 table, and on that shared
+subset the two list them in the **same order**, with exactly one adjacent transposition: the One
+has scan 6 with no event bits, then press of scan 14, then scan 7 with no event bits, where arch 8
+has the two no-event codes together. Drop press of scan 14 and the sequences are identical. Pinned
+in `tests/test_gspm.py`, and unaffected by the corrected reading, which is worth noting because
+the finding was originally derived under the wrong one.
 
 Codes unique to each, which is presumably the physical difference between the two remotes:
 
@@ -353,19 +413,26 @@ to on one remote should therefore carry most of the way to the others. Upstream 
 same relationship between arch 8 and arch 9, 41 codes of 51 shared in order, which is
 independent support for the same conclusion.
 
-### The 600's table is not that remote's physical key matrix
+### The arch 14 table does describe that remote's keypad, after all
 
-The firmware's keypad scanner reads a 14 by 4 matrix, so 56 physical positions, and its native
-key code is a linear 1 to 56 index rather than the `0x80 | ...` form. 108 codes cannot describe
-56 positions. The most likely reading is that arch 14's table enumerates a supported event-code
-namespace shared across the family, while arch 8's and arch 12's are actual binding tables.
-Unconfirmed.
+**Resolved.** This document used to say the 600's table could not be its physical key matrix,
+because 108 codes cannot describe 56 positions. Both halves of that were artefacts of the wrong
+bit split. Under the corrected reading the 600's table is 54 scan codes times 3 event types, and
+54 scan codes describe 54 physical keys on a keypad the firmware scans as a 1 to 56 linear index.
+The count works out exactly, with nothing left over.
 
-There must therefore be a translation somewhere between the scanner's linear index and the
-event codes the config uses. It has not been found. Upstream reports that on their architecture
-the top bits of the event code carry the event type, `0x80` press, `0x40` release, `0xC0`
-repeat, which would explain why the 600 sees a second bank of rows at 8 to 14 and is the most
-promising lead on the `flags` field. Also unconfirmed here.
+So no translation layer between the scanner's index and the config's codes needs to exist, which
+was the open question here. The scanner's index **is** the config's scan code.
+
+### The key table is not the button to action map
+
+Whatever binds a key to an action, it is not this table. Two configs of the same Harmony 700 whose
+owner recorded reassigning three buttons between them carry a byte identical key table, all 163
+records. See [findings.md](findings.md) section 16.
+
+That leaves the table looking like a description of the remote's own keypad and event capability,
+which is consistent with it being identical across the four arch 8 samples and across both One
+samples. The remaining `u16` and `flags` fields are still unexplained.
 
 ## Infrared parameter block
 

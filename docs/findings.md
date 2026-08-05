@@ -38,12 +38,16 @@ PIC18 high-end register layout rather than the PIC18F67J50 datasheet specificall
 12 part number is inferred, not read off a board. Errors are documented where they occurred
 rather than quietly fixed, so the rest can be calibrated against them.
 
-Six have been found and corrected so far. Two of them are the same claim, corrected twice in
-opposite directions, which is worth reading as a pair: arch 12 and 14 were first said to use a
-container unrelated to the Harmony 525's, then said to nest the 525's `0xFEED`/`0xBEEF` frames
-one per section, and in fact there is **exactly one such frame per container, at section slot
-0**. The first correction was right that the formats are compatible and wrong about how far.
-See sections 7 and 15. `SUBFWB` and `SUBWFB` were swapped in the
+Seven have been found and corrected so far. The most consequential is that key codes were read as
+`0x80 | (row << 3) | col`, a matrix address with bit 7 as a flag, when the top two bits are the
+event type and the rest is the keypad scanner's own scan code; that one had generated a whole
+paragraph of wrong reasoning about the 600's table not being able to describe its own keypad, and
+section 17 replaces it. Two more are the same claim corrected twice in opposite directions, which
+is worth reading as a pair: arch 12 and 14 were first said to use a container unrelated to the
+Harmony 525's, then said to nest the 525's `0xFEED`/`0xBEEF` frames one per section, and in fact
+there is **exactly one such frame per container, at section slot 0**. The first correction was
+right that the formats are compatible and wrong about how far. See sections 7 and 15. `SUBFWB` and
+`SUBWFB` were swapped in the
 disassembler, which inverted an arithmetic expression in the infrared scaling block. A hand
 count of LWJL codes was wrong, 107 rather than 108. And `BTFSC` and `BTFSS` were swapped,
 which inverted the stated polarity of every bit test: the infrared enable mask, the keypad
@@ -396,6 +400,14 @@ From the `NOTINTENDED` comments inside `Region_2.EZUpgrade`:
 
 ## 8. LWJL, and a caution about reading too much into it
 
+**Superseded in its central claim. Read section 17 first.** The matrix encoding this section
+works from is wrong: an event code carries an event type in its top two bits and the scanner's
+own scan code in the rest. Everything below that counts "matrix" against "non-matrix" codes, or
+reads rows out of them, is counting the wrong thing, and the caution the section ends with turns
+out to have been warranted for a different reason than the one given. It is kept because the
+row and column tables below are the raw material somebody may want to re-derive, and because
+this is what the analysis looked like before the correction.
+
 **Harmony One user config**: `count = 55`. Using the `0x80 | (row << 3) | col` matrix
 encoding from discussion #1, that is 52 matrix entries over 7 rows by 8 columns, plus 3
 non-matrix codes (`0x06`, `0x07`, `0x2D`). `flags` is `0x7f` on all 55, and the `index`
@@ -439,6 +451,11 @@ looks like a two-button recovery UI).
 
 **Do not treat the 600 table as that remote's physical key matrix.** The semantics of
 this section across architectures are unresolved.
+
+**Resolved in section 17, and the opposite way round.** The 600's table is exactly its keypad: 54
+scan codes in three event classes. "162 codes is far more than the 600 has physical buttons" was
+the right observation and the wrong inference, because the 162 includes each key three times. The
+second bank of rows at 8 to 14 was bit 6 of the code, which is the release flag, not a row bit.
 
 ## 9. Still unidentified
 
@@ -824,7 +841,10 @@ learning-mode edge timing capture.
 
 ### `0x190A6`: keypad scan
 
-The matrix is **14 rows by 4 columns**, rows active low.
+The matrix is **14 rows by 4 columns**, rows active low. Treat that geometry as unconfirmed: it
+comes from a table of 14 masks, and section 17 records why 14 masks may instead be a binary column
+search over 8 columns, which would make the keypad 7 by 8. The linear 1 to 56 index below is
+unaffected either way.
 
 Three row-driver helpers do read-modify-write on a port, preserving the non-matrix bits:
 
@@ -906,6 +926,14 @@ at `0x1BB38`. This is the pin direction setup, and it is where the definitive pi
 assignment can be read off.
 
 ### This settles the LWJL question
+
+**It did not, and the conclusion below is wrong. See section 17.** The half that holds is the
+scanner's native code being a linear 1 to 56 index rather than `0x80 | (row << 3) | col`. That
+was the right observation, and the mistake was to conclude the config must therefore be using a
+different namespace, instead of asking whether the config's codes were being read correctly. They
+were not. Under the corrected reading the 600's 162 entries are 54 scan codes from exactly that 1
+to 56 range, in three event classes, and no translation layer needs to exist. The original text
+follows.
 
 The physical matrix on arch 14 is 14 by 4, so **56 physical key positions**, and the
 scanner's native code is a linear 1 to 56 index, not `0x80 | (row << 3) | col`. The
@@ -1364,6 +1392,117 @@ primitive at `0x1B9AC`. Slot 8 is now the first one to go after.
 The `version word` in section slot 1 did not move: both dumps read 3394, across roughly two years
 and a configuration change. So it is not a timestamp and not a revision counter for the config
 itself.
+
+## 17. Key codes carry an event type, and slot 10 holds the action lists
+
+Both of these started as claims in harmony-decompiler discussions 5 and 6, which by decision 7 of
+`docs/roadmap.md` are hypotheses rather than facts to adopt. Both were tested against our own
+corpus with our own parser, and both survive. Neither is quoted here as evidence: the numbers
+below are ours, and where upstream reports a figure it is noted as an independent second opinion
+rather than as the source.
+
+### An event code is an event type plus a scan code
+
+**This corrects a claim this project published.** `docs/config-format.md` and section 8 above
+stated that key codes encode `0x80 | (row << 3) | col`, with bit 7 marking a matrix key. They do
+not. The top two bits are the event type and the rest is the keypad scanner's own scan code:
+
+| Bits 7,6 | Event |
+|---|---|
+| `00` | not a keypad event |
+| `01` | release |
+| `10` | press |
+| `11` | repeat |
+
+Three agreements, and each comes from somewhere different:
+
+**The count closes exactly.** Decomposed this way, the Harmony 600's 162 records are scan codes 1
+to 54, contiguous, appearing once in each of release, press and repeat. 54 times 3 is 162 with
+nothing left over. The Harmony 700's 163 are the same 162 plus one code with no event bits at all.
+Under the old reading the same table was 108 "matrix" codes against 54 "non-matrix" ones, and 108
+matrix codes cannot describe a 56 position keypad, which is why section 8 above ends by warning
+that the table could not be the remote's keypad. It is the remote's keypad. The warning was a
+symptom of the wrong split.
+
+**The scan codes fit the scanner's own range, and that comes from the firmware rather than from
+the config.** Section 13 records that the arch 14 keypad scanner at `0x190A6` returns a linear
+index from 1 to 56. The table uses 1 to 54 of exactly that range. The old reading produced rows 0
+to 6 and 8 to 14, which is not a range at all, and required a translation layer between the
+scanner and the config that nobody could find. No such layer needs to exist.
+
+**The three event classes carry an identical scan code set**, all 54 shared, in both arch 14
+samples. If bit 7 were part of the address then a code and that code with bit 7 set would be
+different keys, and there would be no reason for the sets to coincide, let alone coincide exactly
+three times over.
+
+Arch 12 and arch 8 come out differently and cleanly: **presses only**, 52 on the One and 53 on the
+arch 8 remote, with no release or repeat entries, plus the three codes with no event bits (`0x06`,
+`0x07`, `0x2D`) that both share. The One's safe mode config is press of scan 47 and scan 46, which
+is the two key recovery combination. So the difference between the architectures is real rather
+than an artefact: arch 14 enumerates every event type per key and the older architectures record
+only presses.
+
+The earlier finding that arch 8 and arch 12 **share a canonical ordering** survives unchanged: 47
+`(event, scan)` pairs in common, in identical order once press of scan 14 is dropped. Worth stating
+explicitly, since that finding was originally derived under the wrong reading and could easily have
+been an artefact of it. It is not.
+
+Upstream's own words for this, from discussion 6, are "Bit 7 was never part of the matrix address",
+with the same three event flags. They reached it by reading their architecture's firmware at
+`0x07160`; we reached it by counting our own tables. Two routes, one answer.
+
+**What this changes in the code.** `KeyRecord.is_matrix`, `.row` and `.col` are gone from
+`src/harmony/gspm.py`, replaced by `.event_type`, `.event_name`, `.scan_code` and `.is_keypad`.
+They were removed rather than deprecated: a wrong reading left available is a wrong reading that
+gets used.
+
+**A lead this opens, not a finding.** Section 13 describes the arch 14 keypad as a 14 by 4 matrix,
+derived from a table of 14 masks. Upstream describes the arch 9 scanner as a binary search for a
+column over 8 columns using a single sense line, driven by exactly 14 masks:
+`0x0F 0x03 0x01 0x02 0x0C 0x04 0x08 0xF0 0x30 0x10 0x20 0xC0 0x40 0x80`. Fourteen is what a binary
+search over two nibbles costs, seven masks each. If ours is the same design then "14 rows" is a
+misreading of a 14 entry search table and the geometry is 7 rows by 8 columns, which is also what
+`(row << 3) + column` with columns 1 to 8 implies and what 56 positions divides into. It does not
+affect the scan codes, since those are the scanner's linear index either way, and it is not
+recorded as a correction because it has not been checked: it needs a re-read of `0x190A6`.
+
+### Base slot 10 is the action list address table
+
+Each entry addresses an action list, and a list is a `u8` count followed by that many three byte
+instructions, each a `u16` operand and an opcode byte.
+
+The reading is carried by a closure, not by the shape fitting. A list occupies `1 + 3 * count`
+bytes, and the lists are packed back to back, so consecutive table entries should sit exactly that
+far apart. The addresses come from the pointer table and the counts come from the lists themselves,
+which are unrelated parts of the file:
+
+| Sample | lists | instructions | consecutive pairs packed |
+|---|---|---|---|
+| 700 user config, arch 14 | 8037 | 19651 | 8032 of 8036 |
+| 600 user config, arch 14 | 4955 | 12194 | 4950 of 4954 |
+| One user config, arch 12 | 4277 | 11640 | 4272 of 4276 |
+| 88x class config, arch 8 | 1318 | 3311 | 1313 of 1317 |
+| 525 config, arch 9 | 487 | 1043 | 482 of 486 |
+
+**Exactly four exceptions per config, in every one of them.** That regularity is itself the
+explanation: the lists are packed into five contiguous runs, so four times the next list is
+somewhere else. Each of those four gaps is tens of kilobytes, never an off by one. On the 700 the
+runs are four in the region ahead of slot 0 and one inside base slot 9, which accounts precisely
+for the 7656 and 381 split of where the table's entries point.
+
+The 525 numbers, 487 lists and 482 of 486 packed, are the same numbers harmony-decompiler reports
+for that file. Reproducing them through our own slot numbering also cross checks the alignment in
+section 16: their "section 10" and our base slot 10 are the same section.
+
+**Opcode meanings are deliberately not adopted.** Upstream publishes a partial table (`0x7F` run
+an action list, `0x7E` select a record, `0x7D` send a command, `0x7C` queue a flag, `0x7A` down to
+`0x77` as an accumulator machine's load, add, multiply and divide) derived from the arch 9
+firmware. Our data says that table does not transfer as it stands, and that is worth knowing
+before anyone leans on it: arch 14's third most common opcode is `0x6C`, 2832 occurrences in the
+700, and `0x6C` does not appear in the 525 sample at all. The inventories do overlap, so this is
+one instruction set with per architecture extensions rather than two encodings, but the meanings
+have to be read out of the arch 14 firmware. That is now the most valuable thing to look for while
+in there.
 
 ## References
 
