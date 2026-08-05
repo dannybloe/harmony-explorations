@@ -310,12 +310,13 @@ test('all the bytes but no completion is an error, because the pipe is then dirt
   await assert.rejects(() => remote.readFlash(0x030000, 62), /no completion, so the pipe is dirty/);
 });
 
-test('a multi chunk internal memory read is refused, because one restarted a remote', async () => {
-  // Not a style preference. A 63 byte read of internal program memory made a Harmony One stop
-  // answering and re-enumerate, watched from both ends. The remote recovered with its config intact,
-  // but a read that restarts the device is not a read this project performs by accident.
+test('a multi chunk internal memory read is refused, because they restart a remote', async () => {
+  // Not a style preference. A 63 byte read of internal program memory made a Harmony One leave the
+  // USB bus, five times over once it was reproduced on purpose, watched from both ends. Each time the
+  // remote recovered with its config intact, but a read that restarts the device is not a read this
+  // project performs by accident.
   const { transport, written } = scriptedRemote([], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
-  await assert.rejects(() => remote.readInternalMemory(0xff, 0, 63), /has been seen to restart a remote/);
+  await assert.rejects(() => remote.readInternalMemory(0xff, 0, 63), /have restarted a remote/);
   assert.equal(written.length, 0, 'and it is refused before anything reaches the device');
 });

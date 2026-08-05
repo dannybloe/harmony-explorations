@@ -805,17 +805,31 @@ selector, and the firmware bounds the remaining 16 to `0xFFC0`, so the reachable
 part number stays inferred, and the route to measuring it is not this one. Recorded as a negative
 result rather than left as a task, because the task as written cannot be done.
 
-**A multi chunk read of this region restarted a remote.** With the pipe clean, 32 bytes read fine, 62
-read fine, and 63 produced no data and then the remote left the USB bus. It re-enumerated by itself,
-came back healthy, and its config still reads byte-identical to its dump. The owner saw it restart, so
-this is the device resetting and not a host artefact. Sixty-three is the first size that needs a
-second chunk on this path, for a single byte, while the config flash path handles 64, 100 and 256
-without complaint.
+**A read of this region can restart the remote.** Found by accident, then reproduced deliberately on
+the spare unprogrammed Harmony One, with the owner watching the device restart, so it is the device
+resetting and not a host artefact.
 
-Not diagnosed, and not retried. `packages/usb` refuses an internal read of more than one chunk, which
-is a cap and not a fix; 62 bytes at a time is enough for what this region is wanted for. Worth stating
-plainly for anyone building on this: **every command in this session was a read**, and a read of this
-region still perturbed a running remote.
+| Read | Result |
+|---|---|
+| 63 bytes at `0x1000` | **restarts it, 3 of 3**, wherever it sits in a sequence |
+| 63 bytes at `0x0040` | the transfer completed, and the remote died immediately afterwards |
+| 63 bytes at `0x0000` | fine, twice |
+| 64 bytes at `0x1000` | fine, twice |
+| 124 bytes at `0x1000` | fine, twice, and that is two full chunks |
+
+Three things are ruled out by that table. It is **not the ordering**, because the failing case fails
+last as readily as first. It is **not the chunk count**, because 124 bytes is two chunks and is fine.
+And it is **not the size 63 by itself**, because 63 at offset zero is fine.
+
+What 63 has that 64 and 124 do not is **a final chunk of exactly one byte**. Offset zero is somehow
+exempt from it. Beyond that this is not diagnosed, and five restarts is enough hardware to spend on
+one question that has a cheap workaround.
+
+Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
+across three separate windows. So this is disruption rather than damage. `packages/usb` refuses an
+internal read of more than one chunk, which is a cap rather than a fix, and 62 bytes at a time is
+enough for what this region is wanted for. Worth stating plainly for anyone building on this: **every
+command involved was a read**, and reads of this region still restart a running remote.
 
 ### Live RAM, and upstream's selector confirmed wrong for this architecture
 
@@ -850,7 +864,8 @@ to settle, and a list that only ever grows is not a status.
 * **Fields 8 and 9 of the version block**, and what fields 7, 10 and 11 are versions of, given that
   they repeat field 0 on both remotes. Concordance prints firmware type, the third component of the
   hardware version, and `IRL, ORL, FRL`, none of which is placed.
-* **Why a 63 byte read of internal program memory restarts a remote.** Capped rather than understood.
+* **Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is
+  exempt.** Narrowed to that by experiment, capped rather than understood.
 * **Another route to `MCU_ID`**, since the internal read window is the first 64 KiB and the device id
   is at `0x3FFFFE`. The arch 12 part number stays inferred until one is found.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.

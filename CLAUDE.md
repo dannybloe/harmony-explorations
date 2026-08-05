@@ -373,10 +373,12 @@ flash come back byte-identical to that unit's lab dump. Six fields of the versio
 from the 600 and confirmed on the One. **Nothing has been written to a remote.**
 `docs/usb-protocol.md` section 4 is the measured part.
 
-**A read restarted a remote, once.** A 63 byte read of internal program memory (`READ_FLASH` with top
-address byte `0xFF`) made the Harmony One leave the USB bus. It re-enumerated by itself and its config
-still matches its dump. Not diagnosed; `packages/usb` refuses a multi chunk read of that region. Treat
-that path as the one place where read only is not the same as harmless.
+**Reads of internal program memory restart a remote.** `READ_FLASH` with top address byte `0xFF`, when
+the transfer ends in a one byte chunk, makes the remote leave the USB bus. Reproduced deliberately on
+the spare unprogrammed One: 5 restarts, all self-recovering, config verified against the dump
+afterwards. Ruled out: ordering, chunk count, and the size 63 by itself. `packages/usb` caps an
+internal read at one chunk. **This is the one path where read only is not the same as harmless**, and
+the cap is a workaround, not an explanation.
 
 **`MCU_ID` is not reachable** and that is now a finding rather than a task: the internal read window is
 the first 64 KiB and a PIC18 keeps its device id at `0x3FFFFE`. The arch 12 part number stays inferred.

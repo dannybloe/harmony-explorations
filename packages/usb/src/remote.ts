@@ -203,18 +203,26 @@ export class HarmonyRemote {
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
     if (count > FLASH_CHUNK_DATA) {
-      // Observed on the bench, and confirmed by the owner watching the remote: a 63 byte read of
-      // internal program memory made a Harmony One stop answering and re-enumerate. It restarted
-      // and was fine afterwards, config intact, but it restarted. 63 is the first size that needs a
-      // second chunk on this path, for a single byte, and the config flash path handles 64, 100 and
-      // 256 without complaint, so the second chunk is where the difference is.
+      // A read of this region can restart the remote, and the cap is what avoids it. Measured on the
+      // spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
       //
-      // Not diagnosed, so this is a cap rather than a fix, and it stays until somebody understands
-      // the path well enough to lift it. One chunk per command is enough for what this is for: the
-      // device id words, and reading the internal firmware in 62 byte steps.
+      //   63 bytes at 0x1000   restarts it, 3 times out of 3, wherever it sits in a sequence
+      //   63 bytes at 0x0040   completed, and the remote died immediately afterwards
+      //   63 bytes at 0x0000   fine, twice
+      //   64 bytes at 0x1000   fine, twice
+      //   124 bytes at 0x1000  fine, twice, and that is two full chunks
+      //
+      // So it is not the chunk count: 124 is two chunks and is fine. What 63 has that 64 and 124 do
+      // not is a final chunk of exactly one byte. Offset 0 is somehow exempt. Beyond that it is not
+      // diagnosed, and five restarts was enough hardware for one question.
+      //
+      // Every one of those restarts recovered on its own, and the config read back byte-identical to
+      // its dump across three separate windows afterwards. So this is disruption, not damage. Still,
+      // "read only" and "harmless" are not the same sentence on this path, which is the reason for a
+      // refusal here rather than a comment somewhere.
       throw new RemoteError(
-        `an internal memory read of ${count} bytes needs more than one chunk, and a multi chunk ` +
-          `read of this region has been seen to restart a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
+        `an internal memory read of ${count} bytes needs more than one chunk, and multi chunk reads ` +
+          `of this region have restarted a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
       );
     }
     if (offset < 0 || offset > 0xffc0) {

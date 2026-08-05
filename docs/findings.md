@@ -2038,8 +2038,16 @@ route to `MCU_ID` that `docs/roadmap.md` wanted does not exist, and the arch 12 
 inferred until another route is found. And a 63 byte read of that same region **restarted a remote**:
 it left the USB bus, re-enumerated by itself, and came back healthy with its config still
 byte-identical to its dump. The owner watched it restart, so it is the device resetting rather than a
-host artefact. Every command in that session was a read. `packages/usb` now refuses a multi chunk read
-of that region, which is a cap and not an explanation.
+host artefact. Every command in that session was a read.
+
+That one was then reproduced on purpose, on the spare unprogrammed unit, because "sometimes it
+restarts" is not a finding and a rail built on it would be superstition. Five restarts, all
+self-recovering, config verified against the dump across three windows afterwards. The table is in
+`docs/usb-protocol.md` section 4; what it rules out is more useful than what it shows. Not the
+ordering, since the failing case fails last as readily as first. Not the chunk count, since 124 bytes
+is two chunks and is fine. Not the size 63 alone, since 63 at offset zero is fine. What is left is a
+final chunk of exactly one byte, with offset zero somehow exempt, and that is where it was left:
+`packages/usb` caps an internal read at one chunk, which is a cap and not an explanation.
 
 ### An honest gap
 
