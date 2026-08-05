@@ -76,6 +76,7 @@ because the 600 dump is truncated by concordance. Other models are iterated on l
   the `GSPM` magic, so `AHCM` (arch 9, Harmony 525) and `TPTP` (arch 8, 720/785/88x) both fail.
   The claim in `docs/config-format.md` that the container is shared across architectures is
   therefore currently untested against the two architectures that would best prove it.
+  **Done in step 2.** The container is now general and the claim held.
 * Five extra config samples are available in the sibling `harmony-decompiler/samples` checkout,
   already published with permission, `UserId` 0, no account data: four arch 8 and one arch 9.
 * Three of the four arch 8 configs were generated about ten minutes apart and still differ in 73
@@ -83,18 +84,20 @@ because the 600 dump is truncated by concordance. Other models are iterated on l
   reshuffles the whole image.** Consequence for the app: byte-identical round tripping is
   achievable, but reproducing what Logitech's generator would have emitted is not, so the editor
   must make minimal diffs against an existing config rather than regenerate one.
-* The keypad scanner at `0x190A6` returns a linear index `row * 4 + column`, 1 to 56, 14 rows by
-  4 columns, rows active low. Upstream is blocked on mapping physical buttons to codes after
-  three failed attempts, none of which involved reading firmware. Polling the RAM variable that
-  receives the scanner's index, over USB, while a human presses each key, is a fourth route.
-  Supporting evidence that the scanner keeps running while USB is attached: upstream observed a
-  key press toggling a backlight boolean.
+* The keypad scanner at `0x190A6` returns a linear index, 1 to 56, rows active low. Polling the
+  RAM variable that receives that index, over USB, while a human presses each key, is a route to
+  the button mapping that upstream's three failed attempts did not try. Supporting evidence that
+  the scanner keeps running while USB is attached: upstream observed a key press toggling a
+  backlight boolean. **Update since:** the experiment got cheaper, because the config's key codes
+  turn out to carry that linear index directly, so there is no translation layer to find first.
 * Upstream reports a config interpreter in firmware, an accumulator machine at `0x01C86` to
   `0x02401` on their architecture, so action lists are bytecode rather than data. Their claimed
-  key chain is physical button, scan code `row << 3 | column`, event code `0x80 | scan`, key
-  table, action list, IR command, with event type in the top bits (`0x80` press, `0x40` release,
-  `0xC0` repeat). That last detail is the most promising lead on our unexplained LWJL `flags`
-  field (`0x00`, `0x07`, `0x7F` across samples).
+  key chain is physical button, scan code, event code, key table, action list, IR command, with
+  event type in the top bits (`0x80` press, `0x40` release, `0xC0` repeat). **The event type part
+  is confirmed on arch 12 and 14**, section 17, and it replaced our own wrong reading of the code
+  as a matrix address. The key table is **not** the link to the action list, though: it is byte
+  identical across a pair of configs whose buttons were reassigned, section 16. Action lists
+  themselves are found, at base slot 10; their opcodes are not.
 * The format's designer stated the pointer table "is probably pointing to data for each of the
   various subsystems (IR sending, state variables, menus, action lists etc)". Treat as a prior
   for section labelling, not as an answer.
@@ -158,7 +161,7 @@ are stale and need correcting, because later policy decisions read them.
   rather than one hardcoded magic, and derives the marker after the pointer table from the data.
   `src/harmony/ezfile.py` gained `parse_ezhex`, which splits a config on its declared
   `BINARYDATASIZE` and verifies the `0x69`-seeded XOR `CHECKSUM` and the `INTENDEDVERSION` block.
-* Result: twelve samples, four architectures, five base addresses, three format versions, four
+* Result: thirteen samples, four architectures, five base addresses, three format versions, four
   pointer table lengths, all consistency checks passing. The container claim in
   `docs/config-format.md` is no longer a claim about two models.
 * A Harmony 700 config arrived afterwards, which gave arch 14 a second sample and, more to the
@@ -242,9 +245,6 @@ are stale and need correcting, because later policy decisions read them.
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is
   reachable through the SPI primitive at `0x1B9AC`.
-* **Also cheap, and it closes a loose end:** re-read the keypad scanner at `0x190A6` to settle
-  whether its 14 masks are 14 rows or a binary column search over 8 columns. `docs/findings.md`
-  section 17 explains why the second reading is likely and why it does not affect the scan codes.
 * **Upstream hypotheses worth testing while in the firmware**, from harmony-decompiler
   discussions 5, 6 and 7. None adopted, all cheap to check against our own images: that `LATE`
   bit 2 is the external flash chip select and `TBLPTR` a 24 bit cursor into it (their arch 9,

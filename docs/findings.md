@@ -351,7 +351,7 @@ wrong, and wrong in the direction that mattered: it told people not to reuse wor
 in fact directly reusable.
 
 The correction below then overshot, claiming a frame per section. There is **exactly one frame
-per container, at section slot 0**, on all twelve samples. The rest of this subsection is the
+per container, at section slot 0**, on all thirteen samples. The rest of this subsection is the
 overshoot as written, kept because how it happened is the instructive part.
 
 The two are **nested**, not alternatives. GSPM is an outer layer carrying the pointer table.
@@ -841,10 +841,9 @@ learning-mode edge timing capture.
 
 ### `0x190A6`: keypad scan
 
-The matrix is **14 rows by 4 columns**, rows active low. Treat that geometry as unconfirmed: it
-comes from a table of 14 masks, and section 17 records why 14 masks may instead be a binary column
-search over 8 columns, which would make the keypad 7 by 8. The linear 1 to 56 index below is
-unaffected either way.
+The matrix is **14 rows by 4 columns**, rows active low, and the `MULLW 0x04` below is what makes
+that a reading of the code rather than an inference from a table size. Section 17 records an
+attempt to overturn this from an upstream analogy, and why the code wins.
 
 Three row-driver helpers do read-modify-write on a port, preserving the non-matrix bits:
 
@@ -1065,10 +1064,10 @@ sample, the Harmony 600 dump. The section labelling method needs two configs of 
 architecture, so that a slot pointing at the same structure in both is a section rather than a
 misread. This is the second one, and it is from the same model as the firmware.
 
-The corpus is now **twelve container samples across four architectures**: four arch 8, one arch
-9, five arch 12 (two user configs from two different One units, two copies of the safe mode
-config, one from the firmware package) and three arch 14 (600 user config, 700 user config, 700
-firmware package container).
+The corpus is now **thirteen container samples across four architectures**, four of each
+except arch 9 which has one: arch 12 contributes two user configs from two different One units,
+two copies of the safe mode config and one from the firmware package, and arch 14 contributes the
+600 user config, both Harmony 700 user configs and the 700 firmware package container.
 
 ### Section slot 1 states the architecture, twice
 
@@ -1088,7 +1087,7 @@ zero bytes.
 
 Every sample is a calibration case: its architecture was already known from a source that is
 not this record, so the record is being checked rather than merely being self consistent. Four
-distinct architecture values, twelve agreements, no exceptions. What would falsify it is a
+distinct architecture values, thirteen agreements, no exceptions. What would falsify it is a
 single config whose slot 1 byte disagreed with its own `<PROTOCOL>`.
 
 Why it is worth having rather than a curiosity: **the cookie cannot tell arch 12 from arch 14**,
@@ -1114,7 +1113,7 @@ package.
 
 **This corrects section 7 a second time.** The claim there is that every section the pointer
 table points at is a `0xFEED`/`0xBEEF` frame. It is not. There is one frame per container, at
-slot 0, in all twelve samples.
+slot 0, in all thirteen samples.
 
 The frame:
 
@@ -1127,8 +1126,8 @@ The frame:
 ```
 
 Two independent confirmations of the length rule. First, the terminator is where the length says
-in all twelve. Second, the frame occupies `length + 2` bytes and the **slot 1 pointer lands on
-exactly that byte** in all twelve, and the pointer table and the length field are different
+in all thirteen. Second, the frame occupies `length + 2` bytes and the **slot 1 pointer lands on
+exactly that byte** in all thirteen, and the pointer table and the length field are different
 parts of the file, so agreeing is not automatic.
 
 The exclusivity is the part that needed care, because it is the part the earlier correction got
@@ -1278,7 +1277,7 @@ ways:
   table, and the entire key table. Slot 4 differs in one byte of 1193 and slot 6 in 1.3 percent.
 * **Displaced only.** The six pointer arrays, whose entries moved by exactly the layout shift.
 * **Rewritten wholesale, at unchanged size.** Slot 9, 2920 bytes and 90 percent different. Slot
-  17, 598324 bytes and 89 percent different. The 254 KiB region ahead of slot 0, 46 percent
+  17, 598324 bytes and 89 percent different. The 249 KiB region ahead of slot 0, 46 percent
   different, which no pointer in the table addresses. None of these is explained by displacement:
   read as 2, 3 or 4 byte values, almost none of their values moved by the layout shift, so this is
   different content rather than the same content at new addresses.
@@ -1303,7 +1302,7 @@ pointer table in the header, so this is two unrelated parts of the file agreeing
 merely happened to satisfy `width + 3 * count == length` would have no reason to.
 
 Slot 10 is the exception and it argues the same way. Its 8037 entries moved by **fourteen
-different deltas**, not one, because they address the 254 KiB region ahead of slot 0 that was
+different deltas**, not one, because they address the 249 KiB region ahead of slot 0 that was
 rewritten rather than displaced. A table of offsets into a rebuilt region is exactly what that
 looks like; a coincidence would not have produced a small set of consistent deltas either.
 
@@ -1456,15 +1455,32 @@ with the same three event flags. They reached it by reading their architecture's
 They were removed rather than deprecated: a wrong reading left available is a wrong reading that
 gets used.
 
-**A lead this opens, not a finding.** Section 13 describes the arch 14 keypad as a 14 by 4 matrix,
-derived from a table of 14 masks. Upstream describes the arch 9 scanner as a binary search for a
-column over 8 columns using a single sense line, driven by exactly 14 masks:
+**A lead that died within the hour, recorded because the way it died is the point.** Upstream
+describes the arch 9 scanner as a binary search for a column over 8 columns using a single sense
+line, driven by exactly 14 masks:
 `0x0F 0x03 0x01 0x02 0x0C 0x04 0x08 0xF0 0x30 0x10 0x20 0xC0 0x40 0x80`. Fourteen is what a binary
-search over two nibbles costs, seven masks each. If ours is the same design then "14 rows" is a
-misreading of a 14 entry search table and the geometry is 7 rows by 8 columns, which is also what
-`(row << 3) + column` with columns 1 to 8 implies and what 56 positions divides into. It does not
-affect the scan codes, since those are the scanner's linear index either way, and it is not
-recorded as a correction because it has not been checked: it needs a re-read of `0x190A6`.
+search over two nibbles costs, seven per nibble. Since section 13 describes the arch 14 keypad as
+14 rows by 4 columns, the obvious suspicion was that "14 rows" was a misreading of a 14 entry mask
+table and that the real geometry was 7 by 8, matching their `(row << 3) + column`.
+
+It is not. Arch 14 computes the index arithmetically and the code says so plainly:
+
+```
+19282: 01 07       DECF 0xd01,F     ; row, one based
+19288: 04 0d       MULLW 0x04       ; times four
+1928a: f3 50       MOVF PRODL,W
+1928e: 00 25       ADDWF 0xd00,W    ; plus column, 1 to 4
+```
+
+`MULLW 0x04` settles it: `(row - 1) * 4 + column`, 14 rows of 4, 1 to 56. The two architectures
+have genuinely different keypad hardware and genuinely different scanners, which is unsurprising
+given one has a touchscreen and the other does not.
+
+The lesson is the one this project's own doctrine already states and I still walked past: the
+answer was in this document, 500 lines above, in a disassembly listing that had been sitting there
+since the first Ghidra pass. Reaching for an upstream analogy before re-reading our own code is
+exactly the failure decision 7 of `docs/roadmap.md` exists to prevent. The scan codes are
+unaffected either way, since those are the scanner's linear index in both readings.
 
 ### Base slot 10 is the action list address table
 

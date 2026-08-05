@@ -261,7 +261,7 @@ over the runner-up before trusting its answer.
 Output here is AI-produced and published as such, so claims are expected to be checkable.
 Established norms:
 
-* Prefer two independent samples. The container is validated against twelve, spanning four
+* Prefer two independent samples. The container is validated against thirteen, spanning four
   architectures, five base addresses, three format versions and four pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying

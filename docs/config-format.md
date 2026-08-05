@@ -23,9 +23,9 @@ u16 checksum + end marker
 
 ## Outer container
 
-Validated against **twelve samples across four architectures**, five base addresses
+Validated against **thirteen samples across four architectures**, five base addresses
 (`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and four pointer table
-lengths. Every consistency check passes on all twelve. See `tests/test_gspm.py`.
+lengths. Every consistency check passes on all thirteen. See `tests/test_gspm.py`.
 
 ```
 0x00  char[4]  cookie          per architecture, see the table below
@@ -69,7 +69,7 @@ Needed to turn the pointers into file offsets, and derivable from the blob itsel
 base = end_addr - (offset_of_end_marker - offset_of_cookie)
 ```
 
-Exact on all twelve samples. Worth noting against concordance's table, which lists arch 9's
+Exact on all thirteen samples. Worth noting against concordance's table, which lists arch 9's
 `config_base` as `0x820000` where the derived value is `0x020000`; bit 23 looks like a flag
 rather than an address bit. Deriving from the data sidesteps the question.
 
@@ -162,7 +162,7 @@ byte identical across that pair while the described change reassigned buttons.
 
 ### Slot 0: the only `0xFEED` frame
 
-Exactly one frame per container, always at slot 0. Confirmed on twelve samples across four
+Exactly one frame per container, always at slot 0. Confirmed on thirteen samples across four
 architectures, and confirmed as *exclusive* by validating every `0xFEED` byte pair in each
 container: no other one closes.
 
@@ -174,7 +174,7 @@ container: no other one closes.
 +len   u16      0xBEEF
 ```
 
-The frame therefore occupies `length + 2` bytes, and in all twelve samples the slot 1 pointer
+The frame therefore occupies `length + 2` bytes, and in all thirteen samples the slot 1 pointer
 lands on exactly that byte. That is an independent confirmation of the length rule, because the
 pointer and the length come from different places in the file.
 
@@ -202,7 +202,7 @@ A fixed seven byte record:
 +0x04  u8[3]    00 00 00
 ```
 
-Confirmed on twelve samples spanning architectures 8, 9, 12 and 14. Every one has its
+Confirmed on thirteen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
 field on nine of them and from the firmware package the container was extracted from on the
 other three, so each sample is a calibration case rather than a self-consistency check.
