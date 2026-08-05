@@ -27,6 +27,16 @@ BASES = {'h700_code': 0x9000, 'one34_code': 0x20000}
 HARMONY_600_LIVE_REPORT_DESCRIPTOR = bytes.fromhex(
     '0600ff0901a101150026ff007508a102090295408106c0a102090595409102c0c0')
 
+# The same remote's endpoint descriptors, read with pyusb because ioreg does not report them.
+# Enumeration only again: libusb caches these when it enumerates, so no handle was opened and
+# no transfer reached the remote. Format matches usbdesc.summary()['endpoints'].
+HARMONY_600_LIVE_ENDPOINTS = [
+    {'number': 1, 'direction': 'in', 'transfer': 'interrupt',
+     'max_packet': 64, 'interval_ms': 1},
+    {'number': 2, 'direction': 'out', 'transfer': 'interrupt',
+     'max_packet': 64, 'interval_ms': 1},
+]
+
 
 def summary(name):
     return usbdesc.summary(lab.load(name), BASES[name])
@@ -204,6 +214,14 @@ class TestTheLiveArch14RemoteMatchesTheArch14Image(unittest.TestCase):
         self.assertEqual(differing, [21])
         self.assertEqual(from_image[21], 0x02, 'arch 12 declares the input report Absolute')
         self.assertEqual(HARMONY_600_LIVE_REPORT_DESCRIPTOR[21], 0x06, 'arch 14, Relative')
+
+    def test_the_endpoints_the_image_declares_are_the_endpoints_the_device_has(self):
+        """
+        Including the asymmetry, which is the thing a host implementation gets wrong: IN on
+        endpoint 1 and OUT on endpoint 2, measured rather than read off a proxy.
+        """
+        self.assertEqual(summary('h700_code')['endpoints'], HARMONY_600_LIVE_ENDPOINTS)
+        self.assertEqual(summary('one34_code')['endpoints'], HARMONY_600_LIVE_ENDPOINTS)
 
     def test_the_measured_descriptor_is_the_declared_length(self):
         self.assertEqual(len(HARMONY_600_LIVE_REPORT_DESCRIPTOR), 33)

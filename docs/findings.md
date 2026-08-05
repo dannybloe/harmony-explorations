@@ -1756,8 +1756,23 @@ third arch 14 device with a wildly different firmware version, 0.2 against 2.8, 
 other arch 14 image. It also means the 700, which is not on the bench, is a sound reading
 proxy for the 600 at least this far.
 
-Recorded as one hardware measurement in an otherwise offline document, and pinned in
-`tests/test_usbdesc.py` so the image and the measurement cannot drift apart silently.
+The endpoint descriptors needed a second tool, because `ioreg` does not report them. pyusb
+does, still without opening the device: libusb caches a device's descriptors when it
+enumerates. **IN on endpoint 1, OUT on endpoint 2, 64 bytes, 1 ms, measured**, plus
+`bmAttributes 0xC0` and 100 mA off the configuration descriptor. Field for field the image's
+`07 05 81 03 40 00 01` and `07 05 02 03 40 00 01`. The asymmetry was the one transport detail
+a host implementation is most likely to get wrong, and it is no longer taken on the word of a
+remote nobody here owns.
+
+Recorded as hardware measurement in an otherwise offline document, and pinned in
+`tests/test_usbdesc.py` so the images and the measurements cannot drift apart silently.
+
+Two lessons came out of the method rather than the result, and both are now in the
+`probe-remote` skill so they are not rediscovered. `system_profiler SPUSBDataType` returns
+nothing at all on this machine while exiting 0, which produced a confident false negative: a
+watcher polling it reported no remote for six minutes while the remote was plugged in. And the
+useful measurements are all available without opening the device, which is what makes them
+safe to take at all while the project is read only.
 
 ### An honest gap
 

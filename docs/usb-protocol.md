@@ -49,6 +49,7 @@ tools/usbdesc.py 700-2.8-Region_2-code-base0x9000.bin 0x9000 --raw
 * **The endpoint numbering is asymmetric.** IN is endpoint 1, OUT is endpoint **2**. The
   device descriptors say `81 03 40 00 01` and `02 03 40 00 01`, so this is not a symmetric
   pair and code that assumes endpoint 1 in both directions will not talk to the remote.
+  Measured on the bench remote as well, see below.
 * **64 bytes each way, and no report ids.** The report descriptor declares report size 8 by
   report count 64 for both the input and the output report, and contains no Report ID item.
   So a report is exactly 64 payload bytes. hidapi wants a leading report id byte of zero
@@ -93,7 +94,25 @@ configuration, full speed, `bMaxPacketSize0 8`, class and subclass and protocol 
 images have them, one HID interface with **two** endpoints, 64 byte input and output reports
 and a 1 ms report interval.
 
-Two of them are worth stating separately.
+The endpoint descriptors were read separately, with pyusb, because `ioreg` does not report
+them. Also enumeration only: libusb caches a device's descriptors when it enumerates, so
+these come out of that cache without an open handle and without a transfer reaching the
+remote.
+
+```
+046D:C122  bcdDevice 0x1071, so skin 71
+  configuration 1: bmAttributes 0xC0, 100 mA
+    interface 0 alt 0: class 3, subclass 0, protocol 0
+      endpoint 0x81: number 1 in  interrupt 64 bytes every 1 ms
+      endpoint 0x02: number 2 out interrupt 64 bytes every 1 ms
+```
+
+That is the image's `07 05 81 03 40 00 01` and `07 05 02 03 40 00 01`, field for field,
+including the asymmetry: **IN on endpoint 1, OUT on endpoint 2, measured.** With
+`bmAttributes 0xC0` and 100 mA from the configuration descriptor as well. Nothing in this
+section now rests on the 700 image alone. `tools/usbprobe.py` repeats it.
+
+Two results are worth stating separately.
 
 **`bcdDevice` came back `0x1071`, which was the prediction, and the 600 is skin 71.** The
 reading of the field was derived from two images and then predicted a third value before it

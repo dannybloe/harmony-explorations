@@ -205,12 +205,14 @@ reads are scattered everywhere. Decode arch 14, then port. Use the 700 image rat
 
 ## Commands
 
-Two project skills carry the rituals that are easy to half-perform:
+Three project skills carry the rituals that are easy to half-perform:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
 * **`finding`**, the verification gate plus the three places a confirmed fact must land, and the
   convention for correcting an earlier claim in place.
+* **`probe-remote`**, how to measure a connected remote read only: the rails, which enumeration
+  commands actually work on this machine, and where a hardware number has to land.
 
 ```
 make test          run the suite; image-backed tests need a lab directory
@@ -229,6 +231,7 @@ tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
 tools/usbdesc.py       <file> <base> [--raw] [--json]
+tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three
@@ -271,6 +274,11 @@ over the runner-up before trusting its answer.
   chain that XORs with the difference to the next case, so the case value is the running XOR
   of every literal so far. Reading them literally gave `0x20` twice, and a duplicate case is
   the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand.
+* **`system_profiler SPUSBDataType` returns nothing at all on this machine**, not even for
+  unrelated devices, and it exits 0 while doing it. So any script that greps it for a remote
+  concludes "not connected" and is believed. That already produced one false negative here: a
+  six minute watcher reported no remote while the remote was plugged in. Use `ioreg`, and see
+  the `probe-remote` skill.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.
