@@ -26,6 +26,11 @@ ghidra_projects/
 .ghidra/
 work/
 
+# Per-machine Claude Code settings. These accumulate absolute paths from whoever's machine
+# they were written on. The shared hook configuration lives in .claude/settings.json, which
+# is committed.
+.claude/settings.local.json
+
 # Build and tool noise.
 *.class
 *.pyc
