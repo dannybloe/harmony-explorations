@@ -24,9 +24,17 @@ checkable and should be checked. Verification method is shown alongside the conc
 rather than just asserted, most importantly the calibration table in section 5 and the
 numeric closure in section 13. Highest-risk items, in order: the SFR map assumes the standard
 PIC18 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch
-12 part number is inferred, not read off a board; and the sense of some `BTFSC`/`BTFSS`
-annotations in the SPI listings may be inverted. Two earlier errors are documented where they
-occurred rather than quietly fixed, so the rest can be calibrated against them.
+12 part number is inferred, not read off a board. Errors are documented where they occurred
+rather than quietly fixed, so the rest can be calibrated against them.
+
+Three have been found and corrected so far. `SUBFWB` and `SUBWFB` were swapped in the
+disassembler, which inverted an arithmetic expression in the infrared scaling block. A hand
+count of LWJL codes was wrong, 107 rather than 108. And `BTFSC` and `BTFSS` were swapped,
+which inverted the stated polarity of every bit test: the infrared enable mask, the keypad
+columns and the reset key combination are all active low, not active high as first written.
+None of those changed a structural conclusion, but all three produced readable listings rather
+than obvious failures, which is why the encodings are now asserted in `tests/test_isa.py` and
+every documented finding has a regression test.
 
 ---
 
@@ -228,23 +236,23 @@ Not inference. Sample from the One at `0x20030`, and note the header at `0x20000
 data, not code:
 
 ```
-020000: cd d8        (checksum, not an instruction)
+020000: cd d8       (checksum, not an instruction)
 ...
-020008: 48 47        (magic, not an instruction)
-02000a: 1c ef 75 f1  GOTO  0x02ea38
-02000e: 12 00        RETURN
-020030: 0f 01        MOVLB 0xf
-020032: 14 0e        MOVLW 0x14
-020034: 5f 6f        MOVWF 0x5f,BANKED
-020036: 37 ec 6c f1  CALL  0x02d86e
-02003a: 02 01        MOVLB 0x2
-02003c: c7 6b        CLRF  0xc7,BANKED
+020008: 48 47       (magic, not an instruction)
+02000a: 1c ef 75 f1 GOTO  0x02ea38
+02000e: 12 00       RETURN
+020030: 0f 01       MOVLB 0xf
+020032: 14 0e       MOVLW 0x14
+020034: 5f 6f       MOVWF 0x5f,BANKED
+020036: 37 ec 6c f1 CALL  0x02d86e
+02003a: 02 01       MOVLB 0x2
+02003c: c7 6b       CLRF  0xc7,BANKED
 ...
-020050: 04 01        MOVLB 0x4
-020052: 40 0e        MOVLW 0x40
-020054: 11 6f        MOVWF 0x11,BANKED
-020056: 28 0e        MOVLW 0x28
-020058: 12 6f        MOVWF 0x12,BANKED
+020050: 04 01       MOVLB 0x4
+020052: 40 0e       MOVLW 0x40
+020054: 11 6f       MOVWF 0x11,BANKED
+020056: 28 0e       MOVLW 0x28
+020058: 12 6f       MOVWF 0x12,BANKED
 ```
 
 Opcode high-byte histograms:
@@ -529,13 +537,14 @@ half-cycles:
 194bc: 82 94       BCF PORTC,2      ; IR LED off
 194be: bd 51       MOVF 0xbd,B,W    ; off-time
 194c0: 80 ec 86 f0 CALL 0x10d00     ; delay
-194c4: be a1       BTFSC 0xbe,B,0   ; bit n of mask selects whether this
+194c4: be a1 BTFSS 0xbe,B,0   ; bit n of mask selects whether this
 194c6: 82 84       BSF PORTC,2      ;   half-cycle drives the LED
 ...                                 ; repeats for bits 0 through 7
 ```
 
-Bank-13 variables: `0xBC` = on-time, `0xBD` = off-time, `0xBE` = an 8-bit mask of which
-half-cycles actually drive the LED. All three are loaded at `0x194A8`-`0x194B0` via
+Bank-13 variables: `0xBC` = on-time, `0xBD` = off-time, `0xBE` = an 8-bit mask selecting
+which half-cycles drive the LED. The mask is **active low**: the test is `BTFSS`, which skips
+the guarded `BSF PORTC,2` when the bit is set, so a **clear** bit turns the LED on. All three are loaded at `0x194A8`-`0x194B0` via
 `MOVFF` from `0x08D`, `0x08E` and `0x3BF`. A programmable on/off time plus a per-half-
 cycle enable mask is exactly what you need to synthesise arbitrary carrier frequencies
 and duty cycles (36, 38, 40, 56 kHz) as well as carrier-less protocols. Single caller,
@@ -631,7 +640,7 @@ modulator block.
 195e4: ef cf bb fd MOVFF INDF0,0xdbb      ; fetch pattern byte
 195ec: bb cd bf f3 MOVFF 0xdbb,0x3bf      ; -> the modulator's enable mask
 195f0: 59 df       RCALL 0x194a4          ; emit 8 half-cycles
-195f2: f2 a4       BTFSC INTCON,2         ; wait for TMR0 overflow
+195f2: f2 a4 BTFSS INTCON,2         ; wait for TMR0 overflow
 195f4: fe d7       BRA 0x195f2
 195f8: ba 07       DECF 0xba,B,F          ; repeat 0xDBA times
 195fa: e5 e1       BNZ 0x195c6
@@ -658,7 +667,7 @@ State variables, all in bank 3:
 Producer, `0x13194`, enqueues two bytes per call:
 
 ```
-13196: 8a a1       BTFSC 0x8a,B,0
+13196: 8a a1 BTFSS 0x8a,B,0
 1319a: 21 ec dd f0 CALL 0x1ba42      ; enter critical section
 131a0: c2 51       MOVF 0xc2,B,W     ; write index
 131a2: c2 2b       INCF 0xc2,B,F     ; post-increment
@@ -708,7 +717,7 @@ The encoder gets its data through two accessors, `0x10A46` (one byte, 95 referen
 
 ```
 1b9ac: c9 68       SETF SSPBUF        ; clock out 0xFF to clock a byte in
-1b9ae: c7 a0       BTFSC 0xc7,0
+1b9ae: c7 a0 BTFSS 0xc7,0
 1b9b0: fe d7       BRA 0x1b9ae        ; wait
 1b9b2: c9 50       MOVF SSPBUF,W      ; the byte
 ```
@@ -772,16 +781,18 @@ Three row-driver helpers do read-modify-write on a port, preserving the non-matr
 | `0x19052` | PORTA | `0xC7` | bits 3-5, 3 rows |
 | `0x19068` | PORTD | `0xF0` | bits 0-3, 4 rows |
 
-7 + 3 + 4 = 14 row lines. `0x19094` reads the columns and returns 1 to 4:
+7 + 3 + 4 = 14 row lines. `0x19094` reads the columns and returns 1 to 4. The tests are
+`BTFSS`, which skips the `RETLW` when the bit is set, so a code is returned for the first
+column line found **low**, consistent with the active-low row drive:
 
 ```
-19094: 81 a8       BTFSC PORTB,4
+19094: 81 a8 BTFSS PORTB,4
 19096: 01 0c       RETLW 0x01
-19098: 81 aa       BTFSC PORTB,5
+19098: 81 aa BTFSS PORTB,5
 1909a: 02 0c       RETLW 0x02
-1909c: 81 ac       BTFSC PORTB,6
+1909c: 81 ac BTFSS PORTB,6
 1909e: 03 0c       RETLW 0x03
-190a0: 81 ae       BTFSC PORTB,7
+190a0: 81 ae BTFSS PORTB,7
 190a2: 04 0c       RETLW 0x04
 190a4: 00 0c       RETLW 0x00       ; no column active
 ```
@@ -821,11 +832,13 @@ remote wakes from sleep on a keypress.
 ### `0x19120`: hardwired reset key combination
 
 Before the normal scan, three specific intersections are probed directly, and one of
-them executes the PIC18 `RESET` instruction:
+them executes the PIC18 `RESET` instruction. `BTFSS` skips the `RESET` when the bit is set,
+so the reset fires when `PORTB,6` reads **low**, which in an active-low matrix means the key
+is being held:
 
 ```
 1911e: 83 94       BCF PORTD,2
-19120: 81 ac       BTFSC PORTB,6
+19120: 81 ac BTFSS PORTB,6
 19122: ff 00       RESET
 ```
 

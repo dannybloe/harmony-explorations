@@ -73,8 +73,8 @@ Things most worth verifying before relying on them, in rough order of risk:
   requirement plus concordance naming the arch 14 sibling. Nobody has read the marking off a
   board.
 * **Bit-test polarity** in a couple of the SPI listings, where the sense of some
-  `BTFSC`/`BTFSS` reads oddly. It does not affect the conclusions, but the annotations may
-  be off by an inversion.
+  `BTFSC`/`BTFSS` read oddly. **Since found and fixed**, see the note at the end of
+  section 10: the two were swapped, so several stated polarities were inverted.
 * **The LWJL semantics** across architectures remain genuinely unexplained (section 8).
 
 Conversely, the things that should be solid because they are cross-checked from independent
@@ -285,17 +285,17 @@ Sanity check outside Ghidra: `gpdasm -p p18f67j50` (arch 14) or `-p p18f87j50`
 Sample, One at `0x20030`:
 
 ```
-02000a: 1c ef 75 f1  GOTO  0x02ea38
-02000e: 12 00        RETURN
-020030: 0f 01        MOVLB 0xf
-020032: 14 0e        MOVLW 0x14
-020034: 5f 6f        MOVWF 0x5f,BANKED
-020036: 37 ec 6c f1  CALL  0x02d86e
-02003a: 02 01        MOVLB 0x2
-02003c: c7 6b        CLRF  0xc7,BANKED
-020050: 04 01        MOVLB 0x4
-020052: 40 0e        MOVLW 0x40
-020054: 11 6f        MOVWF 0x11,BANKED
+02000a: 1c ef 75 f1 GOTO  0x02ea38
+02000e: 12 00       RETURN
+020030: 0f 01       MOVLB 0xf
+020032: 14 0e       MOVLW 0x14
+020034: 5f 6f       MOVWF 0x5f,BANKED
+020036: 37 ec 6c f1 CALL  0x02d86e
+02003a: 02 01       MOVLB 0x2
+02003c: c7 6b       CLRF  0xc7,BANKED
+020050: 04 01       MOVLB 0x4
+020052: 40 0e       MOVLW 0x40
+020054: 11 6f       MOVWF 0x11,BANKED
 ```
 
 Opcode high-byte histograms, One and 600: `0x01 MOVLB` 3458 / 3684, `0x0E MOVLW`
@@ -466,13 +466,15 @@ Not a hardware PWM. Fully unrolled over 8 half-cycles, with **PORTC bit 2 as the
 194bc: 82 94       BCF PORTC,2      ; LED off
 194be: bd 51       MOVF 0xbd,B,W    ; off-time
 194c0: 80 ec 86 f0 CALL 0x10d00     ; delay
-194c4: be a1       BTFSC 0xbe,B,0   ; bit n of mask selects whether this
+194c4: be a1 BTFSS 0xbe,B,0   ; bit n of mask selects whether this
 194c6: 82 84       BSF PORTC,2      ;   half-cycle drives the LED
 ...                                 ; repeats for bits 0..7
 ```
 
-Bank-13 `0xBC` = on-time, `0xBD` = off-time, `0xBE` = an 8-bit mask of which half-cycles
-drive the LED, all loaded at `0x194A8`-`0x194B0` from `0x08D`, `0x08E`, `0x3BF`.
+Bank-13 `0xBC` = on-time, `0xBD` = off-time, `0xBE` = an 8-bit mask selecting which
+half-cycles drive the LED, all loaded at `0x194A8`-`0x194B0` from `0x08D`, `0x08E`, `0x3BF`.
+The mask is **active low**: the test is `BTFSS`, so it skips the guarded `BSF PORTC,2` when the
+bit is set, and a **clear** bit turns the LED on.
 Programmable on/off times plus a per-half-cycle enable mask is exactly what you need for
 arbitrary carrier frequencies and duty cycles (36/38/40/56 kHz) plus carrier-less
 protocols. Single caller at `0x195F0`.
@@ -542,7 +544,7 @@ subtracted cycles are the measured overhead of the unrolled modulator block.
 195e4: ef cf bb fd MOVFF INDF0,0xdbb      ; fetch pattern byte
 195ec: bb cd bf f3 MOVFF 0xdbb,0x3bf      ; -> modulator enable mask
 195f0: 59 df       RCALL 0x194a4          ; emit 8 half-cycles
-195f2: f2 a4       BTFSC INTCON,2         ; wait for TMR0 overflow
+195f2: f2 a4 BTFSS INTCON,2         ; wait for TMR0 overflow
 195f4: fe d7       BRA 0x195f2
 195f8: ba 07       DECF 0xba,B,F          ; repeat 0xDBA times
 ```
@@ -607,7 +609,7 @@ program-memory table reads. It is not. `0x18DBC` is `GOTO 0x1B9AC`:
 
 ```
 1b9ac: c9 68       SETF SSPBUF        ; clock out 0xFF to clock a byte in
-1b9ae: c7 a0       BTFSC 0xc7,0
+1b9ae: c7 a0 BTFSS 0xc7,0
 1b9b0: fe d7       BRA 0x1b9ae
 1b9b2: c9 50       MOVF SSPBUF,W
 ```
@@ -653,11 +655,24 @@ Practical consequence for this project: the two flash ID orderings concordance r
 (`0x1F:0xC8` versus `0x15:0x1C`) are not an inconsistency in its code, they reflect two
 genuinely different flash interfaces. Worth knowing before anyone "fixes" that.
 
-One correction while I am here, in case anyone reuses my numbers: I initially had `SUBFWB`
-and `SUBWFB` swapped in my own disassembler (PIC18 `SUBFWB` is `0x54-0x57`, `SUBWFB` is
-`0x58-0x5B`). It only affected the scaling block above, which is why the `0x65` constant
-is a subtract-from rather than a subtract. The keypad and modulator findings do not use
-those opcodes and are unchanged.
+Two corrections while I am here, in case anyone reuses these numbers.
+
+`SUBFWB` and `SUBWFB` were swapped in my disassembler (PIC18 `SUBFWB` is `0x54-0x57`,
+`SUBWFB` is `0x58-0x5B`). That only affected the scaling block above, which is why the `0x65`
+constant is a subtract-from rather than a subtract.
+
+`BTFSC` and `BTFSS` were also swapped (`BTFSS` is `0xA0-0xAF`, `BTFSC` is `0xB0-0xBF`), which
+inverted the polarity of every bit test I quoted. The listings above are corrected. Three
+statements changed sense: the infrared enable mask is **active low**, so a clear bit drives the
+LED; the keypad columns are **active low**, so a code comes back for the first line found low;
+and the reset combination fires when `PORTB,6` is **low**, meaning the key is held, which is
+the more sensible reading anyway. No structural conclusion moved.
+
+Both errors produced perfectly readable listings rather than obvious failures, which is the
+worrying part. There is now a single shared opcode table with the encodings asserted against
+the datasheet, plus a semantic check: the wait loop at `0x195F2` only makes sense as `BTFSS`,
+because read as `BTFSC` it would spin forever once the timer overflowed. Every finding in this
+post also has a regression test now.
 
 ### `0x190A6`: keypad scanner, and it is 14 rows by 4 columns
 
@@ -670,16 +685,18 @@ the same port survive:
 | `0x19052` | PORTA | `0xC7` | bits 3-5, 3 rows |
 | `0x19068` | PORTD | `0xF0` | bits 0-3, 4 rows |
 
-7 + 3 + 4 = 14 rows. Rows are **active low**. Columns come from `0x19094`:
+7 + 3 + 4 = 14 rows. Rows are **active low**, and so are the columns: the tests below are
+`BTFSS`, which skips the `RETLW` when the bit is set, so a code comes back for the first column
+line found low. Columns come from `0x19094`:
 
 ```
-19094: 81 a8       BTFSC PORTB,4
+19094: 81 a8 BTFSS PORTB,4
 19096: 01 0c       RETLW 0x01
-19098: 81 aa       BTFSC PORTB,5
+19098: 81 aa BTFSS PORTB,5
 1909a: 02 0c       RETLW 0x02
-1909c: 81 ac       BTFSC PORTB,6
+1909c: 81 ac BTFSS PORTB,6
 1909e: 03 0c       RETLW 0x03
-190a0: 81 ae       BTFSC PORTB,7
+190a0: 81 ae BTFSS PORTB,7
 190a2: 04 0c       RETLW 0x04
 190a4: 00 0c       RETLW 0x00
 ```
@@ -715,11 +732,12 @@ Columns are wired to PORTB interrupt-on-change, which is how the remote wakes fr
 ### Bonus: a hardwired reset key combination at `0x19120`
 
 Before the normal scan, three intersections are probed directly and one of them runs the
-PIC18 `RESET` instruction:
+PIC18 `RESET` instruction. `BTFSS` skips the `RESET` when the bit is set, so it fires when
+`PORTB,6` reads **low**, meaning the key is held:
 
 ```
 1911e: 83 94       BCF PORTD,2
-19120: 81 ac       BTFSC PORTB,6
+19120: 81 ac BTFSS PORTB,6
 19122: ff 00       RESET
 ```
 

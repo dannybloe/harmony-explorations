@@ -59,33 +59,73 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 
 ```
 docs/findings.md            the authoritative technical reference
-docs/forum-post.md          public write-up, as posted to harmony-decompiler
 docs/config-format.md       the GSPM config format spec, grows as sections are labelled
-tools/                      analysis tools, all original work
+docs/forum-post.md          public write-up, as posted to harmony-decompiler
+docs/emulator-design.md     design for the PIC18 harness, not yet built
+src/harmony/                the library: one shared PIC18 decoder, plus format readers
+tools/                      command line wrappers around the library
+tests/                      a regression test per documented finding
 reference/                  checksums, derived metadata, concordance notes
+bin/setup-ghidra.sh         build or refresh the Ghidra project
 samples/                    sanitisation policy; no samples committed yet
 ```
 
+The library is deliberately the only place instruction decoding happens. An earlier version
+of this work carried a copy of the opcode table in each tool, and two of those copies
+disagreed with the datasheet in ways that produced readable but wrong listings. There is one
+table now, it is range-checked at import, and `tests/test_isa.py` pins the encodings that
+were previously wrong.
+
 ## Quickstart
 
-Analysis needs a firmware image, which is not in this repository (see below). Once you have
-one:
+Python 3 and nothing else. Analysis needs a firmware image, which is not in this repository:
+see [reference/checksums.md](reference/checksums.md) for how to obtain and verify one.
 
 ```sh
-# inspect a config container: base address and structure are auto-detected
-python3 tools/gspm_parse.py <config-or-flash-dump>
+# unwrap a .hfw or EZUp/EZHex download into analysable binaries
+python3 tools/ezextract.py harmony_700_firmware_2_8.hfw --out ./work
+
+# inspect a config container: base address and pointer count are derived from the data
+python3 tools/gspm_parse.py work/Region_3.EZHex
 
 # disassemble, with SFR names Ghidra's generic PIC-18 language does not provide
-python3 tools/pic18_disasm.py <image> 0x9000 0x194a4 30
+python3 tools/pic18_disasm.py work/Region_2.EZUpgrade 0x9000 0x194a4 30
 
-# follow a variable: every read, write and bit operation touching it
-python3 tools/pic18_trace.py <image> 0x9000 0x08D 0x08E 0x3BF
+# follow a variable: every read, write and bit operation that touches it
+python3 tools/pic18_trace.py work/Region_2.EZUpgrade 0x9000 0x08D 0x08E 0x3BF
 ```
 
-For Ghidra, import as `PIC-18:LE:24:PIC-18` at the load address from the table above, then
-seed the listing from `tools/ghidra/` before analysing. Auto-analysis alone finds almost
-nothing on a raw binary because there is no entry point; seeding is what reaches 87%.
-`analyzeHeadless` rejects relative project paths.
+Starting on a model nobody has looked at yet? Find its load address first, because a
+disassembler given the wrong base produces a plausible listing rather than an obvious
+failure:
+
+```python
+from harmony.pic18 import loadaddr
+best, ranked = loadaddr.find_base(open('image.bin', 'rb').read())
+print(best)            # check the margin over ranked[1] before trusting it
+```
+
+### Tests
+
+```sh
+make test                                   # skips tests that need binaries
+HARMONY_LAB=/path/to/binaries make test     # runs everything
+make lint prose                             # syntax, and the document conventions
+```
+
+Every documented finding has a test, so a refactor that breaks a conclusion is visible
+rather than silent. That matters here more than usual: the analysis was AI-produced, so the
+claims are made executable rather than only written down.
+
+### Ghidra
+
+```sh
+HARMONY_LAB=/path/to/binaries make ghidra
+```
+
+Imports as `PIC-18:LE:24:PIC-18` at the right base, then seeds the listing from
+`tools/ghidra/` before analysing. Auto-analysis alone finds almost nothing on a raw binary,
+because there is no entry point to follow; seeding is what reaches 87% coverage.
 
 ## What is deliberately not here
 
@@ -114,13 +154,16 @@ hardware probing, and nothing was ever written to a remote.
 That is worth stating plainly because it should affect how you read the findings. All of it is
 offline analysis of files, so all of it is independently checkable, and it should be checked.
 The write-ups show their verification method rather than only their conclusions, and they
-record two places where earlier conclusions were wrong and got corrected, on purpose, so the
-rest can be calibrated against them.
+record the places where earlier conclusions were wrong and got corrected, on purpose, so the
+rest can be calibrated against them. Three so far, all documented in
+[docs/findings.md](docs/findings.md).
 
 Items most worth verifying before relying on them: the SFR map assumes the standard PIC18
 high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch 12 part
-number is inferred rather than read off a board; and the sense of some `BTFSC`/`BTFSS`
-annotations in the SPI listings may be inverted.
+number is inferred rather than read off a board. The `BTFSC`/`BTFSS` polarity that was
+previously flagged as a risk here has since been found to be wrong and corrected: see
+`tests/test_isa.py`, which now pins both encodings against the datasheet and against a real
+wait loop from the firmware.
 
 ## Safety
 

@@ -1,0 +1,116 @@
+"""
+The container readers, and the scrubber that must run before any `.hfw` is mirrored.
+"""
+import unittest
+
+import lab
+from harmony import ezfile, gspm
+
+
+class TestScrubDataXml(unittest.TestCase):
+    """
+    The archived `.hfw` packages carry the original downloader's account and session
+    details. Anything that mirrors those files must scrub them first.
+    """
+
+    # Fabricated values in the real fields' shape. Deliberately not the values from an
+    # actual package: those belong to a real person, and this file is public.
+    SAMPLE = (
+        '<Data><POSTOPTIONS><HEADERS><HEADER><KEY>Cookie</KEY>'
+        '<VALUE>SKIN%5FID=Harmony; CookieKeyValue=%7BAAAAAAAA%2DBBBB%7D; '
+        'ServerID=9999; ASPSESSIONIDEXAMPLE=SESSIONTOKENPLACEHOLDER</VALUE>'
+        '</HEADER></HEADERS><PARAMETERS><PARAMETER><KEY>UserId</KEY>'
+        '<VALUE>1234567</VALUE></PARAMETER></PARAMETERS></POSTOPTIONS></Data>'
+    )
+
+    def test_removes_every_sensitive_field(self):
+        out = ezfile.scrub_data_xml(self.SAMPLE)
+        for leak in ('1234567', 'ASPSESSIONIDEXAMPLE', 'SESSIONTOKENPLACEHOLDER',
+                     'CookieKeyValue=%7BAAAAAAAA', 'ServerID=9999'):
+            self.assertNotIn(leak, out, 'leaked %r' % leak)
+
+    def test_keeps_the_structure_intact(self):
+        out = ezfile.scrub_data_xml(self.SAMPLE)
+        self.assertIn('<Data>', out)
+        self.assertIn('REMOVED', out)
+
+    def test_real_package_metadata_is_clean(self):
+        lab.load('one_hfw')            # skips if unavailable
+        text = ezfile.read_hfw_metadata(lab.path('one_hfw'))
+        for field in ezfile.SENSITIVE_XML_FIELDS:
+            for line in text.splitlines():
+                if field in line:
+                    self.assertIn('REMOVED', line, 'unscrubbed %s' % field)
+        self.assertIn('<Architecture>12</Architecture>', text,
+                      'useful metadata should survive scrubbing')
+
+
+class TestHfwReader(unittest.TestCase):
+    def test_one_package_regions(self):
+        lab.load('one_hfw')
+        regions = ezfile.read_hfw(lab.path('one_hfw'))
+        self.assertEqual(sorted(regions), ['Region_2.EZUpgrade'])
+        region = regions['Region_2.EZUpgrade']
+        self.assertEqual(region.encoding, 'hex-data-elements')
+        self.assertEqual(len(region.payload), 68952)
+        self.assertTrue(region.looks_like_gspm)
+
+    def test_700_package_regions(self):
+        lab.load('h700_hfw')
+        regions = ezfile.read_hfw(lab.path('h700_hfw'))
+        self.assertEqual(sorted(regions), ['Region_2.EZUpgrade', 'Region_3.EZHex'])
+        self.assertEqual(len(regions['Region_2.EZUpgrade'].payload), 76672)
+        self.assertEqual(regions['Region_3.EZHex'].encoding, 'raw-after-xml')
+        self.assertTrue(regions['Region_3.EZHex'].looks_like_gspm)
+        self.assertFalse(regions['Region_2.EZUpgrade'].looks_like_gspm,
+                         'arch 14 ships code and config as separate regions')
+
+
+class TestArch12RegionSplit(unittest.TestCase):
+    """
+    Arch 12 packs two destinations into one region: a GSPM config for flash 0x002000 then
+    the code for flash 0x020000. The boundary is discoverable, because the container header
+    records where it ends.
+    """
+
+    def test_split_matches_the_documented_sizes(self):
+        payload = lab.load('one34_region2')
+        config, code = ezfile.split_arch12_region2(payload)
+        self.assertEqual(len(config), 0x22C6)
+        self.assertEqual(len(code), 60050)
+        self.assertEqual(len(config) + len(code), len(payload))
+
+    def test_config_half_is_a_valid_container_for_flash_0x2000(self):
+        config, _ = ezfile.split_arch12_region2(lab.load('one34_region2'))
+        c = gspm.parse(config)
+        self.assertEqual(c.flash_base, 0x002000)
+        self.assertTrue(c.all_checks_pass)
+
+    def test_code_half_is_a_firmware_image(self):
+        from harmony import firmware
+        _, code = ezfile.split_arch12_region2(lab.load('one34_region2'))
+        header = firmware.parse_header(code, base=0x20000)
+        self.assertTrue(header.has_magic)
+        self.assertEqual(header.version, '3.4')
+        self.assertEqual(header.entry_point, 0x2EA38)
+        self.assertTrue(firmware.verify_checksum(code))
+
+
+class TestLoadImage(unittest.TestCase):
+    def test_load_image_unwraps_a_single_region_package(self):
+        lab.load('one_hfw')
+        self.assertEqual(len(ezfile.load_image(lab.path('one_hfw'))), 68952)
+
+    def test_load_image_requires_a_region_for_multi_region_packages(self):
+        lab.load('h700_hfw')
+        with self.assertRaises(ezfile.EzFileError):
+            ezfile.load_image(lab.path('h700_hfw'))
+        self.assertEqual(
+            len(ezfile.load_image(lab.path('h700_hfw'), region='Region_2')), 76672)
+
+    def test_load_image_passes_through_a_raw_binary(self):
+        self.assertEqual(len(ezfile.load_image(lab.path('h700_code'))), 76672)
+
+
+if __name__ == '__main__':
+    unittest.main()

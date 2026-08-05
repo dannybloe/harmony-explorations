@@ -22,10 +22,10 @@ net, not a policy:
   `samples/README.md` for the unresolved sanitisation question.
 * **No Ghidra projects.** They embed an imported copy of the firmware.
 
-Binaries live outside this repository. The working copies are in
-`/Users/dannybloemendaal/harmony-backups/harmony-one-programmed/extracted/`, which is the
-private lab holding the two remote dumps and a persisted Ghidra project. That folder has its
-own `CLAUDE.md`. Analysis happens there; only shareable output lands here.
+Binaries live outside this repository, in a private working directory that also holds the
+remote dumps. Point `HARMONY_LAB` at it; the test suite and `bin/setup-ghidra.sh` both read
+that variable and skip cleanly when it is unset. That directory has its own `CLAUDE.md`
+describing what is in it. Analysis happens there; only shareable output lands here.
 
 ## Never write to a remote
 
@@ -52,17 +52,43 @@ README.md                       front page: status, headline findings, quickstar
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the GSPM spec, structured, for tools to track
 docs/forum-post.md              the public write-up as posted
-tools/                          original analysis tools
+docs/emulator-design.md         design for the emulator harness, not yet built
+src/harmony/                    the library, see below
+tools/                          thin command line wrappers, no logic of their own
 tools/ghidra/                   headless script plus extracted branch target seeds
+tests/                          one regression test per documented finding
 reference/checksums.md          provenance and load addresses
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
+bin/setup-ghidra.sh             build or refresh the Ghidra project
 samples/                        empty by policy
 ```
 
-When something new is confirmed, put the **structured fact** in `docs/config-format.md` and the
-**reasoning and evidence** in `docs/findings.md`. Keep them in sync but do not duplicate: the
-spec is what other tools consume, the findings document is why it is believed.
+The library:
+
+```
+harmony/pic18/isa.py       THE opcode table and decoder. Single source of truth.
+harmony/pic18/disasm.py    text formatting, SFR name resolution, bank tracking
+harmony/pic18/trace.py     find every access to a data address
+harmony/pic18/loadaddr.py  determine the base address of an unknown image
+harmony/firmware.py        image header, checksum, size recovery from truncated dumps
+harmony/gspm.py            the config container
+harmony/ezfile.py          .hfw / EZUp / EZHex readers, and the Data.xml scrubber
+```
+
+**Never add a second opcode table.** Everything decodes through `isa.py`. The reason is in
+its docstring: two tools once carried diverging copies and both produced readable but wrong
+listings. If a mnemonic is missing, add it there and assert its encoding in
+`tests/test_isa.py`.
+
+When something new is confirmed, three things happen together:
+
+1. the **structured fact** goes in `docs/config-format.md`, which is what other tools consume
+2. the **reasoning and evidence** goes in `docs/findings.md`, which is why it is believed
+3. a **regression test** goes in `tests/`, which is what stops it silently rotting
+
+Step 3 is not optional. The analysis here is AI-produced and published as such, so a claim
+that is not executable is only an assertion.
 
 ## Key facts
 
@@ -84,17 +110,30 @@ more popular remote. On arch 14 every config byte read passes through one SPI pr
 reads are scattered everywhere. Decode arch 14, then port. Use the 700 image rather than the
 600 dump, because the 600 dump is truncated by concordance.
 
-## Tools
+## Commands
 
 ```
-tools/gspm_parse.py    <file> [--json]                      parse a GSPM config container
-tools/pic18_disasm.py  <file> <base> <addr> <count>          disassemble with SFR names
-tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]     find all accesses to a data address
+make test          run the suite; set HARMONY_LAB to include the image-backed tests
+make test-verbose  one line per test
+make lint          byte-compile everything
+make prose         check documents for em-dashes and en-dashes
+make ghidra        build or refresh the Ghidra project
+```
+
+```
+tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
+tools/gspm_parse.py    <file> [--json]
+tools/pic18_disasm.py  <file> <base> <addr> <count>
+tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three
-variables. It detects banked accesses and `MOVFF` only, deliberately ignoring access-bank
-instructions, which resolve to bank 0 or the SFR page rather than to a banked variable.
+variables. It sees banked accesses and `MOVFF`; indirect access through FSR is invisible to it,
+so a variable written only via `INDF` will look like it has no writers. Search for the FSR setup
+instead.
+
+`loadaddr.find_base` is what to reach for on a model nobody has examined yet. Check the margin
+over the runner-up before trusting its answer.
 
 ## Pitfalls already hit, do not repeat
 
@@ -104,6 +143,10 @@ instructions, which resolve to bank 0 or the SFR page rather than to a banked va
   adding mnemonics.
 * **Count programmatically, never by eye.** A hand count of LWJL codes gave 107/55 when the
   real figure is 108/54.
+* **Bit test polarity.** `BTFSS` is `0xA0-0xAF` and `BTFSC` is `0xB0-0xBF`. These were once
+  swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
+  and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
+  including a semantic check that does not depend on the datasheet.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.

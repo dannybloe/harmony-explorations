@@ -22,6 +22,10 @@ samples/*
 ghidra-project/
 ghidra_projects/
 
+# Ghidra project built by bin/setup-ghidra.sh, and scratch output.
+.ghidra/
+work/
+
 # Build and tool noise.
 *.class
 *.pyc
