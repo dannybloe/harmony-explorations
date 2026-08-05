@@ -52,9 +52,26 @@ FAMILIES: Tuple[Family, ...] = (
 MAGIC = b'GSPM'                  # the architectures this project targets
 END_MARKER = b'PTYY'
 
-HEADER_PTR_OFFSET = 0x0C
+# The section table's own layout. An item is four bytes: one spare byte, then a three byte
+# little endian flash pointer. So the table begins at 0x0B and the pointers land on 0x0C, 0x10,
+# 0x14 and so on, which is what this file read directly while treating 0x0B as header.
+#
+# That cost one section. The last item's pointer occupies the three bytes immediately before the
+# trailer marker, and the old derivation subtracted exactly those three bytes as unexplained
+# padding, so every container was parsed one slot short. It went unnoticed because the final
+# section is NULL in all thirteen samples.
+#
+# The reading is closed by arithmetic rather than by inspection: 0x0B + 4 * count lands exactly on
+# the measured marker offset in every sample of all four architectures, which the old reading
+# could only match by subtracting three bytes it could not account for. See docs/findings.md
+# section 20.
+SECTION_TABLE_OFFSET = 0x0B
+SECTION_ITEM_SIZE = 4
+POINTER_SIZE = 3
+HEADER_PTR_OFFSET = SECTION_TABLE_OFFSET + 1   # where item 0's pointer lands
 MARKER_SEARCH_LIMIT = 0x200
-KNOWN_POINTER_COUNTS = (19, 20, 21)
+# Arch 9 and 14 carry 20, arch 8 carries 21, arch 12 carries 22.
+KNOWN_POINTER_COUNTS = (20, 21, 22)
 
 # Section slot 0 is a single 0xFEED framed block, the structure discussion #1 documents for
 # the Harmony 525. Stored little endian, so the cookie reads `ed fe` in a hex dump.
@@ -74,9 +91,10 @@ ARCH_RECORD_SLOT = 1
 ARCH_RECORD_LENGTH = 7
 
 # The pointer table is one table across architectures, with per architecture insertions rather
-# than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 19 slots. Arch 8
-# adds a NULL at slot 8, so everything from there on shifts up by one. Arch 12 adds that same
-# NULL plus a real section at slot 18, and the trailing NULL lands at 20.
+# than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 20 slots, whose
+# last two, base 18 and base 19, are NULL in every sample. Arch 8 adds a NULL at slot 8, so
+# everything from there on shifts up by one and it carries 21. Arch 12 adds that same NULL plus a
+# real section at slot 18, so it carries 22 and the two trailing NULLs land at 20 and 21.
 #
 # The evidence is in `docs/findings.md`: the six pointer array slots and the distinctive one
 # byte section both land where this mapping predicts, in all nine config samples.
@@ -93,7 +111,7 @@ INSERTED_SLOTS: Dict[int, Tuple[int, ...]] = {
 
 
 def base_slot(architecture: int, slot: int) -> Optional[int]:
-    """Map a slot on `architecture` to the same section's slot in the 19 slot base layout.
+    """Map a slot on `architecture` to the same section's slot in the 20 slot base layout.
 
     Returns None for a slot that architecture inserted and the base layout does not have, and
     raises for an architecture whose insertions have not been established.
@@ -182,6 +200,11 @@ class Instruction:
 class Section:
     slot: int
     address: int
+    # The item's leading byte, the one the three byte pointer does not use. Zero in every
+    # section of every sample, so its meaning is unestablished rather than known to be padding.
+    # Parsed and checked rather than skipped, because reading the item as a four byte pointer
+    # instead would turn a nonzero value here into a silently wrong address.
+    spare: int = 0
 
     @property
     def is_null(self) -> bool:
@@ -360,8 +383,12 @@ def find_marker(blob: bytes) -> int:
     """Offset of the four letter marker that follows the pointer table.
 
     Derived rather than looked up: it is the first run of four uppercase letters that is
-    preceded by three zero bytes. That holds whether the padding is three bytes or seven,
-    which is the difference between the architectures seen so far.
+    preceded by three zero bytes.
+
+    Those three bytes are not padding, which is what this docstring used to imply. They are the
+    final section's pointer, and it is NULL in every sample, so the heuristic works for a reason
+    rather than by luck. It would stop working on a container whose last section is populated,
+    and nothing in the format says one cannot be.
     """
     for off in range(HEADER_PTR_OFFSET + 4, min(len(blob) - 4, MARKER_SEARCH_LIMIT)):
         if blob[off - 3:off] != b'\0\0\0':
@@ -415,11 +442,18 @@ def parse(data: bytes) -> Container:
     flash_base = end_addr - (end_marker - start)
 
     marker_offset = find_marker(blob)
-    pointer_count = (marker_offset - 3 - HEADER_PTR_OFFSET) // 4
+    pointer_count = (marker_offset - SECTION_TABLE_OFFSET) // SECTION_ITEM_SIZE
     if pointer_count < 1:
         raise GspmError('implausible pointer count %d' % pointer_count)
 
-    pointers = struct.unpack_from('<%dI' % pointer_count, blob, HEADER_PTR_OFFSET)
+    # Three byte pointers, read as three bytes. Reading four worked on the whole corpus only
+    # because the next item's spare byte is always zero; one nonzero byte would have added
+    # 0x1000000 to a section address and produced a plausible looking wrong answer.
+    sections = []
+    for i in range(pointer_count):
+        item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * i
+        address = int.from_bytes(blob[item + 1:item + 1 + POINTER_SIZE], 'little')
+        sections.append(Section(i, address, blob[item]))
 
     container = Container(
         blob_offset=start,
@@ -433,7 +467,7 @@ def parse(data: bytes) -> Container:
         family=family,
         trailer_checksum=struct.unpack_from('<H', blob, len(blob) - 6)[0],
         blob=blob,
-        sections=[Section(i, p) for i, p in enumerate(pointers)],
+        sections=sections,
     )
 
     # Slot 0's frame and slot 1's architecture record, both read here because `parse` is the
@@ -456,7 +490,13 @@ def parse(data: bytes) -> Container:
     end_off = end_addr - flash_base
     container.checks = {
         'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
-        'padding_before_marker_is_zero': blob[marker_offset - 3:marker_offset] == b'\0\0\0',
+        # The table has to end exactly where the marker begins, which fails if the marker offset
+        # is not congruent to the table start. This is the check that would have caught the off
+        # by one had it existed: under the old derivation the table stopped three bytes short.
+        'section_table_ends_at_the_marker':
+            SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * pointer_count == marker_offset,
+        'last_section_is_null': container.sections[-1].is_null,
+        'section_spare_bytes_are_zero': all(s.spare == 0 for s in container.sections),
         'marker_as_expected_for_family': container.marker == family.header_marker,
         'pointer_count_known': pointer_count in KNOWN_POINTER_COUNTS,
         'sections_within_blob': all(
@@ -506,7 +546,7 @@ def summary(c: Container) -> Dict[str, object]:
         # Both offsets, because they differ by the length of whatever the container is wrapped
         # in, and picking the wrong one shifts every section silently.
         'sections': [
-            {'slot': s.slot, 'address': s.address,
+            {'slot': s.slot, 'address': s.address, 'spare': s.spare,
              'blob_offset': c.blob_offset_of(s.address),
              'file_offset': c.file_offset(s.address),
              'length': c.section_length(s.slot),

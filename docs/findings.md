@@ -43,11 +43,18 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Eleven have been found and corrected so far. The two newest both came from the first hardware run
-and share a shape worth more than either fact: an acknowledgement's length nibble is `0` while its
-command byte follows anyway, and a flash chunk's first payload byte is a sequence number rather than
-data. In both cases a test existed and passed, because the test encoded the same assumption as the
-code. Circular, not weak. Section 19.
+Twelve have been found and corrected so far. The newest is the oldest defect here: the container's
+section table starts at `0x0B` rather than `0x0C`, an item is a spare byte plus a three byte
+address, and the three bytes both parsers dismissed as padding are the final section's address. So
+every container had been read one slot short since the first day, in both implementations, with
+every consistency check passing. It decoded correctly regardless, because that slot is NULL in all
+thirteen samples. Section 20, which is mostly about the two warnings that were recorded and not
+chased: a derivation with an unexplained `- 3` in it, and an ambiguity documented next to it.
+
+Before that, two came from the first hardware run and share a shape worth more than either fact: an
+acknowledgement's length nibble is `0` while its command byte follows anyway, and a flash chunk's
+first payload byte is a sequence number rather than data. In both cases a test existed and passed,
+because the test encoded the same assumption as the code. Circular, not weak. Section 19.
 
 Before those, the SFR map was the generic PIC18 layout rather than this family's, section 18, and
 READ_FLASH's response was published as located when only the request had been. That one's lesson: it
@@ -318,8 +325,7 @@ the One's safe-mode config (`0x002000`), the One's user config (`0x040000`), the
 0x00  char[4]  "GSPM"        magic (equals concordance's arch-12/14 cookie 0x4D505347)
 0x04  u32      end_addr      absolute flash address of the trailing "PTYY" marker
 0x08  u32      format        0x00001600 on arch 12, 0x00001400 on arch 14
-0x0C  u32[N]   section_ptr[] absolute flash addresses; 0 means section absent
-      u8[3]    00 00 00      padding
+0x0B  item[N]  section_table { u8 spare; u24 address }[N]; 0 means section absent
       char[4]  "LWJL"        first section magic
       u8       count
                {u8 event_code; u16 index; u8 flags}[count]
@@ -333,11 +339,17 @@ dependent. `end_addr` resolved exactly onto `PTYY` in all four samples.
 
 ### The pointer table length is architecture dependent
 
-* arch 12: **N = 21**, `LWJL` at `0x63`
-* arch 14: **N = 19**, `LWJL` at `0x5B`
+* arch 12: **N = 22**, `LWJL` at `0x63`
+* arch 14: **N = 20**, `LWJL` at `0x5B`
 
 Nothing in the header states `N`. A parser should locate the `LWJL` magic and derive
-`N = (offset_of_LWJL - 3 - 0x0C) / 4`. That formula checks out on both architectures.
+`N = (offset_of_LWJL - 0x0B) / 4`. That formula checks out on both architectures.
+
+**Corrected.** This section originally read `N = 21` and `N = 19`, with the table at `0x0C` and
+three bytes of padding before the marker, and the formula carried a `- 3` for that padding.
+Section 20 has the correction: the table starts at `0x0B`, the three bytes are the last section's
+address, and `N` is one higher everywhere. Nothing else in this section changed, because the
+addresses the old reading produced were all correct.
 
 The `format` field at `0x08` is a version: `0x1600` on arch 12 matches
 `<REGION ID="5">1.6</REGION>` in the One's firmware `Data.xml`, and `0x1400` on arch 14
@@ -352,9 +364,10 @@ Observed pointer values:
 | 7 | `0x004107` | `0x085E44` | `0x072CDB` |
 | 8 | NULL | NULL | `0x072D0A` |
 | 9-18 | `0x00410C`..`0x0042BA` | `0x085E7C`..`0x08C076` | `0x0734B5`..`0x07A33B` |
-| 19-20 | `0x0042BC`, NULL | `0x08C078`, NULL | n/a (only 19 slots) |
+| 19 | `0x0042BC` | `0x08C078` | NULL |
+| 20-21 | NULL, NULL | NULL, NULL | n/a (only 20 slots) |
 
-In the One's 1.6 MB user config all 21 pointers land inside the first 310 KiB; the
+In the One's 1.6 MB user config all 22 pointers land inside the first 310 KiB; the
 remaining 1.36 MB is reached indirectly, presumably the IR code database and the
 touchscreen bitmaps.
 
@@ -2057,6 +2070,97 @@ the odd one, since it feeds the internal case of the main table rather than doin
 itself. The `0x05` case is present in both arch 14 images and absent from the arch 12 one,
 which tracks the architecture rather than the firmware version, the 600 being 0.2 against the
 700's 2.8. No explanation is offered for that yet.
+
+## 20. The section table was one slot short, and the padding was never padding
+
+The container parser had an off by one from the first day it existed, in both implementations,
+and every consistency check passed anyway. This section is the correction and, more usefully, why
+nothing caught it.
+
+### What the parser believed
+
+The header was read as twelve bytes, then a table of `N` four byte pointers at `0x0C`, then three
+zero bytes of padding, then the four letter marker. `N` was derived, because the header does not
+state it:
+
+```
+N = (marker_offset - 3 - 0x0C) / 4
+```
+
+That gave 19 on arch 9 and 14, 20 on arch 8, 21 on arch 12, and it reproduced the measured marker
+offset on all thirteen samples. The `- 3` was the padding. Nobody could say why a format that
+derives everything else would need exactly three bytes of it, and `docs/config-format.md` carried
+an explicit ambiguity next to the formula: a trailing NULL pointer and extra padding are
+indistinguishable, so 19 pointers plus seven zero bytes reads the same as 20 pointers plus three.
+The document said so rather than picking silently, and `tests/test_gspm.py` had a class named
+`TestPointerTablePaddingAmbiguity` pinning the consequence.
+
+### What it actually is
+
+The table starts at `0x0B`, and an item is four bytes made of a spare byte and a **three** byte
+little endian address:
+
+```
+0x0B  { u8 spare; u24 address }[N]
+```
+
+The addresses therefore still land on `0x0C`, `0x10`, `0x14`, which is why every address the old
+parser reported was correct. What it lacked was the last item, whose address occupies the three
+bytes immediately before the marker. Those are the three bytes the old formula subtracted as
+padding.
+
+So `N` is one higher on every architecture: 20 on arch 9 and 14, 21 on arch 8, 22 on arch 12.
+
+### What closes it
+
+Arithmetic on the whole corpus, and it closes in a way the old reading cannot match:
+
+```
+0x0B + 4 * N == marker_offset      exactly, thirteen samples, four architectures
+```
+
+No remainder. The old reading had to subtract three bytes to make its own arithmetic meet the
+marker, and could not say what they were. This one meets it with nothing left over, which is the
+same kind of closure as the IR carrier finding in section 12: the numbers land on each other
+rather than merely near each other.
+
+Two further checks agree. Reading an address at `0x0B + 4k` instead of `0x0C + 4k` gives values
+far outside the blob, so the pointer is offset by one within the item and not the item by one
+within the table. And the `spare` byte is zero in every section of every sample, which is
+precisely why a four byte read of the item worked: the byte the fourth read consumed was the next
+item's spare byte, always zero. The parsers now read three bytes and check the spare, because a
+nonzero one would otherwise add `0x1000000` to an address and produce a plausible wrong answer
+instead of an error.
+
+### Why every check passed
+
+Because the missing slot is NULL in all thirteen samples. A NULL section is an absent section, so
+a parser that never knew about it decoded exactly the same configuration. In base slot terms the
+base layout is 20 slots whose last two, base 18 and base 19, are NULL on all four architectures.
+The old parser stopped after base 18.
+
+That is the honest explanation of a bug living this long, and it is also the reason the fix
+changes no decoded output: not one section address, length, action list or key record moves. The
+`spare` field and one extra NULL section per container are the whole diff, plus regenerated golden
+vectors that differ only by those.
+
+### The check that would have caught it
+
+There now is one, and it is the derivation stated as a closure rather than as a subtraction:
+
+```
+section_table_ends_at_the_marker:  0x0B + 4 * N == marker_offset
+```
+
+The old code could not have run this check, since under its own reading the table stopped three
+bytes short of the marker by construction. A derivation with an unexplained constant in it was the
+warning, and the ambiguity written next to it was the second warning. Both were recorded honestly
+and neither was chased. The lesson is narrower than "check your arithmetic": **an unexplained
+fudge factor in a derivation is a finding waiting to happen, and documenting it is not the same as
+resolving it.**
+
+`tests/test_gspm.py` class `TestPointerTableLength` and
+`packages/codec/test/gspm.test.ts` hold this, in both implementations, over every sample.
 
 ## References
 

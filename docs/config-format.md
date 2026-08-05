@@ -31,8 +31,7 @@ lengths. Every consistency check passes on all thirteen. See `tests/test_gspm.py
 0x00  char[4]  cookie          per architecture, see the table below
 0x04  u32      end_addr        absolute flash address of the trailing end marker
 0x08  u32      format          nibble BCD version: 0x1400 = 1.4, 0x1500, 0x1600
-0x0C  u32[N]   section_ptr[]   absolute flash addresses; 0 means the section is absent
-      u8[...]  00 ...          zero padding, so the marker lands on its offset
+0x0B  item[N]  section_table   { u8 spare; u24 address }[N], see below
       char[4]  marker          per architecture; starts the key table on arch 8, 12 and 14
       u8       count
                { u8 event_code; u16 index; u8 flags }[count]
@@ -73,31 +72,45 @@ Exact on all thirteen samples. Worth noting against concordance's table, which l
 `config_base` as `0x820000` where the derived value is `0x020000`; bit 23 looks like a flag
 rather than an address bit. Deriving from the data sidesteps the question.
 
-### The pointer table length is architecture dependent and not stated in the header
+### The section table starts at `0x0B`, and an item is a spare byte plus a three byte pointer
 
-| Architecture | N | marker at |
+```
+0x0B  { u8 spare; u24 address }[N]
+```
+
+So the addresses land on `0x0C`, `0x10`, `0x14` and so on. The `spare` byte is **zero in every
+section of every sample**, and its meaning is unestablished; it is not known to be padding. A
+parser must not read the item as a `u32` pointer, because a nonzero `spare` would then add
+`0x1000000` to the following address and produce a plausible wrong answer rather than an error.
+
+| Architecture | N | table ends, marker at |
 |---|---|---|
-| 8 | 20 | `0x5F` |
-| 9 | 19 | `0x5B` |
-| 12 | 21 | `0x63` |
-| 14 | 19 | `0x5B` |
+| 8 | 21 | `0x5F` |
+| 9 | 20 | `0x5B` |
+| 12 | 22 | `0x63` |
+| 14 | 20 | `0x5B` |
 
 Derive it rather than hardcoding per model:
 
 ```
-N = (marker_offset - 3 - 0x0C) / 4
+N = (marker_offset - 0x0B) / 4
 ```
 
 The marker itself is found from the data: it is the first four uppercase letters preceded by
-three zero bytes. Which four letters they are is a per architecture fact, so the parser asserts
-it against the table above rather than computing it.
+three zero bytes. Those three bytes are the final section's NULL address, not padding, so the
+heuristic works for a reason rather than by luck, and it would fail on a container whose last
+section is populated. Which four letters they are is a per architecture fact, so the parser
+asserts it against the table above rather than computing it.
 
-**One ambiguity, stated rather than papered over.** On arch 8 and arch 9 the byte after the
-last non-zero pointer leaves more than three zero bytes before the marker, so 19 pointers plus
-seven zeros is indistinguishable from 20 pointers where the last is NULL plus three zeros. Both
-readings decode identically, because a zero pointer means the section is absent. The formula
-above takes the longer reading, which is why the table says 20 for arch 8 and 19 for arch 9;
-`tests/test_gspm.py` pins the consequence, which is that the final slot is NULL.
+**Corrected here.** This document previously put the table at `0x0C` with `N` one lower, treated
+the three bytes before the marker as padding, and recorded an ambiguity: whether arch 8 and
+arch 9 carried a trailing NULL slot or simply more padding. Both readings were wrong in the same
+way. Once the table starts at `0x0B` the length follows from the marker position with no
+remainder, so there is nothing left for padding to be ambiguous about. The evidence is arithmetic
+on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all thirteen samples
+across four architectures, where the old reading could only close by subtracting three bytes it
+could not account for. Every address the old parser reported was still correct, because the slot
+it lacked is NULL everywhere. See `docs/findings.md` section 20.
 
 ## The EZHex wrapper
 
@@ -236,14 +249,17 @@ Observed pointer values, for orientation:
 | 7 | `0x004107` | `0x085E44` | `0x072CDB` | `0x0812C1` |
 | 8 | NULL | NULL | `0x072D0A` | `0x0812F6` |
 | 9 to 18 | `0x00410C`..`0x0042BA` | `0x085E7C`..`0x08C076` | `0x0734B5`..`0x07A33B` | `0x0820FE`..NULL |
-| 19, 20 | `0x0042BC`, NULL | `0x08C078`, NULL | n/a, 19 slots only | n/a, 19 slots only |
+| 19 | `0x0042BC` | `0x08C078` | NULL | NULL |
+| 20, 21 | NULL, NULL | NULL, NULL | n/a, 20 slots only | n/a, 20 slots only |
 
 The non-NULL pointers ascend with the slot number in every sample, so sections are laid out in
 slot order. That is what makes a section length well defined, since the header does not state
 one: a section runs to the next non-NULL pointer, and the last runs to the trailer.
 
-The NULL slots are per architecture rather than per config: slot 18 on arch 9 and arch 14, slots
-8 and 19 on arch 8, slots 8 and 20 on arch 12, in every sample of each.
+The NULL slots are per architecture rather than per config, in every sample of each: slots 18 and
+19 on arch 9 and arch 14, slots 8, 19 and 20 on arch 8, slots 8, 20 and 21 on arch 12. In base
+slot terms that is one statement rather than three, since **base slots 18 and 19 are NULL on all
+four architectures** and the rest is where each architecture's insertions put them.
 
 ### Six sections are arrays of three byte pointers
 
@@ -334,9 +350,9 @@ architecture meanings:
 
 | Architecture | slots | insertions relative to the base layout |
 |---|---|---|
-| 9, 14 | 19 | none, this is the base layout |
-| 8 | 20 | a NULL at slot 8 |
-| 12 | 21 | a NULL at slot 8, and a real section at slot 18 |
+| 9, 14 | 20 | none, this is the base layout |
+| 8 | 21 | a NULL at slot 8 |
+| 12 | 22 | a NULL at slot 8, and a real section at slot 18 |
 
 So a base slot `b` sits at `b`, at `b + 1` for `b >= 8`, and arch 12 additionally pushes
 `b >= 17` up by one more. `src/harmony/gspm.py` implements this as `base_slot` and `arch_slot`,

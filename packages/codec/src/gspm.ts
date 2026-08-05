@@ -67,9 +67,29 @@ export const FAMILIES: readonly Family[] = [
   },
 ];
 
-export const HEADER_PTR_OFFSET = 0x0c;
+/**
+ * The section table's own layout. An item is four bytes: one spare byte, then a three byte little
+ * endian flash pointer. So the table begins at 0x0B and the pointers land on 0x0C, 0x10, 0x14 and
+ * so on, which is what this file read directly while treating 0x0B as header.
+ *
+ * That cost one section. The last item's pointer occupies the three bytes immediately before the
+ * trailer marker, and the old derivation subtracted exactly those three bytes as unexplained
+ * padding, so every container was parsed one slot short. It went unnoticed because the final
+ * section is NULL in all thirteen samples.
+ *
+ * The reading is closed by arithmetic rather than by inspection: 0x0B + 4 * count lands exactly on
+ * the measured marker offset in every sample of all four architectures, which the old reading
+ * could only match by subtracting three bytes it could not account for. See
+ * `docs/findings.md` section 20.
+ */
+export const SECTION_TABLE_OFFSET = 0x0b;
+export const SECTION_ITEM_SIZE = 4;
+export const POINTER_SIZE = 3;
+/** Where item 0's pointer lands. */
+export const HEADER_PTR_OFFSET = SECTION_TABLE_OFFSET + 1;
 export const MARKER_SEARCH_LIMIT = 0x200;
-export const KNOWN_POINTER_COUNTS: readonly number[] = [19, 20, 21];
+/** Arch 9 and 14 carry 20, arch 8 carries 21, arch 12 carries 22. */
+export const KNOWN_POINTER_COUNTS: readonly number[] = [20, 21, 22];
 
 /**
  * Section slot 0 is a single 0xFEED framed block. Stored little endian, so the cookie reads
@@ -205,10 +225,18 @@ export interface Instruction {
 export class Section {
   readonly slot: number;
   readonly address: number;
+  /**
+   * The item's leading byte, the one the three byte pointer does not use. Zero in every section
+   * of every sample, so its meaning is unestablished rather than known to be padding. Parsed and
+   * checked rather than skipped, because reading the item as a four byte pointer instead would
+   * turn a nonzero value here into a silently wrong address.
+   */
+  readonly spare: number;
 
-  constructor(slot: number, address: number) {
+  constructor(slot: number, address: number, spare: number = 0) {
     this.slot = slot;
     this.address = address;
+    this.spare = spare;
   }
 
   get isNull(): boolean {
@@ -448,8 +476,12 @@ export function findMagic(data: Uint8Array): { family: Family; offset: number } 
  * Offset of the four letter marker that follows the pointer table.
  *
  * Derived rather than looked up: it is the first run of four uppercase letters that is preceded
- * by three zero bytes. That holds whether the padding is three bytes or seven, which is the
- * difference between the architectures seen so far.
+ * by three zero bytes.
+ *
+ * Those three bytes are not padding, which is what this comment used to imply. They are the final
+ * section's pointer, and it is NULL in every sample, so the heuristic works for a reason rather
+ * than by luck. It would stop working on a container whose last section is populated, and nothing
+ * in the format says one cannot be.
  */
 export function findMarker(blob: Uint8Array): number {
   const limit = Math.min(blob.length - 4, MARKER_SEARCH_LIMIT);
@@ -513,12 +545,16 @@ export function parse(data: Uint8Array): Container {
   const flashBase = endAddr - (endMarker - start);
 
   const markerOffset = findMarker(blob);
-  const pointerCount = Math.floor((markerOffset - 3 - HEADER_PTR_OFFSET) / 4);
+  const pointerCount = Math.floor((markerOffset - SECTION_TABLE_OFFSET) / SECTION_ITEM_SIZE);
   if (pointerCount < 1) throw new GspmError(`implausible pointer count ${pointerCount}`);
 
+  // Three byte pointers, read as three bytes. Reading four worked on the whole corpus only
+  // because the next item's spare byte is always zero; one nonzero byte would have added
+  // 0x1000000 to a section address and produced a plausible looking wrong answer.
   const sections: Section[] = [];
   for (let i = 0; i < pointerCount; i += 1) {
-    sections.push(new Section(i, u32(blob, HEADER_PTR_OFFSET + 4 * i)));
+    const item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * i;
+    sections.push(new Section(i, u24(blob, item + 1), u8(blob, item)));
   }
 
   const container = new Container({
@@ -559,8 +595,13 @@ export function parse(data: Uint8Array): Container {
   const endOff = endAddr - flashBase;
   container.checks = {
     end_addr_points_at_end_marker: matchesAt(blob, endOff, bytesOf(family.endMarker)),
-    padding_before_marker_is_zero:
-      blob[markerOffset - 3] === 0 && blob[markerOffset - 2] === 0 && blob[markerOffset - 1] === 0,
+    // The table has to end exactly where the marker begins, which fails if the marker offset is
+    // not congruent to the table start. This is the check that would have caught the off by one
+    // had it existed: under the old derivation the table stopped three bytes short.
+    section_table_ends_at_the_marker:
+      SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * pointerCount === markerOffset,
+    last_section_is_null: sections[sections.length - 1]?.isNull === true,
+    section_spare_bytes_are_zero: sections.every((s) => s.spare === 0),
     marker_as_expected_for_family: container.marker === family.headerMarker,
     pointer_count_known: KNOWN_POINTER_COUNTS.includes(pointerCount),
     sections_within_blob: sections.every(
@@ -611,6 +652,7 @@ export function summary(c: Container): Record<string, unknown> {
       return {
         slot: s.slot,
         address: s.address,
+        spare: s.spare,
         blob_offset: c.blobOffsetOf(s.address) ?? null,
         file_offset: c.fileOffset(s.address) ?? null,
         length: c.sectionLength(s.slot) ?? null,

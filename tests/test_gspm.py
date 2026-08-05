@@ -17,19 +17,19 @@ from harmony import gspm
 
 # logical image name -> (magic, base, format version, pointer slots, marker, key records)
 EXPECTED = {
-    'one_safemode': (b'GSPM', 0x002000, '1.6', 21, b'LWJL', 2),
-    'one34_region2': (b'GSPM', 0x002000, '1.6', 21, b'LWJL', 2),
-    'h700_gspm': (b'GSPM', 0x020000, '1.4', 19, b'LWJL', 0),
-    'one_config': (b'GSPM', 0x040000, '1.6', 21, b'LWJL', 55),
-    'one_config_unprogrammed': (b'GSPM', 0x040000, '1.6', 21, b'LWJL', 55),
-    'h600_config': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 162),
-    'h700_config': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 163),
-    'h700_config_2': (b'GSPM', 0x030000, '1.4', 19, b'LWJL', 163),
-    'h525_config': (b'AHCM', 0x020000, '1.4', 19, b'CMAH', 0),
-    'arch8_config_a': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
-    'arch8_config_b': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
-    'arch8_config_c': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
-    'arch8_config_d': (b'TPTP', 0x020000, '1.5', 20, b'WLWL', 56),
+    'one_safemode': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
+    'one34_region2': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
+    'h700_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
+    'one_config': (b'GSPM', 0x040000, '1.6', 22, b'LWJL', 55),
+    'one_config_unprogrammed': (b'GSPM', 0x040000, '1.6', 22, b'LWJL', 55),
+    'h600_config': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 162),
+    'h700_config': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 163),
+    'h700_config_2': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 163),
+    'h525_config': (b'AHCM', 0x020000, '1.4', 20, b'CMAH', 0),
+    'arch8_config_a': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
+    'arch8_config_b': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
+    'arch8_config_c': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
+    'arch8_config_d': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
 }
 
 # logical image name -> the architecture the sample is independently known to be, from the
@@ -82,11 +82,20 @@ class TestContainerAcrossSamples(unittest.TestCase):
                 self.assertEqual(blob[off:off + 4], c.family.end_marker)
 
     def test_pointer_count_derivation_matches_marker_position(self):
-        """The marker sits at 0x0C + 4 * slots + 3, whatever the architecture."""
+        """The table runs from 0x0B to the marker with nothing left over.
+
+        Stated as the closure it is: the section table starts at 0x0B, an item is four bytes,
+        and the marker begins exactly where the last item ends. The arithmetic that used to be
+        here had a `+ 3` in it, which is what an off by one looks like before it is understood:
+        those three bytes are the final item's pointer, not padding.
+        """
         for name, (_, _, _, slots, _, _) in EXPECTED.items():
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
-                self.assertEqual(c.marker_offset, 0x0C + 4 * slots + 3)
+                self.assertEqual(
+                    c.marker_offset,
+                    gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * slots)
+                self.assertEqual(c.pointer_count, slots)
 
     def test_the_corpus_spans_more_than_one_of_everything(self):
         """A derivation confirmed on one value of a variable is not confirmed."""
@@ -98,21 +107,63 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertGreaterEqual(len({c.architecture for c in seen}), 4, 'architectures')
 
 
-class TestPointerTablePaddingAmbiguity(unittest.TestCase):
+class TestPointerTableLength(unittest.TestCase):
     """
-    On arch 8 and arch 9 the derived slot count leaves a trailing NULL pointer, and that is
-    indistinguishable from a shorter table with more zero padding: 18 pointers plus seven
-    zero bytes reads identically to 19 pointers plus three. Both decode the same, because a
-    zero pointer means the section is absent, so the parser takes the longer reading and this
-    test pins the consequence rather than pretending the question is settled.
+    This class used to be called TestPointerTablePaddingAmbiguity, and it recorded a question the
+    parser could not answer: a trailing NULL pointer is indistinguishable from a shorter table
+    with more zero padding, so 18 pointers plus seven zero bytes reads identically to 19 plus
+    three. It took the longer reading and pinned the consequence rather than claiming to know.
+
+    The question is now closed, and the answer was a third reading neither option covered. The
+    table starts at 0x0B, not 0x0C, because an item is a spare byte followed by a three byte
+    pointer. Once the start is fixed the length follows from the marker position with nothing
+    left over, so there is no padding to be ambiguous about: what looked like three bytes of it
+    is the final item's pointer. Every architecture ends in NULL sections, two of them on the
+    base layout, and they are sections rather than slack.
     """
 
-    def test_trailing_slot_is_null_where_the_padding_is_long(self):
-        for name in ('h525_config', 'arch8_config_a'):
+    def test_the_table_ends_exactly_at_the_marker(self):
+        for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
-                self.assertTrue(c.sections[-1].is_null)
-                self.assertFalse(c.sections[-2].is_null)
+                # No remainder. A table start of 0x0C leaves three bytes over on every sample.
+                self.assertEqual(
+                    (c.marker_offset - gspm.SECTION_TABLE_OFFSET) % gspm.SECTION_ITEM_SIZE, 0)
+                self.assertEqual(
+                    gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * c.pointer_count,
+                    c.marker_offset)
+
+    def test_the_base_layout_ends_in_two_null_sections(self):
+        """Base slots 18 and 19 are NULL on all four architectures, wherever they land."""
+        for name in EXPECTED:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for base in (18, 19):
+                    slot = gspm.arch_slot(c.architecture, base)
+                    self.assertTrue(c.sections[slot].is_null,
+                                    'base slot %d (slot %d) is not NULL' % (base, slot))
+
+    def test_reading_an_item_as_a_four_byte_pointer_is_indistinguishable_here(self):
+        """Why the old reading produced correct addresses anyway, stated as a test.
+
+        Every spare byte in the corpus is zero, so a four byte read at the pointer offset
+        returns the same value as a three byte one. That is a property of these samples and not
+        of the format, which is the reason the parser reads three and checks the spare byte.
+
+        It holds for every slot but the last, and that exception is the whole story: a four byte
+        read of the final item runs into the marker, which is why a parser built on four byte
+        pointers could not have had that slot in the first place.
+        """
+        for name in EXPECTED:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                self.assertTrue(all(s.spare == 0 for s in c.sections))
+                for s in c.sections[:-1]:
+                    o = gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * s.slot + 1
+                    self.assertEqual(int.from_bytes(c.blob[o:o + 4], 'little'), s.address)
+                last = c.sections[-1]
+                o = gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * last.slot + 1
+                self.assertEqual(o + gspm.POINTER_SIZE, c.marker_offset)
 
 
 class TestKeyTableAcrossArchitectures(unittest.TestCase):

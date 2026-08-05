@@ -31,6 +31,14 @@ work/
 # is committed.
 .claude/settings.local.json
 
+# Third party binaries and anything extracted from one. Proprietary by definition, so they live
+# in the lab and only derived facts are published. Deliberately broad: it is cheaper to ignore an
+# extension nobody here produces than to discover a gap after a commit.
+*.jar
+*.dylib
+*.jnilib
+*.so
+
 # Build and tool noise.
 *.class
 *.pyc

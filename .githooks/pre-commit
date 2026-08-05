@@ -37,6 +37,10 @@ for f in $staged; do
 	case "$f" in
 	*.bin | *.hfw | *.EZHex | *.EZUp | *.EzHex | *.EzUpgrade | *.gpr | *-info.txt | *-safe.bin)
 		note "$f is a firmware, config or dump file and cannot be committed" ;;
+	# Third party binaries and anything extracted from one. Nothing in this project builds
+	# these, so a staged one is always an accident.
+	*.jar | *.class | *.dylib | *.jnilib | *.so)
+		note "$f is a third party binary and cannot be committed" ;;
 	esac
 done
 

@@ -31,7 +31,7 @@ infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because publicly shared sample
 sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Thirteen samples, five base
-addresses, three format versions, four pointer table lengths, all consistency checks passing. It
+addresses, three format versions, three pointer table lengths, all consistency checks passing. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
 insertions, so a section labelled on one architecture transfers to the others by index.

@@ -18,7 +18,8 @@ import {
   ACTION_LIST_TABLE_SLOT,
   EVENT_NONE,
   EVENT_PRESS,
-  HEADER_PTR_OFFSET,
+  SECTION_ITEM_SIZE,
+  SECTION_TABLE_OFFSET,
   archSlot,
   baseSlot,
   parse,
@@ -37,19 +38,19 @@ interface Expectation {
 }
 
 const EXPECTED: Readonly<Record<string, Expectation>> = {
-  one_safemode: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 21, marker: 'LWJL', keys: 2, architecture: 12 },
-  one34_region2: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 21, marker: 'LWJL', keys: 2, architecture: 12 },
-  h700_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 19, marker: 'LWJL', keys: 0, architecture: 14 },
-  one_config: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 21, marker: 'LWJL', keys: 55, architecture: 12 },
-  one_config_unprogrammed: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 21, marker: 'LWJL', keys: 55, architecture: 12 },
-  h600_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 19, marker: 'LWJL', keys: 162, architecture: 14 },
-  h700_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 19, marker: 'LWJL', keys: 163, architecture: 14 },
-  h700_config_2: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 19, marker: 'LWJL', keys: 163, architecture: 14 },
-  h525_config: { magic: 'AHCM', base: 0x020000, version: '1.4', slots: 19, marker: 'CMAH', keys: 0, architecture: 9 },
-  arch8_config_a: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 20, marker: 'WLWL', keys: 56, architecture: 8 },
-  arch8_config_b: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 20, marker: 'WLWL', keys: 56, architecture: 8 },
-  arch8_config_c: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 20, marker: 'WLWL', keys: 56, architecture: 8 },
-  arch8_config_d: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 20, marker: 'WLWL', keys: 56, architecture: 8 },
+  one_safemode: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
+  one34_region2: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
+  h700_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 20, marker: 'LWJL', keys: 0, architecture: 14 },
+  one_config: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 22, marker: 'LWJL', keys: 55, architecture: 12 },
+  one_config_unprogrammed: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 22, marker: 'LWJL', keys: 55, architecture: 12 },
+  h600_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 162, architecture: 14 },
+  h700_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 163, architecture: 14 },
+  h700_config_2: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 163, architecture: 14 },
+  h525_config: { magic: 'AHCM', base: 0x020000, version: '1.4', slots: 20, marker: 'CMAH', keys: 0, architecture: 9 },
+  arch8_config_a: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
+  arch8_config_b: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
+  arch8_config_c: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
+  arch8_config_d: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
 };
 
 const NAMES = Object.keys(EXPECTED);
@@ -104,8 +105,22 @@ for (const name of NAMES) {
   test(`${name} derives its pointer count from the marker position`, skipUnless(name), () => {
     // The count is not in the header. It follows from where the marker sits, and this is the
     // arithmetic that says so, restated in the opposite direction from the parser's.
+    //
+    // The table ends exactly at the marker with no remainder. This assertion used to carry a
+    // `+ 3`, which is what an off by one looks like before it is understood: those three bytes
+    // are the final item's pointer, not padding. `tests/test_gspm.py` says the same.
     const c = parse(load(name) as Uint8Array);
-    assert.equal(c.markerOffset, HEADER_PTR_OFFSET + 4 * expected.slots + 3);
+    assert.equal(c.markerOffset, SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * expected.slots);
+    assert.equal((c.markerOffset - SECTION_TABLE_OFFSET) % SECTION_ITEM_SIZE, 0);
+    assert.equal(c.pointerCount, expected.slots);
+  });
+
+  test(`${name} carries a zero spare byte in every section item`, skipUnless(name), () => {
+    // An item is four bytes and a pointer is three. The spare byte is zero in every section of
+    // every sample, which is why reading the item as a four byte pointer produced correct
+    // addresses; a nonzero one would have added 0x1000000 silently.
+    const c = parse(load(name) as Uint8Array);
+    assert.ok(c.sections.every((s) => s.spare === 0));
   });
 
   test(`${name} states its own architecture in slot 1`, skipUnless(name), () => {

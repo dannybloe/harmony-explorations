@@ -223,7 +223,7 @@ that is not executable is only an assertion.
 | Entry point | `0x02EA38` (One 3.4) | `0x01BB38` (700 2.8), `0x01A26E` (600 0.2) |
 | Config storage | parallel NOR, memory-mapped, executes in place | SPI serial, not mapped, copied to internal flash |
 | User config at | flash `0x040000` | flash `0x030000` |
-| Container format / pointer slots | `0x1600` (1.6) / 21 | `0x1400` (1.4) / 19 |
+| Container format / pointer slots | `0x1600` (1.6) / 22 | `0x1400` (1.4) / 20 |
 
 Container cookies, since the container is one format across architectures: `TPTP`/`DKDK` on
 arch 8, `AHCM`/`MCHA` on arch 9, `GSPM`/`PTYY` on arch 12 and 14, and `BMBM` on arch 7 per
@@ -233,11 +233,18 @@ concordance's table, unverified here. The marker after the pointer table is `WLW
 way to tell arch 12 from arch 14 without the EZHex header.
 
 **The pointer table is one table across architectures too.** Arch 9 and 14 carry the base
-layout of 19 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
+layout of 20 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
 slot 18. So a section labelled on arch 14 transfers to the One by index, through
 `gspm.base_slot` and `gspm.arch_slot`. Slot numbers in `docs/config-format.md` are base slots.
 Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
-pointers.
+pointers, and base 18 and 19 are NULL on all four architectures.
+
+**The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
+table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
+dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that
+`0x0B + 4 * N` hits the marker offset exactly on thirteen samples where the old reading needed an
+unexplained `- 3`. Read three byte addresses and check `spare`, because a nonzero `spare` read as
+part of a `u32` adds `0x1000000` silently.
 
 Ghidra language: `PIC-18:LE:24:PIC-18`, generic variant only, so SFRs are unnamed.
 `analyzeHeadless` rejects relative project paths.
@@ -350,7 +357,7 @@ Output here is AI-produced and published as such, so claims are expected to be c
 Established norms:
 
 * Prefer two independent samples. The container is validated against thirteen, spanning four
-  architectures, five base addresses, three format versions and four pointer table lengths.
+  architectures, five base addresses, three format versions and three pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
   a stored 263, which the code's arithmetic turns into exactly 26.25 us.
