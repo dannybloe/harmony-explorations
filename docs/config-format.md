@@ -10,22 +10,22 @@ whether a claim is about the format or only about those two models.
 
 **It is one container across architectures, not one per architecture.** Each architecture has
 its own four letter cookie, and the header shape behind it is the same. The 525's
-`0xFEED`/`0xBEEF` framing is the layer *inside* this one: each section the pointer table points
-at is such a frame.
+`0xFEED`/`0xBEEF` framing appears inside this one, but at **section slot 0 only**, not once
+per section. See [findings.md](findings.md) for the correction that replaced.
 
 ```
 container header               absolute pointer table
-  section 0   FEED ... BEEF    per-section frame, as on the 525
-  section 1   FEED ... BEEF
-  ...
+  section 0   FEED ... BEEF    exactly one frame per container, always slot 0
+  section 1                    seven bytes, states the architecture
+  ...                          remaining sections, unframed, mostly unlabelled
 u16 checksum + end marker
 ```
 
 ## Outer container
 
-Validated against **nine samples across four architectures**, five base addresses (`0x002000`,
-`0x020000`, `0x030000`, `0x040000`), three format versions and four pointer table lengths.
-Every consistency check passes on all nine. See `tests/test_gspm.py`.
+Validated against **twelve samples across four architectures**, five base addresses
+(`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and four pointer table
+lengths. Every consistency check passes on all twelve. See `tests/test_gspm.py`.
 
 ```
 0x00  char[4]  cookie          per architecture, see the table below
@@ -69,7 +69,7 @@ Needed to turn the pointers into file offsets, and derivable from the blob itsel
 base = end_addr - (offset_of_end_marker - offset_of_cookie)
 ```
 
-Exact on all nine samples. Worth noting against concordance's table, which lists arch 9's
+Exact on all twelve samples. Worth noting against concordance's table, which lists arch 9's
 `config_base` as `0x820000` where the derived value is `0x020000`; bit 23 looks like a flag
 rather than an address bit. Deriving from the data sidesteps the question.
 
@@ -137,18 +137,91 @@ Known so far:
 
 | Slot | Meaning | Evidence |
 |---|---|---|
-| all | unknown | |
+| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | twelve samples, below |
+| 1 | seven byte record stating the architecture | twelve samples, below |
+| all others | unknown | |
+
+### Slot 0: the only `0xFEED` frame
+
+Exactly one frame per container, always at slot 0. Confirmed on twelve samples across four
+architectures, and confirmed as *exclusive* by validating every `0xFEED` byte pair in each
+container: no other one closes.
+
+```
++0x00  u16      0xFEED        stored little endian, so `ed fe` in a hex dump
++0x02  u16      length        counted from the cookie, stops short of the terminator
++0x04  u8       00            zero in every sample
++0x05  ...      payload       begins A7 08 00 00 00 00 00 "Root"
++len   u16      0xBEEF
+```
+
+The frame therefore occupies `length + 2` bytes, and in all twelve samples the slot 1 pointer
+lands on exactly that byte. That is an independent confirmation of the length rule, because the
+pointer and the length come from different places in the file.
+
+One exception, and it is the reason `length` is validated rather than trusted: the Harmony
+One's safe mode config carries a **degenerate empty frame**, `ed fe 00 00 00 ef be`, whose
+length is 0 while its terminator sits five bytes in. Read `length == 0` as "empty" rather than
+as an offset. Whether the firmware's own parser special cases it that way is **unconfirmed**;
+no arch 12 or arch 14 config parser has been located in the firmware yet.
+
+The payload is a tree of named nodes. In the Harmony 700 sample it holds 62 names, of the shape
+`TV_Power_2`, `Receiver_Input_16`, `PowerOnDelay_<deviceid>_65278`, and the trailing number
+looks like the variable's range rather than its value. That reading is a **lead, not a
+finding**: the firmware routine that consumes the section has not been found, so what the
+section is *for* is still open. `.claude/skills/trace-section/SKILL.md` is the method that
+would settle it.
+
+### Slot 1: the config states its own architecture
+
+A fixed seven byte record:
+
+```
++0x00  u8       architecture   the protocol number: 8, 9, 12, 14
++0x01  u8       architecture   the same value again
++0x02  u16      version word   per model, meaning not established
++0x04  u8[3]    00 00 00
+```
+
+Confirmed on twelve samples spanning architectures 8, 9, 12 and 14. Every one has its
+architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
+field on nine of them and from the firmware package the container was extracted from on the
+other three, so each sample is a calibration case rather than a self-consistency check.
+
+This is the field that makes a config self describing, which the application needs: a config
+read off a remote over USB arrives with no EZHex header, and the cookie is not enough because
+`GSPM` covers both arch 12 and arch 14.
+
+The `version word` is **unconfirmed as to meaning**. What is measured:
+
+| Sample | arch | word |
+|---|---|---|
+| One safe mode config, from firmware 3.4 | 12 | 3126 |
+| arch 8 configs, all four | 8 | 3343 |
+| Harmony 525 config | 9 | 3350 |
+| Harmony One user configs, two different units | 12 | 3387 |
+| Harmony 700 user config, and the container inside 700 firmware 2.8 | 14 | 3394 |
+| Harmony 600 user config | 14 | 3401 |
+
+So it is not the architecture (arch 14 shows two values), not the config contents (four arch 8
+configs that differ in 73 to 84 percent of their bytes share it), and not purely the model (the
+One's safe mode config differs from the One's user config). A generator or target firmware
+version is the obvious guess and remains a guess.
 
 Observed pointer values, for orientation:
 
-| Slot | One safe cfg @`0x2000` | One user cfg @`0x40000` | 600 user cfg @`0x30000` |
-|---|---|---|---|
-| 0 | `0x0029AD` | `0x076197` | `0x063702` |
-| 1 to 6 | `0x0029B4`..`0x002A50` | `0x0762AE`..`0x076740` | `0x063D26`..`0x064007` |
-| 7 | `0x004107` | `0x085E44` | `0x072CDB` |
-| 8 | NULL | NULL | `0x072D0A` |
-| 9 to 18 | `0x00410C`..`0x0042BA` | `0x085E7C`..`0x08C076` | `0x0734B5`..`0x07A33B` |
-| 19, 20 | `0x0042BC`, NULL | `0x08C078`, NULL | n/a, 19 slots only |
+| Slot | One safe cfg @`0x2000` | One user cfg @`0x40000` | 600 user cfg @`0x30000` | 700 user cfg @`0x30000` |
+|---|---|---|---|---|
+| 0 | `0x0029AD` | `0x076197` | `0x063702` | `0x06E3B5` |
+| 1 to 6 | `0x0029B4`..`0x002A50` | `0x0762AE`..`0x076740` | `0x063D26`..`0x064007` | `0x06ECCD`..`0x06F1A6` |
+| 7 | `0x004107` | `0x085E44` | `0x072CDB` | `0x0812C1` |
+| 8 | NULL | NULL | `0x072D0A` | `0x0812F6` |
+| 9 to 18 | `0x00410C`..`0x0042BA` | `0x085E7C`..`0x08C076` | `0x0734B5`..`0x07A33B` | `0x0820FE`..NULL |
+| 19, 20 | `0x0042BC`, NULL | `0x08C078`, NULL | n/a, 19 slots only | n/a, 19 slots only |
+
+The non-NULL pointers ascend with the slot number in every sample, so sections are laid out in
+slot order. The NULL slots are per architecture rather than per config: slot 18 on arch 14, and
+slots 8 and 20 on arch 12, in both samples of each.
 
 In the 1.6 MB Harmony One user config all 21 pointers land within the first 310 KiB. The
 remaining 1.36 MB is reached indirectly, presumably the IR code database and the touchscreen

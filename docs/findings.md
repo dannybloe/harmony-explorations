@@ -20,6 +20,11 @@ Source material:
   concordance issue 66, and one architecture 9 config (Harmony 525) published by trelowney.
   Both sets were published by their owners with the account fields already at zero. See
   section 14.
+* A **Harmony 700 config** contributed to this project, architecture 14, skin 66. The second
+  arch 14 config and the only one from the same model as the 700 firmware image disassembled
+  here. Its provenance and publication permission are not yet settled, so nothing in this
+  document rests on it alone: section 15 states which samples carry each claim, and the
+  contributor is credited once they have been asked whether they want to be.
 
 Everything below is derived from those files plus the concordance source tree. Every
 numeric claim was checked against at least two independent samples where possible.
@@ -34,10 +39,12 @@ PIC18 high-end register layout rather than the PIC18F67J50 datasheet specificall
 12 part number is inferred, not read off a board. Errors are documented where they occurred
 rather than quietly fixed, so the rest can be calibrated against them.
 
-Five have been found and corrected so far. The claim that arch 12 and 14 use a container
-unrelated to the Harmony 525's was wrong: the 525's `0xFEED`/`0xBEEF` frames are nested
-inside the GSPM layer, one per section, so the two are compatible rather than alternatives.
-See section 7 for how that error was made, which is more instructive than the fact of it. `SUBFWB` and `SUBWFB` were swapped in the
+Six have been found and corrected so far. Two of them are the same claim, corrected twice in
+opposite directions, which is worth reading as a pair: arch 12 and 14 were first said to use a
+container unrelated to the Harmony 525's, then said to nest the 525's `0xFEED`/`0xBEEF` frames
+one per section, and in fact there is **exactly one such frame per container, at section slot
+0**. The first correction was right that the formats are compatible and wrong about how far.
+See sections 7 and 15. `SUBFWB` and `SUBWFB` were swapped in the
 disassembler, which inverted an arithmetic expression in the infrared scaling block. A hand
 count of LWJL codes was wrong, 107 rather than 108. And `BTFSC` and `BTFSS` were swapped,
 which inverted the stated polarity of every bit test: the infrared enable mask, the keypad
@@ -334,10 +341,15 @@ touchscreen bitmaps.
 
 ### The 525 container is inside this one
 
-**Corrected.** An earlier version of this document claimed that arch 12 and 14 have no
+**Corrected twice, in opposite directions. Read section 15 for the current statement before
+using anything here.** The first version of this document claimed that arch 12 and 14 have no
 `0xFEED`/`0xBEEF` framing and therefore need a parser unrelated to the 525's. That was
 wrong, and wrong in the direction that mattered: it told people not to reuse work that is
 in fact directly reusable.
+
+The correction below then overshot, claiming a frame per section. There is **exactly one frame
+per container, at section slot 0**, on all twelve samples. The rest of this subsection is the
+overshoot as written, kept because how it happened is the instructive part.
 
 The two are **nested**, not alternatives. GSPM is an outer layer carrying the pointer table.
 Each section that table points at begins with `0xFEED` and ends with `0xBEEF`, which is the
@@ -1016,6 +1028,123 @@ gives the 525's header as 3153 bytes plus a 2 byte separator, which totals two m
 file holds. The XML text is 3151 bytes and the 3153 already includes the separator. The
 derivation `payload = last BINARYDATASIZE bytes` avoids the question entirely, which is the
 argument for deriving boundaries rather than measuring them by hand.
+
+## 15. A config states its own architecture, and slot 0 is the only frame
+
+Both of these came out of adding a **Harmony 700 config** contributed to this project. It
+matters disproportionately for one reason: the arch 14 firmware image this project disassembles is the
+Harmony 700 2.8 image, and until this file arrived the architecture had exactly one config
+sample, the Harmony 600 dump. The section labelling method needs two configs of the same
+architecture, so that a slot pointing at the same structure in both is a section rather than a
+misread. This is the second one, and it is from the same model as the firmware.
+
+The corpus is now **twelve container samples across four architectures**: four arch 8, one arch
+9, five arch 12 (two user configs from two different One units, two copies of the safe mode
+config, one from the firmware package) and three arch 14 (600 user config, 700 user config, 700
+firmware package container).
+
+### Section slot 1 states the architecture, twice
+
+A fixed seven byte record: the architecture number, the same number again, a `u16`, then three
+zero bytes.
+
+| Sample | slot 1 bytes | arch | known independently from |
+|---|---|---|---|
+| arch 8 configs, all four | `08 08 0f 0d 00 00 00` | 8 | `<PROTOCOL>8</PROTOCOL>` |
+| Harmony 525 | `09 09 16 0d 00 00 00` | 9 | `<PROTOCOL>9</PROTOCOL>` |
+| One safe mode config | `0c 0c 36 0c 00 00 00` | 12 | dumped from a Harmony One |
+| One firmware 3.4 package | `0c 0c 36 0c 00 00 00` | 12 | the package it came out of |
+| One user configs, both units | `0c 0c 3b 0d 00 00 00` | 12 | `<PROTOCOL>12</PROTOCOL>` |
+| Harmony 700 user config | `0e 0e 42 0d 00 00 00` | 14 | `<PROTOCOL>14</PROTOCOL>` |
+| Harmony 700 firmware 2.8 package | `0e 0e 42 0d 00 00 00` | 14 | the package it came out of |
+| Harmony 600 user config | `0e 0e 49 0d 00 00 00` | 14 | `<PROTOCOL>14</PROTOCOL>` |
+
+Every sample is a calibration case: its architecture was already known from a source that is
+not this record, so the record is being checked rather than merely being self consistent. Four
+distinct architecture values, twelve agreements, no exceptions. What would falsify it is a
+single config whose slot 1 byte disagreed with its own `<PROTOCOL>`.
+
+Why it is worth having rather than a curiosity: **the cookie cannot tell arch 12 from arch 14**,
+because both are `GSPM`. A config read off a remote over USB has no EZHex header to consult, so
+without this record the reader would have to guess from the format version or the pointer count,
+both of which are weaker signals. `src/harmony/gspm.py` now reports it, and reports it only when
+the two copies agree, so a coincidence cannot be promoted to a fact.
+
+The `u16` beside it is **not identified**. What is measured: 3126 for the One's safe mode config,
+3343 arch 8, 3350 the 525, 3387 both One user configs, 3394 the 700 (both the user config and
+the firmware package container), 3401 the 600. So it is not the architecture, since arch 14
+shows two values. It is not the config contents, since four arch 8 configs that differ in 73 to
+84 percent of their bytes carry the same value. It is not purely the model, since the One's safe
+mode config and its user config differ. A generator or target firmware version fits all six
+observations and is still a guess, so it is recorded as one.
+
+The most interesting single data point is that the 700 user config and the container inside 700
+firmware 2.8 carry the same 3394. Those two files have nothing to do with each other: one was
+generated by Logitech's servers for a stranger's remote, the other shipped inside a firmware
+package.
+
+### There is exactly one `0xFEED` frame, and it is slot 0
+
+**This corrects section 7 a second time.** The claim there is that every section the pointer
+table points at is a `0xFEED`/`0xBEEF` frame. It is not. There is one frame per container, at
+slot 0, in all twelve samples.
+
+The frame:
+
+```
++0x00  u16    0xFEED       `ed fe` in a hex dump
++0x02  u16    length       from the cookie, stopping short of the terminator
++0x04  u8     00
++0x05  ...    payload      always begins A7 08 00 00 00 00 00 "Root"
++len   u16    0xBEEF
+```
+
+Two independent confirmations of the length rule. First, the terminator is where the length says
+in all twelve. Second, the frame occupies `length + 2` bytes and the **slot 1 pointer lands on
+exactly that byte** in all twelve, and the pointer table and the length field are different
+parts of the file, so agreeing is not automatic.
+
+The exclusivity is the part that needed care, because it is the part the earlier correction got
+wrong. Every `ed fe` byte pair in every container was validated: read the `u16` at +2, check for
+`ef be` where it points. One passes, in each sample, at slot 0. That the Harmony One's 1.6 MB
+config holds 31 `ed fe` pairs and 106 `ef be` pairs is exactly what chance produces in that much
+data, and none of the other 30 closes.
+
+One exception, which is why validating beats trusting: the One's safe mode config carries a
+degenerate **empty frame**, `ed fe 00 00 00 ef be`, length 0 with the terminator five bytes in.
+Read length 0 as "empty". Whether the firmware's parser special cases it that way is unconfirmed;
+no arch 12 or arch 14 config parser has been located in the firmware yet, and that is a question
+for step 6.
+
+**How the error happened, since that is the useful part.** The first version counted `0xFEED`
+occurrences across the whole config, got 47, compared it to the roughly 25 that two random bytes
+would produce, and dismissed the framing as coincidence. The correction then located the frame at
+slot 0, saw that it was genuine, and generalised from one slot to all of them without checking
+the other eighteen. Both mistakes are the same mistake in different clothes: a count is not a
+location, and one location is not a rule. The fix is that the parser now validates frames
+structurally and `tests/test_gspm.py` asserts that no second frame exists, which is the assertion
+neither earlier version made.
+
+### A lead on what slot 0 is for
+
+The frame payload is a tree of named nodes under `Root`. The 700 config's holds 62 names, which
+between them describe the installation without any further decoding: six devices by numeric id,
+appearing by role as a TV, a receiver, a Blu-ray player, a VCR and an A/V switch, each with
+`<Role>_Power_2` state, input selection (`TV_Input_10`, `Receiver_Input_16`, `VCR_Input_3`,
+`A/V_Switch_Input_5`), and per device timing in `PowerOnDelay_<id>_65278`,
+`InterDeviceDelay_<id>_65278`, `DefaultPowerOnDelay_<id>_255`. Two global entries,
+`CurrentActivityState_0_6` and `CurrentLocation_1`.
+
+The trailing number reads as the variable's range rather than its value: 2 for a power state, 10
+against 16 for two different input counts, 255 for the defaults, 65278 which is `0xFEFE`. That is
+consistent across every name in the section and it matches the format designer's own remark that
+the pointer table addresses "data for each of the various subsystems (IR sending, state
+variables, menus, action lists etc)".
+
+It is deliberately **not** recorded as a section label. Naming a section from what its data looks
+like is the thing `.claude/skills/trace-section/SKILL.md` exists to prevent: the label has to come
+from the firmware routine that consumes the pointer. This is a strong candidate for "state
+variables" and nothing more until that routine is found.
 
 ## References
 

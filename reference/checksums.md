@@ -78,6 +78,22 @@ print(ezfile.parse_ezhex(open(sys.argv[1], 'rb').read()).xml)" <file>
 Note the 600 file is **truncated**: the real image is 70336 bytes and concordance returns only
 the first 65536. Use the 700 image for arch 14 work, since it is complete.
 
+## Privately contributed config samples
+
+Not public, and not to be republished. Listed here so that a copy in a lab can be verified as
+the same file the documented findings were derived from.
+
+| File | SHA-256 | Provenance |
+|---|---|---|
+| `harmony700.EZHex` | `86ff26c8e2aae0c891809a8d7b0129b09cf8c4d57d8763a65878da8b62e04c3d` | a Harmony 700 config contributed to this project, architecture 14, skin 66, 982340 bytes |
+
+The lab holds a `META.md` beside it with the full provenance. That record is deliberately not
+mirrored here: its permission status is unresolved, so the contributor is not named in this
+repository until they have been asked whether they want to be. Everything published from this
+file is format structure independently confirmed on other samples, which is checked by the
+tests rather than promised: `tests/test_gspm.py` carries each claim on twelve samples across
+four architectures.
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than

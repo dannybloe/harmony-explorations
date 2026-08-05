@@ -25,13 +25,21 @@ loads scattered everywhere. Decode arch 14, then port to arch 12 and confirm.
 python3 tools/gspm_parse.py <config.EZHex> --json
 ```
 
-Note the slot's address and subtract `flash_base` for the blob offset. Do this for **two**
-configs of the same architecture, because a slot that points at the same structure in both is
-a section, and a slot that only makes sense in one is a misread.
+The JSON gives each slot both a `blob_offset` and a `file_offset`; they differ by the length of
+whatever the container is wrapped in, an EZHex XML header or a flash dump, and picking the wrong
+one shifts every section silently rather than failing. Do this for **two** configs of the same
+architecture, because a slot that points at the same structure in both is a section, and a slot
+that only makes sense in one is a misread. Arch 14 now has two: the Harmony 600 dump and the
+Harmony 700 config, the latter from the same model as the reference firmware image.
 
-Look at the bytes the pointer lands on before touching the firmware. Sections are `0xFEED`
-framed with a `u16` length, so the frame tells you the size, and the size alone often rules
-out most guesses.
+Look at the bytes the pointer lands on before touching the firmware. Only **slot 0** is
+`0xFEED` framed, so for every other slot the size comes from the distance to the next
+non-NULL pointer, and the pointers ascend with the slot number. The size alone often rules out
+most guesses.
+
+Two slots are already known, and neither is a target: slot 0 is that one frame, holding a tree
+of named nodes under `Root`, and slot 1 is a seven byte record stating the architecture. See
+`docs/config-format.md`.
 
 ## Step 2: find where the firmware reads that slot
 

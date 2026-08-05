@@ -34,11 +34,17 @@ def main():
             'format_version': container.format_version,
             'format_raw': container.format_raw,
             'pointer_count': container.pointer_count,
+            'architecture': container.architecture,
+            'version_word': container.version_word,
+            'frame_length': container.frame_length,
             'trailer_checksum': container.trailer_checksum,
             'checks': container.checks,
+            # Both offsets, because they differ by the length of whatever the container is
+            # wrapped in, and picking the wrong one shifts every section silently.
             'sections': [
                 {'slot': s.slot, 'address': s.address,
-                 'blob_offset': container.file_offset(s.address)}
+                 'blob_offset': container.blob_offset_of(s.address),
+                 'file_offset': container.file_offset(s.address)}
                 for s in container.sections],
             'keys': [
                 {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,

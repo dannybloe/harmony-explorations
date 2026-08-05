@@ -158,9 +158,15 @@ are stale and need correcting, because later policy decisions read them.
   rather than one hardcoded magic, and derives the marker after the pointer table from the data.
   `src/harmony/ezfile.py` gained `parse_ezhex`, which splits a config on its declared
   `BINARYDATASIZE` and verifies the `0x69`-seeded XOR `CHECKSUM` and the `INTENDEDVERSION` block.
-* Result: nine samples, four architectures, five base addresses, three format versions, four
+* Result: twelve samples, four architectures, five base addresses, three format versions, four
   pointer table lengths, all consistency checks passing. The container claim in
   `docs/config-format.md` is no longer a claim about two models.
+* A Harmony 700 config arrived afterwards, which gave arch 14 a second sample and, more to the
+  point, a config from the same model as the arch 14 firmware image. Two findings came out of
+  it, in `docs/findings.md` section 15: **a config states its own architecture** in section slot
+  1, needed because `GSPM` covers both arch 12 and arch 14 and a config read over USB has no
+  file header to consult; and slot 0 is the container's **only** `0xFEED` frame, which corrected
+  an earlier claim here that every section was one.
 * Findings that came out of it, written up in `docs/findings.md` section 14 with tests in
   `tests/test_gspm.py`: `WLWL` on arch 8 is the same key table as `LWJL`; arch 8 and arch 12
   share 47 codes in identical order apart from one transposition, which suggests the key order

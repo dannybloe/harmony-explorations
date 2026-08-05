@@ -50,6 +50,9 @@ IMAGES = {
     'one_config': 'harmony-one-programmed-config.EZHex',
     'one_config_unprogrammed': 'harmony-one-config.EZHex',
     'h600_config': 'harmony-600-programmed-config.EZHex',
+    # The second arch 14 config, and the only one from the same model as the arch 14
+    # firmware image this project disassembles.
+    'h700_config': 'harmony700.EZHex',
 }
 
 _cache = {}

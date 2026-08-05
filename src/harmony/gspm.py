@@ -16,6 +16,8 @@ module is written against the shape and not against a model table:
     not derivable, so it is recorded per family and asserted rather than computed. `LWJL`
     and `WLWL` are followed by a key table; whether `CMAH` is has not been established,
     because the byte where a count would sit is zero in the only arch 9 sample.
+  * The architecture is stated by the config itself, in section slot 1, so it does not have
+    to be inferred from the cookie. It cannot be: `GSPM` covers both arch 12 and arch 14.
 
 Accepts a bare blob or a raw flash dump with the blob somewhere inside it.
 """
@@ -53,6 +55,23 @@ END_MARKER = b'PTYY'
 HEADER_PTR_OFFSET = 0x0C
 MARKER_SEARCH_LIMIT = 0x200
 KNOWN_POINTER_COUNTS = (19, 20, 21)
+
+# Section slot 0 is a single 0xFEED framed block, the structure discussion #1 documents for
+# the Harmony 525. Stored little endian, so the cookie reads `ed fe` in a hex dump.
+FRAME_COOKIE = b'\xed\xfe'
+FRAME_END = b'\xef\xbe'
+# An empty frame carries length 0 and its terminator sits five bytes in, so the length rule
+# below does not apply to it. Seen only in the One's safe mode config so far.
+EMPTY_FRAME_LENGTH = 5
+# Every non-empty frame's payload starts with this. Twelve samples, four architectures. The
+# 0xA7 looks like a type tag and `Root` names the tree the rest of the section describes.
+FRAME_PROLOGUE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
+
+# Section slot 1 is a seven byte record that states the architecture twice over. Confirmed
+# against the EZHex header's <PROTOCOL> on nine samples and against the firmware package a
+# container was extracted from on three more.
+ARCH_RECORD_SLOT = 1
+ARCH_RECORD_LENGTH = 7
 
 
 @dataclass
@@ -98,6 +117,9 @@ class Container:
     marker: bytes
     family: Family
     trailer_checksum: int
+    architecture: Optional[int] = None    # stated by slot 1, see ARCH_RECORD_SLOT
+    version_word: Optional[int] = None    # the u16 beside it, meaning not established
+    frame_length: Optional[int] = None    # slot 0's 0xFEED frame, None when absent
     sections: List[Section] = field(default_factory=list)
     keys: List[KeyRecord] = field(default_factory=list)
     checks: Dict[str, bool] = field(default_factory=dict)
@@ -111,11 +133,23 @@ class Container:
         """Nibble BCD: 0x1600 is 1.6, 0x1400 is 1.4."""
         return '%d.%d' % (self.format_raw >> 12, (self.format_raw >> 8) & 0xF)
 
-    def file_offset(self, address: int) -> Optional[int]:
-        """Convert an absolute flash address to an offset within the blob."""
+    def blob_offset_of(self, address: int) -> Optional[int]:
+        """Convert an absolute flash address to an offset within the container blob."""
         if address == 0:
             return None
         return address - self.flash_base
+
+    def file_offset(self, address: int) -> Optional[int]:
+        """Convert an absolute flash address to an offset within the file that was parsed.
+
+        Distinct from `blob_offset_of` by `blob_offset`, which is non zero whenever the
+        container sits inside something larger: an EZHex file with its XML header, or a
+        flash dump. Conflating the two silently shifts every section by the header length
+        and produces a plausible looking wrong answer rather than an error, which has
+        already cost time here.
+        """
+        off = self.blob_offset_of(address)
+        return None if off is None else self.blob_offset + off
 
     @property
     def all_checks_pass(self) -> bool:
@@ -150,6 +184,34 @@ def find_marker(blob: bytes) -> int:
         if all(0x41 <= c <= 0x5A for c in blob[off:off + 4]):
             return off
     raise GspmError('no four letter marker found after the pointer table')
+
+
+def frame_length(blob: bytes, off: int) -> Optional[int]:
+    """Length of the 0xFEED frame at `off`, or None if there is not one there.
+
+    The frame is:
+
+        +0x00  u16     0xFEED
+        +0x02  u16     length, counted from the cookie and excluding the terminator
+        +0x04  u8      zero in every sample
+        +0x05  ...     payload, starting with FRAME_PROLOGUE
+        +len   u16     0xBEEF
+
+    So the frame occupies `length + 2` bytes, and that lands exactly on the next section in
+    all twelve samples. The length is validated by requiring the terminator where it says,
+    which is what distinguishes a real frame from the `ed fe` byte pair that turns up by
+    chance roughly once per 64 KiB: the One's 1.6 MB config holds 31 of those pairs and only
+    one of them is a frame.
+    """
+    if blob[off:off + 2] != FRAME_COOKIE:
+        return None
+    length = struct.unpack_from('<H', blob, off + 2)[0]
+    if length == 0:
+        # Degenerate empty frame: cookie, a zero length, a zero byte, terminator.
+        return 0 if blob[off + EMPTY_FRAME_LENGTH:off + 7] == FRAME_END else None
+    if blob[off + length:off + length + 2] != FRAME_END:
+        return None
+    return length
 
 
 def parse(data: bytes) -> Container:
@@ -188,6 +250,23 @@ def parse(data: bytes) -> Container:
         sections=[Section(i, p) for i, p in enumerate(pointers)],
     )
 
+    # Slot 0's frame and slot 1's architecture record, both read here because `parse` is the
+    # only place holding the blob. Guarded rather than assumed: a container with fewer than
+    # two slots, or with either slot NULL, simply leaves these as None.
+    slot0 = container.sections[0].address if container.sections else 0
+    if slot0:
+        container.frame_length = frame_length(blob, slot0 - flash_base)
+
+    if len(container.sections) > ARCH_RECORD_SLOT:
+        arch_addr = container.sections[ARCH_RECORD_SLOT].address
+        o = arch_addr - flash_base if arch_addr else -1
+        if 0 <= o and o + ARCH_RECORD_LENGTH <= len(blob):
+            # The architecture is stored twice. Reading it only when the two copies agree
+            # keeps a coincidence from being reported as a fact.
+            if blob[o] == blob[o + 1]:
+                container.architecture = blob[o]
+            container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
+
     end_off = end_addr - flash_base
     container.checks = {
         'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
@@ -197,6 +276,8 @@ def parse(data: bytes) -> Container:
         'sections_within_blob': all(
             s.is_null or 0 <= s.address - flash_base < len(blob)
             for s in container.sections),
+        'slot0_is_a_feed_frame': container.frame_length is not None,
+        'slot1_states_the_architecture': container.architecture is not None,
     }
 
     if family.key_table_at_marker:
@@ -215,11 +296,17 @@ def parse(data: bytes) -> Container:
 def report(c: Container):
     """Render a parse result as text."""
     yield 'blob at file offset 0x%X, length %d (0x%X)' % (c.blob_offset, c.length, c.length)
-    yield 'container        %s ... %s   (architecture %s)' % (
+    yield 'container        %s ... %s   (family covers architecture %s)' % (
         c.family.magic.decode(), c.family.end_marker.decode(), c.family.architectures)
+    yield 'architecture     %s        (stated by section slot %d, version word %s)' % (
+        c.architecture if c.architecture is not None else 'unstated', ARCH_RECORD_SLOT,
+        c.version_word if c.version_word is not None else '?')
     yield 'flash base       0x%06X   (recovered from end_addr)' % c.flash_base
     yield 'end_addr         0x%06X' % c.end_addr
     yield 'format version   %s   (raw 0x%04X)' % (c.format_version, c.format_raw)
+    yield 'slot 0 frame     %s' % (
+        'FEED, %d bytes, BEEF at +%d' % (c.frame_length, c.frame_length)
+        if c.frame_length else ('empty FEED frame' if c.frame_length == 0 else 'absent'))
     yield 'pointer slots    %d        (%s at 0x%02X%s)' % (
         c.pointer_count, c.marker.decode('ascii', 'replace'), c.marker_offset,
         ', key table' if c.has_key_table else ', contents not established')

@@ -30,9 +30,13 @@ header and its checksum, the config container, the keypad scanner, and the compl
 infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because two publicly shared
-sample sets (arch 8 and arch 9) were added as controls. Nine samples, five base addresses,
+sample sets (arch 8 and arch 9) were added as controls. Twelve samples, five base addresses,
 three format versions, four pointer table lengths, all consistency checks passing. It turns out
-to be one format with a per architecture cookie rather than one format per architecture.
+to be one format with a per architecture cookie rather than one format per architecture. Two of
+its nineteen to twenty one sections are now identified: a config **states its own
+architecture** in section slot 1, which is what lets a config read over USB be parsed without
+the file header Logitech's software supplied, and slot 0 is the container's only
+`0xFEED`/`0xBEEF` frame.
 
 Not established: the config format itself, beyond the container and two small tables. The IR
 device database, activities, menus and display are still opaque. That is the bulk of the
