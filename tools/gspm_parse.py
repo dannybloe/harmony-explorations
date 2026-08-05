@@ -26,38 +26,9 @@ def main():
 
     container = gspm.parse(data)
     if '--json' in sys.argv:
-        out = {
-            'blob_offset': container.blob_offset,
-            'length': container.length,
-            'flash_base': container.flash_base,
-            'end_addr': container.end_addr,
-            'format_version': container.format_version,
-            'format_raw': container.format_raw,
-            'pointer_count': container.pointer_count,
-            'architecture': container.architecture,
-            'version_word': container.version_word,
-            'frame_length': container.frame_length,
-            'trailer_checksum': container.trailer_checksum,
-            'checks': container.checks,
-            # Both offsets, because they differ by the length of whatever the container is
-            # wrapped in, and picking the wrong one shifts every section silently.
-            'sections': [
-                {'slot': s.slot, 'address': s.address,
-                 'blob_offset': container.blob_offset_of(s.address),
-                 'file_offset': container.file_offset(s.address),
-                 'length': container.section_length(s.slot),
-                 # Entries are omitted: the largest array seen holds 8037 of them, which would
-                 # bury everything else. The count is what orients you.
-                 'pointer_array_entries': (
-                     len(container.pointer_array(s.slot))
-                     if container.pointer_array(s.slot) is not None else None)}
-                for s in container.sections],
-            'keys': [
-                {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,
-                 'flags': k.flags, 'event': k.event_name, 'scan': k.scan_code}
-                for k in container.keys],
-        }
-        print(json.dumps(out, indent=2))
+        # The shape lives in `gspm.summary`, not here: it is the golden vector format, and
+        # `packages/codec` has to produce the same object.
+        print(json.dumps(gspm.summary(container), indent=2))
     else:
         for line in gspm.report(container):
             print(line)

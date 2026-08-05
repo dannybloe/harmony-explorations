@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write all clean
 
 help:
 	@echo "test         run the Python test suite (needs a lab directory for image-backed tests)"
@@ -29,6 +29,7 @@ help:
 	@echo "ts           typecheck and test the TypeScript packages"
 	@echo "audit        check the npm dependency tree for known vulnerabilities"
 	@echo "hooks        install the pre-commit hook (per clone, so run it once after cloning)"
+	@echo "golden       compare the golden vectors; golden-write regenerates them"
 	@echo "all          everything above except ghidra"
 
 test:
@@ -71,6 +72,14 @@ ts-test:
 
 audit:
 	@$(PNPM) audit
+
+# Golden vectors: what the Python parser says about each sample, for the TypeScript port to
+# match. They live in the lab directory, because a vector maps somebody's actual configuration.
+golden:
+	@$(PYTHON) tools/golden.py
+
+golden-write:
+	@$(PYTHON) tools/golden.py --write
 
 # Git does not commit .git/hooks, so the hook lives in .githooks and this points git at it.
 # Per clone, which is why the same checks are also reachable from `make` targets: a fresh

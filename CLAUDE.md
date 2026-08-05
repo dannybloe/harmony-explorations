@@ -254,6 +254,7 @@ make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
+make golden        compare the golden vectors; golden-write regenerates them
 make all           everything except ghidra
 ```
 
@@ -264,6 +265,7 @@ tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
+tools/golden.py        [--write]   golden vectors for the Python/TypeScript comparison
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 ```

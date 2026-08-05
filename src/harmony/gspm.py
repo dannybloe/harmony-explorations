@@ -479,6 +479,48 @@ def parse(data: bytes) -> Container:
     return container
 
 
+def summary(c: Container) -> Dict[str, object]:
+    """The container as a plain dictionary, JSON ready.
+
+    This is the golden vector format, and the reason it lives here rather than in the command
+    line tool that used to hold it: `packages/codec` has a `summary` that must produce the same
+    object, and `tools/golden.py` compares them. A shape defined inside a tool cannot be a
+    contract between two implementations.
+
+    Pointer array entries are counted rather than listed, because the largest array seen holds
+    8037 of them and would bury everything else.
+    """
+    return {
+        'blob_offset': c.blob_offset,
+        'length': c.length,
+        'flash_base': c.flash_base,
+        'end_addr': c.end_addr,
+        'format_version': c.format_version,
+        'format_raw': c.format_raw,
+        'pointer_count': c.pointer_count,
+        'architecture': c.architecture,
+        'version_word': c.version_word,
+        'frame_length': c.frame_length,
+        'trailer_checksum': c.trailer_checksum,
+        'checks': c.checks,
+        # Both offsets, because they differ by the length of whatever the container is wrapped
+        # in, and picking the wrong one shifts every section silently.
+        'sections': [
+            {'slot': s.slot, 'address': s.address,
+             'blob_offset': c.blob_offset_of(s.address),
+             'file_offset': c.file_offset(s.address),
+             'length': c.section_length(s.slot),
+             'pointer_array_entries': (
+                 len(c.pointer_array(s.slot))
+                 if c.pointer_array(s.slot) is not None else None)}
+            for s in c.sections],
+        'keys': [
+            {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,
+             'flags': k.flags, 'event': k.event_name, 'scan': k.scan_code}
+            for k in c.keys],
+    }
+
+
 def report(c: Container):
     """Render a parse result as text."""
     yield 'blob at file offset 0x%X, length %d (0x%X)' % (c.blob_offset, c.length, c.length)

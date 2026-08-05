@@ -291,12 +291,21 @@ Still to do, in the order the application needs them:
   and the test and typecheck commands. `packages/usb` and `apps/studio` arrive with the work that
   needs them, because a project with no input files is a build error rather than a placeholder.
   See the conventions above for why the test runner is `node:test` and not `vitest`.
-* Port the 461 lines of container logic to `packages/codec`: EZHex/EZUp container, XML header with
+* **Done.** Port the container logic to `packages/codec`: EZHex container, XML header with
   `BINARYDATASIZE` and the `0x69`-seeded XOR checksum, GSPM family header, derived base address,
-  derived pointer count, LWJL, the IR parameter block.
-* Cross-validate: a golden vector file per sample, asserted by both the Python tests and the TS
-  tests, so the port is provably equivalent before Python's copy is retired. After that, Python
-  keeps only the reverse engineering tools.
+  derived pointer count, LWJL, pointer arrays, action lists. The `.hfw` reader stays in Python:
+  it is a ZIP of firmware regions, which the application never opens, and porting it would mean a
+  ZIP dependency or a hand written inflate for files that get read once, by hand, in the lab.
+* **Done.** Cross-validate: `tools/golden.py --write` generates one vector per sample from the
+  Python parser, and both suites assert against it. Thirteen samples across four architectures
+  match field for field, including the three that are not somebody's configuration, because an
+  implementation can agree on the ordinary cases and diverge on the degenerate ones. The vectors
+  live in the lab directory, not in git: a vector maps a stranger's remote, and publishing a
+  checksum is not the same as publishing that. Each side also guards its own half, so the
+  reference cannot drift while the comparison keeps passing.
+* Retire the Python container parser once the application actually uses the TypeScript one. Not
+  yet: `tools/golden.py` generates the vectors from it, and the reverse engineering tools read
+  configs through it.
 * `packages/usb`: HID transport over `node-hid`, the command layer from `docs/usb-protocol.md`,
   read paths and RAM reads enabled, write and erase paths implemented but gated behind a build
   flag that is off by default.
