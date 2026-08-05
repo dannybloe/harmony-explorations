@@ -1,0 +1,29 @@
+# This repository is PUBLIC. Nothing below may ever be committed.
+# Reasoning: README.md "What is deliberately not here".
+
+# Proprietary Logitech firmware and config binaries. Share checksums, not files.
+*.bin
+*.hfw
+*.EZHex
+*.EZUp
+*.EzHex
+*.EzUpgrade
+
+# Remote dumps and concordance output. The *-info.txt files carry serial GUIDs.
+*-info.txt
+*-safe.bin
+samples/*
+!samples/README.md
+
+# Ghidra projects contain an imported copy of proprietary firmware.
+*.gpr
+*.rep/
+*.lock
+ghidra-project/
+ghidra_projects/
+
+# Build and tool noise.
+*.class
+*.pyc
+__pycache__/
+.DS_Store
