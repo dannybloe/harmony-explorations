@@ -272,6 +272,36 @@ class TestTheStateMachine(unittest.TestCase):
         self.assertEqual(self.table()[0x04], 0x0C982)
 
 
+class TestGetVersion(unittest.TestCase):
+    """Response code then twelve bytes out of a block another routine fills."""
+
+    BASE = 0x9000
+    EXECUTOR = 0x0C906
+
+    def literal_at(self, addr):
+        return isa.decode(lab.load('h700_code'), addr - self.BASE, self.BASE).fields['k']
+
+    def test_the_executor_is_the_state_one_body(self):
+        self.assertEqual(TestTheStateMachine.table()[0x01], self.EXECUTOR)
+
+    def test_the_block_pointer_and_the_response_code(self):
+        block = (self.literal_at(0x0C90C) << 8) | self.literal_at(0x0C908)
+        self.assertEqual(block, 0x0D4F)
+        self.assertEqual(self.literal_at(0x0C91A), 0x28, 'the response code')
+
+    def test_twelve_bytes_are_copied(self):
+        self.assertEqual(self.literal_at(0x0C92A), 0x0C)
+
+    def test_the_response_code_length_nibble_does_not_match_the_copy(self):
+        """
+        Recorded because it is unresolved, not because it is understood. Under the request
+        encoding 0x28 would be 15 payload bytes and the loop copies 12, so either responses
+        encode length differently or something follows the loop.
+        """
+        self.assertEqual(TestTheLengthNibbleMapping.EXPECTED[0x28 & 0x0F], 15)
+        self.assertNotEqual(15, self.literal_at(0x0C92A))
+
+
 class TestReadMisc(unittest.TestCase):
     """
     The command that makes live RAM readable over USB, which is what replaces the deferred

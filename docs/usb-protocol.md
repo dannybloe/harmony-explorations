@@ -292,6 +292,37 @@ that payload byte selects the kind of reset. Sub-command `0x05` is the one that 
 `0x0BDA8`, which is what makes that row an internal continuation rather than a command a host
 can send directly.
 
+### GET_VERSION
+
+**Request: `0x10 | length nibble`.** The parser is inline in the USB callback at `0x0BDFE`
+rather than a separate handler, and it sets state 1.
+
+The executor is state 1, `0x0C906`:
+
+```
+0c908: 4f 0e       MOVLW 0x4f         ; a 16-bit pointer, 0x0D4F
+0c90a: dd 6f       MOVWF 0xedd
+0c90c: 0d 0e       MOVLW 0x0d
+0c90e: de 6f       MOVWF 0xede
+0c910: 16 ec a1 f0 CALL 0x1422c       ; fills the block at 0x0D4F
+0c91a: 28 0e       MOVLW 0x28         ; the response code
+0c922: 6d ec b9 f0 CALL 0x172da       ; append it
+0c928: 5b 6b       CLRF 0xd5b         ; then copy 12 bytes from 0x0D4F
+0c92a: 0c 0e       MOVLW 0x0c
+0c92e: 5b 5d       SUBWF 0xd5b,W
+0c930: 10 e2       BC 0x0c952
+```
+
+**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds. What the 12
+bytes are is not derived; concordance's `GET_VERSION` yields firmware, hardware, skin, flash id,
+protocol and architecture, so those are the obvious candidates and the obvious thing to check
+against a real remote once there is a host implementation.
+
+One loose end, recorded rather than smoothed over: `0x28` under the request encoding would be
+code `0x20` with length nibble 8, and nibble 8 means **15** payload bytes, not 12. Either the
+response length nibble is not the request mapping, or three more bytes follow the loop. Not
+resolved.
+
 ### READ_MISC, and live RAM over USB
 
 **Request: `0xB0 | length nibble`, then three bytes**: an item selector, then a 16-bit
@@ -505,8 +536,12 @@ proximity: it needs following control flow into whatever sets `0xED3` on this pa
   remote from the host.
 * The response layout of each command, which means reading the main loop's state handlers
   rather than the parsers.
-* The request layout of GET_VERSION, WRITE_FLASH, ERASE_FLASH and START_IRCAP, each of which
-  is a few instructions in the same shape as READ_MISC above. READ_FLASH is done.
+* The request layout of WRITE_FLASH, ERASE_FLASH and START_IRCAP, each of which is a few
+  instructions in the same shape as READ_MISC above. READ_FLASH, READ_MISC and GET_VERSION are
+  done.
+* What GET_VERSION's twelve bytes are, which means reading `0x1422C`.
+* Whether responses encode their length the way requests do. GET_VERSION's `0x28` says they may
+  not.
 * Which region `0xFE` and `0xFF` select, which means reading `0x1B50A`.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 
