@@ -2018,12 +2018,28 @@ number would have produced a read of the wrong thing that still returned a plaus
 precisely the case the project's derive-rather-than-adopt rule exists for. This is the first time
 that rule has been vindicated by measurement rather than by argument.
 
-**GET_VERSION's twelve bytes are now five identified, one candidate, six unknown**, by comparing the
-block against `concordance -i` on the same remote. The flash id pair and the packed nibble byte were
-already characterised from the image, so those two are agreements between a disassembly and a device.
-It rests on one remote, which is below this project's usual bar of two independent samples, and it is
-marked as such: the Harmony One would differ in skin, firmware, hardware version and flash part, and
-its concordance output is already in the lab.
+**GET_VERSION's twelve bytes are six identified, by prediction rather than by fitting.** Comparing the
+600's block against `concordance -i` gave a reading of six fields. That reading was written down as a
+prediction for the Harmony One before the One was read, and the One's first six bytes came back exactly
+as predicted, on a remote differing in skin, firmware, hardware version, flash part and architecture.
+The flash id pair and the packed nibble shape were already characterised from the image, so two of the
+six are agreements between a disassembly and a device.
+
+Six fields remain, and what is said about them is deliberately weaker than what is said about the
+first six. Field 6 is `0x0C` on both remotes, so it is a constant. Fields 7, 10 and 11 repeat field 0
+on both, which is an observation and not a reading: three copies of the firmware version is a strange
+thing to carry, and other components' version numbers happening to match on both units is the more
+likely explanation. Fields 8 and 9 are unexplained.
+
+**Two negative results, which are worth as much as the positives here.** A read of internal program
+memory reaches the first 64 KiB only, because the top address byte is spent on the region selector and
+the firmware bounds the rest to `0xFFC0`, while a PIC18 keeps its device id at `0x3FFFFE`. So the
+route to `MCU_ID` that `docs/roadmap.md` wanted does not exist, and the arch 12 part number stays
+inferred until another route is found. And a 63 byte read of that same region **restarted a remote**:
+it left the USB bus, re-enumerated by itself, and came back healthy with its config still
+byte-identical to its dump. The owner watched it restart, so it is the device resetting rather than a
+host artefact. Every command in that session was a read. `packages/usb` now refuses a multi chunk read
+of that region, which is a cap and not an explanation.
 
 ### An honest gap
 

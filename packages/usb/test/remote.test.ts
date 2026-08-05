@@ -115,7 +115,7 @@ test('a flash read assembles its chunks and stops at the count asked for', async
   // bytes of somebody else's data into whatever it was filling.
   const first = flashChunk(0x01, new Array(62).fill(0xaa));
   const second = flashChunk(0x12, new Array(62).fill(0xbb));
-  const { transport, written } = scriptedRemote([first, second], 0);
+  const { transport, written } = scriptedRemote([first, second, FLASH_DONE], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
   const data = await remote.readFlash(0x030000, 100);
   assert.equal(data.length, 100);
@@ -280,4 +280,42 @@ test('a flash chunk decodes into its sequence and its data separately', () => {
   if (decoded.kind !== 'flash-data') return;
   assert.equal(decoded.sequence, 0x23);
   assert.deepEqual([...decoded.data], [1, 2, 3]);
+});
+
+test('a flash read drains the trailing acknowledgement', async () => {
+  // The bug this pins cost a confusing half hour on real hardware. Stopping as soon as the byte
+  // count was satisfied left `f0 50` queued, and the next command read that first and concluded its
+  // own transfer was over. The symptom was a device that looked like it had a size limit: a 32 byte
+  // read worked, the next 62 byte read returned nothing, and a 256 byte read returned 124.
+  const { transport, queue } = scriptedRemote(
+    [
+      flashChunk(0x01, new Array(62).fill(0xaa)),
+      FLASH_DONE,
+      flashChunk(0x01, new Array(62).fill(0xbb)),
+      FLASH_DONE,
+    ],
+    0,
+  );
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
+  const first = await remote.readFlash(0x030000, 62);
+  assert.equal(first[0], 0xaa);
+  assert.equal(queue.length, 2, 'the acknowledgement was consumed, not left behind');
+  const second = await remote.readFlash(0x030000, 62);
+  assert.equal(second[0], 0xbb, 'the second read got its own data, not the first read\'s leftovers');
+});
+
+test('all the bytes but no completion is an error, because the pipe is then dirty', async () => {
+  const { transport } = scriptedRemote([flashChunk(0x01, new Array(62).fill(0xaa))], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
+  await assert.rejects(() => remote.readFlash(0x030000, 62), /no completion, so the pipe is dirty/);
+});
+
+test('a multi chunk internal memory read is refused, because one restarted a remote', async () => {
+  // Not a style preference. A 63 byte read of internal program memory made a Harmony One stop
+  // answering and re-enumerate, watched from both ends. The remote recovered with its config intact,
+  // but a read that restarts the device is not a read this project performs by accident.
+  const { transport, written } = scriptedRemote([], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  await assert.rejects(() => remote.readInternalMemory(0xff, 0, 63), /has been seen to restart a remote/);
+  assert.equal(written.length, 0, 'and it is refused before anything reaches the device');
 });

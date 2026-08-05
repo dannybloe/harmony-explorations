@@ -260,6 +260,9 @@ export const FLASH_SEQUENCE_STEP = 0x11;
 export function nextFlashSequence(previous: number): number {
   return (previous + FLASH_SEQUENCE_STEP) & 0xff;
 }
+
+/** Data bytes in a full chunk: 63 payload bytes less the sequence byte. Measured. */
+export const FLASH_CHUNK_DATA = 62;
 /** `READ_MISC` replies with this: two payload bytes, the selector echoed and one data byte. */
 export const MISC_REPLY = 0xc2;
 /** `GET_VERSION` replies with this, then twelve bytes. */

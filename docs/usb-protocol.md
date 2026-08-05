@@ -5,15 +5,18 @@ quoted from the device's own descriptors. The command layer has its dispatch tab
 nibble mapping, its state machine, and the request and response layout of every command. Live RAM
 over USB works and event injection does not exist.
 
-**Section 4 is the part a host measured**, on the programmed Harmony 600, read only. Three commands
-have run: GET_VERSION, READ_MISC and READ_FLASH. The flash read is verified the only way worth
-verifying a read, against 256 bytes of a dump made months earlier by other software, and it is
-byte-identical. That run also corrected two things this document had inferred, both marked in place.
+**Section 4 is the part a host measured**, on **both architectures**: the programmed Harmony 600 and
+the spare Harmony One. Read only. `GET_VERSION`, `READ_MISC` and `READ_FLASH` have run, the flash read
+is byte-identical to a dump made months earlier by other software on each unit, and six fields of the
+version block were **predicted from the 600 and then confirmed on the One**, which differs in skin,
+firmware, hardware version, flash part and architecture.
 
-What is left is in "Still open" below: six of GET_VERSION's twelve bytes, a second remote to confirm
-the other six, and the internal program memory path that leads to `MCU_ID`, which nothing has yet
-been sent down. This document is the deliverable of step 3 of `docs/roadmap.md`, and it was written
-as each part was established rather than at the end.
+Three things the hardware corrected are marked in place rather than quietly fixed, and one thing it
+did was not expected: a multi chunk read of internal program memory **restarted a remote**. Section 4
+says what is known about that and `packages/usb` refuses the case.
+
+This document is the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was
+established rather than at the end.
 
 Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
 (architecture 14). The Harmony 600 0.2 dump is truncated by concordance at 65536 of 70336
@@ -678,19 +681,40 @@ selector into, so the sharing that caused the retraction above is confirmed to b
 the chunk is the 63 seen at `0x0C9B2` is exactly the question that must not be answered by
 proximity: it needs following control flow into whatever sets `0xED3` on this path. Not done.
 
-## 4. Measured against the bench Harmony 600
+## 4. Measured against two bench remotes
 
 Everything above was derived from firmware images. This section is what a host actually observed on
-the wire, from `packages/usb`, on the programmed Harmony 600: skin 71, firmware 0.2, arch 14,
-`0x046D:0xC122`, `bcdDevice 0x1071`. Read only, no writes of any kind.
+the wire, from `packages/usb`, on **both architectures**:
+
+| | Harmony 600 | Harmony One |
+|---|---|---|
+| Unit | programmed | the **spare, unprogrammed** one |
+| Architecture | 14 | 12 |
+| Identified as | `0x046D:0xC122`, `bcdDevice 0x1071` | `0x046D:0xC121`, `bcdDevice 0x1054` |
+| Skin, firmware | 71, 0.2 | 54, 3.4 |
+| Config at | `0x030000` | `0x040000` |
+
+Read only throughout: `GET_VERSION`, `READ_MISC` and `READ_FLASH`, no writes of any kind by any path.
+
+Which Harmony One is on the bench was determined from the data rather than from the label: 256 bytes
+read at `0x040000` are identical to the unprogrammed unit's dump and differ from the programmed one's
+at offset 4, which is `end_addr` and therefore the config length.
 
 ### The flash read, against an answer obtained without it
 
-256 bytes read from `0x030000` are **byte-identical to the lab dump of that same unit**. That is the
-verification that matters: a read returning plausible bytes proves nothing, and the dump was made by
-concordance months earlier, so it is an independent answer. Pinned in
+256 bytes read from each remote's config base are **byte-identical to the lab dump of that same
+unit**. That is the verification that matters: a read returning plausible bytes proves nothing, and
+the dumps were made by concordance months earlier, so they are independent answers. Pinned in
 `packages/usb/test/hardware.test.ts`, behind `HARMONY_HARDWARE_TESTS=1` so a routine test run does
 not claim a remote.
+
+**One host side bug, worth recording because its symptom was a lie about the device.** A read that
+stopped as soon as it had the bytes it asked for left the trailing `0xF0 0x50` in the pipe, and the
+next command read that first and concluded its own transfer was over. The observed pattern was a 32
+byte read succeeding, the next 62 byte read returning nothing, a 63 byte read returning 62 and a 256
+byte read returning 124: exactly what a device with a strange size limit would look like, and
+entirely one stale report. A transfer here has to be drained to its acknowledgement, not to its byte
+count.
 
 The reply layout, which was not established from the images:
 
@@ -716,35 +740,88 @@ f0 50                      done
 * **The count on the wire is not biased by one.** 256 requested, 256 delivered, as
   62+62+62+62+6+2. The `INCF` that suggested a bias belongs to something else.
 
-### GET_VERSION's twelve bytes, five of them identified
+### GET_VERSION's twelve bytes, six identified by prediction
 
-The block from this remote was `02 11 1c 15 e0 47 0c 02 00 00 02 02`, and `concordance -i` on the
-same unit prints skin 71, firmware 0.2, hardware 1.1.0, external flash `15:1C`, protocol 14.
+The 600 gave `02 11 1c 15 e0 47 0c 02 00 00 02 02`. Laid beside `concordance -i` on the same unit,
+six fields had a reading. **That reading was then written down as a prediction for the Harmony One,
+before the One was read**, and the One gave `34 05 c8 1f c0 36 0c 34 34 16 34 34`: the first six
+bytes exactly as predicted.
 
-| Field | Value | Reading |
-|---|---|---|
-| 0 | `0x02` | firmware version `0.2`, as two nibbles |
-| 1 | `0x11` | hardware version `1.1`, as two nibbles |
-| 2 | `0x1c` | flash device id |
-| 3 | `0x15` | flash manufacturer id, so the pair is concordance's `15:1C` |
-| 4 | `0xe0` | **candidate:** protocol 14 in the high nibble, since `0xE0 >> 4` is 14 |
-| 5 | `0x47` | skin, 71 decimal, which `bcdDevice` says independently |
-| 6 to 11 | `0c 02 00 00 02 02` | not identified |
+| Field | 600 | One | Reading |
+|---|---|---|---|
+| 0 | `0x02` | `0x34` | firmware version, as two nibbles: `0.2` and `3.4` |
+| 1 | `0x11` | `0x05` | hardware version, as two nibbles: `1.1` and `0.5` |
+| 2 | `0x1c` | `0xc8` | flash device id |
+| 3 | `0x15` | `0x1f` | flash manufacturer id, so the pairs are `15:1C` and `1F:C8` |
+| 4 | `0xe0` | `0xc0` | protocol in the high nibble: 14 and 12 |
+| 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
+| 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
+| 7 | `0x02` | `0x34` | equals field 0 on both |
+| 8 | `0x00` | `0x34` | unidentified. Equals field 0 on the One and not on the 600 |
+| 9 | `0x00` | `0x16` | unidentified |
+| 10 | `0x02` | `0x34` | equals field 0 on both |
+| 11 | `0x02` | `0x34` | equals field 0 on both |
 
-Fields 2 and 3 are the 16-bit SPI read the firmware performs with the chip select low, which was
-already characterised as "the flash id" from the image; now it has a value that matches a second
-source. Field 1 is the byte built by the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence, which was already
-characterised as packing two values into one byte.
+That is six fields agreeing across two architectures, with the second remote differing in every one
+of the values the reading predicts. Fields 2 and 3 are the 16-bit SPI read the firmware performs with
+the chip select low, characterised as "the flash id" from the image alone; fields 0 and 1 are the
+packed nibble shape the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence builds. So two of the six are
+agreements between a disassembly and a device.
 
-**One remote, so this is a correspondence and not yet a fact.** Five fields matching printed values
-by position could still contain a coincidence, and field 4 is a guess with one bit of evidence.
-Reading the Harmony One, which differs in skin, firmware, hardware version and flash part, is what
-would settle it, and its `concordance -i` output is already in the lab.
+**What is not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a reading:
+three copies of the firmware version is a strange thing for a version block to carry, and the more
+likely explanation is that they are version numbers of other components which happen to match on both
+of these remotes. Fields 8 and 9 are unexplained, and `0x16` on the One is the only value in the block
+that has no counterpart anywhere in concordance's output. Concordance prints three things this block
+could plausibly carry that are still unplaced: firmware type, the third component of the hardware
+version, and `IRL, ORL, FRL`.
+
+### Internal program memory: `0xFF` reads it, `0xFE` does not, and `MCU_ID` is out of reach
+
+Sent to the Harmony One. **A `READ_FLASH` with top address byte `0xFF` returns internal program
+memory; the same read with `0xFE` returns nothing at all.** That answers which of the two the
+sub-selector wants, which the images could not: both values reach the same body, and only one of them
+produces data.
+
+The window maps one to one from program address zero, and what is there says so:
+
+```
+d2 ef 07 f0   GOTO, at program address 0x0000, the reset vector
+12 00         RETURN
+...
+00 ef 02 f1   GOTO, at 0x0008, the high priority interrupt vector
+...
+00 ef 04 f1   GOTO, at 0x0018, the low priority interrupt vector
+```
+
+PIC18 puts exactly those three vectors at exactly those addresses, so this is the MCU's own flash at
+its own address zero, not a window onto something else. **This is code no image in the corpus
+contains**, because on arch 12 the application runs from external NOR at `0x020000`; what is here is
+whatever bootstraps that.
+
+**`MCU_ID` is not reachable this way.** The address is 24 bits with the top byte spent on the region
+selector, and the firmware bounds the remaining 16 to `0xFFC0`, so the reachable window is the first
+64 KiB of program memory. A PIC18 keeps its device id at `0x3FFFFE`, far outside it. So the arch 12
+part number stays inferred, and the route to measuring it is not this one. Recorded as a negative
+result rather than left as a task, because the task as written cannot be done.
+
+**A multi chunk read of this region restarted a remote.** With the pipe clean, 32 bytes read fine, 62
+read fine, and 63 produced no data and then the remote left the USB bus. It re-enumerated by itself,
+came back healthy, and its config still reads byte-identical to its dump. The owner saw it restart, so
+this is the device resetting and not a host artefact. Sixty-three is the first size that needs a
+second chunk on this path, for a single byte, while the config flash path handles 64, 100 and 256
+without complaint.
+
+Not diagnosed, and not retried. `packages/usb` refuses an internal read of more than one chunk, which
+is a cap and not a fix; 62 bytes at a time is enough for what this region is wanted for. Worth stating
+plainly for anyone building on this: **every command in this session was a read**, and a read of this
+region still perturbed a running remote.
 
 ### Live RAM, and upstream's selector confirmed wrong for this architecture
 
 `READ_MISC` selector `0x07` at data address `0x1C1`, the 600's command state variable, returns
-**10**. Ten is the state `READ_MISC` itself sets. So the read observes the command that is doing the
+**10**, and so does `0x284` on the Harmony One, which is where the same variable lives on arch 12. Ten
+is the state `READ_MISC` itself sets. So the read observes the command that is doing the
 reading, which is a closure that no amount of plausible-looking bytes could fake: it is live memory
 of a running remote, at an address predicted from the disassembly, holding the value the
 disassembly says it should hold at that instant.
@@ -770,13 +847,12 @@ to settle, and a list that only ever grows is not a status.
 
 ### Still open
 
-* **Six of GET_VERSION's twelve bytes**, and confirming the other six on a second remote. Fields
-  `0x0c 0x02 0x00 0x00 0x02 0x02` on the 600 are unidentified, and concordance prints values this
-  block could plausibly carry that are not yet placed: firmware type 0, the third component of
-  hardware version 1.1.0, and `IRL, ORL, FRL: 0, 0, 0`.
-* Which of `0xFE` and `0xFF` is which for internal program memory, and how the 24-bit address maps
-  onto the part's program memory. Nothing has been sent down that path yet, so `MCU_ID` is still
-  unmeasured.
+* **Fields 8 and 9 of the version block**, and what fields 7, 10 and 11 are versions of, given that
+  they repeat field 0 on both remotes. Concordance prints firmware type, the third component of the
+  hardware version, and `IRL, ORL, FRL`, none of which is placed.
+* **Why a 63 byte read of internal program memory restarts a remote.** Capped rather than understood.
+* **Another route to `MCU_ID`**, since the internal read window is the first 64 KiB and the device id
+  is at `0x3FFFFE`. The arch 12 part number stays inferred until one is found.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 * Whether `0x28`, GET_VERSION's code, means anything in its low nibble. It is not a payload length:
   it would say 15 where the firmware copies 12, and the acknowledgement shows the nibble is not a

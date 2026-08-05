@@ -1,14 +1,19 @@
 /**
  * The command layer: a remote, and the read operations version 1 of the application needs.
  *
- * Status: **`getVersion`, `readRam` and `readFlash` have run against a Harmony 600 and are measured,
- * not inferred.** The verification that matters is `readFlash`: 256 bytes read off the remote are
- * byte-identical to the lab dump of that same unit, which is an answer obtained without this code.
- * The first run also corrected two things this file had assumed, both recorded in `protocol.ts`
- * where they belong: an acknowledgement's length nibble is `0` with the command byte following
- * anyway, and a data chunk is `0x6A` with a sequence byte ahead of 62 data bytes.
+ * Status: every read here has run against **two remotes and both architectures**, a Harmony 600 and
+ * a Harmony One, and is measured rather than inferred. The verification that matters is `readFlash`:
+ * 256 bytes read off each remote are byte-identical to the lab dump of that same unit, which is an
+ * answer obtained without this code.
  *
- * `readInternalMemory` and every write path have still never touched a device.
+ * Three things the hardware corrected, all recorded where they belong rather than quietly fixed. An
+ * acknowledgement's length nibble is `0` with the command byte following anyway. A data chunk is
+ * `0x6A` with a sequence byte ahead of 62 data bytes. And `readFlash` used to stop as soon as it had
+ * the bytes it asked for, leaving the trailing acknowledgement in the pipe for the next command to
+ * trip over, which looked exactly like a device with a size limit.
+ *
+ * `readInternalMemory` works and is capped at one chunk, because a multi chunk read of that region
+ * restarted a remote. See the method. Every write path has still never touched a device.
  *
  * The one thing the firmware makes certain is that **replies are asynchronous**: a handler parses
  * its arguments, sets a state, and returns; the main loop acts on the state later. So every read
@@ -16,6 +21,7 @@
  * already waiting.
  */
 import {
+  FLASH_CHUNK_DATA,
   GET_VERSION,
   MISC_RAM,
   READ_FLASH,
@@ -143,7 +149,13 @@ export class HarmonyRemote {
     let filled = 0;
     let idle = 0;
     let sequence: number | undefined;
-    while (filled < count && idle < this.idlePolls) {
+    let finished = false;
+    // Loop until the acknowledgement, not until the byte count is satisfied. Stopping early leaves
+    // the trailing `0xF0 0x50` in the pipe, and the next command then reads it first and concludes
+    // its own transfer is over. That is not hypothetical: it produced a run where a 32 byte read
+    // succeeded, the next 62 byte read returned nothing, and a 256 byte read returned 124, which
+    // looks like a device with a mysterious size limit and is really one stale report.
+    while (!finished && idle < this.idlePolls) {
       const report = await this.transport.read(this.timeoutMs);
       if (report === undefined) {
         idle += 1;
@@ -151,7 +163,10 @@ export class HarmonyRemote {
       }
       idle = 0;
       const reply = decodeReply(report);
-      if (reply.kind === 'ack' && reply.command === READ_FLASH) break;
+      if (reply.kind === 'ack' && reply.command === READ_FLASH) {
+        finished = true;
+        break;
+      }
       if (reply.kind !== 'flash-data') {
         throw new RemoteError(`a flash read answered with a ${reply.kind} reply`);
       }
@@ -170,6 +185,11 @@ export class HarmonyRemote {
     if (filled !== count) {
       throw new RemoteError(`flash read returned ${filled} of ${count} bytes`);
     }
+    if (!finished) {
+      // The bytes are all here but the remote never said it was done, so something is still queued
+      // and the next command would inherit it. Better to fail the read that noticed.
+      throw new RemoteError(`flash read got ${count} bytes but no completion, so the pipe is dirty`);
+    }
     return out;
   }
 
@@ -182,6 +202,21 @@ export class HarmonyRemote {
    * same body. Telling them apart is one of the things this method exists to do.
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
+    if (count > FLASH_CHUNK_DATA) {
+      // Observed on the bench, and confirmed by the owner watching the remote: a 63 byte read of
+      // internal program memory made a Harmony One stop answering and re-enumerate. It restarted
+      // and was fine afterwards, config intact, but it restarted. 63 is the first size that needs a
+      // second chunk on this path, for a single byte, and the config flash path handles 64, 100 and
+      // 256 without complaint, so the second chunk is where the difference is.
+      //
+      // Not diagnosed, so this is a cap rather than a fix, and it stays until somebody understands
+      // the path well enough to lift it. One chunk per command is enough for what this is for: the
+      // device id words, and reading the internal firmware in 62 byte steps.
+      throw new RemoteError(
+        `an internal memory read of ${count} bytes needs more than one chunk, and a multi chunk ` +
+          `read of this region has been seen to restart a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
+      );
+    }
     if (offset < 0 || offset > 0xffc0) {
       // The firmware bounds the 16-bit offset to 0xFFC0, which is 0x10000 minus a full report, so
       // an offset plus one report cannot leave the window. Refusing here reports the rule; sending

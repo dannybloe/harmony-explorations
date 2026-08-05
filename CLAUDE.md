@@ -367,22 +367,31 @@ step 3 is done as far as the firmware can take it: the corpus spans four archite
 container parser is general across all of them and now exists twice, in Python and TypeScript, held
 equal by golden vectors, and `docs/usb-protocol.md` covers both directions of every command.
 
-**Three read commands have run against the programmed Harmony 600**, from our own host code:
-GET_VERSION, READ_MISC and READ_FLASH. The flash read is byte-identical to the lab dump of that unit
-over 256 bytes, which is verification against an answer obtained without this code. Nothing has been
-written to a remote. `docs/usb-protocol.md` section 4 is the measured part. What still waits:
+**The read path works on both architectures**, from our own host code: GET_VERSION, READ_MISC and
+READ_FLASH on the programmed Harmony 600 and on the spare Harmony One. On each, 256 bytes of config
+flash come back byte-identical to that unit's lab dump. Six fields of the version block were predicted
+from the 600 and confirmed on the One. **Nothing has been written to a remote.**
+`docs/usb-protocol.md` section 4 is the measured part.
 
-* **a second remote for the GET_VERSION field mapping.** Five of twelve fields are identified against
-  `concordance -i`, on one remote, which is below the two-sample bar. The Harmony One differs in
-  skin, firmware, hardware version and flash part, and its concordance output is already in the lab,
+**A read restarted a remote, once.** A 63 byte read of internal program memory (`READ_FLASH` with top
+address byte `0xFF`) made the Harmony One leave the USB bus. It re-enumerated by itself and its config
+still matches its dump. Not diagnosed; `packages/usb` refuses a multi chunk read of that region. Treat
+that path as the one place where read only is not the same as harmless.
+
+**`MCU_ID` is not reachable** and that is now a finding rather than a task: the internal read window is
+the first 64 KiB and a PIC18 keeps its device id at `0x3FFFFE`. The arch 12 part number stays inferred.
+
+What still waits:
+
+* fields 8 and 9 of the version block, and what fields 7, 10 and 11 are versions of,
 * the concordance cross-check of a full config read on the same remote,
 * a complete firmware dump of both bench remotes, since concordance truncates the 600 at 65536 of
   70336 bytes,
 * `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
   reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
 * naming ten of GET_VERSION's twelve fields,
-* telling the internal memory sub-selectors `0xFE` and `0xFF` apart, which nothing has been sent
-  down yet and which is the route to `MCU_ID`.
+* a firmware dump of both bench remotes, which is now a matter of many small reads rather than an
+  unknown.
 
 Step 5 is next: **the read only application.** Electron shell with no network access at all,
 enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a
