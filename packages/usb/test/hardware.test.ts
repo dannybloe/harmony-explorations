@@ -23,9 +23,15 @@ import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST, isHarmony, listHarmony } f
 const HARMONY_600 = 0xc122;
 const HARMONY_ONE = 0xc121;
 
-/** The attached remote's product id, or undefined when nothing is attached. */
+/**
+ * The attached remote's product id, or undefined when nothing is attached or more than one is.
+ *
+ * Undefined for "more than one" on purpose: every test below asserts something about a specific
+ * unit, and with two remotes on the bus there is no answer to "the attached one". They skip.
+ */
 async function attached(): Promise<number | undefined> {
-  return (await listHarmony())[0]?.productId;
+  const all = await listHarmony();
+  return all.length === 1 ? all[0]?.productId : undefined;
 }
 
 test('node-hid loads and enumerates the bus', async () => {
@@ -73,13 +79,11 @@ test('a flash read matches the lab dump of the same remote, byte for byte', asyn
   // exist and only the spare's dump is named here, so a programmed One reads as the wrong unit and
   // skips rather than failing: this test is about the read path, not about identifying a remote.
   const product = await attached();
-  const which = product === HARMONY_600 ? 'h600_config'
-    : product === HARMONY_ONE ? 'one_config_unprogrammed'
-    : undefined;
-  if (which === undefined) {
-    t.skip('no bench remote attached');
+  if (product !== HARMONY_600 && product !== HARMONY_ONE) {
+    t.skip('exactly one bench remote has to be attached');
     return;
   }
+  const which = product === HARMONY_600 ? 'h600_config' : 'one_config_unprogrammed';
   const dump = load(which);
   if (dump === undefined) {
     t.skip(`no lab dump named ${which} to compare against`);
@@ -87,7 +91,7 @@ test('a flash read matches the lab dump of the same remote, byte for byte', asyn
   }
 
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony(), { timeoutMs: 500 });
+  const remote = new HarmonyRemote(await openHarmony({ productId: product }), { timeoutMs: 500 });
   try {
     const read = await remote.readFlash(product === HARMONY_600 ? 0x030000 : 0x040000, 256);
     // The container sits behind the EZHex XML header in the dump, so find it rather than assume an
@@ -109,7 +113,7 @@ test('the version block is twelve bytes and the flash id in it matches concordan
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony(), { timeoutMs: 500 });
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_600 }), { timeoutMs: 500 });
   try {
     const fields = await remote.getVersion();
     assert.equal(fields.length, 12);
@@ -129,7 +133,7 @@ test('live RAM reads return varying values, and selector 0x06 is not the same ac
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony(), { timeoutMs: 500 });
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_600 }), { timeoutMs: 500 });
   try {
     // 0x1C1 is the 600's command state variable. Reading it during a READ_MISC returns 10, which is
     // the state READ_MISC itself sets: the read observes the command that is doing the reading. That
@@ -149,7 +153,7 @@ test('the two internal sub-selectors address different memory, and 0xFE maps fro
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony(), { timeoutMs: 500 });
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
   try {
     // This document once said 0xFF reads program memory and 0xFE returns nothing at all. Both
     // halves were wrong, so the correction is pinned rather than described: the same offset through
@@ -176,7 +180,7 @@ test('the 0xFF page carries image headers and a 64 byte identity block', async (
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony(), { timeoutMs: 500 });
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
   try {
     // 0x48 0x47 at offset 8 is the firmware image header this project already parses, in
     // src/harmony/firmware.py. Three separate offsets carry one.

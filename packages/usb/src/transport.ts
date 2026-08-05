@@ -125,9 +125,39 @@ export async function listHarmony(): Promise<FoundRemote[]> {
  * It is still read only in intent, and the intent is not what enforces it: the write paths are
  * refused by `rails.ts` whether or not the device is open.
  */
-export async function openHarmony(): Promise<Transport> {
-  const found = (await listHarmony())[0];
-  if (found === undefined) throw new TransportError('no Harmony remote found on the USB bus');
+/** Which remote to open, when more than one is attached. */
+export interface RemoteSelector {
+  readonly productId?: number;
+  readonly path?: string;
+}
+
+export async function openHarmony(select: RemoteSelector = {}): Promise<Transport> {
+  const all = await listHarmony();
+  const candidates = all.filter(
+    (d) =>
+      (select.productId === undefined || d.productId === select.productId) &&
+      (select.path === undefined || d.path === select.path),
+  );
+  if (candidates.length === 0) {
+    throw new TransportError(
+      all.length === 0
+        ? 'no Harmony remote found on the USB bus'
+        : `no attached remote matches the selector; attached: ${all
+            .map((d) => `0x${d.productId.toString(16)}`)
+            .join(', ')}`,
+    );
+  }
+  if (candidates.length > 1) {
+    // Refusing beats picking. Two Harmony Ones exist on this bench, one programmed and one the
+    // spare write target, and they enumerate identically. Anything that asserts a per unit value,
+    // or one day writes, must not have "whichever came first" decide which device it meant.
+    throw new TransportError(
+      `${candidates.length} remotes match; pass a path to say which. Attached: ${all
+        .map((d) => `0x${d.productId.toString(16)} at ${d.path ?? 'no path'}`)
+        .join(', ')}`,
+    );
+  }
+  const found = candidates[0] as FoundRemote;
   if (found.path === undefined) throw new TransportError('the remote reported no device path');
   const hid = await import('node-hid');
   return transportOver(new hid.HID(found.path));

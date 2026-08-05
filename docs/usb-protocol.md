@@ -849,6 +849,29 @@ themselves are not published here, per `CLAUDE.md`: a remote's serial GUIDs are 
 That the first field is `0xEE` filled is itself consistent. This is the never programmed spare, and
 `concordance -i` reports its serial as all E's, so both readers of that location agree it is unset.
 
+#### A second prediction, for the Harmony 600, before reading it
+
+Everything above is one remote and one architecture, so it predicts the other. Arch 14 differs where
+it matters most: the application runs from **internal** flash with an exec base of `0x9000`, where
+arch 12 runs from external NOR. So if the paging is the same, the 600's own firmware is inside this
+window and readable.
+
+| Predicted | Why it is worth writing down |
+|---|---|
+| `0xFE` maps from program address zero, with the three PIC18 vectors | the paging is a property of the command, not of the model |
+| an identity block at `0xFF` `+0xF400` holding the three GUIDs `concordance -i` reports for that unit | same offset as the One, which the arch 12 result alone cannot establish |
+| `0xFE` `+0x9000` onward is the 600's application firmware | arch 14's exec base, already established from its image |
+
+The third one carries a check worth more than the other two together. The lab holds a dump of the
+600's firmware made by other software months ago, `600-0.2-code-base0x9000-TRUNCATED64k.bin`, which
+covers program `0x09000` to `0x19000`. **65536 bytes have to match byte for byte.**
+
+And if they do, the 4800 bytes concordance never returned, program `0x19000` to `0x1A2C0`, come back
+with them. That is one of the open items at the end of this document, and it would be closed not by
+trusting this read path but by 65536 bytes of it agreeing with an answer obtained without it.
+
+Reads needed: 462 through `0xFE` and 674 through `0xFF`, at 62 bytes each.
+
 #### How the prediction did
 
 Recorded above before any of this was read:
