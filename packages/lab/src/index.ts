@@ -40,6 +40,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The same image, complete, read off the remote across both internal pages. Kept alongside the
   // truncated one rather than replacing it: the agreement between the two is the evidence.
   h600_code_complete: '600-0.2-code-base0x9000-COMPLETE.bin',
+  // The Harmony One's 0xFE internal page. The 0xFF page is deliberately absent: it holds that
+  // unit's identity block.
+  one_internal_fe: 'one-3.4-internal-page-fe.bin',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h525_config: 'config.EZHex',

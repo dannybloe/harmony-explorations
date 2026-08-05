@@ -90,6 +90,27 @@ class TestFirmwareHeader(unittest.TestCase):
             self.skipTest('need both 600 images')
         self.assertEqual(old, new[:len(old)], 'the complete image contains the truncated one')
 
+    def test_the_ones_internal_page_holds_an_image_that_verifies(self):
+        """Code that no package in the corpus contains, checked by its own header.
+
+        On arch 12 the application runs from external NOR, so nothing in any `.hfw` covers the
+        internal flash. There is no second copy to compare against, which is why the checksum is
+        the whole argument: the image at +0x1000 declares its own length and its own checksum, and
+        both agree.
+        """
+        page = lab.load('one_internal_fe')
+        if page is None:
+            self.skipTest("the One's internal page is not in this lab")
+        self.assertEqual(len(page), 0xFFFE, 'two bytes short of a page, per the offset clamp')
+        h = firmware.parse_header(page[0x1000:])
+        self.assertTrue(h.has_magic)
+        self.assertEqual(h.version_bcd, 0x34, 'firmware 3.4, like the remote it came from')
+        size = firmware.recover_size(page[0x1000:])
+        self.assertEqual(size, 45356)
+        self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
+        # The bootloader sits below it and has no header of its own: the reset vector is at zero.
+        self.assertEqual(page[0:2], b'\xd2\xef', 'GOTO at the reset vector')
+
     def test_recover_size_checks_rather_than_guesses_when_it_can(self):
         """It used to take the smallest candidate at least as long as the buffer.
 

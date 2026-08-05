@@ -412,8 +412,14 @@ What still waits:
 
 **The Harmony 600's firmware is no longer truncated.** Read off the remote across both internal
 pages, 70336 bytes, and its own header checksum verifies over all of them where the 65536 byte
-concordance dump does not. The 65534 bytes both can express agree byte for byte. The One's internal
-memory is readable the same way and has not been dumped in full yet.
+concordance dump does not. The 65534 bytes both can express agree byte for byte.
+
+**The One's internal memory is dumped too**, both pages, `one-3.4-internal-page-fe.bin` and `-ff.bin`.
+It holds three images with the `48 47` header and all three verify their own checksums: 45356 bytes
+at `0xFE+0x1000`, 8438 at `0xFF+0x0000`, 634 at `0xFF+0xE000`. This is code no `.hfw` contains, since
+arch 12 runs its application from external NOR. The `0xFF` page is **not** in `tests/lab.py`, on
+purpose: it carries that unit's identity block. **Version block field 9 is the version of the image
+at `0xFF+0x0000`**, which is what `0x16` on the One was.
 
 Step 5 is next: **the read only application.** Electron shell with no network access at all,
 enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a

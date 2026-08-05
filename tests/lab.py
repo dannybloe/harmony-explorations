@@ -40,6 +40,11 @@ IMAGES = {
     # The same image, complete, read off the remote across both internal pages. Kept alongside the
     # truncated one rather than replacing it: the agreement between the two is the evidence.
     'h600_code_complete': '600-0.2-code-base0x9000-COMPLETE.bin',
+    # The Harmony One's 0xFE internal page, read off the spare remote: the bootloader and the
+    # image at +0x1000, which no package in the corpus contains because arch 12 runs its
+    # application from external NOR. The 0xFF page is deliberately absent from this table, since
+    # it holds that unit's identity block.
+    'one_internal_fe': 'one-3.4-internal-page-fe.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
     # Config dumps out of the corpus. The two public sample sets are mirrored from

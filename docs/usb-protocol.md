@@ -759,7 +759,7 @@ bytes exactly as predicted.
 | 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
 | 7 | `0x02` | `0x34` | equals field 0 on both |
 | 8 | `0x00` | `0x34` | unidentified. Equals field 0 on the One and not on the 600 |
-| 9 | `0x00` | `0x16` | unidentified |
+| 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000` in internal memory** |
 | 10 | `0x02` | `0x34` | equals field 0 on both |
 | 11 | `0x02` | `0x34` | equals field 0 on both |
 
@@ -769,13 +769,25 @@ the chip select low, characterised as "the flash id" from the image alone; field
 packed nibble shape the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence builds. So two of the six are
 agreements between a disassembly and a device.
 
-**What is not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a reading:
-three copies of the firmware version is a strange thing for a version block to carry, and the more
-likely explanation is that they are version numbers of other components which happen to match on both
-of these remotes. Fields 8 and 9 are unexplained, and `0x16` on the One is the only value in the block
-that has no counterpart anywhere in concordance's output. Concordance prints three things this block
-could plausibly carry that are still unplaced: firmware type, the third component of the hardware
-version, and `IRL, ORL, FRL`.
+**Field 9 is placed, and by the thing this paragraph used to say did not exist.** It read: "`0x16` on
+the One is the only value in the block that has no counterpart anywhere in concordance's output".
+The counterpart is not in concordance's output, it is in the remote. Reading the One's internal
+memory in full turned up three images carrying the `48 47` header, and the one at `0xFF` `+0x0000`
+has `0x16` in its header's version byte. On the 600 that address holds no image, only zeros, and the
+600's field 9 is `0x00`. Two remotes, a distinctive value in a block otherwise full of `0x34`, and an
+absence matching an absence.
+
+**What is still not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a
+reading: three copies of the firmware version is a strange thing for a version block to carry, and
+the likelier explanation is that they version other components which happen to match on both of these
+remotes. Field 8 is `0x34` on the One and `0x00` on the 600, so it behaves like field 9: a version
+that is present on one remote and absent on the other. The One has two more images versioned `0x34`,
+at `0xFE` `+0x1000` and `0xFF` `+0xE000`, and **neither of those addresses has been read on the 600**.
+If field 8 names one of them, the 600 has no image there. That is the next thing to read, and it is
+two reads.
+
+Concordance prints three things this block could plausibly carry that are still unplaced: firmware
+type, the third component of the hardware version, and `IRL, ORL, FRL`.
 
 ### Internal memory: `0xFE` and `0xFF` are two pages, not one selector and a dud
 

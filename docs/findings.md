@@ -2418,11 +2418,39 @@ candidate can be checked. Both cases now answer 70336. A heuristic that had a cl
 was not using it is a small thing, but it is the same shape as the mistake in section 22: an answer
 produced without evidence, in a place where evidence was cheap.
 
+### The One, swept in full, and a field that stopped being unexplained
+
+The One's two pages were read the same way afterwards, 2114 reads, ten seconds. There is no second
+copy of any of it to compare against, because on arch 12 the application runs from external NOR and
+no `.hfw` package covers the internal flash. So the checksums are the whole argument, and there are
+three of them:
+
+| Image | length | version | checksum |
+|---|---|---|---|
+| `0xFE` `+0x1000` | 45356 | 3.4 | `0xDB1C`, verifies |
+| `0xFF` `+0x0000` | 8438 | 1.6 | `0xCB09`, verifies |
+| `0xFF` `+0xE000` | 634 | 3.4 | `0xD9E9`, verifies |
+
+Three independent images each validating their own contents. Below the first sits the bootloader,
+from the reset vector at zero to `+0x1000`, with no header of its own.
+
+**That middle row places version block field 9.** Section 4 of `docs/usb-protocol.md` had it as
+unexplained, with the remark that `0x16` on the One "is the only value in the block that has no
+counterpart anywhere in concordance's output". True, and the counterpart was never going to be in
+concordance's output: it is in the remote. The image at `0xFF` `+0x0000` carries `0x16` in its
+header's version byte, which is a distinctive value in a block otherwise full of `0x34`. The 600 has
+no image at that address, only zeros, and its field 9 is `0x00`.
+
+Field 8 behaves the same way, `0x34` on the One against `0x00` on the 600, and the One has two more
+images versioned `0x34`. Neither of their addresses has been read on the 600, so the obvious test is
+two reads.
+
 ### What it does not settle
 
-`MCU_ID` is still out of reach, per section 22, so the arch 12 part number stays inferred. The One's
-internal memory is readable the same way and has not been swept in full. And the 700 2.8 image
-remains worth keeping: it is a second arch 14 sample and the only one for that model.
+`MCU_ID` is still out of reach, per section 22, so the arch 12 part number stays inferred. The last
+two bytes of every page are unreadable, because the offset clamps at `0xFFC0` and 62 bytes from
+there end at `0xFFFD`; no image runs that far, so nothing here depends on them. And the 700 2.8
+image remains worth keeping: it is a second arch 14 sample and the only one for that model.
 
 ## References
 
