@@ -805,6 +805,30 @@ selector, and the firmware bounds the remaining 16 to `0xFFC0`, so the reachable
 part number stays inferred, and the route to measuring it is not this one. Recorded as a negative
 result rather than left as a task, because the task as written cannot be done.
 
+#### A prediction about three offsets inside that window, written down before reading them
+
+What has been read of this region so far is its first 62 bytes, which is why it has been described
+as "whatever bootstraps the application" and nothing more. The window runs to `0xFFC0`, and the
+hypothesis under test is that the top of it is not code at all but per unit data:
+
+| Offset | Predicted contents |
+|---|---|
+| `0xE000` | a library or support image, distinct from the bootstrap at zero |
+| `0xF400` | a per unit identifier, 64 bytes |
+| `0xF640` | a manufacturing identifier, 64 bytes |
+
+Recorded in advance because one of these has an answer obtained without this code: `concordance -i`
+prints a `Serial Number` for the connected remote, and the lab holds that output for this exact
+unit, taken months earlier. So `0xF400` either matches a value nobody derived from here, or it does
+not.
+
+If it does hold, then the `MCU_ID` negative result above needs re-examining. Not because the device
+id moves, but because "the reachable window is application bootstrap code" would turn out to be an
+assumption made from one 62 byte read at offset zero rather than a fact about the window.
+
+The offsets themselves are a hypothesis and are not derived here. They are worth testing rather
+than arguing about, since a read costs nothing and the answer is checkable.
+
 **A read of this region can restart the remote.** Found by accident, then reproduced deliberately on
 the spare unprogrammed Harmony One, with the owner watching the device restart, so it is the device
 resetting and not a host artefact.
