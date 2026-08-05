@@ -1,9 +1,11 @@
 # The Harmony USB protocol, from the firmware
 
-**Status: in progress.** The transport is complete and quoted from the device's own
-descriptors. The command layer has its dispatch table, its length nibble mapping and its
-control flow; the per command request and response layouts are still open, and so is the
-`MISC` sub-command question. Section 3 lists what is missing. This document is the
+**Status: in progress.** The transport is complete, quoted from the device's own descriptors and
+confirmed against the Harmony 600 on the bench. The command layer has its dispatch table, its
+length nibble mapping, its state machine, and the request and response layouts of the three
+commands a read-only application needs: `GET_VERSION`, `READ_FLASH` and `READ_MISC`. Live RAM
+over USB is confirmed. `WRITE_FLASH`, `ERASE_FLASH` and `START_IRCAP` are not laid out, and the
+`MISC` write sub-commands are open. Section 3 lists what is missing. This document is the
 deliverable of step 3 of `docs/roadmap.md`, and it is being written as each part is
 established rather than at the end.
 
