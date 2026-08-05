@@ -168,6 +168,15 @@ previously flagged as a risk here has since been found to be wrong and corrected
 `tests/test_isa.py`, which now pins both encodings against the datasheet and against a real
 wait loop from the firmware.
 
+## Licence
+
+MIT, see [LICENSE](LICENSE). That covers everything in this repository: the tools, the
+documents and the derived data.
+
+It does **not** cover the Logitech firmware and config binaries the tools operate on. Those
+are not here and are not ours to license. Obtaining them is your affair, and
+[reference/checksums.md](reference/checksums.md) says where they came from.
+
 ## Safety
 
 **Do not write to, erase, or flash a remote.** These devices are irreplaceable and Logitech's
