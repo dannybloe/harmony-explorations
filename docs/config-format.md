@@ -220,6 +220,33 @@ infrared group arrays are laid out in that space. A section's own data can end l
 pointer, with another section's sub-structures filling the rest, so a large gap is not evidence of
 a large section. See section 36.
 
+### Base slot 2: the last unnamed one
+
+**Not established.** Recorded here so the next attempt starts from a reading rather than a search.
+
+Eight bytes on arch 8, arch 9 and arch 14, nine on arch 12, and it sits immediately before slot 3.
+The arch 12 consumer is at `0x2DB68` on the Harmony One 3.4 image, reached through the ordinary
+section seeker; it reads a `u24` at `+0x00` and a second at `+0x03`, tests the first for zero, and
+uses the second as a pointer. No arch 14 image seeks this slot at all, so whatever reads it there
+is not the seeker.
+
+The bytes, for reference:
+
+| container | arch | bytes |
+|---|---|---|
+| 700, 600 | 14 | `00 40 00 00 1e 00 00 20` |
+| 650 safe mode | 14 | `00 40 00 00 0e 00 00 10` |
+| One, both | 12 | `10 00 00 f0 ff 3f 00 00 40` |
+| 525 | 9 | `00 20 00 00 07 00 00 08` |
+| 880 | 8 | `00 3c 00 00 1e 00 e0 1f` |
+
+Read as `u16` then two `u24` the last field is a round flash size on four architectures,
+`0x080000`, `0x100000`, `0x200000` and `0x1FE000`, with the middle one below it; arch 12's nine
+bytes read as three `u24` give `16`, `0x3FFFF0` and `0x400000`, which is the same shape with a
+sixteen byte region at the top of a four megabyte chip. Two different splits agreeing on the shape
+is suggestive and not evidence, and neither can be checked against a consumer, because the only
+consumer is on the architecture whose length does not match the others.
+
 ### Base slot 4: the firmware event map
 
 **Confirmed on ten configs across four architectures**, and the same shape in every one.
