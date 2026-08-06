@@ -274,5 +274,75 @@ class TestTheStateVariableTable(unittest.TestCase):
         self.assertGreaterEqual(len(boundaries), 6)
 
 
+class TestTheEventMap(unittest.TestCase):
+    """findings.md section 36: base slot 4, and the block it reserves in 0x7E's numbering."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_the_shape_is_the_same_in_every_config(self):
+        from harmony import gspm
+        bases = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                table = gspm.parse(lab.load(name)).event_map()
+                self.assertEqual(len(table.entries), 30)
+                self.assertTrue(table.keys_are_contiguous, 'keys 0 to 29')
+                low, high = table.reserved_block
+                self.assertEqual(high - low, 29, 'the values are contiguous too')
+                self.assertEqual(table.fallback, low, 'the fallback is the value for key 0')
+                self.assertEqual(table.length, gspm.EVENT_MAP_BYTES)
+                bases.add(low)
+        self.assertGreaterEqual(len(bases), 4, 'the base varies, so matching it means something')
+
+    def test_the_section_is_much_smaller_than_the_gap_to_the_next_pointer(self):
+        """The correction section 36 carries: a gap is an upper bound, not a size.
+
+        The bytes in between are slot 5's infrared group arrays, which is asserted rather than
+        assumed: every group array falls inside the gap.
+        """
+        from harmony import gspm
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                start = c.sections[gspm.arch_slot(c.architecture, gspm.EVENT_MAP_SLOT)].address
+                gap = min([s.address for s in c.sections if s.address > start]
+                          + [c.end_addr]) - start
+                self.assertGreater(gap, 3 * gspm.EVENT_MAP_BYTES, 'the gap really is much larger')
+                for group in c.pointer_array(
+                        gspm.arch_slot(c.architecture, gspm.IR_TABLE_SLOT)):
+                    self.assertTrue(start + gspm.EVENT_MAP_BYTES <= group < start + gap,
+                                    'a group array outside the gap')
+
+    def test_0x7e_avoids_the_reserved_block(self):
+        """Two writers of one register share a numbering space, and they do not collide.
+
+        One exception, on the 525, asserted by name so it cannot grow quietly.
+        """
+        from harmony import gspm
+        collisions = {}
+        operands = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            low, high = c.event_map().reserved_block
+            values = {i.operand for lst in (c.action_lists() or []) for i in lst
+                      if i.opcode == 0x7E}
+            operands += len(values)
+            inside = sorted(v for v in values if low <= v <= high)
+            if inside:
+                collisions[name] = inside
+        self.assertEqual(collisions, {'h525_config': [25]})
+        self.assertEqual(operands, 1246, 'pin the count the claim rests on')
+
+    def test_the_block_abuts_the_configs_own_numbering_on_the_one(self):
+        """0 to 9, then the reserved 10 to 39, then 40 upward. One allocator, one pool."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('one_config'))
+        low, high = c.event_map().reserved_block
+        values = {i.operand for lst in (c.action_lists() or []) for i in lst if i.opcode == 0x7E}
+        self.assertEqual((low, high), (10, 39))
+        self.assertEqual(max(v for v in values if v < low), low - 1)
+        self.assertEqual(min(v for v in values if v > high), high + 1)
+
+
 if __name__ == '__main__':
     unittest.main()

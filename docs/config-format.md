@@ -165,10 +165,43 @@ Known so far:
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
 | 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
+| 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
-| all others | unknown | |
+| all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
+
+**The distance from one pointer to the next is an upper bound on a section's size, not its size.**
+Base slot 4 holds 125 bytes and the gap to slot 5 is between 419 and 1532 bytes, because slot 5's
+infrared group arrays are laid out in that space. A section's own data can end long before the next
+pointer, with another section's sub-structures filling the rest, so a large gap is not evidence of
+a large section. See section 36.
+
+### Base slot 4: the firmware event map
+
+**Confirmed on ten configs across four architectures**, and the same shape in every one.
+
+```
++0x00  u24  fallback        used when no key matches
++0x03  u16  count           thirty, always
++0x05  { u8 key; u24 value }[count]
+```
+
+Keys are `0` to `29`, contiguous. Values are `N` to `N + 29`, contiguous, and the fallback is `N`.
+Only `N` varies: 19 on the 700, 14 on the 600, 11 on the 525, 10 on both Ones, 4 on all four 880s.
+
+The firmware raises an event by loading a literal key and looking it up here, and the value goes to
+the same register opcode `0x7E`'s operand goes to. So the two share a numbering space, and the
+block `N` to `N + 29` is **reserved**: across ten configs `0x7E` names 1246 distinct operands and
+lands inside the block once, on the 525. On the programmed Harmony One the config uses 0 to 9, the
+block takes 10 to 39, and the config resumes at 40, abutting on both sides.
+
+Read with `gspm.event_map`.
+*What the thirty events are, and what the numbering space counts, are not established.*
+[findings.md](findings.md) section 36.
+
+**This section is 125 bytes**, not the 419 to 1532 that the distance to the next pointer reports.
+See the warning under "Sections" about what that distance means.
 
 ### Base slot 13: the state variable table
 

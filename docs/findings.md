@@ -3609,6 +3609,90 @@ Definitions, defaults or names are all plausible and none is checked.
 **What any individual variable means.** The table is sized and split; nothing here names entry 9,
 which is the one `0x71` reads most.
 
+## 36. Base slot 4 is the firmware event map, and section sizes are upper bounds
+
+The second slot labelled from section 35's map. It also produces a correction that applies to every
+section, not just this one.
+
+### The table
+
+Base slot 4 is a fixed shape, identical in all ten configs across four architectures:
+
+```
++0x00  u24  fallback        used when no key matches
++0x03  u16  count           thirty, in every config
++0x05  { u8 key; u24 value }[count]
+```
+
+The keys are `0` to `29`, contiguous, every time. The values are `N` to `N + 29`, contiguous, and
+the fallback equals `N`. Only `N` varies: 19 on the 700, 14 on the 600, 11 on the 525, 10 on both
+Harmony Ones, 4 on all four 880s.
+
+### The consumer
+
+`0x16B98` walks it looking for a key that matches `0xF37/0xF38`, and the callers set that key from
+a **literal constant**. Four sites on the 700 load `0x00`, `0x16`, `0x1A` and `0x1B`. So the key
+space is the firmware's, not the config's: the firmware raises event number 22 and the config says
+what event 22 means on this remote.
+
+The value it finds goes to `0xF2D/0xF2E`, **the same pair opcode `0x7E`'s operand goes to**, and
+then both call `0x1679E`. If no key matches, the fallback is used instead.
+
+`0x1679E` treats that pair as "the current item". When it changes, the routine seeks to the
+outgoing item's address and runs its **tag 7** action list through the tagged list runner at
+`0x1B71E`, which reads a count and then `{u8 tag; ...}` records and enqueues only the ones whose
+tag matches. So an item has handlers, and switching away runs one of them.
+
+### The closure
+
+Two different things write the same register, so they must share a numbering space, and they do
+not collide. Over ten configs, `0x7E` names 1246 distinct operands and lands inside the reserved
+block **once**.
+
+| config | reserved block | highest `0x7E` below it | lowest `0x7E` above it |
+|---|---|---|---|
+| 700 | 19 to 48 | 16 | 50 |
+| 600 | 14 to 43 | 11 | **44** |
+| One, programmed | 10 to 39 | **9** | **40** |
+| One, unprogrammed | 10 to 39 | **9** | 41 |
+| 880 a | 4 to 33 | 1 | **34** |
+| 525 | 11 to 40 | 7 | 41, and one operand of 25 sits inside |
+
+The bold entries abut the block exactly. On the programmed Harmony One the config uses 0 to 9, the
+block takes 10 to 39, and the config resumes at 40 with no gap on either side. That is one
+allocator handing out numbers from a single pool with a reserved range in the middle, and it is
+what makes the shared namespace a finding rather than a coincidence of ranges.
+
+The 525's operand 25 is the exception and is reported rather than explained.
+
+### Section sizes are upper bounds, not sizes
+
+**Slot 4's table is 125 bytes.** The distance from slot 4's pointer to slot 5's is between 419 and
+1532 depending on the config.
+
+The difference is not padding. It is **slot 5's infrared group arrays**, laid out in the gap. In
+nine of the ten configs the first group array starts at exactly `slot 4 + 125`, the byte after the
+event map ends; on the 525 it starts later still.
+
+That generalises. `docs/config-format.md` has said since the beginning that "the size comes from
+the distance to the next non NULL pointer", and that is a bound rather than a measurement: a
+section's own data can end long before the next section's pointer, with another section's
+sub-structures filling the space. Any reasoning that treated a large gap as a large section was
+reasoning about the wrong bytes.
+
+It also revises the geography of section 32 without changing its structure. Base slot 5 is the
+array of group pointers; the group arrays those point at physically live in slot 4's gap. The
+two level reading is unchanged, only where the second level sits.
+
+### What is not established
+
+**What the thirty events are.** Four keys are seen in the firmware and the rest are not traced.
+
+**What the numbering space counts**, which is still the `0x7E` question from section 33's commit.
+What is new is that `0x7E` and slot 4 share it and that thirty entries of it are reserved.
+
+**Why the fallback repeats the value for key 0**, in every config.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

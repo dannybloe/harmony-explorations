@@ -44,6 +44,16 @@ button to action map, and that nothing the six pointer arrays index is allocated
 Prefer that kind of conclusion: a described change that leaves a structure untouched rules the
 structure out, and ruling out is cheap and does not decay.
 
+**Do not start from scratch. Every slot from 3 to 17 already has a named firmware entry point**,
+in `docs/findings.md` section 35: the routine `0x10B92` on the Harmony 700 image takes the slot
+number in a register that callers load with a literal, so one scan produced the whole map. Go
+straight to the consumer for the slot you want and skip steps 2 and 3 below.
+
+**A section's size is not the distance to the next pointer**, it is an upper bound on it. Base
+slot 4 holds 125 bytes and the gap to slot 5 is up to 1532, because slot 5's infrared group arrays
+live in between. Read the consumer to learn where the section's own data ends. See
+`docs/findings.md` section 36.
+
 Look at the bytes the pointer lands on before touching the firmware. Only **slot 0** is
 `0xFEED` framed, so for every other slot the size comes from the distance to the next
 non-NULL pointer, and the pointers ascend with the slot number. The size alone often rules out

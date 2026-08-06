@@ -238,6 +238,12 @@ OPCODE_SEND_IR = 0x7D
 # Base slot 13 is the state variable table, named from the firmware routine that reads it.
 # `docs/findings.md` section 35.
 STATE_TABLE_SLOT = 13
+
+# Base slot 4 maps a firmware raised event number to an entry in the same numbering space
+# opcode 0x7E's operand indexes. Thirty events, and the table is a fixed 125 bytes in every
+# config in the corpus. `docs/findings.md` section 36.
+EVENT_MAP_SLOT = 4
+EVENT_MAP_BYTES = 125
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
 STATE_INDEX_OPCODES = frozenset({0x70, 0x71, 0x72})
@@ -262,6 +268,28 @@ class Instruction:
     """
     operand: int
     opcode: int
+
+
+@dataclass
+class EventMap:
+    """Base slot 4, the firmware event to entry map."""
+    fallback: int
+    entries: Dict[int, int]
+    length: int
+
+    @property
+    def keys_are_contiguous(self) -> bool:
+        return set(self.entries) == set(range(len(self.entries)))
+
+    @property
+    def reserved_block(self) -> Tuple[int, int]:
+        """The inclusive range of values this table claims.
+
+        Worth having as a range rather than a set: opcode `0x7E` indexes the same space and
+        avoids this block, so a writer that allocates an entry has to allocate outside it.
+        """
+        values = self.entries.values()
+        return min(values), max(values)
 
 
 @dataclass
@@ -602,6 +630,43 @@ class Container:
         if rest < 4 or rest % 2:
             return None
         return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+
+    def event_map(self) -> Optional['EventMap']:
+        """Base slot 4: what each of the thirty firmware events maps to.
+
+        ```
+        +0x00  u24  fallback        the value used when no key matches
+        +0x03  u16  count           thirty in every config in the corpus
+        +0x05  { u8 key; u24 value }[count]
+        ```
+
+        The firmware raises an event by loading a literal key and looking it up here, and the
+        value it gets goes to the same place opcode `0x7E`'s operand goes. `docs/findings.md`
+        section 36.
+
+        Note the size. This table is 125 bytes and the distance from slot 4's pointer to slot 5's
+        is between 419 and 1532, because the infrared group arrays are laid out in between. A
+        section's size is not the gap to the next pointer.
+        """
+        try:
+            slot = arch_slot(self.architecture, EVENT_MAP_SLOT)
+        except GspmError:
+            return None
+        if slot >= len(self.sections):
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        if off is None or off + 5 > len(self.blob):
+            return None
+        fallback = int.from_bytes(self.blob[off:off + 3], 'little')
+        count = int.from_bytes(self.blob[off + 3:off + 5], 'little')
+        end = off + 5 + 4 * count
+        if end > len(self.blob):
+            return None
+        entries = {}
+        for k in range(count):
+            p = off + 5 + 4 * k
+            entries[self.blob[p]] = int.from_bytes(self.blob[p + 1:p + 4], 'little')
+        return EventMap(fallback=fallback, entries=entries, length=5 + 4 * count)
 
     def state_table(self) -> Optional['StateTable']:
         """Base slot 13: how many state variables there are and how wide each one is.
