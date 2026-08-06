@@ -191,6 +191,7 @@ tools/                          thin command line wrappers, no logic of their ow
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding
 reference/checksums.md          provenance, load addresses, public sample checksums
+reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project

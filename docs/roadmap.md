@@ -68,6 +68,11 @@ of at least eleven. One boundary is already visible without owning anything: the
 are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
 reach them at all, never mind parse them.
 
+There is a sharper version of the same point. Logitech's own discontinuation notice of 28 May 2025
+names forty models whose accounts it closed, and **not one of them is arch 12 or arch 14**; they
+are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
+remotes from the platform that came after. `reference/models.md` has the list and the mapping.
+
 That gap is what step 8 exists for.
 
 ## Context
