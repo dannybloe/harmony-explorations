@@ -3326,6 +3326,163 @@ will name all three.
 to an infrared send, and the corpus never shows it above 10, so the obvious reading is also
 untested. A value of 0 appears 665 times, which a repeat count would have to explain.
 
+## 34. The action list interpreter, read out of the firmware
+
+Section 26 tried to find this by scanning for `XORLW` chains and failed, because **the opcode
+dispatch is a binary search on the opcode value and there is no chain**. That is the correction,
+and it is why the search could not have worked.
+
+Found instead by following the data. Located on the Harmony 700 2.8 image and confirmed on the
+complete Harmony 600 0.2 image.
+
+### The route in
+
+`0x10A30` reads three bytes into `TBLPTRU:TBLPTRH:TBLPTRL` and starts an SPI read there, so it is
+**follow a three byte config pointer**. `0x10A46` reads one byte and advances. Those two are the
+whole config reading vocabulary, and their callers are the section consumers.
+
+The action list reader is at `0x10CD6`:
+
+```
+CALL 0x10A30          follow the pointer
+CALL 0x10A46          read one byte, the count
+loop while count:
+    CALL 0x0EA5A      one instruction
+    count = count - 1
+BSF LATF,7            deselect the flash
+```
+
+which is `u8 count` followed by that many items, exactly the structure section 17 derived from the
+container alone. `0x0EA5A` reads three bytes and hands them on.
+
+### It is a queue machine, not an inline interpreter
+
+`0x0EA5A` does not execute. It **enqueues**. The three bytes go into a circular buffer:
+
+| | Harmony 700 2.8 | Harmony 600 0.2 |
+|---|---|---|
+| buffer | RAM `0x0127` to `0x019E` | RAM `0x021E` to `0x0295` |
+| length | `0x78`, 120 bytes | `0x78`, 120 bytes |
+| count, full at `0x78` | `0x126` | `0x21D` |
+| read pointer | `0x19F` | `0x296` |
+| write pointer | `0x1A1` | `0x298` |
+| init, push, pop | `0x0E7D6`, `0x0E7F8`, `0x0E82C` | `0x0E3F4`, `0x0E416`, `0x0E44A` |
+
+120 bytes is **exactly 40 three byte instructions**, on both. So a config's action lists are a
+program that is spooled into a 40 instruction queue and drained by a separate loop, which is what
+`MISC_QUEUE_ACTION` in the USB command set is for: the host can push into the same queue.
+
+The executor is `0x0EB20` on the 700 and `0x0E73A` on the 600. It tests the queue for empty, pops
+three bytes into `0xD49`, `0xD4A`, `0xD4B` on both, and then:
+
+```
+if opcode == 0x1F and operand_high == 0xFC:   special case
+else:                                          normal dispatch
+```
+
+**No config in the corpus takes that special case.** `0x1F`'s operand high byte is one of
+`E8 E9 EA EB ED EE EF F0 F1 F2 FB FE FF` across ten configs and `FC` is not among them, sitting in
+the gap between `FB` and `FE`. So the firmware has a path nothing here exercises.
+
+### The dispatcher
+
+`0x0EC8E` on the 700, `0x0E89E` on the 600. Identical shape, different RAM addresses. It compares
+the opcode against constants and branches, descending:
+
+| test | what happens |
+|---|---|
+| `opcode < 0x65` | branch away to a second dispatcher, `0x0F160` on the 700 |
+| `opcode >= 0x80` | **bit 7 is cleared** and the whole instruction is handed to one routine, `0x17CC4` on the 700 and `0x16360` on the 600 |
+| `0x7A <= opcode <= 0x7F` | six individual handlers, below |
+| `0x74 <= opcode <= 0x79` | six more |
+| `0x6D <= opcode <= 0x73` | and so on |
+
+That every opcode with bit 7 set goes to one routine with the bit stripped explains the shape of
+the inventory. Of the 75 distinct opcodes the corpus uses, **55 are at `0x80` or above and account
+for 2603 of the 85962 instructions**. They are one family with a parameter, not 55 instructions.
+The 20 below `0x80` carry everything else, and the five below `0x65` carry 12462 uses on their own.
+
+### The register file, and four opcodes placed
+
+`0x10E/0x10F` on the 700, a sixteen bit pair, is an **accumulator**:
+
+| opcode | handler does |
+|---|---|
+| `0x7A` | `accumulator = operand` |
+| `0x79` | `accumulator = accumulator + operand` |
+| `0x78` | `accumulator = f(accumulator, operand)` via `0x1B23C` |
+| `0x77` | `accumulator = g(accumulator, operand)` via `0x1BAF6` |
+
+So the arithmetic machine upstream described is real and this is its register.
+
+### `0x70` and `0x71` are comparisons
+
+Both take the same path. The operand's **low byte is passed to `0x17E28`**, which returns a sixteen
+bit value in `PROD`, so the low byte is an index into a lookup that routine owns. The operand's
+**low nibble of the high byte selects a comparison**, through an `XORLW` chain at `0x0EEAE`:
+
+| selector | test |
+|---|---|
+| 0 | equal |
+| 1 | not equal |
+| 2 | left greater than right |
+| 3 | left less than right |
+| 4 | left greater than or equal |
+| 5 | left less than or equal |
+| 6, 7 | not comparisons; both call `0x17D0E`, 7 after computing through `0x1B23C` with `0xFFFF` |
+
+The result is written to the flag at `0x008`. The left hand side is what separates the two opcodes:
+**`0x71` compares the byte variable `0x00D`, `0x70` compares the accumulator.**
+
+The corpus splits the same way. `0x71` uses selectors `0` to `5` and nothing else, over 2164 uses.
+`0x70` uses `0`, `1`, `2`, `3` and **`7`**, the last one nine times. So the six comparisons belong
+to `0x71` and the odd selector to `0x70`. Selector `6` is never used by either.
+
+That is what the operand statistics were seeing. Section 33's commit recorded `0x71`'s operand as
+"bit 15 a flag, high byte a group 0 to 5, low byte always under 64", measured over 155 distinct
+operands in ten configs with no violation. Read against the firmware:
+
+* the "group 0 to 5" is the **comparison selector**, and `0x71` uses exactly the six values the
+  firmware implements as comparisons and none of the two it does not,
+* the low byte under 64 is the **index bound of whatever `0x17E28` looks up**,
+* bit 15 is a separate flag on the high byte, which the dispatcher masks off with `& 0x0F`.
+
+Three independent measurements of the same field, agreeing. And `[0x71, 0x7F]`, the second most
+common two instruction list on arch 14, is a **conditional call**: compare, then call an action
+list.
+
+### Other handlers, named by what they touch
+
+| opcode | handler |
+|---|---|
+| `0x7F` | operand to `0x3CE/0x3CF`, call `0x10CB8`. The call, section 26 |
+| `0x7E` | operand to the bank 15 pair `0xF2D/0xF2E`, then `0x1679E` |
+| `0x7D` | operand to `0x09A/0x09B`, call `0x130E0`. The infrared send, section 33 |
+| `0x7C` | operand to `0x09C/0x09D`, call `0x13102` |
+| `0x7B` | shifts the instruction: operand high becomes the opcode, operand low becomes operand high, `0x10D` becomes operand low, and the result is pushed back on the queue. A prefix that builds an instruction from a variable |
+| `0x76` | operand to the bank 15 pair `0xF31/0xF32`, then `0x16A34` |
+| `0x74` | operand to `0x33F/0x340`, call `0x1A69C` |
+| `0x73` | operand to `0x39D/0x39E`, call `0x18814` |
+| `0x72` | low byte through `0x17E28`, product to `0x3BB/0x3BC`, high byte to `0x3BA`, call `0x1B30A` |
+
+`0x7B` is worth a second look: an instruction that assembles another instruction out of a runtime
+variable and re-queues it is self modifying bytecode, and it explains how a fixed config can act on
+a value it did not know at build time.
+
+### What is not established
+
+**What `0x17E28` looks up**, which is the thing `0x70`, `0x71` and `0x72` all index with a byte.
+Placing that would name three opcodes at once and probably a section with it.
+
+**What the bank 15 pairs `0xF2D/0xF2E` and `0xF31/0xF32` hold.** They look like special function
+registers in a listing and they are not: on the PIC18F67J50 the lowest defined register is `PMSTAT`
+at `0xF40`, checked against the gputils header rather than assumed, so everything `0x7E` and `0x76`
+write is ordinary memory. Noted because the disassembler prints an `sfr` prefix for anything in
+bank 15 and that reads as hardware when it is not.
+
+**Everything below `0x65`**, which is a second dispatcher not read here, and everything at `0x80`
+and above, which is one routine not read here.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

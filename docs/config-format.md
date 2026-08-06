@@ -584,6 +584,43 @@ equals the `0x7D` operand's. So the grouping is shared between the infrared data
 Read with `gspm.ir_reference` and `gspm.ir_references`.
 [findings.md](findings.md) section 33.
 
+#### The interpreter, from the firmware
+
+**Read out of two arch 14 images**, the Harmony 700 2.8 and the complete Harmony 600 0.2. This is
+what the opcodes are executed by, so it constrains every reading of them.
+
+An action list is spooled into a **circular queue of 120 bytes, exactly 40 three byte
+instructions**, and drained by a separate loop. Same size on both images. The host can push into
+the same queue over USB, which is what `MISC_QUEUE_ACTION` is for.
+
+The dispatch is a **binary search on the opcode**, not a jump table and not an `XORLW` chain. Its
+boundaries:
+
+| range | handling |
+|---|---|
+| below `0x65` | a second dispatcher, not read yet. Five distinct opcodes, 12462 uses |
+| `0x65` to `0x7F` | individual handlers, twenty distinct opcodes, 83359 uses |
+| `0x80` and above | **one routine**, with bit 7 stripped from the opcode. 55 distinct, 2603 uses |
+
+Placed by their handlers:
+
+| opcode | meaning |
+|---|---|
+| `0x7A` | load the sixteen bit accumulator with the operand |
+| `0x79` | add the operand to the accumulator |
+| `0x78`, `0x77` | two more accumulator operations, through helper routines |
+| `0x7B` | build an instruction from a runtime byte and push it back on the queue |
+| `0x71` | **compare**: low byte indexes a lookup, low nibble of the high byte selects the operator, left hand side is a byte variable |
+| `0x70` | the same comparison, with the accumulator as the left hand side |
+
+The comparison selector is `0` equal, `1` not equal, `2` greater, `3` less, `4` greater or equal,
+`5` less or equal. Selectors `6` and `7` are not comparisons. **`0x71` uses exactly `0` to `5` and
+nothing else**, over 2164 uses in ten configs, which is what made its high byte look like a group of
+six. `0x70` uses `0` to `3` and also `7`, nine times.
+
+*What the lookup behind `0x70`, `0x71` and `0x72` reads is not established.*
+[findings.md](findings.md) section 34.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode

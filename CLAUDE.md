@@ -542,6 +542,14 @@ using the proven consumer method plus live RAM polling, read the action list opc
 the arch 14 firmware, derive the trailer checksum from the boot validator already located, and run
 the button mapping experiment by polling the keypad scanner's RAM variable while pressing every key.
 
+**The action list interpreter is located and read**, on the Harmony 700 2.8 image and confirmed on
+the complete 600 0.2: a 120 byte circular queue holding exactly 40 three byte instructions, an
+executor, and a dispatcher that is a **binary search on the opcode**, which is why section 26's
+XORLW chain search could not have found it. `0x10E/0x10F` is a sixteen bit accumulator; `0x7A`
+loads it and `0x79` adds to it; `0x70` and `0x71` are comparisons whose operator is the low nibble
+of the operand's high byte. Everything at opcode `0x80` and above is one routine with bit 7
+stripped. `docs/findings.md` section 34, `tests/test_interpreter.py`.
+
 **Part of step 6 is already done, from the config side rather than the firmware.** Base slot 5 is
 **the infrared database**: two levels of pointer array over records of mark and space durations in
 microseconds, decoded and extractable with `tools/ir_extract.py`. `docs/findings.md` section 32.
