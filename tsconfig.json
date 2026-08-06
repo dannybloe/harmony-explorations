@@ -1,10 +1,23 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/lab" },
-    { "path": "./packages/codec" },
-    { "path": "./packages/usb" },
-    { "path": "./packages/corpus" },
-    { "path": "./packages/bench" }
+    {
+      "path": "./packages/lab"
+    },
+    {
+      "path": "./packages/codec"
+    },
+    {
+      "path": "./packages/usb"
+    },
+    {
+      "path": "./packages/corpus"
+    },
+    {
+      "path": "./packages/bench"
+    },
+    {
+      "path": "./packages/probe"
+    }
   ]
 }

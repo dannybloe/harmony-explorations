@@ -206,6 +206,7 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
 packages/bench/                 TS: the bench instrument, a server plus a page in web/
+packages/probe/                 TS: the contribution probe, a report with shape and no contents
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
@@ -349,6 +350,7 @@ make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
+make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
 make all           everything except ghidra and bench
 ```
 
@@ -368,6 +370,10 @@ node packages/usb/bin/list-remotes.ts    the same question over HID, also enumer
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.
+node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
+                       the contribution probe: a few kilobytes of JSON describing a config's
+                       shape and nothing of its contents, meant to be published. Opens the
+                       device unless --file is given.
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three

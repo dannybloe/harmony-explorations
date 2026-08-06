@@ -537,7 +537,10 @@ The coverage section above is the argument: two architectures of at least eleven
 learn anything about the other nine without hardware nobody here owns. The probe is how somebody
 else's remote becomes evidence. Read only, and it produces one of two things.
 
-**Tier 1, a structural report.** Everything about the shape and nothing about the contents:
+**Tier 1, a structural report. Built.** `packages/probe`, run with `make probe` or
+`node packages/probe/bin/probe.ts`, with `--file <config>` for a config already on disk so the
+output can be inspected without a remote attached. Everything about the shape and nothing about the
+contents:
 
 * USB identity: vendor, product id, `bcdDevice` and therefore the skin, the endpoints
 * the version block, all twelve fields
@@ -556,6 +559,25 @@ repository and why `reference/checksums.md` publishes sums rather than files. A 
 has nowhere for either to hide, so it can go straight into the corpus, into a test, and into a
 document.
 
+**That property is tested rather than promised.** `packages/probe/test/report.test.ts` takes a
+sixteen byte run out of every populated section of a real config, serialises the report, and asserts
+that none of those runs appears in it, as hex or as an array of numbers. A report that quietly grew
+a "first bytes of each section" field would pass every other test in the file and fail that one. Two
+things are left out of the USB half on the same reasoning: the device's serial number string, which
+`node-hid` offers and `listHarmony` deliberately does not carry through, and nothing else, since the
+version block was measured identical on two different Harmony Ones and so describes a model rather
+than a unit.
+
+**The probe does not refuse a remote it does not recognise, which is the whole point.**
+`packages/corpus` maps a product id onto a config base and refuses anything else, which is right for
+a backup and wrong here. The probe instead tries each base this project has evidence for, sixteen
+bytes at a time, and accepts any four uppercase letters as a container cookie with an `end_addr`
+that lands plausibly above the base. Everything the report states is then derived rather than looked
+up: the flash base from `end_addr` and the blob length, the slot count from the marker offset, the
+section lengths from the pointers ascending. So an unknown magic still yields a full section table,
+and the codec's refusal is reported verbatim next to it, because on a new architecture the refusal
+is the interesting part.
+
 **Tier 2, a full dump**, stays what it already is: an explicit, separate act, filed in the private
 lab with a `META.md`, exactly as the existing contributions from guyman70718 and trelowney were.
 That path needs no new tooling.
@@ -565,8 +587,10 @@ therefore starts as something for people who can already do that, and shipping a
 platform is real work that probably belongs with FreeHarmony rather than here. Say so rather than
 implying a general audience.
 
-Timing: after the bench instrument exists in step 5, since the probe is the same reads with a
-narrower output, and it can run alongside step 6.
+Also unsolved: **no report from an unfamiliar architecture exists yet**, because that needs somebody
+else's remote, which is the thing this step is trying to arrange. What is verified is that the probe
+produces a correct report for every sample in the corpus, spanning four architectures, and that it
+still produces the shape when the cookie is rewritten to a magic no family claims.
 
 ## Hardware safety rails
 

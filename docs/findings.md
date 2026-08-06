@@ -610,8 +610,12 @@ analyzeHeadless <abs-project-dir> harmony \
 
 ### Peripheral map
 
-Derived from access-bank SFR usage counts across the image. SFR addresses follow the
-standard PIC18 high-end map and should be confirmed against the PIC18F67J50 datasheet.
+Derived from access-bank SFR usage counts across the image.
+
+**Corrected since this section was written.** It said the addresses followed the standard PIC18
+high-end map and should be confirmed against the PIC18F67J50 datasheet. They were confirmed, and
+eight of 93 names were wrong; the table below is the corrected one, and section 18 has the argument
+and the provenance. Nothing here rests on the generic map any more.
 
 | Address | Name | Uses | Role |
 |---|---|---|---|

@@ -91,6 +91,8 @@ export interface FoundRemote {
   readonly path: string | undefined;
   readonly product: string | undefined;
   readonly manufacturer: string | undefined;
+  /** `bcdDevice`, which carries the skin id in its low byte. See `skinId`. */
+  readonly release: number | undefined;
 }
 
 /**
@@ -115,6 +117,11 @@ export async function listHarmony(): Promise<FoundRemote[]> {
       path: d.path,
       product: d.product,
       manufacturer: d.manufacturer,
+      release: d.release,
+      // `node-hid` also reports `serialNumber`, and it is deliberately not carried through. It
+      // identifies a unit rather than a model, and `@harmony/probe` builds a publishable report
+      // out of this structure: the cheapest way to keep a serial out of a published file is for
+      // nothing upstream of it to have one.
     }));
 }
 

@@ -206,6 +206,33 @@ owner. See [samples/README.md](samples/README.md).
 
 If this project ever mirrors firmware files, **strip `Data.xml` of the account fields first.**
 
+## If you have a Harmony this project has never seen
+
+Two architectures are covered here out of the eleven concordance knows models for, and there is no
+way to learn anything about the other nine without hardware nobody involved owns. So the most useful
+thing another remote can produce is a **structural report**: a few kilobytes of JSON describing the
+shape of its config and nothing of its contents.
+
+```sh
+make probe                                     # a remote attached over USB
+make probe PROBE_ARGS="--product 0xc122"       # when more than one is
+node packages/probe/bin/probe.ts --file cfg    # a config already on disk, no remote
+```
+
+It is read only, and it holds addresses, lengths, counts, the container header and the outcome of
+each check. It does not hold a section's bytes, and it does not hold the remote's serial number.
+That is enforced rather than promised: `packages/probe/test/report.test.ts` pulls a sixteen byte run
+out of every populated section of a real config and asserts none of it survives into the report.
+Read the output before you send it, which is the other reason it is small.
+
+What makes it worth running on an unfamiliar model is that the report derives everything rather than
+looking it up. An unknown container cookie still yields the flash base, the slot count and the full
+section table, with the parser's refusal recorded next to them, because on a new architecture the
+refusal is the interesting part. [docs/roadmap.md](docs/roadmap.md) step 8 has the reasoning.
+
+Honest caveat: this currently means cloning the checkout and building a native module, so it is for
+people who already do that. A runnable file per platform is real work and belongs with FreeHarmony.
+
 ## Provenance
 
 The analysis and tools here were produced by Claude (Anthropic's AI), working from concordance
@@ -227,9 +254,11 @@ field split. Key codes were read as a matrix address with a flag bit, when the t
 an event type, and rather than treat the resulting nonsense as a signal, the analysis built a
 paragraph of explanation on top of it.
 
-Items most worth verifying before relying on them: the SFR map assumes the standard PIC18
-high-end register layout rather than the PIC18F67J50 datasheet specifically; the arch 12 part
-number is inferred rather than read off a board. The `BTFSC`/`BTFSS` polarity that was
+The item most worth verifying before relying on it: the arch 12 part number is inferred rather than
+read off a board. The SFR map used to be listed here too, on the grounds that it assumed the
+standard PIC18 high-end layout rather than the PIC18F67J50 datasheet specifically. It was checked,
+eight of 93 names were wrong, and the table now comes from the gputils register headers for both
+parts. The `BTFSC`/`BTFSS` polarity that was
 previously flagged as a risk here has since been found to be wrong and corrected: see
 `tests/test_isa.py`, which now pins both encodings against the datasheet and against a real
 wait loop from the firmware.

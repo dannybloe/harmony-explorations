@@ -50,6 +50,18 @@ importers:
 
   packages/lab: {}
 
+  packages/probe:
+    dependencies:
+      '@harmony/codec':
+        specifier: workspace:*
+        version: link:../codec
+      '@harmony/lab':
+        specifier: workspace:*
+        version: link:../lab
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
+
   packages/usb:
     dependencies:
       node-hid:

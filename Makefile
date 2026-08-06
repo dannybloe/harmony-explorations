@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench remotes all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes all clean
 
 BENCH_PORT ?= 8731
 
@@ -34,7 +34,8 @@ help:
 	@echo "golden       compare the golden vectors; golden-write regenerates them"
 	@echo "remotes      list attached remotes, enumeration only, opens nothing"
 	@echo "bench        start the bench instrument on 127.0.0.1:$(BENCH_PORT)"
-	@echo "all          everything above except ghidra and bench"
+	@echo "probe        structural report about an attached remote, publishable; PROBE_ARGS=--file X"
+	@echo "all          everything above except ghidra, bench and probe"
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TESTS)
@@ -89,6 +90,11 @@ golden-write:
 # and is the right first move when a remote is plugged in.
 remotes:
 	@node packages/usb/bin/list-remotes.ts
+
+# The contribution probe: a publishable structural report about an attached remote. Opens the
+# device, so it is deliberate, unlike `remotes`. Pass a file instead to run it without hardware.
+probe:
+	@node packages/probe/bin/probe.ts $(PROBE_ARGS)
 
 # The bench instrument. Not part of `all`: it is a long running server, not a check.
 #

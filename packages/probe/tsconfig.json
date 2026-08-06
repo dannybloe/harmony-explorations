@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
+  "references": [{ "path": "../lab" }, { "path": "../codec" }, { "path": "../usb" }]
+}
