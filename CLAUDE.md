@@ -204,6 +204,7 @@ packages/codec/                 TS: the one config codec, container through comp
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
+packages/bench/                 TS: the bench instrument, a server plus a page in web/
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
@@ -345,7 +346,9 @@ make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them
-make all           everything except ghidra
+make remotes       list attached remotes, enumeration only, opens nothing
+make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
+make all           everything except ghidra and bench
 ```
 
 ```

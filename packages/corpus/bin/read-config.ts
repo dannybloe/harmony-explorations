@@ -1,8 +1,11 @@
 /**
  * Read the config off a connected remote and file it in the lab corpus.
  *
- *   node packages/corpus/bin/read-config.ts --label oneres
- *   node packages/corpus/bin/read-config.ts --label h600 --product 0xc122
+ *   node packages/corpus/bin/read-config.ts --label harmony-one
+ *   node packages/corpus/bin/read-config.ts --label harmony-600 --product 0xc122
+ *
+ * The label is whatever tells you later which unit this came off, and it ends up in the filename.
+ * There is no default: a corpus of reads all called the same thing is a corpus you cannot use.
  *
  * Read only. This opens the device, which `list-remotes.ts` deliberately does not, so it is the
  * heavier of the two: use that one to find out what is attached and this one when you mean it.

@@ -17,7 +17,9 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench remotes all clean
+
+BENCH_PORT ?= 8731
 
 help:
 	@echo "test         run the Python test suite (needs a lab directory for image-backed tests)"
@@ -30,7 +32,9 @@ help:
 	@echo "audit        check the npm dependency tree for known vulnerabilities"
 	@echo "hooks        install the pre-commit hook (per clone, so run it once after cloning)"
 	@echo "golden       compare the golden vectors; golden-write regenerates them"
-	@echo "all          everything above except ghidra"
+	@echo "remotes      list attached remotes, enumeration only, opens nothing"
+	@echo "bench        start the bench instrument on 127.0.0.1:$(BENCH_PORT)"
+	@echo "all          everything above except ghidra and bench"
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TESTS)
@@ -80,6 +84,18 @@ golden:
 
 golden-write:
 	@$(PYTHON) tools/golden.py --write
+
+# Asking the operating system what is attached. Opens nothing, so it is safe to run at any time
+# and is the right first move when a remote is plugged in.
+remotes:
+	@node packages/usb/bin/list-remotes.ts
+
+# The bench instrument. Not part of `all`: it is a long running server, not a check.
+#
+# It binds to 127.0.0.1 only. That is a concession this project makes for a bench tool and refuses
+# for the product; FreeHarmony gets a content security policy instead. See docs/roadmap.md step 5.
+bench:
+	@node packages/bench/bin/bench.ts --port $(BENCH_PORT)
 
 # Git does not commit .git/hooks, so the hook lives in .githooks and this points git at it.
 # Per clone, which is why the same checks are also reachable from `make` targets: a fresh

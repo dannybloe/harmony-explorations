@@ -4,6 +4,7 @@
     { "path": "./packages/lab" },
     { "path": "./packages/codec" },
     { "path": "./packages/usb" },
-    { "path": "./packages/corpus" }
+    { "path": "./packages/corpus" },
+    { "path": "./packages/bench" }
   ]
 }

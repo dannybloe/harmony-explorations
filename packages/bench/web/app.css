@@ -1,0 +1,90 @@
+:root {
+  color-scheme: light dark;
+  --ink: #1a1a1a;
+  --paper: #fbfbf9;
+  --line: #d8d6d0;
+  --dim: #6b6862;
+  --ok: #1f6f3d;
+  --bad: #a32020;
+  --accent: #2b5b8c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e6e4df;
+    --paper: #17181a;
+    --line: #33353a;
+    --dim: #96938c;
+    --ok: #63c187;
+    --bad: #e07b7b;
+    --accent: #7fb2e5;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 1.5rem 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, sans-serif;
+  max-width: 60rem;
+}
+
+header { padding: 1.5rem 0 0.5rem; }
+h1 { font-size: 1.3rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0 0 0.25rem; }
+h3 { font-size: 0.85rem; margin: 1.25rem 0 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dim); }
+.sub, .hint { color: var(--dim); font-size: 0.85rem; margin: 0 0 0.75rem; }
+
+section {
+  border-top: 1px solid var(--line);
+  padding: 1.25rem 0;
+}
+
+button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+button:disabled { color: var(--dim); cursor: default; }
+
+input {
+  font: inherit;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+td, th { text-align: left; padding: 0.2rem 0.8rem 0.2rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--dim); font-weight: 500; }
+.mono, td.mono, .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.num { text-align: right; }
+.dim { color: var(--dim); }
+.ok { color: var(--ok); }
+.bad { color: var(--bad); }
+
+.remote {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.remote .name { font-weight: 600; }
+.remote.unknown .name { color: var(--dim); font-weight: 400; }
+.remote[aria-selected='true'] { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 0.5rem 0 0.25rem; }
+#bar-fill { height: 100%; width: 0; background: var(--accent); transition: width 120ms linear; }
+
+ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; }

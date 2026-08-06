@@ -34,16 +34,16 @@ test('the stamp is UTC and sorts', () => {
 });
 
 test('a label cannot escape the directory it is written into', () => {
-  assert.equal(slug('OneRes'), 'oneres');
-  assert.equal(slug('Harmony 600'), 'harmony-600');
+  assert.equal(slug('Harmony One'), 'harmony-one');
+  assert.equal(slug('SpareUnit'), 'spareunit');
   assert.equal(slug('../../etc/passwd'), 'etc-passwd');
   assert.throws(() => slug('///'), FileError);
 });
 
 test('both files share a base name so they stay together', () => {
-  const names = fileNames('OneRes', WHEN);
-  assert.equal(names.config, '20260806T1145Z-oneres-config.bin');
-  assert.equal(names.sidecar, '20260806T1145Z-oneres-config.json');
+  const names = fileNames('Harmony 600', WHEN);
+  assert.equal(names.config, '20260806T1145Z-harmony-600-config.bin');
+  assert.equal(names.sidecar, '20260806T1145Z-harmony-600-config.json');
 });
 
 /** A remote holding one real config, enough to produce a read worth filing. */

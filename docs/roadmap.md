@@ -442,7 +442,8 @@ would map it at, which is how the address arithmetic is asserted without hardwar
 * This composes all three packages and writes to disk, which none of them should do, so it gets its
   own small package rather than being bolted onto one of them.
 
-**Then the bench instrument.** Node plus a browser page, not Electron.
+**Then the bench instrument. Built, and running against both bench remotes.** `packages/bench`,
+started with `make bench`. Node plus a browser page, not Electron.
 
 * A small Node process serves a page and holds the USB side; the browser is the window. No new
   dependencies, since Node has an HTTP server built in, and it is cross platform for free.

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Harmony bench</title>
+    <!--
+      No remote anything. The page is three local files and the server is bound to loopback, so a
+      content security policy is belt and braces rather than the mechanism, but it makes an
+      accidental CDN import fail loudly instead of working.
+    -->
+    <meta
+      http-equiv="content-security-policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'"
+    />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Harmony bench</h1>
+      <p class="sub">Read only. Nothing here writes to a remote.</p>
+    </header>
+
+    <main>
+      <section id="remotes-panel">
+        <h2>Attached <button id="refresh" type="button">refresh</button></h2>
+        <p class="hint">Enumeration only. Listing asks the operating system; nothing is opened.</p>
+        <div id="remotes"></div>
+      </section>
+
+      <section id="identity-panel" hidden>
+        <h2>Identity</h2>
+        <p class="hint">
+          Five of the twelve version block fields have no name yet. They are shown as numbers rather
+          than guessed at.
+        </p>
+        <table id="identity"></table>
+      </section>
+
+      <section id="read-panel" hidden>
+        <h2>Read the config</h2>
+        <p class="hint">
+          About 30 KiB/s, so roughly 40 seconds for a Harmony One. Every read is filed in the lab
+          corpus with a timestamp.
+        </p>
+        <p>
+          <label>label <input id="label" type="text" /></label>
+          <button id="read" type="button">read and file</button>
+        </p>
+        <div id="progress" hidden>
+          <div class="bar"><div id="bar-fill"></div></div>
+          <p id="progress-text" class="mono"></p>
+        </div>
+        <div id="result" hidden>
+          <h3>Container</h3>
+          <table id="container"></table>
+          <h3>Checks</h3>
+          <ul id="checks"></ul>
+          <h3>Sections</h3>
+          <p class="hint">
+            The label column is empty because almost no section has been identified yet. Filling it
+            in is the next block of reverse engineering work.
+          </p>
+          <table id="sections"></table>
+        </div>
+      </section>
+
+      <section id="log-panel">
+        <h2>Commands sent</h2>
+        <p class="hint">
+          Every command that reached a remote. In a project built on restraint it should be possible
+          to see that nothing happened that was not asked for.
+        </p>
+        <table id="log"></table>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -34,8 +34,8 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `600-0.2-code-base0x9000-TRUNCATED64k.bin` | `3c923a93216fabdb4f0ba19f7b5123192054c7c84e878e88a9d99d276a5e4db1` | `concordance --dump-safemode` from a Harmony 600 running fw 0.2 |
 | `600-0.2-code-base0x9000-COMPLETE.bin` | `8cf8422a3ec3ce6d8a313af72c4fb2eb3215884352fdedbb7ff060ed8f897841` | the same image, complete, read off the remote by `packages/usb` |
 | `one-3.4-internal-page-fe.bin` | `bc3b18dc0cdf913b7a21f1b46a072d3f9e78b8ddf9e8d3dae26db4008946cf96` | the Harmony One's `0xFE` internal page, **read off two separate remotes and byte identical** |
-| `one-3.4-internal-page-ff-spare.bin` | not listed | the `0xFF` page of the spare unit |
-| `one-3.4-internal-page-ff-oneop.bin` | not listed | the `0xFF` page of the operational unit |
+| `one-3.4-internal-page-ff-unprogrammed.bin` | not listed | the `0xFF` page of the unprogrammed unit |
+| `one-3.4-internal-page-ff-programmed.bin` | not listed | the `0xFF` page of the programmed unit |
 | `600-0.2-internal-page-fe.bin` | `d5c7abdfe4f7e41031cf294c77347730c7f99871316720514ec2640b656f1e0f` | the Harmony 600's `0xFE` page: bootloader, safe mode image, application firmware |
 | `600-0.2-internal-page-ff.bin` | not listed | the 600's `0xFF` page, which holds its identity block |
 | `600-0.2-safemode-gspm-base0x20000.bin` | `18db67b9cb2b187a8e6f775dd66d5c555a2a3950e61d446ad83ab257bba5a767` | the 600's safe mode config, read off external flash at `0x020000` |
