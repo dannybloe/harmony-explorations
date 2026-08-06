@@ -45,6 +45,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   one_internal_fe: 'one-3.4-internal-page-fe.bin',
   // The 600's 0xFE page. Its 0xFF page is absent: it holds the identity block.
   h600_internal_fe: '600-0.2-internal-page-fe.bin',
+  // The 600's safe mode config, read off external flash at 0x020000, which had only ever been
+  // established from the 700's package. 8192 bytes as read; the container is the first 7115.
+  h600_safemode_gspm: '600-0.2-safemode-gspm-base0x20000.bin',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h525_config: 'config.EZHex',

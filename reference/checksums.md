@@ -38,6 +38,7 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `one-3.4-internal-page-ff-oneop.bin` | not listed | the `0xFF` page of the operational unit |
 | `600-0.2-internal-page-fe.bin` | `d5c7abdfe4f7e41031cf294c77347730c7f99871316720514ec2640b656f1e0f` | the Harmony 600's `0xFE` page: bootloader, safe mode image, application firmware |
 | `600-0.2-internal-page-ff.bin` | not listed | the 600's `0xFF` page, which holds its identity block |
+| `600-0.2-safemode-gspm-base0x20000.bin` | `18db67b9cb2b187a8e6f775dd66d5c555a2a3950e61d446ad83ab257bba5a767` | the 600's safe mode config, read off external flash at `0x020000` |
 
 Those come from specific physical remotes, so their checksums will not reproduce on anyone else's
 hardware. They are listed for the record, not as verification targets, with **one exception**:
@@ -61,6 +62,11 @@ All internal pages are 65534 bytes rather than 65536. The firmware clamps the re
 and a 62 byte read from there ends at `0xFFFD`, so the last two bytes of each page cannot be read at
 all. Three images inside them verify their own header checksums regardless, since none of them
 extends that far.
+
+`600-0.2-safemode-gspm-base0x20000.bin` is 8192 bytes as read, of which the container is the first
+7115 and the rest is erased. Its address was previously known only from the 700's package, so this
+is the arch 14 layout confirmed on a 600. It is a factory artifact rather than a user config, and
+the same length as the 700's to the byte, differing in 83 places.
 
 `600-0.2-code-base0x9000-COMPLETE.bin` supersedes the truncated one and is 70336 bytes against
 65536. It is the first binary here that this project produced rather than decoded from somebody

@@ -18,14 +18,19 @@ import { goldenVector, load, skipUnlessGolden } from '@harmony/lab';
 import { parse, summary } from '../src/index.ts';
 
 /**
- * Same list as `CONTAINERS` in `tools/golden.py`, including the three samples that are not
+ * Same list as `CONTAINERS` in `tools/golden.py`, including the four samples that are not
  * somebody's configuration. An implementation can agree on the ordinary cases and diverge on the
  * degenerate ones: the empty 0xFEED frame only occurs in a safe mode config.
+ *
+ * This list is duplicated rather than derived, so adding a sample on the Python side and not here
+ * loses the comparison silently. `tools/golden.py` writes a vector either way and this file is what
+ * decides whether anything reads it.
  */
 const CONTAINERS = [
   'one_safemode',
   'one34_region2',
   'h700_gspm',
+  'h600_safemode_gspm',
   'one_config',
   'one_config_unprogrammed',
   'h600_config',

@@ -34,7 +34,7 @@ from harmony import gspm  # noqa: E402
 # an implementation can agree on the ordinary cases and diverge on the degenerate ones: the empty
 # 0xFEED frame only occurs in a safe mode config.
 CONTAINERS = (
-    'one_safemode', 'one34_region2', 'h700_gspm',
+    'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm',
     'one_config', 'one_config_unprogrammed', 'h600_config',
     'h700_config', 'h700_config_2', 'h525_config',
     'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',

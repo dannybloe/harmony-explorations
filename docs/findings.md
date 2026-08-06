@@ -2527,6 +2527,64 @@ two bytes of every page are unreadable, because the offset clamps at `0xFFC0` an
 there end at `0xFFFD`; no image runs that far, so nothing here depends on them. And the 700 2.8
 image remains worth keeping: it is a second arch 14 sample and the only one for that model.
 
+## 24. The 600's safe mode config, read where the 700's package said it would be
+
+Section 3 has put the architecture 14 safe mode config at flash `0x020000` for as long as this
+document has existed, and until now that address rested on **one** file: `Region_3.EZHex` out of the
+Harmony 700's 2.8 update package, whose own `end_addr` recovers a base of `0x020000`. No 700 has
+ever been connected here, and the 600 that has been on the bench for months was never asked for
+that address. So an architecture-wide claim was carried by a single model's installer.
+
+### The read
+
+8192 bytes off the 600's external flash at `0x020000`, read only, external flash so no internal page
+and no restart risk. What came back parses as a container and passes every check the parser makes:
+
+| | value |
+|---|---|
+| magic | `GSPM` |
+| `end_addr` | `0x021BC7`, which recovers a flash base of exactly `0x020000` |
+| length | 7115 bytes including the `PTYY` end marker |
+| format | `0x1400`, that is 1.4 |
+| architecture, from slot 1 | 14 |
+| section slots | 20, the architecture 14 count |
+| checks | all ten, including the section table ending exactly at the marker |
+
+The remaining 1077 bytes of the read are erased, so the container is the whole of what is there.
+
+The base address is the part worth stating plainly, because it is not an assumption the parser was
+given: `flash_base` is **recovered** from `end_addr` minus the distance to the end marker. The file
+was read from `0x020000` and independently says it belongs at `0x020000`.
+
+### The comparison nobody asked for
+
+The 600's safe mode config and the 700's are **the same length to the byte**, 7115, and their
+section tables are **identical**: all twenty pointers, same addresses. They differ in 83 bytes.
+
+That is worth pausing on. Section 16 established that a small logical change to a user config
+reshuffles the whole image, three arch 8 configs generated ten minutes apart differing in 73 to 84
+percent of their bytes. These two were built five months apart, by the timestamps in slot 3, one on
+15 April 2009 and one on 18 September 2009, and they have byte identical layout. So the safe mode
+config is not a generated config in the sense the user configs are. It is a fixed artifact that gets
+rebuilt.
+
+Where the 83 differences sit says something too. Seventy four of them are **before the first
+section**, in the `LWJL` block that the section table does not point at, six are in slot 3 (the
+timestamp, which must differ) two in slot 17 and one in slot 1. `LWJL` is the key code table, and
+section 17 established that it is a property of the remote rather than of the configuration. Two
+different keypads is exactly the thing that ought to differ between a 600 and a 700 while everything
+else stays put.
+
+**Not claimed:** what those bytes mean. The clusters are pairs about `0x17` to `0x2A` apart, one
+member of each pair reading `0x00` on the 600 against `0x1F` on the 700. Reading them is key table
+work and belongs with section 17, not here.
+
+### What it closes
+
+`docs/memory-map-600.md` had one row sourced from another model's installer, and that row is now a
+measurement. Nothing changed about the address, which is the point: a prediction that had to hold
+for the architecture claim to stand held.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

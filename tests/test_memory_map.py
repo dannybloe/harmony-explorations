@@ -125,9 +125,51 @@ class TestArch14Map(unittest.TestCase):
         self.assertEqual(c.flash_base, 0x030000)
         self.assertEqual(c.architecture, 14)
 
+    def test_the_safe_mode_config_is_where_the_700s_package_said_it_would_be(self):
+        """Read off the 600's own external flash, where the address came from the 700's installer.
+
+        The base address is not an assumption handed to the parser: `flash_base` is recovered from
+        `end_addr` minus the distance to the end marker, so a file read from 0x020000 independently
+        saying it belongs at 0x020000 is the closure.
+        """
+        raw = lab.load('h600_safemode_gspm')
+        self.assertEqual(len(raw), 8192, 'the read as it came off the device')
+        c = gspm.parse(raw)
+        self.assertEqual(c.flash_base, 0x020000)
+        self.assertEqual(c.architecture, 14)
+        self.assertEqual(c.format_version, '1.4')
+        self.assertEqual(len(c.sections), 20)
+        self.assertEqual(c.end_addr - c.flash_base + 4, 7115)
+        self.assertTrue(c.all_checks_pass, c.checks)
+        self.assertEqual(set(raw[7115:]), {0xFF}, 'erased after the container')
+
+    def test_the_600_and_700_safe_mode_configs_share_a_layout(self):
+        """Same length, same twenty pointers, 83 differing bytes, mostly in the key table.
+
+        Which is the opposite of how user configs behave: section 16 has three of those, generated
+        ten minutes apart, differing in most of their bytes. These two were built five months apart.
+        """
+        a = lab.load('h600_safemode_gspm')[:7115]
+        b = lab.load('h700_gspm')[:7115]
+        self.assertEqual(len(a), len(b))
+        differing = [i for i in range(len(a)) if a[i] != b[i]]
+        self.assertEqual(len(differing), 83)
+
+        ca, cb = gspm.parse(a), gspm.parse(b)
+        self.assertEqual([s.address for s in ca.sections], [s.address for s in cb.sections],
+                         'the section tables are identical')
+        self.assertNotEqual(ca.built_at, cb.built_at, 'built at different times')
+
+        # Most of the difference is below the first section, in the LWJL block the section table
+        # does not point at. That is the key table, and two keypads differing is expected.
+        first_section = min(s.address - ca.flash_base for s in ca.sections if s.address)
+        below = [i for i in differing if i < first_section]
+        self.assertGreater(len(below), len(differing) // 2,
+                           'the differences moved out of the key table region')
+
     def test_the_document_still_carries_these_addresses(self):
         text = _doc('memory-map-600.md')
-        for token in ('+0x1000', '+0x9000', '+0xA2C0', '0x030000', '0x021BCB',
+        for token in ('+0x1000', '+0x9000', '+0xA2C0', '0x030000', '0x020000', '0x021BCB',
                       '70336', '24320', '7115', '3904 KiB'):
             self.assertIn(token, text, 'missing from docs/memory-map-600.md: %s' % token)
 

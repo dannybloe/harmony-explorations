@@ -47,10 +47,12 @@ Not memory mapped, so this is storage rather than code the processor runs.
 | Address | Length | Contents | Source |
 |---|---|---|---|
 | `0x000000` to `0x0112C0` | 70336 | the **application firmware as stored**, which the bootloader copies to internal `0x9000` | `concordance --dump-firmware` returns the first 64 KiB of exactly this image |
-| `0x020000` to `0x021BCB` | 7115 | the **safe mode config**, a `GSPM` container, format 1.4 | the 700's update package; **not verified on the 600 itself** |
+| `0x020000` to `0x021BCB` | 7115 | the **safe mode config**, a `GSPM` container, format 1.4, 20 section slots | read off the device; all ten container checks pass and the recovered base is `0x020000` |
 | `0x030000` to `0x400000` | 3904 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex`, 738149 of 738149 bytes |
 
-Two stretches have never been examined: `0x0112C0` to `0x020000`, and `0x021BCB` to `0x030000`.
+The 1077 bytes after the safe mode container, up to the end of the 8192 that were read, are erased.
+Two stretches have never been examined: `0x0112C0` to `0x020000`, and the rest of `0x021BCB` to
+`0x030000`.
 
 Same closure as on the One: concordance reports the config region as 3904 KiB, and `0x030000` plus
 3904 KiB is exactly `0x400000`, the 4 MiB the part holds.
@@ -60,5 +62,6 @@ Same closure as on the One: concordance reports the config region as 3904 KiB, a
 * **What is in the 121 bytes at `0xFF` `+0xEC00`**, and in the four small records after the identity
   block. Offsets and lengths only.
 * **The two unexamined stretches of external flash** named above.
-* **The safe mode config on the 600 itself.** Its address is the architecture 14 layout, taken from
-  the 700's package, and reading `0x020000` on the 600 would settle it in one command.
+* **What the 83 bytes are** that separate the 600's safe mode config from the 700's. They sit almost
+  entirely in the `LWJL` key table, which is the expected place for two different keypads to differ,
+  but nothing here has read them. See `findings.md` section 24.

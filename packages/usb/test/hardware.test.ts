@@ -11,6 +11,11 @@
  * because you plugged in the other supported remote is a broken test, not a finding, so they skip
  * on the wrong unit rather than asserting a 600's skin against a One.
  *
+ * **Each test asks for its own unit rather than for "the attached remote".** A Harmony One and a
+ * Harmony 600 can be on the bus at the same time, and then one session covers both architectures
+ * instead of needing two. An earlier version gated everything on there being exactly one remote
+ * anywhere, which turned plugging in the second one into a silent, total skip.
+ *
  * Read paths only. Nothing here writes, erases or resets, and the write paths refuse anyway.
  */
 import { test } from 'node:test';
@@ -19,20 +24,61 @@ import assert from 'node:assert/strict';
 import { load } from '@harmony/lab';
 import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST, isHarmony, listHarmony } from '../src/index.ts';
 
-/** Product ids of the two bench remotes, so a test can refuse to run against the wrong one. */
+/** Product ids of the bench remotes, so a test can refuse to run against the wrong one. */
 const HARMONY_600 = 0xc122;
 const HARMONY_ONE = 0xc121;
 
 /**
- * The attached remote's product id, or undefined when nothing is attached or more than one is.
+ * Whether exactly one remote of this model is attached.
  *
- * Undefined for "more than one" on purpose: every test below asserts something about a specific
- * unit, and with two remotes on the bus there is no answer to "the attached one". They skip.
+ * Exactly one, not at least one, because that is what `openHarmony({ productId })` can act on: two
+ * Harmony Ones enumerate identically, so with both of them plugged in the selector is ambiguous and
+ * opening refuses rather than guessing. Skipping here says so before the open does.
  */
-async function attached(): Promise<number | undefined> {
+async function present(productId: number): Promise<boolean> {
   const all = await listHarmony();
-  return all.length === 1 ? all[0]?.productId : undefined;
+  return all.filter((d) => d.productId === productId).length === 1;
 }
+
+/**
+ * Run a read again once if it came back with nothing at all, and never if it came back wrong.
+ *
+ * The first command sent to a freshly attached remote sometimes gets no reply. Observed here as a
+ * `readFlash` returning "0 of 256 bytes" against a Harmony One that then answered every later
+ * command correctly, including a 60050 byte firmware read. One observation and a plausible cause,
+ * so it is worked around rather than explained.
+ *
+ * What makes the retry safe to have in a test is the shape of the failure: **no answer, never a
+ * wrong answer.** So this retries an empty reply and lets everything else through untouched, which
+ * leaves every assertion about the bytes exactly as strict as it was. A blanket retry would not:
+ * it would turn a genuinely broken read path into an intermittent pass, and a test that fails one
+ * run in five for a known reason is a test people learn to ignore.
+ */
+async function retryingEmptyReply<T>(read: () => Promise<T>): Promise<T> {
+  try {
+    return await read();
+  } catch (err) {
+    if (!(err instanceof Error) || !/\b0 of \d+ bytes\b/.test(err.message)) throw err;
+    return await read();
+  }
+}
+
+/** The bench remotes a test can be written against, with what differs between them. */
+const BENCH = [
+  {
+    name: 'Harmony 600',
+    productId: HARMONY_600,
+    configBase: 0x030000,
+    // One dump, because there is one 600. The Ones need two, see below.
+    dumps: ['h600_config'],
+  },
+  {
+    name: 'Harmony One',
+    productId: HARMONY_ONE,
+    configBase: 0x040000,
+    dumps: ['one_config', 'one_config_unprogrammed'],
+  },
+] as const;
 
 test('node-hid loads and enumerates the bus', async () => {
   // Which is worth checking on its own: node-hid is a native module, so this failing means the
@@ -70,58 +116,60 @@ test('an attached Harmony is recognised by vendor and product range', async (t) 
  */
 const HARDWARE = process.env['HARMONY_HARDWARE_TESTS'] === '1';
 
-test('a flash read matches the lab dump of the same remote, byte for byte', async (t) => {
-  if (!HARDWARE) {
-    t.skip('set HARMONY_HARDWARE_TESTS=1 to let tests open the remote');
-    return;
-  }
-  // Whichever bench remote is attached, compared against that unit's own dump. Two Harmony Ones
-  // exist and they enumerate identically, so the unit is identified by which dump the read matches
-  // rather than by the product id. An earlier version picked the spare's dump for any One and
-  // failed on the other one, which is a test reporting on the wrong thing.
-  const product = await attached();
-  if (product !== HARMONY_600 && product !== HARMONY_ONE) {
-    t.skip('exactly one bench remote has to be attached');
-    return;
-  }
-  const candidates = product === HARMONY_600
-    ? ['h600_config']
-    : ['one_config', 'one_config_unprogrammed'];
-
-  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
-  const remote = new HarmonyRemote(await openHarmony({ productId: product }), { timeoutMs: 500 });
-  try {
-    const read = await remote.readFlash(product === HARMONY_600 ? 0x030000 : 0x040000, 256);
-    let matched: string | undefined;
-    for (const name of candidates) {
-      const dump = load(name);
-      if (dump === undefined) continue;
-      // The container sits behind the EZHex XML header in the dump, so find it rather than assume
-      // an offset: conflating a file offset with a flash offset is a mistake this project has made.
-      const at = dump.findIndex(
-        (_b, i) =>
-          dump[i] === 0x47 && dump[i + 1] === 0x53 && dump[i + 2] === 0x50 && dump[i + 3] === 0x4d,
-      );
-      if (at < 0) continue;
-      if (read.every((b, i) => b === dump[at + i])) matched = name;
+// One test per bench model rather than one test that picks a model. With both remotes attached
+// both run, and a session covers arch 12 and arch 14 at once.
+for (const unit of BENCH) {
+  test(`a flash read matches the lab dump of the attached ${unit.name}, byte for byte`, async (t) => {
+    if (!HARDWARE) {
+      t.skip('set HARMONY_HARDWARE_TESTS=1 to let tests open the remote');
+      return;
     }
-    assert.ok(matched !== undefined,
-      `the read matches none of the stored dumps (${candidates.join(', ')}), so either the ` +
-      'remote is a unit this lab has no dump of, or the read path is wrong');
-  } finally {
-    await remote.close();
-  }
-});
+    if (!(await present(unit.productId))) {
+      t.skip(`no single ${unit.name} attached`);
+      return;
+    }
+    // Compared against that unit's own dump. Two Harmony Ones exist and they enumerate
+    // identically, so the unit is identified by which dump the read matches rather than by the
+    // product id. An earlier version picked the spare's dump for any One and failed on the other
+    // one, which is a test reporting on the wrong thing.
+    const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+    const remote = new HarmonyRemote(await openHarmony({ productId: unit.productId }), {
+      timeoutMs: 500,
+    });
+    try {
+      const read = await retryingEmptyReply(() => remote.readFlash(unit.configBase, 256));
+      let matched: string | undefined;
+      for (const name of unit.dumps) {
+        const dump = load(name);
+        if (dump === undefined) continue;
+        // The container sits behind the EZHex XML header in the dump, so find it rather than
+        // assume an offset: conflating a file offset with a flash offset is a mistake this project
+        // has made.
+        const at = dump.findIndex(
+          (_b, i) =>
+            dump[i] === 0x47 && dump[i + 1] === 0x53 && dump[i + 2] === 0x50 && dump[i + 3] === 0x4d,
+        );
+        if (at < 0) continue;
+        if (read.every((b, i) => b === dump[at + i])) matched = name;
+      }
+      assert.ok(matched !== undefined,
+        `the read matches none of the stored dumps (${unit.dumps.join(', ')}), so either the ` +
+        'remote is a unit this lab has no dump of, or the read path is wrong');
+    } finally {
+      await remote.close();
+    }
+  });
+}
 
 test('the version block is twelve bytes and the flash id in it matches concordance', async (t) => {
-  if (!HARDWARE || (await attached()) !== HARMONY_600) {
+  if (!HARDWARE || !(await present(HARMONY_600))) {
     t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
   const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_600 }), { timeoutMs: 500 });
   try {
-    const fields = await remote.getVersion();
+    const fields = await retryingEmptyReply(() => remote.getVersion());
     assert.equal(fields.length, 12);
     // Fields 2 and 3 are the flash id, which concordance prints for this unit as 15:1C. Asserted
     // rather than printed, because the block also carries values that identify the remote.
@@ -134,7 +182,7 @@ test('the version block is twelve bytes and the flash id in it matches concordan
 });
 
 test('live RAM reads return varying values, and selector 0x06 is not the same accessor', async (t) => {
-  if (!HARDWARE || (await attached()) !== HARMONY_600) {
+  if (!HARDWARE || !(await present(HARMONY_600))) {
     t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');
     return;
   }
@@ -144,7 +192,7 @@ test('live RAM reads return varying values, and selector 0x06 is not the same ac
     // 0x1C1 is the 600's command state variable. Reading it during a READ_MISC returns 10, which is
     // the state READ_MISC itself sets: the read observes the command that is doing the reading. That
     // is the closure that makes this a live RAM read rather than a byte from somewhere.
-    assert.equal(await remote.readRam(0x1c1), 10);
+    assert.equal(await retryingEmptyReply(() => remote.readRam(0x1c1)), 10);
     const varied = new Set<number>();
     for (const address of [0x1c1, 0x08d, 0x3bf]) varied.add(await remote.readRam(address));
     assert.ok(varied.size > 1, 'every address returned the same byte, which is not a memory read');
@@ -154,8 +202,8 @@ test('live RAM reads return varying values, and selector 0x06 is not the same ac
 });
 
 test('the two internal sub-selectors address different memory, and 0xFE maps from zero', async (t) => {
-  if (!HARDWARE || (await attached()) !== HARMONY_ONE) {
-    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a Harmony One attached');
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a single Harmony One attached');
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
@@ -165,8 +213,8 @@ test('the two internal sub-selectors address different memory, and 0xFE maps fro
     // halves were wrong, so the correction is pinned rather than described: the same offset through
     // the two sub-selectors returns different bytes, and it is 0xFE that starts at program zero.
     for (const offset of [0x0000, 0x1000, 0xe000]) {
-      const fe = await remote.readInternalMemory(0xfe, offset, 62);
-      const ff = await remote.readInternalMemory(0xff, offset, 62);
+      const fe = await retryingEmptyReply(() => remote.readInternalMemory(0xfe, offset, 62));
+      const ff = await retryingEmptyReply(() => remote.readInternalMemory(0xff, offset, 62));
       assert.notDeepEqual([...fe], [...ff], `0xFE and 0xFF returned the same bytes at ${offset}`);
     }
     // PIC18 puts the reset vector at 0x0000 and the two interrupt vectors at 0x0008 and 0x0018.
@@ -181,8 +229,8 @@ test('the two internal sub-selectors address different memory, and 0xFE maps fro
 });
 
 test('the 0xFF page carries image headers and a 64 byte identity block', async (t) => {
-  if (!HARDWARE || (await attached()) !== HARMONY_ONE) {
-    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a Harmony One attached');
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a single Harmony One attached');
     return;
   }
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
@@ -191,7 +239,7 @@ test('the 0xFF page carries image headers and a 64 byte identity block', async (
     // 0x48 0x47 at offset 8 is the firmware image header this project already parses, in
     // src/harmony/firmware.py. Three separate offsets carry one.
     for (const [selector, offset] of [[0xfe, 0x1000], [0xff, 0x0000], [0xff, 0xe000]] as const) {
-      const head = await remote.readInternalMemory(selector, offset, 62);
+      const head = await retryingEmptyReply(() => remote.readInternalMemory(selector, offset, 62));
       assert.deepEqual([...head.subarray(8, 10)], [0x48, 0x47],
         `no image header at 0x${selector.toString(16)}+0x${offset.toString(16)}`);
     }
@@ -207,8 +255,8 @@ test('the 0xFF page carries image headers and a 64 byte identity block', async (
 });
 
 test('the firmware on the remote is the firmware in the archived package', async (t) => {
-  if (!HARDWARE || (await attached()) !== HARMONY_ONE) {
-    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a Harmony One attached');
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and a single Harmony One attached');
     return;
   }
   const image = load('one34_code');
@@ -225,7 +273,7 @@ test('the firmware on the remote is the firmware in the archived package', async
     const read = new Uint8Array(image.length);
     for (let off = 0; off < image.length; off += 16384) {
       const n = Math.min(16384, image.length - off);
-      read.set(await remote.readFlash(0x020000 + off, n), off);
+      read.set(await retryingEmptyReply(() => remote.readFlash(0x020000 + off, n)), off);
     }
     assert.deepEqual([...read], [...image], 'the remote is running a different build');
   } finally {
