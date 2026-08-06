@@ -127,6 +127,42 @@ export interface ReadOptions {
 export const DEFAULT_CHUNK_BYTES = 16384;
 
 /**
+ * A reply that never came, as opposed to one that came back wrong.
+ *
+ * Two shapes, because the command layer reports silence differently depending on where it happens:
+ * `exchange` says "no reply to command 0x10 within 3 polls" and `readFlash` says "flash read
+ * returned 0 of 256 bytes". Both mean the same thing here.
+ */
+export function isSilence(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return /no reply to command/.test(err.message) || /returned 0 of \d+ bytes/.test(err.message);
+}
+
+/**
+ * Send the first command twice if the first attempt is met with silence.
+ *
+ * **Only the first command, and only on silence.** Observed twice on a Harmony One: a flash read
+ * that returned 0 of 256 bytes, and a `GET_VERSION` that got no reply at all, each on the first
+ * command after the device was opened, each followed immediately by a run that worked from end to
+ * end including a 1232237 byte config read. The Harmony 600 has not done it. So the honest
+ * description is "the One sometimes drops the first command", not a general rule, and the cause is
+ * unknown; see `docs/usb-protocol.md`.
+ *
+ * Everything after the first command stays strict. Retrying the bulk reads too would be a wider
+ * workaround than the evidence supports, and it would turn a genuinely failing transfer into an
+ * intermittent success, which is the failure mode you least want in the thing that files your
+ * backups.
+ */
+async function firstCommand<T>(attempt: () => Promise<T>): Promise<T> {
+  try {
+    return await attempt();
+  } catch (err) {
+    if (!isSilence(err)) throw err;
+    return attempt();
+  }
+}
+
+/**
  * Read the whole config, header first.
  *
  * The version block is read before anything else because it is the cheapest thing that identifies
@@ -141,7 +177,7 @@ export async function readConfig(
   const now = options.now ?? (() => performance.now());
   const started = now();
 
-  const versionBlock = await reader.getVersion();
+  const versionBlock = await firstCommand(() => reader.getVersion());
   const head = await reader.readFlash(profile.configBase, HEADER_PROBE);
   const header = parseHeader(head, profile);
 

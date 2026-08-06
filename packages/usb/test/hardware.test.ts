@@ -43,22 +43,29 @@ async function present(productId: number): Promise<boolean> {
 /**
  * Run a read again once if it came back with nothing at all, and never if it came back wrong.
  *
- * The first command sent to a freshly attached remote sometimes gets no reply. Observed here as a
- * `readFlash` returning "0 of 256 bytes" against a Harmony One that then answered every later
- * command correctly, including a 60050 byte firmware read. One observation and a plausible cause,
- * so it is worked around rather than explained.
+ * The Harmony One sometimes drops the first command after the device is opened. Observed twice: a
+ * `readFlash` returning "0 of 256 bytes", and a `GET_VERSION` answered with no reply at all, each
+ * followed immediately by a run that worked end to end. The 600 has not done it. See
+ * `docs/usb-protocol.md`; the cause is not known and this is a workaround.
+ *
+ * **Two message shapes**, because the layers word silence differently: `exchange` says "no reply to
+ * command 0x10", `readFlash` says "returned 0 of 256 bytes". The first version of this helper
+ * matched only the second and would have let the `GET_VERSION` case straight through.
  *
  * What makes the retry safe to have in a test is the shape of the failure: **no answer, never a
- * wrong answer.** So this retries an empty reply and lets everything else through untouched, which
- * leaves every assertion about the bytes exactly as strict as it was. A blanket retry would not:
- * it would turn a genuinely broken read path into an intermittent pass, and a test that fails one
- * run in five for a known reason is a test people learn to ignore.
+ * wrong answer.** So this retries silence and lets everything else through untouched, which leaves
+ * every assertion about the bytes exactly as strict as it was. A blanket retry would not: it would
+ * turn a genuinely broken read path into an intermittent pass, and a test that fails one run in
+ * five for a known reason is a test people learn to ignore.
  */
 async function retryingEmptyReply<T>(read: () => Promise<T>): Promise<T> {
   try {
     return await read();
   } catch (err) {
-    if (!(err instanceof Error) || !/\b0 of \d+ bytes\b/.test(err.message)) throw err;
+    const silence =
+      err instanceof Error &&
+      (/no reply to command/.test(err.message) || /returned 0 of \d+ bytes/.test(err.message));
+    if (!silence) throw err;
     return await read();
   }
 }

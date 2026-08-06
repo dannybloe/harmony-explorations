@@ -1127,15 +1127,47 @@ to settle, and a list that only ever grows is not a status.
 * **GET_VERSION's block is twelve fields**, by two independent counts. Ten of them are still
   unnamed, which is the entry below.
 
+### The Harmony One drops its first command, sometimes
+
+Observed twice on 6 August 2026, both times on a Harmony One, both times the first command after the
+device was opened:
+
+| Command | Symptom | Immediately afterwards |
+|---|---|---|
+| `READ_FLASH`, 256 bytes at `0x040000` | `flash read returned 0 of 256 bytes` | the same test passed, and a 60050 byte firmware read passed in the same run |
+| `GET_VERSION` | `no reply to command 0x10 within 3 polls of 2000 ms` | a rerun read the whole 1232237 byte config without a hiccup |
+
+**The Harmony 600 has not done it**, on either occasion, including runs where its first command came
+before the One's. So the honest statement is about the One, not about remotes in general.
+
+What can be said: the failure is **silence, never a wrong answer**. No case has produced bytes that
+turned out to be incorrect. What cannot be said is why. Candidates nobody here has separated: a wake
+from sleep, since the One has a rechargeable cell and a screen where the 600 runs on AA cells; a
+first-read-after-open effect in the host stack; or an idle timeout rather than anything to do with
+opening at all. Two observations do not distinguish them, and the experiment that would, opening the
+device repeatedly at measured intervals, has not been run.
+
+The workaround is one retry of the **first** command only, and only on silence, in
+`packages/corpus`. Everything after the first command stays strict: widening the retry would be more
+than the evidence supports and would turn a genuinely failing transfer into an intermittent success,
+which is the worst property for the code that files backups. The same rule, with the same two
+message shapes, is in `packages/usb/test/hardware.test.ts`.
+
 ### Still open
 
-* **Fields 8 and 9 of the version block**, and what fields 7, 10 and 11 are versions of, given that
-  they repeat field 0 on both remotes. Concordance prints firmware type, the third component of the
-  hardware version, and `IRL, ORL, FRL`, none of which is placed.
+* **Why the One drops that first command**, per the section above. Capped rather than understood,
+  which is the same shape as the internal-read restart below.
+* **What fields 7, 10 and 11 are versions of**, given that they repeat field 0 on both remotes.
+  Concordance prints firmware type, the third component of the hardware version, and `IRL, ORL,
+  FRL`, none of which is placed. *Fields 8 and 9 were on this line until they were placed: field 9
+  versions the image at `0xFF` `+0x0000` and field 8 the one at `0xFF` `+0xE000`, both `0x00` when
+  the image is absent, with the 600 as the negative case for each.*
 * **Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is
   exempt.** Narrowed to that by experiment, capped rather than understood.
-* **Another route to `MCU_ID`**, since the internal read window is two 64 KiB pages and the device id
-  is at `0x3FFFFE`. The arch 12 part number stays inferred until one is found.
+* ~~Another route to `MCU_ID`.~~ **Closed as unreachable rather than answered.** The internal window
+  is two 64 KiB pages and a PIC18 keeps its device id at `0x3FFFFE`, outside both, so there is no
+  route through this command set. The arch 12 part number stays inferred. `docs/findings.md`
+  section 22, and section 25 for the weak corroboration that it is a 128 KiB part.
 * Whether the length nibble mapping differs in safe mode, which is a separate firmware.
 * Whether `0x28`, GET_VERSION's code, means anything in its low nibble. It is not a payload length:
   it would say 15 where the firmware copies 12, and the acknowledgement shows the nibble is not a

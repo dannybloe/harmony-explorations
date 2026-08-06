@@ -158,6 +158,60 @@ test('an implausible end_addr is refused before any bulk read happens', () => {
   assert.throws(() => parseHeader(head, profile), /implausible length/);
 });
 
+test('the first command is sent twice when it is met with silence, and only then', skipUnless('h600_config'), async () => {
+  const config = configOf('h600_config');
+  const profile = profileFor(H600);
+  const base = fakeRemote(config, profile);
+
+  // Both shapes the command layer uses for "no reply", since the two layers word it differently.
+  for (const message of ['no reply to command 0x10 within 3 polls of 2000 ms', 'flash read returned 0 of 256 bytes']) {
+    let attempts = 0;
+    const reader: ConfigReader = {
+      ...base.reader,
+      async getVersion() {
+        attempts += 1;
+        if (attempts === 1) throw new Error(message);
+        return new Uint8Array(12);
+      },
+    };
+    const read = await readConfig(reader, profile);
+    assert.equal(attempts, 2, message);
+    assert.equal(read.bytes.length, config.length, 'and the read then completes normally');
+  }
+});
+
+test('a first command that fails for any other reason is not retried', async () => {
+  const profile = profileFor(H600);
+  let attempts = 0;
+  const reader: ConfigReader = {
+    async getVersion() {
+      attempts += 1;
+      throw new Error('a version block is 12 bytes, got 7');
+    },
+    async readFlash() {
+      throw new Error('should never get here');
+    },
+  };
+  await assert.rejects(readConfig(reader, profile), /got 7/);
+  assert.equal(attempts, 1, 'a wrong answer is not a missing one');
+});
+
+test('silence twice in a row is reported rather than retried forever', async () => {
+  const profile = profileFor(H600);
+  let attempts = 0;
+  const reader: ConfigReader = {
+    async getVersion() {
+      attempts += 1;
+      throw new Error('no reply to command 0x10 within 3 polls of 2000 ms');
+    },
+    async readFlash() {
+      throw new Error('should never get here');
+    },
+  };
+  await assert.rejects(readConfig(reader, profile), /no reply to command/);
+  assert.equal(attempts, 2, 'one retry, not a loop');
+});
+
 test('what came off the fake remote parses as the same container as the file', skipUnless('one_config'), async () => {
   const config = configOf('one_config');
   const profile = profileFor(ONE);

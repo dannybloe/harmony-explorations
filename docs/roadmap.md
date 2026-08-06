@@ -422,11 +422,12 @@ Still to do, in the order the application needs them:
 
 ### Step 5: M1, the read path and the bench instrument
 
-**The read pipeline first. Built, tested, and not yet run against a remote.**
-`packages/corpus`, with `bin/read-config.ts` as the command. Twelve tests drive it from a fake
-remote that serves a real config from the corpus at the address the hardware would map it at, which
-is how the address arithmetic gets asserted without hardware. What is left is running it once with
-a remote attached.
+**The read pipeline. Done, on both architectures.** `packages/corpus`, with `bin/read-config.ts` as
+the command. Run against the spare Harmony One and the Harmony 600: 1232237 bytes in 40 seconds and
+738149 bytes in 24, both at about 30 KiB/s, and **both byte identical to that unit's stored dump**
+with all ten container checks passing. The sidecar carries the version block, the addresses and the
+timings. Fifteen tests drive it from a fake remote serving a real config at the address the hardware
+would map it at, which is how the address arithmetic is asserted without hardware.
 
 * Read a whole config off a remote and file it in the lab corpus automatically, with a timestamp,
   because a dump taken before an experiment is the only cheap insurance there is. No new
