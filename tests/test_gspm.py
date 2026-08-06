@@ -591,6 +591,63 @@ class TestActionLists(unittest.TestCase):
         for gap in gaps:
             self.assertGreater(gap, 20000)
 
+    @staticmethod
+    def _runs(c):
+        """The index of the last list in each contiguous run, derived from the table itself."""
+        table = c.pointer_array(gspm.arch_slot(c.architecture, 10))
+        lists = c.action_lists()
+        ends = []
+        for k in range(len(table) - 1):
+            if table[k + 1] != table[k] + 1 + 3 * len(lists[k]):
+                ends.append(k)
+        ends.append(len(table) - 1)
+        return ends
+
+    def test_opcode_7f_takes_an_action_list_index_and_stops_at_a_run_boundary(self):
+        """
+        docs/findings.md section 26. Every `0x7F` operand indexes the action list table, and the
+        largest is exactly the last index before the final run.
+
+        The two halves come from unrelated parts of the file: the run boundaries from the pointer
+        table and the list counts, the operand range from the instruction stream. Landing on the
+        same index in two configs of different sizes is what makes this a reading rather than a
+        range that happens to fit.
+        """
+        for name, expected_max in (('h700_config', 7655), ('h600_config', 4755)):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                lists = c.action_lists()
+                operands = [i.operand for l in lists for i in l if i.opcode == 0x7F]
+                self.assertGreater(len(operands), 1000, 'too few uses to say anything')
+
+                self.assertTrue(all(0 <= o < len(lists) for o in operands),
+                                'an operand that is not a valid list index')
+                self.assertEqual(max(operands), expected_max)
+
+                ends = self._runs(c)
+                self.assertEqual(len(ends), 5, 'five runs, per section 17')
+                self.assertEqual(max(operands), ends[-2],
+                                 'the maximum is the last index before the final run')
+                # And nothing reaches into that final run: those lists are entry points that
+                # something other than an action list call reaches.
+                self.assertEqual([o for o in operands if o > ends[-2]], [])
+
+    def test_two_opcodes_carry_signed_operands(self):
+        """
+        Also section 26. `0x07` and `0x1F` never carry a value below 0xE800, which read as
+        unsigned are numbers with no referent anywhere in the file and read as signed are small
+        negative ones. Not a meaning, a constraint on what the meaning can be.
+        """
+        for name in ('h700_config', 'h600_config'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                by_op = {}
+                for l in c.action_lists():
+                    for i in l:
+                        by_op.setdefault(i.opcode, []).append(i.operand)
+                self.assertTrue(all(o >= 0xFFF2 for o in by_op[0x07]), 'a 0x07 operand below -14')
+                self.assertTrue(all(o >= 0xE800 for o in by_op[0x1F]), 'a 0x1F operand below -6144')
+
     def test_the_525_reproduces_the_count_reported_upstream(self):
         """
         harmony-decompiler discussion 5 reports 487 action lists for this sample and that 482

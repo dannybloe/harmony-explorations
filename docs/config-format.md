@@ -374,15 +374,49 @@ come from the pointer table and the counts come from the lists, so they are unre
 file that turn out to describe the same layout. On the 525 the numbers also match what
 harmony-decompiler reports independently, 487 lists with 482 of 486 packed.
 
-**Opcode meanings are not established here.** The inventory differs by architecture, which matters
-for planning: arch 14's most common opcodes include `0x6C`, which never appears in the arch 9
-sample, so an opcode table derived from the 525 does not cover the remotes on the bench. Counts of
-the most frequent bytes, for orientation only:
+#### Opcode `0x7F` takes an action list index
 
-| Sample | most frequent opcodes |
-|---|---|
-| 700, arch 14 | `0x7C` 7272, `0x7A` 2875, `0x6C` 2832, `0x7F` 2795, `0x1F` 1215 |
-| 525, arch 9 | `0x7F` 235, `0x7C` 203, `0x7D` 200, `0x7E` 134, `0x75` 60 |
+**Confirmed on arch 14**, from the operand ranges rather than from the firmware.
+
+| | 700 | 600 |
+|---|---|---|
+| uses | 2795 | 1465 |
+| distinct operands | 1576 | 834 |
+| operand range | 52 to 7655 | 23 to 4755 |
+| action lists in the config | 8037 | 4955 |
+| the five runs end at index | 17, 4323, 5147, **7655**, 8036 | 11, 2721, 3154, **4755**, 4954 |
+
+Every operand is a valid index into the table, and the largest is **exactly the last index before
+the final run**, on both configs, at two different values. Operands never reach into that final run
+at all: 381 lists on the 700 and 199 on the 600 are addressed by the table and never named by a
+`0x7F`, so those are entry points something else reaches.
+
+That is a boundary landing on a structure derived from a different part of the file, twice, which is
+what makes it a reading rather than a range that happens to fit. It also matches what
+harmony-decompiler reports for arch 9, where `0x7F` is "run an action list", so the meaning
+transfers across architectures even though the wider inventory does not.
+
+#### The rest of the inventory, not established
+
+Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode
+table derived from the 525 does not cover the remotes on the bench.
+
+| Opcode | 700 uses | distinct operands | operand range | reading |
+|---|---|---|---|---|
+| `0x7C` | 7272 | 600 | 1 to 1380 | unknown |
+| `0x7A` | 2875 | 10 | 0 to 65277 | unknown, and only ten distinct operands in 2875 uses |
+| `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
+| `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
+| `0x1F` | 1215 | 121 | 59392 to 65290 | unknown, and the operands are **negative**: `0xE800` to `0xFF0A` |
+| `0x7E` | 861 | 268 | 0 to 373 | unknown |
+| `0x7D` | 372 | 350 | 0 to 1361 | unknown, and nearly every use has its own operand |
+| `0x07` | 230 | 8 | 65522 to 65535 | unknown, operands are `-14` to `-1` |
+
+Two structural remarks that hold whatever the meanings turn out to be. **Some operands are signed**:
+`0x07` and `0x1F` never carry a value below `0xE800`, and reading them as unsigned gives numbers with
+no plausible referent. And **several carry bit 15 as a flag**: `0x6C` tops out at `0x8014` and `0x71`
+at `0x833E` on the 700 against `0x8336` on the 600, which is the shape of an index with a marker
+rather than a range.
 
 ### One table, four architectures
 

@@ -2652,6 +2652,85 @@ What the six bytes actually say. Decoding them into `WDTEN`, `PLLDIV`, `XINST` a
 byte level reading of a per unit region that is not published here, and nothing in this project
 needs it yet.
 
+## 26. Action list opcode `0x7F` is a call, and the operands prove it without the firmware
+
+Section 17 left the opcode table as the most valuable thing to look for, and said the meanings had
+to be read out of the arch 14 firmware. One of them did not need to be.
+
+### The search that did not work, first
+
+The plan was the obvious one: the compiler emits a switch as an `XORLW` chain, so the interpreter
+should be a chain whose case values are action list opcodes. A scan of the whole 700 image for
+chains of three or more cases, scored against the opcodes the configs actually use, returned
+eleven candidates and every one of them was the **same chain** read from a different starting
+offset: the USB state dispatch at `0x0C720`, which `harmony/pic18/chains.py` already documents as
+70 cases running to `0x0C8FE`.
+
+That is the trap the module's own docstring warns about, arriving exactly as described: "the value
+of a case depends on where the walk started, so starting one comparison too late shifts every case
+value, and both readings can look plausible". A scanner that starts a walk at every `XORLW` in the
+image finds one chain many times and calls it many chains.
+
+So the interpreter is not an `XORLW` chain, or it dispatches on something derived from the opcode
+rather than on the opcode itself. Both remain open.
+
+### What worked instead
+
+The operand is a `u16` and the opcode is one byte, so every opcode has an operand distribution, and
+a distribution is testable against structures derived from elsewhere in the file.
+
+| | 700 | 600 |
+|---|---|---|
+| `0x7F` uses | 2795 | 1465 |
+| distinct operands | 1576 | 834 |
+| operand range | 52 to 7655 | 23 to 4755 |
+| action lists in the config | 8037 | 4955 |
+
+Every operand is a valid index into the action list table. That alone would be suggestive rather
+than conclusive, since the table is large and a range can fit by luck. The closure is where the
+range **stops**.
+
+Section 17 established that the lists are packed into exactly five contiguous runs, which is why
+four consecutive table entries per config are not `1 + 3 * count` apart. Those runs end at these
+indices:
+
+```
+700   17, 4323, 5147, 7655, 8036
+600   11, 2721, 3154, 4755, 4954
+```
+
+`0x7F`'s largest operand is **7655** on the 700 and **4755** on the 600. Both are exactly the last
+index before the final run, and not one operand in either config reaches past it.
+
+The run boundaries come from the addresses in the pointer table and the counts inside the lists.
+The operand range comes from the instruction stream. Those are unrelated parts of the file, and the
+boundary lands on the same index in both configs at two different values. A range that fits by luck
+does not do that twice.
+
+### What it means, and what it leaves
+
+`0x7F` takes an action list index and runs it: a call. That agrees with harmony-decompiler's arch 9
+table, where `0x7F` is "run an action list", so this meaning transfers across architectures even
+though the wider inventory does not. Per decision 7 the upstream table was a hypothesis to test
+rather than a fact to adopt, and this is one entry tested and held.
+
+The final run is the interesting leftover. 381 lists on the 700 and 199 on the 600 are addressed by
+the table and never called by a `0x7F`, so something else reaches them and it is not another action
+list. They are entry points. The key table has 163 and 162 records respectively, which does not
+match, so the obvious guess is already ruled out.
+
+### Two structural facts about operands, whatever the opcodes mean
+
+**Some operands are signed.** `0x07` carries only `0xFFF2` to `0xFFFF`, that is `-14` to `-1`, and
+`0x1F` only `0xE800` to `0xFF0A`. Read as unsigned they are numbers with no referent anywhere in
+the file; read as signed they are small negative values.
+
+**Several carry bit 15 as a flag rather than as magnitude.** `0x6C` tops out at `0x8014` on both
+configs, which is itself odd for an index, and `0x71` at `0x833E` on the 700 against `0x8336` on the
+600. An index with a marker bit fits; a range does not.
+
+Neither is claimed as a meaning. They are constraints on what the meanings can be.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
