@@ -535,6 +535,206 @@ class TestSlotFifteenHasADemandedSize(unittest.TestCase):
                 self.assertEqual(len(entries), want)
 
 
+class TestTheBindingTable(unittest.TestCase):
+    """findings.md section 39: base slot 9, its index, and its two firmware tags."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    @staticmethod
+    def _sets(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name))
+
+    def test_the_index_maxes_out_at_the_count_minus_one_everywhere(self):
+        """The closure. Opcode 0x1F with operand high 0xFF carries the index."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            indices = [c.handler_index(i) for lst in c.action_lists() for i in lst]
+            indices = [i for i in indices if i is not None]
+            with self.subTest(config=name):
+                self.assertTrue(indices, 'no config should be without a selection')
+                self.assertEqual(max(indices) + 1, len(c.handler_sets()))
+
+    def test_the_selector_ignores_the_same_opcode_with_another_operand(self):
+        """0x1F reaches many branches; only the 0xFFxx one selects a handler set."""
+        from harmony import gspm
+        c = self._sets('h700_config')
+        self.assertIsNone(c.handler_index(gspm.Instruction(operand=0xFE00, opcode=0x1F)))
+        self.assertIsNone(c.handler_index(gspm.Instruction(operand=0xFF01, opcode=0x7F)))
+        self.assertEqual(c.handler_index(gspm.Instruction(operand=0xFF01, opcode=0x1F)), 1)
+
+    def test_every_config_carries_the_enter_and_leave_tags(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            tags = {e.tag for a in c.handler_sets() for e in c.tagged_list(a)}
+            with self.subTest(config=name):
+                self.assertIn(gspm.HANDLER_TAG_ENTER, tags)
+                self.assertIn(gspm.HANDLER_TAG_LEAVE, tags)
+
+    def test_the_other_tags_are_key_events_by_the_slot_8_split(self):
+        """Tags at 0x80 and above decode as press, release or repeat with a scan code."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = self._sets(name)
+            high = {e.tag for a in c.handler_sets() for e in c.tagged_list(a) if e.tag >= 0x80}
+            with self.subTest(config=name):
+                self.assertTrue(high)
+                # Every one is a real event type, never the 0x40 release-only bit on its own,
+                # and every scan code is inside the 54 the arch 14 key table can express.
+                self.assertTrue(all(t & gspm.EVENT_MASK in (0x80, 0xC0) for t in high))
+
+    def test_the_seven_hundred_pair_differs_by_one_binding_in_one_entry(self):
+        """The controlled pair. One described button, one added binding, nothing else moves."""
+        a, b = self._sets('h700_config'), self._sets('h700_config_2')
+        differing = []
+        for pa, pb in zip(a.handler_sets(), b.handler_sets()):
+            ta = {e.tag: (e.operand, e.opcode) for e in a.tagged_list(pa)}
+            tb = {e.tag: (e.operand, e.opcode) for e in b.tagged_list(pb)}
+            if ta != tb:
+                differing.append((sorted(set(tb) - set(ta)), sorted(set(ta) - set(tb))))
+        self.assertEqual(len(differing), 1)
+        added, removed = differing[0]
+        self.assertEqual(len(added), 1)
+        self.assertEqual(removed, [])
+        self.assertEqual(added[0] & 0xC0, 0x80, 'the added tag is a key press')
+
+
+class TestTheStateValueMap(unittest.TestCase):
+    """findings.md section 39: base slot 14, and opcode 0x72 indexing it and slot 13 at once."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_both_halves_of_the_operand_stay_inside_their_tables(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            maps, variables = c.value_maps(), c.state_table().count
+            refs = [c.value_map_reference(i) for lst in c.action_lists() for i in lst]
+            refs = [r for r in refs if r is not None]
+            with self.subTest(config=name):
+                self.assertTrue(refs)
+                self.assertLess(max(v for v, _ in refs), variables)
+                self.assertLess(max(m for _, m in refs), len(maps))
+
+    def test_only_one_combination_of_widths_fits_the_layout(self):
+        """A record's computed length lands on another record's start under one shape only.
+
+        The discriminator, not a restatement of the constants. The first reading of this had the
+        key varying and the count fixed at two bytes, which scored six of twelve on the older
+        architectures and passed for a majority until the other combinations were tried.
+        """
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            maps = c.value_maps()
+            starts = {m.address for m in maps}
+            counter = gspm.VALUE_MAP_COUNT_WIDTH[c.architecture]
+            scores = {}
+            for cw in (1, 2):
+                for kw in (1, 2):
+                    hit = 0
+                    for m in maps:
+                        off = c.blob_offset_of(m.address)
+                        count = int.from_bytes(c.blob[off + 1:off + 1 + cw], 'little')
+                        hit += (m.address + 2 + cw + (kw + 3) * count) in starts
+                    scores[cw, kw] = hit
+            best = max(scores, key=scores.get)
+            with self.subTest(config=name):
+                self.assertEqual(best, (counter, gspm.VALUE_MAP_KEY_WIDTH))
+                for shape, hit in scores.items():
+                    if shape != best:
+                        self.assertLess(hit, scores[best])
+                # And the winner is not merely ahead, it accounts for nearly every record. The
+                # rest are addresses pointing into the middle of a longer record.
+                self.assertGreaterEqual(scores[best], 0.8 * len(maps))
+
+    def test_a_record_lead_byte_is_what_the_document_says(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            leads = {c.blob[c.blob_offset_of(m.address)] for m in c.value_maps()}
+            with self.subTest(config=name):
+                self.assertEqual(leads, {2})
+
+    def test_every_payload_is_an_address_inside_the_container(self):
+        """The independent check that the three bytes are a pointer and not an instruction."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            targets = [t for m in c.value_maps() for _, t in m.entries]
+            targets += [t for m in c.value_maps() for _, _, t in m.ranges]
+            with self.subTest(config=name):
+                self.assertTrue(targets)
+                self.assertTrue(all(c.flash_base <= t < c.end_addr for t in targets))
+
+
+class TestTheNumberSender(unittest.TestCase):
+    """findings.md section 39: base slot 16, read from three images and used by no config."""
+
+    # The seek site of base slot 16 on each image, and the register the index offset goes into.
+    # Arch 12's is a banked `f` field rather than a resolved address, like its seeker's, so the
+    # three are compared by the literals they receive and not by their numbering.
+    CONSUMERS = {'h700_code': (0x9000, 0x19A90, 0x0E0),
+                 'h600_code_complete': (0x9000, 0x1845E, 0x0DD),
+                 'one34_code': (0x20000, 0x2C5D0, 0x0F4)}
+    # 10000, 1000, 100 and 10 as the little endian pairs the consumer subtracts.
+    LADDER = (0x27, 0x10), (0x03, 0xE8), (0x00, 0x64), (0x00, 0x0A)
+
+    def _window(self, name, base, start):
+        code = lab.load(name)
+        offset = start - base
+        out = []
+        for _ in range(0x180):
+            instr = isa.decode(code, offset, base)
+            out.append(instr)
+            offset += 2 * instr.words
+        return out
+
+    def test_the_three_digit_table_offsets_follow_the_bytes_read_in_sequence(self):
+        """The closure: 1 + 3 + 1 + 3 + 3 + 3 is fourteen, and fourteen is the first offset."""
+        from harmony import gspm
+        self.assertEqual(gspm.NUMBER_SENDER_DIGIT_TABLES[0], gspm.NUMBER_SENDER_HEADER)
+        self.assertEqual(gspm.NUMBER_SENDER_DIGIT_TABLES, (14, 17, 20))
+        self.assertEqual(1 + 3 + 1 + 3 + 3 + 3, gspm.NUMBER_SENDER_HEADER)
+
+    def test_every_image_indexes_at_the_same_four_offsets(self):
+        from harmony import gspm
+        for name, (base, start, register) in self.CONSUMERS.items():
+            offsets, previous = set(), None
+            for instr in self._window(name, base, start):
+                if instr.mnemonic == 'MOVLW':
+                    previous = instr.fields['k']
+                if instr.mnemonic == 'MOVWF' and instr.fields['f'] == register:
+                    offsets.add(previous)
+            with self.subTest(image=name):
+                self.assertEqual(offsets & {1, 14, 17, 20},
+                                 {1} | set(gspm.NUMBER_SENDER_DIGIT_TABLES))
+
+    def test_every_image_subtracts_the_same_decimal_ladder(self):
+        for name, (base, start, _) in self.CONSUMERS.items():
+            literal = None
+            seen = []
+            for instr in self._window(name, base, start):
+                if instr.mnemonic == 'MOVLW':
+                    literal = instr.fields['k']
+                elif instr.mnemonic in ('SUBWF', 'SUBWFB') and literal is not None:
+                    seen.append(literal)
+            with self.subTest(image=name):
+                for high, low in self.LADDER:
+                    self.assertIn(low, seen)
+                    self.assertIn(high, seen)
+
+    def test_no_config_in_the_corpus_has_a_record(self):
+        """Stated as a test so it fails the day a sample arrives that does."""
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            with self.subTest(config=name):
+                self.assertEqual(c.number_senders(), [])
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

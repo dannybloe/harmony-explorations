@@ -171,6 +171,9 @@ Known so far:
 | 15 | a table whose **entry count the firmware demands**: 9 on arch 14, 11 on arch 12 | ten configs, three images |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
+| 9 | the **binding table**: eight to sixteen sets of button bindings with an enter and a leave handler | ten configs, four architectures, below |
+| 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | ten configs, four architectures, below |
+| 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
 
@@ -238,6 +241,137 @@ Read with `gspm.mode_table`.
 *It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
 entries. What distinguishes one entry from another is not established.
 [findings.md](findings.md) section 37.
+
+### Tagged lists
+
+Base slots 6 and 9 both point at lists in this encoding, and one firmware routine reads both. Which
+of the two forms applies is decided by the first byte, exactly as the firmware decides it:
+
+```
++0x00  u8   count                                     when nonzero
++0x01  { u8 tag; u16 operand; u8 opcode }[count]
+```
+
+```
++0x00  u8   0
++0x01  u8   count
++0x02  { u8 flags; u8 tag; u16 operand; u8 opcode }[count]
+```
+
+The firmware stops at the **first** entry whose tag matches and runs nothing else, so a duplicate
+tag is unreachable through anything but its first copy. A writer that emits two entries with one tag
+has emitted dead data, silently. Bit 0 of `flags` in the second form is tested after the match and
+what it selects is *not established*.
+
+Read with `gspm.tagged_list`. [findings.md](findings.md) section 39.
+
+### Base slot 9: the binding table
+
+**Confirmed on ten configs across four architectures.**
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+Eight to sixteen entries, each pointing at a tagged list. **The largest index any config uses is
+exactly the count minus one, in all ten**, over counts from 8 to 16.
+
+The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
+byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming
+one's with **tag 1**, the same leave and enter arrangement base slot 6 has with tags 7 and 6.
+
+An entry's other tags are **key event codes**, by the same `EVENT_MASK` and `SCAN_MASK` split base
+slot 8 uses: `0x81` is a press of scan code 1. So an entry is a set of button bindings with a
+lifecycle.
+
+The two Harmony 700 configs differ in exactly one place in this section, one added binding with a
+press tag in one entry, and their owner's notes record exactly one added standard button assignment
+in one activity.
+
+*What an entry corresponds to is not established.* That owner describes a six device installation
+and the table has eleven entries, so it is not the device list; devices and activities together is
+the reading the counts support and it is not proven.
+
+Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
+
+### Base slot 14: the state value map
+
+**Confirmed on ten configs across four architectures.**
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address
+
+```
++0x00  u8   stepped over by the firmware; 2 in every record in the corpus
++0x01  count                 u16 on arch 14, u8 on arch 8, 9 and 12
++...   { u16 value; u24 address }[count]
++...   u8   count of the range table
++...   { u16 low; u16 high; u24 address }[count]
+```
+
+The **count width differs by architecture and the key width does not**. That is read off the
+layout: compute a record's length under each of the four combinations of widths and ask whether it
+lands on another record's start. One combination per architecture accounts for at least four fifths
+of the records and the other three are all behind it.
+
+Opcode `0x72` names both halves of this at once. Its operand's **low byte is a state variable
+index** into base slot 13 and its **high byte selects the record** here. The record is searched for
+the variable's value, then, if nothing matched, for a range containing it; the bounds are inclusive.
+Both operand bounds hold in all ten configs and neither is ever overrun.
+
+**The payload is a flash address, not an instruction.** All 9776 targets across ten configs land
+inside their own container. The firmware follows one and hands it to a **second interpreter**, a
+one byte opcode language with ten opcodes and a terminator, which is not the action list language
+and is not decoded. Base slot 6's mode switch reaches the same interpreter.
+
+Records share their tails: a few addresses point into the middle of a longer record rather than to
+a record of their own, so two records can overlap by design.
+
+The range table is empty in eight of the ten configs; two carry one range between them.
+
+Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
+
+### Base slot 16: the number sender
+
+**Read from three firmware images and unexercised by any container.** All twelve containers in the
+corpus carry a count of zero here, so the layout below comes from the code alone and no sample
+confirms it.
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address
+
+```
++0x00  u8   flags
++0x01  u24  base, added to the value before conversion
++0x04  u8   minimum number of digits
++0x05  u24  instruction queued first
++0x08  u24  instruction queued last
++0x0B  u24  instruction queued before the digits when the value is long enough
++0x0E  u24  first digit table
++0x11  u24  middle digit table
++0x14  u24  last digit table
+```
+
+Each digit table is ten three byte instructions indexed by the digit. The firmware adds `base` to
+the value it is given, converts the sum to packed decimal by subtracting `10000`, `1000`, `100` and
+`10` in four loops, and queues one instruction per digit, taking it from the first, middle or last
+table according to where the digit sits. `flags` bit 2 makes the prefix instruction fire at a
+hundred and bit 1 at ten; with neither, it never fires. Bit 0 makes the prefix consume a digit.
+
+The fourteen bytes read in sequence end exactly where the first of the three fixed pointer offsets
+begins, which is the closure for this layout, and the routine is identical on the 700, the 600 and
+the One.
+
+Read with `gspm.number_senders`. [findings.md](findings.md) section 39.
 
 ### Base slot 13: the state variable table
 
@@ -713,14 +847,17 @@ Placed by their handlers:
 | `0x7B` | build an instruction from a runtime byte and push it back on the queue |
 | `0x71` | **compare**: low byte indexes a lookup, low nibble of the high byte selects the operator, left hand side is a byte variable |
 | `0x70` | the same comparison, with the accumulator as the left hand side |
+| `0x72` | **map a state variable's value**: low byte a state variable, high byte a base slot 14 record |
+| `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9 |
+| `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register |
 
 The comparison selector is `0` equal, `1` not equal, `2` greater, `3` less, `4` greater or equal,
 `5` less or equal. Selectors `6` and `7` are not comparisons. **`0x71` uses exactly `0` to `5` and
 nothing else**, over 2164 uses in ten configs, which is what made its high byte look like a group of
 six. `0x70` uses `0` to `3` and also `7`, nine times.
 
-*What the lookup behind `0x70`, `0x71` and `0x72` reads is not established.*
-[findings.md](findings.md) section 34.
+The lookup all three of `0x70`, `0x71` and `0x72` index with their low byte is the **state variable
+table**, base slot 13. [findings.md](findings.md) sections 34, 35 and 39.
 
 #### The rest of the inventory, not established
 
@@ -739,7 +876,14 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x07` | 230 | 8 | 65522 to 65535 | unknown; in the second operand space, above |
 | `0x71` | 708 | 73 | 9 to 33598 | unknown, but the operand splits: bit 15 a flag, high byte a group 0 to 5, low byte always under 64 |
 
-**`0x7E` is measured and unplaced.** Recorded so the next attempt does not redo it. Its values are
+**Corrected here:** the paragraph below was written when `0x7E` was measured and unplaced, and it is
+kept because its measurements are still the record of what the operand statistics could and could
+not see. `0x7E` **is** placed, in [findings.md](findings.md) section 37: it enters the base slot 6
+mode its operand indexes. Read the paragraph as an account of why counting operands was not enough,
+not as an open question. Its last sentence is the one that mattered: the maximum tracked nothing
+countable in the config, because nobody had counted the mode table yet.
+
+Its values are
 dense over roughly 40 to the maximum with the bottom of the range mostly unused, and the maximum
 tracks nothing countable in the config: 373 against 354 binding records and 350 infrared records on
 the 700, 267 against 268 and 328 on the One. It is not an index into any of the six pointer arrays,

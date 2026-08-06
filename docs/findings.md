@@ -3869,6 +3869,266 @@ window is not a routine: read to the `RETURN` before attributing anything to a c
 The contents of slots 7, 9, 11, 12, 14, 15, 16 and 17. Every one now has a consumer address on at
 least one image and a structure, which is the difference between a search and a reading.
 
+Slots 9, 14 and 16 came off that list in section 39.
+
+## 39. Three more sections named, and what the accumulator computes
+
+Section 38 ended with eight slots that had a consumer address and no name, and with the rule that
+made naming them possible: read the consumer to its `RETURN`, because a fixed window is not a
+routine. Doing that for three of them names three sections, places a fourth opcode, and answers a
+question section 34 left open, which is what the arithmetic machine is for.
+
+### Base slot 9 is the binding table
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+Eight to sixteen entries in every config in the corpus, each pointing at a tagged list. The
+consumer is `0x1B6DE` on the 700, `0x19E22` on the 600 and `0x2E2D2` on the One, and it does one
+thing: index the array by a byte the caller supplies, follow the pointer, and run the tagged list
+there against a tag the caller also supplies.
+
+**The closure is the index.** One instruction proposes a new current entry, opcode `0x1F` with the
+operand's high byte `0xFF` and the index in the low byte, at `0x0F25C`. Its maximum is **exactly
+the table's count minus one, in all ten configs**:
+
+| config | arch | count | largest index used |
+|---|---|---|---|
+| 700, both | 14 | 11 | 10 |
+| 600 | 14 | 9 | 8 |
+| 525 | 9 | 8 | 7 |
+| One, programmed | 12 | 16 | 15 |
+| One, unprogrammed | 12 | 9 | 8 |
+| 880 a | 8 | 9 | 8 |
+| 880 b | 8 | 10 | 9 |
+| 880 c, 880 d | 8 | 11 | 10 |
+
+Ten for ten, no slack anywhere, across four architectures. That is the same test that placed
+`0x7D` and `0x7E`.
+
+**What an entry holds is button bindings.** Scanning the tags in every entry of every config gives
+two populations. Tags below `0x40` are firmware tags: `1` and `2` appear in all ten configs, and
+the transition code at `0x0EB80` shows what they are. It compares the current entry against a
+proposed one, and when they differ it runs the old entry with **tag 2** and then the new one with
+**tag 1**. Leave and enter, the same arrangement base slot 6 has with tags 7 and 6.
+
+Tags at `0x80` and above are **key event codes**, by the `EVENT_MASK` and `SCAN_MASK` split of
+section 17: `0x81` is a press of scan code 1, `0xC3` a repeat of scan code 3. That is exactly the
+encoding base slot 8 uses, section 27. So an entry is a set of button bindings plus an enter and a
+leave handler.
+
+**The controlled pair settles it.** The two Harmony 700 configs differ in one place in this whole
+section: entry 8 gains a single binding, tag `0x9A`, a key press. Their owner's own notes record
+one new standard button assignment in one activity, `UpArrow = Receiver: InputAv1`. One described
+button, one added binding, in one entry, and nothing else in the section moves. Section 16 warns
+that the pair's direction is unresolved; this does not depend on the direction.
+
+**What an entry corresponds to is not settled.** That owner describes a six device installation and
+the table has eleven entries, so it is not the device list. Devices and activities together is the
+obvious reading, since both have their own button layouts in a Harmony, and it is not proven here.
+The other changes in that same diff, two new additional buttons and a sequence, do not appear in
+this section at all, which fits: additional buttons are on screen items rather than physical keys.
+
+### The tagged list encoding
+
+Base slots 6 and 9 both point at lists in one encoding, read by one firmware routine, `0x1B71E` on
+the 700. It has two forms and the first byte says which:
+
+```
++0x00  u8   count                                     when nonzero
++0x01  { u8 tag; u16 operand; u8 opcode }[count]
+```
+
+```
++0x00  u8   0
++0x01  u8   count
++0x02  { u8 flags; u8 tag; u16 operand; u8 opcode }[count]
+```
+
+The routine stops at the **first** entry whose tag matches and runs nothing else, so a duplicate
+tag is unreachable through anything but its first copy. In the second form bit 0 of `flags` is
+tested after the match; what it selects is not established. `gspm.tagged_list` reads both.
+
+### Base slot 14 is the state value map, and that places `0x72`
+
+Section 34 recorded opcode `0x72` as "low byte through `0x17E28`, product to `0x3BB/0x3BC`, high
+byte to `0x3BA`, call `0x1B30A`" and named none of it. `0x17E28` reads a state variable, section
+35, and `0x1B30A` is the base slot 14 consumer. So the instruction is a single lookup with two
+indices in one operand:
+
+* the operand's **low byte** is a state variable index, into base slot 13,
+* the operand's **high byte** selects a record of base slot 14,
+* the record is searched for the variable's **value**, and the address found there is followed.
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address
+
+```
++0x00  u8   stepped over by the firmware; 2 in every record in the corpus
++0x01  count                 u16 on arch 14, u8 on arch 8, 9 and 12
++...   { u16 value; u24 address }[count]
++...   u8   count of the range table
++...   { u16 low; u16 high; u24 address }[count]
+```
+
+The range table is walked only when no exact value matched, and its bounds are inclusive. Eight of
+the ten configs leave it empty; two carry one range between them, which is the only reason it could
+be read at all.
+
+**The payload is a pointer, not an instruction**, and the corpus says so independently: all 9776
+targets in ten configs land inside their own container. What the firmware does with one is follow
+it and hand it to `0x1879C`, which is a **second interpreter**, reading a one byte opcode from the
+config and dispatching through an `XORLW` chain over the ten opcodes `1` to `5` and `16` to `20`,
+with `0` terminating. It is not the action list language and it is not decoded here. Base slot 6's
+mode switch reaches it too, from `0x16796`.
+
+**Both halves of the operand are bounded by the table they index, in all ten configs**, and neither
+ever overruns:
+
+| config | `0x72` uses | largest high byte | slot 14 records | largest low byte | state variables |
+|---|---|---|---|---|---|
+| 700, both | 36 | 35 | 37 | 83 | 94 |
+| 600 | 25 | 27 | 29 | 72 | 74 |
+| 525 | 11 | 7 | 11 | 13 | 24 |
+| One, programmed | 74 | 14 | **15** | 45 | **46** |
+| One, unprogrammed | 50 | 15 | **16** | 41 | **42** |
+| 880 a | 66 | 12 | **13** | 32 | **33** |
+| 880 b | 67 | 11 | **12** | 36 | **37** |
+| 880 c, 880 d | 68 | 11 | **12** | 37 | **38** |
+
+Six of the ten are tight on the record index and five on the variable index, in bold, and the rest
+are inside by one or two. An opcode whose two operand bytes index two different sections, with both
+bounds holding everywhere, is a stronger statement than either bound alone.
+
+**The count width differs by architecture and the key width does not**, and the layout settles it
+rather than the firmware being read twice. Compute a record's length under each of the four
+combinations and ask whether it lands on another record's start:
+
+| architecture | u8 count, u8 key | u8 count, u16 key | u16 count, u8 key | u16 count, u16 key |
+|---|---|---|---|---|
+| 14, the 700 | 0 of 37 | 0 | 0 | **36 of 37** |
+| 14, the 600 | 0 of 29 | 0 | 0 | **28 of 29** |
+| 12, the One | 0 | **13 of 15, 14 of 16** | 6, 8 | 0 |
+| 9, the 525 | 0 | **10 of 11** | 6 | 0 |
+| 8, all four | 0 | **10 to 11 of 12 to 13** | 6 to 8 | 0 |
+
+One column per row, ahead of every other and accounting for at least four fifths of the records in
+every config. **Corrected here:** the first reading
+of this had the key varying and the count fixed at `u16`, which scored six of twelve on the older
+architectures and looked like a majority until the other two combinations were tried. The records
+that still do not land are ones whose addresses point into the middle of a longer record, which is
+the generator sharing tails.
+
+### Base slot 16 is the number sender
+
+The largest single result here, and nothing in the corpus uses it.
+
+The consumer is `0x19A90` on the 700, `0x1845E` on the 600 and `0x2C5D0` on the One. After
+indexing the array and following the pointer it reads fourteen bytes in sequence and then subtracts
+`10000`, `1000`, `100` and `10` in four loops, accumulating a packed decimal result four bits per
+digit and raising a digit counter to `5`, `4`, `3` and `2` as each loop fires. That is decimal
+conversion, and it is byte for byte the same routine on all three images:
+
+```
+image                 index offsets    subtracted constants        digit floors
+Harmony 700 2.8       1, 14, 17, 20    0x2710 0x03E8 0x64 0x0A     5 4 3 2
+Harmony 600 0.2       1, 14, 17, 20    0x2710 0x03E8 0x64 0x0A     5 4 3 2
+Harmony One 3.4       1, 14, 17, 20    0x2710 0x03E8 0x64 0x0A     5 4 3 2
+```
+
+It then left aligns the digits, and for each one selects one of three pointers at fixed byte
+offsets `0x0E`, `0x11` and `0x14` in the record according to whether the digit is the first, the
+last, or neither, follows it, indexes it by the digit and queues the instruction there.
+
+**Fourteen is the closure.** The sequential reads consume `1 + 3 + 1 + 3 + 3 + 3` bytes, which is
+`0x0E`, exactly where the first of the three fixed offsets is. The record is not two structures
+that happen to be adjacent, it is one:
+
+```
++0x00  u8   flags
++0x01  u24  base, added to the value before conversion
++0x04  u8   minimum number of digits
++0x05  u24  instruction queued first
++0x08  u24  instruction queued last
++0x0B  u24  instruction queued before the digits when the value is long enough
++0x0E  u24  first digit table
++0x11  u24  middle digit table
++0x14  u24  last digit table
+```
+
+Each digit table is ten three byte instructions indexed by the digit. Bits 1 and 2 of `flags`
+decide whether the prefix instruction fires at all, by setting the threshold it is compared
+against: bit 2 sets `0x0100` and bit 1 sets `0x0010`, against the packed decimal value, so a
+hundred and ten. With neither bit the threshold is `0xFFFF` and the prefix never fires. Bit 0
+makes the prefix consume one of the digits.
+
+So a Harmony sends a channel number by looking up one action list per digit, with a different
+table for the leading and trailing digit, and optional prefix and terminator instructions. That is
+the shape of every "enter 1, 2, 3 then Enter" sequence a television needs.
+
+**Every config in the corpus carries a count of zero.** All twelve, spanning four architectures.
+The section exists, its pointer is real, and nobody on this bench has a device configured to use
+it. That is worth stating plainly, because it also explains why no operand statistic could ever
+have found this slot, and because `gspm.number_senders` has never had a record to read.
+
+### What the accumulator computes
+
+Section 34 established `0x10E/0x10F` as a sixteen bit accumulator with load, add and two more
+operations, and could not say what a config wanted arithmetic for. The high band ladder answers it.
+
+Opcodes `0x1F` through `0x3E` dispatch on the operand's **high byte**, in one descending chain from
+`0x0F250` on the 700. Four of its branches pair two sources with two consumers:
+
+| operand high | source | consumer |
+|---|---|---|
+| `0xF3` | the accumulator `0x10E/0x10F` | base slot 16, the number sender |
+| `0xF4` | the accumulator | base slot 14, the value map |
+| `0xF5` | the one byte register section 34 calls `0x00D` | base slot 16 |
+| `0xF6` | that same byte register | base slot 14 |
+
+In each case the operand's **low byte** selects the record. A fifth branch, everything at `0xF7`
+and above, builds an instruction whose opcode is the operand's low byte and whose operand is the
+accumulator, and queues it, which is the same self modifying trick section 34 found in `0x7B`.
+
+So the machine computes a number and then either spells it out in decimal or looks it up in a
+table. None of the four is used by any config in the corpus, which is consistent with slot 16 being
+empty in all of them; slot 14 is reached through `0x72` instead, which does its own lookup rather
+than going through the accumulator.
+
+### Routines named in passing
+
+| address, 700 | what it is |
+|---|---|
+| `0x0EA0E` | queue an instruction already held in RAM at `0x1AA` to `0x1AC` |
+| `0x0EA5A` | read three bytes from the config and queue them, section 34 |
+| `0x10BEE` | `TBLPTR += 3 * index + offset`, the indexer every array consumer uses |
+| `0x10C9A` | save the current config pointer to `0x68B` to `0x68D` |
+| `0x10CA8` | restore it, which is how the digit loop rereads the record |
+| `0x10CB8` | run action list: seek slot 10, index by `0x3CE/0x3CF`, queue every instruction |
+| `0x1B71E` | run a tagged list against a tag |
+
+`0x10BEE` is the one worth carrying. Its two parameters are an index and a byte offset, and the
+offset is the array's header size: `1` for a `u8` count, `2` for a `u16` count, `0` for a table
+with no count at all. Reading it removes the guesswork from every array in the format.
+
+### What is not established
+
+**What an entry of base slot 9 corresponds to**, beyond having bindings and a lifecycle. Devices
+and activities together is the reading the counts support and it is not proven.
+
+**The second table in a base slot 14 record**, empty in every record in the corpus.
+
+**What base slot 16's `flags` bits above 2 do**, and the record's `base` field, which nothing in
+the corpus exercises because nothing in the corpus has a record.
+
+**Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

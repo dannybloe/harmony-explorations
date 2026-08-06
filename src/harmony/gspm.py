@@ -257,6 +257,43 @@ MODE_TAG_ENTER = 6
 # 0x70 the two byte accumulator, 0x72 either.
 STATE_INDEX_OPCODES = frozenset({0x70, 0x71, 0x72})
 
+# Base slot 14 is the state value map. Opcode 0x72 names both of its operand bytes at once: the
+# low byte is a state variable index and the high byte selects the record to look its value up
+# in. `docs/findings.md` section 39.
+VALUE_MAP_SLOT = 14
+OPCODE_MAP_STATE_VALUE = 0x72
+# A record's entry count is a u16 on arch 14 and a u8 on the older architectures; the key is two
+# bytes everywhere. Established from the layout rather than assumed: of the four combinations of
+# widths, only one makes a record's computed length land on another record's start, and the other
+# three score zero, in every config.
+VALUE_MAP_COUNT_WIDTH = {8: 1, 9: 1, 12: 1, 14: 2}
+VALUE_MAP_KEY_WIDTH = 2
+# The range table after it: inclusive bounds and a target, walked only when no value matched.
+VALUE_MAP_RANGE_BYTES = 7
+
+# Base slot 16 is the number sender: it converts a value to decimal digits and enqueues one
+# instruction per digit. `docs/findings.md` section 39.
+NUMBER_SENDER_SLOT = 16
+# The consumer reads a flag byte, a u24 base value, a digit count and three u24 instructions
+# before it indexes anything, which is fourteen bytes, and then it takes three pointers at fixed
+# byte offsets. Those offsets are exactly where the sequential reads leave off, on all three
+# images, which is the closure for this layout.
+NUMBER_SENDER_HEADER = 14
+NUMBER_SENDER_DIGIT_TABLES = (14, 17, 20)     # first digit, middle digits, last digit
+NUMBER_SENDER_DIGITS = 10
+
+# Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
+# orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
+# entry being left and tag 1 on the one being entered.
+HANDLER_TABLE_SLOT = 9
+HANDLER_TAG_ENTER = 1
+HANDLER_TAG_LEAVE = 2
+# The instruction that proposes a new current entry: opcode 0x1F with the operand's high byte
+# 0xFF, the low byte being the index. Its maximum is exactly the table's count minus one in every
+# config in the corpus, which is how the slot was placed.
+OPCODE_SELECT_HANDLER = 0x1F
+SELECT_HANDLER_OPERAND_HIGH = 0xFF
+
 
 def is_high_band(instruction: 'Instruction') -> bool:
     """Whether this instruction's operand is a reference into the second operand space.
@@ -324,6 +361,68 @@ class StateTable:
     def ram_bytes(self) -> int:
         """What the table occupies in the remote's memory once loaded."""
         return self.narrow + 2 * self.wide
+
+
+@dataclass
+class TaggedEntry:
+    """One entry of a tagged list: an instruction the firmware runs when a tag matches.
+
+    Base slots 6 and 9 both point at lists in this encoding and both are read by the same
+    firmware routine, which stops at the first entry whose tag matches and runs nothing else.
+    `flags` is present only in the second of the two forms; bit 0 is tested and what it means is
+    not established.
+    """
+    tag: int
+    operand: int
+    opcode: int
+    flags: Optional[int] = None
+
+
+@dataclass
+class ValueMap:
+    """One base slot 14 record: a value, then a range, then a flash address.
+
+    The firmware walks `entries` comparing each key against the state variable's value and stops
+    at the first that matches, so a duplicate key is reachable only through the first copy. If
+    nothing matches it walks `ranges`, which are inclusive bounds. Either way the answer is an
+    address it follows and hands to the second interpreter at `0x1879C` on the 700, which is a
+    different bytecode from the action lists and is not decoded here.
+    """
+    address: int
+    entries: List[Tuple[int, int]]                # value -> flash address
+    ranges: List[Tuple[int, int, int]]            # low, high, flash address
+    length: int
+
+    def lookup(self, value: int) -> Optional[int]:
+        """What this record maps a value to, by the firmware's own order and match rules."""
+        for key, target in self.entries:
+            if key == value:
+                return target
+        for low, high, target in self.ranges:
+            if low <= value <= high:
+                return target
+        return None
+
+
+@dataclass
+class NumberSender:
+    """One base slot 16 record: how to transmit a number one decimal digit at a time.
+
+    The firmware adds `base` to the value it was handed, converts the sum to packed decimal by
+    repeated subtraction of 10000, 1000, 100 and 10, and enqueues one instruction per digit taken
+    from `first`, `middle` or `last` according to where the digit sits. `digits` is a floor: the
+    conversion raises it to the number of digits the value actually needs.
+    """
+    address: int
+    flags: int
+    base: int
+    digits: int
+    prologue: Instruction        # enqueued before anything else
+    epilogue: Instruction        # enqueued after the last digit
+    prefix: Instruction          # enqueued first when the value is long enough, see `flags`
+    first: List[Instruction]
+    middle: List[Instruction]
+    last: List[Instruction]
 
 
 @dataclass
@@ -747,6 +846,226 @@ class Container:
         if instruction.opcode not in STATE_INDEX_OPCODES:
             return None
         return instruction.operand & 0xFF
+
+    def _counted_pointers(self, slot: int, width: int) -> Optional[List[int]]:
+        """A section read as a count of `width` bytes followed by that many three byte pointers.
+
+        `pointer_array` will not serve here. It accepts a section only when the array accounts
+        for the whole of it, and slots 9, 14 and 16 are each followed by the records they point
+        at, so the array is a header rather than the section.
+        """
+        if slot >= len(self.sections) or self.sections[slot].is_null or not self.blob:
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        if off is None or off + width > len(self.blob):
+            return None
+        count = int.from_bytes(self.blob[off:off + width], 'little')
+        end = off + width + 3 * count
+        if end > len(self.blob):
+            return None
+        return [int.from_bytes(self.blob[p:p + 3], 'little')
+                for p in range(off + width, end, 3)]
+
+    def _instruction_at(self, offset: int) -> 'Instruction':
+        """The three byte instruction at a blob offset, in the action list's own encoding."""
+        return Instruction(operand=int.from_bytes(self.blob[offset:offset + 2], 'little'),
+                           opcode=self.blob[offset + 2])
+
+    def handler_sets(self) -> Optional[List[int]]:
+        """Base slot 9: the address of each tagged handler set.
+
+        ```
+        +0x00  u8   count
+        +0x01  u24  address[count]
+        ```
+
+        Each address is a tagged list in the same encoding base slot 6's mode entries use, so
+        `tagged_lists` reads it. The firmware keeps one entry current and runs `HANDLER_TAG_LEAVE`
+        on the outgoing one and `HANDLER_TAG_ENTER` on the incoming one when that changes.
+        `docs/findings.md` section 39.
+        """
+        try:
+            return self._counted_pointers(arch_slot(self.architecture, HANDLER_TABLE_SLOT), 1)
+        except GspmError:
+            return None
+
+    def tagged_list(self, address: int) -> Optional[List['TaggedEntry']]:
+        """The tagged list at an absolute flash address, in either of the two forms.
+
+        ```
+        +0x00  u8   count
+        +0x01  { u8 tag; u16 operand; u8 opcode }[count]
+        ```
+
+        and, when that count is zero, a second count follows and the entries carry a flags byte:
+
+        ```
+        +0x00  u8   0
+        +0x01  u8   count
+        +0x02  { u8 flags; u8 tag; u16 operand; u8 opcode }[count]
+        ```
+
+        Which form applies is decided by the first byte, exactly as the firmware decides it. Base
+        slot 6's mode entries and base slot 9's handler sets both point at lists of this shape.
+        """
+        off = self.blob_offset_of(address)
+        if off is None or off >= len(self.blob):
+            return None
+        count = self.blob[off]
+        if count:
+            base, stride, wide = off + 1, 4, False
+        else:
+            if off + 1 >= len(self.blob):
+                return None
+            count, base, stride, wide = self.blob[off + 1], off + 2, 5, True
+        if base + stride * count > len(self.blob):
+            return None
+        out = []
+        for k in range(count):
+            p = base + stride * k
+            flags = self.blob[p] if wide else None
+            tag = self.blob[p + 1] if wide else self.blob[p]
+            instruction = self._instruction_at(p + stride - 3)
+            out.append(TaggedEntry(tag=tag, operand=instruction.operand,
+                                   opcode=instruction.opcode, flags=flags))
+        return out
+
+    def handler_index(self, instruction: 'Instruction') -> Optional[int]:
+        """The handler set an instruction selects, or None if it does not select one."""
+        if instruction.opcode != OPCODE_SELECT_HANDLER:
+            return None
+        if instruction.operand >> 8 != SELECT_HANDLER_OPERAND_HIGH:
+            return None
+        return instruction.operand & 0xFF
+
+    def value_maps(self) -> Optional[List['ValueMap']]:
+        """Base slot 14: for each record, a map from a state variable's value to a flash address.
+
+        ```
+        +0x00  u8   count
+        +0x01  u24  address[count]
+        ```
+
+        and at each address
+
+        ```
+        +0x00  u8   ignored          the firmware steps over it; 2 in every record in the corpus
+        +0x01  count                 u16 on arch 14, u8 on arch 8, 9 and 12
+        +...   { u16 value; u24 address }[count]
+        +...   u8   count of the range table
+        +...   { u16 low; u16 high; u24 address }[count]
+        ```
+
+        A few addresses point into the middle of a longer record rather than to a record of its
+        own, which is the generator sharing tails, so two records can overlap by design.
+        """
+        counter = VALUE_MAP_COUNT_WIDTH.get(self.architecture)
+        if counter is None:
+            return None
+        try:
+            addresses = self._counted_pointers(arch_slot(self.architecture, VALUE_MAP_SLOT), 1)
+        except GspmError:
+            return None
+        if addresses is None:
+            return None
+        stride = VALUE_MAP_KEY_WIDTH + 3
+        out = []
+        for address in addresses:
+            off = self.blob_offset_of(address)
+            if off is None or off + 1 + counter > len(self.blob):
+                return None
+            count = int.from_bytes(self.blob[off + 1:off + 1 + counter], 'little')
+            base = off + 1 + counter
+            if base + stride * count >= len(self.blob):
+                return None
+            entries = []
+            for k in range(count):
+                p = base + stride * k
+                entries.append((int.from_bytes(self.blob[p:p + 2], 'little'),
+                                int.from_bytes(self.blob[p + 2:p + 5], 'little')))
+            spans = base + stride * count
+            span_count = self.blob[spans]
+            if spans + 1 + VALUE_MAP_RANGE_BYTES * span_count > len(self.blob):
+                return None
+            ranges = []
+            for k in range(span_count):
+                p = spans + 1 + VALUE_MAP_RANGE_BYTES * k
+                ranges.append((int.from_bytes(self.blob[p:p + 2], 'little'),
+                               int.from_bytes(self.blob[p + 2:p + 4], 'little'),
+                               int.from_bytes(self.blob[p + 4:p + 7], 'little')))
+            out.append(ValueMap(
+                address=address, entries=entries, ranges=ranges,
+                length=2 + counter + stride * count + VALUE_MAP_RANGE_BYTES * span_count))
+        return out
+
+    def value_map_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
+        """The `(state variable, value map record)` an `OPCODE_MAP_STATE_VALUE` names.
+
+        Both halves of the operand are indices, into two different sections. Returned as a pair
+        rather than resolved, for the same reason `ir_reference` is: the caller that wants the
+        record can ask for the table and will find an out of range index itself.
+        """
+        if instruction.opcode != OPCODE_MAP_STATE_VALUE:
+            return None
+        return instruction.operand & 0xFF, instruction.operand >> 8
+
+    def number_senders(self) -> Optional[List['NumberSender']]:
+        """Base slot 16: how to transmit a number as decimal digits.
+
+        ```
+        +0x00  u8   count
+        +0x01  u24  address[count]
+        ```
+
+        and at each address, the fourteen bytes the consumer reads in sequence followed by the
+        three digit tables it indexes at fixed offsets:
+
+        ```
+        +0x00  u8   flags
+        +0x01  u24  base added to the value before conversion
+        +0x04  u8   minimum number of digits
+        +0x05  u24  instruction enqueued first
+        +0x08  u24  instruction enqueued last
+        +0x0B  u24  instruction enqueued before the digits when the value is long enough
+        +0x0E  u24  first digit table
+        +0x11  u24  middle digit table
+        +0x14  u24  last digit table
+        ```
+
+        Each digit table is ten three byte instructions, indexed by the digit. `docs/findings.md`
+        section 39. Every config in the corpus carries a count of zero, so this reader has never
+        had a record to read; it exists because the firmware's layout is unambiguous and a writer
+        would otherwise have nothing to write against.
+        """
+        try:
+            addresses = self._counted_pointers(arch_slot(self.architecture, NUMBER_SENDER_SLOT), 1)
+        except GspmError:
+            return None
+        if addresses is None:
+            return None
+        out = []
+        for address in addresses:
+            off = self.blob_offset_of(address)
+            if off is None or off + NUMBER_SENDER_HEADER + 9 > len(self.blob):
+                return None
+            tables = []
+            for at in NUMBER_SENDER_DIGIT_TABLES:
+                target = self.blob_offset_of(
+                    int.from_bytes(self.blob[off + at:off + at + 3], 'little'))
+                if target is None or target + 3 * NUMBER_SENDER_DIGITS > len(self.blob):
+                    return None
+                tables.append([self._instruction_at(target + 3 * d)
+                               for d in range(NUMBER_SENDER_DIGITS)])
+            out.append(NumberSender(
+                address=address,
+                flags=self.blob[off],
+                base=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
+                digits=self.blob[off + 4],
+                prologue=self._instruction_at(off + 5),
+                epilogue=self._instruction_at(off + 8),
+                prefix=self._instruction_at(off + 11),
+                first=tables[0], middle=tables[1], last=tables[2]))
+        return out
 
     def ir_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
         """The `(group, index)` an `OPCODE_SEND_IR` instruction names, or None if it is not one.

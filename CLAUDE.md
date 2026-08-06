@@ -554,8 +554,15 @@ stripped. `docs/findings.md` section 34, `tests/test_interpreter.py`.
 **the infrared database**: two levels of pointer array over records of mark and space durations in
 microseconds, decoded and extractable with `tools/ir_extract.py`. `docs/findings.md` section 32.
 Base slot 4 is the firmware event map, base slot 6 the mode table, base slot 8 key press bindings,
-base slot 10 the action list table and base slot 13 the state variable table, so **six of the twenty
-slots are named**. Opcode `0x7E` enters the mode its operand indexes; an entry has an enter handler
+base slot 10 the action list table and base slot 13 the state variable table. Section 39 adds three
+more: base slot 9 is **the binding table**, eight to sixteen sets of button bindings with an enter
+and a leave handler, whose index maxes out at the count minus one in all ten configs and where the
+Harmony 700 pair differs by exactly one binding matching its owner's one added button; base slot 14
+is **the state value map**, which opcode `0x72` indexes with its high byte while its low byte names
+the state variable, both bounds holding everywhere; and base slot 16 is **the number sender**, which
+converts a value to decimal and queues one action list per digit, read from three images and used by
+no config in the corpus. So **ten of the twenty slots are named**, counting slot 3. Opcode `0x7E`
+enters the mode its operand indexes; an entry has an enter handler
 and a leave handler and the firmware selects no other tag. Note
 that **a section's size is not the gap to the next pointer**: slot 4 holds 125 bytes and the gap is
 up to 1532, because slot 5's infrared group arrays sit in it. `docs/findings.md` section 36. A scan of the firmware's section seeker
@@ -566,4 +573,8 @@ a search into a reading. **Base slot 3 starts Timer 1**, so it is the clock, and
 entry count is demanded by the firmware**, 9 on arch 14 and 11 on arch 12: a writer that emits a
 different count gets a silent no-op, not an error. That section also confirms the
 `0x0B + 4 * slot` table layout **in code** rather than by arithmetic. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
-`0x3F` are partitioned into a family that addresses a second operand space, section 31.
+`0x3F` are partitioned into a family that addresses a second operand space, section 31. **What the
+accumulator is for** is answered in section 39: the high band ladder pairs it and a byte register
+with the two number renderers, base slots 16 and 14. **There is a second interpreter**, at `0x1879C`
+on the 700, a one byte opcode language reached from base slot 14 and from the mode switch, located
+and not decoded.
