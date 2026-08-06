@@ -3045,6 +3045,101 @@ of the eleven architectures concordance names models for and every architecture 
 discontinuation list in `reference/models.md`. For those the only route to an image is `READ_FLASH`
 off a physical remote.
 
+## 31. Four opcodes address a second operand space, and no other opcode enters it
+
+`0x07`, `0x0F`, `0x1F` and `0x3F` never carry an operand below `0xC000`. Every other opcode in the
+inventory does, in nearly every use. That is not a tendency, it is a partition, and it holds over
+**85962 instructions in ten configs across four architectures**.
+
+### The law
+
+| claim | evidence |
+|---|---|
+| the four never take an operand below `0xC000` | 10381 uses, zero exceptions |
+| the lowest they ever take is exactly `0xC000` | that is `-16384`, a power of two, so the floor is a boundary and not the smallest value that happened to occur |
+| their value sets never collide | no value is ever carried by two of the four, over all ten configs |
+| the band is not theirs alone | `0x7A` puts 984 uses above `0xC000` and `0x79` puts 38 there, so this is a region four opcodes live in exclusively, not a region only they can reach |
+
+Read as signed, the four occupy four bands that rise with the opcode:
+
+| opcode | operands, signed, union over the corpus | uses |
+|---|---|---|
+| `0x07` | `-14` to `-1`, 12 distinct | 4587 |
+| `0x0F` | `-192` to `-29`, 10 distinct | 91 |
+| `0x1F` | `-6400` to `-241`, 247 distinct | 5329 |
+| `0x3F` | `-16384` to `-2510`, 48 distinct | 374 |
+
+The first three bands do not overlap at all. The fourth overlaps the third and still shares no
+value with it.
+
+### The four are one family, and the fifth member is already placed
+
+`0x07`, `0x0F`, `0x1F`, `0x3F` are `2^n - 1` for n = 3, 4, 5, 6. The next term, `2^7 - 1`, is
+`0x7F`, which section 26 established as the call. So five consecutive all ones opcodes exist, four
+of them take an operand from this second space and the fifth takes an index into the action list
+table. No other `2^n - 1` value appears in the inventory: `0x01`, `0x03` and `0xFF` are absent
+everywhere.
+
+Whether the bit pattern is meaningful or a coincidence of how the opcodes were numbered is not
+established. It is recorded because five terms of a series with no gaps is not what an arbitrary
+assignment produces.
+
+### Two of them are fixed per architecture
+
+The corpus has two configs for each of arch 14, arch 12 and arch 8. Within every pair:
+
+| opcode | arch 14 | arch 12 | arch 8 |
+|---|---|---|---|
+| `0x07` | identical, 8 values | identical, 8 values | identical, 8 values |
+| `0x0F` | identical, 2 values | identical, 4 values | one config does not use it |
+| `0x1F` | 40 of 121 and 87 shared | 73 of 93 and 82 | 63 of 69 and 69 |
+| `0x3F` | 4 shared, one set inside the other | identical, 46 values | identical, 5 values |
+
+`0x07`'s eight values are `-14, -13, -11, -10, -9, -4, -3, -1` on arch 14 and
+`-10, -9, -8, -7, -5, -4, -3, -1` on both arch 12 and arch 8, with arch 9 carrying a different five.
+Two configs of an architecture, from different owners in the arch 14 case, agreeing on the whole
+set is what a vocabulary looks like. `0x1F` and `0x3F` vary with the config while keeping most of
+their values, so they are a vocabulary with config specific additions rather than a closed one.
+
+At the level of a whole list shape the agreement is sharper still. Of the 52 list shapes that carry
+a negative operand on both arch 14 remotes, **29 carry exactly the same set of values**, two
+different models with different equipment. The most used of them, `[0x1F, 0x7F]`, appears 710 times
+on the 700 and 358 times on the 600 and its `0x1F` operand is one of the same seven values in every
+one of those 1068 lists.
+
+### Why this matters before the meaning is known
+
+**These operands are not config data.** A value that survives byte identical across two remotes
+that share no devices is a reference into something the firmware supplies, not something the
+generator numbered. An editor that renumbers them because they look like indices would corrupt
+every list that uses one. The codec should treat operands at or above `0xC000` as opaque and carry
+them through unchanged, and `packages/codec` can enforce that before anybody knows what they name.
+
+### What was ruled out
+
+**A relative action list reference.** `0x7F` is an absolute index into the table at base slot 10, so
+a negative operand suggested a backward one. Adding the operand to the index of the containing list
+lands inside the table for 78% of `0x1F` uses on the 700, 54% on the 600 and 6% on the One, and for
+14%, 0% and 4% of `0x3F`. A real addressing mode does not miss.
+
+`0x07` scores 100% on that test on all three, which is the trap: its operands are `-14` to `-1` and
+the tables have thousands of entries, so landing in range carries no information at all. Reported
+here rather than dropped, because the same number looks like a confirmation until the null case is
+computed.
+
+### What is not established
+
+What any of the four name. Four bands of different widths, one of them fourteen values wide and one
+of them 247, is consistent with four different tables, or with one table read at four scales, and
+nothing here separates those.
+
+Whether the four bands are one number line. `0x07` ends at `-14` and `0x0F` starts at `-29`, which
+would be a gap in a shared line; but the corpus only shows values that are used, so an unused gap
+proves nothing.
+
+And why the floor is `-16384` rather than `-32768`. Half the negative range is untouched by every
+sample.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

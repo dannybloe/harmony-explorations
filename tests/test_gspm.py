@@ -10,6 +10,7 @@ The two non-GSPM architectures are here on purpose. `docs/config-format.md` clai
 one container with a per-architecture cookie rather than a family resemblance, and arch 8 and
 arch 9 are the samples that can falsify that claim. They currently confirm it.
 """
+import collections
 import datetime
 import itertools
 import os
@@ -912,6 +913,131 @@ class TestActionLists(unittest.TestCase):
         self.assertNotIn(0x6C, ops['h525_config'])
         # And they do overlap, so this is not two unrelated encodings.
         self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
+
+
+class TestTheHighOperandBand(unittest.TestCase):
+    """findings.md section 31: four opcodes address a second operand space and never leave it.
+
+    Every config in the corpus that has action lists, so ten of them across four architectures.
+    The claim is a partition, which means the interesting assertion is the absence of a
+    counterexample rather than the presence of an example.
+    """
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d')
+
+    # Two configs of one architecture, three times over. Both members of a pair must agree for
+    # a value set to count as a vocabulary rather than as this config's contents.
+    PAIRS = (('h700_config', 'h600_config'),
+             ('one_config', 'one_config_unprogrammed'),
+             ('arch8_config_a', 'arch8_config_b'))
+
+    @staticmethod
+    def _instructions(name):
+        c = gspm.parse(lab.load(name))
+        return [i for lst in (c.action_lists() or []) for i in lst]
+
+    def test_the_four_never_carry_an_operand_below_the_band(self):
+        total = 0
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                low = [i for i in self._instructions(name)
+                       if i.opcode in gspm.HIGH_BAND_OPCODES
+                       and i.operand < gspm.OPERAND_HIGH_BAND]
+                self.assertEqual(low, [], '%s: %d below the band' % (name, len(low)))
+                total += sum(1 for i in self._instructions(name)
+                             if i.opcode in gspm.HIGH_BAND_OPCODES)
+        self.assertGreater(total, 10000, 'the claim rests on the count, so pin the count')
+
+    def test_the_floor_is_exactly_the_band_boundary(self):
+        """Not merely at or above 0xC000: the lowest value observed IS 0xC000.
+
+        A floor that lands on a power of two is a boundary somebody chose. A floor at, say,
+        0xC391 would only be the smallest value that happened to be used.
+        """
+        seen = [i.operand for name in self.CONFIGS for i in self._instructions(name)
+                if i.opcode in gspm.HIGH_BAND_OPCODES]
+        self.assertEqual(min(seen), gspm.OPERAND_HIGH_BAND)
+
+    def test_no_value_is_ever_carried_by_two_of_the_four(self):
+        by_opcode = collections.defaultdict(set)
+        for name in self.CONFIGS:
+            for i in self._instructions(name):
+                if i.opcode in gspm.HIGH_BAND_OPCODES:
+                    by_opcode[i.opcode].add(i.operand)
+        ops = sorted(by_opcode)
+        for a, b in itertools.combinations(ops, 2):
+            with self.subTest(pair='%02X/%02X' % (a, b)):
+                self.assertEqual(by_opcode[a] & by_opcode[b], set())
+        # And the bands are wide enough that disjointness is a claim about sets, not ranges:
+        # 0x1F and 0x3F overlap as intervals and still never collide.
+        self.assertLess(min(by_opcode[0x3F]), min(by_opcode[0x1F]))
+        self.assertLess(min(by_opcode[0x1F]), max(by_opcode[0x3F]))
+
+    def test_the_band_is_not_reserved_to_those_four(self):
+        """Stated so the finding is not read as more than it is: other opcodes reach up here too."""
+        others = set()
+        for name in self.CONFIGS:
+            for i in self._instructions(name):
+                if i.operand >= gspm.OPERAND_HIGH_BAND and i.opcode not in gspm.HIGH_BAND_OPCODES:
+                    others.add(i.opcode)
+        self.assertEqual(others, {0x79, 0x7A})
+
+    def test_0x07_and_0x0f_are_a_vocabulary_fixed_per_architecture(self):
+        for a, b in self.PAIRS:
+            for op in (0x07, 0x0F):
+                sa = {i.operand for i in self._instructions(a) if i.opcode == op}
+                sb = {i.operand for i in self._instructions(b) if i.opcode == op}
+                if not sa or not sb:
+                    continue  # arch8_config_b does not use 0x0F at all
+                with self.subTest(pair='%s/%s' % (a, b), opcode='%02X' % op):
+                    self.assertEqual(sa, sb)
+
+    def test_one_list_shape_carries_the_same_seven_values_on_two_different_models(self):
+        """[0x1F, 0x7F] over 1068 lists on two remotes that share no equipment.
+
+        This is the observation the "not config data" conclusion rests on, so it is asserted on
+        the exact values rather than on the size of the set.
+        """
+        # -5872, then -1280 with offsets 0, 1, 2, 3, 5 and 20.
+        expected = {0xE910, 0xFB00, 0xFB01, 0xFB02, 0xFB03, 0xFB05, 0xFB14}
+        counts = {}
+        for name in ('h700_config', 'h600_config'):
+            c = gspm.parse(lab.load(name))
+            lists = [lst for lst in c.action_lists()
+                     if [i.opcode for i in lst] == [0x1F, 0x7F]]
+            counts[name] = len(lists)
+            with self.subTest(image=name):
+                self.assertEqual({lst[0].operand for lst in lists}, expected)
+        self.assertEqual(counts, {'h700_config': 710, 'h600_config': 358})
+
+    def test_the_operand_is_not_a_relative_action_list_reference(self):
+        """A ruled out hypothesis, kept because its null case is the point.
+
+        Adding the operand to the index of the containing list would be a backward call. It
+        misses badly for 0x1F and 0x3F. It scores 100% for 0x07, which proves nothing: with
+        operands of -14 to -1 and thousands of lists, landing in range is guaranteed.
+        """
+        c = gspm.parse(lab.load('one_config'))
+        lists = c.action_lists()
+        def in_range(op):
+            hit = tot = 0
+            for k, lst in enumerate(lists):
+                for i in lst:
+                    if i.opcode == op:
+                        tot += 1
+                        target = k + i.operand - 0x10000
+                        hit += 0 <= target < len(lists)
+            return hit, tot
+
+        hit, tot = in_range(0x1F)
+        self.assertLess(hit / tot, 0.10, 'an addressing mode does not miss 90%% of the time')
+        hit, tot = in_range(0x07)
+        self.assertEqual(hit, tot, 'and the null case scores perfectly, which is the warning')
+        self.assertLess(max(0x10000 - i.operand for i in self._instructions('one_config')
+                            if i.opcode == 0x07), len(lists),
+                        'because every 0x07 operand is smaller than the table')
 
 
 class TestPointerArraySections(unittest.TestCase):

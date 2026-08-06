@@ -482,6 +482,35 @@ are the same enumeration: one instruction covers up to 100, more than one spells
 
 *What the enumeration counts is not established.* [findings.md](findings.md) section 29.
 
+#### `0x07`, `0x0F`, `0x1F` and `0x3F` address a second operand space
+
+**Confirmed on four architectures.** These four opcodes never carry an operand below `0xC000`, and
+every other opcode in the inventory does. 10381 uses of the four, no exception, in ten configs
+holding 85962 instructions between them.
+
+| opcode | operands, signed, over the whole corpus | distinct | uses |
+|---|---|---|---|
+| `0x07` | `-14` to `-1` | 12 | 4587 |
+| `0x0F` | `-192` to `-29` | 10 | 91 |
+| `0x1F` | `-6400` to `-241` | 247 | 5329 |
+| `0x3F` | `-16384` to `-2510` | 48 | 374 |
+
+The lowest operand any of them takes is exactly `0xC000`, which is `-16384`. No value is ever
+carried by two of the four. The band is not exclusive in the other direction: `0x7A` and `0x79`
+also reach above `0xC000`.
+
+`0x07` and `0x0F` draw from a **vocabulary fixed per architecture**: both configs of arch 14, of
+arch 12 and of arch 8 give byte identical sets. `0x07` is `-14, -13, -11, -10, -9, -4, -3, -1` on
+arch 14 and `-10, -9, -8, -7, -5, -4, -3, -1` on arch 12 and arch 8. `0x1F` and `0x3F` keep most of
+their values across a pair and add config specific ones.
+
+**Consequence for a codec, ahead of the meaning.** An operand at or above `0xC000` is a reference
+into something the firmware supplies, not an index the generator assigned: it survives byte
+identical between two remotes that share no equipment. Carry it through unchanged and never
+renumber it.
+
+*What the four name is not established.* [findings.md](findings.md) section 31.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode
@@ -498,11 +527,15 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x7D` | 372 | 350 | 0 to 1361 | unknown, and nearly every use has its own operand |
 | `0x07` | 230 | 8 | 65522 to 65535 | unknown, operands are `-14` to `-1` |
 
-Two structural remarks that hold whatever the meanings turn out to be. **Some operands are signed**:
-`0x07` and `0x1F` never carry a value below `0xE800`, and reading them as unsigned gives numbers with
-no plausible referent. And **several carry bit 15 as a flag**: `0x6C` tops out at `0x8014` and `0x71`
-at `0x833E` on the 700 against `0x8336` on the 600, which is the shape of an index with a marker
-rather than a range.
+One structural remark that holds whatever the meanings turn out to be. **Several opcodes carry bit
+15 as a flag**: `0x6C` tops out at `0x8014` and `0x71` at `0x833E` on the 700 against `0x8336` on
+the 600, which is the shape of an index with a marker rather than a range. Across the corpus that
+middle region, `0x8000` to `0xBFFF`, holds only four opcodes and 1716 instructions, and it is
+distinct from the `0xC000` band above it.
+
+**Corrected here.** This paragraph used to say `0x07` and `0x1F` never carry a value below
+`0xE800`. The floor is `0xC000`, it applies to four opcodes rather than two, and it is a boundary
+rather than the smallest value observed. See the subsection above.
 
 ### One table, four architectures
 

@@ -211,6 +211,24 @@ INSTRUCTION_LENGTH = 3
 BINDING_TABLE_SLOT = 8
 BINDING_LENGTH = 4
 
+# Four opcodes address a second operand space and never leave it: their operand is always at or
+# above `OPERAND_HIGH_BAND`, and no other opcode's operand set overlaps theirs. `docs/findings.md`
+# section 31. The practical consequence is the reason this is in the library rather than only in
+# a test: a value up here survives byte identical between two remotes that share no equipment, so
+# it names something the firmware supplies and a codec must carry it through unrenumbered.
+OPERAND_HIGH_BAND = 0xC000
+HIGH_BAND_OPCODES = frozenset({0x07, 0x0F, 0x1F, 0x3F})
+
+
+def is_high_band(instruction: 'Instruction') -> bool:
+    """Whether this instruction's operand is a reference into the second operand space.
+
+    Asks about the operand rather than the opcode on purpose. `0x7A` and `0x79` also reach above
+    `OPERAND_HIGH_BAND` without being members of the family, and an editor has to leave their
+    operands alone for the same reason.
+    """
+    return instruction.operand >= OPERAND_HIGH_BAND
+
 
 @dataclass
 class Instruction:
