@@ -282,6 +282,22 @@ NUMBER_SENDER_HEADER = 14
 NUMBER_SENDER_DIGIT_TABLES = (14, 17, 20)     # first digit, middle digits, last digit
 NUMBER_SENDER_DIGITS = 10
 
+# The screen language, a second interpreter with its own one byte opcodes, reached from base slot
+# 11, from a base slot 14 lookup and from a mode entry. `docs/findings.md` section 40.
+SCREEN_TABLE_SLOT = 11
+# Operand bytes per opcode, for the fixed length ones. 21 is arch 8 only and its length is
+# inferred from the corpus rather than read from a firmware, because no arch 8 image exists.
+SCREEN_FIXED_OPERANDS = {1: 6, 2: 5, 3: 9, 4: 5, 16: 1, 17: 3, 20: 3, 21: 4}
+SCREEN_END = 0
+SCREEN_TEXT_INLINE = 5          # two position bytes then a NUL terminated string
+SCREEN_QUEUE_INSTRUCTION = 17   # the bridge to the action list language
+SCREEN_SWITCH_NARROW = 18
+SCREEN_SWITCH_WIDE = 19
+SCREEN_JUMP = 20
+# Present in the arch 12 dispatcher and used by no config in the corpus, so their operands are
+# not established. Listed so a parser refuses them rather than desynchronising silently.
+SCREEN_ARCH12_ONLY = frozenset({22, 23})
+
 # Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
 # orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
 # entry being left and tag 1 on the one being entered.
@@ -361,6 +377,28 @@ class StateTable:
     def ram_bytes(self) -> int:
         """What the table occupies in the remote's memory once loaded."""
         return self.narrow + 2 * self.wide
+
+
+@dataclass
+class ScreenInstruction:
+    """One instruction of the screen language.
+
+    `operands` is the raw operand bytes, because most of them are coordinates and identifiers
+    whose meaning is not established. `glyphs` is set only for the inline string opcode and
+    `targets` only for the ones that transfer control, which is what makes a program walkable.
+
+    They are glyph indices and not characters: the renderer indexes a font table by the code minus
+    one, so nothing here is text in any encoding and none of it decodes to ASCII.
+    """
+    opcode: int
+    operands: bytes
+    glyphs: Optional[bytes] = None
+    targets: List[int] = field(default_factory=list)
+
+    @property
+    def transfers(self) -> bool:
+        """Whether the stream continues somewhere else rather than after this instruction."""
+        return self.opcode in (SCREEN_JUMP, SCREEN_SWITCH_NARROW, SCREEN_SWITCH_WIDE)
 
 
 @dataclass
@@ -996,6 +1034,108 @@ class Container:
             out.append(ValueMap(
                 address=address, entries=entries, ranges=ranges,
                 length=2 + counter + stride * count + VALUE_MAP_RANGE_BYTES * span_count))
+        return out
+
+    def screen_program(self, address: int) -> Optional[List['ScreenInstruction']]:
+        """The screen language program at an absolute flash address.
+
+        Instructions are variable length with no length field anywhere, so the walk either stays
+        in step or falls off a cliff, and returning None is the cliff. It stops at the end
+        opcode, at a jump, or at a switch, since after any of those the stream is somewhere else;
+        the successors are in each instruction's `targets`.
+
+        ```
+        0        end
+        1        6 operand bytes
+        2, 4     5, of which the last three are a flash address
+        3        9, likewise
+        5        two position bytes then a NUL terminated string
+        16       1, an index into base slot 7
+        17       3, an action list instruction, queued
+        18, 19   a switch on a state variable, below
+        20       3, a flash address, and the program continues there
+        21       4, arch 8 only, length inferred from the corpus
+        ```
+
+        A switch reads a state variable index, then a table of exact values and a table of
+        inclusive ranges, and jumps to the first target that matches. The counts, the values and
+        the bounds are one byte in opcode 18 and two in opcode 19; the target is always three.
+        `docs/findings.md` section 40.
+        """
+        off = self.blob_offset_of(address)
+        if off is None:
+            return None
+        out = []
+        limit = len(self.blob)
+        while True:
+            if not 0 <= off < limit:
+                return None
+            opcode = self.blob[off]
+            off += 1
+            if opcode == SCREEN_END:
+                out.append(ScreenInstruction(opcode=opcode, operands=b''))
+                return out
+            if opcode == SCREEN_JUMP:
+                target = int.from_bytes(self.blob[off:off + 3], 'little')
+                out.append(ScreenInstruction(opcode=opcode, operands=self.blob[off:off + 3],
+                                             targets=[target]))
+                return out
+            if opcode in SCREEN_FIXED_OPERANDS:
+                width = SCREEN_FIXED_OPERANDS[opcode]
+                if off + width > limit:
+                    return None
+                out.append(ScreenInstruction(opcode=opcode,
+                                             operands=self.blob[off:off + width]))
+                off += width
+                continue
+            if opcode == SCREEN_TEXT_INLINE:
+                # A code with bit 7 set is the first half of a wide one and takes a second byte
+                # with it, so the terminator cannot be found by scanning for a zero. No string in
+                # the corpus is wide, but a parser that assumed narrow would desynchronise on the
+                # first one that is.
+                end = off + 2
+                while end < limit and self.blob[end]:
+                    end += 2 if self.blob[end] & 0x80 else 1
+                if end >= limit:
+                    return None
+                out.append(ScreenInstruction(opcode=opcode, operands=self.blob[off:off + 2],
+                                             glyphs=self.blob[off + 2:end]))
+                off = end + 1
+                continue
+            if opcode in (SCREEN_SWITCH_NARROW, SCREEN_SWITCH_WIDE):
+                width = 2 if opcode == SCREEN_SWITCH_WIDE else 1
+                start = off
+                off += 1                                  # the state variable index
+                targets = []
+                for entry in (width + 3, 2 * width + 3):   # values, then ranges
+                    count = int.from_bytes(self.blob[off:off + width], 'little')
+                    off += width
+                    if off + entry * count > limit:
+                        return None
+                    for k in range(count):
+                        p = off + entry * k + entry - 3
+                        targets.append(int.from_bytes(self.blob[p:p + 3], 'little'))
+                    off += entry * count
+                out.append(ScreenInstruction(opcode=opcode, operands=self.blob[start:off],
+                                             targets=targets))
+                return out
+            return None
+
+    def screen_program_roots(self) -> List[int]:
+        """Every address the firmware is known to start a screen program at.
+
+        Two sources, both derived rather than guessed: base slot 11 is an array of them, and every
+        target of a base slot 14 lookup is one. A mode entry carries a third on arch 8 and arch 14,
+        which is not included here because the same rule finds nothing on arch 9 and arch 12.
+        """
+        try:
+            slot = arch_slot(self.architecture, SCREEN_TABLE_SLOT)
+        except GspmError:
+            return []
+        out = list(self.pointer_array(slot) or [])
+        for record in self.value_maps() or []:
+            out += [target for _, target in record.entries]
+            out += [target for _, _, target in record.ranges]
         return out
 
     def value_map_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:

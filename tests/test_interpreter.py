@@ -735,6 +735,99 @@ class TestTheNumberSender(unittest.TestCase):
                 self.assertEqual(c.number_senders(), [])
 
 
+class TestTheScreenInterpreter(unittest.TestCase):
+    """findings.md section 40: the second interpreter, its opcodes and its encoding."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+    # The dispatcher, and the address of the XORLW chain inside it, per image.
+    DISPATCHERS = {'h700_code': (0x9000, 0x1879C, 0x187A8),
+                   'h600_code_complete': (0x9000, 0x16E38, 0x16E44),
+                   'one34_code': (0x20000, 0x295AC, 0x295E6)}
+    BASE_OPCODES = {1, 2, 3, 4, 5, 16, 17, 18, 19, 20}
+
+    def test_the_same_ten_opcodes_on_every_image(self):
+        for name, (base, _, at) in self.DISPATCHERS.items():
+            code = lab.load(name)
+            cases = {c.value for c in chains.xor_chain(code, base, at)}
+            with self.subTest(image=name):
+                self.assertTrue(self.BASE_OPCODES <= cases)
+
+    def test_arch_12_adds_two_the_other_two_images_do_not_have(self):
+        """Recorded because a parser has to refuse them rather than guess their length."""
+        from harmony import gspm
+        code = lab.load('one34_code')
+        cases = {c.value for c in chains.xor_chain(code, 0x20000, 0x295E6)}
+        self.assertEqual(cases - self.BASE_OPCODES, set(gspm.SCREEN_ARCH12_ONLY))
+        for name in ('h700_code', 'h600_code_complete'):
+            base, _, at = self.DISPATCHERS[name]
+            cases = {c.value for c in chains.xor_chain(lab.load(name), base, at)}
+            with self.subTest(image=name):
+                self.assertEqual(cases & gspm.SCREEN_ARCH12_ONLY, set())
+
+    def _walk(self, c):
+        """Every program reachable from the roots, and whether any failed to decode."""
+        seen, queue, failed = set(), list(c.screen_program_roots()), 0
+        programs = []
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = c.screen_program(address)
+            if program is None:
+                failed += 1
+                continue
+            programs.append(program)
+            for instruction in program:
+                queue += [t for t in instruction.targets if t not in seen]
+        return programs, failed
+
+    def test_every_program_in_the_corpus_decodes(self):
+        """The closure. Instructions are variable length with no length field anywhere, so one
+        wrong operand count desynchronises the walk and the next byte read as an opcode is
+        almost certainly not one of the eleven."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, failed = self._walk(c)
+            with self.subTest(config=name):
+                self.assertEqual(failed, 0)
+                self.assertGreater(len(programs), 20)
+
+    def test_every_program_ends_the_way_the_firmware_ends_one(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, _ = self._walk(c)
+            for program in programs:
+                last = program[-1]
+                with self.subTest(config=name):
+                    self.assertTrue(last.opcode == gspm.SCREEN_END or last.transfers)
+                    for instruction in program[:-1]:
+                        self.assertFalse(instruction.transfers)
+
+    def test_the_inline_strings_are_glyph_indices_and_not_characters(self):
+        """Stated as a test because calling them text would be the easy mistake."""
+        from harmony import gspm
+        printable = total = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            programs, _ = self._walk(c)
+            for program in programs:
+                for instruction in program:
+                    if not instruction.glyphs:
+                        continue
+                    total += 1
+                    printable += all(32 <= b < 127 for b in instruction.glyphs)
+        self.assertGreater(total, 500)
+        self.assertLess(printable, total / 100)
+
+    def test_a_truncated_program_is_refused_rather_than_guessed(self):
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        self.assertIsNone(c.screen_program(c.end_addr + 1))
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

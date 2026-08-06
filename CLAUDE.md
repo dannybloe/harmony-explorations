@@ -356,6 +356,7 @@ make all           everything except ghidra and bench
 tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
 tools/gspm_parse.py    <file> [--json]
 tools/ir_extract.py    <file> [--json] [--pulses]   the infrared database, grouped
+tools/screen_dump.py   <file> [--json] [--all]      the screen language programs, disassembled
 tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
@@ -575,6 +576,14 @@ different count gets a silent no-op, not an error. That section also confirms th
 `0x0B + 4 * slot` table layout **in code** rather than by arithmetic. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
 `0x3F` are partitioned into a family that addresses a second operand space, section 31. **What the
 accumulator is for** is answered in section 39: the high band ladder pairs it and a byte register
-with the two number renderers, base slots 16 and 14. **There is a second interpreter**, at `0x1879C`
-on the 700, a one byte opcode language reached from base slot 14 and from the mode switch, located
-and not decoded.
+with the two number renderers, base slots 16 and 14.
+
+**The second interpreter is decoded**, section 40. `0x1879C` on the 700, `0x16E38` on the 600,
+`0x295AC` on the One: a one byte opcode language that **draws the screen**, with ten opcodes on all
+three images, two more in the arch 12 dispatcher and one more that arch 8 configs use and no
+available firmware implements. Its programs live in **base slot 11**, in base slot 14's lookups and
+in mode entries, and **base slot 7 is what its opcode 16 indexes**, which names slot 7's caller.
+The closure is that **18252 programs in ten configs decode with nothing left over**, which is a
+real check because the instructions are variable length with no length field. Its inline strings
+are **glyph indices, not characters**: none decode as ASCII. Dump them with
+`tools/screen_dump.py`. That makes it **twelve of the twenty slots named**.

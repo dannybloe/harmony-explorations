@@ -4129,6 +4129,136 @@ the corpus exercises because nothing in the corpus has a record.
 
 **Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
 
+Slots 7 and 11 came off that list in section 40.
+
+## 40. The second interpreter, and base slot 11
+
+Section 39 ended with a routine located and not decoded: base slot 14's lookup follows an address
+and hands it to `0x1879C`, which reads a one byte opcode and dispatches. It is a second bytecode,
+unrelated to the action lists, and it is the language that draws the screen.
+
+### Where it is and what reaches it
+
+| image | dispatcher | opcode chain |
+|---|---|---|
+| Harmony 700 2.8 | `0x1879C` | `0x187A8` |
+| Harmony 600 0.2 | `0x16E38` | `0x16E44` |
+| Harmony One 3.4 | `0x295AC` | `0x295E6` |
+
+Three entry points, all three read off the firmware rather than guessed:
+
+* **base slot 11**, whose consumer indexes the array by `0x39D` and calls the dispatcher directly.
+  Opcode `0x73` of the action list language is what loads `0x39D`, per section 34, so an action
+  list can run a screen program.
+* **a base slot 14 lookup**, section 39.
+* **a mode entry**, through the pointer at offset 6 and then three bytes in. That rule finds 374
+  clean programs on the 700, 237 on the 600 and 117 on an arch 8 config, with **zero** failures,
+  and finds nothing coherent on arch 9 or arch 12, so it is recorded as arch 8 and arch 14 only.
+
+### The instruction set
+
+The dispatcher reads one byte, runs a handler, and loops. `XORLW` chains decoded with
+`harmony/pic18/chains.py`, never by hand.
+
+| opcode | operands | handler does |
+|---|---|---|
+| 0 | none | return; the program ends |
+| 1 | 4 bytes then a `u16` | repeats a primitive `count` times, bounded against the display width |
+| 2 | 2 position bytes, `u24` | render the object at that address at that position |
+| 3 | 6 bytes, `u24` | the same with a larger position record |
+| 4 | 2 position bytes, `u24` | draw the glyph string at that address |
+| 5 | 2 position bytes, then the string | draw the glyph string inline in the program |
+| 16 | 1 byte | index **base slot 7** by it and follow the result |
+| 17 | `u16` operand, `u8` opcode | **queue an action list instruction**, the bridge between the two languages |
+| 18 | a switch, narrow | switch on a state variable and jump |
+| 19 | the same, wide | counts, values and bounds two bytes instead of one |
+| 20 | `u24` | jump; the program continues there |
+
+A switch reads a state variable index, then a table of exact values and a table of inclusive
+ranges, and jumps to the first target that matches:
+
+```
+u8    state variable index
+count                                     u8 in opcode 18, u16 in opcode 19
+{ value; u24 target }[count]              value likewise one byte or two
+count
+{ low; high; u24 target }[count]
+```
+
+That is the same shape base slot 14's record has, which is section 39's structure hoisted out of
+the stream and given its own section.
+
+**Three architectures, three opcode sets.** The ten above are in all three dispatchers. The Harmony
+One's chain has **twelve**: it adds 22 and 23, whose handlers manipulate the stream pointer rather
+than drawing, and which no config in the corpus uses. Arch 8's configs use an opcode **21** that no
+available firmware implements, since no arch 8 image exists; its length is four operand bytes,
+inferred the only way available, by being the one length that lets every stream carrying it reach
+a terminator.
+
+### Why it is the screen
+
+The drawing primitive behind opcodes 2, 3, 4 and 5 bounds both its coordinates against `0x80`,
+drives `LATB` bit 3 between two write paths, which is a display controller's register select line,
+and resolves a glyph by indexing a font table at `0x398` by **the code minus one**. That last
+detail is why the inline strings are not text: they are glyph indices. Of the 1000 or so strings in
+the corpus, **not one decodes as printable ASCII**, and calling them text would be the easy
+mistake.
+
+### The closure
+
+Instructions are variable length and nothing in a program states its length, so one wrong operand
+count desynchronises the walk and the next byte read as an opcode is almost certainly not one of
+the eleven. Walking every program reachable from base slot 11 and every base slot 14 lookup,
+following every jump and every switch arm until nothing new turns up:
+
+| config | arch | programs | instructions | undecodable |
+|---|---|---|---|---|
+| 700, both | 14 | 6194 | 12847 | 0 |
+| 600 | 14 | 4290 | 9042 | 0 |
+| 525 | 9 | 22 | 44 | 0 |
+| One, programmed | 12 | 304 | 710 | 0 |
+| One, unprogrammed | 12 | 278 | 658 | 0 |
+| 880 a to d | 8 | 239 to 245 | 552 to 564 | 0 |
+
+**18252 programs, four architectures, nothing left over.** Extract them with
+`tools/screen_dump.py`.
+
+### Base slot 11 is the screen program table
+
+```
++0x00  u16  count
++0x02  u24  address[count]
+```
+
+One of the six recognised pointer arrays, so the parser already read it; what it points at is what
+was missing. 5711 entries on the 700, 3810 on the 600, 22 to 59 elsewhere, and on arch 14 **5703 of
+the 5711 are the same two instruction program**, queue one action list instruction and end. So the
+table is mostly a level of indirection and the interesting programs are the ones the mode entries
+and the value maps jump into.
+
+### Base slot 7 has a caller
+
+Section 38 read slot 7's structure, a pointer array indexed by a caller supplied byte, and could
+not say who the caller was. It is opcode 16 of this language.
+
+### What is not established
+
+**Opcodes 22 and 23**, present only in the arch 12 dispatcher and used by no config, so their
+operand lengths are unknown. `gspm.SCREEN_ARCH12_ONLY` lists them so a parser refuses them rather
+than desynchronising quietly.
+
+**What opcode 21 does.** Only its length is known, and that by inference from four arch 8 configs.
+
+**What the operands of 1, 2 and 3 mean** beyond two of them being coordinates, and what the objects
+those opcodes render actually are.
+
+**The mode entry root on arch 9 and arch 12.** The arch 14 rule finds nothing there and the search
+over every offset pair found no replacement, so those two architectures reach their screen programs
+some other way.
+
+**The glyph table.** Its address is held in RAM at `0x398` and where that is loaded from is not
+traced.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

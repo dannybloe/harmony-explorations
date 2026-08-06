@@ -171,7 +171,9 @@ Known so far:
 | 15 | a table whose **entry count the firmware demands**: 9 on arch 14, 11 on arch 12 | ten configs, three images |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
+| 7 | a pointer array **indexed by opcode 16 of the screen language** | three images, below |
 | 9 | the **binding table**: eight to sixteen sets of button bindings with an enter and a leave handler | ten configs, four architectures, below |
+| 11 | the **screen program table**: programs in the screen language | ten configs, four architectures, below |
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | ten configs, four architectures, below |
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
 | 18 | NULL in every sample of every architecture | nine configs |
@@ -335,6 +337,65 @@ a record of their own, so two records can overlap by design.
 The range table is empty in eight of the ten configs; two carry one range between them.
 
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
+
+### The screen language
+
+A second interpreter, unrelated to the action lists, with its own one byte opcodes. It draws the
+display. Programs are reached from base slot 11, from a base slot 14 lookup, and on arch 8 and arch
+14 from a mode entry.
+
+| opcode | operands | meaning |
+|---|---|---|
+| 0 | none | end |
+| 1 | 4 bytes, `u16` | repeat a primitive |
+| 2 | 2 position bytes, `u24` | render the object at that address |
+| 3 | 6 bytes, `u24` | the same with a larger position record |
+| 4 | 2 position bytes, `u24` | draw the glyph string at that address |
+| 5 | 2 position bytes, then the string | draw the glyph string inline |
+| 16 | 1 byte | index base slot 7 by it |
+| 17 | `u16` operand, `u8` opcode | queue an action list instruction |
+| 18, 19 | a switch, below | switch on a state variable and jump |
+| 20 | `u24` | jump |
+| 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
+| 22, 23 | *not established* | in the arch 12 dispatcher, used by no config |
+
+A switch:
+
+```
+u8    state variable index
+count                                     u8 in opcode 18, u16 in opcode 19
+{ value; u24 target }[count]              value likewise one byte or two
+count
+{ low; high; u24 target }[count]
+```
+
+**The inline strings are glyph indices, not characters.** The renderer resolves one by indexing a
+font table by the code minus one, and not one string in the corpus decodes as printable ASCII. A
+code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
+terminator cannot be found by scanning for a zero; no string in the corpus is wide.
+
+**18252 programs across ten configs and four architectures decode with nothing left over**, which
+is the check that matters: instructions are variable length with no length field, so a wrong
+operand count desynchronises the walk immediately.
+
+Read with `gspm.screen_program` and `gspm.screen_program_roots`, or dump one with
+`tools/screen_dump.py`. [findings.md](findings.md) section 40.
+
+### Base slot 11: the screen program table
+
+```
++0x00  u16  count
++0x02  u24  address[count]
+```
+
+One of the six recognised pointer arrays. Each entry is a screen program. On arch 14, 5703 of the
+700's 5711 entries are the same two instruction program, queue one action list instruction and end,
+so the table is mostly indirection.
+
+### Base slot 7
+
+A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
+Its 3 byte target is loaded into `TBLPTR` and followed. What the targets are is *not established*.
 
 ### Base slot 16: the number sender
 
