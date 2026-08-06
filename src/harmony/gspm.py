@@ -219,6 +219,18 @@ BINDING_LENGTH = 4
 OPERAND_HIGH_BAND = 0xC000
 HIGH_BAND_OPCODES = frozenset({0x07, 0x0F, 0x1F, 0x3F})
 
+# Base slot 5 is the infrared database, two levels of pointer array over records of mark and
+# space durations. `docs/findings.md` section 32.
+IR_TABLE_SLOT = 5
+IR_POINTER_LENGTH = 3
+# Every record in the corpus opens with the same 14 bytes, `{u8; u24; u8; u24; u24; u24}`, whose
+# first pointer is always the record's own address minus seven. What the four pointers are for is
+# not established, so the header is skipped by length rather than parsed.
+IR_RECORD_HEADER = 14
+# Below this a record is not carrying a duration stream. The shortest real code in the corpus is
+# a 15 bit one, which frames to 34 pulses.
+IR_MIN_PULSES = 8
+
 
 def is_high_band(instruction: 'Instruction') -> bool:
     """Whether this instruction's operand is a reference into the second operand space.
@@ -459,6 +471,101 @@ class Container:
             return None
         lists = [self.action_list(a) for a in table]
         return None if any(l is None for l in lists) else lists
+
+    def ir_groups(self) -> Optional[List[List[int]]]:
+        """Base slot 5, the infrared database: one list of record addresses per group.
+
+        Base slot 5 is a count prefixed array of pointers, and each of those points at a second
+        array of the same shape:
+
+        ```
+        +0x00  u8   zero, the same spare byte the section table carries
+        +0x01  u16  count
+        +0x03  u24  record address [count]
+        ```
+
+        The number of groups equals the number of distinct high bytes a `0x7C` operand takes, in
+        every config in the corpus, and the group indices are contiguous from zero. What a group
+        is remains unnamed; the count runs from 1 to 7 across the corpus, which is the right size
+        for the equipment somebody owns. `docs/findings.md` section 32.
+        """
+        try:
+            slot = arch_slot(self.architecture, IR_TABLE_SLOT)
+        except GspmError:
+            return None
+        table = self.pointer_array(slot) if slot < len(self.sections) else None
+        if table is None:
+            return None
+        groups = []
+        for address in table:
+            off = self.blob_offset_of(address)
+            if off is None or off + 3 > len(self.blob):
+                return None
+            count = int.from_bytes(self.blob[off + 1:off + 3], 'little')
+            end = off + 3 + IR_POINTER_LENGTH * count
+            if end > len(self.blob):
+                return None
+            groups.append([
+                int.from_bytes(self.blob[p:p + IR_POINTER_LENGTH], 'little')
+                for p in range(off + 3, end, IR_POINTER_LENGTH)
+            ])
+        return groups
+
+    def ir_pulses(self, address: int, limit: int = 1024) -> List[Tuple[bool, int]]:
+        """The mark and space run inside one infrared record, as `(is_mark, microseconds)`.
+
+        A record is a `IR_RECORD_HEADER` byte header followed by `u16` durations in microseconds
+        with **bit 15 set on a mark**. The run is located rather than assumed to start at a fixed
+        offset: some records carry a prefix of `0x7FFF` words before the first mark, and how many
+        varies. So this returns the longest strictly alternating run in the record, which is what
+        a decoder has to do anyway.
+
+        Records whose longest run is shorter than `IR_MIN_PULSES` are not this encoding. The whole
+        arch 9 sample is like that, which is consistent with the four infrared encoding classes
+        the firmware's dispatcher routes between: this decodes one of them.
+        """
+        start = self.blob_offset_of(address)
+        if start is None:
+            return []
+        start += IR_RECORD_HEADER
+        words = [
+            int.from_bytes(self.blob[o:o + 2], 'little')
+            for o in range(start, min(start + 2 * limit, len(self.blob) - 1), 2)
+        ]
+        best = (0, 0)
+        i = 0
+        while i < len(words):
+            j = i + 1
+            while j < len(words) and (words[j] >> 15) != (words[j - 1] >> 15):
+                j += 1
+            if j - i > best[1] - best[0]:
+                best = (i, j)
+            i = j
+        return [(bool(w >> 15), w & 0x7FFF) for w in words[best[0]:best[1]]]
+
+    def ir_frame(self, address: int) -> Optional[Tuple[int, int, int]]:
+        """One record read as a framed code: `(header_mark, header_space, bit_count)`.
+
+        The framing is `header mark, header space, bits * (mark, space), trailing mark, trailing
+        gap`, so a run of `2 * bits + 4` from the first mark. Returns None when the record does
+        not have that shape, which includes every record of the arch 9 sample.
+
+        The closure that carries this reading is in `docs/findings.md` section 32: the bit count
+        derived from the length agrees with the bit count of the protocol the header timings name,
+        for every well formed record in the corpus.
+        """
+        pulses = self.ir_pulses(address)
+        if len(pulses) < IR_MIN_PULSES:
+            return None
+        for start, (is_mark, _) in enumerate(pulses):
+            if is_mark:
+                break
+        else:
+            return None
+        rest = len(pulses) - start - 2
+        if rest < 4 or rest % 2:
+            return None
+        return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
 
     def action_list_packing(self) -> Tuple[int, int]:
         """How many consecutive table entries sit exactly `1 + 3 * count` apart, and of how many.

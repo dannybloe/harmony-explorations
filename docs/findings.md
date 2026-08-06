@@ -3140,6 +3140,123 @@ proves nothing.
 And why the floor is `-16384` rather than `-32768`. Half the negative range is untouched by every
 sample.
 
+## 32. Base slot 5 is the infrared database
+
+The first section pointer labelled by function, and it was reached from the opcode work rather
+than from the firmware.
+
+### How it was found
+
+Opcode `0x7C`'s operand splits at the byte, and section 29 left the high byte as an unnamed group.
+Counting those groups against the section table gives an exact match in every config:
+
+| config | arch | distinct `0x7C` groups | pointers in base slot 5 |
+|---|---|---|---|
+| 700 | 14 | 6 | 6 |
+| 700, second config | 14 | 6 | 6 |
+| 600 | 14 | 4 | 4 |
+| 525 | 9 | 4 | 4 |
+| One, programmed | 12 | 5 | 5 |
+| One, unprogrammed | 12 | **1** | **1** |
+| 880 a | 8 | 3 | 3 |
+| 880 b | 8 | 6 | 6 |
+| 880 c | 8 | 7 | 7 |
+| 880 d | 8 | 7 | 7 |
+
+Ten of ten, across four architectures, and the group indices are contiguous from zero every time.
+The count varies from 1 to 7, so this is not a constant that any table would match. The unprogrammed
+Harmony One is the natural minimal case and it lands on 1 without being made to.
+
+### The structure
+
+Base slot 5 is a count prefixed pointer array whose entries are themselves count prefixed pointer
+arrays, using the same spare byte idiom as the section table:
+
+```
+base slot 5:  u8 count; u24 group_address[count]
+
+per group:    u8 zero; u16 count; u24 record_address[count]
+```
+
+Verified over **49 groups and 3058 record pointers in ten configs**: the lead byte is zero every
+time, each group occupies exactly `3 + 3 * count` bytes and the groups are packed adjacently with
+no gap, and every record pointer lands inside the container. None of the 3058 is an action list
+address, so this table addresses something the action list table does not.
+
+Each record opens with a fixed 14 byte header, `{u8; u24; u8; u24; u24; u24}`, whose first pointer
+is always the record's own address minus seven, on all four architectures. What the four pointers
+are for is not established.
+
+### What the records hold
+
+After the header comes a run of `u16` values in which **bit 15 strictly alternates**. Read with
+bit 15 as "this is a mark" and the remaining fifteen bits as microseconds, they are infrared pulse
+trains. The most common single value across the corpus is a 568 microsecond mark, and the most
+common spaces are 552 and 1662.
+
+The framing is fixed:
+
+```
+[leading gap]  header mark, header space,  bits * (mark, space),  trailing mark, trailing gap
+```
+
+so the run from the first mark is `2 * bits + 4` values long. **That identity holds for all 2137
+framed records in the corpus, with no exception.**
+
+### The closure
+
+The bit count comes out of the record's length. The header timings are two numbers at the front of
+the record. They have nothing to do with each other, and they agree:
+
+| header mark / space, measured | records | bits, from the length | the protocol those timings name | its bit count |
+|---|---|---|---|---|
+| 8990 / 4490 and 9000 / 4500 | 1052 | **32, every one** | NEC, 9000 / 4500 | 32 |
+| 3480 / 1730, 3460 / 1730 and 3364 / 1682 | 313 | **48, every one** | Kaseikyo, 3456 / 1728 | 48 |
+| 4500 / 4500 and 4485 / 4485 | 168 | 32 | 4500 / 4500 headers are a 32 bit family | 32 |
+| 4000 / 4500 | 111 | 24 | not identified | |
+
+The measured NEC header is within 0.11% of the specification and the Kaseikyo one within 0.7%. A
+thousand records agreeing on 32 bits and three hundred on 48, where the two quantities are computed
+from opposite ends of the record, is the closure. Reading the durations as anything other than
+microseconds breaks it.
+
+The bit timings agree independently. Kaseikyo specifies a 432 microsecond mark with 432 and 1296
+microsecond spaces; the corpus carries 425 with 450 and 1320. NEC specifies 560 with 560 and 1690;
+the corpus carries 568 with 552 and 1662.
+
+### Arch 9 stores infrared differently
+
+Of the 525's 200 records, 36 frame at all and none of those framings is coherent: header pairs like
+8053 / 46 and 2354 / 0. Its records are short and full of small byte values rather than `u16`
+durations, which is what a table indexed encoding looks like.
+
+That is expected rather than awkward. The firmware's infrared dispatcher routes **four** encoding
+classes, listed as an open question in `docs/config-format.md` since section 11. This decodes one
+of them. The 880's short pulse records, headers around 303 / 310, are probably another.
+
+Counting only records that frame: 347 of 350 on the 700, 271 of 328 on the One, 301 of 454 on the
+880 c, and 97 of 97 on the unprogrammed One.
+
+### What this unblocks
+
+An infrared database extractor, which `docs/roadmap.md` names as the first visible payoff of step 6.
+Every config anybody owns carries the codes for their equipment, in microseconds, and those are
+exactly the codes people cannot recreate once the servers are gone. `gspm.ir_groups`, `ir_pulses`
+and `ir_frame` are the reader.
+
+### What is not established
+
+**What a group is.** One to seven of them, one per `0x7C` group. Equipment is the obvious guess and
+the count fits, but nothing here names them.
+
+**The 14 byte header.** Four pointers, one of which is self referential at minus seven, so the
+records are chained. The chain is not followed here.
+
+**Why some records carry a `0x7FFF` prefix** before the first mark, and how many. The reader locates
+the run rather than assuming an offset, so this does not block decoding, but a writer would need it.
+
+**The other three encoding classes**, including whatever arch 9 uses for all of its records.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

@@ -504,7 +504,14 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   pointer is live for which on-screen activity or device. This is the poor version of the
   emulator's read trace and it costs a day rather than a month.
 * First visible payoff: an IR database extractor, exporting the codes people cannot recreate out
-  of configs they already own, into documented JSON in the explorer.
+  of configs they already own, into documented JSON in the explorer. **Done, and earlier than
+  planned.** It did not need the firmware: base slot 5 turned out to be the infrared database, and
+  it was reached by counting the `0x7C` opcode's group index against the section table. Records are
+  mark and space durations in microseconds, `tools/ir_extract.py` writes them out, and the closure
+  is that the bit count implied by a record's length matches the bit count of the protocol its
+  header timings name, for 1365 records with no exception. `docs/findings.md` section 32. What
+  remains is the other three infrared encoding classes: this reads one, arch 9 uses none of it, and
+  arch 8 has a second population.
 * Then the trailer checksum, from the boot validation routine located in step 3.
 * Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
   both remotes, and publish the resulting table. This also unblocks upstream. It got considerably

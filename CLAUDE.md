@@ -355,6 +355,7 @@ make all           everything except ghidra and bench
 ```
 tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
 tools/gspm_parse.py    <file> [--json]
+tools/ir_extract.py    <file> [--json] [--pulses]   the infrared database, grouped
 tools/pic18_disasm.py  <file> <base> <addr> <count>
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
@@ -538,6 +539,12 @@ that changes. It is publishable precisely because it carries shape and not conte
 
 Then the first reverse engineering block proper (step 6): label the section pointers by function
 using the proven consumer method plus live RAM polling, read the action list opcode table out of
-the arch 14 firmware, extract the IR database, derive the trailer checksum from the boot validator
-already located, and run the button mapping experiment by polling the keypad scanner's RAM variable
-while pressing every key.
+the arch 14 firmware, derive the trailer checksum from the boot validator already located, and run
+the button mapping experiment by polling the keypad scanner's RAM variable while pressing every key.
+
+**Part of step 6 is already done, from the config side rather than the firmware.** Base slot 5 is
+**the infrared database**: two levels of pointer array over records of mark and space durations in
+microseconds, decoded and extractable with `tools/ir_extract.py`. `docs/findings.md` section 32.
+Base slot 8 is key press bindings and base slot 10 the action list table, so three of the twenty
+slots are named. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
+`0x3F` are partitioned into a family that addresses a second operand space, section 31.

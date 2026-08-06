@@ -915,6 +915,149 @@ class TestActionLists(unittest.TestCase):
         self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
 
 
+class TestTheInfraredDatabase(unittest.TestCase):
+    """findings.md section 32: base slot 5 is the infrared database.
+
+    The claim rests on two closures that do not depend on each other. One is arithmetic on the
+    container: the group count matches the `0x7C` group count in every config. The other is
+    arithmetic on the records: the bit count implied by a record's length matches the bit count of
+    the protocol its header timings name.
+    """
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d')
+
+    # Header timings, as a tolerance band, against the bit count the protocol specifies. The bands
+    # are wide because the corpus holds several calibrations of each: NEC turns up as 8990/4490 and
+    # as 9000/4500, Kaseikyo as 3364/1682, 3460/1730 and 3480/1730.
+    PROTOCOLS = (
+        ('NEC 9000/4500', (8900, 9100), (4400, 4600), 32),
+        ('Kaseikyo 3456/1728', (3350, 3520), (1650, 1760), 48),
+    )
+
+    def test_the_group_count_matches_the_0x7c_group_count(self):
+        """Ten configs, four architectures, counts from 1 to 7, and it matches every time.
+
+        Includes the arch 9 sample, whose records use a different encoding: the two level pointer
+        structure is shared even where the leaf format is not.
+        """
+        for name in self.CONFIGS + ('h525_config',):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                groups = {i.operand >> 8 for lst in (c.action_lists() or []) for i in lst
+                          if i.opcode == 0x7C}
+                self.assertEqual(len(c.ir_groups()), len(groups))
+                self.assertEqual(groups, set(range(len(groups))), 'and contiguous from zero')
+
+    def test_the_unprogrammed_one_is_the_minimal_case(self):
+        """A count that is always 6 would match any table. This one goes down to 1."""
+        counts = {name: len(gspm.parse(lab.load(name)).ir_groups())
+                  for name in self.CONFIGS}
+        self.assertEqual(counts['one_config_unprogrammed'], 1)
+        self.assertEqual(max(counts.values()), 7)
+
+    def test_the_two_level_table_is_exactly_packed(self):
+        """Lead byte zero, `3 + 3 * count` bytes per group, groups adjacent, pointers in range."""
+        groups = records = 0
+        # Includes arch 9, whose leaf records use a different encoding: the two level pointer
+        # structure holds there too, and saying so is the point of the wide totals.
+        for name in self.CONFIGS + ('h525_config',):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                table = c.pointer_array(gspm.arch_slot(c.architecture, gspm.IR_TABLE_SLOT))
+                for k, address in enumerate(table):
+                    off = c.blob_offset_of(address)
+                    self.assertEqual(c.blob[off], 0, 'the spare byte')
+                    count = int.from_bytes(c.blob[off + 1:off + 3], 'little')
+                    end = off + 3 + 3 * count
+                    if k + 1 < len(table):
+                        self.assertEqual(end, c.blob_offset_of(table[k + 1]), 'packed adjacently')
+                    groups += 1
+                    records += count
+                for group in c.ir_groups():
+                    for address in group:
+                        self.assertLess(c.blob_offset_of(address), len(c.blob))
+        self.assertEqual((groups, records), (49, 3058), 'pin the corpus wide totals')
+
+    def test_no_record_pointer_is_an_action_list(self):
+        """Which is what makes this a different table rather than another view of slot 10."""
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                lists = set(c.pointer_array(
+                    gspm.arch_slot(c.architecture, gspm.ACTION_LIST_TABLE_SLOT)) or [])
+                reached = {a for g in c.ir_groups() for a in g}
+                self.assertEqual(lists & reached, set())
+
+    def test_the_record_header_pointer_is_the_record_minus_seven(self):
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for group in c.ir_groups():
+                    for address in group:
+                        off = c.blob_offset_of(address)
+                        first = int.from_bytes(c.blob[off + 1:off + 4], 'little')
+                        self.assertEqual(first, address - 7)
+
+    def test_the_framing_identity_holds_for_every_framed_record(self):
+        """Run length from the first mark is `2 * bits + 4`. No exception in the corpus."""
+        framed = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for group in c.ir_groups():
+                for address in group:
+                    frame = c.ir_frame(address)
+                    if frame is None:
+                        continue
+                    pulses = c.ir_pulses(address)
+                    lead = next(i for i, (mark, _) in enumerate(pulses) if mark)
+                    self.assertEqual(len(pulses) - lead, 2 * frame[2] + 4,
+                                     '%s at 0x%06X' % (name, address))
+                    framed += 1
+        self.assertEqual(framed, 2137, 'pin the count the claim quotes')
+
+    def test_the_header_timings_and_the_length_agree_on_the_bit_count(self):
+        """The closure. Two numbers from opposite ends of the record, computed independently.
+
+        The header timings are the first two durations. The bit count comes from how long the
+        record is. Neither is derived from the other, and for 1365 records they name the same
+        protocol.
+        """
+        seen = collections.Counter()
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for group in c.ir_groups():
+                for address in group:
+                    frame = c.ir_frame(address)
+                    if frame is None:
+                        continue
+                    mark, space, bits = frame
+                    for label, (m0, m1), (s0, s1), want in self.PROTOCOLS:
+                        if m0 <= mark <= m1 and s0 <= space <= s1:
+                            seen[label] += 1
+                            self.assertEqual(bits, want, '%s: %s at 0x%06X carries %d bits'
+                                             % (name, label, address, bits))
+        self.assertEqual(seen['NEC 9000/4500'], 1052)
+        self.assertEqual(seen['Kaseikyo 3456/1728'], 313)
+
+    def test_arch_9_does_not_use_this_encoding(self):
+        """Stated as a fact rather than left as a silent gap in the coverage.
+
+        The firmware routes four infrared encoding classes. Reading the 525's records as this one
+        produces header pairs that name no protocol, so the decoder must not claim them.
+        """
+        c = gspm.parse(lab.load('h525_config'))
+        total = sum(len(g) for g in c.ir_groups())
+        framed = [c.ir_frame(a) for g in c.ir_groups() for a in g]
+        framed = [f for f in framed if f is not None]
+        self.assertEqual(total, 200)
+        self.assertLess(len(framed), total // 4, 'most records do not frame at all')
+        for mark, space, _ in framed:
+            self.assertFalse(8900 <= mark <= 9100 and 4400 <= space <= 4600,
+                             'and none of the few that do lands on a real protocol')
+
+
 class TestTheHighOperandBand(unittest.TestCase):
     """findings.md section 31: four opcodes address a second operand space and never leave it.
 

@@ -163,10 +163,66 @@ Known so far:
 | 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | fifteen samples, below |
 | 1 | seven byte record stating the architecture | fifteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
+| 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
+
+### Base slot 5: the infrared database
+
+**Confirmed on ten configs across four architectures.** Two levels of pointer array over records of
+mark and space durations.
+
+```
+base slot 5:  u8  count
+              u24 group_address[count]
+
+per group:    u8  zero            the same spare byte the section table carries
+              u16 count
+              u24 record_address[count]
+
+per record:   u8  kind            14 byte header, four pointers, the first always this
+              u24 pointer           record's own address minus seven; purpose unknown
+              u8  kind
+              u24 pointer
+              u24 pointer
+              u24 pointer
+              u16 duration[]      bit 15 set is a mark, bits 14..0 are microseconds
+```
+
+49 groups and 3058 record pointers checked: the lead byte is zero every time, each group is exactly
+`3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the
+container, and none of them is an action list address.
+
+**The number of groups equals the number of distinct high bytes a `0x7C` operand takes**, in all
+ten configs, with the group indices contiguous from zero. The count runs from 1 to 7, and the
+unprogrammed Harmony One is the minimal case at 1.
+
+The duration run has bit 15 strictly alternating, and is framed as `header mark, header space,
+bits * (mark, space), trailing mark, trailing gap`. So the run from the first mark is
+`2 * bits + 4` values, which holds for all 2137 framed records in the corpus.
+
+| header mark / space | records | bits, from the run length |
+|---|---|---|
+| 8990 / 4490, 9000 / 4500 | 1052 | 32, every one |
+| 3480 / 1730, 3460 / 1730, 3364 / 1682 | 313 | 48, every one |
+| 4500 / 4500, 4485 / 4485 | 168 | 32 |
+| 4000 / 4500 | 111 | 24 |
+
+Those header timings name NEC and Kaseikyo, whose bit counts are 32 and 48. Two quantities computed
+from opposite ends of the record, agreeing with no exception.
+
+**Not every record uses this encoding.** The whole arch 9 sample uses something else, and the 880
+has a second population with headers near 303 / 310. The firmware routes four infrared encoding
+classes; this is one.
+
+Read with `gspm.ir_groups`, `gspm.ir_pulses` and `gspm.ir_frame`. The reader locates the duration
+run rather than assuming a fixed offset, because some records carry a prefix of `0x7FFF` words
+whose length varies.
+
+*What a group is, and what the 14 byte header holds, are not established.*
+[findings.md](findings.md) section 32.
 
 ### Base slot 8: key press bindings
 
@@ -665,7 +721,8 @@ the 0.1 us storage unit and the clock.
 
 ## Open questions
 
-1. What are the 19, 20 or 21 section slots? Method in [roadmap.md](roadmap.md) step 6.
+1. What are the 19, 20 or 21 section slots? Base slots 5, 8 and 10 are named now, so the
+   question is the remaining sixteen or so. Method in [roadmap.md](roadmap.md) step 6.
 2. The trailer checksum algorithm. On the critical path: nothing can be uploaded without it.
    The firmware routine that validates a config on boot is where to look, and **it is now
    located**: the cookie check is at `0x16492` in the Harmony 700 2.8 image and `0x28DAC` in the
@@ -674,7 +731,9 @@ the 0.1 us storage unit and the clock.
    a config read, so the checksum is not a plain 16-bit sum accumulated that way.
    `docs/findings.md` section 19.
 3. Three of the four IR encoding classes. The dispatcher routes four selectors; only one is
-   traced.
+   traced in the firmware. From the config side one class is now decoded outright, the mark and
+   space stream of base slot 5, but arch 9 uses none of it and arch 8 carries a second population
+   with headers near 303 / 310. Those are the other classes and they are still unread.
 4. The key table's semantic difference between architectures, and the meaning of `flags`
    (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
    the 600, small values plus an outlier on arch 8).
