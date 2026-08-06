@@ -203,6 +203,7 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 packages/codec/                 TS: the one config codec, container through compiler
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
+packages/corpus/                TS: read a config off a remote and file it, composes the other three
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
@@ -358,6 +359,9 @@ tools/golden.py        [--write]   golden vectors for the Python/TypeScript comp
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
+node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
+                       reads the whole config off a remote and files it in the lab.
+                       Opens the device, unlike the two above, so reach for it deliberately.
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three

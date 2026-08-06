@@ -21,6 +21,18 @@ importers:
         specifier: workspace:*
         version: link:../lab
 
+  packages/corpus:
+    dependencies:
+      '@harmony/codec':
+        specifier: workspace:*
+        version: link:../codec
+      '@harmony/lab':
+        specifier: workspace:*
+        version: link:../lab
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
+
   packages/lab: {}
 
   packages/usb:

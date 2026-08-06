@@ -1,0 +1,174 @@
+/**
+ * Reading a whole config off a remote, bounded by the config rather than by the region.
+ *
+ * The naive read is "the config region is 3840 KiB, read 3840 KiB". The config is not that big and
+ * the container says so itself: `end_addr` at offset 4 is the absolute flash address of the
+ * trailing end marker, so sixteen bytes at the base give the exact length before the bulk read
+ * starts. On the Harmony One that is `0x1D867C` minus `0x040000` plus four for the marker, 1672832
+ * bytes; on the Harmony 600 `0x0E4361` minus `0x030000` plus four, 738149. Both are the known file
+ * sizes to the byte, so this is arithmetic that has already been checked twice rather than a guess.
+ *
+ * The length also checks itself. If the marker is not sitting at `end_addr` when the read finishes,
+ * either the read is wrong or the config is damaged, and either way nothing should be filed.
+ */
+import { bytes as byteUtil, FAMILIES, type Family } from '@harmony/codec';
+
+/**
+ * What a config read needs from a remote, and deliberately nothing more.
+ *
+ * Narrower than `HarmonyRemote` on purpose. It makes the pipeline testable against a plain object
+ * that serves bytes from a file, and it means this module cannot reach a write path even by
+ * mistake, because no write method exists on the type it holds.
+ */
+export interface ConfigReader {
+  getVersion(): Promise<Uint8Array>;
+  readFlash(address: number, count: number): Promise<Uint8Array>;
+}
+
+/** Everything that differs between the two architectures this project can read. */
+export interface RemoteProfile {
+  readonly productId: number;
+  readonly model: string;
+  readonly architecture: number;
+  readonly configBase: number;
+  /** Where the config region ends, which is the same 4 MiB ceiling on both. */
+  readonly configEnd: number;
+}
+
+export const PROFILES: readonly RemoteProfile[] = [
+  { productId: 0xc121, model: 'Harmony One', architecture: 12, configBase: 0x040000, configEnd: 0x400000 },
+  { productId: 0xc122, model: 'Harmony 600 or 700', architecture: 14, configBase: 0x030000, configEnd: 0x400000 },
+];
+
+export class ReadError extends Error {}
+
+/**
+ * The profile for an attached remote, or a refusal that says why.
+ *
+ * Refusing beats guessing a base address. Reading the wrong address returns bytes that are not a
+ * container, which is a confusing failure, and this project covers two architectures out of at
+ * least eleven that exist, so an unknown product id is the expected case rather than a fault.
+ */
+export function profileFor(productId: number): RemoteProfile {
+  const found = PROFILES.find((p) => p.productId === productId);
+  if (found === undefined) {
+    const known = PROFILES.map((p) => `0x${p.productId.toString(16)} ${p.model}`).join(', ');
+    throw new ReadError(
+      `no config base known for product id 0x${productId.toString(16)}. Known: ${known}. ` +
+        'Other models exist and are not covered yet; see the coverage section of docs/roadmap.md.',
+    );
+  }
+  return found;
+}
+
+/** Enough bytes to hold the magic, `end_addr` and the format word. */
+export const HEADER_PROBE = 16;
+
+export interface ConfigHeader {
+  readonly family: Family;
+  readonly endAddr: number;
+  readonly format: number;
+  /** Container length in bytes, end marker included. */
+  readonly length: number;
+}
+
+/**
+ * Read the container header and work out how long the whole thing is.
+ *
+ * The magic is checked against every known family rather than against `GSPM` alone, so a container
+ * from an architecture nobody here has read still gets a sensible length instead of a refusal.
+ */
+export function parseHeader(head: Uint8Array, profile: RemoteProfile): ConfigHeader {
+  if (head.length < HEADER_PROBE) {
+    throw new ReadError(`header probe returned ${head.length} of ${HEADER_PROBE} bytes`);
+  }
+  const family = FAMILIES.find((f) => byteUtil.ascii(head, 0, 4) === f.magic);
+  if (family === undefined) {
+    const seen = Array.from(head.subarray(0, 4), (b) => b.toString(16).padStart(2, '0')).join(' ');
+    throw new ReadError(
+      `no container magic at 0x${profile.configBase.toString(16)}, found ${seen}. ` +
+        'Either the remote holds no config or the base address is wrong for this model.',
+    );
+  }
+  const endAddr = byteUtil.u32(head, 4);
+  const format = byteUtil.u32(head, 8);
+  const length = endAddr - profile.configBase + family.endMarker.length;
+  if (length <= HEADER_PROBE || profile.configBase + length > profile.configEnd) {
+    throw new ReadError(
+      `end_addr 0x${endAddr.toString(16)} gives an implausible length of ${length} bytes ` +
+        `for a config based at 0x${profile.configBase.toString(16)}`,
+    );
+  }
+  return { family, endAddr, format, length };
+}
+
+export interface ReadProgress {
+  /** Bytes in hand, including the header probe. */
+  readonly done: number;
+  readonly total: number;
+}
+
+export interface ConfigRead {
+  readonly profile: RemoteProfile;
+  readonly header: ConfigHeader;
+  readonly versionBlock: Uint8Array;
+  readonly bytes: Uint8Array;
+  readonly durationMs: number;
+}
+
+export interface ReadOptions {
+  /** Bytes per `READ_FLASH`. 16 KiB is what the hardware tests use for the firmware read. */
+  readonly chunkBytes?: number;
+  readonly onProgress?: (progress: ReadProgress) => void;
+  /** Injectable so a test does not depend on a clock. */
+  readonly now?: () => number;
+}
+
+export const DEFAULT_CHUNK_BYTES = 16384;
+
+/**
+ * Read the whole config, header first.
+ *
+ * The version block is read before anything else because it is the cheapest thing that identifies
+ * the unit, and a read filed without knowing which remote it came from is a file nobody can use.
+ */
+export async function readConfig(
+  reader: ConfigReader,
+  profile: RemoteProfile,
+  options: ReadOptions = {},
+): Promise<ConfigRead> {
+  const chunk = options.chunkBytes ?? DEFAULT_CHUNK_BYTES;
+  const now = options.now ?? (() => performance.now());
+  const started = now();
+
+  const versionBlock = await reader.getVersion();
+  const head = await reader.readFlash(profile.configBase, HEADER_PROBE);
+  const header = parseHeader(head, profile);
+
+  const bytes = new Uint8Array(header.length);
+  bytes.set(head, 0);
+  options.onProgress?.({ done: head.length, total: header.length });
+
+  for (let at = head.length; at < header.length; at += chunk) {
+    const count = Math.min(chunk, header.length - at);
+    const part = await reader.readFlash(profile.configBase + at, count);
+    if (part.length !== count) {
+      throw new ReadError(`read ${part.length} of ${count} bytes at offset ${at}`);
+    }
+    bytes.set(part, at);
+    options.onProgress?.({ done: at + count, total: header.length });
+  }
+
+  // The closure on the whole read: the marker has to be where end_addr said it would be. A read
+  // that drifted, or a config that is damaged, fails here rather than being filed and trusted.
+  const markerAt = header.length - header.family.endMarker.length;
+  if (byteUtil.ascii(bytes, markerAt, header.family.endMarker.length) !== header.family.endMarker) {
+    const seen = Array.from(bytes.subarray(markerAt), (b) => b.toString(16).padStart(2, '0')).join(' ');
+    throw new ReadError(
+      `no ${header.family.endMarker} at end_addr 0x${header.endAddr.toString(16)}, found ${seen}. ` +
+        'The read is not trustworthy and has not been filed.',
+    );
+  }
+
+  return { profile, header, versionBlock, bytes, durationMs: now() - started };
+}

@@ -422,7 +422,11 @@ Still to do, in the order the application needs them:
 
 ### Step 5: M1, the read path and the bench instrument
 
-**The read pipeline first.**
+**The read pipeline first. Built, tested, and not yet run against a remote.**
+`packages/corpus`, with `bin/read-config.ts` as the command. Twelve tests drive it from a fake
+remote that serves a real config from the corpus at the address the hardware would map it at, which
+is how the address arithmetic gets asserted without hardware. What is left is running it once with
+a remote attached.
 
 * Read a whole config off a remote and file it in the lab corpus automatically, with a timestamp,
   because a dump taken before an experiment is the only cheap insurance there is. No new
