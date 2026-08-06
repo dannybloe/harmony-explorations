@@ -776,6 +776,46 @@ class TestActionLists(unittest.TestCase):
         self.assertEqual(low, list(range(0, 451)))
         self.assertEqual(high, [0x8000 + k for k in range(21)])
 
+    def test_opcode_7c_spells_out_values_above_its_field_maximum(self):
+        """
+        docs/findings.md section 29. The operand is a group in the high byte and 1 to 100 in the
+        low one, and a pure list of length k reads as (k - 1) * 100 + n.
+
+        The closure is the ceiling. These lists express 101 to 450, and section 28's fixed 0x6C
+        vocabulary is 0 to 450, which is a count of list lengths times a field maximum agreeing
+        with a set of operand values. Nothing connects the two but the format.
+        """
+        for name, groups in (('h700_config', 6), ('h600_config', 4)):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                lists = c.action_lists()
+                pure = [[i.operand for i in l] for l in lists
+                        if l and all(i.opcode == 0x7C for i in l)]
+
+                # Every 0x7C is either in one of these or in a {0x7F, 0x7D, 0x7C}.
+                trailing = sum(1 for l in lists
+                               if [i.opcode for i in l] == [0x7F, 0x7D, 0x7C])
+                total = sum(1 for l in lists for i in l if i.opcode == 0x7C)
+                self.assertEqual(sum(len(p) for p in pure) + trailing, total)
+
+                self.assertTrue(all(len({o >> 8 for o in p}) == 1 for p in pure),
+                                'a list changes group part way through')
+                self.assertEqual({o & 0xFF for p in pure for o in p[:-1]}, {100},
+                                 'a leading operand is not the field maximum')
+                self.assertEqual({p[0] >> 8 for p in pure}, set(range(groups)))
+
+                expressed = {}
+                for p in pure:
+                    expressed.setdefault(p[0] >> 8, set()).add((len(p) - 1) * 100 + (p[-1] & 0xFF))
+                for group, values in expressed.items():
+                    self.assertEqual(values, set(range(101, 451)),
+                                     'group %d does not express 101 to 450 exactly once' % group)
+
+                vocabulary = {l[1].operand for l in lists
+                              if len(l) == 2 and l[0].opcode == 0x7A and l[1].opcode == 0x6C
+                              and not l[1].operand & 0x8000}
+                self.assertEqual(max(vocabulary), 450, 'the two ceilings have stopped agreeing')
+
     def test_two_opcodes_carry_signed_operands(self):
         """
         Also section 26. `0x07` and `0x1F` never carry a value below 0xE800, which read as

@@ -457,6 +457,26 @@ Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a 
 neither the same size nor contiguous, so the structure does not transfer as it stands.
 [findings.md](findings.md) section 28.
 
+#### `0x7C` carries a value of at most 100
+
+**Confirmed on architecture 14.** The operand splits at the byte: the high byte is a group, 0 to 5
+on the 700 and 0 to 3 on the 600, and the low byte is 1 to 100.
+
+Every use is in one of two shapes: lists made of nothing but `0x7C`, or as the third instruction of
+`{0x7F, 0x7D, 0x7C}`. In a pure list of length `k`, every operand but the last has low byte 100 and
+the whole list keeps one group, so it reads as `(k - 1) * 100 + n`:
+
+| length | lists per group | remainders | value |
+|---|---|---|---|
+| 2, 3, 4 | 100 each | 1 to 100 | 101 to 400 |
+| 5 | 50 | 1 to 50 | 401 to 450 |
+
+The union is 101 to 450 per group, contiguous, each value once. **450 is also the top of the fixed
+`0x6C` vocabulary**, which is 0 to 450, reached from a completely different direction. So the two
+are the same enumeration: one instruction covers up to 100, more than one spells out the rest.
+
+*What the enumeration counts is not established.* [findings.md](findings.md) section 29.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode

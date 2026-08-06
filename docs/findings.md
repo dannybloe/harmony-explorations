@@ -2919,6 +2919,64 @@ programmed config and 21 from 43 to 110 in the unprogrammed one. So this is an a
 structure and the arch 12 equivalent, if there is one, has not been read. Forcing the two together
 would be exactly the kind of transfer section 17 warns about.
 
+## 29. `0x7C` carries a value of at most 100, and longer numbers are spelled out
+
+`0x7C` is the most used opcode on architecture 14, 7272 times in the 700 config and 4788 in the
+600, and it turns out to be doing arithmetic.
+
+### Where it occurs
+
+Every use is accounted for by two shapes. 6900 of the 700's are in lists made of **nothing but**
+`0x7C`, of length two to five, and the remaining 372 are the third instruction of `{0x7F, 0x7D,
+0x7C}`. On the 600 it is 4600 and 188. Nowhere else.
+
+### The operand is two fields
+
+The operand splits at the byte:
+
+* the **high byte** takes the values 0 to 5 on the 700 and 0 to 3 on the 600, which is the same
+  count as the cross product groups in section 28, six and four
+* the **low byte** runs 1 to 100, contiguous, for every group
+
+Every list keeps one high byte from start to finish, and in every list of length `k` the first
+`k - 1` operands have low byte **100**, the maximum, with only the last one varying.
+
+### Which spells out a number
+
+Repeating the largest value a field can hold and then adding a remainder is how you express a
+quantity too large for one instruction. Reading a list of length `k` as `(k - 1) * 100 + n` gives,
+per group:
+
+| length | lists per group | remainders | value |
+|---|---|---|---|
+| 2 | 100 | 1 to 100 | 101 to 200 |
+| 3 | 100 | 1 to 100 | 201 to 300 |
+| 4 | 100 | 1 to 100 | 301 to 400 |
+| 5 | **50** | 1 to **50** | 401 to **450** |
+
+The union is 101 to 450, contiguous, with every value appearing exactly once per group. The count
+of length five lists is half that of the others, and its remainders stop at 50 rather than 100,
+which is not a rounding of anything: it is what a ceiling of 450 requires.
+
+**And 450 is a number this format already used.** Section 28 found `0x6C` indexing a fixed
+vocabulary of 451 contiguous values, **0 to 450**, identical on both remotes. The pure `0x7C` lists
+express **101 to 450**. Same ceiling, arrived at from an unrelated direction: one is a set of
+operand values, the other is a count of list lengths times a field maximum.
+
+So the two structures are the same enumeration seen twice. Values up to 100 fit in one `0x7C`
+operand; values from 101 to 450 need two to five, and the config precomputes a list for each.
+
+### What is not established
+
+What the enumeration counts. A per group quantity capped at 450 with a per instruction maximum of
+100 is the shape of a duration, a repeat count or a level, and nothing here distinguishes them.
+
+Whether the high byte is the same thing as section 28's group. The counts match, six and four, and
+both track the config rather than the model, but matching counts are not identity.
+
+And why the field maximum is 100 rather than 255, when the operand byte could hold more. A decimal
+looking bound in a binary field usually means somebody upstream of the encoder thought in decimal.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
