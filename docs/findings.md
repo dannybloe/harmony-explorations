@@ -4339,6 +4339,86 @@ even number of identical changes. So it will not catch a corrupted transfer as r
 sixteen bits suggest, and a writer should not treat a passing checksum as evidence that a config
 is correct, only that the remote will not refuse it outright.
 
+## 42. The infrared class byte, and why three classes cannot be derived from the corpus
+
+The roadmap has carried "three of the four infrared encoding classes" as a known unknown since
+step 3, on the reading that the corpus contains records of classes nobody has decoded. It does not.
+It contains one class, and that changes what the open question is.
+
+### The byte
+
+**The pointer array does not point at a record's first byte.** It points seven bytes in, at a byte
+the firmware reads on its own and branches on before reading anything else, and the three bytes
+after it point back to the record's real start. Section 32 saw the second half of that, recording
+that "the first pointer is always the record's own address minus seven"; the byte in front of it
+is the encoding class.
+
+```
+record start                     ... the record's own fields
+record start + 7   u8   class    <- the pointer array points here
+                   u24  address  <- points back to record start
+```
+
+The distance is **exactly seven in all 2858 records of all ten configs**, four architectures
+included, which is what makes it a layout rather than a coincidence.
+
+### The census
+
+| architecture | records | class byte |
+|---|---|---|
+| 8 | 1547 | 1, and nothing else |
+| 9 | 200 | **5**, and nothing else |
+| 12 | 425 | 1, and nothing else |
+| 14 | 886 | 1, and nothing else |
+
+No config mixes classes. Every one of the 2858 records on the three architectures whose firmware
+is available is class 1.
+
+### The dispatch
+
+Three sites per image, and the same three on all three images, each an `XORLW` chain over exactly
+`{1, 2, 3, 4}` and no other value:
+
+| image | send | stop | record loader |
+|---|---|---|---|
+| Harmony 700 2.8 | `0x12F0E` | `0x12F4E` | `0x17F32` |
+| Harmony 600 0.2 | `0x11C90` | `0x11CD0` | `0x165CE` |
+| Harmony One 3.4 | `0x26E98` | `0x26ED6` | `0x297AA` |
+
+The send dispatcher copies the record pointer into a different RAM variable per class, `0x3CA`,
+`0x3BD`, `0x3AF` for classes 1, 2 and 3 and none for class 4, and jumps to a different routine.
+`0x3BD` is the variable section 32 traced.
+
+### What this changes
+
+**The other three classes cannot be derived from the corpus, because no config in it uses one.**
+That is a different problem from the one the roadmap describes, and a harder one: the only evidence
+available is the firmware, and the only test available is that the reading is self consistent,
+since there is nothing to decode against.
+
+**The records section 32 cannot frame are class 1 as well**, 617 of them across the corpus. So the
+arch 8 "second population with headers near 303 and 310" that `docs/config-format.md` attributes to
+another encoding class is nothing of the sort. Whatever it is, it is inside class 1, and it needs a
+better class 1 reader.
+
+### What the class 1 loader reads
+
+Enough of it to say where section 32's header of fourteen skipped bytes comes from. From the
+record's real start the loader reads a `u8`, then a `u24` duration in units of 0.1 microseconds
+which it clamps to 256000 and divides by four when it exceeds a byte, setting the Timer 2
+prescaler to match, then a second `u24` the same way, and writes both into a RAM pair. Those are
+the two values the carrier timer is loaded from.
+
+### What is not established
+
+**What arch 9's 5 means.** No arch 9 firmware exists here, so it is either a fifth class its
+firmware implements or a different field entirely, and the corpus cannot tell the two apart.
+
+**Classes 2, 3 and 4**, for the reason above.
+
+**The rest of the class 1 record**, beyond the two carrier durations and section 32's mark and
+space stream.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

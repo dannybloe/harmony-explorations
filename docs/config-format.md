@@ -1117,10 +1117,12 @@ the 0.1 us storage unit and the clock.
 
 1. What are the 19, 20 or 21 section slots? Twelve are named now, so the question is the
    remaining eight or so. Method in [roadmap.md](roadmap.md) step 6.
-2. Three of the four IR encoding classes. The dispatcher routes four selectors; only one is
-   traced in the firmware. From the config side one class is now decoded outright, the mark and
-   space stream of base slot 5, but arch 9 uses none of it and arch 8 carries a second population
-   with headers near 303 / 310. Those are the other classes and they are still unread.
+2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is
+   traced. **Corrected here:** this entry used to say arch 8's second population with headers near
+   303 / 310 was one of the other classes. It is not. Every record's first byte is its class, and
+   all 2858 records on arch 8, 12 and 14 are class 1, so the records the framer cannot read are
+   class 1 too. The other three classes are used by no config in the corpus at all, which makes
+   them a firmware-only problem rather than a decoding one. `docs/findings.md` section 42.
 3. The key table's semantic difference between architectures, and the meaning of `flags`
    (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
    the 600, small values plus an outlier on arch 8).

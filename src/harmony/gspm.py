@@ -247,6 +247,16 @@ IR_POINTER_LENGTH = 3
 # first pointer is always the record's own address minus seven. What the four pointers are for is
 # not established, so the header is skipped by length rather than parsed.
 IR_RECORD_HEADER = 14
+# The pointer array does not point at a record's first byte. It points seven bytes in, at the
+# record's **encoding class**, and the three bytes after that point back to the start. Every
+# record in the corpus has that same distance of seven. `docs/findings.md` section 42.
+IR_RECORD_POINTER_BIAS = 7
+# The firmware dispatches the class over exactly these four values, at three sites on each of the
+# three images: two in the send dispatcher and one in the record loader. Arch 8, 12 and 14 configs
+# use class 1 and nothing else, 2858 records of it; the arch 9 sample reads 5 in every record and
+# no arch 9 firmware exists to say what that means.
+IR_CLASSES = (1, 2, 3, 4)
+IR_CLASS_STREAM = 1
 # Below this a record is not carrying a duration stream. The shortest real code in the corpus is
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
@@ -796,6 +806,29 @@ class Container:
         if rest < 4 or rest % 2:
             return None
         return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+
+    def ir_class(self, address: int) -> Optional[int]:
+        """The encoding class byte of an infrared record, which selects the send routine.
+
+        The byte the pointer array actually lands on. The firmware reads exactly this one byte and
+        branches on it before reading anything else, so it is the first thing a decoder has to
+        look at and the last thing section 32 did. `docs/findings.md` section 42.
+        """
+        offset = self.blob_offset_of(address)
+        if offset is None or offset >= len(self.blob):
+            return None
+        return self.blob[offset]
+
+    def ir_record_start(self, address: int) -> Optional[int]:
+        """Where the record's own data begins, from the pointer three bytes after the class.
+
+        Returned rather than computed as `address - IR_RECORD_POINTER_BIAS` on purpose: the bias
+        is an observation about the corpus and this is what the firmware follows.
+        """
+        offset = self.blob_offset_of(address)
+        if offset is None or offset + 4 > len(self.blob):
+            return None
+        return int.from_bytes(self.blob[offset + 1:offset + 4], 'little')
 
     def mode_table(self) -> Optional[List[int]]:
         """Base slot 6: the address of every mode the remote can switch between.

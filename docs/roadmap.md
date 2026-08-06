@@ -510,8 +510,10 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   mark and space durations in microseconds, `tools/ir_extract.py` writes them out, and the closure
   is that the bit count implied by a record's length matches the bit count of the protocol its
   header timings name, for 1365 records with no exception. `docs/findings.md` section 32. What
-  remains is the other three infrared encoding classes: this reads one, arch 9 uses none of it, and
-  arch 8 has a second population.
+  remains is the other three infrared encoding classes, and section 42 narrows what that means: a
+  record's first byte is its class, all 2858 records on arch 8, 12 and 14 are class 1, and no
+  config in the corpus uses another. So the other three are a firmware-only problem with nothing
+  to decode against, and the records this reader cannot frame are class 1 as well.
 * **The trailer checksum is derived**, from the boot validation routine located in step 3: a
   sixteen bit XOR of the container's little endian words seeded `0x4321`, recomputing on all
   fourteen containers across four architectures. That was the last item on the critical path for
@@ -612,7 +614,8 @@ Not optional, and they belong in the code rather than in a document:
 
 ## Known unknowns, unchanged
 
-* Three of the four IR encoding classes at the dispatcher `0x12F08`.
+* Three of the four IR encoding classes at the dispatcher `0x12F08`. No config in the corpus
+  carries one, section 42, so the firmware is the only evidence there will be.
 * The encoder from raw learned timings to a config IR record. This ran on Logitech's servers, so
   nobody has it, and M5 depends on deriving it from the four decoder classes.
 * Activity semantics. The accumulator machine is read, `docs/findings.md` section 34, and so is

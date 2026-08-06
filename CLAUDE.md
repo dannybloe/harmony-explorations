@@ -595,3 +595,11 @@ architectures, it exists in both codecs and the parse reports it as a container 
 **weak** check: blind to two transposed words, so a passing checksum means the remote will not
 refuse the file, not that the file is right. Brute force over 636 standard algorithms found
 nothing first, which is why the firmware was the route.
+
+**The infrared class byte**, section 42, reframes a roadmap item rather than closing it. The
+pointer array lands seven bytes into a record, on a byte the firmware branches on, and the three
+bytes after it point back to the start; that distance is seven in all 2858 records. Every record on
+arch 8, 12 and 14 is **class 1**, no config mixes classes, and arch 9 reads 5 with no firmware to
+explain it. So the other three classes are used by nothing in the corpus, which makes them a
+firmware-only problem, and **the records section 32 cannot frame are class 1 too**, not another
+class as `docs/config-format.md` used to say.

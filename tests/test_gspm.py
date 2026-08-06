@@ -1517,6 +1517,54 @@ class TestArch12SafeModeConfig(unittest.TestCase):
         self.assertEqual(packaged[:len(blob)], blob)
 
 
+class TestTheInfraredClassByte(unittest.TestCase):
+    """findings.md section 42: the byte the pointer array lands on selects the send routine."""
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+               'arch8_config_d')
+
+    def _records(self, name):
+        c = gspm.parse(lab.load(name))
+        return c, [a for group in (c.ir_groups() or []) for a in group]
+
+    def test_the_pointer_lands_seven_bytes_into_every_record(self):
+        for name in self.CONFIGS:
+            c, records = self._records(name)
+            with self.subTest(config=name):
+                self.assertTrue(records)
+                for address in records:
+                    self.assertEqual(address - c.ir_record_start(address),
+                                     gspm.IR_RECORD_POINTER_BIAS)
+
+    def test_one_class_per_architecture_and_nothing_mixed(self):
+        """The census. Three architectures use class 1 and only class 1."""
+        seen = {}
+        for name in self.CONFIGS:
+            c, records = self._records(name)
+            classes = {c.ir_class(a) for a in records}
+            with self.subTest(config=name):
+                self.assertEqual(len(classes), 1, 'a config never mixes classes')
+            seen.setdefault(c.architecture, set()).update(classes)
+        self.assertEqual(seen[8], {gspm.IR_CLASS_STREAM})
+        self.assertEqual(seen[12], {gspm.IR_CLASS_STREAM})
+        self.assertEqual(seen[14], {gspm.IR_CLASS_STREAM})
+        # Arch 9 reads 5, which is not one of the four its cousins dispatch over, and no arch 9
+        # firmware exists to say whether that is a fifth class or a different field entirely.
+        self.assertEqual(seen[9], {5})
+
+    def test_the_records_section_32_cannot_frame_are_the_same_class(self):
+        """So they need a better class 1 reader, not one of the other three classes."""
+        for name in self.CONFIGS:
+            c, records = self._records(name)
+            unframed = [a for a in records if c.ir_frame(a) is None]
+            if not unframed:
+                continue
+            with self.subTest(config=name):
+                self.assertEqual({c.ir_class(a) for a in unframed},
+                                 {c.ir_class(a) for a in records})
+
+
 class TestTheTrailerChecksum(unittest.TestCase):
     """findings.md section 41: a seeded sixteen bit word XOR, derived from the boot validator."""
 
