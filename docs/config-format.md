@@ -430,6 +430,33 @@ variable length records rather than a table, and whether it also names lists in 
 cannot be told by scanning, because that index range is wide enough for coincidences to swamp it.
 `docs/findings.md` section 26.
 
+#### `{0x7A a; 0x6C b}` is most of an arch 14 config
+
+**Confirmed on architecture 14.** 2832 of the 700's 8037 lists and 1888 of the 600's 4955 are two
+instruction lists of exactly this shape, which is also every `0x6C` in each file: the opcode occurs
+nowhere else.
+
+Partitioned by the `0x7A` operand they form six groups on the 700 and four on the 600, each of
+exactly **472** lists, and every group carries the **same 472 values** of `0x6C` once each. Those
+472 are identical on both remotes:
+
+```
+451 values  0 to 450, contiguous
+ 21 values  0x8000 to 0x8014, which is 0 to 20 with bit 15 set
+```
+
+A set that does not change between two owners' configs on two models is a **vocabulary the format
+carries**, not user data. So most of base slot 10 is the complete cross product of a small per
+config set with that vocabulary, one list per pair.
+
+*A device selector and a function id would fit the counts, since the 700 supports six devices and
+its config has six groups, and the `0x7A` operands look like database identifiers rather than
+indices. Not established.*
+
+Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a value set that is
+neither the same size nor contiguous, so the structure does not transfer as it stands.
+[findings.md](findings.md) section 28.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode

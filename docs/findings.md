@@ -2857,6 +2857,68 @@ without being tested.
 And the other opcodes in these records. `0x7F` is a call, per section 26; `0x7E` and the rest are
 as unread here as they are in slot 10.
 
+## 28. Most of an arch 14 config is one cross product, against a fixed vocabulary
+
+Opcode `0x6C` was the reason section 17 said the arch 9 opcode table does not transfer: it is the
+third most common opcode on architecture 14 and does not appear in the 525 sample at all. It turns
+out not to be an isolated instruction but half of the config's dominant structure.
+
+### One shape, most of the file
+
+Grouping every action list by the sequence of its opcodes gives one overwhelming answer:
+
+| Sample | lists | of shape `{0x7A a; 0x6C b}` |
+|---|---|---|
+| 700 user config | 8037 | 2832 |
+| 600 user config | 4955 | 1888 |
+
+Those counts are also the total number of `0x6C` uses in each config, so **every `0x6C` in the file
+is the second instruction of a two instruction list whose first is a `0x7A`**. There is no other
+context in which it appears.
+
+### The cross product
+
+Partitioning those lists by the `0x7A` operand gives six groups on the 700 and four on the 600. Each
+group holds **exactly 472** lists, and every group holds the **same 472 values** of `0x6C`, each
+once. Six times 472 is 2832 and four times 472 is 1888, so the partition is complete.
+
+The 472 values are the same on both remotes, and they are not arbitrary:
+
+```
+451 values, 0 to 450, contiguous with no gaps
+ 21 values, 0x8000 to 0x8014, which is 0 to 20 with bit 15 set
+```
+
+**That set does not depend on the config.** Two different remotes, two different owners' setups,
+different sizes, and the same 472 values with the same split. A vocabulary the format carries rather
+than anything the user chose.
+
+So the bulk of an architecture 14 config is the complete cross product of a small per config set
+with a fixed 472 entry vocabulary, written out one list per pair. At seven bytes a list that is
+19824 bytes on the 700, which is most of what base slot 10 contains.
+
+### What it probably is, stated as a guess
+
+`0x7A` selecting a device and `0x6C` naming a function would fit. The counts are suggestive: the
+700's config has six groups and a Harmony 700 supports six devices, the 600's has four and a 600
+supports five. The `0x7A` operands are large and scattered, `1E04 1E06 1E07 4EA1 96FC D338` on the
+700, which is the shape of database identifiers rather than indices, and three of the six being
+adjacent is what several devices from one manufacturer would look like.
+
+Read that way a list is a two instruction program, select this device then send function N, and the
+config precomputes one for every combination it might need.
+
+**None of that is established.** The counts fit and nothing here tests them. What is established is
+the structure, the partition and the fixed vocabulary.
+
+### Architecture 12 is not the same shape
+
+The One's configs have an analogous dominant pair, `{0x75 a; 0x7E b}`, but only one group and a
+value set that is neither the same size nor contiguous: 91 distinct values from 40 to 267 in the
+programmed config and 21 from 43 to 110 in the unprogrammed one. So this is an architecture 14
+structure and the arch 12 equivalent, if there is one, has not been read. Forcing the two together
+would be exactly the kind of transfer section 17 warns about.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

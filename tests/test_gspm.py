@@ -737,6 +737,45 @@ class TestActionLists(unittest.TestCase):
                 # And it calls plenty of lists outside that run as well.
                 self.assertGreater(len(calls) - len(final), 100)
 
+    def test_arch_14_is_mostly_one_cross_product_against_a_fixed_vocabulary(self):
+        """
+        docs/findings.md section 28. Most of an arch 14 config is two instruction lists of shape
+        `{0x7A a; 0x6C b}`, partitioned by the first operand into groups that all carry the same
+        472 values of the second.
+
+        The closure is that the 472 do not depend on the config: two remotes, two owners, two
+        sizes, one set. That makes it a vocabulary the format carries rather than user data.
+        """
+        vocabularies = {}
+        for name, groups in (('h700_config', 6), ('h600_config', 4)):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                lists = c.action_lists()
+
+                pairs = [l for l in lists
+                         if len(l) == 2 and l[0].opcode == 0x7A and l[1].opcode == 0x6C]
+                total_6c = sum(1 for l in lists for i in l if i.opcode == 0x6C)
+                self.assertEqual(len(pairs), total_6c,
+                                 '0x6C appears somewhere other than in one of these lists')
+
+                by_selector = {}
+                for l in pairs:
+                    by_selector.setdefault(l[0].operand, []).append(l[1].operand)
+                self.assertEqual(len(by_selector), groups)
+                self.assertEqual({len(v) for v in by_selector.values()}, {472})
+                sets = {frozenset(v) for v in by_selector.values()}
+                self.assertEqual(len(sets), 1, 'the groups do not share one value set')
+                vocabularies[name] = next(iter(sets))
+
+        self.assertEqual(vocabularies['h700_config'], vocabularies['h600_config'],
+                         'the vocabulary differs between configs, so it is not fixed')
+
+        vocabulary = sorted(vocabularies['h700_config'])
+        low = [v for v in vocabulary if not v & 0x8000]
+        high = [v for v in vocabulary if v & 0x8000]
+        self.assertEqual(low, list(range(0, 451)))
+        self.assertEqual(high, [0x8000 + k for k in range(21)])
+
     def test_two_opcodes_carry_signed_operands(self):
         """
         Also section 26. `0x07` and `0x1F` never carry a value below 0xE800, which read as
