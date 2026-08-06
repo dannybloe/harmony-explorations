@@ -164,7 +164,7 @@ Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
 
 ## Sections
 
-Twelve of the twenty base slots are named. The method that named them is described in
+Thirteen of the twenty base slots are named. The method that named them is described in
 [roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
 variable, so finding the consumer of that variable labels the section by function. The infrared
 section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
@@ -199,6 +199,7 @@ Known so far:
 | 11 | the **screen program table**: programs in the screen language | ten configs, four architectures, below |
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | ten configs, four architectures, below |
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
+| 12 | the **timer table**: wait, then queue one instruction | ten configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
 
@@ -419,6 +420,42 @@ so the table is mostly indirection.
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
 Its 3 byte target is loaded into `TBLPTR` and followed. What the targets are is *not established*.
+
+### Base slot 12: the timer table
+
+**Confirmed on ten configs across four architectures**, with three more as a negative case.
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address a seven byte record
+
+```
++0x00  u8   kind, 1 for the one second scheduler
++0x01  u24  duration, in seconds for kind 1
++0x04  u24  the single action list instruction queued when it expires
+```
+
+A timer is started by opcode `0x1F` with the operand's high byte `0xEB`, and cancelled by the same
+opcode with `0xEA`; the operand's low byte is the index into this section in both. **The set of
+indices started is exactly `0` to `count - 1` in every config**, counts from 5 to 30, and no
+instruction names a record that is not there. The three safe mode containers carry no records and
+issue neither instruction.
+
+The firmware runs at most **four** timers at once, so a config with thirty records describes thirty
+possible timers rather than thirty concurrent ones, and starting a fifth is a silent no-op.
+
+**A timer fires exactly one instruction**, not a list. Anything longer has to be a single
+instruction that runs an action list, which is what 116 of the corpus's 159 records do. The
+scheduled kind also **clamps the duration to sixteen bits**, so a value above 65535 becomes 65535
+rather than an error. Both are rails for a writer.
+
+Kind `0` is counted down in software instead and no config in the corpus uses it, so its rate is
+*not established*.
+
+Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) section 43.
 
 ### Base slot 16: the number sender
 

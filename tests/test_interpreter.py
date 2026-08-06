@@ -828,6 +828,104 @@ class TestTheScreenInterpreter(unittest.TestCase):
         self.assertIsNone(c.screen_program(c.end_addr + 1))
 
 
+class TestTheTimerTable(unittest.TestCase):
+    """findings.md section 43: base slot 12, and the two instructions that drive it."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+    SAFEMODE = ('h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    # The subsystem is found on each image by the multiply that indexes its five byte RAM entries.
+    # Four images, four architectures' worth of build, and the same count each time.
+    IMAGES = ('h700_code', 'h600_code_complete', 'h650_code', 'one34_code')
+
+    @staticmethod
+    def _started_and_cancelled(c):
+        started, cancelled = set(), set()
+        for lst in c.action_lists():
+            for instruction in lst:
+                reference = c.timer_reference(instruction)
+                if reference is None:
+                    continue
+                (started if reference[0] else cancelled).add(reference[1])
+        return started, cancelled
+
+    def test_every_record_is_started_and_no_instruction_overruns_the_table(self):
+        """The closure. The count and the operands are unrelated parts of the file."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            timers = c.timers()
+            started, cancelled = self._started_and_cancelled(c)
+            with self.subTest(config=name):
+                self.assertGreater(len(timers), 4)
+                self.assertEqual(started, set(range(len(timers))))
+                self.assertTrue(cancelled <= started, 'a cancel names a timer that is started')
+
+    def test_a_safe_mode_config_has_no_timers_and_asks_for_none(self):
+        """The negative case: a recovery image has nothing to schedule."""
+        from harmony import gspm
+        for name in self.SAFEMODE:
+            c = gspm.parse(lab.load(name))
+            started, cancelled = self._started_and_cancelled(c)
+            with self.subTest(config=name):
+                self.assertEqual(c.timers(), [])
+                self.assertEqual(started | cancelled, set())
+
+    def test_the_records_are_seven_bytes_and_tile(self):
+        """Seven is four skipped bytes plus a three byte instruction, read off the firmware."""
+        from harmony import gspm
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            offsets = sorted(t.address for t in c.timers())
+            gaps = [b - a for a, b in zip(offsets, offsets[1:])]
+            odd = [g for g in gaps if g != gspm.TIMER_RECORD_LENGTH]
+            with self.subTest(config=name):
+                # One odd gap is allowed, and only on the architectures that pack the records
+                # into two runs. Two would mean the record length is wrong.
+                self.assertLessEqual(len(odd), 1, odd)
+                self.assertGreaterEqual(len(gaps) - len(odd), len(offsets) - 2)
+                self.assertTrue(all(g >= gspm.TIMER_RECORD_LENGTH for g in gaps),
+                                'records must not overlap')
+
+    def test_every_record_carries_a_real_opcode_and_the_scheduled_kind(self):
+        from harmony import gspm
+        opcodes = collections.Counter()
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for timer in c.timers():
+                with self.subTest(config=name):
+                    self.assertEqual(timer.kind, gspm.TIMER_KIND_SCHEDULED)
+                    self.assertGreater(timer.duration, 0)
+                opcodes[timer.instruction.opcode] += 1
+        # Placed opcodes only: 0x7E enters a mode, 0x7F is section 34's, and the two singletons
+        # are in the high band family. A new opcode here would mean the record shape drifted.
+        self.assertEqual(set(opcodes), {0x07, 0x1F, 0x7E, 0x7F})
+
+    def test_the_subsystem_is_one_module_on_every_image(self):
+        """Thirty sites that multiply an entry number by five, in one block, four images."""
+        code_and_base = {'h700_code': 0x9000, 'h600_code_complete': 0x9000,
+                         'h650_code': 0x9000, 'one34_code': 0x20000}
+        for name, base in code_and_base.items():
+            code = lab.load(name)
+            sites = [base + at for at in range(0, len(code) - 1, 2)
+                     if code[at:at + 2] == b'\x05\x0d']       # MULLW 0x05
+            with self.subTest(image=name):
+                self.assertEqual(len(sites), 30)
+                self.assertLess(sites[-1] - sites[0], 0x600, 'one contiguous module')
+
+    def test_only_the_two_operand_highs_reach_the_timers(self):
+        """0x1F is one instruction with many branches; the rest must not be read as timers."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        start = gspm.Instruction(operand=gspm.TIMER_START_OPERAND_HIGH << 8 | 3, opcode=0x1F)
+        cancel = gspm.Instruction(operand=gspm.TIMER_CANCEL_OPERAND_HIGH << 8 | 3, opcode=0x1F)
+        self.assertEqual(c.timer_reference(start), (True, 3))
+        self.assertEqual(c.timer_reference(cancel), (False, 3))
+        for high in (gspm.SELECT_HANDLER_OPERAND_HIGH, 0xE7, 0xF3, 0x00):
+            other = gspm.Instruction(operand=high << 8 | 3, opcode=0x1F)
+            self.assertIsNone(c.timer_reference(other), hex(high))
+        self.assertIsNone(c.timer_reference(gspm.Instruction(operand=start.operand, opcode=0x7F)))
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

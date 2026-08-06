@@ -518,6 +518,13 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   sixteen bit XOR of the container's little endian words seeded `0x4321`, recomputing on all
   fourteen containers across four architectures. That was the last item on the critical path for
   writing. `docs/findings.md` section 41.
+* **Section labelling is at thirteen slots of twenty**, and the newest is base slot 12, **the timer
+  table**: a seven byte record holding a duration and the single instruction to queue when it
+  expires, started and cancelled by two branches of the opcode `0x1F` ladder. The closure is that
+  the set of indices a config's action lists start is exactly `0` to `count - 1`, in all ten configs
+  across four architectures, with the three safe mode containers carrying neither. It also yields
+  two writer rails: a timer fires one instruction rather than a list, and its duration is clamped to
+  sixteen bits without an error. `docs/findings.md` section 43. Slots 15 and 17 are what is left.
 * Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
   both remotes, and publish the resulting table. This also unblocks upstream. It got considerably
   cheaper: the config's scan codes are now known to be the scanner's own 1 to 56 index, so the

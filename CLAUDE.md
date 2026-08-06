@@ -609,3 +609,13 @@ arch 8, 12 and 14 is **class 1**, no config mixes classes, and arch 9 reads 5 wi
 explain it. So the other three classes are used by nothing in the corpus, which makes them a
 firmware-only problem, and **the records section 32 cannot frame are class 1 too**, not another
 class as `docs/config-format.md` used to say.
+
+**Base slot 12 is the timer table**, section 43, the thirteenth of twenty slots named. A count
+prefixed pointer array over seven byte records, `{ u8 kind; u24 duration; u24 instruction }`, and a
+firmware module of four RAM entries with a start, a cancel and a poll routine. Opcode `0x1F` with
+operand high `0xEB` starts a timer and `0xEA` cancels it, the low byte being the index, and **the
+set of indices started is exactly the section's own count** in all ten configs across four
+architectures, with the three safe mode containers as the negative case. `T1CON` and the tick's bit
+selection make the unit exactly one second on a 32.768 kHz Timer 1 crystal, and the largest duration
+in the corpus is 7200, which is two hours. Two rails for a writer: **a timer fires one instruction,
+not a list**, and the duration is **clamped to sixteen bits** with no error.

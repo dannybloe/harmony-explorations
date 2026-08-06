@@ -3873,7 +3873,8 @@ window is not a routine: read to the `RETURN` before attributing anything to a c
 The contents of slots 7, 9, 11, 12, 14, 15, 16 and 17. Every one now has a consumer address on at
 least one image and a structure, which is the difference between a search and a reading.
 
-Slots 9, 14 and 16 came off that list in section 39.
+Slots 9, 14 and 16 came off that list in section 39, slots 7 and 11 in section 40, and slot 12
+in section 43. Slots 15 and 17 are what remain.
 
 ## 39. Three more sections named, and what the accumulator computes
 
@@ -4133,7 +4134,7 @@ the corpus exercises because nothing in the corpus has a record.
 
 **Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
 
-Slots 7 and 11 came off that list in section 40.
+Slots 7 and 11 came off that list in section 40, and slot 12 in section 43.
 
 ## 40. The second interpreter, and base slot 11
 
@@ -4422,6 +4423,132 @@ firmware implements or a different field entirely, and the corpus cannot tell th
 
 **The rest of the class 1 record**, beyond the two carrier durations and section 32's mark and
 space stream.
+
+## 43. Base slot 12 is the timer table
+
+The section that runs an action later. It is the twelfth of twenty base slots to be named, it is
+the one that explains where a Harmony's backlight timeout and its two hour power off live, and it
+closes with the cleanest fit in this document so far.
+
+### The subsystem in RAM
+
+One module on the Harmony 700 image, `0x173EC` to `0x17940`, and nothing outside it touches its
+data. That data is an array of **four** entries of five bytes at `0x06E5`:
+
+```
++0x00  u8   flags       bit 0 armed, bit 4 scheduled rather than counted in software
++0x01  u8   index       which base slot 12 record this timer is running
++0x02  u24  remaining
+```
+
+Every access to it multiplies the entry number by five, so the module is found by looking for
+`MULLW 0x05`. There are **exactly 30 such sites in one contiguous block on all four images**, the
+700, the complete 600, the 650 and the Harmony One, which is the same subsystem four times.
+
+Three entry points, and all three are the shape the name predicts:
+
+| routine, 700 | what it does |
+|---|---|
+| `0x17536` | **start**: take the first entry that is not armed, arm it, and load its duration |
+| `0x176E4` | **cancel**: find the entry running a given index, disarm it and clear the index |
+| `0x17448` | **poll**: for each armed entry whose remaining is zero, disarm it and queue its instruction |
+
+### The record
+
+Both start and cancel take an index in the same register, and start reads the record with it:
+
+```
+seek base slot 12
+read u8 count
+TBLPTR += 3 * index
+follow the three byte pointer
+read u8            the kind
+read u24           the duration
+```
+
+The poll routine reads the same record and skips the first four bytes, which is the kind and the
+duration, then reads a `u24` and hands it to `0x0E93E`. That routine copies three bytes into
+`0x1AD` to `0x1AF` and calls the queue push, so the last three bytes of the record are **one action
+list instruction**. Four skipped bytes plus three is seven, and seven is what the corpus says:
+
+```
++0x00  u8   kind
++0x01  u24  duration
++0x04  u24  the instruction queued on expiry
+```
+
+Across the ten user configs the pointers land on 159 records, and **every gap between consecutive
+records is exactly 7**, with one exception per config on arch 8 and arch 12, where the records sit
+in two runs rather than one. Nothing is left over and nothing overlaps.
+
+### The closure
+
+The instruction that starts a timer is opcode `0x1F` with the operand's high byte `0xEB`, and the
+one that cancels it is `0xEA`, both in the descending ladder section 39 read the arithmetic
+branches of. The operand's low byte is the index. So the config states, twice and independently,
+how many timers it has: once as the section's count, and once as the set of indices its action
+lists name.
+
+| config | arch | records | distinct indices started | cancelled | out of range |
+|---|---|---|---|---|---|
+| 700, both configs | 14 | 9 | 9 | 7 | none |
+| 600 | 14 | 5 | 5 | 3 | none |
+| 525 | 9 | 5 | 5 | 2 | none |
+| One, programmed | 12 | 30 | 30 | 23 | none |
+| One, unprogrammed | 12 | 28 | 28 | 21 | none |
+| 880 a | 8 | 19 | 19 | 12 | none |
+| 880 b, c, d | 8 | 18 | 18 | 12 | none |
+
+**The set of indices started is exactly `0 .. count - 1`, in all ten**, four architectures, counts
+from 5 to 30. Not a subset and not an overrun: every record is reachable and no instruction names
+one that is not there. The cancelled set is a subset of the started set every time, which is what
+a cancel means.
+
+The three safe mode configs are the negative case: no slot 12 records and no `0xEB` or `0xEA`
+instruction anywhere. A recovery image has nothing to schedule.
+
+### The unit is one second
+
+`T1CON` is set to `0x1E` at `0x1B908`: Timer 1 clocked from its own oscillator, not synchronised,
+oscillator enabled, **prescale 1:2**. The scheduler's tick, `0x14C22`, samples `TMR1H` and takes
+bits 7 and 6 of it as a four phase counter, so one tick is `2 * 256 * 64` oscillator periods, which
+is `2^14`. The Timer 1 oscillator on this part exists for a 32.768 kHz watch crystal, and
+`32768 / 2^14` is exactly 1 Hz.
+
+The corpus agrees. The durations across all 159 records are 1, 2, 3, 4, 5, 10, 20 and one value of
+**7200**, which is exactly two hours. Every other value is a plausible interface timeout in
+seconds, and the outlier is a round number of hours rather than a round number of anything else.
+
+Marked as inferred rather than measured on one point: the crystal frequency is the standard one
+for that peripheral and nobody here has put a scope on the board.
+
+### Two kinds, one of them unused
+
+The record's first byte selects how the timer is counted. The corpus carries `1` in **all 159
+records**, which arms the one second scheduler above. `0` instead leaves the entry to `0x177D8`,
+which decrements the full 24 bit remaining by one per call from somewhere this project has not
+followed, because no config asks for it. The two paths are distinguished at run time by bit 4 of
+the RAM entry's flags, and the scheduled path clamps the duration to sixteen bits on the way in,
+so a config asking for more than 65535 seconds silently gets 65535.
+
+### What the instruction is
+
+Of the 159, 116 carry opcode `0x7F` and 41 carry `0x7E`, with one `0x07` and one `0x1F`. `0x7E`
+enters a mode, section 37, and `0x7F` is placed in section 34. So a timer is not a macro: it fires
+exactly **one** instruction, and anything longer is expressed by making that instruction run an
+action list. That is a constraint on a writer, and it is the sort that would otherwise be found by
+emitting a two instruction timer and watching only the first one run.
+
+### What is not established
+
+**Which timer is which.** The section is sized, its records are decoded and every one of them is
+reachable; nothing here says that index 3 on the 600 is the backlight.
+
+**The software counted kind**, for want of a config that uses it.
+
+**Where the four RAM entries are copied back from the scheduler.** The poll routine tests the RAM
+entry's remaining while the scheduler counts down its own sixteen bit copy, and the routine that
+reconciles the two was not read.
 
 ## References
 

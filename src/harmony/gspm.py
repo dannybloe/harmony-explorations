@@ -340,6 +340,20 @@ HANDLER_TAG_LEAVE = 2
 OPCODE_SELECT_HANDLER = 0x1F
 SELECT_HANDLER_OPERAND_HIGH = 0xFF
 
+# Base slot 12 is the timer table. Two more branches of the same descending ladder start and
+# cancel a timer, and the operand's low byte is the index into this section in both. A record
+# says how long to wait and which single instruction to queue when the wait is over.
+TIMER_SLOT = 12
+TIMER_RECORD_LENGTH = 7
+TIMER_START_OPERAND_HIGH = 0xEB
+TIMER_CANCEL_OPERAND_HIGH = 0xEA
+# The firmware has room for exactly this many timers running at once, on all four images.
+TIMER_SLOTS_IN_RAM = 4
+# The record's first byte. Every record in the corpus carries 1, which is the kind the firmware
+# counts down in its one second scheduler; 0 is counted down in software instead, at a rate this
+# project has not measured because nothing in the corpus asks for it.
+TIMER_KIND_SCHEDULED = 0x01
+
 
 def is_high_band(instruction: 'Instruction') -> bool:
     """Whether this instruction's operand is a reference into the second operand space.
@@ -491,6 +505,20 @@ class NumberSender:
     first: List[Instruction]
     middle: List[Instruction]
     last: List[Instruction]
+
+
+@dataclass
+class Timer:
+    """One base slot 12 record: wait this long, then queue this instruction.
+
+    Seven bytes, and the whole of the delayed action is the single `instruction`. Anything longer
+    is expressed by making that instruction one that runs an action list, which is what 116 of the
+    159 records in the corpus do.
+    """
+    address: int
+    kind: int
+    duration: int
+    instruction: Instruction
 
 
 @dataclass
@@ -1259,6 +1287,56 @@ class Container:
                 prefix=self._instruction_at(off + 11),
                 first=tables[0], middle=tables[1], last=tables[2]))
         return out
+
+    def timers(self) -> Optional[List['Timer']]:
+        """Base slot 12: the timer table.
+
+        ```
+        +0x00  u8   count
+        +0x01  u24  address[count]
+        ```
+
+        and at each address a seven byte record:
+
+        ```
+        +0x00  u8   kind, see TIMER_KIND_SCHEDULED
+        +0x01  u24  duration, in seconds for the scheduled kind
+        +0x04  u24  the instruction queued when it expires
+        ```
+
+        The firmware runs at most `TIMER_SLOTS_IN_RAM` of these at once, so a config with thirty
+        records is describing thirty possible timers rather than thirty concurrent ones.
+        `docs/findings.md` section 43.
+        """
+        try:
+            addresses = self._counted_pointers(arch_slot(self.architecture, TIMER_SLOT), 1)
+        except GspmError:
+            return None
+        if addresses is None:
+            return None
+        out = []
+        for address in addresses:
+            off = self.blob_offset_of(address)
+            if off is None or off + TIMER_RECORD_LENGTH > len(self.blob):
+                return None
+            out.append(Timer(address=address,
+                             kind=self.blob[off],
+                             duration=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
+                             instruction=self._instruction_at(off + 4)))
+        return out
+
+    def timer_reference(self, instruction: 'Instruction') -> Optional[Tuple[bool, int]]:
+        """`(starts, index)` for an instruction that starts or cancels a timer, else None.
+
+        `starts` is False for the cancel branch, which takes the same index. Returned unresolved
+        for the same reason `ir_reference` is: a caller that wants the record asks `timers`.
+        """
+        if instruction.opcode != OPCODE_SELECT_HANDLER:
+            return None
+        high = instruction.operand >> 8
+        if high not in (TIMER_START_OPERAND_HIGH, TIMER_CANCEL_OPERAND_HIGH):
+            return None
+        return high == TIMER_START_OPERAND_HIGH, instruction.operand & 0xFF
 
     def ir_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
         """The `(group, index)` an `OPCODE_SEND_IR` instruction names, or None if it is not one.
