@@ -54,10 +54,16 @@ container claims, not targets. Other models are iterated on later.
 
 | | this repository | FreeHarmony |
 |---|---|---|
-| holds | the spec, the research tooling, the libraries | the application |
-| that is | `docs/`, `src/harmony/`, `tools/`, `tests/`, `packages/` | Electron shell, interface, packaging |
+| holds | the API, the evidence, and a bench instrument | the product |
+| that is | `packages/usb` and `packages/codec`, plus `docs/`, `src/harmony/`, `tools/`, `tests/` | Electron shell, interface, packaging |
 | licence | MIT | AGPL-3.0 |
 | moves at | the pace of what can be proven | its own pace |
+
+**There is a user interface here too, and it is not the product.** A rough bench instrument, Node
+serving a page to a browser, because an API nobody has driven interactively is an API nobody knows
+is usable, and because step 6 needs a screen with live RAM values on it rather than a script. A
+local listening port is acceptable for a bench tool and not for FreeHarmony, which gets a content
+security policy instead; that difference is written down rather than left to be inferred.
 
 **The line is between library and product, not between documents and code.** The TypeScript
 libraries belong here because they are the spec in executable form: the rule that a confirmed fact
@@ -505,18 +511,22 @@ had rested on the 700's update package and no 700 has ever been connected here. 
 passing. It is the same length as the 700's with an identical section table and 83 differing bytes,
 74 of them in the `LWJL` key table. `docs/findings.md` section 24.
 
-Step 5 is next, and it now spans both repositories.
+Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 
-**Here: the read pipeline.** Read a whole config off a remote and file it in the lab corpus with a
+**The read pipeline.** Read a whole config off a remote and file it in the lab corpus with a
 timestamp, because a dump taken before an experiment is the only cheap insurance there is. No new
-dependencies; `packages/usb` and `packages/codec` already do the work.
+dependencies; `packages/usb` and `packages/codec` already do the work. The read bounds itself: the
+sixteen bytes at the config base carry `end_addr`, so the exact length is known before the bulk read
+starts, which is 1672832 bytes on the One rather than the 3840 KiB the region spans.
 
-**In FreeHarmony: the explorer.** Electron shell with no network access at all, enforced by a
-content security policy rather than promised, and a preload that exposes four named questions rather
-than a general command channel, so the interface cannot express a write even if it is broken. Device
-identity from `GET_VERSION`, a config read with progress (about 30 KB/s measured, so roughly 55
-seconds for a One), the container summary with its ten checks, the section table whose empty label
-column is the project's progress bar, an annotated hex view, and a visible log of every command sent.
+**Then the bench instrument.** Node serving a page, browser as the window, no Electron and no new
+dependencies. What is attached, identity from `GET_VERSION`, a config read with progress, the
+container summary with its ten checks, the section table, and a visible log of every command sent.
+Plain DOM modules, so FreeHarmony can reuse them in a renderer later.
+
+**Then step 8, the contribution probe**, which is what makes somebody else's remote count. Two
+architectures are covered here out of at least eleven that exist, so the structural report is how
+that changes. It is publishable precisely because it carries shape and not contents.
 
 Then the first reverse engineering block proper (step 6): label the section pointers by function
 using the proven consumer method plus live RAM polling, read the action list opcode table out of

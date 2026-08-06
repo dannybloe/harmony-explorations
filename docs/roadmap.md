@@ -23,9 +23,52 @@ Then the internal read window turned out to be two pages rather than one, which 
 claim and, on the 600, **completed a firmware image this project has worked around for months**:
 70336 bytes, its own checksum verifying, against concordance's truncated 65536. Sections 22 and 23.
 
-Next is step 5, the read only application, and it is the first step that spans two repositories:
-decision 4 has been revised so that the product lives in
+Next is step 5, and decision 4 has been revised: the product lives in
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
+Read the next section before the milestones, because that revision changed what this repository is
+for and the milestone list was written when it was going to hold everything.
+
+## What this project is
+
+Three things, and the third one is easy to lose sight of.
+
+**The API.** `packages/usb` against the hardware: connect, identify, read, and one day write behind
+the flag. `packages/codec` against the format: take a config apart, and eventually put one back
+together. That pair is what FreeHarmony imports, and it is the reason the libraries stay here rather
+than moving to the product: they are the specification in executable form.
+
+**The evidence that the API is right.** The documents, the corpus, the golden vectors and one
+regression test per documented finding. Analysis here is AI-produced and published as such, so a
+claim that is not executable is only an assertion.
+
+**A bench instrument that drives the API.** Rough on purpose, and not a product. It exists because
+an API nobody has used interactively is an API nobody knows is usable, and because step 6 cannot be
+done without one: polling a running remote's RAM while a human presses every key is not a script you
+run once, it is a screen with values moving on it. The first write to the spare remote wants a
+finger on a button too, not a test runner.
+
+FreeHarmony is the product built on top: the polished interface, the packaging, and whatever it
+grows into. Nothing in this repository waits for it.
+
+## Coverage, and why it is a problem
+
+Everything here is derived from two remotes on a bench and a handful of files. Logitech shipped
+rather more than that.
+
+| | count |
+|---|---|
+| models listed on the harmony-remote-forum comparison page | 42 |
+| named models in concordance's skin table | 71, in 120 table positions |
+| architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
+| architectures with hardware on this bench | **2** (arch 12 and arch 14) |
+| architectures with sample files only | 2 (arch 8 and arch 9) |
+
+So the container claims are validated across four architectures and the USB claims across two, out
+of at least eleven. One boundary is already visible without owning anything: the 900, 1000 and 1100
+are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
+reach them at all, never mind parse them.
+
+That gap is what step 8 exists for.
 
 ## Context
 
@@ -181,27 +224,35 @@ dependency is added without looking at what it pulls in: that is what rejected `
 
 ## Milestones
 
-**M0 Infrastructure. Done.** Corpus widened to four architectures, container generalised across all
-of them, the workspace standing with the codec ported and proven equal by golden vectors, and the
-USB command layer written from the firmware with its rails.
+These were written when this repository was going to hold the application too, so each one now says
+which side of the split it belongs to. **Here** means the API and the evidence and the bench
+instrument; **FH** means the product.
 
-**M1 Explorer, read only.** *Next, and the first milestone that spans two repositories.* The read
-path is measured now, not planned: whole configs come off all three bench remotes byte identical to
-their own dumps. What remains here is filing every read into the corpus automatically; what remains
-in FreeHarmony is the interface that shows the container, the section table with whatever labels
-exist, an annotated hex view, and an IR code export.
+**M0 Infrastructure. Done. Here.** Corpus widened to four architectures, container generalised
+across all of them, the workspace standing with the codec ported and proven equal by golden vectors,
+and the USB command layer written from the firmware with its rails.
 
-**M2 Round trip codec.** Decompile and recompile byte-identical across the whole corpus, and the
-trailer checksum reproducible. This is the gate for any editing at all.
+**M1 Read path. Next. Here.** The reading itself is measured rather than planned: whole configs come
+off all three bench remotes byte identical to their own dumps. What remains is filing every read
+into the corpus automatically, and a bench instrument that can connect, identify, read with progress
+and show what came back. FH will have its own interface over the same API; that is not this.
 
-**M3 Offline editor.** Edit understood fields, minimal diff against the original, every change
-validated by recompiling and by whatever hardware-free checks exist. Nothing is written yet.
+**M2 Round trip codec. Here.** Decompile and recompile byte-identical across the whole corpus, and
+the trailer checksum reproducible. This is the gate for any editing at all, and it is squarely an
+API milestone.
 
-**M4 Writer.** Write to the spare Harmony One only, read back, diff, recover if wrong.
+**M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
+validated by recompiling. The codec support for it is M2 and lives here; the editing experience does
+not.
 
-**M5 Learning.** IR capture over USB plus our own encoder from raw timings to a config record.
+**M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
+therefore here, first exercised on the spare Harmony One through the bench instrument. The user
+facing "write my config" is FH.
 
-**M6 Authoring.** Create and edit devices and activities, which needs the action list bytecode.
+**M5 Learning. Both.** IR capture over USB and the encoder from raw timings to a config record are
+API. The learning interface is FH.
+
+**M6 Authoring. FH**, on top of the action list bytecode, which is M2 territory and comes from here.
 
 ## Work sequence
 
@@ -369,37 +420,45 @@ Still to do, in the order the application needs them:
   questions this step left open, `READ_FLASH`'s reply code, how the final short chunk is signalled
   and whether the wire count is biased, are answered in `docs/usb-protocol.md` section 4.
 
-### Step 5: M1, the explorer, across two repositories
+### Step 5: M1, the read path and the bench instrument
 
-Per the revision to decision 4, this step has a half in each repository.
-
-**Here: the read pipeline.**
+**The read pipeline first.**
 
 * Read a whole config off a remote and file it in the lab corpus automatically, with a timestamp,
   because a dump taken before an experiment is the only cheap insurance there is. No new
   dependencies: `packages/usb` and `packages/codec` already do the work, and the measured rate is
-  about 30 KB/s, so roughly 55 seconds for a Harmony One's 1672832 bytes.
-* The IR extractor stays where it already is, in step 6, with the scope it already has: get the
-  codes out of a config into documented JSON. **A community device database is a separate idea and
-  is not designed yet.** It gets thought about properly when FreeHarmony starts. Nothing about its
-  shape, its licence, how contributions would be submitted, or what a shared record may contain is
-  settled, and this plan does not pretend to have settled it.
+  about 30 KB/s.
+* **Let the data bound the read.** Sixteen bytes at the config base carry `end_addr`, the absolute
+  flash address of the trailing marker, so the exact length is known before the bulk read starts.
+  On the One that is `0x1D867C` minus `0x040000` plus four, 1672832 bytes; on the 600 `0x0E4361`
+  minus `0x030000` plus four, 738149. Both are the known file sizes to the byte. That reads 1.6 MB
+  instead of the 3840 KiB the config region spans, and the length checks itself: if the marker is
+  not where `end_addr` promised, something is wrong before anything is filed.
+* This composes all three packages and writes to disk, which none of them should do, so it gets its
+  own small package rather than being bolted onto one of them.
 
-**In FreeHarmony: the interface.** Recorded here because the format work has to serve it.
+**Then the bench instrument.** Node plus a browser page, not Electron.
 
-* Electron shell, single window, no network access at all, with a content security policy that
-  makes that structural rather than a promise. No UI framework and no bundler: `tsc` to native ES
-  modules, so the dependency tree stays the one this workspace already argued for.
-* The renderer gets **named questions, not a command channel**: list remotes, identify, read config,
-  save to corpus. There is no `send(command, args)`, so a broken or hostile interface cannot express
-  a write. `packages/codec` is pure TypeScript with no Node imports, so parsing happens in the
-  renderer and the privileged side stays small.
-* Views: device identity from `GET_VERSION`, config read with progress, container summary with its
-  ten checks, the section table, an annotated hex view (virtualised, since 1.6 MB is over a hundred
-  thousand lines), and a raw JSON export of everything decoded so far.
-* A visible log of every command sent to the remote. In a project built on restraint, it should be
+* A small Node process serves a page and holds the USB side; the browser is the window. No new
+  dependencies, since Node has an HTTP server built in, and it is cross platform for free.
+* **A local listening port is acceptable here and not in the product.** "Nothing goes near a
+  network" is a requirement on FreeHarmony, enforced there by a content security policy. This is a
+  bench tool for one machine, and stretching the product rule to cover it silently would be worse
+  than writing the difference down.
+* The page is plain DOM modules with no framework and no bundler, `tsc` to native ES modules. That
+  keeps the dependency tree this workspace already argued for, and the same modules can be dropped
+  into an Electron renderer later, so the work is not thrown away when FH starts.
+* First views: what is attached, identity from `GET_VERSION`, a config read with progress, the
+  container summary with its ten checks, and the section table whose mostly empty label column is
+  this project's real progress bar.
+* A visible log of every command sent to a remote. In a project built on restraint, it should be
   possible to see that nothing happened that was not asked for.
-* Nothing that writes, and no disabled button that hints at it.
+* Nothing that writes, and no disabled control that hints at it, until step 6 has a reason and the
+  rails are exercised.
+
+The IR extractor stays where it already is, in step 6, with the scope it already has: get the codes
+out of a config into documented JSON. **A community device database is a separate idea and is not
+designed yet.** It gets thought about properly when FreeHarmony starts.
 
 ### Step 6: the first reverse engineering block, section labelling
 
@@ -448,6 +507,43 @@ Ongoing rather than a step, and it applies to every step above: a confirmed fact
 `docs/config-format.md`, its reasoning in `docs/findings.md`, and a regression test in `tests/`
 or in the TypeScript package's own suite. `CLAUDE.md` and `README.md` state the product goal and
 these decisions so a future session does not relitigate them.
+
+### Step 8: the contribution probe, so other people's remotes count
+
+The coverage section above is the argument: two architectures of at least eleven, and no way to
+learn anything about the other nine without hardware nobody here owns. The probe is how somebody
+else's remote becomes evidence. Read only, and it produces one of two things.
+
+**Tier 1, a structural report.** Everything about the shape and nothing about the contents:
+
+* USB identity: vendor, product id, `bcdDevice` and therefore the skin, the endpoints
+* the version block, all twelve fields
+* the container header: magic, `end_addr`, format, the recovered flash base, the slot count, the
+  marker, and the `spare` bytes
+* the section table: per slot the address and the length, **never** the contents
+* the outcome of each of the ten container checks, and any parse failure in full
+
+A few kilobytes of JSON, which the contributor can read before sending. It answers the questions
+that actually block generalisation: does the pointer table rule hold on arch 10, how many slots does
+arch 16 carry, does the USB command layer work at all on a model this project has never seen.
+
+**The point of tier 1 is that it is publishable.** A concordance dump is not: it records what
+equipment somebody owns and carries their remote's GUIDs, which is why there is not one in this
+repository and why `reference/checksums.md` publishes sums rather than files. A structural report
+has nowhere for either to hide, so it can go straight into the corpus, into a test, and into a
+document.
+
+**Tier 2, a full dump**, stays what it already is: an explicit, separate act, filed in the private
+lab with a `META.md`, exactly as the existing contributions from guyman70718 and trelowney were.
+That path needs no new tooling.
+
+**What is not solved.** A stranger will not clone a checkout and build a native module. Tier 1
+therefore starts as something for people who can already do that, and shipping a runnable file per
+platform is real work that probably belongs with FreeHarmony rather than here. Say so rather than
+implying a general audience.
+
+Timing: after the bench instrument exists in step 5, since the probe is the same reads with a
+narrower output, and it can run alongside step 6.
 
 ## Hardware safety rails
 
