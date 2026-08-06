@@ -12,7 +12,7 @@ proposal, kept for its arguments.
 
 **That application is a separate repository.** It is called
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) and it holds the product: the Electron
-shell, the interface, the device database and the packaging. This repository holds the knowledge
+shell, the interface and the packaging. This repository holds the knowledge
 and the libraries that make it possible. See "The two repositories" below for where the line runs
 and why it is not drawn between documents and code.
 
@@ -55,7 +55,7 @@ container claims, not targets. Other models are iterated on later.
 | | this repository | FreeHarmony |
 |---|---|---|
 | holds | the spec, the research tooling, the libraries | the application |
-| that is | `docs/`, `src/harmony/`, `tools/`, `tests/`, `packages/` | Electron shell, interface, device database, packaging |
+| that is | `docs/`, `src/harmony/`, `tools/`, `tests/`, `packages/` | Electron shell, interface, packaging |
 | licence | MIT | AGPL-3.0 |
 | moves at | the pace of what can be proven | its own pace |
 
@@ -70,11 +70,12 @@ until they are stable enough to publish. MIT flows into AGPL without trouble; no
 
 **AGPL for the product is deliberate.** concordance and harmony-decompiler are both GPLv3, so a
 copyleft licence keeps their work available rather than off limits, and GPLv3 permits combining
-with AGPL. The network clause is inert for an application with no network, but the device database
-will plausibly grow a server, and that is where it does work that GPL would not.
+with AGPL. The network clause is inert for an application with no network, but anything shared
+between users later would plausibly grow a server, and that is where it does work GPL would not.
 
-The device database will be **CC0**. Contributions are per device, in a format defined here, with
-no field for anything that identifies a remote or its owner. See `docs/roadmap.md` step 6.
+**A community device database is an idea, not a plan.** It gets worked out when FreeHarmony starts,
+not here and not now. Nothing about its shape, its licence or how contributions would work is
+decided, and this file should not pretend otherwise.
 
 ## This repository is public
 
@@ -508,9 +509,7 @@ Step 5 is next, and it now spans both repositories.
 
 **Here: the read pipeline.** Read a whole config off a remote and file it in the lab corpus with a
 timestamp, because a dump taken before an experiment is the only cheap insurance there is. No new
-dependencies; `packages/usb` and `packages/codec` already do the work. Also the contribution format
-for the device database, which is step 6's IR extractor with a second requirement on it: it must be
-shareable, so it has no field for a device name, a serial or a timestamp.
+dependencies; `packages/usb` and `packages/codec` already do the work.
 
 **In FreeHarmony: the explorer.** Electron shell with no network access at all, enforced by a
 content security policy rather than promised, and a preload that exposes four named questions rather

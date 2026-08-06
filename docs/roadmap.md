@@ -373,21 +373,17 @@ Still to do, in the order the application needs them:
 
 Per the revision to decision 4, this step has a half in each repository.
 
-**Here: the read pipeline and the contribution format.**
+**Here: the read pipeline.**
 
 * Read a whole config off a remote and file it in the lab corpus automatically, with a timestamp,
   because a dump taken before an experiment is the only cheap insurance there is. No new
   dependencies: `packages/usb` and `packages/codec` already do the work, and the measured rate is
   about 30 KB/s, so roughly 55 seconds for a Harmony One's 1672832 bytes.
-* Define the **device database contribution format**, which is step 6's IR extractor with a second
-  requirement attached: it has to be shareable. One record per device, holding manufacturer, model,
-  protocol and codes. It has **no field** for a device name the owner typed, for a serial, for a
-  build timestamp, or for the set of devices one household owns, because a single code for a
-  television is anonymous and a list of nine specific devices is a fingerprint. That is privacy
-  handled by the shape of the format rather than by a policy, which is the same reasoning as the
-  write rails living in code.
-* This is distinct from a **backup export**, which should be complete and faithful and never
-  leaves the machine. Conflating the two is how the leak happens.
+* The IR extractor stays where it already is, in step 6, with the scope it already has: get the
+  codes out of a config into documented JSON. **A community device database is a separate idea and
+  is not designed yet.** It gets thought about properly when FreeHarmony starts. Nothing about its
+  shape, its licence, how contributions would be submitted, or what a shared record may contain is
+  settled, and this plan does not pretend to have settled it.
 
 **In FreeHarmony: the interface.** Recorded here because the format work has to serve it.
 
