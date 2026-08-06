@@ -50,7 +50,7 @@ argument that the reads are good is that all three images verify their own heade
 | `0xFF` `+0xF580` | 4 | unidentified | |
 | `0xFF` `+0xF5C0` | 2 | unidentified | |
 | `0xFF` `+0xF640` | 11 | unidentified, `09 00 20 11 02 18 e0 3c 00 67 01` on the spare | |
-| `0xFF` `+0xFFF8` | 6 | unidentified, and the two bytes after it are unreadable | |
+| `0xFF` `+0xFFF8` | 6 | the **configuration words**, program `0x1FFF8` to `0x1FFFD` | gputils `18f87j50_g.lkr`; `findings.md` section 25 |
 
 The image at `0xFE` `+0x1000` ends at `+0xC12C` and the rest of that page is erased. Everything not
 listed in the `0xFF` page is erased too.

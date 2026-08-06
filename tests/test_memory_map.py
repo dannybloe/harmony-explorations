@@ -216,6 +216,80 @@ class TestArch14MapFor700(unittest.TestCase):
             self.assertIn(token, text, 'missing from docs/memory-map-700.md: %s' % token)
 
 
+class TestTheConfigurationWords(unittest.TestCase):
+    """findings.md section 25: the six bytes at 0xFF +0xFFF8.
+
+    The identification rests on arithmetic plus an authoritative table, and the table is a file
+    on this machine rather than a datasheet quote, so the test reads it. `0xFF` pages are not in
+    `tests/lab.py` on purpose, since they carry identity blocks, so what is executable here is the
+    address reasoning and not the bytes.
+    """
+
+    # gputils installs its linker scripts here. Homebrew on Apple silicon first, then Intel, then
+    # a distribution package.
+    LKR_DIRS = (
+        '/opt/homebrew/share/gputils/lkr',
+        '/usr/local/share/gputils/lkr',
+        '/usr/share/gputils/lkr',
+    )
+    CONFIG_START = 0x1FFF8
+    CONFIG_END = 0x1FFFD
+    PAGE_SIZE = 0x10000
+    READ_CLAMP = 0xFFC0
+    REPORT_BYTES = 62
+
+    def _linker_script(self, part):
+        for directory in self.LKR_DIRS:
+            path = os.path.join(directory, '%s_g.lkr' % part)
+            if os.path.isfile(path):
+                with open(path, encoding='utf-8') as fh:
+                    return fh.read()
+        raise unittest.SkipTest('gputils linker scripts not installed (looked in %s)'
+                                % ', '.join(self.LKR_DIRS))
+
+    def _codepages(self, part):
+        text = self._linker_script(part)
+        found = {}
+        for name, start, end in re.findall(
+                r'CODEPAGE\s+NAME=(\w+)\s+START=(0x[0-9A-Fa-f]+)\s+END=(0x[0-9A-Fa-f]+)', text):
+            found[name] = (int(start, 16), int(end, 16))
+        return found
+
+    def test_both_candidate_parts_put_the_config_words_in_the_same_place(self):
+        """The 600 is a PIC18F67J50 and the One is inferred to be the 80 pin sibling."""
+        for part in ('18f67j50', '18f87j50'):
+            with self.subTest(part=part):
+                pages = self._codepages(part)
+                self.assertEqual(pages.get('config'), (self.CONFIG_START, self.CONFIG_END))
+                self.assertEqual(pages.get('page'), (0x0, self.CONFIG_START - 1))
+                self.assertEqual(pages.get('devid'), (0x3FFFFE, 0x3FFFFF))
+
+    def test_the_observed_run_is_at_the_config_address_and_the_config_length(self):
+        """0xFE maps from program zero, so 0xFF +0xFFF8 is program 0x1FFF8."""
+        observed_offset = 0xFFF8
+        observed_length = 6
+        self.assertEqual(self.PAGE_SIZE + observed_offset, self.CONFIG_START)
+        self.assertEqual(self.CONFIG_END - self.CONFIG_START + 1, observed_length)
+
+    def test_the_config_words_are_inside_the_read_window_and_the_lost_bytes_are_not_config(self):
+        """The clamp costs the last two bytes of each page, and they are not configuration."""
+        last_readable = self.READ_CLAMP + self.REPORT_BYTES - 1
+        self.assertEqual(self.PAGE_SIZE + last_readable, self.CONFIG_END,
+                         'the last readable byte is exactly the last configuration byte')
+        for lost in (0x1FFFE, 0x1FFFF):
+            self.assertGreater(lost, self.CONFIG_END, 'past the configuration region')
+
+    def test_the_documents_name_them(self):
+        for name in ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md'):
+            with self.subTest(document=name):
+                text = _doc(name)
+                self.assertIn('configuration words', text)
+                self.assertIn('0x1FFF8', text)
+        findings = _doc('findings.md')
+        self.assertIn('## 25.', findings)
+        self.assertIn('18f67j50_g.lkr', findings)
+
+
 class TestTheSharedMap(unittest.TestCase):
     """docs/memory-map.md, which carries what the three device maps have in common."""
 

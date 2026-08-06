@@ -2505,15 +2505,19 @@ granularity is 62:
 | `+0xF640` | 11 | 12 |
 | `+0xF6C0` | absent | **4, unidentified** |
 | `+0xF735` | absent | **3, unidentified** |
-| `+0xFFF8` | **6, unidentified** | **6, unidentified** |
+| `+0xFFF8` | 6, the **configuration words**, section 25 | 6, the **configuration words**, section 25 |
 
-Everything else in both pages is erased. The four bolded rows on the 600 and the two on the One are
-new, and nothing here says what any of them are.
+Everything else in both pages is erased. The bolded rows were new when this section was written and
+nothing here said what any of them were.
 
-Two of these are worth a remark. The `+0xFFF8` run is at the very top of the page, inside the last
-62 bytes the `0xFFC0` clamp allows, and it is the same length on both remotes; on a PIC18 J-series
-part the configuration words sit at the top of program memory, but not of this page, so the
-resemblance is a prompt to check rather than a reading. And the 600's identity block measures 48
+**`+0xFFF8` is settled now, in section 25, and this paragraph used to get it wrong.** It read: "on a
+PIC18 J-series part the configuration words sit at the top of program memory, **but not of this
+page**, so the resemblance is a prompt to check rather than a reading." The second clause is false.
+`0xFE` maps from program address zero, so `0xFF` is the high half and `0xFF` `+0xFFF8` is program
+`0x1FFF8`, which is exactly where the configuration words are. The hedge came from not carrying the
+page mapping through the arithmetic, one section after establishing it.
+
+And the 600's identity block measures 48
 non-erased bytes against the One's 64, which is not a disagreement: the One's fourth field is
 sixteen zero bytes and the 600's is erased, so both hold three GUIDs and an unused fourth slot.
 
@@ -2584,6 +2588,69 @@ work and belongs with section 17, not here.
 `docs/memory-map-600.md` had one row sourced from another model's installer, and that row is now a
 measurement. Nothing changed about the address, which is the point: a prediction that had to hold
 for the architecture claim to stand held.
+
+## 25. The six bytes at the top of the `0xFF` page are the configuration words
+
+Section 23 listed an unexplained run of six bytes at `0xFF` `+0xFFF8`, present on all three bench
+remotes at the same offset and the same length, and hedged about what it might be. It is the PIC18
+configuration words, and the identification needs no new measurement, only the arithmetic already
+established plus an authoritative table.
+
+### The closure
+
+`0xFE` maps one to one from program address zero, confirmed in section 22 by the three PIC18 vectors
+sitting at `0x0000`, `0x0008` and `0x0018`. So `0xFF` is the high half of a 128 KiB program memory
+and `0xFF` `+0xFFF8` is program address `0x1FFF8`.
+
+gputils ships a linker script per part, and for both candidates it says the same thing:
+
+```
+CODEPAGE   NAME=page       START=0x0               END=0x1FFF7
+CODEPAGE   NAME=config     START=0x1FFF8           END=0x1FFFD        PROTECTED
+CODEPAGE   NAME=devid      START=0x3FFFFE          END=0x3FFFFF       PROTECTED
+```
+
+`18f67j50_g.lkr` and `18f87j50_g.lkr` are byte for byte identical on those three lines, which
+matters because the 600 is a `PIC18F67J50` and the One is inferred to be the 80 pin sibling.
+
+So the configuration region is `0x1FFF8` to `0x1FFFD`, **six bytes**, and the observed run is six
+bytes at that exact address. Offset and length both, on two architectures, against a table nobody
+here wrote. The last configuration byte is the last byte of the region rather than of the page,
+which is why the run is six and not eight.
+
+### The two unreadable bytes turn out to be nothing
+
+Section 23 records that the read offset clamps at `0xFFC0` and a 62 byte read from there ends at
+`0xFFFD`, so `0x1FFFE` and `0x1FFFF` cannot be read at all. Those two addresses are past
+`END=0x1FFFD`: they are not configuration and not program memory. **The clamp costs nothing.** That
+was previously stated as "no image runs that far", which is true but weaker than the real answer.
+
+The arithmetic lands exactly, which is worth stating as its own closure: `0xFFC0` plus 62 bytes ends
+on page offset `0xFFFD`, and `0x10000` plus `0xFFFD` is `0x1FFFD`, the last configuration byte. The
+largest read the firmware permits stops on precisely the last byte worth having. Whether the bound
+was chosen for that reason or the two coincide is not something this can answer.
+
+### What it changes
+
+The configuration words hold the oscillator and PLL selection, the watchdog, the stack overflow
+reset, the extended instruction set bit and the code protection setting. Two consequences.
+
+**A hardware recovery through ICSP becomes a copy rather than a guess.** Restoring a bricked
+internal flash needs the program image, which section 23 already has for all three units with
+verifying checksums, and the configuration words, which without this section would have had to be
+inferred from how the firmware behaves. Nothing here has been attempted and the ICSP pads have never
+been looked for; what changes is that the information exists rather than the procedure.
+
+**It is weak support for the arch 12 part number.** A device whose configuration words sit at
+`0x1FFF8` has 128 KiB of program memory, which is what the `PIC18F87J50` has. That is consistent
+with the inference in section 3 rather than a confirmation of it, since every member of the family
+with that flash size would say the same. `MCU_ID` at `0x3FFFFE` remains out of reach, per section 22.
+
+### Not claimed
+
+What the six bytes actually say. Decoding them into `WDTEN`, `PLLDIV`, `XINST` and the rest is a
+byte level reading of a per unit region that is not published here, and nothing in this project
+needs it yet.
 
 ## References
 

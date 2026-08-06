@@ -26,9 +26,13 @@ address and the top byte selects:
 | anything else | rejected by the firmware |
 
 So `0xFE` and `0xFF` are two 64 KiB pages, 128 KiB of internal memory in total, and the maps write
-an address in them as `0xFE` `+0x1000`. The offset within a page is clamped at `0xFFC0`, which is
-64 short of the end, so an offset plus a full report cannot leave the window and **the last two
-bytes of each page cannot be read**. No image runs that far.
+an address in them as `0xFE` `+0x1000`. `0xFE` maps one to one from program address zero, so `0xFF`
+`+0x1234` is program address `0x11234`, and the top of the `0xFF` page is the top of program memory.
+
+The offset within a page is clamped at `0xFFC0`, which is 64 short of the end, so an offset plus a
+full report cannot leave the window and **the last two bytes of each page cannot be read**. That
+costs nothing: on both parts the program region ends at `0x1FFF7` and the configuration words run
+`0x1FFF8` to `0x1FFFD`, so `0x1FFFE` and `0x1FFFF` are neither.
 
 In every table, "erased" means `0xFF` bytes, and a region with no row is erased.
 
@@ -75,11 +79,26 @@ The practical consequence is the one `CLAUDE.md` records as a safety rail. A fil
 holds the safe mode region on architecture 12 and the **application** on architecture 14, so a
 recovery step written for one architecture restores the wrong thing on the other.
 
+## The top of program memory
+
+Both parts lay out the last words the same way, and gputils states it in the linker script for each:
+
+| Program address | Contents |
+|---|---|
+| `0x00000` to `0x1FFF7` | program memory, which is the two pages above minus the last eight bytes |
+| `0x1FFF8` to `0x1FFFD` | the **configuration words**: oscillator, watchdog, code protection and the rest |
+| `0x1FFFE` to `0x1FFFF` | neither, and unreadable anyway |
+| `0x3FFFFE` | the device id, outside the window entirely |
+
+The configuration words are read on all three bench remotes, as the six byte run at `0xFF`
+`+0xFFF8`. `findings.md` section 25.
+
 ## What no map can show
 
 The device id. A PIC18 keeps it at `0x3FFFFE` and the internal read window is the two pages above,
 128 KiB, so `MCU_ID` is out of reach on both architectures and the architecture 12 part number stays
-inferred rather than measured.
+inferred rather than measured. The configuration words being where they are is consistent with a
+128 KiB part and is not a confirmation, since every sibling with that flash size would agree.
 
 ## Where the detail is
 

@@ -25,7 +25,7 @@ This is where the remote actually runs.
 | `0xFF` `+0xF640` | 12 | unidentified | |
 | `0xFF` `+0xF6C0` | 4 | unidentified | |
 | `0xFF` `+0xF735` | 3 | unidentified | |
-| `0xFF` `+0xFFF8` | 6 | unidentified, and the two bytes after it are unreadable | |
+| `0xFF` `+0xFFF8` | 6 | the **configuration words**, program `0x1FFF8` to `0x1FFFD` | gputils `18f67j50_g.lkr`; `findings.md` section 25 |
 
 Everything else in both pages is erased, including `0xFE` `+0x6F00` to `+0x9000`.
 
