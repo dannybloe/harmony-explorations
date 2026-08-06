@@ -596,10 +596,20 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
 | `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |
-| `0x7E` | 861 | 268 | 0 to 373 | unknown |
+| `0x7E` | 861 | 268 | 0 to 373 | unknown, see below |
 | `0x7D` | 372 | 350 | 0 to 1361 | **send an infrared code**, `{ u8 group; u8 index }`, below |
 | `0x07` | 230 | 8 | 65522 to 65535 | unknown; in the second operand space, above |
 | `0x71` | 708 | 73 | 9 to 33598 | unknown, but the operand splits: bit 15 a flag, high byte a group 0 to 5, low byte always under 64 |
+
+**`0x7E` is measured and unplaced.** Recorded so the next attempt does not redo it. Its values are
+dense over roughly 40 to the maximum with the bottom of the range mostly unused, and the maximum
+tracks nothing countable in the config: 373 against 354 binding records and 350 infrared records on
+the 700, 267 against 268 and 328 on the One. It is not an index into any of the six pointer arrays,
+whose lengths are either far too small or far too large. It spreads across every list shape rather
+than belonging to one, unlike `0x7D`. In `{0x7F, 0x7E}` each value goes with exactly one call target
+in 138 of 139 cases on the 700, and sorting those pairs by target leaves the `0x7E` value non
+decreasing about 90% of the time on all three architectures that use that shape, which says the two
+are ordered by something shared rather than that one indexes the other.
 
 One structural remark that holds whatever the meanings turn out to be. **Several opcodes carry bit
 15 as a flag**: `0x6C` tops out at `0x8014` and `0x71` at `0x833E` on the 700 against `0x8336` on
