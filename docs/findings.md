@@ -3772,6 +3772,103 @@ the pointer at offset 6 are read and not followed here.
 
 **Why there are so many.** 374 on a config with six infrared groups is the number to explain.
 
+## 38. The slot map on a third image, and what the remaining consumers do
+
+Section 35's map was built on the Harmony 700 and section 37 repeated it on the 600. Here it is
+extended to arch 12, and the slots nobody had opened are characterised in one pass.
+
+### Arch 12, and the insertion rule confirmed from the firmware
+
+The Harmony One 3.4 image has the same seeker, found by the same arithmetic, and **24 call sites
+covering raw slots 2 to 19**. Two things follow that the containers alone could only suggest.
+
+**It never seeks raw slot 8.** That is exactly the NULL arch 12 inserts. Every other raw slot from
+2 to 19 has a consumer and that one has none.
+
+**It does seek raw slot 18**, twice, which is the section arch 12 has and the base layout does not.
+
+So the alignment rule in `docs/config-format.md`, derived from three fingerprints in the container,
+is how the firmware actually addresses the table. Arch 12 has more sites than arch 14 has, 24
+against 19, because it has two more slots to reach.
+
+### Base slot 3 seeds the real time clock
+
+Its consumer is five instructions long and unambiguous, on all three images:
+
+```
+seek base slot 3
+index 10
+read three bytes
+CLRF TMR1H ; CLRF TMR1L ; BSF T1CON,0
+```
+
+Timer 1 with its own oscillator is the standard PIC18 real time clock. Section 21 read slot 3 as an
+eleven byte build timestamp on the strength of a corpus search and a weekday closure; the consumer
+loads three of its bytes and starts the clock from them. The reading is confirmed from the
+hardware, on the 700, the 600 and the One.
+
+### Base slot 15 has a size the firmware demands
+
+Its consumer reads the entry count and **compares it against a literal**, bailing out if it differs:
+
+| image | arch | literal | configs of that architecture |
+|---|---|---|---|
+| Harmony 700 2.8 | 14 | 9 | 9 and 9 |
+| Harmony 600 0.2 | 14 | 9 | 9 and 9 |
+| Harmony One 3.4 | 12 | **11** | 11 and 11 |
+
+Two different numbers on two architectures, both matching every config. The arch 9 sample carries 5
+and the arch 8 samples 9, unverified against their firmwares because no image exists for either.
+
+That is a **rail for anything that writes a config**: the count is not free. A generator that emits
+a different number does not get an error, it gets a subsystem that silently does nothing. Recorded
+before there is any writer, because it is exactly the kind of constraint a writer discovers by
+bricking a remote.
+
+What the entries are is not established. The consumer indexes them by a byte in `0x0B7`, reads one
+byte at the target and compares it against `0x0B8`, returning a boolean, so it is a membership test
+over a per architecture fixed size set.
+
+### Base slot 7
+
+A count prefixed pointer array of 5 to 18 entries. Its consumer reads a `u16` count, indexes the
+array by a byte the caller supplies, reads a three byte value, and later loads that value into
+`TBLPTR` and seeks it. So it is a table of flash addresses selected by an index, one level deeper
+than the section table itself.
+
+### The rest, characterised rather than named
+
+Each of these has a located consumer and a structure, which is what makes the next attempt cheap.
+
+| base slot | entries across the corpus | what the consumer does |
+|---|---|---|
+| 9 | 8 to 16 | indexes, follows, and **runs tagged action lists**, then enqueues |
+| 11 | 22 to 5711 | indexes, follows, then a chain of ten routines nothing else calls |
+| 12 | 5 to 30 | reads a byte, indexes, follows, reads a `u24`, copies through `FSR0` |
+| 14 | 11 to 37 | indexes, follows, reads a `u16` then a `u8` |
+| 16 | not an array by the usual header | indexes, follows, reads a `u8` and a `u24`, **enqueues an instruction** |
+| 17 | not an array by the usual header | indexes, follows, reads a `u8`, then two routines |
+
+Slots 9 and 16 both reach the action list queue, so both hold or reference action lists. Slot 11 is
+the largest table in the config on arch 14, 5711 entries on the 700 against 8037 action lists, and
+its consumer is the most involved in the set.
+
+### A mistake worth recording
+
+The first pass at this table was automated: disassemble sixty instructions from each consumer and
+report the special function registers it touches. It attributed Timer 2 to slot 5 and the analogue
+converter to slot 15, and **both were wrong**. Sixty instructions runs past the end of a five
+instruction routine and into whatever the compiler placed next, and the tool has no idea where a
+routine ends.
+
+Slot 3's Timer 1 survived only because it is genuinely inside the routine. The lesson is that a
+window is not a routine: read to the `RETURN` before attributing anything to a consumer.
+
+### What is not established
+
+The contents of slots 7, 9, 11, 12, 14, 15, 16 and 17. Every one now has a consumer address on at
+least one image and a structure, which is the difference between a search and a reading.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

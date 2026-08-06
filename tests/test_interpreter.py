@@ -438,5 +438,117 @@ class TestTheModeTable(unittest.TestCase):
         self.assertEqual(sum(shapes['h700_code'].values()), 19)
 
 
+class TestTheSlotMapOnArch12(unittest.TestCase):
+    """findings.md section 38: the same seeker on the Harmony One, and the insertion rule."""
+
+    SEEKER = 0x2BA76
+    REGISTER = 0xF1     # banked, so the seeker's own f field rather than the resolved address
+    ONE_BASE = 0x20000
+
+    def _sites(self):
+        code = lab.load('one34_code')
+        window = collections.deque(maxlen=6)
+        per_slot = collections.Counter()
+        for _, instr in isa.iter_instructions(code, self.ONE_BASE, 0, len(code)):
+            window.append(instr)
+            if instr.mnemonic not in ('CALL', 'RCALL', 'GOTO'):
+                continue
+            if instr.fields.get('target') != self.SEEKER:
+                continue
+            earlier = list(window)[:-1]
+            for i in range(len(earlier) - 1, 0, -1):
+                if (earlier[i].mnemonic == 'MOVWF'
+                        and (earlier[i].fields.get('f') & 0xFF) == (self.REGISTER & 0xFF)):
+                    for j in range(i - 1, -1, -1):
+                        if earlier[j].mnemonic == 'MOVLW':
+                            per_slot[earlier[j].fields['k']] += 1
+                            break
+                    break
+        return per_slot
+
+    def test_it_reaches_every_raw_slot_but_the_inserted_null(self):
+        from harmony import gspm
+        sites = self._sites()
+        self.assertEqual(sorted(sites), [2, 3, 4, 5, 6, 7] + list(range(9, 20)))
+        self.assertNotIn(8, sites, 'raw slot 8 is the NULL arch 12 inserts')
+        self.assertIsNone(gspm.base_slot(12, 8), 'and the alignment rule agrees')
+        self.assertIn(18, sites, 'raw slot 18 is the section arch 12 has and the base layout lacks')
+        self.assertIsNone(gspm.base_slot(12, 18))
+        self.assertEqual(sum(sites.values()), 24)
+
+
+class TestSlotThreeIsTheClock(unittest.TestCase):
+    """findings.md section 38: the consumer reads three bytes and starts Timer 1."""
+
+    CONSUMERS = {'h700_code': (0x9000, 0x14956), 'h600_code_complete': (0x9000, 0x1043C),
+                 'one34_code': (0x20000, 0x278E8)}
+
+    def test_the_consumer_starts_timer_one(self):
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                offset = addr - base
+                names = []
+                for _ in range(24):
+                    instr = isa.decode(code, offset, base)
+                    offset += 2 * instr.words
+                    field = instr.fields.get('f')
+                    if field is not None and instr.fields.get('a') == 0:
+                        names.append((instr.mnemonic, isa.sfr_name(field | 0xF00)))
+                    if instr.mnemonic == 'RETURN':
+                        break
+                self.assertIn(('CLRF', 'TMR1H'), names)
+                self.assertIn(('CLRF', 'TMR1L'), names)
+                self.assertIn(('BSF', 'T1CON'), names)
+
+    def test_it_indexes_the_section_at_ten(self):
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                self.assertIn(10, literals_at(name, base, addr, 8))
+
+
+class TestSlotFifteenHasADemandedSize(unittest.TestCase):
+    """findings.md section 38: the firmware compares the entry count against a literal.
+
+    Two architectures, two literals, and every config matches its own. This is a rail for a
+    writer: a different count is not an error, it is a subsystem that quietly does nothing.
+    """
+
+    CONSUMERS = {'h700_code': (0x9000, 0x0F904, 14), 'h600_code_complete': (0x9000, 0x10EA2, 14),
+                 'one34_code': (0x20000, 0x23276, 12)}
+    EXPECTED = {14: 9, 12: 11}
+
+    def test_the_firmware_demands_a_count_per_architecture(self):
+        for name, (base, addr, arch) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                self.assertIn(self.EXPECTED[arch], literals_at(name, base, addr, 10))
+
+    def test_every_config_carries_the_count_its_firmware_demands(self):
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            want = self.EXPECTED.get(c.architecture)
+            if want is None:
+                continue
+            with self.subTest(image=name):
+                entries = c.pointer_array(gspm.arch_slot(c.architecture, 15))
+                self.assertEqual(len(entries), want)
+
+
+def literals_at(name, base, addr, count):
+    """The MOVLW literals in a window, stopping at the first RETURN."""
+    code = lab.load(name)
+    offset = addr - base
+    out = []
+    for _ in range(count):
+        instr = isa.decode(code, offset, base)
+        offset += 2 * instr.words
+        if instr.mnemonic == 'MOVLW':
+            out.append(instr.fields['k'])
+        if instr.mnemonic == 'RETURN':
+            break
+    return out
+
+
 if __name__ == '__main__':
     unittest.main()

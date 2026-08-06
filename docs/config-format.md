@@ -166,11 +166,19 @@ Known so far:
 | 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
 | 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
+| 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | fifteen samples, three images, below |
 | 6 | the **mode table**: what `0x7E` and the event map both index | ten configs, four architectures, below |
+| 15 | a table whose **entry count the firmware demands**: 9 on arch 14, 11 on arch 12 | ten configs, three images |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
+
+**Every slot from 2 to 19 has a located firmware consumer**, on the Harmony 700, the 600 and the
+One. See [findings.md](findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
+seeks every raw slot from 2 to 19 **except raw slot 8**, which is the NULL that architecture
+inserts, and it does seek raw slot 18, which is the section it has and the base layout does not. So
+the alignment rule below is how the firmware itself addresses the table.
 
 **The distance from one pointer to the next is an upper bound on a section's size, not its size.**
 Base slot 4 holds 125 bytes and the gap to slot 5 is between 419 and 1532 bytes, because slot 5's

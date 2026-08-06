@@ -559,7 +559,11 @@ slots are named**. Opcode `0x7E` enters the mode its operand indexes; an entry h
 and a leave handler and the firmware selects no other tag. Note
 that **a section's size is not the gap to the next pointer**: slot 4 holds 125 bytes and the gap is
 up to 1532, because slot 5's infrared group arrays sit in it. `docs/findings.md` section 36. A scan of the firmware's section seeker
-gives a **named entry point for every slot from 3 to 17**, which turns labelling the rest from a
-search into a reading; the map is in `docs/findings.md` section 35. That section also confirms the
+gives a **named entry point for every slot, on all three images**: raw 3 to 17 on the two arch 14
+ones and raw 2 to 19 on the One, which never seeks raw slot 8 because that is the NULL arch 12
+inserts. The map is in `docs/findings.md` sections 35 and 38, and it turns labelling the rest from
+a search into a reading. **Base slot 3 starts Timer 1**, so it is the clock, and **base slot 15's
+entry count is demanded by the firmware**, 9 on arch 14 and 11 on arch 12: a writer that emits a
+different count gets a silent no-op, not an error. That section also confirms the
 `0x0B + 4 * slot` table layout **in code** rather than by arithmetic. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
 `0x3F` are partitioned into a family that addresses a second operand space, section 31.
