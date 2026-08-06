@@ -632,6 +632,38 @@ class TestActionLists(unittest.TestCase):
                 # something other than an action list call reaches.
                 self.assertEqual([o for o in operands if o > ends[-2]], [])
 
+    def test_base_slot_8_references_every_list_in_the_final_run_and_no_other(self):
+        """
+        docs/findings.md section 26. The lists no `0x7F` names are owned by base slot 8.
+
+        The closure is a set cover against a noise floor. The final run is 381 values of 65536 on
+        the 700, so a section of that size holds about twenty by accident; it holds 384, they are
+        381 distinct, and those are exactly the run.
+        """
+        for name in ('h700_config', 'h600_config'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                ends = self._runs(c)
+                first, last = ends[-2] + 1, ends[-1]
+
+                slot8 = next(s for s in c.sections
+                             if gspm.base_slot(c.architecture, s.slot) == 8)
+                start = c.blob_offset_of(slot8.address)
+                body = c.blob[start:start + c.section_length(slot8.slot)]
+                found = {body[o] | (body[o + 1] << 8) for o in range(len(body) - 1)
+                         if first <= (body[o] | (body[o + 1] << 8)) <= last}
+
+                self.assertEqual(found, set(range(first, last + 1)),
+                                 'slot 8 does not cover the final run exactly')
+
+                # Against chance: the band is a few hundred values of 65536.
+                readings = len(body) - 1
+                expected = readings * (last - first + 1) / 65536
+                hits = sum(1 for o in range(readings)
+                           if first <= (body[o] | (body[o + 1] << 8)) <= last)
+                self.assertGreater(hits, 10 * expected,
+                                   'no more hits than coincidence would give')
+
     def test_two_opcodes_carry_signed_operands(self):
         """
         Also section 26. `0x07` and `0x1F` never carry a value below 0xE800, which read as

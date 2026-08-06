@@ -2717,7 +2717,44 @@ rather than a fact to adopt, and this is one entry tested and held.
 The final run is the interesting leftover. 381 lists on the 700 and 199 on the 600 are addressed by
 the table and never called by a `0x7F`, so something else reaches them and it is not another action
 list. They are entry points. The key table has 163 and 162 records respectively, which does not
-match, so the obvious guess is already ruled out.
+match, so the obvious guess is ruled out. The next section finds what does.
+
+### Base slot 8 is what reaches the final run
+
+If something names those lists, the indices are somewhere in the file, so the search is a sweep: read
+a `u16` at every byte offset in the container and ask which section the hits fall in. One section
+answers.
+
+| | 700 | 600 |
+|---|---|---|
+| final run | indices 7656 to 8036, 381 lists | indices 4756 to 4954, 199 lists |
+| `u16` readings inside base slot 8 | 3591 | 1962 |
+| hits in that index band, expected by chance | 20.9 | 6.0 |
+| hits observed | **384** | **199** |
+| distinct values among them | 381 | 199 |
+| of the run they cover | **all of it, with nothing left over** | **all of it** |
+
+The band is 381 values of 65536, so a section of this size should contain about twenty by accident.
+It contains 384, they are 381 distinct values, and those 381 values are exactly the run: nothing
+missing, nothing outside. On the 600 it is cleaner still, 199 references for 199 lists, a bijection.
+
+So **base slot 8 owns the final run of action lists**, one reference each. Two of the 700's values
+appear more than once, which accounts for 384 against 381 and is what you would expect of a
+structure where two entries share a list.
+
+**What this sweep cannot say** is whether slot 8 also calls lists in the other four runs. Those span
+indices 0 to 7655, which is twelve percent of the `u16` space, so the noise floor is high enough to
+swallow the signal: the same scan reports about a thousand such readings in the 700 and there is no
+way to tell a reference from a coincidence at that density. Answering it needs slot 8's record
+layout, not a wider sweep.
+
+That layout is not established. The references are not on a fixed stride: the gaps between them are
+mostly four and five bytes with a long tail out to twenty two, so slot 8 holds variable length
+records rather than a table. Which is a useful thing to know before anyone tries to read it as one.
+
+Slot 8 was already the section worth looking at. Section 16 records it as the only section whose
+size changed under the one documented edit in the 700 pair, and `docs/roadmap.md` names it as the
+second target of step 6. It is now also the section that owns 381 action lists.
 
 ### Two structural facts about operands, whatever the opcodes mean
 

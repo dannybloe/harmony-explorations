@@ -396,6 +396,18 @@ what makes it a reading rather than a range that happens to fit. It also matches
 harmony-decompiler reports for arch 9, where `0x7F` is "run an action list", so the meaning
 transfers across architectures even though the wider inventory does not.
 
+#### The final run belongs to base slot 8
+
+The lists a `0x7F` never names are not orphans. Base slot 8 holds a `u16` reference to **every** list
+in the final run and to no list outside it: 381 references covering 7656 to 8036 on the 700, and 199
+covering 4756 to 4954 on the 600, which is a bijection. A section that size would hold about twenty
+values in that band by chance.
+
+Slot 8's own record layout is **not established**. The references are not evenly spaced, so it holds
+variable length records rather than a table, and whether it also names lists in the other four runs
+cannot be told by scanning, because that index range is wide enough for coincidences to swamp it.
+`docs/findings.md` section 26.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode
