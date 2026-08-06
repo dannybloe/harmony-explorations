@@ -4427,7 +4427,7 @@ space stream.
 
 ## 43. Base slot 12 is the timer table
 
-The section that runs an action later. It is the twelfth of twenty base slots to be named, it is
+The section that runs an action later. It is the thirteenth of twenty base slots to be named, it is
 the one that explains where a Harmony's backlight timeout and its two hour power off live, and it
 closes with the cleanest fit in this document so far.
 

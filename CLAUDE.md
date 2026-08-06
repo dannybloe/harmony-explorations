@@ -568,7 +568,8 @@ Harmony 700 pair differs by exactly one binding matching its owner's one added b
 is **the state value map**, which opcode `0x72` indexes with its high byte while its low byte names
 the state variable, both bounds holding everywhere; and base slot 16 is **the number sender**, which
 converts a value to decimal and queues one action list per digit, read from three images and used by
-no config in the corpus. So **ten of the twenty slots are named**, counting slot 3. Opcode `0x7E`
+no config in the corpus. That made it ten, counting slot 3; the running total is at the end of this
+file. Opcode `0x7E`
 enters the mode its operand indexes; an entry has an enter handler
 and a leave handler and the firmware selects no other tag. Note
 that **a section's size is not the gap to the next pointer**: slot 4 holds 125 bytes and the gap is
@@ -592,7 +593,7 @@ in mode entries, and **base slot 7 is what its opcode 16 indexes**, which names 
 The closure is that **18252 programs in ten configs decode with nothing left over**, which is a
 real check because the instructions are variable length with no length field. Its inline strings
 are **glyph indices, not characters**: none decode as ASCII. Dump them with
-`tools/screen_dump.py`. That makes it **twelve of the twenty slots named**.
+`tools/screen_dump.py`. That took the total to twelve.
 
 **The trailer checksum is derived**, section 41, which was the last item on the critical path for
 writing. A sixteen bit XOR of the container's little endian words seeded `0x4321`, from the first
@@ -638,3 +639,8 @@ populated **only on arch 12**, count zero in the other eleven containers, which 
 unnamed: the project decodes arch 14 first and arch 14 never uses it. The codes are ten of the
 One's 43 to 53 scan code block, and the geometry is identical on two unrelated Harmony Ones, so it
 is a layout resource rather than user data. `gspm.touch_pages`, `gspm.Container.touch_hit`.
+
+**Fifteen of the twenty base slots are named.** 18 and 19 are NULL in every sample, so **base slot
+2 is the only one that is neither named nor NULL**: eight bytes on arch 8, 9 and 14 and nine on
+arch 12, with its only seeker call site on the One at `0x2DB68`. What is measured about it is in
+`docs/config-format.md`, marked not established, so nobody mistakes the shape for the answer.
