@@ -1058,6 +1058,89 @@ class TestTheInfraredDatabase(unittest.TestCase):
                              'and none of the few that do lands on a real protocol')
 
 
+class TestOpcode7DSendsInfrared(unittest.TestCase):
+    """findings.md section 33: 0x7D's operand is a `{group, index}` into the infrared database.
+
+    The claim is stronger than "in range": it is a bijection, so the test asserts the mapping is
+    both onto and one to one. An operand that merely landed inside a valid group would pass a
+    range check and fail this.
+    """
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d')
+
+    def test_the_operands_are_exactly_the_valid_group_index_pairs(self):
+        """Onto, and nothing outside the table. Set equality, not a range check.
+
+        Not one to one: a record can be sent from more than one list, 372 instructions naming 350
+        records on the 700. What is exact is the set of operands, which is why this asserts
+        equality of sets rather than of counts.
+        """
+        total = 0
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                sizes = [len(g) for g in c.ir_groups()]
+                everything = {(g, j) for g, n in enumerate(sizes) for j in range(n)}
+                named = set(c.ir_references())
+                self.assertEqual(named, everything)
+                total += len(everything)
+        self.assertEqual(total, 3058, 'pin the corpus wide count')
+
+    def test_a_record_may_be_sent_from_more_than_one_list(self):
+        """The exception to exactness, stated so the claim above is not read as stronger."""
+        c = gspm.parse(lab.load('h700_config'))
+        refs = c.ir_references()
+        self.assertEqual((len(refs), len(set(refs))), (372, 350))
+
+    def test_the_group_sizes_are_irregular_enough_for_that_to_mean_something(self):
+        """Guard against the bijection being trivial.
+
+        If every group held 256 records any byte pair would be in range. The 700's groups hold
+        30, 111, 65, 52, 10 and 82, so an operand has to know which group it is in.
+        """
+        c = gspm.parse(lab.load('h700_config'))
+        self.assertEqual([len(g) for g in c.ir_groups()], [30, 111, 65, 52, 10, 82])
+
+    def test_it_appears_in_exactly_one_list_shape(self):
+        expected = {14: (0x7F, 0x7D, 0x7C), 12: (0x7D, 0x7C),
+                    9: (0x7D, 0x7C), 8: (0x7D, 0x7C)}
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                shapes = {tuple(i.opcode for i in lst) for lst in c.action_lists()
+                          if any(i.opcode == gspm.OPCODE_SEND_IR for i in lst)}
+                self.assertEqual(shapes, {expected[c.architecture]})
+
+    def test_the_0x7c_beside_it_always_carries_the_same_group(self):
+        """The second closure, and it does not involve the infrared table at all."""
+        checked = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for lst in c.action_lists():
+                ops = [i.opcode for i in lst]
+                if gspm.OPCODE_SEND_IR not in ops:
+                    continue
+                send = lst[ops.index(gspm.OPCODE_SEND_IR)]
+                value = lst[ops.index(0x7C)]
+                with self.subTest(image=name):
+                    self.assertEqual(value.operand >> 8, send.operand >> 8)
+                checked += 1
+        self.assertEqual(checked, 3164, 'pin the count over all ten configs')
+
+    def test_the_accompanying_count_is_small(self):
+        """Recorded because it is what rules out the 0x7C being a second identifier."""
+        seen = set()
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for lst in c.action_lists():
+                ops = [i.opcode for i in lst]
+                if gspm.OPCODE_SEND_IR in ops:
+                    seen.add(lst[ops.index(0x7C)].operand & 0xFF)
+        self.assertEqual(seen, {0, 1, 2, 4, 5, 10})
+
+
 class TestTheHighOperandBand(unittest.TestCase):
     """findings.md section 31: four opcodes address a second operand space and never leave it.
 

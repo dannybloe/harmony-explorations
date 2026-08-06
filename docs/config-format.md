@@ -567,6 +567,23 @@ renumber it.
 
 *What the four name is not established.* [findings.md](findings.md) section 31.
 
+#### `0x7D` sends an infrared code
+
+**Confirmed on ten configs across four architectures.** The operand is `{ u8 group; u8 index }`
+into the base slot 5 table above, and **the set of distinct operands is exactly the set of valid
+`(group, index)` pairs**: every record is reached and nothing outside the table is named, 3058
+records and 3058 distinct operands over the ten configs. Onto rather than one to one, since a
+record can be sent from more than one list.
+
+`0x7D` appears in exactly one list shape per config, `{0x7F, 0x7D, 0x7C}` on arch 14 and
+`{0x7D, 0x7C}` on arch 8, 9 and 12, and in all 3164 of those lists the `0x7C` operand's high byte
+equals the `0x7D` operand's. So the grouping is shared between the infrared database, `0x7C` and
+`0x7D`. The accompanying `0x7C` value takes only `0, 1, 2, 4, 5, 10` across the corpus and is 1 in
+2260 of the 3164 sends, which is a count and not an identifier.
+
+Read with `gspm.ir_reference` and `gspm.ir_references`.
+[findings.md](findings.md) section 33.
+
 #### The rest of the inventory, not established
 
 Arch 14's most common opcodes include `0x6C`, which never appears in the arch 9 sample, so an opcode
@@ -578,10 +595,11 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x7A` | 2875 | 10 | 0 to 65277 | unknown, and only ten distinct operands in 2875 uses |
 | `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
-| `0x1F` | 1215 | 121 | 59392 to 65290 | unknown, and the operands are **negative**: `0xE800` to `0xFF0A` |
+| `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |
 | `0x7E` | 861 | 268 | 0 to 373 | unknown |
-| `0x7D` | 372 | 350 | 0 to 1361 | unknown, and nearly every use has its own operand |
-| `0x07` | 230 | 8 | 65522 to 65535 | unknown, operands are `-14` to `-1` |
+| `0x7D` | 372 | 350 | 0 to 1361 | **send an infrared code**, `{ u8 group; u8 index }`, below |
+| `0x07` | 230 | 8 | 65522 to 65535 | unknown; in the second operand space, above |
+| `0x71` | 708 | 73 | 9 to 33598 | unknown, but the operand splits: bit 15 a flag, high byte a group 0 to 5, low byte always under 64 |
 
 One structural remark that holds whatever the meanings turn out to be. **Several opcodes carry bit
 15 as a flag**: `0x6C` tops out at `0x8014` and `0x71` at `0x833E` on the 700 against `0x8336` on

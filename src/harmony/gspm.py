@@ -230,6 +230,10 @@ IR_RECORD_HEADER = 14
 # Below this a record is not carrying a duration stream. The shortest real code in the corpus is
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
+# Opcode 0x7D references an infrared record: high byte the group, low byte the index within it.
+# The reference is onto, and one to one: every record in every config is named exactly once.
+# `docs/findings.md` section 33.
+OPCODE_SEND_IR = 0x7D
 
 
 def is_high_band(instruction: 'Instruction') -> bool:
@@ -566,6 +570,25 @@ class Container:
         if rest < 4 or rest % 2:
             return None
         return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+
+    def ir_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
+        """The `(group, index)` an `OPCODE_SEND_IR` instruction names, or None if it is not one.
+
+        Returns the pair without checking it against the table, because a caller that wants the
+        record should ask `ir_groups` and would then find an out of range index by itself. No
+        operand in the corpus is out of range.
+        """
+        if instruction.opcode != OPCODE_SEND_IR:
+            return None
+        return instruction.operand >> 8, instruction.operand & 0xFF
+
+    def ir_references(self) -> Optional[List[Tuple[int, int]]]:
+        """Every infrared reference in the config's action lists, in list order."""
+        lists = self.action_lists()
+        if lists is None:
+            return None
+        return [(i.operand >> 8, i.operand & 0xFF)
+                for lst in lists for i in lst if i.opcode == OPCODE_SEND_IR]
 
     def action_list_packing(self) -> Tuple[int, int]:
         """How many consecutive table entries sit exactly `1 + 3 * count` apart, and of how many.

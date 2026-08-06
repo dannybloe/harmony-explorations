@@ -3257,6 +3257,75 @@ the run rather than assuming an offset, so this does not block decoding, but a w
 
 **The other three encoding classes**, including whatever arch 9 uses for all of its records.
 
+## 33. Opcode `0x7D` sends an infrared code, and the reference is one to one
+
+The count gave it away. On the 700, `0x7D` has 350 distinct operands and the infrared database has
+350 records. On the 600, 186 and 186.
+
+### The placement
+
+`0x7D`'s operand is `{u8 group; u8 index}` into the base slot 5 table of section 32. Over ten
+configs and four architectures:
+
+| config | arch | distinct `0x7D` operands | infrared records | operands outside the table |
+|---|---|---|---|---|
+| 700 | 14 | 350 | 350 | none |
+| 700, second config | 14 | 350 | 350 | none |
+| 600 | 14 | 186 | 186 | none |
+| 525 | 9 | 200 | 200 | none |
+| One, programmed | 12 | 328 | 328 | none |
+| One, unprogrammed | 12 | 97 | 97 | none |
+| 880 a | 8 | 234 | 234 | none |
+| 880 b | 8 | 397 | 397 | none |
+| 880 c | 8 | 454 | 454 | none |
+| 880 d | 8 | 462 | 462 | none |
+
+**The set of distinct operands is exactly the set of valid `(group, index)` pairs**, ten times over.
+Every record is reached, nothing outside the table is named, 3058 records and 3058 distinct
+operands.
+
+It is onto rather than one to one: the 700 has 372 `0x7D` instructions naming 350 records, so
+twenty two records are sent from more than one list. That is what a shared command looks like and
+it does not weaken the set equality, which is the claim.
+
+Note what the set equality would take by accident. The group is a byte and the index is a byte, and
+the group sizes are irregular: 30, 111, 65, 52, 10 and 82 on the 700. An operand chosen for some
+other reason would have to land inside the right group's length every time, and between them the
+ten configs would have to hit all 3058 pairs and no others.
+
+### The second closure
+
+`0x7D` appears in exactly one list shape per config: `{0x7F, 0x7D, 0x7C}` on arch 14 and
+`{0x7D, 0x7C}` on arch 8, 9 and 12. Nowhere else, in any config.
+
+In all **3164** of those lists, across ten configs, the `0x7C` operand's high byte **equals the
+`0x7D` operand's high byte**. Zero exceptions.
+
+That does two things at once. It confirms the group split of `0x7D`'s operand from a direction that
+does not involve the infrared table at all, and it ties `0x7C`'s group to the same grouping,
+answering the question section 29 left open about whether the two were the same thing. They are, at
+least here.
+
+The `0x7C` value that accompanies a send is small. Over all ten configs it takes six values,
+`0, 1, 2, 4, 5, 10`, and 2260 of the 3164 sends carry 1. So it is a count of something rather than
+an identifier, which fits `0x7C`'s established reading as a quantity of at most 100 spelled out
+above that.
+
+### What arch 14 adds
+
+On arch 14 the idiom carries a leading `0x7F`, which section 26 established as a call to another
+action list. Arch 8, 9 and 12 send without it. What the called list does first is not established.
+
+### What is not established
+
+**What a group is.** Section 32 left this open and this section does not close it. What it adds is
+that the grouping is shared between the infrared database, `0x7C` and `0x7D`, so whatever names it
+will name all three.
+
+**What the accompanying `0x7C` counts.** A repeat count is the obvious reading for a value of 1 next
+to an infrared send, and the corpus never shows it above 10, so the obvious reading is also
+untested. A value of 0 appears 665 times, which a repeat count would have to explain.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
