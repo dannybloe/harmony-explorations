@@ -512,7 +512,10 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   header timings name, for 1365 records with no exception. `docs/findings.md` section 32. What
   remains is the other three infrared encoding classes: this reads one, arch 9 uses none of it, and
   arch 8 has a second population.
-* Then the trailer checksum, from the boot validation routine located in step 3.
+* **The trailer checksum is derived**, from the boot validation routine located in step 3: a
+  sixteen bit XOR of the container's little endian words seeded `0x4321`, recomputing on all
+  fourteen containers across four architectures. That was the last item on the critical path for
+  writing. `docs/findings.md` section 41.
 * Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
   both remotes, and publish the resulting table. This also unblocks upstream. It got considerably
   cheaper: the config's scan codes are now known to be the scanner's own 1 to 56 index, so the
@@ -609,11 +612,12 @@ Not optional, and they belong in the code rather than in a document:
 
 ## Known unknowns, unchanged
 
-* The trailer checksum algorithm. Still on the critical path for anything that writes.
 * Three of the four IR encoding classes at the dispatcher `0x12F08`.
 * The encoder from raw learned timings to a config IR record. This ran on Logitech's servers, so
   nobody has it, and M5 depends on deriving it from the four decoder classes.
-* Activity semantics, which upstream evidence says is bytecode for an accumulator machine.
+* Activity semantics. The accumulator machine is read, `docs/findings.md` section 34, and so is
+  the second interpreter that draws the screen, section 40; what an entry of the binding table
+  corresponds to is the part still open.
 * The LWJL difference between architectures, and the translation from the scanner's linear index
   to config event codes.
 * Whether the firmware implements event injection over USB.

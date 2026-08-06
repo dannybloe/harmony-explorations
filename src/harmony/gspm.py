@@ -74,6 +74,26 @@ MARKER_SEARCH_LIMIT = 0x200
 # Arch 9 and 14 carry 20, arch 8 carries 21, arch 12 carries 22.
 KNOWN_POINTER_COUNTS = (20, 21, 22)
 
+# The trailer checksum's seed, written as two literals by the boot validator on all three images.
+# The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
+# to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
+TRAILER_CHECKSUM_SEED = 0x4321
+TRAILER_CHECKSUM_OFFSET = 6      # from the end of the container, ahead of the four byte marker
+
+
+def trailer_checksum(blob: bytes) -> int:
+    """Recompute a container's trailer checksum from its bytes.
+
+    An odd trailing byte is not folded in, because the firmware divides the byte count by two and
+    counts words. No container in the corpus has an odd body, so that is the firmware's behaviour
+    rather than a tested one.
+    """
+    accumulator = TRAILER_CHECKSUM_SEED
+    body = memoryview(blob)[:len(blob) - TRAILER_CHECKSUM_OFFSET]
+    for offset in range(0, len(body) - 1, 2):
+        accumulator ^= body[offset] | (body[offset + 1] << 8)
+    return accumulator
+
 # Section slot 0 is a single 0xFEED framed block, the structure discussion #1 documents for
 # the Harmony 525. Stored little endian, so the cookie reads `ed fe` in a hex dump.
 FRAME_COOKIE = b'\xed\xfe'
@@ -1417,6 +1437,10 @@ def parse(data: bytes) -> Container:
         # not just a shape match. Slots 1 and 3 sit below the first insertion at 8, so a base
         # slot number indexes them directly on all four architectures.
         'slot3_is_a_timestamp': container.built_at is not None,
+        # The one check a writer cannot skip: the remote refuses a config whose trailer checksum
+        # does not recompute, so this is the boot validator's own test run here.
+        'trailer_checksum_recomputes':
+            trailer_checksum(blob) == container.trailer_checksum,
     }
 
     if family.key_table_at_marker:
@@ -1494,7 +1518,7 @@ def report(c: Container):
         ', key table' if c.has_key_table else ', contents not established')
     yield 'built at        %s   (slot %d timestamp)' % (
         c.built_at.isoformat(sep=' ') if c.built_at else 'unstated', CLOCK_RECORD_SLOT)
-    yield 'trailer checksum 0x%04X   (algorithm not yet derived)' % c.trailer_checksum
+    yield 'trailer checksum 0x%04X   (seeded word XOR, section 41)' % c.trailer_checksum
     for name, ok in c.checks.items():
         yield '  check %-28s %s' % (name, 'PASS' if ok else 'FAIL')
     yield 'sections:'

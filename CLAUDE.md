@@ -540,7 +540,7 @@ that changes. It is publishable precisely because it carries shape and not conte
 
 Then the first reverse engineering block proper (step 6): label the section pointers by function
 using the proven consumer method plus live RAM polling, read the action list opcode table out of
-the arch 14 firmware, derive the trailer checksum from the boot validator already located, and run
+the arch 14 firmware, and run
 the button mapping experiment by polling the keypad scanner's RAM variable while pressing every key.
 
 **The action list interpreter is located and read**, on the Harmony 700 2.8 image and confirmed on
@@ -587,3 +587,11 @@ The closure is that **18252 programs in ten configs decode with nothing left ove
 real check because the instructions are variable length with no length field. Its inline strings
 are **glyph indices, not characters**: none decode as ASCII. Dump them with
 `tools/screen_dump.py`. That makes it **twelve of the twenty slots named**.
+
+**The trailer checksum is derived**, section 41, which was the last item on the critical path for
+writing. A sixteen bit XOR of the container's little endian words seeded `0x4321`, from the first
+byte to the stored value six from the end. It recomputes on all fourteen containers across four
+architectures, it exists in both codecs and the parse reports it as a container check. It is a
+**weak** check: blind to two transposed words, so a passing checksum means the remote will not
+refuse the file, not that the file is right. Brute force over 636 standard algorithms found
+nothing first, which is why the firmware was the route.

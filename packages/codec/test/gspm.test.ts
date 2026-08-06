@@ -22,9 +22,11 @@ import {
   CLOCK_RECORD_SLOT,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
+  TRAILER_CHECKSUM_SEED,
   archSlot,
   baseSlot,
   parse,
+  trailerChecksum,
   type Container,
 } from '../src/index.ts';
 
@@ -356,4 +358,50 @@ test('the timestamp is a bare local time, with no timezone attached', () => {
   const at = parse(data).builtAt as string;
   assert.match(at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
   assert.ok(!at.endsWith('Z'), 'no zone designator');
+});
+
+const TRAILER_SAMPLES = [
+  'h700_config',
+  'h700_config_2',
+  'h600_config',
+  'h525_config',
+  'one_config',
+  'one_config_unprogrammed',
+  'arch8_config_a',
+  'arch8_config_b',
+  'arch8_config_c',
+  'arch8_config_d',
+  'h600_safemode_gspm',
+  'h650_safemode_gspm',
+  'h700_gspm',
+  'one_safemode',
+];
+
+test('the trailer checksum recomputes on every container in the corpus', () => {
+  for (const name of TRAILER_SAMPLES) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    assert.equal(trailerChecksum(c.blob), c.trailerChecksum, name);
+    assert.equal(c.checks['trailer_checksum_recomputes'], true, name);
+  }
+});
+
+test('without the seed nothing matches, which is what pins 0x4321', () => {
+  for (const name of TRAILER_SAMPLES) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    assert.notEqual(trailerChecksum(c.blob) ^ TRAILER_CHECKSUM_SEED, c.trailerChecksum, name);
+  }
+});
+
+test('a flipped byte is caught', () => {
+  // A word XOR misses a byte swap but not a changed byte, which is the case that matters.
+  const data = load('h600_safemode_gspm');
+  if (data === undefined) return;
+  const c = parse(data);
+  const damaged = Uint8Array.from(c.blob);
+  damaged[0x40] = damaged[0x40]! ^ 0x01;
+  assert.notEqual(trailerChecksum(damaged), c.trailerChecksum);
 });

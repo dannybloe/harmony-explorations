@@ -41,7 +41,7 @@ four addresses are named and the lengths are 20, 21 and 22. The counts are compu
       u8       count
                { u8 event_code; u16 index; u8 flags }[count]
       ...      remaining sections, reached via section_ptr
-end-6 u16      checksum        algorithm NOT YET DERIVED
+end-6 u16      checksum        seeded word XOR, below
 end-4 char[4]  end marker      per architecture
 ```
 
@@ -136,15 +136,38 @@ remote in this project, so treat that as the reason to match the header, not as 
 observation.
 
 Not to be confused with the trailer checksum inside the container, which is a different
-algorithm and is still unknown. This one covers the whole payload and is trivially
-reproducible; that one is what the remote validates internally.
+algorithm. This one covers the whole payload; that one is what the remote validates internally,
+and it is derived below.
+
+### The trailer checksum
+
+**Confirmed on fourteen containers across four architectures**, sizes from 7115 bytes to 1672832,
+and derived from the boot validator rather than guessed. A sixteen bit XOR of the container's
+little endian words, seeded `0x4321`, from its first byte up to the stored value:
+
+```python
+accumulator = 0x4321
+for offset in range(0, len(blob) - 6 - 1, 2):
+    accumulator ^= int.from_bytes(blob[offset:offset + 2], 'little')
+```
+
+An odd trailing byte is not folded in, because the firmware divides the byte count by two and
+counts words. No container in the corpus has an odd body.
+
+**This is the value a writer has to get right**; the remote refuses a config whose checksum does
+not recompute. It is also a weak check: a word XOR catches any single changed byte but is blind to
+two transposed words and to any even number of identical changes, so a passing checksum means the
+remote will not refuse the file, not that the file is correct.
+
+Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
+`trailer_checksum_recomputes` as a container check. [findings.md](findings.md) section 41.
 
 ## Sections
 
-Slot meanings are **not yet known**. This is the single highest-value gap, and there is a
-proven method for closing it, described in [roadmap.md](roadmap.md) step 6: the firmware copies
-each config pointer into a per-subsystem RAM variable, so finding the consumer of that variable
-labels the section by function. The infrared section was identified exactly this way.
+Twelve of the twenty base slots are named. The method that named them is described in
+[roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
+variable, so finding the consumer of that variable labels the section by function. The infrared
+section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
 
 A prior worth having, from the person who designed the format, in harmony-decompiler discussion
 number 1: the table "is probably pointing to data for each of the various subsystems (IR
@@ -1092,23 +1115,16 @@ the 0.1 us storage unit and the clock.
 
 ## Open questions
 
-1. What are the 19, 20 or 21 section slots? Base slots 5, 8 and 10 are named now, so the
-   question is the remaining sixteen or so. Method in [roadmap.md](roadmap.md) step 6.
-2. The trailer checksum algorithm. On the critical path: nothing can be uploaded without it.
-   The firmware routine that validates a config on boot is where to look, and **it is now
-   located**: the cookie check is at `0x16492` in the Harmony 700 2.8 image and `0x28DAC` in the
-   Harmony One 3.4 image, the end marker check at `0x1652C` and `0x28E18`. One constraint is
-   already in hand: the 700 image contains exactly one 16-bit accumulate in total, nowhere near
-   a config read, so the checksum is not a plain 16-bit sum accumulated that way.
-   `docs/findings.md` section 19.
-3. Three of the four IR encoding classes. The dispatcher routes four selectors; only one is
+1. What are the 19, 20 or 21 section slots? Twelve are named now, so the question is the
+   remaining eight or so. Method in [roadmap.md](roadmap.md) step 6.
+2. Three of the four IR encoding classes. The dispatcher routes four selectors; only one is
    traced in the firmware. From the config side one class is now decoded outright, the mark and
    space stream of base slot 5, but arch 9 uses none of it and arch 8 carries a second population
    with headers near 303 / 310. Those are the other classes and they are still unread.
-4. The key table's semantic difference between architectures, and the meaning of `flags`
+3. The key table's semantic difference between architectures, and the meaning of `flags`
    (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
    the 600, small values plus an outlier on arch 8).
-5. The 288-byte table at arch 12 flash `0x000000-0x00011F`, in which every nibble is one of
+4. The 288-byte table at arch 12 flash `0x000000-0x00011F`, in which every nibble is one of
    {6, 7, E, F}. On NOR flash that is the signature of a counter advanced by clearing one bit
    at a time. Boot counter, config generation counter and wear map are all plausible. Diffing
    that range across two dumps of the same remote taken at different times would settle it.

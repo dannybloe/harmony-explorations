@@ -92,6 +92,31 @@ export const MARKER_SEARCH_LIMIT = 0x200;
 export const KNOWN_POINTER_COUNTS: readonly number[] = [20, 21, 22];
 
 /**
+ * The trailer checksum's seed, written as two literals by the boot validator on all three images.
+ * The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
+ * to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
+ */
+export const TRAILER_CHECKSUM_SEED = 0x4321;
+/** From the end of the container, ahead of the four byte marker. */
+export const TRAILER_CHECKSUM_OFFSET = 6;
+
+/**
+ * Recompute a container's trailer checksum from its bytes.
+ *
+ * An odd trailing byte is not folded in, because the firmware divides the byte count by two and
+ * counts words. No container in the corpus has an odd body, so that is the firmware's behaviour
+ * rather than a tested one.
+ */
+export function trailerChecksum(blob: Uint8Array): number {
+  let accumulator = TRAILER_CHECKSUM_SEED;
+  const end = blob.length - TRAILER_CHECKSUM_OFFSET;
+  for (let offset = 0; offset + 1 < end; offset += 2) {
+    accumulator ^= blob[offset]! | (blob[offset + 1]! << 8);
+  }
+  return accumulator;
+}
+
+/**
  * Section slot 0 is a single 0xFEED framed block. Stored little endian, so the cookie reads
  * `ed fe` in a hex dump.
  */
@@ -685,6 +710,9 @@ export function parse(data: Uint8Array): Container {
     // just a shape match. Slots 1 and 3 sit below the first insertion at 8, so a base slot number
     // indexes them directly on all four architectures.
     slot3_is_a_timestamp: container.builtAt !== undefined,
+    // The one check a writer cannot skip: the remote refuses a config whose trailer checksum does
+    // not recompute, so this is the boot validator's own test run here.
+    trailer_checksum_recomputes: trailerChecksum(blob) === container.trailerChecksum,
   };
 
   if (family.keyTableAtMarker) {

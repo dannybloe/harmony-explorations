@@ -36,13 +36,18 @@ header and its checksum, the config container, the keypad scanner, and the compl
 infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because publicly shared sample
-sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Thirteen samples, five base
+sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Fifteen samples, four base
 addresses, three format versions, three pointer table lengths, all consistency checks passing. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
 insertions, so a section labelled on one architecture transfers to the others by index.
 
-Nine of the twenty to twenty two sections now have something said about them. A config
+The **trailer checksum is derived**: a sixteen bit XOR of the container's little endian words
+seeded `0x4321`, recomputing on all fourteen containers. That was the last thing standing between
+a generated config and a remote that would accept it.
+
+Twelve of the twenty base slots are named and every slot from 2 to 19 has a located firmware
+consumer. A config
 **states its own architecture** in section slot 1, which is what lets a config read over USB be
 parsed without the file header Logitech's software supplied. Slot 0 is the container's only
 `0xFEED`/`0xBEEF` frame, and slot 3 is a second framed record holding **the date and time the
@@ -58,10 +63,14 @@ not the matrix address it was read as here for a while. That correction turned t
 table from something that provably could not describe its own keypad into 54 keys times three
 event types, exactly.
 
-Not established: the config format itself, beyond the container and two small tables. The IR
-device database, activities, menus and display are still opaque. That is the bulk of the
-remaining work. See [docs/findings.md](docs/findings.md) for detail and
-[docs/config-format.md](docs/config-format.md) for the spec as it firms up.
+Both of the config's languages are read. **Action lists** are bytecode for an accumulator machine
+with a forty instruction queue and a binary search dispatcher, and a **second interpreter draws
+the screen**: its own one byte opcodes for text, objects, a switch on a state variable and a jump,
+with 18252 programs across ten configs decoding with nothing left over.
+
+Not established: what a binding table entry corresponds to, three of the four infrared encoding
+classes, and which physical button each scan code is. See [docs/findings.md](docs/findings.md) for
+detail and [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 
 ## Headline findings
 

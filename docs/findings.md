@@ -4259,6 +4259,86 @@ some other way.
 **The glyph table.** Its address is held in RAM at `0x398` and where that is loaded from is not
 traced.
 
+## 41. The trailer checksum
+
+Section 22 located the boot validator and could not derive the checksum it enforces. It is a
+**sixteen bit XOR of the container's little endian words, seeded with `0x4321`**, over everything
+from the container's first byte up to the stored value, which sits six bytes from the end ahead of
+the four byte marker.
+
+```python
+accumulator = 0x4321
+for offset in range(0, len(blob) - 6 - 1, 2):
+    accumulator ^= int.from_bytes(blob[offset:offset + 2], 'little')
+```
+
+### How it was found, and what failed first
+
+**Brute force did not find it.** 636 combinations of six range choices against six summation
+variants and 100 CRC parameter sets, over five containers, produced not a single hit. That is
+worth recording as a negative: the algorithm is not one of the standard ones, so a corpus attack
+was never going to close this and the firmware was always the route.
+
+Nor was it the constraint section 22 offered. That section observed that the 700 image contains
+exactly one `ADDWF` followed by `ADDWFC` and concluded the checksum is not a plain sixteen bit sum.
+Correct, and it pointed the wrong way: the operation is `XORWF`, twice, once per byte of the
+accumulator, and section 22 had dismissed `XORWF` hits as "mostly comparisons rather than
+accumulation". Two of them were not.
+
+### The routine
+
+Reading the validator to its end rather than stopping at the marker checks, which is the same
+mistake section 38 recorded in another form:
+
+```
+0x16560  accumulator = 0x4321                 two literals, low byte then high
+         seek header offset 4, follow         TBLPTR = end_addr
+         cursor = end_addr - 2
+         read_u16                             the stored checksum
+         cursor = TBLPTR - 2
+         seek header offset 0                 TBLPTR = the container's first byte
+         count = cursor - TBLPTR              bytes from the start to the stored value
+         count >>= 1                          words, so an odd trailing byte is dropped
+0x16606  loop while count:
+             read_u16
+             accumulator.low  ^= word.low     XORWF, 0x1661E
+             accumulator.high ^= word.high    XORWF, 0x1662C
+             count -= 1
+```
+
+The seed is written as the two literals `0x21` and `0x43` into an adjacent register pair, which is
+searchable, and the search finds it on **all three images**: `0x16562` on the 700, `0x15292` on the
+600 and `0x28E36` on the One, each inside that unit's validator. There is a second site on each
+image, `0x106E0`, `0x119FC` and `0x2440C`, which seeds the same value in code that first tests a
+region selector against `0xFE`. That is the write path and it is not read here.
+
+### The closure
+
+**Fourteen containers, four architectures, three format versions, every one recomputes.** Sizes
+from 7115 bytes to 1672832, and the four arch 8 configs that differ from each other in 73 to 84
+percent of their bytes.
+
+| | |
+|---|---|
+| arch 8 | 880 a, b, c, d |
+| arch 9 | 525 |
+| arch 12 | One programmed, One unprogrammed, One safe mode |
+| arch 14 | 700, 700 second, 600, 600 safe mode, 650 safe mode, 700 safe mode |
+
+`gspm.trailer_checksum` and `trailerChecksum` in `packages/codec`, held equal by the golden
+vectors, and the parse now reports `trailer_checksum_recomputes` as a container check.
+
+### Why it matters, and what it does not cover
+
+This was **the last thing on the critical path for writing**. A generated config the remote will
+accept needs this value right, and nothing else known here is a gate in the same way.
+
+It is a weak checksum and that is worth stating plainly. A word XOR catches any single changed
+byte, which is what the test asserts, but it is blind to a transposition of two words and to any
+even number of identical changes. So it will not catch a corrupted transfer as reliably as its
+sixteen bits suggest, and a writer should not treat a passing checksum as evidence that a config
+is correct, only that the remote will not refuse it outright.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

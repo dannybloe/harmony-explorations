@@ -1517,5 +1517,46 @@ class TestArch12SafeModeConfig(unittest.TestCase):
         self.assertEqual(packaged[:len(blob)], blob)
 
 
+class TestTheTrailerChecksum(unittest.TestCase):
+    """findings.md section 41: a seeded sixteen bit word XOR, derived from the boot validator."""
+
+    SAMPLES = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+               'arch8_config_d', 'h600_safemode_gspm', 'h650_safemode_gspm', 'h700_gspm',
+               'one_safemode')
+
+    def test_it_recomputes_on_every_container_in_the_corpus(self):
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            c = gspm.parse(data)
+            with self.subTest(sample=name):
+                self.assertEqual(gspm.trailer_checksum(c.blob), c.trailer_checksum)
+                self.assertTrue(c.checks['trailer_checksum_recomputes'])
+
+    def test_the_seed_is_what_makes_it_fit(self):
+        """Without the seed nothing matches, which is what pins 0x4321 from the data side."""
+        wrong = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            c = gspm.parse(data)
+            bare = gspm.trailer_checksum(c.blob) ^ gspm.TRAILER_CHECKSUM_SEED
+            wrong += bare == c.trailer_checksum
+        self.assertEqual(wrong, 0)
+
+    def test_a_flipped_byte_is_caught(self):
+        """A word XOR misses a byte swap but not a changed byte, which is the case that matters."""
+        data = lab.load('h600_safemode_gspm')
+        if data is None:
+            self.skipTest('no lab')
+        c = gspm.parse(data)
+        damaged = bytearray(c.blob)
+        damaged[0x40] ^= 0x01
+        self.assertNotEqual(gspm.trailer_checksum(bytes(damaged)), c.trailer_checksum)
+
+
 if __name__ == '__main__':
     unittest.main()
