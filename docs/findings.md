@@ -2977,6 +2977,74 @@ both track the config rather than the model, but matching counts are not identit
 And why the field maximum is 100 rather than 255, when the operand byte could hold more. A decimal
 looking bound in a binary field usually means somebody upstream of the encoder thought in decimal.
 
+## 30. The Harmony 650 is arch 14, and it was the third arch 14 sample sitting unopened
+
+`reference/checksums.md` has named three surviving Harmony firmware packages since the corpus was
+first written down. Two were downloaded and analysed. The third, the Harmony 650 0.4 package, was
+listed with the note "not yet analysed, arch 15" and no copy was ever fetched.
+
+It is arch 14.
+
+### How it was established
+
+Downloaded from the same archive page as the other two, opened with `tools/ezextract.py`, and it
+has the same two region shape as the 700 package: a `Region_2.EZUpgrade` of code and a
+`Region_3.EZHex` holding a container.
+
+| | evidence |
+|---|---|
+| code loads at `0x9000` | `loadaddr.find_base` returns 36864 with 1595 boundary hits of 1614 targets, against 410 for the runner up. The arch 14 execution base. |
+| the code is a firmware image | its own header checksum verifies over all 75392 bytes, version 0.4, entry point `0x1B658` |
+| the container says so itself | section slot 1 states architecture 14, and all ten container checks pass |
+| the container sits where arch 14 safe mode configs sit | recovered flash base `0x020000`, format 1.4, 20 pointer slots, 7115 bytes |
+
+The recovered base is the closure rather than an input: `flash_base` is derived from `end_addr`
+minus the distance to the end marker, so the file independently agrees with the address the
+architecture uses.
+
+Slot 1 is what carries the weight here, because format `0x1400` alone does not separate arch 14
+from arch 9. That is the rule stated in `docs/config-format.md`, applied to a model nobody here had
+looked at.
+
+### Why it matters more than one corrected note
+
+**Three arch 14 safe mode configs now exist, from three models.** The 600's was read off the
+device, the 700's came out of its package, and the 650's out of this one. All three are 7115 bytes
+and their **section tables are byte for byte identical**, across three firmware versions with three
+distinct build timestamps. Two samples were the standard here; three models agreeing makes the
+arch 14 safe mode layout a property of the architecture rather than of a device.
+
+The differences are small and sit where section 24 said they would:
+
+| pair | differing bytes of 7115 |
+|---|---|
+| 650 0.4 against 700 2.8 | 50 |
+| 650 0.4 against 600 0.2 | 77 |
+| 600 0.2 against 700 2.8 | 83 |
+
+The 650's and the 600's were built seventy seven seconds apart, on 18 September 2009, which says
+they came off one generator run for two models.
+
+**And arch 12 is now the thin one.** Arch 14 has three code images and three safe mode configs;
+arch 12 has one of each. The architecture with the popular remote is the architecture with the
+least corroboration.
+
+The container corpus is **fifteen samples** as of this section, not the thirteen the earlier
+sections above were measured on. Two arch 14 safe mode configs joined it after those were written:
+the 600's, read off the device in section 24, and this one. Every claim in this document that was
+stated on thirteen has been rerun on all fifteen and still holds, so the older counts are left as
+written rather than edited, and `docs/config-format.md` carries the current one. The counts there
+are asserted against the sample table in `tests/test_gspm.py` now, since that is the number most
+likely to drift next.
+
+### The general point
+
+Only three Harmony firmware packages have ever been published, and all three are the MyHarmony
+generation. There is **no public firmware at all** for arch 2, 3, 7, 8, 9, 10 or 15, which is seven
+of the eleven architectures concordance names models for and every architecture on Logitech's own
+discontinuation list in `reference/models.md`. For those the only route to an image is `READ_FLASH`
+off a physical remote.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

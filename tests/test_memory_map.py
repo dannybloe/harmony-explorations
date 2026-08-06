@@ -16,6 +16,7 @@ import unittest
 
 import lab
 from harmony import ezfile, firmware, gspm
+from harmony.pic18 import loadaddr
 
 _DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
 _MAPS = ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md', 'memory-map-700.md')
@@ -214,6 +215,68 @@ class TestArch14MapFor700(unittest.TestCase):
         for token in ('+0x9000', '+0xBB80', '0x012B80', '0x021BCB', '0x030000',
                       '76672', '7115', '0x01BB38'):
             self.assertIn(token, text, 'missing from docs/memory-map-700.md: %s' % token)
+
+
+class TestTheHarmony650IsArch14(unittest.TestCase):
+    """The third published firmware package, and the one nobody here had opened.
+
+    `reference/checksums.md` listed it as arch 15 for as long as it went unexamined, which would
+    have put it in the network-transport family alongside the 900 and the 1100. It is arch 14, the
+    same as the 600 on the bench, and that matters twice: it is a third independent arch 14 sample,
+    and it makes the 650 a model whose firmware can be checked against a published image if one is
+    ever connected.
+    """
+
+    def test_the_code_region_loads_at_the_arch_14_base(self):
+        """Derived, not assumed: `find_base` is given the bytes and no hint.
+
+        Reported with the runner-up, per the verification standard, because a base address that
+        wins narrowly is a guess wearing a number.
+        """
+        code = lab.load('h650_code')
+        self.assertEqual(len(code), 75392)
+        best, ranked = loadaddr.find_base(code)
+        self.assertEqual(best.base, 0x9000, 'the arch 14 execution base')
+        self.assertGreater(best.boundary_hits, 3 * ranked[1].boundary_hits,
+                           'and it wins by a margin rather than a nose')
+
+    def test_its_own_header_checksum_verifies(self):
+        code = lab.load('h650_code')
+        h = firmware.parse_header(code)
+        self.assertEqual(h.version, '0.4')
+        self.assertTrue(firmware.verify_checksum(code))
+
+    def test_the_safe_mode_config_states_arch_14_itself(self):
+        """The architecture is read out of section slot 1, which is the only place that states it.
+
+        Everything else about this file would fit arch 9 too, since arch 9 also carries format
+        0x1400. Slot 1 is what separates them.
+        """
+        c = gspm.parse(lab.load('h650_safemode_gspm'))
+        self.assertEqual(c.architecture, 14)
+        self.assertEqual(c.format_version, '1.4')
+        self.assertEqual(c.flash_base, 0x020000)
+        self.assertEqual(len(c.sections), 20)
+        self.assertEqual(c.end_addr - c.flash_base + 4, 7115)
+        self.assertTrue(c.all_checks_pass, c.checks)
+
+    def test_all_three_arch_14_safe_mode_configs_share_one_section_table(self):
+        """600, 650 and 700: three models, three firmware versions, one layout.
+
+        Two samples were the standard here; three across three models is what makes the arch 14
+        safe mode layout a property of the architecture rather than of a device.
+        """
+        blobs = {name: lab.load(name)[:7115]
+                 for name in ('h600_safemode_gspm', 'h650_safemode_gspm', 'h700_gspm')}
+        tables = {name: [(s.slot, s.address, s.spare) for s in gspm.parse(b).sections]
+                  for name, b in blobs.items()}
+        first = tables['h600_safemode_gspm']
+        for name, table in tables.items():
+            self.assertEqual(table, first, '%s has a different section table' % name)
+
+        # And they are genuinely three different files, not one image shipped three times.
+        stamps = {gspm.parse(b).built_at for b in blobs.values()}
+        self.assertEqual(len(stamps), 3, 'three distinct build timestamps')
 
 
 class TestTheConfigurationWords(unittest.TestCase):

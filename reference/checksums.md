@@ -11,7 +11,14 @@ The `.hfw` firmware packages are ZIP archives, retrieved from
 
 * `harmony_one_firmware_3_4.hfw`
 * `harmony_700_firmware_2_8__1_.hfw`
-* `harmony_650_firmware_0_4.hfw` (not yet analysed, arch 15)
+* `harmony_650_firmware_0_4.hfw`, SHA-256
+  `9fa62f79f6755e2b0e742e6152c143055f9bb115be952f5d52b3322c1998b819` (**arch 14**, corrected
+  6 August 2026; this file said arch 15 while the package had not been opened)
+
+Those three are the only Harmony firmware images anybody has published, and all three are the
+MyHarmony generation: arch 12 once and arch 14 twice. **No firmware exists in public for arch 2,
+3, 7, 8, 9, 10 or 15.** For those the only route is `READ_FLASH` off a physical remote, which is
+the argument for owning one. See `reference/models.md` for which models are which architecture.
 
 That page is the only surviving source anyone has found. It is worth archiving, and doing so
 is the most time-sensitive item in the project: these files are irreplaceable and there is no
@@ -30,6 +37,8 @@ hex-encoded inside `<DATA>` XML elements and need decoding to get the binary.
 | `one-3.4-code-base0x20000.bin` | `812350eacfd9ff244fa9ec0a9e96fc1bcb6d3cfa7e274158a0f754b96c35c0f6` | the above, from offset `0x22C6` to the end (the code half) |
 | `700-2.8-Region_2-code-base0x9000.bin` | `ae341df2d4255743de46466dcfca9081bc01d93f10a8ba1072a1c1be341d1cc3` | hex-decode `Region_2.EZUpgrade` from the 700 package |
 | `700-2.8-Region_3-gspm-base0x20000.bin` | `cd5073d0f3b99c4a58fb72a3e790594c68da6ba48b350236b392555297989bea` | the raw payload after the XML header of `Region_3.EZHex`, same package |
+| `650-0.4-Region_2-code-base0x9000.bin` | `591df4b1da4407deb59dbec7c6484a778366ba2ffcef60d5fda00703953b3a8f` | hex-decode `Region_2.EZUpgrade` from the 650 package |
+| `650-0.4-Region_3-gspm-base0x20000.bin` | `8c40897c4e043dfd23c7db6249034394961382aa03a2daac980c07c4da0b018d` | the raw payload after the XML header of `Region_3.EZHex`, same package |
 | `one-safemode-gspm-base0x2000-raw64k.bin` | `b21dff3e9588fab528e0af623a2e061de950092f74befe81f10b1e898cb17335` | `concordance --dump-safemode` from a Harmony One running fw 3.4 |
 | `600-0.2-code-base0x9000-TRUNCATED64k.bin` | `3c923a93216fabdb4f0ba19f7b5123192054c7c84e878e88a9d99d276a5e4db1` | `concordance --dump-safemode` from a Harmony 600 running fw 0.2 |
 | `600-0.2-code-base0x9000-COMPLETE.bin` | `8cf8422a3ec3ce6d8a313af72c4fb2eb3215884352fdedbb7ff060ed8f897841` | the same image, complete, read off the remote by `packages/usb` |

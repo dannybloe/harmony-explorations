@@ -53,8 +53,15 @@ IMAGES = {
     # ever been established from the 700's update package, so this is the arch 14 layout confirmed
     # on the model it is claimed for. 8192 bytes as read; the container is the first 7115.
     'h600_safemode_gspm': '600-0.2-safemode-gspm-base0x20000.bin',
+    # The Harmony 650 update package, the third and last published Harmony firmware. It sat in
+    # reference/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
+    # arch 14, so arch 14 has three firmware images and three safe mode configs where arch 12 has
+    # one of each.
+    'h650_code': '650-0.4-Region_2-code-base0x9000.bin',
+    'h650_safemode_gspm': '650-0.4-Region_3-gspm-base0x20000.bin',
     'one_hfw': 'harmony_one_firmware_3_4.hfw',
     'h700_hfw': 'harmony_700_firmware_2_8.hfw',
+    'h650_hfw': 'harmony_650_firmware_0_4.hfw',
     # Config dumps out of the corpus. The two public sample sets are mirrored from
     # harmony-decompiler; the rest are dumps of specific remotes, so their file names are
     # whatever the contributor's concordance run produced.

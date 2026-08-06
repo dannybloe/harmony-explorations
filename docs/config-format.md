@@ -23,9 +23,14 @@ u16 checksum + end marker
 
 ## Outer container
 
-Validated against **thirteen samples across four architectures**, five base addresses
-(`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and four pointer table
-lengths. Every consistency check passes on all thirteen. See `tests/test_gspm.py`.
+Validated against **fifteen samples across four architectures**, four base addresses
+(`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three pointer table
+lengths (20, 21, 22). Every consistency check passes on all fifteen. See `tests/test_gspm.py`.
+
+**Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
+table lengths. The count was stale, and the other two numbers never matched the list beside them:
+four addresses are named and the lengths are 20, 21 and 22. The counts are computed in
+`tests/test_gspm.py` now rather than written down, so they cannot drift again.
 
 ```
 0x00  char[4]  cookie          per architecture, see the table below
@@ -68,7 +73,7 @@ Needed to turn the pointers into file offsets, and derivable from the blob itsel
 base = end_addr - (offset_of_end_marker - offset_of_cookie)
 ```
 
-Exact on all thirteen samples. Worth noting against concordance's table, which lists arch 9's
+Exact on all fifteen samples. Worth noting against concordance's table, which lists arch 9's
 `config_base` as `0x820000` where the derived value is `0x020000`; bit 23 looks like a flag
 rather than an address bit. Deriving from the data sidesteps the question.
 
@@ -107,7 +112,7 @@ the three bytes before the marker as padding, and recorded an ambiguity: whether
 arch 9 carried a trailing NULL slot or simply more padding. Both readings were wrong in the same
 way. Once the table starts at `0x0B` the length follows from the marker position with no
 remainder, so there is nothing left for padding to be ambiguous about. The evidence is arithmetic
-on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all thirteen samples
+on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all fifteen samples
 across four architectures, where the old reading could only close by subtracting three bytes it
 could not account for. Every address the old parser reported was still correct, because the slot
 it lacked is NULL everywhere. See `docs/findings.md` section 20.
@@ -155,8 +160,8 @@ Known so far:
 
 | Slot | Meaning | Evidence |
 |---|---|---|
-| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | thirteen samples, below |
-| 1 | seven byte record stating the architecture | thirteen samples, below |
+| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | fifteen samples, below |
+| 1 | seven byte record stating the architecture | fifteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
 | 10 | of those, the **action list address table** | nine configs, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
@@ -197,7 +202,7 @@ is where a press meets an action list; the key table is something else.
 
 ### Slot 0: the only `0xFEED` frame
 
-Exactly one frame per container, always at slot 0. Confirmed on thirteen samples across four
+Exactly one frame per container, always at slot 0. Confirmed on fifteen samples across four
 architectures, and confirmed as *exclusive* by validating every `0xFEED` byte pair in each
 container: no other one closes.
 
@@ -209,7 +214,7 @@ container: no other one closes.
 +len   u16      0xBEEF
 ```
 
-The frame therefore occupies `length + 2` bytes, and in all thirteen samples the slot 1 pointer
+The frame therefore occupies `length + 2` bytes, and in all fifteen samples the slot 1 pointer
 lands on exactly that byte. That is an independent confirmation of the length rule, because the
 pointer and the length come from different places in the file.
 
@@ -237,7 +242,7 @@ A fixed seven byte record:
 +0x04  u8[3]    00 00 00
 ```
 
-Confirmed on thirteen samples spanning architectures 8, 9, 12 and 14. Every one has its
+Confirmed on fifteen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
 field on nine of them and from the firmware package the container was extracted from on the
 other three, so each sample is a calibration case rather than a self-consistency check.
@@ -299,7 +304,7 @@ An eleven byte framed record:
 +0x09  u16      0xEFBF         terminator
 ```
 
-Confirmed on thirteen samples across all four architectures, and the field assignment is a search
+Confirmed on fifteen samples across all four architectures, and the field assignment is a search
 result rather than a reading: of the 24 permutations of the four date bytes, times two month
 bases, times seven weekday offsets, **exactly one is consistent with every sample**. See
 `docs/findings.md` section 21.

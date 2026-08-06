@@ -31,6 +31,7 @@ const CONTAINERS = [
   'one34_region2',
   'h700_gspm',
   'h600_safemode_gspm',
+  'h650_safemode_gspm',
   'one_config',
   'one_config_unprogrammed',
   'h600_config',

@@ -48,8 +48,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The 600's safe mode config, read off external flash at 0x020000, which had only ever been
   // established from the 700's package. 8192 bytes as read; the container is the first 7115.
   h600_safemode_gspm: '600-0.2-safemode-gspm-base0x20000.bin',
+  // The Harmony 650 package, the third and last published Harmony firmware. Recorded as arch 15
+  // until it was opened; it is arch 14, so arch 14 has three code images and three safe mode
+  // configs where arch 12 has one of each.
+  h650_code: '650-0.4-Region_2-code-base0x9000.bin',
+  h650_safemode_gspm: '650-0.4-Region_3-gspm-base0x20000.bin',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
+  h650_hfw: 'harmony_650_firmware_0_4.hfw',
   h525_config: 'config.EZHex',
   arch8_config_a: 'Update.EZHex',
   arch8_config_b: 'Update-1.EZHex',

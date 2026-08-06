@@ -310,7 +310,7 @@ remote: it contradicts the recorded direction of the Harmony 700 pair and that i
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
 dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that
-`0x0B + 4 * N` hits the marker offset exactly on thirteen samples where the old reading needed an
+`0x0B + 4 * N` hits the marker offset exactly on fifteen samples where the old reading needed an
 unexplained `- 3`. Read three byte addresses and check `spare`, because a nonzero `spare` read as
 part of a `u32` adds `0x1000000` silently.
 
@@ -431,8 +431,8 @@ over the runner-up before trusting its answer.
 Output here is AI-produced and published as such, so claims are expected to be checkable.
 Established norms:
 
-* Prefer two independent samples. The container is validated against thirteen, spanning four
-  architectures, five base addresses, three format versions and three pointer table lengths.
+* Prefer two independent samples. The container is validated against fifteen, spanning four
+  architectures, four base addresses, three format versions and three pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
   a stored 263, which the code's arithmetic turns into exactly 26.25 us.

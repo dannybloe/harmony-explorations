@@ -12,6 +12,8 @@ arch 9 are the samples that can falsify that claim. They currently confirm it.
 """
 import datetime
 import itertools
+import os
+import re
 import unittest
 
 import lab
@@ -22,6 +24,11 @@ EXPECTED = {
     'one_safemode': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
     'one34_region2': (b'GSPM', 0x002000, '1.6', 22, b'LWJL', 2),
     'h700_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
+    # The other two arch 14 safe mode configs. Both were in the corpus without being in this
+    # table, which is how docs/config-format.md came to say thirteen samples while fifteen
+    # containers were being parsed elsewhere.
+    'h600_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
+    'h650_safemode_gspm': (b'GSPM', 0x020000, '1.4', 20, b'LWJL', 0),
     'one_config': (b'GSPM', 0x040000, '1.6', 22, b'LWJL', 55),
     'one_config_unprogrammed': (b'GSPM', 0x040000, '1.6', 22, b'LWJL', 55),
     'h600_config': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 162),
@@ -42,6 +49,12 @@ KNOWN_ARCHITECTURE = {
     'one_safemode': 12,             # dumped from a Harmony One
     'one34_region2': 12,            # packed inside One firmware 3.4
     'h700_gspm': 14,                # packed inside Harmony 700 firmware 2.8
+    # Read off the same Harmony 600 whose user config header says <PROTOCOL>14</PROTOCOL>.
+    'h600_safemode_gspm': 14,
+    # Packed inside Harmony 650 firmware 0.4, whose code region loads at 0x9000. That is the
+    # arch 14 execution base against arch 12's 0x020000, and it is a property of the firmware
+    # rather than of the container, so this entry stays a calibration case and not a circle.
+    'h650_safemode_gspm': 14,
     'one_config': 12,               # <PROTOCOL>12</PROTOCOL>
     'one_config_unprogrammed': 12,
     'h600_config': 14,
@@ -107,6 +120,41 @@ class TestContainerAcrossSamples(unittest.TestCase):
         self.assertGreaterEqual(len({c.format_version for c in seen}), 3, 'format versions')
         self.assertGreaterEqual(len({c.pointer_count for c in seen}), 3, 'table lengths')
         self.assertGreaterEqual(len({c.architecture for c in seen}), 4, 'architectures')
+
+    def test_the_document_quotes_the_spread_this_table_actually_has(self):
+        """The header of docs/config-format.md states the corpus in numbers, and it drifted.
+
+        It said thirteen samples after two more had been added, five base addresses beside a list
+        of four, and four pointer table lengths where there are three. Counting the table here and
+        asserting the words is the only version of that claim that cannot go stale quietly.
+        """
+        seen = [gspm.parse(lab.load(n)) for n in EXPECTED]
+        counts = {
+            'samples': len(seen),
+            'architectures': len({c.architecture for c in seen}),
+            'bases': len({c.flash_base for c in seen}),
+            'versions': len({c.format_version for c in seen}),
+            'lengths': len({c.pointer_count for c in seen}),
+        }
+        self.assertEqual(counts, {'samples': 15, 'architectures': 4, 'bases': 4,
+                                  'versions': 3, 'lengths': 3})
+
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'docs', 'config-format.md')
+        with open(path, encoding='utf-8') as fh:
+            text = fh.read()
+        self.assertIn('**fifteen samples across four architectures**, four base addresses', text)
+        self.assertIn('three format versions and three pointer table\nlengths (20, 21, 22)', text)
+        # No assertion that the old wording is gone: the correction note below the paragraph
+        # quotes it on purpose, and the two positive checks above already fail if it comes back.
+
+        # Every base address the document names is one the corpus actually has, and vice versa.
+        # Scoped to the sentence that names them, not the whole file, which quotes addresses for
+        # a dozen other reasons.
+        sentence = re.search(r'four base addresses\s*\n?\(([^)]*)\)', text)
+        self.assertIsNotNone(sentence, 'the base address list moved')
+        named = {int(m, 16) for m in re.findall(r'`0x([0-9A-Fa-f]+)`', sentence.group(1))}
+        self.assertEqual(named, {c.flash_base for c in seen})
 
 
 class TestPointerTableLength(unittest.TestCase):
