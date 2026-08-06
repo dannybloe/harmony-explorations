@@ -10,6 +10,12 @@ reverse engineering is the cost of that application. `docs/roadmap.md` is the pl
 sequences the format work by what the application needs next; `docs/plan.md` is the earlier
 proposal, kept for its arguments.
 
+**That application is a separate repository.** It is called
+[FreeHarmony](https://github.com/dannybloe/FreeHarmony) and it holds the product: the Electron
+shell, the interface, the device database and the packaging. This repository holds the knowledge
+and the libraries that make it possible. See "The two repositories" below for where the line runs
+and why it is not drawn between documents and code.
+
 The route is **generating config files**, not modifying firmware. A config is a program in a
 data format and the firmware is its interpreter, so the firmware is the authoritative spec for
 every config field. Reading it turns format work from inference into fact-finding. Never
@@ -26,7 +32,11 @@ propose firmware modification as a route to anything.
    architectures.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
-4. **Monorepo**, so the spec and the codec cannot drift apart.
+4. **Spec and libraries together, product apart.** The documents, the research tooling and the
+   TypeScript libraries stay in one repository, because a codec in a second one drifts away from
+   `docs/config-format.md` and the rule that a finding must be executable stops biting. The
+   application lives in FreeHarmony and consumes those libraries. This supersedes the earlier
+   "monorepo" wording, which put the app here too.
 5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
    IR cross learning between the two remotes, and live RAM polling over USB do most of what the
    emulator was wanted for, at a fraction of the build.
@@ -39,6 +49,32 @@ propose firmware modification as a route to anything.
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the two remotes on the bench,
 with the 700 2.8 image as the arch 14 reference. Arch 8 and arch 9 samples are controls for
 container claims, not targets. Other models are iterated on later.
+
+## The two repositories
+
+| | this repository | FreeHarmony |
+|---|---|---|
+| holds | the spec, the research tooling, the libraries | the application |
+| that is | `docs/`, `src/harmony/`, `tools/`, `tests/`, `packages/` | Electron shell, interface, device database, packaging |
+| licence | MIT | AGPL-3.0 |
+| moves at | the pace of what can be proven | its own pace |
+
+**The line is between library and product, not between documents and code.** The TypeScript
+libraries belong here because they are the spec in executable form: the rule that a confirmed fact
+lands as a structured fact, a written argument and a regression test only works if the code
+implementing it sits next to the documents. Move the codec out and a finding can land in `docs/`
+and never reach the code.
+
+FreeHarmony consumes `packages/codec` and `packages/usb` as a git dependency pinned to a commit,
+until they are stable enough to publish. MIT flows into AGPL without trouble; nothing flows back.
+
+**AGPL for the product is deliberate.** concordance and harmony-decompiler are both GPLv3, so a
+copyleft licence keeps their work available rather than off limits, and GPLv3 permits combining
+with AGPL. The network clause is inert for an application with no network, but the device database
+will plausibly grow a server, and that is where it does work that GPL would not.
+
+The device database will be **CC0**. Contributions are per device, in a format defined here, with
+no field for anything that identifies a remote or its owner. See `docs/roadmap.md` step 6.
 
 ## This repository is public
 
@@ -159,9 +195,10 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 ```
 packages/codec/                 TS: the one config codec, container through compiler
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
-packages/usb/                   TS: the command protocol and the write rails, no hardware run yet
-apps/studio/                    Electron: the application, planned
+packages/usb/                   TS: the command protocol and the write rails, read path measured
 ```
+
+There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
 
 **The write rails live in `packages/usb/src/rails.ts`, and that is where they stay.** A rail
 enforced by a user interface is enforced until somebody writes a script. `WRITES_ENABLED` is off
@@ -175,8 +212,12 @@ effect of a commit.**
 **Enumerating is not opening.** `listHarmony` and `packages/usb/bin/list-remotes.ts` ask the
 operating system what is attached; `openHarmony` claims an irreplaceable device. Anything that only
 needs to know whether a remote is plugged in uses the first. `packages/usb/test/hardware.test.ts` is
-the only test that touches USB, it only looks, and it skips rather than passes when nothing is
-attached.
+the only test that touches USB, and it skips rather than passes when nothing is attached. Its
+enumeration tests only look; the rest open the device and send read commands, and those are gated on
+`HARMONY_HARDWARE_TESTS=1` so a routine `make ts` never claims a remote on its way past. Each test
+asks for **its own model** by product id, so a Harmony One and a Harmony 600 can be attached at once
+and one session covers both architectures. Exactly one of that model, though: two Harmony Ones
+enumerate identically and `openHarmony` refuses an ambiguous selector rather than guessing.
 
 **The test runner is Node's own, not `vitest`.** Node 24 strips the types and runs a `.ts` test
 file directly, so the dependency tree is `typescript` plus `@types/node` and nothing else, where
@@ -186,8 +227,8 @@ than remembered: `erasableSyntaxOnly` is on, so no enums, namespaces or paramete
 (`skipUnless`) that the test declares up front.
 
 **Every npm dependency is pinned to an exact version. No `^`, no `~`, ever**, in any
-`package.json` in the workspace, and that includes transitive additions and anything an
-`apps/studio` later wants. A range means the bytes that get installed are decided by whoever
+`package.json` in the workspace, and that includes transitive additions. FreeHarmony inherits the
+rule rather than being bound by this file. A range means the bytes that get installed are decided by whoever
 published last, not by whoever reviewed the change; a lock file narrows that window but does not
 close it, since any `pnpm add` or lock refresh silently moves the range. Pinning makes a
 dependency update a diff someone has to approve. `pnpm-lock.yaml` is committed as well, so the
@@ -416,10 +457,13 @@ three GUIDs `concordance -i` reports, so that block is personal data and never g
 What still waits:
 
 * what fields 7, 10 and 11 of the version block are versions of, fields 8 and 9 being placed,
-* the concordance cross-check of a full config read on the same remote,
-* `MCU_ID`, which would measure the arch 12 part number that is currently inferred, and which is
-  reachable through a `READ_FLASH` with a top address byte of `0xFE` or `0xFF`,
 * naming ten of GET_VERSION's twelve fields.
+
+Two items came off that list rather than being solved. **The concordance cross-check of a full
+config read is done**: each unit's stored `.EZHex` *is* concordance output, and all three configs
+were read off their remotes and matched it in full, 1672832, 1232237 and 738149 bytes. And
+**`MCU_ID` is unreachable by construction**, per the paragraph above, so it is a finding rather than
+a task.
 
 **The Harmony 600's firmware is no longer truncated.** Read off the remote across both internal
 pages, 70336 bytes, and its own header checksum verifies over all of them where the 65536 byte
@@ -454,11 +498,26 @@ arch 12 runs its application from external NOR. The `0xFF` page is **not** in `t
 purpose: it carries that unit's identity block. **Version block field 9 is the version of the image
 at `0xFF+0x0000`**, which is what `0x16` on the One was.
 
-Step 5 is next: **the read only application.** Electron shell with no network access at all,
-enforced by a content security policy rather than promised. Device identity from `GET_VERSION`, a
-config read with progress, the container summary, the section table, an annotated hex view, and
-every read config saved into the lab corpus automatically, because a dump taken before an
-experiment is the only cheap insurance there is.
+**The 600's safe mode config is measured rather than borrowed.** Its address, external `0x020000`,
+had rested on the 700's update package and no 700 has ever been connected here. Reading it on the
+600 returns a container whose recovered base is `0x020000`, format 1.4, 7115 bytes, all ten checks
+passing. It is the same length as the 700's with an identical section table and 83 differing bytes,
+74 of them in the `LWJL` key table. `docs/findings.md` section 24.
+
+Step 5 is next, and it now spans both repositories.
+
+**Here: the read pipeline.** Read a whole config off a remote and file it in the lab corpus with a
+timestamp, because a dump taken before an experiment is the only cheap insurance there is. No new
+dependencies; `packages/usb` and `packages/codec` already do the work. Also the contribution format
+for the device database, which is step 6's IR extractor with a second requirement on it: it must be
+shareable, so it has no field for a device name, a serial or a timestamp.
+
+**In FreeHarmony: the explorer.** Electron shell with no network access at all, enforced by a
+content security policy rather than promised, and a preload that exposes four named questions rather
+than a general command channel, so the interface cannot express a write even if it is broken. Device
+identity from `GET_VERSION`, a config read with progress (about 30 KB/s measured, so roughly 55
+seconds for a One), the container summary with its ten checks, the section table whose empty label
+column is the project's progress bar, an annotated hex view, and a visible log of every command sent.
 
 Then the first reverse engineering block proper (step 6): label the section pointers by function
 using the proven consumer method plus live RAM polling, read the action list opcode table out of

@@ -23,7 +23,9 @@ Then the internal read window turned out to be two pages rather than one, which 
 claim and, on the 600, **completed a firmware image this project has worked around for months**:
 70336 bytes, its own checksum verifying, against concordance's truncated 65536. Sections 22 and 23.
 
-Next is step 5, the read only application.
+Next is step 5, the read only application, and it is the first step that spans two repositories:
+decision 4 has been revised so that the product lives in
+[FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
 
 ## Context
 
@@ -62,8 +64,15 @@ image is a second sample rather than a stand in. Other models are iterated on la
    (`isa.py`, `disasm.py`, `trace.py`, `loadaddr.py`, 694 lines) and the eventual emulator are
    research tools the app never calls. The repository doctrine "never a second opcode table"
    applies equally to config codecs: there will be exactly one, in TypeScript.
-4. **Monorepo.** The spec, the codec and the tests stay in one place, because a codec in a second
-   repository will drift away from `docs/config-format.md`.
+4. **Spec and libraries together, product apart.** *Revised. This decision originally read
+   "monorepo" and put the application here as well.* The documents, the research tooling, the
+   TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
+   away from `docs/config-format.md`, and the rule that a confirmed fact must land as a regression
+   test only bites while the code sits next to the documents. The **application** is a separate
+   repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), AGPL-3.0, consuming these
+   libraries as a pinned git dependency until they are stable enough to publish. The line runs
+   between library and product, not between documents and code. See "The two repositories" in
+   `CLAUDE.md`.
 5. **Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
@@ -140,10 +149,13 @@ tools/                  unchanged: reverse engineering command line
 packages/codec/         TS: EZHex container, GSPM/AHCM/TPTP, records, round trip compiler
 packages/lab/           TS: locates the private lab directory, so TS tests can skip cleanly
 packages/usb/           TS: HID transport plus the Harmony command protocol
-apps/studio/            Electron: the UI
 tests/                  Python reverse engineering tests stay; TS tests live with their package
 docs/                   plus docs/usb-protocol.md and this roadmap
 ```
+
+No `apps/` directory. This plan named `apps/studio` when the application was going to live here;
+per the revision to decision 4 it is FreeHarmony, a separate repository, and the `apps/*` glob is
+out of `pnpm-workspace.yaml`.
 
 Conventions: pnpm workspaces, `.nvmrc`, TypeScript strict, and **Node's own test runner rather
 than `vitest`**, which this plan named until the dependency tree was actually looked at. `vitest`
@@ -153,8 +165,8 @@ by stripping the types, so the whole tree is the compiler and its type definitio
 packages, and `make audit` reports on them. The cost is real but small: type stripping cannot
 erase enums, namespaces or parameter properties, so `erasableSyntaxOnly` is on and the compiler
 refuses them, and `node:test` has no skip-from-inside-the-test, so `packages/lab` returns a skip
-option instead. Revisit if `apps/studio` wants a browser-side runner; that is a decision for the
-package that needs it, not for the workspace.
+option instead. Revisit if FreeHarmony wants a browser-side runner; that is a decision for the
+repository that needs it, not for this workspace.
 
 TS tests that need real dumps resolve `../lab` or `HARMONY_LAB` and skip cleanly when absent,
 mirroring `tests/lab.py`. The two fixture tables are asserted equal, because a golden vector the
@@ -170,13 +182,14 @@ dependency is added without looking at what it pulls in: that is what rejected `
 ## Milestones
 
 **M0 Infrastructure. Done.** Corpus widened to four architectures, container generalised across all
-of them, monorepo standing with the codec ported and proven equal by golden vectors, and the USB
-command layer written from the firmware with its rails.
+of them, the workspace standing with the codec ported and proven equal by golden vectors, and the
+USB command layer written from the firmware with its rails.
 
-**M1 Explorer, read only.** *Next. The transport is in place and enumeration works; what has not
-happened yet is the first command sent to a remote, which will settle the response side.* The app
-finds the remote, reads its config, and shows the container,
-the section table with whatever labels exist, an annotated hex view, and an IR code export.
+**M1 Explorer, read only.** *Next, and the first milestone that spans two repositories.* The read
+path is measured now, not planned: whole configs come off all three bench remotes byte identical to
+their own dumps. What remains here is filing every read into the corpus automatically; what remains
+in FreeHarmony is the interface that shows the container, the section table with whatever labels
+exist, an annotated hex view, and an IR code export.
 
 **M2 Round trip codec.** Decompile and recompile byte-identical across the whole corpus, and the
 trailer checksum reproducible. This is the gate for any editing at all.
@@ -311,11 +324,11 @@ Still to do, in the order the application needs them:
 * Cross-check the documented protocol against a concordance run on the owner's remotes: same
   bytes on the wire, same answers.
 
-### Step 4: monorepo and the TS codec
+### Step 4: the TypeScript workspace and the codec
 
 * **Done.** Stand up pnpm workspaces, `packages/codec`, `packages/lab` as the fixture resolver,
-  and the test and typecheck commands. `packages/usb` and `apps/studio` arrive with the work that
-  needs them, because a project with no input files is a build error rather than a placeholder.
+  and the test and typecheck commands. `packages/usb` arrives with the work that needs it, because
+  a project with no input files is a build error rather than a placeholder.
   See the conventions above for why the test runner is `node:test` and not `vitest`.
 * **Done.** Port the container logic to `packages/codec`: EZHex container, XML header with
   `BINARYDATASIZE` and the `0x69`-seeded XOR checksum, GSPM family header, derived base address,
@@ -347,20 +360,50 @@ Still to do, in the order the application needs them:
 * `listHarmony` and `packages/usb/bin/list-remotes.ts` enumerate without opening anything, which is
   the distinction that matters: listing reads what the operating system already knows, opening
   claims an irreplaceable device. `packages/usb/test/hardware.test.ts` is the only test that touches
-  real USB, it only looks, and it skips when no remote is attached rather than passing.
-* Nothing in `packages/usb` has run against a remote. What that leaves open is recorded in
-  `remote.ts` itself rather than presented as settled: `READ_FLASH`'s reply code is not
-  established, nor whether the final short chunk is signalled by its length or by the state
-  clearing, nor whether the count on the wire is biased by one.
+  real USB, and it skips when no remote is attached rather than passing. Its enumeration tests only
+  look; the rest open the device and are gated on `HARMONY_HARDWARE_TESTS=1`. Each asks for its own
+  model by product id, so both bench remotes can be attached at once and one session covers both
+  architectures.
+* **Done, on hardware.** The read path is measured on all three bench remotes: whole configs,
+  application firmware and both internal pages, byte identical to each unit's own dumps. The three
+  questions this step left open, `READ_FLASH`'s reply code, how the final short chunk is signalled
+  and whether the wire count is biased, are answered in `docs/usb-protocol.md` section 4.
 
-### Step 5: M1, the explorer
+### Step 5: M1, the explorer, across two repositories
+
+Per the revision to decision 4, this step has a half in each repository.
+
+**Here: the read pipeline and the contribution format.**
+
+* Read a whole config off a remote and file it in the lab corpus automatically, with a timestamp,
+  because a dump taken before an experiment is the only cheap insurance there is. No new
+  dependencies: `packages/usb` and `packages/codec` already do the work, and the measured rate is
+  about 30 KB/s, so roughly 55 seconds for a Harmony One's 1672832 bytes.
+* Define the **device database contribution format**, which is step 6's IR extractor with a second
+  requirement attached: it has to be shareable. One record per device, holding manufacturer, model,
+  protocol and codes. It has **no field** for a device name the owner typed, for a serial, for a
+  build timestamp, or for the set of devices one household owns, because a single code for a
+  television is anonymous and a list of nine specific devices is a fingerprint. That is privacy
+  handled by the shape of the format rather than by a policy, which is the same reasoning as the
+  write rails living in code.
+* This is distinct from a **backup export**, which should be complete and faithful and never
+  leaves the machine. Conflating the two is how the leak happens.
+
+**In FreeHarmony: the interface.** Recorded here because the format work has to serve it.
 
 * Electron shell, single window, no network access at all, with a content security policy that
-  makes that structural rather than a promise.
-* Views: device identity from `GET_VERSION`, config read with progress, container summary, section
-  table, annotated hex view, and a raw JSON export of everything decoded so far.
-* Save every read config into the lab corpus automatically, with a timestamp, because a dump
-  taken before an experiment is the only cheap insurance there is.
+  makes that structural rather than a promise. No UI framework and no bundler: `tsc` to native ES
+  modules, so the dependency tree stays the one this workspace already argued for.
+* The renderer gets **named questions, not a command channel**: list remotes, identify, read config,
+  save to corpus. There is no `send(command, args)`, so a broken or hostile interface cannot express
+  a write. `packages/codec` is pure TypeScript with no Node imports, so parsing happens in the
+  renderer and the privileged side stays small.
+* Views: device identity from `GET_VERSION`, config read with progress, container summary with its
+  ten checks, the section table, an annotated hex view (virtualised, since 1.6 MB is over a hundred
+  thousand lines), and a raw JSON export of everything decoded so far.
+* A visible log of every command sent to the remote. In a project built on restraint, it should be
+  possible to see that nothing happened that was not asked for.
+* Nothing that writes, and no disabled button that hints at it.
 
 ### Step 6: the first reverse engineering block, section labelling
 

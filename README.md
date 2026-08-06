@@ -13,6 +13,12 @@ contained, so the reading, the codec and the USB layer all live here rather than
 dependency, and nothing goes near a network. [docs/roadmap.md](docs/roadmap.md) is the plan of
 record and says which format question is being answered next, and why that one.
 
+**That application is [FreeHarmony](https://github.com/dannybloe/FreeHarmony)**, a separate
+repository, AGPL-3.0. This one holds the specification, the research tooling and the TypeScript
+libraries that read a remote and parse a config, all MIT, and that is deliberate: the libraries are
+the specification in executable form, so they belong next to the documents that argue for them.
+FreeHarmony is the product built on top.
+
 **The route is generating config files, not modifying firmware.** Firmware analysis is a means
 to an end: a config file is a program in a data format, the firmware is the interpreter, so
 the firmware is the authoritative specification for every config field. Reading it turns
