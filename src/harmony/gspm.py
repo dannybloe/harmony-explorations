@@ -340,6 +340,25 @@ HANDLER_TAG_LEAVE = 2
 OPCODE_SELECT_HANDLER = 0x1F
 SELECT_HANDLER_OPERAND_HIGH = 0xFF
 
+# Base slot 7's targets are small images, run length encoded. The section itself was placed in
+# section 40, as the table the screen language's opcode 16 indexes; this is what the entries hold.
+#
+#     +0x00  u8   width in pixels
+#     then a stream of one byte operations:
+#       0x00        end of image
+#       0x80 | n    n pixels of the background, skipped
+#       n           n literal pixels follow, two bytes each
+#
+# A row is exactly `width` pixels and the next one starts as soon as that many are accounted for,
+# so the height is however many rows there are rather than a stored field.
+IMAGE_TABLE_SLOT = 7
+IMAGE_END = 0x00
+IMAGE_SKIP = 0x80
+IMAGE_PIXEL_BYTES = 2
+# Arch 9's images use the same terminator and a different packing, and no arch 9 firmware exists
+# here to read it out of, so `images` refuses that architecture rather than guessing.
+IMAGE_ARCHITECTURES = frozenset({8, 12, 14})
+
 # Base slot 17 is the touch screen hit map, and it is the one section only arch 12 populates,
 # because the Harmony One is the only remote here with a touch panel. Two levels: a page, then the
 # rectangles on it. The firmware walks a page in order and returns the first rectangle containing
@@ -530,6 +549,23 @@ class NumberSender:
     first: List[Instruction]
     middle: List[Instruction]
     last: List[Instruction]
+
+
+@dataclass
+class Image:
+    """One small image out of a base slot 7 set.
+
+    `rows` holds one list per row, `width` long, with None where the encoding skipped a pixel and
+    a sixteen bit value where it supplied one. None is kept distinct from a black pixel because
+    the format distinguishes them and a renderer will need to.
+    """
+    address: int
+    width: int
+    rows: List[List[Optional[int]]]
+
+    @property
+    def height(self) -> int:
+        return len(self.rows)
 
 
 @dataclass
@@ -1369,6 +1405,91 @@ class Container:
                              kind=self.blob[off],
                              duration=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
                              instruction=self._instruction_at(off + 4)))
+        return out
+
+    def image_sets(self) -> Optional[List[List[Optional[int]]]]:
+        """Base slot 7 read one level down: per entry, the address of each image or None.
+
+        ```
+        +0x00  u8   slots
+        +0x01  u16  purpose unestablished
+        +0x03  u24  image[slots]      NULL entries are ordinary and common
+        ```
+
+        The section itself is a plain pointer array, `pointer_array`, and it is what the screen
+        language's opcode 16 indexes. `docs/findings.md` sections 40 and 46.
+        """
+        slot = arch_slot(self.architecture, IMAGE_TABLE_SLOT)
+        entries = self.pointer_array(slot)
+        if entries is None:
+            return None
+        out: List[List[Optional[int]]] = []
+        for entry in entries:
+            off = self.blob_offset_of(entry)
+            if off is None or off >= len(self.blob):
+                return None
+            count = self.blob[off]
+            if off + 3 + 3 * count > len(self.blob):
+                return None
+            addresses = [int.from_bytes(self.blob[off + 3 + 3 * i:off + 6 + 3 * i], 'little')
+                         for i in range(count)]
+            out.append([a or None for a in addresses])
+        return out
+
+    def image(self, address: int, limit: Optional[int] = None) -> Optional['Image']:
+        """Decode the image at an absolute flash address, or None if the stream does not fit.
+
+        Returns None rather than a partial image, because a row that does not come to exactly
+        `width` pixels means the encoding was misread and a half decoded bitmap would hide that.
+        """
+        if self.architecture not in IMAGE_ARCHITECTURES:
+            return None
+        off = self.blob_offset_of(address)
+        if off is None or off >= len(self.blob):
+            return None
+        end = len(self.blob) if limit is None else min(limit, len(self.blob))
+        width = self.blob[off]
+        if width == 0:
+            return None
+        at = off + 1
+        rows: List[List[Optional[int]]] = []
+        row: List[Optional[int]] = []
+        while at < end:
+            op = self.blob[at]
+            at += 1
+            if op == IMAGE_END:
+                return Image(address=address, width=width, rows=rows) if rows and not row else None
+            if op & IMAGE_SKIP:
+                row.extend([None] * (op & 0x7F))
+            else:
+                if at + IMAGE_PIXEL_BYTES * op > end:
+                    return None
+                for _ in range(op):
+                    row.append(int.from_bytes(self.blob[at:at + IMAGE_PIXEL_BYTES], 'little'))
+                    at += IMAGE_PIXEL_BYTES
+            if len(row) == width:
+                rows.append(row)
+                row = []
+            elif len(row) > width:
+                return None
+        return None
+
+    def images(self) -> Optional[List[List['Image']]]:
+        """Every image in base slot 7, grouped by entry, with the NULL slots dropped."""
+        sets = self.image_sets()
+        if sets is None:
+            return None
+        out = []
+        for entry in sets:
+            live = sorted(a for a in entry if a is not None)
+            decoded = []
+            for i, address in enumerate(live):
+                nxt = self.blob_offset_of(live[i + 1]) if i + 1 < len(live) else None
+                picture = self.image(address, nxt)
+                if picture is None:
+                    return None
+                decoded.append(picture)
+            out.append(decoded)
         return out
 
     def touch_pages(self) -> Optional[List[List['TouchArea']]]:

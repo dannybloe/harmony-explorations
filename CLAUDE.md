@@ -644,3 +644,13 @@ is a layout resource rather than user data. `gspm.touch_pages`, `gspm.Container.
 2 is the only one that is neither named nor NULL**: eight bytes on arch 8, 9 and 14 and nine on
 arch 12, with its only seeker call site on the One at `0x2DB68`. What is measured about it is in
 `docs/config-format.md`, marked not established, so nobody mistakes the shape for the answer.
+
+**Base slot 7's targets are decoded**, section 46: small **run length encoded images**, `u8 width`
+then one byte operations where `0x00` ends the image, bit 7 set skips that many background pixels
+and a byte below `0x80` introduces that many literal **two byte** pixels. Rows are exactly `width`
+wide and the height is not stored. 913 images on arch 8, 12 and 14 decode with nothing left over,
+and a one byte pixel fails almost all of them, which is the calibration. **Arch 9 packs it
+differently and the reader refuses that architecture.** They are letters: every set has exactly one
+height, widths vary, and `tools/screen_dump.py --images` draws them. What is **not** established is
+how a string reaches an image, and the obvious reading is ruled out rather than merely unproven:
+the inline codes reach 20, 28 and 52 where the selected set holds 15, 18 and 8 slots.

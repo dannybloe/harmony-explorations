@@ -448,10 +448,39 @@ One of the six recognised pointer arrays. Each entry is a screen program. On arc
 700's 5711 entries are the same two instruction program, queue one action list instruction and end,
 so the table is mostly indirection.
 
-### Base slot 7
+### Base slot 7: the image sets
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
-Its 3 byte target is loaded into `TBLPTR` and followed. What the targets are is *not established*.
+Each entry is a set of small run length encoded bitmaps:
+
+```
++0x00  u8   slots
++0x01  u16  purpose unestablished
++0x03  u24  image[slots]      NULL entries are ordinary and common
+```
+
+and each image
+
+```
++0x00  u8   width in pixels
+```
+
+followed by one byte operations: `0x00` ends the image, a byte with bit 7 set skips that many
+background pixels, and a byte below `0x80` introduces that many literal pixels of **two bytes**
+each. A row is exactly `width` pixels and the next begins as soon as that many are accounted for,
+so the height is not stored.
+
+**Confirmed on 913 images across arch 8, arch 12 and arch 14**: every row comes to exactly `width`
+and every stream ends cleanly. Decoding with a one byte pixel instead fails on almost all of them,
+which is the calibration. **Arch 9 uses a different packing** and `gspm.images` refuses it rather
+than guessing.
+
+They are letters. Every set has exactly one height, widths inside a set vary from 3 to 14, and
+`tools/screen_dump.py --images` draws them as recognisable glyphs.
+
+**How a string reaches an image is not established**, and the obvious reading is ruled out: the
+inline strings carry codes up to 20, 28 and 52 while the set their program selects holds at most
+15, 18 and 8 slots. [findings.md](findings.md) section 46.
 
 ### Base slot 17: the touch screen hit map
 

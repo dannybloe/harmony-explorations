@@ -4778,6 +4778,101 @@ rectangle runs to 4437, which is either the panel's edge or deliberately past it
 
 **Why one code of the eleven, 45, is missing** from the map while the key table has it.
 
+## 46. What base slot 7 points at: run length encoded images
+
+Section 40 placed the slot, as the table the screen language's opcode 16 indexes, and left its
+targets unread. They are small bitmaps, and reading them is how a claim in this project stopped
+being an argument and started being a picture.
+
+### The encoding
+
+Each target is:
+
+```
++0x00  u8   width in pixels
+```
+
+then a stream of one byte operations:
+
+| byte | meaning |
+|---|---|
+| `0x00` | end of image |
+| `0x80` plus n | n pixels of the background, not stored |
+| n, below `0x80` | n literal pixels follow, **two bytes each** |
+
+A row is exactly `width` pixels and the next one begins as soon as that many are accounted for, so
+the height is not stored anywhere; it is however many rows the stream produces.
+
+### The closure, and the wrong answer scoring near zero
+
+913 images across arch 8, arch 12 and arch 14: **every row comes to exactly `width`, and every
+stream ends on `0x00` with no row half finished.** That is a real constraint, because the operations
+are variable length and nothing states a row's boundary, so one wrong pixel size desynchronises
+everything after it.
+
+Which is exactly what a one byte pixel does. Run the same decoder with `IMAGE_PIXEL_BYTES` at 1:
+
+| config | two byte pixel | one byte pixel |
+|---|---|---|
+| Harmony 700 | 130 of 130 | 11 of 130 |
+| Harmony One | 147 of 147 | 0 of 147 |
+| Harmony 880 | 66 of 66 | 6 of 66 |
+
+The calibration this project asks for, on a decode rather than on an address.
+
+**Arch 9 is not covered.** The Harmony 525's images share the `0x00` terminator and nothing else
+that this decoder understands, and no arch 9 firmware exists here, so `gspm.images` refuses that
+architecture rather than producing a plausible wrong bitmap.
+
+### They are letters
+
+The strongest confirmation is not a number. `tools/screen_dump.py --images` draws a set as text,
+and the first set of the Harmony 600's own config comes out as recognisable glyphs: a capital H
+nine pixels wide and fifteen tall, a lower case y, a blank, and s, e, c.
+
+Three properties agree with that.
+
+**Every set has exactly one height**, on all three architectures: 15, 14, 14, 14, 15, 14, ... one
+per set, never two. That is what a line of type looks like and not what a set of icons looks like.
+
+**Widths vary inside a set**, 3 to 14 pixels, so the type is proportional. That one is a majority
+rather than a rule: 110 of the corpus's 126 sets hold more than one width, and the other 16 happen
+to hold glyphs that are all the same width.
+
+**A shape repeats across sets.** In the 700's config 130 images reduce to 88 distinct bitmaps, with
+one appearing seven times; on the One 147 reduce to 143, so that config's sets share almost nothing.
+
+The pixel is sixteen bits and fifteen distinct values occur, dominated by `0xFFFF` and `0x0000`.
+Whether those are RGB565 is not established and does not matter to the decode.
+
+### The entry header
+
+```
++0x00  u8   slots
++0x01  u16  purpose unestablished
++0x03  u24  image[slots]
+```
+
+Eight to eighteen slots, and **NULL entries are ordinary**: the 700's first set has 15 slots and 7
+images. So a set is sparse, which is what a generator shipping only the glyphs something needs
+would produce.
+
+### What is not established, and one reading ruled out
+
+**How a string reaches an image.** Section 40 found the renderer indexing a font table at `0x398`
+by the code minus one, and the obvious reading is that opcode 16 loads that table from the set its
+operand names. The corpus says otherwise: on the Harmony 700 every one of the 472 opcode 16
+instructions selects set 4, which has 15 slots, and the inline strings in the same programs carry
+codes up to **20**. On the One the selected set has 18 slots and codes reach 28; on the 880, 8 slots
+and codes reach 52. Only 125 of the 700's 451 strings stay inside the selected set.
+
+So the codes address something larger than one set, and where `0x398` is loaded from is still the
+open question section 40 left. What is new is that the thing it points into is now decodable, and
+that the simplest guess is measurably wrong rather than merely unproven.
+
+**The two bytes at `+0x01`** of a set header, which are `0x01 0x4B` on the 700 and the 880,
+`0x01 0x47` on the 600, `0x01 0x42` on the 525 and `0x49 0x00` on the One.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

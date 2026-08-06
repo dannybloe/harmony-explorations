@@ -665,8 +665,7 @@ Not optional, and they belong in the code rather than in a document:
 * **Base slot 2**, the only pointer that is neither named nor NULL now that section 45 has taken
   slot 17. Eight bytes, nine on arch 12, with one seeker call site on the One. What is measured is
   in `docs/config-format.md`.
-* **What the targets of base slot 7 hold.** The slot itself is placed, section 40: the screen
-  language's opcode 16 indexes it. Each entry is a count, two bytes, and up to fifteen `u24`
-  pointers with NULLs among them, and what those point at is a third encoding this project has not
-  read: bytes with the high bit set alternating with `0xFFFF` and `0x0000` operands. Worth a look
-  because the glyph table has to be somewhere and every other slot is now named.
+* **How a string reaches a glyph.** Base slot 7's targets are decoded, section 46: run length
+  encoded images that draw as letters. What is not known is the addressing. The renderer indexes a
+  font table at `0x398` by the code minus one, section 40, and the codes overrun the set the
+  program selects, so `0x398` is loaded from somewhere this project has not traced.

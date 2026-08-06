@@ -913,6 +913,131 @@ class TestTheParameterBlock(unittest.TestCase):
                     self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
 
 
+class TestTheImageSets(unittest.TestCase):
+    """findings.md section 46: what base slot 7's entries point at."""
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+
+    @staticmethod
+    def _decode(container, address, limit, pixel_bytes):
+        """The reader's own algorithm with the pixel size as a parameter, for the calibration."""
+        from harmony import gspm
+        off = container.blob_offset_of(address)
+        width = container.blob[off]
+        at, rows, used = off + 1, 0, 0
+        while at < limit:
+            op = container.blob[at]
+            at += 1
+            if op == gspm.IMAGE_END:
+                return rows if used == 0 else 0
+            if op & gspm.IMAGE_SKIP:
+                used += op & 0x7F
+            else:
+                at += pixel_bytes * op
+                used += op
+            if used == width:
+                rows += 1
+                used = 0
+            elif used > width:
+                return 0
+        return 0
+
+    @staticmethod
+    def _addresses(container):
+        """Each image with the offset it must end before: the next image, or the set's header.
+
+        A set's images are laid out immediately before the header that points at them, which is
+        what gives the last one a bound without trusting the stream to stop.
+        """
+        from harmony import gspm
+        slot = gspm.arch_slot(container.architecture, gspm.IMAGE_TABLE_SLOT)
+        headers = container.pointer_array(slot)
+        for header, entry in zip(headers, container.image_sets()):
+            live = sorted(a for a in entry if a is not None)
+            for i, address in enumerate(live):
+                nxt = (container.blob_offset_of(live[i + 1]) if i + 1 < len(live)
+                       else container.blob_offset_of(header))
+                yield address, nxt
+
+    def test_every_image_decodes_with_no_row_left_half_finished(self):
+        from harmony import gspm
+        total = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            sets = c.images()
+            with self.subTest(container=name):
+                if c.architecture not in gspm.IMAGE_ARCHITECTURES:
+                    self.assertIsNone(sets)
+                    continue
+                self.assertIsNotNone(sets)
+                for images in sets:
+                    for image in images:
+                        self.assertGreater(image.height, 0)
+                        for row in image.rows:
+                            self.assertEqual(len(row), image.width)
+                total += sum(len(s) for s in sets)
+        self.assertGreater(total, 900)
+
+    def test_a_one_byte_pixel_scores_near_zero(self):
+        """The calibration: the wrong pixel size has to fail, or the fit above means nothing."""
+        from harmony import gspm
+        for name in ('h700_config', 'one_config', 'arch8_config_a'):
+            c = gspm.parse(lab.load(name))
+            right = wrong = total = 0
+            for address, limit in self._addresses(c):
+                total += 1
+                right += 1 if self._decode(c, address, limit, 2) else 0
+                wrong += 1 if self._decode(c, address, limit, 1) else 0
+            with self.subTest(container=name):
+                self.assertEqual(right, total)
+                self.assertLess(wrong, total // 5)
+
+    def test_a_set_has_one_height(self):
+        """What says these are a line of type rather than a set of icons.
+
+        The height holds for every set without exception. Width is a majority property rather
+        than a rule: sixteen of the corpus's 126 sets happen to hold one width only.
+        """
+        from harmony import gspm
+        sets = varying = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture not in gspm.IMAGE_ARCHITECTURES:
+                continue
+            for index, images in enumerate(c.images()):
+                if not images:
+                    continue
+                sets += 1
+                varying += 1 if len({i.width for i in images}) > 1 else 0
+                with self.subTest(container=name, entry=index):
+                    self.assertEqual(len({i.height for i in images}), 1)
+        self.assertEqual(sets, 126)
+        self.assertGreater(varying, sets * 4 // 5)
+
+    def test_the_codes_overrun_the_selected_set(self):
+        """The reading section 46 rules out, kept so it is not re-derived and believed."""
+        from harmony import gspm
+        c = gspm.parse(lab.load('h700_config'))
+        sets = c.image_sets()
+        seen, queue, selected, codes = set(), list(c.screen_program_roots()), set(), set()
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = c.screen_program(address)
+            if program is None:
+                continue
+            for instruction in program:
+                queue.extend(instruction.targets)
+                if instruction.opcode == 16 and instruction.operands:
+                    selected.add(instruction.operands[0])
+                if instruction.opcode == gspm.SCREEN_TEXT_INLINE and instruction.glyphs:
+                    codes.update(instruction.glyphs)
+        self.assertEqual(selected, {4})
+        self.assertGreater(max(codes), len(sets[4]))
+
+
 class TestTheTouchScreenHitMap(unittest.TestCase):
     """findings.md section 45: base slot 17, populated by the one remote with a touch panel."""
 

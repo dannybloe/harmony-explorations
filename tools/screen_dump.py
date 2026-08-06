@@ -7,10 +7,14 @@ jump and every switch arm until nothing new turns up. Instructions are variable 
 length field, so a program that does not decode is reported rather than skipped: a silent count is
 how a desynchronised walk gets mistaken for a complete one.
 
-Usage:  screen_dump.py <file> [--json] [--all]
+Usage:  screen_dump.py <file> [--json] [--all] [--images]
 
 Without `--all` only programs that do more than queue one action list instruction are printed,
 because most of base slot 11 is exactly that and it buries everything else.
+
+`--images` prints base slot 7 instead: the small run length encoded bitmaps opcode 16 indexes,
+drawn as text. That is how the encoding was checked in the first place, because a bitmap that
+decodes into readable letters is a stronger argument than a row count.
 """
 import json
 import sys
@@ -22,6 +26,23 @@ NAMES = {
     0: 'end', 1: 'repeat', 2: 'draw', 3: 'draw.wide', 4: 'string', 5: 'string.inline',
     16: 'slot7', 17: 'queue', 18: 'switch', 19: 'switch.wide', 20: 'jump', 21: 'arch8',
 }
+
+
+def draw(images):
+    """A set of images side by side, one text line per pixel row.
+
+    `.` is a skipped pixel, `#` a nonzero one and a space a zero one. Keeping those three apart
+    matters: the format distinguishes skipped from black and a two symbol rendering hides it.
+    """
+    height = max(image.height for image in images)
+    lines = []
+    for y in range(height):
+        line = []
+        for image in images:
+            row = image.rows[y] if y < image.height else [None] * image.width
+            line.append(''.join('.' if p is None else ('#' if p else ' ') for p in row))
+        lines.append(' '.join(line))
+    return lines
 
 
 def walk(container):
@@ -94,6 +115,22 @@ def main():
             } for address, program in sorted(programs.items())],
         }, sys.stdout, indent=2)
         print()
+        return
+
+    if '--images' in sys.argv:
+        sets = container.images()
+        if sets is None:
+            print('no images: architecture %s uses a packing this reader does not decode'
+                  % container.architecture)
+            return
+        print('architecture %s, %d sets, %d images'
+              % (container.architecture, len(sets), sum(len(s) for s in sets)))
+        for index, images in enumerate(sets):
+            print('\nset %d, %d images' % (index, len(images)))
+            if not images:
+                continue
+            for line in draw(images):
+                print('    ' + line)
         return
 
     trivial = sum(1 for p in programs.values()
