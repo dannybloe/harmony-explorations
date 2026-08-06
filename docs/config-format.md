@@ -165,9 +165,41 @@ Known so far:
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
 | 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
+| 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
+
+### Base slot 13: the state variable table
+
+**Confirmed on ten configs across four architectures**, and named from the firmware routine that
+loads it rather than from what the bytes look like.
+
+```
++0x00  u16  count           how many variables
++0x02  u16  narrow          how many are stored as one byte
++0x04  u16  wide            how many are stored as two bytes; narrow + wide == count
++0x06  u16  narrow again    the same number a second time, purpose unestablished
++0x08  u24  entry[count]
+```
+
+`8 + 3 * count` equals the section's length exactly, in all ten. Counts run from 24 to 94.
+
+The firmware copies this into RAM as two runs, `narrow` single bytes followed by `wide` pairs, so
+**an index below `narrow` is a one byte variable and an index at or above it is a two byte one**.
+
+The opcodes that index it are `0x70`, `0x71` and `0x72`, in the operand's low byte. Every index in
+every config is below that config's own `count`, and the halves are respected exactly:
+
+| opcode | uses | indices |
+|---|---|---|
+| `0x71` | 2164 | always below `narrow`, matching a handler that compares a byte |
+| `0x70` | 146 | always at or above `narrow`, matching a handler that compares the sixteen bit accumulator |
+| `0x72` | 501 | either half |
+
+Read with `gspm.state_table` and `gspm.state_index`.
+*What an individual variable means, and what the `count` pointers reach, are not established.*
+[findings.md](findings.md) section 35.
 
 ### Base slot 5: the infrared database
 

@@ -3483,6 +3483,132 @@ bank 15 and that reads as hardware when it is not.
 **Everything below `0x65`**, which is a second dispatcher not read here, and everything at `0x80`
 and above, which is one routine not read here.
 
+## 35. Base slot 13 is the state variable table, and the firmware confirms the section table
+
+Section 34 left `0x17E28` as an unnamed lookup that `0x70`, `0x71` and `0x72` all index with a
+byte. Reading it names a section, places a third opcode, and confirms in code the one claim in this
+project that had to be corrected in place.
+
+### What `0x17E28` reads
+
+A table in RAM at `0x0900`, with two halves:
+
+```
+index < threshold:   one byte  at 0x0900 + index,               zero extended to sixteen bits
+index >= threshold:  two bytes at 0x0900 + threshold + 2 * (index - threshold), little endian
+```
+
+The threshold lives at `0x1EA`. So the variables are **narrow first, then wide**, and how wide a
+variable is follows from its index rather than from anything stored beside it.
+
+### Where the table comes from
+
+The initialiser at `0x17974` positions on **config section slot 13** and reads a four field header,
+storing the second field into `0x1EA`. In the container that section is:
+
+```
++0x00  u16  count           how many variables
++0x02  u16  narrow          how many are one byte, and the firmware's threshold
++0x04  u16  wide            how many are two bytes
++0x06  u16  narrow again    the same number a second time, purpose unestablished
++0x08  u24  entry[count]
+```
+
+Checked on all ten configs: `narrow + wide == count`, the fourth field always equals the second,
+and `8 + 3 * count` equals the section's length exactly.
+
+| config | arch | count | narrow | wide | RAM it occupies |
+|---|---|---|---|---|---|
+| 700 | 14 | 94 | 67 | 27 | 121 |
+| 600 | 14 | 74 | 55 | 19 | 93 |
+| 525 | 9 | 24 | 23 | 1 | 25 |
+| One, programmed | 12 | 46 | 45 | 1 | 47 |
+| One, unprogrammed | 12 | 42 | 41 | 1 | 43 |
+| 880 c | 8 | 38 | 37 | 1 | 39 |
+
+"State variables" is one of the four subsystems the format's designer named in harmony-decompiler
+discussion 1, alongside infrared sending, menus and action lists. Two of those four are now named.
+
+### The closure
+
+Every `0x70`, `0x71` and `0x72` index in every config is **below that config's own count**. That is
+already a fit across ten different counts from 24 to 94. But the split is sharper than that:
+
+| opcode | uses | indices |
+|---|---|---|
+| `0x71` | 2164 | **always below `narrow`**, so always a one byte variable |
+| `0x70` | 146 | **always at or above `narrow`**, so always a two byte variable |
+| `0x72` | 501 | either half |
+
+Zero violations, ten configs, four architectures.
+
+Section 34 read the firmware and found that **`0x71` compares a byte variable while `0x70` compares
+the sixteen bit accumulator**. The config data has no way to know that, and it respects the exact
+boundary that each config's own header declares. Two readings from opposite ends meeting on a
+number that varies per config, 67 on the 700 and 55 on the 600 and 45 on the One.
+
+In six of the ten configs the largest index used is `count - 1`, so the last variable is live and
+the count is a size rather than a ceiling.
+
+### Selectors 6 and 7 assign
+
+Section 34 left them as "not comparisons". `0x17D0E` reads the variable through the same lookup,
+adds a sixteen bit delta and clamps against a bound. So `0x70` and `0x71` are one instruction that
+either tests a state variable or updates it, and the selector nibble chooses.
+
+### The section table, confirmed in code
+
+The routine every consumer goes through, `0x10B92`, is four instructions of arithmetic:
+
+```
+offset = 4 * slot
+offset = offset + 0x0B
+seek to the container plus offset
+read one byte and discard it
+follow the three byte pointer that comes next
+```
+
+**That is `0x0B + 4 * slot`, then a spare byte, then a `u24`.** Section 20 corrected this document
+from a `u32` table at `0x0C` to a `{u8 spare; u24 address}` table at `0x0B`, on arithmetic over
+fifteen samples. Here the firmware computes it. The correction is no longer an inference.
+
+### A slot to consumer map, for free
+
+Because `0x10B92` takes the slot in a register that callers load with a literal, one scan gives
+every consumer. On the Harmony 700 2.8 image, 19 call sites:
+
+| base slot | consumer at | what is known |
+|---|---|---|
+| 3 | `0x14956`, `0x14F9A` | the build timestamp, section 21 |
+| 4 | `0x16B98` | |
+| 5 | `0x17EF6` | the infrared database, section 32. The consumer indexes **twice**, group then record, which is the two level structure read from the container |
+| 6 | `0x16816` | |
+| 7 | `0x1851A` | |
+| 8 | `0x0F78A` | key press bindings, section 27 |
+| 9 | `0x1B6FE` | |
+| 10 | `0x10CC0` | the action list table, section 34 |
+| 11 | `0x1881C` | |
+| 12 | `0x174CA`, `0x17596` | |
+| 13 | `0x179A4`, `0x17E8C` | **the state variable table**, this section |
+| 14 | `0x1B312` | |
+| 15 | `0x0F904` | |
+| 16 | `0x19A90` | |
+| 17 | `0x1A70C`, `0x1A788` | |
+
+Slots 0, 1 and 2 are absent because they are read by the loader rather than by a subsystem, and
+slots 18 and 19 are NULL everywhere. Every other slot has a named entry point now, which turns
+labelling the remaining ten from a search into a reading.
+
+### What is not established
+
+**What the `count` pointers in slot 13 point at.** Ninety four of them on the 700, three bytes each.
+Definitions, defaults or names are all plausible and none is checked.
+
+**Why the header repeats `narrow`.** Two fields hold the same number in all ten configs.
+
+**What any individual variable means.** The table is sized and split; nothing here names entry 9,
+which is the one `0x71` reads most.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

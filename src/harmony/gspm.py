@@ -235,6 +235,13 @@ IR_MIN_PULSES = 8
 # `docs/findings.md` section 33.
 OPCODE_SEND_IR = 0x7D
 
+# Base slot 13 is the state variable table, named from the firmware routine that reads it.
+# `docs/findings.md` section 35.
+STATE_TABLE_SLOT = 13
+# Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
+# 0x70 the two byte accumulator, 0x72 either.
+STATE_INDEX_OPCODES = frozenset({0x70, 0x71, 0x72})
+
 
 def is_high_band(instruction: 'Instruction') -> bool:
     """Whether this instruction's operand is a reference into the second operand space.
@@ -255,6 +262,31 @@ class Instruction:
     """
     operand: int
     opcode: int
+
+
+@dataclass
+class StateTable:
+    """Base slot 13, the state variable table's header and its entry pointers."""
+    count: int
+    narrow: int          # variables stored as one byte, indices 0 to narrow - 1
+    wide: int            # variables stored as two bytes, indices narrow to count - 1
+    narrow_again: int    # the header repeats `narrow`; why is not established
+    entries: List[int]
+
+    @property
+    def is_consistent(self) -> bool:
+        return (self.narrow + self.wide == self.count
+                and self.narrow_again == self.narrow
+                and len(self.entries) == self.count)
+
+    def is_narrow(self, index: int) -> bool:
+        """Whether this index reads one byte rather than two."""
+        return index < self.narrow
+
+    @property
+    def ram_bytes(self) -> int:
+        """What the table occupies in the remote's memory once loaded."""
+        return self.narrow + 2 * self.wide
 
 
 @dataclass
@@ -570,6 +602,46 @@ class Container:
         if rest < 4 or rest % 2:
             return None
         return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+
+    def state_table(self) -> Optional['StateTable']:
+        """Base slot 13: how many state variables there are and how wide each one is.
+
+        ```
+        +0x00  u16  count           total number of variables
+        +0x02  u16  narrow          how many of them are one byte
+        +0x04  u16  wide            how many are two bytes; narrow + wide == count
+        +0x06  u16  narrow again    the same value repeated, purpose unknown
+        +0x08  u24  entry[count]
+        ```
+
+        The split is what the firmware's lookup uses: an index below `narrow` reads one byte and
+        an index at or above it reads two, so the widths are a property of the index rather than
+        of the value. `docs/findings.md` section 35.
+        """
+        try:
+            slot = arch_slot(self.architecture, STATE_TABLE_SLOT)
+        except GspmError:
+            return None
+        if slot >= len(self.sections):
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        if off is None or off + 8 > len(self.blob):
+            return None
+        count, narrow, wide, again = (
+            int.from_bytes(self.blob[off + 2 * k:off + 2 * k + 2], 'little') for k in range(4))
+        end = off + 8 + 3 * count
+        if end > len(self.blob):
+            return None
+        entries = [int.from_bytes(self.blob[p:p + 3], 'little')
+                   for p in range(off + 8, end, 3)]
+        return StateTable(count=count, narrow=narrow, wide=wide, narrow_again=again,
+                          entries=entries)
+
+    def state_index(self, instruction: 'Instruction') -> Optional[int]:
+        """The state variable an instruction reads, or None if it does not read one."""
+        if instruction.opcode not in STATE_INDEX_OPCODES:
+            return None
+        return instruction.operand & 0xFF
 
     def ir_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
         """The `(group, index)` an `OPCODE_SEND_IR` instruction names, or None if it is not one.

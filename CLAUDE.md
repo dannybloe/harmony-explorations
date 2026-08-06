@@ -553,6 +553,9 @@ stripped. `docs/findings.md` section 34, `tests/test_interpreter.py`.
 **Part of step 6 is already done, from the config side rather than the firmware.** Base slot 5 is
 **the infrared database**: two levels of pointer array over records of mark and space durations in
 microseconds, decoded and extractable with `tools/ir_extract.py`. `docs/findings.md` section 32.
-Base slot 8 is key press bindings and base slot 10 the action list table, so three of the twenty
-slots are named. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
+Base slot 8 is key press bindings, base slot 10 the action list table and **base slot 13 the state
+variable table**, so four of the twenty slots are named. A scan of the firmware's section seeker
+gives a **named entry point for every slot from 3 to 17**, which turns labelling the rest from a
+search into a reading; the map is in `docs/findings.md` section 35. That section also confirms the
+`0x0B + 4 * slot` table layout **in code** rather than by arithmetic. Opcodes `0x7F`, `0x7C`, `0x7A`/`0x6C` are placed, and `0x07`, `0x0F`, `0x1F`,
 `0x3F` are partitioned into a family that addresses a second operand space, section 31.

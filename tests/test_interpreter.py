@@ -202,5 +202,77 @@ class TestTheComparisonSelector(unittest.TestCase):
         self.assertEqual(worst, 63, 'and it reaches the bound, so 64 is the size not a ceiling')
 
 
+class TestTheStateVariableTable(unittest.TestCase):
+    """findings.md section 35: base slot 13, and the split the firmware's lookup uses."""
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d')
+
+    @staticmethod
+    def _table(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).state_table()
+
+    def test_the_header_is_self_consistent_and_accounts_for_the_section(self):
+        from harmony import gspm
+        counts = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                table = c.state_table()
+                self.assertTrue(table.is_consistent, table)
+
+                slot = gspm.arch_slot(c.architecture, gspm.STATE_TABLE_SLOT)
+                start = c.sections[slot].address
+                after = min([s.address for s in c.sections if s.address > start]
+                            + [c.end_addr])
+                self.assertEqual(8 + 3 * table.count, after - start,
+                                 'the header accounts for the whole section')
+                counts.add(table.count)
+        self.assertGreater(len(counts), 5, 'the count varies, so matching it means something')
+        self.assertEqual((min(counts), max(counts)), (24, 94))
+
+    def test_every_index_is_inside_its_own_config_s_table(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                table = c.state_table()
+                used = [c.state_index(i) for lst in (c.action_lists() or []) for i in lst
+                        if c.state_index(i) is not None]
+                self.assertTrue(used)
+                self.assertLess(max(used), table.count)
+
+    def test_0x71_reads_the_narrow_half_and_0x70_the_wide_half(self):
+        """The closure of section 35.
+
+        The firmware says 0x71 compares a byte and 0x70 compares the sixteen bit accumulator. The
+        config data cannot know that, and it never once crosses the boundary its own header
+        declares, which is a different number in every config.
+        """
+        from harmony import gspm
+        narrow_uses = wide_uses = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            table = c.state_table()
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode == 0x71:
+                        narrow_uses += 1
+                        with self.subTest(image=name, opcode='0x71'):
+                            self.assertTrue(table.is_narrow(i.operand & 0xFF))
+                    elif i.opcode == 0x70:
+                        wide_uses += 1
+                        with self.subTest(image=name, opcode='0x70'):
+                            self.assertFalse(table.is_narrow(i.operand & 0xFF))
+        self.assertEqual((narrow_uses, wide_uses), (2164, 146), 'pin what the claim rests on')
+
+    def test_the_boundary_is_not_the_same_number_in_every_config(self):
+        """Otherwise the previous test would pass on a constant rather than on a match."""
+        boundaries = {self._table(name).narrow for name in self.CONFIGS}
+        self.assertGreaterEqual(len(boundaries), 6)
+
+
 if __name__ == '__main__':
     unittest.main()
