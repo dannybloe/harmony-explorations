@@ -90,6 +90,11 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 docs/roadmap.md             the plan of record: decisions, milestones, current step
 docs/findings.md            the authoritative technical reference
 docs/config-format.md       the config format spec, grows as sections are labelled
+docs/usb-protocol.md        the USB protocol, both directions of every command
+docs/memory-map.md          memory maps: addressing, and how the architectures compare
+docs/memory-map-one.md      where everything lives on a Harmony One, on one page
+docs/memory-map-600.md      the same for the Harmony 600
+docs/memory-map-700.md      the same for the 700, which nobody here has connected
 docs/plan.md                the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md     design for the PIC18 harness, deferred rather than dropped
 src/harmony/                the research library: one shared PIC18 decoder, plus readers

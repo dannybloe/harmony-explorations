@@ -137,6 +137,10 @@ docs/roadmap.md                 THE plan of record: decisions, milestones, seque
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
+docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
+docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
+docs/memory-map-600.md          the same for the Harmony 600
+docs/memory-map-700.md          the same for the 700, entirely unmeasured, a list of what to read
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below

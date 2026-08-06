@@ -2323,6 +2323,10 @@ with a run of `BRA` instructions, so it is a jump table into a callable library.
 The `0xFF` page ends in per unit data. From `0xF000` to the `0xFFC0` bound everything is erased except
 a 64 byte block at `+0xF400`, four bytes at `+0xF580` and eleven bytes at `+0xF640`.
 
+**That list was written from the three offsets predicted in advance, and it is not the whole
+inventory.** Counting the non-erased runs programmatically afterwards turned up two more on the One
+and several on the 600. See "Both `0xFF` pages, counted rather than looked at" in section 23.
+
 ### The closure
 
 The 64 byte block is four 16 byte fields, and `concordance -i` prints three GUIDs for a connected
@@ -2479,6 +2483,42 @@ The 600's actual safe mode is the 24320 byte image at internal `0xFE` `+0x1000`,
 read until now, because arch 14 keeps safe mode in internal flash where arch 12 keeps it in external
 NOR. A rail that said "restore from the safe dump" would have restored the application over the
 application and left the recovery path untouched. The rail is corrected and the image is in the lab.
+
+### Both `0xFF` pages, counted rather than looked at
+
+Writing the two memory maps needed a complete list of what is in those pages rather than a list of
+the addresses somebody had thought to look at, so the non-erased runs were counted by a script.
+That is the "count programmatically, never by eye" rule applied to a region this project had
+already declared mapped, and it found regions nobody had named.
+
+Every run of non-`0xFF` bytes, with runs closer together than 64 bytes merged, since the read
+granularity is 62:
+
+| Offset in the `0xFF` page | Harmony One | Harmony 600 |
+|---|---|---|
+| `+0x0000` | 8438, an image, version 1.6 | 41624, the tail of the application |
+| `+0xE000` | 634, an image, version 3.4 | absent |
+| `+0xEC00` | absent | **121 bytes, unidentified** |
+| `+0xF400` | 64, the identity block | 48, the identity block with its fourth field erased |
+| `+0xF580` | 4 | 4 |
+| `+0xF5C0` | **2, unidentified** | absent |
+| `+0xF640` | 11 | 12 |
+| `+0xF6C0` | absent | **4, unidentified** |
+| `+0xF735` | absent | **3, unidentified** |
+| `+0xFFF8` | **6, unidentified** | **6, unidentified** |
+
+Everything else in both pages is erased. The four bolded rows on the 600 and the two on the One are
+new, and nothing here says what any of them are.
+
+Two of these are worth a remark. The `+0xFFF8` run is at the very top of the page, inside the last
+62 bytes the `0xFFC0` clamp allows, and it is the same length on both remotes; on a PIC18 J-series
+part the configuration words sit at the top of program memory, but not of this page, so the
+resemblance is a prompt to check rather than a reading. And the 600's identity block measures 48
+non-erased bytes against the One's 64, which is not a disagreement: the One's fourth field is
+sixteen zero bytes and the 600's is erased, so both hold three GUIDs and an unused fourth slot.
+
+The two Harmony Ones agree on every run above, including the lengths of the unidentified ones, and
+differ only inside `+0xF400`, `+0xF582` and `+0xF643`.
 
 ### What it does not settle
 
