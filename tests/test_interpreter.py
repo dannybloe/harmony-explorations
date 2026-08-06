@@ -7,6 +7,7 @@ keeping them is what makes this a regression test, the same reason `test_usb_fir
 Everything here is asserted against decoded instructions rather than against a hand written
 listing, so a wrong opcode table in `isa.py` fails these too.
 """
+import collections
 import unittest
 
 import lab
@@ -342,6 +343,99 @@ class TestTheEventMap(unittest.TestCase):
         self.assertEqual((low, high), (10, 39))
         self.assertEqual(max(v for v in values if v < low), low - 1)
         self.assertEqual(min(v for v in values if v > high), high + 1)
+
+
+class TestTheModeTable(unittest.TestCase):
+    """findings.md section 37: base slot 6, and what 0x7E's operand indexes."""
+
+    CONFIGS = TestTheStateVariableTable.CONFIGS
+
+    def test_the_count_is_one_more_than_the_largest_0x7e_operand(self):
+        """Ten counts from 103 to 374, each landing on the maximum plus one.
+
+        Asserted as equality rather than as "in range": a table merely large enough would pass a
+        bounds check, and that would be true of half the config.
+        """
+        from harmony import gspm
+        counts = set()
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                modes = c.mode_table()
+                operands = {i.operand for lst in (c.action_lists() or []) for i in lst
+                            if i.opcode == gspm.OPCODE_ENTER_MODE}
+                self.assertEqual(len(modes), max(operands) + 1)
+                counts.add(len(modes))
+        self.assertGreaterEqual(len(counts), 6)
+        self.assertEqual((min(counts), max(counts)), (103, 374))
+
+    def test_the_event_map_indexes_the_same_table(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                limit = len(c.mode_table())
+                table = c.event_map()
+                for value in list(table.entries.values()) + [table.fallback]:
+                    self.assertLess(value, limit)
+
+    def test_every_mode_address_is_inside_the_container(self):
+        from harmony import gspm
+        for name in self.CONFIGS:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                for address in c.mode_table():
+                    self.assertIsNotNone(c.blob_offset_of(address))
+                    self.assertLess(c.blob_offset_of(address), len(c.blob))
+
+    def test_the_firmware_selects_exactly_two_handler_tags(self):
+        """Tag 7 on the way out and tag 6 on the way in, and nothing else in either image.
+
+        Scanned rather than read off a listing: every literal loaded into the tag register.
+        """
+        from harmony import gspm
+        registers = {'h700_code': 0x3C5, 'h600_code_complete': 0x763}
+        for name, register in registers.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                previous = None
+                tags = collections.defaultdict(int)
+                for _, instr in isa.iter_instructions(code, BASE, 0, len(code)):
+                    if (instr.mnemonic == 'MOVWF'
+                            and (instr.fields.get('f') & 0xFF) == (register & 0xFF)
+                            and previous is not None and previous.mnemonic == 'MOVLW'):
+                        tags[previous.fields['k']] += 1
+                    previous = instr
+                self.assertEqual(dict(tags),
+                                 {gspm.MODE_TAG_ENTER: 1, gspm.MODE_TAG_LEAVE: 1})
+
+    def test_the_slot_map_has_the_same_shape_on_both_images(self):
+        """Section 35 built it on the 700. The 600 agrees site for site."""
+        seekers = {'h700_code': (0x10B92, 0x6DD), 'h600_code_complete': (0x18020, 0x6DA)}
+        shapes = {}
+        for name, (seeker, register) in seekers.items():
+            code = lab.load(name)
+            window = collections.deque(maxlen=6)
+            per_slot = collections.Counter()
+            for addr, instr in isa.iter_instructions(code, BASE, 0, len(code)):
+                window.append(instr)
+                if instr.mnemonic not in ('CALL', 'RCALL', 'GOTO'):
+                    continue
+                if instr.fields.get('target') != seeker:
+                    continue
+                earlier = list(window)[:-1]
+                for i in range(len(earlier) - 1, 0, -1):
+                    if (earlier[i].mnemonic == 'MOVWF'
+                            and (earlier[i].fields.get('f') & 0xFF) == (register & 0xFF)):
+                        for j in range(i - 1, -1, -1):
+                            if earlier[j].mnemonic == 'MOVLW':
+                                per_slot[earlier[j].fields['k']] += 1
+                                break
+                        break
+            shapes[name] = dict(per_slot)
+        self.assertEqual(shapes['h700_code'], shapes['h600_code_complete'])
+        self.assertEqual(sorted(shapes['h700_code']), list(range(3, 18)))
+        self.assertEqual(sum(shapes['h700_code'].values()), 19)
 
 
 if __name__ == '__main__':

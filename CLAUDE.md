@@ -553,8 +553,10 @@ stripped. `docs/findings.md` section 34, `tests/test_interpreter.py`.
 **Part of step 6 is already done, from the config side rather than the firmware.** Base slot 5 is
 **the infrared database**: two levels of pointer array over records of mark and space durations in
 microseconds, decoded and extractable with `tools/ir_extract.py`. `docs/findings.md` section 32.
-Base slot 4 is the firmware event map, base slot 8 key press bindings, base slot 10 the action list
-table and base slot 13 the state variable table, so **five of the twenty slots are named**. Note
+Base slot 4 is the firmware event map, base slot 6 the mode table, base slot 8 key press bindings,
+base slot 10 the action list table and base slot 13 the state variable table, so **six of the twenty
+slots are named**. Opcode `0x7E` enters the mode its operand indexes; an entry has an enter handler
+and a leave handler and the firmware selects no other tag. Note
 that **a section's size is not the gap to the next pointer**: slot 4 holds 125 bytes and the gap is
 up to 1532, because slot 5's infrared group arrays sit in it. `docs/findings.md` section 36. A scan of the firmware's section seeker
 gives a **named entry point for every slot from 3 to 17**, which turns labelling the rest from a

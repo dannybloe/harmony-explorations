@@ -3693,6 +3693,85 @@ What is new is that `0x7E` and slot 4 share it and that thirty entries of it are
 
 **Why the fallback repeats the value for key 0**, in every config.
 
+## 37. Base slot 6 is the mode table, and that places `0x7E`
+
+Section 36 found that opcode `0x7E` and the event map write the same register, without saying what
+the number in it names. It names an entry in base slot 6.
+
+### The table
+
+```
++0x00  u24  count
++0x03  u24  address[count]
+```
+
+A `u24` count, where the six recognised pointer arrays use a `u8` or a `u16`, which is why the
+parser's array heuristic never picked this slot up.
+
+### The closure
+
+**The count is exactly one more than the largest `0x7E` operand, in all ten configs.**
+
+| config | arch | count | largest `0x7E` operand |
+|---|---|---|---|
+| 700 | 14 | 374 | 373 |
+| 600 | 14 | 237 | 236 |
+| 525 | 9 | 114 | 113 |
+| One, programmed | 12 | 268 | 267 |
+| One, unprogrammed | 12 | 111 | 110 |
+| 880 a | 8 | 103 | 102 |
+| 880 b | 8 | 125 | 124 |
+| 880 c, 880 d | 8 | 154 | 153 |
+
+Ten counts spanning 103 to 374, and every one of them lands on the operand maximum plus one. Every
+value in the event map is inside the same range as well.
+
+So **`0x7E` switches to the entry its operand indexes**, and the reason its operand set looked
+strange in section 33's commit is that it is an index into a table nothing had counted yet. The
+gap in its values, 17 to 49 on the 700, is the block base slot 4 reserves for firmware events,
+which is section 36.
+
+### What an entry is
+
+The consumer at `0x16816` on the 700 and `0x14832` on the 600:
+
+1. indexes slot 6 by the current mode number and follows the pointer, keeping the entry's address,
+2. follows a further pointer at offset 6 inside the entry,
+3. reads one byte at the entry's start,
+4. follows the pointer at offset 1 and runs the tagged action lists there with **tag 6**.
+
+The other half is in `0x1679E`, the routine both `0x7E` and the event map call. Before storing the
+new mode it takes the **outgoing** one and runs its tagged lists with **tag 7**.
+
+**Those are the only two tags in either image.** Scanning every literal loaded into the tag
+register finds `6` at one site and `7` at one site, on the 700 and on the 600, and nothing else. So
+an entry has exactly two handlers: one that runs on the way in and one that runs on the way out.
+
+### The name
+
+Called the mode table because that is what the consumer makes it: a set of things the remote is in
+one of at a time, each with an enter handler and a leave handler, switched by an instruction and by
+firmware events.
+
+**It is not the activity list.** A Harmony has a handful of activities and this table has 103 to
+374 entries, so whatever an entry is, there are far more of them than there are activities. Enter
+and leave handlers are exactly what an activity's power on and power off macros would be, so
+activities are plausibly *among* the entries, and that is as far as the evidence goes.
+
+### The slot map holds on the second image
+
+Section 35 built the slot to consumer map on the Harmony 700. The same scan on the complete 600
+image finds **19 call sites covering slots 3 to 17**, with two sites for slots 3, 12, 13 and 17 and
+one for each of the rest: the same shape, site for site. The map is a property of the firmware
+rather than of one build.
+
+### What is not established
+
+**What distinguishes one entry from another**, beyond having two handlers. The byte at offset 0 and
+the pointer at offset 6 are read and not followed here.
+
+**Why there are so many.** 374 on a config with six infrared groups is the number to explain.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

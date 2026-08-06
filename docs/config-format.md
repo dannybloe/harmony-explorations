@@ -166,6 +166,7 @@ Known so far:
 | 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
 | 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
+| 6 | the **mode table**: what `0x7E` and the event map both index | ten configs, four architectures, below |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
@@ -202,6 +203,33 @@ Read with `gspm.event_map`.
 
 **This section is 125 bytes**, not the 419 to 1532 that the distance to the next pointer reports.
 See the warning under "Sections" about what that distance means.
+
+### Base slot 6: the mode table
+
+**Confirmed on ten configs across four architectures.**
+
+```
++0x00  u24  count
++0x03  u24  address[count]
+```
+
+A `u24` count, where the six recognised pointer arrays use a `u8` or a `u16`, so the parser's array
+heuristic does not pick this slot up.
+
+**The count is exactly one more than the largest `0x7E` operand, in every config**, over counts from
+103 to 374. Every value in the event map of base slot 4 is in range too. So `0x7E` and the event map
+both index this table, and `0x7E` is the instruction that **switches to the entry its operand
+names**.
+
+Each entry has two handlers, reached through pointers inside it and run as tagged action lists:
+**tag 7 when the mode is left and tag 6 when it is entered**. Those are the only two tags either
+arch 14 image ever selects.
+
+Read with `gspm.mode_table`.
+
+*It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
+entries. What distinguishes one entry from another is not established.
+[findings.md](findings.md) section 37.
 
 ### Base slot 13: the state variable table
 
@@ -698,7 +726,7 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
 | `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |
-| `0x7E` | 861 | 268 | 0 to 373 | unknown, see below |
+| `0x7E` | 861 | 268 | 0 to 373 | **enter the mode** at this index in base slot 6, above |
 | `0x7D` | 372 | 350 | 0 to 1361 | **send an infrared code**, `{ u8 group; u8 index }`, below |
 | `0x07` | 230 | 8 | 65522 to 65535 | unknown; in the second operand space, above |
 | `0x71` | 708 | 73 | 9 to 33598 | unknown, but the operand splits: bit 15 a flag, high byte a group 0 to 5, low byte always under 64 |

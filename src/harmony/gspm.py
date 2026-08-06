@@ -244,6 +244,15 @@ STATE_TABLE_SLOT = 13
 # config in the corpus. `docs/findings.md` section 36.
 EVENT_MAP_SLOT = 4
 EVENT_MAP_BYTES = 125
+
+# Base slot 6 is the mode table: the things the remote switches between. Opcode 0x7E's operand
+# indexes it, and so do the event map's values. `docs/findings.md` section 37.
+MODE_TABLE_SLOT = 6
+OPCODE_ENTER_MODE = 0x7E
+# The firmware runs an entry's tagged action lists by these two tags and no others, on both
+# arch 14 images: tag 7 for the mode being left, tag 6 for the one being entered.
+MODE_TAG_LEAVE = 7
+MODE_TAG_ENTER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
 STATE_INDEX_OPCODES = frozenset({0x70, 0x71, 0x72})
@@ -630,6 +639,37 @@ class Container:
         if rest < 4 or rest % 2:
             return None
         return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+
+    def mode_table(self) -> Optional[List[int]]:
+        """Base slot 6: the address of every mode the remote can switch between.
+
+        ```
+        +0x00  u24  count
+        +0x03  u24  address[count]
+        ```
+
+        A `u24` count rather than the `u8` or `u16` the six recognised pointer arrays use, which
+        is why `pointer_array` does not pick this slot up. The entries themselves are not laid out
+        immediately after the table, so its size is `3 + 3 * count` and not the gap to slot 7.
+
+        Opcode `OPCODE_ENTER_MODE` indexes this, and so do the event map's values.
+        `docs/findings.md` section 37.
+        """
+        try:
+            slot = arch_slot(self.architecture, MODE_TABLE_SLOT)
+        except GspmError:
+            return None
+        if slot >= len(self.sections):
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        if off is None or off + 3 > len(self.blob):
+            return None
+        count = int.from_bytes(self.blob[off:off + 3], 'little')
+        end = off + 3 + 3 * count
+        if end > len(self.blob):
+            return None
+        return [int.from_bytes(self.blob[p:p + 3], 'little')
+                for p in range(off + 3, end, 3)]
 
     def event_map(self) -> Optional['EventMap']:
         """Base slot 4: what each of the thirty firmware events maps to.
