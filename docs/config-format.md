@@ -159,19 +159,41 @@ Known so far:
 | 1 | seven byte record stating the architecture | thirteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
 | 10 | of those, the **action list address table** | nine configs, below |
-| 8 | **unconfirmed candidate**: per assignment records, possibly bytecode | one controlled pair |
+| 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown | |
 
-Slot 8 is a candidate and not a label. It is the only section whose size changed across a pair of
-configs from one remote whose owner recorded the change as one new sequence plus a few button
-reassignments, and it opens with three byte groups whose third byte is `0x7E` or `0x7F`, which has
-the shape of an opcode with a 16 bit operand. Two other sections were rewritten just as heavily
-without changing size, so the evidence singling out slot 8 is thin. A label has to come from the
-firmware routine that reads the pointer. See [findings.md](findings.md) section 16.
+### Base slot 8: key press bindings
 
-Established negatively, which is firmer: **the key table is not the button to action map.** It is
-byte identical across that pair while the described change reassigned buttons.
+*This was an unconfirmed candidate, described as "per assignment records, possibly bytecode" on the
+strength of being the only section whose size changed in the controlled pair. It is read now.*
+
+```
++0x00  u8 count; { u16 operand; u8 opcode }[count]      one ordinary action list
+       then repeated to the end of the section:
+         u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+         0x00 bytes between records are skipped
+```
+
+An entry is an action list instruction with a tag byte in front. The walk consumes the section
+exactly, on seven configs across architectures 8, 9, 12 and 14, and a walk that starts one byte out
+desynchronises immediately, which is what makes consuming it the validation.
+
+**The tag is a key press.** Under the same `EVENT_MASK` and `SCAN_MASK` split as the key table,
+every tag in every sample is a press, `0x80`, and the scan codes are model specific: 2, 8, 9 and 34
+on architecture 14; 43, 44 and 48 to 53 on architecture 12; 30, 31, 38 and 39 on architecture 9;
+5 to 8, 44 to 46 and 48 on architecture 8.
+
+**The controlled pair closes it.** The owner's account of the one change includes two new additional
+buttons. Slot 8 grew by 8 bytes, an entry is 4, the record count is unchanged, and exactly one
+record went from two entries to four. [findings.md](findings.md) section 27.
+
+Slot 8's `0x7F` instructions also call **every** action list in the final packed run, exactly once
+each, which is the only thing that reaches those lists.
+
+Still established negatively, and still worth stating: **the key table is not the button to action
+map.** It is byte identical across that pair while the described change reassigned buttons. Slot 8
+is where a press meets an action list; the key table is something else.
 
 ### Slot 0: the only `0xFEED` frame
 

@@ -206,6 +206,11 @@ class KeyRecord:
 ACTION_LIST_TABLE_SLOT = 10
 INSTRUCTION_LENGTH = 3
 
+# Base slot 8 holds bindings: one plain action list, then records of instructions that each
+# carry an extra leading byte. `docs/findings.md` section 27.
+BINDING_TABLE_SLOT = 8
+BINDING_LENGTH = 4
+
 
 @dataclass
 class Instruction:
@@ -216,6 +221,28 @@ class Instruction:
     """
     operand: int
     opcode: int
+
+
+@dataclass
+class Binding:
+    """One entry of a base slot 8 record: an action list instruction with a tag in front.
+
+    The tag is a key event code by the same split as the key table, `EVENT_MASK` and
+    `SCAN_MASK`: every tag observed on every architecture is a press with a scan code, and the
+    scan codes differ per model, which is what physical buttons would do. What the buttons are
+    is not established. `docs/findings.md` section 27.
+    """
+    tag: int
+    operand: int
+    opcode: int
+
+    @property
+    def event_type(self) -> int:
+        return self.tag & EVENT_MASK
+
+    @property
+    def scan_code(self) -> int:
+        return self.tag & SCAN_MASK
 
 
 @dataclass
@@ -353,6 +380,53 @@ class Container:
             operand=int.from_bytes(self.blob[off + 1 + 3 * k:off + 3 + 3 * k], 'little'),
             opcode=self.blob[off + 3 + 3 * k])
             for k in range(count)]
+
+    def binding_records(self) -> Optional[List[List['Binding']]]:
+        """Base slot 8, parsed: a leading action list, then records of tagged instructions.
+
+        ```
+        +0x00  u8 count; { u16 operand; u8 opcode }[count]     one ordinary action list
+               repeated:
+                 u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+                 0x00 bytes between records are skipped
+        ```
+
+        The leading list is what fixes the offset the records start at: `1 + 3 * count` lands
+        exactly on the first record in every sample. Returns None when the walk cannot consume
+        the section, which is the only validation available and is also the point: a wrong
+        reading of the header desynchronises immediately rather than producing plausible
+        records. `docs/findings.md` section 27.
+        """
+        if self.architecture is None:
+            return None
+        slot = arch_slot(self.architecture, BINDING_TABLE_SLOT)
+        if slot >= len(self.sections) or self.sections[slot].is_null:
+            return None
+        start = self.blob_offset_of(self.sections[slot].address)
+        length = self.section_length(slot)
+        if start is None or length is None:
+            return None
+        body = self.blob[start:start + length]
+        if not body:
+            return None
+
+        records: List[List[Binding]] = []
+        at = 1 + INSTRUCTION_LENGTH * body[0]
+        while at < len(body):
+            count = body[at]
+            if count == 0:          # padding between records
+                at += 1
+                continue
+            end = at + 1 + BINDING_LENGTH * count
+            if end > len(body):
+                return None
+            records.append([
+                Binding(tag=body[at + 1 + 4 * k],
+                        operand=int.from_bytes(body[at + 2 + 4 * k:at + 4 + 4 * k], 'little'),
+                        opcode=body[at + 4 + 4 * k])
+                for k in range(count)])
+            at = end
+        return records
 
     def action_lists(self) -> Optional[List[List[Instruction]]]:
         """Every action list the table at base slot 10 addresses, in table order."""

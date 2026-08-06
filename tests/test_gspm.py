@@ -664,6 +664,79 @@ class TestActionLists(unittest.TestCase):
                 self.assertGreater(hits, 10 * expected,
                                    'no more hits than coincidence would give')
 
+    def test_slot_8_parses_as_bindings_and_consumes_the_section(self):
+        """
+        docs/findings.md section 27. A leading plain action list, then records of instructions
+        with a tag byte in front.
+
+        Consuming the section exactly is the validation, because a walk that starts one byte out
+        desynchronises and runs off the end rather than producing plausible records.
+        """
+        expected = {
+            'h700_config': (354, 765), 'h700_config_2': (354, 767),
+            'h600_config': (191, 403), 'one_config': (268, 883),
+            'h525_config': (82, 216), 'arch8_config_a': (100, 466),
+        }
+        for name, (records, entries) in expected.items():
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                recs = c.binding_records()
+                self.assertIsNotNone(recs, 'the walk did not consume the section')
+                self.assertEqual(len(recs), records)
+                self.assertEqual(sum(len(r) for r in recs), entries)
+
+    def test_every_binding_tag_is_a_key_press_and_the_codes_are_model_specific(self):
+        """
+        Four architectures, no exception: the tag's event bits are always 0x80. And the scan
+        codes move between models, which is what physical buttons would do and what an abstract
+        field would have no reason to do.
+        """
+        scans = {}
+        for name in ('h700_config', 'h600_config', 'one_config', 'h525_config', 'arch8_config_a'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                entries = [b for r in c.binding_records() for b in r]
+                self.assertGreater(len(entries), 100)
+                self.assertEqual({b.event_type for b in entries}, {gspm.EVENT_PRESS})
+                scans[name] = frozenset(b.scan_code for b in entries)
+        self.assertEqual(scans['h700_config'], scans['h600_config'], 'same architecture, same keypad')
+        self.assertNotEqual(scans['h700_config'], scans['one_config'])
+        self.assertNotEqual(scans['h700_config'], scans['h525_config'])
+
+    def test_the_controlled_pair_gained_exactly_two_bindings(self):
+        """
+        The closure. The owner's account of the single change includes two new additional
+        buttons; slot 8 grew by 8 bytes, an entry is 4, and the growth is one record going from
+        two entries to four with the record count unchanged.
+        """
+        a = gspm.parse(lab.load('h700_config')).binding_records()
+        b = gspm.parse(lab.load('h700_config_2')).binding_records()
+        self.assertEqual(len(a), len(b), 'the number of records did not change')
+        self.assertEqual(sum(len(r) for r in b) - sum(len(r) for r in a), 2)
+
+        def sizes(recs):
+            counted = {}
+            for r in recs:
+                counted[len(r)] = counted.get(len(r), 0) + 1
+            return counted
+        before, after = sizes(a), sizes(b)
+        self.assertEqual(after[2] - before[2], -1, 'one record left the two entry group')
+        self.assertEqual(after[4] - before[4], +1, 'and arrived in the four entry group')
+
+    def test_slot_8_calls_every_list_in_the_final_run_exactly_once(self):
+        """The same cover as section 26, now from the record parse rather than a byte sweep."""
+        for name in ('h700_config', 'h600_config'):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                ends = self._runs(c)
+                first, last = ends[-2] + 1, ends[-1]
+                calls = [b.operand for r in c.binding_records() for b in r if b.opcode == 0x7F]
+                final = [o for o in calls if first <= o <= last]
+                self.assertEqual(sorted(final), list(range(first, last + 1)),
+                                 'not a cover of the final run, once each')
+                # And it calls plenty of lists outside that run as well.
+                self.assertGreater(len(calls) - len(final), 100)
+
     def test_two_opcodes_carry_signed_operands(self):
         """
         Also section 26. `0x07` and `0x1F` never carry a value below 0xE800, which read as

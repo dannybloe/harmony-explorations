@@ -2768,6 +2768,95 @@ configs, which is itself odd for an index, and `0x71` at `0x833E` on the 700 aga
 
 Neither is claimed as a meaning. They are constraints on what the meanings can be.
 
+## 27. Base slot 8 is bindings: a key press, and the action list it runs
+
+Section 26 found that slot 8 reaches the action lists nothing else calls, and left its layout
+unread. It reads, and it reads completely.
+
+### The format
+
+```
++0x00  u8 count; { u16 operand; u8 opcode }[count]      one ordinary action list
+       then repeated to the end of the section:
+         u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+         0x00 bytes between records are skipped
+```
+
+An entry is an action list instruction with **one extra byte in front**. The leading plain list is
+what fixes where the records start: `1 + 3 * count` from the section's first byte lands exactly on
+the first record, in every sample.
+
+The walk consumes every byte, on every config in the corpus, across four architectures:
+
+| Sample | arch | bytes | records | entries |
+|---|---|---|---|---|
+| 700 user config | 14 | 3592 | 354 | 765 |
+| 600 user config | 14 | 1963 | 191 | 403 |
+| One user config | 12 | 3928 | 268 | 883 |
+| 88x class config | 8 | | 100 | 466 |
+| 525 config | 9 | 1086 | 82 | 216 |
+| One safe mode config | 12 | | 30 | 30 |
+
+A walk that starts one byte out desynchronises immediately and runs off the end, so consuming the
+section exactly is the validation. That is also how the leading list was found: the record walk only
+works from offset `1 + 3 * count`, and nothing else about the section suggested a header.
+
+### The tag is a key press
+
+Under the key code split from section 17, `EVENT_MASK` and `SCAN_MASK`, **every tag in every sample
+is a press**, `0x80`, with no exceptions across four architectures. The scan codes are a small set
+and the set differs per model:
+
+| Architecture | tags | scan codes |
+|---|---|---|
+| 14, the 600 and 700 | `82 88 89 A2` | 2, 8, 9, 34 |
+| 12, the One | `AB AC B0 B1 B2 B3 B4 B5` | 43, 44, 48 to 53 |
+| 9, the 525 | `9E 9F A6 A7` | 30, 31, 38, 39 |
+| 8, the 88x class | `85 86 87 88 AC AD AE B0` | 5 to 8, 44 to 46, 48 |
+
+Four buttons on architectures 14 and 9, eight on 12 and 8. Different keypads carrying different
+scan codes is what physical buttons would do; a field that meant something abstract would have no
+reason to move between models.
+
+Within a record the tags always appear in the same order, and only certain subsets occur. On the
+700 the shapes are `(89, A2)` 201 times, `(89, 88, A2, 82)` 65 times, `(A2)` 58, `(89)` 12,
+`(88, 82)` 10, `(88)` 5.
+
+### What closes it: the controlled pair
+
+The two Harmony 700 configs differ by one documented change, recorded by their owner: one new
+sequence, one reassigned standard button, **two new additional buttons**, no device touched. Section
+16 established slot 8 as the only section whose size changed.
+
+It grew by **8 bytes**. An entry is 4 bytes, so that is two entries. And the record inventory says
+exactly where they went: the record count is 354 in both, while two entry records go from 212 to
+211 and four entry records from 65 to 66. **One record gained two entries.**
+
+Two new buttons in the owner's account, two new bindings in the file, in a single record. The
+prediction was made by somebody who had never seen the format and the count was produced by a
+parser that knows nothing about their description.
+
+### Slot 8 and the action lists
+
+With the correct parse, section 26's open question answers itself. Slot 8's `0x7F` instructions call
+610 action lists on the 700 and 308 on the 600. Of those, **381 and 199 land in the final run, cover
+it exactly, and each list is called once**; the remaining 229 and 109 call lists in the other runs.
+
+So the final run is the set of lists that only a binding reaches, and slot 8 calls into the general
+population as well.
+
+### Not claimed
+
+Which physical buttons those scan codes are. The mapping from scan code to a button somebody can
+point at is the experiment in `docs/roadmap.md` step 6, and it needs a remote and a finger.
+
+What a record corresponds to. 354 of them on the 700 against 6 devices and a handful of activities
+means a record is something finer, and "a screen of soft buttons" is a guess that fits the counts
+without being tested.
+
+And the other opcodes in these records. `0x7F` is a call, per section 26; `0x7E` and the rest are
+as unread here as they are in slot 10.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
