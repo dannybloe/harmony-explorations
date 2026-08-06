@@ -164,7 +164,7 @@ Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
 
 ## Sections
 
-Thirteen of the twenty base slots are named. The method that named them is described in
+Fourteen of the twenty base slots are named. The method that named them is described in
 [roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
 variable, so finding the consumer of that variable labels the section by function. The infrared
 section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
@@ -191,7 +191,7 @@ Known so far:
 | 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
 | 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | fifteen samples, three images, below |
 | 6 | the **mode table**: what `0x7E` and the event map both index | ten configs, four architectures, below |
-| 15 | a table whose **entry count the firmware demands**: 9 on arch 14, 11 on arch 12 | ten configs, three images |
+| 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | thirteen containers, two images, below |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 7 | a pointer array **indexed by opcode 16 of the screen language** | three images, below |
@@ -420,6 +420,59 @@ so the table is mostly indirection.
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
 Its 3 byte target is loaded into `TBLPTR` and followed. What the targets are is *not established*.
+
+### Base slot 15: the parameter block
+
+**Confirmed on thirteen containers across four architectures**, and every length claim below is a
+literal in the firmware rather than a count of what the corpus carries.
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address a group
+
+```
++0x00  u8   entries
++0x01  u16  value[entries]
+```
+
+The groups are laid out in one run immediately before the pointer array. On arch 8, arch 9 and
+arch 14 the run is exactly the sum of the groups; arch 12 has twelve spare bytes in it.
+
+**The firmware demands the section's count and every group's length.** The count is 9 on arch 14
+and 11 on arch 12. Each group is read only when its length matches the number that build expects,
+and otherwise the subsystem silently uses constants compiled into the firmware:
+
+| group | arch 14 | arch 12 |
+|---|---|---|
+| 0 | 1 | 1 |
+| 1 | 4 | 6 |
+| 2 | 1 | |
+| 3 | 4 | |
+| 4 | | 6 |
+| 5 | 14 | 16 |
+| 6 | 14 | |
+| 7 | 1 | 1 |
+| 9 | | 6 |
+| 10 | | 8 |
+
+A blank is a group with no call site on the image that was read, not a length of zero. Arch 8 and
+arch 9 are absent because no firmware for either exists here. `gspm.PARAMETER_GROUP_COUNTS` carries
+this table and `gspm.parameter_group_lengths_match` checks a container against it.
+
+**A group index is not portable between architectures.** Arch 9's five groups line up with a subset
+of arch 12's in a different order, which is unlike every other indexed structure in this format.
+
+Group 7 is a single value handed to the one second scheduler, with a firmware default of 10, and
+every config carries 0. Groups 5 and 6 are two versions of a non decreasing curve walked against a
+measurement to produce a level, and reading them as battery millivolts fits the cells those remotes
+take but is *a conjecture, not established*. Group 4 is `96, 98, 308, 310, 768, 770` in all twelve
+arch 8, 12 and 14 containers, and what it thresholds is *not established*. The rest are
+*not established*.
+
+Read with `gspm.parameter_groups`. [findings.md](findings.md) section 44.
 
 ### Base slot 12: the timer table
 

@@ -828,6 +828,91 @@ class TestTheScreenInterpreter(unittest.TestCase):
         self.assertIsNone(c.screen_program(c.end_addr + 1))
 
 
+class TestTheParameterBlock(unittest.TestCase):
+    """findings.md section 44: base slot 15, and the length the firmware demands of every group."""
+
+    # Every container, including the three safe mode ones, which carry a full parameter block
+    # where they carry no timers at all.
+    CONTAINERS = TestTheStateVariableTable.CONFIGS + (
+        'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    # The guard routine and its call sites, per image. Recorded because finding them again is a
+    # search, the same reason the rest of this file records addresses.
+    GUARDS = {'h700_code': (0x9000, 0x0F8F0), 'one34_code': (0x20000, 0x23262)}
+
+    @staticmethod
+    def _groups(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).parameter_groups()
+
+    def test_the_groups_account_for_the_run_they_sit_in(self):
+        """No slack between groups, which is what says the record shape is right."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            groups = c.parameter_groups()
+            addresses = c.pointer_array(gspm.arch_slot(c.architecture, gspm.PARAMETER_SLOT))
+            span = max(a + 1 + 2 * len(g) for a, g in zip(addresses, groups)) - min(addresses)
+            with self.subTest(container=name):
+                slack = span - sum(1 + 2 * len(g) for g in groups)
+                # Arch 12 is the only one with spare bytes in the run, and it has twelve.
+                self.assertEqual(slack, 12 if c.architecture == 12 else 0)
+
+    def test_every_group_is_the_length_its_firmware_demands(self):
+        """The closure: fourteen literals off two images, against thirteen containers."""
+        from harmony import gspm
+        checked = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            match = c.parameter_group_lengths_match()
+            if match is None:                      # arch 8 and arch 9, no firmware read
+                continue
+            checked += 1
+            with self.subTest(container=name):
+                self.assertTrue(match, [len(g) for g in c.parameter_groups()])
+        self.assertGreaterEqual(checked, 8)
+
+    def test_the_two_architectures_demand_different_lengths(self):
+        """Otherwise the fit above would be one constant matching everywhere."""
+        from harmony import gspm
+        arch14 = gspm.PARAMETER_GROUP_COUNTS[14]
+        arch12 = gspm.PARAMETER_GROUP_COUNTS[12]
+        shared = set(arch14) & set(arch12)
+        self.assertTrue(shared)
+        self.assertNotEqual([arch14[i] for i in sorted(shared)],
+                            [arch12[i] for i in sorted(shared)])
+
+    def test_the_guard_demands_the_section_count_too(self):
+        """Section 38's literal, re-asserted here because it is the same routine."""
+        expected = {'h700_code': 9, 'one34_code': 11}
+        for name, (base, addr) in self.GUARDS.items():
+            with self.subTest(image=name):
+                self.assertIn(expected[name], literals_at(name, base, addr, 24))
+
+    def test_the_threshold_group_is_the_same_in_every_container_that_has_it(self):
+        """Group 4 is identical on arch 8, 12 and 14, which arch 9 does not share."""
+        from harmony import gspm
+        seen = set()
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture == 9:
+                continue
+            seen.add(tuple(c.parameter_groups()[4]))
+        self.assertEqual(seen, {(96, 98, 308, 310, 768, 770)})
+
+    def test_the_level_curves_do_not_decrease(self):
+        """Groups 5 and 6 are walked by counting how many entries a measurement exceeds."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture == 9:
+                continue
+            for index in (5, 6):
+                curve = c.parameter_groups()[index]
+                with self.subTest(container=name, group=index):
+                    self.assertGreaterEqual(len(curve), 14)
+                    self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
+
+
 class TestTheTimerTable(unittest.TestCase):
     """findings.md section 43: base slot 12, and the two instructions that drive it."""
 

@@ -340,6 +340,21 @@ HANDLER_TAG_LEAVE = 2
 OPCODE_SELECT_HANDLER = 0x1F
 SELECT_HANDLER_OPERAND_HIGH = 0xFF
 
+# Base slot 15 is the parameter block: numbered groups of sixteen bit constants, laid out
+# contiguously and reached through the usual count prefixed pointer array. The firmware reads a
+# group only when its length is exactly what that build expects, and falls back to a compiled in
+# default otherwise, which is why `PARAMETER_GROUP_COUNTS` is a rail rather than a curiosity.
+PARAMETER_SLOT = 15
+# Architecture -> group index -> the length that architecture's firmware demands. Read off the
+# call sites of the guard routine, `0x0F8F0` on the Harmony 700 and `0x23262` on the One, so these
+# are what the code compares against rather than what the corpus happens to carry. Groups absent
+# from a row have no call site on the image that was read, not a length of zero. No image exists
+# for arch 8 or arch 9, so they have no row at all.
+PARAMETER_GROUP_COUNTS: Dict[int, Dict[int, int]] = {
+    14: {0: 1, 1: 4, 2: 1, 3: 4, 5: 14, 6: 14, 7: 1},
+    12: {0: 1, 1: 6, 4: 6, 5: 16, 7: 1, 9: 6, 10: 8},
+}
+
 # Base slot 12 is the timer table. Two more branches of the same descending ladder start and
 # cancel a timer, and the operand's low byte is the index into this section in both. A record
 # says how long to wait and which single instruction to queue when the wait is over.
@@ -1324,6 +1339,55 @@ class Container:
                              duration=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
                              instruction=self._instruction_at(off + 4)))
         return out
+
+    def parameter_groups(self) -> Optional[List[List[int]]]:
+        """Base slot 15: the parameter block, as a list of groups of sixteen bit constants.
+
+        ```
+        +0x00  u8   count
+        +0x01  u24  address[count]
+        ```
+
+        and at each address
+
+        ```
+        +0x00  u8   entries
+        +0x01  u16  value[entries]
+        ```
+
+        The section's own count is demanded by the firmware, 9 on arch 14 and 11 on arch 12, and so
+        is each group's length: see `PARAMETER_GROUP_COUNTS`. `docs/findings.md` section 44.
+        """
+        slot = arch_slot(self.architecture, PARAMETER_SLOT)
+        if slot >= len(self.sections) or self.sections[slot].is_null:
+            return None
+        addresses = self.pointer_array(slot)
+        if addresses is None:
+            return None
+        out = []
+        for address in addresses:
+            off = self.blob_offset_of(address)
+            if off is None or off >= len(self.blob):
+                return None
+            entries = self.blob[off]
+            if off + 1 + 2 * entries > len(self.blob):
+                return None
+            out.append([int.from_bytes(self.blob[off + 1 + 2 * i:off + 3 + 2 * i], 'little')
+                        for i in range(entries)])
+        return out
+
+    def parameter_group_lengths_match(self) -> Optional[bool]:
+        """Whether every group the firmware knows about is the length it demands.
+
+        None when no firmware for this architecture has been read, which is arch 8 and arch 9. A
+        writer that gets this wrong is not refused: the subsystem quietly uses its own defaults.
+        """
+        wanted = PARAMETER_GROUP_COUNTS.get(self.architecture)
+        groups = self.parameter_groups()
+        if wanted is None or groups is None:
+            return None
+        return all(index < len(groups) and len(groups[index]) == length
+                   for index, length in wanted.items())
 
     def timer_reference(self, instruction: 'Instruction') -> Optional[Tuple[bool, int]]:
         """`(starts, index)` for an instruction that starts or cancels a timer, else None.

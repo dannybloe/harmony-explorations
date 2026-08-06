@@ -3873,8 +3873,8 @@ window is not a routine: read to the `RETURN` before attributing anything to a c
 The contents of slots 7, 9, 11, 12, 14, 15, 16 and 17. Every one now has a consumer address on at
 least one image and a structure, which is the difference between a search and a reading.
 
-Slots 9, 14 and 16 came off that list in section 39, slots 7 and 11 in section 40, and slot 12
-in section 43. Slots 15 and 17 are what remain.
+Slots 9, 14 and 16 came off that list in section 39, slots 7 and 11 in section 40, slot 12 in
+section 43 and slot 15 in section 44. Slot 17 is what remains.
 
 ## 39. Three more sections named, and what the accumulator computes
 
@@ -4134,7 +4134,7 @@ the corpus exercises because nothing in the corpus has a record.
 
 **Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
 
-Slots 7 and 11 came off that list in section 40, and slot 12 in section 43.
+Slots 7 and 11 came off that list in section 40, slot 12 in section 43 and slot 15 in section 44.
 
 ## 40. The second interpreter, and base slot 11
 
@@ -4549,6 +4549,123 @@ reachable; nothing here says that index 3 on the 600 is the backlight.
 **Where the four RAM entries are copied back from the scheduler.** The poll routine tests the RAM
 entry's remaining while the scheduler counts down its own sixteen bit copy, and the routine that
 reconciles the two was not read.
+
+## 44. Base slot 15 is the parameter block, and the firmware checks every group's length
+
+Section 38 found that the firmware compares this section's entry count against a literal, 9 on
+arch 14 and 11 on arch 12, and could say no more than "a membership test over a per architecture
+fixed size set". It is not a set and it is not a membership test. It is a **block of numbered
+parameter groups**, and the count check is one of eight of the same kind.
+
+### The shape
+
+```
++0x00  u8   count
++0x01  u24  address[count]
+```
+
+and at each address
+
+```
++0x00  u8   entries
++0x01  u16  value[entries]
+```
+
+The groups sit in one contiguous run immediately before the pointer array, and on arch 8, arch 9
+and arch 14 the run's length is **exactly** the sum of the groups, so nothing is unaccounted for.
+On arch 12 there are twelve spare bytes in the run, which is the only untidy number here.
+
+### The guard, which is the whole point
+
+`0x0F8F0` on the Harmony 700 and `0x23262` on the One are one routine with two arguments, a byte
+offset into the pointer array and an expected length:
+
+```
+seek base slot 15
+read u8 count, and return 0 unless it is 9 (11 on the One)
+TBLPTR += offset
+follow the three byte pointer
+read u8 and return whether it equals the expected length
+```
+
+Every caller does the same thing with the answer: if the length is right it reads that many `u16`
+values out of the group, and **if it is wrong it uses constants compiled into the firmware
+instead**. So a group whose length a writer changes is not rejected, it is ignored, exactly like
+the section count in section 38.
+
+### The closure
+
+The call sites give the expected length per group, and they are literals in the code rather than
+anything derived from a config:
+
+| group | arch 14 expects | arch 12 expects |
+|---|---|---|
+| 0 | 1 | 1 |
+| 1 | 4 | 6 |
+| 2 | 1 | |
+| 3 | 4 | |
+| 4 | | 6 |
+| 5 | 14 | 16 |
+| 6 | 14 | |
+| 7 | 1 | 1 |
+| 9 | | 6 |
+| 10 | | 8 |
+
+Fourteen predictions from two images, and **every one of them holds in every container of its
+architecture**: the two Harmony 700 configs, the 600's, both Ones', and the three safe mode
+containers, thirteen in all. The numbers differ between the architectures in four places, so this
+is not one constant matching everywhere; it is each firmware's own table matching its own configs.
+
+A blank in the table means no call site was found on that image, not a length of zero. Arch 8 and
+arch 9 have no row because no firmware for either exists here.
+
+### What some of the groups hold
+
+Named where the consumer says so, and left alone where it does not.
+
+**Group 7 is a timeout in seconds.** One value, handed to the same one second scheduler the timers
+in section 43 use, with a compiled in default of 10. Every config in the corpus carries 0.
+
+**Groups 5 and 6 are a measurement to level curve**, and there are two of them because the consumer
+picks between them on a run time condition. The consumer walks the list comparing a stored sixteen
+bit measurement against each entry and counting how many it exceeds, capped, which turns a reading
+into a small integer. The values are non decreasing and end in a repeated sentinel:
+
+| container | arch | curve |
+|---|---|---|
+| Harmony 700 | 14 | 2025, 2075, 2375, 2425, 2475, 2525, then 3300 eight times |
+| Harmony 600 | 14 | 2025, 2075, 2100, 2125, 2200, 2525, then 3300 eight times |
+| Harmony One | 12 | 3000, 3015, 3627 ... 4025, 4051, then 9999 twice |
+| Harmony 880 | 8 | 2500, 2515, 3600 ... 4030, 4045, then 9999 four times |
+
+**Read as millivolts these are battery curves, and that is a conjecture rather than a finding.**
+What supports it: the same module reads the analogue converter, `ADCON0` and `ADRESL`/`ADRESH` at
+`0x0F938`, and the ranges are the right ones for the cells those remotes take. The 600 runs on two
+alkaline cells, and 2025 to 2525 mV is 1.01 to 1.26 V each. The One has a lithium pack in a
+charging cradle, and 3000 to 4051 mV is exactly a single lithium cell from empty to full. The
+sentinels are 3300 on arch 14, which is the regulator rail, and 9999 on the others, which is above
+anything measurable. What is missing: nobody has put a meter on a board, and the scaling between
+the converter's counts and those numbers was not followed through.
+
+**Group 4 is `96, 98, 308, 310, 768, 770` in all twelve containers on arch 8, 12 and 14**, three
+pairs two apart, which is the shape of three thresholds with hysteresis. Arch 9's equivalent group
+is `600, 602, 766, 769`. What they threshold is not established.
+
+### The numbering is per architecture
+
+Arch 9 carries five groups where the others carry nine or eleven, and its contents line up with a
+subset of arch 12's in a different order: its group 0 is arch 12's group 2, its group 1 is arch
+12's group 3, and so on. **A group index is not portable**, which is worth stating because every
+other section indexed so far transfers between architectures by base slot.
+
+### What is not established
+
+**What groups 0, 1, 2, 3, 8, 9 and 10 hold.** Each has a consumer address and a length; none has a
+name.
+
+**Whether the curves really are millivolts**, per the paragraph above.
+
+**The twelve spare bytes** in the arch 12 run.
 
 ## References
 

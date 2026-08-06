@@ -619,3 +619,13 @@ architectures, with the three safe mode containers as the negative case. `T1CON`
 selection make the unit exactly one second on a 32.768 kHz Timer 1 crystal, and the largest duration
 in the corpus is 7200, which is two hours. Two rails for a writer: **a timer fires one instruction,
 not a list**, and the duration is **clamped to sixteen bits** with no error.
+
+**Base slot 15 is the parameter block**, section 44, the fourteenth slot named, which corrects
+section 38's reading of it as a membership test. Numbered groups of `{ u8 entries; u16 value[] }`,
+laid out contiguously before the pointer array, and the firmware demands **every group's length**
+as well as the section's count: fourteen literals read off the 700 and the One, holding in all
+thirteen containers, and a group whose length differs is silently replaced by compiled in defaults.
+`gspm.PARAMETER_GROUP_COUNTS` carries the table. A group index is **not** portable between
+architectures, unlike every other indexed structure here. Group 7 is a timeout in seconds, groups 5
+and 6 are a measurement to level curve that reads like battery millivolts and is marked a
+conjecture, and group 4 is one constant across twelve containers.

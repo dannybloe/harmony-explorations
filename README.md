@@ -46,10 +46,13 @@ The **trailer checksum is derived**: a sixteen bit XOR of the container's little
 seeded `0x4321`, recomputing on all fourteen containers. That was the last thing standing between
 a generated config and a remote that would accept it.
 
-Thirteen of the twenty base slots are named and every slot from 2 to 19 has a located firmware
+Fourteen of the twenty base slots are named and every slot from 2 to 19 has a located firmware
 consumer. The newest is **the timer table**, which is where a backlight timeout and a two hour
 power off live: a record says how long to wait and which single instruction to run afterwards, and
-the set of records a config's action lists start is exactly the set it declares. A config
+the set of records a config's action lists start is exactly the set it declares. Next to it is
+**the parameter block**, whose every group has a length the firmware demands and silently ignores
+the group if it differs: fourteen such lengths read off two images, holding in all thirteen
+containers. A config
 **states its own architecture** in section slot 1, which is what lets a config read over USB be
 parsed without the file header Logitech's software supplied. Slot 0 is the container's only
 `0xFEED`/`0xBEEF` frame, and slot 3 is a second framed record holding **the date and time the
