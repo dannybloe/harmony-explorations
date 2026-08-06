@@ -913,6 +913,89 @@ class TestTheParameterBlock(unittest.TestCase):
                     self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
 
 
+class TestTheTouchScreenHitMap(unittest.TestCase):
+    """findings.md section 45: base slot 17, populated by the one remote with a touch panel."""
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+    TOUCH = ('one_config', 'one_config_unprogrammed')
+    # The order a page's codes appear in, as offsets from 0x30, followed by the two that are
+    # always last. Nine shapes exist across both configs and there is no tenth.
+    PREFIX = (0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x2B, 0x2C)
+    ALWAYS = (0x2E, 0x2F)
+
+    @staticmethod
+    def _pages(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).touch_pages()
+
+    def test_only_architecture_twelve_populates_it(self):
+        """The reason it stayed unnamed: eleven of thirteen containers say nothing."""
+        for name in self.CONTAINERS:
+            pages = self._pages(name)
+            with self.subTest(container=name):
+                if name in self.TOUCH:
+                    self.assertGreater(len(pages), 30)
+                else:
+                    self.assertEqual(pages, [])
+
+    def test_the_areas_tile_and_carry_their_own_address(self):
+        """Two independent closures on a twelve byte record."""
+        from harmony import gspm
+        for name in self.TOUCH:
+            c = gspm.parse(lab.load(name))
+            headers = c._counted_pointers(gspm.arch_slot(c.architecture, gspm.TOUCH_MAP_SLOT), 1)
+            for header, page in zip(headers, c.touch_pages()):
+                with self.subTest(container=name, page=hex(header)):
+                    for a, b in zip(page, page[1:]):
+                        self.assertEqual(b.address - a.address, gspm.TOUCH_AREA_LENGTH)
+                    self.assertEqual(page[-1].address + gspm.TOUCH_AREA_LENGTH, header)
+                    for area in page:
+                        self.assertEqual(area.self_address, area.address)
+
+    def test_a_page_is_a_prefix_of_the_code_ladder_plus_two(self):
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                codes = tuple(a.code for a in page)
+                with self.subTest(container=name, codes=codes):
+                    self.assertEqual(codes, self.PREFIX[:len(codes) - 2] + self.ALWAYS)
+
+    def test_the_two_constant_areas_are_a_strip_at_each_edge(self):
+        """Present on every page, including the one that has nothing else."""
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                edges = [(a.x, a.width, a.y, a.height) for a in page[-2:]]
+                with self.subTest(container=name):
+                    self.assertEqual(edges, [(765, 492, 1400, 2000), (3556, 492, 1400, 2000)])
+
+    def test_the_geometry_is_the_same_on_two_unrelated_remotes(self):
+        """What says this is a layout resource and not somebody's configuration."""
+        sizes = [{(a.width, a.height) for page in self._pages(n) for a in page} for n in self.TOUCH]
+        self.assertEqual(sizes[0], sizes[1])
+        self.assertEqual(len(sizes[0]), 35)
+
+    def test_a_hit_returns_the_first_containing_rectangle(self):
+        """Order matters because rectangles overlap, so the lookup must not be a set."""
+        from harmony import gspm
+        page = self._pages('one_config')[0]
+        for area in page:
+            middle = (area.x + area.width // 2, area.y + area.height // 2)
+            expected = next(a.code for a in page if a.contains(*middle))
+            self.assertEqual(gspm.Container.touch_hit(page, *middle), expected)
+        self.assertIsNone(gspm.Container.touch_hit(page, 0, 0))
+
+    def test_overlapping_rectangles_exist_at_all(self):
+        """Otherwise the previous test would be asserting nothing."""
+        overlaps = 0
+        for name in self.TOUCH:
+            for page in self._pages(name):
+                for i, a in enumerate(page):
+                    for b in page[i + 1:]:
+                        if (a.x < b.x + b.width and b.x < a.x + a.width
+                                and a.y < b.y + b.height and b.y < a.y + a.height):
+                            overlaps += 1
+        self.assertEqual(overlaps, 186)
+
+
 class TestTheTimerTable(unittest.TestCase):
     """findings.md section 43: base slot 12, and the two instructions that drive it."""
 

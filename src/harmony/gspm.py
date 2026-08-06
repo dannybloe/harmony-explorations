@@ -340,6 +340,16 @@ HANDLER_TAG_LEAVE = 2
 OPCODE_SELECT_HANDLER = 0x1F
 SELECT_HANDLER_OPERAND_HIGH = 0xFF
 
+# Base slot 17 is the touch screen hit map, and it is the one section only arch 12 populates,
+# because the Harmony One is the only remote here with a touch panel. Two levels: a page, then the
+# rectangles on it. The firmware walks a page in order and returns the first rectangle containing
+# the point, so overlapping rectangles are resolved by position rather than being a defect.
+TOUCH_MAP_SLOT = 17
+TOUCH_AREA_LENGTH = 12
+# The panel reports a coordinate as five bits of high byte and eight of low, so the space is
+# thirteen bits. Rectangles are allowed to run past the panel's own edge and some do.
+TOUCH_COORDINATE_BITS = 13
+
 # Base slot 15 is the parameter block: numbered groups of sixteen bit constants, laid out
 # contiguously and reached through the usual count prefixed pointer array. The firmware reads a
 # group only when its length is exactly what that build expects, and falls back to a compiled in
@@ -520,6 +530,27 @@ class NumberSender:
     first: List[Instruction]
     middle: List[Instruction]
     last: List[Instruction]
+
+
+@dataclass
+class TouchArea:
+    """One base slot 17 record: a rectangle on the touch panel and the key code it reports.
+
+    The trailing `self_address` is the record's own address, which is the same back pointer the
+    infrared records carry, and it is kept because a reader that finds it wrong has found a
+    misaligned record rather than an odd value.
+    """
+    address: int
+    x: int
+    width: int
+    y: int
+    height: int
+    code: int
+    self_address: int
+
+    def contains(self, x: int, y: int) -> bool:
+        """The firmware's own test, half open on both axes."""
+        return self.x <= x < self.x + self.width and self.y <= y < self.y + self.height
 
 
 @dataclass
@@ -1339,6 +1370,84 @@ class Container:
                              duration=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
                              instruction=self._instruction_at(off + 4)))
         return out
+
+    def touch_pages(self) -> Optional[List[List['TouchArea']]]:
+        """Base slot 17: the touch screen hit map, one list of rectangles per page.
+
+        ```
+        +0x00  u8   pages
+        +0x01  u24  page[pages]
+        ```
+
+        each page
+
+        ```
+        +0x00  u8   areas
+        +0x01  u24  area[areas]
+        ```
+
+        and each area twelve bytes
+
+        ```
+        +0x00  u16  x
+        +0x02  u16  width
+        +0x04  u16  y
+        +0x06  u16  height
+        +0x08  u8   the key code a hit reports
+        +0x09  u24  the record's own address
+        ```
+
+        Empty on every architecture but 12, where both Harmony One configs carry it.
+        `docs/findings.md` section 45.
+        """
+        try:
+            pages = self._counted_pointers(arch_slot(self.architecture, TOUCH_MAP_SLOT), 1)
+        except GspmError:
+            return None
+        if pages is None:
+            return None
+        out: List[List[TouchArea]] = []
+        for page in pages:
+            addresses = self._counted_pointers_at(page)
+            if addresses is None:
+                return None
+            areas = []
+            for address in addresses:
+                off = self.blob_offset_of(address)
+                if off is None or off + TOUCH_AREA_LENGTH > len(self.blob):
+                    return None
+                fields = [int.from_bytes(self.blob[off + 2 * k:off + 2 * k + 2], 'little')
+                          for k in range(4)]
+                areas.append(TouchArea(address=address, x=fields[0], width=fields[1],
+                                       y=fields[2], height=fields[3],
+                                       code=self.blob[off + 8],
+                                       self_address=int.from_bytes(
+                                           self.blob[off + 9:off + 12], 'little')))
+            out.append(areas)
+        return out
+
+    @staticmethod
+    def touch_hit(page: List['TouchArea'], x: int, y: int) -> Optional[int]:
+        """The code the firmware would report for a touch, or None if the point misses.
+
+        First match wins, in table order, because that is what the firmware's loop does. The
+        rectangles on a page do overlap, so the order is part of the data rather than incidental.
+        """
+        for area in page:
+            if area.contains(x, y):
+                return area.code
+        return None
+
+    def _counted_pointers_at(self, address: int) -> Optional[List[int]]:
+        """A `{ u8 count; u24 address[count] }` array at an absolute flash address."""
+        off = self.blob_offset_of(address)
+        if off is None or off >= len(self.blob):
+            return None
+        count = self.blob[off]
+        if off + 1 + 3 * count > len(self.blob):
+            return None
+        return [int.from_bytes(self.blob[p:p + 3], 'little')
+                for p in range(off + 1, off + 1 + 3 * count, 3)]
 
     def parameter_groups(self) -> Optional[List[List[int]]]:
         """Base slot 15: the parameter block, as a list of groups of sixteen bit constants.

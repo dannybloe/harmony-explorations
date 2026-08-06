@@ -629,3 +629,12 @@ thirteen containers, and a group whose length differs is silently replaced by co
 architectures, unlike every other indexed structure here. Group 7 is a timeout in seconds, groups 5
 and 6 are a measurement to level curve that reads like battery millivolts and is marked a
 conjecture, and group 4 is one constant across twelve containers.
+
+**Base slot 17 is the touch screen hit map**, section 45, and with it **only base slot 2 is left
+unnamed** (18 and 19 are NULL everywhere). Two levels of count prefixed array over a twelve byte
+record, `{ u16 x; u16 width; u16 y; u16 height; u8 code; u24 self }`, and the firmware returns the
+**first** rectangle containing the point, so a page's order is data: 104 pairs overlap. It is
+populated **only on arch 12**, count zero in the other eleven containers, which is why it stayed
+unnamed: the project decodes arch 14 first and arch 14 never uses it. The codes are ten of the
+One's 43 to 53 scan code block, and the geometry is identical on two unrelated Harmony Ones, so it
+is a layout resource rather than user data. `gspm.touch_pages`, `gspm.Container.touch_hit`.

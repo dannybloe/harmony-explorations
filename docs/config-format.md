@@ -164,7 +164,11 @@ Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
 
 ## Sections
 
-Fourteen of the twenty base slots are named. The method that named them is described in
+Fifteen of the twenty base slots are named. Base slots 18 and 19 are NULL in every sample, so
+**base slot 2 is the only one left that is neither named nor NULL**: eight bytes on most
+architectures and nine on arch 12, read by the loader rather than by a subsystem.
+
+The method that named them is described in
 [roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
 variable, so finding the consumer of that variable labels the section by function. The infrared
 section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
@@ -200,6 +204,7 @@ Known so far:
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | ten configs, four architectures, below |
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
 | 12 | the **timer table**: wait, then queue one instruction | ten configs, four architectures, below |
+| 17 | the **touch screen hit map**, populated on arch 12 only | two configs, one image, below |
 | 18 | NULL in every sample of every architecture | nine configs |
 | all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
 
@@ -420,6 +425,53 @@ so the table is mostly indirection.
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
 Its 3 byte target is loaded into `TBLPTR` and followed. What the targets are is *not established*.
+
+### Base slot 17: the touch screen hit map
+
+**Confirmed on the two Harmony One configs and the Harmony One 3.4 image.** Empty, with a count of
+zero, in the other eleven containers in the corpus: arch 8, arch 9, arch 14 and all three safe mode
+ones. The Harmony One is the only remote here with a touch panel.
+
+```
++0x00  u8   pages
++0x01  u24  page[pages]
+```
+
+each page
+
+```
++0x00  u8   areas
++0x01  u24  area[areas]
+```
+
+each area, twelve bytes
+
+```
++0x00  u16  x
++0x02  u16  width
++0x04  u16  y
++0x06  u16  height
++0x08  u8   the key code a hit reports
++0x09  u24  the record's own address
+```
+
+The firmware walks a page in order and **returns the first rectangle containing the point**, with
+the test half open on both axes, `x <= X < x + width`. Rectangles on a page do overlap, 104 pairs
+across the corpus, so a writer must treat a page's order as meaningful. The panel reports thirteen
+bit coordinates and the largest rectangle reaches 4437.
+
+A page's areas are laid out contiguously immediately before the page's own header, and each area's
+last three bytes are its own address; both hold for every page and every area in both configs.
+
+The code at `+0x08` takes ten values, 43, 44, 46, 47 and 48 to 53, which sit inside the block of
+scan codes the One's key table carries where arch 14 numbers 41 to 54. A page's codes run 48
+upward consecutively, then 43 and 44 for the two largest pages, and always end with 46 and 47,
+which are a tall strip at each edge of the panel. Nine page shapes exist and no others.
+
+**The geometry is not user data.** Two Harmony Ones with entirely different configurations carry
+the same 35 rectangle sizes and share 70 of 70 distinct records; only the number of pages differs.
+
+Read with `gspm.touch_pages` and `gspm.Container.touch_hit`. [findings.md](findings.md) section 45.
 
 ### Base slot 15: the parameter block
 

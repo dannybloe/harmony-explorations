@@ -527,8 +527,11 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   sixteen bits without an error. `docs/findings.md` section 43. **Base slot 15 followed**, section 44, and it corrects section 38's
   reading of it: it is the parameter block, numbered groups of sixteen bit constants, and the
   firmware demands the length of every group as well as the section's count. Fourteen such lengths
-  are literals in two images and every one holds in all thirteen containers. That leaves **slot 17**,
-  which needs a config that exercises it and the corpus has none.
+  are literals in two images and every one holds in all thirteen containers. **Slot 17 followed**, section 45: it is the touch
+  screen hit map, populated only on arch 12 because the Harmony One is the only remote here with a
+  touch panel, and empty in the other eleven containers, which is why decoding arch 14 first could
+  never have found it. That leaves **base slot 2**, eight bytes read by the loader rather than by a
+  subsystem, as the only slot that is neither named nor NULL.
 * Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
   both remotes, and publish the resulting table. This also unblocks upstream. It got considerably
   cheaper: the config's scan codes are now known to be the scanner's own 1 to 56 index, so the

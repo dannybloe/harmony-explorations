@@ -3874,7 +3874,7 @@ The contents of slots 7, 9, 11, 12, 14, 15, 16 and 17. Every one now has a consu
 least one image and a structure, which is the difference between a search and a reading.
 
 Slots 9, 14 and 16 came off that list in section 39, slots 7 and 11 in section 40, slot 12 in
-section 43 and slot 15 in section 44. Slot 17 is what remains.
+section 43, slot 15 in section 44 and slot 17 in section 45. The list is empty.
 
 ## 39. Three more sections named, and what the accumulator computes
 
@@ -4134,7 +4134,8 @@ the corpus exercises because nothing in the corpus has a record.
 
 **Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
 
-Slots 7 and 11 came off that list in section 40, slot 12 in section 43 and slot 15 in section 44.
+Slots 7 and 11 came off that list in section 40, slot 12 in section 43, slot 15 in section 44 and
+slot 17 in section 45, which empties the list.
 
 ## 40. The second interpreter, and base slot 11
 
@@ -4666,6 +4667,116 @@ name.
 **Whether the curves really are millivolts**, per the paragraph above.
 
 **The twelve spare bytes** in the arch 12 run.
+
+## 45. Base slot 17 is the touch screen hit map, and that is the last unnamed pointer
+
+The Harmony One is the only remote in this project with a touch panel, and this is the only section
+that only arch 12 populates. Those two facts turn out to be the same fact.
+
+### Why it took until now
+
+Section 38 filed slot 17 as "not an array by the usual header", and the reason it looked that way
+is that the corpus's arch 14 configs, which everything here is decoded on first, all carry a count
+of **zero**. So does the arch 9 sample, so do all four arch 8 ones, and so do all three safe mode
+containers. Eleven of thirteen containers say nothing at all. The two that do are the Harmony Ones.
+
+There is a general lesson in that. The rule "prefer arch 14, then port" is right for reading code
+and wrong for finding data, because a section is only visible in a config that uses it.
+
+### The structure
+
+Two levels of the usual count prefixed pointer array, over a twelve byte record:
+
+```
++0x00  u8   pages
++0x01  u24  page[pages]
+```
+
+each page
+
+```
++0x00  u8   areas
++0x01  u24  area[areas]
+```
+
+each area
+
+```
++0x00  u16  x
++0x02  u16  width
++0x04  u16  y
++0x06  u16  height
++0x08  u8   the key code a hit reports
++0x09  u24  the record's own address
+```
+
+The arithmetic closes twice over. A page's records are laid out contiguously **immediately before
+the page's own header**, so the last one ends exactly where the header starts: true for 42 pages of
+42 and 32 of 32. And every record's last three bytes are its own address: 247 of 247 and 182 of
+182. That back pointer is the same device section 42 found in the infrared records.
+
+### The firmware, which leaves nothing to infer
+
+The consumer is `0x25D70` on the Harmony One 3.4 image. It seeks raw slot 19, indexes it by a page
+number, reads the page's count, and then walks the records doing exactly this, at `0x25E5A` to
+`0x25EC4`:
+
+```
+if X >= x and X < x + width and Y >= y and Y < y + height:
+    return the byte at +8
+```
+
+sixteen bit compares throughout, half open on both axes, and it **returns on the first match**
+rather than continuing. The point comes from `0x217`/`0x219`, filled at `0x2621C` from a serial
+packet whose coordinate is assembled as `(high & 0x1F) << 8 | low`. Thirteen bits, which is the
+usual packing for a resistive panel controller, and the largest coordinate any rectangle reaches is
+4437.
+
+First match winning matters for a writer: **104 pairs of rectangles on the same page overlap**, so
+the order of a page's records is part of the data and not incidental.
+
+### The codes, and what a page looks like
+
+The byte at +8 takes exactly ten values in both configs, and a page's records carry them in a fixed
+order. Writing them as offsets from `0x30`:
+
+| page size | codes, in order |
+|---|---|
+| 2 | `0x2E 0x2F` |
+| 3 | `0x30`, then those two |
+| 4 to 8 | `0x30` upward, consecutively, then those two |
+| 9 | `0x30` to `0x35`, `0x2B`, then those two |
+| 10 | `0x30` to `0x35`, `0x2B`, `0x2C`, then those two |
+
+All nine shapes occur in both configs and there is no tenth. So a page is **up to eight selectable
+items plus two that are always there**, and the two that are always there are, in the geometry, a
+tall narrow strip at each edge of the panel: `x = 765` and `x = 3556`, both 492 wide and 2000 high.
+Scroll up and scroll down is the obvious reading of two edge strips present on every page including
+the one that has nothing else.
+
+The ten codes are `0x2B`, `0x2C`, `0x2E`, `0x2F` and `0x30` to `0x35`, which are 43, 44, 46, 47 and
+48 to 53. **The One's key table carries a block of scan codes 43 to 53** where the arch 14 remotes
+number 41 to 54 contiguously, and the touch map uses ten of that block's eleven. So the panel feeds
+the same key path the keypad does, which is why nothing else in the config had to know about it.
+
+### The geometry is not user data
+
+The two Harmony One configs come from different remotes with entirely different setups, 4277 action
+lists against 2141, and their touch maps share **70 of the 70** distinct nine byte payloads the
+smaller one carries; the larger adds five. The 35 distinct rectangle sizes are identical between
+them. What differs is how many pages there are, 42 against 32.
+
+That is what says this is a layout resource rather than a user's configuration, and it is also why
+no amount of diffing the Harmony 700 pair could ever have found it.
+
+### What is not established
+
+**What a page corresponds to.** 42 and 32 match no other count in either config.
+
+**The panel's own coordinate range.** Thirteen bits is what the packet can carry; the largest
+rectangle runs to 4437, which is either the panel's edge or deliberately past it.
+
+**Why one code of the eleven, 45, is missing** from the map while the key table has it.
 
 ## References
 
