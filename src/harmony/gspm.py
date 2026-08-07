@@ -417,6 +417,22 @@ TIMER_SLOTS_IN_RAM = 4
 # project has not measured because nothing in the corpus asks for it.
 TIMER_KIND_SCHEDULED = 0x01
 
+# Base slot 2 is the log area: three fields declaring a region of flash above the config that the
+# firmware appends to and never erases. Nine bytes on arch 12, where the first field is a u24, and
+# eight everywhere else, where it is a u16. `docs/findings.md` section 47.
+LOG_SLOT = 2
+# An erased flash byte. The boot scan walks the whole region and remembers the last byte that is
+# not this, which is how the append position survives a power cycle without being stored anywhere.
+LOG_ERASED = 0xFF
+# `limit - start` divided by the declared capacity. One byte per unit on arch 12, which is what its
+# append routine writes per call, and eight on the other three. Nothing has been read that explains
+# the eight, because no arch 14 code reads this section at all.
+LOG_STRIDE = {8: 8, 9: 8, 12: 1, 14: 8}
+# The append branches of the same descending ladder that starts and cancels a timer. Five cases on
+# arch 12, appending one, two and six bytes; the low nibble picks the case. No config in the corpus
+# uses any of them, so the whole facility is firmware that nothing here exercises.
+LOG_APPEND_OPERAND_HIGH = frozenset(range(0xE1, 0xE6))
+
 
 def is_high_band(instruction: 'Instruction') -> bool:
     """Whether this instruction's operand is a reference into the second operand space.
@@ -633,6 +649,32 @@ class Timer:
     kind: int
     duration: int
     instruction: Instruction
+
+
+@dataclass
+class LogArea:
+    """Base slot 2: the region of flash the firmware appends log records to.
+
+    `capacity` is in units of `stride` bytes, and `start + capacity * stride == limit` in every
+    container in the corpus, which is the closure that fixes the three field boundaries. The region
+    always sits above the config and ends at or near the top of the flash chip.
+    """
+    address: int
+    capacity: int
+    start: int
+    limit: int
+
+    @property
+    def span(self) -> int:
+        """The region's length in bytes."""
+        return self.limit - self.start
+
+    @property
+    def stride(self) -> Optional[int]:
+        """Bytes per unit of `capacity`, or None if the declaration does not divide."""
+        if self.capacity <= 0 or self.span % self.capacity:
+            return None
+        return self.span // self.capacity
 
 
 @dataclass
@@ -1438,6 +1480,52 @@ class Container:
                              duration=int.from_bytes(self.blob[off + 1:off + 4], 'little'),
                              instruction=self._instruction_at(off + 4)))
         return out
+
+    def log_area(self) -> Optional['LogArea']:
+        """Base slot 2: the flash region the firmware appends log records to.
+
+        ```
+        +0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
+        +0x02  u24  start           the first byte of the region
+        +0x05  u24  limit           one past its last byte
+        ```
+
+        Not a pointer array and not indexed by anything: three numbers describing a region. The
+        arch 12 firmware scans `[start, limit)` at boot for the last byte that is not `LOG_ERASED`
+        and appends after it, refusing once `capacity` units are used up. `docs/findings.md`
+        section 47.
+        """
+        slot = arch_slot(self.architecture, LOG_SLOT)
+        if slot >= len(self.sections) or self.sections[slot].is_null:
+            return None
+        address = self.sections[slot].address
+        off = self.blob_offset_of(address)
+        length = self.section_length(slot)
+        # The capacity field takes up whatever the section has left over after the two addresses,
+        # so the arch 12 widening is read rather than special cased.
+        if off is None or length is None or length < 8 or off + length > len(self.blob):
+            return None
+        width = length - 6
+        if width not in (2, 3):
+            return None
+        return LogArea(
+            address=address,
+            capacity=int.from_bytes(self.blob[off:off + width], 'little'),
+            start=int.from_bytes(self.blob[off + width:off + width + 3], 'little'),
+            limit=int.from_bytes(self.blob[off + width + 3:off + width + 6], 'little'))
+
+    def log_reference(self, instruction: 'Instruction') -> Optional[int]:
+        """The append case an instruction selects, 1 to 5, or None if it is not one.
+
+        The case decides how many bytes of what the record holds; the arch 12 dispatcher is the
+        only implementation that has been read. Nothing in the corpus returns anything but None.
+        """
+        if instruction.opcode != OPCODE_SELECT_HANDLER:
+            return None
+        high = instruction.operand >> 8
+        if high not in LOG_APPEND_OPERAND_HIGH:
+            return None
+        return high & 0x0F
 
     def font_sets(self) -> Optional[List['FontSet']]:
         """Base slot 7: one entry per typeface, with the address of each glyph or None.

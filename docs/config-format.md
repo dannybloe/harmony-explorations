@@ -164,9 +164,8 @@ Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
 
 ## Sections
 
-Fifteen of the twenty base slots are named. Base slots 18 and 19 are NULL in every sample, so
-**base slot 2 is the only one left that is neither named nor NULL**: eight bytes on most
-architectures and nine on arch 12, read by the loader rather than by a subsystem.
+**Every one of the twenty base slots is now accounted for.** Slots 0 and 1 are the header records,
+slots 2 to 17 are sixteen named sections, and 18 and 19 are NULL in every sample.
 
 The method that named them is described in
 [roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
@@ -205,8 +204,8 @@ Known so far:
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
 | 12 | the **timer table**: wait, then queue one instruction | ten configs, four architectures, below |
 | 17 | the **touch screen hit map**, populated on arch 12 only | two configs, one image, below |
-| 18 | NULL in every sample of every architecture | nine configs |
-| all others | unknown, but every one has a **named firmware entry point** in [findings.md](findings.md) section 35 | |
+| 2 | the **log area**: a region of flash the firmware appends to and never erases | thirteen containers, one image, below |
+| 18, 19 | NULL in every sample of every architecture | thirteen containers |
 
 **Every slot from 2 to 19 has a located firmware consumer**, on the Harmony 700, the 600 and the
 One. See [findings.md](findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
@@ -220,32 +219,47 @@ infrared group arrays are laid out in that space. A section's own data can end l
 pointer, with another section's sub-structures filling the rest, so a large gap is not evidence of
 a large section. See section 36.
 
-### Base slot 2: the last unnamed one
+### Base slot 2: the log area
 
-**Not established.** Recorded here so the next attempt starts from a reading rather than a search.
+**Confirmed on thirteen containers across four architectures**, and on the one arch 12 image, which
+is the only firmware that reads it.
 
-Eight bytes on arch 8, arch 9 and arch 14, nine on arch 12, and it sits immediately before slot 3.
-The arch 12 consumer is at `0x2DB68` on the Harmony One 3.4 image, reached through the ordinary
-section seeker; it reads a `u24` at `+0x00` and a second at `+0x03`, tests the first for zero, and
-uses the second as a pointer. No arch 14 image seeks this slot at all, so whatever reads it there
-is not the seeker.
+Not a pointer to a structure: three numbers reserving a region of flash above the config that the
+firmware appends to and never erases.
 
-The bytes, for reference:
+```
++0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
++0x02  u24  start           the first byte of the region
++0x05  u24  limit           one past its last byte
+```
 
-| container | arch | bytes |
-|---|---|---|
-| 700, 600 | 14 | `00 40 00 00 1e 00 00 20` |
-| 650 safe mode | 14 | `00 40 00 00 0e 00 00 10` |
-| One, both | 12 | `10 00 00 f0 ff 3f 00 00 40` |
-| 525 | 9 | `00 20 00 00 07 00 00 08` |
-| 880 | 8 | `00 3c 00 00 1e 00 e0 1f` |
+`limit - start == capacity * stride`, exactly, in every container, with one stride per
+architecture: **8 bytes on arch 8, arch 9 and arch 14, and 1 on arch 12**. The region always sits
+above the config's `end_addr`, and `limit` is always a round flash boundary: `0x080000`,
+`0x100000`, `0x200000` or `0x400000`, except arch 8, which stops 8 KiB short of 2 MiB at
+`0x1FE000`.
 
-Read as `u16` then two `u24` the last field is a round flash size on four architectures,
-`0x080000`, `0x100000`, `0x200000` and `0x1FE000`, with the middle one below it; arch 12's nine
-bytes read as three `u24` give `16`, `0x3FFFF0` and `0x400000`, which is the same shape with a
-sixteen byte region at the top of a four megabyte chip. Two different splits agreeing on the shape
-is suggestive and not evidence, and neither can be checked against a consumer, because the only
-consumer is on the architecture whose length does not match the others.
+| container | arch | capacity | start | limit |
+|---|---|---|---|---|
+| 700, 600 | 14 | 16384 | `0x1E0000` | `0x200000` |
+| all three safe mode | 14 | 16384 | `0x0E0000` | `0x100000` |
+| One, both | 12 | 16 | `0x3FFFF0` | `0x400000` |
+| 525 | 9 | 8192 | `0x070000` | `0x080000` |
+| all four 880s | 8 | 15360 | `0x1E0000` | `0x1FE000` |
+
+The arch 12 firmware scans the region at boot, at `0x2DB4C`, for the last byte that is not `0xFF`,
+and appends after it, so the write position is recovered from the erased pattern rather than
+stored. The append routine at `0x2DC0A` writes one byte per call, refuses an address outside
+`[0x040000, 0x400000)`, and refuses once `capacity` units are used up. Its only callers are five
+branches of the same operand ladder that drives timers, operand high `0xE1` to `0xE5`, appending
+one to six bytes each.
+
+Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
+[findings.md](findings.md) section 47.
+
+*What is logged is not established*, nor is the stride of 8 on the three architectures whose
+firmware never reads this section. **No config in the corpus appends to it**, so a writer that
+copies these three numbers unchanged is doing everything the corpus does.
 
 ### Base slot 4: the firmware event map
 

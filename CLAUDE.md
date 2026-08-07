@@ -640,10 +640,19 @@ unnamed: the project decodes arch 14 first and arch 14 never uses it. The codes 
 One's 43 to 53 scan code block, and the geometry is identical on two unrelated Harmony Ones, so it
 is a layout resource rather than user data. `gspm.touch_pages`, `gspm.Container.touch_hit`.
 
-**Fifteen of the twenty base slots are named.** 18 and 19 are NULL in every sample, so **base slot
-2 is the only one that is neither named nor NULL**: eight bytes on arch 8, 9 and 14 and nine on
-arch 12, with its only seeker call site on the One at `0x2DB68`. What is measured about it is in
-`docs/config-format.md`, marked not established, so nobody mistakes the shape for the answer.
+**Base slot 2 is the log area**, section 47, and with it **every one of the twenty base slots is
+accounted for**: 0 and 1 are the header records, 2 to 17 are sixteen named sections, 18 and 19 are
+NULL in all thirteen containers. It is not a pointer to a structure but three numbers,
+`{ u16 capacity; u24 start; u24 limit }` and a `u24` capacity on arch 12, reserving a region of
+flash above the config, and `limit - start == capacity * stride` closes exactly in every container
+with a stride of 8 on arch 8, 9 and 14 and 1 on arch 12. The arch 12 firmware scans it at boot for
+the last byte that is not `0xFF`, which is how an append only journal in erased flash recovers its
+write position, and appends one byte per call with two compiled in rails: an address outside
+`[0x040000, 0x400000)` zeroes the remaining count instead of writing, and a full region refuses.
+The only writers are five branches of the timer ladder, operand high `0xE1` to `0xE5`, and **no
+config in the corpus uses any of them**, so the naming rests on the arch 12 firmware alone. Arch
+14 never seeks the slot at all, which is the second time after slot 17 that "prefer arch 14, then
+port" hid a section: it is a rule about reading code, not about finding data.
 
 **Base slot 7 is the font table**, section 46, and the whole text path now works end to end. A set
 is `{ u8 height; u8; u8; u24 glyph[count] }` where one of the two middle bytes is the count, 46 to

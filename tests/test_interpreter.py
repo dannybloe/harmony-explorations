@@ -1245,6 +1245,140 @@ class TestTheTimerTable(unittest.TestCase):
         self.assertIsNone(c.timer_reference(gspm.Instruction(operand=start.operand, opcode=0x7F)))
 
 
+class TestTheLogArea(unittest.TestCase):
+    """findings.md section 47: base slot 2, the last slot that was neither named nor NULL."""
+
+    CONTAINERS = TestTheParameterBlock.CONTAINERS
+    # The arch 12 pair, read off the one image that reads this section at all. The boot scan, the
+    # append routine, and the seek inside the scan that proves which slot it is reading.
+    SCAN = 0x2DB4C
+    APPEND = 0x2DC0A
+    SEEK = 0x2BA76
+    # The window the append routine refuses to write outside. Compiled in rather than taken from
+    # the section, which is the rail that makes a bad `start` harmless.
+    WINDOW = (0x040000, 0x400000)
+
+    @staticmethod
+    def _area(name):
+        from harmony import gspm
+        return gspm.parse(lab.load(name)).log_area()
+
+    def test_every_container_declares_one(self):
+        """Thirteen containers, four architectures, three format versions. None is NULL."""
+        for name in self.CONTAINERS:
+            with self.subTest(container=name):
+                self.assertIsNotNone(self._area(name))
+
+    def test_the_capacity_and_the_bounds_agree(self):
+        """The closure that fixes the field boundaries: span is capacity times a per architecture
+        stride, and the stride is the same for every container of an architecture."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            architecture = gspm.parse(lab.load(name)).architecture
+            with self.subTest(container=name):
+                self.assertEqual(self._area(name).stride, gspm.LOG_STRIDE[architecture])
+
+    def test_the_region_sits_above_the_config_and_ends_at_the_top_of_flash(self):
+        """What makes 'a region reserved for the firmware' the reading rather than a coincidence."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            area = c.log_area()
+            with self.subTest(container=name):
+                self.assertGreaterEqual(area.start, c.end_addr)
+                # 0x100000, 0x200000 and 0x400000 exactly; arch 8 stops 8 KiB short of 2 MiB.
+                self.assertIn(area.limit, (0x080000, 0x100000, 0x1FE000, 0x200000, 0x400000))
+
+    def test_the_wrong_field_split_does_not_close(self):
+        """Calibration. Reading the leading field as a u24 on the eight byte architectures leaves
+        two bytes for the limit, and the region it describes is then smaller than one unit of the
+        capacity it declares, in every container. The correct split divides exactly."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            slot = gspm.arch_slot(c.architecture, gspm.LOG_SLOT)
+            if c.section_length(slot) != 8:
+                continue
+            off = c.blob_offset_of(c.sections[slot].address)
+            capacity = int.from_bytes(c.blob[off:off + 3], 'little')
+            start = int.from_bytes(c.blob[off + 3:off + 6], 'little')
+            limit = int.from_bytes(c.blob[off + 6:off + 8], 'little')
+            with self.subTest(container=name):
+                self.assertLess(limit - start, capacity)
+
+    def test_the_arch_twelve_firmware_scans_the_section_it_declares(self):
+        """The scan seeks raw slot 2 and reads two 24 bit fields out of it, in that order."""
+        code = lab.load('one34_code')
+        seen = []
+        offset = self.SCAN - 0x20000
+        for _ in range(32):
+            instr = isa.decode(code, offset, 0x20000)
+            offset += 2 * instr.words
+            if instr.mnemonic == 'MOVLW':
+                seen.append(('lit', instr.fields['k']))
+            if instr.mnemonic == 'CALL':
+                seen.append(('call', instr.fields['target']))
+        # MOVLW 2 then the seeker, then two reads into the count and the address variables.
+        self.assertIn(('lit', 2), seen)
+        self.assertEqual(seen[seen.index(('lit', 2)) + 1], ('call', self.SEEK))
+        self.assertEqual([t for t in seen if t[0] == 'call'].count(('call', 0x2B93C)), 2)
+
+    def test_the_append_is_bounded_by_a_compiled_in_window(self):
+        """`WINDOW` appears as two literal comparisons at the head of the append routine, and the
+        section's own region is inside it in both arch 12 configs."""
+        low, high = self.WINDOW
+        self.assertEqual(literals_at('one34_code', 0x20000, self.APPEND, 14),
+                         [0x00, 0x00, low >> 16, 0x00, 0x00, high >> 16])
+        for name in ('one_config', 'one_config_unprogrammed'):
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertGreaterEqual(area.start, low)
+                self.assertLessEqual(area.limit, high)
+
+    def test_the_arch_fourteen_firmware_never_seeks_it(self):
+        """Why the section stayed unnamed while the rest of the table fell: the architecture this
+        project decodes first declares it and does not read it."""
+        self.assertEqual(seeker_census('h700_code', 0x9000, 0x10B92, 0x6DD).get(2, 0), 0)
+        self.assertEqual(seeker_census('one34_code', 0x20000, self.SEEK, 0x1F1).get(2, 0), 1)
+
+    def test_no_config_in_the_corpus_appends_to_it(self):
+        """Firmware nothing exercises, like the number sender. A writer may emit these operands;
+        no generated config here ever did."""
+        from harmony import gspm
+        for name in TestTheStateVariableTable.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            used = {c.log_reference(i) for lst in (c.action_lists() or []) for i in lst}
+            with self.subTest(container=name):
+                self.assertEqual(used - {None}, set())
+
+
+def seeker_census(name, base, seeker, slot_register):
+    """How many times each slot number is passed to the section seeker, per image.
+
+    The slot arrives in a fixed RAM byte rather than in W, so the literal is the `MOVLW` feeding
+    the `MOVWF` of that byte, a few instructions before the call.
+    """
+    import collections
+    code = lab.load(name)
+    sites = collections.Counter()
+    offset = 0
+    while offset < len(code) - 4:
+        instr = isa.decode(code, offset, base)
+        if instr and instr.mnemonic == 'CALL' and instr.fields.get('target') == seeker:
+            for back in range(2, 16, 2):
+                if offset - back < 0:
+                    break
+                first = isa.decode(code, offset - back, base)
+                second = isa.decode(code, offset - back + 2, base)
+                if (first and first.mnemonic == 'MOVLW' and second
+                        and second.mnemonic == 'MOVWF'
+                        and second.fields.get('f') == (slot_register & 0xFF)):
+                    sites[first.fields['k']] += 1
+                    break
+        offset += 2
+    return sites
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

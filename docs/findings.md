@@ -4890,6 +4890,134 @@ to build a set and number it, not look a character up.
 
 **Arch 9's packing.**
 
+## 47. Base slot 2 is the log area, and the pointer table is fully named
+
+Slot 2 was the last of the twenty base slots that was neither named nor NULL. It is not a pointer
+to a structure at all: it is three numbers reserving a region of flash **above the config** that the
+firmware appends to and never erases.
+
+### Why it was last
+
+Two reasons, and both are methodological rather than accidental.
+
+It does not look like the other sections. Every named slot so far is a count prefixed pointer array
+or a framed record, so the eye that has read fourteen of those reads eight bytes and expects a
+header. There is no header. Eight bytes on arch 8, 9 and 14, nine on arch 12, and every byte of
+them is a field.
+
+And the architecture this project decodes first never reads it. The census of calls to the section
+seeker `0x10B92` on the Harmony 700 2.8 image returns raw slots 3 to 17 with no site for slot 2,
+while the same census on the One's `0x2BA76` returns raw 2 to 19 with only the arch 14 NULL at 8
+missing. So the standard method, follow the seek to its consumer, has nothing to follow on arch 14.
+That is the same trap as section 45: **"prefer arch 14, then port" is a rule about reading code, and
+it goes wrong when the thing to find is only exercised somewhere else.** Twice now.
+
+### The structure
+
+```
++0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
++0x02  u24  start           the first byte of the region
++0x05  u24  limit           one past its last byte
+```
+
+The field boundaries are fixed by arithmetic before any code is read, because
+`limit - start == capacity * stride` holds in all thirteen containers with one stride per
+architecture:
+
+| | capacity | start | limit | span | stride |
+|---|---|---|---|---|---|
+| arch 14, both user configs | 16384 | `0x1E0000` | `0x200000` | 131072 | 8 |
+| arch 14, all three safe mode | 16384 | `0x0E0000` | `0x100000` | 131072 | 8 |
+| arch 9, Harmony 525 | 8192 | `0x070000` | `0x080000` | 65536 | 8 |
+| arch 8, all four | 15360 | `0x1E0000` | `0x1FE000` | 122880 | 8 |
+| arch 12, both Harmony Ones | 16 | `0x3FFFF0` | `0x400000` | 16 | 1 |
+
+The calibration is the wrong split. Reading the leading field as a `u24` on the eight byte
+architectures leaves two bytes for the limit, and the region that describes is then **smaller than
+one unit of the capacity it declares** in every container. The correct split divides exactly in
+every container.
+
+Two independent things say the region is real rather than an artefact of a lucky division. It sits
+**above the config's own `end_addr`** in all thirteen, and its `limit` is a round flash boundary in
+all thirteen: `0x080000`, `0x100000`, `0x200000` or `0x400000` exactly, with arch 8 the one that
+stops 8 KiB short of 2 MiB.
+
+### What the arch 12 firmware does with it
+
+One reader and one writer, and only on arch 12.
+
+**The boot scan**, `0x2DB4C`, called once from `0x28AF8` inside the init sequence at `0x28AE0`. It
+seeks raw slot 2, reads the capacity into `0x2E8` and the start address into `0x2E5`, then walks
+`capacity` bytes from `start` and remembers the address and the remaining count of the **last byte
+that is not `0xFF`**. That is the whole state: the append position is recovered from the erased
+pattern rather than stored anywhere, which is what an append only journal in flash does.
+
+**The append**, `0x2DC0A`, writes the single byte in `0x2EB` at that position through
+`0x2B85E`, then increments the address and decrements the remaining count. It has two rails of its
+own, both compiled in rather than taken from the config:
+
+* the address must be inside `[0x040000, 0x400000)`, and outside it the routine **zeroes the
+  remaining count**, so a config declaring a bad region disables the facility instead of writing
+  somewhere it should not;
+* it refuses once the remaining count reaches zero, so the region cannot overrun its `limit`.
+
+Both routines reach the external NOR through the same windowed sequence: the address's high byte
+minus 3 goes to `0x020025` through `TBLWT`, and the high byte is then replaced by `0x13`.
+
+### What appends
+
+All ten call sites of `0x2DC0A` are in one dispatcher at `0x25688`, which is a branch of the
+**same descending operand ladder** that starts and cancels timers in section 43. The ladder has
+already established `0xE0 <= operand high <= 0xEF` when it reaches this point, and the low nibble
+selects the case. Decoded with `chains.xor_chain(code, 0x20000, 0x25688)`, since an `XORLW` chain's
+literals are not its case values:
+
+| case | operand high | at | appends |
+|---|---|---|---|
+| 1 | `0xE1` | `0x256A0` | one byte, from `0x0E14` |
+| 2 | `0xE2` | `0x256A6` | two bytes, from `0x0E15` and `0x0E16` |
+| 3 | `0xE3` | `0x256BC` | six bytes, from `0x108`, `0x109`, `0x10A`, `0x10B`, `0x10D`, `0x10E`, in that order reversed |
+| 4 | `0xE4` | `0x25702` | three bytes, filled by `0x2D6FE` from a pointer to them |
+| 5 | `0xE5` | `0x25734` | two bytes, the sixteen bit value `0x2372A` returns in `PROD` |
+
+Every case ends by branching to the same final `CALL` at `0x25756`, which is why ten call sites
+cover fourteen appended bytes. So the record is **one to six bytes with no length prefix and no
+tag**: whatever reads the region back has to know the shape from the case, which means the reader
+is not on the remote.
+
+Cases 4 and 5 pre-load their bytes with `3, 2, 1` and `2, 1` before the call that overwrites them,
+so those are defaults for a call that can fail. What the two sources compute is not established.
+
+**No config in the corpus uses any of them.** A census of every action list instruction in all ten
+configs finds no `OPCODE_SELECT_HANDLER` with an operand high of `0xE0` to `0xE6`. This is the
+second section in that position, after the number sender of section 39: firmware that exists, is
+reachable, and that Logitech's generator never emitted. It is worth saying plainly that this makes
+the naming rest on the firmware alone.
+
+### What is not established
+
+**What is logged.** The case names the record shape and the RAM addresses it copies; what those
+addresses mean at the moment of the call has not been traced, and no config triggers one to
+observe.
+
+**The stride of 8 on arch 8, 9 and 14.** It is exact in nine containers, so it is a field boundary
+rather than a coincidence, but no code that reads this section on those architectures has been
+found. The arch 14 application does not, and the obvious remaining candidate is the bootloader in
+the internal `0xFE` page, which has not been searched.
+
+**Whether anything is in there.** Reading `0x3FFFF0` off a Harmony One would say whether those
+sixteen bytes are erased, and that read has not been done.
+
+### Where it lands
+
+`gspm.LogArea`, `gspm.Container.log_area` and `gspm.Container.log_reference`, with `LOG_STRIDE`
+carrying the per architecture table. `tests/test_interpreter.py::TestTheLogArea` pins the field
+split, the calibration, the two firmware routines, the arch 14 negative and the empty corpus
+census.
+
+With this, **every one of the twenty base slots is accounted for**: 0 and 1 are the header records,
+2 to 17 are sixteen named sections, and 18 and 19 are NULL in all thirteen containers.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

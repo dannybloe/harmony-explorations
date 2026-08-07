@@ -662,9 +662,10 @@ Not optional, and they belong in the code rather than in a document:
 * The LWJL difference between architectures, and the translation from the scanner's linear index
   to config event codes.
 * Whether the firmware implements event injection over USB.
-* **Base slot 2**, the only pointer that is neither named nor NULL now that section 45 has taken
-  slot 17. Eight bytes, nine on arch 12, with one seeker call site on the One. What is measured is
-  in `docs/config-format.md`.
+* **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete;
+  what remains is what the five append cases record, and why the region is measured in eight byte
+  units on the three architectures whose firmware never reads it. Nothing in the corpus appends,
+  so this is a firmware only question, like the three unused IR classes above.
 * **What the glyph codes mean.** Base slot 7 is the font table and the whole text path is traced,
   section 46: opcode 16 loads `0x398` from the slot, and a string's code minus one indexes it. What
   is left is that the codes are a per config character set, so nothing says code 5 is a space in
