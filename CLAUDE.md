@@ -92,9 +92,14 @@ net, not a policy:
   `.hfw` packages contain a `Data.xml` with a stranger's Logitech `UserId`, account GUIDs,
   `ServerID` and `ASPSESSIONID` session cookie. Publish checksums, never files. See
   `reference/checksums.md`.
-* **No config dumps or `concordance -i` output.** Personal data: a config records what
-  equipment someone owns, and the info output carries the remote's unique serial GUIDs. See
-  `samples/README.md` for the unresolved sanitisation question.
+* **No config dumps or `concordance -i` output.** Decided on 7 August 2026, and **not for the
+  reason everyone assumes**: a config carries no account data at all, only an equipment inventory
+  its owner published knowingly, and `samples/README.md` now records the check. What blocks it is
+  **copyright**, since a config is Logitech generated data including an infrared database compiled
+  from Logitech's own, which is the same reason firmware is excluded and which this MIT repository
+  cannot pass to FreeHarmony. The info output is a separate matter: it carries the remote's unique
+  serial GUIDs and that is personal data. A synthetic corpus after M2 is what would change the
+  answer.
 * **No Ghidra projects.** They embed an imported copy of the firmware.
 
 `.githooks/pre-commit` is the second line: it checks **staged content**, so a rename, a
