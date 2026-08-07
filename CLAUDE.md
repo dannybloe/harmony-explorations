@@ -677,7 +677,7 @@ exactly one everywhere. For a writer, a picture's position is implied by everyth
 inserting or resizing one moves every later address.
 
 Coverage now: **98.1%** on a Harmony 700, 98.7% on a 600, **98.0%** on a Harmony One, 98.6% on the
-spare One, 94.4% on arch 8, **49.8%** on arch 9, all with zero overlaps. What is left is arch 9,
+spare One, 94.4% on arch 8, **55.1%** on arch 9, all with zero overlaps. What is left is arch 9,
 and the low part of a config rather than the region.
 
 **Base slot 13's records are read**, section 60, and the way they were found is the point. The
@@ -871,6 +871,18 @@ third closure looked unavailable here, because the config appeared to have no in
 at all; section 64 found 1205 of them the same day and they all resolve. The moral stands anyway:
 an arch 9 gap does not always need firmware, sometimes it just needs remembering that the panel
 is monochrome.
+
+**Infrared class 5 keeps class 1's header and nothing below it**, section 65, which does not solve
+arch 9's infrared but does say where the unsolved part starts. The 525's byte accounting had one gap
+of 28711 bytes, 73% of everything unattributed, and it is base slot 5: the **lowest** backward
+pointer any record holds and the **highest** header's end land on its two boundaries exactly, and
+neither number was picked to fit the other. All four of section 61's header properties hold on all
+200 class 5 records, so the 21 byte header is one structure across two classes and is now claimed,
+4200 bytes, 49.8% to **55.1%**. **The blocks are deliberately not claimed**: `irPulses` still
+returns a plausible duration list for an arch 9 record and it is not one, so the gate is the class
+byte. Conjecture recorded and marked as such: 32 of two alternating symbols per record plus a `u24`
+naming one of 66 shared descriptors reads like a table driven encoding where class 1 is literal.
+Test that against an arch 9 firmware, not against more of the same file.
 
 **Screen opcode 22's width is per architecture**, section 64, and it is the only opcode that is.
 **Arch 12: three bytes, a call**, from its handler at `0x2966E` on the One, which saves the stream

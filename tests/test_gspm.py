@@ -917,6 +917,87 @@ class TestActionLists(unittest.TestCase):
         self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
 
 
+class TestTheArch9InfraredHeader(unittest.TestCase):
+    """findings.md section 65: class 5 shares class 1's header and nothing below it.
+
+    What class 5 *is* stays unknown and needs a firmware nobody here has. What is claimable is the
+    header, because every structural property section 61 read off class 1 holds on all 200 arch 9
+    records too, and because the area they occupy has both its ends fixed independently.
+    """
+
+    SAMPLE = 'h525_config'
+    RECORDS = 200
+    REGION = (0x021F3B, 0x028F62)
+
+    def _records(self):
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        return c, sorted(a for group in c.ir_groups() for a in group)
+
+    def test_every_record_is_class_five_and_carries_the_shared_header(self):
+        """Four fields, each of them a property rather than a value, on all 200."""
+        from harmony import gspm
+        c, records = self._records()
+        self.assertEqual(len(records), self.RECORDS)
+        low, high = self.REGION
+        for address in records:
+            start = c.ir_record_start(address)
+            with self.subTest(record=hex(address)):
+                self.assertEqual(c.ir_class(address), gspm.IR_CLASS_ARCH9)
+                # The pointer at +8 names the record's own start, seven bytes back.
+                self.assertEqual(address - start, gspm.IR_RECORD_POINTER_BIAS)
+                # Both data pointers point backwards and stay inside the area.
+                for block in c.ir_record_blocks(address):
+                    self.assertTrue(low <= block < start, hex(block))
+                # The third `u24` is NULL in every record, which is the field class 1 does not have
+                # a use for either.
+                off = c.blob_offset_of(start)
+                self.assertEqual(int.from_bytes(c.blob[off + 18:off + 21], 'little'), 0)
+
+    def test_the_headers_never_overlap(self):
+        """Twenty one bytes each, which is only claimable if they fit side by side."""
+        from harmony import gspm
+        c, records = self._records()
+        starts = sorted(c.ir_record_start(a) for a in records)
+        for i in range(1, len(starts)):
+            with self.subTest(header=hex(starts[i])):
+                self.assertGreaterEqual(starts[i], starts[i - 1] + gspm.IR_HEADER_LENGTH)
+
+    def test_the_area_lands_exactly_on_what_the_accounting_could_not_attribute(self):
+        """The closure. Both ends, and neither was chosen to make them agree.
+
+        The bottom is the lowest backward pointer any record names and the top is the end of the
+        highest header. The region they bracket is the one large gap the byte accounting reported
+        before this reading existed, to the byte at both ends.
+        """
+        c, _ = self._records()
+        self.assertEqual(c.ir_region(), self.REGION)
+
+    def test_the_blocks_are_not_claimed_and_the_reason_is_the_class(self):
+        """The negative case, and it is deliberate rather than an omission.
+
+        Class 5's bytes below the header are not duration streams, so a reader that walked them to
+        a zero word would claim the wrong extent with no way to notice. Section 61 already records
+        that all of them find a zero word and none of them is the right one.
+        """
+        from harmony import gspm
+        c, records = self._records()
+        self.assertNotIn(gspm.IR_CLASS_ARCH9, gspm.IR_CLASSES)
+        self.assertIn(gspm.IR_CLASS_ARCH9, gspm.IR_HEADER_CLASSES)
+        self.assertEqual(c.ir_frame(records[0]), None)
+
+    def test_the_other_architectures_are_unaffected(self):
+        """The calibration: opening the header claim to class 5 must not touch class 1."""
+        from harmony import gspm
+        for name in ('h700_config', 'one_config', 'arch8_config_a'):
+            lab.require(name)
+            c = gspm.parse(lab.load(name))
+            classes = {c.ir_class(a) for g in c.ir_groups() for a in g}
+            with self.subTest(config=name):
+                self.assertEqual(classes, {gspm.IR_CLASS_STREAM})
+
+
 class TestTheInfraredRecordExtent(unittest.TestCase):
     """findings.md section 61: where an infrared record's bytes actually are.
 

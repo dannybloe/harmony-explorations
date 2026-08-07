@@ -257,6 +257,13 @@ IR_RECORD_POINTER_BIAS = 7
 # no arch 9 firmware exists to say what that means.
 IR_CLASSES = (1, 2, 3, 4)
 IR_CLASS_STREAM = 1
+# The class the arch 9 sample reads in all 200 of its records, and the only class in the corpus
+# that is not 1. What it means is **not** established and needs a firmware nobody here has. What is
+# established, section 65, is that its records carry the same 21 byte header: the class byte at +7,
+# the record's own start at +8, two backward pointers at +12 and +15 and a NULL at +18, all 200 of
+# 200. So the header is claimable and the blocks are not.
+IR_CLASS_ARCH9 = 5
+IR_HEADER_CLASSES = frozenset({IR_CLASS_STREAM, IR_CLASS_ARCH9})
 # The header is 21 bytes, not 14, and two of its pointers name **data blocks that sit below it**.
 # `docs/findings.md` section 61: a block is a run of `u16` durations closed by a zero word, either
 # pointer may be NULL, and two records can name the same block, which is how a config stores one
@@ -1224,6 +1231,32 @@ class Container:
         if offset is None or offset + 4 > len(self.blob):
             return None
         return int.from_bytes(self.blob[offset + 1:offset + 4], 'little')
+
+    def ir_region(self) -> Optional[Tuple[int, int]]:
+        """The whole of base slot 5's record area, as `(first address, one past the last)`.
+
+        The lowest block pointer any record names, to the end of the highest header. Both
+        pointers point backwards in every record of every container, so the lowest of them is the
+        bottom of the area, and the headers are the top of it because nothing sits above the last.
+
+        On the arch 9 sample the two ends land exactly on the boundaries of the one big region the
+        byte accounting could not attribute, which is what says the area is this and not something
+        overlapping it. `docs/findings.md` section 65.
+        """
+        groups = self.ir_groups()
+        if not groups:
+            return None
+        low = high = None
+        for group in groups:
+            for address in group:
+                start = self.ir_record_start(address)
+                if start is None:
+                    return None
+                high = start + IR_HEADER_LENGTH if high is None else max(
+                    high, start + IR_HEADER_LENGTH)
+                for block in self.ir_record_blocks(address) or [start]:
+                    low = block if low is None else min(low, block)
+        return None if low is None or high is None else (low, high)
 
     def mode_table(self) -> Optional[List[int]]:
         """Base slot 6: the address of every mode the remote can switch between.

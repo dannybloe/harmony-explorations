@@ -14,14 +14,16 @@ here owns; this one differs in that the gap is about to close.
 ## Why architecture 9 is worth the trouble
 
 It is the worst covered architecture in the corpus by a wide margin. The byte accounting reads
-**49.8%** against 98% on both target architectures, and the reasons are all the same reason: there
+**55.1%** against 98% on both target architectures, and the reasons are all the same reason: there
 is no arch 9 firmware anywhere, so every structure that does not decode has nothing to appeal to.
 
 One specific thing is stuck behind that, and it is the largest single gap left:
 
 * **Infrared class 5.** Every record in the arch 9 sample reads class 5 where arch 8, 12 and 14 all
-  read class 1, and no firmware this project has implements it. It is why section 61's reader
-  claims nothing on arch 9.
+  read class 1, and no firmware this project has implements it. Section 65 narrowed it rather than
+  solving it: the 21 byte header is shared with class 1 and is read, and the **24511 bytes below
+  the headers** are what is left. They are not duration streams and a terminator will not find
+  their extent, so this one really does want the code.
 
 A firmware image would speak to it. That is the prize, and it is the thing this document is least
 able to predict, because nothing is known about where arch 9 keeps its code.
@@ -31,7 +33,8 @@ into the first session with the hardware because they say **not every arch 9 gap
 **Base slot 7** used to be here, the font reader refusing arch 9 because its glyphs are packed
 differently; section 63 reads them, two bits to a pixel, and they draw as letters. And **the mode
 record tail** used to be here too, at 43 of 114; section 64 found one missing operand count and it
-is now 114 of 114. Between them they took the accounting from 14.6% to 49.8%.
+is now 114 of 114. Between them they took the accounting from 14.6% to 49.8%, and section 65's
+header reading took it to 55.1%.
 
 ## The identity, predicted field by field
 

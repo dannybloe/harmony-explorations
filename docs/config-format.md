@@ -326,10 +326,13 @@ Harmony Ones every mode carries exactly one of each. The rest are key codes.
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
 
 **A screen program follows the list**, at the record's start plus the list's length, and every
-record has one on arch 8, 12 and 14: 374 of 374, 237 of 237, 268 of 268, 103 of 103, and 35 of 35 in
-a safe mode container. Arch 9 manages only 43 of 114, so there the record's tail is a different
-thing and is not established. That program is where the region's large
-pictures are addressed from. [findings.md](findings.md) section 53.
+record has one on **every** architecture: 374 of 374, 237 of 237, 268 of 268, 103 of 103, 114 of
+114 and 35 of 35 in a safe mode container. That program is where the region's large pictures are
+addressed from. [findings.md](findings.md) sections 53 and 64.
+
+Twice this looked like an architecture that did not carry them, and twice the cause was one
+missing operand count rather than a different layout: arch 12 in section 54 and arch 9 in section
+64. Neither program was malformed; both were simply unwalkable.
 
 Read with `gspm.mode_records` and `gspm.mode_program_roots`; `gspm.mode_table` returns the raw
 pointers. [findings.md](findings.md) section 52.
@@ -899,6 +902,21 @@ configs the terminator agrees exactly with the region's tiling 3357 times, stops
 all on arch 8 and all padding, and overruns never. But arch 9's 277 blocks all find a zero word too
 and **not one is in the right place**, so what separates a block this reading covers from one it
 does not is the **class byte**, which is 1 here and 5 there.
+
+#### Class 5 shares the header and nothing else
+
+Arch 9's 200 records all read class 5, and every structural property of the header above holds on
+every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
+pointing backwards and staying inside the area, the third `u24` NULL, and no two headers
+overlapping. So **the 21 byte header is one structure across both classes** and a reader can claim
+it. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
+highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
+the byte accounting could not attribute.
+
+*Not established*: everything below the header. The bytes are not durations, the record body opens
+with a `u24` naming one of 66 shared descriptors elsewhere in the file, and a run of small values
+follows, typically 32 of exactly two of them. Nothing here decodes that and no arch 9 firmware
+exists to. [findings.md](findings.md) section 65.
 
 **Blocks are shared.** A record may carry a bare header whose pointers name a block another record
 also names, so one duration stream can serve several codes. A writer cannot edit a block in place

@@ -23,6 +23,15 @@ export const IR_RECORD_POINTER_BIAS = 7;
 export const IR_MIN_PULSES = 8;
 export const IR_CLASS_STREAM = 1;
 /**
+ * The class the arch 9 sample reads in all 200 of its records, and the only class in the corpus
+ * that is not 1. What it means is **not** established and needs a firmware nobody here has. What is
+ * established, section 65, is that its records carry the same 21 byte header: the class byte at +7,
+ * the record's own start at +8, two backward pointers at +12 and +15 and a NULL at +18, all 200 of
+ * 200. So the header is claimable and the blocks are not.
+ */
+export const IR_CLASS_ARCH9 = 5;
+export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, IR_CLASS_ARCH9]);
+/**
  * The header is 21 bytes and two of its pointers name data blocks that sit **below** it. A block
  * is a run of `u16` durations closed by a zero word; either pointer may be NULL and two records
  * may name the same block. `docs/findings.md` section 61.
@@ -122,6 +131,37 @@ export function irRecordStart(c: Container, address: number): number | undefined
   const off = c.blobOffsetOf(address);
   if (off === undefined || off + 4 > c.blob.length) return undefined;
   return u24(c.blob, off + 1);
+}
+
+/**
+ * The whole of base slot 5's record area, as `[first address, one past the last]`.
+ *
+ * The lowest block pointer any record names, to the end of the highest header. Both pointers point
+ * backwards in every record of every container, so the lowest of them is the bottom of the area,
+ * and the headers are the top because nothing sits above the last one.
+ *
+ * On the arch 9 sample the two ends land exactly on the boundaries of the one big region the byte
+ * accounting could not attribute, which is what says the area is this and not something that
+ * merely overlaps it. Section 65.
+ */
+export function irRegion(c: Container): [number, number] | undefined {
+  const groups = irGroups(c);
+  if (groups === undefined || groups.length === 0) return undefined;
+  let low: number | undefined;
+  let high: number | undefined;
+  for (const group of groups) {
+    for (const address of group.addresses) {
+      const start = irRecordStart(c, address);
+      if (start === undefined) return undefined;
+      const top = start + IR_HEADER_LENGTH;
+      high = high === undefined ? top : Math.max(high, top);
+      const blocks = irRecordBlocks(c, address);
+      for (const block of blocks.length === 0 ? [start] : blocks) {
+        low = low === undefined ? block : Math.min(low, block);
+      }
+    }
+  }
+  return low === undefined || high === undefined ? undefined : [low, high];
 }
 
 export interface IrPulse {

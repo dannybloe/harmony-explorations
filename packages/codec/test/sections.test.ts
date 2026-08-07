@@ -12,8 +12,17 @@ import { load, skipUnless } from '@harmony/lab';
 import {
   eventMap,
   handlerSets,
+  IR_CLASS_ARCH9,
+  IR_CLASS_STREAM,
+  IR_HEADER_CLASSES,
+  IR_HEADER_LENGTH,
+  IR_RECORD_POINTER_BIAS,
+  irClass,
   irGroups,
   irPulses,
+  irRecordBlocks,
+  irRecordStart,
+  irRegion,
   modeRecords,
   modeTable,
   parameterGroups,
@@ -177,3 +186,43 @@ test('the key table is base slot 6 first mode record, byte for byte', skipUnless
     assert.equal((first as { entries: unknown[] }).entries.length, c.keys.length);
     assert.equal((first as { length: number }).length, 1 + 4 * c.keys.length);
   });
+
+/**
+ * Section 65. Class 5 shares class 1's header and nothing below it, so on arch 9 the header is
+ * claimed and the block area is not. The Python suite holds the same statements.
+ */
+test('arch 9 class 5 records carry the shared header', skipUnless('h525_config'), () => {
+  const c = parse(load('h525_config') as Uint8Array);
+  const records = (irGroups(c) ?? []).flatMap((g) => g.addresses).sort((a, b) => a - b);
+  assert.equal(records.length, 200);
+
+  // Both ends of the area, and neither was chosen to make them agree: the bottom is the lowest
+  // backward pointer any record names and the top is the end of the highest header.
+  const region = irRegion(c);
+  assert.deepEqual(region, [0x021f3b, 0x028f62]);
+  const low = (region as [number, number])[0];
+
+  for (const address of records) {
+    const start = irRecordStart(c, address) as number;
+    assert.equal(irClass(c, address), IR_CLASS_ARCH9);
+    assert.equal(address - start, IR_RECORD_POINTER_BIAS);
+    for (const block of irRecordBlocks(c, address)) {
+      assert.ok(low <= block && block < start, `block ${block} is not below its header`);
+    }
+  }
+
+  // Twenty one bytes each, which is only claimable if they fit side by side.
+  const starts = records.map((a) => irRecordStart(c, a) as number).sort((a, b) => a - b);
+  for (let i = 1; i < starts.length; i += 1) {
+    assert.ok((starts[i] as number) >= (starts[i - 1] as number) + IR_HEADER_LENGTH);
+  }
+
+  // The class is what gates the blocks, not a terminator, and 5 is not one of the four the
+  // firmware dispatches over.
+  assert.ok(IR_HEADER_CLASSES.has(IR_CLASS_ARCH9));
+  assert.notEqual(IR_CLASS_ARCH9, IR_CLASS_STREAM);
+  // And the trap that makes the gate necessary: `irPulses` happily returns a duration list here.
+  // It is not one. A zero word turns up in arbitrary data, so nothing below the header can be
+  // claimed on the strength of finding a terminator.
+  assert.notEqual(irPulses(c, records[0] as number), undefined);
+});

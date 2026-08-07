@@ -20,7 +20,7 @@ import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
-import { IR_CLASS_STREAM, IR_HEADER_LENGTH, irBlockLength, irClass, irGroups,
+import { IR_CLASS_STREAM, IR_HEADER_CLASSES, IR_HEADER_LENGTH, irBlockLength, irClass, irGroups,
   irRecordBlocks, irRecordStart } from './ir.ts';
 import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable }
   from './sections.ts';
@@ -218,9 +218,13 @@ export function claims(c: Container, withPictures = true): Claim[] {
   const irBlocks = new Set<number>();
   for (const group of irGroups(c) ?? []) {
     for (const address of group.addresses) {
-      if (irClass(c, address) !== IR_CLASS_STREAM) continue;
+      const encoding = irClass(c, address);
+      if (encoding === undefined || !IR_HEADER_CLASSES.has(encoding)) continue;
       const start = irRecordStart(c, address);
       if (start !== undefined) at(start, IR_HEADER_LENGTH, 'slot-5-header');
+      // Only class 1's blocks are duration streams. Class 5 shares the header and nothing below
+      // it, so its 24511 bytes of block area stay in the gaps where they belong. Section 65.
+      if (encoding !== IR_CLASS_STREAM) continue;
       for (const block of irRecordBlocks(c, address)) irBlocks.add(block);
     }
   }

@@ -6843,6 +6843,90 @@ addresses, so neither finding fed the other and their agreement is a genuine che
 * `tests/test_interpreter.py`, `TestScreenOpcode22`: the dispatcher case, the link register trace,
   the 912 pictures, the calibration over every other width, and the 1205 strings.
 
+## 65. Infrared class 5 keeps class 1's header, and that is all it keeps
+
+Arch 9's infrared records have been the largest single unread structure in the corpus for a while,
+and `docs/memory-map-525.md` lists them as the one thing a firmware image would settle. This does
+not settle them. It reads the part that does not need a firmware, and it says exactly where the
+part that does begins, which is worth more than it sounds: the byte accounting had **one** gap of
+28711 bytes on the 525, 73% of everything still unattributed, and it was not labelled.
+
+### The gap is base slot 5, and both of its ends are fixed
+
+The gap runs `0x021F3B` to `0x028F62`. Base slot 5's group arrays name 200 records, and:
+
+* the **lowest** backward pointer any record holds is `0x021F3B`, and
+* the **highest** header ends at `0x028F62`.
+
+Neither number was chosen to make the other agree. The bottom comes from the pointers and the top
+from the headers, and they land on the two ends of a gap that the accounting reported before this
+reading existed. `gspm.ir_region` returns the pair.
+
+### Everything structural about class 1's header holds on class 5
+
+Section 61 read a 21 byte header off class 1: the class byte where the pointer array lands, the
+record's own start three bytes later, two `u24` pointing backwards at data blocks, and a third
+`u24` that is always NULL. All four hold on all 200 arch 9 records:
+
+| | |
+|---|---|
+| class byte at +7 | 5 in 200 of 200 |
+| `u24` at +8 is the record's own start, seven back | 200 of 200 |
+| both `u24` at +12 and +15 point backwards and stay in the area | 200 of 200 |
+| `u24` at +18 | NULL in 200 of 200 |
+| the headers never overlap, so 21 bytes each fits | 199 of 199 |
+
+So the header is one structure across two encoding classes, which is the same shape of result as
+section 52's "the container's key table is the first mode record, byte for byte".
+
+**The blocks are a different matter and are deliberately not claimed.** Below the header, class 5's
+bytes are not duration streams. Section 61 already recorded the trap: all of arch 9's blocks find a
+zero word and not one of them is in the right place, so a reader that walked to a terminator would
+claim a confident and wrong extent. `irPulses` on an arch 9 record still returns a plausible
+looking list of durations today, and a test pins that it does, because the gate has to be the
+**class byte** and nothing else.
+
+### What class 5 actually is, as far as the bytes go
+
+Recorded because it is what the next person starts from, and marked as **not established**. The
+area alternates block content and headers, and a record's body reads:
+
+```
+u24   a shared descriptor, 66 distinct values over 200 records, 135 of them
+      landing in a second unattributed area of 1814 bytes near base slot 5's own pointer
+u16   39 in most records
+u16
+      then a run of small values, typically 32 of exactly two values followed by 04 05 06 07 08
+```
+
+Thirty two of two alternating symbols is the shape of a 32 bit remote code with one symbol per bit,
+which would make class 5 a **table driven** encoding where class 1 is a literal one, and the shared
+descriptor the table. That is a conjecture with nothing behind it but the shape. It is not in the
+code and it should be tested against an arch 9 firmware rather than against more of the same file.
+
+The rule "each header's block area is the one immediately before it" was tried and **fails**: it
+holds for 135 of 199 and the other 64 point further back, so the areas are shared in some pattern
+this does not recover.
+
+### Coverage
+
+| Sample | before | after |
+|---|---|---|
+| 525, arch 9 | 49.8% | **55.1%** |
+
+4200 bytes, being 200 headers of 21. The 24511 bytes of block content stay in the gaps, where an
+undecoded structure belongs; inflating the number by claiming a span whose contents nobody can read
+would make the measure useless for exactly the thing it exists to track.
+
+### Where it lands
+
+* `gspm.IR_CLASS_ARCH9`, `IR_HEADER_CLASSES` and `gspm.ir_region`; the same three in
+  `packages/codec/src/ir.ts`. `coverage.ts` claims the header for both classes and the blocks for
+  class 1 alone.
+* `tests/test_gspm.py`, `TestTheArch9InfraredHeader`: the four header properties, the non overlap,
+  the region landing on both gap boundaries, the deliberate refusal of the blocks, and a
+  calibration that class 1 is untouched.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
