@@ -913,14 +913,36 @@ class TestTheParameterBlock(unittest.TestCase):
                     self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
 
 
-class TestTheImageSets(unittest.TestCase):
-    """findings.md section 46: what base slot 7's entries point at."""
+class TestTheFontTable(unittest.TestCase):
+    """findings.md section 46: base slot 7 is the font table, and what corrected it.
+
+    The first reading of this section took the set header's first byte for a slot count when it
+    is the glyph height. Two of the tests below exist because of that: the height one, which is
+    what the byte actually is, and the string one, which is what the wrong count made look broken.
+    """
 
     CONTAINERS = TestTheParameterBlock.CONTAINERS
 
     @staticmethod
+    def _programs(container):
+        """Every reachable screen program, the same walk `tools/screen_dump.py` does."""
+        seen, queue, out = set(), list(container.screen_program_roots()), {}
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = container.screen_program(address)
+            if program is None:
+                continue
+            out[address] = program
+            for instruction in program:
+                queue.extend(instruction.targets)
+        return out
+
+    @staticmethod
     def _decode(container, address, limit, pixel_bytes):
-        """The reader's own algorithm with the pixel size as a parameter, for the calibration."""
+        """The reader's algorithm with the pixel size as a parameter, for the calibration."""
         from harmony import gspm
         off = container.blob_offset_of(address)
         width = container.blob[off]
@@ -943,23 +965,39 @@ class TestTheImageSets(unittest.TestCase):
         return 0
 
     @staticmethod
-    def _addresses(container):
-        """Each image with the offset it must end before: the next image, or the set's header.
-
-        A set's images are laid out immediately before the header that points at them, which is
-        what gives the last one a bound without trusting the stream to stop.
-        """
-        from harmony import gspm
-        slot = gspm.arch_slot(container.architecture, gspm.IMAGE_TABLE_SLOT)
-        headers = container.pointer_array(slot)
-        for header, entry in zip(headers, container.image_sets()):
-            live = sorted(a for a in entry if a is not None)
+    def _bounded(container):
+        """Each glyph with the offset it must end before: the next glyph, or the set's header."""
+        for font in container.font_sets():
+            live = sorted(a for a in font.glyphs if a is not None)
             for i, address in enumerate(live):
-                nxt = (container.blob_offset_of(live[i + 1]) if i + 1 < len(live)
-                       else container.blob_offset_of(header))
-                yield address, nxt
+                yield address, container.blob_offset_of(
+                    live[i + 1] if i + 1 < len(live) else font.address)
 
-    def test_every_image_decodes_with_no_row_left_half_finished(self):
+    def test_a_set_declares_one_count_per_container(self):
+        """Not per typeface: it is the config's character set size."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            counts = {f.count for f in c.font_sets()}
+            with self.subTest(container=name):
+                self.assertEqual(len(counts), 1, counts)
+                self.assertGreaterEqual(counts.pop(), 46)
+
+    def test_the_spare_header_byte_is_constant_per_architecture(self):
+        """What the count offset rests on, since the firmware does not settle it."""
+        from harmony import gspm
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            at = gspm.IMAGE_COUNT_OFFSET[c.architecture]
+            spare = 1 if at == 2 else 2
+            expected = 1 if c.architecture != 12 else 0
+            for entry in c.pointer_array(gspm.arch_slot(c.architecture, gspm.IMAGE_TABLE_SLOT)):
+                off = c.blob_offset_of(entry)
+                with self.subTest(container=name, entry=hex(entry)):
+                    self.assertEqual(c.blob[off + spare], expected)
+
+    def test_every_glyph_decodes_to_the_height_its_set_declares(self):
+        """The byte the first reading of this section mistook for a count."""
         from harmony import gspm
         total = 0
         for name in self.CONTAINERS:
@@ -969,14 +1007,37 @@ class TestTheImageSets(unittest.TestCase):
                 if c.architecture not in gspm.IMAGE_ARCHITECTURES:
                     self.assertIsNone(sets)
                     continue
-                self.assertIsNotNone(sets)
-                for images in sets:
-                    for image in images:
-                        self.assertGreater(image.height, 0)
-                        for row in image.rows:
-                            self.assertEqual(len(row), image.width)
-                total += sum(len(s) for s in sets)
-        self.assertGreater(total, 900)
+                for font, glyphs in zip(c.font_sets(), sets):
+                    for glyph in glyphs:
+                        self.assertEqual(glyph.height, font.height)
+                        for row in glyph.rows:
+                            self.assertEqual(len(row), glyph.width)
+                total += sum(len(g) for g in sets)
+        self.assertEqual(total, 3933)
+
+    def test_every_inline_string_resolves_through_its_own_font(self):
+        """The closure the wrong count destroyed, and the reason this section was corrected."""
+        from harmony import gspm
+        codes = resolved = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture not in gspm.IMAGE_ARCHITECTURES:
+                continue
+            fonts = c.font_sets()
+            for program in self._programs(c).values():
+                selected = None
+                for instruction in program:
+                    if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                        selected = instruction.operands[0]
+                    if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                        continue
+                    if selected is None or selected >= len(fonts):
+                        continue
+                    for code in instruction.glyphs:
+                        codes += 1
+                        resolved += c.glyph(fonts[selected], code) is not None
+        self.assertEqual(codes, 16054)
+        self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
         """The calibration: the wrong pixel size has to fail, or the fit above means nothing."""
@@ -984,7 +1045,7 @@ class TestTheImageSets(unittest.TestCase):
         for name in ('h700_config', 'one_config', 'arch8_config_a'):
             c = gspm.parse(lab.load(name))
             right = wrong = total = 0
-            for address, limit in self._addresses(c):
+            for address, limit in self._bounded(c):
                 total += 1
                 right += 1 if self._decode(c, address, limit, 2) else 0
                 wrong += 1 if self._decode(c, address, limit, 1) else 0
@@ -992,50 +1053,15 @@ class TestTheImageSets(unittest.TestCase):
                 self.assertEqual(right, total)
                 self.assertLess(wrong, total // 5)
 
-    def test_a_set_has_one_height(self):
-        """What says these are a line of type rather than a set of icons.
-
-        The height holds for every set without exception. Width is a majority property rather
-        than a rule: sixteen of the corpus's 126 sets happen to hold one width only.
-        """
-        from harmony import gspm
-        sets = varying = 0
-        for name in self.CONTAINERS:
-            c = gspm.parse(lab.load(name))
-            if c.architecture not in gspm.IMAGE_ARCHITECTURES:
-                continue
-            for index, images in enumerate(c.images()):
-                if not images:
-                    continue
-                sets += 1
-                varying += 1 if len({i.width for i in images}) > 1 else 0
-                with self.subTest(container=name, entry=index):
-                    self.assertEqual(len({i.height for i in images}), 1)
-        self.assertEqual(sets, 126)
-        self.assertGreater(varying, sets * 4 // 5)
-
-    def test_the_codes_overrun_the_selected_set(self):
-        """The reading section 46 rules out, kept so it is not re-derived and believed."""
+    def test_a_glyph_code_is_one_based(self):
+        """Zero terminates a string, so nothing can name glyph slot zero by the code zero."""
         from harmony import gspm
         c = gspm.parse(lab.load('h700_config'))
-        sets = c.image_sets()
-        seen, queue, selected, codes = set(), list(c.screen_program_roots()), set(), set()
-        while queue:
-            address = queue.pop()
-            if address in seen:
-                continue
-            seen.add(address)
-            program = c.screen_program(address)
-            if program is None:
-                continue
-            for instruction in program:
-                queue.extend(instruction.targets)
-                if instruction.opcode == 16 and instruction.operands:
-                    selected.add(instruction.operands[0])
-                if instruction.opcode == gspm.SCREEN_TEXT_INLINE and instruction.glyphs:
-                    codes.update(instruction.glyphs)
-        self.assertEqual(selected, {4})
-        self.assertGreater(max(codes), len(sets[4]))
+        font = c.font_sets()[4]
+        self.assertIsNone(c.glyph(font, 0))
+        self.assertIsNone(c.glyph(font, font.count + 1))
+        first = next(i for i, a in enumerate(font.glyphs) if a is not None)
+        self.assertIsNotNone(c.glyph(font, first + gspm.GLYPH_CODE_BIAS))
 
 
 class TestTheTouchScreenHitMap(unittest.TestCase):

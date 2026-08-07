@@ -7,14 +7,18 @@ jump and every switch arm until nothing new turns up. Instructions are variable 
 length field, so a program that does not decode is reported rather than skipped: a silent count is
 how a desynchronised walk gets mistaken for a complete one.
 
-Usage:  screen_dump.py <file> [--json] [--all] [--images]
+Usage:  screen_dump.py <file> [--json] [--all] [--images] [--strings]
 
 Without `--all` only programs that do more than queue one action list instruction are printed,
 because most of base slot 11 is exactly that and it buries everything else.
 
-`--images` prints base slot 7 instead: the small run length encoded bitmaps opcode 16 indexes,
-drawn as text. That is how the encoding was checked in the first place, because a bitmap that
-decodes into readable letters is a stronger argument than a row count.
+`--images` prints base slot 7 instead: the glyph sets opcode 16 selects, drawn as text. That is how
+the encoding was checked in the first place, because a bitmap that decodes into readable letters is
+a stronger argument than a row count.
+
+`--strings` goes one step further and draws the inline strings themselves, each one through the
+font its own program selected. A string that comes out as a readable phrase exercises the whole
+chain at once: the program walk, opcode 16, the code minus one, and the bitmap decoder.
 """
 import json
 import sys
@@ -24,8 +28,16 @@ from harmony import ezfile, gspm
 
 NAMES = {
     0: 'end', 1: 'repeat', 2: 'draw', 3: 'draw.wide', 4: 'string', 5: 'string.inline',
-    16: 'slot7', 17: 'queue', 18: 'switch', 19: 'switch.wide', 20: 'jump', 21: 'arch8',
+    16: 'font', 17: 'queue', 18: 'switch', 19: 'switch.wide', 20: 'jump', 21: 'arch8',
 }
+
+
+def draw_string(container, font, codes):
+    """One inline string, drawn through the font its program selected."""
+    glyphs = [container.glyph(font, code) for code in codes]
+    if any(g is None for g in glyphs):
+        return None
+    return draw(glyphs)
 
 
 def draw(images):
@@ -115,6 +127,35 @@ def main():
             } for address, program in sorted(programs.items())],
         }, sys.stdout, indent=2)
         print()
+        return
+
+    if '--strings' in sys.argv:
+        fonts = container.font_sets()
+        if fonts is None or container.architecture not in gspm.IMAGE_ARCHITECTURES:
+            print('no glyphs: architecture %s uses a packing this reader does not decode'
+                  % container.architecture)
+            return
+        drawn = 0
+        for address, program in sorted(programs.items()):
+            selected = None
+            for instruction in program:
+                # Opcode 16 sets the current font and it stays set for the rest of the program,
+                # so a string is drawn with whatever the last one named.
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                if selected is None or selected >= len(fonts):
+                    continue
+                lines = draw_string(container, fonts[selected], instruction.glyphs)
+                if lines is None:
+                    continue
+                drawn += 1
+                print('\n0x%06X, font %d, codes %s'
+                      % (address, selected, list(instruction.glyphs)))
+                for line in lines:
+                    print('    ' + line)
+        print('\n%d strings drawn' % drawn)
         return
 
     if '--images' in sys.argv:

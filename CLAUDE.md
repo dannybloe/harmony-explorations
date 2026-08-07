@@ -645,12 +645,20 @@ is a layout resource rather than user data. `gspm.touch_pages`, `gspm.Container.
 arch 12, with its only seeker call site on the One at `0x2DB68`. What is measured about it is in
 `docs/config-format.md`, marked not established, so nobody mistakes the shape for the answer.
 
-**Base slot 7's targets are decoded**, section 46: small **run length encoded images**, `u8 width`
-then one byte operations where `0x00` ends the image, bit 7 set skips that many background pixels
-and a byte below `0x80` introduces that many literal **two byte** pixels. Rows are exactly `width`
-wide and the height is not stored. 913 images on arch 8, 12 and 14 decode with nothing left over,
-and a one byte pixel fails almost all of them, which is the calibration. **Arch 9 packs it
-differently and the reader refuses that architecture.** They are letters: every set has exactly one
-height, widths vary, and `tools/screen_dump.py --images` draws them. What is **not** established is
-how a string reaches an image, and the obvious reading is ruled out rather than merely unproven:
-the inline codes reach 20, 28 and 52 where the selected set holds 15, 18 and 8 slots.
+**Base slot 7 is the font table**, section 46, and the whole text path now works end to end. A set
+is `{ u8 height; u8; u8; u24 glyph[count] }` where one of the two middle bytes is the count, 46 to
+76 and the same for every set in a container; a glyph is `u8 width` then one byte operations where
+`0x00` ends it, bit 7 set skips that many background pixels and a byte below `0x80` introduces that
+many literal **two byte** pixels. Three closures on twelve containers: 3933 glyphs whose every row
+is exactly `width`, every glyph decoding to exactly its set's declared height, and **16054 inline
+string codes all resolving** to a non-NULL glyph of the font their own program selected, taken as
+one based. A one byte pixel fails almost all of them. Arch 9 packs it differently and the reader
+refuses it. `tools/screen_dump.py --strings` draws the strings, which come out as readable labels.
+
+**That section was corrected in place the next day and the correction is the instructive part.**
+The first reading took the set header's first byte for a slot count when it is the glyph height,
+which shrank every set from ~75 glyphs to ~15, undercounted the corpus by a factor of four, and
+then made the inline codes look like they overran their set, so the section confidently declared
+the correct reading ruled out. **When a structure refuses to make sense, suspect the field
+assignment before writing up the anomaly**, which is the same lesson as the key code split in
+section 17.

@@ -71,9 +71,10 @@ not the matrix address it was read as here for a while. That correction turned t
 table from something that provably could not describe its own keypad into 54 keys times three
 event types, exactly.
 
-Both of the config's languages are read, and the **glyph bitmaps** with them: base slot 7 holds
-run length encoded images, two bytes a pixel, which decode into recognisable letters and can be
-drawn with `tools/screen_dump.py --images`. **Action lists** are bytecode for an accumulator machine
+Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
+run length encoded glyphs at two bytes a pixel, and every one of 16054 inline string codes in the
+corpus resolves to a glyph of the font its own program selected. `tools/screen_dump.py --strings`
+draws them, and they come out as readable labels. **Action lists** are bytecode for an accumulator machine
 with a forty instruction queue and a binary search dispatcher, and a **second interpreter draws
 the screen**: its own one byte opcodes for text, objects, a switch on a state variable and a jump,
 with 18252 programs across ten configs decoding with nothing left over.

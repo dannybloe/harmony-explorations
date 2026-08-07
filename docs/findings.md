@@ -4778,15 +4778,41 @@ rectangle runs to 4437, which is either the panel's edge or deliberately past it
 
 **Why one code of the eleven, 45, is missing** from the map while the key table has it.
 
-## 46. What base slot 7 points at: run length encoded images
+## 46. Base slot 7 is the font table
 
 Section 40 placed the slot, as the table the screen language's opcode 16 indexes, and left its
-targets unread. They are small bitmaps, and reading them is how a claim in this project stopped
-being an argument and started being a picture.
+targets unread. They are glyphs, and with them a config's text can be drawn.
 
-### The encoding
+**Corrected in place.** The first version of this section, committed the day before, read the byte
+at the start of a set as its slot count. It is the **glyph height**. That single mistake cut every
+set from 46 to 76 glyphs down to 8 to 18, made the corpus look like 913 images when it holds 3933,
+and then produced a second, worse error: the inline strings' codes appeared to run past the end of
+the set their program selected, and this section declared the obvious reading ruled out. It is not
+ruled out; it is right, and the closure below is as clean as any in this document. The lesson is
+the one section 17 already recorded in different words: **when a structure refuses to make sense,
+suspect the field assignment before writing up the anomaly.**
 
-Each target is:
+### The set
+
+```
++0x00  u8   glyph height in pixels, shared by every glyph in the set
++0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
++0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
++0x03  u24  glyph[count]     NULL for a code this config never draws
+```
+
+The count is the same for every set in a container and differs between containers: 75 on the
+Harmony 700, 71 on the 600, 73 and 72 on the two Ones, 74 to 76 on the arch 8 configs, 66 on the
+525 and 46 in all three safe mode containers. So it is a character set size, chosen per config
+rather than per typeface, and most of its codes are NULL because a config ships only the glyphs its
+own text uses.
+
+Which of the two header bytes holds it is **measured rather than explained**. On arch 8, 9 and 14
+the byte at `+0x01` is 1 in every set of every container and the count is at `+0x02`; on arch 12 it
+is the other way round with a zero in the spare byte. The firmware reads the pair as a single `u16`
+and never bounds a glyph code with it, so the code does not settle the question either.
+
+### The glyph
 
 ```
 +0x00  u8   width in pixels
@@ -4796,21 +4822,31 @@ then a stream of one byte operations:
 
 | byte | meaning |
 |---|---|
-| `0x00` | end of image |
+| `0x00` | end of glyph |
 | `0x80` plus n | n pixels of the background, not stored |
 | n, below `0x80` | n literal pixels follow, **two bytes each** |
 
-A row is exactly `width` pixels and the next one begins as soon as that many are accounted for, so
-the height is not stored anywhere; it is however many rows the stream produces.
+A row is exactly `width` pixels and the next one begins as soon as that many are accounted for.
 
-### The closure, and the wrong answer scoring near zero
+### Three closures
 
-913 images across arch 8, arch 12 and arch 14: **every row comes to exactly `width`, and every
-stream ends on `0x00` with no row half finished.** That is a real constraint, because the operations
-are variable length and nothing states a row's boundary, so one wrong pixel size desynchronises
-everything after it.
+**Every row comes to exactly `width`.** 3933 glyphs across arch 8, arch 12 and arch 14, every
+stream ending on `0x00` with no row half finished. The operations are variable length and nothing
+marks a row boundary, so one wrong pixel size desynchronises everything after it.
 
-Which is exactly what a one byte pixel does. Run the same decoder with `IMAGE_PIXEL_BYTES` at 1:
+**Every glyph produces exactly the height its set declares.** 3933 of 3933. The height is stored
+once, in the set header, and recovered 3933 times from streams that never mention it.
+
+**Every inline string resolves.** Walking every reachable screen program and tracking which font
+opcode 16 last selected, **16054 glyph codes across twelve containers land on a non-NULL glyph of
+that font**, with the code taken as one based. Not one is out of range and not one hits a NULL
+slot. Zero is the string terminator, which is why the index is the code minus one, exactly as the
+firmware does it at `0x185E4`.
+
+### The wrong pixel size scores near zero
+
+The calibration this project asks for, on a decode rather than on an address. The same decoder with
+a one byte pixel:
 
 | config | two byte pixel | one byte pixel |
 |---|---|---|
@@ -4818,60 +4854,41 @@ Which is exactly what a one byte pixel does. Run the same decoder with `IMAGE_PI
 | Harmony One | 147 of 147 | 0 of 147 |
 | Harmony 880 | 66 of 66 | 6 of 66 |
 
-The calibration this project asks for, on a decode rather than on an address.
-
-**Arch 9 is not covered.** The Harmony 525's images share the `0x00` terminator and nothing else
-that this decoder understands, and no arch 9 firmware exists here, so `gspm.images` refuses that
+**Arch 9 is not covered.** The Harmony 525's glyphs share the `0x00` terminator and nothing else
+this decoder understands, and no arch 9 firmware exists here, so `gspm.images` refuses that
 architecture rather than producing a plausible wrong bitmap.
+
+### The firmware
+
+Opcode 16's handler at `0x18508` on the Harmony 700 reads its one byte operand, seeks base slot 7,
+reads the section's `u16` count, indexes by the operand and stores the resulting `u24` into
+`0x398` to `0x39A`. That is the pointer section 40 found the renderer using and could not trace to
+a source.
+
+The renderer, at `0x185E4`, seeks that address, skips one byte, reads a `u16`, and then indexes
+what follows at stride three by **the code minus one** before following the pointer. Skipping one
+and reading two is the three byte header above, so the index lands on `glyph[code - 1]`.
 
 ### They are letters
 
-The strongest confirmation is not a number. `tools/screen_dump.py --images` draws a set as text,
-and the first set of the Harmony 600's own config comes out as recognisable glyphs: a capital H
-nine pixels wide and fifteen tall, a lower case y, a blank, and s, e, c.
+`tools/screen_dump.py --strings` draws each inline string through the font its own program
+selected. The Harmony 700's come out as readable labels of the form `(0 sec)`, `(0.1 sec)`,
+`(0.2 sec)`, which are the delay choices in its menus. That exercises the whole chain in one go:
+the program walk, opcode 16, the code minus one, and the bitmap decoder.
 
-Three properties agree with that.
+The pixel is sixteen bits and fifteen distinct values occur across the corpus, dominated by
+`0xFFFF` and `0x0000`. Whether those are RGB565 is not established and does not matter to the
+decode.
 
-**Every set has exactly one height**, on all three architectures: 15, 14, 14, 14, 15, 14, ... one
-per set, never two. That is what a line of type looks like and not what a set of icons looks like.
+### What is not established
 
-**Widths vary inside a set**, 3 to 14 pixels, so the type is proportional. That one is a majority
-rather than a rule: 110 of the corpus's 126 sets hold more than one width, and the other 16 happen
-to hold glyphs that are all the same width.
+**Which header byte is the count**, per the paragraph above.
 
-**A shape repeats across sets.** In the 700's config 130 images reduce to 88 distinct bitmaps, with
-one appearing seven times; on the One 147 reduce to 143, so that config's sets share almost nothing.
+**What the glyph codes mean.** They are a per config character set, so code 5 is a space in the
+700's configs and nothing says it is a space in anyone else's. A writer that wants to add text has
+to build a set and number it, not look a character up.
 
-The pixel is sixteen bits and fifteen distinct values occur, dominated by `0xFFFF` and `0x0000`.
-Whether those are RGB565 is not established and does not matter to the decode.
-
-### The entry header
-
-```
-+0x00  u8   slots
-+0x01  u16  purpose unestablished
-+0x03  u24  image[slots]
-```
-
-Eight to eighteen slots, and **NULL entries are ordinary**: the 700's first set has 15 slots and 7
-images. So a set is sparse, which is what a generator shipping only the glyphs something needs
-would produce.
-
-### What is not established, and one reading ruled out
-
-**How a string reaches an image.** Section 40 found the renderer indexing a font table at `0x398`
-by the code minus one, and the obvious reading is that opcode 16 loads that table from the set its
-operand names. The corpus says otherwise: on the Harmony 700 every one of the 472 opcode 16
-instructions selects set 4, which has 15 slots, and the inline strings in the same programs carry
-codes up to **20**. On the One the selected set has 18 slots and codes reach 28; on the 880, 8 slots
-and codes reach 52. Only 125 of the 700's 451 strings stay inside the selected set.
-
-So the codes address something larger than one set, and where `0x398` is loaded from is still the
-open question section 40 left. What is new is that the thing it points into is now decodable, and
-that the simplest guess is measurably wrong rather than merely unproven.
-
-**The two bytes at `+0x01`** of a set header, which are `0x01 0x4B` on the 700 and the 880,
-`0x01 0x47` on the 600, `0x01 0x42` on the 525 and `0x49 0x00` on the One.
+**Arch 9's packing.**
 
 ## References
 

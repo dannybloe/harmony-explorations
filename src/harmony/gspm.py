@@ -320,6 +320,7 @@ SCREEN_TABLE_SLOT = 11
 SCREEN_FIXED_OPERANDS = {1: 6, 2: 5, 3: 9, 4: 5, 16: 1, 17: 3, 20: 3, 21: 4}
 SCREEN_END = 0
 SCREEN_TEXT_INLINE = 5          # two position bytes then a NUL terminated string
+SCREEN_SELECT_FONT = 16         # one operand: the base slot 7 entry every later string draws with
 SCREEN_QUEUE_INSTRUCTION = 17   # the bridge to the action list language
 SCREEN_SWITCH_NARROW = 18
 SCREEN_SWITCH_WIDE = 19
@@ -340,24 +341,42 @@ HANDLER_TAG_LEAVE = 2
 OPCODE_SELECT_HANDLER = 0x1F
 SELECT_HANDLER_OPERAND_HIGH = 0xFF
 
-# Base slot 7's targets are small images, run length encoded. The section itself was placed in
-# section 40, as the table the screen language's opcode 16 indexes; this is what the entries hold.
+# Base slot 7 is the font table: each entry is one typeface, and each of its slots one glyph,
+# run length encoded. The section was placed in section 40, as the table the screen language's
+# opcode 16 indexes; the entries are read in section 46.
+#
+#     +0x00  u8   glyph height in pixels, the same for every glyph in the set
+#     +0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
+#     +0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
+#     +0x03  u24  glyph[count]     NULL for a code the config never uses
+#
+# and each glyph
 #
 #     +0x00  u8   width in pixels
 #     then a stream of one byte operations:
-#       0x00        end of image
+#       0x00        end of glyph
 #       0x80 | n    n pixels of the background, skipped
 #       n           n literal pixels follow, two bytes each
 #
-# A row is exactly `width` pixels and the next one starts as soon as that many are accounted for,
-# so the height is however many rows there are rather than a stored field.
+# A row is exactly `width` pixels and the next one starts as soon as that many are accounted for.
+# The height is not stored per glyph: it is the set's, and every glyph produces exactly that many
+# rows, which is one of the two checks that hold the reading up.
 IMAGE_TABLE_SLOT = 7
+IMAGE_SET_HEADER = 3
 IMAGE_END = 0x00
 IMAGE_SKIP = 0x80
 IMAGE_PIXEL_BYTES = 2
-# Arch 9's images use the same terminator and a different packing, and no arch 9 firmware exists
+# Which of the two header bytes carries the count. Measured rather than explained: on arch 8, 9
+# and 14 the byte at +1 is 1 in every set of every container and the count is at +2, and on arch 12
+# it is the other way round with a 0 in the spare byte. The firmware reads the pair as one `u16`
+# and does not bound the glyph code with it, so nothing in the code settles which field is which.
+IMAGE_COUNT_OFFSET = {8: 2, 9: 2, 12: 1, 14: 2}
+# Arch 9's glyphs use the same terminator and a different packing, and no arch 9 firmware exists
 # here to read it out of, so `images` refuses that architecture rather than guessing.
 IMAGE_ARCHITECTURES = frozenset({8, 12, 14})
+# A glyph code is one based: zero terminates an inline string, so the firmware indexes the set by
+# the code minus one. `docs/findings.md` sections 40 and 46.
+GLYPH_CODE_BIAS = 1
 
 # Base slot 17 is the touch screen hit map, and it is the one section only arch 12 populates,
 # because the Harmony One is the only remote here with a touch panel. Two levels: a page, then the
@@ -552,8 +571,21 @@ class NumberSender:
 
 
 @dataclass
+class FontSet:
+    """One base slot 7 entry: a typeface, as a sparse array of glyph addresses.
+
+    `height` is the set's, not each glyph's, and every glyph in it decodes to exactly that many
+    rows. A None in `glyphs` is a code this config never draws, which is most of them.
+    """
+    address: int
+    height: int
+    count: int
+    glyphs: List[Optional[int]]
+
+
+@dataclass
 class Image:
-    """One small image out of a base slot 7 set.
+    """One glyph out of a base slot 7 set.
 
     `rows` holds one list per row, `width` long, with None where the encoding skipped a pixel and
     a sixteen bit value where it supplied one. None is kept distinct from a black pixel because
@@ -1407,37 +1439,41 @@ class Container:
                              instruction=self._instruction_at(off + 4)))
         return out
 
-    def image_sets(self) -> Optional[List[List[Optional[int]]]]:
-        """Base slot 7 read one level down: per entry, the address of each image or None.
+    def font_sets(self) -> Optional[List['FontSet']]:
+        """Base slot 7: one entry per typeface, with the address of each glyph or None.
 
         ```
-        +0x00  u8   slots
-        +0x01  u16  purpose unestablished
-        +0x03  u24  image[slots]      NULL entries are ordinary and common
+        +0x00  u8   glyph height, shared by every glyph in the set
+        +0x01  u8   count on arch 12, else 1
+        +0x02  u8   count on arch 8, 9 and 14, else 0
+        +0x03  u24  glyph[count]     NULL for a code this config never draws
         ```
 
-        The section itself is a plain pointer array, `pointer_array`, and it is what the screen
-        language's opcode 16 indexes. `docs/findings.md` sections 40 and 46.
+        The section itself is a plain pointer array, `pointer_array`, and opcode 16 of the screen
+        language indexes it. `docs/findings.md` sections 40 and 46.
         """
         slot = arch_slot(self.architecture, IMAGE_TABLE_SLOT)
         entries = self.pointer_array(slot)
-        if entries is None:
+        at = IMAGE_COUNT_OFFSET.get(self.architecture)
+        if entries is None or at is None:
             return None
-        out: List[List[Optional[int]]] = []
+        out: List[FontSet] = []
         for entry in entries:
             off = self.blob_offset_of(entry)
-            if off is None or off >= len(self.blob):
+            if off is None or off + IMAGE_SET_HEADER > len(self.blob):
                 return None
-            count = self.blob[off]
-            if off + 3 + 3 * count > len(self.blob):
+            count = self.blob[off + at]
+            end = off + IMAGE_SET_HEADER + 3 * count
+            if end > len(self.blob):
                 return None
-            addresses = [int.from_bytes(self.blob[off + 3 + 3 * i:off + 6 + 3 * i], 'little')
-                         for i in range(count)]
-            out.append([a or None for a in addresses])
+            addresses = [int.from_bytes(self.blob[p:p + 3], 'little')
+                         for p in range(off + IMAGE_SET_HEADER, end, 3)]
+            out.append(FontSet(address=entry, height=self.blob[off], count=count,
+                               glyphs=[a or None for a in addresses]))
         return out
 
     def image(self, address: int, limit: Optional[int] = None) -> Optional['Image']:
-        """Decode the image at an absolute flash address, or None if the stream does not fit.
+        """Decode the glyph at an absolute flash address, or None if the stream does not fit.
 
         Returns None rather than a partial image, because a row that does not come to exactly
         `width` pixels means the encoding was misread and a half decoded bitmap would hide that.
@@ -1475,22 +1511,42 @@ class Container:
         return None
 
     def images(self) -> Optional[List[List['Image']]]:
-        """Every image in base slot 7, grouped by entry, with the NULL slots dropped."""
-        sets = self.image_sets()
+        """Every glyph in base slot 7, grouped by set, with the NULL codes dropped.
+
+        Each glyph is bounded by the next one's address, and the last by the set's own header,
+        because the glyphs are laid out immediately before the array that points at them.
+        """
+        sets = self.font_sets()
         if sets is None:
             return None
         out = []
-        for entry in sets:
-            live = sorted(a for a in entry if a is not None)
+        for font in sets:
+            live = sorted(a for a in font.glyphs if a is not None)
             decoded = []
             for i, address in enumerate(live):
-                nxt = self.blob_offset_of(live[i + 1]) if i + 1 < len(live) else None
+                nxt = self.blob_offset_of(live[i + 1] if i + 1 < len(live) else font.address)
                 picture = self.image(address, nxt)
                 if picture is None:
                     return None
                 decoded.append(picture)
             out.append(decoded)
         return out
+
+    def glyph(self, font: 'FontSet', code: int) -> Optional['Image']:
+        """The glyph an inline string's code names, or None if it names nothing.
+
+        The code is one based, because zero terminates a string, so this is where `- 1` lives
+        rather than in every caller.
+        """
+        index = code - GLYPH_CODE_BIAS
+        if index < 0 or index >= len(font.glyphs):
+            return None
+        address = font.glyphs[index]
+        if address is None:
+            return None
+        live = sorted(a for a in font.glyphs if a is not None)
+        after = [a for a in live if a > address]
+        return self.image(address, self.blob_offset_of(after[0] if after else font.address))
 
     def touch_pages(self) -> Optional[List[List['TouchArea']]]:
         """Base slot 17: the touch screen hit map, one list of rectangles per page.

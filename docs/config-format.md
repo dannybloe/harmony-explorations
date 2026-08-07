@@ -448,39 +448,48 @@ One of the six recognised pointer arrays. Each entry is a screen program. On arc
 700's 5711 entries are the same two instruction program, queue one action list instruction and end,
 so the table is mostly indirection.
 
-### Base slot 7: the image sets
+### Base slot 7: the font table
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
-Each entry is a set of small run length encoded bitmaps:
+Each entry is one typeface:
 
 ```
-+0x00  u8   slots
-+0x01  u16  purpose unestablished
-+0x03  u24  image[slots]      NULL entries are ordinary and common
++0x00  u8   glyph height in pixels, shared by every glyph in the set
++0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
++0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
++0x03  u24  glyph[count]     NULL for a code this config never draws
 ```
 
-and each image
+and each glyph
 
 ```
 +0x00  u8   width in pixels
 ```
 
-followed by one byte operations: `0x00` ends the image, a byte with bit 7 set skips that many
+followed by one byte operations: `0x00` ends the glyph, a byte with bit 7 set skips that many
 background pixels, and a byte below `0x80` introduces that many literal pixels of **two bytes**
-each. A row is exactly `width` pixels and the next begins as soon as that many are accounted for,
-so the height is not stored.
+each. A row is exactly `width` pixels and the next begins as soon as that many are accounted for;
+the height comes from the set header rather than from the glyph.
 
-**Confirmed on 913 images across arch 8, arch 12 and arch 14**: every row comes to exactly `width`
-and every stream ends cleanly. Decoding with a one byte pixel instead fails on almost all of them,
-which is the calibration. **Arch 9 uses a different packing** and `gspm.images` refuses it rather
-than guessing.
+The count is the same for every set in a container and differs between containers, 46 to 76, so it
+is a character set size chosen per config. Which of the two header bytes holds it is *measured, not
+explained*: the firmware reads the pair as one `u16` and never bounds a code with it.
 
-They are letters. Every set has exactly one height, widths inside a set vary from 3 to 14, and
-`tools/screen_dump.py --images` draws them as recognisable glyphs.
+**A glyph code is one based**, because zero terminates an inline string, so the firmware indexes the
+set by the code minus one.
 
-**How a string reaches an image is not established**, and the obvious reading is ruled out: the
-inline strings carry codes up to 20, 28 and 52 while the set their program selects holds at most
-15, 18 and 8 slots. [findings.md](findings.md) section 46.
+Three checks, on twelve containers across three architectures:
+
+* every row comes to exactly `width`, for **3933 glyphs**, with no stream ending mid row
+* every glyph decodes to exactly the height its set declares, 3933 of 3933
+* every inline string resolves: **16054 glyph codes** land on a non-NULL glyph of the font their
+  own program selected, none out of range and none on an empty slot
+
+Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.
+**Arch 9 uses a different packing** and `gspm.images` refuses it rather than guessing.
+
+Read with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`; draw them with
+`tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) section 46.
 
 ### Base slot 17: the touch screen hit map
 

@@ -665,7 +665,7 @@ Not optional, and they belong in the code rather than in a document:
 * **Base slot 2**, the only pointer that is neither named nor NULL now that section 45 has taken
   slot 17. Eight bytes, nine on arch 12, with one seeker call site on the One. What is measured is
   in `docs/config-format.md`.
-* **How a string reaches a glyph.** Base slot 7's targets are decoded, section 46: run length
-  encoded images that draw as letters. What is not known is the addressing. The renderer indexes a
-  font table at `0x398` by the code minus one, section 40, and the codes overrun the set the
-  program selects, so `0x398` is loaded from somewhere this project has not traced.
+* **What the glyph codes mean.** Base slot 7 is the font table and the whole text path is traced,
+  section 46: opcode 16 loads `0x398` from the slot, and a string's code minus one indexes it. What
+  is left is that the codes are a per config character set, so nothing says code 5 is a space in
+  anyone else's config, and a writer that wants to add text has to build a set and number it.
