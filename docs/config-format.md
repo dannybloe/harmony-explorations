@@ -325,8 +325,13 @@ Harmony Ones every mode carries exactly one of each. The rest are key codes.
 **The container's key table is the first mode record**, byte for byte: same offset, same count,
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
 
-Only the list is decoded. It is about forty five bytes of a seven hundred byte record, so most of
-base slot 6 is still unread. Read with `gspm.mode_records`; `gspm.mode_table` returns the raw
+**On arch 8 and arch 14 a screen program follows the list**, at the record's start plus the list's
+length, and every record has one: 374 of 374, 237 of 237, 103 of 103, and 35 of 35 in a safe mode
+container. On arch 12 **none** of 268 does, and on arch 9 only 43 of 114, so what follows the list
+there is a different thing and is not established. That program is where the region's large
+pictures are addressed from. [findings.md](findings.md) section 53.
+
+Read with `gspm.mode_records` and `gspm.mode_program_roots`; `gspm.mode_table` returns the raw
 pointers. [findings.md](findings.md) section 52.
 
 *It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
@@ -463,9 +468,12 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**18252 programs across ten configs and four architectures decode with nothing left over**, which
-is the check that matters: instructions are variable length with no length field, so a wrong
-operand count desynchronises the walk immediately.
+**19881 programs across thirteen containers and four architectures decode with nothing left over**,
+which is the check that matters: instructions are variable length with no length field, so a wrong
+operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
+base slot 14 lookup, and on arch 8 and arch 14 **from a mode record**, whose own program sits
+immediately after its tagged list. That third source is 1629 of the total and is where the large
+pictures are named. [findings.md](findings.md) section 53.
 
 Read with `gspm.screen_program` and `gspm.screen_program_roots`, or dump one with
 `tools/screen_dump.py`. [findings.md](findings.md) section 40.
@@ -496,8 +504,11 @@ Every opcode 2 address in the corpus decodes. Strides are per model, 12 on the 6
 to 19 on arch 8, and 20, 22 or 88 on the One; row counts are 10, 11 or 18. Arch 9 and the safe mode
 containers emit no opcode 2 and hold no bitmaps.
 
-**These are small: 125 to 885 bytes each, 3 to 16 per config.** They do not account for the region
-that [findings.md](findings.md) section 49 describes, even though every one of them lands in it.
+**Two size classes.** The ones a base slot 11 program names are icons, 125 to 885 bytes, 3 to 16 per
+config. The ones a **mode record's** program names are large: stride 128 over 128 rows on arch 14
+and 160 rows on arch 8, 16389 and 20485 bytes each. Together they account for about half the region
+[findings.md](findings.md) section 49 describes, on arch 8 and arch 14. On arch 12, where a mode
+record carries no program, they account for 0.5% of it.
 Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
 Opcode 3 draws the same object with a six byte position record instead of two. It is used by one
@@ -558,7 +569,7 @@ Three checks, on twelve containers across three architectures:
 
 * every row comes to exactly `width`, for **3933 glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933
-* every inline string resolves: **16054 glyph codes** land on a non-NULL glyph of the font their
+* every inline string resolves: **39170 glyph codes** land on a non-NULL glyph of the font their
   own program selected, none out of range and none on an empty slot
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.

@@ -20,6 +20,14 @@ export const STATE_TABLE_SLOT = 13;
 /** The firmware runs this tag on the entry being left and `..._ENTER` on the one being entered. */
 export const MODE_TAG_LEAVE = 7;
 export const MODE_TAG_ENTER = 6;
+/**
+ * Architectures where a mode record carries a screen program immediately after its tagged list.
+ *
+ * Every record does on these two, 237 of 237 on the Harmony 600, 374 of 374 on the 700 and 103 of
+ * 103 on arch 8. On arch 12 not one does and on arch 9 only 43 of 114, so what follows the list
+ * there is a different thing and is not established. `docs/findings.md` section 53.
+ */
+export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 14]);
 export const HANDLER_TAG_ENTER = 1;
 export const HANDLER_TAG_LEAVE = 2;
 
@@ -201,6 +209,19 @@ export function modeRecords(c: Container): ModeRecord[] | undefined {
     out.push({ address, start, kind: u8(c.blob, off), entries: list.entries, length: list.length });
   }
   return out;
+}
+
+/**
+ * The screen program each base slot 6 record carries after its tagged list, or nothing off
+ * `MODE_PROGRAM_ARCHITECTURES`.
+ *
+ * The third source of screen programs section 40 suspected and could not place. The address is the
+ * record's own start plus the length of its list, so it needs section 52's correction to the
+ * record start before it can be computed at all.
+ */
+export function modeProgramRoots(c: Container): number[] {
+  if (c.architecture === undefined || !MODE_PROGRAM_ARCHITECTURES.has(c.architecture)) return [];
+  return (modeRecords(c) ?? []).map((record) => record.start + record.length);
 }
 
 export interface TaggedEntry {

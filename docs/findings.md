@@ -5601,6 +5601,87 @@ Coverage moves to 28.3% on a Harmony 700 and 26.5% on a Harmony 600.
 * `packages/codec/src/sections.ts`: `modeRecords`, plus `slot-6-mode` and `slot-6-tail` claims.
 * `tests/test_interpreter.py` `TestTheModeRecord`, and `packages/codec/test/sections.test.ts`.
 
+## 53. A mode record carries a screen program, and that is what names the large pictures
+
+Section 52 corrected where a base slot 6 record starts and observed that only about a tenth of one
+is decoded. This reads most of the rest, and in doing so it answers a large part of section 51's
+question about what addresses the region.
+
+### The rule
+
+**Immediately after a mode record's tagged list there is a screen program.** Its address is the
+record's own start plus the length of that list, which is a quantity section 52 had to establish
+before it could be computed at all: at the old, wrong start the arithmetic lands nowhere.
+
+Section 40 already suspected a third source of screen programs and could not place it, and
+`screen_program_roots` said so in its docstring. This is it.
+
+The closure is that **every one of them decodes, with nothing left over**:
+
+| container | records | programs that decode |
+|---|---|---|
+| Harmony 700, both | 374 | 374 |
+| Harmony 600 | 237 | 237 |
+| 880, arch 8 | 103 | 103 |
+| the three safe mode | 35 | 35 |
+| Harmony One, both | 268 and 111 | **0** |
+| 525, arch 9 | 114 | 43 |
+
+That is a real check and not an observation. Screen instructions are variable length with no length
+field, so a start one byte out desynchronises and the next byte read as an opcode is almost
+certainly not one of the eleven. It happened during this work, in exactly that form: the two codecs
+disagreed on 37 of the Harmony 600's roots by a single byte, because the Python side inferred the
+tagged list's form from its entries and an **empty** wide list has no entry to infer from. The
+TypeScript side read the form from the byte and was right.
+
+**Arch 12 and arch 9 are excluded**, in the code and not by a comment. On the Harmony One not one
+of 268 records is followed by a program, so whatever follows the list there is a different thing
+and is not established. `MODE_PROGRAM_ARCHITECTURES` is `{8, 14}`.
+
+### What it reaches
+
+1629 programs across the corpus that nothing reached before, taking the total from 18252 to 19881,
+and the inline string codes from 16054 to 39170, every one of which still resolves to a glyph of
+the font its own program selected. The three safe mode containers go from **zero** programs to 35:
+they carry no base slot 11 table at all, so every program in one is reached through a mode record.
+
+And the pictures. Section 50 counted 3 to 16 per config and called them small, which they were:
+the ones a mode record names are not.
+
+| container | pictures before | after | largest | bytes | share of the region |
+|---|---|---|---|---|---|
+| Harmony 700 | 4 | 21 | stride 128, 128 rows | 279149 | 46.7% |
+| Harmony 600 | 3 | 16 | stride 128, 128 rows | 213468 | 49.2% |
+| 880, arch 8 | 10 | 28 | stride 128, 160 rows | 144257 | 50.7% |
+| Harmony One | 16 | 16 | stride 88, 10 rows | 6795 | 0.5% |
+
+**So about half of the region on arch 8 and arch 14 is pictures the screen language names**, and
+section 51's missing referent was not missing so much as unreachable: it is screen opcode 2 after
+all, in programs that needed section 52's correction to reach. Section 50's negative stands for the
+Harmony One, where mode records carry no program and the region is still 99.5% unaccounted.
+
+### What it does not do
+
+**It does not read the whole record.** The tagged list plus the program is most of a mode record but
+not all of it, and the byte accounting shows what is left.
+
+**It does not explain arch 12.** The One's region is 1.36 MB and this reaches none of it. Whatever
+an arch 12 mode record holds after its list, it is not a screen program, and that is now the
+sharpest open question in the format: the same structure, on the architecture the project cares
+most about, laid out differently.
+
+Coverage: **59.3% of a Harmony 700**, up from 28.3%, 57.5% of a Harmony 600, 50.6% of arch 8 and
+89.5% of a safe mode container. Arch 12 stays at 8.6%.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6 and the screen language.
+* `src/harmony/gspm.py`: `MODE_PROGRAM_ARCHITECTURES`, `Container.mode_program_roots`,
+  `Container.tagged_list_length`, and the roots list.
+* `packages/codec/src/sections.ts` and `src/screen.ts`, the same two.
+* `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, with every corpus total
+  moved and the old value recorded beside the new one.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

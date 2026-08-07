@@ -22,19 +22,19 @@ import {
 
 /** `[sample, accounted, total]`, every container in the corpus. */
 const ACCOUNTED: readonly [string, number, number][] = [
-  ['h700_config', 277411, 979184],
-  ['h700_config_2', 277411, 979242],
-  ['h600_config', 195326, 738149],
+  ['h700_config', 580969, 979184],
+  ['h700_config_2', 580980, 979242],
+  ['h600_config', 424224, 738149],
   ['h525_config', 11044, 78486],
   ['one_config', 143142, 1672832],
   ['one_config_unprogrammed', 95763, 1232237],
-  ['arch8_config_a', 75369, 444256],
-  ['arch8_config_b', 65659, 470619],
-  ['arch8_config_c', 70711, 490704],
-  ['arch8_config_d', 70815, 492150],
-  ['h600_safemode_gspm', 5202, 7115],
-  ['h700_gspm', 5202, 7115],
-  ['h650_safemode_gspm', 5202, 7115],
+  ['arch8_config_a', 224746, 444256],
+  ['arch8_config_b', 196529, 470619],
+  ['arch8_config_c', 207422, 490704],
+  ['arch8_config_d', 207526, 492150],
+  ['h600_safemode_gspm', 6370, 7115],
+  ['h700_gspm', 6370, 7115],
+  ['h650_safemode_gspm', 6370, 7115],
 ];
 
 for (const [name, accounted, total] of ACCOUNTED) {

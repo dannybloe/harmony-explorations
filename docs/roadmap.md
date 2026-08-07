@@ -252,16 +252,19 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | screen language and fonts | plus the bitmaps | every reader ported |
+| sample | at the start | screen language and fonts | every reader ported | mode records, section 53 |
 |---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.0% | 26.0% | **26.3%** |
-| Harmony 600 | 9.5% | 24.5% | 24.6% | **24.8%** |
-| Harmony One | 3.2% | 7.2% | 7.6% | **8.0%** |
-| 880, arch 8 | 3.6% | 12.4% | 16.0% | **16.4%** |
-| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% | **10.4%** |
-| the three safe mode containers | 4.2% | 64.5% | 64.5% | **70.2%** |
+| Harmony 700 | 11.4% | 26.0% | 26.3% | **59.3%** |
+| Harmony 600 | 9.5% | 24.5% | 24.8% | **57.5%** |
+| Harmony One | 3.2% | 7.2% | 8.0% | **8.6%** |
+| 880, arch 8 | 3.6% | 12.4% | 16.4% | **50.6%** |
+| Harmony 525, arch 9 | 7.2% | 8.8% | 10.4% | **14.1%** |
+| the three safe mode containers | 4.2% | 64.5% | 70.2% | **89.5%** |
 
-The bitmap column barely moves, and that is the finding rather than a disappointment: see below.
+The last column is not another reader. It is one rule, section 53: a mode record carries its own
+screen program, so 1629 programs and about half the region become reachable. **Arch 12 does not
+move, because an arch 12 mode record carries no program**, and that is now the sharpest open
+question in the format.
 
 Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
 a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
@@ -288,7 +291,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 18252 programs across the corpus and section 46 states 3933 glyphs and 16054
+Section 40 states 19881 programs across the corpus and section 46 states 3933 glyphs and 39170
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number

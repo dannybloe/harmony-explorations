@@ -284,6 +284,11 @@ OPCODE_ENTER_MODE = 0x7E
 MODE_TAG_LEAVE = 7
 # A narrow tagged list entry: the tag then a three byte action list instruction.
 TAGGED_ENTRY_LENGTH = 4
+# Architectures where a mode record carries a screen program immediately after its tagged list.
+# Every record does on these two, 237 of 237 and 374 of 374 and 103 of 103; on arch 12 not one
+# does and on arch 9 only 43 of 114, so what follows the list there is a different thing and is
+# not established. `docs/findings.md` section 53.
+MODE_PROGRAM_ARCHITECTURES = frozenset({8, 14})
 MODE_TAG_ENTER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
@@ -1134,8 +1139,11 @@ class Container:
             entries = self.tagged_list(start)
             if entries is None:
                 return None
+            length = self.tagged_list_length(start)
+            if length is None:
+                return None
             out.append(ModeRecord(address=address, start=start, kind=self.blob[off],
-                                  entries=entries, length=1 + TAGGED_ENTRY_LENGTH * len(entries)))
+                                  entries=entries, length=length))
         return out
 
     def event_map(self) -> Optional['EventMap']:
@@ -1297,6 +1305,26 @@ class Container:
             out.append(TaggedEntry(tag=tag, operand=instruction.operand,
                                    opcode=instruction.opcode, flags=flags))
         return out
+
+    def tagged_list_length(self, address: int) -> Optional[int]:
+        """Bytes the tagged list at `address` occupies, counting its own count field.
+
+        Both forms in one place, because the two differ in header size **and** in stride and a
+        caller that remembers only the first gets a length that is short by one byte per entry.
+        That is exactly the mistake `mode_records` made when it first landed.
+        """
+        entries = self.tagged_list(address)
+        if entries is None:
+            return None
+        # The form comes from the bytes and not from the entries. An **empty** wide list has no
+        # entry to carry a flags byte, so inferring the form from one made it look narrow and the
+        # length came out a byte short, which moved 37 of the Harmony 600's mode program roots by
+        # one and cost an afternoon of two codecs disagreeing.
+        off = self.blob_offset_of(address)
+        if off is None or off >= self.length:
+            return None
+        wide = self.blob[off] == 0
+        return (2 + 5 * len(entries)) if wide else (1 + TAGGED_ENTRY_LENGTH * len(entries))
 
     def handler_index(self, instruction: 'Instruction') -> Optional[int]:
         """The handler set an instruction selects, or None if it does not select one."""
@@ -1466,7 +1494,20 @@ class Container:
         for record in self.value_maps() or []:
             out += [target for _, target in record.entries]
             out += [target for _, _, target in record.ranges]
+        out += self.mode_program_roots()
         return out
+
+    def mode_program_roots(self) -> List[int]:
+        """The screen program each base slot 6 record carries after its tagged list.
+
+        Empty off `MODE_PROGRAM_ARCHITECTURES`. This is the third source of screen programs section
+        40 suspected and could not place: the address is the record's own start plus the length of
+        its list, which needs section 52's correction to the record start before it can be
+        computed at all. `docs/findings.md` section 53.
+        """
+        if self.architecture not in MODE_PROGRAM_ARCHITECTURES:
+            return []
+        return [record.start + record.length for record in self.mode_records() or []]
 
     def reachable_screen_programs(self) -> Tuple[Dict[int, List['ScreenInstruction']], List[int]]:
         """Every screen program reachable from a root, plus the addresses that did not decode.

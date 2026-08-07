@@ -606,6 +606,25 @@ encoding. Coverage 28.3% on a 700. Only the list is decoded: it is about 45 byte
 record, so **90% of base slot 6 is unread**, which is now the largest unexplained structure whose
 owner is known.
 
+**A mode record carries a screen program**, section 53, immediately after its tagged list, and that
+answers most of section 51. The address is the record's start plus the list's length, which only
+became computable once section 52 fixed the start. **Every record has one on arch 8 and arch 14**:
+374/374, 237/237, 103/103 and 35/35, decoding with nothing left over, which is a real check because
+screen instructions have no length field. **Arch 12 has none at all**, 0 of 268, and arch 9 has
+43 of 114, so `MODE_PROGRAM_ARCHITECTURES` is `{8, 14}` in code rather than in a comment. This
+reaches 1629 programs nothing reached before (18252 to 19881, string codes 16054 to 39170, all
+resolving) and the three safe mode containers go from zero programs to 35, since they have no base
+slot 11 table at all. **The pictures a mode program names are the large ones**: stride 128 over 128
+rows on arch 14 and 160 on arch 8, 16389 and 20485 bytes each, against 125 for an icon, and
+together they are **about half the region** on arch 8 and arch 14. Coverage 59.3% on a 700, 57.5%
+on a 600, 50.6% on arch 8, 89.5% on a safe mode container. **Arch 12 stays at 8.6% and its 1.36 MB
+region is still 99.5% unaccounted**, which is now the sharpest open question: the same structure,
+on the architecture the project cares most about, laid out differently.
+
+An off by one here cost time and is worth remembering: an **empty** wide tagged list has no entry to
+carry a flags byte, so inferring the form from the entries makes it look narrow and the length comes
+out a byte short. Read the form from the byte.
+
 Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 
 **The read pipeline.** Read a whole config off a remote and file it in the lab corpus with a

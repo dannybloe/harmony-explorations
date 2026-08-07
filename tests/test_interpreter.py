@@ -823,7 +823,16 @@ class TestTheScreenInterpreter(unittest.TestCase):
                     total += 1
                     printable += all(32 <= b < 127 for b in instruction.glyphs)
         self.assertGreater(total, 500)
-        self.assertLess(printable, total / 100)
+        # The claim that matters is that no *word* appears. Short strings of two or three codes
+        # land in the printable range by chance and always have; every one of the handful that
+        # does is one to three codes long and reads as nothing.
+        self.assertLess(printable, total / 50)
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            for program in self._walk(c)[0]:
+                for instruction in program:
+                    if instruction.glyphs and len(instruction.glyphs) >= 4:
+                        self.assertFalse(all(32 <= b < 127 for b in instruction.glyphs))
 
     def test_a_truncated_program_is_refused_rather_than_guessed(self):
         from harmony import gspm
@@ -1039,7 +1048,8 @@ class TestTheFontTable(unittest.TestCase):
                     for code in instruction.glyphs:
                         codes += 1
                         resolved += c.glyph(fonts[selected], code) is not None
-        self.assertEqual(codes, 16054)
+        # 16054 before section 53 added the mode records' own programs as roots.
+        self.assertEqual(codes, 39170)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1393,15 +1403,17 @@ class TestTheBitmap(unittest.TestCase):
     # `[sample, bitmaps, kinds, strides, row counts]`. Small numbers on purpose: this is the
     # measurement that says opcode 2 does not explain the unreached region.
     SHAPES = [
-        ('h700_config', 4, {0, 1}, {12}, {10}),
-        ('h700_config_2', 4, {0, 1}, {12}, {10}),
-        ('h600_config', 3, {0, 1}, {12}, {10}),
+        # The counts grew with section 53: a mode record's own screen program is a root, and it
+        # is where the large pictures are named. Strides 128 and 64 appear only through it.
+        ('h700_config', 21, {0, 1}, {12, 128}, {10, 128}),
+        ('h700_config_2', 21, {0, 1}, {12, 128}, {10, 128}),
+        ('h600_config', 16, {0, 1}, {12, 128}, {10, 128}),
         ('one_config', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
         ('one_config_unprogrammed', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
-        ('arch8_config_a', 10, {0, 1}, {16, 17, 18, 19}, {10}),
-        ('arch8_config_b', 10, {0, 1}, {16, 17, 18, 19}, {10}),
-        ('arch8_config_c', 10, {0, 1}, {16, 17, 18, 19}, {10}),
-        ('arch8_config_d', 10, {0, 1}, {16, 17, 18, 19}, {10}),
+        ('arch8_config_a', 28, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
+        ('arch8_config_b', 27, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
+        ('arch8_config_c', 29, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
+        ('arch8_config_d', 29, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
         # The negative cases. Arch 9 emits no opcode 2 at all and neither does a safe mode
         # container, which is what says the section is optional rather than structural.
         ('h525_config', 0, set(), set(), set()),
@@ -1448,7 +1460,7 @@ class TestTheBitmap(unittest.TestCase):
         The encoded body reads the two `u16` of the header and throws them away, then draws until
         its own terminator. So the number of row breaks it contains and the row count the header
         states are two independent statements, and a walk that is off by one control byte would
-        desynchronise and produce neither. All 51 encoded pictures in the corpus break exactly
+        desynchronise and produce neither. All 93 encoded pictures in the corpus break exactly
         `rows - 1` times, across the three architectures that carry any.
         """
         from harmony import gspm
@@ -1466,7 +1478,7 @@ class TestTheBitmap(unittest.TestCase):
                     self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
                     total += 1
         if all(lab.path(name) for name, count, _, _, _ in self.SHAPES if count):
-            self.assertEqual(total, 51)
+            self.assertEqual(total, 93)
 
     def test_the_pictures_do_not_tile_the_unreached_region(self):
         """The negative that keeps section 49 honest.

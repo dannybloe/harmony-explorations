@@ -17,6 +17,7 @@
 import { Container, GspmError, archSlot } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import { valueMaps } from './valuemap.ts';
+import { modeProgramRoots } from './sections.ts';
 
 export const SCREEN_TABLE_SLOT = 11;
 
@@ -213,6 +214,7 @@ export function screenProgramRoots(c: Container): number[] {
     for (const [, target] of record.entries) out.push(target);
     for (const [, , target] of record.ranges) out.push(target);
   }
+  out.push(...modeProgramRoots(c));
   return out;
 }
 
