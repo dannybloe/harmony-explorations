@@ -42,6 +42,8 @@ const CONTAINERS = [
   'arch8_config_b',
   'arch8_config_c',
   'arch8_config_d',
+  'one_spare_before_sync',
+  'one_spare_after_sync',
 ];
 
 for (const name of CONTAINERS) {

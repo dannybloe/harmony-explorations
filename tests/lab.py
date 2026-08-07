@@ -77,6 +77,11 @@ IMAGES = {
     # pair in the corpus: same remote, one documented change between them.
     'h700_config': 'harmony700.EZHex',
     'h700_config_2': 'harmony700-2.EZHex',
+    # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
+    # written down before it was made, which no other pair here can say, and the second half was
+    # compiled by the live service rather than found. findings.md section 58.
+    'one_spare_before_sync': 'one-spare-before-sync-config.bin',
+    'one_spare_after_sync': 'one-spare-after-sync-config.bin',
 }
 
 _cache = {}

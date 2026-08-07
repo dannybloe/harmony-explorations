@@ -38,6 +38,10 @@ CONTAINERS = (
     'one_config', 'one_config_unprogrammed', 'h600_config',
     'h700_config', 'h700_config_2', 'h525_config',
     'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+    # The section 58 pair. The first is byte identical to `one_config_unprogrammed`, so its vector
+    # is a duplicate on purpose: the alternative is a special case in the test that asserts every
+    # container sample has one, and a special case there is worth less than a duplicate file.
+    'one_spare_before_sync', 'one_spare_after_sync',
 )
 
 

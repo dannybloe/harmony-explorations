@@ -126,7 +126,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
    diff after every write, IR cross learning between the two remotes, and live RAM polling over
    USB.
-6. **Safety rails are absolute.** Firmware is never written. The spare, unprogrammed Harmony One
+6. **Safety rails are absolute.** Firmware is never written. The spare Harmony One
    is the only write target. Details below.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
@@ -733,7 +733,7 @@ Not optional, and they belong in the code rather than in a document:
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the UI.
 * The programmed Harmony One and the Harmony 600 are read only in practice. The spare
-  unprogrammed One is the only write target until a write has been demonstrated repeatable there.
+  spare One is the only write target until a write has been demonstrated repeatable there.
 * **There is no spare for architecture 14, and that blocks writing to it entirely.** The spare
   is a Harmony One, so it is arch 12. Writing to the 600 means writing to the only 600 on the
   bench, which the rail above already forbids and which no amount of read-back verification makes

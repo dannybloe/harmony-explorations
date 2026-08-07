@@ -66,6 +66,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_config: 'harmony-600-programmed-config.EZHex',
   h700_config: 'harmony700.EZHex',
   h700_config_2: 'harmony700-2.EZHex',
+  // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
+  one_spare_before_sync: 'one-spare-before-sync-config.bin',
+  one_spare_after_sync: 'one-spare-after-sync-config.bin',
 };
 
 const cache = new Map<string, string | undefined>();

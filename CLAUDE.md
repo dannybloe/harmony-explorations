@@ -152,9 +152,11 @@ and that is the 7.x software the Harmony One originally shipped with. Two servic
 not, and the project had collapsed them into one sentence.
 
 The rail does not change and the reason it does not is worth stating: a remote is still
-irreplaceable, the service can be withdrawn at any time without notice, and **whether it still
-compiles a new config is not established**. Signing in and reading a device is not the same thing.
-`docs/findings.md` section 56.
+irreplaceable and the service can be withdrawn at any time without notice. This used to add "and
+whether it still compiles a new config is not established". **It is established, and it does**:
+section 58, a config compiled on 6 August 2026 for a device chosen that day and written to the
+spare One. So the premise was wrong twice over, and the rail rests on the half that was always
+carrying it. `docs/findings.md` sections 56 and 58.
 
 Writing is a later milestone, and when it arrives the rails live in the code rather than in a
 document:
@@ -163,10 +165,13 @@ document:
   detected architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by
   the library, not by the user interface.
 * Three remotes are on the bench: a programmed Harmony One, a Harmony 600, and a **spare
-  unprogrammed Harmony One**. The spare is the only write target until a write has been
+  Harmony One**. The spare is the only write target until a write has been
   demonstrated repeatable on it. The spare is arch 12, so **arch 14 has no write target at all**
   and writing to it stays blocked until a second arch 14 remote exists. Reading arch 14 is
-  unaffected: the 600 on the bench is arch 14.
+  unaffected: the 600 on the bench is arch 14. **The spare is no longer blank**: on 7 August 2026
+  Logitech's own software synced a config to it, section 58. Its original contents are in the lab,
+  byte for byte and verified against the device, so anything that wanted a virgin arch 12 remote
+  wants that dump rather than the unit.
 * No write proceeds without a verified original dump of that exact unit in the lab, and without
   the config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash
   id.
@@ -342,8 +347,11 @@ pointers, and base 18 and 19 are NULL on all four architectures.
 **Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
 `0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
 seven byte field assignment is believed; the assignment itself is the only one of 336 candidates
-that fits the corpus. `docs/findings.md` section 21. Do not use it to order two configs of the same
-remote: it contradicts the recorded direction of the Harmony 700 pair and that is unresolved.
+that fits the corpus, and **confirmed independently in section 58** against a config compiled while
+we watched, on a date known before it was read. `docs/findings.md` section 21. Do not use it to
+order two configs of the same remote: it contradicts the recorded direction of the Harmony 700 pair
+and that is unresolved, though the section 58 pair, whose direction was observed rather than
+recorded, is ordered correctly by it.
 
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
@@ -503,7 +511,7 @@ from the 600 and confirmed on the One. **Nothing has been written to a remote.**
 
 **Reads of internal program memory restart a remote.** `READ_FLASH` with top address byte `0xFF`, when
 the transfer ends in a one byte chunk, makes the remote leave the USB bus. Reproduced deliberately on
-the spare unprogrammed One: 5 restarts, all self-recovering, config verified against the dump
+the spare One, then still unprogrammed: 5 restarts, all self-recovering, config verified against the dump
 afterwards. Ruled out: ordering, chunk count, and the size 63 by itself. `packages/usb` caps an
 internal read at one chunk. **This is the one path where read only is not the same as harmless**, and
 the cap is a workaround, not an explanation.

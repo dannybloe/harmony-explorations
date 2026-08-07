@@ -2194,6 +2194,11 @@ Base slot 3 is an eleven byte record framed by a cookie pair of its own, `0xADDF
 This one is worth reading for the method rather than the fact, because the fact is small and the
 method is the difference between a decode and a guess.
 
+> **Confirmed independently on 7 August 2026.** Everything below is a fit to a corpus whose real
+> build dates were unknown. Section 58 supplies the case this section never had: a config compiled
+> while we watched, on a date known before it was read, which the reader recovers exactly. The
+> ordering warning at the end of this section still stands, but it now has evidence against it.
+
 ### The field assignment was searched for, not read
 
 Three of the seven bytes were obvious from their ranges alone across the corpus: `0..48`, `3..58`
@@ -5922,11 +5927,13 @@ true of different things.
 
 The corrected premise is narrow and the temptation to widen it should be resisted.
 
-* **It is not established that the service still compiles a config.** Authenticating an account and
-  identifying an attached remote are the cheap half. Producing a new config for one of these
-  architectures is the expensive half, it is what this project exists to replace, and no observation
-  here touches it. Treat "the service is up" and "a config can still be generated" as two claims
-  with one measured.
+* ~~**It is not established that the service still compiles a config.**~~ **Established the same
+  day, in section 58**, which is why this bullet is struck through rather than removed. It read:
+  "Authenticating an account and identifying an attached remote are the cheap half. Producing a new
+  config for one of these architectures is the expensive half, it is what this project exists to
+  replace, and no observation here touches it." The expensive half was then measured: the service
+  compiled a config for a Harmony One and it was written to the remote and read back. The
+  distinction the bullet drew was the right one to draw and the answer went the other way.
 * **It is not a recovery path.** A service that answers today can be withdrawn tomorrow with no
   notice and no appeal, and the classic service on the other row of that table is what that looks
   like afterwards.
@@ -6054,6 +6061,142 @@ section's location of the table with it.
 * `docs/usb-protocol.md`, the twelve field table and the accessor table under it.
 * `tests/test_usb_firmware.py`, `TestFieldFourIsTheArchitecture`, five tests over all four images.
 * The open items list, which loses one of its ten unnamed fields and keeps the other nine.
+
+## 58. The service still compiles configs, and the corpus now has a pair we asked for
+
+Section 56 established that Logitech's MyHarmony service answers and refused to conclude anything
+about whether it still **compiles**. That question is now answered, and the answer arrived with a
+second thing that is worth more: the first config in this corpus whose contents were chosen by us
+and written down before it existed.
+
+### What was done
+
+On 7 August 2026, on the **spare** Harmony One, which is the only unit these rails allow anywhere
+near a write. Nothing here was written by us; Logitech's own software did the writing over its own
+sync, and both reads either side were ours, through `packages/corpus/bin/read-config.ts`.
+
+1. **Baseline.** The unit's config read off the remote, 1232237 bytes, and compared against the dump
+   already in the lab: **identical, 1232237 of 1232237**. So the state before the experiment is not
+   assumed, it is proved, which matters because the owner had been clicking around in the software
+   beforehand.
+2. **One change, decided in advance.** One device added, a Denon AV receiver picked arbitrarily from
+   Logitech's database, plus one activity, the activity only because their software refuses to
+   proceed without one.
+3. **Sync.** It ran to 100%, the remote rebooted itself, and the software then hung at 99% of its
+   own follow-up work and had to be closed. The reboot is the useful detail: a remote restarts
+   **after** the config write completes, so the hang was in the host and the write was already done.
+4. **Read back.** 1326564 bytes.
+
+### The service compiles
+
+The new config's build timestamp, recovered by our own reader from slot 3, is **2026-08-06
+13:54:22**. It is 94327 bytes larger than the one it replaced, it holds a device that was not there
+before, and every container check passes. A cache cannot produce that, because nothing had ever
+compiled this combination of devices for this remote.
+
+So the premise this project ran on for months, corrected once already in section 56, is wrong in a
+second way. It is not merely that the servers answer. **They still do the thing the project exists
+to replace.** That changes no goal here: a service that can be withdrawn without notice is not a
+plan, the software driving it is barely usable for real configuration, and none of it helps the
+architectures Logitech never served from this endpoint. But it should be said plainly rather than
+softened.
+
+### What the change looks like in the config
+
+**It is a whole regeneration, not an increment.** The naive expectation was the old config plus a
+device. Instead the previous owner's television is gone and almost every count moved, most of them
+**down**:
+
+| | before | after |
+|---|---|---|
+| bytes | 1232237 | 1326564 |
+| built | 2023-07-28 13:27:33 | 2026-08-06 13:54:22 |
+| infrared records | 97 | **125** |
+| mode records | 111 | 106 |
+| action lists | 2141 | 2079 |
+| binding records | 104 | 96 |
+| touch map | 32 pages, 182 rectangles | 31 pages, 171 rectangles |
+| font sets | 18 | 17 |
+| screen programs | 389 | 384 |
+| pictures in the bank | 70 | 64 |
+
+This is section 16's finding again, from the other direction: the generator rewrites everything, so
+a byte diff between two configs is not a description of the change. The counts are, and the one that
+moved the way it had to is the infrared database, from 97 records to 125. A device is codes before
+it is anything else.
+
+**Slot 0 names it outright.** The tree of state variable names is where a config says what it is
+for, and the two read:
+
+```
+before   Root  State  TV_Input_12  CurrentLocation_1  TV_TVInput_3  TV_Screen_10
+               ButtonSoundVolume_2  TV_Power_2  CurrentActivityState_0_2
+after    Root  State  CurrentActivityState_0_2  CurrentLocation_1  ButtonSoundVolume_2
+               Denon_AV_Receiver_Input_23  Denon_AV_Receiver_Power_2
+```
+
+The device that was asked for, with its 23 inputs, and the television that was not asked for is
+absent. That is the tie between "what the owner clicked" and "what is in the flash", and it is the
+first time this project has had one.
+
+### The codec was tested by this and it held
+
+Every config in the corpus before today was built between 2007 and 2023. A reader that had grown
+quietly dependent on a generator quirk of that era would pass the whole suite and fail here. It did
+not:
+
+* **Every container check passes**, including the trailer checksum of section 41.
+* **384 screen programs decode with nothing left over**, none undecodable. That is the strongest
+  single check available, because screen instructions are variable length with no length field, so
+  a walk that desynchronises fails rather than returning something plausible.
+* **The picture bank walks exactly onto the trailer**, 64 records. Section 55 established that a
+  start one to three bytes out does not walk at all, so finding the bank in a file nobody had seen
+  is a check on the whole layout rule.
+* **M2 byte accounting reads 91.5%**, 1213419 of 1326564, **zero overlaps**. Lower than the 97.0%
+  the untouched unit scores, which is expected and not a regression: the old config was a nearly
+  empty remote and this one has real content in the parts still unread.
+* The infrared extractor pulls 123 of the 125 records, the other two being the encoding classes
+  section 42 records as unimplemented. The headers read 3364/1682 microseconds over 48 bits, which
+  is a recognisable protocol family rather than noise.
+
+### An independent confirmation of section 21
+
+Section 21 placed the seven fields of the build timestamp by picking the only one of 336 candidate
+assignments that fits the corpus. A fit is not a confirmation: every config in the corpus arrived
+with its stamp and no way to check it against anything.
+
+This one was compiled while we watched. The owner made the change on **6 August 2026** and the
+reader recovers **2026-08-06 13:54:22** without being told. The day of week byte closes too, and on
+two different values: the record stores 6 for the 2023 config, a Friday, and 5 for the 2026 one, a
+Thursday, matching days since 1 January 2000 modulo 7 in both cases.
+
+It also bears on the open contradiction. Section 21 refuses to order two configs of one remote by
+their stamp, because doing so contradicts the recorded direction of the Harmony 700 pair. **This
+pair's direction is observed rather than recorded**, and the stamp orders it correctly. One case
+does not overturn the 700's, so the warning stands, but it is the first evidence that the reading is
+right and the 700 pair's recorded direction is what is wrong.
+
+### What this does not mean
+
+* **No rail moves.** Nothing was written by us, the write target was the spare, and the write was
+  performed by the vendor's own software doing its supported operation. `HARMONY_ENABLE_WRITES` is
+  still off.
+* **The generator is not an oracle we can lean on.** It regenerates everything, so it cannot be used
+  to produce a minimal diff, which was the hope going in. What it can produce is **labelled
+  samples**: configs whose semantic content is known because we chose it. That is a different and
+  slower instrument, and it is still the best one this project has ever had.
+* **The spare is no longer unprogrammed.** Its original state is preserved byte for byte in the lab
+  and verified against the device, so it survives as data, but the unit itself now carries a
+  configuration. Anything that wanted a virgin arch 12 remote wants the dump, not the remote.
+
+### Where it lands
+
+* Section 56, whose "not established" bullet is struck through in place rather than deleted.
+* `lab.py` gains `one_spare_before_sync` and `one_spare_after_sync`, with a `META.md` recording
+  what was asked for, because a sample nobody described is a sample nobody can use.
+* `tests/test_sync_pair.py`, twelve tests: both halves parse, the counts, the names in slot 0 with
+  the negative half asserted too, the timestamp against a date known in advance, and the day of week
+  byte against the arithmetic rather than against the parser that already checks it.
 
 ## References
 

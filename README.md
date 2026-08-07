@@ -8,10 +8,16 @@ The goal here is to change that. Related effort:
 [trelowney/harmony-decompiler](https://github.com/trelowney/harmony-decompiler).
 
 This page used to open "Logitech's servers are gone". Measured on 7 August 2026, the MyHarmony
-service is not: it answers, and it still reads a connected remote. The **classic** service, the one
-the Harmony One shipped with, is the one serving a discontinuation notice. Whether MyHarmony still
-compiles a config is a separate question and is not established.
-[findings.md](docs/findings.md) section 56.
+service is not: it answers, and **it still compiles configs**, one of which was built that week for
+a device chosen on the spot and written to a remote on this bench. The **classic** service, the one
+the Harmony One shipped with, is the one serving a discontinuation notice.
+[findings.md](docs/findings.md) sections 56 and 58.
+
+That does not make this project unnecessary, and the reasons are worth being explicit about: a
+service that can be withdrawn without notice is not a plan, the software driving it is heavily
+reduced from what it replaced, and none of it is under the owner's control. It does mean the
+sentence at the top of this page is about who *can* generate a config today, not about who
+*could*.
 
 **Where this is going: a local, cross-platform application** that reads a config off a remote,
 edits its devices and activities, learns new infrared codes and writes the result back. Self
