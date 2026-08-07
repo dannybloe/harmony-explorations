@@ -203,6 +203,92 @@ class TestTheComparisonSelector(unittest.TestCase):
         self.assertEqual(worst, 63, 'and it reaches the bound, so 64 is the size not a ceiling')
 
 
+class TestTheStateVariableRecord(unittest.TestCase):
+    """findings.md section 60: what base slot 13's pointers land on, and how long it is.
+
+    Nothing in the container declares the record's length, so `7 + 8 * count` is the whole reader
+    and everything here is a check on that one rule. Two independent ones: the records abut without
+    ever overrunning the next, and the deliberately built config pair reads the count the owner
+    chose.
+    """
+
+    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+               'arch8_config_c', 'arch8_config_d', 'one_spare_before_sync',
+               'one_spare_after_sync', 'h700_gspm', 'one_safemode')
+
+    def test_no_record_overruns_the_next_and_most_abut_it_exactly(self):
+        """
+        The corpus wide closure. A wrong length rule would show up as a record claiming bytes the
+        next one starts in, and none does anywhere. The records that do not abut are the ones at
+        the end of a run, since a config's state records sit in two or three separate blocks.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        total = exact = 0
+        for name in self.CONFIGS:
+            c = gspm.parse(lab.load(name))
+            spans = sorted({(r.address, r.length) for r in c.state_records()})
+            for index, (address, length) in enumerate(spans[:-1]):
+                following = spans[index + 1][0]
+                with self.subTest(image=name, address=address):
+                    self.assertLessEqual(address + length, following, 'the record overruns')
+                total += 1
+                exact += address + length == following
+        self.assertEqual(total, 627, 'consecutive pairs checked')
+        self.assertEqual(exact, 610, 'pairs where the record ends exactly where the next begins')
+
+    def test_the_count_is_the_one_the_owner_asked_for(self):
+        """
+        The labelled pair of section 58. The owner replaced a twelve input television with a
+        twenty three input receiver, and the largest record in each config reads exactly that.
+        Slot 0's name tree carries the same two numbers as suffixes, which is a second artefact
+        agreeing rather than a restatement: the names and the records are different sections.
+        """
+        from harmony import gspm
+        lab.require('one_spare_before_sync', 'one_spare_after_sync')
+        for name, expected in (('one_spare_before_sync', 12), ('one_spare_after_sync', 23)):
+            with self.subTest(image=name):
+                records = gspm.parse(lab.load(name)).state_records()
+                self.assertEqual(max(r.count for r in records), expected)
+
+    def test_the_name_suffixes_are_counts_the_records_carry(self):
+        """
+        Stated as the partial result it is. Every large suffix in slot 0 has a record with that
+        count, but the mapping is not onto: the earlier config names a `_3` no record counts and
+        holds a record of six no name mentions. So this pins the agreement without claiming the
+        names index the table.
+        """
+        import re
+
+        from harmony import gspm
+        lab.require('one_spare_before_sync', 'one_spare_after_sync')
+        for name, expected in (('one_spare_before_sync', {10, 12}), ('one_spare_after_sync', {23})):
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                at = c.blob.find(gspm.FRAME_PROLOGUE)
+                names = [m.group().decode('ascii')
+                         for m in re.finditer(rb'[ -~]{3,}', c.blob[at:at + c.frame_length])]
+                suffixes = {int(n.rsplit('_', 1)[1]) for n in names if re.search(r'_\d+$', n)}
+                counts = {r.count for r in c.state_records()}
+                self.assertTrue(expected <= suffixes & counts, 'suffixes %s counts %s'
+                                % (sorted(suffixes), sorted(counts)))
+
+    def test_the_first_byte_of_every_value_is_zero(self):
+        """The only invariant the eight byte values have, recorded so that the absence of a
+        decode is itself pinned. The last byte is 0x7F in most and five other things elsewhere,
+        so it is not a terminator."""
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        seen = 0
+        for name in self.CONFIGS:
+            for record in gspm.parse(lab.load(name)).state_records():
+                for value in record.values:
+                    self.assertEqual(value[0], 0)
+                    seen += 1
+        self.assertGreater(seen, 500)
+
+
 class TestTheStateVariableTable(unittest.TestCase):
     """findings.md section 35: base slot 13, and the split the firmware's lookup uses."""
 

@@ -174,6 +174,44 @@ export function stateTable(c: Container): StateTable | undefined {
   };
 }
 
+/** A base slot 13 record: seven byte header then `count` values of eight bytes. */
+export const STATE_RECORD_HEADER = 7;
+export const STATE_VALUE_LENGTH = 8;
+
+export interface StateRecord {
+  address: number;
+  count: number;
+  length: number;
+  /** The `u16` at +0x02, unexplained. */
+  second: number;
+}
+
+/**
+ * The record each base slot 13 pointer lands on, in table order.
+ *
+ * Nothing in the container declares the length, so `7 + 8 * count` is the reader. The evidence is
+ * a config whose contents were chosen deliberately plus a corpus wide check that no record
+ * overruns the next: `docs/findings.md` section 60. The eight byte values are not decoded, so
+ * this returns their count and not their contents.
+ */
+export function stateRecords(c: Container): StateRecord[] | undefined {
+  const table = stateTable(c);
+  if (table === undefined) return undefined;
+  const records: StateRecord[] = [];
+  for (const address of table.entries) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined || off + STATE_RECORD_HEADER > c.blob.length) continue;
+    const count = u16(c.blob, off + 4);
+    records.push({
+      address,
+      count,
+      second: u16(c.blob, off + 2),
+      length: STATE_RECORD_HEADER + STATE_VALUE_LENGTH * count,
+    });
+  }
+  return records;
+}
+
 export interface ModeRecord {
   /** What base slot 6's array holds: a byte inside the record, not its start. */
   address: number;

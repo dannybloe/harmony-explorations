@@ -793,9 +793,28 @@ every config is below that config's own `count`, and the halves are respected ex
 | `0x70` | 146 | always at or above `narrow`, matching a handler that compares the sixteen bit accumulator |
 | `0x72` | 501 | either half |
 
-Read with `gspm.state_table` and `gspm.state_index`.
-*What an individual variable means, and what the `count` pointers reach, are not established.*
-[findings.md](findings.md) section 35.
+**Each pointer lands on a record declaring the variable's values.** Nothing states its length, so
+the rule is the reader:
+
+```
++0x00  u16  unestablished, zero in every record in the corpus
++0x02  u16  unestablished, and not the count
++0x04  u16  count           how many values this variable can take
++0x06  u8   unestablished
++0x07       value[count], eight bytes each
+```
+
+So a record is `7 + 8 * count` bytes. Across 14 containers and four architectures, 610 of 627
+consecutive records end exactly where the next begins and **none overruns**, and claiming them in
+the byte accounting produces no overlap with any other structure.
+
+*The eight byte values are not decoded.* The only thing invariant about them is that the first byte
+is zero, in all 509 in the corpus.
+
+Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
+`stateRecords` in `packages/codec`.
+*What an individual variable means is not established.*
+[findings.md](findings.md) sections 35 and 60.
 
 ### Base slot 5: the infrared database
 

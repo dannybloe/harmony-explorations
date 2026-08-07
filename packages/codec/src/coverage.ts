@@ -21,7 +21,8 @@ import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { irGroups } from './ir.ts';
-import { eventMap, handlerSets, modeRecords, modeTable, stateTable } from './sections.ts';
+import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable }
+  from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
   from './tables.ts';
 
@@ -182,6 +183,10 @@ export function claims(c: Container, withPictures = true): Claim[] {
   if (bindings !== undefined) add(bindings.start, bindings.length, 'slot-9-table');
   const state = stateTable(c);
   if (state !== undefined) add(state.start, state.length, 'slot-13-table');
+
+  // Base slot 13's records. The length is `7 + 8 * count` and nothing declares it, so the claim
+  // is the size rule under test: an overlap here would mean the rule is wrong somewhere.
+  for (const record of stateRecords(c) ?? []) at(record.address, record.length, 'slot-13-record');
 
   // Base slot 6's entries, at the record start the back pointer names rather than at the pointer
   // itself. Only the tagged list is claimed: a record runs to about seven hundred bytes and the

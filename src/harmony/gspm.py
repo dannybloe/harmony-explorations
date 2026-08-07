@@ -269,6 +269,11 @@ OPCODE_SEND_IR = 0x7D
 # `docs/findings.md` section 35.
 STATE_TABLE_SLOT = 13
 
+# A base slot 13 record is a seven byte header then `count` values of eight bytes. Nothing in the
+# container declares the length, so this rule is the reader: `docs/findings.md` section 60.
+STATE_RECORD_HEADER = 7
+STATE_VALUE_LENGTH = 8
+
 # Base slot 4 maps a firmware raised event number to an entry in the same numbering space
 # opcode 0x7E's operand indexes. Thirty events, and the table is a fixed 125 bytes in every
 # config in the corpus. `docs/findings.md` section 36.
@@ -533,6 +538,35 @@ class StateTable:
     def ram_bytes(self) -> int:
         """What the table occupies in the remote's memory once loaded."""
         return self.narrow + 2 * self.wide
+
+
+@dataclass
+class StateRecord:
+    """One base slot 13 entry: a variable's declared values.
+
+    ```
+    +0x00  u16  unknown, zero in every record in the corpus
+    +0x02  u16  unknown, not the count and not an index into it
+    +0x04  u16  count
+    +0x06  u8   unknown
+    +0x07       value[count], eight bytes each
+    ```
+
+    `count` is how many values the variable can take, so the record is `7 + 8 * count` bytes.
+    That length is what makes the record readable at all, since nothing declares it: see
+    `docs/findings.md` section 60 for the evidence, which is a config whose contents were chosen
+    deliberately and a corpus wide check that no record overruns the next.
+
+    The eight byte values are **not decoded**, and the only thing invariant about them across the
+    corpus is that the first byte is zero in all 509. The last byte is `0x7F` in most and five
+    other values elsewhere, so it is not a terminator, and no reading is offered here rather than
+    one that fits the majority.
+    """
+    address: int
+    count: int
+    length: int
+    second: int          # the u16 at +0x02, unexplained
+    values: List[bytes]  # the eight byte records, undecoded
 
 
 @dataclass
@@ -1227,6 +1261,34 @@ class Container:
                    for p in range(off + 8, end, 3)]
         return StateTable(count=count, narrow=narrow, wide=wide, narrow_again=again,
                           entries=entries)
+
+    def state_records(self) -> Optional[List['StateRecord']]:
+        """The record each base slot 13 pointer lands on, in table order.
+
+        Returns None when there is no state table, and skips nothing: a record whose declared
+        length would run past the blob is still returned, with the values it can read, because a
+        silently shortened list is how a size rule stops being checkable.
+        """
+        table = self.state_table()
+        if table is None:
+            return None
+        records = []
+        for address in table.entries:
+            off = self.blob_offset_of(address)
+            if off is None or off + STATE_RECORD_HEADER > len(self.blob):
+                continue
+            second = int.from_bytes(self.blob[off + 2:off + 4], 'little')
+            count = int.from_bytes(self.blob[off + 4:off + 6], 'little')
+            values = []
+            for k in range(count):
+                p = off + STATE_RECORD_HEADER + STATE_VALUE_LENGTH * k
+                if p + STATE_VALUE_LENGTH > len(self.blob):
+                    break
+                values.append(bytes(self.blob[p:p + STATE_VALUE_LENGTH]))
+            records.append(StateRecord(
+                address=address, count=count, second=second,
+                length=STATE_RECORD_HEADER + STATE_VALUE_LENGTH * count, values=values))
+        return records
 
     def state_index(self, instruction: 'Instruction') -> Optional[int]:
         """The state variable an instruction reads, or None if it does not read one."""

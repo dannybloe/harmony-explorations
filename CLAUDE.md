@@ -673,9 +673,20 @@ the first alone leaves eleven and thirty candidates on two arch 8 configs, and b
 exactly one everywhere. For a writer, a picture's position is implied by everything before it, so
 inserting or resizing one moves every later address.
 
-Coverage now: **91.9%** on a Harmony 700, 87.4% on a 600, **90.0%** on a Harmony One, 97.0% on the
-spare One, 82.2% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.1% with only
+Coverage now: **92.0%** on a Harmony 700, 87.5% on a 600, **90.1%** on a Harmony One, 97.0% on the
+spare One, 82.3% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.6% with only
 43 of 114 mode records decoding, and the low part of a config rather than the region.
+
+**Base slot 13's records are read**, section 60, and the way they were found is the point. The
+deliberately built config pair of section 58 was asked one question, "what structure reads 12 in the
+old config and 23 in the new", because the owner had replaced a twelve input television with a
+twenty three input receiver. The state table's records answer it: `7 + 8 * count` bytes, the count
+at offset 4, and nothing in the container declares that length, which is why they went unread. Of
+627 consecutive pairs across four architectures 610 abut exactly and none overruns, and claiming
+them adds zero overlaps. The eight byte values are **not** decoded and only their first byte is
+invariant. Two candidates were ruled out first and should not be redone: the base slot 14 value maps
+and the screen language switches are byte for byte identical across the pair, so both are interface
+skeleton rather than equipment.
 
 An off by one here cost time and is worth remembering: an **empty** wide tagged list has no entry to
 carry a flags byte, so inferring the form from the entries makes it look narrow and the length comes

@@ -6314,6 +6314,112 @@ unexplained accessor.
   images, the addressed bytes against two remotes' measured blocks, the arch 14 `CLRF` pair, and the
   pairing that carries field 9.
 
+## 60. The state variable record, found by asking the labelled pair a question
+
+Section 58 said the deliberately built config pair is "a different and slower instrument" than the
+minimal diff it was hoped to be. This is the first thing it produced, and it took one question.
+
+Base slot 13 has been named since section 35: a header, then a `u24` pointer per state variable.
+What those pointers land on was never read. `docs/config-format.md` said so in italics: "what the
+`count` pointers reach are not established."
+
+### The question
+
+The owner replaced a television with an AV receiver, and the two configs' slot 0 name trees record
+what each remote was for:
+
+```
+before   TV_Input_12   TV_TVInput_3   TV_Screen_10   TV_Power_2   ...
+after    Denon_AV_Receiver_Input_23   Denon_AV_Receiver_Power_2   ...
+```
+
+An input selector went from twelve inputs to twenty three. So: **is there a structure that reads 12
+in one config and 23 in the other?** That is a question the corpus could not be asked before,
+because until this week no config's contents were known.
+
+Two candidates were checked and ruled out first, which is worth recording so nobody redoes them.
+The base slot 14 value maps are **identical** across the pair, sixteen of them with the same entry
+counts. So are the screen language switches, all eight of them, same variable and same arm count.
+Both are the interface skeleton and neither scales with the equipment.
+
+### The answer
+
+The state table's records do. In the earlier config one record declares **12**; in the later one,
+one declares **23**; and in each config it is the only large one. Reading the bytes:
+
+```
+before, record 33   00 00 0b 00 0c 00 00  then 12 values      103 bytes
+after,  record 25   00 00 16 00 17 00 00  then 23 values      191 bytes
+```
+
+`0x0C` is 12 and `0x17` is 23, both at offset 4. So the record is:
+
+```
++0x00  u16  zero in every record in the corpus
++0x02  u16  not the count, and not explained
++0x04  u16  count
++0x06  u8   not explained
++0x07       value[count], eight bytes each
+```
+
+and its length is **`7 + 8 * count`**. Nothing in the container declares that length, which is why
+the records went unread: the pointer array gives their starts and nothing gives their extent.
+
+The earlier config's `TV_Screen_10` has a record of 10 beside it, and the three `_2` suffixed names
+in each config have records of 2. So the number in a state variable's name is the number of values
+its record carries.
+
+### Three closures
+
+**The length rule holds corpus wide.** Across 14 containers and four architectures, of 627
+consecutive record pairs, 610 end exactly where the next begins and **none overruns**. The 17 that
+do not abut are the ends of runs, since a config's state records sit in two or three separate
+blocks rather than one.
+
+**Byte accounting agrees.** Claiming the records adds 698 claims and produces **zero overlaps** with
+any other structure in any container. That is a stronger check than the abutting one, because it
+tests the records against everything else the codec knows rather than only against each other. A
+length rule that was too generous would collide with whatever follows a run.
+
+**The count matches an artefact in a different section.** Slot 0's name tree and slot 13's records
+are separate structures written by the same generator, and they agree on 12, 23, 10 and three 2s.
+
+### What is not claimed
+
+**The names do not map onto the records one for one, and the mismatch is stated rather than
+smoothed.** The earlier config names a `TV_TVInput_3` that no record counts, and holds a record of
+6 that no name mentions. So the suffix agreeing with a count is evidence about what the count means,
+not a claim that the tree indexes the table.
+
+**The eight byte values are not decoded.** The only invariant across all 509 in the corpus is that
+the first byte is zero. The last byte is `0x7F` in 412 of them and five other values in the rest, so
+it is not a terminator, and no reading is offered here rather than one that fits the majority and
+quietly fails on the rest. In the receiver's record the third field runs 12, 10, 17, 15 and the
+fourth 1508, 1608, 1509, 1533, which look like two index spaces and are left as that.
+
+### Coverage
+
+Modest, because the records are small, and it moves every architecture including the one that had
+been stuck:
+
+| Sample | before | after |
+|---|---|---|
+| Harmony 700 | 91.9% | **92.0%** |
+| Harmony 600 | 87.4% | **87.5%** |
+| Harmony One | 90.0% | **90.1%** |
+| the safe mode containers | 89.5% | **91.8%** |
+| 525, arch 9 | 14.1% | **14.6%** |
+| 880, arch 8 | 82.2% | **82.3%** |
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 13, replacing the italicised "not established".
+* `gspm.StateRecord` and `Container.state_records`; `stateRecords` in `packages/codec/src/sections.ts`
+  with a `slot-13-record` coverage claim.
+* `tests/test_interpreter.py`, `TestTheStateVariableRecord`: the corpus wide overrun check, the
+  pair reading 12 and 23, the partial name agreement stated as partial, and the one invariant the
+  undecoded values have.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
