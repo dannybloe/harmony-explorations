@@ -79,7 +79,9 @@ watched the keypad port over USB. A remote on USB never runs its application, so
 never computed and only the matrix **column** is observable, a quarter of the mapping. That quarter
 closes: the measured census is 14, 14, 13, 13 buttons per column, a column holds at most 14, and
 the unit's own config carries scan codes contiguous 1 to 54, whose two absentees fall in exactly
-the two columns that are short. Which button carries which of the 54 codes is still open.
+the two columns that are short. Which button carries which of the 54 codes is still open. **The
+Harmony One gives nothing at all**: sixteen buttons from every region of it pull one shared sense
+line, so arch 12 wakes differently from arch 14 and USB yields no part of its mapping.
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, and every one of 16054 inline string codes in the

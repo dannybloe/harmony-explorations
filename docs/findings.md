@@ -5164,8 +5164,10 @@ Three leads for the row, none of them run:
   evidence.
 * **Their rows are low**, 0, 1, 2 and 8, and the top of the remote is where the special buttons are.
   If the matrix is wired roughly top to bottom the ordering constrains a lot.
-* **The Harmony One.** Its matrix is 7 by 8, so a column there is one of eight and each press is
-  worth more, `(code - 1) mod 8`. Same sync mode ceiling, so the same quarter, but a bigger quarter.
+* **The Harmony One.** Written here as "worth more, because its matrix is 7 by 8, so a press is
+  worth `(code - 1) mod 8`". **Both halves of that are wrong and the next subsection is the
+  measurement that says so.** The 7 by 8 came from an upstream matrix encoding that section 17
+  already discarded, and it was never established for arch 12 by anything in this project.
 
 **The route that would finish it is blocked on purpose.** `WRITE_MISC` selector `0x07` writes a
 byte into the data memory of a running remote, so a host could drive the row lines itself and read
@@ -5173,10 +5175,54 @@ the matrix out completely, which is precisely what the parked firmware will not 
 to a live device, on arch 14, where `packages/usb/src/rails.ts` allows no write target at all. It
 is recorded here as the shape of the answer, not as a plan.
 
+### Arch 12 gives nothing at all, and that is the interesting half
+
+The spare Harmony One was attached the same evening. It enters sync mode on being plugged in
+exactly as the 600 does, so that behaviour is a property of the family rather than of one model.
+Then the same measurement, and the result is a clean negative.
+
+**Sixteen distinct buttons, spread over the whole remote, every one of them pulled the same single
+bit.** Four in a first pass, twelve chosen for maximum physical separation in a second: `power`,
+`activities`, `help`, `menu`, `exit`, `guide`, `channel up`, `mute`, `fast forward`, `record`, `3`,
+`enter`. Every press is `PORTB` bit 5 and only bit 5. No other bit on any of the seven ports moved
+once in the whole session, and `0x2FB`, the arch 12 equivalent of the variable the 600 would not
+update, did not move either.
+
+**Bit 5 is therefore not a column line, and that is a proof rather than an impression.** A column
+holds at most as many buttons as the matrix has rows. The One has 40 physical matrix buttons, so
+for sixteen of them to share one column the matrix would need at least sixteen rows and at most
+three columns, and then the other two column lines would have shown up among sixteen presses drawn
+from every region of the remote. They never did.
+
+The firmware agrees. A search of the One 3.4 image for the shape the arch 14 column reader has, a
+run of `BTFSS port,bit ; RETLW n`, **finds nothing at all**, where both arch 14 images have exactly
+one. What arch 12 has instead is the pattern upstream describes for arch 9: a binary search for the
+key over a **single sense line**, driven by a table of masks. A single sense line is precisely what
+sixteen buttons on one bit looks like.
+
+So the ceiling is not the same on the two architectures:
+
+| | wake mechanism observed | what USB yields |
+|---|---|---|
+| arch 14, Harmony 600 | interrupt-on-change per column, four lines | the column, `(code - 1) mod 4` |
+| arch 12, Harmony One | one shared sense line | that a key is down, and nothing else |
+
+One incidental observation, recorded because it was not looked for. A single tap on the touch panel
+pulled `PORTB` bit 4 low and **it stayed low** for the rest of the session, where a keypress
+releases within a fifth of a second. So the panel is a separate input on its own line with its own
+latching behaviour, which is consistent with section 45: its codes are the 43 to 53 block and they
+do not come out of the matrix.
+
+**A prediction, written before anything tests it.** The One has 42 buttons in the photograph, two
+of which are the touch areas flanking the screen, leaving 40 in the matrix. Its config carries
+scan codes 1 to 40, then 43 to 53, then 55. So the 40 matrix buttons should be codes 1 to 40, the
+43 to 53 block is the touch panel, and **55 is not a button**. Nothing here tests that.
+
 ### Where it lands
 
 `packages/usb/bin/watch-columns.ts`, `make watch-columns`, which reads `PORTB` and reports a column
-per press. `tests/test_keypad.py` pins the 54 measurements and the closure against the config.
+per press, and `watch-keys.ts --address --mask` for watching a port with unrelated traffic in it.
+`tests/test_keypad.py` pins the 54 measurements and the closure against the config.
 
 ## References
 

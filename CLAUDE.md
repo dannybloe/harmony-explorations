@@ -559,9 +559,13 @@ most 14, and the unit's own config carries scan codes contiguous 1 to 54 whose t
 and 56, sit in exactly the two columns that are short. First hardware check of section 17's key
 code split and of section 13's `row * 4 + column`. `tools`: `make watch-columns`,
 `packages/usb/bin/watch-columns.ts`, pinned in `tests/test_keypad.py`. The row stays open, 14
-candidates per button; the One is worth the same treatment because its 7 by 8 matrix makes a press
-worth `(code - 1) mod 8`; and **the route that would finish it is a RAM write to drive the rows,
-which the rails forbid on arch 14 and which is not proposed here.**
+candidates per button. **Arch 12 gives nothing at all**, measured the same evening on the spare
+One: sixteen buttons from every region of the remote all pull one shared sense line, `PORTB` bit 5,
+and no other bit on any of the seven ports moves. That is a proof rather than an impression, since
+a column cannot hold sixteen of the One's forty buttons, and the One image has no column reader of
+the arch 14 shape at all. So the USB ceiling is a quarter on arch 14 and zero on arch 12. **The
+route that would finish it is a RAM write to drive the rows, which the rails forbid on arch 14 and
+which is not proposed here.**
 
 **The action list interpreter is located and read**, on the Harmony 700 2.8 image and confirmed on
 the complete 600 0.2: a 120 byte circular queue holding exactly 40 three byte instructions, an

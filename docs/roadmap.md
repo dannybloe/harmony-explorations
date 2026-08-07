@@ -546,10 +546,12 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   55 and 56 sit in exactly the two columns that are short. That checks section 17's key code split
   and section 13's `row * 4 + column` against hardware for the first time.
 
-  What remains is the row, 14 candidates per button. The Harmony One is worth the same treatment:
-  its matrix is 7 by 8, so a press is worth `(code - 1) mod 8` there. The route that would finish
-  it is a RAM write to drive the rows from the host, and the rails allow no write target on arch
-  14, so it stays shut.
+  **Arch 12 was tried too and gives nothing**, which closes the USB route rather than leaving it
+  half open. Sixteen buttons spread across the spare Harmony One all pull one shared sense line,
+  and the One image has no per column reader at all, so there is no equivalent quarter to collect.
+  What remains is the row on arch 14, 14 candidates per button. The route that would finish it is a
+  RAM write to drive the rows from the host, and the rails allow no write target on arch 14, so it
+  stays shut.
 
 ### Step 7: keep the documents honest
 

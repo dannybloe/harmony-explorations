@@ -3,6 +3,7 @@
  *
  *   node packages/usb/bin/watch-keys.ts --product 0xc122
  *   node packages/usb/bin/watch-keys.ts --product 0xc121 --address 0x2fb,0x202
+ *   node packages/usb/bin/watch-keys.ts --product 0xc121 --address 0xf81 --mask 0xf3
  *
  * This is the button mapping experiment of `docs/roadmap.md` step 6, and the reason the emulator
  * could be deferred: `READ_MISC` selector `0x07` reads one byte of the data memory of a running
@@ -70,13 +71,20 @@ if (addresses === undefined) {
   );
 }
 
+// Watching a port rather than a variable means watching a byte with unrelated traffic in it: the
+// Harmony 600 and the One both toggle PORTB bit 2 independently of the keypad, which doubles the
+// line count and makes a press easy to miscount. A mask keeps the bits that are being studied.
+const maskArgument = argument('mask');
+const mask = maskArgument === undefined ? 0xff : Number.parseInt(maskArgument, 16);
+
 const remote = new HarmonyRemote(await openHarmony({ productId: found.productId }), {
   timeoutMs: 2000,
 });
 
 const label = known?.name ?? `product 0x${found.productId.toString(16)}`;
 const watched = addresses.map((a) => `0x${a.toString(16).padStart(3, '0')}`).join(' ');
-process.stderr.write(`watching ${label}, data ${watched}. Ctrl-C to stop.\n`);
+const masked = mask === 0xff ? '' : `, mask 0x${mask.toString(16)}`;
+process.stderr.write(`watching ${label}, data ${watched}${masked}. Ctrl-C to stop.\n`);
 process.stderr.write('press each key in turn and hold it briefly.\n\n');
 
 // Ctrl-C has to close the handle rather than kill the process, or the device is left claimed.
@@ -89,7 +97,7 @@ const started = Date.now();
 // Seeded from the first read rather than from 0, so the resting value is not reported as an event.
 const previous = new Map<number, number>();
 try {
-  for (const address of addresses) previous.set(address, await remote.readRam(address));
+  for (const address of addresses) previous.set(address, (await remote.readRam(address)) & mask);
   for (const [address, value] of previous) {
     process.stderr.write(`  resting 0x${address.toString(16)} = ${value}\n`);
   }
@@ -97,7 +105,7 @@ try {
 
   while (running) {
     for (const address of addresses) {
-      const value = await remote.readRam(address);
+      const value = (await remote.readRam(address)) & mask;
       const was = previous.get(address);
       if (value === was) continue;
       previous.set(address, value);
