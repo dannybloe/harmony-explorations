@@ -5018,6 +5018,78 @@ census.
 With this, **every one of the twenty base slots is accounted for**: 0 and 1 are the header records,
 2 to 17 are sixteen named sections, and 18 and 19 are NULL in all thirteen containers.
 
+## 48. The button mapping experiment, predicted before it is run
+
+This section is written **before** the measurement, which is the point of it. A hardware result
+that confirms a number nobody committed to in advance is worth much less, and this experiment has
+failed three times upstream, so it is worth being explicit about what would count as a success.
+
+### The variable to watch
+
+Section 13 read the arch 14 keypad scanner: a 14 by 4 matrix, rows active low, returning
+`row * 4 + column` as a linear index from 1 to 56, with 0 for no key. What it did not do is say
+where that index is kept, and that is what a live read needs.
+
+The handler is `0x1937A` on the Harmony 700 2.8 image. It calls the scanner, and:
+
+* stores the fresh code in a local, `0xD07`;
+* returns immediately if it equals the code already held, which is the debounce;
+* on a change, writes the fresh code to `0x3A4` and then to `0x3A2`;
+* raises the event by **ORing the event type onto `0x3A2`**, at `0x193AC`:
+  `MOVLW 0x40 ; MOVLB 3 ; IORWF 0x3A2,W`. `0x40` is the release type of section 17.
+
+So `0x3A2` holds the **bare scan code with no event bits**, which is exactly the number a config's
+key table indexes by.
+
+The bench remote is a 600, not a 700, and the RAM layout is per build rather than per architecture.
+The same three instruction shape appears twice in the complete 600 0.2 image, at `0x179FA` and
+`0x17A44`, naming bank 7 offset `0x3D`. Tracing `0x73D` in the 600 and `0x3A2` in the 700 returns
+**seventeen accesses each, of the same kinds in the same order**, with a partner variable of three
+accesses each, `0x73F` against `0x3A4`. That correspondence is the reason for believing the port
+without a second measurement.
+
+Arch 12 has no such helper section behind it, so it is a weaker prediction. The One 3.4 image
+carries the same shape at two places, naming `0x2FB` and `0x202`. `0x2FB` traces like the arch 14
+variable, fifteen accesses with the same clear, OR and store pattern and a fresh code arriving from
+`0xD04`; `0x202` is read from inside the `0x2FB` handler, so the two are related and which is the
+keypad is not settled. The One is the remote with a touch panel and section 45's hit map, so a
+second event source is expected to exist.
+
+| remote | data address | from |
+|---|---|---|
+| Harmony 600 | `0x073D` | 600 0.2, `0x179FA` and `0x17A44` |
+| Harmony 700 | `0x03A2` | 700 2.8, `0x193AC` |
+| Harmony One | `0x02FB`, and `0x0202` as the other candidate | One 3.4, `0x2BF00`, `0x2BF6E`, `0x25F24`, `0x25F8A` |
+
+### The predictions
+
+1. **At rest the variable reads 0**, and it returns to 0 when the key is let go, so a press and a
+   release are two observable transitions.
+2. **A held key reads a value in 1 to 56 on the 600**, from the scanner's own range, and the top
+   two bits are clear, because the event type is ORed on somewhere else and never stored here.
+3. **Every value observed appears in that unit's own key table.** The 600's config carries 54
+   distinct scan codes in three event classes, section 17, and a pressed key that produced a code
+   outside that set would falsify the whole chain rather than just this reading.
+4. **The map is dense but not complete**: 54 codes over 56 matrix positions, so at most two
+   positions have no config entry, and the 600 has fewer than 54 physical buttons, so some codes
+   belong to no button at all. A key that produces nothing is therefore not automatically a
+   failure, and the codes that no key produces are as much of the result as the ones that do.
+5. **`0x2FB` on the One is the keypad and `0x0202` is not.** This is the one prediction that is a
+   guess rather than a reading, and it is written down so that being wrong costs something.
+
+### Why polling is enough
+
+The read costs one USB exchange, so the loop runs at tens of hertz, and a key press held by a human
+lasts an order of magnitude longer than that. The debounce works in the remote's favour here too:
+the handler ignores a repeat of the same code, so the variable holds steady for as long as the key
+is down rather than flickering.
+
+The tool is `packages/usb/bin/watch-keys.ts`, `make watch-keys`. It only reads, it prints one line
+per change, and it seeds itself from the resting value so the first read is not reported as a
+press.
+
+*The result goes in this section, below this line, and the predictions above are not edited.*
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

@@ -96,6 +96,11 @@ remotes:
 probe:
 	@node packages/probe/bin/probe.ts $(PROBE_ARGS)
 
+# The button mapping experiment: poll the keypad scanner's own variable over USB while a human
+# presses every key. Read only, and long running like `bench`, so it is not part of `all`.
+watch-keys:
+	@node packages/usb/bin/watch-keys.ts $(WATCH_ARGS)
+
 # The bench instrument. Not part of `all`: it is a long running server, not a check.
 #
 # It binds to 127.0.0.1 only. That is a concession this project makes for a bench tool and refuses
