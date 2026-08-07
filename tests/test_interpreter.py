@@ -1498,6 +1498,91 @@ class TestTheBitmap(unittest.TestCase):
         self.assertEqual(cases, {gspm.BITMAP_RAW, gspm.BITMAP_ENCODED, gspm.BITMAP_NOTHING})
 
 
+class TestTheModeRecord(unittest.TestCase):
+    """`docs/findings.md` section 52: base slot 6's pointer does not land on its entry.
+
+    It lands inside the record, on a discriminator byte with a `u24` back pointer to the start
+    beside it, which is the shape base slot 5's infrared records have. Reading the entry at the
+    pointer decodes the record's tail as if it were its head, and because the byte there is
+    usually zero it looks like the wide tagged list form with a count running to 255.
+    """
+
+    SAMPLES = ['h600_config', 'h700_config', 'h700_config_2', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'h525_config', 'h600_safemode_gspm']
+    #: Configs whose modes each carry exactly one enter and one leave handler.
+    PAIRED = {'one_config', 'one_config_unprogrammed'}
+
+    def test_every_pointer_lands_inside_its_own_record(self):
+        from harmony import gspm
+        total = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                records = c.mode_records()
+                self.assertTrue(records)
+                for record in records:
+                    at = c.blob_offset_of(record.address)
+                    start = c.blob_offset_of(record.start)
+                    self.assertIsNotNone(start)
+                    self.assertLess(start, at, 'the back pointer must point backwards')
+                    total += 1
+        if all(lab.path(name) for name in self.SAMPLES):
+            self.assertEqual(total, 1616)
+
+    def test_the_list_fits_inside_the_record_it_belongs_to(self):
+        """The closure the record start rests on.
+
+        The count is read at the start and the record ends just past the table pointer, so a wrong
+        start gives a count that overruns. It never does, in any container.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    start = c.blob_offset_of(record.start)
+                    at = c.blob_offset_of(record.address)
+                    self.assertLessEqual(start + record.length, at + 10)
+
+    def test_arch_12_pairs_an_enter_handler_with_a_leave_handler(self):
+        """Section 37 predicted the pair and this is where it holds exactly.
+
+        Both Harmony Ones give one of each in every mode. Arch 14 and arch 8 do not, so the
+        pairing is recorded as an arch 12 property rather than generalised.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None or name not in self.PAIRED:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    tags = [e.tag for e in record.entries]
+                    self.assertEqual(tags.count(gspm.MODE_TAG_ENTER), 1)
+                    self.assertEqual(tags.count(gspm.MODE_TAG_LEAVE), 1)
+
+    def test_reading_at_the_pointer_instead_saturates(self):
+        """The defect this section corrects, pinned so it cannot come back unnoticed.
+
+        At the table pointer the first byte is usually zero, the wide form's marker, and the next
+        byte is taken for a count. On the Harmony 600 that yields a list of 255 entries, which is
+        exactly where a `u8` saturates and is the sign that the start is wrong.
+        """
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        widest = max(len(c.tagged_list(a) or []) for a in c.mode_table())
+        self.assertEqual(widest, 255)
+        self.assertLess(max(len(r.entries) for r in c.mode_records()), 255)
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

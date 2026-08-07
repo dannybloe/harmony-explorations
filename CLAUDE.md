@@ -594,6 +594,18 @@ slot 10's pointer array**: a real entry with a constant high byte, read one byte
 constant in the low position and multiplies every delta by 256. Next: the unnamed fields of decoded
 records, and the unattributed callers of the seek routine `0x18D98`, of which there are fifty.
 
+**Base slot 6's pointer does not land on its entry**, section 52, found while hunting that referent.
+It lands **inside** the record on a discriminator byte with a `u24` back pointer to the start beside
+it, the same shape base slot 5's infrared records have; the tagged list is at the **start**. Reading
+it at the pointer decodes the tail as the head, and since the byte there is usually zero, which is
+also the wide form's marker, it looked like a list saturating at 255. Closures over 1616 records in
+eight containers: the back pointer always points backwards, the count always fits inside the record,
+and on both Ones every mode has exactly one tag 6 and one tag 7. **The container's key table is the
+first mode record, byte for byte**, so the key table encoding and the tagged list encoding are one
+encoding. Coverage 28.3% on a 700. Only the list is decoded: it is about 45 bytes of a 700 byte
+record, so **90% of base slot 6 is unread**, which is now the largest unexplained structure whose
+owner is known.
+
 Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 
 **The read pipeline.** Read a whole config off a remote and file it in the lab corpus with a

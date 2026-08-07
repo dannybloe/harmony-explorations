@@ -164,6 +164,45 @@ export function stateTable(c: Container): StateTable | undefined {
   };
 }
 
+export interface ModeRecord {
+  /** What base slot 6's array holds: a byte inside the record, not its start. */
+  address: number;
+  /** Where the record actually begins, read from the `u24` beside the pointer. */
+  start: number;
+  kind: number;
+  entries: TaggedEntry[];
+  /** The tagged list only: `1 + 4 * entries`. The rest of the record is not decoded. */
+  length: number;
+}
+
+/**
+ * Base slot 6's entries, located the way the firmware locates them.
+ *
+ * **The pointer does not land on the entry.** It lands inside the record, on a discriminator byte
+ * with a `u24` back pointer to the record's start immediately after, which is the shape base slot
+ * 5's infrared records have. The tagged list is at the **start**.
+ *
+ * Reading it at the pointer instead is what made every mode look like the wide form with counts
+ * running to 255: the byte there is usually zero, and so is the wide form's marker.
+ * `docs/findings.md` section 52.
+ */
+export function modeRecords(c: Container): ModeRecord[] | undefined {
+  const table = modeTable(c);
+  if (table === undefined) return undefined;
+  const out: ModeRecord[] = [];
+  for (const address of table.addresses) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined || off + 4 > c.blob.length) return undefined;
+    const start = u24(c.blob, off + 1);
+    const startOff = c.blobOffsetOf(start);
+    if (startOff === undefined || startOff >= off) return undefined;
+    const list = taggedList(c, start);
+    if (list === undefined) return undefined;
+    out.push({ address, start, kind: u8(c.blob, off), entries: list.entries, length: list.length });
+  }
+  return out;
+}
+
 export interface TaggedEntry {
   tag: number;
   operand: number;

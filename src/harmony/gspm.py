@@ -282,6 +282,8 @@ OPCODE_ENTER_MODE = 0x7E
 # The firmware runs an entry's tagged action lists by these two tags and no others, on both
 # arch 14 images: tag 7 for the mode being left, tag 6 for the one being entered.
 MODE_TAG_LEAVE = 7
+# A narrow tagged list entry: the tag then a three byte action list instruction.
+TAGGED_ENTRY_LENGTH = 4
 MODE_TAG_ENTER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
@@ -629,6 +631,21 @@ class Image:
     @property
     def height(self) -> int:
         return len(self.rows)
+
+
+@dataclass
+class ModeRecord:
+    """One base slot 6 entry, with both of its addresses.
+
+    `address` is what the section's pointer array holds and `start` is where the record actually
+    begins; the two differ by the record's whole body, so a reader that takes the first for the
+    second decodes the tail as if it were the head.
+    """
+    address: int
+    start: int
+    kind: int
+    entries: List['TaggedEntry']
+    length: int
 
 
 @dataclass
@@ -1084,6 +1101,42 @@ class Container:
             return None
         return [int.from_bytes(self.blob[p:p + 3], 'little')
                 for p in range(off + 3, end, 3)]
+
+    def mode_records(self) -> Optional[List['ModeRecord']]:
+        """Base slot 6's entries, located the way the firmware locates them.
+
+        **The pointer does not land on the entry.** It lands inside the record, on a discriminator
+        byte with a `u24` back pointer to the record's start immediately after, which is exactly
+        the shape base slot 5's infrared records have (`docs/findings.md` section 42). The tagged
+        list section 37 describes is at the **start**, not at the pointer.
+
+        ```
+        at the record start   u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+        at the table pointer  u8 kind; u24 the record's own start
+        ```
+
+        Reading the list at the pointer instead is what made every mode look like the wide form
+        with counts running to 255: the byte there is usually zero, which the wide form's marker
+        also is. `docs/findings.md` section 52.
+        """
+        table = self.mode_table()
+        if table is None:
+            return None
+        out = []
+        for address in table:
+            off = self.blob_offset_of(address)
+            if off is None or off + 4 > self.length:
+                return None
+            start = int.from_bytes(self.blob[off + 1:off + 4], 'little')
+            start_off = self.blob_offset_of(start)
+            if start_off is None or start_off >= off:
+                return None
+            entries = self.tagged_list(start)
+            if entries is None:
+                return None
+            out.append(ModeRecord(address=address, start=start, kind=self.blob[off],
+                                  entries=entries, length=1 + TAGGED_ENTRY_LENGTH * len(entries)))
+        return out
 
     def event_map(self) -> Optional['EventMap']:
         """Base slot 4: what each of the thirty firmware events maps to.

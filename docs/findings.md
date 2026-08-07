@@ -5531,6 +5531,76 @@ attributed.
 * `tests/test_region.py`, five tests including the calibration case and the byte order comparison.
 * `docs/config-format.md`, under the screen language.
 
+## 52. Base slot 6's pointer does not land on its entry, and the key table is one of them
+
+Found while hunting section 51's missing referent, by asking whether a mode entry's three trailing
+bytes could be an address. They cannot, but the census that asked came back with tags spanning
+**0 to 255**, which is not a tag space, and that was the thread.
+
+### What the pointer points at
+
+The same shape base slot 5's infrared records have, and section 42 already wrote down: the array's
+pointer lands **inside** the record, on a discriminator byte, with a `u24` back pointer to the
+record's start immediately after it.
+
+```
+at the record start   u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+at the table pointer  u8 kind; u24 the record's own start
+```
+
+Records are laid out contiguously and a record runs to about seven hundred bytes, so the pointer
+lands hundreds of bytes past the head. Reading the tagged list at the pointer therefore decodes the
+tail as if it were the head, and because the byte there is usually zero, which is also the wide
+form's marker, the result is a plausible looking list whose count runs to 255. That is what the
+byte accounting refused to claim two commits ago, correctly and for the wrong reason: the extent
+was not unsettled, the start was wrong.
+
+Three closures, over 1616 mode records in eight containers spanning four architectures:
+
+* **every** pointer's back pointer points backwards, 1616 of 1616,
+* the count read at the start gives a list that **fits inside the record**, 1616 of 1616, where a
+  wrong start overruns,
+* on both Harmony Ones every mode carries **exactly one tag 6 and one tag 7**, 379 of 379, which
+  is section 37's enter and leave handler pair holding exactly. It does not hold on arch 14 or arch
+  8, so the pairing is recorded as an arch 12 property rather than generalised.
+
+The other tags are key codes. A mode record maps a key code to one action list instruction, which
+is what a mode should be and is a stronger statement of section 37 than section 37 made.
+
+### The key table is a mode record
+
+The overlap detector found this rather than anybody noticing. Claiming the mode records put exactly
+one collision in every container that has a key table, and it is total: the container's key table
+sits at `markerOffset + 4` with a `u8` count and four byte records, and **base slot 6's first mode
+record starts on the same byte with the same count and the same entries.** On the Harmony 600 both
+are 162 records over 649 bytes at blob `0x5F`.
+
+So the structure after the marker is not header furniture with a private layout. It is a mode
+record, the first one, and the tagged list encoding is the key table encoding. Section 17's reading
+of a key code as an event type plus a scan code is a reading of a **tag**, and it stands: what
+changes is that the same encoding is used in 237 to 374 other places in the same file.
+
+The accounting claims those bytes once, under the name they had first.
+
+### What it does not do
+
+**It does not find section 51's referent.** A tagged list entry's payload is a three byte action
+list instruction, so it cannot hold a `u24` address, and the census that started this confirmed it.
+
+**It does not decode a mode record.** The tagged list is about forty five bytes of a seven hundred
+byte record, so 90% of base slot 6 is still unattributed, and on the Harmony 700 that is 240 KB
+sitting below the region rather than in it. That is now the largest unexplained structure whose
+**owner is known**, which makes it a better target than the region.
+
+Coverage moves to 28.3% on a Harmony 700 and 26.5% on a Harmony 600.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6.
+* `src/harmony/gspm.py`: `ModeRecord` and `Container.mode_records`.
+* `packages/codec/src/sections.ts`: `modeRecords`, plus `slot-6-mode` and `slot-6-tail` claims.
+* `tests/test_interpreter.py` `TestTheModeRecord`, and `packages/codec/test/sections.test.ts`.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

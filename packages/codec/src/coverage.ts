@@ -21,7 +21,7 @@ import { fontSets, glyphs } from './font.ts';
 import { bitmaps, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { irGroups } from './ir.ts';
-import { eventMap, handlerSets, modeTable, stateTable } from './sections.ts';
+import { eventMap, handlerSets, modeRecords, modeTable, stateTable } from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
   from './tables.ts';
 
@@ -80,6 +80,11 @@ export function claims(c: Container): Claim[] {
 
   // The key table follows the marker on the families that carry one: a u8 count and four byte
   // records. `parse` reads it there, so this is the same layout and not a second opinion.
+  //
+  // **It is also base slot 6's first mode record**, byte for byte, which the overlap detector
+  // found rather than anybody noticing: same offset, same count, same four byte entries. It is
+  // claimed once, here, and the mode loop below skips whichever record starts on it.
+  // `docs/findings.md` section 52.
   if (c.hasKeyTable && c.keys.length > 0) {
     add(c.markerOffset + 4, 1 + 4 * c.keys.length, 'key-table');
   }
@@ -165,12 +170,21 @@ export function claims(c: Container): Claim[] {
   const state = stateTable(c);
   if (state !== undefined) add(state.start, state.length, 'slot-13-table');
 
-  // **What base slot 6 and base slot 9 point at is deliberately not claimed**, and the reason is
-  // worth keeping. Every mode entry in the corpus reads as the wide form, and the longest read as
-  // 255 entries, which is exactly where a `u8` count saturates; claiming them overlaps base slot
-  // 5's records and base slot 10's lists by hundreds of bytes. The overlap detector found that,
-  // which is what it exists for. Until the wide form's length rule is settled the honest claim is
-  // none. `taggedList` still reads them: it is the extent that is not trusted, not the entries.
+  // Base slot 6's entries, at the record start the back pointer names rather than at the pointer
+  // itself. Only the tagged list is claimed: a record runs to about seven hundred bytes and the
+  // list is about forty five of them, so the rest is undecoded and stays unattributed.
+  for (const record of modeRecords(c) ?? []) {
+    // The one that is the key table is already claimed above, under the name it had first.
+    if (c.blobOffsetOf(record.start) !== c.markerOffset + 4) {
+      at(record.start, record.length, 'slot-6-mode');
+    }
+    add(c.blobOffsetOf(record.address), 4, 'slot-6-tail');
+  }
+
+  // **Base slot 9's sets are still not claimed.** The same misread that section 52 corrected for
+  // base slot 6 may or may not apply here: slot 9's pointers land on lists that decode, but
+  // nothing has established that they land on the start rather than inside, and claiming an extent
+  // on that basis is what produced the overlaps in the first place.
 
   // The infrared database: **the group arrays only.** A record's extent is not established, and
   // the duration run is located as the longest alternating one rather than read from a length, so

@@ -14,6 +14,7 @@ import {
   handlerSets,
   irGroups,
   irPulses,
+  modeRecords,
   modeTable,
   parameterGroups,
   parse,
@@ -135,3 +136,44 @@ for (const [name, count, longest, groups, pages, areas] of TABLES) {
       }
     });
 }
+
+/** `[sample, mode records, tagged entries across them]`. findings.md section 52. */
+const MODES: readonly [string, number, number][] = [
+  ['h600_config', 237, 2681],
+  ['one_config', 268, 2254],
+  ['h525_config', 114, 564],
+];
+
+for (const [name, count, entries] of MODES) {
+  test(`${name}: a mode record starts where its back pointer says`, skipUnless(name), () => {
+    // Base slot 6's array points *inside* the record, on a discriminator byte with a u24 back
+    // pointer to the start beside it, exactly as base slot 5's infrared records do. Reading the
+    // entry at the pointer decodes the tail as if it were the head.
+    const c = parse(load(name) as Uint8Array);
+    const records = modeRecords(c) ?? [];
+    assert.equal(records.length, count);
+    assert.equal(records.reduce((n, r) => n + r.entries.length, 0), entries);
+    for (const record of records) {
+      const start = c.blobOffsetOf(record.start) as number;
+      const at = c.blobOffsetOf(record.address) as number;
+      assert.ok(start < at, 'the back pointer must point backwards');
+      // The closure: the count is read at the start and the record ends just past the pointer, so
+      // a wrong start gives a count that overruns. It never does.
+      assert.ok(start + record.length <= at + 10);
+    }
+  });
+}
+
+test('the key table is base slot 6 first mode record, byte for byte', skipUnless('h600_config'),
+  () => {
+    // Found by the overlap detector rather than by anybody noticing. Same offset, same count, same
+    // four byte entries, so the container's key table and one mode entry are one structure under
+    // two names, and the accounting claims it once.
+    const c = parse(load('h600_config') as Uint8Array);
+    const first = (modeRecords(c) ?? []).find(
+      (r) => c.blobOffsetOf(r.start) === c.markerOffset + 4,
+    );
+    assert.notEqual(first, undefined, 'a mode record starts on the key table');
+    assert.equal((first as { entries: unknown[] }).entries.length, c.keys.length);
+    assert.equal((first as { length: number }).length, 1 + 4 * c.keys.length);
+  });

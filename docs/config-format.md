@@ -304,11 +304,30 @@ heuristic does not pick this slot up.
 both index this table, and `0x7E` is the instruction that **switches to the entry its operand
 names**.
 
-Each entry has two handlers, reached through pointers inside it and run as tagged action lists:
-**tag 7 when the mode is left and tag 6 when it is entered**. Those are the only two tags either
-arch 14 image ever selects.
+**The pointer does not land on the entry.** It lands inside the record, on a discriminator byte
+with a `u24` back pointer to the record's start immediately after it, exactly as base slot 5's
+infrared records do:
 
-Read with `gspm.mode_table`.
+```
+at the record start   u8 count; { u8 tag; u16 operand; u8 opcode }[count]
+at the table pointer  u8 kind; u24 the record's own start
+```
+
+Records are contiguous and run to about seven hundred bytes, so the pointer lands hundreds of bytes
+past the head. Closures over 1616 records in eight containers: the back pointer always points
+backwards, and the count read at the start always gives a list that fits inside the record, where a
+wrong start overruns.
+
+An entry maps a **tag** to one action list instruction. Two tags are the handlers: **tag 7 when the
+mode is left and tag 6 when it is entered**, the only two either arch 14 image selects, and on both
+Harmony Ones every mode carries exactly one of each. The rest are key codes.
+
+**The container's key table is the first mode record**, byte for byte: same offset, same count,
+same four byte entries. The tagged list encoding and the key table encoding are one encoding.
+
+Only the list is decoded. It is about forty five bytes of a seven hundred byte record, so most of
+base slot 6 is still unread. Read with `gspm.mode_records`; `gspm.mode_table` returns the raw
+pointers. [findings.md](findings.md) section 52.
 
 *It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
 entries. What distinguishes one entry from another is not established.
