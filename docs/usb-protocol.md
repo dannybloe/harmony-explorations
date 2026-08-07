@@ -757,11 +757,11 @@ bytes exactly as predicted.
 | 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble a compiled in zero |
 | 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
 | 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
-| 7 | `0x02` | `0x34` | equals field 0 on both |
-| 8 | `0x00` | `0x34` | **the version of the image at `0xFF` `+0xE000`** |
-| 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000` in internal memory** |
-| 10 | `0x02` | `0x34` | equals field 0 on both |
-| 11 | `0x02` | `0x34` | equals field 0 on both |
+| 7 | `0x02` | `0x34` | **the version byte at program `0x000017`**, in the boot area |
+| 8 | `0x00` | `0x34` | **the version of the image at `0xFF` `+0xE000`**, from `0x01E007` |
+| 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000`**, by pairing, accessor unexplained |
+| 10 | `0x02` | `0x34` | **the safe mode firmware's version**, from `0x001007` |
+| 11 | `0x02` | `0x34` | **the running application image's own header version**, from `0x009007` |
 
 That is six fields agreeing across two architectures, with the second remote differing in every one
 of the values the reading predicts. Fields 2 and 3 are the 16-bit SPI read the firmware performs with
@@ -776,6 +776,15 @@ memory in full turned up three images carrying the `48 47` header, and the one a
 has `0x16` in its header's version byte. On the 600 that address holds no image, only zeros, and the
 600's field 9 is `0x00`. Two remotes, a distinctive value in a block otherwise full of `0x34`, and an
 absence matching an absence.
+
+> **Corrected in section 59 of `docs/findings.md`.** The two paragraphs below place fields 8 and 9
+> correctly and argue for them wrongly. Both rest on the Harmony 600 reporting `0x00` as an absent
+> image answering zero, and on the 700 image those two bytes are `CLRF INDF0`, a compiled in
+> constant. Arch 14 zeroes exactly the two fields that name images only arch 12 carries, which is
+> consistent with the assignment but is not a measurement of it. Field 8 is now proved by the
+> address its accessor builds, `0x01E007`, and field 9 by the three internal images pairing onto
+> three fields with the other two proved. Field 9's own accessor is a table read whose address does
+> not explain its value, and that is unresolved.
 
 **Field 8 was settled the same way, by the two reads named as the test.** Both candidate addresses
 were then read on the 600. It has an image at `0xFE` `+0x1000`, the safe mode one, 24320 bytes at
@@ -808,12 +817,21 @@ Two predictions fall out for remotes nobody here has connected, and they are rec
 connecting one is a test rather than a confirmation: a Harmony 700 should enumerate `bcdDevice`
 `0x1066` and a Harmony 650 `0x1072`, since the skin is reported in binary here and in BCD there.
 
-**What is still not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a
-reading. Three copies of the firmware version is a strange thing for a version block to carry, and
-the likelier explanation is that they version other components which happen to match. One candidate
-is now visible: the safe mode image at `0xFE` `+0x1000` carries the same version as the application
-on both remotes, `0x34` and `0x02`, so a field naming it would be indistinguishable from a field
-naming the application. That is exactly why nothing is claimed.
+**What is still not claimed.** ~~Fields 7, 10 and 11 repeating field 0 is an observation, not a
+reading.~~ **All three have readings now**, in section 59: field 7 is the version byte at program
+`0x000017`, field 10 the safe mode firmware's, and field 11 the running application image's own
+header. They agree with field 0 because they version four things a firmware release stamps
+together, which is what this section already suspected and rightly declined to claim. It read:
+
+> Three copies of the firmware version is a strange thing for a version block to carry, and the
+> likelier explanation is that they version other components which happen to match. One candidate
+> is now visible: the safe mode image at `0xFE` `+0x1000` carries the same version as the
+> application on both remotes, `0x34` and `0x02`, so a field naming it would be indistinguishable
+> from a field naming the application. That is exactly why nothing is claimed.
+
+The candidate was the right one and the objection was the right objection. What answered it was not
+a better comparison of values but the address the accessor builds, `0x001007`, which cannot be the
+application on either architecture.
 
 Concordance prints three things this block could plausibly carry that are still unplaced: firmware
 type, the third component of the hardware version, and `IRL, ORL, FRL`.
@@ -1148,9 +1166,11 @@ to settle, and a list that only ever grows is not a status.
   no-op that reports success, so there is no event injection.
 * **The response layout of each command**: the table above, from the state handlers rather than the
   parsers.
-* **GET_VERSION's block is twelve fields**, by two independent counts. Nine of them are still
-  unnamed, which is the entry below. Field 4 came off that list in section 57 of
-  `docs/findings.md`: it is the architecture, from a compiled in literal in four images.
+* **GET_VERSION's block is twelve fields**, by two independent counts. **Eleven of the twelve now
+  have a reading**, from sections 57 and 59 of `docs/findings.md`: field 4 is the architecture, from
+  a compiled in literal in four images, and fields 7, 10 and 11 are version bytes at program
+  addresses the accessors state outright. Only **field 6** has no reading, and only **field 9's
+  accessor** is located without explaining its value.
 
 ### The Harmony One drops its first command, sometimes
 

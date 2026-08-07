@@ -6198,6 +6198,122 @@ right and the 700 pair's recorded direction is what is wrong.
   the negative half asserted too, the timestamp against a date known in advance, and the day of week
   byte against the arithmetic rather than against the parser that already checks it.
 
+## 59. The version block names four images, and one of them is the safe mode firmware
+
+Section 57 named field 4 by reading five `RETLW` accessors. The remaining unnamed fields turn out to
+be easier still, because their accessors say what they read: each one loads a **24 bit program
+address** into three consecutive RAM bytes and calls the image's byte reader. So the question "what
+is field 10 a version of" is answered by an address rather than by matching values, which is the
+difference between this section and the reasoning it corrects.
+
+### The addresses
+
+The reader is `0x1B558` on the 700, `0x19C7C` on the 600 and `0x2E70A` on the One. Its callers:
+
+| Field | 700 2.8 | 600 0.2 | One 3.4 | Address built |
+|---|---|---|---|---|
+| 7 | `0x10654` | `0x11970` | `0x2426E` | `0x000017` |
+| 8 | hardcoded | hardcoded | `0x243E4` | `0x01E007` |
+| 10 | `0x106B6` | `0x119D2` | `0x2439C` | `0x001007` |
+| 11 | `0x1067E` | `0x1199A` | different | `0x009007` |
+
+Every one of those addresses ends in **7**, and an image header on these remotes carries its version
+byte at offset 7, ahead of the `48 47` magic at offset 8. So each field is the version byte of the
+image at the address minus seven, and the three known image bases fall straight out:
+
+* `0x001000`, which is the image at `0xFE` `+0x1000`: **the safe mode firmware**. Field 10.
+* `0x009000`, which is **the application itself** on arch 14, since `0x9000` is its exec base.
+  Field 11.
+* `0x01E007` on the One, the image at `0xFF` `+0xE000`. Field 8.
+
+Resolved against each unit's own memory dumps and compared with what that remote actually reported:
+field 7, 10 and 11 agree on the Harmony 600, and fields 7 and 10 agree on the Harmony One. Five
+checks, two architectures, no disagreements. Field 8's address lands in the One's `0xFF` page, which
+is deliberately absent from `tests/lab.py` because it carries that unit's identity block, so its
+address is pinned and its value is not.
+
+### Two fields named
+
+**Field 10 is the safe mode firmware's version.** `docs/usb-protocol.md` had this as a candidate and
+explicitly declined to claim it: "the safe mode image at `0xFE` `+0x1000` carries the same version as
+the application on both remotes, `0x34` and `0x02`, so a field naming it would be indistinguishable
+from a field naming the application. That is exactly why nothing is claimed." The restraint was
+right and the address settles it, because `0x001007` cannot be the application on either
+architecture.
+
+**Field 11 is the running application image's own header version.** Proved on arch 14, where the
+accessor reads `0x009007` and `0x9000` is the exec base. On arch 12 the accessor uses a different
+mechanism that is not decoded here, and its value agrees.
+
+That answers the standing question of why fields 7, 10 and 11 all repeat field 0. They are versions
+of four different things that happen to carry the same number, because a firmware release sets them
+together. Field 0 is a constant compiled into the application; field 11 is the same version read
+back out of that application's header; field 10 is the safe mode image beside it; field 7 is a byte
+somewhere else again.
+
+### Field 7 is narrowed, not named
+
+It reads program `0x000017`, and the neighbourhood is the same on both architectures:
+
+```
+One 3.4   0x000010:  ff ff ff ff ff ff ff 34  00 ef 04 f1 12 00 ff ff
+600 0.2   0x000010:  ff ff ff ff ff ff ff 02  00 ef 4c f0 12 00 ff ff
+```
+
+Seven erased bytes, the version, then a `GOTO` and a `RETURN`. So it is a lone version byte in the
+boot area laid out at the same offset an image header would use, with the rest of the header never
+written. Plausibly what the bootloader records when it installs an application, which would explain
+why it tracks the application version. **That last sentence is a conjecture and is marked as one**:
+nothing here identifies the code that writes it.
+
+### The correction: arch 14 hardcodes what it cannot read
+
+`docs/usb-protocol.md` placed fields 8 and 9 by saying they are the versions of the images at
+`0xFF` `+0xE000` and `0xFF` `+0x0000`, and offered the Harmony 600 as the negative case, since it
+reports `0x00` for both and has no such images.
+
+> **That argument does not work.** On the 700 image, fields 8 and 9 are `CLRF INDF0` at `0x14378`
+> and `0x1438C`: a compiled in zero, not a read that found nothing. The 600's two zeroes are
+> therefore not evidence about images at all, and the "negative case" was reading a constant as a
+> measurement.
+
+The conclusion survives, on better evidence, and the constant turns out to be a confirmation rather
+than a problem:
+
+* **Field 8 is proved by address**, `0x01E007`, which is exactly the image the old argument guessed.
+* **Field 9 rests on an exhaustive pairing.** The One holds exactly three images in internal memory
+  and the block has exactly three fields naming one each. Fields 10 and 8 are proved to name
+  `0xFE` `+0x1000` and `0xFF` `+0xE000`, so the remaining field and the remaining image are each
+  other's only candidates, and the value matches: `0x16` is what sits at `0x010007`.
+* **Arch 14 zeroes exactly the two fields whose images it lacks.** The 600's `0xFF` page carries no
+  image at all, and fields 8 and 9 are the two that name images on that page. A firmware that
+  compiled in zero for precisely those two, and reads the other two by address, is consistent with
+  the assignment rather than indifferent to it.
+
+### What is still open
+
+**Field 9's accessor does not explain its value, and that is recorded rather than smoothed over.**
+It is not one of the address-passing accessors. On the One it is a bare table read, `TBLPTR` set to
+`0x020024` and a single `TBLRD*`, at `0x24290`. Program `0x020000` is the application's exec base on
+arch 12, so that is the application image plus `0x24`, and the byte there is `0xDE`, part of a run of
+`DE AD` filler. The remote reports `0x16`. So the table read does not resolve to the application
+image, and where it does resolve is not established. Both halves are worth stating: the accessor is
+located, and reading it does not currently produce the answer the device gives.
+
+**Field 6 is the only field with no reading at all.** Section 57 established it is a compiled in
+`0x0C` on all four images, which killed the idea that it counts the fields, and put nothing in its
+place.
+
+So the block stands at eleven of twelve fields with a reading, one of those eleven carrying an
+unexplained accessor.
+
+### Where it lands
+
+* `docs/usb-protocol.md`, the field table, with the fields 8 and 9 paragraph corrected in place.
+* `tests/test_usb_firmware.py`: `ACCESSOR_ADDRESSES` and four tests, covering the addresses on three
+  images, the addressed bytes against two remotes' measured blocks, the arch 14 `CLRF` pair, and the
+  pairing that carries field 9.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

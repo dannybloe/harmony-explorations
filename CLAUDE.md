@@ -526,11 +526,15 @@ three GUIDs `concordance -i` reports, so that block is personal data and never g
 What still waits:
 
 * what fields 7, 10 and 11 of the version block are versions of, fields 8 and 9 being placed,
-* naming nine of GET_VERSION's twelve fields. **Field 4 is named**: its high nibble is the
-  architecture, from a `RETLW` accessor that reads 14 on three arch 14 images spanning three
-  firmware versions and three skins, and 12 on the One, agreeing with what each bench remote's own
-  config states in base slot 1. Its low nibble is a compiled in zero everywhere, and the byte
-  cannot express an architecture above 15. `docs/findings.md` section 57.
+* **GET_VERSION's twelve fields are all but done.** Eleven have a reading. Field 4's high nibble
+  is the architecture, from a `RETLW` accessor reading 14 on three arch 14 images spanning three
+  firmware versions and three skins, and 12 on the One, agreeing with each bench remote's own config
+  in base slot 1; its low nibble is a compiled in zero everywhere and the byte cannot express an
+  architecture above 15 (section 57). Fields 7, 10 and 11 are version bytes at program addresses
+  their accessors state outright, `0x000017`, `0x001007` and `0x009007`, so **field 10 is the safe
+  mode firmware's version** and **field 11 the running application's own header** (section 59).
+  What is left: **field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
+  table read at `0x020024` whose byte is `0xDE` while the remote reports `0x16`.
 
 Two items came off that list rather than being solved. **The concordance cross-check of a full
 config read is done**: each unit's stored `.EZHex` *is* concordance output, and all three configs

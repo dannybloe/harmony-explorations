@@ -21,6 +21,56 @@ IMAGES = {
     'one34_code': (0x20000, 0x26492, 0x26408),
 }
 
+# The twelve bytes each bench remote reported, measured over USB. findings.md section 59 checks
+# three of them against the program memory the firmware says they come from.
+ONE_VERSION_BLOCK = (0x34, 0x05, 0xC8, 0x1F, 0xC0, 0x36, 0x0C, 0x34, 0x34, 0x16, 0x34, 0x34)
+H600_VERSION_BLOCK = (0x02, 0x11, 0x1C, 0x15, 0xE0, 0x47, 0x0C, 0x02, 0x00, 0x00, 0x02, 0x02)
+
+# image -> (base, {field: (address of the argument load, the 24 bit program address it builds)}).
+#
+# These accessors all have one shape: three consecutive RAM bytes loaded with a little endian
+# program address, then a call to the image's byte reader. So what each field versions is stated by
+# the firmware rather than guessed from the value it happens to hold.
+#
+# Field 11 is absent for the One because arch 12 reaches its application image a different way, and
+# field 8 is absent for both arch 14 images because they hardcode it. Both are asserted elsewhere.
+ACCESSOR_ADDRESSES = {
+    'h700_code': (0x9000, {7: (0x10654, 0x000017), 10: (0x106B6, 0x001007),
+                           11: (0x1067E, 0x009007)}),
+    'h600_code_complete': (0x9000, {7: (0x11970, 0x000017), 10: (0x119D2, 0x001007),
+                                    11: (0x1199A, 0x009007)}),
+    'one34_code': (0x20000, {7: (0x2426E, 0x000017), 8: (0x243E4, 0x01E007),
+                             10: (0x2439C, 0x001007)}),
+}
+
+# The One's three internal images and the field that carries each one's version. Two are proved by
+# the addresses above; field 9 rests on this pairing being exhaustive. findings.md section 59.
+INTERNAL_IMAGE_FIELDS = {10: 0x001000, 9: 0x010000, 8: 0x01E000}
+
+
+def address_argument(code, base, at):
+    """The 24 bit program address an accessor builds, by walking it to its call.
+
+    Reading the three literals positionally would break on field 7, whose upper two bytes are
+    `CLRF` rather than `MOVLW` because they are zero. So this follows the writes instead: whatever
+    lands in the lowest of the three consecutive bytes is the low byte of the address.
+    """
+    written, literal, addr = {}, None, at
+    for _ in range(12):
+        instruction = isa.decode(code, addr - base, base)
+        if instruction.mnemonic == 'CALL':
+            break
+        if instruction.mnemonic == 'MOVLW':
+            literal = instruction.fields['k']
+        elif instruction.mnemonic == 'MOVWF':
+            written[instruction.fields['f']] = literal
+        elif instruction.mnemonic == 'CLRF':
+            written[instruction.fields['f']] = 0
+        addr += 4 if instruction.is_two_word else 2
+    low = min(written)
+    return written[low] | (written[low + 1] << 8) | (written[low + 2] << 16)
+
+
 # The seven commands every image dispatches, by the value left after the length nibble is
 # masked off. Names are the ones the protocol is known by; the firmware names nothing.
 COMMANDS = {0x10: 'GET_VERSION', 0x30: 'WRITE_FLASH', 0x50: 'READ_FLASH',
@@ -550,6 +600,67 @@ class TestFieldFourIsTheArchitecture(unittest.TestCase):
         base, accessor = 0x9000, 0x10648 + 2 * self.HIGH
         callers = trace.xrefs(lab.load('h700_code'), base, (accessor,))
         self.assertEqual(len(callers[accessor]), 1)
+
+    def test_the_version_fields_name_program_addresses(self):
+        """
+        findings.md section 59. Fields 7, 10 and 11 come from accessors that pass a 24 bit program
+        address to one reader routine, so what they version is stated by the firmware rather than
+        inferred from the value. The byte at each address is then checked against what the remote
+        actually reported, which is the half that makes this a measurement.
+        """
+        lab.require(*ACCESSOR_ADDRESSES)
+        for image, (base, cases) in ACCESSOR_ADDRESSES.items():
+            code = lab.load(image)
+            for field, (accessor, expected) in cases.items():
+                with self.subTest('%s field %d' % (image, field)):
+                    self.assertEqual(address_argument(code, base, accessor), expected)
+
+    def test_the_addressed_byte_is_the_one_the_remote_reported(self):
+        """
+        The other half. Each address is resolved in that unit's own memory dumps and compared with
+        its measured version block. The One's `0xFF` page is deliberately absent from `lab.py`
+        because it carries the unit's identity block, so field 8's address is pinned above and its
+        value cannot be checked here.
+        """
+        lab.require('one_internal_fe', 'h600_internal_fe', 'h600_code_complete')
+        for label, fe, application, app_base, reported in (
+            ('One 3.4', 'one_internal_fe', None, None, ONE_VERSION_BLOCK),
+            ('600 0.2', 'h600_internal_fe', 'h600_code_complete', 0x9000, H600_VERSION_BLOCK),
+        ):
+            memory = lab.load(fe)
+            code = None if application is None else lab.load(application)
+            for field, addr in ((7, 0x000017), (10, 0x001007), (11, 0x009007)):
+                if addr >= 0x9000 and code is not None:
+                    byte = code[addr - app_base]
+                elif addr >= 0x9000:
+                    continue      # the One runs its application from external memory
+                else:
+                    byte = memory[addr]
+                with self.subTest('%s field %d' % (label, field)):
+                    self.assertEqual(byte, reported[field])
+
+    def test_arch_fourteen_hardcodes_the_two_fields_whose_images_it_lacks(self):
+        """
+        Fields 8 and 9 are `CLRF INDF0` on the 700, a compiled in zero rather than a read that
+        found nothing. That is the correction in section 59: the Harmony 600 reporting `0x00` for
+        both was taken as an absent image answering zero, and it is not evidence of anything. It is
+        consistent, though, and that is the closure: arch 14 zeroes exactly the two fields naming
+        images that only arch 12 carries.
+        """
+        code = lab.load('h700_code')
+        for addr in (0x14378, 0x1438C):
+            instruction = isa.decode(code, addr - 0x9000, 0x9000)
+            self.assertEqual(instruction.mnemonic, 'CLRF')
+            self.assertEqual(instruction.fields['f'], 0xEF, 'INDF0')
+
+    def test_the_three_internal_images_pair_onto_three_fields(self):
+        """
+        The One holds exactly three images in internal memory and the version block has exactly
+        three fields naming one each. Two are proved by address; the pairing is what carries the
+        third, whose accessor section 59 records as unresolved.
+        """
+        self.assertEqual(sorted(INTERNAL_IMAGE_FIELDS), [8, 9, 10])
+        self.assertEqual(len(set(INTERNAL_IMAGE_FIELDS.values())), 3)
 
     def test_the_packing_can_only_express_fifteen_architectures(self):
         """
