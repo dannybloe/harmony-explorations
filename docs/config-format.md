@@ -451,8 +451,26 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 18, 19 | a switch, below | switch on a state variable and jump |
 | 20 | `u24` | jump |
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
-| 22 | *not established* | in the arch 12 dispatcher, used by no config |
-| 23 | none | *arch 12 only*, its handler reads nothing; one per mode program |
+| 22 | **per architecture**, below | *arch 12*: call. *arch 9*: draw a picture |
+| 23 | none | *arch 12 only*, the return matching opcode 22; one per mode program |
+
+**Opcode 22 is the one opcode whose operand width is not the same everywhere**, so a parser has to
+know the architecture before it can walk past one.
+
+On **arch 12** it takes **3** bytes, a `u24` target: it seeks there and leaves the byte after the
+operands in a link register, which opcode 23 restores. A call and its return, read out of the
+handlers at `0x2966E` and `0x29640` on the Harmony One 3.4 image. There is **one** link register,
+so calls do not nest. No config in the corpus uses it, so this is firmware rather than data.
+
+On **arch 9** it takes **11**, and the last three are the address of a **picture** rather than of a
+program, so a walker must not follow it. The other eight are a band on the screen, eight of them
+covering the 525's 96 by 64 panel in rows of eight, and the individual fields are *not established*.
+No arch 9 firmware exists; the width rests on the corpus, where at 11 all **912** instances across
+114 mode records name one of exactly four picture addresses derived independently from base slot 17,
+and at every other width from 3 to 15 none do. Six widths also decode all 114 records, so decoding
+by itself settles nothing here.
+
+[findings.md](findings.md) section 64.
 
 A switch:
 

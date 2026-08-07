@@ -120,7 +120,7 @@ defect it is.
 | Harmony 600 | 9.5% | **98.7%** |
 | Harmony One | 3.2% | **98.0%** |
 | 880, arch 8 | 3.6% | **94.4%** |
-| 525, arch 9 | 7.2% | 25.7% |
+| 525, arch 9 | 7.2% | 49.8% |
 
 Zero overlapping claims anywhere. `make coverage` prints it.
 

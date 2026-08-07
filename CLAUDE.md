@@ -677,9 +677,8 @@ exactly one everywhere. For a writer, a picture's position is implied by everyth
 inserting or resizing one moves every later address.
 
 Coverage now: **98.1%** on a Harmony 700, 98.7% on a 600, **98.0%** on a Harmony One, 98.6% on the
-spare One, 94.4% on arch 8, **25.7%** on arch 9, all with zero overlaps. What is left is arch 9,
-held down by 71 of its 114 mode records not decoding, and the low part of a config rather than
-the region.
+spare One, 94.4% on arch 8, **49.8%** on arch 9, all with zero overlaps. What is left is arch 9,
+and the low part of a config rather than the region.
 
 **Base slot 13's records are read**, section 60, and the way they were found is the point. The
 deliberately built config pair of section 58 was asked one question, "what structure reads 12 in the
@@ -868,10 +867,22 @@ width, exactly its set's height, and ends exactly where the next begins. **Which
 is derived from the encoder, not from the render**: a run is maximal, so 80 of 80 adjacent run
 pairs alternate and 50 of 50 literal pixels beside a background run read 1; and 160 of 160 cells
 open with a full width background run, which is what says that kind is the paper. Section 46's
-third closure is unavailable here, because the one arch 9 config has **no inline string codes at
-all**, so nothing in it is known to draw its own font. Same shape as section 62's pictures, and
-the same moral: an arch 9 gap does not always need firmware, sometimes it just needs remembering
-that the panel is monochrome.
+third closure looked unavailable here, because the config appeared to have no inline string codes
+at all; section 64 found 1205 of them the same day and they all resolve. The moral stands anyway:
+an arch 9 gap does not always need firmware, sometimes it just needs remembering that the panel
+is monochrome.
+
+**Screen opcode 22's width is per architecture**, section 64, and it is the only opcode that is.
+**Arch 12: three bytes, a call**, from its handler at `0x2966E` on the One, which saves the stream
+position plus three and seeks to a `u24`; **opcode 23 is its return**, which is what `0x29640` was
+doing. One link register, so calls do not nest, and no config uses it. **Arch 9: eleven bytes,
+the last three a picture address**, and that one entry takes arch 9 mode programs from 0 of 114 to
+**114 of 114**, reachable programs from 22 to 136, and coverage from 25.7% to **49.8%**. No arch 9
+firmware exists, so the width rests on the corpus, but not weakly: at eleven all **912** instances
+name one of exactly four picture addresses derived independently from base slot 17, and every
+other width scores zero. **Six widths also decode all 114 records**, so "it decodes" proves
+nothing here and the calibration is the finding. `SCREEN_ARCH12_ONLY` is gone, replaced by
+`SCREEN_OPERANDS_BY_ARCHITECTURE`.
 
 **That section was corrected in place the next day and the correction is the instructive part.**
 The first reading took the set header's first byte for a slot count when it is the glyph height,

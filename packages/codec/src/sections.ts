@@ -29,7 +29,7 @@ export const MODE_TAG_ENTER = 6;
  * only 43 of 114, so there the record's tail is a different thing and is not established.
  * `docs/findings.md` sections 53 and 54.
  */
-export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 12, 14]);
+export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;
 export const HANDLER_TAG_LEAVE = 2;
 

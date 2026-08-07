@@ -301,11 +301,11 @@ MODE_TAG_LEAVE = 7
 # A narrow tagged list entry: the tag then a three byte action list instruction.
 TAGGED_ENTRY_LENGTH = 4
 # Architectures where a mode record carries a screen program immediately after its tagged list.
-# Every record does on all three: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
-# on arch 8 and 268 of 268 on the Harmony One. Arch 12 looked like the exception until section 54
-# found that the only thing stopping it was opcode 23's missing operand count. Arch 9 still manages
-# only 43 of 114, so there the record's tail is a different thing and is not established.
-MODE_PROGRAM_ARCHITECTURES = frozenset({8, 12, 14})
+# Every record does on all four: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
+# on arch 8, 268 of 268 on the Harmony One and 114 of 114 on the 525. Twice this set looked short
+# and twice the cause was one missing operand count rather than a real difference: arch 12 in
+# section 54 and arch 9 in section 64.
+MODE_PROGRAM_ARCHITECTURES = frozenset({8, 9, 12, 14})
 MODE_TAG_ENTER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
@@ -352,12 +352,23 @@ SCREEN_QUEUE_INSTRUCTION = 17   # the bridge to the action list language
 SCREEN_SWITCH_NARROW = 18
 SCREEN_SWITCH_WIDE = 19
 SCREEN_JUMP = 20
-# Present in the arch 12 dispatcher and used by no config in the corpus, so their operands are
-# not established. Listed so a parser refuses them rather than desynchronising silently.
-# Opcode 22 is in the arch 12 dispatcher and appears in no config in the corpus, so its operand
-# count stays unestablished and a parser refuses it rather than desynchronising silently. 23 was
-# in this set until section 54 read its handler.
-SCREEN_ARCH12_ONLY = frozenset({22})
+# Opcode 22 is the one opcode whose width is **not** the same on every architecture, so it cannot
+# live in `SCREEN_FIXED_OPERANDS`. `docs/findings.md` section 64.
+#
+# On arch 12 it is a call, from its handler at `0x2966E` on the Harmony One 3.4 image: it saves the
+# stream position plus three and then reads a `u24` and seeks there, which is three operand bytes
+# and a return address. Opcode 23 is its return, and reading the pair together is what named both.
+# No config in the corpus uses it, so the width is firmware and the semantics are untested.
+#
+# On arch 9 it takes eleven, and the last three name a picture rather than a program. No arch 9
+# firmware exists, so that rests on the corpus, but the closure is not weak: at eleven, all 912
+# instances across 114 mode records name one of exactly four addresses, and those four were derived
+# independently by walking the picture bank. Every other width scores zero.
+SCREEN_CALL = 22
+SCREEN_OPERANDS_BY_ARCHITECTURE = {9: {SCREEN_CALL: 11}, 12: {SCREEN_CALL: 3}}
+# Whether opcode 22's trailing `u24` is a program to walk into. On arch 12 it is; on arch 9 it is a
+# picture, which is a different kind of thing and must not be handed to the program decoder.
+SCREEN_CALL_TARGET_ARCHITECTURES = frozenset({12})
 
 # Opcode 2 draws a bitmap that lives at an address rather than inline, which makes it the only
 # screen instruction that names a place outside the program. `docs/findings.md` section 50.
@@ -1604,12 +1615,20 @@ class Container:
                 out.append(ScreenInstruction(opcode=opcode, operands=self.blob[off:off + 3],
                                              targets=[target]))
                 return out
-            if opcode in SCREEN_FIXED_OPERANDS:
-                width = SCREEN_FIXED_OPERANDS[opcode]
+            widths = SCREEN_OPERANDS_BY_ARCHITECTURE.get(self.architecture, {})
+            if opcode in SCREEN_FIXED_OPERANDS or opcode in widths:
+                width = widths.get(opcode, SCREEN_FIXED_OPERANDS.get(opcode))
                 if off + width > limit:
                     return None
-                out.append(ScreenInstruction(opcode=opcode,
-                                             operands=self.blob[off:off + width]))
+                operands = self.blob[off:off + width]
+                # A call continues after its operands rather than transferring for good, so it is
+                # a target plus a fall through, unlike the jump above. On arch 9 the same opcode's
+                # address is a picture and is deliberately not walked into.
+                targets = []
+                if (opcode == SCREEN_CALL
+                        and self.architecture in SCREEN_CALL_TARGET_ARCHITECTURES):
+                    targets = [int.from_bytes(operands[-3:], 'little')]
+                out.append(ScreenInstruction(opcode=opcode, operands=operands, targets=targets))
                 off += width
                 continue
             if opcode == SCREEN_TEXT_INLINE:

@@ -25,7 +25,9 @@ import {
   IMAGE_PACKED_ARCHITECTURES,
   IMAGE_PACKED_INK,
   IMAGE_PACKED_PAPER,
-  SCREEN_ARCH12_ONLY,
+  SCREEN_CALL,
+  SCREEN_CALL_TARGET_ARCHITECTURES,
+  SCREEN_OPERANDS_BY_ARCHITECTURE,
   SCREEN_FIXED_OPERANDS,
   SCREEN_SELECT_FONT,
   bitmapAt,
@@ -42,6 +44,7 @@ import {
   parse,
   reachablePrograms,
   screenProgram,
+  modeRecords,
   screenProgramRoots,
   valueMaps,
 } from '../src/index.ts';
@@ -52,7 +55,7 @@ const DECODED: readonly [string, number, number][] = [
   ['h700_config', 6568, 553],
   ['h700_config_2', 6568, 553],
   ['h600_config', 4527, 463],
-  ['h525_config', 22, 160],
+  ['h525_config', 136, 160],
   ['one_config', 572, 501],
   ['one_config_unprogrammed', 389, 405],
   ['arch8_config_a', 345, 397],
@@ -73,9 +76,9 @@ const DECODED: readonly [string, number, number][] = [
  * 160 arch 9 glyphs; it does not move with the programs, because glyphs come from base slot 7 and
  * not from the programs that draw them.
  */
-const CORPUS_PROGRAMS = 20260;
+const CORPUS_PROGRAMS = 20374;
 const CORPUS_GLYPHS = 4093;
-const CORPUS_STRING_CODES = 40588;
+const CORPUS_STRING_CODES = 41793;
 
 for (const [name, programs, glyphCount] of DECODED) {
   test(`${name} decodes ${programs} programs and ${glyphCount} glyphs`, skipUnless(name), () => {
@@ -214,14 +217,15 @@ test('the roots come from base slots 11, 14 and 6', skipUnless('h600_config'), (
   assert.equal(roots.length, fromTable.length + fromMaps.length + fromModes.length);
 });
 
-test('the opcode table has no entry for the one the arch 12 dispatcher alone knows', () => {
-  // Listed so a parser refuses it rather than desynchronising silently. No config uses opcode 22,
-  // so its operand count is not established and guessing one would be worse than stopping. Opcode
-  // 23 was in this set until its handler was read: it takes none. Section 54.
-  assert.deepEqual([...SCREEN_ARCH12_ONLY], [22]);
-  for (const opcode of SCREEN_ARCH12_ONLY) {
-    assert.equal(SCREEN_FIXED_OPERANDS[opcode], undefined);
-  }
+test('opcode 22 is the one opcode whose width is per architecture', () => {
+  // Three on arch 12, from the firmware, where it is a call and opcode 23 is its return. Eleven on
+  // arch 9, from the corpus, where it names a picture. It stays out of the shared table because a
+  // single width there would be wrong on one of the two. Sections 54 and 64.
+  assert.equal(SCREEN_FIXED_OPERANDS[SCREEN_CALL], undefined);
+  assert.equal(SCREEN_OPERANDS_BY_ARCHITECTURE[12]?.[SCREEN_CALL], 3);
+  assert.equal(SCREEN_OPERANDS_BY_ARCHITECTURE[9]?.[SCREEN_CALL], 11);
+  // Only the arch 12 one transfers control; arch 9's address is a picture, not a program.
+  assert.deepEqual([...SCREEN_CALL_TARGET_ARCHITECTURES], [12]);
   assert.equal(SCREEN_FIXED_OPERANDS[23], 0);
 });
 
@@ -469,4 +473,40 @@ test('an arch 9 glyph ends exactly where the next one starts', skipUnless('h525_
     }
   }
   assert.equal(checked, 160);
+});
+
+/**
+ * Section 64. Opcode 22 on arch 9 takes eleven operand bytes whose last three name a picture, and
+ * that one entry makes every arch 9 mode record carry a screen program. No arch 9 firmware exists,
+ * so the width rests on the corpus, and the closure below is what makes that acceptable: the four
+ * picture addresses come from walking the bank base slot 17 names, not from these instructions.
+ */
+test('every arch 9 call names a picture, and no other width does', skipUnless('h525_config'), () => {
+  const c = parse(load('h525_config') as Uint8Array);
+  const bank = pictureBank(c, namedContentEnd(c)) ?? [];
+  const start = (c.sections[17]?.address ?? 0) + 2;
+  const addresses = new Set<number>();
+  let at = start;
+  for (const picture of bank) {
+    addresses.add(at);
+    at += picture.length as number;
+  }
+  assert.equal(addresses.size, 4);
+
+  let named = 0;
+  for (const record of modeRecords(c) ?? []) {
+    const program = screenProgram(c, record.start + record.length);
+    assert.notEqual(program, undefined, `record at ${record.start}`);
+    for (const instruction of program ?? []) {
+      if (instruction.opcode !== SCREEN_CALL) continue;
+      named += 1;
+      const operands = instruction.operands;
+      const target =
+        (operands[operands.length - 3] as number) |
+        ((operands[operands.length - 2] as number) << 8) |
+        ((operands[operands.length - 1] as number) << 16);
+      assert.ok(addresses.has(target), `call names ${target}, not a picture`);
+    }
+  }
+  assert.equal(named, 912);
 });

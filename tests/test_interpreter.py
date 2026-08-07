@@ -853,7 +853,11 @@ class TestTheScreenInterpreter(unittest.TestCase):
         cases = {c.value for c in chains.xor_chain(code, 0x20000, 0x295E6)}
         extra = cases - self.BASE_OPCODES
         self.assertEqual(extra, {22, 23})
-        self.assertEqual(set(gspm.SCREEN_ARCH12_ONLY), {22})
+        # Opcode 22's width is per architecture and 23's is not, so only one of them is in the
+        # shared table. Sections 54 and 64.
+        self.assertNotIn(gspm.SCREEN_CALL, gspm.SCREEN_FIXED_OPERANDS)
+        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[12][gspm.SCREEN_CALL], 3)
+        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL], 11)
         self.assertEqual(gspm.SCREEN_FIXED_OPERANDS[23], 0)
         for name in ('h700_code', 'h600_code_complete'):
             base, _, at = self.DISPATCHERS[name]
@@ -1144,8 +1148,10 @@ class TestTheFontTable(unittest.TestCase):
                         codes += 1
                         resolved += c.glyph(fonts[selected], code) is not None
         # 16054 before section 53 added the mode records' own programs as roots, 39170 before
-        # section 54 added arch 12's.
-        self.assertEqual(codes, 40588)
+        # section 54 added arch 12's, 40588 before section 64 added arch 9's. Arch 9's 1205 codes
+        # are the closure section 46 could not run there, and they resolve through the fonts
+        # section 63 decoded, so the two findings check each other.
+        self.assertEqual(codes, 41793)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1171,6 +1177,154 @@ class TestTheFontTable(unittest.TestCase):
         self.assertIsNone(c.glyph(font, font.count + 1))
         first = next(i for i, a in enumerate(font.glyphs) if a is not None)
         self.assertIsNotNone(c.glyph(font, first + gspm.GLYPH_CODE_BIAS))
+
+
+class TestScreenOpcode22(unittest.TestCase):
+    """findings.md section 64: a call on arch 12, a picture draw on arch 9, one opcode number.
+
+    The two readings come from different authorities and both are pinned here. Arch 12's is the
+    firmware, which is the project's usual order; arch 9's has no firmware to appeal to and rests
+    on a closure over the corpus instead, with the calibration that every other width fails it.
+    """
+
+    SAMPLE = 'h525_config'
+    HANDLER_22 = 0x2966E        # writes the link register
+    HANDLER_23 = 0x29640        # reads it back
+    LINK_REGISTER = (0xD34, 0xD35, 0xD36)
+    DISPATCHER = (0x29000, 0x2A000)
+
+    def test_the_arch12_dispatcher_sends_22_to_its_handler(self):
+        """The case value, decoded rather than read off the literals, which are not the cases."""
+        from harmony.pic18 import chains
+        from harmony import gspm
+        lab.require('one34_code')
+        cases = {c.value: c.target for c in chains.xor_chain(lab.load('one34_code'),
+                                                            0x20000, 0x295E6)}
+        self.assertEqual(cases[gspm.SCREEN_CALL], self.HANDLER_22)
+        self.assertEqual(cases[23], self.HANDLER_23)
+
+    def test_22_writes_the_link_register_and_23_reads_it(self):
+        """What makes them a call and a return rather than two unrelated handlers.
+
+        Restricted to the screen dispatcher, because the same three RAM bytes are reused by
+        unrelated code elsewhere in the image and a trace over the whole thing says so.
+        """
+        from harmony.pic18 import trace
+        lab.require('one34_code')
+        found = trace.trace(lab.load('one34_code'), 0x20000, self.LINK_REGISTER)
+        low, high = self.DISPATCHER
+        for address in self.LINK_REGISTER:
+            uses = [u for u in found[address] if low <= u.addr < high]
+            writes = {u.addr for u in uses if 'WRITE' in u.kind}
+            reads = {u.addr for u in uses if 'read' in u.kind}
+            with self.subTest(register=hex(address)):
+                # The handler saves the position and then adds three to it, so two writes.
+                self.assertTrue(all(self.HANDLER_22 <= a < self.HANDLER_22 + 0x30
+                                    for a in writes), writes)
+                self.assertTrue(all(self.HANDLER_23 <= a < self.HANDLER_23 + 0x10
+                                    for a in reads), reads)
+                self.assertTrue(writes and reads)
+
+    def test_every_arch9_call_names_a_picture(self):
+        """The arch 9 closure, and the reason eleven is believed without a firmware.
+
+        The four picture addresses are not derived from these instructions. They come from walking
+        the bank base slot 17 names, which section 62 established independently, so the agreement
+        is between two readings rather than inside one.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        pictures = self._pictures(c)
+        self.assertEqual(len(pictures), 4)
+        named = 0
+        for record in c.mode_records():
+            program = c.screen_program(record.start + record.length)
+            self.assertIsNotNone(program, hex(record.start))
+            for instruction in program:
+                if instruction.opcode != gspm.SCREEN_CALL:
+                    continue
+                named += 1
+                self.assertIn(int.from_bytes(instruction.operands[-3:], 'little'), pictures)
+        self.assertEqual(named, 912)
+
+    def test_no_other_operand_width_names_a_picture(self):
+        """The calibration. Six widths also decode all 114 records, so decoding proves nothing.
+
+        This is the check section 54 wished it had for opcode 23, where a brute force could not
+        choose between two widths and the firmware had to. Here there is no firmware and the
+        corpus separates the candidates by itself: eleven scores 912, everything else scores zero.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        pictures = self._pictures(c)
+        real = gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL]
+        for width in range(3, 16):
+            if width == real:
+                continue
+            gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = width
+            try:
+                hits = decoded = 0
+                for record in c.mode_records():
+                    program = c.screen_program(record.start + record.length)
+                    if program is None:
+                        continue
+                    decoded += 1
+                    for instruction in program:
+                        if instruction.opcode == gspm.SCREEN_CALL:
+                            hits += int.from_bytes(instruction.operands[-3:],
+                                                   'little') in pictures
+            finally:
+                gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = real
+            with self.subTest(width=width):
+                self.assertEqual(hits, 0, 'width %d also names pictures' % width)
+
+    def test_the_arch9_strings_resolve_through_their_own_fonts(self):
+        """Section 46's third closure, unavailable on arch 9 until these programs were reachable.
+
+        It checks two findings against each other: the operand width here and section 63's glyph
+        packing. Neither was derived from the other.
+        """
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        c = gspm.parse(lab.load(self.SAMPLE))
+        fonts = c.font_sets()
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        codes = resolved = 0
+        for program in programs.values():
+            selected = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                if selected is None or selected >= len(fonts):
+                    continue
+                for code in instruction.glyphs:
+                    codes += 1
+                    resolved += c.glyph(fonts[selected], code) is not None
+        self.assertEqual(codes, 1205)
+        self.assertEqual(resolved, codes)
+
+    @staticmethod
+    def _pictures(container):
+        """Every picture in the bank, by address, walked from where base slot 17 says it starts.
+
+        `picture_bank_start` returns a blob offset and these have to be compared against operand
+        addresses, so the start is taken from the same section pointer it uses.
+        """
+        from harmony import gspm
+        slot = gspm.arch_slot(container.architecture, gspm.TOUCH_MAP_SLOT)
+        address = container.sections[slot].address + gspm.PICTURE_BANK_BIAS
+        out = []
+        while True:
+            picture = container.bitmap_at(address)
+            if picture is None:
+                return out
+            out.append(address)
+            address += picture.length
 
 
 class TestTheArch9GlyphPacking(unittest.TestCase):

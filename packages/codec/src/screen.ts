@@ -54,11 +54,29 @@ export const SCREEN_SWITCH_NARROW = 18;
 export const SCREEN_SWITCH_WIDE = 19;
 export const SCREEN_JUMP = 20;
 /**
- * Present in the arch 12 dispatcher and used by no config in the corpus, so its operand count is
- * not established. Listed so a parser refuses it rather than desynchronising silently. 23 was here
- * too until section 54 read its handler.
+ * The one opcode whose width is **not** the same on every architecture, so it cannot live in
+ * `SCREEN_FIXED_OPERANDS`. Section 64.
+ *
+ * On arch 12 it is a call, from its handler at `0x2966E` on the Harmony One 3.4 image: it saves the
+ * stream position plus three, then reads a `u24` and seeks there. Three operand bytes and a return
+ * address, and opcode 23 is the matching return. No config uses it, so the width is firmware and
+ * the semantics are untested.
+ *
+ * On arch 9 it takes eleven and the last three name a picture rather than a program. No arch 9
+ * firmware exists, so that rests on the corpus, and the closure is that at eleven all 912 instances
+ * across 114 mode records name one of exactly four addresses, those four having been derived
+ * independently by walking the picture bank. Every other width scores zero.
  */
-export const SCREEN_ARCH12_ONLY: ReadonlySet<number> = new Set([22]);
+export const SCREEN_CALL = 22;
+export const SCREEN_OPERANDS_BY_ARCHITECTURE: Readonly<Record<number, Record<number, number>>> = {
+  9: { 22: 11 },
+  12: { 22: 3 },
+};
+/**
+ * Whether opcode 22's trailing `u24` is a program to walk into. On arch 12 it is; on arch 9 it is a
+ * picture, which is a different kind of thing and must not be handed to the program decoder.
+ */
+export const SCREEN_CALL_TARGET_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
 
 export interface ScreenInstruction {
   opcode: number;
@@ -139,13 +157,23 @@ export function screenProgram(c: Container, address: number): ScreenInstruction[
       return out;
     }
 
-    const fixed = SCREEN_FIXED_OPERANDS[opcode];
+    const perArch =
+      c.architecture === undefined ? undefined : SCREEN_OPERANDS_BY_ARCHITECTURE[c.architecture];
+    const fixed = perArch?.[opcode] ?? SCREEN_FIXED_OPERANDS[opcode];
     if (fixed !== undefined) {
       if (off + fixed > limit) return undefined;
+      const operands = c.blob.subarray(off, off + fixed);
+      // A call continues after its operands rather than transferring for good, so it is a target
+      // plus a fall through, unlike the jump above. On arch 9 the same opcode's address is a
+      // picture and is deliberately not walked into.
+      const calls =
+        opcode === SCREEN_CALL &&
+        c.architecture !== undefined &&
+        SCREEN_CALL_TARGET_ARCHITECTURES.has(c.architecture);
       out.push({
         opcode,
-        operands: c.blob.subarray(off, off + fixed),
-        targets: [],
+        operands,
+        targets: calls ? [u24(c.blob, off + fixed - 3)] : [],
         start,
         length: 1 + fixed,
       });

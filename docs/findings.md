@@ -6590,6 +6590,13 @@ does not: it emits no opcode 2 and it carries four pictures regardless.
 picture, and the pictures are there, named by a pointer nobody had followed. That is the same shape
 of error as section 49's hunt for a second referent, and it is worth noticing that it recurred.
 
+> **Corrected by section 64, and the correction is the same lesson a third time.** The paragraph
+> above says nothing in the 525's programs draws a picture. Something does: **screen opcode 22**,
+> eleven operand bytes whose last three are a picture address, 912 instances across 114 mode
+> records. It was invisible because the programs holding it were themselves unreachable, for want
+> of that one operand count. So the reasoning was not merely "absence from unreachability" but the
+> same step twice over, and the fix was the same as section 54's: one table entry.
+
 **Kind selects the pixel depth, and the depths are per architecture.** Section 50 read kind 2 off the
 arch 12 and arch 14 firmware as a handler that is a bare `RETURN`, which is correct for those. On
 arch 9, whose remote has a monochrome LCD, kind 2 is one bit a pixel: `5 + stride * rows / 8`, which
@@ -6709,6 +6716,12 @@ So the glyphs are read and **nothing in this config is known to draw them**, whi
 shape as section 62's pictures. Both point at the one thing arch 9 is missing rather than at a
 defect in either reading.
 
+> **Section 64 supplies the closure the same day.** One missing operand count was hiding the
+> programs, and with it 136 are reachable rather than 22 and there are **1205 inline string codes,
+> all 1205 resolving**. They draw as readable English phrases. Neither finding was derived from the
+> other, so the check is genuine: the width was fixed by picture addresses and the glyphs by their
+> own row and height arithmetic, and they agree.
+
 Two smaller things are unexplained rather than glossed. The row leader's high nibble is `0x20` in
 all 1730 rows, so whether it is a tag or the high bits of a longer length field is not settled by
 one sample. And values 0 and 3 never occur, so whether the panel has four grey levels of which this
@@ -6732,6 +6745,103 @@ and that needs firmware. `docs/memory-map-525.md` is the plan.
 * `tests/test_interpreter.py`, `TestTheArch9GlyphPacking`: six tests, one per closure above plus a
   calibration that the packed reader is refused where it does not belong.
 * The corpus glyph total moves from 3933 to 4093 in both suites.
+
+## 64. Screen opcode 22 is a call on arch 12 and a picture draw on arch 9
+
+The third time an architecture's mode programs turned out to be shut by a single missing operand
+count, and the second time it was this pair of opcodes. Section 54 opened arch 12 with `23: 0`.
+This opens arch 9, and it also answers what sections 62 and 63 had to leave standing.
+
+### Arch 12, from the firmware
+
+Opcode 22 was in the arch 12 dispatcher and in no config, so its width was unestablished and both
+codecs refused it. Its handler is at `0x2966E` on the Harmony One 3.4 image:
+
+```
+2966e: CALL 0x2b88a          ; the current stream position -> 0x01F..0x021
+29672: MOVFF 0x01f,0xd34
+29676: MOVFF 0x020,0xd35
+2967a: MOVFF 0x021,0xd36     ; save it
+2967e: MOVLW 0x03
+29682: ADDWF 0xd34,F         ; ... plus three
+29690: CALL 0x2b8ac          ; read a u24 and seek there
+```
+
+`0x2B88A` computes where the reader is and reads nothing. `0x2B8AC` reads three bytes and makes
+them the new position. So **opcode 22 consumes three operand bytes, jumps to the address they
+hold, and leaves the byte after them in `0xD34` to `0xD36`.** That is a call with a return address.
+
+And it names the other half. Section 54 described `0x29640`, opcode 23's handler, as copying the
+stream position into `0x19C` to `0x19E` and had no name for it. It copies **`0xD34` to `0xD36`**,
+which is what opcode 22 wrote. Opcode 23 is the **return**.
+
+A trace of those three bytes over the whole image, restricted to the dispatcher, shows exactly one
+writer and one reader: `0x29672` onwards and `0x29640` onwards. Outside the dispatcher the same RAM
+is reused by unrelated code, which is why the restriction is in the test rather than assumed away.
+
+**One link register, not a stack**, so these calls do not nest. That is a writer rail.
+
+No config in the corpus uses opcode 22 on arch 12, so the width is firmware and the semantics are
+untested against data.
+
+### Arch 9, from the corpus, because there is no firmware
+
+Every arch 9 mode record's tail starts `16 00 03 00 00 00 00 60 08 8b 2f 03 17`, repeated with an
+incrementing first operand byte. Eight of them, and the middle bytes step by eight:
+
+```
+00  03 00  00 00  00  60 08  8b 2f 03
+01  03 00  08 00  08  60 08  8b 2f 03
+02  03 00  10 00  10  60 08  8b 2f 03
+...
+07  03 00  38 00  38  60 08  8b 2f 03
+```
+
+The 525's screen is 96 by 64 and `0x60` is 96, so eight bands of eight rows cover it exactly. The
+individual fields are **not** claimed here. What is claimed is the width, eleven, and that the last
+three bytes are a `u24`.
+
+**The closure is that the `u24` is always a picture.** Walking the bank from where base slot 17
+says it starts, section 62, gives four addresses. At width eleven, **all 912 instances across all
+114 mode records name one of those four**. At every other width from 3 to 15, zero do.
+
+The calibration matters because the obvious criterion is useless here. Six widths, 0 through 5,
+also decode all 114 records, because a short operand count simply lands the walk on a byte that
+happens to be a valid opcode. That is exactly the ambiguity section 54 could not resolve for
+opcode 23 and had to take to the firmware. Here there is no firmware and the corpus separates the
+candidates by itself, on a criterion the candidates cannot influence.
+
+So `SCREEN_FIXED_OPERANDS` can no longer hold opcode 22 at all: it is the one opcode whose width
+differs by architecture, three on arch 12 and eleven on arch 9. And only arch 12's address is a
+program; arch 9's is a picture and must not be walked into.
+
+### What it opens
+
+| | before | after |
+|---|---|---|
+| arch 9 mode records carrying a screen program | 0 of 114 | **114 of 114** |
+| reachable screen programs in the 525 config | 22 | **136** |
+| inline string codes in the 525 config | 0 | **1205**, all resolving |
+| byte accounting, 525 | 25.7% | **49.8%** |
+
+`MODE_PROGRAM_ARCHITECTURES` is now all four.
+
+**The 1205 strings are the real prize**, because they close section 63 rather than this one.
+Section 46's third check, that every inline code lands on a non NULL glyph of the font its own
+program selected, was unavailable on arch 9 this morning for want of any strings to check. The
+codes now resolve, and `tools/screen_dump.py --strings` draws them as readable English phrases.
+The glyph packing was derived from row and height arithmetic and the operand width from picture
+addresses, so neither finding fed the other and their agreement is a genuine check.
+
+### Where it lands
+
+* `gspm.SCREEN_OPERANDS_BY_ARCHITECTURE`, `SCREEN_CALL`, `SCREEN_CALL_TARGET_ARCHITECTURES`,
+  replacing `SCREEN_ARCH12_ONLY`; the same three in `packages/codec/src/screen.ts`.
+  `MODE_PROGRAM_ARCHITECTURES` gains 9 in both.
+* Sections 62 and 63 corrected in place: both said nothing in the 525's config draws the thing
+  they had just read, and both were wrong for the same reason.
+* `tests/test_interpreter.py`, `TestScreenOpcode22`: the dispatcher case, the link register trace,
+  the 912 pictures, the calibration over every other width, and the 1205 strings.
 
 ## References
 
