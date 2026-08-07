@@ -252,14 +252,14 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | after the screen language and the fonts | plus the bitmaps |
-|---|---|---|---|
-| Harmony 700 | 11.4% | 26.0% | **26.0%** |
-| Harmony 600 | 9.5% | 24.5% | **24.6%** |
-| Harmony One | 3.2% | 7.2% | **7.6%** |
-| 880, arch 8 | 3.6% | 12.4% | **16.0%** |
-| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% |
-| the three safe mode containers | 4.2% | **64.5%** | 64.5% |
+| sample | at the start | screen language and fonts | plus the bitmaps | plus five more readers |
+|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.0% | 26.0% | **26.3%** |
+| Harmony 600 | 9.5% | 24.5% | 24.6% | **24.8%** |
+| Harmony One | 3.2% | 7.2% | 7.6% | **7.7%** |
+| 880, arch 8 | 3.6% | 12.4% | 16.0% | **16.3%** |
+| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% | **10.3%** |
+| the three safe mode containers | 4.2% | 64.5% | 64.5% | **68.7%** |
 
 The bitmap column barely moves, and that is the finding rather than a disappointment: see below.
 
@@ -297,6 +297,17 @@ that was already in the document.
 Still to port, in rough order of mass: the mode table (base slot 6), the binding table (base slot
 9), the infrared records (base slot 5), the number sender, the state table, the timers, the
 parameter block, the touch map and the firmware event map.
+
+**Five of those have landed**, in `packages/codec/src/sections.ts` and `src/ir.ts`: the firmware
+event map, the mode table, the binding table, the state variable table and the infrared database,
+each held to the figures Python already published. Two of them raised a question rather than a
+number. **A base slot 5 record has no established extent**, so the located duration run is a
+heuristic and claiming it puts one or two runs per config on top of an action list; only the group
+arrays are claimed. And **every mode entry in the corpus reads as the wide tagged list form with
+the longest at 255 entries**, exactly where a `u8` count saturates, so claiming their extents
+overlaps base slots 5 and 10 by hundreds of bytes. Both were found by the overlap detector rather
+than by reading the code, which is the argument for having built it. Still to port: the number
+sender, the timers, the parameter block and the touch map.
 
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a

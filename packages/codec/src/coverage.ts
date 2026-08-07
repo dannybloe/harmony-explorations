@@ -20,6 +20,8 @@ import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
+import { irGroups } from './ir.ts';
+import { eventMap, handlerSets, modeTable, stateTable } from './sections.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
 export interface Claim {
@@ -142,6 +144,39 @@ export function claims(c: Container): Claim[] {
   // the encoded one by where its walk terminates.
   for (const bitmap of bitmaps(c)) {
     at(bitmap.address, bitmap.length, 'slot-11-bitmap');
+  }
+
+  // The four tabular sections, each claiming the length its own reader computed. None of them is
+  // large; what makes them worth claiming is that the length is read rather than taken as the gap
+  // to the next pointer, which for base slot 4 would be up to twelve times too long.
+  const events = eventMap(c);
+  if (events !== undefined) {
+    const start = slot(4);
+    if (start !== undefined) {
+      at((c.sections[start] as { address: number }).address, events.length, 'slot-4-event');
+    }
+  }
+  const modes = modeTable(c);
+  if (modes !== undefined) add(modes.start, modes.length, 'slot-6-table');
+  const bindings = handlerSets(c);
+  if (bindings !== undefined) add(bindings.start, bindings.length, 'slot-9-table');
+  const state = stateTable(c);
+  if (state !== undefined) add(state.start, state.length, 'slot-13-table');
+
+  // **What base slot 6 and base slot 9 point at is deliberately not claimed**, and the reason is
+  // worth keeping. Every mode entry in the corpus reads as the wide form, and the longest read as
+  // 255 entries, which is exactly where a `u8` count saturates; claiming them overlaps base slot
+  // 5's records and base slot 10's lists by hundreds of bytes. The overlap detector found that,
+  // which is what it exists for. Until the wide form's length rule is settled the honest claim is
+  // none. `taggedList` still reads them: it is the extent that is not trusted, not the entries.
+
+  // The infrared database: **the group arrays only.** A record's extent is not established, and
+  // the duration run is located as the longest alternating one rather than read from a length, so
+  // claiming it is a heuristic wearing a measurement's clothes. Doing so anyway put one or two
+  // runs per config on top of a base slot 10 list, which is the overlap detector saying the same
+  // thing. The records stay unclaimed until something states where one ends.
+  for (const group of irGroups(c) ?? []) {
+    add(group.start, group.length, 'slot-5-group');
   }
 
   // Base slot 14's own records, which are what supplied half of those roots.
