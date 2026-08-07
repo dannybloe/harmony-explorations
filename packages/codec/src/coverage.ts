@@ -22,6 +22,8 @@ import { bitmaps, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { irGroups } from './ir.ts';
 import { eventMap, handlerSets, modeTable, stateTable } from './sections.ts';
+import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
+  from './tables.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
 export interface Claim {
@@ -177,6 +179,26 @@ export function claims(c: Container): Claim[] {
   // thing. The records stay unclaimed until something states where one ends.
   for (const group of irGroups(c) ?? []) {
     add(group.start, group.length, 'slot-5-group');
+  }
+
+  // Three more count prefixed arrays whose records state their own size. Base slot 12's pointer
+  // array is not one of the six `pointerArrayAt` recognises, so it is claimed here; base slot 15's
+  // is, so only its groups are.
+  const timerTable = timers(c);
+  if (timerTable !== undefined) {
+    add(timerTable.start, timerTable.length, 'slot-12-table');
+    for (const timer of timerTable.records) at(timer.address, TIMER_RECORD_LENGTH, 'slot-12-record');
+  }
+  for (const group of parameterGroups(c) ?? []) {
+    at(group.address, group.length, 'slot-15-group');
+  }
+  const touch = touchPages(c);
+  if (touch !== undefined) {
+    add(touch.start, touch.length, 'slot-17-table');
+    for (const page of touch.records) {
+      add(page.start, page.length, 'slot-17-page');
+      for (const area of page.areas) at(area.address, TOUCH_AREA_LENGTH, 'slot-17-area');
+    }
   }
 
   // Base slot 14's own records, which are what supplied half of those roots.

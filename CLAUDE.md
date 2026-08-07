@@ -224,6 +224,16 @@ packages/probe/                 TS: the contribution probe, a report with shape 
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
 
+**The codec port is complete.** Every reader `src/harmony/gspm.py` has now exists in
+`packages/codec` too, bar base slot 16, the number sender, whose count is zero in every config so a
+port would be exercised by nothing. `packages/codec/src/coverage.ts` is the M2 progress number and
+`make coverage` prints it: 26.3% of a Harmony 700 and 8.0% of a Harmony One, zero overlaps
+everywhere. **It stops there and another reader will not move it**, because the rest is the region
+of section 49. Two extents are deliberately unclaimed and the reasons are in the code: a base slot
+5 record has none established, and every mode entry reads as the wide tagged list form with the
+longest at 255 entries, exactly where a `u8` count saturates. Both were found by the overlap
+detector rather than by reading the code.
+
 **The write rails live in `packages/usb/src/rails.ts`, and that is where they stay.** A rail
 enforced by a user interface is enforced until somebody writes a script. `WRITES_ENABLED` is off
 unless `HARMONY_ENABLE_WRITES=1`, and the tests are refusals: with the flag off every write path

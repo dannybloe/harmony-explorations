@@ -252,14 +252,14 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | screen language and fonts | plus the bitmaps | plus five more readers |
+| sample | at the start | screen language and fonts | plus the bitmaps | every reader ported |
 |---|---|---|---|---|
 | Harmony 700 | 11.4% | 26.0% | 26.0% | **26.3%** |
 | Harmony 600 | 9.5% | 24.5% | 24.6% | **24.8%** |
-| Harmony One | 3.2% | 7.2% | 7.6% | **7.7%** |
-| 880, arch 8 | 3.6% | 12.4% | 16.0% | **16.3%** |
-| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% | **10.3%** |
-| the three safe mode containers | 4.2% | 64.5% | 64.5% | **68.7%** |
+| Harmony One | 3.2% | 7.2% | 7.6% | **8.0%** |
+| 880, arch 8 | 3.6% | 12.4% | 16.0% | **16.4%** |
+| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% | **10.4%** |
+| the three safe mode containers | 4.2% | 64.5% | 64.5% | **70.2%** |
 
 The bitmap column barely moves, and that is the finding rather than a disappointment: see below.
 
@@ -306,8 +306,17 @@ heuristic and claiming it puts one or two runs per config on top of an action li
 arrays are claimed. And **every mode entry in the corpus reads as the wide tagged list form with
 the longest at 255 entries**, exactly where a `u8` count saturates, so claiming their extents
 overlaps base slots 5 and 10 by hundreds of bytes. Both were found by the overlap detector rather
-than by reading the code, which is the argument for having built it. Still to port: the number
-sender, the timers, the parameter block and the touch map.
+than by reading the code, which is the argument for having built it.
+
+**The timer table, the parameter block and the touch map followed**, in
+`packages/codec/src/tables.ts`, and with them **every reader Python has is now in TypeScript** bar
+one: base slot 16, the number sender, whose count is zero in every config in the corpus, so a port
+would add no bytes and be exercised by nothing. The touch map is what moves the Harmony One, from
+7.7% to 8.0%, because it is the only remote here that carries one.
+
+So the port is done and the ceiling is where section 49 said it would be. **Coverage stops in the
+mid twenties on arch 14 and at 8% on arch 12, and the region is the whole of the difference.** The
+next thing M2 needs is not another reader.
 
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a

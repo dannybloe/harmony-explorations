@@ -9,8 +9,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
-import { eventMap, handlerSets, irGroups, irPulses, modeTable, parse, stateTable, taggedList }
-  from '../src/index.ts';
+import {
+  eventMap,
+  handlerSets,
+  irGroups,
+  irPulses,
+  modeTable,
+  parameterGroups,
+  parse,
+  stateTable,
+  taggedList,
+  timers,
+  touchPages,
+} from '../src/index.ts';
 
 /** `[sample, event fallback, state header, modes, bindings, records per group]`. */
 const SECTIONS: readonly [string, number, number[], number, number, number[]][] = [
@@ -87,3 +98,40 @@ test('a mode entry reads as a tagged list, and its extent is not trusted', skipU
     }
     assert.equal(widest, 255, 'the saturation that says the length rule is unsettled');
   });
+
+/**
+ * `[sample, timers, longest duration, group lengths, touch pages, touch areas]`, again the numbers
+ * `src/harmony/gspm.py` produces. findings.md sections 43, 44 and 45.
+ */
+const TABLES: readonly [string, number, number, number[], number, number][] = [
+  ['h700_config', 9, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], 0, 0],
+  ['h600_config', 5, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], 0, 0],
+  ['one_config', 30, 20, [1, 6, 1, 1, 6, 16, 16, 1, 2, 6, 8], 42, 247],
+  ['arch8_config_a', 19, 20, [1, 6, 1, 1, 6, 14, 14, 1, 2], 0, 0],
+  // The longest duration anywhere in the corpus, and it is two hours, which is what makes the one
+  // second tick believable rather than merely arithmetically possible.
+  ['h525_config', 5, 7200, [1, 1, 4, 1, 1], 0, 0],
+];
+
+for (const [name, count, longest, groups, pages, areas] of TABLES) {
+  test(`${name}: the timers, the parameters and the touch map read as Python reads them`,
+    skipUnless(name), () => {
+      const c = parse(load(name) as Uint8Array);
+      const table = timers(c);
+      assert.equal(table?.records.length, count);
+      assert.equal(Math.max(...(table?.records ?? []).map((t) => t.duration)), longest);
+      // Sixteen bits, because the firmware clamps there with no error. A writer needs that rail.
+      for (const timer of table?.records ?? []) assert.ok(timer.duration <= 0xffff);
+
+      assert.deepEqual((parameterGroups(c) ?? []).map((g) => g.values.length), groups);
+
+      const touch = touchPages(c);
+      assert.equal(touch?.records.length, pages);
+      assert.equal((touch?.records ?? []).reduce((n, p) => n + p.areas.length, 0), areas);
+      // Every area carries its own address, which is what makes the twelve byte reading self
+      // checking rather than a plausible split of a run of bytes.
+      for (const page of touch?.records ?? []) {
+        for (const area of page.areas) assert.equal(area.self, area.address);
+      }
+    });
+}
