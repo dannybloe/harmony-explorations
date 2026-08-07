@@ -1382,6 +1382,107 @@ def seeker_census(name, base, seeker, slot_register):
     return sites
 
 
+class TestTheBitmap(unittest.TestCase):
+    """`docs/findings.md` section 50: what screen opcode 2 addresses.
+
+    The header is read off the firmware rather than guessed from the data, which matters because
+    two `u16` of which the firmware uses only the low byte look exactly like two `u8` with a pad
+    byte each, on every value the corpus contains.
+    """
+
+    # `[sample, bitmaps, kinds, strides, row counts]`. Small numbers on purpose: this is the
+    # measurement that says opcode 2 does not explain the unreached region.
+    SHAPES = [
+        ('h700_config', 4, {0, 1}, {12}, {10}),
+        ('h700_config_2', 4, {0, 1}, {12}, {10}),
+        ('h600_config', 3, {0, 1}, {12}, {10}),
+        ('one_config', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
+        ('one_config_unprogrammed', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
+        ('arch8_config_a', 10, {0, 1}, {16, 17, 18, 19}, {10}),
+        ('arch8_config_b', 10, {0, 1}, {16, 17, 18, 19}, {10}),
+        ('arch8_config_c', 10, {0, 1}, {16, 17, 18, 19}, {10}),
+        ('arch8_config_d', 10, {0, 1}, {16, 17, 18, 19}, {10}),
+        # The negative cases. Arch 9 emits no opcode 2 at all and neither does a safe mode
+        # container, which is what says the section is optional rather than structural.
+        ('h525_config', 0, set(), set(), set()),
+        ('h600_safemode_gspm', 0, set(), set(), set()),
+        ('h700_gspm', 0, set(), set(), set()),
+        ('h650_safemode_gspm', 0, set(), set(), set()),
+    ]
+
+    def test_every_addressed_bitmap_decodes(self):
+        from harmony import gspm
+        for name, count, kinds, strides, rows in self.SHAPES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                found = c.bitmaps()
+                self.assertEqual(len(found), count)
+                self.assertEqual({b.kind for b in found}, kinds)
+                self.assertEqual({b.stride for b in found}, strides)
+                self.assertEqual({b.rows for b in found}, rows)
+
+    def test_a_raw_bitmap_states_its_own_length(self):
+        from harmony import gspm
+        # The check the extent rests on: a raw picture is exactly its header plus one row per
+        # declared row, and every one of them fits inside the container it lives in.
+        for name, count, _, _, _ in self.SHAPES:
+            data = lab.load(name)
+            if data is None or count == 0:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                raw = [b for b in c.bitmaps() if b.kind == gspm.BITMAP_RAW]
+                self.assertTrue(raw, 'expected at least one raw picture')
+                for bitmap in raw:
+                    self.assertEqual(bitmap.length,
+                                     gspm.BITMAP_HEADER + bitmap.stride * bitmap.rows)
+                    off = c.blob_offset_of(bitmap.address)
+                    self.assertLessEqual(off + bitmap.length, c.length)
+
+    def test_an_encoded_bitmap_claims_no_length(self):
+        from harmony import gspm
+        # Deliberate. Where the extent is not established the reader says so rather than guessing,
+        # because a guessed extent would be claimed by the byte accounting as if it were read.
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        encoded = [b for b in c.bitmaps() if b.kind == gspm.BITMAP_ENCODED]
+        self.assertTrue(encoded)
+        for bitmap in encoded:
+            self.assertIsNone(bitmap.length)
+
+    def test_the_pictures_do_not_tile_the_unreached_region(self):
+        """The negative that keeps section 49 honest.
+
+        If the region above everything named were a run of these objects, the byte after one would
+        begin the next. It does not: the first picture on the 600 is followed by five zero bytes,
+        which decode as a picture of no rows and no stride.
+        """
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        first = min(c.bitmaps(), key=lambda b: b.address)
+        self.assertEqual(first.kind, gspm.BITMAP_RAW)
+        following = c.bitmap_at(first.address + first.length)
+        self.assertIsNotNone(following)
+        self.assertEqual((following.stride, following.rows), (0, 0))
+
+    def test_the_renderer_dispatches_on_the_kind_byte(self):
+        """The three arms of the chain at `0x0E3F6`, decoded rather than read literally.
+
+        An XORLW chain's literals are not its case values, so this goes through `chains.py`. Kind
+        2 is the one that matters for a reader: it is a valid byte the firmware accepts and draws
+        nothing for, so refusing it would refuse a file the remote takes.
+        """
+        from harmony import gspm
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        cases = {case.value for case in chains.xor_chain(code, 0x9000, 0x0E3F6)}
+        self.assertEqual(cases, {gspm.BITMAP_RAW, gspm.BITMAP_ENCODED, gspm.BITMAP_NOTHING})
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

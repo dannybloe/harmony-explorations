@@ -17,10 +17,15 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
+  BITMAP_HEADER,
+  BITMAP_NOTHING,
+  BITMAP_RAW,
   IMAGE_ARCHITECTURES,
   SCREEN_ARCH12_ONLY,
   SCREEN_FIXED_OPERANDS,
   SCREEN_SELECT_FONT,
+  bitmapAt,
+  bitmaps,
   fontSets,
   glyphAt,
   glyphOf,
@@ -245,3 +250,70 @@ for (const [name, count, ceiling] of REGION) {
     }
   });
 }
+
+/**
+ * `[sample, pictures, kinds, strides, row counts]`, mirroring `tests/test_interpreter.py`.
+ * findings.md section 50.
+ *
+ * The numbers are small on purpose: this is also the measurement that says opcode 2 does **not**
+ * explain the unreached region of section 49. Sixteen pictures of 125 to 885 bytes account for
+ * under two kilobytes of a container where the region runs to hundreds of them.
+ */
+const BITMAPS: readonly [string, number, number[], number[], number[]][] = [
+  ['h700_config', 4, [0, 1], [12], [10]],
+  ['h600_config', 3, [0, 1], [12], [10]],
+  ['one_config', 16, [0, 1], [20, 22, 88], [10, 11, 18]],
+  ['arch8_config_a', 10, [0, 1], [16, 17, 18, 19], [10]],
+  // Arch 9 emits no opcode 2 at all and neither does a safe mode container, which is what says
+  // the pictures are optional rather than structural.
+  ['h525_config', 0, [], [], []],
+  ['h600_safemode_gspm', 0, [], [], []],
+];
+
+for (const [name, count, kinds, strides, rows] of BITMAPS) {
+  test(`${name} addresses ${count} pictures, all of which decode`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const found = bitmaps(c);
+    assert.equal(found.length, count);
+    const uniq = (xs: number[]): number[] => [...new Set(xs)].sort((a, b) => a - b);
+    assert.deepEqual(uniq(found.map((b) => b.kind)), kinds);
+    assert.deepEqual(uniq(found.map((b) => b.stride)), strides);
+    assert.deepEqual(uniq(found.map((b) => b.rows)), rows);
+    for (const bitmap of found) {
+      if (bitmap.kind !== BITMAP_RAW) {
+        // Deliberately no extent where none is established, so the accounting cannot claim it.
+        assert.equal(bitmap.length, undefined);
+        continue;
+      }
+      assert.equal(bitmap.length, BITMAP_HEADER + bitmap.stride * bitmap.rows);
+      const off = c.blobOffsetOf(bitmap.address) as number;
+      assert.ok(off + (bitmap.length as number) <= c.blob.length);
+    }
+  });
+}
+
+test('the pictures do not tile the unreached region', skipUnless('h600_config'), () => {
+  // The negative that keeps section 49 honest. If the region above everything named were a run of
+  // these objects, the byte after one would begin the next. It does not.
+  const c = parse(load('h600_config') as Uint8Array);
+  const first = bitmaps(c).reduce((a, b) => (b.address < a.address ? b : a));
+  assert.equal(first.kind, BITMAP_RAW);
+  const following = bitmapAt(c, first.address + (first.length as number));
+  assert.notEqual(following, undefined);
+  assert.equal(following?.stride, 0);
+  assert.equal(following?.rows, 0);
+});
+
+test('a kind above the three the firmware knows is refused', skipUnless('h600_config'), () => {
+  // Kind 2 is a bare RETURN in the renderer, so it is valid and draws nothing; three and up are
+  // not reached at all. A reader that accepted them would invent a picture out of whatever bytes
+  // followed.
+  const c = parse(load('h600_config') as Uint8Array);
+  const first = bitmaps(c).reduce((a, b) => (b.address < a.address ? b : a));
+  const off = c.blobOffsetOf(first.address) as number;
+  const copy = parse(load('h600_config') as Uint8Array);
+  copy.blob[off] = BITMAP_NOTHING;
+  assert.equal(bitmapAt(copy, first.address)?.kind, BITMAP_NOTHING);
+  copy.blob[off] = BITMAP_NOTHING + 1;
+  assert.equal(bitmapAt(copy, first.address), undefined);
+});

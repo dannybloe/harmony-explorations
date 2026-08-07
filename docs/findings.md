@@ -5274,9 +5274,27 @@ a colour touch panel carries 1.37 MB where a 600 carries 0.46 MB and an arch 9 r
 monochrome display carries none. That is a conjecture and it is written here as one. Nothing has
 been decoded and no firmware has been read for it.
 
+> **Answered in part by section 50, and the answer is narrower than this section expected.** The
+> firmware was read and opcode 2 does draw a picture, with a header this section did not know
+> about. But the pictures are 125 to 885 bytes each, so all sixteen of the Harmony One's come to
+> under two kilobytes of its 1.37 MB region. Opcode 2 is still the only referent found, and it is
+> now known to account for almost none of what it points into. Section 50 records what that rules
+> out.
+
 **Why so few referents.** Three to sixteen distinct targets for hundreds of kilobytes, so either
 each target addresses something very large, or a target is the head of a table with structure of
 its own. Those are different problems and the difference is not settled.
+
+> **Section 50 rules out the first of those two and does not establish the second.** A picture
+> states its own size and the size is small, so no target addresses something very large. Whether a
+> target heads a table is not settled either: the pictures do not tile, so they are not a run of
+> records, and the region's only ascending pointer-shaped runs turned out to be misaligned reads of
+> base slot 10's own array.
+
+Two counts in the table above are occurrences and not distinct addresses, which section 50 measures
+instead: the Harmony 600's four opcode 2 instructions name three places and the Harmony One's 141
+name sixteen. Both readings say the same thing about the region and the difference is recorded so
+the two sections can be compared.
 
 **Whether opcode 2 is the only way in.** It is the only one found. Pointers inside records have not
 been swept, so a second referent from a structure that is itself only partly decoded is possible.
@@ -5288,6 +5306,116 @@ about 35% no matter how many section readers are ported, and it is the first thi
 have to reproduce. It is also the best remaining target for the firmware method of the
 `trace-section` skill: opcode 2 has a handler in the arch 14 dispatcher at `0x1879C`, and that
 handler is what the region is for.
+
+## 50. Screen opcode 2 draws a bitmap, and that is not what fills the region
+
+Section 49 named opcode 2 as the only referent of the region that holds most of a config, and left
+what it points at as a conjecture. The firmware settles the conjecture and refuses the conclusion
+that was hoped for: opcode 2 draws a picture, the picture states its own size, and the size is far
+too small to be what the region holds.
+
+### The route through the firmware
+
+On the Harmony 700 2.8 image, base `0x9000`. The screen dispatcher is at `0x1879C` and its opcode
+chain at `0x187A8`, section 40. Decoded with `harmony/pic18/chains.py`, because an `XORLW` chain's
+literals are not its case values, case 2 lands at `0x187D6`, which is an `RCALL` to `0x183EA` and a
+branch back to the dispatcher. The same shape is at `0x16E44` on the complete Harmony 600 0.2 image.
+
+`0x183EA` is the instruction's own handler and it does four things: read the two position bytes,
+read a three byte address, **seek the config stream to that address**, and call `0x0E3EC` with the
+position in `0x2A1` and `0x2A2`. It saves `TBLPTR` before the seek and restores it after, which is
+what makes the picture a separate object rather than something inline in the program.
+
+`0x0E3EC` is the renderer. It reads one byte, the kind, and switches on it through the chain at
+`0x0E3F6`:
+
+| kind | handler | what it is |
+|---|---|---|
+| 0 | `0x0E404`, body at `0x0E44E` | raw rows |
+| 1 | `0x0E426`, body at `0x0E530` | the skip and literal encoding a glyph uses |
+| 2 | `0x0E44C` | a bare `RETURN`: valid, draws nothing |
+| anything else | falls through | returns without reading the header |
+
+### The object
+
+```
++0x00  u8   kind
++0x01  u16  stride, in bytes per row
++0x03  u16  rows
++0x05       the pixels
+```
+
+The kind 0 body reads those two `u16` and then loops: while `row < rows`, put `stride` in `0x29E`,
+the position plus the row in `0x299` and `0x29A`, call the row writer at `0x0E292`, then set
+`0x6DE`/`0x6DF` to `stride` and call `0x10BAC` to advance the stream by that many bytes. So a raw
+picture is exactly `5 + stride * rows` bytes and nothing about its extent is inferred.
+
+Kind 1 reads and **discards** the same four header bytes, then runs a byte at a time: `0x00` ends,
+`0x80` advances a row, bit 7 set skips that many, and a value below `0x80` introduces that many
+literal pixels. That is the base slot 7 glyph encoding of section 46, byte for byte, which is why
+`stride` is recorded in bytes rather than pixels: a pixel is two bytes on both paths.
+
+**Two rails for a writer, both from the code rather than from the data.** The firmware loads only
+the **low byte** of each `u16`, so a stride or a row count above 255 is taken modulo 256 with no
+error. And the row loop stops drawing above row 128 but keeps advancing the stream, so a picture
+taller than that is read in full and partly discarded. Neither is visible in the corpus, where the
+largest stride is 88 and the largest row count 18.
+
+### What the corpus holds
+
+`gspm.Container.bitmaps()` walks every reachable screen program, collects every opcode 2 address
+and decodes each header. Every one of them decodes, in every container:
+
+| sample | pictures | kinds | strides | rows | raw bytes |
+|---|---|---|---|---|---|
+| Harmony 700, both | 4 | 0 and 1 | 12 | 10 | 375 |
+| Harmony 600 | 3 | 0 and 1 | 12 | 10 | 250 |
+| Harmony One, both | 16 | 0 and 1 | 20, 22, 88 | 10, 11, 18 | 1912 |
+| 880, all four arch 8 | 10 | 0 and 1 | 16 to 19 | 10 | 710 |
+| 525, arch 9 | 0 | | | | 0 |
+| the three safe mode | 0 | | | | 0 |
+
+No kind outside 0 and 1 appears, no header runs past the end of its container, and the strides are
+per model rather than per config, which is what a layout resource looks like rather than user data.
+The two container kinds that emit no opcode 2 have no pictures, the same negative case as section
+49's.
+
+### The negative, which is the point
+
+1912 bytes of pictures against a 1374394 byte region on the Harmony One. **Opcode 2 accounts for
+about one part in seven hundred of what it points into.** Three measurements were made to find the
+rest, and all three came back negative. They are recorded here so nobody repeats them:
+
+* **The pictures do not tile.** If the region were a run of these objects the byte after one would
+  begin the next. On the Harmony 600 the first picture is followed by five zero bytes, which read
+  as a picture of no rows and no stride. Pinned as a test in both codecs.
+* **There is no pointer table into the region.** The two longest ascending runs of three byte
+  values landing in the region, 231 and 157 entries with near constant strides, both turned out to
+  be base slot 10's own pointer array read one byte out of alignment. A misaligned read of an
+  ascending table is itself ascending, which is worth knowing before trusting the next one.
+* **The bytes look like pixels and that is not a decode.** On the Harmony 600, which has a
+  monochrome screen, the region holds 1119 distinct sixteen bit words and 40% of the non zero ones
+  are exact RGB565 greys when read big endian, against roughly 0.05% for random data; long runs
+  read as monotone gradients only in that byte order. The Harmony One, which has a colour screen,
+  holds 31056 distinct words. Suggestive, consistent with the two panels, and not sufficient: no
+  image width fits, nothing frames the data, and a hypothesis that cannot say where one picture
+  ends is not a reading.
+
+So section 49's ranking stands and its explanation does not. The region is still the largest single
+unknown in the format, and the next move is no longer "read opcode 2's handler", because that is
+done. It is to find the second referent, which means sweeping addresses out of the sections that
+are decoded but whose record fields are not all named.
+
+### Where it lands
+
+* `docs/config-format.md`, under the screen language.
+* `src/harmony/gspm.py`: `Bitmap`, `Container.bitmap_at`, `Container.bitmap_reference`,
+  `Container.bitmaps`, and `Container.reachable_screen_programs`, which `tools/screen_dump.py` now
+  calls instead of keeping its own copy of the walk.
+* `packages/codec/src/screen.ts`: the same four, and a `slot-11-bitmap` claim in the byte
+  accounting. Raw pictures only: an encoded one's extent is not established, so the reader returns
+  no length rather than a guess, because the accounting would otherwise claim bytes nothing read.
+* `tests/test_interpreter.py` `TestTheBitmap` and `packages/codec/test/screen.test.ts`.
 
 ## References
 

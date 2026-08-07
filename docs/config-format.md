@@ -418,7 +418,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 |---|---|---|
 | 0 | none | end |
 | 1 | 4 bytes, `u16` | repeat a primitive |
-| 2 | 2 position bytes, `u24` | render the object at that address |
+| 2 | 2 position bytes, `u24` | draw the **bitmap** at that address, below |
 | 3 | 6 bytes, `u24` | the same with a larger position record |
 | 4 | 2 position bytes, `u24` | draw the glyph string at that address |
 | 5 | 2 position bytes, then the string | draw the glyph string inline |
@@ -450,6 +450,36 @@ operand count desynchronises the walk immediately.
 
 Read with `gspm.screen_program` and `gspm.screen_program_roots`, or dump one with
 `tools/screen_dump.py`. [findings.md](findings.md) section 40.
+
+#### What opcode 2 draws
+
+The only screen instruction that names a place outside its own program. At the address:
+
+```
++0x00  u8   kind
++0x01  u16  stride, in bytes per row
++0x03  u16  rows
++0x05       the pixels
+```
+
+`kind` 0 is `rows` rows of `stride` raw bytes, so the object is exactly `5 + stride * rows` bytes.
+`kind` 1 discards the two sizes and uses the base slot 7 glyph encoding instead, skip and literal
+over **two byte** pixels; its extent is **not established** and the readers return no length rather
+than guessing one. `kind` 2 is a bare `RETURN` in the firmware, valid and drawing nothing, and a
+higher value is not reached at all.
+
+Two rails for a writer, both read off the firmware and invisible in the corpus:
+
+* only the **low byte** of each `u16` is loaded, so a value above 255 is taken modulo 256, silently,
+* the row loop stops drawing above **row 128** but still advances the stream.
+
+Every opcode 2 address in the corpus decodes. Strides are per model, 12 on the 600 and the 700, 16
+to 19 on arch 8, and 20, 22 or 88 on the One; row counts are 10, 11 or 18. Arch 9 and the safe mode
+containers emit no opcode 2 and hold no bitmaps.
+
+**These are small: 125 to 885 bytes each, 3 to 16 per config.** They do not account for the region
+that [findings.md](findings.md) section 49 describes, even though every one of them lands in it.
+Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
 ### Base slot 11: the screen program table
 

@@ -88,8 +88,16 @@ run length encoded glyphs at two bytes a pixel, and every one of 16054 inline st
 corpus resolves to a glyph of the font its own program selected. `tools/screen_dump.py --strings`
 draws them, and they come out as readable labels. **Action lists** are bytecode for an accumulator machine
 with a forty instruction queue and a binary search dispatcher, and a **second interpreter draws
-the screen**: its own one byte opcodes for text, objects, a switch on a state variable and a jump,
-with 18252 programs across ten configs decoding with nothing left over.
+the screen**: its own one byte opcodes for text, bitmaps, a switch on a state variable and a jump,
+with 18252 programs across ten configs decoding with nothing left over. Its one instruction that
+names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
+glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
+is loaded, and the row loop stops drawing above row 128 while still consuming the stream.
+
+**The largest single unknown is that most of a config is a region no named section reaches**, 62% of
+a Harmony 600 and 82% of a Harmony One. The bitmaps are the only thing known to point into it and
+they account for about one part in seven hundred of it, so what fills it is still open; three
+follow-up measurements that came back negative are written up so they are not repeated.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
 classes, and which physical button each scan code is. See [docs/findings.md](docs/findings.md) for

@@ -547,10 +547,21 @@ byte any of the sixteen named sections claims, and it is not padding: 140 distin
 zero, 0.6% `0xFF`. **Screen opcode 2 is the only known referent** and every address it names lands
 there, 4 of 4 on the 600 and 141 of 141 on the One, while opcode 4 has the same shape and never
 does. The closure is that the two container kinds emitting no opcode 2, the arch 9 sample and the
-three safe mode containers, have no such region. What the data is is **not established**; a picture
-is the obvious conjecture from opcode 2's position-plus-address shape and is marked as one. This
-caps M2's coverage at roughly 35% however many readers are ported, so decoding it is what M2 needs
-next, starting from opcode 2's handler in the dispatcher at `0x1879C`.
+three safe mode containers, have no such region. This caps M2's coverage at roughly 35% however
+many readers are ported.
+
+**Opcode 2 draws a bitmap and that does not explain the region**, section 50, which answers section
+49's conjecture and refuses its hope. `u8 kind; u16 stride; u16 rows` then pixels; kind 0 is raw and
+exactly `5 + stride * rows` bytes, kind 1 is the base slot 7 glyph encoding with its extent **not
+established**, kind 2 is a bare `RETURN`. Two writer rails from the code: only the **low byte** of
+each `u16` is loaded, and the row loop stops drawing above **row 128** while still advancing. But a
+picture is 125 to 885 bytes and there are 3 to 16 per config, so the One's sixteen come to under two
+kilobytes of a 1.37 MB region. Three negatives are recorded rather than left to be redone: the
+bitmaps **do not tile**, the region's only ascending pointer-shaped runs are **misaligned reads of
+base slot 10's own array** (a misaligned read of an ascending table is itself ascending), and 40% of
+the 600's non-zero big endian words are exact RGB565 greys against 31056 distinct words on the
+colour-screen One, which is suggestive of pixels and **is not a decode**. Next is the second
+referent, swept out of the decoded sections whose record fields are not all named.
 
 Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 

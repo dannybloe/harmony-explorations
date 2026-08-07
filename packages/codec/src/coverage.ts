@@ -18,7 +18,7 @@
  */
 import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
-import { reachablePrograms } from './screen.ts';
+import { bitmaps, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
@@ -136,6 +136,13 @@ export function claims(c: Container): Claim[] {
     for (const instruction of program) {
       add(instruction.start, instruction.length, 'slot-11-program');
     }
+  }
+
+  // What screen opcode 2 addresses. Only the raw kind is claimed: an encoded picture's extent is
+  // not established, and claiming a guess would be worse than claiming nothing, because the whole
+  // point of this number is that every byte in it has been read by something.
+  for (const bitmap of bitmaps(c)) {
+    if (bitmap.length !== undefined) at(bitmap.address, bitmap.length, 'slot-11-bitmap');
   }
 
   // Base slot 14's own records, which are what supplied half of those roots.

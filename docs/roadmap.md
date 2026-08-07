@@ -252,14 +252,16 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | after the screen language and the fonts |
-|---|---|---|
-| Harmony 700 | 11.4% | **26.0%** |
-| Harmony 600 | 9.5% | **24.5%** |
-| Harmony One | 3.2% | **7.2%** |
-| 880, arch 8 | 3.6% | **12.4%** |
-| Harmony 525, arch 9 | 7.2% | 8.8% |
-| the three safe mode containers | 4.2% | **64.5%** |
+| sample | at the start | after the screen language and the fonts | plus the bitmaps |
+|---|---|---|---|
+| Harmony 700 | 11.4% | 26.0% | **26.0%** |
+| Harmony 600 | 9.5% | 24.5% | **24.5%** |
+| Harmony One | 3.2% | 7.2% | **7.3%** |
+| 880, arch 8 | 3.6% | 12.4% | **15.6%** |
+| Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% |
+| the three safe mode containers | 4.2% | **64.5%** | 64.5% |
+
+The bitmap column barely moves, and that is the finding rather than a disappointment: see below.
 
 Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
 a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
@@ -302,8 +304,17 @@ Harmony 600 and 82% of a Harmony One, and it is not padding. Screen opcode 2 is 
 referent and every target it names lands there, in every container that emits one; the two kinds
 that emit none, the arch 9 sample and the three safe mode containers, have no such region. So
 porting the remaining twelve readers takes coverage to roughly 35% and no further, and **decoding
-that region is what M2 actually needs next.** It is a firmware question rather than a corpus one,
-and opcode 2's handler in the dispatcher at `0x1879C` is where it starts.
+that region is what M2 actually needs next.**
+
+**Opcode 2's handler has now been read, and it does not explain the region.** Section 50: the
+instruction draws a bitmap with a five byte header that states its own size, and the sizes are 125
+to 885 bytes, 3 to 16 per config. All sixteen of the Harmony One's come to under two kilobytes of
+its 1.37 MB region, which is why the column above hardly moves. Three follow-up measurements came
+back negative and are recorded so they are not repeated: the bitmaps do not tile, the region's only
+ascending pointer-shaped runs are misaligned reads of base slot 10's array, and the bytes are
+suggestive of pixels without being a decode. **The next move is to find the second referent**, by
+sweeping addresses out of the sections that are decoded but whose record fields are not all named,
+rather than to read more of the dispatcher.
 
 **M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does

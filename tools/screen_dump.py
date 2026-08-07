@@ -58,22 +58,12 @@ def draw(images):
 
 
 def walk(container):
-    """Every reachable program, in address order, plus the addresses that did not decode."""
-    seen, queue, failed = set(), list(container.screen_program_roots()), []
-    programs = {}
-    while queue:
-        address = queue.pop()
-        if address in seen:
-            continue
-        seen.add(address)
-        program = container.screen_program(address)
-        if program is None:
-            failed.append(address)
-            continue
-        programs[address] = program
-        for instruction in program:
-            queue += [t for t in instruction.targets if t not in seen]
-    return programs, failed
+    """Every reachable program, in address order, plus the addresses that did not decode.
+
+    The walk itself lives on the container now, because `bitmaps()` needs the same one and two
+    copies of a reachability rule drift apart exactly like two opcode tables do.
+    """
+    return container.reachable_screen_programs()
 
 
 def render(instruction):

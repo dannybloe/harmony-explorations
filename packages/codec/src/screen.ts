@@ -246,3 +246,88 @@ export function reachablePrograms(
   }
   return found;
 }
+
+/**
+ * Opcode 2 draws a picture that lives at an address rather than inline, which makes it the only
+ * screen instruction naming a place outside its own program. `docs/findings.md` section 50.
+ */
+export const SCREEN_DRAW_IMAGE = 2;
+/** `u8 kind` then two `u16`, so the pixels start five bytes in. */
+export const BITMAP_HEADER = 5;
+/** `rows` rows of `stride` bytes, straight through. */
+export const BITMAP_RAW = 0;
+/** The skip and literal encoding a base slot 7 glyph uses, section 46. */
+export const BITMAP_ENCODED = 1;
+/** A bare RETURN in the firmware: a valid byte that draws nothing. */
+export const BITMAP_NOTHING = 2;
+
+export interface Bitmap {
+  address: number;
+  kind: number;
+  /**
+   * Bytes per row, not pixels per row, because that is what the firmware counts: it hands the row
+   * writer `stride` bytes and then advances the stream by `stride`. A pixel is two bytes here as
+   * it is in a glyph.
+   */
+  stride: number;
+  rows: number;
+  /**
+   * The whole object including its header, and only known for `BITMAP_RAW`. An encoded picture
+   * runs until its own encoding says stop and that rule is not established, so this is undefined
+   * rather than a guess: the byte accounting would otherwise claim bytes nothing has read.
+   */
+  length: number | undefined;
+}
+
+/** The address a `SCREEN_DRAW_IMAGE` names: its last three operand bytes. */
+export function bitmapReference(instruction: ScreenInstruction): number | undefined {
+  if (instruction.opcode !== SCREEN_DRAW_IMAGE) return undefined;
+  if (instruction.operands.length < 5) return undefined;
+  return u24(instruction.operands, instruction.operands.length - 3);
+}
+
+/**
+ * Decode the header of the picture at `address`.
+ *
+ * ```
+ * +0x00  u8   kind
+ * +0x01  u16  stride, in bytes per row
+ * +0x03  u16  rows
+ * +0x05       the pixels
+ * ```
+ *
+ * The firmware loads only the **low byte** of each `u16`, so a writer emitting a stride or a row
+ * count above 255 gets it modulo 256 and no error. Every value in the corpus is far below that,
+ * which is why data cannot tell the two readings apart and the firmware has to settle it.
+ */
+export function bitmapAt(c: Container, address: number): Bitmap | undefined {
+  const off = c.blobOffsetOf(address);
+  if (off === undefined || off + BITMAP_HEADER > c.blob.length) return undefined;
+  const kind = u8(c.blob, off);
+  if (kind > BITMAP_NOTHING) return undefined;
+  const stride = u16(c.blob, off + 1);
+  const rows = u16(c.blob, off + 3);
+  let length: number | undefined;
+  if (kind === BITMAP_RAW) {
+    length = BITMAP_HEADER + stride * rows;
+    if (off + length > c.blob.length) return undefined;
+  }
+  return { address, kind, stride, rows, length };
+}
+
+/** Every distinct picture any reachable screen program addresses, in address order. */
+export function bitmaps(c: Container): Bitmap[] {
+  const addresses = new Set<number>();
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      const reference = bitmapReference(instruction);
+      if (reference !== undefined) addresses.add(reference);
+    }
+  }
+  const out: Bitmap[] = [];
+  for (const address of [...addresses].sort((a, b) => a - b)) {
+    const bitmap = bitmapAt(c, address);
+    if (bitmap !== undefined) out.push(bitmap);
+  }
+  return out;
+}

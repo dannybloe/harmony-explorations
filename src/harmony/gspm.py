@@ -329,6 +329,17 @@ SCREEN_JUMP = 20
 # not established. Listed so a parser refuses them rather than desynchronising silently.
 SCREEN_ARCH12_ONLY = frozenset({22, 23})
 
+# Opcode 2 draws a bitmap that lives at an address rather than inline, which makes it the only
+# screen instruction that names a place outside the program. `docs/findings.md` section 50.
+SCREEN_DRAW_IMAGE = 2
+# `u8 kind` then two `u16`, so the pixels start five bytes in.
+BITMAP_HEADER = 5
+# The kinds the renderer implements. 2 is a bare RETURN in the firmware, so it draws nothing but
+# is still a valid byte; anything above it returns without reading the header at all.
+BITMAP_RAW = 0        # `rows` rows of `stride` bytes, straight through
+BITMAP_ENCODED = 1    # the skip and literal encoding a base slot 7 glyph uses, section 46
+BITMAP_NOTHING = 2
+
 # Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
 # orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
 # entry being left and tag 1 on the one being entered.
@@ -614,6 +625,27 @@ class Image:
     @property
     def height(self) -> int:
         return len(self.rows)
+
+
+@dataclass
+class Bitmap:
+    """What a screen opcode 2 addresses: a picture stored away from the program that draws it.
+
+    `stride` is in bytes and not in pixels, because that is what the firmware counts: it draws a
+    row by handing `stride` bytes to the row writer and then advances the stream by `stride`. A
+    pixel is two bytes here as it is in a glyph, so a raw row is `stride / 2` pixels wide, but the
+    file states the byte count and this keeps it.
+
+    `length` is the whole object including its header, and it is only known for `BITMAP_RAW`.
+    `BITMAP_ENCODED` runs until its own encoding says stop, which is not established, so `length`
+    is None there rather than a guess: a guessed extent is worse than none, because the byte
+    accounting in `packages/codec` would then quietly claim bytes it has not read.
+    """
+    address: int
+    kind: int
+    stride: int
+    rows: int
+    length: Optional[int]
 
 
 @dataclass
@@ -1374,6 +1406,81 @@ class Container:
             out += [target for _, target in record.entries]
             out += [target for _, _, target in record.ranges]
         return out
+
+    def reachable_screen_programs(self) -> Tuple[Dict[int, List['ScreenInstruction']], List[int]]:
+        """Every screen program reachable from a root, plus the addresses that did not decode.
+
+        Reachability rather than the root list alone, because a program transfers to others and
+        the generator shares tails, so most of them are named by a jump and not by a table.
+        """
+        seen, queue, failed = set(), list(self.screen_program_roots()), []
+        programs: Dict[int, List['ScreenInstruction']] = {}
+        while queue:
+            address = queue.pop()
+            if address in seen:
+                continue
+            seen.add(address)
+            program = self.screen_program(address)
+            if program is None:
+                failed.append(address)
+                continue
+            programs[address] = program
+            for instruction in program:
+                queue += [t for t in instruction.targets if t not in seen]
+        return programs, failed
+
+    def bitmap_reference(self, instruction: 'ScreenInstruction') -> Optional[int]:
+        """The address a `SCREEN_DRAW_IMAGE` names, which is its last three operand bytes.
+
+        Five operands: two of position and then the address. Returned rather than resolved, so a
+        caller that only wants to know which places are addressed does not have to parse them.
+        """
+        if instruction.opcode != SCREEN_DRAW_IMAGE or len(instruction.operands) < 5:
+            return None
+        at = len(instruction.operands) - 3
+        return int.from_bytes(instruction.operands[at:at + 3], 'little')
+
+    def bitmap_at(self, address: int) -> Optional['Bitmap']:
+        """Decode the header of the picture at `address`.
+
+        ```
+        +0x00  u8   kind
+        +0x01  u16  stride, in bytes per row
+        +0x03  u16  rows
+        +0x05       the pixels
+        ```
+
+        The firmware loads only the **low byte** of each of those two `u16`, so a writer that emits
+        a stride or a row count above 255 gets the value modulo 256 and no error. Both fields are
+        far below that everywhere in the corpus, which is why the two readings cannot be told apart
+        from data and the firmware settles it.
+        """
+        off = self.blob_offset_of(address)
+        if off is None or off + BITMAP_HEADER > self.length:
+            return None
+        kind = self.blob[off]
+        if kind > BITMAP_NOTHING:
+            return None
+        stride = int.from_bytes(self.blob[off + 1:off + 3], 'little')
+        rows = int.from_bytes(self.blob[off + 3:off + 5], 'little')
+        length = None
+        if kind == BITMAP_RAW:
+            length = BITMAP_HEADER + stride * rows
+            if off + length > self.length:
+                return None
+        return Bitmap(address=address, kind=kind, stride=stride, rows=rows, length=length)
+
+    def bitmaps(self) -> List['Bitmap']:
+        """Every distinct picture any reachable screen program addresses, in address order."""
+        addresses = set()
+        programs, _ = self.reachable_screen_programs()
+        for program in programs.values():
+            for instruction in program:
+                reference = self.bitmap_reference(instruction)
+                if reference is not None:
+                    addresses.add(reference)
+        out = [self.bitmap_at(address) for address in sorted(addresses)]
+        return [bitmap for bitmap in out if bitmap is not None]
 
     def value_map_reference(self, instruction: 'Instruction') -> Optional[Tuple[int, int]]:
         """The `(state variable, value map record)` an `OPCODE_MAP_STATE_VALUE` names.
