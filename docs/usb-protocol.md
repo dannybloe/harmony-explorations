@@ -754,7 +754,7 @@ bytes exactly as predicted.
 | 1 | `0x11` | `0x05` | hardware version, as two nibbles: `1.1` and `0.5` |
 | 2 | `0x1c` | `0xc8` | flash device id |
 | 3 | `0x15` | `0x1f` | flash manufacturer id, so the pairs are `15:1C` and `1F:C8` |
-| 4 | `0xe0` | `0xc0` | protocol in the high nibble: 14 and 12 |
+| 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble a compiled in zero |
 | 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
 | 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
 | 7 | `0x02` | `0x34` | equals field 0 on both |
@@ -783,6 +783,30 @@ version `0x02`, and its checksum verifies. And it has **nothing at all at `0xFF`
 erased. Field 8 is `0x00`. So field 8 is the version of the image at `0xFF` `+0xE000`, and the
 alternative is ruled out rather than merely unfavoured: if field 8 named the safe mode image, the 600
 would report `0x02` there, and it does not.
+
+**Fields 4, 5 and 6 come from compiled in literals, and that names field 4.** The version block's
+accessors for them are five consecutive `RETLW` instructions, so their values are readable off any
+image without running anything. On the 700 2.8 they are at `0x10648`, on the complete 600 0.2 at
+`0x11964`, on the 650 0.4 at `0x138C8` and on the One 3.4 at `0x24262`, in the order field 0, field
+4's low nibble, field 5, field 6, field 4's high nibble.
+
+| Image | field 0 | field 5 | field 4 high | architecture |
+|---|---|---|---|---|
+| 700 2.8 | `0x28` | `0x42`, so skin 66 | `0x0e` | 14 |
+| 600 0.2 | `0x02` | `0x47`, so skin 71 | `0x0e` | 14 |
+| 650 0.4 | `0x04` | `0x48`, so skin 72 | `0x0e` | 14 |
+| One 3.4 | `0x34` | `0x36`, so skin 54 | `0x0c` | 12 |
+
+Three arch 14 images with three different firmware versions and three different skins all report
+14, and the arch 12 image reports 12, so the byte tracks the architecture and nothing else. It also
+matches the architecture each bench remote's own config states in base slot 1, on all three units.
+That agreement is evidence rather than a tautology, because the accessor has exactly one caller and
+the firmware never compares the constant against the config. Read as "protocol" until then;
+`docs/findings.md` section 57.
+
+Two predictions fall out for remotes nobody here has connected, and they are recorded now so that
+connecting one is a test rather than a confirmation: a Harmony 700 should enumerate `bcdDevice`
+`0x1066` and a Harmony 650 `0x1072`, since the skin is reported in binary here and in BCD there.
 
 **What is still not claimed.** Fields 7, 10 and 11 repeating field 0 is an observation, not a
 reading. Three copies of the firmware version is a strange thing for a version block to carry, and
@@ -1124,8 +1148,9 @@ to settle, and a list that only ever grows is not a status.
   no-op that reports success, so there is no event injection.
 * **The response layout of each command**: the table above, from the state handlers rather than the
   parsers.
-* **GET_VERSION's block is twelve fields**, by two independent counts. Ten of them are still
-  unnamed, which is the entry below.
+* **GET_VERSION's block is twelve fields**, by two independent counts. Nine of them are still
+  unnamed, which is the entry below. Field 4 came off that list in section 57 of
+  `docs/findings.md`: it is the architecture, from a compiled in literal in four images.
 
 ### The Harmony One drops its first command, sometimes
 

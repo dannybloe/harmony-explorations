@@ -476,6 +476,92 @@ class TestGetVersion(unittest.TestCase):
         self.assertNotEqual(15, self.literal_at(0x0C92A))
 
 
+class TestFieldFourIsTheArchitecture(unittest.TestCase):
+    """
+    findings.md section 57. Field 4's high nibble was written down as "protocol" because that is
+    what it is conventionally called; it is the architecture number, and four images say so.
+
+    The five accessors the version block calls for fields 0, 4 and 5 are `RETLW`, so their values
+    are compiled in per image and readable without running anything. That makes the section's claim
+    a table lookup rather than an argument.
+    """
+
+    # image -> (base, address of the five RETLW accessors, firmware, skin, architecture)
+    #
+    # The accessors sit consecutively, two bytes apart, in the order the version block consumes
+    # them: field 0, field 4's low nibble, field 5, field 6's constant, field 4's high nibble.
+    TABLES = {
+        'h700_code': (0x9000, 0x10648, 0x28, 66, 14),
+        'h600_code_complete': (0x9000, 0x11964, 0x02, 71, 14),
+        'h650_code': (0x9000, 0x138C8, 0x04, 72, 14),
+        'one34_code': (0x20000, 0x24262, 0x34, 54, 12),
+    }
+
+    LOW, SKIN, CONSTANT, HIGH = 1, 2, 3, 4
+
+    def literal(self, image, base, table, index):
+        """The literal an accessor returns, checked to actually be a RETLW rather than assumed."""
+        addr = table + 2 * index
+        instruction = isa.decode(lab.load(image), addr - base, base)
+        self.assertEqual(instruction.mnemonic, 'RETLW', 'at 0x%05X in %s' % (addr, image))
+        return instruction.fields['k']
+
+    def test_the_constant_is_the_architecture_on_every_image(self):
+        """
+        The closure. Three arch 14 images with three different firmware versions and three
+        different skins all return 14, and the arch 12 image returns 12. So the byte tracks the
+        architecture and tracks neither the model nor the firmware version, which is what
+        separates "the architecture" from "a protocol revision that happens to match twice".
+        """
+        lab.require(*self.TABLES)
+        for image, (base, table, firmware, skin, architecture) in self.TABLES.items():
+            with self.subTest(image):
+                # Firmware and skin are read alongside, as the evidence that the table has been
+                # located rather than that an address happened to hold the right byte.
+                self.assertEqual(self.literal(image, base, table, 0), firmware)
+                self.assertEqual(self.literal(image, base, table, self.SKIN), skin)
+                self.assertEqual(self.literal(image, base, table, self.HIGH), architecture)
+
+    def test_the_low_nibble_is_zero_everywhere_so_it_is_undetermined(self):
+        """Field 4's other four bits are a compiled in zero on all four images, so they are a
+        second field whose meaning nothing here can reach."""
+        lab.require(*self.TABLES)
+        for image, (base, table, _, _, _) in self.TABLES.items():
+            with self.subTest(image):
+                self.assertEqual(self.literal(image, base, table, self.LOW), 0)
+
+    def test_field_six_is_a_compiled_in_constant_and_not_a_field_count(self):
+        """
+        0x0C on both bench remotes invited reading it as the number of fields. It is the same
+        0x0C on the arch 12 image and on all three arch 14 ones, from its own accessor, so it is
+        a constant that happens to equal twelve.
+        """
+        lab.require(*self.TABLES)
+        for image, (base, table, _, _, _) in self.TABLES.items():
+            with self.subTest(image):
+                self.assertEqual(self.literal(image, base, table, self.CONSTANT), 0x0C)
+
+    def test_the_architecture_accessor_has_exactly_one_caller(self):
+        """
+        It is reported and never consulted. That matters for the naming: the firmware does not
+        compare this constant against the architecture the config states in its own slot 1, so
+        the agreement between the two is evidence rather than a tautology.
+        """
+        base, accessor = 0x9000, 0x10648 + 2 * self.HIGH
+        callers = trace.xrefs(lab.load('h700_code'), base, (accessor,))
+        self.assertEqual(len(callers[accessor]), 1)
+
+    def test_the_packing_can_only_express_fifteen_architectures(self):
+        """
+        A writer rail worth having: the high nibble is built with ANDLW 0xF0 after a SWAPF, so an
+        architecture above 15 cannot be reported in this byte at all. Every architecture named in
+        this project is below that, which is why nothing has hit it.
+        """
+        andlw = isa.decode(lab.load('h700_code'), 0x1426A - 0x9000, 0x9000)
+        self.assertEqual((andlw.mnemonic, andlw.fields['k']), ('ANDLW', 0xF0))
+        self.assertLess(max(a for _, _, _, _, a in self.TABLES.values()), 16)
+
+
 class TestReadMisc(unittest.TestCase):
     """
     The command that makes live RAM readable over USB, which is what replaces the deferred

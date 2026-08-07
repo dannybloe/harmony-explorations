@@ -5962,6 +5962,99 @@ however many documents repeat it. This section exists as much to record that as 
   admission that the answer expires. This is the only finding in this document with no test, and
   saying so is the point.
 
+## 57. Version block field 4 is the architecture, and its accessors are compiled in literals
+
+Ten of `GET_VERSION`'s twelve fields were unnamed and the open items list has said so for a while.
+One comes off it here, and the interesting part is how cheap it turned out to be once the question
+was asked of the image instead of of the two remotes.
+
+Field 4 read `0xE0` on the Harmony 600 and `0xC0` on the Harmony One, and section 44 of
+`docs/usb-protocol.md` wrote that down as "protocol in the high nibble: 14 and 12". That is the name
+concordance uses, adopted because the numbers were right and nobody pushed on it. But 14 and 12 are
+not protocol revisions that happen to be adjacent, they are **the architecture numbers**, the same
+two the config states in base slot 1 and the same two this project organises everything else by.
+
+### The accessors are RETLW, so the answer is a table lookup
+
+The version block builder at `0x1422C` fills twelve bytes, each from its own small accessor.
+Five of those accessors sit consecutively, two bytes apart, and every one of them is a single
+`RETLW`:
+
+```
+10648: 28 0c       RETLW 0x28     field 0, the firmware version
+1064a: 00 0c       RETLW 0x00     field 4, low nibble
+1064c: 42 0c       RETLW 0x42     field 5, the skin
+1064e: 0c 0c       RETLW 0x0c     field 6
+10650: 0e 0c       RETLW 0x0e     field 4, high nibble
+```
+
+So these values are compiled into the image and need no device, no execution and no inference. The
+builder packs two of them into one byte at `0x14268`, `SWAPF` then `ANDLW 0xF0` then `IORWF`, which
+is the nibble packing `docs/usb-protocol.md` had already spotted without knowing which byte it
+built.
+
+The table was then located in all four available images by searching for the same five literal
+pattern, with each image's own firmware version and skin as the anchor. One hit in each, no
+ambiguity.
+
+| Image | at | field 0 | skin | field 4 high | architecture |
+|---|---|---|---|---|---|
+| 700 2.8 | `0x10648` | `0x28` | 66 | `0x0e` | 14 |
+| 600 0.2, complete | `0x11964` | `0x02` | 71 | `0x0e` | 14 |
+| 650 0.4 | `0x138C8` | `0x04` | 72 | `0x0e` | 14 |
+| One 3.4 | `0x24262` | `0x34` | 54 | `0x0c` | 12 |
+
+### Why this names it rather than renames it
+
+Two remotes reading 14 and 12 is compatible with almost any label, because there are only two of
+them and any two numbers agree with any two numbers. The table above is what makes it a finding.
+
+**It varies with the architecture and with nothing else.** Three arch 14 images, three different
+firmware versions (2.8, 0.2, 0.4), three different skins (66, 71, 72), three different models, and
+all three return 14. A protocol revision that never moved across three firmware generations of the
+same family would be a strange protocol revision. The arch 12 image is the contrast case and
+returns 12.
+
+**It agrees with what the config says about itself.** Base slot 1 states the architecture, and on
+all three bench remotes the nibble equals what that unit's own config carries: 14 on the 600, 12 on
+both Harmony Ones. Two independent artefacts, a firmware image and a config, produced years apart by
+different parts of Logitech's toolchain.
+
+**And that agreement is not circular**, which is the part worth checking rather than assuming. The
+accessor at `0x10650` has **exactly one caller**, the version block builder. The firmware never
+compares this constant against the architecture in the config it is running, so the two agreeing is
+a fact about the world rather than a consequence of one being copied from the other. Had the
+firmware validated one against the other, the agreement would have proved nothing at all.
+
+### Three smaller things that came with it
+
+* **Field 6 is a constant and not a field count.** `0x0C` on both remotes invited reading it as
+  twelve, the number of fields, and that reading is now dead: it comes from its own `RETLW 0x0c` in
+  every image including the arch 12 one, so it is a compiled in constant that happens to equal
+  twelve. What it means is still unknown, but it is no longer self-referential.
+* **Field 4's low nibble is a compiled in zero on all four images.** It is a genuine second
+  four-bit field, since the packing builds it from a separate accessor, and every image this project
+  has sets it to zero. So it is undetermined rather than absent, and a fifth image is what would
+  move it.
+* **A writer rail.** The high nibble is masked with `ANDLW 0xF0` after a `SWAPF`, so this byte
+  **cannot express an architecture above 15**. Every architecture named in this project is below
+  that, which is why nothing has hit the ceiling, and it is a real constraint on any future one.
+
+### Two predictions, recorded before the fact
+
+Neither a Harmony 700 nor a Harmony 650 has ever been connected here, so the skins in the table
+above are unverified readings of an image. Writing the consequence down now is what makes connecting
+one worth doing: the skin is reported in binary in field 5 and in BCD in `bcdDevice`, as the 600's
+71 and `0x1071` and the One's 54 and `0x1054` both show. So a **700 should enumerate `bcdDevice`
+`0x1066`** and a **650 `0x1072`**. If either does not, the reading of field 5 is wrong and this
+section's location of the table with it.
+
+### Where it lands
+
+* `docs/usb-protocol.md`, the twelve field table and the accessor table under it.
+* `tests/test_usb_firmware.py`, `TestFieldFourIsTheArchitecture`, five tests over all four images.
+* The open items list, which loses one of its ten unnamed fields and keeps the other nine.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
