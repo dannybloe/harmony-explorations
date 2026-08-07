@@ -4257,7 +4257,8 @@ not say who the caller was. It is opcode 16 of this language.
 
 **Opcodes 22 and 23**, present only in the arch 12 dispatcher and used by no config, so their
 operand lengths are unknown. `gspm.SCREEN_ARCH12_ONLY` lists them so a parser refuses them rather
-than desynchronising quietly.
+than desynchronising quietly. *Both were read later: 23 in section 54 and 22 in section 64, and
+that constant no longer exists.*
 
 **What opcode 21 does.** Only its length is known, and that by inference from four arch 8 configs.
 
@@ -5796,7 +5797,8 @@ Zero overlapping claims anywhere, which is the check that keeps those numbers ho
 ### Where it lands
 
 * `docs/config-format.md`, the screen language and base slot 6.
-* `SCREEN_FIXED_OPERANDS[23] = 0` and `SCREEN_ARCH12_ONLY = {22}` in both codecs;
+* `SCREEN_FIXED_OPERANDS[23] = 0` and `SCREEN_ARCH12_ONLY = {22}` in both codecs, the latter
+  replaced by `SCREEN_OPERANDS_BY_ARCHITECTURE` in section 64 once 22 was read too;
   `MODE_PROGRAM_ARCHITECTURES` gains 12; `PIXEL_BYTES` and the corrected raw extent.
 * `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, where the tiling test now
   asserts the opposite of what it did and says so.

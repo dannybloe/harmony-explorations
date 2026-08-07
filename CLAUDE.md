@@ -650,8 +650,8 @@ rows on arch 14 and 160 on arch 8, 16389 and 20485 bytes each, against 125 for a
 together they are **about half the region** on arch 8 and arch 14. **Arch 12 was not the exception it looked like**, section 54. One missing entry was holding it
 shut: **screen opcode 23 takes no operand**, from its handler at `0x29640`, which makes no read call
 at all where every other handler calls its own reader. With `23: 0` all **268 of 268** arch 12 mode
-programs decode. Opcode 22 appears in no config and stays refused, so `SCREEN_ARCH12_ONLY` is now
-`{22}`. A brute force over operand counts could not choose between 0 and 5; the firmware did, which
+programs decode. Opcode 22 appeared in no config and stayed refused, until section 64 below read
+it too. A brute force over operand counts could not choose between 0 and 5; the firmware did, which
 is the right order of authority.
 
 **A picture's `stride` is in pixels, not bytes**, also section 54, correcting section 50. A pixel is
