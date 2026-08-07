@@ -106,14 +106,28 @@ names an address outside its own program draws a **bitmap**, either raw rows or 
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
 is loaded, and the row loop stops drawing above row 128 while still consuming the stream.
 
-**The largest single unknown is that most of a config is a region no named section reaches**, 62% of
-a Harmony 600 and 82% of a Harmony One. The bitmaps are the only thing known to point into it and
-they account for about one part in two hundred of it, so what fills it is still open; three
-follow-up measurements that came back negative are written up so they are not repeated.
+**That region is read now, and with it most of a config.** It used to be the largest single
+unknown, 62% of a Harmony 600 and 82% of a Harmony One reachable from nothing named. It is one
+contiguous array of screen pictures, rows of big endian RGB565 pixels, drawn by programs carried
+inside mode records that nothing could reach until a missing operand count was found in the
+firmware. The byte accounting is the measure of it: the fraction of a config attributed to a
+structure the codec understands, with any two structures claiming the same byte reported as the
+defect it is.
+
+| | at the start | now |
+|---|---|---|
+| Harmony 700 | 11.4% | **98.1%** |
+| Harmony 600 | 9.5% | **98.7%** |
+| Harmony One | 3.2% | **98.0%** |
+| 880, arch 8 | 3.6% | **94.4%** |
+| 525, arch 9 | 7.2% | 14.6% |
+
+Zero overlapping claims anywhere. `make coverage` prints it.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
-classes, and which physical button each scan code is. See [docs/findings.md](docs/findings.md) for
-detail and [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
+classes, which physical button each scan code is, and almost all of architecture 9. See
+[docs/findings.md](docs/findings.md) for detail and
+[docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 
 ## Headline findings
 

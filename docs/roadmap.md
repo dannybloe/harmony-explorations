@@ -252,15 +252,20 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 |
-|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | **91.9%** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | **87.4%** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | **90.0%** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | **97.0%** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | **82.2%** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 |
+|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | **98.1%** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | **98.7%** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | **98.0%** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | **98.6%** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | **94.4%** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | **14.6%** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | **91.8%** |
+
+The last column is two readers landing the same day: base slot 13's records, found by asking the
+deliberately built config pair of section 58 one question, and the infrared records, whose header
+turned out to be 21 bytes pointing **backwards** at duration blocks below it. Arch 9 barely moves
+and that is now the whole of what is left, along with a handful of gaps under three kilobytes.
 
 Neither of the last two columns is a reader. Section 53 is one rule, that a mode record carries its
 own screen program, and section 54 is two corrections: opcode 23 takes no operand, which is what
