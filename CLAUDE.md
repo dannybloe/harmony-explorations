@@ -215,6 +215,7 @@ docs/memory-map.md              memory maps: the addressing rules and the archit
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, entirely unmeasured, a list of what to read
+docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -663,7 +664,9 @@ one matched, which is why section 50's "the pictures do not tile" was wrong. Arc
 700, 97.0% of arch 8, 48.2% of a Harmony One. There was never a second referent, only one referent
 in programs nothing could reach. Coverage **87.8%** on a 700, 86.4% on a 600, 80.2% on arch 8, 47.9%
 on a One, zero overlaps. **And the other half is nothing else**, section 55: the region is **one contiguous array of
-pictures** from the end of the named content to the trailer, with no table, no count and no header.
+pictures** from the end of the named content to the trailer, with no table, no count and no
+header, though **base slot 17 names its start** on arch 8, 9 and 14, section 62, so only arch 12
+needs the search.
 Walking it lands **exactly** on the trailer in all nine containers that have one, over runs of 18 to
 98 records, and a start one to three bytes out does not walk at all. About a third of the entries
 are drawn by a screen program; the rest are in the same array and nothing reachable draws them,
@@ -674,7 +677,7 @@ exactly one everywhere. For a writer, a picture's position is implied by everyth
 inserting or resizing one moves every later address.
 
 Coverage now: **98.1%** on a Harmony 700, 98.7% on a 600, **98.0%** on a Harmony One, 98.6% on the
-spare One, 94.4% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.6% with only
+spare One, 94.4% on arch 8, 18.5% on arch 9, all with zero overlaps. What is left is arch 9, still at 14.6% with only
 43 of 114 mode records decoding, and the low part of a config rather than the region.
 
 **Base slot 13's records are read**, section 60, and the way they were found is the point. The

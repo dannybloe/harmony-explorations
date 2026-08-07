@@ -5847,7 +5847,13 @@ the search is checked twice against things it did not choose.
 ### What it means
 
 The region is a **picture bank**: a contiguous array with no table, no count and no header, running
-from the end of the named content to the trailer. About a third of its entries are drawn by a screen
+from the end of the named content to the trailer.
+
+> **Corrected in section 62.** "No header" stands, but "nothing names it" does not: on arch 8,
+> arch 9 and arch 14 **base slot 17 points two bytes in front of the bank**, on all seven samples,
+> so the search below is needed on arch 12 alone. And the arch 9 sample, offered here as one of the
+> four containers with no such region, has four pictures. It emits no screen opcode 2 and it has
+> them anyway, which is where the inference went wrong. About a third of its entries are drawn by a screen
 program and the rest are not drawn by anything this project can reach. Whether they are spares, or
 addressed by something still unread, is not established and the reader does not pretend otherwise:
 it reports them, it does not explain them.
@@ -6032,6 +6038,18 @@ accessor at `0x10650` has **exactly one caller**, the version block builder. The
 compares this constant against the architecture in the config it is running, so the two agreeing is
 a fact about the world rather than a consequence of one being copied from the other. Had the
 firmware validated one against the other, the agreement would have proved nothing at all.
+
+**A third artefact agrees, and it names the field.** An `.EZHex` opens with an XML header stating
+the remote a config was built for, and its `PROTOCOL` element reads 12 on the Harmony One's config,
+14 on the 600's and 9 on the arch 9 sample. Those are the architecture numbers. The rest of that
+header maps onto the block just as exactly: `BOARD 0.5.0` against field 1's `0x05`, `SKIN 54`
+against field 5's `0x36`, `FLASH 0x1F:0xC8` against fields 3 and 2. So the same number reaches the
+host over USB and the generator over XML, and Logitech's own word for it is **protocol**. This
+section renames it anyway, because what the value identifies is what this project and concordance
+both call the architecture, and because a name that only makes sense next to a second, absent notion
+of architecture is the worse of the two. The header is a fourth prediction waiting to be tested:
+`docs/memory-map-525.md` uses it to predict seven of the twelve bytes for a remote nobody here has
+connected.
 
 ### Three smaller things that came with it
 
@@ -6513,6 +6531,92 @@ the codec would have quietly claimed 277 wrong extents in a sample nobody looks 
 * `tests/test_gspm.py`, `TestTheInfraredRecordExtent`: the terminator against the layout, the arch 9
   negative case with the counts that refuted the first version, the sharing, and that the pointers
   point backwards.
+
+## 62. Base slot 17 names the picture bank, and arch 9's pictures are one bit a pixel
+
+Two corrections, both of section 55, both found by reading harmony-decompiler's `FORMAT.md` and
+then testing what it says against our own parse rather than adopting it. That is what decision 7 in
+`CLAUDE.md` asks for, and it paid here in a way that quoting them would not have: their claim is
+about their own section numbering and their own sample, and checking it turned up something they did
+not claim.
+
+### What they said, and what checking it showed
+
+Their section 4h reports that arch 9's section 17 is four bitmaps, `u8 format; u16 width; u16
+height` then 768 bytes at one bit a pixel, 96 by 64, which is the 525's LCD size. Reading our own
+parse of the same file at base slot 17:
+
+```
+00 00 | 02 60 00 40 00 | <768 bytes> | 02 60 00 40 00 | ...
+```
+
+`kind 2`, stride 96, rows 64. Four of them, and `2 + 4 * 773 + 6` is **exactly** the 3100 bytes from
+the slot 17 pointer to the end of the container, the six being the trailer. So the claim holds.
+
+**But that header is our picture header**, `u8 kind; u16 stride; u16 rows` from sections 50 and 54,
+not a format of its own. Which raises the question their numbering hides: what is at base slot 17 on
+the other architectures?
+
+| sample | first bytes at base slot 17 | reads as |
+|---|---|---|
+| 525, arch 9 | `00 00 02 60 00 40 00` | kind 2, 96 x 64 |
+| 880, arch 8 | `00 00 00 80 00 a0 00` | kind 0, 128 x 160 |
+| 600, arch 14 | `00 00 00 80 00 80 00` | kind 0, 128 x 128 |
+| 700, arch 14 | `00 00 00 80 00 80 00` | kind 0, 128 x 128 |
+
+Those are the exact dimensions section 53 identified as the large pictures a mode program names. So
+base slot 17, plus two, is the start of the **picture bank**.
+
+### The bank is addressed, on three architectures of four
+
+Section 55 found the bank's start by trying every offset above the named content and keeping the one
+whose walk lands exactly on the trailer while containing every addressed picture. It works, and it
+was never necessary except on arch 12: **`slot 17 + 2` is the bank start on all seven arch 8, arch 9
+and arch 14 samples**, exactly, with the walk from there landing on the trailer.
+
+Arch 12 is the exception and the reason is now obvious rather than mysterious. It is the only
+architecture here with a touch screen, and section 45 established that base slot 17 is its touch hit
+map. So the slot is reused, and on arch 12 the bank really is unaddressed and the search stays.
+
+What the two bytes ahead of the bank are is not established. They are zero in all seven.
+
+### Arch 9 has a region after all
+
+Section 55's closure was that the containers emitting no screen opcode 2, the arch 9 sample and the
+three safe mode containers, have no such region. Three of those four still hold. The arch 9 sample
+does not: it emits no opcode 2 and it carries four pictures regardless.
+
+**The faulty step was inferring absence from unreachability.** Nothing in the 525's programs draws a
+picture, and the pictures are there, named by a pointer nobody had followed. That is the same shape
+of error as section 49's hunt for a second referent, and it is worth noticing that it recurred.
+
+**Kind selects the pixel depth, and the depths are per architecture.** Section 50 read kind 2 off the
+arch 12 and arch 14 firmware as a handler that is a bare `RETURN`, which is correct for those. On
+arch 9, whose remote has a monochrome LCD, kind 2 is one bit a pixel: `5 + stride * rows / 8`, which
+makes 96 by 64 come to 773 bytes. That is why the reader gave kind 2 no length and why arch 9 could
+not be walked.
+
+### Coverage
+
+Arch 9 moves for the first time in a while, and nothing else changes, since the other architectures
+were already reading their banks by search.
+
+| Sample | before | after |
+|---|---|---|
+| 525, arch 9 | 14.6% | **18.5%** |
+
+Still the worst covered architecture by a wide margin, and still for the same reason: there is no
+arch 9 firmware here to appeal to. `docs/memory-map-525.md` is the plan for changing that.
+
+### Where it lands
+
+* Section 55, corrected in place, and `TestThePictureBank.WITHOUT` loses `h525_config` with the
+  reason in a comment.
+* `gspm.picture_bank_start`, `BITMAP_MONOCHROME_ARCHITECTURES`; `pictureBankStart` in
+  `packages/codec/src/screen.ts`. `picture_bank` prefers the stated start and falls back to the
+  search, so arch 12 is unaffected.
+* `tests/test_interpreter.py`: the four monochrome pictures, and the stated start against all eight
+  samples that have one plus arch 12 as the negative case.
 
 ## References
 

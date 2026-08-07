@@ -1716,7 +1716,10 @@ class TestThePictureBank(unittest.TestCase):
         ('arch8_config_d', 33, 242658, 29),
     ]
     # Containers with no region at all, and therefore no bank. The negative case.
-    WITHOUT = ['h525_config', 'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm']
+    # The three safe mode containers. `h525_config` was on this list until section 62 and should
+    # not have been: section 55 read "emits no screen opcode 2" as "has no picture region", and
+    # the arch 9 sample emits none and has four pictures anyway.
+    WITHOUT = ['h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm']
 
     def test_the_bank_walks_to_the_trailer_exactly(self):
         from harmony import gspm
@@ -1767,6 +1770,49 @@ class TestThePictureBank(unittest.TestCase):
                 continue
             with self.subTest(name):
                 self.assertIsNone(gspm.parse(data).picture_bank())
+
+    def test_arch_9_has_a_bank_of_four_monochrome_pictures(self):
+        """
+        findings.md section 62, and a correction of section 55.
+
+        Section 55 concluded that the containers emitting no screen opcode 2 have no picture
+        region, and offered the arch 9 sample as one of the four cases carrying that closure. It
+        does emit none, and it has four pictures regardless: nothing in its programs draws one, and
+        base slot 17 names them anyway. The inference from "nothing draws it" to "it is not there"
+        is the part that was wrong.
+
+        Kind 2 is the giveaway. On the other three architectures its handler draws nothing, so the
+        reader gave it no length; on arch 9 it is one bit a pixel, which makes a 96 by 64 screen
+        768 bytes and the record 773.
+        """
+        from harmony import gspm
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        bank = c.picture_bank()
+        self.assertIsNotNone(bank)
+        self.assertEqual([(p.kind, p.stride, p.rows, p.length) for p in bank],
+                         [(2, 96, 64, 773)] * 4)
+
+    def test_base_slot_17_states_where_the_bank_begins(self):
+        """
+        Two bytes ahead of it, on every sample of the three architectures that do not have a touch
+        screen. Arch 12 puts the touch hit map in that slot and names the bank nowhere, so the
+        search stays for it alone.
+        """
+        from harmony import gspm
+        stated = ('h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+                  'arch8_config_d', 'h600_config', 'h700_config', 'h700_config_2')
+        lab.require(*stated, 'one_config')
+        for name in stated:
+            with self.subTest(name):
+                c = gspm.parse(lab.load(name))
+                start = c.picture_bank_start()
+                self.assertIsNotNone(start)
+                run = c.picture_run(start)
+                self.assertIsNotNone(run, 'the walk from the stated start reaches the trailer')
+                self.assertEqual(run, c.picture_bank())
+        self.assertIsNone(gspm.parse(lab.load('one_config')).picture_bank_start(),
+                          'arch 12 names the bank nowhere')
 
     def test_a_start_one_byte_out_does_not_walk(self):
         """What makes the walk a proof rather than a parse."""

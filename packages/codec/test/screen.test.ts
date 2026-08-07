@@ -29,6 +29,7 @@ import {
   bitmaps,
   namedContentEnd,
   pictureBank,
+  pictureBankStart,
   pictureRun,
   fontSets,
   glyphAt,
@@ -384,7 +385,32 @@ test('a start one byte out does not walk', skipUnless('h600_config'), () => {
   }
 });
 
-test('a container with no region has no bank', skipUnless('h525_config'), () => {
+test('arch 9 has a bank after all, of four monochrome pictures', skipUnless('h525_config'), () => {
+  // This asserted `undefined` until section 62. Section 55 concluded arch 9 had no picture region,
+  // on the strength of it emitting no screen opcode 2, and the conclusion did not follow: nothing
+  // there draws a picture, and the pictures are there anyway. Base slot 17 names them.
   const c = parse(load('h525_config') as Uint8Array);
-  assert.equal(pictureBank(c, namedContentEnd(c)), undefined);
+  const bank = pictureBank(c, namedContentEnd(c));
+  assert.notEqual(bank, undefined);
+  const pictures = bank as { kind: number; stride: number; rows: number; length: number }[];
+  assert.equal(pictures.length, 4);
+  for (const picture of pictures) {
+    // Kind 2 draws nothing on the other three architectures. Here it is one bit a pixel, so a
+    // 96 by 64 screen is 768 bytes and the record is 773.
+    assert.deepEqual(
+      { kind: picture.kind, stride: picture.stride, rows: picture.rows, length: picture.length },
+      { kind: 2, stride: 96, rows: 64, length: 773 },
+    );
+  }
+});
+
+test('base slot 17 states where the bank begins', skipUnless('h525_config', 'h600_config'), () => {
+  // Two bytes ahead of it, and the walk from there lands on the trailer, which is the check the
+  // search used to have to make for every candidate offset.
+  for (const name of ['h525_config', 'h600_config']) {
+    const c = parse(load(name) as Uint8Array);
+    const stated = pictureBankStart(c);
+    assert.notEqual(stated, undefined, name);
+    assert.notEqual(pictureRun(c, stated as number), undefined, name);
+  }
 });

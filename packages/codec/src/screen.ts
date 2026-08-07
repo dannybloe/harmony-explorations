@@ -18,6 +18,7 @@ import { Container, GspmError, archSlot } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import { valueMaps } from './valuemap.ts';
 import { modeProgramRoots } from './sections.ts';
+import { TOUCH_MAP_SLOT } from './tables.ts';
 
 export const SCREEN_TABLE_SLOT = 11;
 
@@ -275,6 +276,16 @@ export const BITMAP_END = 0x00;
 export const BITMAP_ROW_BREAK = 0x80;
 /** A pixel, in both kinds and in a base slot 7 glyph. */
 export const PIXEL_BYTES = 2;
+/**
+ * `kind` selects the pixel depth and the depths are per architecture. Arch 9's remote has a
+ * monochrome LCD and its kind 2 is one bit a pixel, where the same kind on the other three
+ * architectures is a handler that draws nothing. `docs/findings.md` section 62.
+ */
+export const BITMAP_MONOCHROME_ARCHITECTURES = new Set([9]);
+export const PIXEL_BITS = 8;
+/** Base slot 17 points two bytes ahead of the picture bank, except on arch 12. */
+export const PICTURE_BANK_BIAS = 2;
+export const PICTURE_BANK_UNADDRESSED = new Set([12]);
 
 export interface Bitmap {
   address: number;
@@ -330,6 +341,9 @@ export function bitmapAt(c: Container, address: number): Bitmap | undefined {
   let rowBreaks: number | undefined;
   if (kind === BITMAP_RAW) {
     length = BITMAP_HEADER + PIXEL_BYTES * stride * rows;
+    if (off + length > c.blob.length) return undefined;
+  } else if (kind === BITMAP_NOTHING && BITMAP_MONOCHROME_ARCHITECTURES.has(c.architecture ?? -1)) {
+    length = BITMAP_HEADER + Math.floor((stride * rows) / PIXEL_BITS);
     if (off + length > c.blob.length) return undefined;
   } else if (kind === BITMAP_ENCODED) {
     const walked = encodedExtent(c, off + BITMAP_HEADER);
@@ -394,7 +408,33 @@ export function pictureRun(c: Container, from: number): Bitmap[] | undefined {
  * a bank: the walk lands on the trailer, **and** every picture opcode 2 names appears in it at its
  * own address. The first alone leaves several candidates on two arch 8 configs.
  */
+/**
+ * Where the picture array begins when the container says so, as a blob offset.
+ *
+ * Base slot 17 points two bytes in front of it on arch 8, 9 and 14, exact on all seven samples.
+ * Arch 12 uses that slot for the touch screen hit map and names the bank nowhere, which is why
+ * `pictureBank` still searches. `docs/findings.md` section 62.
+ */
+export function pictureBankStart(c: Container): number | undefined {
+  if (c.architecture === undefined || PICTURE_BANK_UNADDRESSED.has(c.architecture)) return undefined;
+  let slot: number;
+  try {
+    slot = archSlot(c.architecture, TOUCH_MAP_SLOT);
+  } catch {
+    return undefined;
+  }
+  const section = c.sections[slot];
+  if (section === undefined || section.address === 0) return undefined;
+  const off = c.blobOffsetOf(section.address);
+  return off === undefined ? undefined : off + PICTURE_BANK_BIAS;
+}
+
 export function pictureBank(c: Container, from: number, search = 1024): Bitmap[] | undefined {
+  const stated = pictureBankStart(c);
+  if (stated !== undefined) {
+    const run = pictureRun(c, stated);
+    if (run !== undefined) return run;
+  }
   const wanted = new Set(bitmaps(c).map((b) => b.address));
   for (let start = from; start < Math.min(from + search, c.blob.length); start += 1) {
     const run = pictureRun(c, start);

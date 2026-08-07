@@ -375,6 +375,11 @@ BITMAP_END = 0x00
 BITMAP_ROW_BREAK = 0x80
 # A pixel, in both the raw and the encoded kind and in a base slot 7 glyph.
 PIXEL_BYTES = 2
+# `kind` selects the pixel depth, and the depths are per architecture. Arch 8, 12 and 14 all draw
+# two bytes a pixel; the arch 9 remote has a monochrome LCD and its kind 2 is one bit a pixel, where
+# the same kind on the other three is a handler that draws nothing. `docs/findings.md` section 62.
+BITMAP_MONOCHROME_ARCHITECTURES = frozenset({9})
+PIXEL_BITS = 8
 # The trailer: a sixteen bit checksum and the four byte end marker.
 TRAILER_LENGTH = 6
 
@@ -432,6 +437,10 @@ GLYPH_CODE_BIAS = 1
 # rectangles on it. The firmware walks a page in order and returns the first rectangle containing
 # the point, so overlapping rectangles are resolved by position rather than being a defect.
 TOUCH_MAP_SLOT = 17
+# The same slot names the picture bank on the architectures that do not have a touch screen, two
+# bytes ahead of it. Arch 12 is the exception and names the bank nowhere.
+PICTURE_BANK_BIAS = 2
+PICTURE_BANK_UNADDRESSED = frozenset({12})
 TOUCH_AREA_LENGTH = 12
 # The panel reports a coordinate as five bits of high byte and eight of low, so the space is
 # thirteen bits. Rectangles are allowed to run past the panel's own edge and some do.
@@ -1698,6 +1707,12 @@ class Container:
             length, breaks = self._encoded_extent(off + BITMAP_HEADER)
             if length is None:
                 return None
+        elif kind == BITMAP_NOTHING and self.architecture in BITMAP_MONOCHROME_ARCHITECTURES:
+            # One bit a pixel rather than two bytes, so `96 x 64` is 768 bytes and the whole record
+            # is 773. Nothing draws this kind on the other architectures.
+            length = BITMAP_HEADER + stride * rows // PIXEL_BITS
+            if off + length > self.length:
+                return None
         return Bitmap(address=address, kind=kind, stride=stride, rows=rows, length=length,
                       row_breaks=breaks)
 
@@ -1741,8 +1756,29 @@ class Container:
             at += picture.length
         return out if at == end and out else None
 
+    def picture_bank_start(self) -> Optional[int]:
+        """Where the picture array begins, when the container says so, as a blob offset.
+
+        On arch 8, arch 9 and arch 14 **base slot 17 points two bytes in front of it**, so the bank
+        is addressed rather than merely present. Exact on all seven samples of those architectures.
+        The two bytes are zero everywhere and are not explained.
+
+        Arch 12 uses base slot 17 for the touch screen hit map instead and names the bank nowhere,
+        which is why the search below still exists. `docs/findings.md` section 62.
+        """
+        if self.architecture in PICTURE_BANK_UNADDRESSED:
+            return None
+        try:
+            slot = arch_slot(self.architecture, TOUCH_MAP_SLOT)
+        except GspmError:
+            return None
+        if slot >= len(self.sections) or not self.sections[slot].address:
+            return None
+        off = self.blob_offset_of(self.sections[slot].address)
+        return None if off is None else off + PICTURE_BANK_BIAS
+
     def picture_bank(self, search: int = 1024) -> Optional[List['Bitmap']]:
-        """The whole picture array, found by trying start offsets just above the named content.
+        """The whole picture array, from base slot 17 where that names it and by search otherwise.
 
         The bank begins where everything with a name ends, but not on that exact byte: sections
         this module does not fully read leave a short head, 181 bytes on one Harmony One. So offsets
@@ -1753,6 +1789,11 @@ class Container:
         and stop on the trailer would be a coincidence at the scale of dozens of records. The corpus
         answer is the smallest candidate that fits, and it fits only once.
         """
+        stated = self.picture_bank_start()
+        if stated is not None:
+            run = self.picture_run(stated)
+            if run is not None:
+                return run
         top = self.named_content_end()
         if top is None:
             return None
