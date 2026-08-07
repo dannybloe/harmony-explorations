@@ -5233,7 +5233,10 @@ across the file. It is one region at the top of it.
 
 ### The region
 
-Take the highest byte any structure this project can name reaches, and everything above it:
+Take the highest byte any structure this project can name reaches, and everything above it. **The
+figures below were measured when two readers had been ported and are therefore stale**; with every
+reader landed the region is 61.1% of a Harmony 700, 58.8% of a Harmony 600, 81.4% of a Harmony One
+and 3.9% of the arch 9 sample. The ranking does not change, which is the point of leaving them:
 
 | sample | highest named structure | container ends | the region |
 |---|---|---|---|
@@ -5274,6 +5277,11 @@ a colour touch panel carries 1.37 MB where a 600 carries 0.46 MB and an arch 9 r
 monochrome display carries none. That is a conjecture and it is written here as one. Nothing has
 been decoded and no firmware has been read for it.
 
+> **Answered by section 51, and the conjecture was right.** The region is image data: rows of 176
+> big endian RGB565 pixels on arch 12, with blank screens of exactly `176 * 220 * 2` bytes fixing
+> the height. Recovered on both Harmony Ones independently. What addresses it is still unknown, so
+> the sentence above about "not established" now applies only to the referent.
+
 > **Answered in part by section 50, and the answer is narrower than this section expected.** The
 > firmware was read and opcode 2 does draw a picture, with a header this section did not know
 > about. But the pictures are 125 to 885 bytes each, so all sixteen of the Harmony One's come to
@@ -5298,6 +5306,9 @@ the two sections can be compared.
 
 **Whether opcode 2 is the only way in.** It is the only one found. Pointers inside records have not
 been swept, so a second referent from a structure that is itself only partly decoded is possible.
+
+> **Still open after section 51**, which swept eight candidates and found nothing. Two of them were
+> the same misalignment trap this section's own successor fell into twice.
 
 ### Why it matters more than its size
 
@@ -5425,6 +5436,100 @@ are decoded but whose record fields are not all named.
 * `packages/codec/src/screen.ts`: the same four, and a `slot-11-bitmap` claim in the byte
   accounting, for both kinds.
 * `tests/test_interpreter.py` `TestTheBitmap` and `packages/codec/test/screen.test.ts`.
+
+## 51. The region is image data, and the second referent is still missing
+
+Section 49 found the region and could not say what it holds. Section 50 read the firmware that
+draws the one thing pointing into it and found the pointer accounts for about one part in two
+hundred of it. This says what the bytes are. It does not say what addresses them, and the list of
+things that turned out not to is the longer half of the section.
+
+### The measurement
+
+Three claims, each with its own closure, and none of them a decode: there is no framing in the
+region, so nothing here reads a structure.
+
+**A row is 176 pixels.** Recovered by minimising the mean absolute difference between vertically
+adjacent pixels over candidate widths 8 to 512, on the busiest 16 KB window of the region, which is
+picked by distinct pixel count because a smooth gradient scores well at every width and says
+nothing. On the Harmony One the answer is 176 with the runner up at 1.5 times the score, and on the
+**second, unrelated Harmony One** it is 176 again. Wrong widths score two to twenty times worse and
+the test asserts it, per the calibration rule in the verification standard.
+
+**A screen is 220 rows.** Fixed independently of the width, by blank screens: the region contains
+runs of zero bytes exactly `176 * 220 * 2` bytes long, four in one config and three in the other,
+and no run in the corpus falls within four kilobytes of that length without being one of them.
+Nothing in the width recovery produces the number 220, so the two are two statements and not one
+restated.
+
+**A pixel is two bytes, big endian, RGB565.** Byte order is measured rather than assumed: the same
+window at the same width scores worse read little endian, because swapping a pixel's halves turns a
+smooth image into a noisy one. Supporting it from the other architecture, the Harmony 600 has a
+monochrome screen and 40% of its non zero big endian words are exact RGB565 greys against about
+0.05% for random data, while the colour Harmony One holds 31056 distinct words.
+
+Rendered at 176 pixels with a luminance ramp, a window of the Harmony One's region is a coherent
+picture with shading, edges and a lit object. That is what prompted the measurements and it is not
+one of them.
+
+### What this does not settle
+
+**The width on arch 14.** The same recovery on the Harmony 600 and on arch 8 prefers 127 or 128
+with a margin of about 2%, which is not a result, and on the Harmony 700 it produces no clear
+answer at all. So the geometry is established on arch 12 and merely suggested elsewhere. The 600
+having a smaller monochrome panel is consistent with 128 and is not evidence for it.
+
+**Where one image starts.** Images are packed with no header: a sweep of the whole region for the
+five byte header of section 50 finds exactly the pictures opcode 2 already names and not one more.
+Row phase cannot locate a boundary either, and the reason is worth writing down rather than
+rediscovering: the score compares row `r` with row `r + 1`, and shifting both by the same amount
+leaves it unchanged, so the measure is blind to phase by construction.
+
+### The referent, and eight places it is not
+
+The point of the search was the second referent, and it was not found. These were ruled out, each
+by a measurement rather than by inspection:
+
+| candidate | result |
+|---|---|
+| more of screen opcode 2 | 3 to 16 targets per config, all tiny, section 50 |
+| screen opcode 3, the other bitmap draw | **one instruction in the entire corpus**, on arch 8 |
+| any other caller of the renderer | only opcode 3 and the text path, which draws a glyph with it |
+| infrared record headers | in region addresses at 5 of 186 offsets, noise |
+| further bitmap headers inside the region | exactly the known ones, none extra |
+| the log area of base slot 2 | reserves flash far above the container, not inside it |
+| base slot 0 | a tree of state variable names, no addresses |
+| a pointer to a blank screen boundary | none, at any of the four, plus or minus two bytes |
+
+Opcode 3 is worth its own line. Its handler at `0x18440` on the Harmony 700 reads a kind byte and
+dispatches to the same two bodies opcode 2 does, differing only in copying a six byte position
+record instead of two, so it is a second bitmap draw in the language. It is also used **once** in
+ten configs, so it explains nothing.
+
+Two of the negatives were the **same trap twice**, and it is the one to remember here. Twice a long
+ascending run of three byte values seemed to be a table into the region, and twice it was a
+misaligned read of base slot 10's own pointer array. The signature is exact: a real entry whose
+high byte is constant, read one byte late, puts that constant in the low position and multiplies
+every delta by 256. A run of 231 entries with a constant `0x05` low byte and a constant `0x700`
+delta is a table of real entries stepping by 7, seen sideways.
+
+### Why it still matters
+
+The region is 59% of a Harmony 600 and 81% of a Harmony One, it is the whole of the gap between
+M2's 26% and a round trip, and it is now known to be pictures rather than an unknown. A writer that
+cannot place an image cannot write a config, so the open question has not moved, only sharpened:
+**what tells the remote where a picture is.** The next places to look are the fields of decoded
+records that are not yet named, and the arch 14 firmware's other readers of an absolute config
+address, of which the seek routine at `0x18D98` has fifty callers and only a handful have been
+attributed.
+
+### Where it lands
+
+* `src/harmony/region.py`, reverse engineering only and deliberately not in `packages/codec`: a
+  width recovered by minimising a difference is a measurement and not a reader, and standing it
+  next to the readers would invite a caller to treat it as one.
+* `tests/test_region.py`, five tests including the calibration case and the byte order comparison.
+* `docs/config-format.md`, under the screen language.
 
 ## References
 

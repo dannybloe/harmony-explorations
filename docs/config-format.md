@@ -481,6 +481,19 @@ containers emit no opcode 2 and hold no bitmaps.
 that [findings.md](findings.md) section 49 describes, even though every one of them lands in it.
 Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
+Opcode 3 draws the same object with a six byte position record instead of two. It is used by one
+instruction in the whole corpus, so its operand layout is read from the firmware and exercised by
+almost nothing.
+
+#### What fills the region
+
+Not the bitmaps above. The region is **raw image data**: rows of 176 **big endian RGB565** pixels
+on arch 12, with a screen of 220 rows, so a full screen is 77440 bytes. Recovered on both Harmony
+Ones by minimising the vertical pixel difference over candidate widths, and the height is fixed
+independently by blank screens of exactly that length. There is **no header and no framing**, so
+where one image starts is unknown, and **nothing found so far addresses them**. The width on arch
+14 is not established. `harmony/region.py`, [findings.md](findings.md) section 51.
+
 ### Base slot 11: the screen program table
 
 ```

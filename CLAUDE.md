@@ -571,8 +571,28 @@ seven kilobytes of a 1.37 MB region. Three negatives are recorded rather than le
 bitmaps **do not tile**, the region's only ascending pointer-shaped runs are **misaligned reads of
 base slot 10's own array** (a misaligned read of an ascending table is itself ascending), and 40% of
 the 600's non-zero big endian words are exact RGB565 greys against 31056 distinct words on the
-colour-screen One, which is suggestive of pixels and **is not a decode**. Next is the second
-referent, swept out of the decoded sections whose record fields are not all named.
+colour-screen One, which is suggestive of pixels and **is not a decode**.
+
+**The region is image data**, section 51, which answers "what is it" and leaves "what addresses it"
+open. Rows of **176 big endian RGB565 pixels** on arch 12, screen height **220**, so a full screen
+is 77440 bytes. Three closures: the width is recovered by minimising the vertical pixel difference
+over widths 8 to 512 and wins by 1.5 times on **both** Harmony Ones, which are different remotes;
+the height is fixed independently by blank screens of exactly 77440 zero bytes, four in one config
+and three in the other; and big endian beats little endian on the same window. There is **no header
+and no framing**, and the arch 14 width is **not** established (127/128 with a 2% margin, which is
+not a result). `src/harmony/region.py` is reverse engineering only and deliberately not in
+`packages/codec`, because a width recovered by minimisation is a measurement, not a reader.
+
+**The second referent was searched for and not found.** Ruled out by measurement, so do not redo
+them: more of opcode 2; **opcode 3**, which is a second bitmap draw with a six byte position record
+and is used by **one instruction in ten configs**; any other caller of the renderer, which is only
+opcode 3 and the text path; infrared record headers; further bitmap headers inside the region;
+the base slot 2 log area, which reserves flash far above the container; base slot 0, which is a
+tree of **state variable names**; and a pointer to any blank screen boundary. Twice a long ascending
+run of `u24` values looked like a table into the region and twice it was **a misaligned read of base
+slot 10's pointer array**: a real entry with a constant high byte, read one byte late, puts that
+constant in the low position and multiplies every delta by 256. Next: the unnamed fields of decoded
+records, and the unattributed callers of the seek routine `0x18D98`, of which there are fifty.
 
 Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 

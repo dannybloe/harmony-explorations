@@ -318,6 +318,14 @@ So the port is done and the ceiling is where section 49 said it would be. **Cove
 mid twenties on arch 14 and at 8% on arch 12, and the region is the whole of the difference.** The
 next thing M2 needs is not another reader.
 
+**The region is image data**, section 51: rows of 176 big endian RGB565 pixels on arch 12, on a 220
+row screen, recovered on both Harmony Ones and confirmed by blank screens of exactly 77440 zero
+bytes. That answers what M2 has to reproduce and not yet how. There is no header and no framing,
+and **eight candidates for what addresses the images were ruled out by measurement**, including
+screen opcode 3, which is a second bitmap draw used by one instruction in the whole corpus. The two
+routes left are the unnamed fields of records that are otherwise decoded, and the unattributed
+callers of the arch 14 seek routine at `0x18D98`.
+
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a
 Harmony 600 and 82% of a Harmony One, and it is not padding. Screen opcode 2 is its only known
