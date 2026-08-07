@@ -541,6 +541,17 @@ had rested on the 700's update package and no 700 has ever been connected here. 
 passing. It is the same length as the 700's with an identical section table and 83 differing bytes,
 74 of them in the `LWJL` key table. `docs/findings.md` section 24.
 
+**Most of a config is a region nothing named reaches**, section 49, found by M2's byte accounting
+rather than by looking for it. 62% of a Harmony 600 and 82% of a Harmony One sit above the highest
+byte any of the sixteen named sections claims, and it is not padding: 140 distinct byte values, 35%
+zero, 0.6% `0xFF`. **Screen opcode 2 is the only known referent** and every address it names lands
+there, 4 of 4 on the 600 and 141 of 141 on the One, while opcode 4 has the same shape and never
+does. The closure is that the two container kinds emitting no opcode 2, the arch 9 sample and the
+three safe mode containers, have no such region. What the data is is **not established**; a picture
+is the obvious conjecture from opcode 2's position-plus-address shape and is marked as one. This
+caps M2's coverage at roughly 35% however many readers are ported, so decoding it is what M2 needs
+next, starting from opcode 2's handler in the dispatcher at `0x1879C`.
+
 Step 5 is next, and FreeHarmony is deliberately out of scope for now, so both halves of it are here.
 
 **The read pipeline.** Read a whole config off a remote and file it in the lab corpus with a

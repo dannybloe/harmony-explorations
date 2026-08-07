@@ -5224,6 +5224,71 @@ scan codes 1 to 40, then 43 to 53, then 55. So the 40 matrix buttons should be c
 per press, and `watch-keys.ts --address --mask` for watching a port with unrelated traffic in it.
 `tests/test_keypad.py` pins the 54 measurements and the closure against the config.
 
+## 49. Most of a config is a region nothing named reaches, and screen opcode 2 is its only referent
+
+Found by the byte accounting of milestone M2 rather than by looking for it, which is the argument
+for having built the accounting first. With sixteen sections named and the two largest readers
+ported, the Harmony 600 is 24.5% attributed and the Harmony One 7.2%. The rest is not scattered
+across the file. It is one region at the top of it.
+
+### The region
+
+Take the highest byte any structure this project can name reaches, and everything above it:
+
+| sample | highest named structure | container ends | the region |
+|---|---|---|---|
+| Harmony 700 | `0x052C5F` | `0x0EF0F0` | 631953 bytes, 64.5% |
+| Harmony 600 | `0x043AA7` | `0x0B4365` | 460990 bytes, 62.5% |
+| Harmony One | `0x048BC6` | `0x198680` | 1374394 bytes, 82.2% |
+| Harmony One, spare | `0x01DE24` | `0x12CD6D` | 1109833 bytes, 90.1% |
+| 880, arch 8 | `0x025EBA` | `0x06C760` | 289446 bytes, 65.2% |
+| 525, arch 9 | `0x011FD0` | `0x013296` | 4806 bytes, 6.1% |
+| the three safe mode | `0x000879` | `0x001BCB` | 4946 bytes, 69.5% of a tiny file |
+
+**It is not padding.** The Harmony 600's holds 140 distinct byte values, 35% of it zero and 0.6%
+`0xFF`, which is the wrong shape for erased flash and the wrong shape for a run of one record type.
+
+### What points at it
+
+One thing, and only one. **Screen language opcode 2**, whose five operands are two position bytes
+and a three byte flash address, section 40. Every target it names lands in the region, in every
+config that has one:
+
+| sample | opcode 2 targets in the region | opcode 4 targets in the region |
+|---|---|---|
+| Harmony 600 | 4 of 4 | 0 of 21 |
+| Harmony One | 141 of 141 | 0 of 60 |
+
+Opcode 4 has the same shape, five operands ending in an address, and never points there, so this is
+a property of opcode 2 and not of "screen opcodes that carry an address".
+
+**The two container kinds with no opcode 2 have no region either.** The arch 9 sample and the three
+safe mode containers emit none, and their unattributed remainder is 4806 and 4946 bytes rather than
+hundreds of kilobytes. That is the closure: the region exists exactly where its referent does.
+
+### What is not established
+
+**What the data is.** The obvious guess from opcode 2's shape, a position and an address, is that
+it draws a picture, and the region's size tracking the model's screen would fit: a Harmony One with
+a colour touch panel carries 1.37 MB where a 600 carries 0.46 MB and an arch 9 remote with a small
+monochrome display carries none. That is a conjecture and it is written here as one. Nothing has
+been decoded and no firmware has been read for it.
+
+**Why so few referents.** Three to sixteen distinct targets for hundreds of kilobytes, so either
+each target addresses something very large, or a target is the head of a table with structure of
+its own. Those are different problems and the difference is not settled.
+
+**Whether opcode 2 is the only way in.** It is the only one found. Pointers inside records have not
+been swept, so a second referent from a structure that is itself only partly decoded is possible.
+
+### Why it matters more than its size
+
+It is the largest single unknown in the format, it is the reason M2's coverage number cannot pass
+about 35% no matter how many section readers are ported, and it is the first thing a writer would
+have to reproduce. It is also the best remaining target for the firmware method of the
+`trace-section` skill: opcode 2 has a handler in the arch 14 dispatcher at `0x1879C`, and that
+handler is what the region is for.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

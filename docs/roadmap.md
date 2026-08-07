@@ -296,6 +296,15 @@ Still to port, in rough order of mass: the mode table (base slot 6), the binding
 9), the infrared records (base slot 5), the number sender, the state table, the timers, the
 parameter block, the touch map and the firmware event map.
 
+**And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
+most of a config is one region at the top of the file that no named section reaches, 62% of a
+Harmony 600 and 82% of a Harmony One, and it is not padding. Screen opcode 2 is its only known
+referent and every target it names lands there, in every container that emits one; the two kinds
+that emit none, the arch 9 sample and the three safe mode containers, have no such region. So
+porting the remaining twelve readers takes coverage to roughly 35% and no further, and **decoding
+that region is what M2 actually needs next.** It is a firmware question rather than a corpus one,
+and opcode 2's handler in the dispatcher at `0x1879C` is where it starts.
+
 **M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does
 not.

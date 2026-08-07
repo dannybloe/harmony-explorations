@@ -197,3 +197,51 @@ test('the opcode table has no entry for the two the arch 12 dispatcher alone kno
     assert.equal(SCREEN_FIXED_OPERANDS[opcode], undefined);
   }
 });
+
+/**
+ * `[sample, distinct opcode 2 targets, highest offset any other known structure reaches]`.
+ *
+ * findings.md section 49. Opcode 2 is the only known referent of the region that holds most of a
+ * config, and the pairing is what says so: every target above every other structure, in every
+ * container that has any, and no region at all in the two kinds that emit no opcode 2.
+ */
+const REGION: readonly [string, number, number][] = [
+  ['h700_config', 4, 0x052c5f],
+  ['h600_config', 3, 0x043aa7],
+  ['one_config', 16, 0x048bc6],
+  ['one_config_unprogrammed', 16, 0x01de24],
+  ['arch8_config_a', 10, 0x025eba],
+  ['h525_config', 0, 0x011fd0],
+  ['h600_safemode_gspm', 0, 0x000879],
+];
+
+/** Where opcode 2's address sits: five operands, two of position then three of address. */
+const SCREEN_DRAW_FROM_ADDRESS = 2;
+
+for (const [name, count, ceiling] of REGION) {
+  test(`${name}: opcode 2 addresses ${count} places, all above everything named`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const targets = new Set<number>();
+    for (const [, program] of reachablePrograms(c)) {
+      for (const instruction of program) {
+        if (instruction.opcode !== SCREEN_DRAW_FROM_ADDRESS) continue;
+        if (instruction.operands.length < 5) continue;
+        const at = instruction.operands.length - 3;
+        const address =
+          (instruction.operands[at] as number) |
+          ((instruction.operands[at + 1] as number) << 8) |
+          ((instruction.operands[at + 2] as number) << 16);
+        targets.add(address);
+      }
+    }
+    assert.equal(targets.size, count, 'distinct opcode 2 targets');
+    for (const address of targets) {
+      const off = c.blobOffsetOf(address);
+      assert.notEqual(off, undefined, `target ${address} is outside the container`);
+      assert.ok(
+        (off as number) > ceiling,
+        `target at 0x${(off as number).toString(16)} is not above 0x${ceiling.toString(16)}`,
+      );
+    }
+  });
+}
