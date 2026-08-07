@@ -3245,7 +3245,8 @@ Counting only records that frame: 347 of 350 on the 700, 271 of 328 on the One, 
 
 An infrared database extractor, which `docs/roadmap.md` names as the first visible payoff of step 6.
 Every config anybody owns carries the codes for their equipment, in microseconds, and those are
-exactly the codes people cannot recreate once the servers are gone. `gspm.ir_groups`, `ir_pulses`
+exactly the codes people cannot recreate without Logitech, and cannot recreate at all once the
+service goes. Section 56 corrects an earlier claim that it already had. `gspm.ir_groups`, `ir_pulses`
 and `ir_frame` are the reader.
 
 ### What is not established
@@ -5871,6 +5872,95 @@ corpus is never.
   `src/harmony/gspm.py`; `pictureRun`, `pictureBank` and `namedContentEnd` in `packages/codec`,
   with a `picture-bank` claim.
 * `tests/test_interpreter.py` `TestThePictureBank` and `packages/codec/test/screen.test.ts`.
+
+## 56. "Logitech's servers are gone" was false, and it was load bearing
+
+This project opened four of its documents with a sentence that is not true. `README.md` said
+"Logitech's servers are gone, so a config already on a remote can be read off it, but nobody can
+generate a new one". `CLAUDE.md`, `docs/roadmap.md` and the `probe-remote` skill each carried a
+version of the same clause, and section 32 used it to explain why an infrared extractor is worth
+building. Nobody here had ever checked it. It was inherited from the general knowledge that Harmony
+was discontinued, repeated until it read like a measured fact, and then reasoned from.
+
+It is wrong because there are **two** services and only one of them is gone.
+
+### The measurement
+
+Taken on 7 August 2026 from the bench machine. Every number below is one command anybody can rerun,
+which matters more than usual here, because unlike every other finding in this document this one is
+about the outside world and will decay.
+
+| Host | Resolves to | HTTP |
+|---|---|---|
+| `svcs.myharmony.com` | `prod-auto-lb-2-1658367766.us-east-1.elb.amazonaws.com`, two addresses | 403 on `/` |
+| `sl.dhg.myharmony.com` | `d7h69h8uqh3sy.cloudfront.net` | 200, serves assets |
+| `www.myharmony.com` | four addresses, `nginx` | 200, redirects to a locale |
+| `members.harmonyremote.com` | `d2mqwx6wju8p2w.cloudfront.net`, `AmazonS3` | 200 |
+
+Three things separate a service that answers from a bucket that has outlived its owner.
+
+* **`svcs.myharmony.com` is an application, not a file store.** It resolves to a load balancer whose
+  name says `prod-auto-lb-2`, and a 403 on the root path is a running application declining an
+  unauthenticated request. A withdrawn service gives NXDOMAIN or a parking page.
+* **Its certificate was renewed five weeks ago.** `CN=*.myharmony.com`, issued by Amazon,
+  `notBefore Jul 5 00:00:00 2026`, `notAfter Jan 18 2027`. This is the independent closure and it is
+  the strongest single fact in the section: a certificate is a thing somebody has to keep renewing,
+  so a fresh one is evidence of an operator rather than of an unpaid-for leftover. Nothing about the
+  DNS or the 403 could distinguish "maintained" from "forgotten and still billed"; the certificate
+  can.
+* **An account still authenticates.** The owner signed in to the service from the bench machine with
+  his own account, and it authenticated him and recognised the remote attached over USB. Sign-in is
+  server side by construction, so this is not something a cached page can fake.
+
+And `members.harmonyremote.com`, the one that **is** gone, says so in its own words: a static S3
+page last modified 31 July 2025, titled "Logitech Harmony Remote Software Discontinuation". That is
+the **classic** service, the 7.x software the Harmony One originally shipped with, and it is almost
+certainly the source of the belief. Both halves of the sentence were true of something. They were
+true of different things.
+
+### What this does not establish, which is most of it
+
+The corrected premise is narrow and the temptation to widen it should be resisted.
+
+* **It is not established that the service still compiles a config.** Authenticating an account and
+  identifying an attached remote are the cheap half. Producing a new config for one of these
+  architectures is the expensive half, it is what this project exists to replace, and no observation
+  here touches it. Treat "the service is up" and "a config can still be generated" as two claims
+  with one measured.
+* **It is not a recovery path.** A service that answers today can be withdrawn tomorrow with no
+  notice and no appeal, and the classic service on the other row of that table is what that looks
+  like afterwards.
+* **It changes nothing about the remotes.** A Harmony One is out of production either way. The
+  scarce thing was never the config server.
+
+### Why no rail moves
+
+Every safety rule in `CLAUDE.md` survives this correction untouched, and it is worth being explicit
+about why, because a correction that leaves the conclusion standing invites the suspicion that the
+conclusion was never resting on the premise.
+
+It partly was. The rail's stated justification was "these devices are irreplaceable **and**
+Logitech's recovery servers are gone", and half of that conjunction has now failed. What remains is
+the half that was always doing the work: the devices are irreplaceable. The three bullets above are
+the argument that the failed half was never load bearing for the rail even though it was load
+bearing for the prose. So the wording changes in five places and the behaviour changes nowhere.
+
+The one thing that does change is the project's own standard. `docs/findings.md` opens by claiming
+its assertions are checkable, and this one sat in the front page of the repository for months
+without anyone spending the thirty seconds a `dig` costs. **An inherited premise is not a finding**,
+however many documents repeat it. This section exists as much to record that as to record the DNS.
+
+### Where it lands
+
+* `README.md`, `CLAUDE.md`, `docs/roadmap.md` and `.claude/skills/probe-remote/SKILL.md`, each
+  corrected in place with the old wording quoted rather than deleted.
+* Section 32 of this document, whose "once the servers are gone" is narrowed to what it can support.
+* **No regression test, deliberately.** The three-part rule wants one and it is the wrong tool here:
+  a test that resolves a hostname would reach an external service on every `make test`, fail
+  offline, and assert a fact about somebody else's infrastructure that we would rather have change
+  than pin. The commands in the table are the executable part, and the date on the section is the
+  admission that the answer expires. This is the only finding in this document with no test, and
+  saying so is the point.
 
 ## References
 

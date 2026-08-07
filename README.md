@@ -3,9 +3,15 @@
 Reverse engineering notes and tools for Logitech Harmony remotes, focused on the config
 file format and the firmware that interprets it.
 
-Logitech's servers are gone, so a config already on a remote can be read off it, but nobody
-can generate a new one. The goal here is to change that. Related effort:
+A config already on a remote can be read off it, but nobody outside Logitech can generate a new one.
+The goal here is to change that. Related effort:
 [trelowney/harmony-decompiler](https://github.com/trelowney/harmony-decompiler).
+
+This page used to open "Logitech's servers are gone". Measured on 7 August 2026, the MyHarmony
+service is not: it answers, and it still reads a connected remote. The **classic** service, the one
+the Harmony One shipped with, is the one serving a discontinuation notice. Whether MyHarmony still
+compiles a config is a separate question and is not established.
+[findings.md](docs/findings.md) section 56.
 
 **Where this is going: a local, cross-platform application** that reads a config off a remote,
 edits its devices and activities, learns new infrared codes and writes the result back. Self
@@ -305,7 +311,10 @@ are not here and are not ours to license. Obtaining them is your affair, and
 
 ## Safety
 
-**Do not write to, erase, or flash a remote.** These devices are irreplaceable and Logitech's
-recovery servers are gone. Note that patching a concordance architecture constant to fix the
-firmware dump also redirects `erase_firmware()` and `write_firmware_to_remote(direct=1)`, so a
-patched build must be treated as read-only.
+**Do not write to, erase, or flash a remote.** These devices are irreplaceable. Note that patching a
+concordance architecture constant to fix the firmware dump also redirects `erase_firmware()` and
+`write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
+
+This used to add "and Logitech's recovery servers are gone", which is wrong, and the rail stands
+anyway: a service that answers today can be withdrawn tomorrow, and it has not been shown to
+compile a config any more. See section 56 of [findings.md](docs/findings.md).

@@ -137,10 +137,24 @@ on is far harder to label later than one described on arrival.
 
 ## Never write to a remote
 
-Read paths only, for now. These devices are irreplaceable and Logitech's recovery servers are
-gone. Note that patching a concordance architecture constant to fix the firmware dump also
-redirects `erase_firmware()` and `write_firmware_to_remote(direct=1)`, so a patched build must be
-treated as read-only.
+Read paths only, for now. These devices are irreplaceable. Note that patching a concordance
+architecture constant to fix the firmware dump also redirects `erase_firmware()` and
+`write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
+
+**This section used to say "and Logitech's recovery servers are gone". That is wrong and the
+correction is instructive.** Measured on 7 August 2026 from the bench machine:
+`sl.dhg.myharmony.com` serves live assets over CloudFront, `svcs.myharmony.com` resolves to an AWS
+load balancer named `prod-auto-lb-2` and answers, its certificate was renewed on 5 July 2026, and
+the owner can sign in with his account and have a connected remote recognised. What **is**
+discontinued is the **classic** service:
+`members.harmonyremote.com` serves a page titled "Logitech Harmony Remote Software Discontinuation",
+and that is the 7.x software the Harmony One originally shipped with. Two services, one gone and one
+not, and the project had collapsed them into one sentence.
+
+The rail does not change and the reason it does not is worth stating: a remote is still
+irreplaceable, the service can be withdrawn at any time without notice, and **whether it still
+compiles a new config is not established**. Signing in and reading a device is not the same thing.
+`docs/findings.md` section 56.
 
 Writing is a later milestone, and when it arrives the rails live in the code rather than in a
 document:

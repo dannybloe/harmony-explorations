@@ -736,8 +736,9 @@ Not optional, and they belong in the code rather than in a document:
   unprogrammed One is the only write target until a write has been demonstrated repeatable there.
 * **There is no spare for architecture 14, and that blocks writing to it entirely.** The spare
   is a Harmony One, so it is arch 12. Writing to the 600 means writing to the only 600 on the
-  bench, with Logitech's recovery servers gone, which the rail above already forbids and which
-  no amount of read-back verification makes acceptable. So arch 14 writing waits for a second
+  bench, which the rail above already forbids and which no amount of read-back verification makes
+  acceptable. This used to say "with Logitech's recovery servers gone"; see section 56, they are
+  not, but a withdrawable service is not a recovery plan either. So arch 14 writing waits for a second
   arch 14 remote, a 600 or a 700, bought used. Not urgent, since version 1 of the application
   is read only, but worth arranging before the moment it is wanted rather than at it: these
   are discontinued devices and the supply only shrinks.

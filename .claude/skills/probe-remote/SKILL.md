@@ -5,9 +5,15 @@ description: Measure a connected Harmony remote read only, to check an image-der
 
 # Measuring a connected remote
 
-The project is read only, and these remotes are irreplaceable with Logitech's recovery servers
-gone. So a hardware measurement is worth having and is also the easiest place to do permanent
-damage. This skill is the ritual that separates the two.
+The project is read only, and these remotes are irreplaceable. So a hardware measurement is worth
+having and is also the easiest place to do permanent damage. This skill is the ritual that separates
+the two.
+
+This used to add "with Logitech's recovery servers gone", which is wrong: the MyHarmony service was
+measured alive on 7 August 2026 and the owner can sign in and read a remote through it. The classic
+`members.harmonyremote.com` service is the one that is discontinued. Nothing about the rails
+changes, because a remote is still irreplaceable, the service can go at any time, and it has not
+been shown to compile a config any more. See `docs/findings.md` section 56.
 
 ## The rails
 
