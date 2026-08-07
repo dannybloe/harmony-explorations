@@ -9,4 +9,7 @@
 export * as bytes from './bytes.ts';
 export * from './gspm.ts';
 export * from './ezhex.ts';
+export * from './valuemap.ts';
+export * from './screen.ts';
+export * from './font.ts';
 export * from './coverage.ts';

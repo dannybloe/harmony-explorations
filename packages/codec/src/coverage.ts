@@ -17,6 +17,9 @@
  * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
  */
 import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './gspm.ts';
+import { fontSets, glyphs } from './font.ts';
+import { reachablePrograms } from './screen.ts';
+import { countedPointers, valueMaps } from './valuemap.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
 export interface Claim {
@@ -123,6 +126,46 @@ export function claims(c: Container): Claim[] {
     for (let k = 0; k < table.length && k < lists.length; k += 1) {
       at(table[k] as number, 1 + 3 * (lists[k] as unknown[]).length, 'slot-10-list');
     }
+  }
+
+  // Every screen program reachable from base slot 11 and from base slot 14's lookups, claimed
+  // instruction by instruction. Not program by program: the generator shares tails, so two
+  // programs can run into the same continuation and claiming whole programs would report an
+  // overlap where the file has none.
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      add(instruction.start, instruction.length, 'slot-11-program');
+    }
+  }
+
+  // Base slot 14's own records, which are what supplied half of those roots.
+  const maps = valueMaps(c);
+  if (maps !== undefined) {
+    const slot14 = slot(14);
+    if (slot14 !== undefined) {
+      const header = countedPointers(c, slot14, 1);
+      if (header !== undefined) add(header.start, header.length, 'slot-14-table');
+    }
+    // Records overlap by design where the generator shared a tail, so each is claimed only up to
+    // the next one that starts inside it. An overlap here would be the file's, not a defect, and
+    // the report must not turn a known sharing into a false alarm.
+    const starts = [...maps].map((m) => c.blobOffsetOf(m.address)).filter((o) => o !== undefined);
+    for (const record of maps) {
+      const start = c.blobOffsetOf(record.address);
+      if (start === undefined) continue;
+      const inside = starts.filter((o) => o > start && o < start + record.length);
+      const bound = inside.length === 0 ? record.length : Math.min(...inside) - start;
+      add(start, bound, 'slot-14-record');
+    }
+  }
+
+  // The glyph sets and their bitmaps. A set's header sits immediately after the glyphs it points
+  // at, and both are claimed with the length their own decoder settled on.
+  for (const font of fontSets(c) ?? []) {
+    at(font.address, font.length, 'slot-7-set');
+  }
+  for (const set of glyphs(c) ?? []) {
+    for (const picture of set) at(picture.address, picture.length, 'slot-7-glyph');
   }
 
   return out;

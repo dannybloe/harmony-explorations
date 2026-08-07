@@ -249,15 +249,17 @@ squarely an API milestone.
 **Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
 is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
 fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answers it and
-`make coverage` prints it. The starting point, 7 August 2026:
+`make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
+it the same day:
 
-| sample | accounted | total | |
-|---|---|---|---|
-| Harmony 700 | 111472 | 979184 | 11.4% |
-| Harmony 600 | 70286 | 738149 | 9.5% |
-| Harmony 525, arch 9 | 5641 | 78486 | 7.2% |
-| Harmony One | 53040 | 1672832 | 3.2% |
-| 880, arch 8 | 16051 | 444256 | 3.6% |
+| sample | at the start | after the screen language and the fonts |
+|---|---|---|
+| Harmony 700 | 11.4% | **26.0%** |
+| Harmony 600 | 9.5% | **24.5%** |
+| Harmony One | 3.2% | **7.2%** |
+| 880, arch 8 | 3.6% | **12.4%** |
+| Harmony 525, arch 9 | 7.2% | 8.8% |
+| the three safe mode containers | 4.2% | **64.5%** |
 
 Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
 a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
@@ -278,10 +280,21 @@ So M2 is three things in order, and only the third is the emitter:
    test. The copied residue shrinks as coverage rises, so progress is measurable at every step
    rather than only at the end.
 
-The ported readers so far are the header, the section table, the marker, the trailer, the key
-table, slots 0, 1, 2 and 3, the six counted pointer arrays and the action lists. What remains is
-the port of the other twelve section readers from `src/harmony/gspm.py`, largest first: the screen
-programs and the glyph bitmaps are most of the missing mass.
+Ported: the header, the section table, the marker, the trailer, the key table, slots 0, 1, 2 and
+3, the six counted pointer arrays, the action lists, and then the two that carried the mass, the
+**screen language** and the **font table** with base slot 14 alongside them because its lookups
+supply half the screen programs' entry points.
+
+**Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
+Section 40 states 18252 programs across the corpus and section 46 states 3933 glyphs and 16054
+resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
+existed. The TypeScript readers reach the same three numbers. A vector file compares an
+implementation against a recording of itself; this compares two implementations against a number
+that was already in the document.
+
+Still to port, in rough order of mass: the mode table (base slot 6), the binding table (base slot
+9), the infrared records (base slot 5), the number sender, the state table, the timers, the
+parameter block, the touch map and the firmware event map.
 
 **M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does
