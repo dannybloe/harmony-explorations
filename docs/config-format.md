@@ -588,10 +588,38 @@ Three checks, on twelve containers across three architectures:
   own program selected, none out of range and none on an empty slot
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.
-**Arch 9 uses a different packing** and `gspm.images` refuses it rather than guessing.
+
+#### Arch 9 packs the glyph itself a second way
+
+The set header above is unchanged, and so is the terminator. What differs is inside a glyph, and
+the reason is the same one section 62 found in the picture bank: the 5xx panel is monochrome, so a
+pixel is two bits rather than two bytes.
+
+```
++0x00  u8   width in pixels
+       one row per pixel row, until a 0x00 appears in the leader position:
+         +0x00  u8   0x20 | n, n being how many bytes of commands the row occupies
+         n bytes of commands, each  kind << 4 | (count - 1):
+           0x5   count literal pixels, two bits each, big endian, ceil(2 * count / 8) bytes follow
+           0x6   a run of count background pixels, no data
+           0xA   a run of count ink pixels, no data
+```
+
+The leader's byte count and the commands' pixel count are two independent statements of the row's
+length and both have to come out exactly. **Pixel value 2 is the paper and 1 is the ink**; no other
+value occurs. Which is which is derived from the encoder rather than from the render: a run is
+maximal, so 80 of 80 adjacent run pairs alternate the kinds and 50 of 50 literal pixels beside a
+kind `6` run read 1, and 160 of 160 glyph cells open with a full width kind `6` run.
+
+*Unconfirmed for want of a second sample*: the leader's high nibble is `0x20` in all 1730 rows, so
+whether it is a tag or part of a longer length field is open, and values 0 and 3 never appear, so
+whether the panel has four levels is open too. The one arch 9 config has **no inline string codes
+at all**, so section 46's third check is unavailable here.
+
+160 glyphs on this encoding, which takes the corpus total to **4093**.
 
 Read with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`; draw them with
-`tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) section 46.
+`tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) sections 46 and 63.
 
 ### Base slot 17: the touch screen hit map
 

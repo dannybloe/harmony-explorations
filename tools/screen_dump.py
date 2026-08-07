@@ -32,19 +32,32 @@ NAMES = {
 }
 
 
+def paper_value(container):
+    """The pixel value that renders as blank, or None where a zero is the blank one.
+
+    Arch 9 packs two bits to a pixel and its background is 2, not 0, so a renderer that treats
+    every nonzero value as ink fills the whole cell. Section 63.
+    """
+    if container.architecture in gspm.IMAGE_PACKED_ARCHITECTURES:
+        return gspm.IMAGE_PACKED_PAPER
+    return None
+
+
 def draw_string(container, font, codes):
     """One inline string, drawn through the font its program selected."""
     glyphs = [container.glyph(font, code) for code in codes]
     if any(g is None for g in glyphs):
         return None
-    return draw(glyphs)
+    return draw(glyphs, paper_value(container))
 
 
-def draw(images):
+def draw(images, paper=None):
     """A set of images side by side, one text line per pixel row.
 
     `.` is a skipped pixel, `#` a nonzero one and a space a zero one. Keeping those three apart
     matters: the format distinguishes skipped from black and a two symbol rendering hides it.
+    `paper` overrides which value counts as blank, for the architectures whose background is not
+    a zero.
     """
     height = max(image.height for image in images)
     lines = []
@@ -52,7 +65,8 @@ def draw(images):
         line = []
         for image in images:
             row = image.rows[y] if y < image.height else [None] * image.width
-            line.append(''.join('.' if p is None else ('#' if p else ' ') for p in row))
+            line.append(''.join('.' if p is None else
+                                (' ' if p == (paper or 0) else '#') for p in row))
         lines.append(' '.join(line))
     return lines
 
@@ -160,7 +174,7 @@ def main():
             print('\nset %d, %d images' % (index, len(images)))
             if not images:
                 continue
-            for line in draw(images):
+            for line in draw(images, paper_value(container)):
                 print('    ' + line)
         return
 

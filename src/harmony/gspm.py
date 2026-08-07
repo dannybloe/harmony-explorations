@@ -425,12 +425,41 @@ IMAGE_PIXEL_BYTES = 2
 # it is the other way round with a 0 in the spare byte. The firmware reads the pair as one `u16`
 # and does not bound the glyph code with it, so nothing in the code settles which field is which.
 IMAGE_COUNT_OFFSET = {8: 2, 9: 2, 12: 1, 14: 2}
-# Arch 9's glyphs use the same terminator and a different packing, and no arch 9 firmware exists
-# here to read it out of, so `images` refuses that architecture rather than guessing.
-IMAGE_ARCHITECTURES = frozenset({8, 12, 14})
+IMAGE_ARCHITECTURES = frozenset({8, 9, 12, 14})
 # A glyph code is one based: zero terminates an inline string, so the firmware indexes the set by
 # the code minus one. `docs/findings.md` sections 40 and 46.
 GLYPH_CODE_BIAS = 1
+
+# Arch 9 shares the set header and the terminator and packs the glyph itself a second way, section
+# 63. The 5xx remotes have a monochrome panel, so a pixel is two bits rather than two bytes, and
+# that is the same lesson section 62 learned one slot over about the picture bank.
+#
+#     +0x00  u8   width in pixels
+#     then one row per pixel row, ending at a 0x00 in the leader position:
+#       +0x00  u8   0x20 | n, where n is how many bytes of commands the row occupies
+#       then n bytes of commands, each 0x00 | kind << 4 | (count - 1):
+#         0x5  count literal pixels, packed two bits each, big endian, in ceil(2 * count / 8) bytes
+#         0x6  a run of count background pixels, no data
+#         0xA  a run of count ink pixels, no data
+#
+# The row's declared length is redundant with its commands and that redundancy is a check: it has
+# to be consumed exactly. `0x20` is constant in all 1730 rows of the only arch 9 sample, so whether
+# it is a tag or the high bits of a longer length field is not settled.
+IMAGE_PACKED_ARCHITECTURES = frozenset({9})
+IMAGE_PACKED_ROW_TAG = 0x20
+IMAGE_PACKED_ROW_TAG_MASK = 0xF0
+IMAGE_PACKED_LITERAL = 0x5
+IMAGE_PACKED_BACKGROUND = 0x6
+IMAGE_PACKED_FOREGROUND = 0xA
+IMAGE_PACKED_PIXEL_BITS = 2
+# Only two of the four values a two bit pixel can hold occur, in 5489 literal pixels, and which of
+# them is the ink is derived rather than assumed. A run is maximal, since the encoder would
+# otherwise have extended it: 80 of 80 adjacent run pairs alternate the two kinds and 50 of 50
+# literal pixels beside a background run read 1, never 2. So the background run's value is not 1,
+# and the ink run's is not the background's. Which of the two kinds is the background is fixed
+# independently, by 160 of 160 glyph cells opening with a full width run of kind 6.
+IMAGE_PACKED_PAPER = 2
+IMAGE_PACKED_INK = 1
 
 # Base slot 17 is the touch screen hit map, and it is the one section only arch 12 populates,
 # because the Harmony One is the only remote here with a touch panel. Two levels: a page, then the
@@ -693,6 +722,10 @@ class Image:
     `rows` holds one list per row, `width` long, with None where the encoding skipped a pixel and
     a sixteen bit value where it supplied one. None is kept distinct from a black pixel because
     the format distinguishes them and a renderer will need to.
+
+    Arch 9 is the exception on both counts, section 63: it never skips, so no entry is None, and a
+    value is a two bit grey level rather than a sixteen bit one. `IMAGE_PACKED_PAPER` and
+    `IMAGE_PACKED_INK` name the two that occur.
     """
     address: int
     width: int
@@ -2044,6 +2077,8 @@ class Container:
         width = self.blob[off]
         if width == 0:
             return None
+        if self.architecture in IMAGE_PACKED_ARCHITECTURES:
+            return self._packed_image(address, off, end, width)
         at = off + 1
         rows: List[List[Optional[int]]] = []
         row: List[Optional[int]] = []
@@ -2065,6 +2100,55 @@ class Container:
                 row = []
             elif len(row) > width:
                 return None
+        return None
+
+    def _packed_image(self, address: int, off: int, end: int,
+                      width: int) -> Optional['Image']:
+        """The arch 9 glyph encoding: rows framed by their own byte length, pixels two bits wide.
+
+        Unlike the other three architectures this never yields None for a pixel. A background run
+        states the background rather than skipping it, so every pixel has a value, and the values
+        are two bit grey levels rather than the sixteen bit ones the other architectures store.
+        `docs/findings.md` section 63.
+        """
+        at = off + 1
+        rows: List[List[Optional[int]]] = []
+        while at < end:
+            leader = self.blob[at]
+            at += 1
+            if leader == IMAGE_END:
+                return Image(address=address, width=width, rows=rows) if rows else None
+            if leader & IMAGE_PACKED_ROW_TAG_MASK != IMAGE_PACKED_ROW_TAG:
+                return None
+            stop = at + (leader & 0x0F)
+            if stop > end:
+                return None
+            row: List[Optional[int]] = []
+            while at < stop:
+                op = self.blob[at]
+                at += 1
+                kind, count = op >> 4, (op & 0x0F) + 1
+                if kind == IMAGE_PACKED_BACKGROUND:
+                    row.extend([IMAGE_PACKED_PAPER] * count)
+                elif kind == IMAGE_PACKED_FOREGROUND:
+                    row.extend([IMAGE_PACKED_INK] * count)
+                elif kind == IMAGE_PACKED_LITERAL:
+                    need = -(-IMAGE_PACKED_PIXEL_BITS * count // 8)
+                    if at + need > stop:
+                        return None
+                    bits = int.from_bytes(self.blob[at:at + need], 'big')
+                    at += need
+                    top = 8 * need
+                    row.extend((bits >> (top - IMAGE_PACKED_PIXEL_BITS * (k + 1))) & 0x03
+                               for k in range(count))
+                else:
+                    return None
+            # The row's declared length and its pixel count are two independent statements of the
+            # same thing, so disagreeing means the encoding was misread rather than the data being
+            # odd. Refuse instead of returning a glyph that is quietly the wrong shape.
+            if at != stop or len(row) != width:
+                return None
+            rows.append(row)
         return None
 
     def images(self) -> Optional[List[List['Image']]]:

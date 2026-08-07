@@ -22,16 +22,49 @@ export const IMAGE_SKIP = 0x80;
 export const IMAGE_PIXEL_BYTES = 2;
 /** Which byte of the three byte set header is the glyph count. Per architecture. */
 export const IMAGE_COUNT_OFFSET: Readonly<Record<number, number>> = { 8: 2, 9: 2, 12: 1, 14: 2 };
-/**
- * Arch 9 packs its glyphs differently and no arch 9 firmware exists here to read it out of, so
- * the decoder refuses that architecture rather than guessing.
- */
-export const IMAGE_ARCHITECTURES: ReadonlySet<number> = new Set([8, 12, 14]);
+export const IMAGE_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
 /**
  * A glyph code is one based: zero terminates an inline string, so the firmware indexes the set by
  * the code minus one. Sections 40 and 46.
  */
 export const GLYPH_CODE_BIAS = 1;
+
+/**
+ * Arch 9 shares the set header and the terminator and packs the glyph itself a second way, section
+ * 63. The 5xx remotes have a monochrome panel, so a pixel is two bits rather than two bytes, and
+ * that is the same lesson section 62 learned one slot over about the picture bank.
+ *
+ * ```
+ * +0x00  u8   width in pixels
+ *        one row per pixel row, ending at a 0x00 in the leader position:
+ *          +0x00  u8   0x20 | n, n being how many bytes of commands the row occupies
+ *          n bytes of commands, each kind << 4 | (count - 1):
+ *            0x5  count literal pixels, two bits each, big endian, ceil(2 * count / 8) bytes
+ *            0x6  a run of count background pixels, no data
+ *            0xA  a run of count ink pixels, no data
+ * ```
+ *
+ * The row's declared length is redundant with its commands and that redundancy is a check: it has
+ * to be consumed exactly. `0x20` is constant in all 1730 rows of the only arch 9 sample, so whether
+ * it is a tag or the high bits of a longer length field is not settled.
+ */
+export const IMAGE_PACKED_ARCHITECTURES: ReadonlySet<number> = new Set([9]);
+export const IMAGE_PACKED_ROW_TAG = 0x20;
+export const IMAGE_PACKED_ROW_TAG_MASK = 0xf0;
+export const IMAGE_PACKED_LITERAL = 0x5;
+export const IMAGE_PACKED_BACKGROUND = 0x6;
+export const IMAGE_PACKED_FOREGROUND = 0xa;
+export const IMAGE_PACKED_PIXEL_BITS = 2;
+/**
+ * Only two of the four values a two bit pixel can hold occur, in 5489 literal pixels, and which of
+ * them is the ink is derived rather than assumed. A run is maximal, since the encoder would
+ * otherwise have extended it: 80 of 80 adjacent run pairs alternate the two kinds and 50 of 50
+ * literal pixels beside a background run read 1, never 2. So the background run's value is not 1,
+ * and the ink run's is not the background's. Which of the two kinds is the background is fixed
+ * independently, by 160 of 160 glyph cells opening with a full width run of kind 6.
+ */
+export const IMAGE_PACKED_PAPER = 2;
+export const IMAGE_PACKED_INK = 1;
 
 export interface FontSet {
   address: number;
@@ -47,7 +80,11 @@ export interface FontSet {
 export interface Glyph {
   address: number;
   width: number;
-  /** One entry per pixel, `undefined` for a background pixel the encoding skipped. */
+  /**
+   * One entry per pixel, `undefined` for a background pixel the encoding skipped. Arch 9 never
+   * skips, so no entry is `undefined` there, and its values are two bit grey levels rather than
+   * the sixteen bit ones the other three architectures store. Section 63.
+   */
   rows: (number | undefined)[][];
   /** Bytes the encoded glyph occupies, the leading width byte included. */
   length: number;
@@ -126,6 +163,7 @@ export function glyphAt(c: Container, address: number, limit?: number): Glyph | 
   const end = limit === undefined ? c.blob.length : Math.min(limit, c.blob.length);
   const width = u8(c.blob, off);
   if (width === 0) return undefined;
+  if (IMAGE_PACKED_ARCHITECTURES.has(c.architecture)) return packedGlyph(c, address, off, end, width);
 
   let at = off + 1;
   const rows: (number | undefined)[][] = [];
@@ -152,6 +190,64 @@ export function glyphAt(c: Container, address: number, limit?: number): Glyph | 
     } else if (row.length > width) {
       return undefined;
     }
+  }
+  return undefined;
+}
+
+/**
+ * The arch 9 glyph encoding: rows framed by their own byte length, pixels two bits wide.
+ *
+ * Unlike the other three architectures this never yields `undefined` for a pixel. A background run
+ * states the background rather than skipping it, so every pixel has a value.
+ */
+function packedGlyph(
+  c: Container,
+  address: number,
+  off: number,
+  end: number,
+  width: number,
+): Glyph | undefined {
+  let at = off + 1;
+  const rows: (number | undefined)[][] = [];
+  while (at < end) {
+    const leader = u8(c.blob, at);
+    at += 1;
+    if (leader === IMAGE_END) {
+      return rows.length === 0 ? undefined : { address, width, rows, length: at - off };
+    }
+    if ((leader & IMAGE_PACKED_ROW_TAG_MASK) !== IMAGE_PACKED_ROW_TAG) return undefined;
+    const stop = at + (leader & 0x0f);
+    if (stop > end) return undefined;
+    const row: (number | undefined)[] = [];
+    while (at < stop) {
+      const op = u8(c.blob, at);
+      at += 1;
+      const kind = op >> 4;
+      const count = (op & 0x0f) + 1;
+      if (kind === IMAGE_PACKED_BACKGROUND) {
+        for (let k = 0; k < count; k += 1) row.push(IMAGE_PACKED_PAPER);
+      } else if (kind === IMAGE_PACKED_FOREGROUND) {
+        for (let k = 0; k < count; k += 1) row.push(IMAGE_PACKED_INK);
+      } else if (kind === IMAGE_PACKED_LITERAL) {
+        const need = Math.ceil((IMAGE_PACKED_PIXEL_BITS * count) / 8);
+        if (at + need > stop) return undefined;
+        // Bit by bit rather than through an accumulator: a full width nibble is 16 pixels, which
+        // is 32 bits, and JavaScript's shift operators work on a signed 32 bit value.
+        for (let k = 0; k < count; k += 1) {
+          const bit = IMAGE_PACKED_PIXEL_BITS * k;
+          const byte = u8(c.blob, at + (bit >> 3));
+          row.push((byte >> (8 - IMAGE_PACKED_PIXEL_BITS - (bit & 7))) & 0x03);
+        }
+        at += need;
+      } else {
+        return undefined;
+      }
+    }
+    // The row's declared length and its pixel count are two independent statements of the same
+    // thing, so disagreeing means the encoding was misread rather than the data being odd. Refuse
+    // instead of returning a glyph that is quietly the wrong shape.
+    if (at !== stop || row.length !== width) return undefined;
+    rows.push(row);
   }
   return undefined;
 }

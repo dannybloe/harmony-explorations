@@ -6618,6 +6618,121 @@ arch 9 firmware here to appeal to. `docs/memory-map-525.md` is the plan for chan
 * `tests/test_interpreter.py`: the four monochrome pictures, and the stated start against all eight
   samples that have one plus arch 12 as the negative case.
 
+## 63. Arch 9 packs a glyph two bits to a pixel, and its font reads as letters
+
+Section 62's lesson, one slot over. The picture bank turned out to be present on arch 9 and encoded
+at a smaller pixel depth because the 525 has a monochrome panel; base slot 7 is the same story, and
+the reader had been refusing that architecture since section 46 with "the glyphs are packed
+differently" and nothing more.
+
+The set header is not the difference. `font_sets` already read arch 9: five sets, heights 11, 11,
+11, 11 and 8, 66 glyph slots each, 160 of the 330 non NULL. What refused was the glyph itself, which
+on arch 8, 12 and 14 is a flat stream of skip and literal operations with a two byte pixel.
+
+### The encoding
+
+```
++0x00  u8   width in pixels
+       one row per pixel row, until a 0x00 appears in the leader position:
+         +0x00  u8   0x20 | n, n being how many bytes of commands the row occupies
+         n bytes of commands, each  kind << 4 | (count - 1):
+           0x5   count literal pixels, two bits each, big endian, ceil(2 * count / 8) bytes follow
+           0x6   a run of count background pixels, no data
+           0xA   a run of count ink pixels, no data
+```
+
+The Harmony One's `H`, seven wide and eleven tall, is the whole format in one line:
+
+```
+07  21 66  21 66  23 56 9a 98  23 56 9a 98  23 56 9a 98  23 60 a4 60  23 56 9a 98 ... 21 66  00
+```
+
+Two blank rows, `0x66` being a run of seven; then stem rows, `0x56` seven literal pixels in
+`9a 98`, whose bit pairs are `10 01 10 10 10 01 10`; then the crossbar, `60 a4 60`, one background
+pixel, five ink and one more background; then the stems again and two blank rows.
+
+The rows have **two independent statements of their own length**, the leader's byte count and the
+commands' pixel count, and both have to come out exactly. That redundancy is what makes a misread
+fail loudly instead of producing a plausible bitmap.
+
+### Four closures, all inside one sample
+
+The corpus has one arch 9 config and there is no arch 9 firmware, so the usual "two independent
+samples" is unavailable. What replaces it is four checks over 160 glyphs, three of them structural:
+
+| check | result |
+|---|---|
+| every row comes to exactly the glyph's `width` | 160 of 160 |
+| every glyph comes to exactly its set's `height` | 160 of 160 |
+| the decode ends exactly where the next glyph starts, nothing left over | 160 of 160 |
+| the glyphs render as Latin letters, digits and punctuation | by eye, `--images` |
+
+The third is the same closure section 55 used on the picture bank, and it is tested the way that
+one is: truncating the glyph by a single byte has to **fail**, because the terminator is the last
+byte. A glyph carrying even one byte of slack would still find its terminator in the short read.
+
+### Which value is the ink, derived rather than chosen
+
+Only two of the four values a two bit pixel can hold ever occur, 1 and 2, in 5489 literal pixels.
+Which is the ink, and what the two run kinds fill with, could have been settled by looking at the
+render and keeping whichever looked like letters. It was not, because that is the weakest kind of
+argument available and section 46's own correction came from trusting a plausible reading.
+
+The encoder supplies a better one. **A run is maximal**: it would have been extended rather than
+restarted, so whatever sits beside a run holds a different value. Two consequences, measured:
+
+* **80 of 80** adjacent run pairs alternate the two kinds. Never `6` beside `6`, never `A` beside
+  `A`. So the two kinds hold different values, and since only two values exist they hold one each.
+* **50 of 50** literal pixels immediately beside a kind `6` run read **1**, never 2. So kind `6`
+  does not hold 1. It holds 2, and kind `A` holds 1.
+
+That fixes the pair to each other without deciding which is the paper. **160 of 160 glyph cells
+open with a full width run of kind `6`**, and kind `A` never appears in the top or bottom row of any
+cell. A font whose cells opened with a row of ink would underline every line of text on the screen.
+So kind `6` is the background, value 2 is the paper and value 1 is the ink.
+
+A weaker version of the same question was tried first and is recorded because it is a useful
+calibration: minimising the vertical pixel difference over the two assignments, which is how
+section 51 recovered the picture width, scores 23.6% against 27.5%. A margin of 1.16 times, where
+section 51 had 1.5, and not enough to conclude anything from. The maximality argument has no
+counterexample at all.
+
+### What did not close, and it matters
+
+Section 46's third closure was that **16054 inline string codes all resolve** to a non NULL glyph
+of the font their own program selected. It is not available here: the 525's config has **zero**
+inline string codes. Only 22 screen programs are reachable at all, against 4527 on a Harmony 600,
+because arch 9's mode records mostly do not decode and section 53's mode program root therefore
+reaches almost nothing.
+
+So the glyphs are read and **nothing in this config is known to draw them**, which is the same
+shape as section 62's pictures. Both point at the one thing arch 9 is missing rather than at a
+defect in either reading.
+
+Two smaller things are unexplained rather than glossed. The row leader's high nibble is `0x20` in
+all 1730 rows, so whether it is a tag or the high bits of a longer length field is not settled by
+one sample. And values 0 and 3 never occur, so whether the panel has four grey levels of which this
+font uses two, or the two bits are a value beside its complement, is likewise open.
+
+### Coverage
+
+| Sample | before | after |
+|---|---|---|
+| 525, arch 9 | 18.5% | **25.7%** |
+
+Still last by a wide margin. The rest of the gap is the mode record tail, 71 of 114 not decoding,
+and that needs firmware. `docs/memory-map-525.md` is the plan.
+
+### Where it lands
+
+* `gspm.IMAGE_PACKED_ARCHITECTURES` and the constants beside it, `Container._packed_image`;
+  `packedGlyph` in `packages/codec/src/font.ts`. `IMAGE_ARCHITECTURES` gains 9 in both.
+* `tools/screen_dump.py --images` draws them, through a `paper_value` that stops a renderer
+  treating every nonzero value as ink.
+* `tests/test_interpreter.py`, `TestTheArch9GlyphPacking`: six tests, one per closure above plus a
+  calibration that the packed reader is refused where it does not belong.
+* The corpus glyph total moves from 3933 to 4093 in both suites.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

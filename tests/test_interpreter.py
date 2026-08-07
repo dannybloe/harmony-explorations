@@ -1119,7 +1119,8 @@ class TestTheFontTable(unittest.TestCase):
                         for row in glyph.rows:
                             self.assertEqual(len(row), glyph.width)
                 total += sum(len(g) for g in sets)
-        self.assertEqual(total, 3933)
+        # 3933 until section 63 read arch 9's packing and added its 160 glyphs.
+        self.assertEqual(total, 4093)
 
     def test_every_inline_string_resolves_through_its_own_font(self):
         """The closure the wrong count destroyed, and the reason this section was corrected."""
@@ -1170,6 +1171,158 @@ class TestTheFontTable(unittest.TestCase):
         self.assertIsNone(c.glyph(font, font.count + 1))
         first = next(i for i, a in enumerate(font.glyphs) if a is not None)
         self.assertIsNotNone(c.glyph(font, first + gspm.GLYPH_CODE_BIAS))
+
+
+class TestTheArch9GlyphPacking(unittest.TestCase):
+    """findings.md section 63: the second base slot 7 glyph encoding, two bits to a pixel.
+
+    One sample, because one arch 9 config is all the corpus has. The closures are inside it
+    instead: 160 glyphs, three independent checks each, and the run values derived from the
+    encoder's own maximality rather than chosen to make the render look right.
+    """
+
+    SAMPLE = 'h525_config'
+    GLYPHS = 160
+
+    def _container(self):
+        from harmony import gspm
+        lab.require(self.SAMPLE)
+        return gspm.parse(lab.load(self.SAMPLE))
+
+    @staticmethod
+    def _commands(container, address, limit):
+        """Every row of a glyph as its list of `(kind, count)` commands, undecoded."""
+        from harmony import gspm
+        off = container.blob_offset_of(address)
+        at = off + 1
+        while at < limit:
+            leader = container.blob[at]
+            at += 1
+            if leader == gspm.IMAGE_END:
+                return
+            stop = at + (leader & 0x0F)
+            row = []
+            while at < stop:
+                op = container.blob[at]
+                at += 1
+                kind, count = op >> 4, (op & 0x0F) + 1
+                if kind == gspm.IMAGE_PACKED_LITERAL:
+                    at += -(-gspm.IMAGE_PACKED_PIXEL_BITS * count // 8)
+                row.append((kind, count))
+            yield row
+
+    @staticmethod
+    def _bounded(container):
+        for font in container.font_sets():
+            live = sorted(a for a in font.glyphs if a is not None)
+            for i, address in enumerate(live):
+                yield font, address, container.blob_offset_of(
+                    live[i + 1] if i + 1 < len(live) else font.address)
+
+    def test_every_glyph_decodes_to_its_declared_shape(self):
+        """Two checks per glyph, and the height is the set's rather than the glyph's."""
+        c = self._container()
+        total = 0
+        for font, address, limit in self._bounded(c):
+            glyph = c.image(address, limit)
+            with self.subTest(glyph=hex(address)):
+                self.assertIsNotNone(glyph)
+                self.assertEqual(len(glyph.rows), font.height)
+                for row in glyph.rows:
+                    self.assertEqual(len(row), glyph.width)
+            total += 1
+        self.assertEqual(total, self.GLYPHS)
+
+    def test_a_glyph_ends_exactly_where_the_next_one_starts(self):
+        """Nothing left over, the same closure the picture bank turns on.
+
+        Truncating by a single byte has to fail, because the terminator is the last byte. If a
+        glyph carried even one byte of slack the short read would still find the terminator, so
+        this is what says the extent is exact rather than merely sufficient.
+        """
+        c = self._container()
+        for _, address, limit in self._bounded(c):
+            with self.subTest(glyph=hex(address)):
+                self.assertIsNotNone(c.image(address, limit))
+                self.assertIsNone(c.image(address, limit - 1))
+
+    def test_a_cell_opens_with_a_full_width_background_run(self):
+        """Which of the two run kinds is the background, decided without looking at a render.
+
+        A glyph cell whose top row were ink would underline every line of text on the screen, and
+        160 of 160 glyphs have the same kind there while the other kind never appears in that
+        position at all.
+        """
+        from harmony import gspm
+        c = self._container()
+        tops = 0
+        for font, address, limit in self._bounded(c):
+            rows = list(self._commands(c, address, limit))
+            width = c.blob[c.blob_offset_of(address)]
+            with self.subTest(glyph=hex(address)):
+                self.assertEqual(rows[0], [(gspm.IMAGE_PACKED_BACKGROUND, width)])
+                self.assertNotIn((gspm.IMAGE_PACKED_FOREGROUND, width), (rows[0], rows[-1]))
+            tops += 1
+        self.assertEqual(tops, self.GLYPHS)
+
+    def test_a_run_is_maximal_which_is_what_fixes_its_value(self):
+        """The encoder would have extended a run rather than restarting it, so neighbours differ.
+
+        Two consequences, and between them they pin both run values without appealing to how the
+        glyphs look. Adjacent runs always alternate the two kinds, so they hold different values.
+        And the literal pixel beside a background run is never the value that dominates literal
+        rows, so the background run is not carrying that value either.
+        """
+        from harmony import gspm
+        c = self._container()
+        pairs = alternating = 0
+        beside = {}
+        for _, address, limit in self._bounded(c):
+            for row in self._commands(c, address, limit):
+                for i in range(1, len(row)):
+                    before, after = row[i - 1][0], row[i][0]
+                    if gspm.IMAGE_PACKED_LITERAL in (before, after):
+                        continue
+                    pairs += 1
+                    alternating += before != after
+            glyph = c.image(address, limit)
+            for row, kinds in zip(glyph.rows, self._commands(c, address, limit)):
+                at = 0
+                for i, (kind, count) in enumerate(kinds):
+                    for j in (i - 1, i + 1):
+                        if kind != gspm.IMAGE_PACKED_LITERAL or not 0 <= j < len(kinds):
+                            continue
+                        if kinds[j][0] != gspm.IMAGE_PACKED_BACKGROUND:
+                            continue
+                        edge = row[at] if j < i else row[at + count - 1]
+                        beside[edge] = beside.get(edge, 0) + 1
+                    at += count
+        self.assertEqual(pairs, 80)
+        self.assertEqual(alternating, pairs)
+        self.assertEqual(beside, {gspm.IMAGE_PACKED_INK: 50})
+
+    def test_only_two_of_the_four_pixel_values_occur(self):
+        """A two bit pixel on a two level panel, which is why paper and ink are named constants."""
+        from harmony import gspm
+        c = self._container()
+        seen = {v for _, a, l in self._bounded(c) for r in c.image(a, l).rows for v in r}
+        self.assertEqual(seen, {gspm.IMAGE_PACKED_PAPER, gspm.IMAGE_PACKED_INK})
+
+    def test_the_other_architectures_keep_the_two_byte_pixel(self):
+        """The calibration: the packed reader has to be refused where it does not belong."""
+        from harmony import gspm
+        for name in ('h700_config', 'one_config', 'arch8_config_a'):
+            lab.require(name)
+            c = gspm.parse(lab.load(name))
+            with self.subTest(container=name):
+                self.assertNotIn(c.architecture, gspm.IMAGE_PACKED_ARCHITECTURES)
+                address = next(a for f in c.font_sets() for a in f.glyphs if a is not None)
+                off = c.blob_offset_of(address)
+                # A packed row leader is 0x20 | length, and the two byte encoding's first
+                # operation after the width byte is a skip or a literal count. They do not
+                # collide: nothing here reads as a leader.
+                self.assertNotEqual(c.blob[off + 1] & gspm.IMAGE_PACKED_ROW_TAG_MASK,
+                                    gspm.IMAGE_PACKED_ROW_TAG)
 
 
 class TestTheTouchScreenHitMap(unittest.TestCase):

@@ -22,6 +22,9 @@ import {
   BITMAP_RAW,
   PIXEL_BYTES,
   IMAGE_ARCHITECTURES,
+  IMAGE_PACKED_ARCHITECTURES,
+  IMAGE_PACKED_INK,
+  IMAGE_PACKED_PAPER,
   SCREEN_ARCH12_ONLY,
   SCREEN_FIXED_OPERANDS,
   SCREEN_SELECT_FONT,
@@ -49,7 +52,7 @@ const DECODED: readonly [string, number, number][] = [
   ['h700_config', 6568, 553],
   ['h700_config_2', 6568, 553],
   ['h600_config', 4527, 463],
-  ['h525_config', 22, 0],
+  ['h525_config', 22, 160],
   ['one_config', 572, 501],
   ['one_config_unprogrammed', 389, 405],
   ['arch8_config_a', 345, 397],
@@ -66,11 +69,12 @@ const DECODED: readonly [string, number, number][] = [
 /**
  * What the Python implementation reports. 18252, 3933 and 16054 when this port landed; the first
  * and third moved with section 53, which made a mode record's own screen program a root and so
- * reached 1629 programs nothing had reached before. The glyph total does not move, because glyphs
- * come from base slot 7 and not from the programs that draw them.
+ * reached 1629 programs nothing had reached before. The glyph total moved once, by section 63's
+ * 160 arch 9 glyphs; it does not move with the programs, because glyphs come from base slot 7 and
+ * not from the programs that draw them.
  */
 const CORPUS_PROGRAMS = 20260;
-const CORPUS_GLYPHS = 3933;
+const CORPUS_GLYPHS = 4093;
 const CORPUS_STRING_CODES = 40588;
 
 for (const [name, programs, glyphCount] of DECODED) {
@@ -413,4 +417,56 @@ test('base slot 17 states where the bank begins', skipUnless('h525_config', 'h60
     assert.notEqual(stated, undefined, name);
     assert.notEqual(pictureRun(c, stated as number), undefined, name);
   }
+});
+
+/**
+ * Section 63, the second glyph encoding. Two bits to a pixel on a monochrome panel, rows framed by
+ * their own byte length, and one arch 9 sample to hold it up, so the closures are inside the
+ * sample rather than across two of them.
+ */
+test('arch 9 packs 160 glyphs two bits to a pixel', skipUnless('h525_config'), () => {
+  const c = parse(load('h525_config') as Uint8Array);
+  assert.ok(IMAGE_PACKED_ARCHITECTURES.has(c.architecture as number));
+  const sets = fontSets(c);
+  const decoded = glyphs(c);
+  assert.notEqual(sets, undefined);
+  assert.notEqual(decoded, undefined);
+  const pictures = decoded as Glyph[][];
+  let total = 0;
+  const seen = new Set<number | undefined>();
+  for (let i = 0; i < pictures.length; i += 1) {
+    const height = (sets as NonNullable<typeof sets>)[i]?.height;
+    for (const glyph of pictures[i] as Glyph[]) {
+      assert.equal(glyph.rows.length, height, `glyph at ${glyph.address}`);
+      for (const row of glyph.rows) {
+        assert.equal(row.length, glyph.width);
+        for (const pixel of row) seen.add(pixel);
+      }
+      total += 1;
+    }
+  }
+  assert.equal(total, 160);
+  // Never undefined: a background run states the background rather than skipping it. And only two
+  // of the four values a two bit pixel can hold ever occur.
+  assert.deepEqual([...seen].sort(), [IMAGE_PACKED_INK, IMAGE_PACKED_PAPER]);
+});
+
+test('an arch 9 glyph ends exactly where the next one starts', skipUnless('h525_config'), () => {
+  // Truncating by one byte has to fail, because the terminator is the last byte. A glyph carrying
+  // even one byte of slack would still find its terminator in the short read, so this is what says
+  // the extent is exact rather than merely sufficient. Same closure as the picture bank's walk.
+  const c = parse(load('h525_config') as Uint8Array);
+  const sets = fontSets(c) as NonNullable<ReturnType<typeof fontSets>>;
+  let checked = 0;
+  for (const font of sets) {
+    const live = font.glyphs.filter((a): a is number => a !== undefined).sort((a, b) => a - b);
+    for (let i = 0; i < live.length; i += 1) {
+      const limit = c.blobOffsetOf((live[i + 1] ?? font.address) as number) as number;
+      const address = live[i] as number;
+      assert.notEqual(glyphAt(c, address, limit), undefined, `glyph at ${address}`);
+      assert.equal(glyphAt(c, address, limit - 1), undefined, `glyph at ${address}, one byte short`);
+      checked += 1;
+    }
+  }
+  assert.equal(checked, 160);
 });

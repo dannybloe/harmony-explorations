@@ -677,8 +677,9 @@ exactly one everywhere. For a writer, a picture's position is implied by everyth
 inserting or resizing one moves every later address.
 
 Coverage now: **98.1%** on a Harmony 700, 98.7% on a 600, **98.0%** on a Harmony One, 98.6% on the
-spare One, 94.4% on arch 8, 18.5% on arch 9, all with zero overlaps. What is left is arch 9, still at 14.6% with only
-43 of 114 mode records decoding, and the low part of a config rather than the region.
+spare One, 94.4% on arch 8, **25.7%** on arch 9, all with zero overlaps. What is left is arch 9,
+held down by 71 of its 114 mode records not decoding, and the low part of a config rather than
+the region.
 
 **Base slot 13's records are read**, section 60, and the way they were found is the point. The
 deliberately built config pair of section 58 was asked one question, "what structure reads 12 in the
@@ -857,8 +858,20 @@ is `{ u8 height; u8; u8; u24 glyph[count] }` where one of the two middle bytes i
 many literal **two byte** pixels. Three closures on twelve containers: 3933 glyphs whose every row
 is exactly `width`, every glyph decoding to exactly its set's declared height, and **16054 inline
 string codes all resolving** to a non-NULL glyph of the font their own program selected, taken as
-one based. A one byte pixel fails almost all of them. Arch 9 packs it differently and the reader
-refuses it. `tools/screen_dump.py --strings` draws the strings, which come out as readable labels.
+one based. A one byte pixel fails almost all of them. `tools/screen_dump.py --strings` draws the
+strings, which come out as readable labels.
+
+**Arch 9 packs the glyph itself a second way**, section 63, and the set header is unchanged. Rows
+framed by their own byte length, then commands: `0x5` literal pixels at **two bits** each, `0x6` a
+run of background, `0xA` a run of ink. 160 glyphs, and every one of them comes to exactly its
+width, exactly its set's height, and ends exactly where the next begins. **Which value is the ink
+is derived from the encoder, not from the render**: a run is maximal, so 80 of 80 adjacent run
+pairs alternate and 50 of 50 literal pixels beside a background run read 1; and 160 of 160 cells
+open with a full width background run, which is what says that kind is the paper. Section 46's
+third closure is unavailable here, because the one arch 9 config has **no inline string codes at
+all**, so nothing in it is known to draw its own font. Same shape as section 62's pictures, and
+the same moral: an arch 9 gap does not always need firmware, sometimes it just needs remembering
+that the panel is monochrome.
 
 **That section was corrected in place the next day and the correction is the instructive part.**
 The first reading took the set header's first byte for a slot count when it is the glyph height,
