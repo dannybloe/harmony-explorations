@@ -917,6 +917,128 @@ class TestActionLists(unittest.TestCase):
         self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
 
 
+class TestTheInfraredRecordExtent(unittest.TestCase):
+    """findings.md section 61: where an infrared record's bytes actually are.
+
+    The header is 21 bytes and two of its pointers name data blocks that sit **below** it, so a
+    record is not one contiguous run and the durations are not after the header. A block ends at a
+    zero word.
+
+    The reason this matters beyond tidiness is that it replaced a heuristic. The duration run used
+    to be located as the longest alternating one, which found a single frame of a record that holds
+    three, and claiming that extent put runs on top of base slot 10 lists. Both closures below are
+    the ones the heuristic could not pass.
+    """
+
+    STREAM = ('h700_config', 'h700_config_2', 'h600_config', 'one_config',
+              'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
+              'arch8_config_c', 'arch8_config_d', 'one_spare_before_sync',
+              'one_spare_after_sync')
+
+    HEADER = 21
+
+    def blocks_and_headers(self, c):
+        """Every distinct block address, and every record header start."""
+        starts = sorted({c.ir_record_start(a) for g in c.ir_groups() for a in g})
+        blocks = set()
+        for group in c.ir_groups():
+            for address in group:
+                blocks.update(c.ir_record_blocks(address))
+        return starts, blocks
+
+    def test_a_block_ends_exactly_where_the_layout_says_it_does(self):
+        """
+        The closure. A block's length is read from its own terminator, and independently the
+        headers and blocks tile a region, so the distance to the next boundary is a second opinion
+        on the same number. They agree for every block on the two target architectures.
+
+        Arch 8 is included and counted separately: some of its blocks stop **short** of the next
+        boundary, which is padding rather than a wrong rule, and short is the safe direction since
+        it can only under claim.
+        """
+        from harmony import gspm
+        lab.require(*self.STREAM)
+        exact = short = over = 0
+        for name in self.STREAM:
+            c = gspm.parse(lab.load(name))
+            starts, blocks = self.blocks_and_headers(c)
+            bounds = sorted(blocks | set(starts))
+            top = max(starts) + self.HEADER
+            for index, boundary in enumerate(bounds):
+                if boundary not in blocks:
+                    continue
+                expected = (bounds[index + 1] if index + 1 < len(bounds) else top) - boundary
+                measured = c.ir_block_length(boundary)
+                with self.subTest(image=name, block=boundary):
+                    self.assertIsNotNone(measured, 'a class 1 block always closes')
+                    self.assertLessEqual(measured, expected, 'a block may not overrun the next')
+                if measured == expected:
+                    exact += 1
+                elif measured < expected:
+                    short += 1
+                else:
+                    over += 1
+        self.assertEqual(over, 0)
+        self.assertEqual(exact, 3357)
+        self.assertEqual(short, 133)
+
+    def test_arch_9_finds_a_terminator_and_it_is_the_wrong_one(self):
+        """
+        The negative case, and it is sharper than expected. The first guess was that arch 9's
+        records simply would not close, so the terminator alone would keep them out. They do close:
+        all 277 blocks find a zero word, and **none of them** lands where the layout says the block
+        ends. A zero word is common enough in arbitrary data to be found by accident.
+
+        So the terminator is not a validity check, and what actually keeps arch 9 out of the byte
+        accounting is the **class byte**: every one of its records reads 5 and only class 1 is
+        claimed. This test exists because the first version of it asserted the opposite and failed.
+        """
+        from harmony import gspm
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        starts, blocks = self.blocks_and_headers(c)
+        bounds = sorted(blocks | set(starts))
+        top = max(starts) + self.HEADER
+        closing = agreeing = 0
+        for index, boundary in enumerate(bounds):
+            if boundary not in blocks:
+                continue
+            expected = (bounds[index + 1] if index + 1 < len(bounds) else top) - boundary
+            measured = c.ir_block_length(boundary)
+            closing += measured is not None
+            agreeing += measured == expected
+        self.assertEqual(closing, 277)
+        self.assertEqual(agreeing, 0)
+        self.assertEqual({c.ir_class(a) for g in c.ir_groups() for a in g}, {5})
+
+    def test_blocks_are_shared_between_records(self):
+        """
+        Why a caller has to deduplicate. Some records carry no durations of their own and name a
+        block another record also names, which is how one stream serves several codes. A config
+        with more block pointers than distinct blocks is the observable form of that.
+        """
+        from harmony import gspm
+        lab.require('one_spare_after_sync')
+        c = gspm.parse(lab.load('one_spare_after_sync'))
+        pointers = sum(len(c.ir_record_blocks(a)) for g in c.ir_groups() for a in g)
+        _, blocks = self.blocks_and_headers(c)
+        self.assertGreater(pointers, len(blocks))
+
+    def test_the_pointers_point_backwards(self):
+        """A record's durations sit below its header, in every block in the corpus. Worth pinning
+        because it is the opposite of what every other record shape here does."""
+        from harmony import gspm
+        lab.require(*self.STREAM)
+        for name in self.STREAM:
+            c = gspm.parse(lab.load(name))
+            for group in c.ir_groups():
+                for address in group:
+                    start = c.ir_record_start(address)
+                    for block in c.ir_record_blocks(address):
+                        with self.subTest(image=name, record=start):
+                            self.assertLess(block, start)
+
+
 class TestTheInfraredDatabase(unittest.TestCase):
     """findings.md section 32: base slot 5 is the infrared database.
 

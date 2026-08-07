@@ -257,6 +257,17 @@ IR_RECORD_POINTER_BIAS = 7
 # no arch 9 firmware exists to say what that means.
 IR_CLASSES = (1, 2, 3, 4)
 IR_CLASS_STREAM = 1
+# The header is 21 bytes, not 14, and two of its pointers name **data blocks that sit below it**.
+# `docs/findings.md` section 61: a block is a run of `u16` durations closed by a zero word, either
+# pointer may be NULL, and two records can name the same block, which is how a config stores one
+# duration stream for several codes.
+IR_HEADER_LENGTH = 21
+IR_BLOCK_POINTERS = (12, 15)
+IR_BLOCK_TERMINATOR = 0
+# No block in the corpus reaches a third of this. It exists so that a record of another encoding
+# class, whose bytes are not a duration stream at all, walks off the end rather than to the end of
+# the container: the arch 9 sample is exactly that case.
+IR_BLOCK_LIMIT = 8192
 # Below this a record is not carrying a duration stream. The shortest real code in the corpus is
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
@@ -1109,6 +1120,46 @@ class Container:
         if offset is None or offset >= len(self.blob):
             return None
         return self.blob[offset]
+
+    def ir_record_blocks(self, address: int) -> List[int]:
+        """The data blocks one infrared record names, as addresses, NULLs dropped.
+
+        Two `u24` pointers inside the header, and they point **backwards**: a record's durations
+        sit below its header rather than after it. Two records naming the same block is normal and
+        is how one duration stream serves several codes, so a caller accumulating bytes must
+        deduplicate. `docs/findings.md` section 61.
+        """
+        start = self.ir_record_start(address)
+        off = None if start is None else self.blob_offset_of(start)
+        if off is None or off + IR_HEADER_LENGTH > len(self.blob):
+            return []
+        found = []
+        for at in IR_BLOCK_POINTERS:
+            value = int.from_bytes(self.blob[off + at:off + at + 3], 'little')
+            if value:
+                found.append(value)
+        return found
+
+    def ir_block_length(self, address: int) -> Optional[int]:
+        """How long a data block is, from its own terminator, or None when it does not close.
+
+        The durations run as `u16` words until one reads zero, and the zero is part of the block.
+
+        **This is not a validity check**, and the arch 9 sample is why that has to be said: all 277
+        of its blocks find a zero word and not one of them lands where the block actually ends. A
+        zero word turns up in arbitrary data. So callers gate on the class byte, which is 1 for
+        every record this reading covers and 5 on arch 9. `docs/findings.md` section 61.
+        """
+        off = self.blob_offset_of(address)
+        if off is None:
+            return None
+        limit = min(off + IR_BLOCK_LIMIT, len(self.blob) - 1)
+        at = off
+        while at < limit:
+            if int.from_bytes(self.blob[at:at + 2], 'little') == IR_BLOCK_TERMINATOR:
+                return at + 2 - off
+            at += 2
+        return None
 
     def ir_record_start(self, address: int) -> Optional[int]:
         """Where the record's own data begins, from the pointer three bytes after the class.

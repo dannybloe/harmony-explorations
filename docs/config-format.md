@@ -829,14 +829,34 @@ per group:    u8  zero            the same spare byte the section table carries
               u16 count
               u24 record_address[count]
 
-per record:   u8  kind            14 byte header, four pointers, the first always this
-              u24 pointer           record's own address minus seven; purpose unknown
-              u8  kind
-              u24 pointer
-              u24 pointer
-              u24 pointer
-              u16 duration[]      bit 15 set is a mark, bits 14..0 are microseconds
+per record:   u16                 } seven bytes, the same for every record of one device
+              u16                 }
+              u8                  }
+              u8  class           the pointer array lands HERE, seven bytes in
+              u24 start             the record's own first byte
+              u8
+              u24 block             durations, or NULL
+              u24 block             durations, or NULL
+              u24                   zero in every record seen
+
+per block:    u16 duration[]      bit 15 set is a mark, bits 14..0 are microseconds,
+                                  closed by a word reading zero
 ```
+
+**A record's blocks sit below its header, not after it**, so the header is the last thing in the
+run and a record is not one contiguous span. Reading forwards from the header reads the *next*
+record's durations. The header is 21 bytes; `620 + 208 + 21` is the whole of a typical Harmony One
+record. [findings.md](findings.md) section 61.
+
+**A block ends at a zero word, and that is not a validity check.** Over 3490 blocks in eleven
+configs the terminator agrees exactly with the region's tiling 3357 times, stops short 133 times,
+all on arch 8 and all padding, and overruns never. But arch 9's 277 blocks all find a zero word too
+and **not one is in the right place**, so what separates a block this reading covers from one it
+does not is the **class byte**, which is 1 here and 5 there.
+
+**Blocks are shared.** A record may carry a bare header whose pointers name a block another record
+also names, so one duration stream can serve several codes. A writer cannot edit a block in place
+without checking who else points at it.
 
 49 groups and 3058 record pointers checked: the lead byte is zero every time, each group is exactly
 `3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the

@@ -6420,6 +6420,100 @@ been stuck:
   pair reading 12 and 23, the partial name agreement stated as partial, and the one invariant the
   undecoded values have.
 
+## 61. An infrared record's durations sit below its header, and coverage jumps to 98%
+
+The infrared database has been named since section 32 and its records were still the largest
+unclaimed thing in a config: 79470 bytes on a Harmony One, the biggest single gap the byte
+accounting reported. They were unclaimed on purpose. `packages/codec/src/coverage.ts` said so:
+
+> A record's extent is not established, and the duration run is located as the longest alternating
+> one rather than read from a length, so claiming it is a heuristic wearing a measurement's
+> clothes. Doing so anyway put one or two runs per config on top of a base slot 10 list, which is
+> the overlap detector saying the same thing.
+
+Both halves of that were right, and both are now fixed. The reason the heuristic failed is worth
+following, because the record is laid out the opposite way round from everything else here.
+
+### The header is 21 bytes and points backwards
+
+```
++0x00  u16  } seven bytes, the same in every record of one device
++0x02  u16  }
++0x06  u8   }
++0x07  u8   the encoding class, and where the group array's pointer lands
++0x08  u24  the record's own start, the back pointer of section 42
++0x0B  u8
++0x0C  u24  data block, or NULL
++0x0F  u24  data block, or NULL
++0x12  u24  zero in every record seen
+```
+
+The two block pointers do not point after the header. They point **below** it: a record's durations
+sit in front of it, and the header is the last thing in the run. On a Harmony One record at
+`0x0429E5` the blocks are at `0x0426A9` and `0x042915`, 828 and 208 bytes earlier, and
+`620 + 208 + 21` is exactly the 849 bytes to the next record.
+
+That is why the old reader missed. It started at the header and walked forwards, so it read the
+**next** record's data, and it stopped at the first place the mark and space alternation broke.
+
+### A block is a duration run closed by a zero word
+
+The alternation breaks because a block holds the frame **three times**, separated by a run of
+consecutive spaces. On the Denon record above, one frame is 101 pulses and the block is 310 words:
+lead in, frame, `32767 / 20422 / 20422` gap, frame, gap, frame, zero. The longest alternating run
+finds one frame of the three, which is why the extent came out at 202 bytes instead of 620.
+
+Read properly, the block states its own end: `u16` durations until a word reads zero, the zero
+included.
+
+### Two closures
+
+**The terminator agrees with the layout.** The headers and the blocks tile a contiguous region, so
+the distance from a block to the next boundary is an independent second opinion on its length. Over
+3490 blocks in eleven configs, **3357 agree exactly, 133 stop short, and none overruns.** The short
+ones are all arch 8 and are padding; short can only under claim, so it is the safe direction.
+
+**Byte accounting agrees, and it is the harder test.** Claiming the headers and the deduplicated
+blocks produces **zero overlaps** in any container, against every other structure the codec knows.
+That is what the old heuristic could not do.
+
+| Sample | before | after |
+|---|---|---|
+| Harmony 700 | 92.0% | **98.1%** |
+| Harmony 600 | 87.5% | **98.7%** |
+| Harmony One | 90.1% | **98.0%** |
+| Harmony One, spare | 97.0% | **98.6%** |
+| 880, arch 8 | 82.3% | **94.4%** |
+
+### Blocks are shared, which is the point of the two pointers
+
+Five of the Denon's 125 records are a bare 21 byte header whose pointers name blocks another record
+also names. So one duration stream can serve several codes, and anything accumulating bytes has to
+deduplicate or it will double count. A writer has the mirror of this constraint: a block cannot be
+edited in place without checking who else names it.
+
+### The mistake this section made, kept because it is the useful part
+
+The first version of the reader argued that the terminator was also a validity check: a record of an
+encoding class we do not decode would find no zero word, so nothing would claim it. The test written
+to pin that **failed**, and the failure is the interesting result. All 277 blocks of the arch 9
+sample do find a zero word, and **not one of them lands where the block ends**. A zero word is
+common enough in arbitrary data to be found by accident, at a plausible looking distance.
+
+So the terminator says how long a block is once you already know it is a block, and nothing more.
+What keeps arch 9 out of the accounting is the **class byte**: every record there reads 5 and only
+class 1 is claimed. Had the test been written to agree with the docstring rather than to check it,
+the codec would have quietly claimed 277 wrong extents in a sample nobody looks at closely.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 5.
+* `gspm.ir_record_blocks` and `gspm.ir_block_length`; `irRecordBlocks` and `irBlockLength` in
+  `packages/codec/src/ir.ts`, with `slot-5-header` and `slot-5-block` coverage claims.
+* `tests/test_gspm.py`, `TestTheInfraredRecordExtent`: the terminator against the layout, the arch 9
+  negative case with the counts that refuted the first version, the sharing, and that the pointers
+  point backwards.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

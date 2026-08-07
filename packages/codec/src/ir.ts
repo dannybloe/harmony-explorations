@@ -22,6 +22,45 @@ export const IR_RECORD_POINTER_BIAS = 7;
 /** Shorter than this and the record is not this encoding: the whole arch 9 sample is like that. */
 export const IR_MIN_PULSES = 8;
 export const IR_CLASS_STREAM = 1;
+/**
+ * The header is 21 bytes and two of its pointers name data blocks that sit **below** it. A block
+ * is a run of `u16` durations closed by a zero word; either pointer may be NULL and two records
+ * may name the same block. `docs/findings.md` section 61.
+ */
+export const IR_HEADER_LENGTH = 21;
+export const IR_BLOCK_POINTERS = [12, 15];
+export const IR_BLOCK_TERMINATOR = 0;
+/** Bounds the walk so a record of an undecoded class runs off the end rather than to the end. */
+export const IR_BLOCK_LIMIT = 8192;
+
+/** The data blocks one record names, NULLs dropped. Callers must deduplicate: blocks are shared. */
+export function irRecordBlocks(c: Container, address: number): number[] {
+  const start = irRecordStart(c, address);
+  const off = start === undefined ? undefined : c.blobOffsetOf(start);
+  if (off === undefined || off + IR_HEADER_LENGTH > c.blob.length) return [];
+  const found: number[] = [];
+  for (const at of IR_BLOCK_POINTERS) {
+    const value = u24(c.blob, off + at);
+    if (value !== 0) found.push(value);
+  }
+  return found;
+}
+
+/**
+ * A block's length from its own terminator, or undefined when it does not close inside the bound.
+ *
+ * Not a validity check: arch 9's blocks all find a zero word and none of them is right, so callers
+ * gate on the class byte instead. `docs/findings.md` section 61.
+ */
+export function irBlockLength(c: Container, address: number): number | undefined {
+  const off = c.blobOffsetOf(address);
+  if (off === undefined) return undefined;
+  const limit = Math.min(off + IR_BLOCK_LIMIT, c.blob.length - 1);
+  for (let at = off; at < limit; at += 2) {
+    if (u16(c.blob, at) === IR_BLOCK_TERMINATOR) return at + 2 - off;
+  }
+  return undefined;
+}
 
 export interface IrGroup {
   addresses: number[];

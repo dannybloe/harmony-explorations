@@ -673,8 +673,8 @@ the first alone leaves eleven and thirty candidates on two arch 8 configs, and b
 exactly one everywhere. For a writer, a picture's position is implied by everything before it, so
 inserting or resizing one moves every later address.
 
-Coverage now: **92.0%** on a Harmony 700, 87.5% on a 600, **90.1%** on a Harmony One, 97.0% on the
-spare One, 82.3% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.6% with only
+Coverage now: **98.1%** on a Harmony 700, 98.7% on a 600, **98.0%** on a Harmony One, 98.6% on the
+spare One, 94.4% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.6% with only
 43 of 114 mode records decoding, and the low part of a config rather than the region.
 
 **Base slot 13's records are read**, section 60, and the way they were found is the point. The
@@ -687,6 +687,16 @@ them adds zero overlaps. The eight byte values are **not** decoded and only thei
 invariant. Two candidates were ruled out first and should not be redone: the base slot 14 value maps
 and the screen language switches are byte for byte identical across the pair, so both are interface
 skeleton rather than equipment.
+
+**The infrared records are read, and coverage jumps to 98%**, section 61. They were the largest
+unclaimed thing in a config, 79470 bytes on a One, and they were laid out the opposite way round
+from everything else: the header is **21** bytes and its two `u24` pointers name duration blocks
+that sit **below** it, so reading forwards from a header reads the next record's data. A block
+holds the frame three times separated by runs of consecutive spaces, which is why "the longest
+alternating run" found a third of it, and it closes on a zero word. Blocks are **shared** between
+records, so anything accumulating bytes must deduplicate and a writer cannot edit one in place
+without checking who else names it. **The terminator is not a validity check**: all 277 arch 9
+blocks find a zero word and none is in the right place, so the gate is the class byte.
 
 An off by one here cost time and is worth remembering: an **empty** wide tagged list has no entry to
 carry a flags byte, so inferring the form from the entries makes it look narrow and the length comes

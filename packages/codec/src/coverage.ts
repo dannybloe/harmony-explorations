@@ -20,7 +20,8 @@ import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
-import { irGroups } from './ir.ts';
+import { IR_CLASS_STREAM, IR_HEADER_LENGTH, irBlockLength, irClass, irGroups,
+  irRecordBlocks, irRecordStart } from './ir.ts';
 import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable }
   from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
@@ -204,13 +205,28 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // nothing has established that they land on the start rather than inside, and claiming an extent
   // on that basis is what produced the overlaps in the first place.
 
-  // The infrared database: **the group arrays only.** A record's extent is not established, and
-  // the duration run is located as the longest alternating one rather than read from a length, so
-  // claiming it is a heuristic wearing a measurement's clothes. Doing so anyway put one or two
-  // runs per config on top of a base slot 10 list, which is the overlap detector saying the same
-  // thing. The records stay unclaimed until something states where one ends.
+  // The infrared database. This used to claim the group arrays alone, because a record's extent
+  // was not established and the duration run was located as the longest alternating one, which is
+  // a heuristic wearing a measurement's clothes. Section 61 replaced it: the header is 21 bytes and
+  // names two data blocks below itself, and a block ends at a zero word, so both extents are read
+  // rather than inferred. A block may be named by two records, hence the deduplication, and one
+  // that does not close is not claimed at all. What keeps arch 9 out is the **class byte**, not the
+  // terminator: all 277 of its blocks find a zero word and none of them is the right one.
   for (const group of irGroups(c) ?? []) {
     add(group.start, group.length, 'slot-5-group');
+  }
+  const irBlocks = new Set<number>();
+  for (const group of irGroups(c) ?? []) {
+    for (const address of group.addresses) {
+      if (irClass(c, address) !== IR_CLASS_STREAM) continue;
+      const start = irRecordStart(c, address);
+      if (start !== undefined) at(start, IR_HEADER_LENGTH, 'slot-5-header');
+      for (const block of irRecordBlocks(c, address)) irBlocks.add(block);
+    }
+  }
+  for (const block of irBlocks) {
+    const length = irBlockLength(c, block);
+    if (length !== undefined) at(block, length, 'slot-5-block');
   }
 
   // Three more count prefixed arrays whose records state their own size. Base slot 12's pointer
