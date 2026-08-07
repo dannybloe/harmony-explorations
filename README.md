@@ -53,7 +53,7 @@ power off live: a record says how long to wait and which single instruction to r
 the set of records a config's action lists start is exactly the set it declares. Next to it is
 **the parameter block**, whose every group has a length the firmware demands and silently ignores
 the group if it differs: fourteen such lengths read off two images, holding in all thirteen
-containers. The last one to fall is **the touch screen hit map**, which only the Harmony One
+containers. Then **the touch screen hit map**, which only the Harmony One
 carries, because it is the only remote here with a touch panel: per screen page a list of
 rectangles, each reporting a key code, and the firmware answers a touch with the first rectangle
 the point falls in. The last to fall is **the log area**, which is not a pointer to anything: three
@@ -73,6 +73,13 @@ The key table is decoded: an event code is an **event type plus the keypad scann
 not the matrix address it was read as here for a while. That correction turned the Harmony 600's
 table from something that provably could not describe its own keypad into 54 keys times three
 event types, exactly.
+
+**That has now been checked against the remote**, by pressing all 54 of its buttons while the host
+watched the keypad port over USB. A remote on USB never runs its application, so the scan code is
+never computed and only the matrix **column** is observable, a quarter of the mapping. That quarter
+closes: the measured census is 14, 14, 13, 13 buttons per column, a column holds at most 14, and
+the unit's own config carries scan codes contiguous 1 to 54, whose two absentees fall in exactly
+the two columns that are short. Which button carries which of the 54 codes is still open.
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, and every one of 16054 inline string codes in the

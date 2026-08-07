@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns all clean
 
 BENCH_PORT ?= 8731
 
@@ -35,6 +35,8 @@ help:
 	@echo "remotes      list attached remotes, enumeration only, opens nothing"
 	@echo "bench        start the bench instrument on 127.0.0.1:$(BENCH_PORT)"
 	@echo "probe        structural report about an attached remote, publishable; PROBE_ARGS=--file X"
+	@echo "watch-keys   poll the keypad scanner's RAM on an attached remote, read only"
+	@echo "watch-columns report the matrix column of every key pressed, read only"
 	@echo "all          everything above except ghidra, bench and probe"
 
 test:
@@ -100,6 +102,10 @@ probe:
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.
 watch-keys:
 	@node packages/usb/bin/watch-keys.ts $(WATCH_ARGS)
+
+# The column half of that experiment, which is the half a remote in sync mode will give up.
+watch-columns:
+	@node packages/usb/bin/watch-columns.ts $(WATCH_ARGS)
 
 # The bench instrument. Not part of `all`: it is a long running server, not a check.
 #

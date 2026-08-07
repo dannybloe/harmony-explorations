@@ -530,13 +530,26 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   are literals in two images and every one holds in all thirteen containers. **Slot 17 followed**, section 45: it is the touch
   screen hit map, populated only on arch 12 because the Harmony One is the only remote here with a
   touch panel, and empty in the other eleven containers, which is why decoding arch 14 first could
-  never have found it. That leaves **base slot 2**, eight bytes read by the loader rather than by a
-  subsystem, as the only slot that is neither named nor NULL.
-* Then the button mapping experiment: poll the scanner's RAM variable while pressing every key on
-  both remotes, and publish the resulting table. This also unblocks upstream. It got considerably
-  cheaper: the config's scan codes are now known to be the scanner's own 1 to 56 index, so the
-  experiment produces the mapping directly rather than needing a translation layer found first.
-  Only 54 of the 56 indices are used on arch 14, so two of them are also an answer.
+  never have found it. **Slot 2 closed the table**, section 47: it is the log area, three numbers
+  reserving a region of flash above the config that the arch 12 firmware appends to and never
+  erases. All twenty base slots are now accounted for.
+* The button mapping experiment was **run and it does not work this way**, section 48. A remote on
+  USB sits in sync mode and never runs its application, so the scanner never runs and the variable
+  the mapping was to be read from never changes. Checked three ways, including that sync comes up
+  before the host sends anything. What the firmware does instead is park all fourteen rows low and
+  wait for an interrupt on the column port, which makes the **column** readable and the row not, so
+  a press yields `(code - 1) mod 4`.
+
+  All 54 buttons of the Harmony 600 were pressed anyway, because that quarter is permanent and it
+  closes against an independent artefact: the census is 14, 14, 13, 13 per column, a column holds
+  at most 14, and the unit's own config carries scan codes contiguous 1 to 54, whose two absentees
+  55 and 56 sit in exactly the two columns that are short. That checks section 17's key code split
+  and section 13's `row * 4 + column` against hardware for the first time.
+
+  What remains is the row, 14 candidates per button. The Harmony One is worth the same treatment:
+  its matrix is 7 by 8, so a press is worth `(code - 1) mod 8` there. The route that would finish
+  it is a RAM write to drive the rows from the host, and the rails allow no write target on arch
+  14, so it stays shut.
 
 ### Step 7: keep the documents honest
 

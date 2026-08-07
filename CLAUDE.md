@@ -545,9 +545,23 @@ architectures are covered here out of at least eleven that exist, so the structu
 that changes. It is publishable precisely because it carries shape and not contents.
 
 Then the first reverse engineering block proper (step 6): label the section pointers by function
-using the proven consumer method plus live RAM polling, read the action list opcode table out of
-the arch 14 firmware, and run
-the button mapping experiment by polling the keypad scanner's RAM variable while pressing every key.
+using the proven consumer method plus live RAM polling, and read the action list opcode table out of
+the arch 14 firmware.
+
+**The button mapping experiment was run on the 600 and it does not work by polling RAM**, section
+48. A remote on USB sits in sync mode and never runs its application, so the keypad handler never
+runs and no scan code is ever computed; checked three ways, including that sync comes up before the
+host sends anything. The firmware instead parks all fourteen row lines low and waits for an
+interrupt on the column port, which makes the **column** readable and the row not, so a press
+yields `(code - 1) mod 4` and nothing else. All 54 buttons were pressed anyway, and that quarter
+closes against an independent artefact: the census is 14, 14, 13, 13 per column, a column holds at
+most 14, and the unit's own config carries scan codes contiguous 1 to 54 whose two absentees, 55
+and 56, sit in exactly the two columns that are short. First hardware check of section 17's key
+code split and of section 13's `row * 4 + column`. `tools`: `make watch-columns`,
+`packages/usb/bin/watch-columns.ts`, pinned in `tests/test_keypad.py`. The row stays open, 14
+candidates per button; the One is worth the same treatment because its 7 by 8 matrix makes a press
+worth `(code - 1) mod 8`; and **the route that would finish it is a RAM write to drive the rows,
+which the rails forbid on arch 14 and which is not proposed here.**
 
 **The action list interpreter is located and read**, on the Harmony 700 2.8 image and confirmed on
 the complete 600 0.2: a 120 byte circular queue holding exactly 40 three byte instructions, an
