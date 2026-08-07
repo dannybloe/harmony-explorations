@@ -23,11 +23,13 @@ export const MODE_TAG_ENTER = 6;
 /**
  * Architectures where a mode record carries a screen program immediately after its tagged list.
  *
- * Every record does on these two, 237 of 237 on the Harmony 600, 374 of 374 on the 700 and 103 of
- * 103 on arch 8. On arch 12 not one does and on arch 9 only 43 of 114, so what follows the list
- * there is a different thing and is not established. `docs/findings.md` section 53.
+ * Every record does on all three: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
+ * on arch 8 and 268 of 268 on the Harmony One. Arch 12 looked like the exception until section 54
+ * found that the only thing stopping it was opcode 23's missing operand count. Arch 9 still manages
+ * only 43 of 114, so there the record's tail is a different thing and is not established.
+ * `docs/findings.md` sections 53 and 54.
  */
-export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 14]);
+export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;
 export const HANDLER_TAG_LEAVE = 2;
 

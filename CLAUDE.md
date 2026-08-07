@@ -616,10 +616,24 @@ reaches 1629 programs nothing reached before (18252 to 19881, string codes 16054
 resolving) and the three safe mode containers go from zero programs to 35, since they have no base
 slot 11 table at all. **The pictures a mode program names are the large ones**: stride 128 over 128
 rows on arch 14 and 160 on arch 8, 16389 and 20485 bytes each, against 125 for an icon, and
-together they are **about half the region** on arch 8 and arch 14. Coverage 59.3% on a 700, 57.5%
-on a 600, 50.6% on arch 8, 89.5% on a safe mode container. **Arch 12 stays at 8.6% and its 1.36 MB
-region is still 99.5% unaccounted**, which is now the sharpest open question: the same structure,
-on the architecture the project cares most about, laid out differently.
+together they are **about half the region** on arch 8 and arch 14. **Arch 12 was not the exception it looked like**, section 54. One missing entry was holding it
+shut: **screen opcode 23 takes no operand**, from its handler at `0x29640`, which makes no read call
+at all where every other handler calls its own reader. With `23: 0` all **268 of 268** arch 12 mode
+programs decode. Opcode 22 appears in no config and stays refused, so `SCREEN_ARCH12_ONLY` is now
+`{22}`. A brute force over operand counts could not choose between 0 and 5; the firmware did, which
+is the right order of authority.
+
+**A picture's `stride` is in pixels, not bytes**, also section 54, correcting section 50. A pixel is
+two bytes as it is in a glyph, so a raw picture is `5 + 2 * stride * rows`. The closure is that
+pictures then **tile exactly**, 14 of the Harmony 600's 15 gaps, where under the halved reading not
+one matched, which is why section 50's "the pictures do not tile" was wrong. Arch 12's pictures read
+`stride 176, rows 220`, exactly the geometry section 51 recovered by measurement.
+
+**So the region is pictures and opcode 2 addresses all of them**: 98.3% of a Harmony 600, 93.3% of a
+700, 97.0% of arch 8, 48.2% of a Harmony One. There was never a second referent, only one referent
+in programs nothing could reach. Coverage **87.8%** on a 700, 86.4% on a 600, 80.2% on arch 8, 47.9%
+on a One, zero overlaps. The open item is the Harmony One's other half, which is a different
+question: not what addresses the region but what else is in it besides the 28 pictures.
 
 An off by one here cost time and is worth remembering: an **empty** wide tagged list has no entry to
 carry a flags byte, so inferring the form from the entries makes it look narrow and the length comes

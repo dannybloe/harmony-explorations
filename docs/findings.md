@@ -5358,8 +5358,13 @@ what makes the picture a separate object rather than something inline in the pro
 
 The kind 0 body reads those two `u16` and then loops: while `row < rows`, put `stride` in `0x29E`,
 the position plus the row in `0x299` and `0x29A`, call the row writer at `0x0E292`, then set
-`0x6DE`/`0x6DF` to `stride` and call `0x10BAC` to advance the stream by that many bytes. So a raw
-picture is exactly `5 + stride * rows` bytes and nothing about its extent is inferred.
+`0x6DE`/`0x6DF` to `stride` and call `0x10BAC` to advance the stream.
+
+> **`stride` is in pixels, not bytes, and this section said bytes.** A pixel is two bytes here as it
+> is in a glyph, so a raw picture is `5 + 2 * stride * rows`. Corrected in section 54, where the
+> corpus settles it: consecutive pictures then sit exactly that far apart, and 14 of the Harmony
+> 600's 15 gaps are exact. Two claims below rest on the halved figure and are wrong because of it,
+> both marked where they appear.
 
 Kind 1 reads and **discards** the same four header bytes, then runs a byte at a time: `0x00` ends,
 `0x80` advances a row, bit 7 set skips that many, and a value below `0x80` introduces that many
@@ -5396,6 +5401,11 @@ and decodes each header. Every one of them decodes, in every container:
 | 525, arch 9 | 0 | | | | 0 |
 | the three safe mode | 0 | | | | 0 |
 
+**These counts are the ones reachable at the time**, before sections 53 and 54 made a mode record's
+own screen program a root. The corpus holds 16 to 29 pictures per config, not 3 to 16, and the byte
+totals are an order of magnitude larger. The conclusion this section drew from the small numbers is
+reversed there.
+
 No kind outside 0 and 1 appears, no header runs past the end of its container, and the strides are
 per model rather than per config, which is what a layout resource looks like rather than user data.
 The two container kinds that emit no opcode 2 have no pictures, the same negative case as section
@@ -5404,12 +5414,18 @@ The two container kinds that emit no opcode 2 have no pictures, the same negativ
 ### The negative, which is the point
 
 6795 bytes of pictures against a 1374394 byte region on the Harmony One. **Opcode 2 accounts for
-about one part in two hundred of what it points into**, counting both kinds at their full extent. Three measurements were made to find the
+about one part in two hundred of what it points into**, counting both kinds at their full extent.
+
+> **Reversed by sections 53 and 54.** Opcode 2 accounts for 98% of the Harmony 600's region, 93% of
+> the 700's, 97% of arch 8's and 48% of the Harmony One's, once the programs inside mode records are
+> reachable and the raw extent is not halved. The negative below was a measurement of what could be
+> reached, not of what exists. Three measurements were made to find the
 rest, and all three came back negative. They are recorded here so nobody repeats them:
 
-* **The pictures do not tile.** If the region were a run of these objects the byte after one would
-  begin the next. On the Harmony 600 the first picture is followed by five zero bytes, which read
-  as a picture of no rows and no stride. Pinned as a test in both codecs.
+* ~~**The pictures do not tile.**~~ **Wrong, and wrong because of the halved extent above.** They
+  tile exactly, once a raw picture is `5 + 2 * stride * rows`: 14 of the Harmony 600's 15 gaps are
+  precisely the extent of the picture before them. Corrected in section 54 and the test now asserts
+  the tiling.
 * **There is no pointer table into the region.** The two longest ascending runs of three byte
   values landing in the region, 231 and 157 entries with near constant strides, both turned out to
   be base slot 10's own pointer array read one byte out of alignment. A misaligned read of an
@@ -5462,6 +5478,11 @@ and no run in the corpus falls within four kilobytes of that length without bein
 Nothing in the width recovery produces the number 220, so the two are two statements and not one
 restated.
 
+> **Both confirmed by the format itself in section 54**, which is a better outcome than a
+> measurement surviving. A picture's header on the Harmony One reads `stride 176, rows 220`, so the
+> two numbers this section recovered from the bytes are stated in the file. Eight pictures per
+> config carry exactly that geometry.
+
 **A pixel is two bytes, big endian, RGB565.** Byte order is measured rather than assumed: the same
 window at the same width scores worse read little endian, because swapping a pixel's halves turns a
 smooth image into a noisy one. Supporting it from the other architecture, the Harmony 600 has a
@@ -5486,6 +5507,11 @@ rediscovering: the score compares row `r` with row `r + 1`, and shifting both by
 leaves it unchanged, so the measure is blind to phase by construction.
 
 ### The referent, and eight places it is not
+
+> **Found in sections 53 and 54, and it was screen opcode 2 all along.** Not a second referent but
+> the same one, in programs nothing could reach: a mode record carries a screen program after its
+> tagged list, and on arch 12 that program could not be decoded because opcode 23 had no operand
+> count. The eight negatives below were all correct about where it is not.
 
 The point of the search was the second referent, and it was not found. These were ruled out, each
 by a measurement rather than by inspection:
@@ -5681,6 +5707,89 @@ Coverage: **59.3% of a Harmony 700**, up from 28.3%, 57.5% of a Harmony 600, 50.
 * `packages/codec/src/sections.ts` and `src/screen.ts`, the same two.
 * `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, with every corpus total
   moved and the old value recorded beside the new one.
+
+## 54. One missing operand count was holding arch 12 shut, and the region is pictures
+
+Section 53 left the sharpest open question in the format: a mode record carries a screen program on
+arch 8 and arch 14, and on arch 12 not one of 268 does. That turned out to be false, and the reason
+it looked true was a single absent table entry.
+
+### Opcode 23 takes no operand
+
+Dumping what follows an arch 12 mode record's tagged list shows a program that starts
+`02 00 00 6e 7c 12`, which is screen opcode 2 with an address in the region, and then runs into a
+`0x17`. Opcodes 22 and 23 are in the arch 12 dispatcher and in no config the corpus had reached, so
+`SCREEN_FIXED_OPERANDS` had neither and the walk refused, correctly, rather than desynchronising.
+
+Opcode 23's handler is at `0x29640` on the Harmony One 3.4 image. It copies the stream position into
+`0x19C` to `0x19E`, writes the position minus three into a table, sets `0x19E` to `0x13` and returns
+to the loop. **It makes no read call at all**, where every other handler in that dispatcher calls
+its own reader; opcode 16's is one instruction, `RCALL 0x292AC`. So it consumes no operand.
+
+That is the whole change: one entry, `23: 0`. With it, **268 of 268 arch 12 mode programs decode**,
+each containing exactly one opcode 23 and one opcode 2. Opcode 22 appears nowhere in the corpus, so
+it stays unestablished and a parser still refuses it.
+
+A brute force over operand counts 0 to 7 for both opcodes was run first and could not choose: 22
+never occurs, and 23 decodes at both 0 and 5. The firmware settled what the corpus could not, which
+is the project's usual order of authority and worth noting because the temptation was to take the
+count that produced the larger picture count.
+
+### `stride` is in pixels, and section 50 said bytes
+
+With arch 12 open, its pictures read `stride 176, rows 220`, which is exactly the geometry section
+51 recovered by minimising a row difference. That agreement is also what exposed an error: at
+`5 + stride * rows` such a picture is 38725 bytes, but section 51's blank screens are 77440, twice
+that, and the filled ones correlate at 352 bytes a row rather than 176.
+
+A pixel is two bytes, as it is in a glyph and as the encoded kind already assumed, so a raw picture
+is **`5 + 2 * stride * rows`**. The corpus closes it without ambiguity: consecutive pictures then sit
+exactly that far apart, 14 of the Harmony 600's 15 gaps, 17 of the 700's 20 and 23 of arch 8's 27,
+where under the halved reading not one gap matched anything. Section 50's "the pictures do not tile"
+was an artefact of the halved extent and is corrected there.
+
+### What the region is
+
+Both corrections together:
+
+| container | pictures | bytes | share of the region |
+|---|---|---|---|
+| Harmony 600 | 16 | 426700 | **98.3%** |
+| Harmony 700 | 21 | 558037 | **93.3%** |
+| 880, arch 8 | 28 | 276019 | **97.0%** |
+| Harmony One | 28 | 656275 | 48.2% |
+| Harmony One, spare | 27 | 578830 | 52.5% |
+
+So the region that sections 49, 50 and 51 circled is, on three of the four architectures,
+**essentially all pictures, all addressed by screen opcode 2**. There was never a second referent.
+There was one referent in programs that could not be reached, for two different reasons on two
+different architectures: on arch 8 and arch 14 because a mode record's program had no known start,
+and on arch 12 because of one missing operand count.
+
+The Harmony One's remaining half is the open item, and it is a different question from the one this
+started as: not "what addresses the region" but "what else is in it besides the 28 pictures".
+
+### Coverage
+
+M2's number, which is what all of this was for:
+
+| sample | before this session | now |
+|---|---|---|
+| Harmony 700 | 26.0% | **87.8%** |
+| Harmony 600 | 24.5% | **86.4%** |
+| Harmony One | 7.2% | **47.9%** |
+| 880, arch 8 | 12.4% | **80.2%** |
+| the three safe mode | 64.5% | **89.5%** |
+
+Zero overlapping claims anywhere, which is the check that keeps those numbers honest.
+
+### Where it lands
+
+* `docs/config-format.md`, the screen language and base slot 6.
+* `SCREEN_FIXED_OPERANDS[23] = 0` and `SCREEN_ARCH12_ONLY = {22}` in both codecs;
+  `MODE_PROGRAM_ARCHITECTURES` gains 12; `PIXEL_BYTES` and the corrected raw extent.
+* `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, where the tiling test now
+  asserts the opposite of what it did and says so.
 
 ## References
 

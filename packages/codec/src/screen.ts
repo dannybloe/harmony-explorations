@@ -36,6 +36,10 @@ export const SCREEN_FIXED_OPERANDS: Readonly<Record<number, number>> = {
   17: 3,
   20: 3,
   21: 4,
+  // Arch 12 only and takes **no** operand: its handler at `0x29640` on the Harmony One 3.4 image
+  // makes no read call at all, where every other handler calls its own reader. That one entry is
+  // what unblocked arch 12's mode programs. `docs/findings.md` section 54.
+  23: 0,
 };
 
 export const SCREEN_END = 0;
@@ -49,10 +53,11 @@ export const SCREEN_SWITCH_NARROW = 18;
 export const SCREEN_SWITCH_WIDE = 19;
 export const SCREEN_JUMP = 20;
 /**
- * Present in the arch 12 dispatcher and used by no config in the corpus, so their operands are
- * not established. Listed so a parser refuses them rather than desynchronising silently.
+ * Present in the arch 12 dispatcher and used by no config in the corpus, so its operand count is
+ * not established. Listed so a parser refuses it rather than desynchronising silently. 23 was here
+ * too until section 54 read its handler.
  */
-export const SCREEN_ARCH12_ONLY: ReadonlySet<number> = new Set([22, 23]);
+export const SCREEN_ARCH12_ONLY: ReadonlySet<number> = new Set([22]);
 
 export interface ScreenInstruction {
   opcode: number;
@@ -268,14 +273,16 @@ export const BITMAP_NOTHING = 2;
  */
 export const BITMAP_END = 0x00;
 export const BITMAP_ROW_BREAK = 0x80;
+/** A pixel, in both kinds and in a base slot 7 glyph. */
+export const PIXEL_BYTES = 2;
 
 export interface Bitmap {
   address: number;
   kind: number;
   /**
-   * Bytes per row, not pixels per row, because that is what the firmware counts: it hands the row
-   * writer `stride` bytes and then advances the stream by `stride`. A pixel is two bytes here as
-   * it is in a glyph.
+   * Pixels per row. A pixel is two bytes, as it is in a glyph, so a raw row occupies `2 * stride`
+   * bytes. Section 50 first read this as a byte count and halved every raw extent; the corpus
+   * settles it, because consecutive pictures then sit exactly `5 + 2 * stride * rows` apart.
    */
   stride: number;
   rows: number;
@@ -322,7 +329,7 @@ export function bitmapAt(c: Container, address: number): Bitmap | undefined {
   let length: number | undefined;
   let rowBreaks: number | undefined;
   if (kind === BITMAP_RAW) {
-    length = BITMAP_HEADER + stride * rows;
+    length = BITMAP_HEADER + PIXEL_BYTES * stride * rows;
     if (off + length > c.blob.length) return undefined;
   } else if (kind === BITMAP_ENCODED) {
     const walked = encodedExtent(c, off + BITMAP_HEADER);

@@ -756,16 +756,24 @@ class TestTheScreenInterpreter(unittest.TestCase):
                 self.assertTrue(self.BASE_OPCODES <= cases)
 
     def test_arch_12_adds_two_the_other_two_images_do_not_have(self):
-        """Recorded because a parser has to refuse them rather than guess their length."""
+        """Both are arch 12 only; one is now read and the other still has to be refused.
+
+        Opcode 23 takes no operand, from its handler, and that single entry is what let arch 12's
+        mode programs decode. Opcode 22 appears in no config, so its length stays unestablished and
+        a parser must stop rather than guess. `docs/findings.md` section 54.
+        """
         from harmony import gspm
         code = lab.load('one34_code')
         cases = {c.value for c in chains.xor_chain(code, 0x20000, 0x295E6)}
-        self.assertEqual(cases - self.BASE_OPCODES, set(gspm.SCREEN_ARCH12_ONLY))
+        extra = cases - self.BASE_OPCODES
+        self.assertEqual(extra, {22, 23})
+        self.assertEqual(set(gspm.SCREEN_ARCH12_ONLY), {22})
+        self.assertEqual(gspm.SCREEN_FIXED_OPERANDS[23], 0)
         for name in ('h700_code', 'h600_code_complete'):
             base, _, at = self.DISPATCHERS[name]
             cases = {c.value for c in chains.xor_chain(lab.load(name), base, at)}
             with self.subTest(image=name):
-                self.assertEqual(cases & gspm.SCREEN_ARCH12_ONLY, set())
+                self.assertEqual(cases & extra, set())
 
     def _walk(self, c):
         """Every program reachable from the roots, and whether any failed to decode."""
@@ -1048,8 +1056,9 @@ class TestTheFontTable(unittest.TestCase):
                     for code in instruction.glyphs:
                         codes += 1
                         resolved += c.glyph(fonts[selected], code) is not None
-        # 16054 before section 53 added the mode records' own programs as roots.
-        self.assertEqual(codes, 39170)
+        # 16054 before section 53 added the mode records' own programs as roots, 39170 before
+        # section 54 added arch 12's.
+        self.assertEqual(codes, 40588)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1408,8 +1417,10 @@ class TestTheBitmap(unittest.TestCase):
         ('h700_config', 21, {0, 1}, {12, 128}, {10, 128}),
         ('h700_config_2', 21, {0, 1}, {12, 128}, {10, 128}),
         ('h600_config', 16, {0, 1}, {12, 128}, {10, 128}),
-        ('one_config', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
-        ('one_config_unprogrammed', 16, {0, 1}, {20, 22, 88}, {10, 11, 18}),
+        # Arch 12 only opened up with section 54. Stride 176 over 220 rows is a full screen, and
+        # it is the geometry section 51 recovered by measurement, here stated by the format.
+        ('one_config', 28, {0, 1}, {20, 22, 61, 62, 69, 87, 88, 176}, {10, 11, 18, 33, 62, 69, 91, 220}),
+        ('one_config_unprogrammed', 27, {0, 1}, {20, 22, 61, 62, 69, 87, 88, 176}, {10, 11, 18, 33, 62, 69, 91, 220}),
         ('arch8_config_a', 28, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
         ('arch8_config_b', 27, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
         ('arch8_config_c', 29, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
@@ -1449,8 +1460,9 @@ class TestTheBitmap(unittest.TestCase):
                 raw = [b for b in c.bitmaps() if b.kind == gspm.BITMAP_RAW]
                 self.assertTrue(raw, 'expected at least one raw picture')
                 for bitmap in raw:
-                    self.assertEqual(bitmap.length,
-                                     gspm.BITMAP_HEADER + bitmap.stride * bitmap.rows)
+                    self.assertEqual(
+                        bitmap.length,
+                        gspm.BITMAP_HEADER + gspm.PIXEL_BYTES * bitmap.stride * bitmap.rows)
                     off = c.blob_offset_of(bitmap.address)
                     self.assertLessEqual(off + bitmap.length, c.length)
 
@@ -1460,7 +1472,7 @@ class TestTheBitmap(unittest.TestCase):
         The encoded body reads the two `u16` of the header and throws them away, then draws until
         its own terminator. So the number of row breaks it contains and the row count the header
         states are two independent statements, and a walk that is off by one control byte would
-        desynchronise and produce neither. All 93 encoded pictures in the corpus break exactly
+        desynchronise and produce neither. All 95 encoded pictures in the corpus break exactly
         `rows - 1` times, across the three architectures that carry any.
         """
         from harmony import gspm
@@ -1478,23 +1490,25 @@ class TestTheBitmap(unittest.TestCase):
                     self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
                     total += 1
         if all(lab.path(name) for name, count, _, _, _ in self.SHAPES if count):
-            self.assertEqual(total, 93)
+            self.assertEqual(total, 95)
 
-    def test_the_pictures_do_not_tile_the_unreached_region(self):
-        """The negative that keeps section 49 honest.
+    def test_the_pictures_tile_the_region(self):
+        """The closure on the extent, and the correction of an earlier negative.
 
-        If the region above everything named were a run of these objects, the byte after one would
-        begin the next. It does not: the first picture on the 600 is followed by five zero bytes,
-        which decode as a picture of no rows and no stride.
+        `stride` is in pixels and a pixel is two bytes, so a raw picture is `5 + 2 * stride * rows`
+        bytes. Section 50 read `stride` as a byte count, which halved every raw extent and made the
+        pictures look as though they did not tile; they do. Fourteen of the Harmony 600's fifteen
+        gaps are exactly the extent of the picture before them, and the odd one out is where a
+        second picture is addressed out of order.
         """
         from harmony import gspm
         lab.require('h600_config')
         c = gspm.parse(lab.load('h600_config'))
-        first = min(c.bitmaps(), key=lambda b: b.address)
-        self.assertEqual(first.kind, gspm.BITMAP_RAW)
-        following = c.bitmap_at(first.address + first.length)
-        self.assertIsNotNone(following)
-        self.assertEqual((following.stride, following.rows), (0, 0))
+        pictures = sorted(c.bitmaps(), key=lambda b: b.address)
+        exact = sum(1 for k in range(len(pictures) - 1)
+                    if pictures[k].address + pictures[k].length == pictures[k + 1].address)
+        self.assertEqual(exact, 14)
+        self.assertEqual(len(pictures), 16)
 
     def test_the_renderer_dispatches_on_the_kind_byte(self):
         """The three arms of the chain at `0x0E3F6`, decoded rather than read literally.

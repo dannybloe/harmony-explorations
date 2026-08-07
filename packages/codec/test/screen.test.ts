@@ -20,6 +20,7 @@ import {
   BITMAP_HEADER,
   BITMAP_NOTHING,
   BITMAP_RAW,
+  PIXEL_BYTES,
   IMAGE_ARCHITECTURES,
   SCREEN_ARCH12_ONLY,
   SCREEN_FIXED_OPERANDS,
@@ -45,8 +46,8 @@ const DECODED: readonly [string, number, number][] = [
   ['h700_config_2', 6568, 553],
   ['h600_config', 4527, 463],
   ['h525_config', 22, 0],
-  ['one_config', 304, 501],
-  ['one_config_unprogrammed', 278, 405],
+  ['one_config', 572, 501],
+  ['one_config_unprogrammed', 389, 405],
   ['arch8_config_a', 345, 397],
   ['arch8_config_b', 366, 299],
   ['arch8_config_c', 399, 312],
@@ -64,9 +65,9 @@ const DECODED: readonly [string, number, number][] = [
  * reached 1629 programs nothing had reached before. The glyph total does not move, because glyphs
  * come from base slot 7 and not from the programs that draw them.
  */
-const CORPUS_PROGRAMS = 19881;
+const CORPUS_PROGRAMS = 20260;
 const CORPUS_GLYPHS = 3933;
-const CORPUS_STRING_CODES = 39170;
+const CORPUS_STRING_CODES = 40588;
 
 for (const [name, programs, glyphCount] of DECODED) {
   test(`${name} decodes ${programs} programs and ${glyphCount} glyphs`, skipUnless(name), () => {
@@ -205,12 +206,15 @@ test('the roots come from base slots 11, 14 and 6', skipUnless('h600_config'), (
   assert.equal(roots.length, fromTable.length + fromMaps.length + fromModes.length);
 });
 
-test('the opcode table has no entry for the two the arch 12 dispatcher alone knows', () => {
-  // Listed so a parser refuses them rather than desynchronising silently. No config uses them, so
-  // their operand counts are not established and guessing one would be worse than stopping.
+test('the opcode table has no entry for the one the arch 12 dispatcher alone knows', () => {
+  // Listed so a parser refuses it rather than desynchronising silently. No config uses opcode 22,
+  // so its operand count is not established and guessing one would be worse than stopping. Opcode
+  // 23 was in this set until its handler was read: it takes none. Section 54.
+  assert.deepEqual([...SCREEN_ARCH12_ONLY], [22]);
   for (const opcode of SCREEN_ARCH12_ONLY) {
     assert.equal(SCREEN_FIXED_OPERANDS[opcode], undefined);
   }
+  assert.equal(SCREEN_FIXED_OPERANDS[23], 0);
 });
 
 /**
@@ -223,8 +227,8 @@ test('the opcode table has no entry for the two the arch 12 dispatcher alone kno
 const REGION: readonly [string, number, number][] = [
   ['h700_config', 21, 0x052c5f],
   ['h600_config', 16, 0x043aa7],
-  ['one_config', 16, 0x048bc6],
-  ['one_config_unprogrammed', 16, 0x01de24],
+  ['one_config', 28, 0x048bc6],
+  ['one_config_unprogrammed', 27, 0x01de24],
   ['arch8_config_a', 28, 0x025eba],
   ['h525_config', 0, 0x011fd0],
   ['h600_safemode_gspm', 0, 0x000879],
@@ -274,7 +278,8 @@ const BITMAPS: readonly [string, number, number[], number[], number[]][] = [
   // where the large pictures are: one is 16389 bytes against 125 for an icon.
   ['h700_config', 21, [0, 1], [12, 128], [10, 128]],
   ['h600_config', 16, [0, 1], [12, 128], [10, 128]],
-  ['one_config', 16, [0, 1], [20, 22, 88], [10, 11, 18]],
+  ['one_config', 28, [0, 1], [20, 22, 61, 62, 69, 87, 88, 176],
+    [10, 11, 18, 33, 62, 69, 91, 220]],
   ['arch8_config_a', 28, [0, 1], [16, 17, 18, 19, 64, 128], [10, 32, 160]],
   // Arch 9 emits no opcode 2 at all and neither does a safe mode container, which is what says
   // the pictures are optional rather than structural.
@@ -293,7 +298,7 @@ for (const [name, count, kinds, strides, rows] of BITMAPS) {
     assert.deepEqual(uniq(found.map((b) => b.rows)), rows);
     for (const bitmap of found) {
       if (bitmap.kind === BITMAP_RAW) {
-        assert.equal(bitmap.length, BITMAP_HEADER + bitmap.stride * bitmap.rows);
+        assert.equal(bitmap.length, BITMAP_HEADER + PIXEL_BYTES * bitmap.stride * bitmap.rows);
         assert.equal(bitmap.rowBreaks, undefined);
       } else {
         // The closure the encoded extent rests on: the body discards the header and then breaks
@@ -307,16 +312,19 @@ for (const [name, count, kinds, strides, rows] of BITMAPS) {
   });
 }
 
-test('the pictures do not tile the unreached region', skipUnless('h600_config'), () => {
-  // The negative that keeps section 49 honest. If the region above everything named were a run of
-  // these objects, the byte after one would begin the next. It does not.
+test('the pictures tile the region', skipUnless('h600_config'), () => {
+  // The closure on the extent, and the correction of an earlier negative. `stride` is in pixels
+  // and a pixel is two bytes, so section 50's byte reading halved every raw extent and made the
+  // pictures look as though they did not tile. They do.
   const c = parse(load('h600_config') as Uint8Array);
-  const first = bitmaps(c).reduce((a, b) => (b.address < a.address ? b : a));
-  assert.equal(first.kind, BITMAP_RAW);
-  const following = bitmapAt(c, first.address + (first.length as number));
-  assert.notEqual(following, undefined);
-  assert.equal(following?.stride, 0);
-  assert.equal(following?.rows, 0);
+  const pictures = bitmaps(c).sort((a, b) => a.address - b.address);
+  let exact = 0;
+  for (let k = 0; k + 1 < pictures.length; k += 1) {
+    const here = pictures[k] as { address: number; length: number };
+    if (here.address + here.length === (pictures[k + 1] as { address: number }).address) exact += 1;
+  }
+  assert.equal(pictures.length, 16);
+  assert.equal(exact, 14);
 });
 
 test('a kind above the three the firmware knows is refused', skipUnless('h600_config'), () => {

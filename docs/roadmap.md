@@ -252,19 +252,20 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | screen language and fonts | every reader ported | mode records, section 53 |
+| sample | at the start | every reader ported | mode records, 53 | opcode 23 and the extent, 54 |
 |---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.0% | 26.3% | **59.3%** |
-| Harmony 600 | 9.5% | 24.5% | 24.8% | **57.5%** |
-| Harmony One | 3.2% | 7.2% | 8.0% | **8.6%** |
-| 880, arch 8 | 3.6% | 12.4% | 16.4% | **50.6%** |
-| Harmony 525, arch 9 | 7.2% | 8.8% | 10.4% | **14.1%** |
-| the three safe mode containers | 4.2% | 64.5% | 70.2% | **89.5%** |
+| Harmony 700 | 11.4% | 26.3% | 59.3% | **87.8%** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | **86.4%** |
+| Harmony One | 3.2% | 8.0% | 8.6% | **47.9%** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | **80.2%** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% |
 
-The last column is not another reader. It is one rule, section 53: a mode record carries its own
-screen program, so 1629 programs and about half the region become reachable. **Arch 12 does not
-move, because an arch 12 mode record carries no program**, and that is now the sharpest open
-question in the format.
+Neither of the last two columns is a reader. Section 53 is one rule, that a mode record carries its
+own screen program, and section 54 is two corrections: opcode 23 takes no operand, which is what
+was holding arch 12 shut, and a picture's `stride` is in pixels rather than bytes, which had halved
+every raw extent. Together they take the region from an unknown to **98% pictures on a Harmony 600,
+93% on a 700 and 97% on arch 8**. The Harmony One is at 48% and that is the open item.
 
 Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
 a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
@@ -291,7 +292,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 19881 programs across the corpus and section 46 states 3933 glyphs and 39170
+Section 40 states 20260 programs across the corpus and section 46 states 3933 glyphs and 40588
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number
@@ -321,13 +322,9 @@ So the port is done and the ceiling is where section 49 said it would be. **Cove
 mid twenties on arch 14 and at 8% on arch 12, and the region is the whole of the difference.** The
 next thing M2 needs is not another reader.
 
-**The region is image data**, section 51: rows of 176 big endian RGB565 pixels on arch 12, on a 220
-row screen, recovered on both Harmony Ones and confirmed by blank screens of exactly 77440 zero
-bytes. That answers what M2 has to reproduce and not yet how. There is no header and no framing,
-and **eight candidates for what addresses the images were ruled out by measurement**, including
-screen opcode 3, which is a second bitmap draw used by one instruction in the whole corpus. The two
-routes left are the unnamed fields of records that are otherwise decoded, and the unattributed
-callers of the arch 14 seek routine at `0x18D98`.
+**The region is pictures, and screen opcode 2 addresses all of them**, sections 51 to 54. Section 51
+measured the geometry off the bytes, 176 pixels by 220 rows on arch 12; section 54 found the format
+states it. There was never a second referent, only one referent in programs nothing could reach.
 
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a

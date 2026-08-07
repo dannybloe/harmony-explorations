@@ -285,10 +285,11 @@ MODE_TAG_LEAVE = 7
 # A narrow tagged list entry: the tag then a three byte action list instruction.
 TAGGED_ENTRY_LENGTH = 4
 # Architectures where a mode record carries a screen program immediately after its tagged list.
-# Every record does on these two, 237 of 237 and 374 of 374 and 103 of 103; on arch 12 not one
-# does and on arch 9 only 43 of 114, so what follows the list there is a different thing and is
-# not established. `docs/findings.md` section 53.
-MODE_PROGRAM_ARCHITECTURES = frozenset({8, 14})
+# Every record does on all three: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
+# on arch 8 and 268 of 268 on the Harmony One. Arch 12 looked like the exception until section 54
+# found that the only thing stopping it was opcode 23's missing operand count. Arch 9 still manages
+# only 43 of 114, so there the record's tail is a different thing and is not established.
+MODE_PROGRAM_ARCHITECTURES = frozenset({8, 12, 14})
 MODE_TAG_ENTER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
@@ -324,7 +325,10 @@ NUMBER_SENDER_DIGITS = 10
 SCREEN_TABLE_SLOT = 11
 # Operand bytes per opcode, for the fixed length ones. 21 is arch 8 only and its length is
 # inferred from the corpus rather than read from a firmware, because no arch 8 image exists.
-SCREEN_FIXED_OPERANDS = {1: 6, 2: 5, 3: 9, 4: 5, 16: 1, 17: 3, 20: 3, 21: 4}
+# 23 is arch 12 only and takes **no** operand: its handler at `0x29640` on the Harmony One 3.4
+# image makes no read call at all, where every other handler calls its own reader. That one entry
+# is what unblocked arch 12's mode programs. `docs/findings.md` section 54.
+SCREEN_FIXED_OPERANDS = {1: 6, 2: 5, 3: 9, 4: 5, 16: 1, 17: 3, 20: 3, 21: 4, 23: 0}
 SCREEN_END = 0
 SCREEN_TEXT_INLINE = 5          # two position bytes then a NUL terminated string
 SCREEN_SELECT_FONT = 16         # one operand: the base slot 7 entry every later string draws with
@@ -334,7 +338,10 @@ SCREEN_SWITCH_WIDE = 19
 SCREEN_JUMP = 20
 # Present in the arch 12 dispatcher and used by no config in the corpus, so their operands are
 # not established. Listed so a parser refuses them rather than desynchronising silently.
-SCREEN_ARCH12_ONLY = frozenset({22, 23})
+# Opcode 22 is in the arch 12 dispatcher and appears in no config in the corpus, so its operand
+# count stays unestablished and a parser refuses it rather than desynchronising silently. 23 was
+# in this set until section 54 read its handler.
+SCREEN_ARCH12_ONLY = frozenset({22})
 
 # Opcode 2 draws a bitmap that lives at an address rather than inline, which makes it the only
 # screen instruction that names a place outside the program. `docs/findings.md` section 50.
@@ -350,6 +357,8 @@ BITMAP_NOTHING = 2
 # bit 7 path, so neither is inferred from the data.
 BITMAP_END = 0x00
 BITMAP_ROW_BREAK = 0x80
+# A pixel, in both the raw and the encoded kind and in a base slot 7 glyph.
+PIXEL_BYTES = 2
 
 # Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
 # orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
@@ -657,10 +666,10 @@ class ModeRecord:
 class Bitmap:
     """What a screen opcode 2 addresses: a picture stored away from the program that draws it.
 
-    `stride` is in bytes and not in pixels, because that is what the firmware counts: it draws a
-    row by handing `stride` bytes to the row writer and then advances the stream by `stride`. A
-    pixel is two bytes here as it is in a glyph, so a raw row is `stride / 2` pixels wide, but the
-    file states the byte count and this keeps it.
+    `stride` is in **pixels**, and a pixel is two bytes as it is in a glyph, so a raw row occupies
+    `2 * stride` bytes. Section 50 first read it as a byte count, which halved every raw extent;
+    the corpus settles it, because consecutive pictures then sit exactly `5 + 2 * stride * rows`
+    apart and under the old reading they appeared not to tile at all.
 
     `length` is the whole object including its header. `BITMAP_RAW` states it, and `BITMAP_ENCODED`
     is walked to its terminator; None means the walk ran off the end of the container, which is a
@@ -1567,7 +1576,7 @@ class Container:
         rows = int.from_bytes(self.blob[off + 3:off + 5], 'little')
         length, breaks = None, None
         if kind == BITMAP_RAW:
-            length = BITMAP_HEADER + stride * rows
+            length = BITMAP_HEADER + PIXEL_BYTES * stride * rows
             if off + length > self.length:
                 return None
         elif kind == BITMAP_ENCODED:
