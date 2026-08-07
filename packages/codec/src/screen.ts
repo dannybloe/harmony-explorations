@@ -361,6 +361,50 @@ function encodedExtent(
   return undefined;
 }
 
+/** The trailer: a sixteen bit checksum and the four byte end marker. */
+export const TRAILER_LENGTH = 6;
+
+/**
+ * Every picture from blob `from` to the trailer, or undefined if the walk does not land there.
+ *
+ * **Self verifying, which is the whole point.** Pictures are variable length and state their own
+ * size, so a walk starting one byte out reads a header out of pixel data and either stops early or
+ * overshoots. Landing exactly on the trailer after dozens of records is the check.
+ * `docs/findings.md` section 55.
+ */
+export function pictureRun(c: Container, from: number): Bitmap[] | undefined {
+  const end = c.blob.length - TRAILER_LENGTH;
+  const out: Bitmap[] = [];
+  let at = from;
+  while (at < end) {
+    const picture = bitmapAt(c, c.flashBase + at);
+    if (picture?.length === undefined || picture.length <= BITMAP_HEADER) return undefined;
+    out.push(picture);
+    at += picture.length;
+  }
+  return at === end && out.length > 0 ? out : undefined;
+}
+
+/**
+ * The whole picture array, found by trying start offsets just above the named content.
+ *
+ * The bank begins where everything with a name ends, but not on that exact byte: sections this
+ * codec does not fully read leave a short head, 181 bytes on one Harmony One. So offsets are tried
+ * in order under two constraints, and exactly one start satisfies both in every container that has
+ * a bank: the walk lands on the trailer, **and** every picture opcode 2 names appears in it at its
+ * own address. The first alone leaves several candidates on two arch 8 configs.
+ */
+export function pictureBank(c: Container, from: number, search = 1024): Bitmap[] | undefined {
+  const wanted = new Set(bitmaps(c).map((b) => b.address));
+  for (let start = from; start < Math.min(from + search, c.blob.length); start += 1) {
+    const run = pictureRun(c, start);
+    if (run === undefined) continue;
+    const have = new Set(run.map((b) => b.address));
+    if ([...wanted].every((a) => have.has(a))) return run;
+  }
+  return undefined;
+}
+
 /** Every distinct picture any reachable screen program addresses, in address order. */
 export function bitmaps(c: Container): Bitmap[] {
   const addresses = new Set<number>();

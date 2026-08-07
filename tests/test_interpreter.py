@@ -1609,6 +1609,91 @@ class TestTheModeRecord(unittest.TestCase):
         self.assertLess(max(len(r.entries) for r in c.mode_records()), 255)
 
 
+class TestThePictureBank(unittest.TestCase):
+    """`docs/findings.md` section 55: the region is one contiguous array of pictures.
+
+    Sections 53 and 54 reached the pictures screen opcode 2 names. This says what the rest is, and
+    the answer is that there is no rest: the whole region above the named content walks as a run of
+    pictures and lands exactly on the trailer.
+    """
+
+    # `[sample, pictures in the bank, bytes, how many opcode 2 names]`.
+    BANKS = [
+        ('one_config', 98, 1361283, 28),
+        ('one_config_unprogrammed', 70, 1102735, 27),
+        ('h600_config', 18, 434210, 16),
+        ('h700_config', 24, 598320, 21),
+        ('h700_config_2', 24, 598320, 21),
+        ('arch8_config_a', 32, 284539, 28),
+        ('arch8_config_b', 31, 239618, 27),
+        ('arch8_config_c', 33, 242658, 29),
+        ('arch8_config_d', 33, 242658, 29),
+    ]
+    # Containers with no region at all, and therefore no bank. The negative case.
+    WITHOUT = ['h525_config', 'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm']
+
+    def test_the_bank_walks_to_the_trailer_exactly(self):
+        from harmony import gspm
+        for name, count, size, named in self.BANKS:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                bank = c.picture_bank()
+                self.assertIsNotNone(bank)
+                self.assertEqual(len(bank), count)
+                self.assertEqual(sum(p.length for p in bank), size)
+                # Contiguous by construction, so check it: each picture begins where the last ended.
+                for k in range(len(bank) - 1):
+                    self.assertEqual(bank[k].address + bank[k].length, bank[k + 1].address)
+                addressed = {b.address for b in c.bitmaps()}
+                self.assertEqual(len(addressed & {p.address for p in bank}), named)
+
+    def test_the_start_is_the_only_one_that_fits(self):
+        """Two constraints, and together they leave exactly one candidate.
+
+        Landing on the trailer alone leaves several starts on two arch 8 configs, because a wrong
+        head can still parse. Requiring that every picture opcode 2 names appears in the run at its
+        own address removes them.
+        """
+        from harmony import gspm
+        for name, count, _, _ in self.BANKS:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                top = c.named_content_end()
+                wanted = {b.address for b in c.bitmaps()}
+                fits = []
+                for start in range(top, min(top + 1024, c.length)):
+                    run = c.picture_run(start)
+                    if run is not None and wanted <= {p.address for p in run}:
+                        fits.append(start)
+                self.assertEqual(len(fits), 1, f'{name}: {len(fits)} starts fit')
+
+    def test_a_container_with_no_region_has_no_bank(self):
+        from harmony import gspm
+        for name in self.WITHOUT:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                self.assertIsNone(gspm.parse(data).picture_bank())
+
+    def test_a_start_one_byte_out_does_not_walk(self):
+        """What makes the walk a proof rather than a parse."""
+        from harmony import gspm
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        bank = c.picture_bank()
+        start = c.blob_offset_of(bank[0].address)
+        self.assertIsNotNone(c.picture_run(start))
+        for delta in (-1, 1, 2, 3):
+            self.assertIsNone(c.picture_run(start + delta), f'offset {delta:+d} should not walk')
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

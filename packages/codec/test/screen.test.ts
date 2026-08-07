@@ -27,6 +27,9 @@ import {
   SCREEN_SELECT_FONT,
   bitmapAt,
   bitmaps,
+  namedContentEnd,
+  pictureBank,
+  pictureRun,
   fontSets,
   glyphAt,
   glyphOf,
@@ -339,4 +342,49 @@ test('a kind above the three the firmware knows is refused', skipUnless('h600_co
   assert.equal(bitmapAt(copy, first.address)?.kind, BITMAP_NOTHING);
   copy.blob[off] = BITMAP_NOTHING + 1;
   assert.equal(bitmapAt(copy, first.address), undefined);
+});
+
+/** `[sample, pictures in the bank, bytes]`. findings.md section 55. */
+const BANK: readonly [string, number, number][] = [
+  ['one_config', 98, 1361283],
+  ['one_config_unprogrammed', 70, 1102735],
+  ['h600_config', 18, 434210],
+  ['h700_config', 24, 598320],
+  ['arch8_config_a', 32, 284539],
+];
+
+for (const [name, count, size] of BANK) {
+  test(`${name}: the picture bank walks to the trailer exactly`, skipUnless(name), () => {
+    // The whole region above the named content is one contiguous array of pictures. Landing on the
+    // trailer after dozens of variable length records is the proof, not the parse.
+    const c = parse(load(name) as Uint8Array);
+    const bank = pictureBank(c, namedContentEnd(c));
+    assert.notEqual(bank, undefined);
+    const pictures = bank as { address: number; length: number }[];
+    assert.equal(pictures.length, count);
+    assert.equal(pictures.reduce((n, p) => n + p.length, 0), size);
+    for (let k = 0; k + 1 < pictures.length; k += 1) {
+      const here = pictures[k] as { address: number; length: number };
+      assert.equal(here.address + here.length, (pictures[k + 1] as { address: number }).address);
+    }
+    // Every picture opcode 2 names is one of these, which is the second constraint that makes the
+    // start unique.
+    const inside = new Set(pictures.map((p) => p.address));
+    for (const bitmap of bitmaps(c)) assert.ok(inside.has(bitmap.address));
+  });
+}
+
+test('a start one byte out does not walk', skipUnless('h600_config'), () => {
+  const c = parse(load('h600_config') as Uint8Array);
+  const bank = pictureBank(c, namedContentEnd(c)) as { address: number }[];
+  const start = c.blobOffsetOf((bank[0] as { address: number }).address) as number;
+  assert.notEqual(pictureRun(c, start), undefined);
+  for (const delta of [-1, 1, 2, 3]) {
+    assert.equal(pictureRun(c, start + delta), undefined, `offset ${delta}`);
+  }
+});
+
+test('a container with no region has no bank', skipUnless('h525_config'), () => {
+  const c = parse(load('h525_config') as Uint8Array);
+  assert.equal(pictureBank(c, namedContentEnd(c)), undefined);
 });

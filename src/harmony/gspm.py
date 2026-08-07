@@ -359,6 +359,8 @@ BITMAP_END = 0x00
 BITMAP_ROW_BREAK = 0x80
 # A pixel, in both the raw and the encoded kind and in a base slot 7 glyph.
 PIXEL_BYTES = 2
+# The trailer: a sixteen bit checksum and the four byte end marker.
+TRAILER_LENGTH = 6
 
 # Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
 # orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
@@ -1605,6 +1607,76 @@ class Container:
             elif control & 0x80 == 0:
                 off += 2 * control
         return None, None
+
+    def picture_run(self, offset: int) -> Optional[List['Bitmap']]:
+        """Every picture from blob `offset` to the trailer, or None if the walk does not land there.
+
+        **Self verifying, which is the whole point.** Pictures are variable length and state their
+        own size, so a walk that starts one byte out reads a header out of pixel data and either
+        stops or overshoots. Landing exactly on the trailer after dozens of records is the check.
+
+        `docs/findings.md` section 55.
+        """
+        end = self.length - TRAILER_LENGTH
+        out: List['Bitmap'] = []
+        at = offset
+        while at < end:
+            picture = self.bitmap_at(self.flash_base + at)
+            if picture is None or picture.length is None or picture.length <= BITMAP_HEADER:
+                return None
+            out.append(picture)
+            at += picture.length
+        return out if at == end and out else None
+
+    def picture_bank(self, search: int = 1024) -> Optional[List['Bitmap']]:
+        """The whole picture array, found by trying start offsets just above the named content.
+
+        The bank begins where everything with a name ends, but not on that exact byte: sections
+        this module does not fully read leave a short head, 181 bytes on one Harmony One. So offsets
+        are tried in order and the first whose walk lands exactly on the trailer wins.
+
+        **Searching is safe here in a way it usually is not.** A wrong start reads a header out of
+        pixel data, and for it to still consume the remaining hundreds of kilobytes in whole records
+        and stop on the trailer would be a coincidence at the scale of dozens of records. The corpus
+        answer is the smallest candidate that fits, and it fits only once.
+        """
+        top = self.named_content_end()
+        if top is None:
+            return None
+        # Every picture opcode 2 names has to appear in the run at its own address. That is the
+        # second constraint and it is what makes the answer unique: on two arch 8 configs several
+        # starts land on the trailer, and only one of them also agrees with the addresses.
+        wanted = {b.address for b in self.bitmaps()}
+        for start in range(top, min(top + search, self.length)):
+            run = self.picture_run(start)
+            if run is not None and wanted <= {b.address for b in run}:
+                return run
+        return None
+
+    def named_content_end(self) -> Optional[int]:
+        """The blob offset just past the highest byte any named section reaches.
+
+        Only the sections this module can read, and not the pictures, which is what makes it a
+        usable lower bound for where the picture bank starts.
+        """
+        top = self.marker_offset + 4
+        for slot in range(len(self.sections)):
+            array = self.pointer_array(slot)
+            if array:
+                top = max(top, max(array) - self.flash_base)
+        for record in self.mode_records() or []:
+            at = self.blob_offset_of(record.address)
+            if at is not None:
+                top = max(top, at + 4)
+        programs, _ = self.reachable_screen_programs()
+        for address, program in programs.items():
+            at = self.blob_offset_of(address)
+            if at is None:
+                continue
+            top = max(top, at + sum(1 + len(i.operands) +
+                                    (len(i.glyphs) + 1 if i.glyphs is not None else 0)
+                                    for i in program))
+        return top
 
     def bitmaps(self) -> List['Bitmap']:
         """Every distinct picture any reachable screen program addresses, in address order."""

@@ -18,7 +18,7 @@
  */
 import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
-import { bitmaps, reachablePrograms } from './screen.ts';
+import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { irGroups } from './ir.ts';
 import { eventMap, handlerSets, modeRecords, modeTable, stateTable } from './sections.ts';
@@ -61,8 +61,9 @@ export const REPORT_LIMIT = 20;
  * Deliberately separate from folding them into a map, so a caller debugging a bad extent can see
  * the raw claims with their owners rather than only the merged result.
  */
-export function claims(c: Container): Claim[] {
+export function claims(c: Container, withPictures = true): Claim[] {
   const out: Claim[] = [];
+  let bankClaims: () => void = () => {};
   const add = (start: number | undefined, length: number | undefined, owner: string): void => {
     if (start === undefined || length === undefined || length <= 0) return;
     if (start < 0 || start + length > c.blob.length) return;
@@ -147,11 +148,23 @@ export function claims(c: Container): Claim[] {
     }
   }
 
-  // What screen opcode 2 addresses. Both kinds state an extent now: the raw one in its header and
-  // the encoded one by where its walk terminates.
-  for (const bitmap of bitmaps(c)) {
-    at(bitmap.address, bitmap.length, 'slot-11-bitmap');
-  }
+  // The pictures, in two claims that between them name every byte once.
+  //
+  // The bank is the whole region above the named content, one contiguous array of pictures of
+  // which screen opcode 2 names about a third; the walk it performs is its own proof, because
+  // landing exactly on the trailer after dozens of variable length records is not something a
+  // wrong start does. It is deferred because its start is where every other claim stops, and the
+  // trailer is excluded from that because it sits at the very end.
+  //
+  // `slot-11-bitmap` then covers only the pictures **outside** the bank, so the two never collide.
+  bankClaims = () => {
+    const bank = pictureBank(c, namedContentEnd(c)) ?? [];
+    const inside = new Set(bank.map((picture) => picture.address));
+    for (const picture of bank) at(picture.address, picture.length, 'picture-bank');
+    for (const bitmap of bitmaps(c)) {
+      if (!inside.has(bitmap.address)) at(bitmap.address, bitmap.length, 'slot-11-bitmap');
+    }
+  };
 
   // The four tabular sections, each claiming the length its own reader computed. None of them is
   // large; what makes them worth claiming is that the length is read rather than taken as the gap
@@ -245,7 +258,24 @@ export function claims(c: Container): Claim[] {
     for (const picture of set) at(picture.address, picture.length, 'slot-7-glyph');
   }
 
+  // Deferred until every other claim exists, because the bank starts where they stop.
+  if (withPictures) bankClaims();
   return out;
+}
+
+/**
+ * Where the named content stops, which is the lower bound for the picture bank's start.
+ *
+ * Everything but the pictures themselves and the trailer, the first because the bank is what this
+ * is used to find and the second because it sits at the very end of the container.
+ */
+export function namedContentEnd(c: Container): number {
+  let top = 0;
+  for (const claim of claims(c, false)) {
+    if (claim.owner === 'trailer') continue;
+    top = Math.max(top, claim.start + claim.length);
+  }
+  return top;
 }
 
 /** The base slot number an architecture slot corresponds to, or undefined when it is inserted. */

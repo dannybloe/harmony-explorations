@@ -5769,6 +5769,10 @@ and on arch 12 because of one missing operand count.
 The Harmony One's remaining half is the open item, and it is a different question from the one this
 started as: not "what addresses the region" but "what else is in it besides the 28 pictures".
 
+> **Answered in section 55: nothing else.** The region is one contiguous array of pictures, 98 of
+> them on that config, of which 28 are addressed. The rest are in the same array and nothing this
+> project can reach draws them.
+
 ### Coverage
 
 M2's number, which is what all of this was for:
@@ -5790,6 +5794,83 @@ Zero overlapping claims anywhere, which is the check that keeps those numbers ho
   `MODE_PROGRAM_ARCHITECTURES` gains 12; `PIXEL_BYTES` and the corrected raw extent.
 * `tests/test_interpreter.py` and `packages/codec/test/screen.test.ts`, where the tiling test now
   asserts the opposite of what it did and says so.
+
+## 55. The region is one array of pictures, and about a third of them are addressed
+
+Section 54 left the Harmony One at 48% of its region explained and framed the remainder as a
+different question: not what addresses the region, but what else is in it besides the pictures.
+The answer is nothing. It is all pictures, and the ones nothing addresses sit in the same array as
+the ones that do.
+
+### The walk
+
+Every gap the byte accounting reported inside the region begins with a valid picture header. Walking
+a gap as a run of pictures, each stating its own size, consumes it to the byte: seven gaps on the
+Harmony One, 44 pictures, every one exact. Extending that to the whole region does the same.
+
+| container | pictures | bytes | landed | addressed by opcode 2 |
+|---|---|---|---|---|
+| Harmony One | 98 | 1361283 | exact | 28 |
+| Harmony One, spare | 70 | 1102735 | exact | 27 |
+| Harmony 600 | 18 | 434210 | exact | 16 |
+| Harmony 700, both | 24 | 598320 | exact | 21 |
+| 880, arch 8 | 32 | 284539 | exact | 28 |
+| the other three arch 8 | 31 to 33 | 239618 to 242658 | exact | 27 to 29 |
+
+**Landing exactly on the trailer is the proof, not the parse.** Pictures are variable length and
+state their own size, so a walk that starts one byte out reads a header out of pixel data and
+either stops early or overshoots. Nine containers, nine exact landings, over runs of 18 to 98
+records. The test asserts that offsets one to three bytes either side of the true start do not walk
+at all.
+
+### Finding the start
+
+The bank begins where the named content stops, but not on that exact byte: sections the codec does
+not fully read leave a short head, one byte on the Harmony 600 and 181 on a Harmony One. So the
+reader tries offsets in order under **two** constraints, and exactly one candidate satisfies both in
+every container:
+
+* the walk lands on the trailer, and
+* every picture screen opcode 2 names appears in the run, at its own address.
+
+The first alone is not enough. On two arch 8 configs eleven and thirty starts land on the trailer,
+because a wrong head can still parse into whole records; adding the second leaves one. That is worth
+stating because searching for a start is normally a bad idea, and what makes it safe here is that
+the search is checked twice against things it did not choose.
+
+### What it means
+
+The region is a **picture bank**: a contiguous array with no table, no count and no header, running
+from the end of the named content to the trailer. About a third of its entries are drawn by a screen
+program and the rest are not drawn by anything this project can reach. Whether they are spares, or
+addressed by something still unread, is not established and the reader does not pretend otherwise:
+it reports them, it does not explain them.
+
+For a writer this is the most useful shape it could have had. A picture's position is implied by
+everything before it, so inserting or resizing one moves every later address, which is consistent
+with what section 16 observed about the generator rewriting whole sections for a small change.
+
+### Coverage
+
+| sample | before this session | now |
+|---|---|---|
+| Harmony 700 | 26.0% | **91.9%** |
+| Harmony 600 | 24.5% | **87.4%** |
+| Harmony One | 7.2% | **90.0%** |
+| Harmony One, spare | 3.2% | **97.0%** |
+| 880, arch 8 | 12.4% | **82.2%** |
+
+Zero overlapping claims anywhere. The bank and the pictures opcode 2 names are disjoint by
+construction: the named ones are claimed only when they fall outside the bank, which in the current
+corpus is never.
+
+### Where it lands
+
+* `docs/config-format.md`, the screen language.
+* `Container.picture_run`, `Container.picture_bank` and `Container.named_content_end` in
+  `src/harmony/gspm.py`; `pictureRun`, `pictureBank` and `namedContentEnd` in `packages/codec`,
+  with a `picture-bank` claim.
+* `tests/test_interpreter.py` `TestThePictureBank` and `packages/codec/test/screen.test.ts`.
 
 ## References
 

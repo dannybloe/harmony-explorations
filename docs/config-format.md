@@ -508,9 +508,22 @@ containers emit no opcode 2 and hold no bitmaps.
 
 **Two size classes.** The ones a base slot 11 program names are icons, 245 to 1765 bytes. The ones a
 **mode record's** program names are full screens: stride 128 over 128 rows on arch 14, 128 over 160
-on arch 8, and **176 over 220 on arch 12**, which is the Harmony One's panel. Together they are
-**98% of the region** on a Harmony 600, 93% on a 700, 97% on arch 8 and 48% on a Harmony One.
-[findings.md](findings.md) sections 49 to 54.
+on arch 8, and **176 over 220 on arch 12**, which is the Harmony One's panel.
+
+#### The picture bank
+
+Pictures do not sit where they are addressed; they sit in **one contiguous array** running from the
+end of the named content to the trailer, with **no table, no count and no header**. Walking it from
+its start lands exactly on the trailer in every container that has one: 98 pictures on a Harmony
+One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. About a third of the entries are drawn by a
+screen program and the rest are drawn by nothing this project can reach.
+
+The start is found by trying offsets above the named content under two constraints, the exact
+landing and the presence of every addressed picture; exactly one candidate satisfies both.
+`gspm.picture_bank`. [findings.md](findings.md) sections 49 to 55.
+
+**For a writer:** a picture's position is implied by everything before it, so inserting or resizing
+one moves every later address.
 Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
 Opcode 3 draws the same object with a six byte position record instead of two. It is used by one

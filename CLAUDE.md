@@ -632,8 +632,20 @@ one matched, which is why section 50's "the pictures do not tile" was wrong. Arc
 **So the region is pictures and opcode 2 addresses all of them**: 98.3% of a Harmony 600, 93.3% of a
 700, 97.0% of arch 8, 48.2% of a Harmony One. There was never a second referent, only one referent
 in programs nothing could reach. Coverage **87.8%** on a 700, 86.4% on a 600, 80.2% on arch 8, 47.9%
-on a One, zero overlaps. The open item is the Harmony One's other half, which is a different
-question: not what addresses the region but what else is in it besides the 28 pictures.
+on a One, zero overlaps. **And the other half is nothing else**, section 55: the region is **one contiguous array of
+pictures** from the end of the named content to the trailer, with no table, no count and no header.
+Walking it lands **exactly** on the trailer in all nine containers that have one, over runs of 18 to
+98 records, and a start one to three bytes out does not walk at all. About a third of the entries
+are drawn by a screen program; the rest are in the same array and nothing reachable draws them,
+which is reported and **not** explained. The start is found by trying offsets above the named
+content under **two** constraints, the exact landing and the presence of every addressed picture:
+the first alone leaves eleven and thirty candidates on two arch 8 configs, and both together leave
+exactly one everywhere. For a writer, a picture's position is implied by everything before it, so
+inserting or resizing one moves every later address.
+
+Coverage now: **91.9%** on a Harmony 700, 87.4% on a 600, **90.0%** on a Harmony One, 97.0% on the
+spare One, 82.2% on arch 8, all with zero overlaps. What is left is arch 9, still at 14.1% with only
+43 of 114 mode records decoding, and the low part of a config rather than the region.
 
 An off by one here cost time and is worth remembering: an **empty** wide tagged list has no entry to
 carry a flags byte, so inferring the form from the entries makes it look narrow and the length comes

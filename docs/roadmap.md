@@ -252,14 +252,15 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | every reader ported | mode records, 53 | opcode 23 and the extent, 54 |
-|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | **87.8%** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | **86.4%** |
-| Harmony One | 3.2% | 8.0% | 8.6% | **47.9%** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | **80.2%** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 |
+|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | **91.9%** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | **87.4%** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | **90.0%** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | **97.0%** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | **82.2%** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% |
 
 Neither of the last two columns is a reader. Section 53 is one rule, that a mode record carries its
 own screen program, and section 54 is two corrections: opcode 23 takes no operand, which is what
@@ -322,9 +323,14 @@ So the port is done and the ceiling is where section 49 said it would be. **Cove
 mid twenties on arch 14 and at 8% on arch 12, and the region is the whole of the difference.** The
 next thing M2 needs is not another reader.
 
-**The region is pictures, and screen opcode 2 addresses all of them**, sections 51 to 54. Section 51
-measured the geometry off the bytes, 176 pixels by 220 rows on arch 12; section 54 found the format
-states it. There was never a second referent, only one referent in programs nothing could reach.
+**The region is one contiguous array of pictures**, sections 51 to 55. Section 51 measured the
+geometry off the bytes, 176 pixels by 220 rows on arch 12; section 54 found the format states it;
+section 55 found that the pictures nothing addresses sit in the same array as the ones that do, and
+that walking it lands exactly on the trailer in all nine containers that have one. There was never a
+second referent.
+
+**What is left is arch 9 and the low part of a config**, not the region. The Harmony 525 sits at
+14.1% and its mode records decode only 43 of 114, so its record tail is a different shape.
 
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a
