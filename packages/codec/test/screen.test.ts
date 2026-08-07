@@ -280,12 +280,15 @@ for (const [name, count, kinds, strides, rows] of BITMAPS) {
     assert.deepEqual(uniq(found.map((b) => b.stride)), strides);
     assert.deepEqual(uniq(found.map((b) => b.rows)), rows);
     for (const bitmap of found) {
-      if (bitmap.kind !== BITMAP_RAW) {
-        // Deliberately no extent where none is established, so the accounting cannot claim it.
-        assert.equal(bitmap.length, undefined);
-        continue;
+      if (bitmap.kind === BITMAP_RAW) {
+        assert.equal(bitmap.length, BITMAP_HEADER + bitmap.stride * bitmap.rows);
+        assert.equal(bitmap.rowBreaks, undefined);
+      } else {
+        // The closure the encoded extent rests on: the body discards the header and then breaks
+        // rows exactly as many times as the header said, which is two independent statements of
+        // one number. A walk one control byte out of step would agree with neither.
+        assert.equal(bitmap.rowBreaks, bitmap.rows - 1);
       }
-      assert.equal(bitmap.length, BITMAP_HEADER + bitmap.stride * bitmap.rows);
       const off = c.blobOffsetOf(bitmap.address) as number;
       assert.ok(off + (bitmap.length as number) <= c.blob.length);
     }

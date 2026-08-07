@@ -255,9 +255,9 @@ it the same day:
 | sample | at the start | after the screen language and the fonts | plus the bitmaps |
 |---|---|---|---|
 | Harmony 700 | 11.4% | 26.0% | **26.0%** |
-| Harmony 600 | 9.5% | 24.5% | **24.5%** |
-| Harmony One | 3.2% | 7.2% | **7.3%** |
-| 880, arch 8 | 3.6% | 12.4% | **15.6%** |
+| Harmony 600 | 9.5% | 24.5% | **24.6%** |
+| Harmony One | 3.2% | 7.2% | **7.6%** |
+| 880, arch 8 | 3.6% | 12.4% | **16.0%** |
 | Harmony 525, arch 9 | 7.2% | 8.8% | 8.8% |
 | the three safe mode containers | 4.2% | **64.5%** | 64.5% |
 
@@ -308,7 +308,7 @@ that region is what M2 actually needs next.**
 
 **Opcode 2's handler has now been read, and it does not explain the region.** Section 50: the
 instruction draws a bitmap with a five byte header that states its own size, and the sizes are 125
-to 885 bytes, 3 to 16 per config. All sixteen of the Harmony One's come to under two kilobytes of
+to 885 bytes, 3 to 16 per config. All sixteen of the Harmony One's come to under seven kilobytes of
 its 1.37 MB region, which is why the column above hardly moves. Three follow-up measurements came
 back negative and are recorded so they are not repeated: the bitmaps do not tile, the region's only
 ascending pointer-shaped runs are misaligned reads of base slot 10's array, and the bytes are

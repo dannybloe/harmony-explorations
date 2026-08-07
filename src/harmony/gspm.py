@@ -339,6 +339,10 @@ BITMAP_HEADER = 5
 BITMAP_RAW = 0        # `rows` rows of `stride` bytes, straight through
 BITMAP_ENCODED = 1    # the skip and literal encoding a base slot 7 glyph uses, section 46
 BITMAP_NOTHING = 2
+# The two control bytes of the encoded kind, both special cased in the firmware before the generic
+# bit 7 path, so neither is inferred from the data.
+BITMAP_END = 0x00
+BITMAP_ROW_BREAK = 0x80
 
 # Base slot 9 is a second table of tagged handler sets, the same shape as the mode table and two
 # orders of magnitude smaller. One entry is current at a time; the firmware runs tag 2 on the
@@ -636,16 +640,20 @@ class Bitmap:
     pixel is two bytes here as it is in a glyph, so a raw row is `stride / 2` pixels wide, but the
     file states the byte count and this keeps it.
 
-    `length` is the whole object including its header, and it is only known for `BITMAP_RAW`.
-    `BITMAP_ENCODED` runs until its own encoding says stop, which is not established, so `length`
-    is None there rather than a guess: a guessed extent is worse than none, because the byte
-    accounting in `packages/codec` would then quietly claim bytes it has not read.
+    `length` is the whole object including its header. `BITMAP_RAW` states it, and `BITMAP_ENCODED`
+    is walked to its terminator; None means the walk ran off the end of the container, which is a
+    refusal and not a picture.
+
+    `row_breaks` is how many row breaks the encoding contains, and it is set only for the encoded
+    kind. It is the closure the extent rests on: the encoded body discards the header, so the two
+    agreeing on the row count is two independent statements of the same number.
     """
     address: int
     kind: int
     stride: int
     rows: int
     length: Optional[int]
+    row_breaks: Optional[int] = None
 
 
 @dataclass
@@ -1463,12 +1471,37 @@ class Container:
             return None
         stride = int.from_bytes(self.blob[off + 1:off + 3], 'little')
         rows = int.from_bytes(self.blob[off + 3:off + 5], 'little')
-        length = None
+        length, breaks = None, None
         if kind == BITMAP_RAW:
             length = BITMAP_HEADER + stride * rows
             if off + length > self.length:
                 return None
-        return Bitmap(address=address, kind=kind, stride=stride, rows=rows, length=length)
+        elif kind == BITMAP_ENCODED:
+            length, breaks = self._encoded_extent(off + BITMAP_HEADER)
+            if length is None:
+                return None
+        return Bitmap(address=address, kind=kind, stride=stride, rows=rows, length=length,
+                      row_breaks=breaks)
+
+    def _encoded_extent(self, off: int) -> Tuple[Optional[int], Optional[int]]:
+        """Walk the encoded body from `off` and return `(whole object length, row breaks)`.
+
+        One byte at a time, exactly as the firmware does it: `BITMAP_END` stops, `BITMAP_ROW_BREAK`
+        starts the next row, any other byte with bit 7 set skips that many pixels, and a byte below
+        it introduces that many literal **two byte** pixels. The first two are separate cases in
+        the code rather than a skip of zero, which is why the row break is a fact and not a guess.
+        """
+        start, breaks = off, 0
+        while off < self.length:
+            control = self.blob[off]
+            off += 1
+            if control == BITMAP_END:
+                return BITMAP_HEADER + off - start, breaks
+            if control == BITMAP_ROW_BREAK:
+                breaks += 1
+            elif control & 0x80 == 0:
+                off += 2 * control
+        return None, None
 
     def bitmaps(self) -> List['Bitmap']:
         """Every distinct picture any reachable screen program addresses, in address order."""

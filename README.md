@@ -96,7 +96,7 @@ is loaded, and the row loop stops drawing above row 128 while still consuming th
 
 **The largest single unknown is that most of a config is a region no named section reaches**, 62% of
 a Harmony 600 and 82% of a Harmony One. The bitmaps are the only thing known to point into it and
-they account for about one part in seven hundred of it, so what fills it is still open; three
+they account for about one part in two hundred of it, so what fills it is still open; three
 follow-up measurements that came back negative are written up so they are not repeated.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding

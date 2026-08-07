@@ -260,6 +260,12 @@ export const BITMAP_RAW = 0;
 export const BITMAP_ENCODED = 1;
 /** A bare RETURN in the firmware: a valid byte that draws nothing. */
 export const BITMAP_NOTHING = 2;
+/**
+ * The two control bytes of the encoded kind. Both are special cased in the firmware ahead of the
+ * generic bit 7 path, so the row break is a fact rather than a skip of zero read charitably.
+ */
+export const BITMAP_END = 0x00;
+export const BITMAP_ROW_BREAK = 0x80;
 
 export interface Bitmap {
   address: number;
@@ -272,11 +278,15 @@ export interface Bitmap {
   stride: number;
   rows: number;
   /**
-   * The whole object including its header, and only known for `BITMAP_RAW`. An encoded picture
-   * runs until its own encoding says stop and that rule is not established, so this is undefined
-   * rather than a guess: the byte accounting would otherwise claim bytes nothing has read.
+   * The whole object including its header. A raw picture states it; an encoded one is walked to
+   * its terminator. Undefined means the walk ran off the end, which is a refusal, not a picture.
    */
   length: number | undefined;
+  /**
+   * Row breaks in the encoded body, and set only for that kind. The closure the extent rests on:
+   * the body discards the header, so this and `rows` are two independent statements of one number.
+   */
+  rowBreaks: number | undefined;
 }
 
 /** The address a `SCREEN_DRAW_IMAGE` names: its last three operand bytes. */
@@ -308,11 +318,38 @@ export function bitmapAt(c: Container, address: number): Bitmap | undefined {
   const stride = u16(c.blob, off + 1);
   const rows = u16(c.blob, off + 3);
   let length: number | undefined;
+  let rowBreaks: number | undefined;
   if (kind === BITMAP_RAW) {
     length = BITMAP_HEADER + stride * rows;
     if (off + length > c.blob.length) return undefined;
+  } else if (kind === BITMAP_ENCODED) {
+    const walked = encodedExtent(c, off + BITMAP_HEADER);
+    if (walked === undefined) return undefined;
+    ({ length, rowBreaks } = walked);
   }
-  return { address, kind, stride, rows, length };
+  return { address, kind, stride, rows, length, rowBreaks };
+}
+
+/**
+ * Walk an encoded body from `off`, one control byte at a time exactly as the firmware does it.
+ *
+ * `BITMAP_END` stops, `BITMAP_ROW_BREAK` starts the next row, any other byte with bit 7 set skips
+ * that many pixels, and a byte below it introduces that many literal two byte pixels.
+ */
+function encodedExtent(
+  c: Container,
+  from: number,
+): { length: number; rowBreaks: number } | undefined {
+  let off = from;
+  let rowBreaks = 0;
+  while (off < c.blob.length) {
+    const control = u8(c.blob, off);
+    off += 1;
+    if (control === BITMAP_END) return { length: BITMAP_HEADER + off - from, rowBreaks };
+    if (control === BITMAP_ROW_BREAK) rowBreaks += 1;
+    else if ((control & 0x80) === 0) off += 2 * control;
+  }
+  return undefined;
 }
 
 /** Every distinct picture any reachable screen program addresses, in address order. */

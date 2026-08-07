@@ -138,11 +138,10 @@ export function claims(c: Container): Claim[] {
     }
   }
 
-  // What screen opcode 2 addresses. Only the raw kind is claimed: an encoded picture's extent is
-  // not established, and claiming a guess would be worse than claiming nothing, because the whole
-  // point of this number is that every byte in it has been read by something.
+  // What screen opcode 2 addresses. Both kinds state an extent now: the raw one in its header and
+  // the encoded one by where its walk terminates.
   for (const bitmap of bitmaps(c)) {
-    if (bitmap.length !== undefined) at(bitmap.address, bitmap.length, 'slot-11-bitmap');
+    at(bitmap.address, bitmap.length, 'slot-11-bitmap');
   }
 
   // Base slot 14's own records, which are what supplied half of those roots.

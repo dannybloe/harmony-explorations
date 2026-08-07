@@ -464,8 +464,8 @@ The only screen instruction that names a place outside its own program. At the a
 
 `kind` 0 is `rows` rows of `stride` raw bytes, so the object is exactly `5 + stride * rows` bytes.
 `kind` 1 discards the two sizes and uses the base slot 7 glyph encoding instead, skip and literal
-over **two byte** pixels; its extent is **not established** and the readers return no length rather
-than guessing one. `kind` 2 is a bare `RETURN` in the firmware, valid and drawing nothing, and a
+over **two byte** pixels, ending at a `0x00` control byte; it breaks rows exactly `rows - 1` times
+even though it threw the header away, which is the closure its extent rests on. `kind` 2 is a bare `RETURN` in the firmware, valid and drawing nothing, and a
 higher value is not reached at all.
 
 Two rails for a writer, both read off the firmware and invisible in the corpus:

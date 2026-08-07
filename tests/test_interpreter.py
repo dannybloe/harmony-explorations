@@ -1442,16 +1442,31 @@ class TestTheBitmap(unittest.TestCase):
                     off = c.blob_offset_of(bitmap.address)
                     self.assertLessEqual(off + bitmap.length, c.length)
 
-    def test_an_encoded_bitmap_claims_no_length(self):
+    def test_an_encoded_bitmap_agrees_with_a_header_it_discarded(self):
+        """The closure the encoded extent rests on, and it is a real one.
+
+        The encoded body reads the two `u16` of the header and throws them away, then draws until
+        its own terminator. So the number of row breaks it contains and the row count the header
+        states are two independent statements, and a walk that is off by one control byte would
+        desynchronise and produce neither. All 51 encoded pictures in the corpus break exactly
+        `rows - 1` times, across the three architectures that carry any.
+        """
         from harmony import gspm
-        # Deliberate. Where the extent is not established the reader says so rather than guessing,
-        # because a guessed extent would be claimed by the byte accounting as if it were read.
-        lab.require('h600_config')
-        c = gspm.parse(lab.load('h600_config'))
-        encoded = [b for b in c.bitmaps() if b.kind == gspm.BITMAP_ENCODED]
-        self.assertTrue(encoded)
-        for bitmap in encoded:
-            self.assertIsNone(bitmap.length)
+        total = 0
+        for name, _, _, _, _ in self.SHAPES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for bitmap in c.bitmaps():
+                    if bitmap.kind != gspm.BITMAP_ENCODED:
+                        self.assertIsNone(bitmap.row_breaks)
+                        continue
+                    self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
+                    total += 1
+        if all(lab.path(name) for name, count, _, _, _ in self.SHAPES if count):
+            self.assertEqual(total, 51)
 
     def test_the_pictures_do_not_tile_the_unreached_region(self):
         """The negative that keeps section 49 honest.

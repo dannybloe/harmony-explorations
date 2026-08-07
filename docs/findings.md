@@ -5277,7 +5277,7 @@ been decoded and no firmware has been read for it.
 > **Answered in part by section 50, and the answer is narrower than this section expected.** The
 > firmware was read and opcode 2 does draw a picture, with a header this section did not know
 > about. But the pictures are 125 to 885 bytes each, so all sixteen of the Harmony One's come to
-> under two kilobytes of its 1.37 MB region. Opcode 2 is still the only referent found, and it is
+> under seven kilobytes of its 1.37 MB region. Opcode 2 is still the only referent found, and it is
 > now known to account for almost none of what it points into. Section 50 records what that rules
 > out.
 
@@ -5353,7 +5353,17 @@ picture is exactly `5 + stride * rows` bytes and nothing about its extent is inf
 Kind 1 reads and **discards** the same four header bytes, then runs a byte at a time: `0x00` ends,
 `0x80` advances a row, bit 7 set skips that many, and a value below `0x80` introduces that many
 literal pixels. That is the base slot 7 glyph encoding of section 46, byte for byte, which is why
-`stride` is recorded in bytes rather than pixels: a pixel is two bytes on both paths.
+`stride` is recorded in bytes rather than pixels: a pixel is two bytes on both paths. `0x00` and
+`0x80` are separate cases in the code ahead of the generic bit 7 path, so the row break is read
+rather than charitably interpreted as a skip of zero.
+
+**The encoded extent has a closure, which is why it is claimed.** This section said on the day it
+landed that kind 1's extent was not established and that the readers would return no length rather
+than guess one. That was resolved within the hour and is corrected here rather than rewritten: the
+terminator makes the extent walkable, and the check that it is walked correctly is that the body
+**discards the header and then breaks rows exactly `rows - 1` times anyway**. Two independent
+statements of one number, and a walk one control byte out of step would agree with neither. It
+holds for all 51 encoded pictures in the corpus, on arch 8, arch 12 and arch 14.
 
 **Two rails for a writer, both from the code rather than from the data.** The firmware loads only
 the **low byte** of each `u16`, so a stride or a row count above 255 is taken modulo 256 with no
@@ -5368,10 +5378,10 @@ and decodes each header. Every one of them decodes, in every container:
 
 | sample | pictures | kinds | strides | rows | raw bytes |
 |---|---|---|---|---|---|
-| Harmony 700, both | 4 | 0 and 1 | 12 | 10 | 375 |
-| Harmony 600 | 3 | 0 and 1 | 12 | 10 | 250 |
-| Harmony One, both | 16 | 0 and 1 | 20, 22, 88 | 10, 11, 18 | 1912 |
-| 880, all four arch 8 | 10 | 0 and 1 | 16 to 19 | 10 | 710 |
+| Harmony 700, both | 4 | 0 and 1 | 12 | 10 | 536 |
+| Harmony 600 | 3 | 0 and 1 | 12 | 10 | 411 |
+| Harmony One, both | 16 | 0 and 1 | 20, 22, 88 | 10, 11, 18 | 6795 |
+| 880, arch 8 | 10 | 0 and 1 | 16 to 19 | 10 | 2423 |
 | 525, arch 9 | 0 | | | | 0 |
 | the three safe mode | 0 | | | | 0 |
 
@@ -5382,8 +5392,8 @@ The two container kinds that emit no opcode 2 have no pictures, the same negativ
 
 ### The negative, which is the point
 
-1912 bytes of pictures against a 1374394 byte region on the Harmony One. **Opcode 2 accounts for
-about one part in seven hundred of what it points into.** Three measurements were made to find the
+6795 bytes of pictures against a 1374394 byte region on the Harmony One. **Opcode 2 accounts for
+about one part in two hundred of what it points into**, counting both kinds at their full extent. Three measurements were made to find the
 rest, and all three came back negative. They are recorded here so nobody repeats them:
 
 * **The pictures do not tile.** If the region were a run of these objects the byte after one would
@@ -5413,8 +5423,7 @@ are decoded but whose record fields are not all named.
   `Container.bitmaps`, and `Container.reachable_screen_programs`, which `tools/screen_dump.py` now
   calls instead of keeping its own copy of the walk.
 * `packages/codec/src/screen.ts`: the same four, and a `slot-11-bitmap` claim in the byte
-  accounting. Raw pictures only: an encoded one's extent is not established, so the reader returns
-  no length rather than a guess, because the accounting would otherwise claim bytes nothing read.
+  accounting, for both kinds.
 * `tests/test_interpreter.py` `TestTheBitmap` and `packages/codec/test/screen.test.ts`.
 
 ## References

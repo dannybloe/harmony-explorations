@@ -552,11 +552,12 @@ many readers are ported.
 
 **Opcode 2 draws a bitmap and that does not explain the region**, section 50, which answers section
 49's conjecture and refuses its hope. `u8 kind; u16 stride; u16 rows` then pixels; kind 0 is raw and
-exactly `5 + stride * rows` bytes, kind 1 is the base slot 7 glyph encoding with its extent **not
-established**, kind 2 is a bare `RETURN`. Two writer rails from the code: only the **low byte** of
+exactly `5 + stride * rows` bytes, kind 1 is the base slot 7 glyph encoding walked to its `0x00`
+terminator, kind 2 is a bare `RETURN`. The encoded extent has its own closure: the body **discards
+the header** and then breaks rows exactly `rows - 1` times anyway, in all 51 encoded pictures. Two writer rails from the code: only the **low byte** of
 each `u16` is loaded, and the row loop stops drawing above **row 128** while still advancing. But a
-picture is 125 to 885 bytes and there are 3 to 16 per config, so the One's sixteen come to under two
-kilobytes of a 1.37 MB region. Three negatives are recorded rather than left to be redone: the
+picture is 125 to 885 bytes and there are 3 to 16 per config, so the One's sixteen come to under
+seven kilobytes of a 1.37 MB region. Three negatives are recorded rather than left to be redone: the
 bitmaps **do not tile**, the region's only ascending pointer-shaped runs are **misaligned reads of
 base slot 10's own array** (a misaligned read of an ascending table is itself ascending), and 40% of
 the 600's non-zero big endian words are exact RGB565 greys against 31056 distinct words on the
