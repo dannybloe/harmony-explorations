@@ -1,0 +1,211 @@
+/**
+ * Byte accounting: which bytes of a container belong to a structure this codec understands.
+ *
+ * This is the progress measure for milestone M2 in `docs/roadmap.md`, and it comes before the
+ * emitter on purpose. A round trip that rebuilds a config byte for byte can only rebuild what it
+ * can attribute, so "what fraction is attributed" is the number that has to reach 100 first, and
+ * it is a number that can only go up as readers land.
+ *
+ * It is also a check rather than only a report. Two structures claiming the same byte means one of
+ * them is sized wrong, and a claim that runs past the end of its section means the same. Neither
+ * shows up in a reader's own tests, because a reader that returns plausible values from slightly
+ * the wrong number of bytes looks correct until something else needs the boundary.
+ *
+ * **A claim is made by the reader that already knows the size.** Nothing here re-derives a length
+ * from a structure's contents; where a length was only computed inside a reader, that reader grew
+ * a variant which returns it. A second copy of a size rule is free to drift from the first, which
+ * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
+ */
+import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './gspm.ts';
+
+/** One attributed run of bytes, as offsets into the container blob. */
+export interface Claim {
+  start: number;
+  length: number;
+  /** What claimed it, for the per owner breakdown. Slot owners read `slot-<base>-<part>`. */
+  owner: string;
+}
+
+export interface Overlap {
+  start: number;
+  length: number;
+  owners: string[];
+}
+
+export interface CoverageReport {
+  total: number;
+  accounted: number;
+  /** `accounted / total`, the number M2 is trying to move. */
+  fraction: number;
+  /** Bytes attributed per owner, largest first, counting each byte once. */
+  byOwner: [string, number][];
+  /** Runs nothing claims, largest first. Where the remaining work is. */
+  gaps: { start: number; length: number }[];
+  /** Runs more than one claim wants. Always a defect in one of them. */
+  overlaps: Overlap[];
+}
+
+/** How many of the largest gaps and overlaps a report carries. The rest are counted, not listed. */
+export const REPORT_LIMIT = 20;
+
+/**
+ * Every claim this codec can make about `c`, in no particular order and possibly overlapping.
+ *
+ * Deliberately separate from folding them into a map, so a caller debugging a bad extent can see
+ * the raw claims with their owners rather than only the merged result.
+ */
+export function claims(c: Container): Claim[] {
+  const out: Claim[] = [];
+  const add = (start: number | undefined, length: number | undefined, owner: string): void => {
+    if (start === undefined || length === undefined || length <= 0) return;
+    if (start < 0 || start + length > c.blob.length) return;
+    out.push({ start, length, owner });
+  };
+  const at = (address: number, length: number | undefined, owner: string): void =>
+    add(c.blobOffsetOf(address), length, owner);
+
+  // The fixed furniture. The header runs to the section table, the table to the marker, and the
+  // last six bytes are the trailer checksum and the end marker.
+  add(0, SECTION_TABLE_OFFSET, 'header');
+  add(SECTION_TABLE_OFFSET, SECTION_ITEM_SIZE * c.pointerCount, 'section-table');
+  add(c.markerOffset, 4, 'marker');
+  add(c.blob.length - 6, 6, 'trailer');
+
+  // The key table follows the marker on the families that carry one: a u8 count and four byte
+  // records. `parse` reads it there, so this is the same layout and not a second opinion.
+  if (c.hasKeyTable && c.keys.length > 0) {
+    add(c.markerOffset + 4, 1 + 4 * c.keys.length, 'key-table');
+  }
+
+  const slot = (base: number): number | undefined => {
+    if (c.architecture === undefined) return undefined;
+    try {
+      const s = archSlot(c.architecture, base);
+      return s < c.sections.length ? s : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Slot 0 states its own length, which is what makes it the only section whose extent is read
+  // rather than inferred.
+  const tree = c.sections[0];
+  if (tree !== undefined && !tree.isNull) at(tree.address, c.frameLength, 'slot-0-tree');
+
+  const arch = slot(1);
+  if (arch !== undefined) at((c.sections[arch] as { address: number }).address, 7, 'slot-1-arch');
+
+  const clock = slot(3);
+  if (clock !== undefined && c.builtAt !== undefined) {
+    at((c.sections[clock] as { address: number }).address, 11, 'slot-3-clock');
+  }
+
+  const log = slot(2);
+  if (log !== undefined) {
+    add(c.blobOffsetOf((c.sections[log] as { address: number }).address), c.sectionLength(log),
+        'slot-2-log');
+  }
+
+  // The six counted pointer arrays, each claiming exactly the bytes its own width rule settled on.
+  for (let i = 0; i < c.sections.length; i += 1) {
+    const array = c.pointerArrayAt(i);
+    if (array === undefined) continue;
+    const base = c.architecture === undefined ? undefined : baseOf(c, i);
+    add(array.start, array.length, `slot-${base ?? i}-table`);
+  }
+
+  // What the action list table addresses. The extent is `1 + 3 * count` and the count is the list
+  // itself, so this needs no size rule of its own.
+  const lists = c.actionLists();
+  const listSlot = slot(10);
+  if (lists !== undefined && listSlot !== undefined) {
+    const table = c.pointerArray(listSlot) ?? [];
+    for (let k = 0; k < table.length && k < lists.length; k += 1) {
+      at(table[k] as number, 1 + 3 * (lists[k] as unknown[]).length, 'slot-10-list');
+    }
+  }
+
+  return out;
+}
+
+/** The base slot number an architecture slot corresponds to, or undefined when it is inserted. */
+function baseOf(c: Container, slot: number): number | undefined {
+  if (c.architecture === undefined) return undefined;
+  for (let base = 0; base < 20; base += 1) {
+    try {
+      if (archSlot(c.architecture, base) === slot) return base;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+/** Fold the claims about `c` into a report. */
+export function coverage(c: Container): CoverageReport {
+  const total = c.blob.length;
+  // One byte per byte is the honest way to count when claims may overlap: a merged interval list
+  // would have to resolve overlaps to count them, and resolving them is what hides the defect.
+  const owner = new Array<string | undefined>(total);
+  const overlapping = new Map<number, string[]>();
+  const byOwner = new Map<string, number>();
+
+  for (const claim of claims(c)) {
+    for (let i = claim.start; i < claim.start + claim.length; i += 1) {
+      const held = owner[i];
+      if (held === undefined) {
+        owner[i] = claim.owner;
+        byOwner.set(claim.owner, (byOwner.get(claim.owner) ?? 0) + 1);
+      } else if (held !== claim.owner) {
+        const seen = overlapping.get(i) ?? [held];
+        if (!seen.includes(claim.owner)) seen.push(claim.owner);
+        overlapping.set(i, seen);
+      }
+    }
+  }
+
+  const accounted = owner.reduce<number>((n, o) => (o === undefined ? n : n + 1), 0);
+  return {
+    total,
+    accounted,
+    fraction: total === 0 ? 0 : accounted / total,
+    byOwner: [...byOwner.entries()].sort((a, b) => b[1] - a[1]),
+    gaps: runs(total, (i) => owner[i] === undefined).slice(0, REPORT_LIMIT),
+    overlaps: mergeOverlaps(total, overlapping).slice(0, REPORT_LIMIT),
+  };
+}
+
+/** Maximal runs of consecutive indices satisfying `pick`, longest first. */
+function runs(total: number, pick: (i: number) => boolean): { start: number; length: number }[] {
+  const out: { start: number; length: number }[] = [];
+  let start: number | undefined;
+  for (let i = 0; i <= total; i += 1) {
+    const inside = i < total && pick(i);
+    if (inside && start === undefined) start = i;
+    if (!inside && start !== undefined) {
+      out.push({ start, length: i - start });
+      start = undefined;
+    }
+  }
+  return out.sort((a, b) => b.length - a.length);
+}
+
+function mergeOverlaps(total: number, at: Map<number, string[]>): Overlap[] {
+  const out: Overlap[] = [];
+  let start: number | undefined;
+  let owners: string[] = [];
+  for (let i = 0; i <= total; i += 1) {
+    const here = at.get(i);
+    const key = here === undefined ? '' : here.join('+');
+    if (start !== undefined && key !== owners.join('+')) {
+      out.push({ start, length: i - start, owners });
+      start = undefined;
+      owners = [];
+    }
+    if (here !== undefined && start === undefined) {
+      start = i;
+      owners = here;
+    }
+  }
+  return out.sort((a, b) => b.length - a.length);
+}

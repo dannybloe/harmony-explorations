@@ -214,6 +214,7 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 
 ```
 packages/codec/                 TS: the one config codec, container through compiler
+                                and src/coverage.ts, the M2 byte accounting
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
@@ -360,6 +361,7 @@ make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them
+make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>

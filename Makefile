@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns all clean
+.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
 
 BENCH_PORT ?= 8731
 
@@ -37,6 +37,7 @@ help:
 	@echo "probe        structural report about an attached remote, publishable; PROBE_ARGS=--file X"
 	@echo "watch-keys   poll the keypad scanner's RAM on an attached remote, read only"
 	@echo "watch-columns report the matrix column of every key pressed, read only"
+	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
 	@echo "all          everything above except ghidra, bench and probe"
 
 test:
@@ -97,6 +98,11 @@ remotes:
 # device, so it is deliberate, unlike `remotes`. Pass a file instead to run it without hardware.
 probe:
 	@node packages/probe/bin/probe.ts $(PROBE_ARGS)
+
+# Byte accounting: what fraction of each config the codec can attribute to a structure. The
+# progress measure for M2, since an emitter can only rebuild what a reader can attribute.
+coverage:
+	@node packages/codec/bin/coverage.ts $(COVERAGE_ARGS)
 
 # The button mapping experiment: poll the keypad scanner's own variable over USB while a human
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.

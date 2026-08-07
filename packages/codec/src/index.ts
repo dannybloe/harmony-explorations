@@ -9,3 +9,4 @@
 export * as bytes from './bytes.ts';
 export * from './gspm.ts';
 export * from './ezhex.ts';
+export * from './coverage.ts';

@@ -242,9 +242,46 @@ off all three bench remotes byte identical to their own dumps. What remains is f
 into the corpus automatically, and a bench instrument that can connect, identify, read with progress
 and show what came back. FH will have its own interface over the same API; that is not this.
 
-**M2 Round trip codec. Here.** Decompile and recompile byte-identical across the whole corpus, and
-the trailer checksum reproducible. This is the gate for any editing at all, and it is squarely an
-API milestone.
+**M2 Round trip codec. Here, and started.** Decompile and recompile byte-identical across the whole
+corpus, and the trailer checksum reproducible. This is the gate for any editing at all, and it is
+squarely an API milestone.
+
+**Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
+is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
+fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answers it and
+`make coverage` prints it. The starting point, 7 August 2026:
+
+| sample | accounted | total | |
+|---|---|---|---|
+| Harmony 700 | 111472 | 979184 | 11.4% |
+| Harmony 600 | 70286 | 738149 | 9.5% |
+| Harmony 525, arch 9 | 5641 | 78486 | 7.2% |
+| Harmony One | 53040 | 1672832 | 3.2% |
+| 880, arch 8 | 16051 | 444256 | 3.6% |
+
+Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
+a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
+and the readers return values without returning the bytes they consumed. Every screen program in
+the corpus decodes with nothing left over, section 40, and not one of them can yet say which bytes
+it occupied.
+
+So M2 is three things in order, and only the third is the emitter:
+
+1. **Readers that report their extent.** The size rule has to live in the reader that already
+   computes it, never in the accounting beside it, for the same reason there is one opcode table.
+   `pointerArrayAt` is the pattern: `pointerArray` is that function with the extent dropped.
+2. **Coverage as the number**, which is also a check. Two claims on one byte means one is sized
+   wrong, and that is invisible in a reader's own tests, because values read from slightly the
+   wrong span still look like values. The corpus reports no overlaps today and the synthetic case
+   in the test proves the detector works.
+3. **The emitter**, rebuilding what is accounted and copying the rest, with byte equality as the
+   test. The copied residue shrinks as coverage rises, so progress is measurable at every step
+   rather than only at the end.
+
+The ported readers so far are the header, the section table, the marker, the trailer, the key
+table, slots 0, 1, 2 and 3, the six counted pointer arrays and the action lists. What remains is
+the port of the other twelve section readers from `src/harmony/gspm.py`, largest first: the screen
+programs and the glyph bitmaps are most of the missing mass.
 
 **M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does

@@ -410,6 +410,20 @@ export class Container {
    * Returns undefined when the section is not this shape, or when there is no blob to read.
    */
   pointerArray(slot: number): number[] | undefined {
+    return this.pointerArrayAt(slot)?.values;
+  }
+
+  /**
+   * The same read, with the bytes it occupies.
+   *
+   * `pointerArray` is this with the extent dropped. One implementation rather than two, because
+   * the byte accounting of `coverage` needs exactly the width this loop settles on, and a second
+   * copy of the width rule would be free to disagree with the first. The same reason there is one
+   * opcode table.
+   */
+  pointerArrayAt(
+    slot: number,
+  ): { values: number[]; start: number; length: number; width: number } | undefined {
     const length = this.sectionLength(slot);
     const section = this.sections[slot];
     if (length === undefined || section === undefined || this.blob.length === 0) return undefined;
@@ -421,9 +435,9 @@ export class Container {
       if (count !== 0 && width + 3 * count === length) {
         const base = off + width;
         if (base + 3 * count > this.blob.length) continue;
-        const out: number[] = [];
-        for (let k = 0; k < count; k += 1) out.push(u24(this.blob, base + 3 * k));
-        return out;
+        const values: number[] = [];
+        for (let k = 0; k < count; k += 1) values.push(u24(this.blob, base + 3 * k));
+        return { values, start: off, length: width + 3 * count, width };
       }
     }
     return undefined;
