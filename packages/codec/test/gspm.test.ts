@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_TABLE_SLOT,
   EVENT_NONE,
@@ -136,7 +136,7 @@ for (const name of NAMES) {
   });
 }
 
-test('end_addr locates the end marker', () => {
+test('end_addr locates the end marker', skipWithoutLab(), () => {
   const samples = available();
   assert.ok(samples.length > 0, 'no samples available at all');
   for (const { name, container: c } of samples) {
@@ -149,7 +149,7 @@ test('end_addr locates the end marker', () => {
   }
 });
 
-test('the corpus spans more than one of everything', () => {
+test('the corpus spans more than one of everything', skipWithoutLab(), () => {
   const samples = available();
   if (samples.length < NAMES.length) {
     // Deliberately not a skip: the claim is about the corpus, and a partial corpus cannot make
@@ -165,7 +165,7 @@ test('the corpus spans more than one of everything', () => {
   assert.ok(distinct((s) => s.container.architecture) >= 4, 'architectures');
 });
 
-test('the architecture is not derivable from the cookie', () => {
+test('the architecture is not derivable from the cookie', skipWithoutLab(), () => {
   // The reason slot 1 is read at all: GSPM covers both arch 12 and arch 14, so a per cookie
   // table would be wrong for one of them.
   const byCookie = new Map<string, Set<number | undefined>>();
@@ -179,7 +179,7 @@ test('the architecture is not derivable from the cookie', () => {
   assert.deepEqual([...gspm].sort(), [12, 14]);
 });
 
-test('arch 14 records 54 scan codes times three event types', () => {
+test('arch 14 records 54 scan codes times three event types', skipWithoutLab(), () => {
   const samples = available().filter((s) => s.expected.architecture === 14 && s.container.keys.length > 0);
   assert.ok(samples.length > 0, 'no arch 14 config present');
   for (const { name, container: c } of samples) {
@@ -200,7 +200,7 @@ test('arch 14 records 54 scan codes times three event types', () => {
   }
 });
 
-test('arch 12 and arch 8 record presses only', () => {
+test('arch 12 and arch 8 record presses only', skipWithoutLab(), () => {
   const samples = available().filter(
     (s) => [8, 12].includes(s.expected.architecture) && s.container.keys.length > 10,
   );
@@ -210,7 +210,7 @@ test('arch 12 and arch 8 record presses only', () => {
   }
 });
 
-test('the same six base slots are pointer arrays in every config', () => {
+test('the same six base slots are pointer arrays in every config', skipWithoutLab(), () => {
   // Recognised by shape, not tabulated: a section is an array when `width + 3 * count` accounts
   // for it exactly. That it picks out the same six base slots in every config, across four
   // architectures with different insertions, is what makes the recognition believable.
@@ -223,7 +223,7 @@ test('the same six base slots are pointer arrays in every config', () => {
   }
 });
 
-test('every pointer array entry is an address inside the config', () => {
+test('every pointer array entry is an address inside the config', skipWithoutLab(), () => {
   const configs = userConfigs();
   assert.ok(configs.length > 0, 'no config present');
   for (const { name, container: c } of configs) {
@@ -240,7 +240,7 @@ test('every pointer array entry is an address inside the config', () => {
   }
 });
 
-test('the action list table and the lists agree on the packing, bar four', () => {
+test('the action list table and the lists agree on the packing, bar four', skipWithoutLab(), () => {
   // The addresses come from the pointer table and the counts come from the lists themselves, so
   // agreement between them is two unrelated parts of the file telling the same story. The four
   // exceptions are the boundaries between the runs the lists are packed into.
@@ -254,7 +254,7 @@ test('the action list table and the lists agree on the packing, bar four', () =>
   }
 });
 
-test('every action list parses and no list is empty or implausibly long', () => {
+test('every action list parses and no list is empty or implausibly long', skipWithoutLab(), () => {
   const configs = userConfigs();
   assert.ok(configs.length > 0, 'no config present');
   for (const { name, container: c } of configs) {
@@ -271,7 +271,7 @@ test('every action list parses and no list is empty or implausibly long', () => 
   }
 });
 
-test('the opcode inventory differs between architectures', () => {
+test('the opcode inventory differs between architectures', skipWithoutLab(), () => {
   // Which is why the arch 9 opcode table published upstream cannot simply be adopted: arch 14's
   // third most common opcode never appears in the arch 9 sample.
   const opcodes = (name: string): Set<number> | undefined => {
@@ -302,7 +302,7 @@ test('a disagreeing pair of architecture bytes is not reported as an architectur
   assert.equal(c.checks['slot1_states_the_architecture'], false);
 });
 
-test('every sample carries a slot 3 timestamp, and the cookie pair is unique in the blob', () => {
+test('every sample carries a slot 3 timestamp, and the cookie pair is unique in the blob', skipWithoutLab(), () => {
   // Unlike slot 0's 0xFEED, which turns up by chance about once per 64 KiB, this pair nine bytes
   // apart occurs exactly once in every blob including the One's 1.6 MB one. That is why the
   // record needs no length field to be recognised.
@@ -377,7 +377,7 @@ const TRAILER_SAMPLES = [
   'one_safemode',
 ];
 
-test('the trailer checksum recomputes on every container in the corpus', () => {
+test('the trailer checksum recomputes on every container in the corpus', skipWithoutLab(), () => {
   for (const name of TRAILER_SAMPLES) {
     const data = load(name);
     if (data === undefined) continue;
@@ -387,7 +387,7 @@ test('the trailer checksum recomputes on every container in the corpus', () => {
   }
 });
 
-test('without the seed nothing matches, which is what pins 0x4321', () => {
+test('without the seed nothing matches, which is what pins 0x4321', skipWithoutLab(), () => {
   for (const name of TRAILER_SAMPLES) {
     const data = load(name);
     if (data === undefined) continue;

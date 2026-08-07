@@ -740,6 +740,7 @@ class TestActionLists(unittest.TestCase):
         codes move between models, which is what physical buttons would do and what an abstract
         field would have no reason to do.
         """
+        lab.require(*self.CONFIGS)
         scans = {}
         for name in ('h700_config', 'h600_config', 'one_config', 'h525_config', 'arch8_config_a'):
             with self.subTest(image=name):
@@ -795,6 +796,7 @@ class TestActionLists(unittest.TestCase):
         The closure is that the 472 do not depend on the config: two remotes, two owners, two
         sizes, one set. That makes it a vocabulary the format carries rather than user data.
         """
+        lab.require('h700_config', 'h600_config')
         vocabularies = {}
         for name, groups in (('h700_config', 6), ('h600_config', 4)):
             with self.subTest(image=name):
@@ -959,6 +961,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
 
     def test_the_two_level_table_is_exactly_packed(self):
         """Lead byte zero, `3 + 3 * count` bytes per group, groups adjacent, pointers in range."""
+        lab.require(*self.CONFIGS, 'h525_config')
         groups = records = 0
         # Includes arch 9, whose leaf records use a different encoding: the two level pointer
         # structure holds there too, and saying so is the point of the wide totals.
@@ -1077,6 +1080,7 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
         records on the 700. What is exact is the set of operands, which is why this asserts
         equality of sets rather than of counts.
         """
+        lab.require(*self.CONFIGS)
         total = 0
         for name in self.CONFIGS:
             with self.subTest(image=name):
@@ -1165,6 +1169,7 @@ class TestTheHighOperandBand(unittest.TestCase):
         return [i for lst in (c.action_lists() or []) for i in lst]
 
     def test_the_four_never_carry_an_operand_below_the_band(self):
+        lab.require(*self.CONFIGS)
         total = 0
         for name in self.CONFIGS:
             with self.subTest(image=name):

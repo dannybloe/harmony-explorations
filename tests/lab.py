@@ -111,3 +111,22 @@ def load(name):
             % (IMAGES[name], LAB or 'nothing, HARMONY_LAB unset'))
     with open(p, 'rb') as fh:
         return fh.read()
+
+
+def require(*names):
+    """Skip the whole test unless every named image is present.
+
+    Call this before a loop that ends in a corpus wide assertion. `load` raises SkipTest, but
+    **inside `subTest` unittest skips only that subtest and carries on**, so a loop of subTests
+    finishes having loaded nothing and the total afterwards is asserted against zero. That is not
+    a clean skip, it is a failure, and it made nine tests fail in a checkout with no lab while the
+    documents promised otherwise.
+
+    Also the right call when a test hands a path to something that opens it itself, since `path`
+    answers None rather than skipping.
+    """
+    missing = [IMAGES[name] for name in names if not path(name)]
+    if missing:
+        raise unittest.SkipTest(
+            'no %s found; set HARMONY_LAB (searched: %s)'
+            % (', '.join(missing), LAB or 'nothing, HARMONY_LAB unset'))

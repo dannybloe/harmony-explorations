@@ -168,6 +168,7 @@ class TestLoadImage(unittest.TestCase):
             len(ezfile.load_image(lab.path('h700_hfw'), region='Region_2')), 76672)
 
     def test_load_image_passes_through_a_raw_binary(self):
+        lab.require('h700_code')
         self.assertEqual(len(ezfile.load_image(lab.path('h700_code'))), 76672)
 
 

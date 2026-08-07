@@ -116,7 +116,14 @@ harmony/
 ```
 
 The tooling finds `../lab` automatically, so no environment variable is needed in a normal
-checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present. That
+checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present, and **that is now
+enforced rather than assumed**: `make test` and `make ts` were both run against a nonexistent lab
+and nine Python tests plus ten TypeScript ones failed instead of skipping. The cause is the same
+on both sides. A skip raised inside `subTest`, or a per sample `skipUnless`, skips that sample and
+lets the loop finish, so a corpus wide total afterwards is asserted against zero. Guard such a test
+up front with `lab.require(...)` in Python or `skipWithoutLab()` in TypeScript. The TypeScript one
+deliberately skips only when there is **no lab at all**, because a lab that is present and missing
+a sample should still fail loudly. That
 directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
 `tools/corpus.py` inventories the dumps and, importantly, reports which ones have no

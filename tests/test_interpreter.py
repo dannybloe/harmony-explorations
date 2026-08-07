@@ -217,6 +217,7 @@ class TestTheStateVariableTable(unittest.TestCase):
 
     def test_the_header_is_self_consistent_and_accounts_for_the_section(self):
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         counts = set()
         for name in self.CONFIGS:
             with self.subTest(image=name):
@@ -282,6 +283,7 @@ class TestTheEventMap(unittest.TestCase):
 
     def test_the_shape_is_the_same_in_every_config(self):
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         bases = set()
         for name in self.CONFIGS:
             with self.subTest(image=name):
@@ -357,6 +359,7 @@ class TestTheModeTable(unittest.TestCase):
         bounds check, and that would be true of half the config.
         """
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         counts = set()
         for name in self.CONFIGS:
             with self.subTest(image=name):

@@ -166,3 +166,17 @@ export function skipUnless(...names: string[]): { skip: string | false } {
   if (missing.length === 0) return { skip: false };
   return { skip: `lab image not available: ${missing.map((n) => IMAGES[n]).join(', ')}` };
 }
+
+/**
+ * A `{ skip }` option for a test whose claim is about the corpus as a whole.
+ *
+ * Such a test should **fail** rather than skip when the lab is there and a sample is missing,
+ * because a partial corpus cannot support a claim about spread and a silent pass would hide that.
+ * It should still skip when there is no lab at all, which is the ordinary state of a fresh clone.
+ * Conflating the two made ten tests fail in a checkout with no lab while `CLAUDE.md` promised a
+ * clean skip, so the distinction is the whole point of this being separate from `skipUnless`.
+ */
+export function skipWithoutLab(): { skip: string | false } {
+  if (LAB !== undefined && existsSync(LAB)) return { skip: false };
+  return { skip: 'no lab directory; set HARMONY_LAB or put one alongside the repository' };
+}
