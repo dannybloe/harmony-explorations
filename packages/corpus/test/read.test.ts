@@ -17,6 +17,7 @@ import {
   DEFAULT_CHUNK_BYTES,
   HEADER_PROBE,
   parseHeader,
+  PROFILES,
   profileFor,
   ReadError,
   readConfig,
@@ -26,6 +27,7 @@ import {
 
 const ONE = 0xc121;
 const H600 = 0xc122;
+const H525 = 0xc111;
 
 /** A remote whose config flash holds `config` at `profile.configBase`, and nothing else. */
 function fakeRemote(config: Uint8Array, profile: RemoteProfile, versionBlock = new Uint8Array(12)) {
@@ -51,7 +53,7 @@ function configOf(name: string): Uint8Array {
   return decodePayload(load(name) as Uint8Array).payload;
 }
 
-test('the two bench models have a config base and everything else is refused', () => {
+test('the known models have a config base and everything else is refused', () => {
   assert.equal(profileFor(ONE).configBase, 0x040000);
   assert.equal(profileFor(ONE).architecture, 12);
   assert.equal(profileFor(H600).configBase, 0x030000);
@@ -63,6 +65,22 @@ test('the two bench models have a config base and everything else is refused', (
     assert.match(err.message, /coverage section/);
     return true;
   });
+});
+
+test('the 525 entry is marked unverified and the two bench models are not', () => {
+  // The distinction is the point. Both bench profiles were measured against the remote's own lab
+  // dump; the 525's rests on a published report of one unit nobody here has connected, and that
+  // has to be visible in the data rather than only in a comment. `docs/memory-map-525.md`.
+  assert.equal(profileFor(H525).architecture, 9);
+  assert.equal(profileFor(H525).configBase, 0x020000);
+  // Not the 4 MiB ceiling the other two share: the 525's flash is 512 KiB.
+  assert.equal(profileFor(H525).configEnd, 0x080000);
+  assert.equal(profileFor(H525).unverified, true);
+  assert.equal(profileFor(ONE).unverified, undefined);
+  assert.equal(profileFor(H600).unverified, undefined);
+  // concordance's table says 0x820000 for this architecture, where bit 23 is a flag rather than an
+  // address bit. Nothing here should ever carry that value.
+  for (const profile of PROFILES) assert.ok(profile.configBase < 0x800000, profile.model);
 });
 
 test('end_addr in the header gives the exact length, on both architectures', skipUnless('one_config', 'h600_config'), () => {

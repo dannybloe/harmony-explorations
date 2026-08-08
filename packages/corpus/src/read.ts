@@ -25,19 +25,34 @@ export interface ConfigReader {
   readFlash(address: number, count: number): Promise<Uint8Array>;
 }
 
-/** Everything that differs between the two architectures this project can read. */
+/** Everything that differs between the architectures this project can read. */
 export interface RemoteProfile {
   readonly productId: number;
   readonly model: string;
   readonly architecture: number;
   readonly configBase: number;
-  /** Where the config region ends, which is the same 4 MiB ceiling on both. */
+  /** Where the config region ends. Not the same on every architecture: see the 525 below. */
   readonly configEnd: number;
+  /**
+   * Set when no remote of this model has ever been connected here, so the entry rests on a
+   * published report rather than on a measurement. The read still checks itself, because
+   * `parseHeader` refuses anything that is not a container, so a wrong base fails loudly.
+   */
+  readonly unverified?: true;
 }
 
 export const PROFILES: readonly RemoteProfile[] = [
   { productId: 0xc121, model: 'Harmony One', architecture: 12, configBase: 0x040000, configEnd: 0x400000 },
   { productId: 0xc122, model: 'Harmony 600 or 700', architecture: 14, configBase: 0x030000, configEnd: 0x400000 },
+  // The 525's flash is 512 KiB rather than 4 MiB, so its region ends at `0x080000` and not at the
+  // ceiling the other two share. Both numbers come from the arch 9 config in the lab: its own
+  // recovered base is `0x020000` and base slot 2 puts the log area's limit at `0x080000`, which by
+  // section 47's rule sits above the config. `docs/memory-map-525.md`.
+  //
+  // Two traps recorded here rather than left to be rediscovered. concordance's own table gives
+  // arch 9's config base as `0x820000`, where bit 23 is a flag and not an address bit. And the
+  // product id rests on a third party report of one unit, which is what `unverified` says.
+  { productId: 0xc111, model: 'Harmony 525', architecture: 9, configBase: 0x020000, configEnd: 0x080000, unverified: true },
 ];
 
 export class ReadError extends Error {}

@@ -145,11 +145,18 @@ In rough order of value.
    the same length nibble mapping. `GET_VERSION` is the whole test, and if it fails, everything
    below waits.
 2. **The version block, against the table above.** Twelve bytes, seven of them predicted.
-3. **The product id and the `bcdDevice`**, against `0xC111` and `0x0916`. A `PROFILES` entry is
-   already in `packages/corpus/src/read.ts`, marked as resting on a third party report, so a config
-   read will simply work if the report is right. The failure mode if it is wrong is loud rather than
-   silent: `readConfig` checks for the container magic at the base and refuses when it is not
-   there.
+3. **The product id and the `bcdDevice`**, against `0xC111` and `0x0916`. A `PROFILES` entry in
+   `packages/corpus/src/read.ts` carries the product id, the base and the 512 KiB ceiling, with
+   `unverified: true` so that the difference between a measured profile and a reported one is in
+   the data and not only in a comment. If the report is right, a config read simply works. If it is
+   wrong the failure is loud rather than silent: `readConfig` checks for the container magic at the
+   base and refuses when it is not there.
+
+   **This entry did not exist until 8 August 2026, and this document claimed it did**, in those
+   words, from the day it was written. Nobody would have found out until the remote was plugged in
+   and the read refused. Worth recording because the document's whole purpose is to make the first
+   session a test, and an untested claim about our own code is the one kind of prediction that
+   cannot teach us anything when it fails.
 4. **A config read**, verified against its own container checks and filed in the lab. That is a
    second arch 9 sample, which the corpus has never had, and two samples is where this project's
    verification standard starts.
