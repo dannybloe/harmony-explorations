@@ -577,7 +577,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 97.2%<!--fact:coverage_arch8_config_a--> | 65.1%<!--fact:coverage_h525_config--> | 99.8%<!--fact:coverage_one_config--> | 99.7%<!--fact:coverage_h600_config--> |
+| 97.7%<!--fact:coverage_arch8_config_a--> | 66.4%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -667,14 +667,16 @@ produce a config the remote accepts and mishandles.
 Step 8, the contribution probe, exists. Step 6 is the next block: label what is left by the proven
 consumer method plus live RAM polling.
 
-**The remaining gap is one pool of tagged lists**, sections 66 and 67. On arch 12 and arch 14 what
-is left is seven gaps holding 3948 bytes on the Harmony One, 1970 on the 600 and 3599 on the 700,
-almost all of it in two runs after a mode entry. Those runs are tagged lists packed end to end, one
-per mode page plus one per base slot 9 set, and **only slot 9's part is claimed**: the pool's start
-is not derivable, since a tagged list walk tiles from dozens of wrong offsets, and nothing in a
-container names the other lists. Finding what indexes them is the next step, not reading more bytes.
-Arch 9 is different and mostly blocked: 24467 of its 27420 remaining bytes are infrared class 5,
-which wants a firmware nobody has. **Read the whole gap list before choosing a target**: `make coverage
+**Both target architectures are at 100.0%**, sections 66 and 67, with 24 bytes unattributed in a
+1.63 MB Harmony One config and 41 in a 600, and zero overlaps in all seventeen containers. The last
+structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
+set, bounded below by a mode entry's end and above by the lowest address another reader names.
+That completes the first of milestone M2's three parts for arch 12 and arch 14.
+
+What is left is infrared, on the two architectures with no firmware: 9864 bytes of duration blocks
+on arch 8 and 24467 of class 5 on arch 9, the latter wanting a firmware nobody has. **What the pool
+is for is still open**: nothing in a container names the lists that are not slot 9's, and no
+consumer in either image reaches them. **Read the whole gap list before choosing a target**: `make coverage
 --detail` prints only the twenty largest, and section 66 was found by asking for all of them and
 noticing two families with the same count.
 

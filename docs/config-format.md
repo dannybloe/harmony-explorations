@@ -415,9 +415,12 @@ gives an address below itself where all 1616 of slot 6's do. So the extent is th
 declared length. [findings.md](findings.md) section 67.
 
 The sets sit in a pool of tagged lists packed end to end, which also holds one list per mode page.
-**Only the sets are claimed.** The pool's start is not derivable, because a tagged list walk tiles
-from dozens of wrong offsets as readily as from the right one, so the exact landing that locates the
-picture bank proves nothing here.
+The pool is bounded at both ends without searching: it begins on the byte after a mode entry's page
+array and ends at the lowest address above that which another reader already names, and a run must
+hold at least one set on a list boundary. 29 runs in seventeen containers, tiling exactly.
+
+*What the lists that are not sets are for is not established.* Nothing in a container names them and
+no consumer in either firmware image reaches them. [findings.md](findings.md) section 67.
 
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming

@@ -33,6 +33,7 @@ import {
   screenProgram,
   stateTable,
   taggedList,
+  taggedListPools,
   timers,
   touchPages,
   bytes,
@@ -335,3 +336,61 @@ test('arch 9 class 5 records carry the shared header', skipUnless('h525_config')
   // claimed on the strength of finding a terminator.
   assert.notEqual(irPulses(c, records[0] as number), undefined);
 });
+
+/**
+ * `[sample, pool runs, lists, bytes]`. findings.md section 67.
+ *
+ * The runs of tagged lists packed end to end. Both ends are derived: the start is a mode entry's
+ * end and the stop is the lowest address above it that another reader already names, so nothing
+ * here consults the byte accounting.
+ */
+const POOLS: readonly [string, number, number, number][] = [
+  ['one_config', 2, 346, 5854],
+  ['one_config_unprogrammed', 2, 161, 3013],
+  ['h600_config', 2, 263, 2941],
+  ['h700_config', 2, 437, 4845],
+  ['h525_config', 2, 143, 1797],
+  ['arch8_config_a', 2, 150, 3094],
+  ['one_safemode', 1, 31, 183],
+  ['h600_safemode_gspm', 1, 36, 79],
+];
+
+for (const [name, runs, lists, bytes] of POOLS) {
+  test(`${name}: the tagged list pool is bounded at both ends`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const pools = taggedListPools(c);
+    assert.equal(pools.length, runs);
+    assert.equal(pools.reduce((n, p) => n + p.lists.length, 0), lists);
+    assert.equal(pools.reduce((n, p) => n + (p.end - p.start), 0), bytes);
+
+    const ends = new Set((modeRecords(c) ?? [])
+      .map((r) => (c.blobOffsetOf(r.address) as number) + r.entryLength));
+    for (const pool of pools) {
+      // The start is stated by a mode entry, which is what section 67 first missed: it is not
+      // something the walk has to find.
+      assert.ok(ends.has(pool.start), 'a pool starts where a mode entry ends');
+      // The lists tile the run with nothing left over.
+      const last = pool.lists[pool.lists.length - 1] as { start: number; length: number };
+      assert.equal(pool.lists[0]?.start, pool.start);
+      assert.equal(last.start + last.length, pool.end);
+      for (let k = 1; k < pool.lists.length; k += 1) {
+        const previous = pool.lists[k - 1] as { start: number; length: number };
+        assert.equal(previous.start + previous.length, pool.lists[k]?.start);
+      }
+    }
+
+    // Every base slot 9 set is in a pool, which is the constraint that makes the rule specific:
+    // without it a tagged list walk accepts spans that tile by accident.
+    for (const address of handlerSets(c)?.addresses ?? []) {
+      const off = c.blobOffsetOf(address) as number;
+      assert.ok(
+        pools.some((p) => p.lists.some((l) => l.start === off)),
+        `slot 9 set at ${off} is not a list in a pool`,
+      );
+    }
+
+    // The count identity, exact in every container: one list per mode page plus one per set.
+    const pages = (modeRecords(c) ?? []).reduce((n, r) => n + r.pages.length, 0);
+    assert.equal(lists, pages + (handlerSets(c)?.addresses.length ?? 0));
+  });
+}

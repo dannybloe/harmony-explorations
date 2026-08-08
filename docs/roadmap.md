@@ -242,9 +242,14 @@ off all three bench remotes byte identical to their own dumps. What remains is f
 into the corpus automatically, and a bench instrument that can connect, identify, read with progress
 and show what came back. FH will have its own interface over the same API; that is not this.
 
-**M2 Round trip codec. Here, and started.** Decompile and recompile byte-identical across the whole
-corpus, and the trailer checksum reproducible. This is the gate for any editing at all, and it is
-squarely an API milestone.
+**M2 Round trip codec. Here, and its first part is done on both target architectures.** Decompile
+and recompile byte-identical across the whole corpus, and the trailer checksum reproducible. This is
+the gate for any editing at all, and it is squarely an API milestone.
+
+Of the three parts below, **the first two are complete for arch 12 and arch 14**: every reader
+reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes short on a Harmony
+One and 41 on a 600. What remains for M2 is the emitter itself. Arch 8 and arch 9 are not there and
+both remainders are infrared, on the two architectures no firmware image exists for.
 
 **Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
 is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
@@ -252,15 +257,15 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 |
-|---|---|---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | **99.6%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | **99.7%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | **99.8%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | **99.8%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | **97.2%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | **65.1%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | **98.4%<!--fact:coverage_h700_gspm-->** |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | **100.0%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | **100.0%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | **100.0%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | **97.7%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | **66.4%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | **99.4%<!--fact:coverage_h700_gspm-->** |
 
 **Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
 historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
@@ -699,20 +704,25 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   One, 2941 on the 600, 4845 on the 700, against the 268 and 237 separate gaps they replace. That
   is the next thing to read, and it is the same structure on every architecture.
 
-* **Those runs are a pool of tagged lists**, section 67, and a third of one of them is now claimed.
-  Base slot 9's sets live in it, and the reason they were never claimed is settled by a negative:
-  read as base slot 6's shape, `u8 kind` and a `u24` back pointer, not one of the 54 sets in the
-  corpus gives an address below itself where all 1616 of slot 6's do. So the pointer is the list.
-  Coverage 99.8% on a Harmony One, and what is left there is 3948 bytes in seven gaps.
+* **Those runs are a pool of tagged lists**, section 67, and reading them takes **both target
+  architectures to 100.0%**: 24 bytes unattributed in a 1.63 MB Harmony One config, 41 in a 600,
+  zero overlaps anywhere. Base slot 9's sets live in the pool, and the reason they were never
+  claimed is settled by a negative: read as base slot 6's shape, `u8 kind` and a `u24` back pointer,
+  not one of the 54 sets in the corpus gives an address below itself where all 1616 of slot 6's do.
 
-  **The rest of the pool is not claimable and the reason is worth carrying forward.** The walk
-  lands exactly on each run's end in all sixteen containers, and the list count is exactly pages
-  plus slot 9 sets in all sixteen, but the run's **start** is not derivable: the picture bank's
-  derivation, run here, gives 35 to 1275 candidate starts rather than one, because a tagged list
-  walk tiles from a wrong offset as readily as from the right one. Nothing in a container names
-  those lists either, and the arch 14 firmware's tagged list runner has four call sites and none of
-  them reaches the pool. So the next attempt starts from finding what indexes it, not from the
-  bytes.
+  The pool is bounded without searching. It begins on the byte after a mode entry's page array,
+  which section 66 made a stated quantity, and ends at the lowest address above that which another
+  reader already names, with the condition that a run hold at least one slot 9 set on a list
+  boundary. That accepts two runs of seven candidates in a Harmony One and two of 206 in the 525.
+
+  **This section first concluded the opposite**, that the pool was not claimable, because the
+  picture bank's derivation gives 35 to 1275 candidate starts here. That measurement is right and
+  the conclusion was not: the start never had to be searched for, because a mode entry states it.
+
+  What stays open is what the pool is **for**. Nothing in a container names the lists that are not
+  slot 9's, and the arch 14 tagged list runner has four call sites, none of which reaches them. The
+  count is exactly one per mode page plus one per slot 9 set, in all seventeen containers, and that
+  regularity is the thread to pull.
 
 ### Step 7: keep the documents honest
 

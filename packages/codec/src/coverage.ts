@@ -22,8 +22,8 @@ import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { IR_CLASS_STREAM, IR_HEADER_CLASSES, IR_HEADER_LENGTH, irBlockLength, irClass, irGroups,
   irRecordBlocks, irRecordStart } from './ir.ts';
-import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable, taggedList }
-  from './sections.ts';
+import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable,
+  taggedList, taggedListPools } from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
   from './tables.ts';
 
@@ -215,9 +215,24 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // slot 6's shape, `u8 kind` and a `u24` back pointer, **not one of the 54 sets in the corpus
   // gives an address below itself**, where all 1616 of slot 6's do. So the pointer is the start
   // and the list states its own length. Section 67.
+  const setStarts = new Set<number>();
   for (const address of handlerSets(c)?.addresses ?? []) {
     const list = taggedList(c, address);
-    if (list !== undefined) at(address, list.length, 'slot-9-list');
+    if (list === undefined) continue;
+    const off = c.blobOffsetOf(address);
+    if (off !== undefined) setStarts.add(off);
+    at(address, list.length, 'slot-9-list');
+  }
+
+  // The runs those sets sit in, whose other lists nothing in the container names. Claimed under a
+  // name that says only what they are, because what walks them is still open: the count is exactly
+  // one per mode page plus one per slot 9 set in all sixteen containers, and no consumer in either
+  // firmware image reaches them. Section 67.
+  for (const pool of taggedListPools(c)) {
+    for (const list of pool.lists) {
+      if (setStarts.has(list.start)) continue;
+      add(list.start, list.length, 'tagged-list-pool');
+    }
   }
 
   // The infrared database. This used to claim the group arrays alone, because a record's extent

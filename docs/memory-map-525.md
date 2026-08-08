@@ -14,14 +14,13 @@ here owns; this one differs in that the gap is about to close.
 ## Why architecture 9 is worth the trouble
 
 It is the worst covered architecture in the corpus by a wide margin. The byte accounting reads
-**65.1%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
+**66.4%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
 is no arch 9 firmware anywhere, so every structure that does not decode has nothing to appeal to.
 
-**The margin is smaller than the number makes it look.** Infrared class 5 alone is 24467 of the
-27420 bytes still unaccounted, so setting that one blocked structure aside the arch 9 sample is
-read to about 96%. What is genuinely arch 9 specific and not blocked is the 1814 byte run after
-base slot 4. The 1052 bytes left in the tagged list pool are the same gap arch 12 and arch 14 have,
-and no more soluble here than there. Sections 66 and 67.
+**The margin is almost entirely one structure.** Infrared class 5 is 24467 of the 26368 bytes
+still unaccounted, so setting it aside the arch 9 sample is read to about 97%, against 100.0% on
+both target architectures. What else is left is a 1814 byte run after base slot 4 and very little
+besides. Sections 66 and 67.
 
 One specific thing is stuck behind that, and it is the largest single gap left:
 

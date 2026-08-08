@@ -7172,8 +7172,8 @@ the list states its own length. Every one of the 54 decodes, 1364 entries betwee
 tags are `0x81` to `0xbf`, which is section 17's key code shape and matches section 39 calling this
 the binding table.
 
-Coverage, zero overlaps: **99.8% on a Harmony One**, 99.7% on a 600, 99.6% on a 700, 97.2% on arch 8
-and 65.1% on the 525.
+Coverage with the sets alone, zero overlaps: 99.8% on a Harmony One, 99.7% on a 600, 99.6% on a
+700, 97.2% on arch 8 and 65.1% on the 525. With the rest of the pool, below, it goes further.
 
 ### What the rest is, and why it is not claimed
 
@@ -7193,17 +7193,49 @@ The lists the walk finds, counted at the true run start:
 is not the list a page names: those are a different pool, above base slot 7's table, and only 62 of
 330 on the One are even byte identical to one here.
 
-**It is still not claimable, and the reason is a test that failed.** The picture bank of section 55
-is claimed without any pointer naming it, because its start is *derived*: candidate offsets are
-tried and exactly one satisfies both the exact landing and the presence of every addressed picture.
-The same derivation was run here, requiring the walk to land on the run's end and every base slot 9
-pointer in the run to fall on a list boundary, and it gives **41, 45, 50, 42, 35 and 1275 candidate
-starts** rather than one. A tagged list walk is far too permissive to locate anything: a wrong start
-tiles just as happily as the right one.
+~~**It is still not claimable, and the reason is a test that failed.**~~ **That was wrong, and it
+was wrong in an instructive way.** The paragraph below is kept because the measurement in it is
+correct and the conclusion drawn from it was not.
 
-So the exact landing, on its own, is **not** evidence here, and section 55's use of it was safe only
-because a second constraint did the work. Worth stating plainly, because the shape of the argument
-looks identical and is not.
+> The picture bank of section 55 is claimed without any pointer naming it, because its start is
+> *derived*: candidate offsets are tried and exactly one satisfies both the exact landing and the
+> presence of every addressed picture. The same derivation was run here, requiring the walk to land
+> on the run's end and every base slot 9 pointer in the run to fall on a list boundary, and it gives
+> **41, 45, 50, 42, 35 and 1275 candidate starts** rather than one. A tagged list walk is far too
+> permissive to locate anything: a wrong start tiles just as happily as the right one.
+
+The measurement holds: a tagged list walk really does tile from hundreds of wrong offsets, so the
+exact landing is not evidence on its own and section 55 was safe only because a second constraint
+carried it. **What was wrong was concluding that the start therefore could not be had.** It does not
+have to be searched for at all.
+
+**Every one of the 29 runs begins on the byte after a mode entry's page array ends**, in seventeen
+containers. The start is stated, by the structure section 66 read. Asking whether the walk could
+find the start was asking the wrong question of the wrong structure, and the lesson is the one this
+document keeps relearning: when the data could tell you and something else does tell you, believe
+the something else.
+
+### The pool, bounded at both ends
+
+```
+start   a mode entry's end, that is  entry + 6 + 3 * pages
+walk    tagged lists, each by its own declared length
+end     the lowest address above the start that another reader already names
+```
+
+The upper bound uses only addresses other readers produce: mode record starts, entries, pages,
+page lists, page programs, the mode table, and base slots 10 and 11. **Base slots 10 and 11 by base
+number and never by raw slot**, because raw slot 10 is base slot 9 on arch 8 and arch 12, and slot
+9's sets are inside a pool, so bounding with them stops the walk on the thing it is meant to
+contain. That mistake was made once here and it cost the arch 12 safe mode container, which came
+back with no pool at all while every other container came back right.
+
+One further condition, and it is what makes the rule specific rather than merely satisfiable: **a
+run has to contain at least one base slot 9 set, on a list boundary.** With it the rule accepts two
+runs of the seven candidates in a Harmony One, two of 206 in the 525 and two of 130 in an arch 8
+config, and one in each safe mode container. Seventeen of seventeen, byte for byte the runs above.
+
+Nothing in this consults the byte accounting, which would be circular. It is a reader.
 
 ### The negatives, so the next attempt is cheaper
 
@@ -7224,14 +7256,33 @@ them from a base this analysis has not found, or is not the tagged list runner a
 254 on the 600, and a container whose modes are nearly empty matches 30 of 30, which is what an
 empty list matching an empty list gives.
 
+### What it moves, and it is the milestone
+
+| container | before section 66 | after 66 | sets, 67 | the pool, 67 |
+|---|---|---|---|---|
+| Harmony One | 98.0% | 99.6% | 99.8% | **100.0%** |
+| Harmony One, spare | 98.6% | 99.8% | 99.8% | **100.0%** |
+| Harmony 600 | 98.7% | 99.6% | 99.7% | **100.0%** |
+| Harmony 700 | 98.1% | 99.5% | 99.6% | **100.0%** |
+| 880, arch 8 | 94.4% | 97.0% | 97.2% | 97.7% |
+| 525, arch 9 | 55.1% | 64.1% | 65.1% | 66.4% |
+| safe mode, arch 14 | 91.8% | 98.2% | 98.4% | 99.4% |
+
+**Both target architectures are at 100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One
+config and 41 in a Harmony 600. Zero overlaps in all seventeen containers. That is the first of the
+three parts of milestone M2 in `docs/roadmap.md` complete for arch 12 and arch 14: an emitter can
+now rebuild essentially all of a config rather than copying a residue.
+
+Arch 8 and arch 9 are not there, and both remainders are infrared: 9864 bytes of duration blocks on
+arch 8 and 24467 of class 5 on arch 9, the latter still wanting a firmware nobody has.
+
 ### Where it lands
 
-* `docs/config-format.md`, base slot 9.
-* `packages/codec/src/coverage.ts`: the `slot-9-list` claim, replacing the comment that said why
-  there was none.
-* `packages/codec/test/sections.test.ts`: the 54 sets, their entry counts, the absent back pointer,
-  and base slot 6 as the calibration that the test is not merely observing a corpus with no
-  backward addresses in it.
+* `docs/config-format.md`, base slot 9 and the pool.
+* `packages/codec/src/sections.ts`: `taggedListPools`, and `src/coverage.ts` for the `slot-9-list`
+  and `tagged-list-pool` claims, replacing the comment that said why there were none.
+* `packages/codec/test/sections.test.ts`: the 54 sets, their entry counts, the absent back pointer
+  with base slot 6 as the calibration, and the pool's two derived ends with the count identity.
 
 ## References
 

@@ -119,17 +119,20 @@ defect it is.
 
 | | at the start | now |
 |---|---|---|
-| Harmony 700 | 11.4% | **99.6%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | **99.7%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | **99.8%<!--fact:coverage_one_config-->** |
-| 880, arch 8 | 3.6% | **97.2%<!--fact:coverage_arch8_config_a-->** |
-| 525, arch 9 | 7.2% | 65.1%<!--fact:coverage_h525_config--> |
+| Harmony 700 | 11.4% | **100.0%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | **100.0%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | **100.0%<!--fact:coverage_one_config-->** |
+| 880, arch 8 | 3.6% | **97.7%<!--fact:coverage_arch8_config_a-->** |
+| 525, arch 9 | 7.2% | 66.4%<!--fact:coverage_h525_config--> |
 
-Zero overlapping claims anywhere. `make coverage` prints it.
+Zero overlapping claims anywhere. `make coverage` prints it. **Both target architectures reach
+100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One config and 41 in a Harmony 600, which
+is the point at which an emitter can rebuild a config rather than copy a residue. What is left on
+the other two is infrared, on the two architectures no firmware image exists for.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
 classes, which physical button each scan code is, and architecture 9's infrared, which is 24467 of
-the 27420 bytes that sample still has unaccounted. See
+the 26368 bytes that sample still has unaccounted. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 

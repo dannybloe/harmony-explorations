@@ -327,6 +327,100 @@ export function modePages(c: Container): ModePage[] {
   return (modeRecords(c) ?? []).flatMap((record) => record.pages);
 }
 
+/** One run of tagged lists packed end to end, as blob offsets. */
+export interface TaggedListPool {
+  start: number;
+  end: number;
+  lists: { start: number; length: number }[];
+}
+
+/**
+ * The runs of tagged lists packed end to end, which hold base slot 9's sets among others.
+ *
+ * **Both ends are derived, and that is the whole difficulty.** The start is a mode entry's end:
+ * every one of the 29 runs in the corpus begins on the byte after some entry's page array, which
+ * is what makes it a stated position rather than a searched one. The end is the lowest address
+ * above that start which any other reader already names, so the walk is bounded by structures
+ * rather than by the byte accounting, which would be circular.
+ *
+ * Section 67 first concluded these were not claimable, on the grounds that section 55's
+ * derivation for the picture bank gives 35 to 1275 candidate starts here rather than one. That
+ * was measuring the wrong thing: the start does not have to be searched for, because a mode entry
+ * states it. The exact landing is then a check on the reading and not the way it was found.
+ *
+ * A pool run has to contain at least one base slot 9 set, on a list boundary. Without that the
+ * rule accepts spans that tile by accident, since a tagged list walk is permissive: two of seven
+ * candidate runs on a Harmony One, two of 206 on the 525.
+ */
+export function taggedListPools(c: Container): TaggedListPool[] {
+  const records = modeRecords(c);
+  if (records === undefined) return [];
+  const offsetOf = (address: number): number | undefined => c.blobOffsetOf(address);
+  const inside = (offset: number | undefined): boolean =>
+    offset !== undefined && offset >= 0 && offset < c.blob.length;
+
+  // Everything another reader names, which is what bounds a run from above.
+  const bounds = new Set<number>();
+  const note = (offset: number | undefined): void => {
+    if (inside(offset)) bounds.add(offset as number);
+  };
+  for (const record of records) {
+    note(offsetOf(record.start));
+    note(offsetOf(record.address));
+    for (const page of record.pages) {
+      note(offsetOf(page.address));
+      note(offsetOf(page.list));
+      note(offsetOf(page.program));
+    }
+  }
+  for (const address of modeTable(c)?.addresses ?? []) note(offsetOf(address));
+  // Base slots 10 and 11 by base number and never by raw slot: raw slot 10 is base slot 9 on arch
+  // 8 and arch 12, and slot 9's sets are *inside* a pool, so bounding with them stops the walk on
+  // the very thing the run is meant to contain.
+  for (const base of [10, 11]) {
+    if (c.architecture === undefined) break;
+    let slot: number;
+    try {
+      slot = archSlot(c.architecture, base);
+    } catch (error) {
+      if (error instanceof GspmError) continue;
+      throw error;
+    }
+    for (const address of c.pointerArray(slot) ?? []) note(offsetOf(address));
+  }
+  const ordered = [...bounds].sort((a, b) => a - b);
+
+  const sets = (handlerSets(c)?.addresses ?? [])
+    .map(offsetOf)
+    .filter((offset): offset is number => offset !== undefined);
+
+  const pools: TaggedListPool[] = [];
+  for (const record of records) {
+    const entry = offsetOf(record.address);
+    if (entry === undefined) continue;
+    const start = entry + record.entryLength;
+    const end = ordered.find((offset) => offset > start);
+    if (end === undefined) continue;
+    const lists: { start: number; length: number }[] = [];
+    const starts = new Set<number>();
+    let at = start;
+    while (at < end) {
+      const wide = u8(c.blob, at) === 0;
+      const count = wide ? u8(c.blob, at + 1) : u8(c.blob, at);
+      const length = wide ? 2 + 5 * count : 1 + 4 * count;
+      if (length <= 0 || at + length > end) break;
+      lists.push({ start: at, length });
+      starts.add(at);
+      at += length;
+    }
+    if (at !== end) continue;
+    const held = sets.filter((offset) => offset >= start && offset < end);
+    if (held.length === 0 || !held.every((offset) => starts.has(offset))) continue;
+    pools.push({ start, end, lists });
+  }
+  return pools;
+}
+
 /**
  * The screen program each base slot 6 record carries after its tagged list, or nothing off
  * `MODE_PROGRAM_ARCHITECTURES`.
