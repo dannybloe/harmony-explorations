@@ -22,6 +22,7 @@ import {
   ACTION_NOOP_LIMIT,
   ACTION_LIST_INDEX_OPCODE,
   archSlot,
+  coverage,
   DEVICE_ASSIGN_FIELD_BIT,
   DEVICE_ASSIGN_OPCODE,
   deviceAssignment,
@@ -38,6 +39,7 @@ import {
   IR_QUANTITY_OPCODE,
   IR_RECORD_POINTER_BIAS,
   irClass,
+  irClass5Body,
   irGroupCount,
   irHeaderLength,
   irQuantity,
@@ -46,6 +48,8 @@ import {
   irRecordBlocks,
   irRecordStart,
   irRegion,
+  irSymbolBlock,
+  irSymbolTable,
   MODE_ENTRY_HEADER,
   MODE_PAGE_LEAD_ARCHITECTURES,
   MODE_PAGE_POINTERS,
@@ -363,6 +367,148 @@ test('arch 9 class 5 records carry the shared header', skipUnless('h525_config')
   // It is not one. A zero word turns up in arbitrary data, so nothing below the header can be
   // claimed on the strength of finding a terminator.
   assert.notEqual(irPulses(c, records[0] as number), undefined);
+});
+
+/**
+ * `[sample, records, pointers, bodies, index bytes, tables, blocks, body/table/block bytes]`.
+ * findings.md section 82.
+ *
+ * Class 5 is class 1 with a dictionary: a header pointer names a body of indices, the body names a
+ * symbol table, the table names pulse blocks. Pinned per sample because the sharing is the point:
+ * 414 pointers reach 380 distinct bodies, and 380 bodies reach 5 tables.
+ */
+const CLASS5: readonly [string, number, number, number, number, number, number,
+  number, number, number][] = [
+  ['h525_config', 200, 414, 380, 22062, 5, 43, 23962, 134, 1680],
+  ['h525_config_2', 107, 286, 266, 10270, 1, 7, 11600, 22, 82],
+];
+
+for (const [name, records, pointers, bodyCount, indexBytes, tableCount, blockCount,
+  bodyBytes, tableBytes, blockBytes] of CLASS5) {
+  test(`${name}: class 5 bodies, symbol tables and pulse blocks`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const bodies = new Set<number>();
+    const tables = new Set<number>();
+    const symbols = new Set<number>();
+    let seenRecords = 0;
+    let seenPointers = 0;
+    let seenIndexBytes = 0;
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        assert.equal(irClass(c, address), IR_CLASS_ARCH9, 'arch 9 is class 5 throughout');
+        seenRecords += 1;
+        for (const pointer of irRecordBlocks(c, address)) {
+          seenPointers += 1;
+          bodies.add(pointer);
+        }
+      }
+    }
+    for (const address of bodies) {
+      const body = irClass5Body(c, address);
+      assert.notEqual(body, undefined);
+      const { table, indices, length } = body as NonNullable<typeof body>;
+      assert.equal(length, 5 + indices.length, 'a body is 5 + n');
+      seenIndexBytes += indices.length;
+      tables.add(table);
+      // Every index is inside its own table. A wrong entry width or a wrong count offset would
+      // show up here first, since the streams run to 702 indices.
+      const symbolTable = irSymbolTable(c, table);
+      assert.notEqual(symbolTable, undefined);
+      const { symbols: entries } = symbolTable as NonNullable<typeof symbolTable>;
+      for (const index of indices) {
+        assert.ok(index < entries.length, `index ${index} of ${entries.length}`);
+      }
+      for (const symbol of entries) symbols.add(symbol);
+    }
+    assert.equal(seenRecords, records);
+    assert.equal(seenPointers, pointers);
+    assert.equal(bodies.size, bodyCount);
+    assert.equal(seenIndexBytes, indexBytes);
+    assert.equal(tables.size, tableCount);
+    assert.equal(symbols.size, blockCount);
+
+    // The independent closure: a table sits exactly on top of the last of its own blocks. Nothing
+    // in the reader arranges that, so a wrong stride would move one end and not the other.
+    for (const address of tables) {
+      const table = irSymbolTable(c, address) as NonNullable<ReturnType<typeof irSymbolTable>>;
+      let top = 0;
+      for (const symbol of table.symbols) {
+        const block = irSymbolBlock(c, symbol) as NonNullable<ReturnType<typeof irSymbolBlock>>;
+        top = Math.max(top, block.start + block.length);
+      }
+      assert.equal(table.start, top, 'the table follows its own blocks with nothing between');
+    }
+
+    // Every block ends in a zero word, which the firmware does not read: the count already said
+    // where the block stops. So this is an observation about the generator, and the emitter writes
+    // a zero rather than copying one.
+    let blocks = 0;
+    for (const symbol of symbols) {
+      const block = irSymbolBlock(c, symbol) as NonNullable<ReturnType<typeof irSymbolBlock>>;
+      assert.equal(block.length, 4 + 2 * block.pulses.length);
+      const end = block.start + block.length;
+      assert.equal(c.blob[end - 2], 0);
+      assert.equal(c.blob[end - 1], 0);
+      blocks += block.length;
+    }
+
+    const owners = new Map(coverage(c).byOwner);
+    assert.equal(owners.get('slot-5-class5-body'), bodyBytes);
+    assert.equal(owners.get('slot-5-symbol-table'), tableBytes);
+    assert.equal(owners.get('slot-5-symbol-block'), blockBytes);
+    assert.equal(blocks, blockBytes, 'what the reader walks is what the accounting claims');
+  });
+}
+
+test('a class 5 body expands to an ordinary NEC frame', skipUnless('h525_config'), () => {
+  // The closure that says the three levels mean what they are claimed to mean. Nothing above
+  // checks a duration; this expands one code the way the sender would and asks whether the result
+  // is a real infrared protocol. findings.md section 82.
+  const c = parse(load('h525_config') as Uint8Array);
+  const first = (irGroups(c) ?? [])[0]?.addresses[0] as number;
+  const body = irClass5Body(c, irRecordBlocks(c, first)[0] as number);
+  const { table, indices } = body as NonNullable<typeof body>;
+  const entries = (irSymbolTable(c, table) as NonNullable<ReturnType<typeof irSymbolTable>>)
+    .symbols;
+  const pulses = indices.flatMap(
+    (i) => (irSymbolBlock(c, entries[i] as number) as NonNullable<
+      ReturnType<typeof irSymbolBlock>
+    >).pulses,
+  ).map((w) => ({ mark: w >> 15 === 1, microseconds: w & 0x7fff }));
+
+  // NEC: a 9000 and 4500 header, 32 bits of a 560 mark with a 560 or 1690 space, a trailing mark.
+  // The stored values are the generator's own, so they are near those rather than equal to them.
+  const header = pulses.findIndex((p) => p.mark && p.microseconds === 8990);
+  assert.ok(header >= 0, 'a header mark');
+  assert.equal(pulses[header + 1]?.microseconds, 4490);
+  const bits = pulses.slice(header + 2, header + 2 + 64);
+  assert.equal(bits.length, 64, '32 bits of mark and space');
+  const zero = bits.filter((p, i) => i % 2 === 1 && p.microseconds === 552).length;
+  const one = bits.filter((p, i) => i % 2 === 1 && p.microseconds === 1662).length;
+  assert.equal(zero + one, 32, 'every space is one of two values');
+  for (let i = 0; i < 64; i += 2) assert.equal(bits[i]?.microseconds, 568, 'every mark is 568');
+
+  // And a repeat frame further down, which is the other half of NEC and the reason the tail
+  // symbols are shared by every code in the table.
+  assert.ok(
+    pulses.some((p, i) => p.mark && p.microseconds === 8990
+      && pulses[i + 1]?.microseconds === 2230),
+    'a 9000 and 2250 repeat header',
+  );
+  // A gap longer than a fifteen bit field is split rather than truncated.
+  assert.ok(pulses.some((p) => !p.mark && p.microseconds === 0x7fff));
+});
+
+test('class 5 is read on the class byte and nothing else', skipUnless('h600_config'), () => {
+  // The negative. Class 1's pointers name duration streams, so the class 5 readers must not touch
+  // them, and the accounting is where that shows: an arch 14 container claims no body, no symbol
+  // table and no symbol block.
+  const c = parse(load('h600_config') as Uint8Array);
+  const owners = new Map(coverage(c).byOwner);
+  for (const owner of ['slot-5-class5-body', 'slot-5-symbol-table', 'slot-5-symbol-block']) {
+    assert.equal(owners.get(owner), undefined, `${owner} claimed on a class 1 container`);
+  }
+  assert.ok((owners.get('slot-5-block') ?? 0) > 0, 'class 1 blocks are claimed instead');
 });
 
 /**

@@ -75,9 +75,12 @@ import {
   irGroups,
   irHeaderLength,
   irBlockWords,
+  irClass5Body,
   irHeaderPointers,
   irRecordBlocks,
   irRecordStart,
+  irSymbolBlock,
+  irSymbolTable,
 } from './ir.ts';
 import { valueMaps } from './valuemap.ts';
 import {
@@ -593,6 +596,7 @@ export function rebuilds(c: Container): Rebuild[] {
     framed(group.start, 'slot-5-group', w);
   }
   const blocks = new Set<number>();
+  const bodies = new Set<number>();
   for (const group of irGroups(c) ?? []) {
     for (const address of group.addresses) {
       const encoding = irClass(c, address);
@@ -605,10 +609,11 @@ export function rebuilds(c: Container): Rebuild[] {
         .u8(irGroupCount(c, address));
       for (const pointer of irHeaderPointers(c, address)) w.u24(pointer);
       partly(off, 'slot-5-header', w, irHeaderLength(c, address) - IR_HEADER_BASE + 1);
-      // Only class 1 names duration streams. Class 5 shares the header and nothing below it, so
-      // its blocks are not walked here any more than they are claimed there. Section 65.
-      if (encoding !== IR_CLASS_STREAM) continue;
-      for (const block of irRecordBlocks(c, address)) blocks.add(block);
+      // The same two pointers, a different thing behind them: class 1 a duration stream, class 5 a
+      // body naming a shared symbol table. Section 82.
+      for (const block of irRecordBlocks(c, address)) {
+        (encoding === IR_CLASS_STREAM ? blocks : bodies).add(block);
+      }
     }
   }
   // Deduplicated, because a block can be named by two records, which is also why an editor cannot
@@ -619,6 +624,38 @@ export function rebuilds(c: Container): Rebuild[] {
     const w = new Writer(2 * words.length);
     for (const word of words) w.u16(word);
     framed(c.blobOffsetOf(block), 'slot-5-block', w);
+  }
+  // Class 5, all three levels of it, and every one of them is fully typed: a body is a pointer, a
+  // count and a byte per index, a symbol table is a count and a pointer each, and a symbol block
+  // is a count, its words and its terminator. Nothing here is an encoder's choice the way a glyph
+  // or a picture body is, so all of it rebuilds rather than being carried. Section 82.
+  const tables = new Set<number>();
+  for (const address of bodies) {
+    const body = irClass5Body(c, address);
+    if (body === undefined) continue;
+    const w = new Writer(body.length).u24(body.table).u16(body.indices.length);
+    for (const index of body.indices) w.u8(index);
+    framed(body.start, 'slot-5-class5-body', w);
+    tables.add(body.table);
+  }
+  const symbols = new Set<number>();
+  for (const address of tables) {
+    const table = irSymbolTable(c, address);
+    if (table === undefined) continue;
+    const w = new Writer(table.length).u8(table.symbols.length);
+    for (const symbol of table.symbols) w.u24(symbol);
+    framed(table.start, 'slot-5-symbol-table', w);
+    for (const symbol of table.symbols) symbols.add(symbol);
+  }
+  for (const address of symbols) {
+    const block = irSymbolBlock(c, address);
+    if (block === undefined) continue;
+    const w = new Writer(block.length).u16(block.pulses.length);
+    for (const pulse of block.pulses) w.u16(pulse);
+    // The terminator is written as a zero rather than copied, so a block that does not end in one
+    // fails the round trip instead of being reproduced quietly. All 50 in the corpus do.
+    w.u16(0);
+    framed(block.start, 'slot-5-symbol-block', w);
   }
 
   // Base slot 14's records, whose entry and range tables are fully typed. A record can end inside

@@ -1024,7 +1024,7 @@ all on arch 8 and all padding, and overruns never. But arch 9's 277 blocks all f
 and **not one is in the right place**, so what separates a block this reading covers from one it
 does not is the **class byte**, which is 1 here and 5 there.
 
-#### Class 5 shares the header and nothing else
+#### Class 5 shares the header, and behind it spells a code from a dictionary
 
 Arch 9's 200 records all read class 5, and every structural property of the header above holds on
 every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
@@ -1035,10 +1035,37 @@ assumed, section 75. `gspm.ir_region` gives the whole area, from the lowest back
 highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
 the byte accounting could not attribute.
 
-*Not established*: everything below the header. The bytes are not durations, the record body opens
-with a `u24` naming one of 66 shared descriptors elsewhere in the file, and a run of small values
-follows, typically 32 of exactly two of them. Nothing here decodes that and no arch 9 firmware
-exists to. [findings.md](findings.md) section 65.
+**Confirmed on both arch 9 configs, and every field width is a literal in the firmware that reads
+it**, section 82. Where a class 1 pointer names a run of durations, a class 5 pointer names a body
+that spells the code as indices into a shared table of short pulse blocks:
+
+```
+per body:     u24 table           the symbol table's address
+              u16 n               bytes of index stream
+              u8  index[n]        zero based into that table
+
+per table:    u8  count
+              u24 symbol[count]   packed immediately above the last of its own blocks
+
+per symbol:   u16 count
+              u16 pulse[count]    bit 15 set is a mark, bits 14..0 are microseconds
+              u16 0x0000          present in all 50 blocks, and read by nothing
+```
+
+A body is `5 + n` bytes, a table `1 + 3 * count`, a symbol block `4 + 2 * count`. The pulse words
+are the same format class 1 uses, so one body expands to an ordinary duration run: the corpus's
+tables hold a symbol per bit value plus one each for the header, the trailing mark, the gaps and the
+repeat frame. A gap longer than 32767 microseconds is split across words, since that is all fifteen
+bits can say.
+
+~~the record body opens with a `u24` naming one of 66 shared descriptors~~<!--superseded--> That
+`u24` is the symbol table pointer and there are 5 of them in `h525_config`, not 66; the count came
+from reading at each block area's start rather than at a pointer target, which is a body start only
+135 times in 199. [findings.md](findings.md) sections 65 and 82.
+
+**All three levels are shared, harder than anywhere else in the format.** Two records name one body,
+up to 206 bodies name one symbol table, and a symbol block is reused by every code with that pulse
+pair in it. Nothing here can be edited in place.
 
 **Blocks are shared.** A record may carry a bare header whose pointers name a block another record
 also names, so one duration stream can serve several codes. A writer cannot edit a block in place

@@ -73,3 +73,5 @@ and leave this table alone.
 | `version word is per model` | section 81 | per config: one Harmony One carries two words either side of one sync |
 | `word is per model rather than per config` | section 81 | the same unit disagrees with itself, section 58's observed pair |
 
+| `66 shared descriptors` | section 82 | 5 symbol tables; the 66 came from reading each block area's start, a body start only 135 times in 199 |
+| `Nothing here decodes that` | section 82 | the body is `u24 table; u16 n; u8 index[n]`, and every width is a literal in the firmware |

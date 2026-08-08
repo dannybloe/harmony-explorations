@@ -7007,6 +7007,13 @@ which would make class 5 a **table driven** encoding where class 1 is a literal 
 descriptor the table. That is a conjecture with nothing behind it but the shape. It is not in the
 code and it should be tested against an arch 9 firmware rather than against more of the same file.
 
+**It was, and the conjecture is right**, section 82: the descriptor is the symbol table, the run of
+small values is one index per bit, and the 1814 bytes are the tables and their pulse blocks to the
+byte. **The count is wrong and instructively so.** This read the `u24` at each block area's start,
+which is a body start only 135 times in 199, so 64 of the reads landed inside an index stream and
+"66 distinct values" is 5 tables plus 64 pieces of misaligned data. The 135 that did land in the
+1814 bytes were the correct reads all along, which is why the wrong rule produced the right lead.
+
 The rule "each header's block area is the one immediately before it" was tried and **fails**: it
 holds for 135 of 199 and the other 64 point further back, so the areas are shared in some pattern
 this does not recover.
@@ -9158,6 +9165,142 @@ the device and everything to whoever reads the config afterwards, which now incl
 * `docs/config-format.md`, base slot 1.
 * `tests/test_gspm.py`, with the corrected claim and the falsifying pair.
 * `tests/test_findings.py`, the census, computed rather than quoted.
+
+
+## 82. Infrared class 5 is class 1 with a dictionary
+
+The last remainder in the byte accounting, and it closes the way section 65 guessed it would. Class
+1 spells a code as a literal run of durations. Class 5 spells it as a run of **indices** into a
+table of short pulse blocks, so a code that repeats a bit pattern stores that pattern once. Three
+levels where class 1 has one:
+
+```
+record body    u24  the symbol table's address
+               u16  n, bytes of index stream
+               u8   index[n]                     zero based, into that table
+                                                 5 + n bytes
+
+symbol table   u8   count
+               u24  symbol[count]                1 + 3 * count bytes
+
+symbol block   u16  count
+               u16  pulse[count]                 bit 15 carrier on, low 15 bits microseconds
+               u16  0x0000                       4 + 2 * count bytes
+```
+
+The header is unchanged, section 65, and so is what its two pointers mean: a thing to send. What
+changed is what is behind them, and that is decided by the class byte at `+7` alone.
+
+### The firmware states every field of it
+
+Arch 9, the 525's own image, `--part 4550`. The loader is at `0x04FF6` and the player's class 5 arm
+at `0x0513E`, both reached once per pointer:
+
+| what | where | which field |
+|---|---|---|
+| read the header pointer, seek it, stop if NULL | `0x04FF6` | the body's address |
+| **only when the class byte `0x22A` is 5**, read three bytes into `0x22D` | `0x05002` | `u24 table` |
+| read two bytes into `0x230` | `0x05018` | `u16 n` |
+| save the read position into `0x291` | `0x05326` | the index stream starts here |
+| per step: read one byte into `0x15C`, decrement `0x230`, advance `0x291` | `0x0514C`, `0x051E4` | one `u8` index |
+| offset `= 3 * 0x15C + 0x15B`, where `0x15B` is loaded with 1 | `0x066F4`, `0x05370` | skip the count, three bytes an entry |
+| add that to the table address and seek | `0x06792` | `symbol[index]` |
+| read three bytes into `TBLPTR` and seek those | `0x06560` | the entry is a `u24` |
+| read two bytes into `0x705` | `0x05178` | the block's `u16 count` |
+| that many times: read two bytes, push them to the pulse queue | `0x051AC` | `pulse[count]` |
+
+So the count prefix is why section 65 could not find a terminator, the `+1` is the count byte of the
+table, and the three byte stride is the table's entry width. Nothing here is inferred from the data:
+each of the four widths is a literal in the code that reads it.
+
+The block's trailing zero word is **not** read by any of this, since the count already says where
+the block stops. It is there in all 50 blocks of the corpus anyway, so the emitter writes a zero
+rather than copying what it found, and a block that ever lacks one fails the round trip.
+
+### The data agrees, and it agrees everywhere
+
+Both arch 9 configs, every class 5 record, no exceptions and no unparsed remainder:
+
+| | `h525_config` | `h525_config_2` |
+|---|---|---|
+| class 5 records | 200 | 107 |
+| non NULL header pointers | 414 | 286 |
+| distinct bodies | 380 | 266 |
+| index bytes | 22062 | 10270 |
+| symbol tables | 5 | 1 |
+| symbols per table | 11, 3, 7, 7, 15 | 7 |
+| bodies naming one table | 2 to 206 | 266 |
+| distinct symbol blocks | 43 | 7 |
+| pulses in a block | 1 to 54 | 1 to 16 |
+| bytes: bodies, tables, blocks | 23962, 134, 1680 | 11600, 22, 82 |
+
+Every index is inside its table, every block's count fits the file, and **every table sits exactly
+on top of the last of its own blocks**, delta zero for all six tables. That last one is the
+independent closure the gate asks for: nothing in the reader arranges it, and a wrong entry width or
+a wrong count offset would put the top of the block run somewhere else.
+
+### What it decodes to, which is the closure that matters
+
+Expanding one 39 index body of `h525_config` through its table, in microseconds, mark as `+`:
+
+```
+[-32767 x14 -20631] [+8990 -4490] [+568 -552] x6 [+568 -1662] x8 ... [+568] [-20111 -20111]
+[+8990 -2230] [+568 -32767 -32767 -30543]
+```
+
+That is NEC, exactly: a 9000 and 4500 header, 32 bits of 560 with 560 or 1690 spaces, a trailing
+mark, and a **repeat frame** of 9000 and 2250. The table holds one symbol for a zero bit, one for a
+one bit, and one each for the header, the trailing mark, the gaps and the repeat, which is why the
+index streams of two buttons on the same device differ only in the middle. A long gap is split into
+words of `0x7FFF`, since 32767 microseconds is all a fifteen bit field can say.
+
+So the microsecond unit and the carrier bit carry over from class 1 unchanged, and this is a
+compression scheme rather than a different encoding. It is also why the corpus's arch 9 configs are
+smaller than their arch 12 equivalents per code.
+
+### What section 65 saw, and why its count was wrong
+
+Section 65 recorded the body as `u24 a shared descriptor, 66 distinct values over 200 records, 135
+of them landing in a second unattributed area of 1814 bytes`, and guessed from a run of 32
+alternating values that class 5 might be table driven with one symbol per bit. **The guess was
+right and the count was a misaligned read**, which is the third time this project has been caught by
+that family, sections 49 and 55 being the others.
+
+It read the `u24` at the start of each block area, which is the previous header's end. That is a
+body start only when a body happens to end there, which is the case 135 times out of 199; the other
+64 reads landed inside an index stream and produced a value that is not a pointer at all.
+Reproduced exactly: 65 distinct values over 199 area starts, and 135 of those starts are genuine
+body starts. **And the 1814 bytes are the symbol tables plus the symbol blocks, to the byte**: 134
+and 1680. Section 65's descriptor was the symbol table pointer, seen through an alignment that was
+right two times in three.
+
+### For a writer
+
+Everything at these two lower levels is shared, more than anywhere else in the format. Two records
+name one body 34 times in `h525_config`, 206 bodies name one symbol table, and a symbol block is
+reused by every code that has a zero bit in it. So an editor changes nothing here in place: a new
+code appends a body and reuses the table, and a changed timing means a new symbol rather than an
+edited one.
+
+### Where the accounting lands
+
+Arch 9 goes from 67.1 to 99.95 percent on `h525_config` and 77.1 to 99.92 on `h525_config_2`, with
+zero overlaps, and the emitter rebuilds all of it from fields: `framed` rises from 22063 to 47839
+and from 15079 to 26783, and both still round trip byte for byte.
+
+What is left on arch 9 is **43 bytes in six gaps, and they are not arch 9's**. The same six shapes
+sit in every container in the corpus: the `0xBEEF` that closes base slot 0's frame, three zero bytes
+before base slot 4, a tagged list between base slot 7's table and the page list pool, and a byte
+either side of base slot 17's table. That is one small finding across four architectures rather than
+anything to do with infrared, and it is the next thing to do.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 5, the three class 5 structures.
+* `packages/codec/src/ir.ts`, `irClass5Body`, `irSymbolTable` and `irSymbolBlock`; the claims and
+  the rebuilders in `coverage.ts` and `emit.ts`.
+* `packages/codec/test/sections.test.ts`, the corpus numbers above and the NEC expansion.
+* `tests/test_findings.py`, the firmware addresses, pinned against the image.
 
 
 ## References

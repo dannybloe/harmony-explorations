@@ -595,7 +595,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 100.0%<!--fact:coverage_arch8_config_a--> | 67.1%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
+| 100.0%<!--fact:coverage_arch8_config_a--> | 99.9%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -610,7 +610,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
 | 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
 | 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: groups, then records with a 21 byte header | 32, 42, 61, 65 |
+| 5 | the infrared database: groups, then records with a 21 byte header. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings | 38 |
@@ -675,11 +675,6 @@ produce a config the remote accepts and mishandles.
 * **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
   ten fields have a reading, section 59.
-* **Infrared class 5**, arch 9. The 21 byte header is read, section 65, and the **sender** is read
-  now, section 80: the class byte is switched on at `0x05108` and class 5's arm reads a `u16` count
-  and that many `u16` pulse words, which is why nothing terminates the way class 1's does. What is
-  open is **where the words are**, since the count is not at either block pointer and the firmware
-  reaches them through a three byte table indexed by a byte from a walking list.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
@@ -729,18 +724,19 @@ thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F`
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not
 one table across architectures**, so they must not be ported.
 
-The byte accounting has **one** remainder left: 25819 bytes on arch 9, nearly all class 5
-infrared. This paragraph used to name a second, 5437 bytes in the arch 12 safe mode container, and<!--superseded-->
-warned against a `u8 tag; u8 n; u16 v[n]` walk that tiled them to within a byte. The warning was
-right and the structure was not there at all: the whole remainder was one font set the reader had
-cut to a single glyph, section 78, and that container is at 99.6% now.
+The byte accounting has **no architecture sized remainder left**. It used to name two: 5437 bytes<!--superseded-->
+in the arch 12 safe mode container, which was one font set the reader had cut to a single glyph,
+section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. What is left across
+the whole corpus is 24 to 75 bytes a container, six shapes, and they are the **same** six on every
+architecture: base slot 0's closing `0xBEEF`, three zero bytes before base slot 4, a tagged list
+above base slot 7's table, and a byte either side of base slot 17's table. One small finding, not
+four.
 
-**Three architectures are at 100.0%**, sections 66, 67 and 75, with 24 bytes unattributed in a
-1.63 MB Harmony One config, 41 in a 600 and 60 in an 880, and zero overlaps in all seventeen
-containers. The last
+**All four architectures are at or above 99.9%**, sections 66, 67, 75 and 82, and zero overlaps in
+all nineteen containers. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
-That completes the first two of milestone M2's three parts on arch 8, 12 and 14.
+That completes the first two of milestone M2's three parts on every architecture.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
 the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
@@ -787,10 +783,13 @@ came from asking for all of them and noticing families with the same count. **It
 families now**, length times count sorted by total bytes, computed over every gap rather than the
 listed ones, so the next one of these does not need the hand count.
 
-What is left is arch 9's class 5 infrared, and the arch 9 firmware it wanted is in the lab and open,
-section 80: `h525_code` is the 525's whole internal program flash, loading at `0x0000` with the
-application from `0x1000`. Its SPI primitive at `0x07F8E` is arch 9's single config read choke
-point, the analogue of arch 14's `0x1B9AC`.
+**Arch 9's class 5 infrared is read**, section 82, out of the 525's own firmware: `h525_code` is its
+whole internal program flash, loading at `0x0000` with the application from `0x1000`, and its SPI
+primitive at `0x07F8E` is arch 9's single config read choke point, the analogue of arch 14's
+`0x1B9AC`. Class 5 turned out to be **class 1 with a dictionary**: a header pointer names a body of
+one byte indices, the body names a symbol table, and the table names short pulse blocks that every
+code with that pulse pair reuses. One body expands to a textbook NEC frame, repeat header included,
+which is the closure. Every field width is a literal in the firmware that reads it.
 
 **Disassemble it with `--part 4550`.** The 525 is a PIC18F4550 and the default register map is the
 67J50 family's: 65 of 139 addresses disagree, the whole CCP block moves, and the infrared carrier

@@ -21,8 +21,8 @@ import { ARCH_RECORD_LENGTH, Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET,
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
-import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irGroups,
-  irHeaderLength, irRecordBlocks, irRecordStart } from './ir.ts';
+import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Body, irGroups,
+  irHeaderLength, irRecordBlocks, irRecordStart, irSymbolBlock, irSymbolTable } from './ir.ts';
 import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable,
   taggedList, taggedListPools } from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
@@ -274,21 +274,44 @@ export function claims(c: Container, withPictures = true): Claim[] {
     add(group.start, group.length, 'slot-5-group');
   }
   const irBlocks = new Set<number>();
+  const irBodies = new Set<number>();
   for (const group of irGroups(c) ?? []) {
     for (const address of group.addresses) {
       const encoding = irClass(c, address);
       if (encoding === undefined || !IR_HEADER_CLASSES.has(encoding)) continue;
       const start = irRecordStart(c, address);
       if (start !== undefined) at(start, irHeaderLength(c, address), 'slot-5-header');
-      // Only class 1's blocks are duration streams. Class 5 shares the header and nothing below
-      // it, so its 24511 bytes of block area stay in the gaps where they belong. Section 65.
-      if (encoding !== IR_CLASS_STREAM) continue;
-      for (const block of irRecordBlocks(c, address)) irBlocks.add(block);
+      // The two classes put different things behind the same pointers: class 1 a duration stream
+      // ending at a zero word, class 5 a body that names a shared symbol table. Section 82.
+      for (const block of irRecordBlocks(c, address)) {
+        (encoding === IR_CLASS_STREAM ? irBlocks : irBodies).add(block);
+      }
     }
   }
   for (const block of irBlocks) {
     const length = irBlockLength(c, block);
     if (length !== undefined) at(block, length, 'slot-5-block');
+  }
+  // Class 5, and every set here is deduplicated because sharing is the whole point of the shape:
+  // two records name one body, hundreds of bodies name one symbol table, and a symbol block is
+  // reused by many codes. An editor that changes one in place has to know who else names it.
+  const irTables = new Set<number>();
+  for (const address of irBodies) {
+    const body = irClass5Body(c, address);
+    if (body === undefined) continue;
+    add(body.start, body.length, 'slot-5-class5-body');
+    irTables.add(body.table);
+  }
+  const irSymbols = new Set<number>();
+  for (const address of irTables) {
+    const table = irSymbolTable(c, address);
+    if (table === undefined) continue;
+    add(table.start, table.length, 'slot-5-symbol-table');
+    for (const symbol of table.symbols) irSymbols.add(symbol);
+  }
+  for (const address of irSymbols) {
+    const block = irSymbolBlock(c, address);
+    if (block !== undefined) add(block.start, block.length, 'slot-5-symbol-block');
   }
 
   // Three more count prefixed arrays whose records state their own size. Base slot 12's pointer

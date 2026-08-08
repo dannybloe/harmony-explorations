@@ -25,10 +25,14 @@ export const IR_MIN_PULSES = 8;
 export const IR_CLASS_STREAM = 1;
 /**
  * The class the arch 9 sample reads in all 200 of its records, and the only class in the corpus
- * that is not 1. What it means is **not** established and needs a firmware nobody here has. What is
- * established, section 65, is that its records carry the same 21 byte header: the class byte at +7,
- * the record's own start at +8, two backward pointers at +12 and +15 and a NULL at +18, all 200 of
- * 200. So the header is claimable and the blocks are not.
+ * that is not 1. It shares the header, section 65: the class byte at +7, the record's own start at
+ * +8, two backward pointers at +12 and +15 and a NULL at +18, all 200 of 200.
+ *
+ * **What its pointers name is a body, not a duration stream**, section 82. The body indexes a
+ * shared table of small pulse blocks, so the durations are one level further down and reused
+ * between codes. `irClass5Body`, `irSymbolTable` and `irSymbolBlock` are that level; this used to
+ * say "what it means is not established and needs a firmware nobody here has", and the firmware
+ * arrived on 8 August 2026.
  */
 export const IR_CLASS_ARCH9 = 5;
 export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, IR_CLASS_ARCH9]);
@@ -153,6 +157,97 @@ export function irBlockWords(c: Container, address: number): number[] | undefine
   const words: number[] = [];
   for (let at = off; at < off + length; at += 2) words.push(u16(c.blob, at));
   return words;
+}
+
+/**
+ * Class 5's record body, which the header's pointers name where class 1's name a duration stream.
+ *
+ * ```
+ * +0x00  u24  symbol table address
+ * +0x03  u16  n, the bytes of index stream that follow
+ * +0x05  u8   index[n], zero based into the symbol table
+ * ```
+ *
+ * So the body is `5 + n` bytes and it does not carry a single duration itself: it spells a code as
+ * a sequence of symbols, and a symbol is a small pulse block that several codes reuse. That is why
+ * section 65 could not find a terminator, why the count is at neither header pointer, and why the
+ * area was the last remainder in the byte accounting. `docs/findings.md` section 82.
+ */
+export const IR_CLASS5_BODY_HEADER = 5;
+
+export interface IrClass5Body {
+  /** Address of the symbol table this body's indices are into. Shared between records. */
+  table: number;
+  indices: number[];
+  /** Blob offset and byte length, so the accounting claims exactly what was read. */
+  start: number;
+  length: number;
+}
+
+/** One class 5 body, from the address a record header's pointer holds. */
+export function irClass5Body(c: Container, address: number): IrClass5Body | undefined {
+  const start = c.blobOffsetOf(address);
+  if (start === undefined || start + IR_CLASS5_BODY_HEADER > c.blob.length) return undefined;
+  const table = u24(c.blob, start);
+  const n = u16(c.blob, start + 3);
+  const length = IR_CLASS5_BODY_HEADER + n;
+  if (start + length > c.blob.length) return undefined;
+  const indices: number[] = [];
+  for (let at = start + IR_CLASS5_BODY_HEADER; at < start + length; at += 1) {
+    indices.push(u8(c.blob, at));
+  }
+  return { table, indices, start, length };
+}
+
+export interface IrSymbolTable {
+  /** Addresses of the pulse blocks, in the order the indices count them. */
+  symbols: number[];
+  start: number;
+  length: number;
+}
+
+/**
+ * A symbol table: `u8 n; u24 symbol[n]`, the three byte table the firmware indexes at `0x05108`'s
+ * class 5 arm. It sits immediately above the last of its own blocks in all six in the corpus.
+ */
+export function irSymbolTable(c: Container, address: number): IrSymbolTable | undefined {
+  const start = c.blobOffsetOf(address);
+  if (start === undefined || start >= c.blob.length) return undefined;
+  const count = u8(c.blob, start);
+  const length = 1 + IR_POINTER_LENGTH * count;
+  if (start + length > c.blob.length) return undefined;
+  const symbols: number[] = [];
+  for (let at = start + 1; at < start + length; at += IR_POINTER_LENGTH) {
+    symbols.push(u24(c.blob, at));
+  }
+  return { symbols, start, length };
+}
+
+export interface IrSymbolBlock {
+  /** Durations, bit 15 marking carrier on, the same word format class 1's blocks use. */
+  pulses: number[];
+  start: number;
+  length: number;
+}
+
+/**
+ * One symbol: `u16 count; u16 pulse[count]; u16 0x0000`, so `4 + 2 * count` bytes.
+ *
+ * The count is the reason this is not class 1's shape: the arch 9 player at `0x076CE` is handed a
+ * length rather than walking to a terminator, which is why a class 1 style walk found a zero word
+ * in every arch 9 block and none of them was the end of anything. The trailing zero word is there
+ * anyway, in all 50 blocks of the corpus, and it is claimed because the firmware's own count says
+ * where the block stops and the word sits inside that.
+ */
+export function irSymbolBlock(c: Container, address: number): IrSymbolBlock | undefined {
+  const start = c.blobOffsetOf(address);
+  if (start === undefined || start + 2 > c.blob.length) return undefined;
+  const count = u16(c.blob, start);
+  const length = 4 + 2 * count;
+  if (count > IR_BLOCK_LIMIT || start + length > c.blob.length) return undefined;
+  const pulses: number[] = [];
+  for (let at = start + 2; at < start + 2 + 2 * count; at += 2) pulses.push(u16(c.blob, at));
+  return { pulses, start, length };
 }
 
 export interface IrGroup {

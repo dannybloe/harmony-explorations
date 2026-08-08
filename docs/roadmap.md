@@ -250,13 +250,13 @@ third round trips.** Decompile
 and recompile byte-identical across the whole corpus, and the trailer checksum reproducible. This is
 the gate for any editing at all, and it is squarely an API milestone.
 
-Of the three parts below, **the first two are complete for arch 12 and arch 14**: every reader
-reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes short on a Harmony
-One and 41 on a 600. Arch 9 is not there, and its remainder is infrared. The arch 9 firmware that
-would settle it arrived with the 525 on 8 August 2026 and section 80 opened it: the class 5 sender
-reads a `u16` count and that many `u16` pulse words, and what is still open is where those words
-are, since the count is at neither of the record header's block pointers. Arch 8 is there
-as of section 75.
+Of the three parts below, **the first two are complete on all four architectures**: every reader
+reports its extent and the accounting has no overlaps anywhere, 24 bytes short on a Harmony One, 41
+on a 600, 60 on an 880 and 43 on a 525. Arch 8 landed with section 75 and arch 9 with section 82,
+which read class 5 infrared out of the 525's own firmware: a record's pointer names a body of one
+byte indices into a shared table of short pulse blocks, so a code is spelled from a dictionary. What
+is left is the **same six gaps in every container**, four architectures included, and that is one
+small finding rather than an architecture's worth of work.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
 number. **Every structure `coverage` claims is rebuilt**, the output is byte identical to the input
@@ -278,7 +278,7 @@ and so this table cannot be mistaken for the coverage one below by anything look
 | `h600_config`, arch 14 | 28.3%<!--fact:framed_h600_config--> | 529 KB, the same |
 | `h700_config`, arch 14 | 26.1%<!--fact:framed_h700_config--> | 724 KB, the same |
 | `arch8_config_a` | 21.6%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
-| `h525_config`, arch 9 | 28.1%<!--fact:framed_h525_config--> | 31 KB, and 26 KB still copied: class 5 infrared |
+| `h525_config`, arch 9 | 61.0%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
@@ -309,15 +309,15 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | **67.1%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | **99.4%<!--fact:coverage_h700_gspm-->** |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | **99.9%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | **99.4%<!--fact:coverage_h700_gspm-->** |
 
 **Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
 historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
@@ -329,10 +329,15 @@ deliberately built config pair of section 58 one question, and the infrared reco
 points **backwards** at duration blocks below it. Its length was read as a flat 21 bytes and is
 `12 + 9 * count`, section 75, which is the last column.
 
-**The last column is one byte.** An infrared header states how many nine byte pointer groups it
-carries, and 37 records a config on arch 8 carry two. That closed arch 8 outright, from 97.7% to
-100.0%, and moved arch 9 as well, and it needed no firmware: the reading came from the corpus, out
-of three gap families whose counts were all 37. Section 75.
+**The header groups column is one byte.** An infrared header states how many nine byte pointer
+groups it carries, and 37 records a config on arch 8 carry two. That closed arch 8 outright, from
+97.7% to 100.0%, and moved arch 9 as well, and it needed no firmware: the reading came from the
+corpus, out of three gap families whose counts were all 37. Section 75.
+
+**The last column is arch 9's infrared**, and unlike the one before it, it needed the firmware.
+Class 5 spells a code as indices into a shared table of pulse blocks, section 82, so 25776 of the
+25819 bytes the 525 had left were three structures nobody could size without the code that reads
+them. It closes the last architecture sized hole in the accounting.
 
 **The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
 for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,

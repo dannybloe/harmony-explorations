@@ -279,6 +279,14 @@ class TestArch9Infrared(unittest.TestCase):
     CLASS_DISPATCH = 0x05108
     CLASS5 = 0x0513E
     QUEUE_PUSH_PAIR = 0x0277C
+    # Section 82: the loader that reads a class 5 body, and the helpers it reads the fields with.
+    CLASS5_LOADER = 0x04FF6
+    SAVE_WALKING_POINTER = 0x05326
+    READ_U16 = 0x0658E
+    READ_U24 = 0x065BE
+    READ_U24_INTO_TBLPTR = 0x06560
+    CLASS5_SEEK_SYMBOL = 0x05370
+    INDEX_TO_ENTRY = 0x066F4
 
     def code(self):
         return lab.load('h525_code')
@@ -329,10 +337,10 @@ class TestArch9Infrared(unittest.TestCase):
         self.assertIn('SUBWF 0x2a,B,W', text)
 
     def test_class_five_pushes_u16_words_it_reads_from_the_config(self):
-        """The loop this section stops at: a count, then that many words, each pushed as a pulse.
+        """The loop: a count, then that many words, each pushed as a pulse.
 
-        What is **not** established is where the words come from, so this pins the loop and not a
-        layout. `0x0658E` reads two bytes into the variable named by 0x14e and 0x14f.
+        Where the words come from was open when section 80 was written and is closed by section 82.
+        `0x0658E` reads two bytes into the variable named by 0x14e and 0x14f.
         """
         lab.require('h525_code')
         text = self.text(self.CLASS5, 80)
@@ -342,6 +350,46 @@ class TestArch9Infrared(unittest.TestCase):
         push = self.text(self.QUEUE_PUSH_PAIR, 16)
         self.assertIn('MOVLW 0x02', push)
         self.assertIn('ADDWF 0x2d8,F', push)
+
+    def test_the_two_read_helpers_state_their_own_widths(self):
+        """Section 82's field widths are literals in the code, not inferences from the data.
+
+        `0x0658E` reads a u16 into the pointer at 0x14e, `0x065BE` a u24 into the pointer at
+        0x150, each by clocking bytes through the SPI reader and stepping the destination.
+        """
+        lab.require('h525_code')
+        self.assertEqual(self.text(self.READ_U16, 15).count('CALL 0x07572'), 2)
+        self.assertEqual(self.text(self.READ_U24, 22).count('CALL 0x07572'), 3)
+
+    def test_the_loader_reads_a_table_pointer_only_for_class_five(self):
+        """The body's first two fields, and the class byte is what gates the first of them.
+
+        A class 1 pointer names durations straight away; a class 5 pointer names a body, and only
+        then does the loader take a u24 table address. Section 82.
+        """
+        lab.require('h525_code')
+        text = self.text(self.CLASS5_LOADER, 22)
+        self.assertIn('MOVLW 0x05', text)
+        self.assertIn('SUBWF 0x22a,W', text)          # the class byte, bank 2
+        self.assertIn('MOVLW 0x2d', text)             # destination 0x22d
+        self.assertIn('CALL 0x%05x' % self.READ_U24, text)
+        self.assertIn('MOVLW 0x30', text)             # destination 0x230, the u16 index count
+        self.assertIn('CALL 0x%05x' % self.READ_U16, text)
+        # And the read position afterwards becomes the walking pointer over the index stream.
+        self.assertIn('MOVFF TBLPTRL,0x291', self.text(self.SAVE_WALKING_POINTER, 4))
+
+    def test_an_index_reaches_a_three_byte_table_entry(self):
+        """`3 * index + 1`: the stride is the entry width and the one skips the table's count."""
+        lab.require('h525_code')
+        text = self.text(self.INDEX_TO_ENTRY, 20)
+        self.assertIn('MOVF 0x15c,W', text)           # the index byte
+        self.assertIn('MOVLW 0x03', text)             # three bytes an entry
+        self.assertIn('MULWF', text)
+        self.assertIn('MOVF 0x15b,W', text)           # the addend, loaded with 1 by 0x05370
+        self.assertIn('MOVWF 0x5b,B', self.text(self.CLASS5_SEEK_SYMBOL, 1))
+        self.assertIn('MOVLW 0x01', self.text(self.CLASS5 + 0x2C, 2))
+        # The entry itself is a u24 read straight into the table pointer and seeked.
+        self.assertIn('MOVWF TBLPTRU', self.text(self.READ_U24_INTO_TBLPTR, 8))
 
 
 class TestInfraredChain(unittest.TestCase):

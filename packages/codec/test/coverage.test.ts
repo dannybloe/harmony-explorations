@@ -25,8 +25,9 @@ const ACCOUNTED: readonly [string, number, number][] = [
   ['h700_config', 979143, 979184],
   ['h700_config_2', 979201, 979242],
   ['h600_config', 738108, 738149],
-  ['h525_config', 52667, 78486],
-  ['h525_config_2', 39448, 51195],
+  // 52667 and 39448 until section 82 read class 5's bodies, symbol tables and pulse blocks.
+  ['h525_config', 78443, 78486],
+  ['h525_config_2', 51152, 51195],
   ['h525_safemode_ahcm', 13160, 15342],
   ['one_config', 1672808, 1672832],
   ['one_config_unprogrammed', 1232213, 1232237],
@@ -40,6 +41,10 @@ const ACCOUNTED: readonly [string, number, number][] = [
   ['one_safemode', 8870, 8902],
   ['one34_region2', 8870, 8902],
   ['h650_safemode_gspm', 7069, 7115],
+  // The spare One either side of its sync, so the nineteen container claims that CLAUDE.md and
+  // the roadmap make about overlaps and round tripping are checked over the same nineteen.
+  ['one_spare_before_sync', 1232213, 1232237],
+  ['one_spare_after_sync', 1326540, 1326564],
 ];
 
 for (const [name, accounted, total] of ACCOUNTED) {
@@ -85,21 +90,24 @@ for (const [name, accounted, total] of ACCOUNTED) {
 }
 
 test('the gap families are computed over every gap, not the listed ones',
-  skipUnless('h525_config'), () => {
+  skipUnless('arch8_config_a'), () => {
     // The view that finds structures. `gaps` is capped at REPORT_LIMIT and sorted by size, so a
     // family of forty equal gaps below the cut is invisible in it; sections 75 and 66 were both
     // found by looking past that cut by hand. This is that view, and the totals below are what
     // says it did not stop at the cap either.
-    const report = coverage(parse(load('h525_config') as Uint8Array));
-    assert.equal(report.gapCount, 203);
+    //
+    // The sample used to be `h525_config`, whose 203 gaps included a family of 43 equal ones. That
+    // family was class 5's bodies and section 82 claimed them, so the demonstration moved to the
+    // container that still has the shape: an arch 8 config, where the largest single gap is four
+    // bytes and fifty one one byte gaps carry more than it does.
+    const report = coverage(parse(load('arch8_config_a') as Uint8Array));
+    assert.equal(report.gapCount, 54);
     assert.equal(report.gapBytes, report.total - report.accounted);
     assert.ok(report.gapCount > report.gaps.length, 'the listed gaps are a sample, not the list');
     const biggest = report.gapFamilies[0];
-    assert.deepEqual(biggest, { length: 154, count: 43, bytes: 6622 });
-    // Sorted by total bytes, and the largest single gap is not the largest family: 1814 bytes in
-    // one run against 6622 in forty three, which is the whole point of the view.
-    assert.equal(report.gaps[0]?.length, 1814);
-    assert.ok((biggest?.bytes ?? 0) > 1814);
+    assert.deepEqual(biggest, { length: 1, count: 51, bytes: 51 });
+    assert.equal(report.gaps[0]?.length, 4);
+    assert.ok((biggest?.bytes ?? 0) > 4);
   });
 
 test('a gap family counts equal lengths and nothing else', () => {

@@ -43,7 +43,8 @@ The work targets two architectures, and there are three on the bench:
 * **arch 12** ("Gin"), Harmony One
 * **arch 14**, Harmony 600 and Harmony 700
 * **arch 9**, Harmony 525, connected on 8 August 2026. Read, not targeted: its config and its
-  firmware are in the lab and its class 5 infrared is the last big gap in the byte accounting.
+  firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
+  accounting, is read.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
@@ -125,19 +126,18 @@ defect it is.
 | Harmony 600 | 9.5% | **100.0%<!--fact:coverage_h600_config-->** |
 | Harmony One | 3.2% | **100.0%<!--fact:coverage_one_config-->** |
 | 880, arch 8 | 3.6% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| 525, arch 9 | 7.2% | 67.1%<!--fact:coverage_h525_config--> |
+| 525, arch 9 | 7.2% | 99.9%<!--fact:coverage_h525_config--> |
 
 Zero overlapping claims anywhere. `make coverage` prints it. **Both target architectures reach
 100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One config and 41 in a Harmony 600, which
 is the point at which an emitter can rebuild a config rather than copy a residue, and
 `packages/codec/src/emit.ts` now does: every owner the accounting claims is rebuilt from fields on
 all nineteen containers, and what stays copied is 22 to 73 bytes, exactly what no reader claims.
-What is left is arch 9's infrared, and the arch 9 firmware that would settle it arrived with the
-525 on 8 August 2026.
+Arch 9 joined them once its own firmware was read: class 5 infrared is a dictionary encoding,
+section 82, and 43 bytes of that sample are left.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
-classes, which physical button each scan code is, and architecture 9's infrared, which is 24467 of
-the 26368 bytes that sample still has unaccounted. See
+classes, and which physical button each scan code is. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 

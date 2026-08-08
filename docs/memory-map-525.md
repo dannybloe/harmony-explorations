@@ -14,29 +14,23 @@ here owns; this one differs in that the gap is about to close.
 
 ## Why architecture 9 is worth the trouble
 
-It is the worst covered architecture in the corpus by a wide margin. The byte accounting reads
-**67.1%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
-was no arch 9 firmware anywhere, so every structure that did not decode had nothing to appeal to.
-**That changed on 8 August 2026**: the application image is in the lab, read off the bench unit's
-external flash. Nothing has been decoded out of it yet, so the number below has not moved.
+It **was** the worst covered architecture in the corpus by a wide margin, and it is not any more:
+the byte accounting reads **99.9%<!--fact:coverage_h525_config-->** against 100.0% on both target
+architectures, with 43 bytes left in six gaps that every container in the corpus has. The reasons it
+lagged were all the same reason: there was no arch 9 firmware anywhere, so every structure that did
+not decode had nothing to appeal to. **That changed on 8 August 2026**, when the application image
+came off the bench unit's external flash and its internal program flash came off over USB.
 
-**The margin is almost entirely one structure.** Infrared class 5 is 24467 of the 26368 bytes
-still unaccounted, so setting it aside the arch 9 sample is read to about 97%, against 100.0% on
-both target architectures. What else is left is a 1814 byte run after base slot 4 and very little
-besides. Sections 66 and 67.
+**The margin was almost entirely one structure**, infrared class 5, which was 24467 of the 26368
+bytes then unaccounted. Section 82 read it out of that firmware: a header pointer names a body of
+one byte indices, the body names a symbol table, and the table names short pulse blocks, so a code
+is spelled from a dictionary rather than written out. Every record in the arch 9 corpus reads class
+5 where arch 8, 12 and 14 all read class 1.
 
-One specific thing is stuck behind that, and it is the largest single gap left:
-
-* **Infrared class 5.** Every record in the arch 9 sample reads class 5 where arch 8, 12 and 14 all
-  read class 1, and no firmware this project has implements it. Section 65 narrowed it rather than
-  solving it: the 21 byte header is shared with class 1 and is read, and the **24511 bytes below
-  the headers** are what is left. They are not duration streams and a terminator will not find
-  their extent, so this one really does want the code.
-
-A firmware image would speak to it. That was the prize, and this document was least able to predict
-it because nothing was known about where arch 9 keeps its code. The answer: an update image in
-external flash at `0x810000`, loading at program `0x1000`, with the running copy in the MCU's own
-flash and a bootloader below it.
+That is what the firmware was the prize for, and this document was least able to predict where the
+firmware would be, because nothing was known about where arch 9 keeps its code. The answer: an
+update image in external flash at `0x810000`, loading at program `0x1000`, with the running copy in
+the MCU's own flash and a bootloader below it.
 
 **Two items came off that list without one**, both on 7 August 2026, and they are worth carrying
 into the first session with the hardware because they say **not every arch 9 gap needs the code**.
