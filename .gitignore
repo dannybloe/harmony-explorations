@@ -25,6 +25,10 @@ ghidra_projects/
 # Ghidra project built by bin/setup-ghidra.sh, and scratch output.
 .ghidra/
 work/
+# Throwaway analysis scripts. They have to sit inside the workspace to import the packages, so
+# they cannot live in a system temp directory, and one session committed a directory of them by
+# reflex with `git add -A`.
+.scratch/
 
 # Per-machine Claude Code settings. These accumulate absolute paths from whoever's machine
 # they were written on. The shared hook configuration lives in .claude/settings.json, which
