@@ -237,10 +237,12 @@ instrument; **FH** means the product.
 across all of them, the workspace standing with the codec ported and proven equal by golden vectors,
 and the USB command layer written from the firmware with its rails.
 
-**M1 Read path. Next. Here.** The reading itself is measured rather than planned: whole configs come
-off all three bench remotes byte identical to their own dumps. What remains is filing every read
-into the corpus automatically, and a bench instrument that can connect, identify, read with progress
-and show what came back. FH will have its own interface over the same API; that is not this.
+**M1 Read path. Done. Here.** The reading itself is measured rather than planned: whole configs come
+off all three bench remotes byte identical to their own dumps. ~~What remains is filing every read
+into the corpus automatically, and a bench instrument.~~ **Both exist**, `packages/corpus` and
+`packages/bench`, and step 5 below records them as built and run against both architectures; this
+paragraph said "Next" for longer than it was true. FH will have its own interface over the same API;
+that is not this.
 
 **M2 Round trip codec. Here, and its first part is done on both target architectures.** Decompile
 and recompile byte-identical across the whole corpus, and the trailer checksum reproducible. This is
