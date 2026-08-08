@@ -352,7 +352,9 @@ arch 12         u8 unknown; u24 list; u24 program     7 bytes
 
 `list` is a tagged list in the encoding below and `program` is a screen program. The firmware
 searches the page's list for a tag first and the mode record's own list second, so a page
-**overrides** rather than replaces. Two tags are searched this way, `0x29` and `0x2A`, either side
+**overrides** rather than replaces. Both offsets are read off the code rather than inferred: one
+routine runs the list at `page + 0` and then the one at `entry + 1`, section 69. **Every page's
+list also has a second copy**, in the pool base slot 9's sets sit in, which nothing reads. Two tags are searched this way, `0x29` and `0x2A`, either side
 of the code that moves a wrapping page cursor; **what they name is unconfirmed.** So is the lead
 byte, which no reader in either image touches after fetching it.
 
@@ -419,15 +421,24 @@ The pool is bounded at both ends without searching: it begins on the byte after 
 array and ends at the lowest address above that which another reader already names, and a run must
 hold at least one set on a list boundary. 29 runs in seventeen containers, tiling exactly.
 
-The lists that are not sets are **one per mode page**, and each is the twin of that page's own
-list: same tag sequence, different operands. 2906 of 2906 pages pair, with nothing left over on
-either side, in all seventeen containers. Every empty pool list is in the wide form and every wide
-form one is empty.
+The lists that are not sets are **a second copy of every mode page's own list**, in mode table
+order: the k-th copy belongs to the k-th page, 2906 of 2906 in all seventeen containers with
+nothing left over on either side. Every empty copy is in the wide form and every wide form one is
+empty.
 
-*What the twin is for is not established.* A page record carries one list pointer, the tagged list
-runner's four call sites are all accounted for, and the firmware never computes the address a pool
-begins at, so the route to it is not any of the three that were checked.
-[findings.md](findings.md) sections 67 and 68.
+The copy is identical in **meaning** and not in bytes. Form, entry count, tag, flags, opcode and
+operand all agree per entry, with one exception: opcode `0x7F`'s operand is an index into base slot
+10, and the two copies name different table entries whose **action lists decode identically**, 5861
+of 5861 pairs. Comparing the two runs byte for byte therefore says they differ, which is what
+section 67 did before section 69 corrected it.
+
+**Nothing reads a copy.** The tagged list runner has five references on each of the two
+architectures with a firmware, and every one takes its pointer from a page record or from a mode
+entry; and reading every byte position in a container as a `u24` finds 27 that name a copy across
+seventeen containers, against 148.8 that chance predicts. An emitter still has to reproduce them
+byte for byte, and their position is implied by everything packed before them, as pictures are.
+*Why the generator emits them is not established*, and no config can answer it.
+[findings.md](findings.md) sections 67, 68 and 69.
 
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming
@@ -613,7 +624,7 @@ the named content to the trailer, walkable end to end in all nine containers tha
 and screen opcode 2 inside a mode program is what addresses them.
 
 **This subsection used to say the opposite and the correction is worth reading.** It described the
-region as raw image data with **no header and no framing**, so that "where one image starts is
+region as raw image data with **no header and no framing**, so that "where one image starts is<!--superseded-->
 unknown and nothing found so far addresses them", and it gave the arch 14 width as not<!--superseded--> established.
 All three were wrong, and each fell to a different finding:
 

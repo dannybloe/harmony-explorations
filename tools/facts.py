@@ -65,7 +65,19 @@ MARKER = re.compile(r'([0-9][0-9,.]*%?)<!--fact:([a-z0-9_]+)-->')
 
 # What a correction looks like in these documents, so a dead phrase quoted inside one is allowed.
 # Both forms are already in use: a blockquote for a long correction, italics for a short one.
-CORRECTION = ('>', '*', '~~')
+#
+# `**` is deliberately NOT one of them, and it used to be, by accident: `*` matched a line opening
+# in bold as well as one opening in italics. These documents open a load-bearing sentence in bold
+# constantly, 507 lines of them, which is exactly where a summary would restate a dead claim, so
+# the exemption was widest where the check was needed most. Found on 8 August 2026 while landing
+# section 69, by removing a correction marker to confirm the guard fired and watching it not fire.
+CORRECTION = ('>', '~~')
+ITALIC_OR_BULLET = re.compile(r'\*(?!\*)')
+
+
+def is_correction(line):
+    """Does this line open a correction, so a dead phrase quoted in it is allowed?"""
+    return line.startswith(CORRECTION) or bool(ITALIC_OR_BULLET.match(line))
 # And an explicit escape, for the common case that neither form fits: a sentence that quotes a dead
 # claim in the act of refuting it, mid paragraph. Structure cannot express that, so it is stated.
 # It is trivially abusable, and so is `git commit --no-verify`; the point of both is that the
@@ -223,7 +235,7 @@ def check_phrases():
                     context.append(lines[i - 1].lstrip())
                 if i + 1 < len(lines):
                     context.append(lines[i + 1].lstrip())
-                if any(c.startswith(CORRECTION) for c in context):
+                if any(is_correction(c) for c in context):
                     continue
                 problems.append('%s:%d: superseded by %s: "%s"'
                                 % (rel(doc), i + 1, killed_by, phrase))

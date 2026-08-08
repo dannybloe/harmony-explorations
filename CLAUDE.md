@@ -275,7 +275,7 @@ There is no `apps/` here. The application is FreeHarmony, and the workspace glob
 port would be exercised by nothing. `packages/codec/src/coverage.ts` is the M2 progress number and
 `make coverage` prints it; the current figures are in "Where the work stands" below.
 
-**This paragraph used to end "it stops there and another reader will not move it", and that was
+**This paragraph used to end "it stops there and another reader will not move it", and that was<!--superseded-->
 wrong twice over.** It read 26.3% of a Harmony 700 against 98.1% today, and seven readers have
 moved it since: sections 53, 54, 55, 61, 63, 64 and 65. The two extents it called deliberately
 unclaimed are both read now, base slot 5's record by section 61 and the mode entry by section 52,
@@ -564,7 +564,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 65 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 69 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -593,10 +593,10 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: groups, then records with a 21 byte header | 32, 42, 61, 65 |
-| 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with two tagged lists | 37, 52, 53, 66, 68 |
+| 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings | 38 |
-| 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67 |
+| 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67, 69 |
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
 | 12 | the timer table | 43 |
@@ -637,6 +637,9 @@ produce a config the remote accepts and mishandles.
   in place without checking who else names it.
 * **A picture's position is implied by everything before it**, section 55, so inserting or resizing
   one moves every later address.
+* **Every mode page's tagged list has a second copy that nothing reads**, section 69, whose position
+  is likewise implied rather than stated. An editor that changes a page's bindings has to change
+  both, and an emitter that omits the copy still passes every check the remote makes.
 * **A section's size is not the gap to the next pointer**, section 36. Slot 4 holds 125 bytes where
   the gap is up to 1532, because slot 5's group arrays sit inside it.
 * **The log area's writer refuses out of range rather than erroring**, section 47: an address
@@ -673,12 +676,16 @@ structure was a pool of tagged lists packed end to end, one per mode page plus o
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
 That completes the first of milestone M2's three parts for arch 12 and arch 14.
 
+**What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
+mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in
+meaning except that opcode `0x7F`'s operand names a different base slot 10 entry holding an
+identical action list. Nothing reads a copy, and an emitter must still reproduce it. Section 68 got
+this wrong twice by pairing the runs by address rather than by mode table order and by comparing
+them byte for byte.
+
 What is left is infrared, on the two architectures with no firmware: 9864 bytes of duration blocks
-on arch 8 and 24467 of class 5 on arch 9, the latter wanting a firmware nobody has. **What the pool
-is for is still open**, and section 68 sharpens it: each of its non slot 9 lists is the twin of one
-mode page's list, same tags and different operands, 2906 of 2906 pages paired with nothing left
-over. A page record carries one list pointer, so the twin is reached by a route that is not the
-page record, not a walk from the entry, and not the tagged list runner. Start from the tags. **Read the whole gap list before choosing a target**: `make coverage
+on arch 8 and 24467 of class 5 on arch 9, the latter wanting a firmware nobody has. **Read the
+whole gap list before choosing a target**: `make coverage
 --detail` prints only the twenty largest, and section 66 was found by asking for all of them and
 noticing two families with the same count.
 

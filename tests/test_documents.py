@@ -13,9 +13,14 @@ in the tool.
 """
 import os
 import re
+import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+
+import facts  # noqa: E402
+
 MARKER = re.compile(r'<!--fact:([a-z0-9_]+)-->')
 
 
@@ -77,6 +82,29 @@ class TestTheCoverageTable(unittest.TestCase):
             for cell in row[1:-1]:
                 with self.subTest(row=row[0], cell=cell):
                     self.assertRegex(cell, r'^\d+(\.\d+)?%$')
+
+
+class TestTheCorrectionExemption(unittest.TestCase):
+    """`tools/facts.py`: which line openings excuse a dead phrase, and which must not.
+
+    The phrase check allows a superseded claim inside a correction, because recording corrections
+    in place is the house convention. It decides that from how the line opens, and `*` used to
+    match a line opening in **bold** as well as one opening in *italics*. These documents open a
+    load-bearing sentence in bold constantly, so the exemption was widest exactly where a summary
+    would restate a dead claim. Found on 8 August 2026 by removing a correction marker to confirm
+    the guard fired, and watching it not fire.
+    """
+
+    def test_bold_is_not_a_correction(self):
+        self.assertFalse(facts.is_correction('**A claim stated in bold, which is not a note.**'))
+
+    def test_the_forms_actually_in_use_still_are(self):
+        """Assert the positives too: a fix that made the check refuse every correction would
+        pass a test that only checked the negative."""
+        self.assertTrue(facts.is_correction('> a blockquote, the long form'))
+        self.assertTrue(facts.is_correction('~~struck through, the in place form~~'))
+        self.assertTrue(facts.is_correction('*an italic note, the short form*'))
+        self.assertTrue(facts.is_correction('* a bullet, which the lists of consequences use'))
 
 
 if __name__ == '__main__':

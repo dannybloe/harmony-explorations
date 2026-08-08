@@ -10,6 +10,8 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import {
+  ACTION_LIST_INDEX_OPCODE,
+  archSlot,
   eventMap,
   handlerSets,
   IR_CLASS_ARCH9,
@@ -29,6 +31,7 @@ import {
   modePages,
   modeRecords,
   modeTable,
+  pageListCopies,
   parameterGroups,
   parse,
   screenProgram,
@@ -460,7 +463,143 @@ for (const [name, pages] of TWINS) {
     assert.equal(paired, pages);
     // Nothing left over on the pool side either, which is what makes it a bijection.
     assert.equal([...bag.values()].reduce((n, k) => n + k, 0), 0);
-    // And the twins are not copies: over the pairs the operands disagree.
+    // The pairing is by content, so at least one tag sequence has to be distinguishing for the
+    // bijection above to mean anything.
     assert.ok(seen.size > 0);
+  });
+}
+
+/**
+ * `[sample, pages, 0x7f pairs]`. findings.md section 69: the pool list is a second copy of the
+ * page's own list, identical in meaning, and the k-th copy belongs to the k-th page.
+ *
+ * The bijection above pairs by tag sequence, which is weaker than it looks when most sequences
+ * repeat. This pairs by **rank** instead, which is the reading, and then demands that every
+ * paired entry agrees in form, tag, flags, opcode and operand, with opcode `0x7F` allowed to name
+ * a different base slot 10 entry only when that entry holds an identical action list.
+ */
+const COPIES: readonly [string, number, number][] = [
+  ['one_config', 330, 835],
+  ['one_config_unprogrammed', 152, 425],
+  ['h600_config', 254, 308],
+  ['h700_config', 426, 610],
+  ['h525_config', 135, 153],
+  ['arch8_config_a', 141, 406],
+  // The safe mode containers have pages and copies but no `0x7F` at all, which is the negative
+  // case: the rank pairing has to hold there too, on nothing but tags and opcodes.
+  ['one_safemode', 30, 0],
+  ['h600_safemode_gspm', 35, 0],
+];
+
+for (const [name, pages, sevenF] of COPIES) {
+  test(`${name}: a page's list copy is the same list in meaning`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const table = c.pointerArray(archSlot(c.architecture as number, 10)) as number[];
+    // Two table entries are the same action list when they decode to the same instructions, which
+    // is the whole point: the indices differ and what they name does not.
+    const body = (index: number): string =>
+      (c.actionList(table[index] as number) ?? [])
+        .map((i) => `${i.opcode}:${i.operand}`)
+        .join(' ');
+
+    const copies = pageListCopies(c);
+    const pageList = modePages(c);
+    assert.equal(copies.length, pageList.length, 'one copy per page');
+    assert.equal(pageList.length, pages);
+
+    let pairs = 0;
+    pageList.forEach((page, k) => {
+      const mine = taggedList(c, page.list);
+      // `pageListCopies` reports blob offsets, `taggedList` takes flash addresses, and conflating
+      // the two is the mistake this repository has already paid for once.
+      const copy = taggedList(c, (copies[k] as number) + c.flashBase);
+      assert.notEqual(mine, undefined);
+      assert.notEqual(copy, undefined);
+      const a = mine as NonNullable<typeof mine>;
+      const b = copy as NonNullable<typeof copy>;
+      assert.equal(a.entries.length, b.entries.length, `page ${k} entry count`);
+      a.entries.forEach((x, i) => {
+        const y = b.entries[i] as typeof x;
+        assert.equal(x.tag, y.tag, `page ${k} entry ${i} tag`);
+        assert.equal(x.flags, y.flags, `page ${k} entry ${i} flags, so the form agrees too`);
+        assert.equal(x.opcode, y.opcode, `page ${k} entry ${i} opcode`);
+        if (x.opcode === ACTION_LIST_INDEX_OPCODE) {
+          pairs += 1;
+          assert.equal(body(x.operand), body(y.operand), `page ${k} entry ${i} action list`);
+        } else {
+          assert.equal(x.operand, y.operand, `page ${k} entry ${i} operand`);
+        }
+      });
+    });
+    assert.equal(pairs, sevenF);
+  });
+}
+
+/** `[sample, the best score any shifted pairing reaches]`. findings.md section 69. */
+const SHIFTED: readonly [string, number][] = [
+  ['one_config', 192],
+  ['h600_config', 109],
+  ['h700_config', 168],
+];
+
+for (const [name, best] of SHIFTED) {
+  test(`${name}: pairing the copies off by one stops agreeing`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const copies = pageListCopies(c);
+    const pageList = modePages(c);
+    // The calibration this repository asks for: run the same comparison against a pairing that is
+    // known to be wrong and record what it scores. Without it, agreement on tags proves nothing,
+    // because most pages carry the same one or two tags as their neighbours.
+    const agree = (shift: number): number => {
+      let ok = 0;
+      pageList.forEach((page, k) => {
+        const a = taggedList(c, page.list);
+        const b = taggedList(c, (copies[(k + shift) % copies.length] as number) + c.flashBase);
+        if (a === undefined || b === undefined) return;
+        if (a.entries.length !== b.entries.length) return;
+        if (a.entries.every((x, i) => x.tag === b.entries[i]?.tag && x.opcode === b.entries[i]?.opcode)) {
+          ok += 1;
+        }
+      });
+      return ok;
+    };
+    assert.equal(agree(0), pageList.length, 'the stated pairing agrees everywhere');
+    assert.equal(Math.max(agree(1), agree(2)), best, 'and a shifted one does not');
+    assert.ok(best < pageList.length);
+  });
+}
+
+/**
+ * `[sample, copies, pointers naming one, what chance predicts]`. findings.md section 69.
+ *
+ * The negative that carries the reading: nothing names a copy. Every byte position in the
+ * container is read as a `u24` and matched against every copy's address, which is the most
+ * permissive search there is, and it still comes back under the count a uniform random container
+ * of the same size would produce. Recorded with the chance figure so a future reader can see that
+ * the handful of hits is noise rather than a route nobody followed.
+ */
+const UNNAMED: readonly [string, number, number][] = [
+  ['one_config', 330, 13],
+  ['h600_config', 254, 1],
+  ['h700_config', 426, 4],
+  ['h525_config', 135, 0],
+  ['arch8_config_a', 141, 0],
+];
+
+for (const [name, count, hits] of UNNAMED) {
+  test(`${name}: nothing in the container names a page list copy`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const copies = pageListCopies(c);
+    assert.equal(copies.length, count);
+    const want = new Set(copies.map((off) => off + c.flashBase));
+    let found = 0;
+    for (let i = 0; i + 3 <= c.blob.length; i += 1) {
+      if (want.has(bytes.u24(c.blob, i))) found += 1;
+    }
+    assert.equal(found, hits);
+    // Three byte windows over a blob this size hit any given set of addresses at this rate by
+    // chance alone. Being at or under it is the claim; the exact count above is only the pin.
+    const chance = (c.blob.length * want.size) / 0x1000000;
+    assert.ok(found <= chance, `${found} hits against ${chance.toFixed(1)} expected by chance`);
   });
 }

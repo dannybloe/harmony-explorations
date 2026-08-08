@@ -719,16 +719,22 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   picture bank's derivation gives 35 to 1275 candidate starts here. That measurement is right and
   the conclusion was not: the start never had to be searched for, because a mode entry states it.
 
-  What stays open is what the pool is **for**, and section 68 pulled that thread as far as the
-  files allow. Each of the pool's non slot 9 lists is the **twin of one mode page's list**: the same
-  tag sequence, different operands, 2906 of 2906 pages paired with nothing left over on either
-  side, in all seventeen containers. So a page has two tagged lists over the same keys.
+  What the pool holds is settled, over sections 68 and 69. Each of its non slot 9 lists is a
+  **second copy of one mode page's own list**, the k-th copy belonging to the k-th page in mode
+  table order, 2906 of 2906 in all seventeen containers with nothing left over on either side. The
+  copy is identical in meaning: every field agrees except opcode `0x7F`'s operand, where the two
+  indices name base slot 10 entries holding identical action lists, 5861 of 5861 pairs.
 
-  Three routes to the twin are ruled out: a page record carries one list pointer and no second, the
-  tagged list runner's four call sites are all accounted for, and the firmware never computes the
-  address a pool begins at. The next attempt starts from the **tags**, which on arch 14 are four
-  values covering every entry in both lists, and a scan for the code that loads those literals is
-  the move that found the mode handlers in section 37.
+  **Nothing reads it.** The tagged list runner has five references on each architecture with a
+  firmware, and every one takes its pointer from a page record or a mode entry; reading every byte
+  position as a `u24` finds 27 pointers to a copy against 148.8 that chance predicts. An emitter
+  still has to reproduce them, and their position is implied by the packing rather than stated, so
+  they are a rail rather than a curiosity.
+
+  Section 68 said the opposite on two points, and both were the same mistake: it paired the two runs
+  **by address** where the order is mode table order, and it compared them **byte for byte** where
+  the difference is one remapped index. The lesson is the one section 67 already recorded, applied
+  to a comparison instead of a start: when a structure has a stated order, use it.
 
 ### Step 7: keep the documents honest
 

@@ -14,9 +14,15 @@ commit that lands the finding. That is the fourth place a confirmed fact goes, a
 `config-format.md`, `findings.md` and a regression test; the `finding` skill says so too.
 
 **A phrase may still appear inside a correction**, because recording corrections in place is the
-whole point of the convention. The checker allows a line that starts with `>`, `*` or `~~`, or
-that sits directly above or below one. So quoting a dead claim in order to say it is dead is fine,
-and asserting it is not.
+whole point of the convention. The checker allows a line that starts with a blockquote `>`, a
+strikethrough `~~`, an italic note or a bullet, or that sits directly above or below one. So
+quoting a dead claim in order to say it is dead is fine, and asserting it is not.
+
+**A line opening in bold is not a correction**, and it counted as one until 8 August 2026, because
+the italic marker `*` also matches `**`. These documents open a load-bearing sentence in bold
+constantly, 507 lines of them, so the exemption was widest exactly where a summary would restate a
+dead claim: 19% of all non blank lines were excused, against 10% now. Two real restatements were
+being missed and both are marked with the explicit escape below.
 
 **Choose the phrase carefully.** It has to be dead in every context, not merely dead in the one
 that prompted it. `40588 glyph codes` is *not* here, because it remains the correct figure for the
@@ -38,6 +44,9 @@ and leave this table alone.
 | `which of 0xFE and 0xFF is which is not established` | section 59 | two pages, and `0xFE` maps from program address zero |
 | `route to the MCU_ID that would measure` | section 59 | unreachable by construction: the window is two 64 KiB pages |
 | `the pictures do not tile` | section 54 | they tile exactly, once `stride` is read as pixels |
+| `They are not copies of the page lists` | section 69 | they are copies, differing only in which base slot 10 entry they name |
+| `What the twin is for is not established` | section 69 | it is a copy of the page's own list, and nothing reads it |
+| `never at the same rank in their pools` | section 69 | the k-th copy is the k-th page, in mode table order |
 | `About a third of the entries are drawn` | section 66 | all of an arch 12 bank, all but two elsewhere |
 | `an entry is four bytes` | section 66 | `6 + 3 * pages`; the four byte reading was short rather than wrong |
 | `arch 9 uses a different packing` | section 63 | read: two bits a pixel, rows framed by their own byte length |

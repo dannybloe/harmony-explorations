@@ -422,6 +422,48 @@ export function taggedListPools(c: Container): TaggedListPool[] {
 }
 
 /**
+ * The action list language opcode whose operand indexes base slot 10's table.
+ *
+ * Named here rather than in the opcode inventory because it is the one field a page list and its
+ * copy are allowed to disagree on, and a test that hard codes `0x7f` reads like a magic number.
+ */
+export const ACTION_LIST_INDEX_OPCODE = 0x7f;
+
+/**
+ * The second copy of every mode page's tagged list, as blob offsets in page order.
+ *
+ * The pools of `taggedListPools` hold two kinds of list: base slot 9's sets, which that section's
+ * table names, and one list per mode page, which nothing names at all. Strip the sets and what is
+ * left is a **copy of each page's own list**, the k-th copy belonging to the k-th page in mode
+ * table order. Section 69.
+ *
+ * The copy is a copy in meaning rather than in bytes. Form, entry count, tags, flags and opcodes
+ * all agree, and so does every operand except opcode `0x7F`'s, which is an index into base slot
+ * 10: there the two copies name **different table entries holding identical action lists**. So
+ * comparing the two runs byte for byte says they differ, which is what section 67 did and why it
+ * concluded they were not copies.
+ *
+ * No firmware path reads them. Both call sites of the tagged list runner that concern a mode read
+ * a pointer taken from the current page record or from the mode record, and an exhaustive scan
+ * finds fewer three byte values naming a copy than chance predicts. They still have to be
+ * reproduced byte for byte by an emitter, which is why this exists.
+ */
+export function pageListCopies(c: Container): number[] {
+  const sets = new Set(
+    (handlerSets(c)?.addresses ?? [])
+      .map((address) => c.blobOffsetOf(address))
+      .filter((offset): offset is number => offset !== undefined),
+  );
+  const out: number[] = [];
+  for (const pool of taggedListPools(c)) {
+    for (const list of pool.lists) {
+      if (!sets.has(list.start)) out.push(list.start);
+    }
+  }
+  return out;
+}
+
+/**
  * The screen program each base slot 6 record carries after its tagged list, or nothing off
  * `MODE_PROGRAM_ARCHITECTURES`.
  *

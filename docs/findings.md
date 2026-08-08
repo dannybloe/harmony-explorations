@@ -7252,9 +7252,13 @@ and 6, `0x16938` and `0x16966` are a page's list and its fallback to the mode re
 tag in `0x3C4`. None of them reaches the pool. So whatever walks the other 330 lists either indexes
 them from a base this analysis has not found, or is not the tagged list runner at all.
 
-**They are not copies of the page lists**, tested byte for byte: 62 of 330 match on the One, 135 of
-254 on the 600, and a container whose modes are nearly empty matches 30 of 30, which is what an
-empty list matching an empty list gives.
+~~**They are not copies of the page lists**, tested byte for byte: 62 of 330 match on the One, 135
+of 254 on the 600, and a container whose modes are nearly empty matches 30 of 30, which is what an
+empty list matching an empty list gives.~~ **Wrong, and wrong for a reason worth keeping.** They
+are copies, every one of 2906 of them, and the byte comparison missed it because the copies differ
+in exactly one field: opcode `0x7F`'s operand is an index into base slot 10, and the two copies
+name different table entries that hold **identical action lists**. So the bytes differ and the
+meaning does not, and a byte comparison cannot tell those apart. Section 69.
 
 ### What it moves, and it is the milestone
 
@@ -7308,13 +7312,19 @@ It is a bijection, not a coincidence of totals: the tag multisets agree exactly,
 aggregate first showed. On a Harmony One the pool's tags are `0xb1` 264 times, `0xb2` 251, `0xb0`
 100, `0xb3` 80, and the page lists' tags are the same eight tags at the same eight counts.
 
-What differs is the payload. Over the pairs, **0 of 175 entries share an operand** on a Harmony One
-and 0 of 115 on a 600, while 161 of 175 and 70 of 115 share an opcode. So the same tag maps to two
-different things, of the same kind.
+~~What differs is the payload. Over the pairs, **0 of 175 entries share an operand** on a Harmony
+One and 0 of 115 on a 600, while 161 of 175 and 70 of 115 share an opcode. So the same tag maps to
+two different things, of the same kind.~~ **The opcode figures are an artefact of the wrong
+pairing.** Paired by rank, every entry shares its opcode, 5861 of 5861 pairs across the corpus, and
+only opcode `0x7F`'s operand differs. Section 69.
 
-The two lists are never adjacent, never at the same rank in their pools, 85 of 330 by address order
-on a Harmony One, and never the same bytes: the pairing is by content and the layout does not
-express it.
+~~The two lists are never adjacent, never at the same rank in their pools, 85 of 330 by address
+order on a Harmony One, and never the same bytes: the pairing is by content and the layout does not
+express it.~~ **Every clause of that is wrong, and the mistake was measuring rank in the wrong
+order.** It compared the two runs by address, when the order that matters is **mode table order**:
+the k-th copy in the pool belongs to the k-th page, in all seventeen containers with nothing left
+over. The layout expresses the pairing exactly, which is how it is reached without a pointer.
+Section 69.
 
 ### What it settles about the pool
 
@@ -7347,11 +7357,154 @@ The next attempt should start from the tags rather than the pointers. On arch 14
 `0x89`, `0x88` and `0x82`, four values covering every entry in both lists, and a scan for the code
 that loads those literals is the same one paragraph move that found the mode handlers in section 37.
 
+**That is what section 69 did, and the tags were the wrong door.** They are key codes, so the
+firmware never loads them as literals; what it loads are the pointers. Reading the runner's two
+call sites properly is what closed it.
+
 ### Where it lands
 
 * `docs/config-format.md`, base slot 6's pages.
 * `packages/codec/test/sections.test.ts`: the bijection over the corpus, the operand disagreement
   as the statement that the twins are not copies, and the wide form matching emptiness exactly.
+
+## 69. The second list is a copy of the first, and nothing reads it
+
+Sections 67 and 68 left one question: what reaches the pool's non slot 9 lists, given that no
+pointer names them and no firmware route computes their address. The answer is that nothing does,
+and the reason it took three sections to get there is that two measurements said the opposite of
+what they looked like they said.
+
+### The runner has two call sites for a mode, and both are accounted for
+
+Section 67 listed the tagged list runner's call sites and called two of them "a page's list and its
+fallback to the mode record's". Reading them properly is what settles it. On the Harmony 700 image,
+`0x168F4` is one routine with two consecutive blocks:
+
+```
+16916:  TBLPTR <- F25/F26/F27      the current page record
+        CALL 0x18D98               seek
+        0x6D9 = 0 ; CALL 0x10B48   advance by 0 bytes
+        CALL 0x10A30               follow the u24 there
+        0x3C5 <- F2F               the tag to look for
+16938:  CALL 0x1B71E               run the list
+
+16942:  TBLPTR <- F2A/F2B/F2C      the mode entry
+        CALL 0x18D98               seek
+        0x6D9 = 1 ; CALL 0x10B48   advance by 1 byte
+        CALL 0x10A30               follow the u24 there
+        0x3C5 <- F2F
+16966:  CALL 0x1B71E
+```
+
+`0x10B48` adds `0x6D9` to `TBLPTR` as a plain byte count, which the routine itself shows. So the
+first block reads the `u24` at **page record + 0**, which is the page's list of section 66, and the
+second the `u24` at **entry + 1**, which is the back pointer to the mode record's own list that
+section 52 read. That is the override arrangement `config-format.md` already describes, now with
+the two field offsets read off the code rather than inferred.
+
+Both pointers are computed at `0x167E0`: the entry comes from base slot 6's table by `3 * mode + 3`,
+and the page record from `entry + 6 + 3 * page` at `0x16A06`, which is the page array of section 66.
+Section 68 saw that `0x10C36` is called with a literal of 6 at exactly one site and read it as
+evidence that nothing computes a pool start; it is that site, and what it computes is the **first
+page pointer**.
+
+The other three references are the mode record's list again with tag 6 at `0x168A0`, the same with
+tag 7 at `0x167DE`, and base slot 9's at `0x1B718`, reached from `0x1B6FE`. The arch 12 image has
+the same five references to its runner at `0x2E2F2`, in the same two block shape at `0x28430` to
+`0x284AA`. **Neither architecture has a sixth.**
+
+### Nothing names a copy, and the search was the most permissive one available
+
+Every byte position in a container read as a little endian `u24` and matched against every copy's
+address:
+
+| container | copies | positions naming one | expected by chance |
+|---|---|---|---|
+| Harmony One | 330 | 13 | 32.9 |
+| Harmony One, spare unprogrammed | 152 | 1 | 11.2 |
+| Harmony 600 | 254 | 1 | 11.2 |
+| Harmony 700, both | 426 | 4 | 24.9 |
+| 525, arch 9 | 135 | 0 | 0.6 |
+| 880 a to d | 141 to 204 | 0, 2, 0, 0 | 3.7 to 6.0 |
+| the five safe mode containers | 30 to 35 | 0 | under 0.1 |
+
+**27 across seventeen containers against 148.8 that chance predicts**, and every one of the 27 sits
+inside a screen program, an action list, a picture or another tagged list, where a three byte window
+crosses a field boundary. The count being *under* the chance figure is the point: a search this
+permissive would find spurious hits even if the structure were pointed at properly, and it finds
+fewer than noise.
+
+### They are copies, in meaning rather than in bytes
+
+Section 67 tested byte equality, got 62 of 330 on a Harmony One, and concluded they were not copies.
+The right pairing is by **rank in mode table order**, not by address, and the right comparison
+allows one field to differ:
+
+| | |
+|---|---|
+| form, wide or narrow | agrees |
+| entry count | agrees |
+| tag, per entry | agrees |
+| flags, per entry | agrees |
+| opcode, per entry | agrees |
+| operand, per entry | agrees, **except** opcode `0x7F` |
+| opcode `0x7F`'s operand | differs, and both index base slot 10 |
+
+Opcode `0x7F`'s operand is an action list index, section 34. The two indices are different and the
+action lists they name decode to **identical instructions**: 5861 of 5861 pairs, seventeen
+containers, four architectures. So the copies are the same list, and the byte comparison could
+never have seen it.
+
+**2906 of 2906 pages, and the k-th copy is the k-th page.** Which is a claim that needs calibrating,
+because most pages carry the same one or two tags as their neighbours and agreement on tags alone
+would be cheap. Pairing the same two runs off by one:
+
+| container | correct pairing | shifted by one | shifted by two |
+|---|---|---|---|
+| Harmony One | 330 of 330 | 192 | 163 |
+| Harmony 600 | 254 of 254 | 109 | 87 |
+| Harmony 700 | 426 of 426 | 168 | 144 |
+
+100% against 39 to 58%, on tags and opcodes alone. With the operands included the wrong pairings
+collapse further.
+
+The direction is visible in the indices. On a Harmony One the page's copy names indices 3442 to
+4276 of a 4277 entry table, which is exactly the last 835 entries, one per binding, all distinct;
+the pool's copy names 238 to 3148, and reuses them. On the other three architectures the two share
+many indices instead. So the generator appends a fresh action list per page binding and leaves the
+shared set behind, which is a generator artefact rather than a format feature.
+
+### What it means for a writer
+
+The copies are **dead data that still has to be reproduced**. An emitter that omits them produces a
+config the remote would run correctly and that differs from what Logitech's generator emits, and
+section 41's trailer checksum will not notice. Three consequences:
+
+* An editor changing a page's bindings should change both copies, or the two disagree. Nothing will
+  read the difference, but a later reader of the file will.
+* A copy's position is implied by everything packed before it, the same rail section 55 records for
+  pictures. Nothing points at it, so nothing can be moved by editing a pointer.
+* `slot-6-page-list-copy` is what the byte accounting calls them now, replacing
+  `tagged-list-pool`, which named the run rather than the contents.
+
+### What is still not known
+
+**Why the copy exists at all** is a question about Logitech's generator, not about the format, and
+no config in the corpus can answer it. The honest statement is that the format permits it, the
+firmware ignores it, and the corpus contains it without exception.
+
+One smaller thing stays open and it blocks nothing. The tags are key codes in section 17's shape,
+and which physical key each of the four arch 14 values names is part of the button map section 48
+leaves open. Reading them would say which buttons a page binds, which is a label rather than a
+structure.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6's pages and base slot 9's pool.
+* `packages/codec/src/sections.ts`: `pageListCopies` and `ACTION_LIST_INDEX_OPCODE`, and
+  `src/coverage.ts` for the renamed claim.
+* `packages/codec/test/sections.test.ts`: the semantic identity per entry, the off by one
+  calibration with its scores, and the pointer scan against its chance baseline.
 
 ## References
 

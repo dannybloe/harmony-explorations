@@ -224,14 +224,14 @@ export function claims(c: Container, withPictures = true): Claim[] {
     at(address, list.length, 'slot-9-list');
   }
 
-  // The runs those sets sit in, whose other lists nothing in the container names. Claimed under a
-  // name that says only what they are, because what walks them is still open: the count is exactly
-  // one per mode page plus one per slot 9 set in all sixteen containers, and no consumer in either
-  // firmware image reaches them. Section 67.
+  // The other lists in those runs, one per mode page and named by nothing. Section 67 claimed
+  // them under a name that said only what they are, because what walks them was open. Section 69
+  // closed it: each is a second copy of one page's own list, identical in meaning, and no firmware
+  // path reads it. The name says that now, since an emitter has to reproduce them.
   for (const pool of taggedListPools(c)) {
     for (const list of pool.lists) {
       if (setStarts.has(list.start)) continue;
-      add(list.start, list.length, 'tagged-list-pool');
+      add(list.start, list.length, 'slot-6-page-list-copy');
     }
   }
 
