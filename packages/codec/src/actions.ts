@@ -14,7 +14,7 @@
  * is recorded as a reading too. "Does nothing" is a fact about the instruction, not an absence of
  * one, and an emitter needs it as much as any other.
  *
- * `docs/findings.md` sections 33, 34, 37, 39, 42, 43, 69, 70, 71, 72 and 73.
+ * `docs/findings.md` sections 33, 34, 37, 39, 42, 43, 69, 70, 71, 72, 73 and 74.
  */
 
 import { SECOND_SPACE_LIMIT, ACTION_NOOP_LIMIT } from './ir.ts';
@@ -77,8 +77,8 @@ const MAIN: ReadonlyMap<number, Reading> = new Map([
   [0x71, means('compare, byte register against a state variable', 34)],
   [0x72, means("map a state variable's value through base slot 14", 39)],
   [0x73, means('run the base slot 11 screen program the operand indexes', 73)],
-  [0x74, placed('the low half of a two byte opcode with 0x75', 71)],
-  [0x75, placed('accumulate a value, four distinct operands across the corpus', 71)],
+  [0x74, means('accumulate a digit into a twenty four bit value', 74)],
+  [0x75, means('sound a tone: low byte the half period, high byte the cycles', 74)],
   [0x77, placed('an accumulator operation through a helper', 34)],
   [0x78, placed('an accumulator operation through a helper', 34)],
   [0x79, means('add the operand to the accumulator', 34)],
@@ -100,7 +100,7 @@ const MAIN: ReadonlyMap<number, Reading> = new Map([
 type Band = readonly [number, Reading];
 
 const BANDS_3F: readonly Band[] = [
-  [0xf0, placed('load one of three byte registers, or jump; nibbles 3 and 5 do nothing', 73)],
+  [0xf0, placed('six stores, disjoint between architectures; nibble 3 is the sound enable', 74)],
   [0xe0, placed('four operations on a pair of RAM words', 73)],
   [0xd0, placed('consume the following three bytes as an argument, a six byte instruction', 73)],
   [0xb0, placed('a peripheral operation selected by operand bits 4 to 8', 73)],
@@ -148,14 +148,14 @@ const BANDS_0F: readonly Band[] = [
 ];
 
 const BANDS_07: readonly Band[] = [
-  [0xff, placed('set a pending flag the interpreter reads', 73)],
+  [0xff, means('make the next state variable write silent', 74)],
   [0xfe, means("run the current binding set's list with tag 5", 39)],
   [0xfd, placed('push a register pair on the interpreter stack', 73)],
   [0xfc, placed('pop it, and act unless the slot holds the empty marker', 73)],
   [0xfb, means('cancel all four running timers', 73)],
   [0xfa, placed('a helper with no argument', 73)],
   [0xf9, means('read the clock, base slot 3', 73)],
-  [0xf8, placed('read three fixed state variables and act on them', 73)],
+  [0xf8, means('step the date held in state variables 3, 5 and 6', 74)],
   [0xf7, means("re-run the current mode page's tagged list", 69)],
   [0xf6, placed('a helper with no argument', 73)],
   [0xf5, placed('pop the interpreter stack and mark the slot empty', 73)],

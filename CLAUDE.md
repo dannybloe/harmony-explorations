@@ -569,7 +569,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 73 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 74 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -683,13 +683,19 @@ the table, `reading` gives one instruction's, `readingCoverage` gives a config's
 
 | | share of 97537 instructions |
 |---|---|
-| meaning | 90.3% |
-| placement only | 9.7% |
+| meaning | 97.9% |
+| placement only | 2.1% |
 | no reading at all | 6 instructions, one opcode, `0x6E` |
 
-Against 24.5% with no reading before. Per architecture the meaning figure is 98.5% on the 700 and
-**75 to 80% on the One**, which is where the remaining work is: the arch 12 `0x3F` peripheral band
-and the `0x0F` bands, neither of which arch 14 exercises.
+Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5% on arch 14, 97.6%
+on arch 8, 97.1% on arch 9 and **97.0% on the One**, whose gap section 74 closed. What is left is
+mostly one thing, `0x3F` band `0xC0` on arch 12 at 424 uses, and it is hardware state rather than
+config structure.
+
+**The two biggest items turned out to be things the remote does, not things a config describes.**
+`0x75` is the **beeper**, four tones from 461 Hz to 4.7 kHz, gated by `0x3F` high byte `0xF3`; and
+`0x07` high byte `0xF8` **steps a date** held in state variables 3, 5 and 6, which are therefore
+firmware defined and must not be reused. Sections 73 and 74.
 
 **Read a dispatcher, not one handler at a time**, and **count who uses an opcode before choosing
 which firmware to open**. The second rule is new and it cost three misreadings in one section:

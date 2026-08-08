@@ -15,6 +15,7 @@ import {
   parse,
   reading,
   readingCoverage,
+  stateRecords,
   stateTable,
   STATE_WRITE_BASE,
 } from '../src/index.ts';
@@ -103,7 +104,7 @@ test('the state variable band of 0x1F stays inside the table too', skipUnless('h
 test('a reading distinguishes meaning from placement', () => {
   // The distinction is the point of the table: without it the first draft reported 100%.
   assert.equal(reading({ opcode: 0x7f, operand: 0 }, 14)?.depth, 'meaning');
-  assert.equal(reading({ opcode: 0x75, operand: 0 }, 14)?.depth, 'placement');
+  assert.equal(reading({ opcode: 0x77, operand: 0 }, 14)?.depth, 'placement');
   // No reading at all is a third state, not a placement.
   assert.equal(reading({ opcode: 0x6e, operand: 0 }, 14), undefined);
 });
@@ -154,11 +155,11 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 
 // name, meaning, placement, unread
 const COVERAGE: [string, number, number, number][] = [
-  ['h700_config', 19355, 294, 2],
-  ['h600_config', 11986, 206, 2],
-  ['one_config', 9334, 2306, 0],
-  ['h525_config', 943, 100, 0],
-  ['arch8_config_a', 2825, 486, 0],
+  ['h700_config', 19370, 279, 2],
+  ['h600_config', 11996, 196, 2],
+  ['one_config', 11419, 221, 0],
+  ['h525_config', 1013, 30, 0],
+  ['arch8_config_a', 3213, 98, 0],
 ];
 
 for (const [name, meaning, placement, unread] of COVERAGE) {
@@ -184,4 +185,84 @@ test('exactly one opcode in the whole corpus has no reading', skipUnless('one_co
     }
   }
   assert.deepEqual([...left.keys()], ['0x6e']);
+});
+
+/**
+ * Section 74: the Harmony One's remaining opcodes.
+ *
+ * The tone table is the one closure worth pinning as numbers rather than as a count, because it is
+ * what turns `0x75` from a placement into a meaning: four operands, four audible frequencies,
+ * under a clock section 32 derived from something else entirely.
+ */
+const TONE_STEP_US = 17 / 4; // seventeen instruction cycles an iteration, at 4 MIPS
+
+// operand, cycles, half period in iterations, frequency to the nearest hertz
+const TONES: [number, number, number, number][] = [
+  [0x01ff, 1, 255, 461],
+  [0x0fca, 15, 202, 582],
+  [0x4664, 70, 100, 1176],
+  [0x8c19, 140, 25, 4706],
+];
+
+test('every 0x75 operand in the corpus is one of four audible tones', skipUnless('one_config'), () => {
+  const names = ['one_config', 'h525_config', 'arch8_config_a', 'one_spare_after_sync'];
+  const seen = new Map<number, number>();
+  for (const name of names) {
+    if (!load(name)) continue;
+    for (const list of lists(name).lists) {
+      for (const i of list) if (i.opcode === 0x75) seen.set(i.operand, (seen.get(i.operand) ?? 0) + 1);
+    }
+  }
+  assert.deepEqual([...seen.keys()].sort((a, b) => a - b), TONES.map((t) => t[0]).sort((a, b) => a - b));
+
+  for (const [operand, cycles, half, hz] of TONES) {
+    assert.equal(operand >>> 8, cycles);
+    assert.equal(operand & 0xff, half);
+    // Audible, and that is the point: a square wave at these rates is a beeper and nothing else.
+    const frequency = 1e6 / (2 * half * TONE_STEP_US);
+    assert.equal(Math.round(frequency), hz);
+    assert.ok(frequency > 200 && frequency < 8000, `${hz} Hz is outside the audible band`);
+  }
+});
+
+test('arch 12 and arch 14 never use each others 0x3F 0xF0 nibbles', skipUnless('one_config'), () => {
+  // The band's XORLW chain has cases 0 to 5 on arch 12 and 0, 1, 2, 6, 7 on arch 14, so the two
+  // sets of configs must stay inside their own. A prediction, not a description.
+  const only12 = new Set([3, 4, 5]);
+  const only14 = new Set([6, 7]);
+  const used = new Map<number, Set<number>>();
+  for (const name of ['one_config', 'h700_config', 'h600_config', 'arch8_config_a', 'h525_config']) {
+    if (!load(name)) continue;
+    const { lists: all, architecture } = lists(name);
+    if (!used.has(architecture)) used.set(architecture, new Set());
+    for (const list of all) {
+      for (const i of list) {
+        if (i.opcode !== 0x3f) continue;
+        const hi = i.operand >>> 8;
+        if (hi >= 0xf0) used.get(architecture)!.add(hi & 0x0f);
+      }
+    }
+  }
+  for (const [architecture, nibbles] of used) {
+    for (const n of nibbles) {
+      if (architecture === 12) assert.ok(!only14.has(n), `arch 12 used nibble ${n}`);
+      else assert.ok(!only12.has(n), `arch ${architecture} used nibble ${n}`);
+    }
+  }
+  // And the divergence has to be visible, or the test passes vacuously.
+  assert.ok([...(used.get(12) ?? [])].some((n) => only12.has(n)), 'arch 12 uses none of its own');
+});
+
+test('the low state variable records are identical across architectures', skipUnless('one_config'), () => {
+  // Which is what "state variables 3, 5 and 6 are firmware defined" predicts from the config side.
+  const shapes = new Map<number, string>();
+  for (const name of ['one_config', 'h700_config', 'h600_config', 'arch8_config_a', 'h525_config']) {
+    if (!load(name)) continue;
+    const c = parse(load(name)!);
+    const records = stateRecords(c) ?? [];
+    if (records.length < 12) continue;
+    shapes.set(c.architecture as number, records.slice(2, 12).map((r) => r.count).join(','));
+  }
+  assert.ok(shapes.size >= 3, 'needs several architectures to say anything');
+  assert.equal(new Set(shapes.values()).size, 1, [...shapes].map(([a, s]) => `${a}: ${s}`).join(' | '));
 });

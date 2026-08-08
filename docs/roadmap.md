@@ -647,15 +647,21 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   family and two of `0x1F`'s bands end in the same routine, and that join is only visible if you
   read both rather than one at a time.
 
-  **The number is executable now**, in `packages/codec/src/actions.ts`, and it carries a depth,
-  because knowing which routine runs is not knowing what an instruction means for a config. 90.3%
-  of the corpus has a meaning, 9.7% has a placement only, and 6 instructions of 97537 have neither.
-  Per architecture the meaning figure is 98.5% on the 700 against 75 to 80% on the One.
+  Section 74 then closed the arch 12 gap that measurement had exposed, by applying the rule
+  section 73 had just paid three times to learn: count who uses an opcode before choosing which
+  firmware to open. The two largest items were not config structure at all. `0x75` is the
+  **beeper**, four tones between 461 Hz and 4.7 kHz whose pitch closes against the clock the
+  infrared carrier gives; and `0x07`'s `0xF8` band **steps a date** held in state variables 3, 5
+  and 6, closed by a thirty day month table and a modulo 12.
 
-  **What is left is not a codec problem.** The three largest placement only families, 78% of the
-  remainder, are `0x74`/`0x75`, `0x07`'s `0xF8` band and its `0xFF` band: interpreter and hardware
-  state, not config structure. Closing the arch 12 gap means reading the One's `0x3F` peripheral
-  band and its `0x0F` bands, which arch 14 never exercises.
+  **The number is executable**, in `packages/codec/src/actions.ts`, and it carries a depth, because
+  knowing which routine runs is not knowing what an instruction means for a config. **97.9% of the
+  corpus has a meaning**, 2.1% has a placement only, and 6 instructions of 97537 have neither. Per
+  architecture: 98.5% on the 700, 97.6% on arch 8, 97.1% on arch 9, 97.0% on the One.
+
+  **What is left is not a codec problem.** The largest remaining family is `0x3F` band `0xC0` on
+  arch 12, 424 uses, a peripheral selected by operand bits 4 to 8. Hardware state, not config
+  structure, which is what the rest of the remainder is too.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

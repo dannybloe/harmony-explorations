@@ -43,7 +43,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fifteen have been found and corrected so far. The newest is a reading that was right about the
+Sixteen have been found and corrected so far. The newest is section 74's, and it is the same
+mistake twice in a row: section 71 settled whether `0x74` and `0x75` are one instruction or two by
+reading the architecture that issues neither of them. The rule that would have caught it was
+written down in section 73, one section earlier, after it had cost three misreadings there. Count
+who uses an opcode before choosing which firmware to open.
+
+Before it, a reading that was right about the
 shape and wrong about the size: section 72 had the `0x3F` `0xD0` band consuming the next **three
 instructions** off the queue, because the queue holds three byte instructions and the handler calls
 the queue reader three times. The reader pops one **byte**. Four instructions of disassembly settle
@@ -8096,6 +8102,182 @@ which would put the two architectures back on one table and make the divergence 
 * `packages/codec/test/actions.test.ts`: the two closures, the band boundaries, the depth
   distinction, and that the corpus leaves exactly one opcode unread.
 * `src/harmony/pic18/isa.py`: `SFR_PAGE_START`, with `tests/test_isa.py` pinning it.
+
+
+## 74. The Harmony One's remaining opcodes, and what the remote does with them
+
+Section 73 measured an arch 12 gap and named it: 75 to 80% of the One's instructions had a meaning
+against 98.5% of the 700's, because the arch 12 `0x3F` peripheral band and the `0x0F` bands are
+never exercised by arch 14. It also stated the rule that had just cost it three misreadings:
+**count who uses an opcode before choosing which firmware to open.** This section is that rule
+applied to the rest, and it pays immediately, because the two biggest items turn out to be things
+the remote does rather than things the config describes.
+
+Ranked before starting, on arch 12 configs only:
+
+| uses | what |
+|---|---|
+| 3391 | `0x75` |
+| 1117 | the `0x07` family |
+| 318 | `0x3F` band `0xC0` |
+| 78 | `0x3F` band `0xF0` |
+
+### `0x75` is the beeper
+
+**Arch 14 issues it zero times.** All 4380 uses are arch 12, 8 and 9, so section 71 read the
+handler on the one architecture that has no use for it. On the One the dispatcher tests `0x75` at
+`0x25100` and calls `0x2411E`, which is a square wave generator:
+
+```
+0xD21/0xD22 = operand low, shifted left twice        the half period, times four
+if 0xE12 == 0: return                                a gate, below
+loop while counter < operand high:
+    BTG LATG,0                                       toggle the pin
+    0xEE4/0xEE5 = 0xD21/0xD22 ; CALL 0x2CCC4         delay
+    BTG LATG,0
+    0xEE4/0xEE5 = 0xD21/0xD22 ; CALL 0x2CCC4
+```
+
+`0x2CCC4` shifts its argument **right** twice and busy loops that many times, so the caller's
+multiply by four and the callee's divide by four cancel: the delay is the operand's low byte in
+iterations, seventeen instruction cycles each.
+
+**The numeric closure is the pitch.** Section 32 derived the core clock independently, from the
+infrared carrier: 4 MIPS, so an instruction cycle is 0.25 us. The corpus uses exactly four
+operands, and every one of them lands in the audible band:
+
+| operand | cycles | half period | frequency | duration | uses |
+|---|---|---|---|---|---|
+| `0x01FF` | 1 | 1084 us | 461 Hz | 2.2 ms | 80 |
+| `0x0FCA` | 15 | 859 us | 582 Hz | 26 ms | 4238 |
+| `0x4664` | 70 | 425 us | 1176 Hz | 60 ms | 56 |
+| `0x8C19` | 140 | 106 us | 4706 Hz | 30 ms | 6 |
+
+Those figures count the delay loop alone. Counting the toggle, the call and the loop test around it
+moves the lowest tone by under 1% and the highest by about 8%, to 457 and 4324 Hz. Either way it is
+a click and three beeps, 2 to 60 ms, and `0x0FCA` at 4238 uses is the one on nearly every button.
+
+**Second closure: nothing else drives the pin.** `LATG` bit 0 is touched in exactly two places in
+the One's 3 MB image, and both are the two `BTG` instructions above. The 700 sets and clears the
+same pin in six places, none of them a tone loop, which is consistent with arch 14 never issuing
+the instruction and using the pin for something else.
+
+The pin is identified from behaviour rather than from a schematic, so "the beeper" is an inference
+from a square wave at speech frequencies in short bursts. What is not an inference is the
+arithmetic.
+
+### `0x3F` with high byte `0xF3` is the sound gate
+
+The generator returns without doing anything when `0xE12` is zero. `0xE12` is written by exactly
+one instruction, `0x3F` with high byte `0xF3`, in the band handler at `0x24EE2`. So a config can
+mute its own beeper, and the first named state variable in the One's slot 0 tree is
+`ButtonSoundVolume_2`, which is at least the right subject.
+
+**That band gave a prediction, and it held.** Its `XORLW` chain has cases 0 to 5 on arch 12 and
+cases 0, 1, 2, 6 and 7 on arch 14, so the two architectures should never use each other's nibbles:
+
+| arch | nibbles used |
+|---|---|
+| 8 | 0, 1, 2 |
+| 9 | 0, 1 |
+| 12 | 0, 1, 2, **3, 5** |
+| 14 | 0, 1, 2, **6** |
+
+106 uses on arch 12 of nibbles arch 14 has no case for, 3 on arch 14 of one arch 12 has no case
+for, and **no config crosses**. Section 73 argued the `0x3F` bands diverge between architectures
+from a band boundary and a failed prediction; this is the same claim with a prediction that
+succeeded.
+
+### Correcting section 71: `0x74` and `0x75` are two instructions
+
+Section 71 concluded that `0x74` and `0x75` are "one instruction, not two",<!--superseded--> because the arch 14
+dispatcher never tests `0x75`. That is true of arch 14 and it is the wrong architecture to ask:
+**arch 14 issues neither.** The One's dispatcher tests both, four instructions apart, and sends
+them to different routines: `0x75` to the tone generator and `0x74` to `0x2CFA8`, which shifts a
+24 bit value left four bits, ORs in the operand's low byte and increments a digit count.
+
+So the digit accumulator section 71 described is real, and it is `0x74`. Nothing in the corpus
+issues `0x74`, on any architecture. The reading that failed to close there failed because it was
+being asked of the wrong opcode.
+
+### `0x07` band `0xF8` steps the date
+
+886 uses on arch 12 and 944 on arch 8; arch 14 issues it never. `0x27F78` reads three bytes and
+calls `0x28072`, which is a calendar:
+
+```
+switch (month):
+  case 3, 5, 8, 10: last = 29         the four thirty day months, zero based
+  case 1:           last = 28         February
+  default:          last = 30
+if day != last:  ...
+else:            month = (month + 1) mod 12
+write both back
+```
+
+**Two closures, and neither is subtle.** The case set `{3, 5, 8, 10}` is exactly April, June,
+September and November counted from zero, with February alone and 31 as the default. And the month
+is reduced **modulo 12**.
+
+The three bytes are at the state variable base plus 3, plus 5 and plus 6. That base is `0x900` on
+arch 14 and `0x108` on arch 12, derived from each firmware's own write routine, and **the offsets
+are the same three in both**. So state variable 3 is the day of month, 5 is the month and 6 is the
+year, and they are firmware defined rather than assigned by the generator.
+
+The corpus agrees from a third direction: the value counts of the first twelve base slot 13 records
+are identical across all four architectures, `0 ? 1 1 0 1 0 0 0 0 0 0`, with only index 1 differing
+between arch 12 and arch 14. The low indices are reserved.
+
+**Not confirmed by the names.** Slot 0's tree names variables under `Root/State`, and the names at
+positions 3, 5 and 6 are ordinary device states, so the tree is not in index order. Its trailing
+numbers are domain sizes, `TV_Input_14` against `TV_Power_2`, not indices. Mapping a name to an
+index needs the tree parsed properly and is open.
+
+### `0x07` band `0xFF` makes the next state variable write silent
+
+It sets one byte, `0x122` on arch 14 and `0xE24` on arch 12. That byte is what the dispatcher hands
+to the state variable write as its fourth argument, and the write routine skips its notification
+path when it is nonzero. The dispatcher **clears it immediately afterwards**, so it applies to one
+write and no more.
+
+1214 uses. For an emitter it is a rail: dropping a `0x07 0xFF` does not change what a config
+computes, it changes whether the screen redraws.
+
+### Arch 12 confirmations, since the readings were made elsewhere
+
+* `0x80 | n`, the state variable write, at `0x24F94` and `0x2A598`. Same handover as arch 14, bit 7
+  cleared, operand and index and the silent flag. Narrow variables at `0x108 + index`.
+* `0x07` band `0xFB`, cancel all timers: `0x2A05E` clears bit 0 of four five byte slots at `0xEE8`,
+  the same four the timer instructions of section 43 use.
+* `0x07` band `0xF9`, read the clock: `0x27F20` seeks slot 3.
+
+### Where the language stands
+
+| | share of 97537 instructions |
+|---|---|
+| meaning | 97.9% |
+| placement only | 2.1% |
+| no reading at all | 6 instructions, one opcode, `0x6E` |
+
+Against 90.3% at the end of section 73 and 24.5% unread before it. Per architecture: 98.5% on arch
+14, **97.0% on arch 12**, 97.6% on arch 8, 97.1% on arch 9. The gap section 73 measured is closed.
+
+What is left is small and mostly one thing, `0x3F` band `0xC0` on arch 12 at 424 uses, a peripheral
+selected by operand bits 4 to 8 that drives `LATC` bit 5 among others. It is hardware state rather
+than config structure, which is what the rest of the remainder is too.
+
+### What would falsify it
+
+An arch 14 config issuing `0x75`, or an arch 12 config using nibble 6 or 7 of the `0x3F` `0xF0`
+band. A `0x75` operand whose low byte implies a frequency outside the audible band. A config whose
+state variable 5 is written with a value at or above 12 by an instruction other than the date step.
+
+### Where it lands
+
+* `docs/config-format.md`: the opcode inventory, and the state variable section.
+* `packages/codec/src/actions.ts`: `0x74`, `0x75`, `0x07`'s `0xF8` and `0xFF`, `0x3F`'s `0xF0`.
+* `packages/codec/test/actions.test.ts`: the four tone operands, the disjoint nibble sets, and the
+  coverage figures.
 
 
 ## References

@@ -1455,6 +1455,34 @@ Bands the firmware tests and then ignores are part of the specification, not gap
 `0xFC`, `0x1F` below `0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles
 3 and 5. The corpus uses several of them, 84 times for the last alone.
 
+#### `0x75` sounds a tone
+
+**Confirmed on arch 8, 9 and 12**, 4380 uses; arch 14 issues it never. The operand is
+`{ u8 cycles; u8 half_period }`, the half period in loop iterations of seventeen instruction
+cycles. At the 4 MIPS the infrared carrier gives (section 32) that is 4.25 us a step:
+
+| operand | cycles | frequency | duration | uses |
+|---|---|---|---|---|
+| `0x01FF` | 1 | 461 Hz | 2.2 ms | 80 |
+| `0x0FCA` | 15 | 582 Hz | 26 ms | 4238 |
+| `0x4664` | 70 | 1176 Hz | 60 ms | 56 |
+| `0x8C19` | 140 | 4706 Hz | 30 ms | 6 |
+
+The whole corpus uses those four and nothing else. Counting the loop's own overhead moves the
+highest by about 8% and the lowest by under 1%. **`0x3F` with high byte `0xF3` gates it**: the
+generator returns without playing when that byte is zero. [findings.md](findings.md) section 74.
+
+#### State variables 3, 5 and 6 are the date
+
+**Firmware defined, not assigned by the generator.** `0x07` with high byte `0xF8` steps a calendar
+held in them: day, month and year. The month length table has the four thirty day months at zero
+based 3, 5, 8 and 10, February apart, and the month is reduced modulo 12. The same three offsets
+from the state variable base appear in both firmwares, `0x900` on arch 14 and `0x108` on arch 12.
+
+A writer must not reuse those indices. The corpus agrees: the value counts of the first twelve
+base slot 13 records are identical across all four architectures.
+[findings.md](findings.md) section 74.
+
 #### `0x80 | n` writes state variable `n`
 
 **Confirmed on twelve containers across four architectures**, 3011 uses. The dispatcher clears bit
@@ -1530,9 +1558,13 @@ Placed by their handlers:
 | `0x6B`, `0x6A`, `0x69` | accumulator **AND**, **OR**, **XOR** operand |
 | `0x6C` | **write a device record**: the accumulator from a preceding `0x7A` selects it, bit 15 of the operand selects one of two fields and the rest is the value, below |
 | `0x67` | the third producer into the infrared queue of `0x7C` and `0x7D`, tag `0x5`. What it means is unconfirmed |
-| `0x74`, `0x75` | **one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode |
+| `0x74`, `0x75` | ~~**one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode~~<!--superseded--> **two instructions**, section 74. Arch 14 issues neither, and the arch 12 dispatcher tests both: `0x75` **sounds a tone**, `0x74` accumulates a digit |
 | `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
 | `0x73` | **run the base slot 11 screen program** the operand indexes |
+| `0x75` | **sound a tone**: low byte the half period, high byte the cycles. Four operands in the corpus, 461 Hz to 4.7 kHz, below |
+| `0x07` with operand `0xF8xx` | **step the date** held in state variables 3, 5 and 6 |
+| `0x07` with operand `0xFFxx` | **make the next state variable write silent**, one write and no more |
+| `0x3F` with operand `0xF3xx` | **the sound gate** `0x75` tests before playing anything |
 | `0x80` and above | **write state variable `opcode & 0x7F`**, the operand its value |
 | `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9 |
 | `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register |
