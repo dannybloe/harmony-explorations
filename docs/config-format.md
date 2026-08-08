@@ -1425,13 +1425,60 @@ the same, and for a stronger reason: renumbering it changes the instruction.
 
 Two consequences follow. **Opcodes below `0x07` do nothing**: the dispatcher returns before reading
 the operand, and the corpus's 3053 `0x00` instructions all carry operand zero, so they are three
-zero bytes an emitter must keep. And **one instruction can span four**: opcodes `0x3F` to `0x64`
-with an operand high byte in `0xD0` to `0xDF` consume the next three off the queue.
+zero bytes an emitter must keep. And ~~**one instruction can span four**: opcodes `0x3F` to `0x64`
+with an operand high byte in `0xD0` to `0xDF` consume the next three off the queue.~~<!--superseded--> **it is two,
+not four**, section 73: `0x0E82C` pops **one byte** off the queue, not one instruction, so three
+calls take three bytes. `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte instruction**
+whose second half is an ordinary instruction read as data, `0x7F` in 40 of its 60 uses.
 
 **Only five opcodes occur below `0x65` in the whole corpus**, `0x00`, `0x07`, `0x0F`, `0x1F` and
 `0x3F`, one per range and each the top of its own, which is `2^n - 1`. What the low bits would mean
 is unconfirmed because nothing exercises them.
-[findings.md](findings.md) sections 31 and 72.
+[findings.md](findings.md) sections 31, 72 and 73.
+
+**The bands are read, and they are not one table across architectures.** Every branch of both
+dispatchers is followed to its `RETURN` in section 73. The full band tables are there; what a
+codec needs from them is this:
+
+| opcode | band, on | what the bands are |
+|---|---|---|
+| `0x1F` | operand high byte | a register machine: a byte register, a sixteen bit accumulator, load and arithmetic on each, and load and store against the base slot 13 state variable table |
+| `0x07` | operand low byte | thirteen operations with no argument: a push and pop stack, timer cancellation, clock and state variable reads |
+| `0x0F` | operand low byte | peripherals and a diagnostic output channel, plus register moves. Little to do with the config |
+| `0x3F` | operand high byte | four bands, one of which is the six byte instruction above |
+
+**`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ.** This
+is the only structure in the format so far that is not one table across architectures, so a `0x3F`
+band **must not** be ported between them. The failed prediction that found it is in section 73.
+
+Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` band
+`0xFC`, `0x1F` below `0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles
+3 and 5. The corpus uses several of them, 84 times for the last alone.
+
+#### `0x80 | n` writes state variable `n`
+
+**Confirmed on twelve containers across four architectures**, 3011 uses. The dispatcher clears bit
+7 and hands the instruction to one routine, which indexes the base slot 13 table and writes the
+operand into it.
+
+```
+opcode  0x80 | index      index into base slot 13, 0 to 0x7F
+operand the value
+```
+
+The **width comes from the table**, not from the instruction: an index below base slot 13's
+`narrow` count stores one byte and the operand's high byte is discarded. Two closures: no
+instruction names a variable the table does not have, and **none of the 2947 narrow writes carries
+a high byte**, which is the one an emitter has to respect.
+
+`0x1F` bands `0xEE` and `0xED` reach the same store with the index in the operand instead, so an
+index above `0x7F` is reachable only through those. [findings.md](findings.md) section 73.
+
+#### `0x73` runs a screen program
+
+**Confirmed on eight containers**, 3927 uses, all arch 8, 9 and 12; no arch 14 config issues it.
+The operand indexes base slot 11, the same table the screen language programs live in, and
+**nothing in the corpus names a program outside it**. [findings.md](findings.md) section 73.
 
 #### `0x7D` sends an infrared code
 
@@ -1464,9 +1511,9 @@ boundaries:
 
 | range | handling |
 |---|---|
-| below `0x65` | a second dispatcher, not read yet. Five distinct opcodes, 12462 uses |
+| below `0x65` | a second dispatcher, read in full in section 73. Five distinct opcodes, 12462 uses |
 | `0x65` to `0x7F` | individual handlers, twenty distinct opcodes, 83359 uses |
-| `0x80` and above | **one routine**, with bit 7 stripped from the opcode. 55 distinct, 2603 uses |
+| `0x80` and above | **one routine**, with bit 7 stripped: a state variable write. 55 distinct, 2603 uses |
 
 Placed by their handlers:
 
@@ -1485,6 +1532,8 @@ Placed by their handlers:
 | `0x67` | the third producer into the infrared queue of `0x7C` and `0x7D`, tag `0x5`. What it means is unconfirmed |
 | `0x74`, `0x75` | **one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode |
 | `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
+| `0x73` | **run the base slot 11 screen program** the operand indexes |
+| `0x80` and above | **write state variable `opcode & 0x7F`**, the operand its value |
 | `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9 |
 | `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register |
 
@@ -1507,10 +1556,10 @@ table derived from the 525 does not cover the remotes on the bench.
 | `0x6C` | 2832 | 472 | 0 to 32788 | **write a device record**, arch 14 only, above |
 | `0x7C` | 7272 | 600 | 1 to 1380 | **a per device quantity**, `{ u8 group; u8 value }`, above |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
-| `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |
+| `0x1F` | 1215 | 121 | 59392 to 65290 | **a register machine**, band by band, above |
 | `0x7E` | 861 | 268 | 0 to 373 | **enter the mode** at this index in base slot 6, above |
 | `0x7D` | 372 | 350 | 0 to 1361 | **send an infrared code**, `{ u8 group; u8 index }`, below |
-| `0x07` | 230 | 8 | 65522 to 65535 | unknown; in the second operand space, above |
+| `0x07` | 230 | 8 | 65522 to 65535 | **thirteen operations with no argument**, above |
 | `0x71` | 708 | 73 | 9 to 33598 | unknown, but the operand splits: bit 15 a flag, high byte a group 0 to 5, low byte always under 64 |
 
 **Corrected here:** the paragraph below was written when `0x7E` was measured and unplaced, and it is

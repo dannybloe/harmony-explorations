@@ -528,8 +528,13 @@ over the runner-up before trusting its answer.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.
-* **`concordance --dump-firmware` does not return firmware.** See
-  `reference/concordance-notes.md`. This is why the firmware had gone unexamined.
+* **`concordance --dump-firmware` returns no usable firmware on arch 12 or arch 14**, which is why
+  the firmware had gone unexamined. **The scope is the whole point and this line used to omit it**:
+  the defect is two entries in concordance's architecture table, not the tool, and on **arch 8 and
+  arch 9 the same command returns the complete firmware region**, because `firmware_base` is its
+  own region there and `config_base - firmware_base` is exactly `FIRMWARE_MAX_SIZE`. So asking a
+  contributor for `concordance -b -f` is the route to an arch 8 image, and it is how the incoming
+  525 gets dumped. `reference/concordance-notes.md`, asserted in `tests/test_concordance_notes.py`.
 * **A misaligned read of an ascending table is itself ascending.** Twice a long run of ascending
   `u24` values looked like an undiscovered pointer table into the picture region, and twice it was
   base slot 10's own array read one byte late: a real entry with a constant high byte puts that
@@ -564,7 +569,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 72 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 73 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -667,18 +672,36 @@ produce a config the remote accepts and mishandles.
 
 ## Next
 
-Step 8, the contribution probe, exists. **Step 6 is the next block and what it has left is measured:
-the action list language, not the sections.** All twenty base slots are labelled; of 97537 action
-list instructions, **24.5% still use an opcode with no reading**, down from 42% when this was
-measured. **Read a dispatcher, not one handler at a time**: section 71 took nine opcodes in one pass
-where section 70 took one, and section 72 took the whole shape of the space below `0x65`.
+Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
+both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so
+what is left of step 6 is small and it is measured rather than estimated.
 
-Two dispatchers, and they work differently. Above `0x65` the opcode is the instruction and the
-binary search at `0x0EC8E` names a handler for each. **Below `0x65` the operand carries the rest of
-the opcode**, section 72: the high byte for opcodes from `0x1F` up and the low byte below it, so
-`0x1F` and `0x07` are ranges rather than instructions. Opcodes under `0x07` do nothing at all.
-What is left at the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x74`/`0x75` at 4380 and `0x73` at
-3927, and about a third of the second space's branches are unread.
+**The number now carries a depth, and that distinction is the point.** Knowing which routine an
+opcode reaches is not knowing what it means for a config, and counting the first as the second
+reported 100% for a language a tenth of which nobody can name. `packages/codec/src/actions.ts` is
+the table, `reading` gives one instruction's, `readingCoverage` gives a config's:
+
+| | share of 97537 instructions |
+|---|---|
+| meaning | 90.3% |
+| placement only | 9.7% |
+| no reading at all | 6 instructions, one opcode, `0x6E` |
+
+Against 24.5% with no reading before. Per architecture the meaning figure is 98.5% on the 700 and
+**75 to 80% on the One**, which is where the remaining work is: the arch 12 `0x3F` peripheral band
+and the `0x0F` bands, neither of which arch 14 exercises.
+
+**Read a dispatcher, not one handler at a time**, and **count who uses an opcode before choosing
+which firmware to open**. The second rule is new and it cost three misreadings in one section:
+`0x73` and two `0x3F` bands were all read on arch 14 and all used only elsewhere. One query says
+which image to open.
+
+Above `0x65` the opcode is the instruction and the binary search at `0x0EC8E` names a handler for
+each; `0x80 | n` is one instruction with a five bit field, a write into state variable `n`. **Below
+`0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
+thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
+which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not
+one table across architectures**, so they must not be ported.
 
 The byte accounting has three other remainders, all smaller and none on a user config of a target
 architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, both wanting a firmware nobody

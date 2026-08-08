@@ -637,16 +637,25 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   lists. When that was first measured, 56424 of 97537 action list instructions, 57.8%, used one of
   65 opcodes with no reading.
 
-  Three findings have moved it to **24.5%**. Section 70 read `0x7C`, the most used instruction in
-  the corpus at 21882 uses: a per device quantity capped at 100 and spelled out above that. Section
-  71 then read the **dispatcher** rather than a handler and took nine opcodes at once, `0x65` to
-  `0x6D`, an accumulator machine plus `0x6C`, a write into a per device record. Section 72 did the
-  same for the second dispatcher and found the space below `0x65` is not one instruction per opcode
-  at all: the operand carries the rest of the opcode, and opcodes under `0x07` do nothing.
+  Four findings closed it. Section 70 read `0x7C`, the most used instruction in the corpus at 21882
+  uses: a per device quantity capped at 100 and spelled out above that. Section 71 then read the
+  **dispatcher** rather than a handler and took nine opcodes at once, `0x65` to `0x6D`, an
+  accumulator machine plus `0x6C`, a write into a per device record. Section 72 did the same for
+  the second dispatcher and found the space below `0x65` is not one instruction per opcode at all:
+  the operand carries the rest of the opcode, and opcodes under `0x07` do nothing. **Section 73
+  read every remaining branch of both dispatchers**, which is where the method paid: the `0x80`
+  family and two of `0x1F`'s bands end in the same routine, and that join is only visible if you
+  read both rather than one at a time.
 
-  **That is the method for the rest**: read a dispatcher, not a handler. What is left at the top is
-  `0x1F` at 6119 uses, `0x07` at 5739, `0x74` and `0x75` at 4380, and `0x73` at 3927, and about a
-  third of the second space's branches are still unread.
+  **The number is executable now**, in `packages/codec/src/actions.ts`, and it carries a depth,
+  because knowing which routine runs is not knowing what an instruction means for a config. 90.3%
+  of the corpus has a meaning, 9.7% has a placement only, and 6 instructions of 97537 have neither.
+  Per architecture the meaning figure is 98.5% on the 700 against 75 to 80% on the One.
+
+  **What is left is not a codec problem.** The three largest placement only families, 78% of the
+  remainder, are `0x74`/`0x75`, `0x07`'s `0xF8` band and its `0xFF` band: interpreter and hardware
+  state, not config structure. Closing the arch 12 gap means reading the One's `0x3F` peripheral
+  band and its `0x0F` bands, which arch 14 never exercises.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

@@ -43,7 +43,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fourteen have been found and corrected so far. The newest is the sharpest: this document recorded
+Fifteen have been found and corrected so far. The newest is a reading that was right about the
+shape and wrong about the size: section 72 had the `0x3F` `0xD0` band consuming the next **three
+instructions** off the queue, because the queue holds three byte instructions and the handler calls
+the queue reader three times. The reader pops one **byte**. Four instructions of disassembly settle
+it, and none of them were read before the claim was published. Section 73.
+
+The sharpest is still this one: this document recorded
 that a `READ_FLASH` through sub-selector `0xFE` "returns nothing at all", on the strength of one
 probe at one offset that produced no reply. It reads fine, and it is the one that maps from program
 address zero. **A null result from a single probe is a fact about that probe**, and writing it up as
@@ -98,7 +104,9 @@ asserted in `tests/test_isa.py` and every documented finding has a regression te
 
 The firmware is PIC18 machine code and it is directly disassemblable. The reason this
 had not been established is that `concordance --dump-firmware` does not return usable
-code on either architecture, for two different reasons:
+code on either architecture **here**, for two different reasons. It does on arch 8 and
+arch 9, which is section 2's correction of 8 August 2026 and is not a detail: it is the
+route to an image for a model this project has no hardware for.
 
 * **Arch 12 (Harmony One).** The dump contains no code at all. It returns a small
   GSPM config container instead. The application lives at flash `0x020000`, which
@@ -144,6 +152,37 @@ Of 65536 bytes, only about 9 KiB is non-`0xFF`:
 ### Arch 14 content at flash 0
 All 65536 bytes are populated, and all of it is PIC18 code. This is the first 64 KiB of
 a 70336-byte image.
+
+### Corrected 8 August 2026: this is two architecture entries, not the tool
+
+*The section above was read as a statement about concordance, and it is a statement about arch 12
+and arch 14. On arch 8 and arch 9 the same command returns the complete firmware.* The generalised
+form had reached four documents, and it had a practical cost: it made asking a contributor with an
+880 for a dump look pointless, when it is the only route to an arch 8 image that exists.
+
+Two properties separate those architectures from ours, both read out of the same table:
+
+| arch | flash_base | firmware_base | config_base |
+|---|---|---|---|
+| 8 | `0x000000` | `0x010000` | `0x020000` |
+| 9 | `0x800000` | `0x810000` | `0x820000` |
+| 12 | `0x000000` | `0` | `0x040000` |
+| 14 | `0x000000` | `0x000000` | `0x030000` |
+
+First, `firmware_base` differs from `flash_base`, so the two dumps are not the same read and the
+firmware dump is aimed at firmware. Second, `config_base - firmware_base` is `0x10000` on both,
+which is exactly `FIRMWARE_MAX_SIZE`, so one read covers the whole firmware region with nothing
+truncated and nothing foreign in it. That second closure is what makes the answer a fact rather
+than a hope: the size cap that breaks arch 14 happens to be the region size on arch 8 and arch 9.
+
+Two consequences. `concordance -b -f` is a reasonable thing to ask a stranger for, on a 720, 785,
+880, 882 or 885, and the request can honestly say the file cannot contain their serial number,
+which sits at flash `0x000110`, below `firmware_base`. And **arch 9's infrared, listed as wanting a
+firmware nobody has, is reachable**: the 525 arriving in August 2026 can be dumped this way.
+
+Asserted in `tests/test_concordance_notes.py`, which reads the constants out of a concordance
+checkout and skips when there is none. Nothing here reads that source for structure or copies it;
+these are constants describing hardware, which is the same footing as the rest of this section.
 
 ## 3. Flash layout per architecture
 
@@ -7823,6 +7862,241 @@ it.
   `SECOND_SPACE_RANGES`.
 * `packages/codec/test/sections.test.ts`: the five opcodes, the two ignored bands with zero
   instructions in them, and every no-op carrying operand zero.
+
+## 73. Both dispatchers read to the end, and what a third of the language turns out to be
+
+Sections 70, 71 and 72 each took a slice of the action list language and stopped: one opcode, then
+nine, then the shape of the space below `0x65`. The habit was mine rather than the material's, and
+the instruction was to stop batching. So this section reads **every remaining branch of both
+dispatchers** to its `RETURN`, and what it costs is one afternoon rather than the six that reading
+them a handful at a time would have taken.
+
+The material rewards it, because the branches are not independent. The `0x80` family and two of
+`0x1F`'s bands turn out to end in the same routine, which is only visible if you read both.
+
+### `0x80 | n` writes state variable `n`
+
+The dispatcher at `0x0EC8E` strips bit 7 and hands the instruction to one routine, which
+sections 34 and 35 recorded without saying what the routine does. It is `0x17CC4`, and the handover
+is explicit:
+
+```
+0eca2: BCF   0xbd,B,7        the opcode, bit 7 cleared
+0eca4: MOVFF 0x1bb,0x1f4     the operand, low
+0eca8: MOVFF 0x1bc,0x1f5     the operand, high
+0ecac: MOVFF 0x1bd,0x1f3     the index
+0ecb0: MOVFF 0x122,0x1f2     a flag: zero asks for a notification afterwards
+0ecb4: CALL  0x17cc4
+```
+
+`0x17CC4` indexes the base slot 13 state variable table through `0x17E28`, then calls `0x17DD8`,
+which decides the width from the table's own `narrow` count: below it, one byte at RAM
+`0x900 + index`; at or above it, `index -= narrow; index *= 2; index += narrow` and two bytes. So
+**`0x80 | n` means "state variable `n` = the operand"**, and the 55 opcodes at the top of the
+inventory are one instruction with a five bit field, exactly as the shape of the dispatcher
+suggested and nobody had confirmed.
+
+Two closures, over 12 containers and 3011 uses:
+
+* **0 name a variable the table does not have.**
+* **0 of the 2947 narrow writes carry a high byte**, which the firmware would silently drop. A
+  generator that did not know the width would have left some.
+
+The second is the stronger one, because the first only says the indices are small.
+
+### `0x73` runs a screen program
+
+`0x18814` loads slot `0x0B` into `0x6DD`, seeks with `0x10B92`, puts the operand in the sixteen bit
+index at `0x6E1` with element size 2 at `0x6E0`, indexes with `0x10BEE`, follows the pointer with
+`0x10A30` and calls the screen interpreter at `0x1879C`. So **`0x73` runs the base slot 11 screen
+program its operand indexes**, the same table `0x7F` does for action lists.
+
+**No arch 14 config issues it**, so that reading was about to be published against a handler nothing
+in the corpus reaches. Checked on the architecture that does use it: the One's dispatcher at
+`0x25128` copies the operand into `0x2F1/0x2F2` and calls `0x296F4`, which asks for arch slot `0x0C`
+(base slot 11), indexes with element size 2 and jumps to `0x295AC`, the arch 12 screen interpreter.
+Same structure, different addresses.
+
+3927 uses across 8 containers, all of them arch 8, 9 or 12, **0 outside the table**.
+
+### `0x1F` is a register machine
+
+Every band, on the operand's high byte, with the low byte as the argument. The byte register is
+`0x10D` and the sixteen bit accumulator is `0x10E/0x10F`:
+
+| band | what |
+|---|---|
+| `0xFF` | select the current binding table entry, base slot 9. Section 39 |
+| `0xFE`, `0xFD` | add to, remove from a set the interpreter keeps at `0x118`, counted at `0x117` |
+| `0xFC` | nothing |
+| `0xFB`, `0xFA`, `0xF9`, `0xF8` | byte register: load, add, multiply, divide |
+| `0xF7` | execute the accumulator as an instruction, the low byte its opcode |
+| `0xF6`, `0xF5`, `0xF4`, `0xF3` | send the byte register or the accumulator to base slot 16 or 14. Section 39 |
+| `0xF2`, `0xF1` | increment, decrement the state variable the low byte names |
+| `0xF0`, `0xEF` | byte register, accumulator = that state variable |
+| `0xEE`, `0xED` | that state variable = byte register, accumulator |
+| `0xEC`, `0xE8`, `0xE6` | store the low byte in a RAM variable, three different ones |
+| `0xEB`, `0xEA` | start, cancel the base slot 12 timer the low byte indexes. Section 43 |
+| `0xE9` | split the low byte into three fields, bit 0 and bits 1 to 3 and bits 4 to 7 |
+| `0xE7` | load the accumulator from one of three system registers |
+| `0xE5` down to `0xE0` | nothing |
+
+**The pairs are the tell.** `0xF6` against `0xF4`, `0xF5` against `0xF3`, `0xF0` against `0xEF`,
+`0xEE` against `0xED`: the same operation twice, once for the byte register and once for the
+accumulator. A band table read one entry at a time would not show that, and it is what makes the
+`0x10D` reading safe.
+
+`0xEE` and `0xED` share a tail at `0x0F3E2` that sets `0x1F3` and `0x1F2` and calls `0x17CC4`,
+**the same routine the `0x80` family uses**. So the language has two ways to write a state
+variable, one with the index in the opcode and one with it in the operand, and they are the same
+store. That is the join two separate readings would have missed.
+
+The closure is the index again: over 17 containers and 2937 uses of the `0xE7` to `0xF2` band,
+**0 name a variable the table does not have**, and in thirteen of the seventeen the highest index
+used is exactly `count - 1`.
+
+### `0x07` is a control flow and housekeeping family
+
+Thirteen operations with no argument, on the operand's low byte. Sections 26 and 72 had the top
+four:
+
+| band | what |
+|---|---|
+| `0xFF` | set the pending flag at `0x122` |
+| `0xFE` | run the current binding set's list with tag 5. Section 39 |
+| `0xFD`, `0xFC` | push, pop a register pair on a stack at `0x111` with pointer `0x110` |
+| `0xFB` | **cancel all four running timers**, `0x1776E` |
+| `0xFA`, `0xF6`, `0xF4`, `0xF3`, `0xF2` | five helpers with no argument |
+| `0xF9` | read the clock, base slot 3, `0x14F84` |
+| `0xF8` | read three fixed state variables, 3, 5 and 6, `0x14FE0` |
+| `0xF7` | re-run the current mode page's tagged list, `0x16776`. Section 69 |
+| `0xF5` | pop the stack and mark the slot empty |
+
+`0xFB` is worth its own line: `0x1776E` walks the same four slot table of five byte entries at
+`0x6E5` that `0x1F`'s `0xEB` and `0xEA` bands do, which is the four concurrent timers section 43
+measured from the other end. Three instructions, one table, and the count agrees.
+
+### `0x0F` is peripherals and a diagnostic channel
+
+On the low byte, and mostly not about the config at all:
+
+| band | what |
+|---|---|
+| `0xF0` | nothing |
+| `0xE0` | emit one to three bytes on a diagnostic channel through `0x159F4`. Nibble 6 emits `0xAA` twice, nibble 4 emits the constants 3, 2, 1 |
+| `0xC0`, `0xB0`, `0xA0` | peripheral operations with two fields, one field, and a boolean |
+| `0x80` | move between the byte register and the accumulator, both directions |
+| `0x70`, `0x60`, `0x50` | nothing |
+| `0x40` | a lookup whose sixteen bit result goes to scratch |
+
+The `0xE0` band emitting a fixed `0xAA 0xAA` and a fixed `3 2 1` is what makes it read as
+diagnostic rather than functional. **The corpus uses band `0x60` six times**, and that band does
+nothing at all.
+
+### `0x3F`, and the one place the architectures diverge
+
+Four bands on the high byte: `0xF0` loads one of three byte registers through an `XORLW` chain
+whose cases are 0, 1, 2, 6 and 7, so **nibbles 3 and 5 fall into the default and do nothing**, 84
+uses of them in the corpus. `0xE0` is four operations on a pair of RAM words. `0xD0` is below.
+
+The lowest band is `0xB0` on arch 14 and **`0xC0` on arch 12**, and the routines behind them are
+not the same code. Arch 14's `0x0F782` seeks base slot 8 and bounds the operand against its leading
+byte; arch 12's `0x24F24`, reached from the dispatcher at `0x25330`, splits the operand into bit 0,
+bits 1 to 3 and bits 4 to 8 and drives a peripheral, `LATC` bit 5 among them.
+
+**This was found by a closure failing.** Reading arch 12's `0x3F 0xC0` through arch 14's handler
+predicts an index into base slot 8, and the corpus refutes it flatly: indices reach 194 where that
+slot's leading byte is 1, 412 of 424 uses out of range. The prediction was wrong because the
+handler was the wrong one, not because the reading was subtle. So **the second operand space is not
+one table across architectures**, unlike the main opcode table and unlike the pointer table, and a
+writer cannot port a `0x3F` band from one to the other.
+
+That is **three times in one section**: `0x3F` band `0xC0`, `0x73`, and `0x3F` band `0xB0` itself,
+all read on arch 14 and all used only elsewhere. `CLAUDE.md` already says the rule about preferring
+arch 14 is about reading code rather than finding data, and the practical form of it is narrower
+and worth stating: **before reading a handler, count who uses the opcode.** One query, and it says
+which firmware to open. Every one of the three would have been caught by it.
+
+### Correcting section 72 on the `0xD0` band
+
+Section 72 says the `0xD0` band "consumes the next three instructions off the queue" and hands over
+twelve bytes. **It consumes three bytes and hands over four.** `0x0E82C` is not an instruction
+fetch: it pops **one byte** off the 120 byte circular queue at `0x127` to `0x19E`, decrements the
+count at `0x126` and wraps. Three calls, three bytes.
+
+The error was reading "three calls to the queue reader" as "three instructions" because the queue
+is described everywhere as holding three byte instructions. The right check was to read the
+callee, which takes four instructions to do and settles it.
+
+What survives is the part that matters: `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte
+instruction**, and a reader that walks an action list three bytes at a time is right about the
+bytes and wrong about the boundaries wherever it appears. It is also **retried rather than failed**
+when its destination queue has fewer than four slots free: `0x13156` returns zero, and the
+dispatcher rewinds the queue pointer by three and adds three back to the count, so the same
+instruction runs again next time round.
+
+In the corpus its three byte payload is always a well formed instruction, `0x7F` in 40 of 60 uses
+and `0x7E` in 19. That is consistent rather than confirming, since a decoder stays aligned either
+way, but it does say the payload is an action list reference rather than raw data.
+
+### The disassembler was calling bank 15 variables SFRs
+
+`sfr_name` labelled anything at `0xF00` and above `sfrXXX`. On this family the SFR page starts at
+**`0xF40`**, with `PMSTAT` the lowest named register in Microchip's own header, and the 4 KiB of
+general purpose registers run up to `0xF3F`. A `MOVFF` carries a twelve bit absolute address, so
+the interpreter's own stack at `0xF28` and its scratch at `0xF18` to `0xF30` were being printed as
+unnamed peripherals. Fixed: below `SFR_PAGE_START` the name is `gprXXX`.
+
+Same family as the generic SFR map of section 18, and caught the same way, against the header
+rather than by reasoning about the listing.
+
+### Where the language stands, honestly
+
+The first version of `packages/codec/src/actions.ts` counted every branch above as read and
+reported **100%**. That is the wrong number and the way it is wrong is worth recording: knowing
+which routine runs and which RAM byte it writes is not the same as knowing what the instruction
+means for a config. So a reading now carries a **depth**, `meaning` or `placement`, and the
+progress number is reported both ways:
+
+| | share of 97537 instructions |
+|---|---|
+| meaning | 90.3% |
+| placement only | 9.7% |
+| no reading at all | 6 instructions, one opcode, `0x6E` |
+
+Against 24.5% with no reading when step 6 was last measured. Per architecture the meaning figure is
+98.5% on the Harmony 700, 98.3% on the 600, 90.4% on the 525, 85 to 89% on arch 8 and **75 to 80%
+on the Harmony One**, which is the gap worth closing next: it is the arch 12 `0x3F` peripheral band
+and the `0x0F` bands, neither of which arch 14 exercises.
+
+What is placement only, ranked, is now a measurement rather than a memory:
+
+| uses | what |
+|---|---|
+| 4380 | `0x74`/`0x75`, whose meaning section 71 already failed to close |
+| 1830 | `0x07` band `0xF8`, three fixed state variables |
+| 1214 | `0x07` band `0xFF`, the pending flag |
+| 436 | `0x07` band `0xF5` |
+| 424 | `0x3F` band `0xC0`, arch 12 peripherals |
+
+The top three are 78% of what is left, and none of them is a config structure: they are interpreter
+and hardware state. So the remaining work on this language is worth less to a codec than its size
+suggests, which is itself a finding.
+
+### What would falsify it
+
+A config using `0x80 | n` with `n` at or above its state variable count, or a narrow write carrying
+a high byte. A `0x73` operand outside base slot 11. An arch 14 config using `0x3F` band `0xC0`,
+which would put the two architectures back on one table and make the divergence a misreading.
+
+### Where it lands
+
+* `docs/config-format.md`: the second operand space subsection, and the opcode inventory.
+* `packages/codec/src/actions.ts`: the whole table, `reading` and `readingCoverage`.
+* `packages/codec/test/actions.test.ts`: the two closures, the band boundaries, the depth
+  distinction, and that the corpus leaves exactly one opcode unread.
+* `src/harmony/pic18/isa.py`: `SFR_PAGE_START`, with `tests/test_isa.py` pinning it.
+
 
 ## References
 

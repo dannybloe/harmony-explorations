@@ -48,6 +48,9 @@ and leave this table alone.
 | `What the twin is for is not established` | section 69 | it is a copy of the page's own list, and nothing reads it |
 | `never at the same rank in their pools` | section 69 | the k-th copy is the k-th page, in mode table order |
 | `address a second operand space` | section 72 | the operand carries the rest of the opcode, and `0xC000` is the lowest band the dispatcher tests |
+| `a second dispatcher, not read yet` | section 73 | both dispatchers are read to the end, band by band |
+| `consume the next three off the queue` | section 73 | three bytes, not three instructions: the queue reader pops one byte |
+| `unknown; in the second operand space` | section 73 | `0x1F` is a register machine and `0x07` thirteen nullary operations |
 | `About a third of the entries are drawn` | section 66 | all of an arch 12 bank, all but two elsewhere |
 | `an entry is four bytes` | section 66 | `6 + 3 * pages`; the four byte reading was short rather than wrong |
 | `arch 9 uses a different packing` | section 63 | read: two bits a pixel, rows framed by their own byte length |

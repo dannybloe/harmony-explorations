@@ -459,12 +459,29 @@ SFR_SHADOW: Dict[int, str] = {
 # than bank 0 general purpose registers.
 ACCESS_BANK_SFR_START = 0x60
 
+# Where the SFRs actually begin on this family. The 67J50 and 87J50 put 4 KiB of general
+# purpose registers below `0xF40`, so bank 15 is half RAM, and `PMSTAT` at `0xF40` is the
+# lowest named register in Microchip's own header.
+#
+# This constant exists because a `MOVFF` carries a twelve bit absolute address, and calling
+# everything at `0xF00` and above an SFR turned ordinary bank 15 variables into `sfrF28` in
+# the listings. The interpreter's own stack and its instruction registers live there, so the
+# mislabel made interpreter state read as hardware. Same family of error as the generic SFR
+# map recorded in `docs/findings.md` section 18, caught the same way: against the header.
+SFR_PAGE_START = 0xF40
+
 
 def sfr_name(addr: int, adshr: bool = False) -> str:
-    """Name an SFR address, honouring the ADSHR shadow set when that bit is set."""
+    """Name an SFR address, honouring the ADSHR shadow set when that bit is set.
+
+    Below `SFR_PAGE_START` there is no SFR to name, so the address is reported as the general
+    purpose register it is rather than as an unnamed peripheral.
+    """
     if adshr and addr in SFR_SHADOW:
         return SFR_SHADOW[addr]
-    return SFR.get(addr, 'sfr%03X' % addr)
+    if addr in SFR:
+        return SFR[addr]
+    return ('gpr%03X' if addr < SFR_PAGE_START else 'sfr%03X') % addr
 
 
 def resolve_file(f: int, a: int, bsr: Optional[int] = None,

@@ -197,6 +197,33 @@ class TestAdshrSelectsAShadowRegister(unittest.TestCase):
         for addr in isa.SFR_SHADOW:
             self.assertIn(addr, isa.SFR, hex(addr))
 
+
+class TestBankFifteenIsHalfRamOnThisFamily(unittest.TestCase):
+    """`docs/findings.md` section 73.
+
+    The 67J50 and 87J50 carry 4 KiB of general purpose registers, so the SFR page starts at
+    `0xF40` rather than `0xF00`. A twelve bit `MOVFF` address below that names a variable, and
+    calling it an SFR made the action list interpreter's own stack read as hardware.
+    """
+
+    def test_the_page_starts_where_the_microchip_header_says(self):
+        self.assertEqual(isa.SFR_PAGE_START, 0xF40)
+        self.assertEqual(min(isa.SFR), isa.SFR_PAGE_START)
+
+    def test_an_address_below_the_page_is_named_a_register_not_a_peripheral(self):
+        # The interpreter pushes this pair in `0x07` sub `0xFD`.
+        self.assertEqual(isa.sfr_name(0xF28), 'gprF28')
+        self.assertEqual(isa.sfr_name(0xF29), 'gprF29')
+
+    def test_an_unnamed_address_inside_the_page_is_still_a_peripheral(self):
+        # The gap between OSCCON and T0CON, unimplemented on this part.
+        self.assertNotIn(0xFD4, isa.SFR)
+        self.assertEqual(isa.sfr_name(0xFD4), 'sfrFD4')
+
+    def test_named_registers_are_unaffected(self):
+        self.assertEqual(isa.sfr_name(0xF40), 'PMSTAT')
+        self.assertEqual(isa.sfr_name(0xF65), 'UCON')
+
     def test_resolve_file_passes_the_bit_through(self):
         # MOVWF 0xC1 with a=0 is 0x6EC1: the access bank, so the SFR page.
         instr = dec(0x6EC1)
