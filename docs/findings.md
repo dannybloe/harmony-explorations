@@ -7506,6 +7506,116 @@ structure.
 * `packages/codec/test/sections.test.ts`: the semantic identity per entry, the off by one
   calibration with its scores, and the pointer scan against its chance baseline.
 
+## 70. Opcode `0x7C` is a per device quantity, capped at 100 and spelled out above it
+
+`0x7C` is the most used instruction in the corpus, 21882 of 97537, and it has been unread since
+section 29 guessed it was "a quantity of at most 100". It is the companion of `0x7D`, the infrared
+send, and the two differ in one bit.
+
+### The handlers are the same routine twice
+
+On the Harmony 700 image, `0x7D`'s handler is `0x130E0` and `0x7C`'s is `0x13102`, sixteen
+instructions apart:
+
+```
+130e0:  MOVFF 0x09B,0x099          the operand's low byte
+        MOVFF 0x09A,0x098          its high byte
+        RCALL 0x12FD6              the worker
+        ...                        priority 2
+
+13102:  BSF   0x09C,6              set bit 6 of the high byte
+        MOVFF 0x09D,0x099
+        MOVFF 0x09C,0x098
+        RCALL 0x12FD6              the same worker
+        ...                        priority 1
+```
+
+The byte order matters and is settled by the executor: `0x09A` and `0x09C` are written from `0x1BC`,
+the popped instruction's second operand byte, so they hold the **high** byte. That is what
+`config-format.md`'s `0x09A/0x09B` notation meant and it was ambiguous.
+
+The Harmony One image mirrors it exactly: `0x26F74` with priority 2, `0x26F96` with `BSF 0x6BD,6`
+and priority 1, sharing the worker at `0x26F4E`. **Two architectures, the same pair of routines.**
+
+### The worker is a queue, and bit 6 changes what enqueueing means
+
+`0x12FD6` writes into a circular buffer of 30 bytes at RAM `0x65` to `0x83`, with a write cursor at
+`0x085/0x086`, a read cursor at `0x083/0x084` and a count at `0x064`. Entries are two bytes,
+`{ u8 tag; u8 value }`, and the tag is `kind << 4 | group`: `0x0` for a send, `0x4` for this
+opcode, `0x5` for a third producer that is not an action list opcode.
+
+With bit 6 clear the worker pushes the two bytes and returns. With it set it first walks the queue
+to its last entry and then, at `0x13088`:
+
+| condition | what happens |
+|---|---|
+| the last entry's tag differs | push a new entry |
+| the last entry's value is already 100 | push a new entry |
+| the new value is smaller | **drop it** |
+| otherwise | overwrite the last entry's value |
+
+So consecutive quantities for one device collapse to the larger, **except at 100**, where the fold
+is refused and a second entry is pushed instead. That is the mechanism that makes a quantity above
+100 expressible at all, and it is read off the code rather than inferred from the data.
+
+The sender consults the queue for a `0x4` tag at `0x13830` and `0x13AC8`, through the scan at
+`0x13204`, and changes its own timing parameter accordingly.
+
+### The corpus closes it twice
+
+**The group is always one the infrared table has.** Over 21882 uses in twelve containers spanning
+four architectures, every high byte is below that config's infrared group count, with no exception.
+That is the closure section 33 used for `0x7D`, applied to a table this operand was not derived
+from, and the group counts vary from 1 to 7 across the corpus so it is not vacuous.
+
+**The value never exceeds the cap.** 0 to 100 everywhere, never 101, in all 21882.
+
+**And arch 14 spells the whole range out.** Its configs carry a generated table of lists made of
+nothing but this opcode, `(g,100)` repeated then a remainder:
+
+| container | groups | lists per group | totals |
+|---|---|---|---|
+| Harmony 700, both configs | 6 | 350 | 101 to 450, contiguous |
+| Harmony 600 | 4 | 350 | 101 to 450, contiguous |
+
+**Every total from 101 to 450, once per group, nothing missing and nothing twice**, and not one list
+of the 4900 fails the cap-then-remainder shape. A reading where the run did not sum would have to
+explain why the last instruction's value is exactly `total - 100 * (length - 1)` in every one of
+them.
+
+The table starts at 101 because 1 to 100 needs a single instruction and is not worth a list of its
+own. Arch 8, 9 and 12 have no such table: there `0x7C` almost always follows a `0x7D` for the same
+group, 340 of 345 on a Harmony One, carrying a small value.
+
+### What is not established
+
+**What the quantity measures.** The evidence says it is per device, bounded at 450 in practice,
+consumed by the infrared sender, and folded by taking the larger of two consecutive requests. That
+last rule is what a duration behaves like and not what a repeat count behaves like, but the unit is
+a guess and this document does not make it. Finishing it wants the timer that drains the queue.
+
+**The third producer**, tag `0x5`, which reaches the same worker from outside the action list
+language.
+
+### The rails it yields
+
+* **The value is capped at 100 by the firmware**, not by convention. A writer emitting 150 in one
+  instruction gets a queue entry the sender will treat as 150 only if nothing folds it, and the
+  fold rule is written against the cap. Spell it out.
+* **A config cannot have more than sixteen infrared groups**, because the queue tag is
+  `kind << 4 | group`. The corpus tops out at seven, so nothing has met this, and a generator that
+  did would corrupt the tag rather than fail.
+* **Consecutive quantities for one device are not independent.** An editor inserting one next to
+  an existing one changes the existing one's effect.
+
+### Where it lands
+
+* `docs/config-format.md`, the action list opcode inventory: `0x7C` moves out of the unread table.
+* `packages/codec/src/ir.ts`: `irQuantity` with `IR_QUANTITY_OPCODE`, `IR_QUANTITY_CAP`,
+  `IR_QUANTITY_QUEUE_BIT` and `IR_MAX_GROUPS`.
+* `packages/codec/test/sections.test.ts`: the group closure against the infrared table, the 101 to
+  450 closure, and the refusals that stop `irQuantity` summing a shape it has not read.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

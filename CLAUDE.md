@@ -564,7 +564,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 69 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 70 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -667,8 +667,18 @@ produce a config the remote accepts and mishandles.
 
 ## Next
 
-Step 8, the contribution probe, exists. Step 6 is the next block: label what is left by the proven
-consumer method plus live RAM polling.
+Step 8, the contribution probe, exists. **Step 6 is the next block and what it has left is measured:
+the action list language, not the sections.** All twenty base slots are labelled; of 97537 action
+list instructions, 57.8% use one of 65 opcodes with no reading. The dispatch is mapped in section
+34, so each is a named handler to read rather than a search. `0x7C` is done, section 70; the rest of
+the top is `0x6C`, `0x1F`, `0x07`, `0x75` and `0x73`.
+
+The byte accounting has three other remainders, all smaller and none on a user config of a target
+architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, both wanting a firmware nobody
+has, and 5437 bytes in the **arch 12 safe mode container**, which is 61% of it and appears in no
+user config. A `u8 tag; u8 n; u16 v[n]` walk tiles that run to within a byte and **should not be
+believed on that basis**: with `n` usually zero it tiles almost anything, which is the same trap
+section 67 recorded.
 
 **Both target architectures are at 100.0%**, sections 66 and 67, with 24 bytes unattributed in a
 1.63 MB Harmony One config and 41 in a 600, and zero overlaps in all seventeen containers. The last

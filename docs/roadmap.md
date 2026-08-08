@@ -629,6 +629,17 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   and our own data says it does not transfer as it stands: arch 14's third most common opcode is
   `0x6C`, which never appears in the arch 9 sample. So this has to be read out of the 700 image,
   and it is the single highest value thing to do while in there.
+
+  **This is now the whole of what step 6 has left, and it is measured.** Every one of the twenty
+  base slots is labelled, so section labelling is done; what is not done is the language inside the
+  lists. Of 97537 action list instructions in the corpus, **56424, or 57.8%, use one of 65 opcodes
+  with no reading**. The dispatch is mapped, section 34, so each one is a named handler to read
+  rather than a search.
+
+  The first of them is done: **`0x7C`, the most used instruction in the corpus at 21882 uses**, is a
+  per device quantity capped at 100 and spelled out above that, section 70. What that leaves at the
+  top of the list is `0x6C` at 7552 uses, `0x1F` at 6119, `0x07` at 5739, `0x75` at 4380 and `0x73`
+  at 3927, in that order.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

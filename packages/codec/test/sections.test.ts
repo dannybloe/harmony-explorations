@@ -18,8 +18,12 @@ import {
   IR_CLASS_STREAM,
   IR_HEADER_CLASSES,
   IR_HEADER_LENGTH,
+  IR_MAX_GROUPS,
+  IR_QUANTITY_CAP,
+  IR_QUANTITY_OPCODE,
   IR_RECORD_POINTER_BIAS,
   irClass,
+  irQuantity,
   irGroups,
   irPulses,
   irRecordBlocks,
@@ -603,3 +607,105 @@ for (const [name, count, hits] of UNNAMED) {
     assert.ok(found <= chance, `${found} hits against ${chance.toFixed(1)} expected by chance`);
   });
 }
+
+/**
+ * `[sample, uses, infrared groups]`. findings.md section 70: opcode `0x7C` carries a per group
+ * quantity capped at 100, and its group is always one the infrared table has.
+ *
+ * The same closure section 33 used for `0x7D`, applied to its companion: the operand is checked
+ * against a table it was not derived from.
+ */
+const QUANTITY: readonly [string, number, number, number][] = [
+  ['h700_config', 7272, 6, 100],
+  ['h600_config', 4788, 4, 100],
+  // The cap is only reached where a quantity above it is spelled out, which arch 12 and arch 9
+  // never do in this corpus. So the largest value is a per sample measurement, not the cap.
+  ['one_config', 345, 5, 60],
+  ['arch8_config_a', 242, 3, 100],
+  ['h525_config', 203, 4, 95],
+];
+
+for (const [name, uses, groups, largest] of QUANTITY) {
+  test(`${name}: every 0x7C names a group the infrared table has`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const table = c.pointerArray(archSlot(c.architecture as number, 10)) as number[];
+    assert.equal(irGroups(c)?.length, groups);
+    let seen = 0;
+    let highest = -1;
+    for (const address of table) {
+      for (const i of c.actionList(address) ?? []) {
+        if (i.opcode !== IR_QUANTITY_OPCODE) continue;
+        seen += 1;
+        const group = i.operand >>> 8;
+        const value = i.operand & 0xff;
+        assert.ok(group < groups, `group ${group} against ${groups} infrared groups`);
+        assert.ok(group < IR_MAX_GROUPS, 'the queue tag has four bits for the group');
+        assert.ok(value <= IR_QUANTITY_CAP, `value ${value} above the cap the firmware enforces`);
+        highest = Math.max(highest, value);
+      }
+    }
+    assert.equal(seen, uses);
+    assert.equal(highest, largest);
+    assert.ok(highest <= IR_QUANTITY_CAP);
+  });
+}
+
+/**
+ * `[sample, groups, lists per group]`. findings.md section 70's closure.
+ *
+ * Arch 14 carries a generated table of quantities spelled out in capped instructions. Every group
+ * gets every total from 101 to 450, once, and nothing else, which is what says the run really does
+ * sum rather than merely look like it.
+ */
+const QUANTITY_TABLE: readonly [string, number, number][] = [
+  ['h700_config', 6, 350],
+  ['h700_config_2', 6, 350],
+  ['h600_config', 4, 350],
+];
+
+for (const [name, groups, per] of QUANTITY_TABLE) {
+  test(`${name}: the spelled out quantities run 101 to 450 in every group`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const table = c.pointerArray(archSlot(c.architecture as number, 10)) as number[];
+    const totals = new Map<number, Set<number>>();
+    let lists = 0;
+    for (const address of table) {
+      const list = c.actionList(address) ?? [];
+      if (list.length < 2 || !list.every((i) => i.opcode === IR_QUANTITY_OPCODE)) continue;
+      const run = irQuantity(list);
+      // A list made entirely of this opcode has to be one well formed run, or the reading is
+      // wrong: `irQuantity` refuses a cap anywhere but the end and a change of group.
+      assert.notEqual(run, undefined, 'a list of nothing but 0x7C is one run');
+      const q = run as NonNullable<typeof run>;
+      assert.equal(q.instructions, list.length);
+      if (!totals.has(q.group)) totals.set(q.group, new Set());
+      const set = totals.get(q.group) as Set<number>;
+      assert.ok(!set.has(q.amount), `${q.amount} appears twice in group ${q.group}`);
+      set.add(q.amount);
+      lists += 1;
+    }
+    assert.equal(totals.size, groups);
+    for (const [group, set] of totals) {
+      assert.equal(set.size, per, `group ${group}`);
+      const sorted = [...set].sort((a, b) => a - b);
+      assert.equal(sorted[0], 101);
+      assert.equal(sorted[sorted.length - 1], 450);
+      sorted.forEach((v, i) => assert.equal(v, 101 + i, 'contiguous, with no total missing'));
+    }
+    assert.equal(lists, groups * per);
+  });
+}
+
+test('a quantity run refuses a shape that is not cap then remainder', () => {
+  const at = (group: number, value: number) => ({ operand: (group << 8) | value, opcode: 0x7c });
+  // The reading, spelled the way the corpus spells it.
+  assert.deepEqual(irQuantity([at(2, 100), at(2, 45)]), { group: 2, amount: 145, instructions: 2 });
+  assert.deepEqual(irQuantity([at(2, 100), at(2, 100)]), { group: 2, amount: 200, instructions: 2 });
+  assert.deepEqual(irQuantity([at(0, 7)]), { group: 0, amount: 7, instructions: 1 });
+  // A run that stops at a different group is that group's business, not this run's.
+  assert.deepEqual(irQuantity([at(1, 100), at(3, 4)]), { group: 1, amount: 100, instructions: 1 });
+  // And the refusals, which are what stop this summing something it has not read.
+  assert.equal(irQuantity([at(2, 45), at(2, 100)]), undefined, 'a cap before the end');
+  assert.equal(irQuantity([{ operand: 0, opcode: 0x7d }]), undefined, 'a different opcode');
+  assert.equal(irQuantity([]), undefined);
+});

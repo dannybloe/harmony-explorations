@@ -1333,10 +1333,27 @@ Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a 
 neither the same size nor contiguous, so the structure does not transfer as it stands.
 [findings.md](findings.md) section 28.
 
-#### `0x7C` carries a value of at most 100
+#### `0x7C` is a per device quantity, capped at 100
 
-**Confirmed on architecture 14.** The operand splits at the byte: the high byte is a group, 0 to 5
-on the 700 and 0 to 3 on the 600, and the low byte is 1 to 100.
+**Confirmed on four architectures, and on two firmware images.** The operand is
+`{ u8 group; u8 value }`: the group is an infrared group, and in 21882 uses across twelve
+containers it is always one the config's infrared table has. The value is 0 to 100 and never more.
+
+**The cap is enforced by the firmware, not by convention.** `0x7C`'s handler is `0x7D`'s handler
+with one bit set: `0x13102` against `0x130E0` on the Harmony 700, `0x26F96` against `0x26F74` on
+the Harmony One, sharing a worker. Both hand the operand to the same infrared queue, a circular
+buffer of 30 bytes holding `{ u8 tag; u8 value }` entries where the tag is `kind << 4 | group`;
+`0x7C` sets bit 6 of the group byte, which marks the entry as a quantity rather than a send, and
+asks for priority 1 where `0x7D` asks for 2.
+
+That bit changes what enqueueing means. A quantity folds into the last entry of the queue when the
+tag matches: the larger value wins and the smaller is dropped. **The fold is refused when the
+queued value is already 100**, which pushes a second entry instead, and that is the mechanism that
+makes a quantity above 100 expressible at all. [findings.md](findings.md) section 70.
+
+Two rails follow. A writer must **spell out a value above 100** rather than emit it whole, and a
+config can hold at most **sixteen infrared groups**, because the tag's low nibble carries the
+group. The corpus tops out at seven.
 
 Every use is in one of two shapes: lists made of nothing but `0x7C`, or as the third instruction of
 `{0x7F, 0x7D, 0x7C}`. In a pure list of length `k`, every operand but the last has low byte 100 and
@@ -1351,7 +1368,10 @@ The union is 101 to 450 per group, contiguous, each value once. **450 is also th
 `0x6C` vocabulary**, which is 0 to 450, reached from a completely different direction. So the two
 are the same enumeration: one instruction covers up to 100, more than one spells out the rest.
 
-*What the enumeration counts is not established.* [findings.md](findings.md) section 29.
+*What the enumeration counts is not established.* The firmware says it is per device, bounded at
+450 in practice, consumed by the infrared sender, and folded by taking the larger of two
+consecutive requests, which is how a duration behaves and not how a repeat count does. The unit
+itself wants the timer that drains the queue. [findings.md](findings.md) sections 29 and 70.
 
 #### `0x07`, `0x0F`, `0x1F` and `0x3F` address a second operand space
 
@@ -1428,6 +1448,7 @@ Placed by their handlers:
 | `0x71` | **compare**: low byte indexes a lookup, low nibble of the high byte selects the operator, left hand side is a byte variable |
 | `0x70` | the same comparison, with the accumulator as the left hand side |
 | `0x72` | **map a state variable's value**: low byte a state variable, high byte a base slot 14 record |
+| `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
 | `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9 |
 | `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register |
 
@@ -1446,9 +1467,9 @@ table derived from the 525 does not cover the remotes on the bench.
 
 | Opcode | 700 uses | distinct operands | operand range | reading |
 |---|---|---|---|---|
-| `0x7C` | 7272 | 600 | 1 to 1380 | unknown |
 | `0x7A` | 2875 | 10 | 0 to 65277 | unknown, and only ten distinct operands in 2875 uses |
 | `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
+| `0x7C` | 7272 | 600 | 1 to 1380 | **a per device quantity**, `{ u8 group; u8 value }`, above |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
 | `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |
 | `0x7E` | 861 | 268 | 0 to 373 | **enter the mode** at this index in base slot 6, above |

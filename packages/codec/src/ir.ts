@@ -11,6 +11,7 @@
  * claims the arrays and the located run, which are the two things a reader here actually reads.
  */
 import { Container, GspmError, archSlot } from './gspm.ts';
+import type { Instruction } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 
 export const IR_TABLE_SLOT = 5;
@@ -231,4 +232,72 @@ export function irFrame(
     headerSpace: (run.pulses[first + 1] as IrPulse).microseconds,
     bits: (rest - 2) / 2,
   };
+}
+
+/**
+ * The action list opcode that carries a per group quantity. Section 70.
+ *
+ * The companion of `0x7D`, the send: both hand a `{ u8 group; u8 value }` operand to one worker in
+ * the infrared sender, and the only difference in the two handlers is that this one sets bit 6 of
+ * the group byte first and asks for a different priority.
+ */
+export const IR_QUANTITY_OPCODE = 0x7c;
+
+/**
+ * The largest value one `IR_QUANTITY_OPCODE` instruction may carry.
+ *
+ * Not a guess from the data: the firmware refuses to fold a new request into a queued one whose
+ * value is already this, so a larger quantity has to be spelled as several instructions. The
+ * corpus never exceeds it in 21882 uses.
+ */
+export const IR_QUANTITY_CAP = 100;
+
+/**
+ * The bit the handler sets on the group byte, which is what marks the queue entry as a quantity
+ * rather than a send. The queue tag is `kind << 4 | group`, so the low nibble bounds a config to
+ * sixteen infrared groups.
+ */
+export const IR_QUANTITY_QUEUE_BIT = 0x40;
+export const IR_MAX_GROUPS = 16;
+
+export interface IrQuantity {
+  group: number;
+  /** The sum of the run, which is what the sender ends up with. */
+  amount: number;
+  /** How many instructions spell it. */
+  instructions: number;
+}
+
+/**
+ * Read a maximal run of `IR_QUANTITY_OPCODE` starting at `start`, or nothing if there is none.
+ *
+ * A run is `cap` repeated then a remainder, all naming the same group, and the quantity is their
+ * sum. The shape is not inferred from the data: the firmware's fold rule refuses to merge into a
+ * queued value of `IR_QUANTITY_CAP`, so each capped instruction lands as its own queue entry and
+ * the sender meets them in order. `docs/findings.md` section 70.
+ *
+ * A run whose leading instructions are not the cap, or which changes group part way, is refused
+ * rather than summed: that would be a different structure and summing it would hide the fact.
+ */
+export function irQuantity(list: readonly Instruction[], start = 0): IrQuantity | undefined {
+  const first = list[start];
+  if (first === undefined || first.opcode !== IR_QUANTITY_OPCODE) return undefined;
+  const group = first.operand >>> 8;
+
+  let end = start;
+  while (end < list.length) {
+    const here = list[end] as Instruction;
+    if (here.opcode !== IR_QUANTITY_OPCODE || here.operand >>> 8 !== group) break;
+    end += 1;
+  }
+
+  // Every instruction but the last is the cap. The last may be the cap too, which is how a round
+  // multiple of it is spelled; what is refused is a cap appearing anywhere earlier than the end.
+  for (let k = start; k < end - 1; k += 1) {
+    if (((list[k] as Instruction).operand & 0xff) !== IR_QUANTITY_CAP) return undefined;
+  }
+
+  let amount = 0;
+  for (let k = start; k < end; k += 1) amount += (list[k] as Instruction).operand & 0xff;
+  return { group, amount, instructions: end - start };
 }
