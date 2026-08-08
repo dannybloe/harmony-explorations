@@ -310,13 +310,19 @@ infrared records do:
 
 ```
 at the record start   u8 count; { u8 tag; u16 operand; u8 opcode }[count]
-at the table pointer  u8 kind; u24 the record's own start
+at the table pointer  u8 kind; u24 the record's own start; u16 pages; u24 page[pages]
 ```
 
 Records are contiguous and run to about seven hundred bytes, so the pointer lands hundreds of bytes
 past the head. Closures over 1616 records in eight containers: the back pointer always points
 backwards, and the count read at the start always gives a list that fits inside the record, where a
 wrong start overruns.
+
+`kind` is 0 in 2326 entries and 1 in 70, all of the latter on arch 8 and arch 12. The firmware
+tests its bit 0 and branches, so it is a flag; **what it selects is unconfirmed.**
+
+The entry is `6 + 3 * pages` bytes. The offset and the stride are the two literals the consumer at
+`0x16816` feeds to its `3 * index + literal` helper, so neither is inferred from the bytes.
 
 An entry maps a **tag** to one action list instruction. Two tags are the handlers: **tag 7 when the
 mode is left and tag 6 when it is entered**, the only two either arch 14 image selects, and on both
@@ -334,8 +340,35 @@ Twice this looked like an architecture that did not carry them, and twice the ca
 missing operand count rather than a different layout: arch 12 in section 54 and arch 9 in section
 64. Neither program was malformed; both were simply unwalkable.
 
-Read with `gspm.mode_records` and `gspm.mode_program_roots`; `gspm.mode_table` returns the raw
-pointers. [findings.md](findings.md) section 52.
+#### A mode's pages
+
+**Confirmed on seventeen containers across four architectures.** Each `page[]` address is a record
+of two pointers, and on arch 12 only, one byte in front of them:
+
+```
+arch 8, 9, 14   u24 list; u24 program                 6 bytes
+arch 12         u8 unknown; u24 list; u24 program     7 bytes
+```
+
+`list` is a tagged list in the encoding below and `program` is a screen program. The firmware
+searches the page's list for a tag first and the mode record's own list second, so a page
+**overrides** rather than replaces. Two tags are searched this way, `0x29` and `0x2A`, either side
+of the code that moves a wrapping page cursor; **what they name is unconfirmed.** So is the lead
+byte, which no reader in either image touches after fetching it.
+
+Closures: 2906 of 2906 page pointers resolve; the page abutting an entry sits exactly six bytes
+before it on arch 8, 9 and 14 and exactly seven on arch 12, in 2396 of 2396 entries, which is where
+the length comes from since nothing states it; every `list` decodes as a tagged list and lands in
+the run above base slot 7's table, which it fills to within 4 to 34 bytes; every `program` decodes
+as a screen program.
+
+**Prefer `program` over the computed root above.** On arch 8, 9 and 14 the first page's program is
+usually the same address; on arch 12 it never is, because the stated program begins with a call
+(opcode 22) to the fragment sitting where the computation lands. [findings.md](findings.md)
+section 66.
+
+Read with `gspm.mode_records`, `gspm.mode_pages` and `gspm.mode_program_roots`; `gspm.mode_table`
+returns the raw pointers. [findings.md](findings.md) sections 52 and 66.
 
 *It is not the activity list*: a Harmony has a handful of activities and this table has hundreds of
 entries. What distinguishes one entry from another is not established.
@@ -490,7 +523,7 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**20374<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
+**21392<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -536,8 +569,10 @@ on arch 8, and **176 over 220 on arch 12**, which is the Harmony One's panel.
 Pictures do not sit where they are addressed; they sit in **one contiguous array** running from the
 end of the named content to the trailer, with **no table, no count and no header**. Walking it from
 its start lands exactly on the trailer in every container that has one: 98 pictures on a Harmony
-One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. About a third of the entries are drawn by a
-screen program and the rest are drawn by nothing this project can reach.
+One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. **Every entry of an arch 12 bank is drawn by a
+screen program**, 98 of 98 and 70 of 70, and exactly two per container are not on arch 8 and arch
+14. So the bank is the set of pictures the programs draw rather than a region that happens to
+contain them. [findings.md](findings.md) section 66.
 
 The start is found by trying offsets above the named content under two constraints, the exact
 landing and the presence of every addressed picture; exactly one candidate satisfies both.
@@ -619,11 +654,11 @@ set by the code minus one.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4093<!--fact:glyphs--> glyphs and 41793<!--fact:inline_string_codes--> codes.
+are 4093<!--fact:glyphs--> glyphs and 55542<!--fact:inline_string_codes--> codes.
 
 * every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933
-* every inline string resolves: **40588<!--fact:string_codes_two_byte_pixel--> glyph codes** land on a non-NULL glyph of the font their
+* every inline string resolves: **54107<!--fact:string_codes_two_byte_pixel--> glyph codes** land on a non-NULL glyph of the font their
   own program selected, none out of range and none on an empty slot
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.

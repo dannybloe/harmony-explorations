@@ -921,16 +921,22 @@ class TestTheScreenInterpreter(unittest.TestCase):
                     total += 1
                     printable += all(32 <= b < 127 for b in instruction.glyphs)
         self.assertGreater(total, 500)
-        # The claim that matters is that no *word* appears. Short strings of two or three codes
-        # land in the printable range by chance and always have; every one of the handful that
-        # does is one to three codes long and reads as nothing.
-        self.assertLess(printable, total / 50)
+        # The claim that matters is that no *word* appears. Short strings land in the printable
+        # range by chance, and section 66 tripled the corpus of them, so the by-chance rate moved
+        # from under 1 in 50 to 1 in 28: 201 of 5656, of which 198 are three codes or shorter.
+        self.assertLess(printable, total / 25)
+        # The three longer ones are `)!6$!` twice and `'=''`, so the sharper statement is that no
+        # printable run of four or more contains a **letter**. That was true under the old
+        # threshold too and it stays true here, where the weaker length rule would now fail.
         for name in self.CONFIGS:
             c = gspm.parse(lab.load(name))
             for program in self._walk(c)[0]:
                 for instruction in program:
-                    if instruction.glyphs and len(instruction.glyphs) >= 4:
-                        self.assertFalse(all(32 <= b < 127 for b in instruction.glyphs))
+                    codes = instruction.glyphs
+                    if not codes or len(codes) < 4:
+                        continue
+                    if all(32 <= b < 127 for b in codes):
+                        self.assertFalse(any(chr(b).isalpha() for b in codes))
 
     def test_a_truncated_program_is_refused_rather_than_guessed(self):
         from harmony import gspm
@@ -1149,10 +1155,11 @@ class TestTheFontTable(unittest.TestCase):
                         codes += 1
                         resolved += c.glyph(fonts[selected], code) is not None
         # 16054 before section 53 added the mode records' own programs as roots, 39170 before
-        # section 54 added arch 12's, 40588 before section 64 added arch 9's. Arch 9's 1205 codes
-        # are the closure section 46 could not run there, and they resolve through the fonts
-        # section 63 decoded, so the two findings check each other.
-        self.assertEqual(codes, 41793)
+        # section 54 added arch 12's, 40588 before section 64 added arch 9's, 41793 before
+        # section 66 added the programs a mode's pages state. Arch 9's codes are the closure
+        # section 46 could not run there, and they resolve through the fonts section 63 decoded,
+        # so the two findings check each other.
+        self.assertEqual(codes, 55542)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1306,7 +1313,8 @@ class TestScreenOpcode22(unittest.TestCase):
                 for code in instruction.glyphs:
                     codes += 1
                     resolved += c.glyph(fonts[selected], code) is not None
-        self.assertEqual(codes, 1205)
+        # 1205 before section 66 made the programs a mode's pages state reachable.
+        self.assertEqual(codes, 1435)
         self.assertEqual(resolved, codes)
 
     @staticmethod
@@ -1808,17 +1816,23 @@ class TestTheBitmap(unittest.TestCase):
     SHAPES = [
         # The counts grew with section 53: a mode record's own screen program is a root, and it
         # is where the large pictures are named. Strides 128 and 64 appear only through it.
-        ('h700_config', 21, {0, 1}, {12, 128}, {10, 128}),
-        ('h700_config_2', 21, {0, 1}, {12, 128}, {10, 128}),
+        # Section 66 moved every count again, by making the program a mode's pages state a root.
+        # Arch 12 gains the most, 28 to 98, because that is where its screen drawing lives.
+        ('h700_config', 22, {0, 1}, {12, 128}, {10, 128}),
+        ('h700_config_2', 22, {0, 1}, {12, 128}, {10, 128}),
         ('h600_config', 16, {0, 1}, {12, 128}, {10, 128}),
         # Arch 12 only opened up with section 54. Stride 176 over 220 rows is a full screen, and
         # it is the geometry section 51 recovered by measurement, here stated by the format.
-        ('one_config', 28, {0, 1}, {20, 22, 61, 62, 69, 87, 88, 176}, {10, 11, 18, 33, 62, 69, 91, 220}),
-        ('one_config_unprogrammed', 27, {0, 1}, {20, 22, 61, 62, 69, 87, 88, 176}, {10, 11, 18, 33, 62, 69, 91, 220}),
-        ('arch8_config_a', 28, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
-        ('arch8_config_b', 27, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
-        ('arch8_config_c', 29, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
-        ('arch8_config_d', 29, {0, 1}, {16, 17, 18, 19, 64, 128}, {10, 32, 160}),
+        ('one_config', 98, {0, 1},
+         {20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176},
+         {10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220}),
+        ('one_config_unprogrammed', 70, {0, 1},
+         {20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176},
+         {10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220}),
+        ('arch8_config_a', 30, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_b', 29, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_c', 31, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
+        ('arch8_config_d', 31, {0, 1}, {15, 16, 17, 18, 19, 64, 128}, {8, 10, 32, 160}),
         # The negative cases. Arch 9 emits no opcode 2 at all and neither does a safe mode
         # container, which is what says the section is optional rather than structural.
         ('h525_config', 0, set(), set(), set()),
@@ -1884,7 +1898,8 @@ class TestTheBitmap(unittest.TestCase):
                     self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
                     total += 1
         if all(lab.path(name) for name, count, _, _, _ in self.SHAPES if count):
-            self.assertEqual(total, 95)
+            # 95 before section 66 reached the programs a mode's pages state.
+            self.assertEqual(total, 129)
 
     def test_the_pictures_tile_the_region(self):
         """The closure on the extent, and the correction of an earlier negative.
@@ -2003,6 +2018,112 @@ class TestTheModeRecord(unittest.TestCase):
         self.assertLess(max(len(r.entries) for r in c.mode_records()), 255)
 
 
+class TestTheModePages(unittest.TestCase):
+    """`docs/findings.md` section 66: an entry states how many pages a mode has, and each page
+    names a tagged list and a screen program.
+
+    The entry is `u8 kind; u24 start; u16 pages; u24 page[pages]`, read that way because the
+    consumer at `0x16816` reads it that way: literal 6 into the stride helper's offset register,
+    then indexing with stride 3. The four byte reading it replaces was not wrong, only short.
+    """
+
+    SAMPLES = ['h600_config', 'h700_config', 'h700_config_2', 'one_config',
+               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+               'arch8_config_d', 'h525_config', 'h600_safemode_gspm', 'one_safemode']
+
+    def test_every_page_pointer_lands_in_the_container(self):
+        """The first thing a wrong stride or a wrong offset would break."""
+        from harmony import gspm
+        pages = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for record in c.mode_records():
+                    self.assertEqual(record.page_count, len(record.pages))
+                    self.assertEqual(record.entry_length, 6 + 3 * record.page_count)
+                    for page in record.pages:
+                        self.assertIsNotNone(c.blob_offset_of(page.address))
+                        pages += 1
+        if all(lab.path(name) for name in self.SAMPLES):
+            self.assertEqual(pages, 2510)
+
+    def test_a_page_precedes_the_entry_by_its_own_length(self):
+        """The closure on the page's size, which nothing states.
+
+        One page of every entry sits immediately in front of it, so the distance from the entry
+        back to that page is the page's length: six bytes everywhere and seven on arch 12, where
+        the consumer reads a byte at offset 0 before following the pointer at offset 1. Every
+        entry in every container has exactly one such neighbour.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                expected = 7 if c.architecture in gspm.MODE_PAGE_LEAD_ARCHITECTURES else 6
+                for record in c.mode_records():
+                    at = c.blob_offset_of(record.address)
+                    adjacent = [p for p in record.pages
+                                if c.blob_offset_of(p.address) == at - expected]
+                    self.assertEqual(len(adjacent), 1)
+                    self.assertEqual(adjacent[0].length, expected)
+
+    def test_a_page_names_a_tagged_list_and_a_screen_program(self):
+        """Both fields, checked by what they point at rather than by what they look like.
+
+        The list field lands in the one unclaimed run directly above base slot 7's table in every
+        container that has one, and the program field decodes as a screen program with nothing
+        left over. Neither holds for a field split one byte out.
+        """
+        from harmony import gspm
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                for page in c.mode_pages():
+                    self.assertIsNotNone(c.tagged_list(page.list_address))
+                    self.assertIsNotNone(c.screen_program(page.program))
+
+    def test_the_stated_program_is_the_computed_one_off_arch_12(self):
+        """Where section 53's computation and this reading agree, and where they do not.
+
+        On arch 8, 9 and 14 the first page's program is the address section 53 computes, in all
+        but a handful of arch 8 records. On **arch 12 they never coincide**: the stated program
+        starts later and its first instruction is a call to the fragment sitting where section 53
+        computed. So the computed root is a callee there rather than a mistake.
+        """
+        from harmony import gspm
+        agreed = disagreed = 0
+        for name in self.SAMPLES:
+            data = lab.load(name)
+            if data is None:
+                continue
+            with self.subTest(name):
+                c = gspm.parse(data)
+                arch12 = c.architecture == 12
+                for record in c.mode_records():
+                    if not record.pages:
+                        continue
+                    stated = record.pages[0].program
+                    computed = record.start + record.length
+                    if arch12:
+                        self.assertNotEqual(stated, computed)
+                        self.assertGreater(stated, computed)
+                    if stated == computed:
+                        agreed += 1
+                    else:
+                        disagreed += 1
+        if all(lab.path(name) for name in self.SAMPLES):
+            self.assertEqual((agreed, disagreed), (1618, 461))
+
+
 class TestThePictureBank(unittest.TestCase):
     """`docs/findings.md` section 55: the region is one contiguous array of pictures.
 
@@ -2012,16 +2133,21 @@ class TestThePictureBank(unittest.TestCase):
     """
 
     # `[sample, pictures in the bank, bytes, how many opcode 2 names]`.
+    #
+    # The last column is what section 66 moved, and it moved a long way: section 55 could name
+    # about a third of a bank and now **every picture in an arch 12 bank is named**, 98 of 98 and
+    # 70 of 70, with exactly two left over per container on arch 8 and arch 14. The bank is not
+    # a region that happens to contain pictures, it is the set of pictures the programs draw.
     BANKS = [
-        ('one_config', 98, 1361283, 28),
-        ('one_config_unprogrammed', 70, 1102735, 27),
+        ('one_config', 98, 1361283, 98),
+        ('one_config_unprogrammed', 70, 1102735, 70),
         ('h600_config', 18, 434210, 16),
-        ('h700_config', 24, 598320, 21),
-        ('h700_config_2', 24, 598320, 21),
-        ('arch8_config_a', 32, 284539, 28),
-        ('arch8_config_b', 31, 239618, 27),
-        ('arch8_config_c', 33, 242658, 29),
-        ('arch8_config_d', 33, 242658, 29),
+        ('h700_config', 24, 598320, 22),
+        ('h700_config_2', 24, 598320, 22),
+        ('arch8_config_a', 32, 284539, 30),
+        ('arch8_config_b', 31, 239618, 29),
+        ('arch8_config_c', 33, 242658, 31),
+        ('arch8_config_d', 33, 242658, 31),
     ]
     # Containers with no region at all, and therefore no bank. The negative case.
     # The three safe mode containers. `h525_config` was on this list until section 62 and should

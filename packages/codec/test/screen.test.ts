@@ -44,6 +44,7 @@ import {
   parse,
   reachablePrograms,
   screenProgram,
+  modePages,
   modeRecords,
   screenProgramRoots,
   valueMaps,
@@ -52,16 +53,16 @@ import type { Glyph } from '../src/index.ts';
 
 /** `[sample, reachable programs, decoded glyphs]`. Same walk as `tests/test_interpreter.py`. */
 const DECODED: readonly [string, number, number][] = [
-  ['h700_config', 6568, 553],
-  ['h700_config_2', 6568, 553],
-  ['h600_config', 4527, 463],
-  ['h525_config', 136, 160],
-  ['one_config', 572, 501],
-  ['one_config_unprogrammed', 389, 405],
-  ['arch8_config_a', 345, 397],
-  ['arch8_config_b', 366, 299],
-  ['arch8_config_c', 399, 312],
-  ['arch8_config_d', 399, 312],
+  ['h700_config', 6620, 553],
+  ['h700_config_2', 6620, 553],
+  ['h600_config', 4544, 463],
+  ['h525_config', 157, 160],
+  ['one_config', 1013, 501],
+  ['one_config_unprogrammed', 586, 405],
+  ['arch8_config_a', 394, 397],
+  ['arch8_config_b', 427, 299],
+  ['arch8_config_c', 463, 312],
+  ['arch8_config_d', 463, 312],
   // Zero before section 53. A safe mode container has 35 modes and no base slot 11 table, so
   // every program it holds is reached through a mode record.
   ['h600_safemode_gspm', 35, 46],
@@ -72,13 +73,14 @@ const DECODED: readonly [string, number, number][] = [
 /**
  * What the Python implementation reports. 18252, 3933 and 16054 when this port landed; the first
  * and third moved with section 53, which made a mode record's own screen program a root and so
- * reached 1629 programs nothing had reached before. The glyph total moved once, by section 63's
- * 160 arch 9 glyphs; it does not move with the programs, because glyphs come from base slot 7 and
- * not from the programs that draw them.
+ * reached 1629 programs nothing had reached before, and again with section 66, which added the
+ * program each of a mode's pages states outright: 20374 and 41793 before it. The glyph total
+ * moved once, by section 63's 160 arch 9 glyphs; it does not move with the programs, because
+ * glyphs come from base slot 7 and not from the programs that draw them.
  */
-const CORPUS_PROGRAMS = 20374;
+const CORPUS_PROGRAMS = 21392;
 const CORPUS_GLYPHS = 4093;
-const CORPUS_STRING_CODES = 41793;
+const CORPUS_STRING_CODES = 55542;
 
 for (const [name, programs, glyphCount] of DECODED) {
   test(`${name} decodes ${programs} programs and ${glyphCount} glyphs`, skipUnless(name), () => {
@@ -202,7 +204,7 @@ test('a glyph whose rows do not close is refused rather than truncated', skipUnl
   assert.equal(glyphAt(c, (first as { address: number }).address, 2), undefined);
 });
 
-test('the roots come from base slots 11, 14 and 6', skipUnless('h600_config'), () => {
+test('the roots come from base slots 11, 14 and 6, and from a mode page', skipUnless('h600_config'), () => {
   const c = parse(load('h600_config') as Uint8Array);
   const roots = screenProgramRoots(c);
   const fromTable = c.pointerArray(11) ?? [];
@@ -211,10 +213,15 @@ test('the roots come from base slots 11, 14 and 6', skipUnless('h600_config'), (
     ...m.ranges.map(([, , target]) => target),
   ]);
   const fromModes = modeProgramRoots(c);
+  const fromPages = modePages(c);
   assert.ok(fromTable.length > 0, 'slot 11 supplies roots');
   assert.ok(fromMaps.length > 0, 'slot 14 supplies roots');
   assert.ok(fromModes.length > 0, 'slot 6 supplies roots, section 53');
-  assert.equal(roots.length, fromTable.length + fromMaps.length + fromModes.length);
+  assert.ok(fromPages.length > 0, "slot 6's pages supply roots, section 66");
+  assert.equal(
+    roots.length,
+    fromTable.length + fromMaps.length + fromModes.length + fromPages.length,
+  );
 });
 
 test('opcode 22 is the one opcode whose width is per architecture', () => {
@@ -237,11 +244,11 @@ test('opcode 22 is the one opcode whose width is per architecture', () => {
  * container that has any, and no region at all in the two kinds that emit no opcode 2.
  */
 const REGION: readonly [string, number, number][] = [
-  ['h700_config', 21, 0x052c5f],
+  ['h700_config', 22, 0x052c5f],
   ['h600_config', 16, 0x043aa7],
-  ['one_config', 28, 0x048bc6],
-  ['one_config_unprogrammed', 27, 0x01de24],
-  ['arch8_config_a', 28, 0x025eba],
+  ['one_config', 98, 0x048bc6],
+  ['one_config_unprogrammed', 70, 0x01de24],
+  ['arch8_config_a', 30, 0x025eba],
   ['h525_config', 0, 0x011fd0],
   ['h600_safemode_gspm', 0, 0x000879],
 ];
@@ -288,11 +295,14 @@ for (const [name, count, ceiling] of REGION) {
 const BITMAPS: readonly [string, number, number[], number[], number[]][] = [
   // Strides 128 and 64 appear only through a mode record's own program, section 53, and they are
   // where the large pictures are: one is 16389 bytes against 125 for an icon.
-  ['h700_config', 21, [0, 1], [12, 128], [10, 128]],
+  ['h700_config', 22, [0, 1], [12, 128], [10, 128]],
   ['h600_config', 16, [0, 1], [12, 128], [10, 128]],
-  ['one_config', 28, [0, 1], [20, 22, 61, 62, 69, 87, 88, 176],
-    [10, 11, 18, 33, 62, 69, 91, 220]],
-  ['arch8_config_a', 28, [0, 1], [16, 17, 18, 19, 64, 128], [10, 32, 160]],
+  // Section 66 took arch 12 from 28 to 98 by making the program a mode's pages state a root,
+  // which is where the One does its screen drawing.
+  ['one_config', 98, [0, 1],
+    [20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176],
+    [10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220]],
+  ['arch8_config_a', 30, [0, 1], [15, 16, 17, 18, 19, 64, 128], [8, 10, 32, 160]],
   // Arch 9 emits no opcode 2 at all and neither does a safe mode container, which is what says
   // the pictures are optional rather than structural.
   ['h525_config', 0, [], [], []],

@@ -254,13 +254,13 @@ it the same day:
 
 | sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 |
 |---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **98.1%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **98.7%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **98.0%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **98.6%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **94.4%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **55.1%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **91.8%<!--fact:coverage_h700_gspm-->** |
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **99.5%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **99.6%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **99.6%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **99.8%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **97.0%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **64.1%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **98.2%<!--fact:coverage_h700_gspm-->** |
 
 The sixth column is two readers landing the same day: base slot 13's records, found by asking the
 deliberately built config pair of section 58 one question, and the infrared records, whose header
@@ -302,7 +302,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 20374<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 40588<!--fact:string_codes_two_byte_pixel-->
+Section 40 states 21392<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number
@@ -677,6 +677,17 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   What remains is the row on arch 14, 14 candidates per button. The route that would finish it is a
   RAM write to drive the rows from the host, and the rails allow no write target on arch 14, so it
   stays shut.
+* **A mode has pages**, section 66, and that is where the last large structure was. Base slot 6's
+  entry was read as four bytes and it is `6 + 3 * pages`: a `u16` count and an array of page
+  addresses, each page naming a tagged list of its own and a screen program. Found by asking the
+  byte accounting for its **whole** gap list rather than the twenty largest it prints, and noticing
+  that on all four architectures the leftovers formed two families with the same number of gaps in
+  each, which was the mode count. Coverage moves to 99.6% on a Harmony One and a 600, and every
+  picture in an arch 12 bank is now drawn by a program that can be reached.
+
+  **What remains is two runs per container**, both after a mode entry: 5854 bytes on the Harmony
+  One, 2941 on the 600, 4845 on the 700, against the 268 and 237 separate gaps they replace. That
+  is the next thing to read, and it is the same structure on every architecture.
 
 ### Step 7: keep the documents honest
 

@@ -314,6 +314,15 @@ TAGGED_ENTRY_LENGTH = 4
 # section 54 and arch 9 in section 64.
 MODE_PROGRAM_ARCHITECTURES = frozenset({8, 9, 12, 14})
 MODE_TAG_ENTER = 6
+# A page record is `{ u24 list; u24 program }` everywhere except arch 12, which puts one byte in
+# front of it. Read from the consumer, because the layout cannot tell the two apart: the arch 14
+# reader at `0x16918` follows the `u24` at page offset 0 and the arch 12 one at `0x28422` follows
+# the one at offset 1, having read a single byte at offset 0 first. `docs/findings.md` section 66.
+MODE_PAGE_LEAD_ARCHITECTURES = frozenset({12})
+# The two `u24`s a page always carries; the arch 12 lead byte is on top of this.
+MODE_PAGE_POINTERS = 6
+# An entry's fixed head: the kind byte, the record back pointer and the `u16` page count.
+MODE_ENTRY_HEADER = 6
 # Opcodes whose operand's low byte is a state variable index. 0x71 compares a one byte variable,
 # 0x70 the two byte accumulator, 0x72 either.
 STATE_INDEX_OPCODES = frozenset({0x70, 0x71, 0x72})
@@ -755,18 +764,43 @@ class Image:
 
 
 @dataclass
+class ModePage:
+    """One page of a mode: a tagged list of its own and the screen program that draws it.
+
+    The firmware looks a tag up in `list_address` first and falls back to the mode record's own
+    list when it finds nothing there, so a page overrides rather than replaces. `program` goes
+    straight to the screen interpreter, `0x1879C` on arch 14 and `0x295AC` on arch 12.
+
+    `lead` is the byte arch 12 puts in front of the two pointers and no other architecture has.
+    Nothing in either image reads it back, so what it selects is not established.
+    `docs/findings.md` section 66.
+    """
+    address: int
+    lead: Optional[int]
+    list_address: int
+    program: int
+    length: int
+
+
+@dataclass
 class ModeRecord:
     """One base slot 6 entry, with both of its addresses.
 
     `address` is what the section's pointer array holds and `start` is where the record actually
     begins; the two differ by the record's whole body, so a reader that takes the first for the
     second decodes the tail as if it were the head.
+
+    `length` is the tagged list at `start`. `entry_length` is the entry at `address`, which is
+    `6 + 3 * page_count` and not the four bytes this used to read.
     """
     address: int
     start: int
     kind: int
     entries: List['TaggedEntry']
     length: int
+    page_count: int = 0
+    pages: List['ModePage'] = field(default_factory=list)
+    entry_length: int = MODE_ENTRY_HEADER
 
 
 @dataclass
@@ -1305,14 +1339,25 @@ class Container:
         Reading the list at the pointer instead is what made every mode look like the wide form
         with counts running to 255: the byte there is usually zero, which the wide form's marker
         also is. `docs/findings.md` section 52.
+
+        The entry does not stop at that back pointer. Four bytes further sit a `u16` page count
+        and an array of that many page addresses, which is how the consumer at `0x16816` reads
+        it: a literal 6 into the stride helper's offset register, then indexing with stride 3.
+        `docs/findings.md` section 66.
+
+        ```
+        at the table pointer  u8 kind; u24 start; u16 pages; u24 page[pages]
+        ```
         """
         table = self.mode_table()
         if table is None:
             return None
+        lead = self.architecture in MODE_PAGE_LEAD_ARCHITECTURES
+        page_length = MODE_PAGE_POINTERS + (1 if lead else 0)
         out = []
         for address in table:
             off = self.blob_offset_of(address)
-            if off is None or off + 4 > self.length:
+            if off is None or off + MODE_ENTRY_HEADER > self.length:
                 return None
             start = int.from_bytes(self.blob[off + 1:off + 4], 'little')
             start_off = self.blob_offset_of(start)
@@ -1324,9 +1369,32 @@ class Container:
             length = self.tagged_list_length(start)
             if length is None:
                 return None
+            page_count = int.from_bytes(self.blob[off + 4:off + 6], 'little')
+            entry_length = MODE_ENTRY_HEADER + 3 * page_count
+            if off + entry_length > self.length:
+                return None
+            pages = []
+            for k in range(page_count):
+                at = off + MODE_ENTRY_HEADER + 3 * k
+                page = int.from_bytes(self.blob[at:at + 3], 'little')
+                page_off = self.blob_offset_of(page)
+                if page_off is None or page_off + page_length > self.length:
+                    return None
+                first = page_off + (1 if lead else 0)
+                pages.append(ModePage(
+                    address=page,
+                    lead=self.blob[page_off] if lead else None,
+                    list_address=int.from_bytes(self.blob[first:first + 3], 'little'),
+                    program=int.from_bytes(self.blob[first + 3:first + 6], 'little'),
+                    length=page_length))
             out.append(ModeRecord(address=address, start=start, kind=self.blob[off],
-                                  entries=entries, length=length))
+                                  entries=entries, length=length, page_count=page_count,
+                                  pages=pages, entry_length=entry_length))
         return out
+
+    def mode_pages(self) -> List['ModePage']:
+        """Every page of every mode, flattened, in table order."""
+        return [page for record in self.mode_records() or [] for page in record.pages]
 
     def event_map(self) -> Optional['EventMap']:
         """Base slot 4: what each of the thirty firmware events maps to.
@@ -1703,6 +1771,10 @@ class Container:
         Two sources, both derived rather than guessed: base slot 11 is an array of them, and every
         target of a base slot 14 lookup is one. A mode entry carries a third on arch 8 and arch 14,
         which is not included here because the same rule finds nothing on arch 9 and arch 12.
+
+        A mode's pages name a fourth, and outright rather than by computation: on arch 12 the
+        stated address and the computed root never coincide, because the stated program begins
+        with a call to the fragment that sits after the tagged list. `docs/findings.md` section 66.
         """
         try:
             slot = arch_slot(self.architecture, SCREEN_TABLE_SLOT)
@@ -1713,6 +1785,7 @@ class Container:
             out += [target for _, target in record.entries]
             out += [target for _, _, target in record.ranges]
         out += self.mode_program_roots()
+        out += [page.program for page in self.mode_pages()]
         return out
 
     def mode_program_roots(self) -> List[int]:

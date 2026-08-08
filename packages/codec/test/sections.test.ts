@@ -23,10 +23,14 @@ import {
   irRecordBlocks,
   irRecordStart,
   irRegion,
+  MODE_ENTRY_HEADER,
+  MODE_PAGE_LEAD_ARCHITECTURES,
+  MODE_PAGE_POINTERS,
   modeRecords,
   modeTable,
   parameterGroups,
   parse,
+  screenProgram,
   stateTable,
   taggedList,
   timers,
@@ -172,6 +176,61 @@ for (const [name, count, entries] of MODES) {
     }
   });
 }
+
+/**
+ * `[sample, pages across every mode]`. findings.md section 66.
+ *
+ * The entry runs on past the back pointer: a `u16` page count and that many `u24` page addresses,
+ * read that way because the consumer at `0x16816` reads it that way. The Python suite holds the
+ * same statements over the whole corpus; these are the two architectures that differ in shape.
+ */
+const PAGES: readonly [string, number][] = [
+  ['h600_config', 254],
+  ['one_config', 330],
+  ['h525_config', 135],
+  ['arch8_config_a', 141],
+];
+
+for (const [name, pages] of PAGES) {
+  test(`${name}: a mode's pages each name a list and a program`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const records = modeRecords(c) ?? [];
+    const lead = MODE_PAGE_LEAD_ARCHITECTURES.has(c.architecture as number);
+    const expected = MODE_PAGE_POINTERS + (lead ? 1 : 0);
+    let seen = 0;
+    for (const record of records) {
+      assert.equal(record.pages.length, record.pageCount);
+      assert.equal(record.entryLength, MODE_ENTRY_HEADER + 3 * record.pageCount);
+      // One page of every entry sits immediately in front of it, and that distance is the page's
+      // length: nothing in the container states it, so this is where it comes from.
+      const at = c.blobOffsetOf(record.address) as number;
+      const adjacent = record.pages.filter((p) => c.blobOffsetOf(p.address) === at - expected);
+      assert.equal(adjacent.length, 1, 'exactly one page abuts the entry');
+      for (const page of record.pages) {
+        assert.equal(page.length, expected);
+        assert.equal(page.lead === undefined, !lead, 'the lead byte is arch 12 only');
+        // Both fields checked by what they point at. A split one byte out satisfies neither.
+        assert.notEqual(taggedList(c, page.list), undefined, 'the list field is a tagged list');
+        assert.notEqual(screenProgram(c, page.program), undefined, 'the program field decodes');
+        seen += 1;
+      }
+    }
+    assert.equal(seen, pages);
+  });
+}
+
+test('on arch 12 the stated program is never the computed root', skipUnless('one_config'), () => {
+  // Section 53 computes a mode's program as the record start plus its list length, and on arch 12
+  // that address is not the program the page names: the stated one starts later and its first
+  // instruction is a call back to it. So the computed root is a callee rather than a mistake, and
+  // this is the statement that keeps both readings honest.
+  const c = parse(load('one_config') as Uint8Array);
+  for (const record of modeRecords(c) ?? []) {
+    const page = record.pages[0];
+    if (page === undefined) continue;
+    assert.ok(page.program > record.start + record.length);
+  }
+});
 
 test('the key table is base slot 6 first mode record, byte for byte', skipUnless('h600_config'),
   () => {

@@ -17,7 +17,7 @@
 import { Container, GspmError, archSlot } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import { valueMaps } from './valuemap.ts';
-import { modeProgramRoots } from './sections.ts';
+import { modePages, modeProgramRoots } from './sections.ts';
 import { TOUCH_MAP_SLOT } from './tables.ts';
 
 export const SCREEN_TABLE_SLOT = 11;
@@ -249,6 +249,10 @@ export function screenProgramRoots(c: Container): number[] {
     for (const [, , target] of record.ranges) out.push(target);
   }
   out.push(...modeProgramRoots(c));
+  // A mode's pages each name a program outright, which is a stronger source than the computed
+  // root above: on arch 12 the two never coincide, because the stated one begins with a call to
+  // the fragment that sits after the tagged list. `docs/findings.md` section 66.
+  for (const page of modePages(c)) out.push(page.program);
   return out;
 }
 

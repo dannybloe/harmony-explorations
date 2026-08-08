@@ -97,11 +97,11 @@ line, so arch 12 wakes differently from arch 14 and USB yields no part of its ma
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrome 5xx panel, and
-every one of 41793<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
+every one of 55542<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
 program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
 a binary search dispatcher, and a **second interpreter draws the screen**: its own one byte opcodes
-for text, bitmaps, a switch on a state variable and a jump, with 20374<!--fact:screen_programs--> programs across thirteen
+for text, bitmaps, a switch on a state variable and a jump, with 21392<!--fact:screen_programs--> programs across thirteen
 containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
@@ -111,22 +111,25 @@ is loaded, and the row loop stops drawing above row 128 while still consuming th
 unknown, 62% of a Harmony 600 and 82% of a Harmony One reachable from nothing named. It is one
 contiguous array of screen pictures, rows of big endian RGB565 pixels, drawn by programs carried
 inside mode records that nothing could reach until a missing operand count was found in the
-firmware. The byte accounting is the measure of it: the fraction of a config attributed to a
+firmware. A mode turned out to have **pages**, each naming its own key map and its own screen, and
+following those took the Harmony One from 28 pictures reached to 98, which is every picture in its
+bank. The byte accounting is the measure of it: the fraction of a config attributed to a
 structure the codec understands, with any two structures claiming the same byte reported as the
 defect it is.
 
 | | at the start | now |
 |---|---|---|
-| Harmony 700 | 11.4% | **98.1%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | **98.7%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | **98.0%<!--fact:coverage_one_config-->** |
-| 880, arch 8 | 3.6% | **94.4%<!--fact:coverage_arch8_config_a-->** |
-| 525, arch 9 | 7.2% | 55.1%<!--fact:coverage_h525_config--> |
+| Harmony 700 | 11.4% | **99.5%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | **99.6%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | **99.6%<!--fact:coverage_one_config-->** |
+| 880, arch 8 | 3.6% | **97.0%<!--fact:coverage_arch8_config_a-->** |
+| 525, arch 9 | 7.2% | 64.1%<!--fact:coverage_h525_config--> |
 
 Zero overlapping claims anywhere. `make coverage` prints it.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
-classes, which physical button each scan code is, and almost all of architecture 9. See
+classes, which physical button each scan code is, and architecture 9's infrared, which is 24467 of
+the 28165 bytes that sample still has unaccounted. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 

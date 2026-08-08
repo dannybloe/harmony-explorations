@@ -22,7 +22,7 @@ import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { IR_CLASS_STREAM, IR_HEADER_CLASSES, IR_HEADER_LENGTH, irBlockLength, irClass, irGroups,
   irRecordBlocks, irRecordStart } from './ir.ts';
-import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable }
+import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable, taggedList }
   from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
   from './tables.ts';
@@ -153,7 +153,8 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // The pictures, in two claims that between them name every byte once.
   //
   // The bank is the whole region above the named content, one contiguous array of pictures of
-  // which screen opcode 2 names about a third; the walk it performs is its own proof, because
+  // which screen opcode 2 now names all of on arch 12 and all but two elsewhere, section 66; the
+  // walk it performs is its own proof, because
   // landing exactly on the trailer after dozens of variable length records is not something a
   // wrong start does. It is deferred because its start is where every other claim stops, and the
   // trailer is excluded from that because it sits at the very end.
@@ -197,7 +198,16 @@ export function claims(c: Container, withPictures = true): Claim[] {
     if (c.blobOffsetOf(record.start) !== c.markerOffset + 4) {
       at(record.start, record.length, 'slot-6-mode');
     }
-    add(c.blobOffsetOf(record.address), 4, 'slot-6-tail');
+    // The entry, which used to be claimed as four bytes because the page count and the page
+    // array below it were not read. Section 66.
+    add(c.blobOffsetOf(record.address), record.entryLength, 'slot-6-entry');
+    for (const page of record.pages) {
+      at(page.address, page.length, 'slot-6-page');
+      // A page's own tagged list. These sit together in one run directly above base slot 7's
+      // table, and claiming them fills all but a few bytes of it.
+      const list = taggedList(c, page.list);
+      if (list !== undefined) at(page.list, list.length, 'slot-6-page-list');
+    }
   }
 
   // **Base slot 9's sets are still not claimed.** The same misread that section 52 corrected for

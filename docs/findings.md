@@ -6929,6 +6929,209 @@ would make the measure useless for exactly the thing it exists to track.
   the region landing on both gap boundaries, the deliberate refusal of the blocks, and a
   calibration that class 1 is untouched.
 
+## 66. A mode has pages, and each one names its own key map and its own screen
+
+Base slot 6's entry was read as four bytes: a kind byte and a `u24` back pointer to the record
+(section 52). That was not wrong, only short. The entry runs on for a `u16` and an array of `u24`
+addresses, and what those addresses reach is most of what the byte accounting still could not name
+on any architecture.
+
+### How it was found
+
+Not by reading the firmware. By asking `make coverage --detail` for the **whole** gap list rather
+than the twenty largest it prints, and noticing that on all four architectures the leftovers fall
+into two families with **exactly the same number of gaps in each**:
+
+| container | arch | unaccounted | gaps after `slot-6-tail` | gaps after `slot-11-program` |
+|---|---|---|---|---|
+| 525 | 9 | 35201 | 2430 in 114 | 5351 in 114 |
+| 880 a | 8 | 24661 | 3723 in 103 | 8684 in 103 |
+| Harmony One | 12 | 33616 | 7380 in 268 | 22288 in 268 |
+| Harmony 600 | 14 | 9403 | 4177 in 237 | 3256 in 237 |
+
+114, 103, 268 and 237 are the mode counts. Two families with one count between them is one
+structure straddling the four bytes that were claimed, not two structures beside it.
+
+### What the firmware reads
+
+Section 37 located base slot 6's consumer at `0x16816` on the Harmony 700 and said it "follows a
+further pointer at offset 6 inside the entry", read and not followed. Following it is this section.
+
+```
+CALL 0x10B92           seek base slot 6 and follow its pointer
+0x6E3:0x6E4 = mode     the index
+0x6E2 = 3              the literal
+CALL 0x10C36           TBLPTR += 3 * index + literal, then seek
+CALL 0x10A30           follow the u24 there: the entry
+save TBLPTR in F2A..F2C
+0x6E3:0x6E4 = 0
+0x6E2 = 6
+CALL 0x10C36           TBLPTR = entry + 6
+CALL 0x10A30           follow the u24 there
+save TBLPTR in F25..F27
+```
+
+`0x10C36` is four instructions of `3 * index + literal`, which is what makes the offset and the
+stride facts rather than a reading of the bytes. The same helper is used twice with two literals,
+3 for the section's own array and 6 for the entry's.
+
+Then at `0x169AA`, reached when the remote changes page:
+
+```
+TBLPTR = entry
+0x6D9 = 4
+CALL 0x10B48           TBLPTR = entry + 4
+0x6D3:0x6D4 = 0x0D3E
+CALL 0x10A5E           read two bytes into 0x0D3E
+```
+
+`0x10A5E` reads exactly two bytes, and `0x0D3E:0x0D3F` is then compared against a counter that the
+surrounding code increments at one site and decrements at another, wrapping to zero at the top and
+to the count minus one at the bottom. That counter goes back into `0x6E3:0x6E4` with a literal of
+**0**, and `0x10C36` is called again from `entry + 6`. So the `u16` is a count and what follows it
+is an array of that many `u24`s, indexed by a wrapping cursor.
+
+```
+at the table pointer   u8 kind; u24 record start; u16 pages; u24 page[pages]
+```
+
+The old four byte reading is the first two fields of this.
+
+### What a page is
+
+`F25..F27` holds the address of one page, and three routines read it back.
+
+| site | offset | what it does with it |
+|---|---|---|
+| `0x16918` | page + 0 | follow the `u24`, run the tagged list there against a tag |
+| `0x16778` | page + 3 | follow the `u24`, hand it to `0x1879C` |
+| `0x28166` / `0x28422` / `0x281A2` | arch 12, see below | the same two, one byte later |
+
+`0x1879C` is the screen language interpreter, section 40. `0x1B71E` is the tagged list runner,
+section 39. So a page is two pointers: a tagged list of its own and a screen program.
+
+```
+arch 8, 9, 14   u24 list; u24 program                6 bytes
+arch 12         u8 unknown; u24 list; u24 program    7 bytes
+```
+
+**The arch 12 lead byte comes from the consumer, not from the layout**, and it is the one place
+this could have gone wrong quietly. The Harmony One 3.4 image has three call sites for slot 6,
+`0x25D24`, `0x28280` and `0x28380`; `0x28280` is the analogue of `0x16816`, with the same literals
+3 and 6, and its page reader at `0x28166` sets the offset register to **zero and reads one byte**
+before the pointer follows at offset 1 (`0x28422`) and offset 4 (`0x281A2`). Nothing in either
+image reads that byte back afterwards, so what it selects is not established.
+
+The corroboration from the data is that the page abutting each entry sits exactly six bytes before
+it on arch 8, 9 and 14 and exactly seven on arch 12, in **2396 of 2396 entries** across seventeen
+containers. A field split one byte out satisfies neither the distance nor the two checks below.
+
+### The three closures
+
+**Every page pointer resolves**, 2906 of 2906 in seventeen containers spanning four architectures,
+three format versions and four flash bases. Page counts run 1 to 14, with 2238 entries carrying
+exactly one.
+
+**Every list field lands in the one unclaimed run above base slot 7's table**, 1503 of 1503 in the
+eight configs measured before the claim existed, and claiming them fills that run almost exactly:
+
+| container | run above slot 7's table | page lists claim | left over |
+|---|---|---|---|
+| 525 | 1086 | 1052 | 34 |
+| 880 a | 2050 | 2046 | 4 |
+| Harmony One | 3928 | 3924 | 4 |
+| Harmony 600 | 1963 | 1929 | 34 |
+| Harmony 700 | 3592 | 3558 | 34 |
+
+That run was a single contiguous gap in every container and nothing had explained it. It is a pool
+of per page key maps.
+
+**Every program field decodes as a screen program**, 1503 of 1503, which is the check section 53
+established: instructions are variable length with no length field, so a start one byte out
+desynchronises and the next byte read as an opcode is almost certainly not one of the eleven.
+
+And zero overlaps. The byte accounting reports none in any of the seventeen containers after the
+entry, the page and the page's list are all claimed, which is what says the extents are right
+rather than merely plausible.
+
+### It corrects section 53 in one direction and confirms it in the other
+
+Section 53 computes a mode's screen program as the record start plus the length of its tagged
+list. A page **states** it, so the two can be compared.
+
+| arch | first page's program equals the computed root |
+|---|---|
+| 9 | 114 of 114 |
+| 14 | 237 of 237, 374 of 374, 35 of 35 |
+| 8 | 92 of 103, 112 of 125, 140 of 154 twice |
+| 12 | **0 of 268, 0 of 111, 0 of 30** |
+
+On arch 12 they never coincide, and the reason is not that section 53 was wrong: the stated
+program starts 8 to 46 bytes later and its **first instruction is a call to the address section 53
+computed**. Opcode 22 is a call on arch 12 (section 64), so the computed root is a fragment the
+real program calls rather than a mistake. On arch 8 the eleven to fourteen disagreements per
+config are the same shape, 37 to 56 bytes later.
+
+The rule worth keeping: where a structure states an address, use the stated one. The computed one
+was right about which architectures have mode programs and wrong about where three of them start.
+
+### What it moves
+
+Byte accounting, `make coverage`, zero overlaps everywhere:
+
+| container | before | after |
+|---|---|---|
+| 525, arch 9 | 55.1% | 64.1% |
+| 880, arch 8 | 94.4% | 97.0% |
+| Harmony One, arch 12 | 98.0% | 99.6% |
+| Harmony 600, arch 14 | 98.7% | 99.6% |
+| Harmony 700, arch 14 | 98.1% | 99.5% |
+| safe mode, arch 14 | 91.8% | 98.2% |
+| safe mode, arch 12 | 19.1% | 35.0% |
+
+Screen programs across the corpus go from 20374 to 21392 and inline string codes from 41793 to
+55542, every one of which still resolves to a glyph of the font its own program selected.
+
+**And the pictures.** Section 55 could name about a third of a picture bank by screen opcode 2.
+Now **every picture in an arch 12 bank is named**, 98 of 98 and 70 of 70, with exactly two left
+over per container on arch 8 and arch 14. The One goes from 28 addressed pictures to 98, with
+strides up to 176 and row counts up to 220. So the bank is not a region that happens to hold
+pictures, it is the set of pictures the programs draw, and the two unnamed ones per arch 8 and
+arch 14 container are the whole of what is left of that question.
+
+### What it does not do
+
+**It does not read the rest of a mode record.** On arch 12 and arch 14 what remains unaccounted is
+now **seven gaps**, of which two carry almost all of it: 5854 bytes in two runs on the Harmony One,
+2941 on the 600, 4845 on the 700, each following a mode entry. That is the next target and it is a
+much smaller one than the 268 and 237 gaps it replaces.
+
+**It does not touch arch 9's infrared.** 24467 of the 525's remaining 28165 bytes are the class 5
+block area of section 65, which wants a firmware nobody has.
+
+**It does not say what the lead byte selects**, nor the kind byte at the entry's start, which is 0
+in 2326 entries and 1 in 70, all of them on arch 8 and arch 12. The firmware tests its bit 0 at
+`0x168AE` and branches, so it is a flag rather than an index, and that is as far as this goes.
+
+**It does not name the tags.** The tagged list at a page is searched for tag `0x29` and then tag
+`0x2A`, at four sites between them, and the mode record's own list is searched as a fallback when
+the page's yields nothing. So a page **overrides** rather than replaces. Under section 17's split a
+tag is an event type and a scan code, which makes these scan codes 41 and 42 with event type 0, and
+the two sit either side of the code that increments the page cursor. Calling them the page keys is
+the obvious reading and it is not evidence, so it is not claimed here.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6.
+* `src/harmony/gspm.py`: `ModePage`, `MODE_PAGE_LEAD_ARCHITECTURES`, `MODE_PAGE_POINTERS`,
+  `MODE_ENTRY_HEADER`, `Container.mode_pages`, and the page programs in
+  `screen_program_roots`.
+* `packages/codec/src/sections.ts`: the same, plus `modePages`; `src/screen.ts` for the roots and
+  `src/coverage.ts` for the `slot-6-entry`, `slot-6-page` and `slot-6-page-list` claims, which
+  replace the four byte `slot-6-tail` one.
+* `tests/test_interpreter.py` `TestTheModePages`, and `packages/codec/test/sections.test.ts`, with
+  every corpus total moved and the old value recorded beside the new one.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

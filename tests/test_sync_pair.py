@@ -171,13 +171,14 @@ class TestWhatTheChangeDid(unittest.TestCase):
         """
         The screen programs are the strongest single check available on a config, because the
         instructions are variable length with no length field: a walk that desynchronises fails
-        rather than returning something plausible. 384 programs, none undecodable, on a file the
-        current generator produced.
+        rather than returning something plausible. 588 programs, none undecodable, on a file the
+        current generator produced. 384 before section 66 added the programs a mode's pages state,
+        and the check is stronger at the larger number rather than merely different.
         """
         lab.require('one_spare_after_sync')
         programs, failed = container('one_spare_after_sync').reachable_screen_programs()
         self.assertEqual(len(failed), 0)
-        self.assertEqual(len(programs), 384)
+        self.assertEqual(len(programs), 588)
 
     def test_the_picture_bank_still_walks_to_the_trailer(self):
         """

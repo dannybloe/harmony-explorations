@@ -358,7 +358,7 @@ carries step 3; the documents that summarise it had, because a summary is a copy
 test. So the copies are executable now, and `make facts` is the check:
 
 * a number quoted in prose carries a marker naming the fact it states,
-  `20374<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  `21392<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
@@ -577,7 +577,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 94.4%<!--fact:coverage_arch8_config_a--> | 55.1%<!--fact:coverage_h525_config--> | 98.0%<!--fact:coverage_one_config--> | 98.7%<!--fact:coverage_h600_config--> |
+| 97.0%<!--fact:coverage_arch8_config_a--> | 64.1%<!--fact:coverage_h525_config--> | 99.6%<!--fact:coverage_one_config--> | 99.6%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -593,7 +593,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: groups, then records with a 21 byte header | 32, 42, 61, 65 |
-| 6 | the mode table, and its records carry a screen program | 37, 52, 53 |
+| 6 | the mode table. A record carries a screen program, and its entry carries an array of pages | 37, 52, 53, 66 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings | 38 |
 | 9 | the binding table: sets of button bindings with an enter and a leave handler | 39 |
@@ -606,16 +606,17 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 16 | the number sender. Used by no config in the corpus | 39 |
 | 17 | the touch screen hit map on arch 12; elsewhere it names the picture bank | 45, 62 |
 
-**Most of a config is pictures**, sections 49 to 55 and 62: one contiguous array from the end of the
-named content to the trailer, no table and no count, addressed only by screen opcode 2 inside mode
-programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch 8, 12 and
-14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine containers
-that have one.
+**Most of a config is pictures**, sections 49 to 55, 62 and 66: one contiguous array from the end of
+the named content to the trailer, no table and no count, addressed only by screen opcode 2 inside
+mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch 8, 12
+and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine containers
+that have one, and **every picture in an arch 12 bank is drawn by a program**, 98 of 98 and 70 of
+70, with exactly two per container unreached on arch 8 and arch 14.
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 20374 programs across the corpus decode with
-nothing left over.
+byte opcodes, section 40, whose closure is that 21392<!--fact:screen_programs--> programs across the
+corpus decode with nothing left over.
 
 ## Rails a writer will have to respect
 
@@ -664,6 +665,15 @@ produce a config the remote accepts and mishandles.
 ## Next
 
 Step 8, the contribution probe, exists. Step 6 is the next block: label what is left by the proven
-consumer method plus live RAM polling. Arch 9 is the worst covered architecture and a Harmony 525
-is arriving; `docs/memory-map-525.md` is the plan for that session and holds predictions written
-down before the remote was connected, which is the point of it.
+consumer method plus live RAM polling.
+
+**The remaining gap is two runs per container**, section 66. On arch 12 and arch 14 what is left is
+seven gaps, of which two hold almost all of it, and both follow a mode entry: 5854 bytes on the
+Harmony One, 2941 on the 600, 4845 on the 700. That is the sharpest target in the format. Arch 9's
+is different and mostly blocked: 24467 of its 28165 remaining bytes are infrared class 5, which
+wants a firmware nobody has. **Read the whole gap list before choosing a target**: `make coverage
+--detail` prints only the twenty largest, and section 66 was found by asking for all of them and
+noticing two families with the same count.
+
+A Harmony 525 is arriving; `docs/memory-map-525.md` is the plan for that session and holds
+predictions written down before the remote was connected, which is the point of it.

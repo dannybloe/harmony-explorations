@@ -38,5 +38,7 @@ and leave this table alone.
 | `which of 0xFE and 0xFF is which is not established` | section 59 | two pages, and `0xFE` maps from program address zero |
 | `route to the MCU_ID that would measure` | section 59 | unreachable by construction: the window is two 64 KiB pages |
 | `the pictures do not tile` | section 54 | they tile exactly, once `stride` is read as pixels |
+| `About a third of the entries are drawn` | section 66 | all of an arch 12 bank, all but two elsewhere |
+| `an entry is four bytes` | section 66 | `6 + 3 * pages`; the four byte reading was short rather than wrong |
 | `arch 9 uses a different packing` | section 63 | read: two bits a pixel, rows framed by their own byte length |
 | `PROFILES` entry is already in | 8 August 2026 | it was not, until the audit added it |

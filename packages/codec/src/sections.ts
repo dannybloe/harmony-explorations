@@ -32,6 +32,21 @@ export const MODE_TAG_ENTER = 6;
 export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;
 export const HANDLER_TAG_LEAVE = 2;
+/**
+ * A page record is `{ u24 list; u24 program }` everywhere except arch 12, which puts one byte
+ * in front of it.
+ *
+ * Read from the consumer rather than from the layout, because the layout cannot tell the two
+ * apart: the arch 14 reader at `0x16918` follows the `u24` at page offset 0 and the arch 12 one
+ * at `0x28422` follows the `u24` at offset **1**, having read a single byte at offset 0 first
+ * (`0x28166`). Nothing in either image reads that byte back, so what it selects is not known.
+ * `docs/findings.md` section 66.
+ */
+export const MODE_PAGE_LEAD_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
+/** The two `u24`s a page always carries; the arch 12 lead byte is on top of this. */
+export const MODE_PAGE_POINTERS = 6;
+/** An entry's fixed head: the kind byte, the record back pointer and the page count. */
+export const MODE_ENTRY_HEADER = 6;
 
 /** The blob offset of a section's own address, or undefined when the slot is absent or NULL. */
 function sectionStart(c: Container, base: number): number | undefined {
@@ -212,8 +227,27 @@ export function stateRecords(c: Container): StateRecord[] | undefined {
   return records;
 }
 
+/**
+ * One page of a mode: a tagged list of its own and the screen program that draws it.
+ *
+ * The firmware looks a tag up in `list` first and falls back to the mode record's list when it
+ * finds nothing, so a page overrides rather than replaces. `program` goes straight to the screen
+ * interpreter, `0x1879C` on arch 14 and `0x295AC` on arch 12.
+ */
+export interface ModePage {
+  /** The page record's own address, as the entry's pointer array holds it. */
+  address: number;
+  /** The arch 12 byte in front of the two pointers, absent elsewhere. */
+  lead: number | undefined;
+  /** A tagged list, in the same encoding the mode record's list uses. */
+  list: number;
+  /** A screen program, stated rather than computed. */
+  program: number;
+  length: number;
+}
+
 export interface ModeRecord {
-  /** What base slot 6's array holds: a byte inside the record, not its start. */
+  /** What base slot 6's array holds: the entry, which is not the record's start. */
   address: number;
   /** Where the record actually begins, read from the `u24` beside the pointer. */
   start: number;
@@ -221,6 +255,11 @@ export interface ModeRecord {
   entries: TaggedEntry[];
   /** The tagged list only: `1 + 4 * entries`. The rest of the record is not decoded. */
   length: number;
+  /** The `u16` at the entry's offset 4, which is how many pages follow it. */
+  pageCount: number;
+  pages: ModePage[];
+  /** The entry itself: `6 + 3 * pageCount`, which is what the byte accounting claims. */
+  entryLength: number;
 }
 
 /**
@@ -233,22 +272,59 @@ export interface ModeRecord {
  * Reading it at the pointer instead is what made every mode look like the wide form with counts
  * running to 255: the byte there is usually zero, and so is the wide form's marker.
  * `docs/findings.md` section 52.
+ *
+ * The entry does not stop at that back pointer. Four bytes further sit a `u16` page count and an
+ * array of that many page addresses, which is how the consumer at `0x16816` reads it: it loads a
+ * literal 6 into the stride helper's offset register and indexes from there with stride 3.
+ * `docs/findings.md` section 66.
  */
 export function modeRecords(c: Container): ModeRecord[] | undefined {
   const table = modeTable(c);
   if (table === undefined) return undefined;
+  const lead = c.architecture !== undefined && MODE_PAGE_LEAD_ARCHITECTURES.has(c.architecture);
+  const pageLength = MODE_PAGE_POINTERS + (lead ? 1 : 0);
   const out: ModeRecord[] = [];
   for (const address of table.addresses) {
     const off = c.blobOffsetOf(address);
-    if (off === undefined || off + 4 > c.blob.length) return undefined;
+    if (off === undefined || off + MODE_ENTRY_HEADER > c.blob.length) return undefined;
     const start = u24(c.blob, off + 1);
     const startOff = c.blobOffsetOf(start);
     if (startOff === undefined || startOff >= off) return undefined;
     const list = taggedList(c, start);
     if (list === undefined) return undefined;
-    out.push({ address, start, kind: u8(c.blob, off), entries: list.entries, length: list.length });
+    const pageCount = u16(c.blob, off + 4);
+    const entryLength = MODE_ENTRY_HEADER + 3 * pageCount;
+    if (off + entryLength > c.blob.length) return undefined;
+    const pages: ModePage[] = [];
+    for (let k = 0; k < pageCount; k += 1) {
+      const page = u24(c.blob, off + MODE_ENTRY_HEADER + 3 * k);
+      const pageOff = c.blobOffsetOf(page);
+      if (pageOff === undefined || pageOff + pageLength > c.blob.length) return undefined;
+      pages.push({
+        address: page,
+        lead: lead ? u8(c.blob, pageOff) : undefined,
+        list: u24(c.blob, pageOff + (lead ? 1 : 0)),
+        program: u24(c.blob, pageOff + (lead ? 1 : 0) + 3),
+        length: pageLength,
+      });
+    }
+    out.push({
+      address,
+      start,
+      kind: u8(c.blob, off),
+      entries: list.entries,
+      length: list.length,
+      pageCount,
+      pages,
+      entryLength,
+    });
   }
   return out;
+}
+
+/** Every page of every mode, flattened, in table order. */
+export function modePages(c: Container): ModePage[] {
+  return (modeRecords(c) ?? []).flatMap((record) => record.pages);
 }
 
 /**
