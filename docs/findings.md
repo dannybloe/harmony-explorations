@@ -6415,6 +6415,21 @@ arch 12, so that is the application image plus `0x24`, and the byte there is `0x
 image, and where it does resolve is not established. Both halves are worth stating: the accessor is
 located, and reading it does not currently produce the answer the device gives.
 
+**One explanation is ruled out, on 8 August 2026.** The obvious one was that the installed image
+differs from the published package, since only the package had been read at that address. It does
+not: the One's own dump of external flash at `0x020000` is byte identical to
+`one-3.4-code-base0x20000.bin` over the package's whole 60050 bytes, and its byte at `0x020024` is
+`0xDE` as well. The builder's field order was re-derived at the same time and it holds: the twelve
+bytes are sent from `0xD26`, `0xD27`, `0xD21`, `0xD20`, `0xD2A` then `0xD2B` to `0xD2F`, `0xD24` and
+`0xD22`, which puts fields 7, 8 and 10 on the accessors already proved by address and leaves field 9
+on `0x24290` with nothing else writing its variable in between.
+
+So what is left is a **hardware** question rather than a firmware one: what a `TBLRD` returns on this
+part when `TBLPTR` is past the on-chip flash, which is where `0x020024` sits if the internal memory
+is 128 KB. The One's own `0xFF` page holds `0x16` at `+0x0007`, which is program `0x010007` and is
+what the pairing predicts, so a table read that folded the address into on-chip memory would have to
+fold `0x020024` onto `0x010007` and there is no rule under which it does.
+
 **Field 6 is the only field with no reading at all.** Section 57 established it is a compiled in
 `0x0C` on all four images, which killed the idea that it counts the fields, and put nothing in its
 place.

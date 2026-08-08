@@ -674,7 +674,9 @@ produce a config the remote accepts and mishandles.
 
 * **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
-  ten fields have a reading, section 59.
+  ten fields have a reading, section 59. The installed image is ruled out as the explanation: the
+  One's own flash dump is byte identical to the package there, so what is left is what a `TBLRD`
+  does past the on-chip flash, which is a hardware question and not a firmware one.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on

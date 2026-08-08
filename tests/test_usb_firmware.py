@@ -662,6 +662,36 @@ class TestFieldFourIsTheArchitecture(unittest.TestCase):
         self.assertEqual(sorted(INTERNAL_IMAGE_FIELDS), [8, 9, 10])
         self.assertEqual(len(set(INTERNAL_IMAGE_FIELDS.values())), 3)
 
+    def test_field_nine_reads_an_address_the_device_does_not_answer_with(self):
+        """The open half of section 59, pinned so it cannot quietly stop being open.
+
+        Field 9's accessor is a bare table read of program `0x020024` and the byte there is `0xDE`,
+        while the One reports `0x16`. What this adds is a negative: the byte is `0xDE` in the
+        package image **and** in the same unit's own dump of external flash at `0x020000`, which
+        are byte identical over the package's length, so the discrepancy is not the installed
+        image differing from the one that was published.
+        """
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        base = 0x20000
+        # The routine, in full: three writes to TBLPTR, a TBLRD, and the result on its way out.
+        # Read as literals rather than through `address_argument`, which walks to a CALL and this
+        # accessor makes none: that is the whole point of it being the odd one.
+        written, literal = {}, None
+        for at in range(0x24290, 0x2429A, 2):
+            instruction = isa.decode(code, at - base, base)
+            if instruction.mnemonic == 'MOVLW':
+                literal = instruction.fields['k']
+            elif instruction.mnemonic == 'MOVWF':
+                written[instruction.fields['f']] = literal
+            elif instruction.mnemonic == 'CLRF':
+                written[instruction.fields['f']] = 0
+        upper, high, low = written[0xF8], written[0xF7], written[0xF6]
+        self.assertEqual((upper << 16) | (high << 8) | low, 0x020024)
+        self.assertEqual(isa.decode(code, 0x2429A - base, base).mnemonic, 'TBLRD*')
+        self.assertEqual(code[0x020024 - base], 0xDE)
+        self.assertEqual(ONE_VERSION_BLOCK[9], 0x16, 'what the remote answers instead')
+
     def test_the_packing_can_only_express_fifteen_architectures(self):
         """
         A writer rail worth having: the high nibble is built with ANDLW 0xF0 after a SWAPF, so an
