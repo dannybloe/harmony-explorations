@@ -66,6 +66,23 @@ One consequence worth stating when asking: on arch 8 the serial number is at fla
 below `firmware_base`, so a firmware dump cannot contain it. `--dump-safemode` reads the region
 that does.
 
+## The documented long option for `-b` does not exist
+
+`--help` and `concordance.1` both name the flag `-b, --binary-only`. `long_options` in
+`concordance/concordance.c` registers it as `"binary"`, and getopt matches unambiguous
+abbreviations rather than extensions, so the documented spelling is not a longer form of a valid
+one, it is simply rejected:
+
+```
+--binary-only -> concordance: unrecognized option `--binary-only', exit 1
+--binary      -> accepted
+-b            -> accepted
+```
+
+Harmless once known, and worth knowing before telling a contributor to run something. Asking for
+plain `--dump-firmware` avoids the question: the EZUp wrapper it writes is hex encoded `<DATA>`
+elements, which `harmony.ezfile.load_image` reads directly.
+
 ## Suggested changes
 
 ### arch 12, `remote_info.h`

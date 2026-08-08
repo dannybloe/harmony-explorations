@@ -101,8 +101,24 @@ class TestTheDumpReadsTheWrongRegion(unittest.TestCase):
 
 
 @skipWithoutSource
+class TestTheDocumentedLongOptionForB(unittest.TestCase):
+    """The help text and the man page name a long option the binary rejects."""
+
+    def test_the_option_is_registered_as_binary(self):
+        options = _read('concordance', 'concordance.c')
+        self.assertIn('{"binary", no_argument, 0, \'b\'}', options)
+        self.assertNotIn('{"binary-only"', options)
+
+    def test_both_documents_call_it_binary_only(self):
+        # Not a nitpick: it is what a contributor would copy, and getopt matches abbreviations
+        # rather than extensions, so the documented spelling cannot resolve to the registered one.
+        self.assertIn('--binary-only', _read('concordance', 'concordance.c'))
+        self.assertIn(r'\-\-binary\-only', _read('concordance', 'concordance.1'))
+
+
+@skipWithoutSource
 class TestArch8And9DumpTheWholeFirmware(unittest.TestCase):
-    """Why asking a stranger for `concordance -b -f` is worth doing on those two and not on ours."""
+    """Why asking a stranger for `--dump-firmware` is worth doing on those two and not on ours."""
 
     def setUp(self):
         self.arch = _arch_table()
