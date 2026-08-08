@@ -978,8 +978,23 @@ per block:    u16 duration[]      bit 15 set is a mark, bits 14..0 are microseco
 
 **A record's blocks sit below its header, not after it**, so the header is the last thing in the
 run and a record is not one contiguous span. Reading forwards from the header reads the *next*
-record's durations. The header is 21 bytes; `620 + 208 + 21` is the whole of a typical Harmony One
-record. [findings.md](findings.md) section 61.
+record's durations. [findings.md](findings.md) section 61.
+
+~~The header is 21 bytes~~<!--superseded--> **the header states its own length**, section 75. Byte
+`+0x0B` is a count of nine byte **pointer groups**, each `{ u24 block; u24 block; u24 block }`, so
+the header is `12 + 9 * count`:
+
+```
++0x00  ...  eleven bytes: the class at +7, the record's own start at +8
++0x0B  u8   count
++0x0C  group[count]
+```
+
+The count is **1 in every record on arch 12, arch 14 and most of arch 9**, and that case is exactly
+the 21 byte header with two pointers and a trailing NULL that section 61 described. On arch 8 it is
+**2 in exactly 37 records of every config**, whatever else the config holds, and on arch 9 in 61.
+A two group header is 30 bytes and names up to six blocks. `620 + 208 + 21` is the whole of a
+typical Harmony One record, since arch 12 has one group everywhere.
 
 **A block ends at a zero word, and that is not a validity check.** Over 3490 blocks in eleven
 configs the terminator agrees exactly with the region's tiling 3357 times, stops short 133 times,
@@ -992,8 +1007,9 @@ does not is the **class byte**, which is 1 here and 5 there.
 Arch 9's 200 records all read class 5, and every structural property of the header above holds on
 every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
 pointing backwards and staying inside the area, the third `u24` NULL, and no two headers
-overlapping. So **the 21 byte header is one structure across both classes** and a reader can claim
-it. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
+overlapping. So **the header is one structure across both classes** and a reader can claim it,
+though arch 9 carries 61 records with two pointer groups, so its length is read rather than
+assumed, section 75. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
 highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
 the byte accounting could not attribute.
 

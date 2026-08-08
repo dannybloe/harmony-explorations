@@ -22,12 +22,16 @@ import {
   IR_CLASS_ARCH9,
   IR_CLASS_STREAM,
   IR_HEADER_CLASSES,
+  IR_HEADER_BASE,
+  IR_HEADER_GROUP,
   IR_HEADER_LENGTH,
   IR_MAX_GROUPS,
   IR_QUANTITY_CAP,
   IR_QUANTITY_OPCODE,
   IR_RECORD_POINTER_BIAS,
   irClass,
+  irGroupCount,
+  irHeaderLength,
   irQuantity,
   irGroups,
   irPulses,
@@ -829,4 +833,88 @@ test('the second operand space is a sub opcode field, and nothing lands outside 
   for (const boundary of SECOND_SPACE_RANGES) {
     assert.equal(boundary & (boundary + 1), 0, `0x${boundary.toString(16)} is 2^n - 1`);
   }
+});
+
+/**
+ * Section 75: an infrared record header is a counted list of pointer groups.
+ *
+ * The count is the discriminator, so these tests are about it rather than about the bytes: one
+ * number explains a short header, an unclaimed block and the gap between them, and getting it
+ * wrong is what left arch 8 short of a hundred percent for as long as the accounting existed.
+ */
+const GROUPS: [string, number, Record<number, number>][] = [
+  ['arch8_config_a', 8, { 1: 197, 2: 37 }],
+  ['arch8_config_c', 8, { 1: 417, 2: 37 }],
+  ['h700_config', 14, { 1: 350 }],
+  ['one_config', 12, { 1: 328 }],
+  ['h525_config', 9, { 1: 139, 2: 61 }],
+];
+
+for (const [name, architecture, expected] of GROUPS) {
+  test(`${name}: the header states how many pointer groups it has`, skipUnless(name), () => {
+    const c = parse(load(name)!);
+    assert.equal(c.architecture, architecture);
+    const counts: Record<number, number> = {};
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        const n = irGroupCount(c, address);
+        counts[n] = (counts[n] ?? 0) + 1;
+        // The header length follows from the count and nothing else.
+        assert.equal(irHeaderLength(c, address), IR_HEADER_BASE + IR_HEADER_GROUP * n);
+      }
+    }
+    assert.deepEqual(counts, expected);
+  });
+}
+
+test('only arch 8 and arch 9 carry a second pointer group', skipUnless('one_config'), () => {
+  // The reason section 61 read the header as a flat 21 bytes and it held for three architectures:
+  // a count of one is exactly that header. Assert the negative, or the reading is untested.
+  for (const name of ['one_config', 'h700_config', 'h600_config']) {
+    if (!load(name)) continue;
+    const c = parse(load(name)!);
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        assert.equal(irGroupCount(c, address), 1, `${name} at 0x${address.toString(16)}`);
+        assert.equal(irHeaderLength(c, address), IR_HEADER_LENGTH);
+      }
+    }
+  }
+});
+
+test('every arch 8 config has exactly 37 two group records', skipUnless('arch8_config_a'), () => {
+  // The four configs carry 234, 397, 454 and 462 records between them, and the count of two group
+  // ones does not move. Whatever selects the second group, it is not how much the config holds.
+  for (const name of ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d']) {
+    if (!load(name)) continue;
+    const c = parse(load(name)!);
+    let two = 0;
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) if (irGroupCount(c, address) === 2) two += 1;
+    }
+    assert.equal(two, 37, name);
+  }
+});
+
+test('a second group names blocks the first does not', skipUnless('arch8_config_a'), () => {
+  const c = parse(load('arch8_config_a')!);
+  let twoGroup = 0;
+  for (const group of irGroups(c) ?? []) {
+    for (const address of group.addresses) {
+      if (irGroupCount(c, address) !== 2) continue;
+      twoGroup += 1;
+      const blocks = irRecordBlocks(c, address);
+      // Every one of the 37 names at least one block beyond the first group's three pointers,
+      // which is what the unclaimed tails were.
+      const off = c.blobOffsetOf(irRecordStart(c, address)!)!;
+      const byte = (at: number): number => c.blob[at] ?? 0;
+      const first = [0, 3, 6]
+        .map((d) => byte(off + IR_HEADER_BASE + d) |
+          (byte(off + IR_HEADER_BASE + d + 1) << 8) |
+          (byte(off + IR_HEADER_BASE + d + 2) << 16))
+        .filter((v) => v !== 0);
+      assert.ok(blocks.length > first.length, `0x${address.toString(16)} gained no block`);
+    }
+  }
+  assert.equal(twoGroup, 37);
 });

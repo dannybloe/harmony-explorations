@@ -37,7 +37,27 @@ export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, 
  * is a run of `u16` durations closed by a zero word; either pointer may be NULL and two records
  * may name the same block. `docs/findings.md` section 61.
  */
-export const IR_HEADER_LENGTH = 21;
+/**
+ * The fixed part of a record header, before the pointer groups.
+ *
+ * Section 61 read the header as a flat 21 bytes with two block pointers and a NULL. That is the
+ * `count == 1` case and it is every record on arch 12, arch 14 and arch 9, which is why it held.
+ */
+export const IR_HEADER_BASE = 12;
+/** One group: three `u24` block pointers, any of which may be NULL. */
+export const IR_HEADER_GROUP = 9;
+export const IR_POINTERS_PER_GROUP = 3;
+/**
+ * Header byte `+11`: how many nine byte pointer groups follow, so the header is `12 + 9 * count`.
+ *
+ * It is 1 in every record on arch 12, arch 14 and arch 9. On arch 8 it is 2 in 37 records of every
+ * config, and that one number explains three separate holes in the accounting at once: 37 headers
+ * were claimed nine bytes short, 37 blocks went unclaimed, and the 37 gaps in between were the
+ * second group. `docs/findings.md` section 75.
+ */
+export const IR_GROUP_COUNT_AT = 11;
+/** The `count == 1` header, which is every record outside arch 8. Kept for callers that assume it. */
+export const IR_HEADER_LENGTH = IR_HEADER_BASE + IR_HEADER_GROUP;
 export const IR_BLOCK_POINTERS = [12, 15];
 export const IR_BLOCK_TERMINATOR = 0;
 /** Bounds the walk so a record of an undecoded class runs off the end rather than to the end. */
@@ -47,17 +67,41 @@ export const IR_BLOCK_LIMIT = 8192;
 export function irRecordBlocks(c: Container, address: number): number[] {
   const start = irRecordStart(c, address);
   const off = start === undefined ? undefined : c.blobOffsetOf(start);
-  if (off === undefined || off + IR_HEADER_LENGTH > c.blob.length) return [];
+  if (off === undefined) return [];
+  const groups = irGroupCount(c, address);
+  if (off + IR_HEADER_BASE + IR_HEADER_GROUP * groups > c.blob.length) return [];
   const found: number[] = [];
-  for (const at of IR_BLOCK_POINTERS) {
-    const value = u24(c.blob, off + at);
-    if (value !== 0) found.push(value);
+  for (let group = 0; group < groups; group += 1) {
+    for (let slot = 0; slot < IR_POINTERS_PER_GROUP; slot += 1) {
+      const value = u24(c.blob, off + IR_HEADER_BASE + IR_HEADER_GROUP * group + 3 * slot);
+      if (value !== 0) found.push(value);
+    }
   }
   return found;
 }
 
 /**
- * A block's length from its own terminator, or undefined when it does not close inside the bound.
+ * How many pointer groups the record at `address` carries. One when the header is unreadable.
+ *
+ * Clamped rather than trusted: a count of zero would make the header claim less than its fixed
+ * part, and a wild one would run the pointer walk off the end of a neighbouring record.
+ */
+export function irGroupCount(c: Container, address: number): number {
+  const start = irRecordStart(c, address);
+  const off = start === undefined ? undefined : c.blobOffsetOf(start);
+  if (off === undefined || off + IR_HEADER_BASE >= c.blob.length) return 1;
+  const stated = c.blob[off + IR_GROUP_COUNT_AT] ?? 0;
+  if (stated < 1 || stated > IR_MAX_GROUPS) return 1;
+  return stated;
+}
+
+/** The header's own length, `12 + 9 * count`. */
+export function irHeaderLength(c: Container, address: number): number {
+  return IR_HEADER_BASE + IR_HEADER_GROUP * irGroupCount(c, address);
+}
+
+/**
+ * A block's length from its terminating zero word, or undefined when it does not close.
  *
  * Not a validity check: arch 9's blocks all find a zero word and none of them is right, so callers
  * gate on the class byte instead. `docs/findings.md` section 61.

@@ -14,7 +14,7 @@ here owns; this one differs in that the gap is about to close.
 ## Why architecture 9 is worth the trouble
 
 It is the worst covered architecture in the corpus by a wide margin. The byte accounting reads
-**66.4%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
+**67.1%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
 is no arch 9 firmware anywhere, so every structure that does not decode has nothing to appeal to.
 
 **The margin is almost entirely one structure.** Infrared class 5 is 24467 of the 26368 bytes

@@ -43,7 +43,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Sixteen have been found and corrected so far. The newest is section 74's, and it is the same
+Seventeen have been found and corrected so far. The newest is section 75's, and it is the kindest
+kind: section 61 read an infrared header as a flat 21 bytes and every word of its argument holds,
+because 21 bytes is what the header is when the count at `+0x0B` is one, which is every record it
+looked at. The claim was not wrong so much as unaware of its own scope, and the byte that states
+the scope was sitting unnamed in the layout it published.
+
+Before it, section 74's, and it is the same
 mistake twice in a row: section 71 settled whether `0x74` and `0x75` are one instruction or two by
 reading the architecture that issues neither of them. The rule that would have caught it was
 written down in section 73, one section earlier, after it had cost three misreadings there. Count
@@ -6505,7 +6511,13 @@ accounting reported. They were unclaimed on purpose. `packages/codec/src/coverag
 Both halves of that were right, and both are now fixed. The reason the heuristic failed is worth
 following, because the record is laid out the opposite way round from everything else here.
 
-### The header is 21 bytes and points backwards
+### The header states its own length and points backwards
+
+> ~~The header is 21 bytes~~. **Corrected by section 75.** It is `12 + 9 * count`, and `+0x0B`,
+> unnamed below, is the count of nine byte pointer groups. Twenty one is the `count == 1` case,
+> which is every record on arch 12 and arch 14 and most of arch 9, so everything this section
+> argues holds; what it missed is 37 records a config on arch 8 that carry a second group, and
+> with it the "zero in every record seen" at `+0x12`, which is the first group's third pointer.
 
 ```
 +0x00  u16  } seven bytes, the same in every record of one device
@@ -6513,10 +6525,10 @@ following, because the record is laid out the opposite way round from everything
 +0x06  u8   }
 +0x07  u8   the encoding class, and where the group array's pointer lands
 +0x08  u24  the record's own start, the back pointer of section 42
-+0x0B  u8
-+0x0C  u24  data block, or NULL
-+0x0F  u24  data block, or NULL
-+0x12  u24  zero in every record seen
++0x0B  u8   the number of pointer groups that follow, section 75
++0x0C  u24  data block, or NULL   }
++0x0F  u24  data block, or NULL   } one group
++0x12  u24  data block, or NULL   }
 ```
 
 The two block pointers do not point after the header. They point **below** it: a record's durations
@@ -8287,6 +8299,107 @@ state variable 5 is written with a value at or above 12 by an instruction other 
 * `packages/codec/src/actions.ts`: `0x74`, `0x75`, `0x07`'s `0xF8` and `0xFF`, `0x3F`'s `0xF0`.
 * `packages/codec/test/actions.test.ts`: the four tone operands, the disjoint nibble sets, and the
   coverage figures.
+
+
+## 75. An infrared record header is a counted list of pointer groups, and arch 8 closes
+
+Arch 8 sat at 97.7% of its bytes attributed while both target architectures were at 100.0%, and
+the reason recorded for leaving it there was that its remainder wanted a firmware nobody has. Two
+things were wrong with that. The remainder is **self framed**, so it wants no firmware, and arch 8
+being a control rather than a target is a statement about which remote the product supports, not
+about whether a reader is right. The corpus already holds four arch 8 configs and reading them
+costs no hardware.
+
+### The measurement that started it
+
+`make coverage --detail` prints the twenty largest gaps and there are 128, so the first step was
+to ask for all of them. The remainder decomposes, and three of the families have the **same count
+in all four configs**:
+
+| bytes | gaps | between |
+|---|---|---|
+| 7268 | 23 of 316 | an infrared block and the next header |
+| 2444 | 13 of 188 | the same |
+| 333 | 37 of 9 | a header and its own block |
+| 152 | 1 | as the first two |
+| 60 | 54 small | section boundaries |
+
+23 and 13 make 36, and with the 152 that is **37 blocks**. 37 nine byte gaps. And the header byte
+at `+11`, which section 61 recorded without a meaning, is **2 in exactly 37 records**. Three
+independent 37s is not a coincidence, and none of them moves when the config grows from 234 records
+to 462.
+
+### The header is `12 + 9 * count`
+
+Section 61 read the header as a flat 21 bytes: a class byte at `+7`, the record's own start at
+`+8`, two block pointers at `+12` and `+15`, and a NULL at `+18`. That is the `count == 1` case,
+and it is every record on arch 12, arch 14 and arch 9's own 139, which is why it held.
+
+```
++0x00  ...  eleven bytes, class at +7 and the record's own start at +8
++0x0B  u8   count, how many pointer groups follow
++0x0C  group[count], each { u24 block; u24 block; u24 block }
+```
+
+So a two group header is 30 bytes, not 21, and it names up to six blocks rather than two. The
+"NULL at `+18`" was the first group's third pointer, which happens to be NULL in every arch 9
+record and in most others.
+
+**Everything the accounting could not attribute follows from that one byte.** The 37 nine byte
+gaps are the second group. The 37 unclaimed blocks are what its pointers name. And the reason they
+looked like tails of a truncated block is that they sit immediately after the first group's blocks,
+which is how the generator packs them.
+
+### It closes arch 8
+
+| sample | before | after |
+|---|---|---|
+| arch8_config_a | 97.7% | **100.0%** |
+| arch8_config_b | 98.1% | **100.0%** |
+| arch8_config_c | 98.1% | **100.0%** |
+| arch8_config_d | 98.1% | **100.0%** |
+| h525_config, arch 9 | 66.4% | 67.1% |
+
+Arch 12 and arch 14 do not move, which is the check that matters: their count is 1 everywhere, so
+the new reader computes exactly what the old one did. **Zero overlaps in all seventeen containers**,
+before and after. Arch 9 gains 549 bytes from its own 61 two group records, and the rest of its
+remainder is still class 5.
+
+That is a fourth architecture at 100.0%, and the infrared reader is the same code on all four.
+
+### The 49 bytes that are left, and three things they are not
+
+What remains on arch 8 is 60 bytes, of which 51 are single bytes and 49 of those sit between a
+screen program and a mode page. The value is always zero. Recorded here because the obvious
+explanations are all refuted and the next person should not spend the afternoon again:
+
+* **Not length parity.** All 49 padded programs have **even** length, and 358 unpadded ones have
+  odd length. The rule would have to be the opposite of the obvious one and it is not that either.
+* **Not address alignment.** The pad byte falls on both parities of its flash address, and so does
+  the structure after it.
+* **Not a terminator after a jump.** Every one of the 49 programs is four bytes, `SCREEN_JUMP` plus
+  its three operand bytes, and the byte after is `0x00`, which is `SCREEN_END`. That reads like an
+  explicit end the program reader drops. It is not: on arch 12 and arch 14 **zero** of 319 and 478
+  jump ending programs are followed by a zero byte, and on arch 8 only 49 of 251 are.
+
+So they are trailing slack at the end of the screen program area, and what puts them there is open.
+Arch 8 rounds to 100.0% with them, on the same rounding that gives arch 12 its 24 unattributed
+bytes and arch 14 its 41.
+
+### What would falsify it
+
+A record with `+11` above 1 on arch 12 or arch 14, which would mean the count is not what keeps
+those architectures on the old reading. A two group record whose second group names a block already
+named by the first, which would show up as an overlap. An arch 8 config whose count of two group
+records is not 37.
+
+### Where it lands
+
+* `docs/config-format.md`: base slot 5's record header.
+* `packages/codec/src/ir.ts`: `IR_HEADER_BASE`, `IR_HEADER_GROUP`, `IR_GROUP_COUNT_AT`,
+  `irGroupCount`, `irHeaderLength`, and `irRecordBlocks` walking every group.
+* `packages/codec/src/coverage.ts`: the header claim takes its length from the record.
+* `packages/codec/test/sections.test.ts` and `test/coverage.test.ts`.
 
 
 ## References

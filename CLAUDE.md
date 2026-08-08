@@ -569,7 +569,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 74 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 75 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -582,7 +582,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 97.7%<!--fact:coverage_arch8_config_a--> | 66.4%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
+| 100.0%<!--fact:coverage_arch8_config_a--> | 67.1%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -711,15 +711,15 @@ thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F`
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not
 one table across architectures**, so they must not be ported.
 
-The byte accounting has three other remainders, all smaller and none on a user config of a target
-architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, ~~both wanting a firmware
-nobody has~~<!--superseded-->, and 5437 bytes in the **arch 12 safe mode container**, which is 61% of it and appears in no
-user config. A `u8 tag; u8 n; u16 v[n]` walk tiles that run to within a byte and **should not be
-believed on that basis**: with `n` usually zero it tiles almost anything, which is the same trap
-section 67 recorded.
+The byte accounting has two remainders left, neither on a user config of a target architecture:
+25819 bytes on arch 9, nearly all class 5 infrared, and 5437 bytes in the **arch 12 safe mode
+container**, which is 61% of it and appears in no user config. A `u8 tag; u8 n; u16 v[n]` walk tiles
+that run to within a byte and **should not be believed on that basis**: with `n` usually zero it
+tiles almost anything, which is the same trap section 67 recorded.
 
-**Both target architectures are at 100.0%**, sections 66 and 67, with 24 bytes unattributed in a
-1.63 MB Harmony One config and 41 in a 600, and zero overlaps in all seventeen containers. The last
+**Three architectures are at 100.0%**, sections 66, 67 and 75, with 24 bytes unattributed in a
+1.63 MB Harmony One config, 41 in a 600 and 60 in an 880, and zero overlaps in all seventeen
+containers. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
 That completes the first of milestone M2's three parts for arch 12 and arch 14.
@@ -731,21 +731,20 @@ identical action list. Nothing reads a copy, and an emitter must still reproduce
 this wrong twice by pairing the runs by address rather than by mode table order and by comparing
 them byte for byte.
 
-What is left is infrared, on the two architectures with no firmware **in the lab**, which is not
-the same as none obtainable: `concordance -b -f` returns the complete firmware region on both, so
-an arch 8 image is one contributor away and the 525's arrives with the remote.
+**Arch 8 closed on 8 August 2026 and needed no firmware to do it**, section 75. Its whole
+remainder came from one byte: an infrared record header is `12 + 9 * count` with the count at
+`+0x0B`, not the flat 21 bytes section 61 read, and 37 records a config carry a second pointer
+group. That one number explained three separate gap families at once, 37 short headers, 37
+unclaimed blocks and the 37 gaps between them, and none of the counts moves when the config grows
+from 234 records to 462.
 
-**Most of arch 8's remainder needs no firmware at all.** Measured on 8 August 2026 with the full
-gap list rather than the twenty largest: of its 10257 bytes, 9712 are **36 duration blocks framed
-by `0x7FFF`**, 23 of 316 bytes and 13 of 188, each sitting between an infrared block and the next
-header, with the counts identical in all four arch 8 configs and a 122 byte prefix shared across
-the 23. A terminator that states itself is readable without a dispatcher to read. Another 51 bytes
-are single byte alignment padding, 49 of them on the boundary between a screen program and a mode
-page, which is an emitter rail regardless of architecture. Arch 9's 24467 bytes of class 5 are a
-different matter and do want the firmware. **Read the
-whole gap list before choosing a target**: `make coverage
---detail` prints only the twenty largest, and section 66 was found by asking for all of them and
-noticing two families with the same count.
+**Read the whole gap list before choosing a target**, and this is the second finding it produced:
+`make coverage --detail` prints only the twenty largest of 128, and both this and section 66 came
+from asking for all of them and noticing families with the same count.
+
+What is left is arch 9's class 5 infrared, which does want an arch 9 firmware. The lab has none and
+the route is known: `concordance -b -f` returns the complete firmware region on arch 8 and arch 9,
+so the 525's arrives with the remote.
 
 A Harmony 525 is arriving; `docs/memory-map-525.md` is the plan for that session and holds
 predictions written down before the remote was connected, which is the point of it.
