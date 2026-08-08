@@ -184,7 +184,7 @@ than a hope: the size cap that breaks arch 14 happens to be the region size on a
 Two consequences. `concordance -b -f` is a reasonable thing to ask a stranger for, on a 720, 785,
 880, 882 or 885, and the request can honestly say the file cannot contain their serial number,
 which sits at flash `0x000110`, below `firmware_base`. And **arch 9's infrared, listed as wanting a
-firmware nobody has, is reachable**: the 525 arriving in August 2026 can be dumped this way.
+firmware nobody has, is reachable**:<!--superseded--> the 525 arriving in August 2026 can be dumped this way.
 
 Asserted in `tests/test_concordance_notes.py`, which reads the constants out of a concordance
 checkout and skips when there is none. Nothing here reads that source for structure or copies it;
@@ -7158,7 +7158,9 @@ now **seven gaps**, of which two carry almost all of it: 5854 bytes in two runs 
 much smaller one than the 268 and 237 gaps it replaces.
 
 **It does not touch arch 9's infrared.** 24467 of the 525's remaining 28165 bytes are the class 5
-block area of section 65, which wants a firmware nobody has.
+block area of section 65, which wants an arch 9 firmware. The lab has none, and the route is
+known: `concordance -b -f` returns the whole firmware region on arch 9, and the 525 arriving in
+August 2026 can be dumped that way.
 
 **It does not say what the lead byte selects**, nor the kind byte at the entry's start, which is 0
 in 2326 entries and 1 in 70, all of them on arch 8 and arch 12. The firmware tests its bit 0 at
@@ -7329,7 +7331,14 @@ three parts of milestone M2 in `docs/roadmap.md` complete for arch 12 and arch 1
 now rebuild essentially all of a config rather than copying a residue.
 
 Arch 8 and arch 9 are not there, and both remainders are infrared: 9864 bytes of duration blocks on
-arch 8 and 24467 of class 5 on arch 9, the latter still wanting a firmware nobody has.
+arch 8 and 24467 of class 5 on arch 9, ~~the latter still wanting a firmware nobody has~~.<!--superseded-->
+
+> **Corrected on 8 August 2026.** "Nobody has" was read as a permanent condition and it is a
+> statement about our lab. `concordance -b -f` returns the complete firmware region on both arch 8
+> and arch 9, so an arch 8 image is one contributor away and arch 9's arrives with the 525. Worse
+> for the original claim, arch 8's blocks are **framed by `0x7FFF`** and want no firmware at all:
+> 9712 of its 10257 bytes are 36 such blocks, 23 of 316 bytes and 13 of 188, with the counts
+> identical in all four arch 8 configs. The claim discouraged work that was already possible.
 
 ### Where it lands
 

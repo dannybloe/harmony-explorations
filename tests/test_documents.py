@@ -109,3 +109,38 @@ class TestTheCorrectionExemption(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class TestAPhraseCanHideInALineBreak(unittest.TestCase):
+    """`docs/findings.md` section 74's sweep.
+
+    The phrase check scanned line by line, and these documents wrap at about a hundred characters,
+    so a banned phrase long enough to straddle a wrap was invisible to it. Measured before the fix:
+    two of seventeen occurrences in the tree, both of the same 29 character phrase, and one of them
+    was a real restatement that had survived two sweeps.
+    """
+
+    def test_the_flattened_text_carries_a_line_number_per_character(self):
+        lines = ['first line', 'second line']
+        flat, owner = facts.flatten(lines)
+        self.assertEqual(flat, 'first line second line')
+        self.assertEqual(len(owner), len(flat))
+        self.assertEqual(owner[0], 0)
+        self.assertEqual(owner[flat.index('second')], 1)
+
+    def test_indentation_does_not_survive_flattening(self):
+        """Otherwise a phrase wrapping into an indented continuation would still be missed."""
+        flat, _ = facts.flatten(['a claim that', '    continues indented'])
+        self.assertEqual(flat, 'a claim that continues indented')
+
+    def test_a_phrase_split_across_a_wrap_is_found(self):
+        """The behaviour the fix exists for, stated against the checker's own search."""
+        lines = ['some text wanting a', 'firmware nobody has, restated']
+        flat, owner = facts.flatten(lines)
+        at = flat.lower().find('wanting a firmware nobody has')
+        self.assertGreaterEqual(at, 0, 'a wrapped phrase must be visible once flattened')
+        # And it must report the line the phrase starts on, not the one it ends on.
+        self.assertEqual(owner[at], 0)
+
+    def test_the_documents_are_clean_under_the_flattened_check(self):
+        """The check itself, over the real tree. Pure text, so it needs no lab."""
+        self.assertEqual(facts.check_phrases(), [])

@@ -213,6 +213,26 @@ def check_numbers(facts, write, edits=None):
     return problems
 
 
+def flatten(lines):
+    """The document as one string, plus the line number owning each character.
+
+    Searching line by line cannot see a phrase that wraps, and these documents wrap at about a
+    hundred characters, so any phrase of more than a few words can hide in a line break. Measured
+    on 8 August 2026, before this existed: two of seventeen occurrences in the tree were invisible,
+    both of the same 29 character phrase, and one of them was a real restatement.
+    """
+    parts = []
+    owner = []
+    for i, line in enumerate(lines):
+        text = line.strip()
+        if parts:
+            parts.append(' ')
+            owner.append(i)
+        parts.append(text)
+        owner.extend([i] * len(text))
+    return ''.join(parts), owner
+
+
 def check_phrases():
     """A dead phrase may appear only inside a correction. Returns a list of complaints."""
     problems = []
@@ -221,24 +241,28 @@ def check_phrases():
         if os.path.abspath(doc) == os.path.abspath(SUPERSEDED):
             continue
         lines = open(doc, encoding='utf-8').read().splitlines()
-        for i, line in enumerate(lines):
-            for phrase, killed_by in phrases:
-                if phrase.lower() not in line.lower():
-                    continue
-                if QUOTED in line:
-                    continue
-                # A correction may open on this line, the one before it or the one after: a
-                # blockquote usually introduces the quoted claim on its own line first, and an
-                # italic note usually follows the sentence it corrects.
-                context = [line.lstrip()]
-                if i:
-                    context.append(lines[i - 1].lstrip())
-                if i + 1 < len(lines):
-                    context.append(lines[i + 1].lstrip())
-                if any(is_correction(c) for c in context):
-                    continue
-                problems.append('%s:%d: superseded by %s: "%s"'
-                                % (rel(doc), i + 1, killed_by, phrase))
+        flat, owner = flatten(lines)
+        low = flat.lower()
+        for phrase, killed_by in phrases:
+            wanted = ' '.join(phrase.split()).lower()
+            at = low.find(wanted)
+            while at >= 0:
+                first = owner[at]
+                last = owner[min(at + len(wanted) - 1, len(owner) - 1)]
+                span = lines[first:last + 1]
+                # A correction may open on any line the phrase spans, the one before, or the one
+                # after: a blockquote usually introduces the quoted claim on its own line first,
+                # and an italic note usually follows the sentence it corrects.
+                context = [line.lstrip() for line in span]
+                if first:
+                    context.append(lines[first - 1].lstrip())
+                if last + 1 < len(lines):
+                    context.append(lines[last + 1].lstrip())
+                if not any(QUOTED in line for line in span) \
+                        and not any(is_correction(c) for c in context):
+                    problems.append('%s:%d: superseded by %s: "%s"'
+                                    % (rel(doc), first + 1, killed_by, phrase))
+                at = low.find(wanted, at + 1)
     return problems
 
 

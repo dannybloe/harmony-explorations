@@ -57,4 +57,5 @@ and leave this table alone.
 | `PROFILES` entry is already in | 8 August 2026 | it was not, until the audit added it |
 | `one instruction, not two` | section 74 | two instructions: arch 12 tests both, and arch 14 issues neither |
 | `75 to 80% on the One` | section 74 | 97.0%, once the beeper, the date step and the silent write were read |
+| `wanting a firmware nobody has` | 8 August 2026 | `concordance -b -f` returns the whole firmware region on arch 8 and arch 9, so an image is one contributor away; and most of arch 8's remainder is self framed and needs none |
 | `does not return firmware.` | section 2, 8 August 2026 | it does on arch 8 and arch 9; the defect is two architecture entries, so the claim is only true with a scope, and a sentence that ends there has none |

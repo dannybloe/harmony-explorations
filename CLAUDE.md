@@ -659,7 +659,9 @@ produce a config the remote accepts and mishandles.
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
   ten fields have a reading, section 59.
 * **Infrared class 5**, arch 9. The 21 byte header is read, section 65; the 24511 bytes below the
-  headers are not, they are not duration streams, and this one wants a firmware nobody has.
+  headers are not, and they are not duration streams. This one wants an arch 9 firmware, which the
+  lab does not have and which the incoming 525 supplies: `concordance -b -f` dumps the whole
+  firmware region on that architecture.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
@@ -710,8 +712,8 @@ which is a six byte instruction. **`0x3F`'s bands are the only structure in the 
 one table across architectures**, so they must not be ported.
 
 The byte accounting has three other remainders, all smaller and none on a user config of a target
-architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, both wanting a firmware nobody
-has, and 5437 bytes in the **arch 12 safe mode container**, which is 61% of it and appears in no
+architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, ~~both wanting a firmware
+nobody has~~<!--superseded-->, and 5437 bytes in the **arch 12 safe mode container**, which is 61% of it and appears in no
 user config. A `u8 tag; u8 n; u16 v[n]` walk tiles that run to within a byte and **should not be
 believed on that basis**: with `n` usually zero it tiles almost anything, which is the same trap
 section 67 recorded.
@@ -729,8 +731,18 @@ identical action list. Nothing reads a copy, and an emitter must still reproduce
 this wrong twice by pairing the runs by address rather than by mode table order and by comparing
 them byte for byte.
 
-What is left is infrared, on the two architectures with no firmware: 9864 bytes of duration blocks
-on arch 8 and 24467 of class 5 on arch 9, the latter wanting a firmware nobody has. **Read the
+What is left is infrared, on the two architectures with no firmware **in the lab**, which is not
+the same as none obtainable: `concordance -b -f` returns the complete firmware region on both, so
+an arch 8 image is one contributor away and the 525's arrives with the remote.
+
+**Most of arch 8's remainder needs no firmware at all.** Measured on 8 August 2026 with the full
+gap list rather than the twenty largest: of its 10257 bytes, 9712 are **36 duration blocks framed
+by `0x7FFF`**, 23 of 316 bytes and 13 of 188, each sitting between an infrared block and the next
+header, with the counts identical in all four arch 8 configs and a 122 byte prefix shared across
+the 23. A terminator that states itself is readable without a dispatcher to read. Another 51 bytes
+are single byte alignment padding, 49 of them on the boundary between a screen program and a mode
+page, which is an emitter rail regardless of architecture. Arch 9's 24467 bytes of class 5 are a
+different matter and do want the firmware. **Read the
 whole gap list before choosing a target**: `make coverage
 --detail` prints only the twenty largest, and section 66 was found by asking for all of them and
 noticing two families with the same count.
