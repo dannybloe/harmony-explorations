@@ -382,12 +382,18 @@ SCREEN_JUMP = 20
 # and a return address. Opcode 23 is its return, and reading the pair together is what named both.
 # No config in the corpus uses it, so the width is firmware and the semantics are untested.
 #
-# On arch 9 it takes eleven, and the last three name a picture rather than a program. No arch 9
-# firmware exists, so that rests on the corpus, but the closure is not weak: at eleven, all 912
-# instances across 114 mode records name one of exactly four addresses, and those four were derived
-# independently by walking the picture bank. Every other width scores zero.
+# On arch 9 it takes **one**, and that operand is a row index. This document said eleven until
+# section 85, on the strength of the trailing `u24` naming a picture; it does, but the picture
+# belongs to the opcode 3 that follows, which is nine operands ending in a flash address. Both
+# readings consume the same twelve bytes and agree on the address whenever opcode 22 is followed by
+# opcode 3, which is 1856 times out of 1856 in the two arch 9 user configs. The safe mode container
+# has four where it is not, and there the eleven byte reading walks off the end of a program.
+#
+# The closure is that the operand is 0 to 7 uniformly, eight per mode page and 8 * pages per
+# config, and that the opcode 3 after it draws at `y = 8 * operand` with a width of 96 and a height
+# of 8. That is the 525's screen, eight rows of eight pixels. `docs/findings.md` section 85.
 SCREEN_CALL = 22
-SCREEN_OPERANDS_BY_ARCHITECTURE = {9: {SCREEN_CALL: 11}, 12: {SCREEN_CALL: 3}}
+SCREEN_OPERANDS_BY_ARCHITECTURE = {9: {SCREEN_CALL: 1}, 12: {SCREEN_CALL: 3}}
 # Whether opcode 22's trailing `u24` is a program to walk into. On arch 12 it is; on arch 9 it is a
 # picture, which is a different kind of thing and must not be handed to the program decoder.
 SCREEN_CALL_TARGET_ARCHITECTURES = frozenset({12})
@@ -1874,7 +1880,13 @@ class Container:
         elif kind == BITMAP_NOTHING and self.architecture in BITMAP_MONOCHROME_ARCHITECTURES:
             # One bit a pixel rather than two bytes, so `96 x 64` is 768 bytes and the whole record
             # is 773. Nothing draws this kind on the other architectures.
-            length = BITMAP_HEADER + stride * rows // PIXEL_BITS
+            #
+            # **A row is padded to a whole byte**, so it is `ceil(stride / 8) * rows` and not
+            # `stride * rows // 8`. The two agree for every picture in both arch 9 user configs,
+            # because all of them are 96 pixels wide, and the arch 9 safe mode container has a 19
+            # pixel one that tells them apart: at 3 bytes a row its bank walks to the trailer
+            # exactly, and at 2.375 it falls off the second picture. `docs/findings.md` section 85.
+            length = BITMAP_HEADER + -(-stride // PIXEL_BITS) * rows
             if off + length > self.length:
                 return None
         return Bitmap(address=address, kind=kind, stride=stride, rows=rows, length=length,

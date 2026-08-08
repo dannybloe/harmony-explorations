@@ -854,10 +854,10 @@ class TestTheScreenInterpreter(unittest.TestCase):
         extra = cases - self.BASE_OPCODES
         self.assertEqual(extra, {22, 23})
         # Opcode 22's width is per architecture and 23's is not, so only one of them is in the
-        # shared table. Sections 54 and 64.
+        # shared table. Three on arch 12 and one on arch 9. Sections 54, 64 and 85.
         self.assertNotIn(gspm.SCREEN_CALL, gspm.SCREEN_FIXED_OPERANDS)
         self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[12][gspm.SCREEN_CALL], 3)
-        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL], 11)
+        self.assertEqual(gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL], 1)
         self.assertEqual(gspm.SCREEN_FIXED_OPERANDS[23], 0)
         for name in ('h700_code', 'h600_code_complete'):
             base, _, at = self.DISPATCHERS[name]
@@ -1163,15 +1163,19 @@ class TestTheFontTable(unittest.TestCase):
                 if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
                     continue
                 used.setdefault(selected, set()).update(instruction.glyphs)
-        self.assertEqual(sorted(used), [0, 3])
+        # All four sets are used, which they were not until section 85: the program the eleven
+        # byte reading of opcode 22 walked off is the one that selects fonts 1 and 2.
+        self.assertEqual(sorted(used), [0, 1, 2, 3])
+        # Glyphs present against glyphs drawn, per set. Font 0 ships exactly what it draws; the
+        # other three ship a handful more, and `H` is spare in all three of them.
+        spare = {0: [], 1: [72, 121], 2: [72, 97, 121], 3: [72]}
         for selected, codes in used.items():
             font = fonts[selected]
             present = {font.first + i for i, a in enumerate(font.glyphs) if a is not None}
             with self.subTest(font=selected):
-                # Every code drawn has a glyph, and the set carries almost nothing else: one
-                # spare glyph in font 3 and none at all in font 0.
+                # Every code drawn has a glyph, and the set carries little else.
                 self.assertEqual(codes - present, set())
-                self.assertLessEqual(len(present - codes), 1)
+                self.assertEqual(sorted(present - codes), spare[selected])
                 # And they are ASCII, which is what says 32 is a first code and not a flag.
                 self.assertTrue(all(32 <= code < 127 for code in codes))
             # Under the reading section 46 published, the codes run past the end of the set.
@@ -1226,7 +1230,9 @@ class TestTheFontTable(unittest.TestCase):
         # they resolve through the fonts section 63 decoded, so the two findings check each other.
         # **Every one of the bench 525's own codes resolves too**, which is the first time that
         # closure has run on an arch 9 config this project read itself.
-        self.assertEqual(codes, 58068)
+        # 58068 until section 85 made one more arch 9 program reachable, whose two strings are
+        # thirteen codes and two.
+        self.assertEqual(codes, 58083)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1255,11 +1261,16 @@ class TestTheFontTable(unittest.TestCase):
 
 
 class TestScreenOpcode22(unittest.TestCase):
-    """findings.md section 64: a call on arch 12, a picture draw on arch 9, one opcode number.
+    """findings.md sections 64 and 85: a call on arch 12, a row select on arch 9.
 
     The two readings come from different authorities and both are pinned here. Arch 12's is the
     firmware, which is the project's usual order; arch 9's has no firmware to appeal to and rests
     on a closure over the corpus instead, with the calibration that every other width fails it.
+
+    **Section 64 read the arch 9 width as eleven and section 85 corrected it to one.** The picture
+    address it saw is real and belongs to the opcode 3 that follows, so both readings consume the
+    same twelve bytes wherever opcode 22 is followed by opcode 3, which is everywhere in the two
+    user configs. The safe mode container is what separates them.
     """
 
     SAMPLE = 'h525_config'
@@ -1300,60 +1311,106 @@ class TestScreenOpcode22(unittest.TestCase):
                                     for a in reads), reads)
                 self.assertTrue(writes and reads)
 
-    def test_every_arch9_call_names_a_picture(self):
-        """The arch 9 closure, and the reason eleven is believed without a firmware.
+    def test_every_arch9_row_draw_names_a_picture(self):
+        """The arch 9 closure, and the reason one is believed without a firmware.
 
-        The four picture addresses are not derived from these instructions. They come from walking
-        the bank base slot 17 names, which section 62 established independently, so the agreement
-        is between two readings rather than inside one.
+        Every mode page's program issues opcode 22 eight times, once per row index 0 to 7, and each
+        one is followed by an opcode 3 that draws 96 by 8 pixels at `y = 8 * index` from a picture
+        in the bank. The four picture addresses are not derived from these instructions: they come
+        from walking the bank base slot 17 names, which section 62 established independently.
         """
         from harmony import gspm
         lab.require(self.SAMPLE)
         c = gspm.parse(lab.load(self.SAMPLE))
         pictures = self._pictures(c)
         self.assertEqual(len(pictures), 4)
-        named = 0
-        for record in c.mode_records():
-            program = c.screen_program(record.start + record.length)
-            self.assertIsNotNone(program, hex(record.start))
-            for instruction in program:
+        rows = 0
+        per_value = {}
+        pages = [page for record in c.mode_records() for page in record.pages]
+        for page in pages:
+            program = c.screen_program(page.program)
+            self.assertIsNotNone(program, hex(page.address))
+            on_this_page = 0
+            for i, instruction in enumerate(program):
                 if instruction.opcode != gspm.SCREEN_CALL:
                     continue
-                named += 1
-                self.assertIn(int.from_bytes(instruction.operands[-3:], 'little'), pictures)
-        self.assertEqual(named, 912)
+                rows += 1
+                on_this_page += 1
+                self.assertEqual(len(instruction.operands), 1)
+                row = instruction.operands[0]
+                self.assertLess(row, 8)
+                per_value[row] = per_value.get(row, 0) + 1
+                draw = program[i + 1]
+                self.assertEqual(draw.opcode, 3, 'opcode 22 is followed by a draw')
+                # Two `(0, 8 * row)` pairs, then 96 by 8: the row's position, twice.
+                self.assertEqual(list(draw.operands[:6]), [0, 8 * row, 0, 8 * row, 0x60, 8])
+                self.assertIn(int.from_bytes(draw.operands[-3:], 'little'), pictures)
+            self.assertEqual(on_this_page, 8, 'eight rows on every page')
+        self.assertEqual(rows, 8 * len(pages))
+        self.assertEqual(rows, 1080)
+        self.assertEqual(sorted(per_value.items()), [(k, len(pages)) for k in range(8)])
 
-    def test_no_other_operand_width_names_a_picture(self):
-        """The calibration. Six widths also decode all 114 records, so decoding proves nothing.
+    def test_no_other_operand_width_produces_that_structure(self):
+        """The calibration. Several widths also decode all 135 page programs, so decoding proves
+        nothing on its own; the row structure is what separates them.
 
-        This is the check section 54 wished it had for opcode 23, where a brute force could not
-        choose between two widths and the firmware had to. Here there is no firmware and the
-        corpus separates the candidates by itself: eleven scores 912, everything else scores zero.
+        Eleven, which section 64 chose, scores zero here for a reason worth keeping: at eleven
+        there is no following instruction to look at, because opcode 22 has swallowed it.
         """
         from harmony import gspm
         lab.require(self.SAMPLE)
         c = gspm.parse(lab.load(self.SAMPLE))
         pictures = self._pictures(c)
         real = gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL]
-        for width in range(3, 16):
+        pages = [page for record in c.mode_records() for page in record.pages]
+        for width in range(1, 16):
             if width == real:
                 continue
             gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = width
             try:
-                hits = decoded = 0
-                for record in c.mode_records():
-                    program = c.screen_program(record.start + record.length)
+                hits = 0
+                for page in pages:
+                    program = c.screen_program(page.program)
                     if program is None:
                         continue
-                    decoded += 1
-                    for instruction in program:
-                        if instruction.opcode == gspm.SCREEN_CALL:
-                            hits += int.from_bytes(instruction.operands[-3:],
-                                                   'little') in pictures
+                    for i, instruction in enumerate(program):
+                        if instruction.opcode != gspm.SCREEN_CALL:
+                            continue
+                        row = instruction.operands[0] if instruction.operands else 255
+                        draw = program[i + 1] if i + 1 < len(program) else None
+                        hits += (row < 8 and draw is not None and draw.opcode == 3
+                                 and list(draw.operands[:6])
+                                 == [0, 8 * row, 0, 8 * row, 0x60, 8]
+                                 and int.from_bytes(draw.operands[-3:], 'little') in pictures)
             finally:
                 gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = real
             with self.subTest(width=width):
-                self.assertEqual(hits, 0, 'width %d also names pictures' % width)
+                self.assertEqual(hits, 0, 'width %d also produces rows' % width)
+
+    def test_the_safe_mode_container_is_what_separates_one_from_eleven(self):
+        """Why the corpus could not tell them apart until 8 August 2026.
+
+        In both user configs every opcode 22 is followed by an opcode 3, so the two readings
+        consume the same bytes and disagree about nothing observable. The arch 9 safe mode
+        container has four that are not, and there the eleven byte reading walks a program off the
+        end and loses it: 48 reachable programs against 49.
+        """
+        from harmony import gspm
+        sample = 'h525_safemode_ahcm'
+        lab.require(sample)
+        c = gspm.parse(lab.load(sample))
+        real = gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL]
+        self.assertEqual(real, 1)
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        self.assertEqual(len(programs), 49)
+        gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = 11
+        try:
+            c = gspm.parse(lab.load(sample))
+            old, _ = c.reachable_screen_programs()
+        finally:
+            gspm.SCREEN_OPERANDS_BY_ARCHITECTURE[9][gspm.SCREEN_CALL] = real
+        self.assertEqual(len(old), 48, 'the eleven byte reading loses one program')
 
     def test_the_arch9_strings_resolve_through_their_own_fonts(self):
         """Section 46's third closure, unavailable on arch 9 until these programs were reachable.

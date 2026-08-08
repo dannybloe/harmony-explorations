@@ -44,7 +44,7 @@ const ACCOUNTED: readonly [string, number, number][] = [
   // 52667 and 39448 until section 82 read class 5's bodies, symbol tables and pulse blocks.
   ['h525_config', 78486, 78486],
   ['h525_config_2', 51195, 51195],
-  ['h525_safemode_ahcm', 13391, 15342],
+  ['h525_safemode_ahcm', 15059, 15342],
   ['one_config', 1672832, 1672832],
   ['one_config_unprogrammed', 1232237, 1232237],
   ['arch8_config_a', 444256, 444256],

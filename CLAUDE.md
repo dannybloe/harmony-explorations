@@ -360,7 +360,7 @@ carries step 3; the documents that summarise it had, because a summary is a copy
 test. So the copies are executable now, and `make facts` is the check:
 
 * a number quoted in prose carries a marker naming the fact it states,
-  `21551<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  `21552<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
@@ -634,7 +634,7 @@ that have one, and **every picture in an arch 12 bank is drawn by a program**, 9
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 21551<!--fact:screen_programs--> programs across the
+byte opcodes, section 40, whose closure is that 21552<!--fact:screen_programs--> programs across the
 corpus decode with nothing left over.
 
 ## Rails a writer will have to respect
@@ -748,8 +748,12 @@ nothing unattributed at all, in eighteen of the nineteen containers. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
 That completes the first two of milestone M2's three parts on every architecture. **The exception is
-`h525_safemode_ahcm`**, the arch 9 safe mode container, which has structures left in it rather than
-tails and is named as the open item rather than excluded from the corpus.
+`h525_safemode_ahcm`**, the arch 9 safe mode container, at 98.2% after section 85, which corrected
+two arch 9 readers that every other container agreed with: opcode 22 takes **one** operand and not
+eleven, so the picture belongs to the opcode 3 after it, and a monochrome picture row is padded to a
+whole byte. Both were invisible until a container turned up with an odd width and four instructions
+in an order the corpus had never carried. Its last 283 bytes are four runs nothing points at, named
+in section 85 and deliberately unclaimed.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
 the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
@@ -822,7 +826,9 @@ states once it is not measured against a chip size taken from the same field.
 **It is in the corpus now**, `h525_safemode_ahcm`, and in the corpus wide claim lists rather than
 excluded from them, where it is the counterexample two of them name: its font sets start at code 32
 and declare four counts. **Excluding it would have left the corpus agreeing with itself**, which is
-the condition that hid the first glyph code. Three arch 12 assumptions came out of `packages/usb`
+the condition that hid the first glyph code, and section 85 is the same lesson twice more: it holds
+the only picture whose width is not a multiple of eight and the only opcode 22 that is not followed
+by an opcode 3, and each of those broke a rule every other container had confirmed. Three arch 12 assumptions came out of `packages/usb`
 on the way: the version reply was matched as a whole byte, its length was fixed at twelve, and the
 region validator was hard coded. `docs/memory-map-525.md` holds the predictions against the
 measurements.

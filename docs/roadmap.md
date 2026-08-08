@@ -279,7 +279,7 @@ and so this table cannot be mistaken for the coverage one below by anything look
 | `h600_config`, arch 14 | 28.3%<!--fact:framed_h600_config--> | 529 KB, the same |
 | `h700_config`, arch 14 | 26.1%<!--fact:framed_h700_config--> | 724 KB, the same |
 | `arch8_config_a` | 21.7%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
-| `h525_config`, arch 9 | 61.0%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
+| `h525_config`, arch 9 | 62.4%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
@@ -405,7 +405,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 21551<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
+Section 40 states 21552<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number

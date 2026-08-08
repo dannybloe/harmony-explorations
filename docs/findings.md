@@ -6904,6 +6904,12 @@ untested against data.
 
 ### Arch 9, from the corpus, because there is no firmware
 
+**Corrected by section 85: the width is one, not eleven.** The rest of this part stands, including
+every byte quoted below and the picture it lands on, because both readings consume the same twelve
+bytes; what section 85 changes is that the `03` in the second column is an **opcode** rather than an
+operand, and the address belongs to it. Read on for how the wrong structure survived a closure and a
+calibration, which is the instructive part.
+
 Every arch 9 mode record's tail starts `16 00 03 00 00 00 00 60 08 8b 2f 03 17`, repeated with an
 incrementing first operand byte. Eight of them, and the middle bytes step by eight:
 
@@ -6920,8 +6926,13 @@ individual fields are **not** claimed here. What is claimed is the width, eleven
 three bytes are a `u24`.
 
 **The closure is that the `u24` is always a picture.** Walking the bank from where base slot 17
-says it starts, section 62, gives four addresses. At width eleven, **all 912 instances across all
+says it starts, section 62, gives four addresses. At width eleven, **all 912 instances across all<!--superseded-->
 114 mode records name one of those four**. At every other width from 3 to 15, zero do.
+
+That closure is real and it is not evidence for eleven, which section 85 is about: the `u24` is
+opcode 3's operand either way, and no width other than eleven puts opcode 22's own operands on top
+of it. A closure that only one candidate can satisfy does not distinguish that candidate from the
+one that reads the same bytes differently.
 
 The calibration matters because the obvious criterion is useless here. Six widths, 0 through 5,
 also decode all 114 records, because a short operand count simply lands the walk on a byte that
@@ -8972,8 +8983,8 @@ which is the condition that hid the first glyph code, so the tests assert the ex
 skipping it.
 
 The corpus totals it moves are the sixth item on section 76's list, and they move as arithmetic:
-21551<!--fact:screen_programs--> screen programs, 4315<!--fact:glyphs--> glyphs and
-58068<!--fact:inline_string_codes--> inline string codes.
+21552<!--fact:screen_programs--> screen programs, 4315<!--fact:glyphs--> glyphs and
+58083<!--fact:inline_string_codes--> inline string codes.
 
 ### One tooling hole, found on the way
 
@@ -9530,6 +9541,137 @@ that config belongs to a structure, which is the fact that made the first half u
 * `packages/codec/test/coverage.test.ts`, one corpus wide test per rule, each named after what would
   falsify it, plus the pinned per sample terminator counts.
 * `docs/config-format.md`, base slots 3, 11, 15 and 17.
+
+
+## 85. Opcode 22 takes one operand on arch 9, and a monochrome row is padded to a byte
+
+Two corrections, both found in the arch 9 safe mode container, both invisible in every other
+container in the corpus, and both of the same shape: **a rule that is wrong and a corpus that cannot
+say so, because every sample happens to sit on the one case where the wrong rule gives the right
+answer.** Section 83's list said this container had structures left rather than tails, and it does;
+what it did not say is that two of its own readers were wrong.
+
+Together they take `h525_safemode_ahcm` from 87.3 to 98.2 percent, and they leave 283 bytes in four
+runs, named at the end.
+
+### Opcode 22 is a row select, not an eleven byte picture draw
+
+Section 64 read opcode 22 on arch 9 as eleven operands whose last three name a picture, against
+three on arch 12 where the firmware says it is a call. The picture is real. **The instruction is
+not**: those eleven bytes are one operand, then an **opcode 3**, which is nine operands ending in a
+flash address, exactly as the shared table has always had it.
+
+```
+16 nn 03 00 yy 00 yy 60 08 aa aa aa
+^^ ^^                                 opcode 22, one operand: the row, 0 to 7
+      ^^ .....................        opcode 3, nine operands
+         ^^ ^^ ^^ ^^                  two (0, 8 * row) pairs
+                     ^^ ^^            96 wide, 8 high
+                           ^^ ^^ ^^   the picture
+```
+
+Both readings consume the same twelve bytes and end on the same `u24`, so they agree about
+everything observable **whenever opcode 22 is followed by opcode 3**. That is 1856 times out of
+1856 in the two arch 9 user configs, which is why section 64's closure held: it was reading opcode
+3's address through opcode 22's swallowed operands, and every other width scored zero because every
+other width lands on neither.
+
+The safe mode container has four that are not followed by opcode 3, two of them opcode 16 and two
+opcode 4, and there the eleven byte reading walks straight off a program. That program is the 49th,
+it was lost, and it is the one that draws "Nothing to do" and "OK".
+
+**The closure for one is arithmetic rather than positional.** The operand runs 0 to 7 and nothing
+else, **eight per mode page, once each**:
+
+| sample | pages | opcode 22 | per page | operand values |
+|---|---|---|---|---|
+| `h525_config` | 135 | 1080 | 8 | 0 to 7, 135 of each |
+| `h525_config_2` | 97 | 776 | 8 | 0 to 7, 97 of each |
+| `h525_safemode_ahcm` | 44 | 348 | 8, one page 4 | 0 to 7 |
+
+and the opcode 3 that follows draws at `y = 8 * operand`, 96 wide and 8 high, in all 1856. Eight
+rows of eight pixels, 96 by 64, which is the 525's screen: **every picture in both user configs is
+exactly 96 by 64**, four of them in one and five in the other, and a page draws all eight of its
+strips from one of them.
+
+Why a full screen image is drawn as eight strips at all is **not established**. The obvious guess is
+that the operand marks which menu row the strip is, so that a key press can be attributed to it,
+which would make it arch 9's equivalent of arch 12's touch hit map. Nothing here tests that, and no
+arch 9 firmware routine has been traced to opcode 22.
+
+### A monochrome row is padded to a whole byte
+
+Section 62 read arch 9's kind 2 picture as one bit a pixel and sized it `stride * rows / 8`. It is
+`ceil(stride / 8) * rows`: a row starts on a byte boundary.
+
+The two agree for every picture in both user configs, because all nine of them are 96 pixels wide
+and 96 is a multiple of 8. The safe mode container's bank opens with a **19 pixel** one, and there
+the difference is 23 bytes against 30, so the old rule desynchronised on the second picture and the
+whole bank of 1616 bytes stayed unclaimed.
+
+Under the corrected rule the bank walks and lands **exactly on the trailer**, which is the same
+closure the bank walk uses everywhere else:
+
+| | kind | pixels | bytes |
+|---|---|---|---|
+| 1 | 2 | 19 x 10 | 35 |
+| 2 | 2 | 96 x 64 | 773 |
+| 3 | 2 | 96 x 64 | 773 |
+| 4 | 2 | 18 x 10 | 35 |
+
+Two full screens and two small ones, 1616 bytes, ending on the byte the trailer starts at.
+
+### What moved
+
+| | before | after |
+|---|---|---|
+| `h525_safemode_ahcm` accounted | 13391 of 15342, 87.3% | 15059 of 15342, 98.2% |
+| its reachable programs | 48 | 49 |
+| font sets its strings use | 0 and 3 | 0, 1, 2 and 3 |
+| corpus inline string codes | 58068 | 58083 |
+| corpus screen programs | 21551 | 21552 |
+
+The font line is worth stating separately, because it is an independent structure agreeing:
+section 78 read this container's font sets as four, starting at code 32, 32, 72 and 32. Two of them
+were used by nothing at all under the old reading. The program the eleven byte width lost is the one
+that selects them, and its strings are "Nothing to do" in font 1 and "OK" in font 2, both of which
+resolve, in ASCII, against the codes those sets carry.
+
+Neither user config moves by a byte in the accounting. The corrections are visible in the emitter
+instead, where the arch 9 framed share rises from 61.0 to 62.4 percent on `h525_config`: an opcode
+byte that used to be carried inside opcode 22's operands is a framed opcode now.
+
+### What is left, and why it is not claimed
+
+283 bytes of `h525_safemode_ahcm`, in four runs, and **no pointer anywhere names any of them**. A
+`u24` scan of the whole container finds nothing, and neither does a search of the 525's internal
+program flash or either 64 KiB external flash read.
+
+| where | bytes | what it decodes as |
+|---|---|---|
+| `0x1A10D` | 26 | a screen program: two row draws, then a jump that is claimed |
+| `0x1A12B` | 26 | the same, drawing the other small picture |
+| `0x1A170` | 108 | 36 action list instructions, every opcode with a reading |
+| `0x1A2EB` | 123 | 41 of them, likewise, running up to the first section pointer |
+
+The two screen runs sit inside a switch's case blocks and are not reached by it: the switch at
+`0x1A100` tests state variable 11 and sends 0 to `0x1A127` and 1 to `0x1A145`, and those are the
+**jumps at the end** of each block rather than the drawing code in front of them. Both jumps go to
+the same terminator. So under this reading the container carries two icon draws that cannot execute.
+
+They are left unclaimed on purpose. Claiming a run because it decodes would be inferring a structure
+from its contents rather than from the byte that states it, which is the mistake this project has
+recorded three times, and dead code in one container is not a format fact. What would settle it is
+an arch 9 firmware trace of the switch handler, which nobody has read yet.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 11's opcode table and the picture header.
+* `packages/codec/src/screen.ts` and `src/harmony/gspm.py`, both widths, in both languages, with
+  the golden vectors regenerated so the two still agree.
+* `packages/codec/test/screen.test.ts` and `tests/test_interpreter.py`, the row structure per page,
+  the calibration that no other width produces it, and the safe mode container as the sample that
+  separates one from eleven.
 
 
 ## References

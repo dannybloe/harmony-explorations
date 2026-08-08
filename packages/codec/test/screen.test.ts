@@ -26,6 +26,7 @@ import {
   IMAGE_PACKED_ARCHITECTURES,
   IMAGE_PACKED_INK,
   IMAGE_PACKED_PAPER,
+  PICTURE_BANK_BIAS,
   SCREEN_CALL,
   SCREEN_CALL_TARGET_ARCHITECTURES,
   SCREEN_OPERANDS_BY_ARCHITECTURE,
@@ -70,8 +71,10 @@ const DECODED: readonly [string, number, number][] = [
   ['h600_safemode_gspm', 35, 46],
   ['h700_gspm', 35, 46],
   ['h650_safemode_gspm', 35, 46],
-  // The arch 9 safe mode container, whose 79 glyphs are the ASCII of section 78.
-  ['h525_safemode_ahcm', 48, 79],
+  // The arch 9 safe mode container, whose 79 glyphs are the ASCII of section 78. 48 programs
+  // until section 85 corrected opcode 22's width: the 49th is the one the old reading walked off,
+  // and it is the only program in the corpus that selects fonts 1 and 2.
+  ['h525_safemode_ahcm', 49, 79],
 ];
 
 /**
@@ -87,9 +90,9 @@ const DECODED: readonly [string, number, number][] = [
  * with themselves and not with each other. So the list is the same fifteen samples as
  * `lab.CONTAINERS` and the three totals are the numbers `tests/test_interpreter.py` asserts.
  */
-const CORPUS_PROGRAMS = 21551;
+const CORPUS_PROGRAMS = 21552;
 const CORPUS_GLYPHS = 4315;
-const CORPUS_STRING_CODES = 58068;
+const CORPUS_STRING_CODES = 58083;
 
 for (const [name, programs, glyphCount] of DECODED) {
   test(`${name} decodes ${programs} programs and ${glyphCount} glyphs`, skipUnless(name), () => {
@@ -189,10 +192,17 @@ test('the arch 9 safe mode container ships exactly the ASCII its own strings use
         used.set(selected, codes);
       }
     }
-    assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 3]);
+    // All four sets are used, which they were not until section 85: the program the eleven byte
+    // reading of opcode 22 walked off is the one that selects fonts 1 and 2.
+    assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 1, 2, 3]);
+    // Glyphs present against glyphs drawn, per set. Font 0 ships exactly what it draws; the other
+    // three ship a handful more, and `H` is spare in all three of them.
+    const spare: Record<number, number[]> = { 0: [], 1: [72, 121], 2: [72, 97, 121], 3: [72] };
     for (const [selected, codes] of used) {
       const font = sets[selected] as (typeof sets)[number];
       const present = new Set(font.glyphs.map((a, i) => (a === undefined ? -1 : font.first + i)));
+      assert.deepEqual([...present].filter((code) => code >= 0 && !codes.has(code)).sort((a, b) => a - b),
+        spare[selected], `font ${selected} ships more than its strings use`);
       for (const code of codes) {
         assert.ok(present.has(code), `code ${code} of font ${selected} has no glyph`);
         assert.ok(code >= 32 && code < 127, `code ${code} is not ASCII`);
@@ -300,12 +310,12 @@ test('the roots come from base slots 11, 14 and 6, and from a mode page', skipUn
 });
 
 test('opcode 22 is the one opcode whose width is per architecture', () => {
-  // Three on arch 12, from the firmware, where it is a call and opcode 23 is its return. Eleven on
-  // arch 9, from the corpus, where it names a picture. It stays out of the shared table because a
-  // single width there would be wrong on one of the two. Sections 54 and 64.
+  // Three on arch 12, from the firmware, where it is a call and opcode 23 is its return. **One** on
+  // arch 9, from the corpus, where it selects a row. It stays out of the shared table because a
+  // single width there would be wrong on one of the two. Sections 54, 64 and 85.
   assert.equal(SCREEN_FIXED_OPERANDS[SCREEN_CALL], undefined);
   assert.equal(SCREEN_OPERANDS_BY_ARCHITECTURE[12]?.[SCREEN_CALL], 3);
-  assert.equal(SCREEN_OPERANDS_BY_ARCHITECTURE[9]?.[SCREEN_CALL], 11);
+  assert.equal(SCREEN_OPERANDS_BY_ARCHITECTURE[9]?.[SCREEN_CALL], 1);
   // Only the arch 12 one transfers control; arch 9's address is a picture, not a program.
   assert.deepEqual([...SCREEN_CALL_TARGET_ARCHITECTURES], [12]);
   assert.equal(SCREEN_FIXED_OPERANDS[23], 0);
@@ -566,32 +576,65 @@ test('an arch 9 glyph ends exactly where the next one starts', skipUnless('h525_
  * so the width rests on the corpus, and the closure below is what makes that acceptable: the four
  * picture addresses come from walking the bank base slot 17 names, not from these instructions.
  */
-test('every arch 9 call names a picture, and no other width does', skipUnless('h525_config'), () => {
-  const c = parse(load('h525_config') as Uint8Array);
-  const bank = pictureBank(c, namedContentEnd(c)) ?? [];
-  const start = (c.sections[17]?.address ?? 0) + 2;
-  const addresses = new Set<number>();
-  let at = start;
-  for (const picture of bank) {
-    addresses.add(at);
-    at += picture.length as number;
-  }
-  assert.equal(addresses.size, 4);
+test('an arch 9 row draw is opcode 22 then opcode 3, and the row index is the operand',
+  skipUnless('h525_config', 'h525_config_2'), () => {
+    // Section 85, correcting section 64 in place. The old reading gave opcode 22 eleven operands
+    // whose last three named a picture. They do name one, but the instruction is opcode 3 and the
+    // operand of opcode 22 is a row index: it runs 0 to 7 for every mode page, and the opcode 3
+    // after it draws 96 by 8 at `y = 8 * operand`. Both readings consume the same twelve bytes,
+    // which is why 1856 instances could not tell them apart.
+    for (const [name, expected, pictures] of
+      [['h525_config', 1080, 4], ['h525_config_2', 776, 5]] as const) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const bank = pictureBank(c, namedContentEnd(c)) ?? [];
+      const start = (c.sections[17]?.address ?? 0) + PICTURE_BANK_BIAS;
+      const addresses = new Set<number>();
+      let at = start;
+      for (const picture of bank) {
+        addresses.add(at);
+        at += picture.length as number;
+      }
+      assert.equal(addresses.size, pictures, `${name}: the bank's own picture count`);
 
-  let named = 0;
-  for (const record of modeRecords(c) ?? []) {
-    const program = screenProgram(c, record.start + record.length);
-    assert.notEqual(program, undefined, `record at ${record.start}`);
-    for (const instruction of program ?? []) {
-      if (instruction.opcode !== SCREEN_CALL) continue;
-      named += 1;
-      const operands = instruction.operands;
-      const target =
-        (operands[operands.length - 3] as number) |
-        ((operands[operands.length - 2] as number) << 8) |
-        ((operands[operands.length - 1] as number) << 16);
-      assert.ok(addresses.has(target), `call names ${target}, not a picture`);
+      const pages = (modeRecords(c) ?? []).flatMap((record) => record.pages);
+      let rows = 0;
+      const perValue = new Map<number, number>();
+      for (const page of pages) {
+        const program = screenProgram(c, page.program);
+        assert.notEqual(program, undefined, `${name}: a page whose program does not walk`);
+        let onThisPage = 0;
+        for (let i = 0; i < (program ?? []).length; i += 1) {
+          const instruction = (program as { opcode: number; operands: Uint8Array }[])[i] as
+            { opcode: number; operands: Uint8Array };
+          if (instruction.opcode !== SCREEN_CALL) continue;
+          rows += 1;
+          onThisPage += 1;
+          assert.equal(instruction.operands.length, 1, `${name}: one operand`);
+          const row = instruction.operands[0] as number;
+          assert.ok(row < 8, `${name}: row ${row}`);
+          perValue.set(row, (perValue.get(row) ?? 0) + 1);
+          // The draw that follows, and its geometry, which is what ties the operand to a row.
+          const next = (program as { opcode: number; operands: Uint8Array }[])[i + 1] as
+            { opcode: number; operands: Uint8Array } | undefined;
+          assert.equal(next?.opcode, 3, `${name}: opcode 22 is followed by a draw`);
+          const operands = next?.operands as Uint8Array;
+          // Two `(0, 8 * row)` pairs, then 96 by 8. Whatever the first four bytes are exactly,
+          // the row's pixel position is in them twice and it is eight times the operand.
+          assert.deepEqual([...operands.subarray(0, 6)], [0, 8 * row, 0, 8 * row, 0x60, 8],
+            `${name}: row ${row} is drawn at y = ${8 * row}`);
+          const target = (operands[operands.length - 3] as number)
+            | ((operands[operands.length - 2] as number) << 8)
+            | ((operands[operands.length - 1] as number) << 16);
+          assert.ok(addresses.has(target), `${name}: the draw names ${target}, not a picture`);
+        }
+        assert.equal(onThisPage, 8, `${name}: eight rows on every page`);
+      }
+      assert.equal(rows, expected, `${name}: rows`);
+      assert.equal(rows, 8 * pages.length, `${name}: eight per page`);
+      // Uniform, which is the closure: each row index appears exactly once per page.
+      assert.deepEqual([...perValue.entries()].sort((a, b) => a[0] - b[0]),
+        Array.from({ length: 8 }, (_, k) => [k, pages.length]));
     }
-  }
-  assert.equal(named, 912);
-});
+  });

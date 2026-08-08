@@ -16,7 +16,8 @@ here owns; this one differs in that the gap is about to close.
 
 It **was** the worst covered architecture in the corpus by a wide margin, and it is not any more:
 the byte accounting reads **100.0%<!--fact:coverage_h525_config-->** against 100.0% on both target
-architectures, with nothing left unattributed in either of its user configs since section 84. The reasons it
+architectures, with nothing left unattributed in either of its user configs since section 84, and
+its safe mode container at 98.2% since section 85. The reasons it
 lagged were all the same reason: there was no arch 9 firmware anywhere, so every structure that did
 not decode had nothing to appeal to. **That changed on 8 August 2026**, when the application image
 came off the bench unit's external flash and its internal program flash came off over USB.

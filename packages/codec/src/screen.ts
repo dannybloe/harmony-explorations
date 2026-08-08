@@ -62,14 +62,21 @@ export const SCREEN_JUMP = 20;
  * address, and opcode 23 is the matching return. No config uses it, so the width is firmware and
  * the semantics are untested.
  *
- * On arch 9 it takes eleven and the last three name a picture rather than a program. No arch 9
- * firmware exists, so that rests on the corpus, and the closure is that at eleven all 912 instances
- * across 114 mode records name one of exactly four addresses, those four having been derived
- * independently by walking the picture bank. Every other width scores zero.
+ * On arch 9 it takes **one**, and that operand is a row index. This said eleven until section 85,
+ * on the strength of the trailing `u24` naming a picture. It does name one, but the picture belongs
+ * to the **opcode 3** that follows it, which is nine operands ending in a flash address, and the
+ * two readings consume the same twelve bytes whenever opcode 22 is followed by opcode 3. That is
+ * 1856 times out of 1856 in the two arch 9 user configs, which is why the corpus could not tell
+ * them apart; the safe mode container has four where it is not, and there the eleven byte reading
+ * walks a program off the end.
+ *
+ * The closure is that the operand runs 0 to 7 uniformly, eight per mode page and `8 * pages` per
+ * config, and that the opcode 3 after it draws at `y = 8 * operand`, 96 wide and 8 high. Eight rows
+ * of eight pixels on a 96 by 64 screen, which is the picture the bank's own walk finds twice.
  */
 export const SCREEN_CALL = 22;
 export const SCREEN_OPERANDS_BY_ARCHITECTURE: Readonly<Record<number, Record<number, number>>> = {
-  9: { 22: 11 },
+  9: { 22: 1 },
   12: { 22: 3 },
 };
 /**
@@ -400,7 +407,11 @@ export function bitmapAt(c: Container, address: number): Bitmap | undefined {
     length = BITMAP_HEADER + PIXEL_BYTES * stride * rows;
     if (off + length > c.blob.length) return undefined;
   } else if (kind === BITMAP_NOTHING && BITMAP_MONOCHROME_ARCHITECTURES.has(c.architecture ?? -1)) {
-    length = BITMAP_HEADER + Math.floor((stride * rows) / PIXEL_BITS);
+    // **A row is padded to a whole byte.** Every picture in both arch 9 user configs is 96 pixels
+    // wide, where padding changes nothing, so `stride * rows / 8` fitted them exactly; the safe
+    // mode container's 19 pixel picture is what tells the two apart, and at three bytes a row its
+    // bank walks onto the trailer exactly. Section 85.
+    length = BITMAP_HEADER + Math.ceil(stride / PIXEL_BITS) * rows;
     if (off + length > c.blob.length) return undefined;
   } else if (kind === BITMAP_ENCODED) {
     const walked = encodedExtent(c, off + BITMAP_HEADER);

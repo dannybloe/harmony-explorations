@@ -539,7 +539,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 18, 19 | a switch, below | switch on a state variable and jump |
 | 20 | `u24` | jump |
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
-| 22 | **per architecture**, below | *arch 12*: call. *arch 9*: draw a picture |
+| 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
 | 23 | none | *arch 12 only*, the return matching opcode 22; one per mode program |
 
 **Opcode 22 is the one opcode whose operand width is not the same everywhere**, so a parser has to
@@ -550,13 +550,22 @@ operands in a link register, which opcode 23 restores. A call and its return, re
 handlers at `0x2966E` and `0x29640` on the Harmony One 3.4 image. There is **one** link register,
 so calls do not nest. No config in the corpus uses it, so this is firmware rather than data.
 
-On **arch 9** it takes **11**, and the last three are the address of a **picture** rather than of a
-program, so a walker must not follow it. The other eight are a band on the screen, eight of them
-covering the 525's 96 by 64 panel in rows of eight, and the individual fields are *not established*.
-No arch 9 firmware exists; the width rests on the corpus, where at 11 all **912** instances across
-114 mode records name one of exactly four picture addresses derived independently from base slot 17,
-and at every other width from 3 to 15 none do. Six widths also decode all 114 records, so decoding
-by itself settles nothing here.
+On **arch 9** it takes **1**, a row index from 0 to 7, and the instruction that follows it is an
+ordinary opcode 3 drawing a 96 by 8 strip at `y = 8 * row`. Every mode page's program issues the
+eight of them once each, and every strip on a page comes from the same picture, which is 96 by 64
+in every arch 9 user config: the 525's whole panel, drawn in eight rows.
+
+What the row index is **for** is not established. It marks the strip rather than positioning it,
+since the position is in the opcode 3 already, and the obvious guess is that a key press is
+attributed to a row by it, which would make it arch 9's equivalent of the touch hit map. No arch 9
+firmware routine has been traced to it.
+
+Corrected: this document said **11 operands, the last three naming a picture**, which read the
+opcode 3 that follows as part of opcode 22. Both readings consume the same twelve bytes and end on
+the same address whenever opcode 22 is followed by opcode 3, and that is 1856 instances out of 1856
+in the two arch 9 user configs, so the corpus could not separate them. The arch 9 safe mode
+container has four that are followed by something else, and there the 11 byte reading walks a
+program off the end. See [findings.md](findings.md) section 85.
 
 [findings.md](findings.md) section 64.
 
@@ -575,7 +584,7 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**21551<!--fact:screen_programs--> programs across 15<!--fact:containers--> containers and four architectures decode with nothing left over**,
+**21552<!--fact:screen_programs--> programs across 15<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -602,6 +611,13 @@ bytes. Pictures are laid out contiguously and consecutive ones sit exactly that 
 over **two byte** pixels, ending at a `0x00` control byte; it breaks rows exactly `rows - 1` times
 even though it threw the header away, which is the closure its extent rests on. `kind` 2 is a bare `RETURN` in the firmware, valid and drawing nothing, and a
 higher value is not reached at all.
+
+**On arch 9 `kind` 2 is the only kind used and it is one bit a pixel**, since the 5xx panel is
+monochrome. A row is padded to a whole byte, so the record is `5 + ceil(stride / 8) * rows`: a 96
+pixel row is 12 bytes and a 19 pixel one is 3, not 2.375. Every picture in an arch 9 user config is
+96 by 64, the whole panel, at 773 bytes; the safe mode container also carries a 19 by 10 and an 18
+by 10. Corrected from `5 + stride * rows / 8`, which agrees for every width that is a multiple of
+eight and so for everything the user configs contain. [findings.md](findings.md) section 85.
 
 Two rails for a writer, both read off the firmware and invisible in the corpus:
 
@@ -634,9 +650,11 @@ landing and the presence of every addressed picture; exactly one candidate satis
 one moves every later address.
 Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
-Opcode 3 draws the same object with a six byte position record instead of two. It is used by one
-instruction in the whole corpus, so its operand layout is read from the firmware and exercised by
-almost nothing.
+Opcode 3 draws the same object with a six byte position record instead of two. On arch 8, 12 and 14
+it is used by one instruction in the whole corpus, so its operand layout there is read from the
+firmware and exercised by almost nothing. **On arch 9 it is the ordinary way to draw**, 1856 times
+across the two user configs, always preceded by an opcode 22 naming the row: two `(0, 8 * row)`
+pairs, then 96 by 8, then the picture. [findings.md](findings.md) section 85.
 
 #### What fills the region
 
@@ -719,7 +737,7 @@ read at all. `findings.md` section 78.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4315<!--fact:glyphs--> glyphs and 58068<!--fact:inline_string_codes--> codes.
+are 4315<!--fact:glyphs--> glyphs and 58083<!--fact:inline_string_codes--> codes.
 
 * every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933

@@ -77,3 +77,5 @@ and leave this table alone.
 | `Nothing here decodes that` | section 82 | the body is `u24 table; u16 n; u8 index[n]`, and every width is a literal in the firmware |
 | `what stays copied is 4 to 68 bytes` | section 84 | nothing stays copied: every byte of eighteen containers is written by a rebuilder |
 | `43 bytes left in six gaps` | section 84 | the six shapes are read, and no user config has an unattributed byte |
+| `it takes eleven` | section 85 | one, a row index; the picture belongs to the opcode 3 that follows |
+| `all 912 instances` | section 85 | 1080 and 776 row selects, eight per mode page, and the address is opcode 3's |
