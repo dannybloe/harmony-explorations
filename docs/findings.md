@@ -3705,7 +3705,8 @@ Definitions, defaults or names are all plausible and none is checked.
 **Why the header repeats `narrow`.** Two fields hold the same number in all ten configs.
 
 **What any individual variable means.** The table is sized and split; nothing here names entry 9,
-which is the one `0x71` reads most.
+which is the one `0x71` reads most. **Answered by section 86**: base slot 0 names every variable
+the generator gave a name to, and the name says what it is for and how many values it takes.
 
 ## 36. Base slot 4 is the firmware event map, and section sizes are upper bounds
 
@@ -6521,11 +6522,22 @@ smoothed.** The earlier config names a `TV_TVInput_3` that no record counts, and
 6 that no name mentions. So the suffix agreeing with a count is evidence about what the count means,
 not a claim that the tree indexes the table.
 
-**The eight byte values are not decoded.** The only invariant across all 509 in the corpus is that
+Section 86 settles that too, and the mismatch was the count being the wrong field: the suffix is the
+record's **highest value** plus one, not its number of values, and against that field it agrees in
+all 250 named variables. The record of 6 belongs to a variable of 3 values with two transitions
+each.
+
+**The eight byte values are not decoded.** The only invariant across all 509 in the corpus is that<!--superseded-->
 the first byte is zero. The last byte is `0x7F` in 412 of them and five other values in the rest, so
 it is not a terminator, and no reading is offered here rather than one that fits the majority and
 quietly fails on the rest. In the receiver's record the third field runs 12, 10, 17, 15 and the
 fourth 1508, 1608, 1509, 1533, which look like two index spaces and are left as that.
+
+**Read by section 86**, and the paragraph above is why it took another twenty six sections: the last
+byte is an action list **opcode**, so `0x7F` in most of them and five other opcodes elsewhere is
+exactly what it should be, and the two index spaces are a value the variable moves from and a value
+it moves to. Refusing a reading that fits the majority was right; what was missing was the field
+that says which majority, and base slot 0's name for the variable supplied it.
 
 ### Coverage
 
@@ -9672,6 +9684,115 @@ an arch 9 firmware trace of the switch handler, which nobody has read yet.
 * `packages/codec/test/screen.test.ts` and `tests/test_interpreter.py`, the row structure per page,
   the calibration that no other width produces it, and the safe mode container as the sample that
   separates one from eleven.
+
+
+## 86. A config states its devices and its activities, and a state variable is a machine
+
+The application has to show a user their devices and their activities before it can let them edit
+anything, and until now nothing here could produce either list. Both are stated rather than
+inferred, and finding out which fields state them also decoded the last undecoded record in base
+slot 13.
+
+**No brand or model out of a contributor's config is quoted here.** The generic role words the
+generator emits, `TV`, `Receiver`, `PowerOnDelay`, `CurrentActivityState`, are structure rather than
+inventory and appear freely; the one brand anywhere in this repository is from the owner's own
+deliberate sync, section 58, where the device was picked arbitrarily to make the experiment. Every
+number below is a count.
+
+### A level 1 name ends in the number of values its variable takes
+
+Section 77 read base slot 0 as a list of named nodes and established that a level 1 node's index is
+a base slot 13 state variable. The name itself was left alone. It is three parts,
+`<label>_<qualifier>_<values>`, and the last of them is the variable's own range:
+
+**`values` is the record's `u16` at +0x02 plus one, in 250 of 250 named variables**, across arch 8,
+9, 12 and 14. That settles a field section 60 recorded as "unexplained, not the count and not an
+index into it": it is the **highest value** the variable takes.
+
+The qualifier is a Logitech device identifier on the two arch 14 configs, six digits or more, and a
+small number on the older generators. It is never stored in the container as a number, which is
+consistent with base slot 0 being host side, section 81.
+
+### The eight byte values are transitions
+
+Section 60 read the record's length as `7 + 8 * count` and said the values were not decoded, the
+only invariant being a zero first byte. They are transitions:
+
+```
++0x00  u8   zero, in all 551 of them, the same spare byte the section table carries
++0x01  i16  from, or a negative sentinel
++0x03  i16  to, or a negative sentinel
++0x05  u16  operand   the three bytes are one action list instruction
++0x07  u8   opcode
+```
+
+Four checks, all corpus wide and none of them arranged by the reading:
+
+* every instruction has a reading in `actions.ts`, 551 of 551, and 439 of them are opcode `0x7F`,
+  which names a base slot 10 action list **by index**. Every one of those indices exists.
+* no `from` or `to` names a value the variable cannot take: every non negative one is inside `0` to
+  the record's highest value.
+* the sentinels are `-2`, in both fields, and `-3` in `from`. There is no third.
+* a record either carries no transitions at all, 164 of them, or **covers every value of its
+  variable the same number of times**: once in 83 records, twice in two and four times in one. So
+  `count` counts transitions rather than values, and it is a multiple of `second + 1`.
+
+The last of those is what ties the values to the header. A list that happened to sit after a header
+would not cover exactly `0` to `second` with nothing missing and nothing extra, 86 times.
+
+### The activities are counted by one variable, and the devices are the infrared groups
+
+**Every container in the corpus that has a name tree names exactly one `CurrentActivityState`**, in
+that spelling, qualified as `CurrentActivityState_0`. Its highest value is the number of activities:
+value 0 is no activity running and the rest are the activities themselves.
+
+**A device is an infrared group.** Base slot 5's groups partition the database, 8 to 164 codes each
+and occasionally none, and two independent things say a group is one device: on the two arch 14
+configs the number of distinct device identifiers in the state variable names equals the number of
+groups, 4 and 6, and the calibration below.
+
+| sample | named variables | activities | devices |
+|---|---|---|---|
+| `one_spare_before_sync` | 7 | 1 | 1 |
+| `one_spare_after_sync` | 5 | 1 | 1 |
+| `one_config` | 12 | 8 | 5 |
+| `one_config_unprogrammed` | 7 | 1 | 1 |
+| `h600_config` | 41 | 3 | 4 |
+| `h700_config` | 60 | 5 | 6 |
+| `arch8_config_a` to `_d` | 7 to 13 | 1 to 3 | 3 to 7 |
+| `h525_config` | 8 | 3 | 4 |
+| `h525_safemode_ahcm` | 1 | 0 | none |
+
+**The calibration is the deliberate pair of section 58**, which is why that experiment was worth
+doing: `one_spare_after_sync` was compiled by Logitech's own service on 6 August 2026 for exactly
+**one device and one activity**, chosen that day and written down before the remote was read. It
+reports one and one. The other end is the arch 9 safe mode container, which drives nothing: one
+named variable, the activity state, highest value zero.
+
+The gate's other question, what would falsify this, has a cheap answer: a config built for a known
+number of devices and activities that reports a different pair. That is one sync away whenever a
+remote and the service are both to hand.
+
+### What it does not read
+
+The activities have no names anywhere in base slot 0. A device's name is in the label of its
+variables, and a device with no state variables has no name at all, which is why the identifier
+count matches the group count on arch 14 and the label count does not match it elsewhere. Where an
+activity's name is drawn from is open; the obvious place to look is the text a mode page's screen
+program draws.
+
+The `u16` at +0x00 of a record is at most the highest value in all 735 records and zero in most, so
+it reads as an initial value. Nothing has been traced to it and it is marked unconfirmed.
+
+### Where it lands
+
+* `docs/config-format.md`, base slots 0 and 13.
+* `packages/codec/src/sections.ts`, the decoded transition, and `src/inventory.ts`, which is the
+  application's view: `stateVariables`, `activityCount`, `deviceCount`, `deviceIds`.
+* `packages/codec/src/emit.ts` frames the transitions now rather than carrying them, which is what
+  moves the arch 14 framed share by half a point.
+* `packages/codec/test/inventory.test.ts`, counts and shapes only, and `src/harmony/gspm.py`'s
+  docstring, since the research library reads the same record.
 
 
 ## References

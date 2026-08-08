@@ -628,22 +628,29 @@ class StateRecord:
     """One base slot 13 entry: a variable's declared values.
 
     ```
-    +0x00  u16  unknown, zero in every record in the corpus
-    +0x02  u16  unknown, not the count and not an index into it
-    +0x04  u16  count
+    +0x00  u16  an initial value: at most `second` in all 735 records, usually zero. Unconfirmed
+    +0x02  u16  the **highest value** the variable takes
+    +0x04  u16  count, of transitions rather than of values
     +0x06  u8   unknown
-    +0x07       value[count], eight bytes each
+    +0x07       transition[count], eight bytes each:
+                  +0x00  u8   zero in all 551
+                  +0x01  i16  from, or a negative sentinel: -2 and -3 both occur
+                  +0x03  i16  to, or -2
+                  +0x05  u16  operand    the three bytes are one action list instruction
+                  +0x07  u8   opcode
     ```
 
-    `count` is how many values the variable can take, so the record is `7 + 8 * count` bytes.
-    That length is what makes the record readable at all, since nothing declares it: see
-    `docs/findings.md` section 60 for the evidence, which is a config whose contents were chosen
-    deliberately and a corpus wide check that no record overruns the next.
+    The record is `7 + 8 * count` bytes, and that length is what makes it readable at all, since
+    nothing declares it: `docs/findings.md` section 60.
 
-    The eight byte values are **not decoded**, and the only thing invariant about them across the
-    corpus is that the first byte is zero in all 509. The last byte is `0x7F` in most and five
-    other values elsewhere, so it is not a terminator, and no reading is offered here rather than
-    one that fits the majority.
+    **Section 86 read the rest.** Base slot 0 names each variable and the name ends in the number
+    of values it takes, which is `second + 1` in all 250 named variables of the corpus, and every
+    non negative `from` and `to` is inside `0` to `second`. A record either carries no transitions
+    or covers every value the same number of times, so `count` is a multiple of `second + 1`.
+
+    The values stay raw here: this is the research library and `packages/codec` owns the codec.
+    `packages/codec/src/sections.ts` decodes them and `src/inventory.ts` is what reads a config's
+    devices and activities out of them.
     """
     address: int
     count: int

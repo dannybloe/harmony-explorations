@@ -313,12 +313,48 @@ export function stateTable(c: Container): StateTable | undefined {
 export const STATE_RECORD_HEADER = 7;
 export const STATE_VALUE_LENGTH = 8;
 
+/**
+ * One eight byte value of a base slot 13 record: a transition, and what to run on it.
+ *
+ * ```
+ * +0x00  u8   zero in all 551 of them, the same spare byte the section table carries
+ * +0x01  i16  from, or a negative sentinel
+ * +0x03  i16  to, or a negative sentinel
+ * +0x05  u16  operand   the three bytes are one action list instruction
+ * +0x07  u8   opcode
+ * ```
+ *
+ * `docs/findings.md` section 86.
+ */
+export interface StateValue {
+  /** Where the value sits, as a blob offset. */
+  start: number;
+  /** The value moved away from, or a negative sentinel: `-2` and `-3` both occur. */
+  from: number;
+  /** The value moved to, or `-2`. */
+  to: number;
+  /** What runs on that transition, in the action list language. */
+  operand: number;
+  opcode: number;
+}
+
 export interface StateRecord {
   address: number;
   count: number;
   length: number;
-  /** The `u16` at +0x02, unexplained. */
+  /**
+   * The `u16` at +0x02: the **highest value** the variable takes, section 86.
+   *
+   * The name base slot 0 gives the variable ends in the number of values it has, and that number
+   * is this one plus one in all 250 named variables of the corpus. Every non negative `from` and
+   * `to` in the record's own values is inside `0` to here, which is the second closure.
+   */
   second: number;
+  /** The `u16` at +0x00. At most `second` in all 735 records, and zero in most, so it reads as an
+   * initial value. **Unconfirmed**: nothing has been traced to it. */
+  first: number;
+  /** The transitions, decoded. Empty when the record enumerates none. */
+  values: StateValue[];
 }
 
 /**
@@ -337,11 +373,27 @@ export function stateRecords(c: Container): StateRecord[] | undefined {
     const off = c.blobOffsetOf(address);
     if (off === undefined || off + STATE_RECORD_HEADER > c.blob.length) continue;
     const count = u16(c.blob, off + 4);
+    const length = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * count;
+    const values: StateValue[] = [];
+    if (off + length <= c.blob.length) {
+      for (let k = 0; k < count; k += 1) {
+        const at = off + STATE_RECORD_HEADER + STATE_VALUE_LENGTH * k;
+        values.push({
+          start: at,
+          from: (u16(c.blob, at + 1) << 16) >> 16,
+          to: (u16(c.blob, at + 3) << 16) >> 16,
+          operand: u16(c.blob, at + 5),
+          opcode: u8(c.blob, at + 7),
+        });
+      }
+    }
     records.push({
       address,
       count,
       second: u16(c.blob, off + 2),
-      length: STATE_RECORD_HEADER + STATE_VALUE_LENGTH * count,
+      first: u16(c.blob, off),
+      values,
+      length,
     });
   }
   return records;

@@ -79,3 +79,5 @@ and leave this table alone.
 | `43 bytes left in six gaps` | section 84 | the six shapes are read, and no user config has an unattributed byte |
 | `it takes eleven` | section 85 | one, a row index; the picture belongs to the opcode 3 that follows |
 | `all 912 instances` | section 85 | 1080 and 776 row selects, eight per mode page, and the address is opcode 3's |
+| `eight byte values are not decoded` | section 86 | a transition: `u8 zero; i16 from; i16 to; u16 operand; u8 opcode` |
+| `the u16 at +0x02, unexplained` | section 86 | the variable's highest value, which its name states plus one |

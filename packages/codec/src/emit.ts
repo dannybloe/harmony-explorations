@@ -637,16 +637,21 @@ export function rebuilds(c: Container): Rebuild[] {
       .raw(c.blob.subarray(off + 5, off + picture.length)), 5);
   }
 
-  // Base slot 13's records. Two `u16` of the seven byte header are read and the eight byte values
-  // are not decoded at all, so this is the shallowest reader in the file and the split says so.
+  // Base slot 13's records: three `u16` of the seven byte header, then the values, which are
+  // transitions and are written from their fields since section 86 read them. One header byte is
+  // still carried, the `u8` at +0x06, which nothing has a reading for.
   for (const record of stateRecords(c) ?? []) {
     const off = c.blobOffsetOf(record.address);
     if (off === undefined) continue;
-    partly(off, 'slot-13-record', new Writer(record.length)
-      .raw(c.blob.subarray(off, off + 2))
+    const w = new Writer(record.length)
+      .u16(record.first)
       .u16(record.second)
       .u16(record.count)
-      .raw(c.blob.subarray(off + 6, off + record.length)), 4);
+      .raw(c.blob.subarray(off + 6, off + 7));
+    for (const value of record.values) {
+      w.u8(0).u16(value.from).u16(value.to).u16(value.operand).u8(value.opcode);
+    }
+    partly(off, 'slot-13-record', w, record.length - 1);
   }
 
   // Base slot 5. The group arrays and the pointer part of a record header are typed; the eleven

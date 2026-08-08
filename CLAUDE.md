@@ -606,12 +606,12 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 
 | slot | what it is | sections |
 |---|---|---|
-| 0 | a `0xFEED` framed tree of state variable names under `Root` | 20 |
+| 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for | 20, 77, 86 |
 | 1 | seven bytes stating the architecture, the only place the config says it | 20 |
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
 | 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
 | 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: groups, then records with a 21 byte header. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82 |
+| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
@@ -619,7 +619,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
 | 12 | the timer table | 43 |
-| 13 | the state variable table | 35, 60 |
+| 13 | the state variable table: a range, and transitions carrying one instruction | 35, 60, 86 |
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
 | 16 | the number sender. Used by no config in the corpus | 39 |
@@ -780,6 +780,20 @@ len(name); u16 level; u16 index; char name[]`, and **level 1 names base slot 13'
 entry by entry**. What opened it was the arch 9 safe mode container, whose first node is not called
 `Root`: `FRAME_PROLOGUE` was never a prologue, it was the first node, and two of its nine bytes were
 that node's own length.
+
+**A config states its devices and its activities, section 86, which is what the application needs
+before it can show anything.** A level 1 name is `<label>_<qualifier>_<values>` and `values` is its
+variable's highest value plus one, 250 of 250, which settles the field section 60 could not explain.
+Every container with a name tree names exactly one `CurrentActivityState`, whose highest value is
+the **number of activities**, and **a device is an infrared group**. The calibration is section 58's
+deliberate pair: a config Logitech compiled for one device and one activity reports one and one, and
+the arch 9 safe mode container reports zero activities. The record's eight byte values are
+transitions, `u8 zero; i16 from; i16 to; { u16 operand; u8 opcode }`, and the instruction is an
+action list one. `packages/codec/src/inventory.ts` is the application's view of it.
+
+**The names are the user's own equipment, so no brand out of a contributor's config is quoted**, in
+a document or in a test: counts and shapes. The generic role words the generator emits are structure
+and appear freely, and the one brand in the repository is from the owner's own sync, section 58.
 
 **What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
 mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in

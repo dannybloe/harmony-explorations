@@ -136,6 +136,13 @@ containers, and the residue copy writes **nothing at all** on eighteen of them.
 Arch 9 joined the rest once its own firmware was read: class 5 infrared is a dictionary encoding,
 section 82.
 
+**A config also says what it is for**, which is what an interface has to show before it can let
+anybody edit anything: **a device is an infrared group**, and one state variable, named
+`CurrentActivityState` in every container that carries names, counts the **activities**. The
+calibration is a config Logitech's own service compiled for one device and one activity while we
+watched, which reports one and one. The names in that tree are the owner's own equipment, so what
+is published here is counts and shapes rather than anybody's inventory. Section 86.
+
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
 classes, and which physical button each scan code is. See
 [docs/findings.md](docs/findings.md) for detail and

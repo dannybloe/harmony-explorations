@@ -251,8 +251,8 @@ and recompile byte-identical across the whole corpus, and the trailer checksum r
 the gate for any editing at all, and it is squarely an API milestone.
 
 Of the three parts below, **the first two are complete on all four architectures**: every reader
-reports its extent and the accounting has no overlaps anywhere, 15 bytes short on a Harmony One, 4
-on a 600, 53 on an 880 and 4 on a 525. Arch 8 landed with section 75 and arch 9 with section 82,
+reports its extent and the accounting has no overlaps anywhere, and since section 84 nothing at all
+is short on a user config. Arch 8 landed with section 75 and arch 9 with section 82,
 which read class 5 infrared out of the 525's own firmware: a record's pointer names a body of one
 byte indices into a shared table of short pulse blocks, so a code is spelled from a dictionary. What
 is left is nothing: sections 83 and 84 read the last six shapes, and **every user config in the
@@ -276,10 +276,10 @@ and so this table cannot be mistaken for the coverage one below by anything look
 | sample | framed | what is carried |
 |---|---|---|
 | `one_config`, arch 12 | 13.4%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
-| `h600_config`, arch 14 | 28.3%<!--fact:framed_h600_config--> | 529 KB, the same |
-| `h700_config`, arch 14 | 26.1%<!--fact:framed_h700_config--> | 724 KB, the same |
+| `h600_config`, arch 14 | 28.4%<!--fact:framed_h600_config--> | 529 KB, the same |
+| `h700_config`, arch 14 | 26.2%<!--fact:framed_h700_config--> | 724 KB, the same |
 | `arch8_config_a` | 21.7%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
-| `h525_config`, arch 9 | 62.4%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
+| `h525_config`, arch 9 | 62.7%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
@@ -474,6 +474,13 @@ rather than to read more of the dispatcher.
 **M3 Offline editor. FH.** Edit understood fields, minimal diff against the original, every change
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does
 not.
+
+**What the interface will list is read now**, section 86, and it is the piece M3 could not have
+started without: **a device is an infrared group**, and one state variable, `CurrentActivityState`,
+states the **number of activities**. Base slot 0's name for a variable says what it is for and how
+many values it takes, and the eight byte records under it are transitions carrying one action list
+instruction each. `packages/codec/src/inventory.ts` is that view. Activity **names** are not found
+yet; the place to look is the text a mode page's screen program draws.
 
 **Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
 same length and there is deliberately no way to insert, delete or resize anything, because a

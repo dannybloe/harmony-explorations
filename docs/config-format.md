@@ -991,24 +991,37 @@ every config is below that config's own `count`, and the halves are respected ex
 the rule is the reader:
 
 ```
-+0x00  u16  unestablished, zero in every record in the corpus
-+0x02  u16  unestablished, and not the count
-+0x04  u16  count           how many values this variable can take
++0x00  u16  an initial value, at most `max` in all 735 records and zero in most. *Unconfirmed*
++0x02  u16  max             the highest value this variable takes
++0x04  u16  count           how many transitions follow, not how many values there are
 +0x06  u8   unestablished
-+0x07       value[count], eight bytes each
++0x07       transition[count], eight bytes each
+```
+
+and a transition
+
+```
++0x00  u8   zero, in all 551 of them
++0x01  i16  from, or a negative sentinel: -2 and -3 both occur
++0x03  i16  to, or -2
++0x05  u16  operand         these three bytes are one action list instruction
++0x07  u8   opcode
 ```
 
 So a record is `7 + 8 * count` bytes. Across 14 containers and four architectures, 610 of 627
 consecutive records end exactly where the next begins and **none overruns**, and claiming them in
 the byte accounting produces no overlap with any other structure.
 
-*The eight byte values are not decoded.* The only thing invariant about them is that the first byte
-is zero, in all 509 in the corpus.
+`max` is what **base slot 0's name for the variable ends in, plus one**, in all 250 named variables
+of the corpus, which is what settles it. Every non negative `from` and `to` is inside `0` to `max`,
+every instruction has a reading, and every one of the 439 that name a base slot 10 list by index
+names one that exists. A record either carries no transitions or covers every value of the variable
+the same number of times, so `count` is a multiple of `max + 1`: once per value in 83 records, twice
+in two and four times in one. [findings.md](findings.md) section 86.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
-*What an individual variable means is not established.*
-[findings.md](findings.md) sections 35 and 60.
+[findings.md](findings.md) sections 35, 60 and 86.
 
 ### Base slot 5: the infrared database
 
@@ -1241,11 +1254,20 @@ Two properties hold corpus wide and are what make this a tree rather than a list
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
 
-In the Harmony 700 sample the frame holds 62 names, of the shape `TV_Power_2`,
-`Receiver_Input_16`, `PowerOnDelay_<deviceid>_65278`. The trailing number looks like the
-variable's range rather than its value, and **that part is still a lead**: no firmware routine
-consuming the section has been found, so the correspondence with slot 13 is established by the
-index and not by a consumer.
+A level 1 name is three parts, `<label>_<qualifier>_<values>`:
+
+* **`values` is the variable's range**, the `max` field of its base slot 13 record plus one, in all
+  250 named variables of the corpus. Section 86, and it is what settled that field.
+* the **qualifier** is a Logitech device identifier on the two arch 14 configs, six digits or more
+  and never stored in the container as a number, and a small number on the older generators.
+* the **label** is what the variable is: a device's name and a function of it, or one of the words
+  the generator always emits. `CurrentActivityState_0_<values>` is in every container that has a
+  name tree, and its `max` is the number of activities the config defines.
+
+The names are the user's own equipment, so no brand out of a contributor's config is quoted here or
+in the tests: what is recorded is the shape and the count. No firmware routine consuming this section has
+been found, so the correspondence with slot 13 is established by the index and by the range
+agreeing, not by a consumer.
 
 ### Slot 1: the config states its own architecture
 
