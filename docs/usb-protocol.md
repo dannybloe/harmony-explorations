@@ -384,7 +384,8 @@ The executor is state 1, `0x0C906`:
 0c930: 10 e2       BC 0x0c952
 ```
 
-**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds.
+**Response: `0x28` then 12 bytes**, copied out of a block that `0x1422C` builds. On **arch 9** the
+response is `0x27` and seven fields; see below.
 
 **It is twelve fields, and the count closes.** `0x1422C` takes the pointer in `0xEDD` and
 `0xEDE` as a base and stores through it with `ADDWF 0xedd,W` at exactly **twelve** sites, from
@@ -573,6 +574,19 @@ and 0 for rejected:
   window. That path calls `0x1B50A` with the address triple instead of the flash reader.
 * anything else: rejected.
 
+**That rule is arch 12 and arch 14's, and arch 9's is a different one.** *Measured on a Harmony
+525, live device, 8 August 2026, section 76.* It is **silent** at `0x010000`, `0x020000` and
+`0x030000` and answers at `0x800000`, `0x810000`, `0x820000` and `0x870000`, so its serial flash
+sits a megabyte up: config at `0x820000`, firmware at `0x810000`, and a second image at
+`0x800000`, exactly where concordance's architecture table puts them. Internal program memory is
+at plain `0x000000` there, with no `0xFE` window at all, which matters because this project's cap
+on internal reads keys on `0xFE` and `0xFF` and therefore protected nothing on arch 9 until
+`validateRegionByte` learned about the architecture.
+
+**A rejected address produces silence, not an error.** So a host with the wrong base looks like a
+host with a broken cable, and that is how it presented: the first arch 9 config read failed with
+"flash read returned 0 of 16 bytes".
+
 **And the special region is the MCU's own program memory.** Inside the read path, at `0x0CA74`:
 
 ```
@@ -746,6 +760,25 @@ f0 50                      done
   corruption inside a config rather than an error.
 * **The count on the wire is not biased by one.** 256 requested, 256 delivered, as
   62+62+62+62+6+2. The `INCF` that suggested a bias belongs to something else.
+
+### The reply's low nibble is the field count, and twelve is not universal
+
+*Measured on a Harmony 525, live device, 8 August 2026. `docs/findings.md` section 76.*
+
+| architecture | reply byte | fields |
+|---|---|---|
+| 9 | `0x27` | 7, and every one of them identified |
+| 12, 14 | `0x28` | 12, by the firmware's own two counts above |
+
+A 525 answers `27 30 25 12 ff 90 16 09`: firmware 3.0, board 2.5.0, flash `0xFF:0x12`, then `0x90`
+for architecture 9, skin 22, and `0x09` where the two MyHarmony era remotes carry a compiled in
+`0x0C`. concordance reads the nibble as a length and branches on it, accepting 5, 7 or 8 and giving
+up the architecture and the skin below 6 and the protocol below 7, which is the same rule seen from
+the other side: the nibble counts where it is small and is a floor at 8, and the arch 12 firmware
+settles the real figure at twelve by copying twelve bytes.
+
+**Field 4's high nibble is the architecture, now on three architectures.** That reading came from
+four images spanning two, so `0x90` on a third is the test it had been waiting for.
 
 ### GET_VERSION's twelve bytes, six identified by prediction
 

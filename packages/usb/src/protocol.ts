@@ -204,16 +204,42 @@ export function readRamRequest(dataAddress: number): Uint8Array {
 }
 
 /**
- * What the firmware's validator at `0x13DFE` makes of the top address byte of a flash command.
+ * What a firmware's validator makes of the top address byte of a flash command.
  *
  * Not a host side politeness: this is the device's own rule, so a host that gets it wrong is
- * refused rather than obeyed. Below `0x20` is an ordinary config flash address. `0xFE` and `0xFF`
- * select the MCU's own program memory, read by table read, which is the route to the device id
- * words on a PIC18 J-series part. Everything else is rejected.
+ * refused rather than obeyed. On arch 12 and arch 14 the rule is read out of the validator at
+ * `0x13DFE`: below `0x20` is an ordinary config flash address, `0xFE` and `0xFF` select the MCU's
+ * own program memory by table read, and everything else is rejected.
+ *
+ * **The rule is per architecture, which cost a session's first config read.** A Harmony 525 is
+ * silent at `0x010000`, `0x020000` and `0x030000` and answers at `0x820000`, so external flash
+ * sits a whole megabyte up and the arch 12 rule refuses every address that works. Measured on the
+ * bench on 8 August 2026; `docs/findings.md` section 76. The device says no by saying nothing,
+ * which is why a wrong base looks like a broken cable rather than a rejected address.
  */
 export type Region = 'config-flash' | 'internal-program-memory';
 
-export function validateRegionByte(topByte: number): Region {
+/** The architecture whose rule applies when a caller does not say. The two bench targets share it. */
+export const DEFAULT_REGION_ARCHITECTURE = 12;
+/** Arch 9 addresses its serial flash from here, one megabyte up. `0x80` to `0x87` on a 512 KiB part. */
+export const ARCH9_FLASH_TOP_MIN = 0x80;
+export const ARCH9_FLASH_TOP_MAX = 0x87;
+
+export function validateRegionByte(
+  topByte: number,
+  architecture: number = DEFAULT_REGION_ARCHITECTURE,
+): Region {
+  if (architecture === 9) {
+    // Internal program memory is at plain low addresses on this part, a PIC18LF4550 with 32 KiB
+    // of it, so the top byte is `0x00` and there is no `0xFE` window. It is still reported as
+    // internal, which is what keeps `readInternalMemory`'s one chunk cap over it: arch 12 restarts
+    // when such a read ends in a one byte chunk and nothing establishes that arch 9 does not.
+    if (topByte === 0x00) return 'internal-program-memory';
+    if (topByte >= ARCH9_FLASH_TOP_MIN && topByte <= ARCH9_FLASH_TOP_MAX) return 'config-flash';
+    throw new ProtocolError(
+      `arch 9 rejects 0x${topByte.toString(16)} as a top address byte; its flash is at 0x80 to 0x87`,
+    );
+  }
   if (topByte < 0x20) return 'config-flash';
   if (topByte === 0xfe || topByte === 0xff) return 'internal-program-memory';
   throw new ProtocolError(
@@ -221,8 +247,8 @@ export function validateRegionByte(topByte: number): Region {
   );
 }
 
-export function regionOf(address: number): Region {
-  return validateRegionByte((address >>> 16) & 0xff);
+export function regionOf(address: number, architecture?: number): Region {
+  return validateRegionByte((address >>> 16) & 0xff, architecture);
 }
 
 /**
@@ -265,10 +291,30 @@ export function nextFlashSequence(previous: number): number {
 export const FLASH_CHUNK_DATA = 62;
 /** `READ_MISC` replies with this: two payload bytes, the selector echoed and one data byte. */
 export const MISC_REPLY = 0xc2;
-/** `GET_VERSION` replies with this, then twelve bytes. */
+/** `GET_VERSION` replies with this high nibble, whatever the generation. */
+export const VERSION_REPLY_CODE = 0x20;
+/** What an arch 12 or arch 14 remote answers: this byte, then twelve fields. */
 export const VERSION_REPLY = 0x28;
-/** The twelve fields of a version block. Ten of them are not named yet. */
+/**
+ * The twelve fields of an arch 12 or arch 14 version block. Ten of them are not named yet.
+ *
+ * **Twelve is not universal and the nibble is what says so.** A Harmony 525 answers `0x27` and
+ * seven fields, measured on the bench on 8 August 2026. On the two MyHarmony era remotes the byte
+ * is `0x28` while the firmware copies twelve, so the nibble is a floor there rather than a count,
+ * and concordance reads it the same way: it accepts 5, 7 or 8 and branches on which.
+ * `docs/findings.md` section 76.
+ */
 export const VERSION_FIELD_COUNT = 12;
+/** The nibble the MyHarmony era answers, where the block is longer than the nibble states. */
+export const VERSION_NIBBLE_LONG = 8;
+/**
+ * The shortest block a caller may treat as an identity.
+ *
+ * Seven, because that is what a Harmony 525 answers and every field of it is identified. Five is
+ * what concordance also accepts, and a block that short carries no architecture and no skin, so it
+ * would be an identity with the two fields worth having missing.
+ */
+export const VERSION_FIELD_COUNT_MIN = 7;
 
 export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
@@ -312,11 +358,15 @@ export function decodeReply(report: Uint8Array): Reply {
     }
     return { kind: 'misc', selector, value };
   }
-  if (first === VERSION_REPLY) {
-    if (report.length < 1 + VERSION_FIELD_COUNT) {
-      throw new ProtocolError('version reply is short');
-    }
-    return { kind: 'version', fields: report.subarray(1, 1 + VERSION_FIELD_COUNT) };
+  if (code === VERSION_REPLY_CODE) {
+    // The nibble is the field count, except where it is a floor. `0x28` means twelve, which the
+    // arch 12 and arch 14 firmware settles by copying twelve bytes; anything else means itself,
+    // which is how a Harmony 525's `0x27` yields seven. Matching the whole byte instead is what
+    // made a 525's perfectly good answer decode as an anonymous data reply.
+    const stated = first & 0x0f;
+    const count = stated >= VERSION_NIBBLE_LONG ? VERSION_FIELD_COUNT : stated;
+    if (report.length < 1 + count) throw new ProtocolError('version reply is short');
+    return { kind: 'version', fields: report.subarray(1, 1 + count) };
   }
   return { kind: 'data', code, payload };
 }

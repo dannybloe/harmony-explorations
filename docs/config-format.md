@@ -23,9 +23,11 @@ u16 checksum + end marker
 
 ## Outer container
 
-Validated against **fifteen samples across four architectures**, four base addresses
+Validated against **sixteen samples across four architectures**, four base addresses
 (`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three pointer table
-lengths (20, 21, 22). Every consistency check passes on all fifteen. See `tests/test_gspm.py`.
+lengths (20, 21, 22). Every consistency check passes on all sixteen. See `tests/test_gspm.py`.
+The sixteenth is the bench Harmony 525's own config, read over USB on 8 August 2026 and identical
+in every container field to the published arch 9 sample, section 76.
 
 **Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
 table lengths. The count was stale, and the other two numbers never matched the list beside them:
@@ -74,8 +76,13 @@ base = end_addr - (offset_of_end_marker - offset_of_cookie)
 ```
 
 Exact on all fifteen samples. Worth noting against concordance's table, which lists arch 9's
-`config_base` as `0x820000` where the derived value is `0x020000`; bit 23 looks like a flag
-rather than an address bit. Deriving from the data sidesteps the question.
+`config_base` as `0x820000` where the derived value is `0x020000`.
+
+> **Corrected on 8 August 2026, section 76.** This used to end "bit 23 looks like a flag<!--superseded-->
+> rather than an address bit". Both numbers are right and they are different address spaces: a
+> `READ_FLASH` command must name `0x820000` and a 525 is silent below `0x800000`, while every
+> pointer inside the container counts from `0x020000`. Deriving the container's base from the data
+> is still what sidesteps the question here, and a reader that talks to a remote needs both.
 
 ### The section table starts at `0x0B`, and an item is a spare byte plus a three byte pointer
 
@@ -554,7 +561,7 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**21392<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
+**21503<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -685,7 +692,7 @@ set by the code minus one.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4093<!--fact:glyphs--> glyphs and 55542<!--fact:inline_string_codes--> codes.
+are 4236<!--fact:glyphs--> glyphs and 57389<!--fact:inline_string_codes--> codes.
 
 * every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933

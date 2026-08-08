@@ -45,6 +45,7 @@ const REBUILT: readonly [string, number, number][] = [
   ['h600_safemode_gspm', 1900, 5143],
   ['h650_safemode_gspm', 1900, 5143],
   ['h525_config', 21757, 30607],
+  ['h525_config_2', 14907, 24372],
   ['arch8_config_a', 95871, 348063],
   ['arch8_config_b', 174656, 295506],
   ['arch8_config_c', 186704, 303503],

@@ -67,20 +67,35 @@ test('the known models have a config base and everything else is refused', () =>
   });
 });
 
-test('the 525 entry is marked unverified and the two bench models are not', () => {
-  // The distinction is the point. Both bench profiles were measured against the remote's own lab
-  // dump; the 525's rests on a published report of one unit nobody here has connected, and that
-  // has to be visible in the data rather than only in a comment. `docs/memory-map-525.md`.
+test('the 525 reads at 0x820000 and its container counts from 0x020000', () => {
+  // Two address spaces a megabyte apart, measured on the bench on 8 August 2026. This test used to
+  // assert the opposite of every line of it: that the base was `0x020000`, that the entry was
+  // `unverified`, and that no profile may ever carry `0x820000` because bit 23 was a flag. The
+  // remote settled it in one command, being silent at `0x020000` and answering `AHCM` at
+  // `0x820000`. `docs/findings.md` section 76.
   assert.equal(profileFor(H525).architecture, 9);
-  assert.equal(profileFor(H525).configBase, 0x020000);
+  assert.equal(profileFor(H525).configBase, 0x820000);
+  assert.equal(profileFor(H525).containerBase, 0x020000);
   // Not the 4 MiB ceiling the other two share: the 525's flash is 512 KiB.
-  assert.equal(profileFor(H525).configEnd, 0x080000);
-  assert.equal(profileFor(H525).unverified, true);
-  assert.equal(profileFor(ONE).unverified, undefined);
-  assert.equal(profileFor(H600).unverified, undefined);
-  // concordance's table says 0x820000 for this architecture, where bit 23 is a flag rather than an
-  // address bit. Nothing here should ever carry that value.
-  for (const profile of PROFILES) assert.ok(profile.configBase < 0x800000, profile.model);
+  assert.equal(profileFor(H525).configEnd, 0x880000);
+  // No entry is unverified any more, because a remote of every model in the table has now been
+  // connected here. The field stays, because the next architecture will need it.
+  for (const profile of PROFILES) assert.equal(profile.unverified, undefined, profile.model);
+  // The two bench architectures have one space, not two, and must not grow a second by accident.
+  assert.equal(profileFor(ONE).containerBase, undefined);
+  assert.equal(profileFor(H600).containerBase, undefined);
+});
+
+test('a container base is used for the length and never for the read address', () => {
+  // The negative that makes the pair worth having. Reading the 525's length against `configBase`
+  // is what produced minus 8337413, so this pins that `parseHeader` uses the other one, with a
+  // hand built header rather than a sample so it needs no lab.
+  const head = new Uint8Array(HEADER_PROBE);
+  head.set([0x41, 0x48, 0x43, 0x4d], 0); // AHCM
+  head.set([0xf7, 0xc7, 0x02, 0x00], 4); // end_addr 0x0002c7f7, the bench unit's own
+  const header = parseHeader(head, profileFor(H525));
+  assert.equal(header.length, 0x0002c7f7 - 0x020000 + 4);
+  assert.equal(header.length, 51195, 'the config read off the bench 525');
 });
 
 test('end_addr in the header gives the exact length, on both architectures', skipUnless('one_config', 'h600_config'), () => {

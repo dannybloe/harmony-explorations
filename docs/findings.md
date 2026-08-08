@@ -15,6 +15,10 @@ Source material:
   dumped remote.
 * A **second Harmony One** of the same model, firmware and skin, unprogrammed. The pair is
   worth more than two unrelated dumps.
+* A **Harmony 525**, architecture 9, connected on 8 August 2026. Its config, its two external
+  flash images and the first bytes of its internal program memory were read over USB by this
+  project's own code. The third architecture with hardware here, and the first arch 9 firmware
+  anywhere in this project. Section 76.
 * **Five publicly shared configs from other architectures**, used as controls rather than as
   targets: four architecture 8 configs (720/785/88x class) shared by guyman70718 in
   concordance issue 66, and one architecture 9 config (Harmony 525) published by trelowney.
@@ -32,7 +36,9 @@ numeric claim was checked against at least two independent samples where possibl
 the source material listed above. No insider information and **no writes to any remote**. It
 was pure offline analysis of files until section 19, which now also rests on hardware. The
 programmed Harmony 600 was enumerated read only, and then three read commands were sent to it from
-this project's own host code: GET_VERSION, READ_MISC and READ_FLASH. **Nothing has been written to a
+this project's own host code: GET_VERSION, READ_MISC and READ_FLASH. Section 76 does the same to a
+Harmony 525 and takes its firmware off it, so arch 9 is no longer an architecture reasoned about
+purely from one stranger's config. **Nothing has been written to a
 remote, by any path.** Every other claim in this document is offline analysis, which means it is
 independently checkable and should be checked. Verification method is shown alongside the conclusions
 rather than just asserted, most importantly the calibration table in section 5 and the
@@ -43,7 +49,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Seventeen have been found and corrected so far. The newest is section 75's, and it is the kindest
+Eighteen have been found and corrected so far. The newest is section 76's, and it is one this
+project set up deliberately: `docs/memory-map-525.md` published nine predictions before a Harmony
+525 was connected, and the one that failed was not in the list at all. Two documents said bit 23 of
+arch 9's flash address "reads as a flag rather than an address bit", from concordance's table<!--superseded-->
+disagreeing with the config's own arithmetic. It is the reverse: bit 23 belongs to the read
+command's address and not to the container's. The reasoning was sound and one sided, because only
+the config was available to reason from, and the remote settled it in one command.
+
+Before it, section 75's, and it is the kindest
 kind: section 61 read an infrared header as a flat 21 bytes and every word of its argument holds,
 because 21 bytes is what the header is when the count at `+0x0B` is one, which is every record it
 looked at. The claim was not wrong so much as unaware of its own scope, and the byte that states
@@ -8400,6 +8414,176 @@ records is not 37.
   `irGroupCount`, `irHeaderLength`, and `irRecordBlocks` walking every group.
 * `packages/codec/src/coverage.ts`: the header claim takes its length from the record.
 * `packages/codec/test/sections.test.ts` and `test/coverage.test.ts`.
+
+
+## 76. A Harmony 525 on the bench: two address spaces, a seven byte version block, and arch 9 firmware
+
+A Harmony 525 was connected on 8 August 2026, which made architecture 9 the third this project has
+hardware for. `docs/memory-map-525.md` exists so that session was a test rather than a description:
+every number in it was published before the remote arrived. Eight of the nine predictions hold
+exactly. The ninth is wrong and it is the interesting one, and two things nobody had predicted at
+all were what actually stood between us and a config read.
+
+### The identity, predicted against measured
+
+Enumeration first, opening nothing:
+
+| | predicted | measured |
+|---|---|---|
+| `idProduct` | `0xC111` | `0xC111` |
+| `bcdDevice` | `0x0916` | `0x0916` |
+
+Both hold, so the `bcdDevice` rule really is generation specific. The Harmony One enumerates
+`0x1054` and the 600 `0x1071`, a constant `0x10` followed by the skin in BCD; read that way a 525
+would be `0x1022` and it is not. Read as plain hex it is protocol 9 and skin 22, both exact.
+Section 57's corroboration of field 5 through `bcdDevice` therefore holds for the MyHarmony era and
+must not be carried back.
+
+Then `GET_VERSION`, which answered `27 30 25 12 ff 90 16 09`:
+
+| field | predicted | measured | |
+|---|---|---|---|
+| 0 | `0x30` | `0x30` | firmware 3.0, and the USB vendor string says `Harmony Remote 0-3.0.0` |
+| 1 | `0x25` | `0x25` | `BOARD 2.5.0` |
+| 2 | `0x12` | `0x12` | flash device id |
+| 3 | `0xFF` | `0xFF` | flash manufacturer id, so a 25F040, 512 KiB |
+| 4 | `0x90` | `0x90` | `PROTOCOL 9` in the high nibble |
+| 5 | `0x16` | `0x16` | `SKIN 22` |
+| 6 | `0x0C` | **`0x09`** | the one miss |
+
+**Field 4 is the claim that mattered and it holds.** Section 57 read its high nibble as the
+architecture from four images spanning two architectures. A third architecture is a real test of
+that and `0x90` is the whole claim in one byte.
+
+**Field 6 is not a constant.** It is `0x0C` on arch 12 and arch 14, which is why it was predicted
+here and why it sits in the open list as "a compiled in `0x0C` with no reading". On this remote it
+is `0x09`, which is the architecture and the protocol. concordance reads that byte as the protocol
+when the block is seven long and takes the protocol from the architecture nibble when it is longer,
+so on arch 12 and arch 14 nothing reads it and a stale `0x0C` would never show. That is a
+hypothesis rather than a reading: it would make the 600 claim protocol 12 where its own config
+header says 14. What is established is only that the byte is not the same everywhere.
+
+### The version block is seven fields, and the nibble says so
+
+The reply is `0x27`: high nibble `0x2` for a version response, low nibble 7. Every one of those
+seven bytes is identified above. On arch 12 and arch 14 the reply is `0x28` while the firmware
+copies twelve, which is why this project read the nibble as decoration and matched the whole byte.
+
+concordance reads it as a length and branches on it, accepting 5, 7 or 8 and giving up the
+architecture and the skin below 6 and the protocol below 7. Both readings are now needed: the
+nibble is a count where it is small and a floor at 8, where the arch 12 firmware settles the real
+figure at twelve by copying twelve bytes.
+
+Matching the whole byte meant a perfectly good answer from a working remote decoded as an anonymous
+data reply, and then a second check refused it for not being twelve bytes long. **A remote that
+answers correctly and is refused twice by the host is the worst shape a protocol bug can take**,
+because every symptom points at the device.
+
+### Two address spaces, a megabyte apart
+
+This is what actually blocked the read, and nothing had predicted it.
+
+`READ_FLASH` on this remote is **silent** at `0x010000`, `0x020000` and `0x030000`, and answers at
+`0x800000`, `0x810000`, `0x820000` and `0x870000`. At `0x820000` the first bytes are
+`41 48 43 4d`, which is `AHCM`. So the config is exactly where concordance's architecture table
+says it is, `config_base = 0x820000`, with `flash_base = 0x800000` and `firmware_base = 0x810000`.
+
+**And the container's own pointers are `0x02xxxx`.** Its `end_addr` is `0x0002C7F7`, section slot 0
+points at `0x029609`, and the recovered base is `0x020000`. Computing the length as
+`end_addr - config_base` gives **minus 8337413**, which is how this was found rather than assumed.
+
+So both numbers are right and they are different numbers:
+
+| | value | what uses it |
+|---|---|---|
+| read base | `0x820000` | the address a `READ_FLASH` command must name |
+| container base | `0x020000` | what every pointer inside the file counts from |
+
+`docs/memory-map-525.md` and `packages/corpus/src/read.ts` both said bit 23 "reads as a flag rather<!--superseded-->
+than an address bit", from concordance's table disagreeing with the config's own arithmetic. It is
+the opposite: bit 23 is part of the command's address and absent from the config's. The reasoning
+that produced the wrong version was sound and one sided, since only the config was available.
+
+**The device refuses by saying nothing.** On arch 12 and arch 14 the firmware's validator at
+`0x13DFE` rejects a top address byte outside `< 0x20`, `0xFE` and `0xFF`. Whatever arch 9's rule
+is, a rejected address produces silence rather than an error, so a wrong base looks like a broken
+cable. That is worth stating because the entry in `read.ts` was written with a comment promising
+the failure would be loud, on the grounds that `parseHeader` refuses anything that is not a
+container. It never got that far.
+
+### The firmware, which was the prize
+
+`0x800000` and `0x810000` both hold an image beginning `xx xx ff ff 48 47 00 70`, where `48 47` is
+`HG` and the first two bytes differ between them, so they are plausibly a checksum. `0x810000` is
+the larger, 37912 of 65536 bytes not `0x00` or `0xFF` against 8826 at `0x800000`.
+
+`loadaddr.find_base` puts the `0x810000` image at program `0x1000`, scoring 717 boundary hits
+against 326 for base 0 and 153 for the next candidate, which is the wide separation that module
+asks for. Three independent things agree with it:
+
+* Disassembled at `0x1000` the first eight bytes are the header and `0x1008` is
+  `GOTO 0x07FB4`, with ordinary code from `0x1010`: `MOVLB`, `CLRF`, `BTFSS`, `BRA`, `BCF LATE,2`.
+* `0x07FB4` fits inside 32 KiB, which is the program memory of the `PIC18LF4550` concordance names
+  for this architecture.
+* A read of **internal** program memory at `0x000000` returns `7b ef 07 f0`, a `GOTO 0x0EF6`. That
+  is the reset vector, and it lands **below** `0x1000`, so the region under the application image
+  is a bootloader and the application starts exactly where `find_base` put it.
+
+So the layout is: bootloader in internal flash below `0x1000`, the application above it, its update
+image in external flash at `0x810000`, a second image at `0x800000`, and the config at `0x820000`.
+
+**Internal program memory is at plain low addresses here**, not behind the `0xFE` and `0xFF` window
+arch 12 and arch 14 use. This project's cap on internal reads keys on those two top bytes, so on
+arch 9 it protected nothing until the region rule learned about the architecture. The cap is now
+applied to top byte `0x00` on arch 9 for the same reason it exists elsewhere: an arch 12 remote
+leaves the USB bus when such a read ends in a one byte chunk, and nothing establishes that this one
+does not.
+
+### The config, and what it settles
+
+51195 bytes read over USB with this project's own code and filed in the lab. Every container
+prediction holds: `AHCM` and `MCHA`, marker `CMAH`, format `0x1400`, 20 pointer slots, architecture
+9 in slot 1. The trailer checksum recomputes over all 51195 bytes, which is the closure on the whole
+read: a transfer that drifted anywhere would fail it.
+
+The byte accounting reads 77.1% and the emitter round trips it byte for byte. That is the corpus's
+**second** arch 9 sample, which is where this project's verification standard starts, and the first
+that did not come from a stranger.
+
+### What it rules out
+
+That the USB command layer is MyHarmony era only. `GET_VERSION` and `READ_FLASH` both work on an
+EasyZapper era remote from this project's own host code, with the same command bytes and the same
+length nibble mapping concordance uses.
+
+That `packages/usb` was ready for a third architecture. Three things had to change and all three
+were arch 12 assumptions written as universals: the version reply matched as a whole byte, the
+version length fixed at twelve, and the region validator hard coded.
+
+That the first exchange after connecting is reliable. The very first `GET_VERSION` of the session
+returned nothing within three polls of two seconds; every exchange since has answered in **2 ms**,
+four in a row identical. libconcord sends `COMMAND_RESET_USB` before anything else to every non
+Z-Wave remote with the comment that otherwise "the first communication attempt fails", and
+`readConfig` already retries once on silence, which is why it never saw this. **No reset was sent
+here and none is proposed**, since the rails forbid one and a single retry covers it.
+
+### What would falsify it
+
+A second 525 whose version block is not seven fields, or whose field 6 is not `0x09`. An arch 9
+remote that answers a `READ_FLASH` below `0x800000` other than in internal program memory. A
+container on arch 9 whose own pointers count from `0x820000`. An `0x810000` image that does not
+disassemble at `0x1000`.
+
+### Where it lands
+
+* `packages/usb/src/protocol.ts`: `VERSION_REPLY_CODE`, `VERSION_NIBBLE_LONG`,
+  `VERSION_FIELD_COUNT_MIN`, and `validateRegionByte` taking an architecture.
+* `packages/usb/src/remote.ts`: `RemoteOptions.architecture`, and `getVersion` accepting a block
+  that is not twelve bytes.
+* `packages/corpus/src/read.ts`: the 525 profile, no longer `unverified`, and `containerBase`.
+* `packages/usb/test/protocol.test.ts` and `packages/corpus/test/read.test.ts`.
+* `docs/memory-map-525.md`, rewritten from predictions to measurements.
+* `reference/checksums.md`: the config and the two flash images.
 
 
 ## References

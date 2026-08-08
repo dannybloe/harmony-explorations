@@ -48,6 +48,7 @@ const profile = profileFor(found.productId);
 process.stdout.write(`${profile.model}, architecture ${profile.architecture}\n`);
 
 const remote = new HarmonyRemote(await openHarmony({ productId: found.productId }), {
+  architecture: profile.architecture,
   timeoutMs: 2000,
 });
 try {

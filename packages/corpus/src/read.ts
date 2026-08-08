@@ -30,9 +30,20 @@ export interface RemoteProfile {
   readonly productId: number;
   readonly model: string;
   readonly architecture: number;
+  /** The address a `READ_FLASH` command must name to reach the start of the config. */
   readonly configBase: number;
-  /** Where the config region ends. Not the same on every architecture: see the 525 below. */
+  /** Where the config region ends, in the same space as `configBase`. */
   readonly configEnd: number;
+  /**
+   * The base the container's **own** pointers count from, when that is not `configBase`.
+   *
+   * Two spaces, and on arch 9 they differ by a megabyte: `READ_FLASH` answers at `0x820000` and
+   * is silent below `0x800000`, while the container's `end_addr` and every section pointer inside
+   * it are `0x02xxxx`. Reading the length as `end_addr - configBase` then gives a negative number,
+   * which is how this was found rather than assumed. Defaults to `configBase`, which is what the
+   * two bench architectures do. `docs/findings.md` section 76.
+   */
+  readonly containerBase?: number;
   /**
    * Set when no remote of this model has ever been connected here, so the entry rests on a
    * published report rather than on a measurement. The read still checks itself, because
@@ -44,15 +55,18 @@ export interface RemoteProfile {
 export const PROFILES: readonly RemoteProfile[] = [
   { productId: 0xc121, model: 'Harmony One', architecture: 12, configBase: 0x040000, configEnd: 0x400000 },
   { productId: 0xc122, model: 'Harmony 600 or 700', architecture: 14, configBase: 0x030000, configEnd: 0x400000 },
-  // The 525's flash is 512 KiB rather than 4 MiB, so its region ends at `0x080000` and not at the
-  // ceiling the other two share. Both numbers come from the arch 9 config in the lab: its own
-  // recovered base is `0x020000` and base slot 2 puts the log area's limit at `0x080000`, which by
-  // section 47's rule sits above the config. `docs/memory-map-525.md`.
+  // **The 525's read base is `0x820000`, and this entry said `0x020000` until a remote was
+  // connected on 8 August 2026.** Both numbers are real and they are not the same number: the
+  // container's own pointers are `0x02xxxx`, which is the base its `end_addr` recovers and what
+  // every offset inside the file means, while `READ_FLASH` will not answer below `0x800000` at
+  // all. So bit 23 is part of the command's address on this architecture and absent from the
+  // config's, which is the opposite of the note that used to sit here calling it a flag. Measured:
+  // `0x010000`, `0x020000` and `0x030000` are silent, `0x820000` returns `AHCM`.
   //
-  // Two traps recorded here rather than left to be rediscovered. concordance's own table gives
-  // arch 9's config base as `0x820000`, where bit 23 is a flag and not an address bit. And the
-  // product id rests on a third party report of one unit, which is what `unverified` says.
-  { productId: 0xc111, model: 'Harmony 525', architecture: 9, configBase: 0x020000, configEnd: 0x080000, unverified: true },
+  // The region is still 384 KiB, ending at `0x880000`, because the flash is a 512 KiB 25F040 and
+  // base slot 2 puts the log area above the config. `docs/findings.md` section 76.
+  { productId: 0xc111, model: 'Harmony 525', architecture: 9, configBase: 0x820000,
+    configEnd: 0x880000, containerBase: 0x020000 },
 ];
 
 export class ReadError extends Error {}
@@ -107,7 +121,7 @@ export function parseHeader(head: Uint8Array, profile: RemoteProfile): ConfigHea
   }
   const endAddr = byteUtil.u32(head, 4);
   const format = byteUtil.u32(head, 8);
-  const length = endAddr - profile.configBase + family.endMarker.length;
+  const length = endAddr - (profile.containerBase ?? profile.configBase) + family.endMarker.length;
   if (length <= HEADER_PROBE || profile.configBase + length > profile.configEnd) {
     throw new ReadError(
       `end_addr 0x${endAddr.toString(16)} gives an implausible length of ${length} bytes ` +

@@ -1130,8 +1130,9 @@ class TestTheFontTable(unittest.TestCase):
                         for row in glyph.rows:
                             self.assertEqual(len(row), glyph.width)
                 total += sum(len(g) for g in sets)
-        # 3933 until section 63 read arch 9's packing and added its 160 glyphs.
-        self.assertEqual(total, 4093)
+        # 3933 until section 63 read arch 9's packing and added its 160 glyphs, 4093 until
+        # section 76 put a second arch 9 config in the corpus, read off the bench 525.
+        self.assertEqual(total, 4236)
 
     def test_every_inline_string_resolves_through_its_own_font(self):
         """The closure the wrong count destroyed, and the reason this section was corrected."""
@@ -1156,10 +1157,12 @@ class TestTheFontTable(unittest.TestCase):
                         resolved += c.glyph(fonts[selected], code) is not None
         # 16054 before section 53 added the mode records' own programs as roots, 39170 before
         # section 54 added arch 12's, 40588 before section 64 added arch 9's, 41793 before
-        # section 66 added the programs a mode's pages state. Arch 9's codes are the closure
-        # section 46 could not run there, and they resolve through the fonts section 63 decoded,
-        # so the two findings check each other.
-        self.assertEqual(codes, 55542)
+        # section 66 added the programs a mode's pages state, and 55542 before section 76 added a
+        # second arch 9 config. Arch 9's codes are the closure section 46 could not run there, and
+        # they resolve through the fonts section 63 decoded, so the two findings check each other.
+        # **Every one of the bench 525's own codes resolves too**, which is the first time that
+        # closure has run on an arch 9 config this project read itself.
+        self.assertEqual(codes, 57389)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):

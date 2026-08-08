@@ -36,6 +36,10 @@ EXPECTED = {
     'h700_config': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 163),
     'h700_config_2': (b'GSPM', 0x030000, '1.4', 20, b'LWJL', 163),
     'h525_config': (b'AHCM', 0x020000, '1.4', 20, b'CMAH', 0),
+    # The bench 525's own config, read over USB on 8 August 2026. Identical in every container
+    # field to the published sample from another owner, which is the second arch 9 sample this
+    # table has wanted since the architecture was added. findings.md section 76.
+    'h525_config_2': (b'AHCM', 0x020000, '1.4', 20, b'CMAH', 0),
     'arch8_config_a': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
     'arch8_config_b': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
     'arch8_config_c': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
@@ -137,14 +141,14 @@ class TestContainerAcrossSamples(unittest.TestCase):
             'versions': len({c.format_version for c in seen}),
             'lengths': len({c.pointer_count for c in seen}),
         }
-        self.assertEqual(counts, {'samples': 15, 'architectures': 4, 'bases': 4,
+        self.assertEqual(counts, {'samples': 16, 'architectures': 4, 'bases': 4,
                                   'versions': 3, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             'docs', 'config-format.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
-        self.assertIn('**fifteen samples across four architectures**, four base addresses', text)
+        self.assertIn('**sixteen samples across four architectures**, four base addresses', text)
         self.assertIn('three format versions and three pointer table\nlengths (20, 21, 22)', text)
         # No assertion that the old wording is gone: the correction note below the paragraph
         # quotes it on purpose, and the two positive checks above already fail if it comes back.

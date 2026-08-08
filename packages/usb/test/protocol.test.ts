@@ -124,6 +124,30 @@ test('the region byte rule is the firmware validator, and it rejects', () => {
   }
 });
 
+test('arch 9 puts its flash a megabyte up, and the two rules disagree everywhere', () => {
+  // Measured on a Harmony 525 on 8 August 2026: silent at 0x010000, 0x020000 and 0x030000, and
+  // answering at 0x800000, 0x810000, 0x820000 and 0x870000. `docs/findings.md` section 76.
+  assert.equal(validateRegionByte(0x82, 9), 'config-flash');
+  assert.equal(validateRegionByte(0x80, 9), 'config-flash');
+  assert.equal(validateRegionByte(0x87, 9), 'config-flash');
+  // Internal program memory is at plain low addresses on a PIC18LF4550, with no 0xFE window. It is
+  // still reported as internal, which is what keeps the one chunk cap over it.
+  assert.equal(validateRegionByte(0x00, 9), 'internal-program-memory');
+  // And 0xFE is not a window here at all, so the arch 12 route into program memory is refused.
+  assert.throws(() => validateRegionByte(0xfe, 9), ProtocolError);
+});
+
+test('each architecture refuses the other one is allowed', () => {
+  // The negative, and it is the whole reason the rule takes an architecture. Every address that
+  // works on a 525 is refused by the arch 12 rule, and the arch 12 config base is refused by the
+  // arch 9 one, so a default applied to the wrong remote fails before a byte is sent.
+  assert.throws(() => validateRegionByte(0x82), ProtocolError, 'arch 12 rule on an arch 9 address');
+  assert.throws(() => validateRegionByte(0x04, 9), ProtocolError, 'arch 9 rule on an arch 12 base');
+  assert.throws(() => validateRegionByte(0x03, 9), ProtocolError, 'the 525 is silent here');
+  assert.equal(regionOf(0x820000, 9), 'config-flash');
+  assert.throws(() => regionOf(0x820000), ProtocolError);
+});
+
 test('the config regions of both architectures are in the accepted range', () => {
   // The check that this rule is compatible with reading the remotes on the bench at all.
   assert.equal(regionOf(0x040000), 'config-flash'); // arch 12, Harmony One
@@ -143,8 +167,8 @@ test('a READ_MISC reply echoes the selector alongside its byte', () => {
 });
 
 test('a version reply is cut to twelve fields by the count the firmware copies', () => {
-  // Not by the length nibble. 0x28's nibble would mean 15 payload bytes under the request mapping
-  // while the executor copies 12, and that discrepancy is unresolved, so the count that is
+  // Not by the length nibble, at 0x28. Its nibble would mean 15 payload bytes under the request
+  // mapping while the executor copies 12, and that discrepancy is unresolved, so the count that is
   // actually established wins.
   const report = new Uint8Array(REPORT_SIZE);
   report[0] = 0x28;
@@ -153,6 +177,22 @@ test('a version reply is cut to twelve fields by the count the firmware copies',
   assert.equal(reply.kind, 'version');
   if (reply.kind !== 'version') return;
   assert.deepEqual([...reply.fields], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+});
+
+test('a Harmony 525 answers 0x27 and seven fields, which used to decode as anonymous data', () => {
+  // The exact reply measured on the bench on 8 August 2026, every byte of it identified: firmware
+  // 3.0, board 2.5.0, flash 0xFF:0x12, architecture 9, skin 22, and 0x09 where arch 12 and arch 14
+  // carry a compiled in 0x0C. Matching the whole byte 0x28 instead of the high nibble is what made
+  // a working remote's correct answer look like a device fault. `docs/findings.md` section 76.
+  const report = new Uint8Array(REPORT_SIZE);
+  report.set([0x27, 0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09], 0);
+  const reply = decodeReply(report);
+  assert.equal(reply.kind, 'version');
+  if (reply.kind !== 'version') return;
+  assert.deepEqual([...reply.fields], [0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09]);
+  // The architecture in the high nibble of field 4, which section 57 derived from two
+  // architectures and this is the third test of.
+  assert.equal((reply.fields[4] as number) >> 4, 9);
 });
 
 test('the command states are the ones the firmware sets', () => {

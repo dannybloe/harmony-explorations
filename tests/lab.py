@@ -66,6 +66,8 @@ IMAGES = {
     # harmony-decompiler; the rest are dumps of specific remotes, so their file names are
     # whatever the contributor's concordance run produced.
     'h525_config': 'config.EZHex',
+    # The bench 525's own config, read over USB on 8 August 2026. findings.md section 76.
+    'h525_config_2': '20260808T1645Z-harmony-525-config.bin',
     'arch8_config_a': 'Update.EZHex',
     'arch8_config_b': 'Update-1.EZHex',
     'arch8_config_c': 'Update-2.EZHex',
@@ -108,7 +110,7 @@ def _find(filename):
 # the corpus is. The two Harmony One sync-pair dumps are deliberately absent: they are two states of
 # one remote rather than two remotes, so counting them would double one unit in every total.
 CONTAINERS = (
-    'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+    'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
     'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
     'arch8_config_d', 'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm',
 )

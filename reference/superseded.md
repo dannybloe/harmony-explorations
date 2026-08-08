@@ -60,3 +60,7 @@ and leave this table alone.
 | `The header is 21 bytes` | section 75 | `12 + 9 * count`, stated at `+0x0B`; 21 is the count of one case |
 | `wanting a firmware nobody has` | 8 August 2026 | `concordance -b -f` returns the whole firmware region on arch 8 and arch 9, so an image is one contributor away; and most of arch 8's remainder is self framed and needs none |
 | `does not return firmware.` | section 2, 8 August 2026 | it does on arch 8 and arch 9; the defect is two architecture entries, so the claim is only true with a scope, and a sentence that ends there has none |
+| `flag rather than an address bit` | section 76 | bit 23 belongs to the read command's address on arch 9; a 525 is silent below `0x800000` and answers `AHCM` at `0x820000` |
+| `which the lab does not have` | section 76 | it has one: the arch 9 application image was read off a 525's external flash at `0x810000` on 8 August 2026 |
+| `twelve byte version block` | section 76 | seven on a 525, and the reply's low nibble states it; twelve is the arch 12 and arch 14 figure |
+

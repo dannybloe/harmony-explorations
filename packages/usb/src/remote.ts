@@ -26,7 +26,7 @@ import {
   MISC_RAM,
   READ_FLASH,
   nextFlashSequence,
-  VERSION_FIELD_COUNT,
+  VERSION_FIELD_COUNT_MIN,
   decodeReply,
   getVersionRequest,
   readFlashRequest,
@@ -50,6 +50,12 @@ export interface RemoteOptions {
   readonly timeoutMs?: number;
   /** How many empty polls in a row end a transfer that has stopped producing data. */
   readonly idlePolls?: number;
+  /**
+   * Which architecture's address rule applies, since the device's own validator is not the same
+   * on all of them. Defaults to the arch 12 and arch 14 rule; an arch 9 remote needs `9` or every
+   * address that works is refused before it is sent. `docs/findings.md` section 76.
+   */
+  readonly architecture?: number;
 }
 
 const DEFAULT_TIMEOUT_MS = 2000;
@@ -59,11 +65,13 @@ export class HarmonyRemote {
   private readonly transport: Transport;
   private readonly timeoutMs: number;
   private readonly idlePolls: number;
+  private readonly architecture: number | undefined;
 
   constructor(transport: Transport, options: RemoteOptions = {}) {
     this.transport = transport;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.idlePolls = options.idlePolls ?? DEFAULT_IDLE_POLLS;
+    this.architecture = options.architecture;
   }
 
   async close(): Promise<void> {
@@ -84,13 +92,17 @@ export class HarmonyRemote {
   }
 
   /**
-   * The twelve byte version block.
+   * The version block, twelve bytes on arch 12 and arch 14 and **seven on a Harmony 525**.
    *
-   * Twelve because two independent counts agree: the firmware stores through its output pointer at
-   * exactly twelve sites, and the executor copies twelve bytes. A read of a Harmony 600 compared
-   * against `concordance -i` on the same unit identifies five of them and leaves six unidentified,
-   * with one candidate; see `docs/usb-protocol.md` for the mapping and its caveat, which is that it
-   * rests on a single remote.
+   * Twelve because two independent counts agree there: the firmware stores through its output
+   * pointer at exactly twelve sites, and the executor copies twelve bytes. A read of a Harmony 600
+   * compared against `concordance -i` on the same unit identifies five of them and leaves six
+   * unidentified, with one candidate; see `docs/usb-protocol.md` for the mapping and its caveat.
+   *
+   * **The length is stated by the reply and is not a constant.** This used to insist on twelve, so
+   * an arch 9 remote answering `0x27` and seven good fields was refused twice over: once because
+   * the decoder matched the whole byte and once because of this check. Measured on the bench on
+   * 8 August 2026; `docs/findings.md` section 76.
    *
    * Raw bytes, not a labelled object, and that stays true until a second remote agrees. Ten labels
    * on bytes nobody has identified would be worse than none, because they would be believed.
@@ -100,8 +112,10 @@ export class HarmonyRemote {
     if (reply.kind !== 'version') {
       throw new RemoteError(`GET_VERSION answered with a ${reply.kind} reply`);
     }
-    if (reply.fields.length !== VERSION_FIELD_COUNT) {
-      throw new RemoteError(`version block is ${reply.fields.length} bytes, expected 12`);
+    if (reply.fields.length < VERSION_FIELD_COUNT_MIN) {
+      throw new RemoteError(
+        `version block is ${reply.fields.length} bytes, fewer than ${VERSION_FIELD_COUNT_MIN}`,
+      );
     }
     return reply.fields;
   }
@@ -142,7 +156,7 @@ export class HarmonyRemote {
    * sent exactly the number of bytes asked for, so the count on the wire is not biased by one.
    */
   async readFlash(address: number, count: number): Promise<Uint8Array> {
-    regionOf(address); // throws for a top byte the firmware's own validator rejects
+    regionOf(address, this.architecture); // throws for a top byte the device's own rule rejects
     await this.transport.write(readFlashRequest(address, count));
 
     const out = new Uint8Array(count);

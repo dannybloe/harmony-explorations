@@ -60,11 +60,12 @@ rather more than that.
 | models listed on the harmony-remote-forum comparison page | 42 |
 | named models in concordance's skin table | 71, in 120 table positions |
 | architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
-| architectures with hardware on this bench | **2** (arch 12 and arch 14) |
-| architectures with sample files only | 2 (arch 8 and arch 9) |
+| architectures with hardware on this bench | **3** (arch 9, arch 12 and arch 14) |
+| architectures with sample files only | 1 (arch 8) |
 
-So the container claims are validated across four architectures and the USB claims across two, out
-of at least eleven. One boundary is already visible without owning anything: the 900, 1000 and 1100
+So the container claims are validated across four architectures and the USB claims across **three**,
+out of at least eleven. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
+every one of them an arch 12 assumption written as a universal: section 76. One boundary is already visible without owning anything: the 900, 1000 and 1100
 are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
 reach them at all, never mind parse them.
 
@@ -380,7 +381,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 21392<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
+Section 40 states 21503<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number

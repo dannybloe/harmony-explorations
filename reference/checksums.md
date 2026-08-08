@@ -145,6 +145,17 @@ Note the 600 firmware file listed under derived binaries is **truncated**: the r
 70336 bytes and concordance returns only the first 65536. Use the 700 image for arch 14 work,
 since it is complete.
 
+## Read off a Harmony 525, 8 August 2026
+
+Architecture 9, the first arch 9 hardware here. All three read over USB by this project's own code,
+read only; they live in the lab and are not publishable, so these are the checksums. Section 76.
+
+| File | SHA-256 | What |
+|---|---|---|
+| `20260808T1645Z-harmony-525-config.bin` | `a5bdb588638d81fb0b491eb47a90cfd2f9e9a4bd1ca374ad16550af0e0910ffb` | the user config, 51195 bytes, flash `0x820000` |
+| `20260808-harmony-525-flash-810000.bin` | `2c29005c1080690a9d6716c94b3bb1e49856b47b448a452c329ec1c41a1e6282` | the application firmware image, 65536 bytes |
+| `20260808-harmony-525-flash-800000.bin` | `dbb57d128aa8b3b0f03a7ec0de9522f09dd04cb30c350c804a25ba91b4c1412a` | a second `HG` framed image, a third the size |
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than
@@ -155,6 +166,7 @@ obviously failing.
 | One 3.4 code half | `0x20000` | `0x2EA38` | mark `0x20000-0x2002F` as data: header plus `DEADDEAD` fill |
 | 700 2.8 `Region_2` | `0x9000` | `0x1BB38` | header is `0x00-0x0F` only, code starts at `0x9010` |
 | 600 0.2 dump | `0x9000` | `0x1A26E` | entry point falls in the truncated tail |
+| 525 flash `0x810000` | `0x1000` | `GOTO 0x07FB4` at `0x1008` | derived, 717 boundary hits against 326 for base 0; header is `0x1000-0x1007` |
 
 Ghidra language: `PIC-18:LE:24:PIC-18`. Only a generic variant exists, so SFRs come out
 unnamed; `tools/pic18_disasm.py` resolves them instead.

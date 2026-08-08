@@ -1,11 +1,12 @@
 # Memory map: Harmony 525 (architecture 9)
 
-Where everything is expected to live on a Harmony 525, written **before one was connected**.
+Where everything lives on a Harmony 525. **The predictions were published first and the remote was
+connected on 8 August 2026**, which is the point of the document: the measurements below are marked
+as such and the predictions they answer are kept beside them rather than overwritten.
 
-A second hand 525 is on its way to the bench, which will make architecture 9 the third this project
-has hardware for. This document exists so that the first session with it is a test rather than a
-description: every number below is a prediction, derived from one config file somebody else
-published, and each one can be wrong in a way that would teach us something.
+Eight of the nine identity predictions hold exactly. The one that failed was not in the list at
+all, and it is the one that blocked the config read: the address a `READ_FLASH` must name. Full
+argument in [findings.md](findings.md) section 76.
 
 Read [memory-map.md](memory-map.md) first for the addressing rules and the `0xFE` and `0xFF`
 notation. [memory-map-700.md](memory-map-700.md) is the same kind of document for a model nobody
@@ -15,7 +16,9 @@ here owns; this one differs in that the gap is about to close.
 
 It is the worst covered architecture in the corpus by a wide margin. The byte accounting reads
 **67.1%<!--fact:coverage_h525_config-->** against 99.5% or better on both target architectures, and the reasons are all the same reason: there
-is no arch 9 firmware anywhere, so every structure that does not decode has nothing to appeal to.
+was no arch 9 firmware anywhere, so every structure that did not decode had nothing to appeal to.
+**That changed on 8 August 2026**: the application image is in the lab, read off the bench unit's
+external flash. Nothing has been decoded out of it yet, so the number below has not moved.
 
 **The margin is almost entirely one structure.** Infrared class 5 is 24467 of the 26368 bytes
 still unaccounted, so setting it aside the arch 9 sample is read to about 97%, against 100.0% on
@@ -30,8 +33,10 @@ One specific thing is stuck behind that, and it is the largest single gap left:
   the headers** are what is left. They are not duration streams and a terminator will not find
   their extent, so this one really does want the code.
 
-A firmware image would speak to it. That is the prize, and it is the thing this document is least
-able to predict, because nothing is known about where arch 9 keeps its code.
+A firmware image would speak to it. That was the prize, and this document was least able to predict
+it because nothing was known about where arch 9 keeps its code. The answer: an update image in
+external flash at `0x810000`, loading at program `0x1000`, with the running copy in the MCU's own
+flash and a bootloader below it.
 
 **Two items came off that list without one**, both on 7 August 2026, and they are worth carrying
 into the first session with the hardware because they say **not every arch 9 gap needs the code**.
@@ -40,6 +45,25 @@ differently; section 63 reads them, two bits to a pixel, and they draw as letter
 record tail** used to be here too, at 43 of 114; section 64 found one missing operand count and it
 is now 114 of 114. Between them they took the accounting from 14.6% to 49.8%, and section 65's
 header reading took it to 55.1%.
+
+## Measured, 8 August 2026
+
+| | measured | how |
+|---|---|---|
+| `idProduct` | `0xC111` | enumeration, nothing opened |
+| `bcdDevice` | `0x0916` | the same |
+| `GET_VERSION` | `27 30 25 12 ff 90 16 09` | seven fields, not twelve; the reply's low nibble says so |
+| read base of the config | `0x820000` | silent at `0x010000`, `0x020000` and `0x030000`; `AHCM` here |
+| the container's own base | `0x020000` | its `end_addr`, and every pointer inside it |
+| application firmware image | flash `0x810000`, loads at program `0x1000` | `loadaddr.find_base`, 717 boundary hits against 326 |
+| a second image | flash `0x800000` | same `HG` header, a third the size |
+| internal program memory | plain `0x000000`, reset vector `GOTO 0x0EF6` | one 62 byte read, inside the cap |
+| the config | 51195 bytes, trailer checksum recomputes | read over USB by this project's own code |
+
+The MCU is the `PIC18LF4550` concordance names for this architecture, and three things agree with
+it: the application entry is `GOTO 0x07FB4`, which fits 32 KiB; the reset vector lands below
+`0x1000`, so a bootloader sits under the application; and the flash id `0xFF:0x12` is a 25F040 of
+512 KiB.
 
 ## The identity, predicted field by field
 
@@ -69,7 +93,7 @@ The arch 9 sample's header reads `PROTOCOL 9`, `SKIN 22`, `FLASH 0xFF:0x12`, `BO
 | 3 | `0xFF` | the same, the manufacturer id |
 | 4 | `0x90` | `PROTOCOL 9`, high nibble, low nibble zero on all four images |
 | 5 | `0x16` | `SKIN 22` |
-| 6 | `0x0c` | a compiled in constant on all four images available |
+| 6 | `0x0c` | a compiled in constant on all four images available. **Wrong: it is `0x09`**, the architecture, and concordance reads that byte as the protocol when the block is seven long |
 | 7, 10, 11 | not predicted | version bytes at program addresses no arch 9 image can be checked against |
 | 8, 9 | not predicted | arch 12 reads internal images here and arch 14 hardcodes zero |
 
@@ -83,10 +107,10 @@ exact, which the One and 600 do not satisfy either way.
 So the rule is **generation specific**, and the 525 is the case that shows it. Which reading is
 right is not settled by one report of one unit, and an enumeration on the bench is what settles it:
 
-| | predicted | if it holds |
+| | predicted | measured |
 |---|---|---|
-| `idProduct` | `0xC111` | third party report confirmed on a second unit |
-| `bcdDevice` | `0x0916` | the `0x10` plus BCD skin rule is a MyHarmony era convention, not a Harmony one |
+| `idProduct` | `0xC111` | `0xC111`, so the third party report is confirmed on a second unit |
+| `bcdDevice` | `0x0916` | `0x0916`, so the `0x10` plus BCD skin rule is a MyHarmony era convention |
 
 **Field 4 is the one to watch.** Section 57 concluded that its high nibble is the architecture, from
 four images spanning only two architectures. A third architecture is a real test of that, and `0x90`
@@ -100,10 +124,15 @@ reading rather than with the remote.
 
 ## External flash
 
+Addresses in the left column are what a `READ_FLASH` command names. Subtract `0x800000` for the
+space the container's own pointers use.
+
 | Address | Length | Contents | Source |
 |---|---|---|---|
-| `0x020000` onward | 78486 in one sample | the **user config**, an `AHCM` container | the sample's own recovered base |
-| `0x070000` to `0x080000` | 65536 | the **log area** | base slot 2 of the sample, `capacity 8192` at a stride of 8 |
+| `0x800000` | 65536 | an `HG` framed image, a third the size of the one below | measured |
+| `0x810000` | 65536 | the **application firmware**, code from program `0x1000` | measured |
+| `0x820000` onward | 51195 on the bench unit, 78486 in the published sample | the **user config**, an `AHCM` container | measured |
+| `0x870000` to `0x880000` | 65536 | the **log area** | base slot 2, `capacity 8192` at a stride of 8 |
 
 **The flash is 512 KiB, not the 4 MiB both other architectures have**, and the chip is a 25F040.
 That was first inferred here from one number, the log area's limit of `0x080000` with section 47's
@@ -111,20 +140,28 @@ rule that the region sits above the config, and it agrees with what the sample's
 independently. It also fixes the config region at `0x020000` to `0x080000`, which is 384 KiB, and
 the owner's "77 of 384 KiB" is the same arithmetic from the other side.
 
-One trap for whoever adds the profile: **concordance's own table gives arch 9's config base as
-`0x820000`**, where the value derived from this file's `end_addr` is `0x020000`. Bit 23 reads as a
-flag rather than an address bit. Our reader derives the base from the data and is unaffected, which
-is the point of deriving it.
+> **Corrected on 8 August 2026, section 76.** This said "bit 23 reads as a flag rather than an<!--superseded-->
+> address bit", and it is the reverse. Both numbers are real and they are two address spaces: a
+> `READ_FLASH` command must name `0x820000`, and the remote is **silent** at `0x020000`, while the
+> container's `end_addr` and every pointer inside it count from `0x020000`. Deriving the container's
+> base from the data is still right and it is not enough, because a reader that talks to a remote
+> needs the other number too. `packages/corpus/src/read.ts` carries both, as `configBase` and
+> `containerBase`, and computing the length from the wrong one gives minus 8337413.
 
 Where the application firmware sits in flash is **not predicted at all**. On arch 12 it is external
 and on arch 14 internal, and arch 9 has never been examined either way.
 
 ## Internal memory
 
-Nothing is predicted. The MCU is unknown, the page structure is unknown, and whether `READ_FLASH`
-with a top address byte of `0xFE` or `0xFF` even reaches internal memory on this architecture is
-unknown. Note that on arch 12 an internal read that ends in a one byte chunk restarts the remote,
-which is why `packages/usb` caps such a read at one chunk; that cap applies here too and should not
+Nothing was predicted, and the answer is that **there is no `0xFE` window here at all**. Internal
+program memory answers at plain `0x000000`, and the first four bytes are `7b ef 07 f0`, a
+`GOTO 0x0EF6`, which is the reset vector landing in a bootloader below the application.
+
+That has a safety consequence worth stating plainly. `packages/usb` caps an internal read at one
+chunk because an arch 12 remote leaves the USB bus when such a read ends in a one byte chunk, and
+the cap keys on the top bytes `0xFE` and `0xFF`. On arch 9 it therefore **protected nothing** until
+the region rule learned about the architecture. It now classifies top byte `0x00` on arch 9 as
+internal, so the cap covers it. Only one 62 byte read has been done there, and the cap should not
 be lifted to find out whether arch 9 shares the fault.
 
 ## The container, already known from one sample
@@ -141,7 +178,18 @@ what a successful read should produce. All ten container checks pass on the samp
 | architecture, stated in slot 1 | 9 |
 | infrared | class 5 in every record |
 
-## What one session would settle
+## What one session settled
+
+All five, on 8 August 2026. Kept in the original order and wording, with the outcome against each,
+because a list of intentions rewritten after the fact teaches nobody anything.
+
+| | outcome |
+|---|---|
+| 1. the command layer | works, with three arch 12 assumptions removed from `packages/usb` first |
+| 2. the version block | seven of seven predicted bytes right, and the block is seven fields rather than twelve |
+| 3. product id and `bcdDevice` | both exactly as reported; the `PROFILES` entry existed and its base was wrong |
+| 4. a config read | 51195 bytes, filed, checksum recomputes, a second arch 9 sample at last |
+| 5. the firmware | in the lab, load address derived with a wide margin |
 
 In rough order of value.
 

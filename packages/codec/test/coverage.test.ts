@@ -26,6 +26,7 @@ const ACCOUNTED: readonly [string, number, number][] = [
   ['h700_config_2', 979201, 979242],
   ['h600_config', 738108, 738149],
   ['h525_config', 52667, 78486],
+  ['h525_config_2', 39448, 51195],
   ['one_config', 1672808, 1672832],
   ['one_config_unprogrammed', 1232213, 1232237],
   ['arch8_config_a', 444196, 444256],

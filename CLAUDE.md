@@ -59,9 +59,9 @@ propose firmware modification as a route to anything.
 
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. Arch 8 stays a control for container claims rather than
-a target. **Arch 9 was a control too and is becoming a target**, since a Harmony 525 is arriving in
-August 2026 and three findings in two days took it from 14.6% to 55.1%; `docs/memory-map-525.md`
-holds the predictions for its first session. Other models are iterated on later.
+a target. **Arch 9 is a target now**: the Harmony 525 arrived on 8 August 2026, its config and its
+firmware are in the lab, and `docs/memory-map-525.md` records what was predicted before it was
+connected against what it measured. Other models are iterated on later.
 
 ## The two repositories
 
@@ -177,8 +177,8 @@ document:
 * **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the
   detected architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by
   the library, not by the user interface.
-* Three remotes are on the bench: a programmed Harmony One, a Harmony 600, and a **spare
-  Harmony One**. The spare is the only write target until a write has been
+* Four remotes are on the bench: a programmed Harmony One, a Harmony 600, a **spare
+  Harmony One**, and a **Harmony 525**, which is arch 9 and therefore has no write target either. The spare is the only write target until a write has been
   demonstrated repeatable on it. The spare is arch 12, so **arch 14 has no write target at all**
   and writing to it stays blocked until a second arch 14 remote exists. Reading arch 14 is
   unaffected: the 600 on the bench is arch 14. **The spare is no longer blank**: on 7 August 2026
@@ -359,7 +359,7 @@ carries step 3; the documents that summarise it had, because a summary is a copy
 test. So the copies are executable now, and `make facts` is the check:
 
 * a number quoted in prose carries a marker naming the fact it states,
-  `21392<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  `21503<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
@@ -622,7 +622,7 @@ that have one, and **every picture in an arch 12 bank is drawn by a program**, 9
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 21392<!--fact:screen_programs--> programs across the
+byte opcodes, section 40, whose closure is that 21503<!--fact:screen_programs--> programs across the
 corpus decode with nothing left over.
 
 ## Rails a writer will have to respect
@@ -665,9 +665,9 @@ produce a config the remote accepts and mishandles.
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
   ten fields have a reading, section 59.
 * **Infrared class 5**, arch 9. The 21 byte header is read, section 65; the 24511 bytes below the
-  headers are not, and they are not duration streams. This one wants an arch 9 firmware, which the
-  lab does not have and which the incoming 525 supplies: `concordance -b -f` dumps the whole
-  firmware region on that architecture.
+  headers are not, and they are not duration streams. **The arch 9 firmware exists now**: read off
+  a 525's external flash at `0x810000` on 8 August 2026 over this project's own read path, no
+  concordance needed. Section 76. Nothing has been decoded out of it yet.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
@@ -769,9 +769,12 @@ from 234 records to 462.
 `make coverage --detail` prints only the twenty largest of 128, and both this and section 66 came
 from asking for all of them and noticing families with the same count.
 
-What is left is arch 9's class 5 infrared, which does want an arch 9 firmware. The lab has none and
-the route is known: `concordance -b -f` returns the complete firmware region on arch 8 and arch 9,
-so the 525's arrives with the remote.
+What is left is arch 9's class 5 infrared, which does want an arch 9 firmware. **The lab has one**,
+read off the bench 525 at flash `0x810000`, loading at program `0x1000`. Section 76.
 
-A Harmony 525 is arriving; `docs/memory-map-525.md` is the plan for that session and holds
-predictions written down before the remote was connected, which is the point of it.
+**The Harmony 525 is on the bench and read**, section 76. Its config is the corpus's second arch 9
+sample and the arch 9 **firmware** is in the lab, read off external flash at `0x810000` and loading
+at program `0x1000`. Nothing has been decoded out of it yet, so class 5 infrared is still open and
+now has something to appeal to. Three arch 12 assumptions came out of `packages/usb` on the way:
+the version reply was matched as a whole byte, its length was fixed at twelve, and the region
+validator was hard coded. `docs/memory-map-525.md` holds the predictions against the measurements.

@@ -57,6 +57,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h650_hfw: 'harmony_650_firmware_0_4.hfw',
   h525_config: 'config.EZHex',
+  // The bench 525's own config, read over USB on 8 August 2026. The corpus's second arch 9 sample
+  // and the first not published by a stranger, which is where the two sample standard starts.
+  h525_config_2: '20260808T1645Z-harmony-525-config.bin',
   arch8_config_a: 'Update.EZHex',
   arch8_config_b: 'Update-1.EZHex',
   arch8_config_c: 'Update-2.EZHex',

@@ -38,17 +38,19 @@ format reverse engineering from inference into fact-finding.
 
 ## Status
 
-The work targets two architectures, the two remotes on the bench:
+The work targets two architectures, and there are three on the bench:
 
 * **arch 12** ("Gin"), Harmony One
 * **arch 14**, Harmony 600 and Harmony 700
+* **arch 9**, Harmony 525, connected on 8 August 2026. Read, not targeted: its config and its
+  firmware are in the lab and its class 5 infrared is the last big gap in the byte accounting.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
 infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because publicly shared sample
-sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Fifteen samples, four base
+sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Sixteen samples, four base
 addresses, three format versions, three pointer table lengths, all consistency checks passing. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -97,11 +99,11 @@ line, so arch 12 wakes differently from arch 14 and USB yields no part of its ma
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrome 5xx panel, and
-every one of 55542<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
+every one of 57389<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
 program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
 a binary search dispatcher, and a **second interpreter draws the screen**: its own one byte opcodes
-for text, bitmaps, a switch on a state variable and a jump, with 21392<!--fact:screen_programs--> programs across thirteen
+for text, bitmaps, a switch on a state variable and a jump, with 21503<!--fact:screen_programs--> programs across thirteen
 containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
