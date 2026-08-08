@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
+  ACTION_NOOP_LIMIT,
   ACTION_LIST_INDEX_OPCODE,
   archSlot,
   DEVICE_ASSIGN_FIELD_BIT,
@@ -43,6 +44,9 @@ import {
   parameterGroups,
   parse,
   screenProgram,
+  SECOND_SPACE_LIMIT,
+  SECOND_SPACE_RANGES,
+  subOpcode,
   stateTable,
   taggedList,
   taggedListPools,
@@ -775,4 +779,54 @@ test('a device assignment is refused unless both halves are there', () => {
   assert.equal(deviceAssignment([assign(1), load16(2)]), undefined, 'the wrong way round');
   assert.equal(deviceAssignment([load16(1)]), undefined, 'no assign');
   assert.equal(deviceAssignment([]), undefined);
+});
+
+/**
+ * findings.md section 72: below `0x65` the operand carries a second opcode field.
+ *
+ * The corpus check is the closure. Exactly five opcodes appear below the limit, one per range the
+ * dispatcher splits into, and not one instruction lands in a band the firmware states it ignores.
+ */
+test('the second operand space is a sub opcode field, and nothing lands outside it', () => {
+  const seen = new Map<number, number>();
+  let total = 0;
+  let ignored = 0;
+  let noop = 0;
+  let noopArgument = 0;
+  for (const name of ['h700_config', 'h700_config_2', 'h600_config', 'one_config',
+    'one_config_unprogrammed', 'arch8_config_a', 'h525_config']) {
+    const blob = load(name);
+    if (blob === undefined) continue;
+    const c = parse(blob);
+    const table = c.pointerArray(archSlot(c.architecture as number, 10));
+    if (table === undefined) continue;
+    for (const address of table) {
+      for (const i of c.actionList(address) ?? []) {
+        if (i.opcode >= SECOND_SPACE_LIMIT) continue;
+        total += 1;
+        seen.set(i.opcode, (seen.get(i.opcode) ?? 0) + 1);
+        if (i.opcode < ACTION_NOOP_LIMIT) {
+          noop += 1;
+          // The dispatcher returns before looking at the operand, and the generator emits zero.
+          if (i.operand !== 0) noopArgument += 1;
+          assert.equal(subOpcode(i), undefined);
+          continue;
+        }
+        const sub = subOpcode(i) as NonNullable<ReturnType<typeof subOpcode>>;
+        assert.equal(sub.byte, i.opcode >= 0x1f ? 'high' : 'low');
+        // The two bands the firmware states it ignores.
+        if (i.opcode >= 0x3f && sub.value < 0xb0) ignored += 1;
+        if (i.opcode >= 0x0f && i.opcode < 0x1f && sub.value >= 0xf0) ignored += 1;
+      }
+    }
+  }
+  assert.equal(total, 9725, 'instructions below the limit in these seven containers');
+  assert.equal(ignored, 0, 'an instruction the firmware would silently drop');
+  assert.equal(noopArgument, 0, 'a no-op carrying an operand');
+  assert.equal(noop, 2075);
+  // One opcode per range, and each is the top of its range, which is 2^n - 1.
+  assert.deepEqual([...seen.keys()].sort((a, b) => a - b), [0x00, 0x07, 0x0f, 0x1f, 0x3f]);
+  for (const boundary of SECOND_SPACE_RANGES) {
+    assert.equal(boundary & (boundary + 1), 0, `0x${boundary.toString(16)} is 2^n - 1`);
+  }
 });

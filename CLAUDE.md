@@ -564,7 +564,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 71 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 72 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -669,12 +669,16 @@ produce a config the remote accepts and mishandles.
 
 Step 8, the contribution probe, exists. **Step 6 is the next block and what it has left is measured:
 the action list language, not the sections.** All twenty base slots are labelled; of 97537 action
-list instructions, **27.7% still use an opcode with no reading**, down from 42% when this was
-measured. The dispatch table names a handler for every opcode in `0x65` to `0x7F`, so **read the
-dispatcher rather than one handler at a time**: section 71 took nine opcodes in one pass where
-section 70 took one. `0x7C` and the `0x65` to `0x6D` accumulator block are done, sections 70 and 71;
-what is left at the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x74`/`0x75` at 4380 and `0x73` at
-3927.
+list instructions, **24.5% still use an opcode with no reading**, down from 42% when this was
+measured. **Read a dispatcher, not one handler at a time**: section 71 took nine opcodes in one pass
+where section 70 took one, and section 72 took the whole shape of the space below `0x65`.
+
+Two dispatchers, and they work differently. Above `0x65` the opcode is the instruction and the
+binary search at `0x0EC8E` names a handler for each. **Below `0x65` the operand carries the rest of
+the opcode**, section 72: the high byte for opcodes from `0x1F` up and the low byte below it, so
+`0x1F` and `0x07` are ranges rather than instructions. Opcodes under `0x07` do nothing at all.
+What is left at the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x74`/`0x75` at 4380 and `0x73` at
+3927, and about a third of the second space's branches are unread.
 
 The byte accounting has three other remainders, all smaller and none on a user config of a target
 architecture: 10257 bytes of infrared on arch 8 and 26368 on arch 9, both wanting a firmware nobody

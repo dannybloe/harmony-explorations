@@ -1393,7 +1393,7 @@ device. Keys occur nowhere else in the container, so they are identifiers the ge
 rather than offsets into it. *What the two fields are is not established*, but field 0's range is
 the same 0 to 450 that `0x7C` carries by a different route. [findings.md](findings.md) section 71.
 
-#### `0x07`, `0x0F`, `0x1F` and `0x3F` address a second operand space
+#### `0x07`, `0x0F`, `0x1F` and `0x3F` carry a second opcode field in the operand
 
 **Confirmed on four architectures.** These four opcodes never carry an operand below `0xC000`, and
 every other opcode in the inventory does. 10381 uses of the four, no exception, in ten configs
@@ -1415,12 +1415,23 @@ arch 12 and of arch 8 give byte identical sets. `0x07` is `-14, -13, -11, -10, -
 arch 14 and `-10, -9, -8, -7, -5, -4, -3, -1` on arch 12 and arch 8. `0x1F` and `0x3F` keep most of
 their values across a pair and add config specific ones.
 
-**Consequence for a codec, ahead of the meaning.** An operand at or above `0xC000` is a reference
-into something the firmware supplies, not an index the generator assigned: it survives byte
-identical between two remotes that share no equipment. Carry it through unchanged and never
-renumber it.
+~~**Consequence for a codec, ahead of the meaning.** An operand at or above `0xC000` is a reference
+into something the firmware supplies, not an index the generator assigned.~~ **The advice was
+right and the reason was wrong**, section 72. The operand is not a reference: it is the rest of the
+opcode. Below `0x65` the dispatcher stops testing the opcode after five ranges and tests a byte of
+the operand instead, the **high** byte for opcodes from `0x1F` up and the **low** byte below it, and
+`0xC000` is simply the bottom of the lowest band it tests. Carry the operand through unchanged all
+the same, and for a stronger reason: renumbering it changes the instruction.
 
-*What the four name is not established.* [findings.md](findings.md) section 31.
+Two consequences follow. **Opcodes below `0x07` do nothing**: the dispatcher returns before reading
+the operand, and the corpus's 3053 `0x00` instructions all carry operand zero, so they are three
+zero bytes an emitter must keep. And **one instruction can span four**: opcodes `0x3F` to `0x64`
+with an operand high byte in `0xD0` to `0xDF` consume the next three off the queue.
+
+**Only five opcodes occur below `0x65` in the whole corpus**, `0x00`, `0x07`, `0x0F`, `0x1F` and
+`0x3F`, one per range and each the top of its own, which is `2^n - 1`. What the low bits would mean
+is unconfirmed because nothing exercises them.
+[findings.md](findings.md) sections 31 and 72.
 
 #### `0x7D` sends an infrared code
 

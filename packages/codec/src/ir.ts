@@ -347,3 +347,38 @@ export function deviceAssignment(
     value: assign.operand & ~DEVICE_ASSIGN_FIELD_BIT & 0xffff,
   };
 }
+
+/**
+ * Below this the action list dispatcher continues on a byte of the **operand**, so an instruction
+ * is a pair rather than one opcode. `docs/findings.md` section 72.
+ */
+export const SECOND_SPACE_LIMIT = 0x65;
+
+/** Below this the dispatcher returns without doing anything at all. */
+export const ACTION_NOOP_LIMIT = 0x07;
+
+/** Where the range boundaries fall, each one `2^n - 1`, highest first. */
+export const SECOND_SPACE_RANGES = [0x3f, 0x1f, 0x0f, 0x07] as const;
+
+export interface SubOpcode {
+  /** Which byte of the operand carries it. */
+  byte: 'high' | 'low';
+  value: number;
+  /** The other byte, which is the instruction's actual argument. */
+  argument: number;
+}
+
+/**
+ * The sub opcode an instruction below `SECOND_SPACE_LIMIT` carries, or nothing above it.
+ *
+ * Opcodes from `0x1F` up dispatch on the operand's **high** byte and those below it on the **low**
+ * byte, which is read off the two branches of the dispatcher rather than inferred. A no-op returns
+ * nothing too, because the firmware never looks at its operand.
+ */
+export function subOpcode(instruction: Instruction): SubOpcode | undefined {
+  const { opcode, operand } = instruction;
+  if (opcode >= SECOND_SPACE_LIMIT || opcode < ACTION_NOOP_LIMIT) return undefined;
+  return opcode >= 0x1f
+    ? { byte: 'high', value: operand >>> 8, argument: operand & 0xff }
+    : { byte: 'low', value: operand & 0xff, argument: operand >>> 8 };
+}

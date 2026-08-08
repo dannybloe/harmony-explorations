@@ -635,14 +635,16 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   lists. When that was first measured, 56424 of 97537 action list instructions, 57.8%, used one of
   65 opcodes with no reading.
 
-  Two findings have moved it to **27.7%**. Section 70 read `0x7C`, the most used instruction in the
-  corpus at 21882 uses: a per device quantity capped at 100 and spelled out above that. Section 71
-  then read the **dispatcher** rather than a handler and took nine opcodes at once, `0x65` to
-  `0x6D`, which are an accumulator machine plus `0x6C`, a write into a per device record.
+  Three findings have moved it to **24.5%**. Section 70 read `0x7C`, the most used instruction in
+  the corpus at 21882 uses: a per device quantity capped at 100 and spelled out above that. Section
+  71 then read the **dispatcher** rather than a handler and took nine opcodes at once, `0x65` to
+  `0x6D`, an accumulator machine plus `0x6C`, a write into a per device record. Section 72 did the
+  same for the second dispatcher and found the space below `0x65` is not one instruction per opcode
+  at all: the operand carries the rest of the opcode, and opcodes under `0x07` do nothing.
 
-  **That is the method for the rest**: the binary search at `0x0EC8E` names a handler for every
-  opcode in `0x65` to `0x7F`, so reading it is cheaper per opcode than chasing one. What is left at
-  the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x74` and `0x75` at 4380, and `0x73` at 3927.
+  **That is the method for the rest**: read a dispatcher, not a handler. What is left at the top is
+  `0x1F` at 6119 uses, `0x07` at 5739, `0x74` and `0x75` at 4380, and `0x73` at 3927, and about a
+  third of the second space's branches are still unread.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

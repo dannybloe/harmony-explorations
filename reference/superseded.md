@@ -47,6 +47,7 @@ and leave this table alone.
 | `They are not copies of the page lists` | section 69 | they are copies, differing only in which base slot 10 entry they name |
 | `What the twin is for is not established` | section 69 | it is a copy of the page's own list, and nothing reads it |
 | `never at the same rank in their pools` | section 69 | the k-th copy is the k-th page, in mode table order |
+| `address a second operand space` | section 72 | the operand carries the rest of the opcode, and `0xC000` is the lowest band the dispatcher tests |
 | `About a third of the entries are drawn` | section 66 | all of an arch 12 bank, all but two elsewhere |
 | `an entry is four bytes` | section 66 | `6 + 3 * pages`; the four byte reading was short rather than wrong |
 | `arch 9 uses a different packing` | section 63 | read: two bits a pixel, rows framed by their own byte length |

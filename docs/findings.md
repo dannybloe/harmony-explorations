@@ -3054,7 +3054,13 @@ of the eleven architectures concordance names models for and every architecture 
 discontinuation list in `reference/models.md`. For those the only route to an image is `READ_FLASH`
 off a physical remote.
 
-## 31. Four opcodes address a second operand space, and no other opcode enters it
+## 31. Four opcodes take an operand above `0xC000` and no other opcode enters that band
+
+~~Titled "Four opcodes address a second operand space" until section 72, which is the wrong noun:
+the operand is not an address into anything, it is the rest of the opcode.~~ **The measurement
+below is unchanged and every number in it still holds.** What changed is the reading, and it is
+recorded here rather than rewritten because the partition was found before the dispatcher was, and
+that is the more instructive order.
 
 `0x07`, `0x0F`, `0x1F` and `0x3F` never carry an operand below `0xC000`. Every other opcode in the
 inventory does, in nearly every use. That is not a tendency, it is a partition, and it holds over
@@ -7723,6 +7729,100 @@ Of 97537 action list instructions in the corpus, the share using an opcode with 
   `DEVICE_ASSIGN_OPCODE` and `DEVICE_ASSIGN_FIELD_BIT`.
 * `packages/codec/test/sections.test.ts`: that no `0x6C` stands alone, the key count against the
   infrared table, both fields enumerated exhaustively, and the pair's refusals.
+
+## 72. Below `0x65` the operand is a second opcode field, and `0x00` does nothing
+
+Section 31 measured that four opcodes, `0x07`, `0x0F`, `0x1F` and `0x3F`, never carry an operand
+below `0xC000` where every other opcode does, and called that a **second operand space**: references
+the firmware supplies rather than indices the generator assigns. The measurement is right and the
+name is not. The operand is not a reference. It is **the rest of the opcode**.
+
+### The dispatcher says so
+
+The action list dispatcher branches to `0x0F160` for any opcode below `0x65`, and from there it
+stops testing the opcode after five ranges and starts testing a byte of the operand:
+
+| opcodes | dispatches on | the band it ignores |
+|---|---|---|
+| below `0x07` | nothing, it returns | everything |
+| `0x07` to `0x0E` | the operand's **low** byte | not established |
+| `0x0F` to `0x1E` | the operand's **low** byte | `0xF0` and above |
+| `0x1F` to `0x3E` | the operand's **high** byte | not established |
+| `0x3F` to `0x64` | the operand's **high** byte | below `0xB0` |
+
+So `0xC000` is not a floor on a value, it is the bottom of the lowest band the firmware tests, and
+section 31's four opcodes are four ranges rather than four instructions.
+
+### The corpus fits it exactly
+
+| range | uses | opcodes that occur | landing in an ignored band |
+|---|---|---|---|
+| below `0x07` | 3053 | `0x00` | n/a |
+| `0x07` to `0x0E` | 5739 | `0x07` | none stated |
+| `0x0F` to `0x1E` | 111 | `0x0F` | **0** |
+| `0x1F` to `0x3E` | 6119 | `0x1F` | none stated |
+| `0x3F` to `0x64` | 644 | `0x3F` | **0** |
+
+**Exactly five opcodes occur below `0x65` in the whole corpus**, one per range, and each is the top
+of its range: `0x07`, `0x0F`, `0x1F` and `0x3F` are `2^n - 1`. So the generator emits the range's
+boundary value and never anything else in it, over 15666 instructions. What the low bits of the
+opcode would mean is not established, because nothing exercises them.
+
+### `0x00` is a no-op
+
+The dispatcher's first test is `opcode >= 0x07`, and below that it returns without reading the
+operand at all. **3053 instructions in the corpus are opcode `0x00`, and every one carries operand
+zero**, so they are three zero bytes each. A reader should not invent a meaning for them and an
+emitter has to keep them, since a list's length is declared in entries.
+
+### What the sub opcodes do, as far as they are read
+
+For opcodes `0x1F` to `0x3E`, on the operand's high byte, `0xFB` alone is 2371 uses:
+
+| high byte | what |
+|---|---|
+| `0xFB` | the byte register at RAM `0x10D` **= operand low** |
+| `0xFA` | `0x10D` **+=** operand low |
+| `0xF9` | `0x10D` **\*=** operand low |
+| `0xF8` | `0x10D` = a helper of the two, `0x097DC` |
+| `0xFF`, `0xFE`, `0xFD` | operand low into `0x1B1`, `0x123`, `0x125`, each with its own call |
+| `0xFC` | nothing |
+| `0xF7` | builds an instruction from the accumulator and pushes it back, as `0x7B` does |
+
+That names `0x10D`, which section 34 mentioned only as the byte `0x7B` injects: it is a byte wide
+register with its own load, add and multiply.
+
+For opcodes `0x07` to `0x0E`, on the operand's low byte:
+
+| low byte | what |
+|---|---|
+| `0xFF` | sets the flag at `0x122` |
+| `0xFE` | runs the current binding set's list with **tag 5**, through `0x1B6DE` |
+| `0xFD` | **pushes** a sixteen bit value on a stack at RAM `0x111`, pointer `0x110` |
+| `0xFC` | **pops** it, comparing against `0xFEFE` |
+
+So `0x07` is a control flow family with a real stack, which fits section 26's reading of `0x7F` as
+the call.
+
+For opcodes `0x3F` to `0x64`, on the operand's high byte, the `0xD0` band is the interesting one:
+it **consumes the next three instructions off the queue** and hands twelve bytes to `0x13156` in
+the infrared sender. That is the first multi word instruction found in this language, and it means
+a reader that walks an action list one instruction at a time is right about the bytes and wrong
+about the boundaries wherever that band appears.
+
+### What is not read
+
+The branches below `0xF3` for `0x1F`, below `0xFC` for `0x07`, and below `0xE0` for `0x0F`. Between
+them they hold about 6000 of the 15666, so this is a third of the second space rather than all of
+it.
+
+### Where it lands
+
+* `docs/config-format.md`, replacing the "second operand space" subsection's framing.
+* `packages/codec/src/ir.ts`: `subOpcode`, `SECOND_SPACE_LIMIT`, `ACTION_NOOP_LIMIT` and
+  `SECOND_SPACE_RANGES`.
+* `packages/codec/test/sections.test.ts`: the five opcodes, the two ignored bands with zero
+  instructions in them, and every no-op carrying operand zero.
 
 ## References
 
