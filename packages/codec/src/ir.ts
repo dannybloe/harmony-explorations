@@ -81,6 +81,28 @@ export function irRecordBlocks(c: Container, address: number): number[] {
 }
 
 /**
+ * The same pointers with their positions kept, NULLs included.
+ *
+ * `irRecordBlocks` drops the NULLs, which is what a reader wants and the opposite of what a writer
+ * wants: a slot's index inside its group is part of the record, so an emitter that skipped the
+ * empty ones would shuffle the rest up.
+ */
+export function irHeaderPointers(c: Container, address: number): number[] {
+  const start = irRecordStart(c, address);
+  const off = start === undefined ? undefined : c.blobOffsetOf(start);
+  if (off === undefined) return [];
+  const groups = irGroupCount(c, address);
+  if (off + IR_HEADER_BASE + IR_HEADER_GROUP * groups > c.blob.length) return [];
+  const found: number[] = [];
+  for (let group = 0; group < groups; group += 1) {
+    for (let slot = 0; slot < IR_POINTERS_PER_GROUP; slot += 1) {
+      found.push(u24(c.blob, off + IR_HEADER_BASE + IR_HEADER_GROUP * group + 3 * slot));
+    }
+  }
+  return found;
+}
+
+/**
  * How many pointer groups the record at `address` carries. One when the header is unreadable.
  *
  * Clamped rather than trusted: a count of zero would make the header claim less than its fixed
@@ -114,6 +136,23 @@ export function irBlockLength(c: Container, address: number): number | undefined
     if (u16(c.blob, at) === IR_BLOCK_TERMINATOR) return at + 2 - off;
   }
   return undefined;
+}
+
+/**
+ * The words of a duration block, its terminating zero included.
+ *
+ * A block is a list of `u16` durations with bit 15 marking a mark rather than a space, section 61,
+ * so this is the whole of it: reading it gives the words back and writing them gives the bytes
+ * back. Unlike a glyph or an encoded picture, nothing about the encoding is a choice, which is why
+ * an emitter can rebuild one from fields and cannot rebuild those.
+ */
+export function irBlockWords(c: Container, address: number): number[] | undefined {
+  const off = c.blobOffsetOf(address);
+  const length = irBlockLength(c, address);
+  if (off === undefined || length === undefined) return undefined;
+  const words: number[] = [];
+  for (let at = off; at < off + length; at += 2) words.push(u16(c.blob, at));
+  return words;
 }
 
 export interface IrGroup {

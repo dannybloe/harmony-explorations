@@ -32,7 +32,6 @@ import {
   Container,
   GspmError,
   MS_PER_DAY,
-  POINTER_SIZE,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   TRAILER_CHECKSUM_OFFSET,
@@ -41,12 +40,38 @@ import {
 import { countedPointers } from './valuemap.ts';
 import {
   EVENT_MAP_SLOT,
+  LOG_AREA_SLOT,
+  LOG_AREA_WIDE_ARCHITECTURES,
   STATE_TABLE_SLOT,
   eventMap,
   handlerSets,
+  modeRecords,
   modeTable,
+  stateRecords,
+  logArea,
   stateTable,
+  taggedList,
+  taggedListPools,
 } from './sections.ts';
+import type { TaggedList } from './sections.ts';
+import { IMAGE_COUNT_OFFSET, fontSets, glyphs } from './font.ts';
+import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
+import { namedContentEnd } from './coverage.ts';
+import {
+  IR_CLASS_STREAM,
+  IR_GROUP_COUNT_AT,
+  IR_HEADER_BASE,
+  IR_HEADER_CLASSES,
+  irClass,
+  irGroupCount,
+  irGroups,
+  irHeaderLength,
+  irBlockWords,
+  irHeaderPointers,
+  irRecordBlocks,
+  irRecordStart,
+} from './ir.ts';
+import { valueMaps } from './valuemap.ts';
 import {
   TIMER_RECORD_LENGTH,
   TOUCH_AREA_LENGTH,
@@ -63,10 +88,6 @@ export const COOKIE_LENGTH = 4;
  * failure is unmistakable in a hex dump, unlike zero, which half the container legitimately is.
  */
 export const POISON = 0xa5;
-export const END_ADDR_OFFSET = 4;
-export const FORMAT_OFFSET = 8;
-/** The format word's own bytes. The fourth is section slot 0's spare, which the table writes. */
-export const FORMAT_LENGTH = SECTION_TABLE_OFFSET - FORMAT_OFFSET;
 
 /**
  * One structure rebuilt from what a reader returned, as bytes and where they go.
@@ -262,6 +283,18 @@ export function rebuilds(c: Container): Rebuild[] {
       .raw(CLOCK_END));
   }
 
+  // Base slot 2, the log area: a capacity and the bounds of a region above the config. The
+  // capacity is a `u24` on arch 12 and a `u16` elsewhere, which is why the section is nine bytes
+  // there and eight everywhere else. Section 47.
+  const log = logArea(c);
+  if (log !== undefined && c.architecture !== undefined) {
+    const wide = LOG_AREA_WIDE_ARCHITECTURES.has(c.architecture);
+    const w = new Writer(log.length);
+    if (wide) w.u24(log.capacity);
+    else w.u16(log.capacity);
+    framed(sectionStart(LOG_AREA_SLOT), 'slot-2-log', w.u24(log.start).u24(log.limit));
+  }
+
   // The six counted pointer arrays, each written at the width its own reader settled on.
   for (let i = 0; i < c.sections.length; i += 1) {
     const array = c.pointerArrayAt(i);
@@ -388,6 +421,192 @@ export function rebuilds(c: Container): Rebuild[] {
     }
   }
 
+  // A tagged list, in either of its two forms.
+  //
+  // **The form comes from the length, never from the entries.** An empty wide list has no entry to
+  // carry a flags byte, so reading the form off the entries makes it look narrow and the emitted
+  // list comes out a byte short. Same family as the key code split and the field parity mistakes:
+  // when the data could tell you and something else does tell you, believe the something else.
+  const taggedBytes = (list: TaggedList): Writer => {
+    const count = list.entries.length;
+    const wide = count === 0 ? list.length === 2 : list.length - 2 === 5 * count;
+    const w = new Writer(list.length);
+    if (wide) w.u8(0).u8(count);
+    else w.u8(count);
+    for (const entry of list.entries) {
+      if (wide) w.u8(entry.flags ?? 0);
+      w.u8(entry.tag).u16(entry.operand).u8(entry.opcode);
+    }
+    return w;
+  };
+  const taggedAt = (address: number, owner: string): void => {
+    const list = taggedList(c, address);
+    if (list !== undefined) framed(list.start, owner, taggedBytes(list));
+  };
+
+  // Base slot 6. The record's own bytes are its tagged list and nothing else, because the rest of
+  // a record is not decoded; the entry is the six byte header and its page array; a page is a
+  // lead byte on arch 12 and two pointers everywhere.
+  for (const record of modeRecords(c) ?? []) {
+    // The record that is the key table is rebuilt above under the name it had first, and `seen`
+    // is what keeps this from writing it twice.
+    taggedAt(record.start, 'slot-6-mode');
+    const entry = new Writer(record.entryLength)
+      .u8(record.kind)
+      .u24(record.start)
+      .u16(record.pageCount);
+    for (const page of record.pages) entry.u24(page.address);
+    framed(c.blobOffsetOf(record.address), 'slot-6-entry', entry);
+    for (const page of record.pages) {
+      const w = new Writer(page.length);
+      if (page.lead !== undefined) w.u8(page.lead);
+      w.u24(page.list).u24(page.program);
+      framed(c.blobOffsetOf(page.address), 'slot-6-page', w);
+      taggedAt(page.list, 'slot-6-page-list');
+    }
+  }
+
+  // Base slot 9's sets, and then the copies: one per mode page, read by nothing and emitted anyway
+  // because the file has them. Section 69.
+  for (const address of handlerSets(c)?.addresses ?? []) taggedAt(address, 'slot-9-list');
+  for (const pool of taggedListPools(c)) {
+    for (const list of pool.lists) taggedAt(list.start + c.flashBase, 'slot-6-page-list-copy');
+  }
+
+  // The screen language. The opcode byte is framed and the operands are carried, which is an
+  // honest statement of where the reading stops: the walk knows how long every instruction is on
+  // every architecture, and what the coordinates and identifiers inside one mean is open.
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      const w = new Writer(instruction.length).u8(instruction.opcode).raw(instruction.operands);
+      let fields = 1;
+      if (instruction.glyphs !== undefined) {
+        w.raw(instruction.glyphs).u8(0);
+        fields += 1;
+      }
+      partly(instruction.start, 'slot-11-program', w, fields);
+    }
+  }
+
+  // Base slot 7. A set's header and pointer array are typed; a glyph is not, and cannot be.
+  //
+  // **A glyph is carried on purpose, and the reason is a rail rather than a shortcut.** The
+  // decoder reads it to pixels, and pixels do not determine the bytes back: the encoder chose
+  // where to skip and where to emit literals, and several encodings draw the same picture. So
+  // re-encoding a glyph would produce a valid file that is not this file, and byte equality is
+  // the whole test here. The same holds for an encoded picture below.
+  for (const font of fontSets(c) ?? []) {
+    const off = c.blobOffsetOf(font.address);
+    const countAt = IMAGE_COUNT_OFFSET[c.architecture ?? -1];
+    if (off === undefined || countAt === undefined) continue;
+    // Three header bytes, of which the count is the second on arch 12 and the third elsewhere.
+    // The other one holds a constant nothing reads, so it is carried rather than assumed.
+    const w = new Writer(font.length).u8(font.height);
+    if (countAt === 1) w.u8(font.count).raw(c.blob.subarray(off + 2, off + 3));
+    else w.raw(c.blob.subarray(off + 1, off + 2)).u8(font.count);
+    for (const glyph of font.glyphs) w.u24(glyph ?? 0);
+    partly(off, 'slot-7-set', w, font.length - 1);
+  }
+  for (const set of glyphs(c) ?? []) {
+    for (const glyph of set) {
+      const off = c.blobOffsetOf(glyph.address);
+      if (off === undefined) continue;
+      partly(off, 'slot-7-glyph', new Writer(glyph.length)
+        .u8(glyph.width)
+        .raw(c.blob.subarray(off + 1, off + glyph.length)), 1);
+    }
+  }
+
+  // The pictures: a five byte header from fields, the body carried, for the reason above.
+  const pictures = [...(pictureBank(c, namedContentEnd(c)) ?? [])];
+  const inBank = new Set(pictures.map((picture) => picture.address));
+  for (const bitmap of bitmaps(c)) if (!inBank.has(bitmap.address)) pictures.push(bitmap);
+  for (const picture of pictures) {
+    const off = c.blobOffsetOf(picture.address);
+    if (off === undefined || picture.length === undefined) continue;
+    const owner = inBank.has(picture.address) ? 'picture-bank' : 'slot-11-bitmap';
+    partly(off, owner, new Writer(picture.length)
+      .u8(picture.kind)
+      .u16(picture.stride)
+      .u16(picture.rows)
+      .raw(c.blob.subarray(off + 5, off + picture.length)), 5);
+  }
+
+  // Base slot 13's records. Two `u16` of the seven byte header are read and the eight byte values
+  // are not decoded at all, so this is the shallowest reader in the file and the split says so.
+  for (const record of stateRecords(c) ?? []) {
+    const off = c.blobOffsetOf(record.address);
+    if (off === undefined) continue;
+    partly(off, 'slot-13-record', new Writer(record.length)
+      .raw(c.blob.subarray(off, off + 2))
+      .u16(record.second)
+      .u16(record.count)
+      .raw(c.blob.subarray(off + 6, off + record.length)), 4);
+  }
+
+  // Base slot 5. The group arrays and the pointer part of a record header are typed; the eleven
+  // bytes in front of the group count are not read, and a duration block is a stream this codec
+  // walks to its terminator without decoding.
+  for (const group of irGroups(c) ?? []) {
+    const w = new Writer(group.length).u8(0).u16(group.addresses.length);
+    for (const address of group.addresses) w.u24(address);
+    framed(group.start, 'slot-5-group', w);
+  }
+  const blocks = new Set<number>();
+  for (const group of irGroups(c) ?? []) {
+    for (const address of group.addresses) {
+      const encoding = irClass(c, address);
+      if (encoding === undefined || !IR_HEADER_CLASSES.has(encoding)) continue;
+      const start = irRecordStart(c, address);
+      const off = start === undefined ? undefined : c.blobOffsetOf(start);
+      if (off === undefined) continue;
+      const w = new Writer(irHeaderLength(c, address))
+        .raw(c.blob.subarray(off, off + IR_GROUP_COUNT_AT))
+        .u8(irGroupCount(c, address));
+      for (const pointer of irHeaderPointers(c, address)) w.u24(pointer);
+      partly(off, 'slot-5-header', w, irHeaderLength(c, address) - IR_HEADER_BASE + 1);
+      // Only class 1 names duration streams. Class 5 shares the header and nothing below it, so
+      // its blocks are not walked here any more than they are claimed there. Section 65.
+      if (encoding !== IR_CLASS_STREAM) continue;
+      for (const block of irRecordBlocks(c, address)) blocks.add(block);
+    }
+  }
+  // Deduplicated, because a block can be named by two records, which is also why an editor cannot
+  // change one in place without checking who else points at it. Section 61.
+  for (const block of blocks) {
+    const words = irBlockWords(c, block);
+    if (words === undefined) continue;
+    const w = new Writer(2 * words.length);
+    for (const word of words) w.u16(word);
+    framed(c.blobOffsetOf(block), 'slot-5-block', w);
+  }
+
+  // Base slot 14's records, whose entry and range tables are fully typed. A record can end inside
+  // the next one where the generator shared a tail, so the length is bounded the way `coverage`
+  // bounds it and a shortened record falls back to carrying what is left.
+  const maps = valueMaps(c);
+  if (maps !== undefined && c.architecture !== undefined) {
+    const counter = c.architecture === 14 ? 2 : 1;
+    const starts = maps.map((m) => c.blobOffsetOf(m.address)).filter((o) => o !== undefined);
+    for (const record of maps) {
+      const off = c.blobOffsetOf(record.address);
+      if (off === undefined) continue;
+      const inside = starts.filter((o) => o > off && o < off + record.length);
+      const bound = inside.length === 0 ? record.length : Math.min(...inside) - off;
+      if (bound < record.length) {
+        // A shared tail: the record does not own its own end, so nothing here can write it.
+        continue;
+      }
+      const w = new Writer(bound).raw(c.blob.subarray(off, off + 1));
+      if (counter === 1) w.u8(record.entries.length);
+      else w.u16(record.entries.length);
+      for (const [value, address] of record.entries) w.u16(value).u24(address);
+      w.u8(record.ranges.length);
+      for (const [low, high, address] of record.ranges) w.u16(low).u16(high).u24(address);
+      partly(off, 'slot-14-record', w, bound - 1);
+    }
+  }
+
   return out;
 }
 
@@ -508,6 +727,3 @@ export function roundTrip(c: Container): RoundTrip {
   }
   return { equal: true, ...totals };
 }
-
-/** Kept so the pointer size is referenced where an emitter would need it next. */
-export const EMIT_POINTER_SIZE = POINTER_SIZE;

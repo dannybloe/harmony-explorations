@@ -254,11 +254,39 @@ reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes 
 One and 41 on a 600. Arch 9 is not there, and its remainder is infrared, on an architecture no
 firmware image exists for. Arch 8 is there as of section 75.
 
-**The third part exists and round trips**, `packages/codec/src/emit.ts`. It rebuilds the container
-frame and copies everything else, and the output is byte identical to the input on all seventeen
-containers, four architectures included. The frame is 18 bytes plus four per pointer slot, so 98 on
-arch 14, 102 on arch 8 and 106 on arch 12, against 1.63 MB of copied residue on a Harmony One. That
-ratio is the number part 3 moves, and it moves as structures leave the residue one at a time.
+**The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
+number. Every structure `coverage` claims is rebuilt except one, the output is byte identical to
+the input on all seventeen containers, and what is left to copy is 198 to 2367 bytes of a config
+rather than the whole of it.
+
+**Three numbers, not one.** `framed` bytes are computed from typed fields, `carried` bytes came out
+of a reader as an opaque run, `copied` is what no rebuilder claims. Collapsing them is how an
+emitter that copies a config claims to rebuild it, which is the mistake `actions.ts` made with its
+own numbers and the reason that file reports a depth.
+
+The rows name samples rather than remotes, so each one reads the same as the fact marker beside it,
+and so this table cannot be mistaken for the coverage one below by anything looking for a row.
+
+| sample | framed | what is carried |
+|---|---|---|
+| `one_config`, arch 12 | 13.4%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
+| `h600_config`, arch 14 | 28.1%<!--fact:framed_h600_config--> | 529 KB, the same |
+| `h700_config`, arch 14 | 25.9%<!--fact:framed_h700_config--> | 724 KB, the same |
+| `arch8_config_a` | 21.6%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
+| `h525_config`, arch 9 | 27.7%<!--fact:framed_h525_config--> | 31 KB, and 26 KB still copied: class 5 infrared |
+
+**Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
+pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
+and several encodings draw the same image. Re-encoding one produces a valid file that is not this
+file, so an editor has to carry every image it did not change through verbatim. What would move
+these bytes from carried to framed is a reader returning the **control stream** rather than the
+pixels, which is determined, and that is the next thing part 3 wants.
+
+**One structure is not rebuilt at all, and finding out which was worth the exercise.** Base slot 0,
+the `0xFEED` frame. The accounting counts it because the frame states its own length, and no field
+inside it has ever been read, so `coverage` reports 100% of a Harmony One config attributed while
+277 of those bytes are understood only as far as "this many of them". The emitter is what makes
+that difference visible, and `emit.test.ts` asserts the leftover set is exactly that one name.
 
 **Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
 is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
@@ -329,10 +357,15 @@ So M2 is three things in order, and only the third is the emitter:
    **The residue is copied by name, into a buffer filled with poison.** The obvious version starts
    from a copy of the input and overwrites what it rebuilds, and that version passes its round trip
    test whether or not the emitter writes anything, because the right bytes are already there. So
-   equality alone proves nothing and the tests that carry weight are the negatives: a byte neither
-   rebuilt nor copied stays `0xA5` and fails the compare, a section address changed in the parse
-   reaches the output, and a flipped payload byte moves the trailer checksum, which is what says
-   the checksum is computed rather than copied.
+   equality alone proves nothing and the tests that carry weight are the negatives: a rebuilder
+   whose bytes do not fill the extent it declared is an error rather than a short write, a section
+   address and a key record changed in the parse reach the output, and a flipped payload byte moves
+   the trailer checksum, which is what says the checksum is computed rather than copied.
+
+   The buffer still starts as `0xA5` rather than as a copy of the input, which was the guard while
+   the residue was a single named span. Now that the residue is the complement of the rebuild list,
+   poison cannot survive a correct run, and what it protects against is narrower: a rebuild that
+   marks bytes written without writing them.
 
 Ported: the header, the section table, the marker, the trailer, the key table, slots 0, 1, 2 and
 3, the six counted pointer arrays, the action lists, and then the two that carried the mass, the

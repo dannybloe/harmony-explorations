@@ -38,6 +38,7 @@ help:
 	@echo "watch-keys   poll the keypad scanner's RAM on an attached remote, read only"
 	@echo "watch-columns report the matrix column of every key pressed, read only"
 	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
+	@echo "emit         how much of each sample the emitter can put back; EMIT_ARGS=--detail"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "all          everything above except ghidra, bench and probe"
 
@@ -114,6 +115,9 @@ probe:
 # progress measure for M2, since an emitter can only rebuild what a reader can attribute.
 coverage:
 	@node packages/codec/bin/coverage.ts $(COVERAGE_ARGS)
+
+emit:
+	@node packages/codec/bin/emit.ts $(EMIT_ARGS)
 
 # The button mapping experiment: poll the keypad scanner's own variable over USB while a human
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.

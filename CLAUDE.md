@@ -445,6 +445,7 @@ make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them
 make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
+make emit          how much of each sample the emitter puts back, and whether it round trips
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
@@ -650,6 +651,10 @@ produce a config the remote accepts and mishandles.
   the gap is up to 1532, because slot 5's group arrays sit inside it.
 * **The log area's writer refuses out of range rather than erroring**, section 47: an address
   outside `[0x040000, 0x400000)` zeroes the remaining count instead of writing.
+* **A glyph and an encoded picture cannot be re-encoded from their pixels**, which the emitter
+  found rather than the firmware: several control streams draw the same image, so re-encoding one
+  produces a valid file that is not the original. An editor carries every image it did not change
+  through byte for byte.
 * **A small logical change reshuffles the whole image.** Three arch 8 configs generated ten minutes
   apart differ in 73 to 84% of their bytes. So an editor makes minimal diffs against an existing
   config; reproducing what Logitech's generator would have emitted is not achievable.
@@ -725,12 +730,24 @@ structure was a pool of tagged lists packed end to end, one per mode page plus o
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
 That completes the first two of milestone M2's three parts on arch 8, 12 and 14.
 
-**The third part exists and round trips**, `packages/codec/src/emit.ts`: rebuild the container
-frame, copy the residue, and the bytes come back identical on all seventeen containers. It builds
-into a buffer filled with `0xA5` rather than into a copy of its input, because **an emitter that
-starts from a copy passes a round trip test while writing nothing at all**. So the tests that carry
-weight are the negatives, and a byte the emitter forgets stays poison and fails the compare. The
-number to move is the copied residue, 1.63 MB against a 106 byte frame on a Harmony One.
+**The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
+the mirror of `claims`, owner name for owner name, and **every owner is rebuilt except base slot 0**;
+the bytes come back identical on all seventeen containers and the copied residue is 198 to 2367
+bytes of a config. It builds into a buffer filled with `0xA5` rather than into a copy of its input,
+because **an emitter that starts from a copy passes a round trip test while writing nothing at
+all**, so the tests that carry weight are the negatives.
+
+**The number has a depth, the same way `actions.ts` does.** `framed` bytes come from typed fields,
+5.5% to 38.2% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
+that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
+their pixels**: the encoder chose where to skip and where to emit literals and several encodings
+draw the same image. A reader returning the control stream instead of the pixels is what would move
+them, and that is the next thing to do here.
+
+**Base slot 0 is the one thing the emitter cannot touch**, and it is what the exercise found: the
+accounting counts it because its `0xFEED` frame states its own length, and no field inside it has
+ever been read. So a 100% coverage figure includes 277 bytes of a Harmony One config understood
+only as far as how many there are.
 
 **What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
 mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in

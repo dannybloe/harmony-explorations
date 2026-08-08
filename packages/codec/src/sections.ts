@@ -96,6 +96,45 @@ export function eventMap(c: Container): EventMap | undefined {
   return { fallback: u24(c.blob, off), entries, length };
 }
 
+export const LOG_AREA_SLOT = 2;
+/** The capacity field is a `u24` on arch 12, where the section is nine bytes rather than eight. */
+export const LOG_AREA_WIDE_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
+
+export interface LogArea {
+  capacity: number;
+  /** The first byte of the reserved region, and one past its last. */
+  start: number;
+  limit: number;
+  length: number;
+}
+
+/**
+ * Base slot 2: three numbers reserving flash **above** the config rather than inside it.
+ *
+ * ```
+ * +0x00  u16  capacity        u24 on arch 12, where the section is nine bytes
+ * +0x02  u24  start           the first byte of the region
+ * +0x05  u24  limit           one past its last byte
+ * ```
+ *
+ * The writer refuses an address outside `[0x040000, 0x400000)` by zeroing the remaining count
+ * rather than erroring, which is a rail rather than a curiosity. `docs/findings.md` section 47.
+ */
+export function logArea(c: Container): LogArea | undefined {
+  const off = sectionStart(c, LOG_AREA_SLOT);
+  if (off === undefined || c.architecture === undefined) return undefined;
+  const wide = LOG_AREA_WIDE_ARCHITECTURES.has(c.architecture);
+  const width = wide ? 3 : 2;
+  const length = width + 6;
+  if (off + length > c.blob.length) return undefined;
+  return {
+    capacity: wide ? u24(c.blob, off) : u16(c.blob, off),
+    start: u24(c.blob, off + width),
+    limit: u24(c.blob, off + width + 3),
+    length,
+  };
+}
+
 export interface CountedSection {
   addresses: number[];
   /** Where the section starts in the blob, and how long its own table is. */

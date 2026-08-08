@@ -116,6 +116,27 @@ def coverage_facts():
     return found
 
 
+def emit_facts():
+    """Per sample, the share of a container the emitter rebuilds from typed fields.
+
+    The other half of `coverage_facts`, and shelled out for the same reason: one implementation of
+    the split, in the codec, rather than a second one here that would be free to disagree.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/emit.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and parts[-1] == 'equal' and parts[-2].endswith('%'):
+            found['framed_' + parts[0]] = parts[-2]
+    return found
+
+
 def corpus_facts():
     """The totals the documents quote, computed over the corpus the tests use."""
     import lab
@@ -275,6 +296,7 @@ def main():
     facts = {}
     facts.update(corpus_facts())
     facts.update(coverage_facts())
+    facts.update(emit_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):
