@@ -394,6 +394,14 @@ slot 18. So a section labelled on arch 14 transfers to the One by index, through
 Six of them (base 5, 7, 10, 11, 12, 15) are count prefixed arrays of **three byte** flash
 pointers, and base 18 and 19 are NULL on all four architectures.
 
+**Base slots 0 and 1 are host side.** The firmware's section seeker is called with raw slots 2 to
+19 on the One and 3 to 17 on the 700, and with 0 and 1 on neither, so the name tree and the
+architecture record are read by the host software and nothing on the remote validates them. That is
+why slot 1 can be three bytes in one container and seven in the rest, and why its version word can
+name a skin the remote does not report. **The word is per config, not per model**: one Harmony One
+carries two different words either side of the sync section 58 watched. Its low byte is a skin
+number, and an editor copies it rather than computing it. Section 81.
+
 **Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
 `0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
 seven byte field assignment is believed; the assignment itself is the only one of 336 candidates

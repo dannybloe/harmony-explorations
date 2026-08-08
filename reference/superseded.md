@@ -70,4 +70,6 @@ and leave this table alone.
 | `the glyph count on arch 12, and 1 on arch 8` | section 78 | the byte at +1 is the first glyph code; the count sits at +2 unless that byte is zero |
 | `Which of the two header bytes holds it is` | section 78 | it is the byte at +2, and the other one is the first code, not a spare |
 | `the font header's spare byte` | section 78 | there is no spare byte: it is the first glyph code |
+| `version word is per model` | section 81 | per config: one Harmony One carries two words either side of one sync |
+| `word is per model rather than per config` | section 81 | the same unit disagrees with itself, section 58's observed pair |
 

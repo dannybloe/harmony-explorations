@@ -49,7 +49,12 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty have been found and corrected so far. The newest is section 78's, which is the same shape
+Twenty one have been found and corrected so far. The newest is section 81's: the version word
+beside the architecture was recorded as per model rather than per config, and one Harmony One
+carries two different words either side of the sync section 58 watched. It is a skin number, and
+nothing on the remote reads the section it sits in.
+
+Before it, section 78's, which is the same shape
 as section 77's one section over: two fields of a font set header had been assigned meanings by the
 values they happened to hold, and the sample that varied them was again the arch 9 safe mode
 container. It moved the arch 12 safe mode container from 39.1% attributed to 99.6%.
@@ -8890,9 +8895,10 @@ So both parsers now bound the record by `sectionLength(1)`, take the architectur
 two bytes and the version word when there are four, and this container reports **an architecture
 and no version word**, which is what it holds.
 
-**A lead, sharpened rather than settled.** `tests/test_gspm.py` records that the version word is
-per model, not per config, and that its meaning is not established. Its low byte is very close to
-the remote's skin:
+**A lead, sharpened rather than settled.** `tests/test_gspm.py` recorded that the version word is<!--superseded-->
+per model, not per config, and that its meaning is not established. **Section 81 corrects the first
+half of that**, with a pair from this same corpus. Its low byte is very close to the remote's
+skin:
 
 | container | version word | remote's skin |
 |---|---|---|
@@ -9057,6 +9063,101 @@ elsewhere and the bank on those accesses is inferred rather than known.
 * `tests/test_findings.py`, which pins every address above against the image, because finding them
   again is a search.
 * `tests/lab.py`, `h525_code`, the 525's whole internal program flash.
+
+
+## 81. Base slots 0 and 1 are host side, and the version word is per config
+
+Section 79 left the version word as a sharpened lead: its low byte is very close to the remote's
+skin, exactly in six containers of eight, and 59 and 73 in the two that miss. This settles what kind
+of field it is without settling what picks the value, and it does that by asking a question the
+corpus cannot answer: **who reads it.**
+
+### Nobody on the remote reads either of them
+
+The section seeker takes a raw slot number in a register that every caller loads with a literal, so
+one scan gives the whole census. Run on both firmwares, walking back from each call site to its
+`MOVLW`:
+
+| image | seeker | raw slots seeked |
+|---|---|---|
+| Harmony One 3.4 | `0x2BA76` | 2 to 19, 24 sites, none unresolved |
+| Harmony 700 2.8 | `0x10B92` | 3 to 17, 19 sites, none unresolved |
+
+**Raw slot 0 and raw slot 1 appear on neither.** Section 47 already reported these two censuses, for
+what they say about slot 2, and the absence at the other end went unremarked. So the two sections
+this project has just learned to read, base slot 0's name tree in section 77 and base slot 1's
+architecture record, are the two the firmware never fetches. They are written for the host software
+and nothing on the remote validates them.
+
+That explains three things at once that otherwise look like defects: slot 1 can be three bytes long
+in one container and seven in the rest, section 79; its version word can name a skin the remote does
+not report, below; and base slot 0 can carry a state variable's name that no interpreter ever needs.
+
+### The word is per config, and one remote proves it
+
+`tests/test_gspm.py` asserted that the word is per model rather than per config. The corpus contains<!--superseded-->
+the counterexample and it was the one pair nobody had compared:
+
+| container | word | when |
+|---|---|---|
+| the spare Harmony One, before its sync | `0x0D3B` | built 2023 |
+| **the same unit, after** | `0x0D36` | built 6 August 2026, watched |
+
+One physical remote, two configs from Logitech's own service, two different words. Section 58 is
+what makes this evidence rather than an anomaly: that sync was performed and observed, so the
+direction and the provenance are known rather than inferred. The programmed Harmony One carries
+`0x0D3B` too, so the claim as published is false in both directions: two units of one model can
+agree, and one unit can disagree with itself.
+
+### What the low byte is
+
+A skin number, in Logitech's own numbering. Six of the eight containers whose remote's skin is known
+carry it exactly:
+
+| | word | low byte | the remote's skin |
+|---|---|---|---|
+| Harmony One, safe mode and the 2026 config | `0x0C36`, `0x0D36` | 54 | 54 |
+| Harmony 700, user config and factory container | `0x0D42` | 66 | 66 |
+| Harmony 600, safe mode | `0x0D47` | 71 | 71 |
+| Harmony 650, safe mode | `0x0D48` | 72 | 72 |
+| Harmony 525, both configs | `0x0D16` | 22 | 22 |
+| Harmony 880, all four configs | `0x0D0F` | 15 | 15 |
+| Harmony One, the 2023 configs | `0x0D3B` | **59** | 54 |
+| Harmony 600, user config | `0x0D49` | **73** | 71 |
+
+The two that miss are not arbitrary. Logitech's own classic software, in the private lab, carries a
+table of platform families against skin numbers, and it agrees with all six exact cases; the family
+it calls Gin is the arch 12 platform this project already names that way. In that table 59 and 73
+are unallocated, and each is the next free number inside its own family's block: Gin holds 54, and
+the family holding 66, 71 and 72 stops there. So both read as later members of the same family
+rather than as a different kind of value. The table dates from before the MyHarmony era, which is
+why a later skin would be missing from it, and that is also why this is a **lead confirmed in kind
+and not in detail**: what selects 54 over 59 for one remote is not established.
+
+### What it is not
+
+**Not the remote's own skin.** `one_config`'s EZHex header states `<SKIN>54</SKIN>` while its body
+carries 59, in the same file.
+
+**Not the build date.** The One's 2026 config carries the lower number and its 2023 configs the
+higher one, so the value does not advance with time.
+
+**Not the architecture**, which section 20 already established, and not the config contents: four
+arch 8 configs differing in 73 to 84 percent of their bytes share one word.
+
+The high byte is `0x0D` in every container built from 2009 onward and `0x0C` in the One's 2007
+factory container, which is what "an older word" in the superseded test was seeing.
+
+### For a writer
+
+Copy the word, do not compute it. Nothing on the remote reads it, so a wrong value costs nothing on
+the device and everything to whoever reads the config afterwards, which now includes this project.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 1.
+* `tests/test_gspm.py`, with the corrected claim and the falsifying pair.
+* `tests/test_findings.py`, the census, computed rather than quoted.
 
 
 ## References

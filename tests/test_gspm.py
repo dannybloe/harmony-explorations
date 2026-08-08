@@ -446,11 +446,13 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
         self.assertIsNone(broken.architecture)
         self.assertFalse(broken.checks['slot1_states_the_architecture'])
 
-    def test_the_version_word_is_per_model_not_per_config(self):
+    def test_the_version_word_is_per_config_and_usually_agrees_within_a_model(self):
         """
-        The u16 beside the architecture is identical in configs of the same model and differs
-        between models, including across the two arch 14 models. Its meaning is not
-        established; this pins the observation so a later claim has to survive it.
+        The u16 beside the architecture, as far as the corpus pins it. **This test used to claim
+        the word is per model rather than per config**, which section 81 falsified with a pair
+        nobody had compared: one physical Harmony One carries a different word before and after
+        the sync of section 58. The observations below all survived that, so they stay; the claim
+        the name made did not.
         """
         word = lambda n: gspm.parse(lab.load(n)).version_word
 
@@ -467,6 +469,44 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
         # And it is not the skin: the One's safe mode config is the same model as its user
         # config, same skin, yet carries an older word.
         self.assertNotEqual(word('one_config'), word('one_safemode'))
+
+    def test_one_remote_carries_two_different_words(self):
+        """Section 81, and it is why the claim above is about configs and not about models.
+
+        The spare Harmony One either side of the sync section 58 performed and watched. Same
+        unit, same model, same skin, two configs from Logitech's own service, two words. The low
+        byte moves from 59 to 54, and 54 is the skin that remote reports over USB.
+        """
+        lab.require('one_spare_before_sync', 'one_spare_after_sync')
+        before = gspm.parse(lab.load('one_spare_before_sync')).version_word
+        after = gspm.parse(lab.load('one_spare_after_sync')).version_word
+        self.assertEqual((before, after), (0x0D3B, 0x0D36))
+        self.assertNotEqual(before, after)
+        # The high byte is the same on both, so what moved is the low one.
+        self.assertEqual(before >> 8, after >> 8)
+
+    def test_the_low_byte_is_the_remotes_skin_in_six_containers_of_eight(self):
+        """Section 81. Stated as the count it is, with the two exceptions named rather than hidden.
+
+        A skin is known independently: from the EZHex header for a config that has one, and from
+        `bcdDevice` for a remote on the bench. Six containers carry it exactly in the low byte and
+        two carry a number unallocated in Logitech's own table, one per family.
+        """
+        known = {
+            'one_safemode': 54, 'one_spare_after_sync': 54,
+            'h700_config': 66, 'h700_gspm': 66, 'h600_safemode_gspm': 71,
+            'h650_safemode_gspm': 72, 'h525_config': 22, 'arch8_config_a': 15,
+        }
+        exceptions = {'one_config': (59, 54), 'h600_config': (73, 71)}
+        lab.require(*known, *exceptions)
+        for name, skin in known.items():
+            with self.subTest(container=name):
+                self.assertEqual(gspm.parse(lab.load(name)).version_word & 0xFF, skin)
+        for name, (carried, skin) in exceptions.items():
+            with self.subTest(container=name):
+                word = gspm.parse(lab.load(name)).version_word & 0xFF
+                self.assertEqual(word, carried)
+                self.assertNotEqual(word, skin)
 
     def test_a_three_byte_record_states_an_architecture_and_no_version_word(self):
         """Section 79. The record's extent is the gap to the next pointer, like every section's.

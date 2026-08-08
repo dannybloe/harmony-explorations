@@ -308,15 +308,20 @@ people who already do that. A runnable file per platform is real work and belong
 ## Provenance
 
 The analysis and tools here were produced by Claude (Anthropic's AI), working from concordance
-dumps of three remotes, two archived Logitech firmware packages, and five configs that other
-people published for other architectures. No insider information, no hardware probing, and
-nothing was ever written to a remote.
+dumps of three remotes, three archived Logitech firmware packages, configs that other people
+published for other architectures, and **four remotes on the bench, read over USB by this
+project's own code**. No insider information, and **nothing has ever been written to a remote**.
 
-That is worth stating plainly because it should affect how you read the findings. All of it is
-offline analysis of files, so all of it is independently checkable, and it should be checked.
-The write-ups show their verification method rather than only their conclusions, and they
-record the places where earlier conclusions were wrong and got corrected, on purpose, so the
-rest can be calibrated against them. Seven so far, all documented in
+**This paragraph said "no hardware probing" for longer than it was true**, and the correction is
+part of the point: the read path has run against a Harmony One, a 600, a spare One and a 525 since
+6 August 2026, and one arch 9 firmware image was taken off a remote rather than out of a package.
+`docs/findings.md` carries the same statement and was corrected first; this is a summary, and a
+summary is a copy of a fact with no test.
+
+Most of it is still offline analysis of files, so most of it is independently checkable, and it
+should be checked. The write-ups show their verification method rather than only their conclusions,
+and they record the places where earlier conclusions were wrong and got corrected, on purpose, so
+the rest can be calibrated against them. Twenty one so far, all documented in
 [docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
 described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
 are nested inside the GSPM layer. That advised people away from reusable work. One is instructive

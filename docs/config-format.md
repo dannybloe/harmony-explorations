@@ -1177,9 +1177,14 @@ A fixed seven byte record:
 ```
 +0x00  u8       architecture   the protocol number: 8, 9, 12, 14
 +0x01  u8       architecture   the same value again
-+0x02  u16      version word   per model, meaning not established
++0x02  u16      version word   low byte a skin number, high byte a generation
 +0x04  u8[3]    00 00 00
 ```
+
+**The record is up to seven bytes, not exactly seven.** The arch 9 safe mode container carries
+three, with base slot 2 starting immediately after, so the extent is the gap to the next pointer
+like every other section's and a reader that takes a fixed seven reads slot 2's first byte as part
+of the version word. Section 79.
 
 Confirmed on sixteen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
@@ -1202,9 +1207,21 @@ The `version word` is **unconfirmed as to meaning**. What is measured:
 | Harmony 600 user config | 14 | 3401 |
 
 So it is not the architecture (arch 14 shows two values), not the config contents (four arch 8
-configs that differ in 73 to 84 percent of their bytes share it), and not purely the model (the
-One's safe mode config differs from the One's user config). A generator or target firmware
-version is the obvious guess and remains a guess.
+configs that differ in 73 to 84 percent of their bytes share it), and **not per model**: the same
+spare Harmony One carries 3387 before the sync of section 58 and 3382 after it, which is one unit
+and two configs from the same service.
+
+What the **low byte** is, section 81: a skin number in Logitech's own numbering. Six of the eight
+containers whose remote's skin is known independently carry it exactly, 54, 66, 71, 72, 22 and 15;
+the two that do not carry 59 and 73, each unallocated in Logitech's classic software table and each
+the next free number inside its own platform's block. So it names a model the way a skin does, and
+what selects 54 over 59 for one remote is **not established**. The high byte is `0x0D` in every
+container built from 2009 onward and `0x0C` in the One's 2007 factory container.
+
+**Nothing on the remote reads this section, or base slot 0.** The firmware's section seeker is
+called with raw slots 2 to 19 on the One and 3 to 17 on the 700, and with 0 and 1 on neither, so
+both are host side records. That is why a wrong value here has no effect on the device, and why an
+editor must **copy** the word rather than compute it. Section 81.
 
 Observed pointer values, for orientation:
 

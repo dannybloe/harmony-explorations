@@ -199,6 +199,69 @@ class TestCycleDelayRoutine(unittest.TestCase):
         self.assertEqual(after.mnemonic, 'RETURN')
 
 
+class TestTheSectionSeekerCensus(unittest.TestCase):
+    """Which sections the firmware ever fetches, computed rather than quoted.
+
+    The seeker takes a raw slot number in a register every caller loads with a literal, so one
+    scan gives the whole census. What it says is as interesting for what is missing: raw slots 0
+    and 1 appear on neither architecture, so base slot 0's name tree and base slot 1's
+    architecture record are read by the host and never by the remote. `docs/findings.md`
+    section 81.
+    """
+
+    SEEKERS = {'one34_code': (0x20000, 0x2BA76), 'h700_code': (0x9000, 0x10B92)}
+    # Sites, then the raw slots. The One skips raw 8, which is the NULL arch 12 inserts and the
+    # slot arch 14 does not have at all, so the gap is the container's and not the census's.
+    EXPECTED = {
+        'one34_code': (24, [n for n in range(2, 20) if n != 8]),
+        'h700_code': (19, list(range(3, 18))),
+    }
+
+    def census(self, name):
+        """Every call site of the seeker, with the literal slot each one loads."""
+        base, seeker = self.SEEKERS[name]
+        code = lab.load(name)
+        sites = trace.xrefs(code, base, [seeker])[seeker]
+        slots = []
+        for site in sites:
+            offset = site.addr - base
+            for back in range(2, 30, 2):
+                if offset - back < 0:
+                    break
+                instr = isa.decode(code, offset - back, base)
+                if instr.mnemonic == 'MOVLW':
+                    slots.append(instr.fields['k'])
+                    break
+                if instr.mnemonic in ('RETURN', 'RETLW', 'GOTO'):
+                    break
+        return sites, slots
+
+    def test_every_call_site_resolves_to_a_literal_slot(self):
+        """A site whose slot could not be recovered would make the absences below meaningless."""
+        for name in self.SEEKERS:
+            lab.require(name)
+            sites, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertEqual(len(slots), len(sites))
+                self.assertEqual(len(sites), self.EXPECTED[name][0])
+
+    def test_the_seeked_slots_are_the_ones_recorded(self):
+        for name, (_, expected) in self.EXPECTED.items():
+            lab.require(name)
+            _, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertEqual(sorted(set(slots)), expected)
+
+    def test_neither_firmware_ever_seeks_raw_slot_zero_or_one(self):
+        """The point of section 81: those two sections exist for the host software."""
+        for name in self.SEEKERS:
+            lab.require(name)
+            _, slots = self.census(name)
+            with self.subTest(image=name):
+                self.assertNotIn(0, slots)
+                self.assertNotIn(1, slots)
+
+
 class TestArch9Infrared(unittest.TestCase):
     """The infrared chain on the Harmony 525, read out of the first arch 9 firmware.
 
