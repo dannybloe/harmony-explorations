@@ -7284,6 +7284,75 @@ arch 8 and 24467 of class 5 on arch 9, the latter still wanting a firmware nobod
 * `packages/codec/test/sections.test.ts`: the 54 sets, their entry counts, the absent back pointer
   with base slot 6 as the calibration, and the pool's two derived ends with the count identity.
 
+## 68. A mode page has two tagged lists, keyed by the same tags
+
+Section 67 claimed the pool and left its purpose open, with the count identity as the only clue:
+one list per mode page plus one per base slot 9 set, exact in every container. This says what the
+per page ones are, and does not say where the firmware reads them, which is now the sharper half.
+
+### The pairing
+
+**Every page's list has a twin in the pool with exactly the same tag sequence.**
+
+| container | pages | paired | pool lists left over |
+|---|---|---|---|
+| the four Harmony One configs | 330, 152, 152, 144 | all | 0 |
+| the two Harmony 700 configs | 426, 426 | all | 0 |
+| Harmony 600 | 254 | all | 0 |
+| 525, arch 9 | 135 | all | 0 |
+| the four arch 8 configs | 141, 173, 204, 204 | all | 0 |
+| the five safe mode containers | 30, 30, 35, 35, 35 | all | 0 |
+
+**2906 of 2906 pages, seventeen of seventeen containers, and nothing unpaired in either direction.**
+It is a bijection, not a coincidence of totals: the tag multisets agree exactly, which is what the
+aggregate first showed. On a Harmony One the pool's tags are `0xb1` 264 times, `0xb2` 251, `0xb0`
+100, `0xb3` 80, and the page lists' tags are the same eight tags at the same eight counts.
+
+What differs is the payload. Over the pairs, **0 of 175 entries share an operand** on a Harmony One
+and 0 of 115 on a 600, while 161 of 175 and 70 of 115 share an opcode. So the same tag maps to two
+different things, of the same kind.
+
+The two lists are never adjacent, never at the same rank in their pools, 85 of 330 by address order
+on a Harmony One, and never the same bytes: the pairing is by content and the layout does not
+express it.
+
+### What it settles about the pool
+
+The count identity of section 67 is explained: `pages + sets` because the pool is one list per page
+plus base slot 9's, and slot 9's are simply stored in the same run. Nothing is left over on either
+side of the ledger, in any container, which is the strongest form the check can take.
+
+**The empty ones are consistent too.** 62 of 330 pool lists on a Harmony One carry no entries, and
+**every empty list is in the wide form and every wide form list is empty**, 62 of 62, 63 of 63, 72
+of 72, 53 of 53 and 41 of 41. That is the shape section 53's correction predicted: an empty wide
+list has no entry to carry a flags byte, which is why inferring the form from the entries fails.
+
+### What it does not settle, and where to look
+
+**Nowhere in either firmware image is a second list per page read**, and that is now a sharper
+statement than section 67's. A page record is `u24 list; u24 program`, six bytes, seven on arch 12,
+and it carries exactly one list pointer. The tagged list runner `0x1B71E` has four call sites, all
+accounted for. And the helper that indexes an entry, `0x10C36`, is called with a literal of 6 at
+exactly one site in the image, `0x1684C`, with the index zero: the firmware never computes
+`entry + 6 + 3 * pages`, which is where a pool begins.
+
+So the twin is not reached from the page record, not by walking from the entry, and not through the
+routine that runs every other tagged list. Three routes ruled out. What is left is that some
+consumer holds the pool's address by another means, or that the second list is read by code that
+does not use the tagged list runner at all, which the identical tag sequences make plausible: the
+same tags with different operands is what a **second table over the same keys** looks like, and its
+reader need not be the first one's.
+
+The next attempt should start from the tags rather than the pointers. On arch 14 they are `0xa2`,
+`0x89`, `0x88` and `0x82`, four values covering every entry in both lists, and a scan for the code
+that loads those literals is the same one paragraph move that found the mode handlers in section 37.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6's pages.
+* `packages/codec/test/sections.test.ts`: the bijection over the corpus, the operand disagreement
+  as the statement that the twins are not copies, and the wide form matching emptiness exactly.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

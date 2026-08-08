@@ -719,10 +719,16 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   picture bank's derivation gives 35 to 1275 candidate starts here. That measurement is right and
   the conclusion was not: the start never had to be searched for, because a mode entry states it.
 
-  What stays open is what the pool is **for**. Nothing in a container names the lists that are not
-  slot 9's, and the arch 14 tagged list runner has four call sites, none of which reaches them. The
-  count is exactly one per mode page plus one per slot 9 set, in all seventeen containers, and that
-  regularity is the thread to pull.
+  What stays open is what the pool is **for**, and section 68 pulled that thread as far as the
+  files allow. Each of the pool's non slot 9 lists is the **twin of one mode page's list**: the same
+  tag sequence, different operands, 2906 of 2906 pages paired with nothing left over on either
+  side, in all seventeen containers. So a page has two tagged lists over the same keys.
+
+  Three routes to the twin are ruled out: a page record carries one list pointer and no second, the
+  tagged list runner's four call sites are all accounted for, and the firmware never computes the
+  address a pool begins at. The next attempt starts from the **tags**, which on arch 14 are four
+  values covering every entry in both lists, and a scan for the code that loads those literals is
+  the move that found the mode handlers in section 37.
 
 ### Step 7: keep the documents honest
 

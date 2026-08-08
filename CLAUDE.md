@@ -593,7 +593,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: groups, then records with a 21 byte header | 32, 42, 61, 65 |
-| 6 | the mode table. A record carries a screen program, and its entry carries an array of pages | 37, 52, 53, 66 |
+| 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with two tagged lists | 37, 52, 53, 66, 68 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings | 38 |
 | 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67 |
@@ -675,8 +675,10 @@ That completes the first of milestone M2's three parts for arch 12 and arch 14.
 
 What is left is infrared, on the two architectures with no firmware: 9864 bytes of duration blocks
 on arch 8 and 24467 of class 5 on arch 9, the latter wanting a firmware nobody has. **What the pool
-is for is still open**: nothing in a container names the lists that are not slot 9's, and no
-consumer in either image reaches them. **Read the whole gap list before choosing a target**: `make coverage
+is for is still open**, and section 68 sharpens it: each of its non slot 9 lists is the twin of one
+mode page's list, same tags and different operands, 2906 of 2906 pages paired with nothing left
+over. A page record carries one list pointer, so the twin is reached by a route that is not the
+page record, not a walk from the entry, and not the tagged list runner. Start from the tags. **Read the whole gap list before choosing a target**: `make coverage
 --detail` prints only the twenty largest, and section 66 was found by asking for all of them and
 noticing two families with the same count.
 

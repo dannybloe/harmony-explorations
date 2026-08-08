@@ -419,8 +419,15 @@ The pool is bounded at both ends without searching: it begins on the byte after 
 array and ends at the lowest address above that which another reader already names, and a run must
 hold at least one set on a list boundary. 29 runs in seventeen containers, tiling exactly.
 
-*What the lists that are not sets are for is not established.* Nothing in a container names them and
-no consumer in either firmware image reaches them. [findings.md](findings.md) section 67.
+The lists that are not sets are **one per mode page**, and each is the twin of that page's own
+list: same tag sequence, different operands. 2906 of 2906 pages pair, with nothing left over on
+either side, in all seventeen containers. Every empty pool list is in the wide form and every wide
+form one is empty.
+
+*What the twin is for is not established.* A page record carries one list pointer, the tagged list
+runner's four call sites are all accounted for, and the firmware never computes the address a pool
+begins at, so the route to it is not any of the three that were checked.
+[findings.md](findings.md) sections 67 and 68.
 
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming

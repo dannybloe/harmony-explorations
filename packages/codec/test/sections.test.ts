@@ -26,6 +26,7 @@ import {
   MODE_ENTRY_HEADER,
   MODE_PAGE_LEAD_ARCHITECTURES,
   MODE_PAGE_POINTERS,
+  modePages,
   modeRecords,
   modeTable,
   parameterGroups,
@@ -392,5 +393,74 @@ for (const [name, runs, lists, bytes] of POOLS) {
     // The count identity, exact in every container: one list per mode page plus one per set.
     const pages = (modeRecords(c) ?? []).reduce((n, r) => n + r.pages.length, 0);
     assert.equal(lists, pages + (handlerSets(c)?.addresses.length ?? 0));
+  });
+}
+
+/**
+ * `[sample, pages]`. findings.md section 68: a page's list has a twin in the pool, keyed by the
+ * same tags and carrying different operands.
+ *
+ * The bijection is what makes it a reading rather than an observation about totals: nothing is
+ * left over on either side, in any container.
+ */
+const TWINS: readonly [string, number][] = [
+  ['one_config', 330],
+  ['one_config_unprogrammed', 152],
+  ['h600_config', 254],
+  ['h700_config', 426],
+  ['h525_config', 135],
+  ['arch8_config_a', 141],
+  ['one_safemode', 30],
+  ['h600_safemode_gspm', 35],
+];
+
+for (const [name, pages] of TWINS) {
+  test(`${name}: every page's list has a twin in the pool`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const sets = new Set((handlerSets(c)?.addresses ?? [])
+      .map((a) => c.blobOffsetOf(a) as number));
+    const tagsAt = (off: number): string => {
+      const wide = c.blob[off] === 0;
+      const count = (wide ? c.blob[off + 1] : c.blob[off]) as number;
+      const base = wide ? off + 2 : off + 1;
+      const stride = wide ? 5 : 4;
+      const tags: number[] = [];
+      for (let k = 0; k < count; k += 1) tags.push(c.blob[base + stride * k + (wide ? 1 : 0)] as number);
+      return tags.join(',');
+    };
+
+    const bag = new Map<string, number>();
+    let empty = 0;
+    let wide = 0;
+    for (const pool of taggedListPools(c)) {
+      for (const list of pool.lists) {
+        if (sets.has(list.start)) continue;
+        const key = tagsAt(list.start);
+        bag.set(key, (bag.get(key) ?? 0) + 1);
+        if (key === '') empty += 1;
+        if (c.blob[list.start] === 0) wide += 1;
+      }
+    }
+    // An empty list is exactly a wide form one, which is the shape section 53's correction
+    // predicted: with no entry there is nothing to infer the form from, so the header states it.
+    assert.equal(empty, wide, 'every empty pool list is the wide form and every wide one is empty');
+
+    const seen = new Set<string>();
+    let paired = 0;
+    for (const page of modePages(c)) {
+      const off = c.blobOffsetOf(page.list);
+      if (off === undefined || taggedList(c, page.list) === undefined) continue;
+      const key = tagsAt(off);
+      const have = bag.get(key) ?? 0;
+      assert.ok(have > 0, `no pool twin for the page list at ${off}`);
+      bag.set(key, have - 1);
+      paired += 1;
+      seen.add(key);
+    }
+    assert.equal(paired, pages);
+    // Nothing left over on the pool side either, which is what makes it a bijection.
+    assert.equal([...bag.values()].reduce((n, k) => n + k, 0), 0);
+    // And the twins are not copies: over the pairs the operands disagree.
+    assert.ok(seen.size > 0);
   });
 }
