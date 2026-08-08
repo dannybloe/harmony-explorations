@@ -67,4 +67,7 @@ and leave this table alone.
 | `the one thing the emitter cannot touch` | section 77 | base slot 0 is read and rebuilt from fields |
 | `payload, starting with FRAME_PROLOGUE` | section 77 | the payload is a list of nodes, and those nine bytes are the first one |
 | `no field inside it has ever been read` | section 77 | tag, length, level, index and name, and level 1 names base slot 13 |
+| `the glyph count on arch 12, and 1 on arch 8` | section 78 | the byte at +1 is the first glyph code; the count sits at +2 unless that byte is zero |
+| `Which of the two header bytes holds it is` | section 78 | it is the byte at +2, and the other one is the first code, not a spare |
+| `the font header's spare byte` | section 78 | there is no spare byte: it is the first glyph code |
 

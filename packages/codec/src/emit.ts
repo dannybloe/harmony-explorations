@@ -62,7 +62,7 @@ import {
   taggedListPools,
 } from './sections.ts';
 import type { TaggedList } from './sections.ts';
-import { IMAGE_COUNT_OFFSET, fontSets, glyphs } from './font.ts';
+import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { namedContentEnd } from './coverage.ts';
 import {
@@ -538,13 +538,12 @@ export function rebuilds(c: Container): Rebuild[] {
   // the whole test here. The same holds for an encoded picture below.
   for (const font of fontSets(c) ?? []) {
     const off = c.blobOffsetOf(font.address);
-    const countAt = IMAGE_COUNT_OFFSET[c.architecture ?? -1];
-    if (off === undefined || countAt === undefined) continue;
-    // Three header bytes, of which the count is the second on arch 12 and the third elsewhere.
-    // The other one holds a constant nothing reads, so it is carried rather than assumed.
+    if (off === undefined) continue;
+    // Three header bytes: the height, the first code and the count, in whichever of the two
+    // orders this set uses. `spare` is the byte the count did not come from, section 78.
     const w = new Writer(font.length).u8(font.height);
-    if (countAt === 1) w.u8(font.count).raw(c.blob.subarray(off + 2, off + 3));
-    else w.raw(c.blob.subarray(off + 1, off + 2)).u8(font.count);
+    if (font.countAt === 1) w.u8(font.count).u8(font.spare);
+    else w.u8(font.first).u8(font.count);
     for (const glyph of font.glyphs) w.u24(glyph ?? 0);
     partly(off, 'slot-7-set', w, font.length - 1);
   }

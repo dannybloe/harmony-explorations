@@ -258,7 +258,7 @@ as of section 75.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
 number. **Every structure `coverage` claims is rebuilt**, the output is byte identical to the input
-on all eighteen containers, and what is left to copy is 22 to 73 bytes of a user config, which is
+on all nineteen containers, and what is left to copy is 22 to 73 bytes of a user config, which is
 exactly the residue no reader claims either. So the two halves of M2 now meet: what the accounting
 attributes and what the emitter can put back are the same set of bytes.
 

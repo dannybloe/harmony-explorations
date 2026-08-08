@@ -21,6 +21,7 @@ import {
   BITMAP_NOTHING,
   BITMAP_RAW,
   PIXEL_BYTES,
+  GLYPH_FIRST_CODE_DEFAULT,
   IMAGE_ARCHITECTURES,
   IMAGE_PACKED_ARCHITECTURES,
   IMAGE_PACKED_INK,
@@ -127,6 +128,67 @@ for (const [name, programs, glyphCount] of DECODED) {
     }
   });
 }
+
+test('the set header byte below the height is the first glyph code', skipWithoutLab(), () => {
+  // Section 78. Every container in the corpus starts its sets at code 1, which is exactly why the
+  // byte read as a constant for so long, so the corpus is the wrong place to look for the meaning
+  // and the right place to pin the default.
+  for (const [name] of DECODED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    for (const font of fontSets(parse(data)) ?? []) {
+      assert.equal(font.first, GLYPH_FIRST_CODE_DEFAULT, `${name} at ${font.address}`);
+    }
+  }
+});
+
+test('the count offset is not an architecture property', skipUnless('one_safemode'), () => {
+  // The claim section 78 corrected, as the two arch 12 containers that disagree about it. Keying
+  // the count on the architecture cut the One's safe mode font from 46 glyphs to one, and with it
+  // 5437 bytes of an 8902 byte container.
+  const safe = parse(load('one_safemode') as Uint8Array);
+  const font = (fontSets(safe) ?? [])[0];
+  assert.equal(safe.architecture, 12);
+  assert.deepEqual([font?.countAt, font?.count], [2, 46]);
+  const user = load('one_config');
+  if (user === undefined) return;
+  const other = (fontSets(parse(user)) ?? [])[0];
+  assert.equal(other?.countAt, 1, 'the same architecture, the other shape');
+});
+
+test('the arch 9 safe mode container ships exactly the ASCII its own strings use',
+  skipUnless('h525_safemode_ahcm'), () => {
+    // The sample that settled the field, and the closure that settled it: the font table and the
+    // screen programs are independent structures, and under this reading they agree exactly.
+    const c = parse(load('h525_safemode_ahcm') as Uint8Array);
+    const sets = fontSets(c) ?? [];
+    assert.deepEqual(sets.map((f) => [f.first, f.count]), [[32, 91], [32, 90], [72, 50], [32, 90]]);
+    const used = new Map<number, Set<number>>();
+    for (const [, program] of reachablePrograms(c)) {
+      let selected: number | undefined;
+      for (const instruction of program) {
+        if (instruction.opcode === SCREEN_SELECT_FONT && instruction.operands.length > 0) {
+          selected = instruction.operands[0];
+        }
+        if (instruction.glyphs === undefined || selected === undefined) continue;
+        const codes = used.get(selected) ?? new Set<number>();
+        for (const code of instruction.glyphs) codes.add(code);
+        used.set(selected, codes);
+      }
+    }
+    assert.deepEqual([...used.keys()].sort((a, b) => a - b), [0, 3]);
+    for (const [selected, codes] of used) {
+      const font = sets[selected] as (typeof sets)[number];
+      const present = new Set(font.glyphs.map((a, i) => (a === undefined ? -1 : font.first + i)));
+      for (const code of codes) {
+        assert.ok(present.has(code), `code ${code} of font ${selected} has no glyph`);
+        assert.ok(code >= 32 && code < 127, `code ${code} is not ASCII`);
+        assert.notEqual(glyphOf(c, font, code), undefined, `code ${code} does not decode`);
+      }
+      // And the reading section 46 published runs the codes off the end of the set.
+      assert.ok(Math.max(...codes) - GLYPH_FIRST_CODE_DEFAULT >= font.glyphs.length);
+    }
+  });
 
 test(`the corpus decodes ${CORPUS_PROGRAMS} programs, as Python reports`, skipWithoutLab(), () => {
   let total = 0;

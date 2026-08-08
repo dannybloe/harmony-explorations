@@ -717,11 +717,11 @@ thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F`
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not
 one table across architectures**, so they must not be ported.
 
-The byte accounting has two remainders left, neither on a user config of a target architecture:
-25819 bytes on arch 9, nearly all class 5 infrared, and 5437 bytes in the **arch 12 safe mode
-container**, which is 61% of it and appears in no user config. A `u8 tag; u8 n; u16 v[n]` walk tiles
-that run to within a byte and **should not be believed on that basis**: with `n` usually zero it
-tiles almost anything, which is the same trap section 67 recorded.
+The byte accounting has **one** remainder left: 25819 bytes on arch 9, nearly all class 5
+infrared. This paragraph used to name a second, 5437 bytes in the arch 12 safe mode container, and<!--superseded-->
+warned against a `u8 tag; u8 n; u16 v[n]` walk that tiled them to within a byte. The warning was
+right and the structure was not there at all: the whole remainder was one font set the reader had
+cut to a single glyph, section 78, and that container is at 99.6% now.
 
 **Three architectures are at 100.0%**, sections 66, 67 and 75, with 24 bytes unattributed in a
 1.63 MB Harmony One config, 41 in a 600 and 60 in an 880, and zero overlaps in all seventeen
@@ -732,7 +732,7 @@ That completes the first two of milestone M2's three parts on arch 8, 12 and 14.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
 the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
-rebuilt**; the bytes come back identical on all seventeen containers and the copied residue is 22 to
+rebuilt**; the bytes come back identical on all nineteen containers and the copied residue is 22 to
 73 bytes of a user config, which is exactly what no reader claims either. It builds into a buffer
 filled with `0xA5` rather than into a copy of its input,
 because **an emitter that starts from a copy passes a round trip test while writing nothing at
@@ -781,12 +781,15 @@ sample and the arch 9 **firmware** is in the lab, at program `0x1000`, **confirm
 against the remote's own internal memory** rather than only derived. Nothing has been decoded out
 of it yet, so class 5 infrared is still open and now has something to appeal to.
 
-**Its safe mode config is the next piece of work and it is bigger than it looks.** Found at flash
-`0x818000`, it parses and its checksum recomputes, and it contradicts six claims the corpus
-asserts. **The first of the six is settled and it was not a fix**: slot 0's `Root` node was a
-misreading of the whole section, and correcting it read base slot 0, section 77. Five are left:
-base slot 1's seven byte length, the log area's range, one font count per container, the font
-header's spare byte, and two corpus totals. It is deliberately **not** in the corpus until each is
-re-derived, because adding it would turn five properties into five exceptions in one commit. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the way:
-the version reply was matched as a whole byte, its length was fixed at twelve, and the region
+**Its safe mode config was the next piece of work and it was bigger than it looked.** Found at
+flash `0x818000`, it parses, its checksum recomputes, and it contradicted six claims the corpus
+asserts. **Five are settled and not one of them was a fix.** It said slot 0's root node is named
+`Curr`, and re-deriving that read base slot 0 for the first time, section 77. It said a font set
+declares more than one count and that the header's spare byte varies, and re-deriving those found
+the byte is the **first glyph code** and the count is not keyed on the architecture, section 78,
+which took the arch 12 safe mode container from 39.1% attributed to 99.6%. **Two are left**: base
+slot 1's seven byte length, three bytes here, and the log area's range. It is in the corpus now as
+`h525_safemode_ahcm` and deliberately out of the corpus wide claim lists until those two are
+re-derived. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the
+way: the version reply was matched as a whole byte, its length was fixed at twelve, and the region
 validator was hard coded. `docs/memory-map-525.md` holds the predictions against the measurements.

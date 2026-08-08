@@ -1100,18 +1100,73 @@ class TestTheFontTable(unittest.TestCase):
                 self.assertEqual(len(counts), 1, counts)
                 self.assertGreaterEqual(counts.pop(), 46)
 
-    def test_the_spare_header_byte_is_constant_per_architecture(self):
-        """What the count offset rests on, since the firmware does not settle it."""
+    def test_the_header_byte_below_the_height_is_the_first_glyph_code(self):
+        """Section 78, and the claim it replaced was that this byte is a spare.
+
+        Every container in the corpus starts its sets at code 1, which is why the byte looked
+        like a constant. The one sample that does not is the arch 9 safe mode container, and its
+        strings only resolve when the index is the code minus that byte.
+        """
         from harmony import gspm
         for name in self.CONTAINERS:
             c = gspm.parse(lab.load(name))
-            at = gspm.IMAGE_COUNT_OFFSET[c.architecture]
-            spare = 1 if at == 2 else 2
-            expected = 1 if c.architecture != 12 else 0
-            for entry in c.pointer_array(gspm.arch_slot(c.architecture, gspm.IMAGE_TABLE_SLOT)):
-                off = c.blob_offset_of(entry)
-                with self.subTest(container=name, entry=hex(entry)):
-                    self.assertEqual(c.blob[off + spare], expected)
+            for font in c.font_sets():
+                with self.subTest(container=name, set=hex(font.address)):
+                    self.assertEqual(font.first, gspm.GLYPH_FIRST_CODE_DEFAULT)
+
+    def test_the_count_offset_is_not_an_architecture_property(self):
+        """The corrected claim, stated as the two arch 12 containers that disagree.
+
+        `one_config` carries the count at +1 with a zero below it; `one_safemode`, the same
+        architecture, carries it at +2 the way every arch 8, 9 and 14 container does. A reader
+        keyed on the architecture cuts that set from 46 glyphs to one, which is how 5437 bytes of
+        an 8902 byte container went unattributed.
+        """
+        from harmony import gspm
+        lab.require('one_config', 'one_safemode')
+        shapes = {}
+        for name in ('one_config', 'one_safemode'):
+            c = gspm.parse(lab.load(name))
+            font = c.font_sets()[0]
+            shapes[name] = (c.architecture, font.count_at, font.count)
+        self.assertEqual(shapes['one_config'][:2], (12, 1))
+        self.assertEqual(shapes['one_safemode'], (12, 2, 46))
+
+    def test_the_arch_9_safe_mode_container_starts_its_sets_at_code_32(self):
+        """The sample that settled the field, and the closure that settled it.
+
+        Its strings are ASCII: the glyphs a set ships are exactly the characters that set's own
+        strings use, which is a statement about two independent structures agreeing, the font
+        table and the screen programs. Under the old reading the codes ran off the end of the set.
+        """
+        from harmony import gspm
+        lab.require('h525_safemode_ahcm')
+        c = gspm.parse(lab.load('h525_safemode_ahcm'))
+        fonts = c.font_sets()
+        self.assertEqual([(f.first, f.count) for f in fonts],
+                         [(32, 91), (32, 90), (72, 50), (32, 90)])
+        used = {}
+        for program in self._programs(c).values():
+            selected = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                used.setdefault(selected, set()).update(instruction.glyphs)
+        self.assertEqual(sorted(used), [0, 3])
+        for selected, codes in used.items():
+            font = fonts[selected]
+            present = {font.first + i for i, a in enumerate(font.glyphs) if a is not None}
+            with self.subTest(font=selected):
+                # Every code drawn has a glyph, and the set carries almost nothing else: one
+                # spare glyph in font 3 and none at all in font 0.
+                self.assertEqual(codes - present, set())
+                self.assertLessEqual(len(present - codes), 1)
+                # And they are ASCII, which is what says 32 is a first code and not a flag.
+                self.assertTrue(all(32 <= code < 127 for code in codes))
+            # Under the reading section 46 published, the codes run past the end of the set.
+            self.assertGreater(max(codes) - gspm.GLYPH_FIRST_CODE_DEFAULT, len(font.glyphs))
 
     def test_every_glyph_decodes_to_the_height_its_set_declares(self):
         """The byte the first reading of this section mistook for a count."""
@@ -1187,7 +1242,7 @@ class TestTheFontTable(unittest.TestCase):
         self.assertIsNone(c.glyph(font, 0))
         self.assertIsNone(c.glyph(font, font.count + 1))
         first = next(i for i, a in enumerate(font.glyphs) if a is not None)
-        self.assertIsNotNone(c.glyph(font, first + gspm.GLYPH_CODE_BIAS))
+        self.assertIsNotNone(c.glyph(font, first + font.first))
 
 
 class TestScreenOpcode22(unittest.TestCase):

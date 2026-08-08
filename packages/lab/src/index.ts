@@ -60,6 +60,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The bench 525's own config, read over USB on 8 August 2026. The corpus's second arch 9 sample
   // and the first not published by a stranger, which is where the two sample standard starts.
   h525_config_2: '20260808T1645Z-harmony-525-config.bin',
+  // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
+  // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
+  // section 77 read one of them and section 78 read four more, so what is left is base slot 1's
+  // extent and the log area's range, both recorded rather than asserted. It is the only container
+  // whose font sets do not start at code 1, which is what made that field readable at all.
+  h525_safemode_ahcm: '20260808-harmony-525-safemode-ahcm.bin',
   arch8_config_a: 'Update.EZHex',
   arch8_config_b: 'Update-1.EZHex',
   arch8_config_c: 'Update-2.EZHex',

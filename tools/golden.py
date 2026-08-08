@@ -38,6 +38,10 @@ CONTAINERS = (
     'one_config', 'one_config_unprogrammed', 'h600_config',
     'h700_config', 'h700_config_2', 'h525_config', 'h525_config_2',
     'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+    # The arch 9 safe mode container. It is in the corpus as a sample and out of the corpus wide
+    # claim lists, section 78, and a golden vector is exactly the thing it should have: the two
+    # implementations have to agree about the container that disagrees with everything else.
+    'h525_safemode_ahcm',
     # The section 58 pair. The first is byte identical to `one_config_unprogrammed`, so its vector
     # is a duplicate on purpose: the alternative is a special case in the test that asserts every
     # container sample has one, and a special case there is worth less than a duplicate file.

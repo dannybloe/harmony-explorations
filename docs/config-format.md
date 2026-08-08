@@ -30,8 +30,11 @@ The sixteenth is the bench Harmony 525's own config, read over USB on 8 August 2
 in every container field to the published arch 9 sample, section 76.
 
 A **seventeenth** container exists and is deliberately not in that set: the same remote's arch 9
-safe mode config, at flash `0x818000`. It contradicts six established claims at once and each one
-needs re-deriving before it can be asserted against. Section 76 lists them.
+safe mode config, at flash `0x818000`. It contradicted six established claims at once, and the
+rule was that each needs re-deriving before it can be asserted against. Five are done, sections 77
+and 78, and neither was a fix: one read base slot 0 and the other read a font set's first glyph
+code. What is left is base slot 1's extent, three bytes here against seven everywhere else, and the
+log area's range. Section 76 lists them and `h525_safemode_ahcm` is the sample.
 
 **Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
 table lengths. The count was stale, and the other two numbers never matched the list beside them:
@@ -671,10 +674,14 @@ Each entry is one typeface:
 
 ```
 +0x00  u8   glyph height in pixels, shared by every glyph in the set
-+0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
-+0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
++0x01  u8   the first glyph code
++0x02  u8   the glyph count
 +0x03  u24  glyph[count]     NULL for a code this config never draws
 ```
+
+**unless `+0x02` is zero**, and then the count is at `+0x01` and the first code is 1. That is a
+discriminator and not an explanation, and it is what every arch 12 user config needs. A code's
+index is `code - first`.
 
 and each glyph
 
@@ -687,12 +694,14 @@ background pixels, and a byte below `0x80` introduces that many literal pixels o
 each. A row is exactly `width` pixels and the next begins as soon as that many are accounted for;
 the height comes from the set header rather than from the glyph.
 
-The count is the same for every set in a container and differs between containers, 46 to 76, so it
-is a character set size chosen per config. Which of the two header bytes holds it is *measured, not
-explained*: the firmware reads the pair as one `u16` and never bounds a code with it.
+The count is the same for every set in every **generated** config, 46 to 76, so it is a character
+set size chosen per config. The arch 9 safe mode container declares 91, 90, 50 and 90 in one
+container, so the field is per set and a generator happens to choose once.
 
-**A glyph code is one based**, because zero terminates an inline string, so the firmware indexes the
-set by the code minus one.
+**A glyph code is one based** in every generated config, because zero terminates an inline string
+and nothing can name a glyph by the code zero. It is the header that says so, not the format: the
+arch 9 safe mode container's sets start at 32 and its codes are ASCII, which is how the field was
+read at all. `findings.md` section 78.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
@@ -1137,7 +1146,7 @@ length is 0 while its terminator sits five bytes in. Read `length == 0` as "empt
 as an offset. Whether the firmware's own parser special cases it that way is **unconfirmed**;
 no arch 12 or arch 14 config parser has been located in the firmware yet.
 
-The nodes tile the frame exactly, in every framed container: sixteen of the eighteen `make
+The nodes tile the frame exactly, in every framed container: sixteen of the nineteen `make
 coverage` reports, the two exceptions being the One's safe mode config with its degenerate empty
 frame. The walk lands on the byte `length` names, with nothing left over and nothing short, and
 that is what validates the reading:

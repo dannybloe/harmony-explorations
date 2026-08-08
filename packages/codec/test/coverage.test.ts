@@ -27,6 +27,7 @@ const ACCOUNTED: readonly [string, number, number][] = [
   ['h600_config', 738108, 738149],
   ['h525_config', 52667, 78486],
   ['h525_config_2', 39448, 51195],
+  ['h525_safemode_ahcm', 13160, 15342],
   ['one_config', 1672808, 1672832],
   ['one_config_unprogrammed', 1232213, 1232237],
   ['arch8_config_a', 444196, 444256],
@@ -35,6 +36,9 @@ const ACCOUNTED: readonly [string, number, number][] = [
   ['arch8_config_d', 492075, 492150],
   ['h600_safemode_gspm', 7069, 7115],
   ['h700_gspm', 7069, 7115],
+  // 3465 until section 78 read the set header's count from the byte it is actually in.
+  ['one_safemode', 8870, 8902],
+  ['one34_region2', 8870, 8902],
   ['h650_safemode_gspm', 7069, 7115],
 ];
 

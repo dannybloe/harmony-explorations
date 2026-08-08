@@ -4,8 +4,9 @@
  * Ported from `src/harmony/gspm.py`. `docs/findings.md` section 46, which is also the section
  * that was corrected in place the day after it landed: the set header's first byte is the glyph
  * height and not a slot count, and the wrong reading made the inline string codes look like they
- * overran their set. The lesson is in the section; what matters here is that `IMAGE_COUNT_OFFSET`
- * is per architecture because of it.
+ * overran their set. The lesson is in the section, and section 78 had to apply it a second time
+ * to the two header bytes below the height: they are a first code and a count, not a count and a
+ * spare that swap places by architecture.
  *
  * As with the screen language, a glyph carries the byte length it decoded to, which the Python
  * original does not return. The byte accounting needs it and the decoder is the only place that
@@ -20,14 +21,49 @@ export const IMAGE_END = 0x00;
 export const IMAGE_SKIP = 0x80;
 /** A pixel is two bytes. A one byte pixel fails almost every closure in section 46. */
 export const IMAGE_PIXEL_BYTES = 2;
-/** Which byte of the three byte set header is the glyph count. Per architecture. */
-export const IMAGE_COUNT_OFFSET: Readonly<Record<number, number>> = { 8: 2, 9: 2, 12: 1, 14: 2 };
 export const IMAGE_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
 /**
- * A glyph code is one based: zero terminates an inline string, so the firmware indexes the set by
- * the code minus one. Sections 40 and 46.
+ * The first code a set covers when the header does not state one. Zero terminates an inline
+ * string, so nothing can name the first glyph by the code zero. Sections 40 and 46.
  */
-export const GLYPH_CODE_BIAS = 1;
+export const GLYPH_FIRST_CODE_DEFAULT = 1;
+
+export interface FontSetHeader {
+  height: number;
+  /** The code the first pointer belongs to, so a glyph's index is `code - first`. */
+  first: number;
+  count: number;
+  /** The byte the count sits at, 1 or 2. Not decided by the architecture, section 78. */
+  countAt: 1 | 2;
+  /** Whatever the other byte holds, carried rather than assumed. */
+  spare: number;
+}
+
+/**
+ * Read a set's three byte header, section 78.
+ *
+ * ```
+ * +0x00  u8   glyph height in pixels
+ * +0x01  u8   the first glyph code
+ * +0x02  u8   the glyph count
+ * ```
+ *
+ * **unless `+0x02` is zero**, and then the count is at `+0x01` and the first code is 1. Section 46
+ * read that as an architecture rule, `1` at `+0x01` on arch 8, 9 and 14 and the count there on
+ * arch 12, and it is not one: the One's own safe mode container carries the other shape, which is
+ * why 47 of its inline strings resolved through a set the reader had cut to a single glyph. What
+ * settled the meaning of `+0x01` is the arch 9 safe mode container, whose sets start at code 32:
+ * its strings render as English only when the index is `code - 32`, and the glyphs it ships are
+ * exactly the ASCII characters its own text uses.
+ */
+export function fontSetHeader(blob: Uint8Array, off: number): FontSetHeader {
+  const height = u8(blob, off);
+  const second = u8(blob, off + 1);
+  const third = u8(blob, off + 2);
+  return third === 0
+    ? { height, first: GLYPH_FIRST_CODE_DEFAULT, count: second, countAt: 1, spare: third }
+    : { height, first: second, count: third, countAt: 2, spare: second };
+}
 
 /**
  * Arch 9 shares the set header and the terminator and packs the glyph itself a second way, section
@@ -70,7 +106,12 @@ export interface FontSet {
   address: number;
   /** Shared by every glyph in the set, and checked against every decoded glyph. */
   height: number;
+  /** The code `glyphs[0]` belongs to. 1 in every user config, 32 and 72 in a safe mode one. */
+  first: number;
   count: number;
+  /** Where the count was read from, and the byte that was not the count. */
+  countAt: 1 | 2;
+  spare: number;
   /** One per code, `undefined` for a code this config never draws. */
   glyphs: (number | undefined)[];
   /** Bytes the set header and its pointer array occupy. */
@@ -99,16 +140,16 @@ export function glyphHeight(glyph: Glyph): number {
  *
  * ```
  * +0x00  u8   glyph height, shared by every glyph in the set
- * +0x01  u8   count on arch 12, else 1
- * +0x02  u8   count on arch 8, 9 and 14, else 0
+ * +0x01  u8   the first glyph code, or the count when the byte below is zero
+ * +0x02  u8   the glyph count
  * +0x03  u24  glyph[count]     NULL for a code this config never draws
  * ```
  *
  * The section itself is a plain pointer array, and opcode 16 of the screen language indexes it.
+ * `fontSetHeader` carries the argument for the two byte reading.
  */
 export function fontSets(c: Container): FontSet[] | undefined {
   if (c.architecture === undefined) return undefined;
-  const at = IMAGE_COUNT_OFFSET[c.architecture];
   let slot: number;
   try {
     slot = archSlot(c.architecture, IMAGE_TABLE_SLOT);
@@ -117,13 +158,13 @@ export function fontSets(c: Container): FontSet[] | undefined {
     throw error;
   }
   const entries = slot < c.sections.length ? c.pointerArray(slot) : undefined;
-  if (entries === undefined || at === undefined) return undefined;
+  if (entries === undefined) return undefined;
 
   const out: FontSet[] = [];
   for (const entry of entries) {
     const off = c.blobOffsetOf(entry);
     if (off === undefined || off + IMAGE_SET_HEADER > c.blob.length) return undefined;
-    const count = u8(c.blob, off + at);
+    const { height, first, count, countAt, spare } = fontSetHeader(c.blob, off);
     const end = off + IMAGE_SET_HEADER + 3 * count;
     if (end > c.blob.length) return undefined;
     const glyphs: (number | undefined)[] = [];
@@ -133,8 +174,11 @@ export function fontSets(c: Container): FontSet[] | undefined {
     }
     out.push({
       address: entry,
-      height: u8(c.blob, off),
+      height,
+      first,
       count,
+      countAt,
+      spare,
       glyphs,
       length: IMAGE_SET_HEADER + 3 * count,
     });
@@ -279,11 +323,12 @@ export function glyphs(c: Container): Glyph[][] | undefined {
 /**
  * The glyph an inline string's code names, or undefined if it names nothing.
  *
- * The code is one based, because zero terminates a string, so the `- 1` lives here rather than in
- * every caller.
+ * The index is `code - font.first`, which is the code minus one in every user config and the code
+ * minus 32 in the arch 9 safe mode container. Section 78; the subtraction lives here rather than
+ * in every caller.
  */
 export function glyphOf(c: Container, font: FontSet, code: number): Glyph | undefined {
-  const index = code - GLYPH_CODE_BIAS;
+  const index = code - font.first;
   if (index < 0 || index >= font.glyphs.length) return undefined;
   const address = font.glyphs[index];
   if (address === undefined) return undefined;

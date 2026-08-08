@@ -49,7 +49,12 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Nineteen have been found and corrected so far. The newest is section 77's, and it is the most
+Twenty have been found and corrected so far. The newest is section 78's, which is the same shape
+as section 77's one section over: two fields of a font set header had been assigned meanings by the
+values they happened to hold, and the sample that varied them was again the arch 9 safe mode
+container. It moved the arch 12 safe mode container from 39.1% attributed to 99.6%.
+
+Before it, section 77's, and it is the most
 productive kind: `FRAME_PROLOGUE`, a nine byte constant this project matched at the head of every
 `0xFEED` frame, was never a prologue. It was the first node of a list, and two of its bytes were
 that node's own length. Recording it as a fixed string is what kept base slot 0 unread for months,
@@ -4881,21 +4886,26 @@ suspect the field assignment before writing up the anomaly.**
 
 ```
 +0x00  u8   glyph height in pixels, shared by every glyph in the set
-+0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
-+0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
++0x01  u8   the first glyph code
++0x02  u8   the glyph count
 +0x03  u24  glyph[count]     NULL for a code this config never draws
 ```
+
+**Corrected again in section 78**, and the correction is recorded here rather than only there,
+because this is the layout other sections quote. The version this section published read `+0x01` as
+"the glyph count on arch 12, and 1 on arch 8, 9 and 14" and `+0x02` as the reverse, and marked which<!--superseded-->
+byte holds the count as measured rather than explained. It is the byte at `+0x02`, unless that byte
+is zero and then the count is at `+0x01`; and `+0x01` is not a spare but the **first glyph code**,
+which is 1 in every container the corpus had when this section was written. The count is not keyed
+on the architecture: the One's own safe mode container carries the other shape.
 
 The count is the same for every set in a container and differs between containers: 75 on the
 Harmony 700, 71 on the 600, 73 and 72 on the two Ones, 74 to 76 on the arch 8 configs, 66 on the
 525 and 46 in all three safe mode containers. So it is a character set size, chosen per config
 rather than per typeface, and most of its codes are NULL because a config ships only the glyphs its
-own text uses.
-
-Which of the two header bytes holds it is **measured rather than explained**. On arch 8, 9 and 14
-the byte at `+0x01` is 1 in every set of every container and the count is at `+0x02`; on arch 12 it
-is the other way round with a zero in the spare byte. The firmware reads the pair as a single `u16`
-and never bounds a glyph code with it, so the code does not settle the question either.
+own text uses. **That too holds only of the corpus as it was**: the arch 9 safe mode container
+declares 91, 90, 50 and 90 in one container, so it is chosen per set and every generated config
+happens to choose once.
 
 ### The glyph
 
@@ -4967,11 +4977,13 @@ decode.
 
 ### What is not established
 
-**Which header byte is the count**, per the paragraph above.
+**Which header byte is the count** was the item here, and section 78 settled it.
 
 **What the glyph codes mean.** They are a per config character set, so code 5 is a space in the
 700's configs and nothing says it is a space in anyone else's. A writer that wants to add text has
-to build a set and number it, not look a character up.
+to build a set and number it, not look a character up. Section 78 narrows this too: the arch 9 safe
+mode container's codes **are** ASCII, so the encoding is a choice a generator makes rather than a
+property of the format, and a config that starts its sets at 1 has renumbered.
 
 **Arch 9's packing.**
 
@@ -8589,14 +8601,20 @@ and each is a question rather than a count:
 |---|---|
 | base slot 1 is seven bytes and slot 2 follows it | slot 2 starts **three** bytes in, so a seven byte reading overlaps it by four. Every one of the sixteen corpus samples has exactly seven |
 | the log area is a region above the config | `0x0F0000` to `0x100000` here, above a 512 KiB flash |
-| slot 0's frame is a tree under `Root` | the root node is named `Curr`, and six header bytes differ |
-| a font set declares one count per container | four sets declaring 91, 90, 50 and 90 |
-| the font header's spare byte is constant per architecture | it is not, here |
+| slot 0's frame is a tree under `Root` | its first node is named `CurrentActivityState_PowerOff_1`, and six header bytes differ |
+| a font set declares one count per container | four sets declaring 91, 90, 50 and 90, which section 78 confirmed rather than explained away |
+| the font header's spare byte is constant per architecture | it is not, here: section 78 read it as the first glyph code |<!--superseded-->
 | the corpus glyph and string totals | both move, which is only a consequence of the above |
 
 Adding it would have turned six properties into six exceptions in one commit, and the honest order
 is the other way round: re-derive each, then assert against it. **An arch 9 firmware exists now**,
-which is what the first two want. Regenerate the file from the flash dump with
+which is what the first two want.
+
+**The third is settled, and it was not a fix.** The row above says "the root node is named `Curr`",
+which is what the comparison reported, and the reason it reported that is the whole of section 77:
+slot 0 was matched against a fixed nine byte prologue, so a container whose first node is not
+`Root` looked like one whose root was renamed. `Curr` is the first four characters of a state
+variable's name. Re-deriving the claim read the section instead, and `Root` is there, third. Regenerate the file from the flash dump with
 `gspm.parse(open(dump,'rb').read()[0x8000:])`; its checksum is in `reference/checksums.md`.
 
 ### The config, and what it settles
@@ -8712,7 +8730,7 @@ That `Root` is structural. Nothing in the frame distinguishes it; it is a name a
 other, and a reader that requires it refuses a container the remote accepts.
 
 That base slot 0 needs a firmware. It was read from four architectures of data and one sample that
-broke the pattern, with no arch 12 or arch 14 code opened at all. Sixteen of the eighteen containers `make coverage`
+broke the pattern, with no arch 12 or arch 14 code opened at all. Sixteen of the nineteen containers `make coverage`
 reports carry nodes, and the two that do not are the One's safe mode config, whose frame is the
 degenerate empty one.
 
@@ -8731,6 +8749,119 @@ containing a byte that is not text, which would suggest the field is not a name.
   One config, 39 of a 600.
 * `packages/codec/test/sections.test.ts`, including the negative: a node length one byte out stops
   the frame tiling.
+
+
+## 78. A font set states its first glyph code, and the count is not where the architecture says
+
+Section 46 read the three byte header above a glyph pointer array as `height`, then a count and a
+spare byte that swap places by architecture, and recorded under "what is not established" that
+**which of the two holds the count is measured rather than explained**. It is explained now, and
+the explanation makes the other byte a field rather than a constant:
+
+```
++0x00  u8   glyph height in pixels
++0x01  u8   the first glyph code
++0x02  u8   the glyph count
++0x03  u24  glyph[count]
+```
+
+so a code's index is `code - first`, and section 46's "the code minus one" is that formula with the
+value every config in the corpus happens to carry.
+
+### The sample that could show it
+
+Every container anyone here had starts its sets at code 1, which is precisely why the byte read as a
+constant: a field whose value never varies is indistinguishable from padding. The arch 9 safe mode
+container from section 76 is the first sample where it varies, and it varies to a number that names
+itself. Its four sets declare `(32, 91)`, `(32, 90)`, `(72, 50)` and `(32, 90)`, and 32 is the ASCII
+space.
+
+**Its strings are English.** Rendered through `glyph[code - 32]`, the 54 inline strings of its
+screen programs come out as `USB CONNECTED`, `Update Successful`, `E0 : Error Startup`, `Entry`.
+Rendered through `glyph[code - 1]` none of them resolves at all, because a code of 122 runs past the
+end of a 91 entry array. 54 of 54 against 0 of 54.
+
+**Two independent structures agree.** The glyphs a set ships are exactly the characters that set's
+own strings use, computed from the pointer array on one side and from the screen programs on the
+other:
+
+```
+font 0   codes used     .0:ABCDEFGHILMNOPRSTUW\abcdefghiklmnopqrstuvwyz
+         glyphs present  .0:ABCDEFGHILMNOPRSTUW\abcdefghiklmnopqrstuvwyz
+font 3   codes used     :ACDcehiostvy
+         glyphs present :ACDHcehiostvy
+```
+
+One spare glyph in font 3 and none at all in font 0. That is section 46's "a config ships only the
+glyphs its own text uses" restated as an equality, and it cannot come out that way under a wrong
+first code.
+
+**The array ends where the count says.** Entry 90 of set 0 is the last plausible address and entry
+91 onwards reads as glyph data, so 91 at `+0x02` is the count and the pointer array is exactly that
+long. A reading with 122 entries, which is what indexing by `code - 1` would need, runs into the
+glyphs.
+
+This also gives the arch 9 glyph decoder its first readable text. Section 63 derived the two bit
+packing from the encoder's own regularities and recorded that it could not run section 46's third
+closure, because the one arch 9 config had no inline string codes at all. It has one now, in
+letters.
+
+### And the count is not keyed on the architecture
+
+The same reading of `+0x02` immediately falsifies the other half. **The One's own safe mode
+container carries the shape section 46 assigned to arch 8, 9 and 14**: `(14, 1, 46)`, a 46 glyph set
+with the count at `+0x02`, on an arch 12 container. Read with the count at `+0x01` it is a set of
+one glyph, and its 47 inline strings resolve 0 of 47 instead of 47 of 47.
+
+So the rule is a property of the container, not of the remote:
+
+> read the count at `+0x02`, unless that byte is zero, and then the count is at `+0x01` and the
+> first code is 1.
+
+That is a discriminator rather than an explanation, and it is stated as one. What is still not
+known is **why** arch 12 user configs put the count in the first code's byte with a zero below it,
+and the firmware does not settle it: the arch 14 renderer at `0x185E4` subtracts a literal 1 rather
+than the header byte, and it never bounds a code with the count at all. So on that architecture
+both fields are advisory to the firmware and load bearing to a reader.
+
+### 5437 bytes, in one byte
+
+The arch 12 safe mode container was **39.1%** attributed, with 5437 unaccounted bytes that appeared<!--superseded-->
+in no user config. `CLAUDE.md` recorded a `u8 tag; u8 n; u16 v[n]` walk that tiled them to within a
+byte and warned it should not be believed on that basis. It should not have been: the whole
+remainder was the 45 glyphs and 135 pointer bytes of a set the reader had cut to one entry.
+
+| | before | after |
+|---|---|---|
+| accounted | 3465 of 8902 | 8870 of 8902 |
+| | 39.1% | 99.6% |
+
+**The lesson is the one section 46 recorded and this section had to apply again.** Section 46's
+correction was that the header's first byte is a height and not a count; the same paragraph then
+published two more fields whose meanings had been assigned by which value they happened to hold.
+When a field's value never varies across the corpus, the corpus cannot tell you what it is, and the
+honest move is to say so and go looking for the sample where it varies. That sample existed, and it
+was in the firmware region of a remote nobody had connected.
+
+### What would falsify it
+
+A container whose sets start at a code other than 1 and whose strings do not resolve through
+`code - first`. A set whose pointer array is longer or shorter than the count at the byte this rule
+picks. An arch 12 user config with a nonzero byte at `+0x02`, which would break the discriminator
+outright.
+
+### Where it lands
+
+* `docs/config-format.md`: base slot 7.
+* `packages/codec/src/font.ts`, `fontSetHeader` and `glyphOf`; `src/harmony/gspm.py`,
+  `font_set_header`, mirrored.
+* `packages/codec/test/screen.test.ts` and `tests/test_interpreter.py`, including the two
+  negatives: the old reading resolves 0 of 47 strings on the One's safe mode container and runs
+  the arch 9 codes off the end of their set.
+* The arch 9 safe mode container joins the corpus as a sample, `h525_safemode_ahcm`, and stays out
+  of the corpus wide claim lists. Section 76 kept it out over six contradictions; section 77 read
+  one and this section reads four, so what is left is base slot 1's extent and the log area's
+  range.
 
 
 ## References

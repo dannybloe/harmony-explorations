@@ -451,15 +451,10 @@ IMAGE_SET_HEADER = 3
 IMAGE_END = 0x00
 IMAGE_SKIP = 0x80
 IMAGE_PIXEL_BYTES = 2
-# Which of the two header bytes carries the count. Measured rather than explained: on arch 8, 9
-# and 14 the byte at +1 is 1 in every set of every container and the count is at +2, and on arch 12
-# it is the other way round with a 0 in the spare byte. The firmware reads the pair as one `u16`
-# and does not bound the glyph code with it, so nothing in the code settles which field is which.
-IMAGE_COUNT_OFFSET = {8: 2, 9: 2, 12: 1, 14: 2}
 IMAGE_ARCHITECTURES = frozenset({8, 9, 12, 14})
-# A glyph code is one based: zero terminates an inline string, so the firmware indexes the set by
-# the code minus one. `docs/findings.md` sections 40 and 46.
-GLYPH_CODE_BIAS = 1
+# The first code a set covers when its header does not state one. Zero terminates an inline string,
+# so nothing can name a glyph by the code zero. `docs/findings.md` sections 40, 46 and 78.
+GLYPH_FIRST_CODE_DEFAULT = 1
 
 # Arch 9 shares the set header and the terminator and packs the glyph itself a second way, section
 # 63. The 5xx remotes have a monochrome panel, so a pixel is two bits rather than two bytes, and
@@ -739,10 +734,15 @@ class FontSet:
 
     `height` is the set's, not each glyph's, and every glyph in it decodes to exactly that many
     rows. A None in `glyphs` is a code this config never draws, which is most of them.
+
+    `first` is the code `glyphs[0]` belongs to, so a code's index is `code - first`. Section 78.
     """
     address: int
     height: int
+    first: int
     count: int
+    count_at: int
+    spare: int
     glyphs: List[Optional[int]]
 
 
@@ -2163,31 +2163,34 @@ class Container:
 
         ```
         +0x00  u8   glyph height, shared by every glyph in the set
-        +0x01  u8   count on arch 12, else 1
-        +0x02  u8   count on arch 8, 9 and 14, else 0
+        +0x01  u8   the first glyph code, or the count when the byte below is zero
+        +0x02  u8   the glyph count
         +0x03  u24  glyph[count]     NULL for a code this config never draws
         ```
 
+        `font_set_header` carries the argument for reading the two bytes that way, which section
+        78 corrected: it is not the architecture that decides where the count sits.
+
         The section itself is a plain pointer array, `pointer_array`, and opcode 16 of the screen
-        language indexes it. `docs/findings.md` sections 40 and 46.
+        language indexes it. `docs/findings.md` sections 40, 46 and 78.
         """
         slot = arch_slot(self.architecture, IMAGE_TABLE_SLOT)
         entries = self.pointer_array(slot)
-        at = IMAGE_COUNT_OFFSET.get(self.architecture)
-        if entries is None or at is None:
+        if entries is None:
             return None
         out: List[FontSet] = []
         for entry in entries:
             off = self.blob_offset_of(entry)
             if off is None or off + IMAGE_SET_HEADER > len(self.blob):
                 return None
-            count = self.blob[off + at]
+            height, first, count, count_at, spare = font_set_header(self.blob, off)
             end = off + IMAGE_SET_HEADER + 3 * count
             if end > len(self.blob):
                 return None
             addresses = [int.from_bytes(self.blob[p:p + 3], 'little')
                          for p in range(off + IMAGE_SET_HEADER, end, 3)]
-            out.append(FontSet(address=entry, height=self.blob[off], count=count,
+            out.append(FontSet(address=entry, height=height, first=first, count=count,
+                               count_at=count_at, spare=spare,
                                glyphs=[a or None for a in addresses]))
         return out
 
@@ -2305,10 +2308,11 @@ class Container:
     def glyph(self, font: 'FontSet', code: int) -> Optional['Image']:
         """The glyph an inline string's code names, or None if it names nothing.
 
-        The code is one based, because zero terminates a string, so this is where `- 1` lives
-        rather than in every caller.
+        The index is `code - font.first`, which is the code minus one in every user config and
+        the code minus 32 in the arch 9 safe mode container. Section 78; the subtraction lives
+        here rather than in every caller.
         """
-        index = code - GLYPH_CODE_BIAS
+        index = code - font.first
         if index < 0 or index >= len(font.glyphs):
             return None
         address = font.glyphs[index]
@@ -2498,6 +2502,33 @@ class Container:
 
 class GspmError(ValueError):
     pass
+
+
+def font_set_header(blob: bytes, off: int) -> Tuple[int, int, int, int, int]:
+    """A base slot 7 set's three byte header: height, first code, count, where the count was.
+
+    ```
+    +0x00  u8   glyph height in pixels
+    +0x01  u8   the first glyph code
+    +0x02  u8   the glyph count
+    ```
+
+    **unless `+0x02` is zero**, and then the count is at `+0x01` and the first code is 1.
+
+    Section 46 read this as an architecture rule and it is not one: the One's own safe mode
+    container carries the shape section 46 assigned to arch 8, 9 and 14, which is why 47 of its
+    inline strings resolved through a set this reader had cut to one glyph. What settled the
+    meaning of `+0x01` is the arch 9 safe mode container, whose sets start at code 32: its strings
+    render as English only when the index is `code - 32`, and the glyphs it ships are exactly the
+    ASCII characters its own text uses. `docs/findings.md` section 78.
+
+    Returns `(height, first, count, count_at, spare)`, where `spare` is whichever byte the count
+    did not come from, carried rather than assumed.
+    """
+    height, second, third = blob[off], blob[off + 1], blob[off + 2]
+    if third == 0:
+        return height, GLYPH_FIRST_CODE_DEFAULT, second, 1, third
+    return height, second, third, 2, second
 
 
 def find_magic(data: bytes) -> Tuple[Family, int]:

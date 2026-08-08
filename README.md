@@ -131,7 +131,7 @@ Zero overlapping claims anywhere. `make coverage` prints it. **Both target archi
 100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One config and 41 in a Harmony 600, which
 is the point at which an emitter can rebuild a config rather than copy a residue, and
 `packages/codec/src/emit.ts` now does: every owner the accounting claims is rebuilt from fields on
-all eighteen containers, and what stays copied is 22 to 73 bytes, exactly what no reader claims.
+all nineteen containers, and what stays copied is 22 to 73 bytes, exactly what no reader claims.
 What is left is arch 9's infrared, and the arch 9 firmware that would settle it arrived with the
 525 on 8 August 2026.
 

@@ -68,6 +68,10 @@ IMAGES = {
     'h525_config': 'config.EZHex',
     # The bench 525's own config, read over USB on 8 August 2026. findings.md section 76.
     'h525_config_2': '20260808T1645Z-harmony-525-config.bin',
+    # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
+    # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
+    # against, and two of them are still open, base slot 1's extent and the log area's range.
+    'h525_safemode_ahcm': '20260808-harmony-525-safemode-ahcm.bin',
     'arch8_config_a': 'Update.EZHex',
     'arch8_config_b': 'Update-1.EZHex',
     'arch8_config_c': 'Update-2.EZHex',

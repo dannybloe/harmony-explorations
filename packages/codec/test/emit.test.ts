@@ -39,13 +39,14 @@ import {
  * the same amount is a reader getting deeper; both rising is a new structure.
  */
 const REBUILT: readonly [string, number, number][] = [
-  ['one34_region2', 2168, 1130],
-  ['one_safemode', 2168, 1130],
+  ['one34_region2', 2348, 6522],
+  ['one_safemode', 2348, 6522],
   ['h700_gspm', 1929, 5144],
   ['h600_safemode_gspm', 1929, 5144],
   ['h650_safemode_gspm', 1929, 5144],
   ['h525_config', 22063, 30608],
   ['h525_config_2', 15079, 24373],
+  ['h525_safemode_ahcm', 5375, 7976],
   ['arch8_config_a', 96134, 348064],
   ['arch8_config_b', 175042, 295507],
   ['arch8_config_c', 187127, 303504],
