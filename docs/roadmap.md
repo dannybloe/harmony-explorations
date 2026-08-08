@@ -255,14 +255,15 @@ reports its extent and the accounting has no overlaps anywhere, 15 bytes short o
 on a 600, 53 on an 880 and 4 on a 525. Arch 8 landed with section 75 and arch 9 with section 82,
 which read class 5 infrared out of the 525's own firmware: a record's pointer names a body of one
 byte indices into a shared table of short pulse blocks, so a code is spelled from a dictionary. What
-is left is the **same six gaps in every container**, four architectures included, and that is one
-small finding rather than an architecture's worth of work.
+is left is nothing: sections 83 and 84 read the last six shapes, and **every user config in the
+corpus is accounted for to the byte**.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
 number. **Every structure `coverage` claims is rebuilt**, the output is byte identical to the input
-on all nineteen containers, and what is left to copy is 4 to 68 bytes of a user config, which is
-exactly the residue no reader claims either. So the two halves of M2 now meet: what the accounting
-attributes and what the emitter can put back are the same set of bytes.
+on all nineteen containers, and **`copied` is zero on eighteen of them**: every byte is written by
+a rebuilder, from a field or from a carried run, and the residue copy covers nothing. So the two
+halves of M2 meet exactly rather than approximately. The nineteenth is the arch 9 safe mode
+container, which has structures left in it rather than tails.
 
 **Three numbers, not one.** `framed` bytes are computed from typed fields, `carried` bytes came out
 of a reader as an opaque run, `copied` is what no rebuilder claims. Collapsing them is how an
@@ -277,7 +278,7 @@ and so this table cannot be mistaken for the coverage one below by anything look
 | `one_config`, arch 12 | 13.4%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
 | `h600_config`, arch 14 | 28.3%<!--fact:framed_h600_config--> | 529 KB, the same |
 | `h700_config`, arch 14 | 26.1%<!--fact:framed_h700_config--> | 724 KB, the same |
-| `arch8_config_a` | 21.6%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
+| `arch8_config_a` | 21.7%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
 | `h525_config`, arch 9 | 61.0%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
@@ -317,7 +318,7 @@ it the same day:
 | Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
 | 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
 | Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | 99.9% | **100.0%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | 99.4% | **99.9%<!--fact:coverage_h700_gspm-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | 99.4% | **100.0%<!--fact:coverage_h700_gspm-->** |
 
 **Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
 historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
@@ -339,10 +340,16 @@ Class 5 spells a code as indices into a shared table of pulse blocks, section 82
 25819 bytes the 525 had left were three structures nobody could size without the code that reads
 them. It closed the last architecture sized hole in the accounting.
 
-**The last column is the residue**, section 83: base slot 0's frame is two bytes longer than the
-length it states, an empty counted array is still an array, and the bytes above base slot 7's table
-are base slot 8's leading action list. Every user config is at 100.0% now, with 4 to 68 bytes left
-in each and a list of what they are.
+**The last column is the residue**, sections 83 and 84, and it is where one decimal place stops
+being enough. Section 83 read three shapes, that base slot 0's frame is two bytes longer than the
+length it states, that an empty counted array is still an array, and that the bytes above base slot
+7's table are base slot 8's leading action list, which took every user config to 100.0% with 4 to 68
+bytes left in each. Section 84 read those: a screen program carries a terminator even where a jump
+means nothing reaches it, base slot 3's section is three bytes longer than the clock record, base
+slot 17's is two where it names the picture bank, the key table's extent is its mode record's, and
+twelve arch 12 bytes belong to base slot 15 and to no group. **The column reads the same either way
+and the difference is the whole milestone**, so it is stated in bytes rather than in percent: no
+container in this table has an unaccounted byte left.
 
 **The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
 for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,

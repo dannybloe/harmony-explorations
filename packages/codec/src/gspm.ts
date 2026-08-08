@@ -156,6 +156,12 @@ export const CLOCK_COOKIE = new Uint8Array([0xdf, 0xad]);
 export const CLOCK_END = new Uint8Array([0xbf, 0xef]);
 export const CLOCK_RECORD_LENGTH = 11;
 /**
+ * The section is three bytes longer than the record, and those three are zero in all nineteen
+ * containers of the corpus. The record closes at `CLOCK_END`, so the tail is the section's own and
+ * not part of the framing. `docs/findings.md` section 84.
+ */
+export const CLOCK_SECTION_LENGTH = 14;
+/**
  * Day of week is stored as days since 1 January 2000 modulo 7, which is why 0 means Saturday: that
  * date was one. The same epoch explains the year offset, so two fields agree on one anchor.
  */

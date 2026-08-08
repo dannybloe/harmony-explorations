@@ -9409,6 +9409,129 @@ base slot 17 and four runs of 26 to 189 bytes that read as instructions.
 * `docs/config-format.md`, base slots 0 and 8.
 
 
+## 84. Five rules take every user config to the byte, and the residue copy to nothing
+
+Section 83 left a list rather than a number: 4 to 68 bytes per container in five shapes, three of
+which looked like a section's own tail and one of which was 50 to 65 single zero bytes on arch 8.
+All five are read now. **Every user config in the corpus is accounted for to the byte, the emitter
+rebuilds all of it, and the residue copy writes nothing at all**, on eighteen of the nineteen
+containers. The nineteenth is the arch 9 safe mode one, which has structures left rather than tails.
+
+### A screen program that ends by transferring still carries its terminator
+
+The arch 8 family, and the only one of the five that is a structure rather than an extent.
+
+`screenProgram` stops at a jump or a switch, because after either the stream is somewhere else, so
+the byte after the last instruction belongs to whatever comes next. On arch 8 there is usually
+nothing next: 49, 61, 64 and 64 of those bytes per config are a single `0x00` that no reader
+claimed, and every one of them sits immediately in front of a mode page record.
+
+**The closure is positional and it comes from the same file.** In exactly that place, between a
+program and the page record after it, most programs end with a `SCREEN_END` the walk **does** reach:
+
+| sample | pages | preceded by a reached terminator | preceded by an unclaimed zero | abutting |
+|---|---|---|---|---|
+| `arch8_config_a` | 141 | 91 | 49 | 1 |
+| `arch8_config_b` | 173 | 112 | 61 | 0 |
+| `arch8_config_c` | 204 | 140 | 64 | 0 |
+| `arch8_config_d` | 204 | 140 | 64 | 0 |
+| `one_config` | 330 | 294 | 0 | 36 |
+| `h600_config` | 254 | 254 | 0 | 0 |
+
+So the generator emits a terminator at the end of a program's storage whether or not it can be
+executed, and the two columns differ only in what the last instruction was. The 36 arch 12 pages in
+the last column are the other direction: a jump that abuts the record with no terminator at all,
+which is why the claim is made only when the byte is zero.
+
+It is a program's own byte, not a page record's leading one, and the two readings are separable:
+nothing points at the byte before a page record, so no firmware path reads it as part of the record,
+while the 294 and 91 reached ones are executed instructions.
+
+Counted as programs rather than as bytes it is 52, 64, 67 and 67, because three per arch 8 config
+end in a switch whose following zero another program's walk had already claimed.
+
+### Three extents that were one field short
+
+Nothing conceptual, and each one was invisible until the container had nothing else left in it.
+
+* **Base slot 3 is 14 bytes and the clock record is 11.** The record closes at its own `0xEFBF`,
+  so the three bytes after it are the section's. Zero in all nineteen containers, and written as
+  zeros by the emitter rather than carried, so a tail that is not zero fails the round trip.
+* **Base slot 17 is two bytes where it names the picture bank.** Section 62 established that the
+  pointer lands `PICTURE_BANK_BIAS`, which is 2, in front of the bank on arch 8, 9 and 14. The
+  section's own part is therefore those two bytes, not the one byte an empty count accounts for.
+  Both are zero in all thirteen containers that do this.
+* **The key table's extent is the mode record's**, not `1 + 4 * count`. Section 52 found the two are
+  the same bytes; a mode record has two forms and **an empty one is the wide form**, a zero lead
+  byte and a zero count, two bytes where the narrow arithmetic says one. That is the whole of it on
+  the arch 14 safe mode containers, and it is where their two unclaimed bytes each came from. The
+  old claim also required a nonzero key count, so an empty record was claimed as nothing.
+
+The last of those has a second half. **Arch 9 has no key table**, so on arch 9 the record at the
+marker is an ordinary mode record, and the rule that skipped it left 189 bytes of
+`h525_safemode_ahcm` unclaimed. The skip is now conditional on there being a key table at all.
+
+### Twelve bytes on arch 12 that belong to base slot 15 and to no group
+
+Section 44 saw these and called them the only untidy number in the section. They sit between the
+tenth and eleventh of arch 12's eleven parameter groups, the groups either side of them are
+contiguous with their neighbours, and the pointer array names the eleventh outright.
+
+They are byte identical in all six arch 12 containers, `ff 00 ff 00 00 00 00 00 55 55 55 55`, and no
+`u24` anywhere in any container names their address. Twelve bytes is six `u16` values, which is the
+body of a six value group without its count byte, but a count of `0xff` cannot be read out of the
+first byte and nothing points at them, so that is a shape rather than a reading.
+
+**So this claim is an attribution and not a decoding, and the emitter says so**: whose the bytes are
+is settled by position, inside base slot 15's run between two of its groups, and what they say is
+not, so they are carried rather than framed. That distinction is the reason the emitter reports two
+numbers, and this is the first claim to use it deliberately.
+
+### Where it leaves the accounting
+
+Every container in the corpus except the arch 9 safe mode one is at 100.0 percent of its bytes, with
+zero overlaps, and `emit` reports **`copied` as zero** on all eighteen: every byte is written by a
+rebuilder, from a field or from a carried run. The residue copy still exists and still covers
+nothing, which is the state milestone M2's first three parts were aiming at.
+
+What each container gained, against section 83's list:
+
+| container | bytes | what they were |
+|---|---|---|
+| arch 14 and arch 9 user configs | 4 to 6 | the clock tail, base slot 17's second byte, an empty key record |
+| arch 12 user configs | 15 | the clock tail plus base slot 15's twelve |
+| arch 8 user configs | 53 to 68 | those plus 49 to 64 dead terminators |
+| arch 12 safe mode containers | 15 | the clock tail plus base slot 15's twelve |
+| arch 14 safe mode containers | 6 | the clock tail, base slot 17, an empty key record |
+| `h525_safemode_ahcm` | 193 | those plus the 189 byte mode record arch 9 was skipping |
+
+### What finishing cost, which is worth recording
+
+Two tests had to move, and both moves are the same shape: a demonstration that depends on a defect
+stops demonstrating anything when the defect is fixed.
+
+`the gap families are computed over every gap, not the listed ones` was pinned to `h525_config`'s
+203 gaps, then to `arch8_config_a`'s 51 after section 82, and now no container has more gaps than
+the report lists. The grouping is a pure function of a gap list now, `gapFamilies`, and the test
+hands it 54 synthetic gaps. The corpus keeps a weaker version: on the one sample that still has
+gaps, the families partition them exactly.
+
+`an edit no reader claims is refused` looked for an unclaimed byte in `h600_config` to try to write.
+There is not one. The rail it tests was always two rules, "inside one claim, not merely covered by
+several", and the second half is what a fully claimed container can still exercise: an edit spanning
+the boundary between two adjacent claims is refused. The test also asserts, now, that every byte of
+that config belongs to a structure, which is the fact that made the first half untestable.
+
+### Where it lands
+
+* `packages/codec/src/screen.ts`, `deadTerminator`, and the claim and rebuilder either side of it.
+* `packages/codec/src/coverage.ts` and `emit.ts`, the four extents, and `gapFamilies` as a pure
+  function.
+* `packages/codec/test/coverage.test.ts`, one corpus wide test per rule, each named after what would
+  falsify it, plus the pinned per sample terminator counts.
+* `docs/config-format.md`, base slots 3, 11, 15 and 17.
+
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

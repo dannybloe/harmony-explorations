@@ -30,6 +30,7 @@ import {
   BINDING_SLOT,
   EMPTY_FRAME_LENGTH,
   CLOCK_COOKIE,
+  CLOCK_SECTION_LENGTH,
   FRAME_COOKIE,
   FRAME_END,
   FRAME_END_LENGTH,
@@ -65,7 +66,8 @@ import {
 } from './sections.ts';
 import type { TaggedList } from './sections.ts';
 import { fontSets, glyphs } from './font.ts';
-import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
+import { SCREEN_END, bitmaps, deadTerminator, pictureBank, pictureBankStart, reachablePrograms }
+  from './screen.ts';
 import { EMPTY_ARRAY_LIMIT, claims, namedContentEnd } from './coverage.ts';
 import {
   IR_CLASS_STREAM,
@@ -294,7 +296,9 @@ export function rebuilds(c: Container): Rebuild[] {
     const month = Number(t.slice(5, 7)) - 1;
     const day = Number(t.slice(8, 10));
     const dow = ((Math.floor((Date.UTC(year, month, day) - CLOCK_EPOCH_MS) / MS_PER_DAY) % 7) + 7) % 7;
-    framed(clockAt, 'slot-3-clock', new Writer(11)
+    // Fourteen bytes: the record, then the three zeros the section carries past it. Written as
+    // zeros rather than copied, so a tail that is not zero fails the round trip. Section 84.
+    framed(clockAt, 'slot-3-clock', new Writer(CLOCK_SECTION_LENGTH)
       .raw(CLOCK_COOKIE)
       .u8(Number(t.slice(17, 19)))
       .u8(Number(t.slice(14, 16)))
@@ -303,7 +307,8 @@ export function rebuilds(c: Container): Rebuild[] {
       .u8(dow)
       .u8(month)
       .u8(year - 2000)
-      .raw(CLOCK_END));
+      .raw(CLOCK_END)
+      .u8(0).u8(0).u8(0));
   }
 
   // Base slot 0, the `0xFEED` frame and its named nodes. **This was the one owner the emitter
@@ -443,8 +448,17 @@ export function rebuilds(c: Container): Rebuild[] {
   // the field keeps that property in the emitter.
   const touch = touchPages(c);
   if (touch !== undefined) {
-    const w = new Writer(touch.length).u8(touch.records.length);
+    // Two bytes rather than one where the section names the picture bank instead of a touch map,
+    // because the bank starts `PICTURE_BANK_BIAS` past the pointer and both bytes are zero in all
+    // thirteen containers that do this. Written as zeros, so a nonzero second byte fails the round
+    // trip rather than being carried past unnoticed. Section 84.
+    const bank = pictureBankStart(c);
+    const header = bank !== undefined && touch.records.length === 0
+      ? bank - touch.start
+      : touch.length;
+    const w = new Writer(header).u8(touch.records.length);
     for (const page of touch.records) w.u24(page.address);
+    while (w.remaining > 0) w.u8(0);
     framed(touch.start, 'slot-17-table', w);
     for (const page of touch.records) {
       const p = new Writer(page.length).u8(page.areas.length);
@@ -498,6 +512,16 @@ export function rebuilds(c: Container): Rebuild[] {
     const w = new Writer(claim.length);
     for (let i = 0; i < claim.length; i += 1) w.u8(0);
     framed(claim.start, claim.owner, w);
+  }
+
+  // Base slot 15's spare run, the twelve arch 12 bytes no group covers. **Carried, not framed**,
+  // and that is the point of the two numbers: whose the bytes are is settled, section 84, what they
+  // say is not, so writing them as the constant they happen to be in all six arch 12 containers
+  // would be a claim nothing here can support.
+  for (const claim of claims(c)) {
+    if (claim.owner !== 'slot-15-spare') continue;
+    const w = new Writer(claim.length).raw(c.blob.subarray(claim.start, claim.start + claim.length));
+    partly(claim.start, claim.owner, w, 0);
   }
 
   // A tagged list, in either of its two forms.
@@ -565,6 +589,9 @@ export function rebuilds(c: Container): Rebuild[] {
       }
       partly(instruction.start, 'slot-11-program', w, fields);
     }
+    // The terminator after a program that ended by transferring. Its value is known rather than
+    // carried, since a terminator is the one opcode with nothing in it. Section 84.
+    framed(deadTerminator(c, program), 'slot-11-program', new Writer(1).u8(SCREEN_END));
   }
 
   // Base slot 7. A set's header and pointer array are typed; a glyph is not, and cannot be.

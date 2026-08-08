@@ -128,11 +128,11 @@ defect it is.
 | 880, arch 8 | 3.6% | **100.0%<!--fact:coverage_arch8_config_a-->** |
 | 525, arch 9 | 7.2% | 100.0%<!--fact:coverage_h525_config--> |
 
-Zero overlapping claims anywhere. `make coverage` prints it. **Every user config reaches 100.0%**,
-with 15 bytes unattributed in a 1.63 MB Harmony One config and 4 in a Harmony 600, which is the
-point at which an emitter can rebuild a config rather than copy a residue, and
-`packages/codec/src/emit.ts` now does: every owner the accounting claims is rebuilt from fields on
-all nineteen containers, and what stays copied is 4 to 68 bytes, exactly what no reader claims.
+Zero overlapping claims anywhere. `make coverage` prints it. **Every user config is accounted for
+to the byte**, not to a rounded percentage: a 1.63 MB Harmony One config has nothing unattributed
+in it. That is the point at which an emitter can rebuild a config rather than copy a residue, and
+`packages/codec/src/emit.ts` does: every owner the accounting claims is rebuilt on all nineteen
+containers, and the residue copy writes **nothing at all** on eighteen of them.
 Arch 9 joined the rest once its own firmware was read: class 5 infrared is a dictionary encoding,
 section 82.
 

@@ -735,19 +735,27 @@ section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. S
 the six shapes that were left in every container down to three: base slot 0's frame is `length + 2`
 because the terminator sits outside the field, an empty counted array is still an array, and the 4
 or 34 bytes above base slot 7's table are **base slot 8's leading action list**, which also turned
-up that every mode page's list is inside base slot 8's section.
+up that every mode page's list is inside base slot 8's section. Section 84 read the last three and
+two more: a screen program carries a `SCREEN_END` even where a jump means nothing reaches it, which
+was the whole arch 8 family of 49 to 64 single zero bytes; base slot 3's section is three bytes
+longer than the clock record and base slot 17's is two where it names the picture bank; the key
+table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
+bytes belong to base slot 15 and to no group, by position rather than by reading.
 
-**Every user config is at 100.0%**, sections 66, 67, 75, 82 and 83, with zero overlaps in all
-nineteen containers and 4 to 68 bytes left in each. The last
+**Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
+overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:
+nothing unattributed at all, in eighteen of the nineteen containers. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
-That completes the first two of milestone M2's three parts on every architecture. What is left is
-named container by container in section 83, and it is a section's own tail three times out of four.
+That completes the first two of milestone M2's three parts on every architecture. **The exception is
+`h525_safemode_ahcm`**, the arch 9 safe mode container, which has structures left in it rather than
+tails and is named as the open item rather than excluded from the corpus.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
 the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
-rebuilt**; the bytes come back identical on all nineteen containers and the copied residue is 22 to
-73 bytes of a user config, which is exactly what no reader claims either. It builds into a buffer
+rebuilt**; the bytes come back identical on all nineteen containers and **the residue copy writes
+nothing at all** on eighteen of them, since every byte is now written by a rebuilder. It builds into
+a buffer
 filled with `0xA5` rather than into a copy of its input,
 because **an emitter that starts from a copy passes a round trip test while writing nothing at
 all**, so the tests that carry weight are the negatives.

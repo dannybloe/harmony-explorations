@@ -347,6 +347,11 @@ Harmony Ones every mode carries exactly one of each. The rest are key codes.
 **The container's key table is the first mode record**, byte for byte: same offset, same count,
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
 
+So its length is the record's, and a record has two forms: **an empty one is the wide form**, a zero
+lead byte and a zero count, two bytes where `1 + 4 * count` says one. That is the whole of it on the
+arch 14 safe mode containers. On arch 9 there is no key table at the marker at all and the record
+there is an ordinary mode record, 189 bytes in `h525_safemode_ahcm`. `docs/findings.md` section 84.
+
 **A screen program follows the list**, at the record's start plus the list's length, and every
 record has one on **every** architecture: 374 of 374, 237 of 237, 268 of 268, 103 of 103, 114 of
 114 and 35 of 35 in a safe mode container. That program is where the region's large pictures are
@@ -669,6 +674,13 @@ One of the six recognised pointer arrays. Each entry is a screen program. On arc
 700's 5711 entries are the same two instruction program, queue one action list instruction and end,
 so the table is mostly indirection.
 
+**A program's storage ends with a `SCREEN_END` byte even where the last instruction is a jump or a
+switch**, which no execution can reach. Confirmed positionally: in the same place, in front of a
+mode page record, 91 to 294 programs per container end with a terminator that is reached, against
+49 to 64 per arch 8 config that are not. A jump may also abut the next structure with no terminator
+at all, 36 times on the One, so the byte is part of the program only when it is zero.
+`docs/findings.md` section 84.
+
 ### Base slot 7: the font table
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.
@@ -754,6 +766,10 @@ Read with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`; 
 zero, in the other eleven containers in the corpus: arch 8, arch 9, arch 14 and all three safe mode
 ones. The Harmony One is the only remote here with a touch panel.
 
+Where it is empty the section is **two** zero bytes rather than one, because the pointer lands two
+bytes in front of the picture bank that follows it, which is the same bias the bank walk starts
+from. Both bytes are zero in all thirteen containers that do this. `docs/findings.md` section 84.
+
 ```
 +0x00  u8   pages
 +0x01  u24  page[pages]
@@ -814,6 +830,11 @@ and at each address a group
 
 The groups are laid out in one run immediately before the pointer array. On arch 8, arch 9 and
 arch 14 the run is exactly the sum of the groups; arch 12 has twelve spare bytes in it.
+
+Those twelve sit **between the tenth and eleventh group**, they are `ff 00 ff 00 00 00 00 00 55 55
+55 55` in all six arch 12 containers, and no `u24` in any container names their address. So they
+belong to this section by position and their contents are **unread**; a writer carries them through
+unchanged. `docs/findings.md` section 84.
 
 **The firmware demands the section's count and every group's length.** The count is 9 on arch 14
 and 11 on arch 12. Each group is read only when its length matches the number that build expects,
@@ -1310,6 +1331,11 @@ record whose weekday disagrees with its date is refused rather than reported, in
 
 The cookie pair is **unique in every blob**, unlike slot 0's `0xFEED`, which occurs about once
 per 64 KiB by chance. So this record can be located without a length field.
+
+**The section is fourteen bytes and the record is eleven.** The three bytes after the terminator
+are zero in all nineteen containers. The record closes at `0xEFBF`, so those three are the
+section's own tail rather than part of the framing, and a writer emits them as zeros.
+`docs/findings.md` section 84.
 
 What the firmware does with it is **not established**, so this is not a section label. What is
 established is what the bytes are.

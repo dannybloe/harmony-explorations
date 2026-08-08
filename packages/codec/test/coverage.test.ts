@@ -12,46 +12,55 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   BINDING_SLOT,
+  CLOCK_RECORD_LENGTH,
+  CLOCK_SECTION_LENGTH,
   Container,
   EMPTY_ARRAY_LIMIT,
   EMPTY_FRAME_LENGTH,
   FAMILIES,
   FRAME_END,
   FRAME_END_LENGTH,
+  PICTURE_BANK_BIAS,
+  REPORT_LIMIT,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   archSlot,
   claims,
   coverage,
+  deadTerminator,
+  gapFamilies,
   modeRecords,
+  parameterGroups,
   parse,
+  pictureBankStart,
+  reachablePrograms,
 } from '../src/index.ts';
 
 /** `[sample, accounted, total]`, every container in the corpus. */
 const ACCOUNTED: readonly [string, number, number][] = [
-  ['h700_config', 979180, 979184],
-  ['h700_config_2', 979238, 979242],
-  ['h600_config', 738145, 738149],
+  ['h700_config', 979184, 979184],
+  ['h700_config_2', 979242, 979242],
+  ['h600_config', 738149, 738149],
   // 52667 and 39448 until section 82 read class 5's bodies, symbol tables and pulse blocks.
-  ['h525_config', 78480, 78486],
-  ['h525_config_2', 51189, 51195],
-  ['h525_safemode_ahcm', 13198, 15342],
-  ['one_config', 1672817, 1672832],
-  ['one_config_unprogrammed', 1232222, 1232237],
-  ['arch8_config_a', 444203, 444256],
-  ['arch8_config_b', 470554, 470619],
-  ['arch8_config_c', 490636, 490704],
-  ['arch8_config_d', 492082, 492150],
-  ['h600_safemode_gspm', 7109, 7115],
-  ['h700_gspm', 7109, 7115],
+  ['h525_config', 78486, 78486],
+  ['h525_config_2', 51195, 51195],
+  ['h525_safemode_ahcm', 13391, 15342],
+  ['one_config', 1672832, 1672832],
+  ['one_config_unprogrammed', 1232237, 1232237],
+  ['arch8_config_a', 444256, 444256],
+  ['arch8_config_b', 470619, 470619],
+  ['arch8_config_c', 490704, 490704],
+  ['arch8_config_d', 492150, 492150],
+  ['h600_safemode_gspm', 7115, 7115],
+  ['h700_gspm', 7115, 7115],
   // 3465 until section 78 read the set header's count from the byte it is actually in.
-  ['one_safemode', 8887, 8902],
-  ['one34_region2', 8887, 8902],
-  ['h650_safemode_gspm', 7109, 7115],
+  ['one_safemode', 8902, 8902],
+  ['one34_region2', 8902, 8902],
+  ['h650_safemode_gspm', 7115, 7115],
   // The spare One either side of its sync, so the nineteen container claims that CLAUDE.md and
   // the roadmap make about overlaps and round tripping are checked over the same nineteen.
-  ['one_spare_before_sync', 1232222, 1232237],
-  ['one_spare_after_sync', 1326549, 1326564],
+  ['one_spare_before_sync', 1232237, 1232237],
+  ['one_spare_after_sync', 1326564, 1326564],
 ];
 
 for (const [name, accounted, total] of ACCOUNTED) {
@@ -96,25 +105,47 @@ for (const [name, accounted, total] of ACCOUNTED) {
   });
 }
 
-test('the gap families are computed over every gap, not the listed ones',
-  skipUnless('arch8_config_a'), () => {
-    // The view that finds structures. `gaps` is capped at REPORT_LIMIT and sorted by size, so a
-    // family of forty equal gaps below the cut is invisible in it; sections 75 and 66 were both
-    // found by looking past that cut by hand. This is that view, and the totals below are what
-    // says it did not stop at the cap either.
-    //
-    // The sample used to be `h525_config`, whose 203 gaps included a family of 43 equal ones. That
-    // family was class 5's bodies and section 82 claimed them, so the demonstration moved to the
-    // container that still has the shape: an arch 8 config, where the largest single gap is three
-    // bytes and fifty one byte gaps carry more than it does.
-    const report = coverage(parse(load('arch8_config_a') as Uint8Array));
-    assert.equal(report.gapCount, 51);
+test('the gap families are computed over every gap, not the listed ones', () => {
+  // The view that finds structures. `gaps` is capped at REPORT_LIMIT and sorted by size, so a
+  // family of forty equal gaps below the cut is invisible in it; sections 75, 66 and 84 were all
+  // found by looking past that cut. This is that view, and it counts every gap rather than the
+  // listed ones.
+  //
+  // **It is tested on a list rather than on a container, and that is a consequence of finishing.**
+  // The sample was `h525_config`, whose 203 gaps held a family of 43; section 82 claimed those, so
+  // it moved to `arch8_config_a`, where fifty one byte gaps outweighed the largest single gap of
+  // three; section 84 claimed those too and no container in the corpus has more than a handful of
+  // gaps left. A demonstration that depends on a fixture the work is trying to eliminate stops
+  // checking the moment it succeeds.
+  const many = [
+    ...Array.from({ length: 50 }, () => ({ length: 1 })),
+    ...Array.from({ length: 3 }, () => ({ length: 9 })),
+    { length: 3 },
+  ];
+  const families = gapFamilies(many);
+  assert.ok(many.length > REPORT_LIMIT, 'more gaps than a report would ever list');
+  assert.deepEqual(families, [
+    { length: 1, count: 50, bytes: 50 },
+    { length: 9, count: 3, bytes: 27 },
+    { length: 3, count: 1, bytes: 3 },
+  ]);
+  // The families partition the gaps: every one of them is counted exactly once.
+  assert.equal(families.reduce((n, f) => n + f.count, 0), many.length);
+  assert.equal(families.reduce((n, f) => n + f.bytes, 0),
+    many.reduce((n, g) => n + g.length, 0));
+  // And the cut is by bytes, so a long family of one beats a short family of many only when it
+  // carries more. Fifty one byte gaps outweigh a three byte one, which is the arch 8 case.
+  assert.ok((families[0]?.bytes ?? 0) > (families[2]?.bytes ?? 0));
+});
+
+test('every gap the report counts is one the families describe',
+  skipUnless('h525_safemode_ahcm'), () => {
+    // The corpus side of the same property, on the one container that still has gaps at all.
+    const report = coverage(parse(load('h525_safemode_ahcm') as Uint8Array));
+    assert.ok(report.gapCount > 0, 'this sample is the one with work left in it');
     assert.equal(report.gapBytes, report.total - report.accounted);
-    assert.ok(report.gapCount > report.gaps.length, 'the listed gaps are a sample, not the list');
-    const biggest = report.gapFamilies[0];
-    assert.deepEqual(biggest, { length: 1, count: 50, bytes: 50 });
-    assert.equal(report.gaps[0]?.length, 3);
-    assert.ok((biggest?.bytes ?? 0) > 3);
+    assert.equal(report.gapFamilies.reduce((n, f) => n + f.count, 0), report.gapCount);
+    assert.equal(report.gapFamilies.reduce((n, f) => n + f.bytes, 0), report.gapBytes);
   });
 
 test('a gap family counts equal lengths and nothing else', () => {
@@ -283,3 +314,207 @@ test('an empty counted array is claimed, and only when it is nothing but zeros',
       assert.ok(empties > 0, `${name}: no empty array anywhere, and slot 16 should be one`);
     }
   });
+
+test('every user config is accounted for to the byte', skipWithoutLab(), () => {
+  // Milestone M2's first two parts, finished. **The exception is named rather than excluded**: the
+  // arch 9 safe mode container is the one sample with structures left in it, and a test that
+  // skipped it would let the corpus agree with itself, which is the condition that hid the font
+  // set's first glyph code until section 78.
+  const open = 'h525_safemode_ahcm';
+  let checked = 0;
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const report = coverage(parse(data));
+    if (name === open) {
+      assert.ok(report.accounted < report.total, `${open}: this one is the work that is left`);
+      continue;
+    }
+    assert.equal(report.accounted, report.total, `${name}: ${report.gapBytes} bytes unaccounted`);
+    assert.equal(report.gapCount, 0);
+    checked += 1;
+  }
+  assert.ok(checked >= 18, `only ${checked} containers checked, expected the whole corpus`);
+});
+
+test('a screen program that ends by transferring still carries its terminator',
+  skipWithoutLab(), () => {
+    // Section 84. The walk stops at a jump or a switch, so the byte after one is nobody's as far as
+    // it is concerned. On arch 8 that byte is a zero which nothing else claims, 49 to 64 per config,
+    // and it is the program's own `SCREEN_END`.
+    //
+    // **The closure is positional and it comes from the same file.** In the same place, between a
+    // program and the mode page record after it, most programs end with a `SCREEN_END` the walk
+    // does reach. So the terminator is emitted whether or not it can be executed, and the two cases
+    // differ only in the last instruction. The counts of each are asserted per sample below.
+    //
+    // The counts are of every program that ends by transferring into a zero, which is more than the
+    // number of bytes this recovered: three per arch 8 config end in a switch whose zero another
+    // program's walk had already reached, so they were never unclaimed. 49, 61 and 64 were the
+    // unclaimed ones.
+    const expected: Record<string, number> = {
+      arch8_config_a: 52,
+      arch8_config_b: 64,
+      arch8_config_c: 67,
+      arch8_config_d: 67,
+      one_config: 3,
+      one_config_unprogrammed: 5,
+      h600_config: 2,
+      h700_config: 2,
+      h700_config_2: 2,
+      h525_config: 0,
+      h525_config_2: 0,
+    };
+    for (const [name, count] of Object.entries(expected)) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      let dead = 0;
+      for (const [, program] of reachablePrograms(c)) {
+        const at = deadTerminator(c, program);
+        if (at === undefined) continue;
+        dead += 1;
+        assert.equal(c.blob[at], 0, `${name}: a terminator that is not a terminator`);
+      }
+      assert.equal(dead, count, `${name}: dead terminators`);
+    }
+  });
+
+test('a page record is preceded by a program terminator, reached or not', skipWithoutLab(), () => {
+  // The other half of the same argument, from the page side rather than the program side: the byte
+  // in front of a mode page record is zero in every container, and where it is not, the program
+  // before it ends with a jump that abuts the record. 36 arch 12 pages do that.
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const dead = new Set<number>();
+    for (const [, program] of reachablePrograms(c)) {
+      const at = deadTerminator(c, program);
+      if (at !== undefined) dead.add(at);
+    }
+    const owner = new Array<string | undefined>(c.blob.length);
+    for (const claim of claims(c)) {
+      for (let i = claim.start; i < claim.start + claim.length; i += 1) owner[i] ??= claim.owner;
+    }
+    // The arch 9 safe mode container is the one sample with unclaimed bytes left in it, so a page
+    // there can legitimately be preceded by a zero nothing has claimed yet.
+    const open = name === 'h525_safemode_ahcm';
+    let zeros = 0;
+    let abutting = 0;
+    for (const page of (modeRecords(c) ?? []).flatMap((r) => r.pages)) {
+      const at = c.blobOffsetOf(page.address);
+      if (at === undefined || at === 0) continue;
+      if (c.blob[at - 1] === 0) {
+        zeros += 1;
+        if (!open) {
+          assert.equal(owner[at - 1], 'slot-11-program', `${name}: the terminator is unclaimed`);
+        }
+      } else {
+        abutting += 1;
+        assert.equal(owner[at - 1], 'slot-11-program',
+          `${name}: whatever precedes a page is part of a program`);
+      }
+    }
+    assert.ok(zeros + abutting > 0, `${name}: no mode pages at all`);
+    assert.ok(zeros >= abutting, `${name}: ${abutting} pages abut, ${zeros} are terminated`);
+    assert.ok(dead.size <= zeros, `${name}: more dead terminators than terminated pages`);
+  }
+});
+
+test('base slot 3 is fourteen bytes, three of them zero past the record', skipWithoutLab(), () => {
+  // The clock record closes at its own `0xEFBF`, so the three bytes after it are the section's and
+  // not the record's. Zero in all nineteen containers, which is why the emitter writes them as
+  // zeros rather than carrying them: a tail that is not zero should fail rather than pass quietly.
+  let seen = 0;
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const claim = claims(c).find((x) => x.owner === 'slot-3-clock');
+    if (claim === undefined) continue;
+    seen += 1;
+    assert.equal(claim.length, CLOCK_SECTION_LENGTH, `${name}: the clock section`);
+    for (let i = CLOCK_RECORD_LENGTH; i < CLOCK_SECTION_LENGTH; i += 1) {
+      assert.equal(c.blob[claim.start + i], 0, `${name}: a nonzero byte past the clock record`);
+    }
+  }
+  assert.ok(seen >= 18, `only ${seen} clocks, expected one per container`);
+});
+
+test('base slot 17 is two zero bytes where it names the picture bank', skipWithoutLab(), () => {
+  // Section 62 established that the pointer lands `PICTURE_BANK_BIAS` bytes in front of the bank on
+  // arch 8, 9 and 14. Which means the section's own part is those two bytes, not the one byte an
+  // empty count accounts for, and both are zero in all thirteen containers that do this.
+  let seen = 0;
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    if (c.architecture === 12) continue;
+    const claim = claims(c).find((x) => x.owner === 'slot-17-table');
+    const bank = pictureBankStart(c);
+    if (claim === undefined || bank === undefined) continue;
+    seen += 1;
+    assert.equal(claim.start + claim.length, bank, `${name}: the claim stops at the bank`);
+    assert.equal(claim.length, PICTURE_BANK_BIAS, `${name}: the section is the bias`);
+    for (let i = 0; i < claim.length; i += 1) {
+      assert.equal(c.blob[claim.start + i], 0, `${name}: a nonzero byte in front of the bank`);
+    }
+  }
+  assert.ok(seen >= 13, `only ${seen} banks, expected thirteen`);
+});
+
+test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWithoutLab(), () => {
+  // Section 44 saw these and called them the only untidy number in the section. They sit between
+  // the tenth and eleventh group of arch 12's eleven, they are byte identical in all six arch 12
+  // containers, and no `u24` anywhere in any container names their address. So whose they are is
+  // settled by position; what they say is not, which is why the emitter carries them rather than
+  // framing them.
+  const known = [0xff, 0x00, 0xff, 0x00, 0, 0, 0, 0, 0x55, 0x55, 0x55, 0x55];
+  let arch12 = 0;
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const spare = claims(c).filter((x) => x.owner === 'slot-15-spare');
+    if (c.architecture !== 12) {
+      assert.deepEqual(spare, [], `${name}: base slot 15 has no hole off arch 12`);
+      continue;
+    }
+    arch12 += 1;
+    assert.equal(spare.length, 1, `${name}: one hole`);
+    const { start, length } = spare[0] as { start: number; length: number };
+    assert.equal(length, known.length, `${name}: twelve bytes`);
+    assert.deepEqual([...c.blob.subarray(start, start + length)], known, `${name}: the same twelve`);
+    // Between two groups rather than past the last one, which is what makes it a hole.
+    const groups = (parameterGroups(c) ?? []).map((g) => c.blobOffsetOf(g.address) as number);
+    assert.ok(Math.min(...groups) < start && Math.max(...groups) > start, `${name}: not a tail`);
+  }
+  assert.ok(arch12 >= 6, `only ${arch12} arch 12 containers, expected six`);
+});
+
+test('the key table claims the mode record it is, in whichever form', skipWithoutLab(), () => {
+  // Section 52 found the key table and base slot 6's first mode record are the same bytes. The
+  // extent has to be the record's, because a mode record has two forms and an empty one is the
+  // **wide** form: a zero lead byte and a zero count, two bytes where `1 + 4 * count` says one.
+  // That is the whole of it on the arch 14 safe mode containers, and where their two unclaimed
+  // bytes each came from. Arch 9 has no key table at all, so there the record is claimed as an
+  // ordinary mode record and skipping it left 189 bytes of the safe mode container unaccounted.
+  for (const [name] of ACCOUNTED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const first = (modeRecords(c) ?? [])
+      .find((record) => c.blobOffsetOf(record.start) === c.markerOffset + 4);
+    if (first === undefined) continue;
+    const owner = c.hasKeyTable ? 'key-table' : 'slot-6-mode';
+    const claim = claims(c).find((x) => x.start === c.markerOffset + 4 && x.owner === owner);
+    assert.notEqual(claim, undefined, `${name}: no ${owner} claim on the first mode record`);
+    assert.equal(claim?.length, first.length, `${name}: the record's own length`);
+    // And never both, which is what the deduplication in `claims` is for.
+    const both = claims(c).filter((x) => x.start === c.markerOffset + 4
+      && (x.owner === 'key-table' || x.owner === 'slot-6-mode'));
+    assert.equal(both.length, 1, `${name}: claimed twice`);
+  }
+});

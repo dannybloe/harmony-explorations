@@ -228,6 +228,31 @@ export function screenProgram(c: Container, address: number): ScreenInstruction[
 }
 
 /**
+ * The `SCREEN_END` byte a program's own walk never reaches, as a blob offset, if it has one.
+ *
+ * A program that ends by transferring control, a jump or a switch, is finished as far as the walk
+ * is concerned, so the walk stops at that instruction and any byte after it belongs to whatever
+ * comes next. On arch 8 there is often nothing next: 49 to 64 of these per config are followed by
+ * a single zero byte and then a mode page record, and nothing claimed that byte.
+ *
+ * It is the program's terminator, emitted whether or not it can be reached. The closure is
+ * positional and comes from the same containers: at that exact position, between a program and
+ * the page record after it, every other program in the file ends with a `SCREEN_END` the walk
+ * **does** reach, 91 to 140 of them per config. Same place, same value, and the only difference is
+ * whether the last instruction fell into it. `docs/findings.md` section 84.
+ *
+ * Returns nothing when the byte is not zero, which is what a program abutting the next structure
+ * looks like, and 36 arch 12 programs do that.
+ */
+export function deadTerminator(c: Container, program: ScreenInstruction[]): number | undefined {
+  const last = program[program.length - 1];
+  if (last === undefined || !transfers(last)) return undefined;
+  const after = last.start + last.length;
+  if (after >= c.blob.length || u8(c.blob, after) !== SCREEN_END) return undefined;
+  return after;
+}
+
+/**
  * Every address the firmware is known to start a screen program at.
  *
  * Two sources, both derived rather than guessed: base slot 11 is an array of them, and every

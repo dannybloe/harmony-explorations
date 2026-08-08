@@ -75,3 +75,5 @@ and leave this table alone.
 
 | `66 shared descriptors` | section 82 | 5 symbol tables; the 66 came from reading each block area's start, a body start only 135 times in 199 |
 | `Nothing here decodes that` | section 82 | the body is `u24 table; u16 n; u8 index[n]`, and every width is a literal in the firmware |
+| `what stays copied is 4 to 68 bytes` | section 84 | nothing stays copied: every byte of eighteen containers is written by a rebuilder |
+| `43 bytes left in six gaps` | section 84 | the six shapes are read, and no user config has an unattributed byte |

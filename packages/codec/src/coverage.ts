@@ -16,11 +16,18 @@
  * a variant which returns it. A second copy of a size rule is free to drift from the first, which
  * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
  */
-import { ARCH_RECORD_LENGTH, BINDING_SLOT, Container, EMPTY_FRAME_LENGTH, FRAME_END_LENGTH,
-  INSTRUCTION_LENGTH, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot }
+import { ARCH_RECORD_LENGTH, BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
+  EMPTY_FRAME_LENGTH, FRAME_END_LENGTH, INSTRUCTION_LENGTH, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET,
+  archSlot }
   from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
-import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
+import {
+  bitmaps,
+  deadTerminator,
+  pictureBank,
+  pictureBankStart,
+  reachablePrograms,
+} from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Body, irGroups,
   irHeaderLength, irRecordBlocks, irRecordStart, irSymbolBlock, irSymbolTable } from './ir.ts';
@@ -113,8 +120,15 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // found rather than anybody noticing: same offset, same count, same four byte entries. It is
   // claimed once, here, and the mode loop below skips whichever record starts on it.
   // `docs/findings.md` section 52.
-  if (c.hasKeyTable && c.keys.length > 0) {
-    add(c.markerOffset + 4, 1 + 4 * c.keys.length, 'key-table');
+  //
+  // **Its extent is the record's, not `1 + 4 * count`.** A mode record has two forms, and an empty
+  // one is the wide form: a zero lead byte and a zero count, two bytes where the narrow arithmetic
+  // says one. That is the whole of it on the arch 14 safe mode containers, and the reason those
+  // carried two unclaimed bytes each. Section 84.
+  const keyRecord = (modeRecords(c) ?? [])
+    .find((record) => c.blobOffsetOf(record.start) === c.markerOffset + 4);
+  if (c.hasKeyTable && keyRecord !== undefined) {
+    add(c.markerOffset + 4, keyRecord.length, 'key-table');
   }
 
   const slot = (base: number): number | undefined => {
@@ -164,9 +178,18 @@ export function claims(c: Container, withPictures = true): Claim[] {
        'slot-1-arch');
   }
 
+  // Base slot 3, the whole section rather than the record. The record is eleven bytes and closes
+  // at its own terminator; the section is fourteen and the last three are zero in all nineteen
+  // containers, which is why they are claimed here and written as zeros by the emitter rather than
+  // carried. A tail that is not zero is not this section's, so the claim falls back to the record.
   const clock = slot(3);
   if (clock !== undefined && c.builtAt !== undefined) {
-    at((c.sections[clock] as { address: number }).address, 11, 'slot-3-clock');
+    const address = (c.sections[clock] as { address: number }).address;
+    const off = c.blobOffsetOf(address);
+    const length = c.sectionLength(clock);
+    const padded = off !== undefined && length === CLOCK_SECTION_LENGTH
+      && c.blob.subarray(off + CLOCK_RECORD_LENGTH, off + length).every((b) => b === 0);
+    at(address, padded ? CLOCK_SECTION_LENGTH : CLOCK_RECORD_LENGTH, 'slot-3-clock');
   }
 
   const log = slot(2);
@@ -219,6 +242,10 @@ export function claims(c: Container, withPictures = true): Claim[] {
     for (const instruction of program) {
       add(instruction.start, instruction.length, 'slot-11-program');
     }
+    // Plus the terminator after a program that ended by transferring, which the walk stops before
+    // and which the generator emitted anyway. Section 84, and the whole of what arch 8 had left.
+    const dead = deadTerminator(c, program);
+    if (dead !== undefined) add(dead, 1, 'slot-11-program');
   }
 
   // The pictures, in two claims that between them name every byte once.
@@ -265,8 +292,10 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // itself. Only the tagged list is claimed: a record runs to about seven hundred bytes and the
   // list is about forty five of them, so the rest is undecoded and stays unattributed.
   for (const record of modeRecords(c) ?? []) {
-    // The one that is the key table is already claimed above, under the name it had first.
-    if (c.blobOffsetOf(record.start) !== c.markerOffset + 4) {
+    // The one that is the key table is already claimed above, under the name it had first. Only
+    // where there is a key table: arch 9 has none, so there the record is an ordinary mode record
+    // and skipping it left 189 bytes of the safe mode container unclaimed. Section 84.
+    if (!c.hasKeyTable || c.blobOffsetOf(record.start) !== c.markerOffset + 4) {
       at(record.start, record.length, 'slot-6-mode');
     }
     // The entry, which used to be claimed as four bytes because the page count and the page
@@ -365,12 +394,45 @@ export function claims(c: Container, withPictures = true): Claim[] {
     add(timerTable.start, timerTable.length, 'slot-12-table');
     for (const timer of timerTable.records) at(timer.address, TIMER_RECORD_LENGTH, 'slot-12-record');
   }
-  for (const group of parameterGroups(c) ?? []) {
+  const groups = parameterGroups(c) ?? [];
+  for (const group of groups) {
     at(group.address, group.length, 'slot-15-group');
+  }
+  // Base slot 15's run is contiguous from its lowest group to its own pointer array, and on arch 8,
+  // 9 and 14 the groups fill it exactly. **On arch 12 twelve bytes do not belong to any group**,
+  // section 44 noticed them and called them the only untidy number here. They are byte identical in
+  // all six arch 12 containers, `ff 00 ff 00 00 00 00 00 55 55 55 55`, and no `u24` anywhere in any
+  // of them names that address, so what they are is unread; whose they are is not. Section 84.
+  const parameterSlot = slot(15);
+  if (parameterSlot !== undefined && groups.length > 0) {
+    const table = c.blobOffsetOf((c.sections[parameterSlot] as { address: number }).address);
+    const starts = groups.map((g) => [c.blobOffsetOf(g.address), g.length] as const);
+    const first = Math.min(...starts.map(([o]) => o ?? Infinity));
+    if (table !== undefined && Number.isFinite(first) && table > first) {
+      const filled = new Uint8Array(table - first);
+      for (const [o, length] of starts) {
+        if (o === undefined) continue;
+        for (let i = 0; i < length; i += 1) filled[o - first + i] = 1;
+      }
+      for (let i = 0; i < filled.length; i += 1) {
+        if (filled[i] === 1) continue;
+        let j = i;
+        while (j < filled.length && filled[j] !== 1) j += 1;
+        add(first + i, j - i, 'slot-15-spare');
+        i = j;
+      }
+    }
   }
   const touch = touchPages(c);
   if (touch !== undefined) {
-    add(touch.start, touch.length, 'slot-17-table');
+    // Where base slot 17 names the picture bank rather than a touch map, its own part is the two
+    // bytes in front of the bank, not the one byte an empty count accounts for. `PICTURE_BANK_BIAS`
+    // is the same constant the bank walk starts from, so the two cannot drift apart. Section 84.
+    const bank = pictureBankStart(c);
+    const header = bank !== undefined && touch.records.length === 0
+      ? bank - touch.start
+      : touch.length;
+    add(touch.start, header, 'slot-17-table');
     for (const page of touch.records) {
       add(page.start, page.length, 'slot-17-page');
       for (const area of page.areas) at(area.address, TOUCH_AREA_LENGTH, 'slot-17-area');
@@ -465,22 +527,37 @@ export function coverage(c: Container): CoverageReport {
 
   const accounted = owner.reduce<number>((n, o) => (o === undefined ? n : n + 1), 0);
   const gaps = runs(total, (i) => owner[i] === undefined);
-  const families = new Map<number, number>();
-  for (const gap of gaps) families.set(gap.length, (families.get(gap.length) ?? 0) + 1);
   return {
     total,
     accounted,
     fraction: total === 0 ? 0 : accounted / total,
     byOwner: [...byOwner.entries()].sort((a, b) => b[1] - a[1]),
     gaps: gaps.slice(0, REPORT_LIMIT),
-    gapFamilies: [...families.entries()]
-      .map(([length, count]) => ({ length, count, bytes: length * count }))
-      .sort((a, b) => b.bytes - a.bytes || b.length - a.length)
-      .slice(0, FAMILY_LIMIT),
+    gapFamilies: gapFamilies(gaps),
     gapCount: gaps.length,
     gapBytes: gaps.reduce((n, gap) => n + gap.length, 0),
     overlaps: mergeOverlaps(total, overlapping).slice(0, REPORT_LIMIT),
   };
+}
+
+/**
+ * The gaps grouped by length, by total bytes, capped at `FAMILY_LIMIT`.
+ *
+ * Exported so the grouping can be tested on a list nobody had to produce a container for. **That
+ * matters more than it used to**: every user config is fully accounted now, so the corpus can no
+ * longer supply a container with more gaps than `REPORT_LIMIT`, and the property this function
+ * exists for is precisely that it counts all of them rather than the listed ones. A test that can
+ * only be written against a fixture that no longer exists is a test that quietly stops checking.
+ */
+export function gapFamilies(
+  gaps: readonly { length: number }[],
+): { length: number; count: number; bytes: number }[] {
+  const families = new Map<number, number>();
+  for (const gap of gaps) families.set(gap.length, (families.get(gap.length) ?? 0) + 1);
+  return [...families.entries()]
+    .map(([length, count]) => ({ length, count, bytes: length * count }))
+    .sort((a, b) => b.bytes - a.bytes || b.length - a.length)
+    .slice(0, FAMILY_LIMIT);
 }
 
 /** Maximal runs of consecutive indices satisfying `pick`, longest first. */

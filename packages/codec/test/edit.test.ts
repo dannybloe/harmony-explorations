@@ -154,22 +154,36 @@ test('an entry the two copies disagree on is refused', skipUnless(SAMPLE), () =>
   );
 });
 
-test('an edit no reader claims is refused', skipUnless(SAMPLE), () => {
+test('an edit no one structure covers is refused', skipUnless(SAMPLE), () => {
   // The rail that keeps this honest. A run nobody has read is a run whose consequences nobody can
   // state, so the layer will not write it even though the bytes are perfectly addressable.
+  //
+  // **It is demonstrated on a run that spans two claims rather than on an unclaimed one, because
+  // this container no longer has an unclaimed byte to offer.** That is section 84 and it is the
+  // milestone, not a weakening: the rule was always "inside one claim, not merely covered by
+  // several", since a run crossing a boundary means the caller has the wrong extent, and that half
+  // of it is now the only half a full container can exercise.
   const c = parse(load(SAMPLE) as Uint8Array);
   const owned = [...claims(c)].sort((a, b) => a.start - b.start);
-  let gap: number | undefined;
-  for (let i = 1; i < owned.length && gap === undefined; i += 1) {
-    const end = (owned[i - 1] as { start: number; length: number }).start
-      + (owned[i - 1] as { length: number }).length;
-    if ((owned[i] as { start: number }).start > end) gap = end;
+  let boundary: number | undefined;
+  for (let i = 1; i < owned.length && boundary === undefined; i += 1) {
+    const previous = owned[i - 1] as { start: number; length: number };
+    const next = owned[i] as { start: number; length: number };
+    const end = previous.start + previous.length;
+    // Adjacent and not nested, so an edit of two bytes at `end - 1` lies in neither claim alone.
+    if (next.start === end && previous.length > 1 && next.length > 1) boundary = end;
   }
-  assert.notEqual(gap, undefined, 'this container has an unclaimed byte to try');
+  assert.notEqual(boundary, undefined, 'two claims meet somewhere in this container');
   assert.throws(
-    () => applyEdits(c, [{ start: gap as number, bytes: Uint8Array.from([1]), owner: 'test' }]),
+    () => applyEdits(c, [{ start: (boundary as number) - 1, bytes: Uint8Array.from([1, 2]),
+      owner: 'test' }]),
     EditError,
   );
+  // And the whole container being claimed is itself the thing worth asserting, since the refusal
+  // above used to be demonstrated on a gap.
+  const covered = new Uint8Array(c.blob.length);
+  for (const claim of claims(c)) covered.fill(1, claim.start, claim.start + claim.length);
+  assert.equal(covered.indexOf(0), -1, 'every byte of this config belongs to a structure');
 });
 
 test('two edits on one byte are refused', skipUnless(SAMPLE), () => {
