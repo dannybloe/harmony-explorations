@@ -252,15 +252,20 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 |
-|---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **99.5%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **99.6%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **99.6%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **99.8%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **97.0%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **64.1%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **98.2%<!--fact:coverage_h700_gspm-->** |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 |
+|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | **99.5%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | **99.6%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | **99.6%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | **99.8%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | **97.0%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | **64.1%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | **98.2%<!--fact:coverage_h700_gspm-->** |
+
+**Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
+historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
+on a history column makes `make facts-write` rewrite the past, which is exactly what happened to
+this table for one commit.
 
 The sixth column is two readers landing the same day: base slot 13's records, found by asking the
 deliberately built config pair of section 58 one question, and the infrared records, whose header
@@ -269,13 +274,18 @@ turned out to be 21 bytes pointing **backwards** at duration blocks below it.
 **The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
 for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,
 one missing operand count was hiding every one of its mode programs, and its infrared records share
-class 1's header. Nothing else moved, because the other architectures were already at the ceiling.
+class 1's header. Nothing else moved in that column, and the reading at the time was that the other
+architectures were at the ceiling. **They were not**, which the eighth column says: base slot 6's
+entry had a page count and an array of pages nobody had read, and following them moved every
+architecture at once. What looked like a ceiling was one unread field.
 
-Neither of the last two columns is a reader. Section 53 is one rule, that a mode record carries its
-own screen program, and section 54 is two corrections: opcode 23 takes no operand, which is what
-was holding arch 12 shut, and a picture's `stride` is in pixels rather than bytes, which had halved
-every raw extent. Together they take the region from an unknown to **98% pictures on a Harmony 600,
-93% on a 700 and 97% on arch 8**. The Harmony One is at 48% and that is the open item.
+Neither the fourth nor the fifth column is a reader. Section 53 is one rule, that a mode record
+carries its own screen program, and section 54 is two corrections: opcode 23 takes no operand, which
+is what was holding arch 12 shut, and a picture's `stride` is in pixels rather than bytes, which had
+halved every raw extent. Together they take the region from an unknown to **98% pictures on a
+Harmony 600, 93% on a 700 and 97% on arch 8**, with the Harmony One at 48% and left as the open
+item. Section 66 closed that one: every picture in an arch 12 bank is drawn by a program that can be
+reached, 98 of 98 and 70 of 70.
 
 Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
 a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
