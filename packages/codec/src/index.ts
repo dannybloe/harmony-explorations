@@ -14,6 +14,7 @@ export * from './screen.ts';
 export * from './sections.ts';
 export * from './ir.ts';
 export * from './actions.ts';
+export * from './emit.ts';
 export * from './tables.ts';
 export * from './font.ts';
 export * from './coverage.ts';

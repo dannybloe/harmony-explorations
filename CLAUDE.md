@@ -259,8 +259,9 @@ samples/                        empty by policy
 The TypeScript workspace, per `docs/roadmap.md` step 4:
 
 ```
-packages/codec/                 TS: the one config codec, container through compiler
-                                and src/coverage.ts, the M2 byte accounting
+packages/codec/                 TS: the one config codec, container through compiler,
+                                src/coverage.ts the M2 byte accounting and src/emit.ts
+                                the emitter that reads it back the other way
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
@@ -722,7 +723,14 @@ tiles almost anything, which is the same trap section 67 recorded.
 containers. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
-That completes the first of milestone M2's three parts for arch 12 and arch 14.
+That completes the first two of milestone M2's three parts on arch 8, 12 and 14.
+
+**The third part exists and round trips**, `packages/codec/src/emit.ts`: rebuild the container
+frame, copy the residue, and the bytes come back identical on all seventeen containers. It builds
+into a buffer filled with `0xA5` rather than into a copy of its input, because **an emitter that
+starts from a copy passes a round trip test while writing nothing at all**. So the tests that carry
+weight are the negatives, and a byte the emitter forgets stays poison and fails the compare. The
+number to move is the copied residue, 1.63 MB against a 106 byte frame on a Harmony One.
 
 **What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
 mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in

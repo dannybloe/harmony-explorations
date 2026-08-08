@@ -244,14 +244,21 @@ into the corpus automatically, and a bench instrument.~~ **Both exist**, `packag
 paragraph said "Next" for longer than it was true. FH will have its own interface over the same API;
 that is not this.
 
-**M2 Round trip codec. Here, and its first part is done on both target architectures.** Decompile
+**M2 Round trip codec. Here. Two of its three parts are done on both target architectures and the
+third round trips.** Decompile
 and recompile byte-identical across the whole corpus, and the trailer checksum reproducible. This is
 the gate for any editing at all, and it is squarely an API milestone.
 
 Of the three parts below, **the first two are complete for arch 12 and arch 14**: every reader
 reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes short on a Harmony
-One and 41 on a 600. What remains for M2 is the emitter itself. Arch 8 and arch 9 are not there and
-both remainders are infrared, on the two architectures no firmware image exists for.
+One and 41 on a 600. Arch 9 is not there, and its remainder is infrared, on an architecture no
+firmware image exists for. Arch 8 is there as of section 75.
+
+**The third part exists and round trips**, `packages/codec/src/emit.ts`. It rebuilds the container
+frame and copies everything else, and the output is byte identical to the input on all seventeen
+containers, four architectures included. The frame is 18 bytes plus four per pointer slot, so 98 on
+arch 14, 102 on arch 8 and 106 on arch 12, against 1.63 MB of copied residue on a Harmony One. That
+ratio is the number part 3 moves, and it moves as structures leave the residue one at a time.
 
 **Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
 is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
@@ -318,6 +325,14 @@ So M2 is three things in order, and only the third is the emitter:
 3. **The emitter**, rebuilding what is accounted and copying the rest, with byte equality as the
    test. The copied residue shrinks as coverage rises, so progress is measurable at every step
    rather than only at the end.
+
+   **The residue is copied by name, into a buffer filled with poison.** The obvious version starts
+   from a copy of the input and overwrites what it rebuilds, and that version passes its round trip
+   test whether or not the emitter writes anything, because the right bytes are already there. So
+   equality alone proves nothing and the tests that carry weight are the negatives: a byte neither
+   rebuilt nor copied stays `0xA5` and fails the compare, a section address changed in the parse
+   reaches the output, and a flipped payload byte moves the trailer checksum, which is what says
+   the checksum is computed rather than copied.
 
 Ported: the header, the section table, the marker, the trailer, the key table, slots 0, 1, 2 and
 3, the six counted pointer arrays, the action lists, and then the two that carried the mass, the
