@@ -1373,6 +1373,26 @@ are the same enumeration: one instruction covers up to 100, more than one spells
 consecutive requests, which is how a duration behaves and not how a repeat count does. The unit
 itself wants the timer that drains the queue. [findings.md](findings.md) sections 29 and 70.
 
+#### `0x6C` writes a device record, and never alone
+
+**Confirmed on three arch 14 containers.** Every use is the second half of `[0x7A key, 0x6C value]`
+and the list holding the pair is those two instructions and nothing else, 7552 of 7552. Arch 8, 9
+and 12 do not use the opcode.
+
+```
+0x7A key          load the sixteen bit accumulator
+0x6C value        look the accumulator up to a record, write the value into it
+```
+
+Bit 15 of the value is **a field selector**, split off by the firmware before the store. Per key the
+corpus enumerates field 0 from 0 to 450 and field 1 from 0 to 20, contiguous and complete, with
+nothing between `450` and `0x8000`.
+
+**The number of distinct keys is the number of infrared groups**, 6 and 6 and 4, so a key is a
+device. Keys occur nowhere else in the container, so they are identifiers the generator brought in
+rather than offsets into it. *What the two fields are is not established*, but field 0's range is
+the same 0 to 450 that `0x7C` carries by a different route. [findings.md](findings.md) section 71.
+
 #### `0x07`, `0x0F`, `0x1F` and `0x3F` address a second operand space
 
 **Confirmed on four architectures.** These four opcodes never carry an operand below `0xC000`, and
@@ -1448,6 +1468,11 @@ Placed by their handlers:
 | `0x71` | **compare**: low byte indexes a lookup, low nibble of the high byte selects the operator, left hand side is a byte variable |
 | `0x70` | the same comparison, with the accumulator as the left hand side |
 | `0x72` | **map a state variable's value**: low byte a state variable, high byte a base slot 14 record |
+| `0x6D`, `0x68` | accumulator **shifted left** or **right** by the operand's low byte; a count of zero is a defined no-op |
+| `0x6B`, `0x6A`, `0x69` | accumulator **AND**, **OR**, **XOR** operand |
+| `0x6C` | **write a device record**: the accumulator from a preceding `0x7A` selects it, bit 15 of the operand selects one of two fields and the rest is the value, below |
+| `0x67` | the third producer into the infrared queue of `0x7C` and `0x7D`, tag `0x5`. What it means is unconfirmed |
+| `0x74`, `0x75` | **one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode |
 | `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
 | `0x1F` with operand `0xFFxx` | **select the current binding table entry**, low byte the index into base slot 9 |
 | `0x1F` to `0x3E` with operand `0xF3xx` to `0xF6xx` | send a computed number to base slot 16 or 14, from the accumulator or from a byte register |
@@ -1468,7 +1493,7 @@ table derived from the 525 does not cover the remotes on the bench.
 | Opcode | 700 uses | distinct operands | operand range | reading |
 |---|---|---|---|---|
 | `0x7A` | 2875 | 10 | 0 to 65277 | unknown, and only ten distinct operands in 2875 uses |
-| `0x6C` | 2832 | 472 | 0 to 32788 | unknown, arch 14 only |
+| `0x6C` | 2832 | 472 | 0 to 32788 | **write a device record**, arch 14 only, above |
 | `0x7C` | 7272 | 600 | 1 to 1380 | **a per device quantity**, `{ u8 group; u8 value }`, above |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
 | `0x1F` | 1215 | 121 | 59392 to 65290 | unknown; in the second operand space, above |

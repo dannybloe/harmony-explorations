@@ -632,14 +632,17 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
 
   **This is now the whole of what step 6 has left, and it is measured.** Every one of the twenty
   base slots is labelled, so section labelling is done; what is not done is the language inside the
-  lists. Of 97537 action list instructions in the corpus, **56424, or 57.8%, use one of 65 opcodes
-  with no reading**. The dispatch is mapped, section 34, so each one is a named handler to read
-  rather than a search.
+  lists. When that was first measured, 56424 of 97537 action list instructions, 57.8%, used one of
+  65 opcodes with no reading.
 
-  The first of them is done: **`0x7C`, the most used instruction in the corpus at 21882 uses**, is a
-  per device quantity capped at 100 and spelled out above that, section 70. What that leaves at the
-  top of the list is `0x6C` at 7552 uses, `0x1F` at 6119, `0x07` at 5739, `0x75` at 4380 and `0x73`
-  at 3927, in that order.
+  Two findings have moved it to **27.7%**. Section 70 read `0x7C`, the most used instruction in the
+  corpus at 21882 uses: a per device quantity capped at 100 and spelled out above that. Section 71
+  then read the **dispatcher** rather than a handler and took nine opcodes at once, `0x65` to
+  `0x6D`, which are an accumulator machine plus `0x6C`, a write into a per device record.
+
+  **That is the method for the rest**: the binary search at `0x0EC8E` names a handler for every
+  opcode in `0x65` to `0x7F`, so reading it is cheaper per opcode than chasing one. What is left at
+  the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x74` and `0x75` at 4380, and `0x73` at 3927.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

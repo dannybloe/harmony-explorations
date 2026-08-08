@@ -7542,7 +7542,8 @@ and priority 1, sharing the worker at `0x26F4E`. **Two architectures, the same p
 `0x12FD6` writes into a circular buffer of 30 bytes at RAM `0x65` to `0x83`, with a write cursor at
 `0x085/0x086`, a read cursor at `0x083/0x084` and a count at `0x064`. Entries are two bytes,
 `{ u8 tag; u8 value }`, and the tag is `kind << 4 | group`: `0x0` for a send, `0x4` for this
-opcode, `0x5` for a third producer that is not an action list opcode.
+opcode, and `0x5` for ~~a third producer that is not an action list opcode~~ **opcode `0x67`,
+which section 71 found in the dispatcher: it is one after all.**
 
 With bit 6 clear the worker pushes the two bytes and returns. With it set it first walks the queue
 to its last entry and then, at `0x13088`:
@@ -7594,8 +7595,9 @@ consumed by the infrared sender, and folded by taking the larger of two consecut
 last rule is what a duration behaves like and not what a repeat count behaves like, but the unit is
 a guess and this document does not make it. Finishing it wants the timer that drains the queue.
 
-**The third producer**, tag `0x5`, which reaches the same worker from outside the action list
-language.
+~~**The third producer**, tag `0x5`, which reaches the same worker from outside the action list
+language.~~ **It is opcode `0x67`**, section 71, and it was called an outsider only because this
+section read the queue before the dispatcher. What it means is still open.
 
 ### The rails it yields
 
@@ -7615,6 +7617,112 @@ language.
   `IR_QUANTITY_QUEUE_BIT` and `IR_MAX_GROUPS`.
 * `packages/codec/test/sections.test.ts`: the group closure against the infrared table, the 101 to
   450 closure, and the refusals that stop `irQuantity` summing a shape it has not read.
+
+## 71. The `0x65` to `0x6D` block is an accumulator machine, and `0x6C` writes a device record
+
+Section 70 read one opcode by chasing its handler. This reads the dispatcher instead and takes nine
+at once, which is the cheaper move and should have come first: the binary search at `0x0EC8E` on the
+Harmony 700 image names a handler for every opcode in `0x65` to `0x7F`, so each is a routine to read
+rather than a thing to look for.
+
+### The accumulator machine
+
+Sections 34 and 39 placed `0x7A` as "load the accumulator", `0x79` as "add", and `0x78` and `0x77`
+as two more operations through helpers. The block below `0x6E` is the rest of the same machine,
+working on the sixteen bit pair at RAM `0x10E/0x10F`:
+
+| opcode | handler | what it does |
+|---|---|---|
+| `0x6D` | `0x0F052` | accumulator **shifted left** by the operand's low byte, `RLCF` in a loop |
+| `0x6C` | `0x0F072` | **writes a device record**, below |
+| `0x6B` | `0x0F096` | accumulator **AND** operand |
+| `0x6A` | `0x0F0BA` | accumulator **OR** operand |
+| `0x69` | `0x0F0DE` | accumulator **XOR** operand |
+| `0x68` | `0x0F104` | accumulator **shifted right** by the operand's low byte, `RRCF` in a loop |
+| `0x67` | `0x0F12C` | operand to `0x09E/0x09F`, then `0x13128` |
+| `0x66`, `0x65` | `0x0F146` | the operand's high byte, or both bytes, to `0x159F4` |
+
+Both shifts read their count from `WREG` and skip the loop entirely when it is zero, so a shift of
+zero is a defined no-op rather than a shift of 256.
+
+**`0x67` closes an open item in section 70.** That section found a third producer feeding the
+infrared queue with tag `0x5` and said it was not an action list opcode. It is: `0x67`, and the
+routine it calls is `0x13128`, the third of the three siblings section 70 disassembled. Reading the
+queue before the dispatcher is what made it look like an outsider.
+
+**And `0x74` and `0x75` are the same instruction.** The dispatcher never compares against `0x75`:
+at `0x0EE12` it tests `>= 0x74` and both fall into one handler, and nothing downstream reads the
+opcode byte `0x1BD`, whose only readers are the two dispatcher comparisons themselves. So `0x75`'s
+4380 uses run `0x74`'s code. What that code means is still open; that there is one meaning and not
+two is not.
+
+### `0x6C` never stands alone
+
+Every use in the corpus is the second half of a pair:
+
+```
+0x7A key        load the accumulator
+0x6C value      write it
+```
+
+**7552 of 7552**, in three arch 14 containers, and the list holding them is exactly those two
+instructions and nothing else, 2832, 2832 and 1888 times. Arch 8, 9 and 12 do not use the opcode at
+all.
+
+The handler passes the operand to `0x11B92`, which splits **bit 15** off into its own argument,
+clears it, looks the accumulator up to a record index with `0xFF` for not found, and writes the
+remaining fifteen bits as two bytes into that record. So the operand is a field selector and a
+value, not one number.
+
+### The corpus says the key is a device
+
+| container | infrared groups | distinct `0x7A` keys |
+|---|---|---|
+| Harmony 700, both configs | 6 | 6 |
+| Harmony 600 | 4 | 4 |
+
+And per key, exactly:
+
+| field | values | count |
+|---|---|---|
+| bit 15 clear | 0 to 450, contiguous | 451 |
+| bit 15 set | 0 to 20, contiguous | 21 |
+
+**Every key, every container, with nothing missing and nothing twice.** 6 times 472 is 2832 and 4
+times 472 is 1888, which is every use accounted for. A reading where bit 15 were part of the value
+would have to explain why 0 to 450 and `0x8000` to `0x8014` are both complete and nothing lies
+between.
+
+**0 to 450 is the same enumeration `0x7C` carries**, section 70, reached from an unrelated
+direction: there it is a per group quantity spelled in units of at most 100, here it is one
+instruction per value. So the two opcodes write the same kind of thing by different routes, and the
+`0x7C` route exists because a byte wide queue cannot carry 450.
+
+The keys are 16 bit values that occur nowhere else in the container except as `0x7A` operands, so
+they are identifiers the generator brought in rather than offsets into anything here. On the 700
+three of the six share a high byte, `0x1E04`, `0x1E06` and `0x1E07`, which is what a run of device
+ids from one manufacturer looks like. That is a suggestion and not a reading.
+
+### The generated tables
+
+The `0x7C` lists of section 70 sit in **contiguous blocks of 350 table entries**, one block per
+group, though not in ascending order of total. The `[0x7A, 0x6C]` lists are scattered through the
+table instead. Both are generated sets covering a range exhaustively, which is what a settings menu
+needs: one action list per selectable value.
+
+### What it moves
+
+Of 97537 action list instructions in the corpus, the share using an opcode with a reading goes from
+**64.6% to 72.3%**. What is left at the top is `0x1F` at 6119 uses, `0x07` at 5739, `0x75` and
+`0x74` at 4380 and below, `0x73` at 3927 and `0x00` at 3053.
+
+### Where it lands
+
+* `docs/config-format.md`, the action list opcode table.
+* `packages/codec/src/ir.ts`: `deviceAssignment`, `ACCUMULATOR_LOAD_OPCODE`,
+  `DEVICE_ASSIGN_OPCODE` and `DEVICE_ASSIGN_FIELD_BIT`.
+* `packages/codec/test/sections.test.ts`: that no `0x6C` stands alone, the key count against the
+  infrared table, both fields enumerated exhaustively, and the pair's refusals.
 
 ## References
 

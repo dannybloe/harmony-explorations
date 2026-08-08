@@ -301,3 +301,49 @@ export function irQuantity(list: readonly Instruction[], start = 0): IrQuantity 
   for (let k = start; k < end; k += 1) amount += (list[k] as Instruction).operand & 0xff;
   return { group, amount, instructions: end - start };
 }
+
+/** Loads the sixteen bit accumulator with its operand. `docs/findings.md` section 34. */
+export const ACCUMULATOR_LOAD_OPCODE = 0x7a;
+
+/**
+ * Writes the accumulator's device record. Section 71.
+ *
+ * Never appears alone: every use in the corpus is the second half of
+ * `[ACCUMULATOR_LOAD_OPCODE key, DEVICE_ASSIGN_OPCODE value]`, 7552 of 7552.
+ */
+export const DEVICE_ASSIGN_OPCODE = 0x6c;
+
+/** Bit 15 of the assigned value, which the handler strips into a separate argument. */
+export const DEVICE_ASSIGN_FIELD_BIT = 0x8000;
+
+export interface DeviceAssignment {
+  /** The accumulator the load put there, which selects the record. One per infrared group. */
+  key: number;
+  /** Bit 15, which selects which of the record's two fields is written. */
+  field: number;
+  /** The remaining fifteen bits. */
+  value: number;
+}
+
+/**
+ * Read a `[load, assign]` pair, or nothing if the two instructions are not that pair.
+ *
+ * The firmware strips bit 15 of the operand into its own argument before storing, which is why
+ * this reports `field` and `value` separately rather than handing back the raw operand: the corpus
+ * enumerates 0 to 450 for field 0 and 0 to 20 for field 1, per key, and reading them as one number
+ * would hide that. What the two fields are is not established. `docs/findings.md` section 71.
+ */
+export function deviceAssignment(
+  list: readonly Instruction[],
+  start = 0,
+): DeviceAssignment | undefined {
+  const load = list[start];
+  const assign = list[start + 1];
+  if (load?.opcode !== ACCUMULATOR_LOAD_OPCODE) return undefined;
+  if (assign?.opcode !== DEVICE_ASSIGN_OPCODE) return undefined;
+  return {
+    key: load.operand,
+    field: (assign.operand & DEVICE_ASSIGN_FIELD_BIT) === 0 ? 0 : 1,
+    value: assign.operand & ~DEVICE_ASSIGN_FIELD_BIT & 0xffff,
+  };
+}

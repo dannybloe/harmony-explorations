@@ -10,8 +10,12 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import {
+  ACCUMULATOR_LOAD_OPCODE,
   ACTION_LIST_INDEX_OPCODE,
   archSlot,
+  DEVICE_ASSIGN_FIELD_BIT,
+  DEVICE_ASSIGN_OPCODE,
+  deviceAssignment,
   eventMap,
   handlerSets,
   IR_CLASS_ARCH9,
@@ -708,4 +712,67 @@ test('a quantity run refuses a shape that is not cap then remainder', () => {
   assert.equal(irQuantity([at(2, 45), at(2, 100)]), undefined, 'a cap before the end');
   assert.equal(irQuantity([{ operand: 0, opcode: 0x7d }]), undefined, 'a different opcode');
   assert.equal(irQuantity([]), undefined);
+});
+
+/**
+ * `[sample, pairs, keys, infrared groups]`. findings.md section 71.
+ *
+ * `0x6C` never stands alone: it is always the second half of a load-then-assign pair, and the
+ * number of distinct keys is the number of infrared groups. Per key the corpus enumerates one
+ * field exhaustively from 0 to 450 and the other from 0 to 20, which is what says the two are
+ * fields of one record rather than one number with a high bit set.
+ */
+const ASSIGNMENTS: readonly [string, number, number][] = [
+  ['h700_config', 2832, 6],
+  ['h700_config_2', 2832, 6],
+  ['h600_config', 1888, 4],
+];
+
+for (const [name, pairs, keys] of ASSIGNMENTS) {
+  test(`${name}: every 0x6C is a device assignment, one key per infrared group`,
+    skipUnless(name), () => {
+      const c = parse(load(name) as Uint8Array);
+      const table = c.pointerArray(archSlot(c.architecture as number, 10)) as number[];
+      const byKey = new Map<number, [Set<number>, Set<number>]>();
+      let seen = 0;
+      let alone = 0;
+      for (const address of table) {
+        const list = c.actionList(address) ?? [];
+        list.forEach((i, k) => {
+          if (i.opcode !== DEVICE_ASSIGN_OPCODE) return;
+          seen += 1;
+          if (list[k - 1]?.opcode !== ACCUMULATOR_LOAD_OPCODE) { alone += 1; return; }
+          const a = deviceAssignment(list, k - 1) as NonNullable<ReturnType<typeof deviceAssignment>>;
+          if (!byKey.has(a.key)) byKey.set(a.key, [new Set(), new Set()]);
+          (byKey.get(a.key) as [Set<number>, Set<number>])[a.field as 0 | 1].add(a.value);
+        });
+      }
+      assert.equal(seen, pairs);
+      // The negative that makes the pairing a reading: not one use stands on its own.
+      assert.equal(alone, 0, 'a 0x6C with no accumulator load before it');
+      assert.equal(byKey.size, keys);
+      assert.equal(irGroups(c)?.length, keys, 'one key per infrared group');
+      for (const [key, [plain, flagged]] of byKey) {
+        const check = (set: Set<number>, top: number) => {
+          const v = [...set].sort((a, b) => a - b);
+          assert.equal(v.length, top + 1, `key 0x${key.toString(16)}`);
+          v.forEach((x, i) => assert.equal(x, i, 'contiguous from zero'));
+        };
+        check(plain, 450);
+        check(flagged, 20);
+      }
+    });
+}
+
+test('a device assignment is refused unless both halves are there', () => {
+  const load16 = (v: number) => ({ operand: v, opcode: ACCUMULATOR_LOAD_OPCODE });
+  const assign = (v: number) => ({ operand: v, opcode: DEVICE_ASSIGN_OPCODE });
+  assert.deepEqual(deviceAssignment([load16(0x1e04), assign(450)]),
+    { key: 0x1e04, field: 0, value: 450 });
+  // Bit 15 is stripped into its own field, which is what the handler does before storing.
+  assert.deepEqual(deviceAssignment([load16(0x1e04), assign(DEVICE_ASSIGN_FIELD_BIT | 20)]),
+    { key: 0x1e04, field: 1, value: 20 });
+  assert.equal(deviceAssignment([assign(1), load16(2)]), undefined, 'the wrong way round');
+  assert.equal(deviceAssignment([load16(1)]), undefined, 'no assign');
+  assert.equal(deviceAssignment([]), undefined);
 });
