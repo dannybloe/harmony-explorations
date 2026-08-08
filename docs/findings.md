@@ -8539,6 +8539,59 @@ applied to top byte `0x00` on arch 9 for the same reason it exists elsewhere: an
 leaves the USB bus when such a read ends in a one byte chunk, and nothing establishes that this one
 does not.
 
+### The internal read, and what it confirms
+
+Read on the owner's say so, 529 commands of 62 bytes each, one chunk per command, with a
+`GET_VERSION` health check every 64 reads. **No restart, no missed health check, and the remote
+answered normally afterwards.** That is the arch 12 hazard not reproducing here rather than being
+absent, since a single chunk read is what the cap was always meant to permit.
+
+The result is a closure that could not be had any other way. Internal program memory
+`0x1000` to `0x7FFF` and the external image at `0x810000` are **byte identical over all 28672
+bytes**. So the external image is the running application rather than a version of it, and
+`find_base`'s answer of `0x1000` is confirmed by the device: a wrong base would have misaligned the
+comparison everywhere instead of matching exactly.
+
+Three more things fall out of it:
+
+* **The image frames itself.** `HG` at `+4` and `GH` at `0x6FFE`, so it spans `0x7000` bytes,
+  which is program `0x1000` to `0x7FFF` inclusive. Both external images carry the same frame.
+* **The bootloader is below it**, `0x0000` to `0x0FFF`, 3781 of 4096 bytes used. The reset vector
+  at `0x0000` is `GOTO 0x0EF6`, inside itself; the high priority interrupt vector at `0x0008` is
+  `GOTO 0x1400`, inside the application. So it hands interrupts to the application, and it exists
+  in no external image, which makes it the one part of this remote's code that only the device has.
+* **`0x800000` is a different firmware**, not a copy: 27994 of 28672 bytes differ from the running
+  one, and `find_base` puts it at `0x1000` too, 182 boundary hits of 183. Safe mode, by position
+  and by the company it keeps.
+
+### A second container, in the firmware region
+
+Checking what else was in the `0x810000` region found `AHCM` at offset `0x8000`, so flash
+`0x818000`: a **safe mode config**, 15342 bytes, twenty slots, marker `CMAH`, architecture 9, and
+its trailer checksum recomputes. The first arch 9 safe mode container, and the arch 12 and arch 14
+pattern repeating on a third architecture.
+
+Its base is `0x018000`, which is `0x800000` below the address `READ_FLASH` names, exactly as the
+user config's `0x020000` is below `0x820000`. **Two containers, one offset**, which is the two
+address space finding checking itself on a sample that did not exist when it was made.
+
+**It is not in the corpus, and that is deliberate.** It contradicts six claims the corpus asserts,
+and each is a question rather than a count:
+
+| what it contradicts | on this container |
+|---|---|
+| base slot 1 is seven bytes and slot 2 follows it | slot 2 starts **three** bytes in, so a seven byte reading overlaps it by four. Every one of the sixteen corpus samples has exactly seven |
+| the log area is a region above the config | `0x0F0000` to `0x100000` here, above a 512 KiB flash |
+| slot 0's frame is a tree under `Root` | the root node is named `Curr`, and six header bytes differ |
+| a font set declares one count per container | four sets declaring 91, 90, 50 and 90 |
+| the font header's spare byte is constant per architecture | it is not, here |
+| the corpus glyph and string totals | both move, which is only a consequence of the above |
+
+Adding it would have turned six properties into six exceptions in one commit, and the honest order
+is the other way round: re-derive each, then assert against it. **An arch 9 firmware exists now**,
+which is what the first two want. Regenerate the file from the flash dump with
+`gspm.parse(open(dump,'rb').read()[0x8000:])`; its checksum is in `reference/checksums.md`.
+
 ### The config, and what it settles
 
 51195 bytes read over USB with this project's own code and filed in the lab. Every container
@@ -8583,7 +8636,10 @@ disassemble at `0x1000`.
 * `packages/corpus/src/read.ts`: the 525 profile, no longer `unverified`, and `containerBase`.
 * `packages/usb/test/protocol.test.ts` and `packages/corpus/test/read.test.ts`.
 * `docs/memory-map-525.md`, rewritten from predictions to measurements.
-* `reference/checksums.md`: the config and the two flash images.
+* `reference/checksums.md`: the config, the two flash images, the internal memory and the safe
+  mode container.
+* `packages/usb/src/remote.ts`: the one chunk cap moved into `readFlash`, so it covers arch 9's
+  internal region as well as the `0xFE` window it was written for.
 
 
 ## References

@@ -26,6 +26,7 @@
  */
 
 import {
+  ARCH_RECORD_LENGTH,
   CLOCK_COOKIE,
   CLOCK_END,
   CLOCK_EPOCH_MS,
@@ -251,13 +252,23 @@ export function rebuilds(c: Container): Rebuild[] {
   // then three bytes nothing reads. Those three are carried, and they are the smallest example in
   // the file of why the split exists: four framed bytes out of seven is what this record actually
   // is understood to.
+  const archSlotIndex = slot(1);
   const archAt = sectionStart(1);
-  if (archAt !== undefined && c.architecture !== undefined && c.versionWord !== undefined) {
-    partly(archAt, 'slot-1-arch', new Writer(7)
-      .u8(c.architecture)
-      .u8(c.architecture)
-      .u16(c.versionWord)
-      .raw(c.blob.subarray(archAt + 4, archAt + 7)), 4);
+  if (archAt !== undefined && archSlotIndex !== undefined && c.architecture !== undefined) {
+    // Bounded by the next section, which matters on exactly one container: the 525's safe mode
+    // config puts base slot 2 three bytes in. Below four bytes even the version word does not fit,
+    // so the record is carried whole and only the architecture byte is framed.
+    const room = c.sectionLength(archSlotIndex);
+    const length = room === undefined ? ARCH_RECORD_LENGTH : Math.min(ARCH_RECORD_LENGTH, room);
+    const w = new Writer(length);
+    if (length >= 4 && c.versionWord !== undefined) {
+      w.u8(c.architecture).u8(c.architecture).u16(c.versionWord)
+        .raw(c.blob.subarray(archAt + 4, archAt + length));
+      partly(archAt, 'slot-1-arch', w, 4);
+    } else {
+      w.u8(c.architecture).raw(c.blob.subarray(archAt + 1, archAt + length));
+      partly(archAt, 'slot-1-arch', w, 1);
+    }
   }
 
   // Section slot 3's timestamp, and the day of week byte is the interesting one: it is derived

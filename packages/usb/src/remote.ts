@@ -156,7 +156,20 @@ export class HarmonyRemote {
    * sent exactly the number of bytes asked for, so the count on the wire is not biased by one.
    */
   async readFlash(address: number, count: number): Promise<Uint8Array> {
-    regionOf(address, this.architecture); // throws for a top byte the device's own rule rejects
+    // Throws for a top byte the device's own rule rejects, and tells us which region this is.
+    const region = regionOf(address, this.architecture);
+    if (region === 'internal-program-memory' && count > FLASH_CHUNK_DATA) {
+      // The one chunk cap, enforced here rather than only in `readInternalMemory`. It lived there
+      // alone until 8 August 2026, which was fine while internal memory was only reachable through
+      // the `0xFE` window that method builds. On arch 9 it is at plain low addresses, so every
+      // caller of `readFlash` could reach it uncapped and the documents claimed otherwise. The
+      // hazard is in `readInternalMemory`'s comment: a multi chunk read of this region has
+      // restarted a remote, five times, on arch 12.
+      throw new RemoteError(
+        `an internal memory read of ${count} bytes needs more than one chunk, and multi chunk ` +
+          `reads of this region have restarted a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
+      );
+    }
     await this.transport.write(readFlashRequest(address, count));
 
     const out = new Uint8Array(count);

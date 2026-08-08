@@ -154,7 +154,13 @@ read only; they live in the lab and are not publishable, so these are the checks
 |---|---|---|
 | `20260808T1645Z-harmony-525-config.bin` | `a5bdb588638d81fb0b491eb47a90cfd2f9e9a4bd1ca374ad16550af0e0910ffb` | the user config, 51195 bytes, flash `0x820000` |
 | `20260808-harmony-525-flash-810000.bin` | `2c29005c1080690a9d6716c94b3bb1e49856b47b448a452c329ec1c41a1e6282` | the application firmware image, 65536 bytes |
-| `20260808-harmony-525-flash-800000.bin` | `dbb57d128aa8b3b0f03a7ec0de9522f09dd04cb30c350c804a25ba91b4c1412a` | a second `HG` framed image, a third the size |
+| `20260808-harmony-525-flash-800000.bin` | `dbb57d128aa8b3b0f03a7ec0de9522f09dd04cb30c350c804a25ba91b4c1412a` | a second `HG` framed image, the safe mode application |
+| `20260808-harmony-525-internal-0x0000.bin` | `21a8cb3d1e0f512738a2cae3b7981512bfb893271d8b4056e315b8727e5626d0` | internal program memory, 32768 bytes, read in 529 single chunk commands |
+| `20260808-harmony-525-safemode-ahcm.bin` | `cf0d0ece48352d7078c7333d98de68473a38945fa8a77bd78ab11f17d15bac68` | the safe mode config, cut out of the `0x810000` dump at offset `0x8000` |
+
+`0x1000` to `0x7FFF` of the internal read is byte identical to the first 28672 bytes of the
+`0x810000` image, which is what confirms both the load address and that the external image is the
+running code.
 
 ## Load addresses
 
@@ -166,7 +172,9 @@ obviously failing.
 | One 3.4 code half | `0x20000` | `0x2EA38` | mark `0x20000-0x2002F` as data: header plus `DEADDEAD` fill |
 | 700 2.8 `Region_2` | `0x9000` | `0x1BB38` | header is `0x00-0x0F` only, code starts at `0x9010` |
 | 600 0.2 dump | `0x9000` | `0x1A26E` | entry point falls in the truncated tail |
-| 525 flash `0x810000` | `0x1000` | `GOTO 0x07FB4` at `0x1008` | derived, 717 boundary hits against 326 for base 0; header is `0x1000-0x1007` |
+| 525 flash `0x810000` | `0x1000` | `GOTO 0x07FB4` at `0x1008` | derived at 717 boundary hits against 326, then **confirmed against the device's own internal memory**; framed `HG` at `+4` and `GH` at `0x6FFE` |
+| 525 flash `0x800000` | `0x1000` | `GOTO 0x0BF5*2` at `0x1008` | the safe mode application, 182 boundary hits of 183 |
+| 525 internal | `0x0000` | reset `GOTO 0x0EF6` | bootloader below `0x1000`, application above it |
 
 Ghidra language: `PIC-18:LE:24:PIC-18`. Only a generic variant exists, so SFRs come out
 unnamed; `tools/pic18_disasm.py` resolves them instead.

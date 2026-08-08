@@ -16,7 +16,8 @@
  * a variant which returns it. A second copy of a size rule is free to drift from the first, which
  * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
  */
-import { Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot } from './gspm.ts';
+import { ARCH_RECORD_LENGTH, Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot }
+  from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
 import { countedPointers, valueMaps } from './valuemap.ts';
@@ -107,8 +108,19 @@ export function claims(c: Container, withPictures = true): Claim[] {
   const tree = c.sections[0];
   if (tree !== undefined && !tree.isNull) at(tree.address, c.frameLength, 'slot-0-tree');
 
+  // Base slot 1's seven byte record, **bounded by whatever starts next**. The gap to base slot 2
+  // is exactly seven on all sixteen other containers and three on the 525's safe mode config, so
+  // there a seven byte claim runs four bytes into slot 2. Bounding it is the same rule base slot
+  // 14's records already use, and for the same reason: where the file shares bytes, the report
+  // must not turn that into a false alarm. Which section really owns those four is open, and
+  // section 76 says so rather than this pretending to have settled it.
   const arch = slot(1);
-  if (arch !== undefined) at((c.sections[arch] as { address: number }).address, 7, 'slot-1-arch');
+  if (arch !== undefined) {
+    const length = c.sectionLength(arch);
+    at((c.sections[arch] as { address: number }).address,
+       length === undefined ? ARCH_RECORD_LENGTH : Math.min(ARCH_RECORD_LENGTH, length),
+       'slot-1-arch');
+  }
 
   const clock = slot(3);
   if (clock !== undefined && c.builtAt !== undefined) {

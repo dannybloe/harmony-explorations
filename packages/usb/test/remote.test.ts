@@ -320,3 +320,18 @@ test('a multi chunk internal memory read is refused, because they restart a remo
   await assert.rejects(() => remote.readInternalMemory(0xff, 0, 63), /have restarted a remote/);
   assert.equal(written.length, 0, 'and it is refused before anything reaches the device');
 });
+
+test('the one chunk cap covers arch 9, where internal memory is at plain low addresses', async () => {
+  // The cap lived only in `readInternalMemory`, which builds an address in the `0xFE` window. On
+  // arch 9 there is no such window: internal program memory answers at 0x000000, so every caller
+  // of `readFlash` could reach it uncapped while the documents said otherwise. Found by writing
+  // the document and then checking the code rather than the other way round.
+  const { transport, written } = scriptedRemote([], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 9 });
+  await assert.rejects(() => remote.readFlash(0x000000, 63), /have restarted a remote/);
+  assert.equal(written.length, 0, 'refused before anything reaches the device');
+  // And the same address on the default rule is ordinary config flash, so the cap must not fire
+  // there: an arch 12 remote reads its config from below 0x200000 in chunks much larger than 62.
+  const other = new HarmonyRemote(scriptedRemote([], 0).transport, { timeoutMs: 1 });
+  await assert.rejects(() => other.readFlash(0x000000, 63), /flash read returned 0 of 63/);
+});

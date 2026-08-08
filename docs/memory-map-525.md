@@ -57,7 +57,8 @@ header reading took it to 55.1%.
 | the container's own base | `0x020000` | its `end_addr`, and every pointer inside it |
 | application firmware image | flash `0x810000`, loads at program `0x1000` | `loadaddr.find_base`, 717 boundary hits against 326 |
 | a second image | flash `0x800000` | same `HG` header, a third the size |
-| internal program memory | plain `0x000000`, reset vector `GOTO 0x0EF6` | one 62 byte read, inside the cap |
+| internal program memory | plain `0x000000`; 32 KiB read in 529 single chunk commands, no restart | health checked every 64 reads |
+| the safe mode config | flash `0x818000`, container base `0x018000` | the same `0x800000` offset the user config has |
 | the config | 51195 bytes, trailer checksum recomputes | read over USB by this project's own code |
 
 The MCU is the `PIC18LF4550` concordance names for this architecture, and three things agree with
@@ -129,8 +130,9 @@ space the container's own pointers use.
 
 | Address | Length | Contents | Source |
 |---|---|---|---|
-| `0x800000` | 65536 | an `HG` framed image, a third the size of the one below | measured |
-| `0x810000` | 65536 | the **application firmware**, code from program `0x1000` | measured |
+| `0x800000` | 65536 | the **safe mode application**, `HG` framed, program `0x1000` to `0x7FFF` | measured |
+| `0x810000` | 65536 | the **application firmware**, byte identical to internal `0x1000` onward | measured |
+| `0x818000` | 15342 | the **safe mode config**, an `AHCM` container based at `0x018000` | measured |
 | `0x820000` onward | 51195 on the bench unit, 78486 in the published sample | the **user config**, an `AHCM` container | measured |
 | `0x870000` to `0x880000` | 65536 | the **log area** | base slot 2, `capacity 8192` at a stride of 8 |
 
@@ -156,6 +158,12 @@ and on arch 14 internal, and arch 9 has never been examined either way.
 Nothing was predicted, and the answer is that **there is no `0xFE` window here at all**. Internal
 program memory answers at plain `0x000000`, and the first four bytes are `7b ef 07 f0`, a
 `GOTO 0x0EF6`, which is the reset vector landing in a bootloader below the application.
+
+`0x1000` to `0x7FFF` is the application, and it is **byte identical** to the external image at
+`0x810000` over all 28672 bytes, which confirms both that the image is the running code and that
+its load address is `0x1000`. Below `0x1000` is a bootloader that exists in no external image:
+3781 of its 4096 bytes are used, its reset vector stays inside itself and its interrupt vector
+jumps into the application.
 
 That has a safety consequence worth stating plainly. `packages/usb` caps an internal read at one
 chunk because an arch 12 remote leaves the USB bus when such a read ends in a one byte chunk, and

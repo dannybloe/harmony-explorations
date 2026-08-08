@@ -773,8 +773,15 @@ What is left is arch 9's class 5 infrared, which does want an arch 9 firmware. *
 read off the bench 525 at flash `0x810000`, loading at program `0x1000`. Section 76.
 
 **The Harmony 525 is on the bench and read**, section 76. Its config is the corpus's second arch 9
-sample and the arch 9 **firmware** is in the lab, read off external flash at `0x810000` and loading
-at program `0x1000`. Nothing has been decoded out of it yet, so class 5 infrared is still open and
-now has something to appeal to. Three arch 12 assumptions came out of `packages/usb` on the way:
+sample and the arch 9 **firmware** is in the lab, at program `0x1000`, **confirmed byte for byte
+against the remote's own internal memory** rather than only derived. Nothing has been decoded out
+of it yet, so class 5 infrared is still open and now has something to appeal to.
+
+**Its safe mode config is the next piece of work and it is bigger than it looks.** Found at flash
+`0x818000`, it parses and its checksum recomputes, and it contradicts six claims the corpus
+asserts: base slot 1's seven byte length, the log area's range, slot 0's `Root` node, one font
+count per container, the font header's spare byte, and two corpus totals. It is deliberately **not**
+in the corpus until each is re-derived, because adding it would turn six properties into six
+exceptions in one commit. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the way:
 the version reply was matched as a whole byte, its length was fixed at twelve, and the region
 validator was hard coded. `docs/memory-map-525.md` holds the predictions against the measurements.

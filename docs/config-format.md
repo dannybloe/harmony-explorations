@@ -29,6 +29,10 @@ lengths (20, 21, 22). Every consistency check passes on all sixteen. See `tests/
 The sixteenth is the bench Harmony 525's own config, read over USB on 8 August 2026 and identical
 in every container field to the published arch 9 sample, section 76.
 
+A **seventeenth** container exists and is deliberately not in that set: the same remote's arch 9
+safe mode config, at flash `0x818000`. It contradicts six established claims at once and each one
+needs re-deriving before it can be asserted against. Section 76 lists them.
+
 **Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
 table lengths. The count was stale, and the other two numbers never matched the list beside them:
 four addresses are named and the lengths are 20, 21 and 22. The counts are computed in
