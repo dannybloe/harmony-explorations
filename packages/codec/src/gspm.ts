@@ -147,15 +147,15 @@ export const ARCH_RECORD_LENGTH = 7;
  * every sample. See `docs/findings.md` section 21.
  */
 export const CLOCK_RECORD_SLOT = 3;
-const CLOCK_COOKIE = new Uint8Array([0xdf, 0xad]);
-const CLOCK_END = new Uint8Array([0xbf, 0xef]);
+export const CLOCK_COOKIE = new Uint8Array([0xdf, 0xad]);
+export const CLOCK_END = new Uint8Array([0xbf, 0xef]);
 export const CLOCK_RECORD_LENGTH = 11;
 /**
  * Day of week is stored as days since 1 January 2000 modulo 7, which is why 0 means Saturday: that
  * date was one. The same epoch explains the year offset, so two fields agree on one anchor.
  */
-const CLOCK_EPOCH_MS = Date.UTC(2000, 0, 1);
-const MS_PER_DAY = 86400000;
+export const CLOCK_EPOCH_MS = Date.UTC(2000, 0, 1);
+export const MS_PER_DAY = 86400000;
 
 /**
  * The pointer table is one table across architectures, with per architecture insertions rather

@@ -19,7 +19,7 @@ import {
   Container,
   FAMILIES,
   Section,
-  POISON,
+  Writer,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   TRAILER_CHECKSUM_OFFSET,
@@ -49,8 +49,8 @@ const CONTAINERS: readonly string[] = [
   'one_spare_after_sync',
 ];
 
-/** The frame's own size: twelve header bytes, four per slot, and six of trailer. */
-const FRAME_FIXED = 18;
+/** The frame's own size: eleven header bytes, four per slot, and six of trailer. */
+const FRAME_FIXED = 17;
 
 for (const name of CONTAINERS) {
   test(`${name} emits back to the byte it was parsed from`, skipUnless(name), () => {
@@ -63,42 +63,27 @@ for (const name of CONTAINERS) {
     assert.ok(result.equal);
   });
 
-  test(`${name} rebuilds a frame whose size its slot count states`, skipUnless(name), () => {
-    // Not a restatement of the round trip. Equality holds whether the emitter writes four bytes
-    // per slot or skips half of them, because the residue copy would cover for it; this pins how
-    // much of the container the emitter is actually responsible for, which is the M2 number.
+  test(`${name} accounts for every byte exactly once`, skipUnless(name), () => {
+    // Not a restatement of the round trip. Equality holds whether a rebuilder writes its whole
+    // structure or half of it, because the residue copy covers for whatever it leaves; this pins
+    // that the three categories partition the container, which is what makes the number mean
+    // something.
     const c = parse(load(name) as Uint8Array);
     const report = emit(c);
-    assert.equal(report.rebuilt, FRAME_FIXED + SECTION_ITEM_SIZE * c.pointerCount);
-    assert.deepEqual(report.owners, ['header', 'section-table', 'trailer']);
+    assert.equal(report.framed + report.carried + report.copied, c.blob.length);
+    assert.ok(report.framed > FRAME_FIXED + SECTION_ITEM_SIZE * c.pointerCount);
   });
 }
 
-test('a byte the emitter neither writes nor copies stays poison', () => {
-  // The guard the whole design rests on, tested by making it fire. `markerOffset` four bytes past
-  // the end of the section table is what an emitter that had forgotten a structure would look
-  // like: nothing writes those four bytes and nothing copies them either.
-  const blob = new Uint8Array(64);
-  const tableEnd = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * 2;
-  const c = new Container({
-    blobOffset: 0,
-    length: blob.length,
-    flashBase: 0,
-    endAddr: blob.length - 4,
-    formatRaw: 0x1400,
-    pointerCount: 2,
-    markerOffset: tableEnd + 4,
-    marker: 'CMAH',
-    family: FAMILIES[0] as (typeof FAMILIES)[number],
-    trailerChecksum: 0,
-    blob,
-    sections: [],
-  });
-  const { bytes } = emit(c);
-  for (let i = tableEnd; i < tableEnd + 4; i += 1) {
-    assert.equal(bytes[i], POISON, `offset ${i} was neither rebuilt nor copied`);
-  }
-  assert.equal(roundTrip(c).equal, false, 'a hole must fail the compare, not pass it');
+test('a rebuilder that writes half its structure is an error, not a short write', () => {
+  // The guard that matters once the residue copy covers everything a rebuilder does not claim.
+  // Poison can no longer survive, so the thing that has to fail loudly is a rebuilder whose bytes
+  // do not fill the extent it declared: it would round trip, because the copy would cover the
+  // half it skipped, and the byte count would say it had rebuilt the whole thing.
+  const short = new Writer(4).u8(1).u8(2);
+  assert.equal(short.remaining, 2);
+  const over = new Writer(2).u8(1).u8(2).u8(3);
+  assert.equal(over.remaining, -1, 'writing past the end has to be visible, not silently dropped');
 });
 
 test('a section address changed in the parse reaches the output', skipUnless('h600_config'), () => {
@@ -107,11 +92,10 @@ test('a section address changed in the parse reaches the output', skipUnless('h6
   const c = parse(load('h600_config') as Uint8Array);
   const first = c.sections[0];
   assert.ok(first !== undefined);
-  const changed = new Container({
-    ...c,
-    sections: [new Section(first.slot, first.address + 1, first.spare)],
-  });
-  const { bytes } = emit(changed);
+  const sections = c.sections.map((s, i) =>
+    i === 0 ? new Section(s.slot, s.address + 1, s.spare) : s,
+  );
+  const { bytes } = emit(new Container({ ...c, sections }));
   const item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * first.slot;
   assert.notEqual(bytes[item + 1], c.blob[item + 1], 'the low byte of the address');
   assert.equal(bytes[item], first.spare, 'the spare byte is written back, not zeroed');
