@@ -278,9 +278,16 @@ and so this table cannot be mistaken for the coverage one below by anything look
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
 and several encodings draw the same image. Re-encoding one produces a valid file that is not this
-file, so an editor has to carry every image it did not change through verbatim. What would move
-these bytes from carried to framed is a reader returning the **control stream** rather than the
-pixels, which is determined, and that is the next thing part 3 wants.
+file, so an editor has to carry every image it did not change through verbatim.
+
+**Whether those bytes should ever become framed is a real question and it is open.** Moving them
+needs either a reader that returns the **control stream** rather than the pixels, which is
+determined and would round trip, or an encoder, which is not and would not. Neither adds
+understanding: what a picture means is already read, section 50 and section 54, and the number
+would move by 60 to 80 points while nothing became clearer, which is the inflation the depth split
+exists to prevent. What does depend on it is **editing an image**, since a carried body is one
+this codec can reproduce and cannot change. So it is a product question rather than a format one,
+and it is not scheduled here.
 
 **One structure is not rebuilt at all, and finding out which was worth the exercise.** Base slot 0,
 the `0xFEED` frame. The accounting counts it because the frame states its own length, and no field

@@ -741,8 +741,10 @@ all**, so the tests that carry weight are the negatives.
 5.5% to 38.2% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
 that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
 their pixels**: the encoder chose where to skip and where to emit literals and several encodings
-draw the same image. A reader returning the control stream instead of the pixels is what would move
-them, and that is the next thing to do here.
+draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
+means is already read, so framing the body would move the number 60 to 80 points without anything
+becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
+one, which is a product question. `docs/roadmap.md`, milestone M2.
 
 **Base slot 0 is the one thing the emitter cannot touch**, and it is what the exercise found: the
 accounting counts it because its `0xFEED` frame states its own length, and no field inside it has
