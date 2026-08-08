@@ -8864,6 +8864,103 @@ outright.
   range.
 
 
+## 79. The last two of the six, and neither was a contradiction
+
+Section 76 kept the arch 9 safe mode container out of the corpus because it contradicted six
+claims, and set the order: re-derive each, then assert against it. Sections 77 and 78 took four of
+them and turned two into findings. These are the other two, and both dissolve on measurement rather
+than resolving into new structure. That is worth recording as clearly as the two that did not,
+because a list of six anomalies with four real ones and two artefacts is the normal shape of such a
+list.
+
+### Base slot 1 is three bytes here, and its extent was never stated
+
+The record is seven bytes in all sixteen other containers, `protocol, protocol, version word,
+0x00 0x00, 0x00 or 0x10`, and three bytes here: `09 09 12`, with base slot 2 starting immediately
+after.
+
+There is nothing to explain. **A section's extent is the distance to the next pointer**, section
+36, and slot 1 was the one place both parsers read a fixed length instead. What that cost is
+instructive: reading seven bytes here takes the version word's high byte out of base slot 2's
+capacity field and reports `0x0012` as this section's, which is a perfectly plausible word. No
+check would have caught it, because the value is only ever compared with other configs of the same
+model and this is the only container of its kind.
+
+So both parsers now bound the record by `sectionLength(1)`, take the architecture when there are
+two bytes and the version word when there are four, and this container reports **an architecture
+and no version word**, which is what it holds.
+
+**A lead, sharpened rather than settled.** `tests/test_gspm.py` records that the version word is
+per model, not per config, and that its meaning is not established. Its low byte is very close to
+the remote's skin:
+
+| container | version word | remote's skin |
+|---|---|---|
+| Harmony One, user config | `0x0D3B` (59) | 54 |
+| Harmony One, safe mode | `0x0C36` (54) | 54 |
+| Harmony 600, user config | `0x0D49` (73) | 71 |
+| Harmony 600, safe mode | `0x0D47` (71) | 71 |
+| Harmony 650, safe mode | `0x0D48` (72) | 72 |
+| Harmony 700, user config and safe mode | `0x0D42` (66) | 66 |
+| Harmony 525, user config | `0x0D16` (22) | 22 |
+| Harmony 880, user config | `0x0D0F` (15) | 15 |
+
+Six exact, and the two that miss are both user configs whose own EZHex header states the skin the
+remote reports, 54 and 71. The high byte is `0x0D` in every container but one, the One's safe mode
+config at `0x0C`, which is what "an older word" in `tests/test_gspm.py` was already saying. So the
+low byte is a skin like model number and the high byte a version, and what a writer must not do is
+assume it can compute either: it is copied from the config being edited.
+
+### The log area's range obeys every rule section 47 states
+
+The recorded contradiction was "the log area is a region above the config" against "`0x0F0000` to
+`0x100000` here, above a 512 KiB flash". Measured against section 47's own three checks it passes
+all of them: the region sits above this container's `end_addr` of `0x01BBEE`, its `limit` is a
+round flash boundary, and `limit - start` is `capacity * 8` exactly, 65536 against 8192.
+
+**The 512 KiB came from the same field in the other container.** The 525's user config names
+`0x070000` to `0x080000`, and that is what "a 512 KiB flash" was measuring against, so the
+comparison was the field against itself.
+
+What the corpus actually shows is that a safe mode container does not name its remote's chip:
+
+| | limit | the remote's own config says |
+|---|---|---|
+| arch 9 safe mode | `0x100000` | `0x080000` |
+| arch 14 safe mode, all three | `0x100000` | `0x200000` |
+| arch 12 safe mode | `0x400000` | `0x400000` |
+
+Two architectures, both naming 1 MiB, neither matching the unit. A safe mode config ships inside a
+firmware package rather than being generated for a remote, so the size it names is the family's
+nominal one. The arch 12 pair agreeing is not evidence against that: its region is 16 bytes with
+stride 1 and looks nothing like the others.
+
+### What this closes
+
+All six. The container is in the corpus now, `h525_safemode_ahcm`, and in the corpus wide claim
+lists, where it is the counterexample two of them have to name: its font sets start at code 32 and
+declare four different counts. **Excluding it would have left the corpus agreeing with itself**,
+which is the condition that hid the first glyph code, so the tests assert the exception rather than
+skipping it.
+
+The corpus totals it moves are the sixth item on section 76's list, and they move as arithmetic:
+21551<!--fact:screen_programs--> screen programs, 4315<!--fact:glyphs--> glyphs and
+58068<!--fact:inline_string_codes--> inline string codes.
+
+### One tooling hole, found on the way
+
+`make facts` reported that every marked number agreed while `docs/config-format.md` said "thirteen
+containers" with a `fact:containers` marker on it. The marker regex only matches digits, so a
+marker on a spelled out number is invisible to the checker that exists to catch exactly this. It is
+an error now: a `fact:` marker with no number in front of it is reported, and the count of markers
+has to match the count of matched values.
+
+The other half of the same lesson is in `packages/codec/test/screen.test.ts`, whose corpus totals
+had drifted from the Python suite's because both sides pin their own: `h525_config_2` joined one
+list and not the other, and each file then agreed with itself. The list is the same fifteen samples
+as `lab.CONTAINERS` now.
+
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

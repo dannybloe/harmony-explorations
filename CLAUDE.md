@@ -359,7 +359,7 @@ carries step 3; the documents that summarise it had, because a summary is a copy
 test. So the copies are executable now, and `make facts` is the check:
 
 * a number quoted in prose carries a marker naming the fact it states,
-  `21503<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  `21551<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
@@ -622,7 +622,7 @@ that have one, and **every picture in an arch 12 bank is drawn by a program**, 9
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 21503<!--fact:screen_programs--> programs across the
+byte opcodes, section 40, whose closure is that 21551<!--fact:screen_programs--> programs across the
 corpus decode with nothing left over.
 
 ## Rails a writer will have to respect
@@ -783,13 +783,17 @@ of it yet, so class 5 infrared is still open and now has something to appeal to.
 
 **Its safe mode config was the next piece of work and it was bigger than it looked.** Found at
 flash `0x818000`, it parses, its checksum recomputes, and it contradicted six claims the corpus
-asserts. **Five are settled and not one of them was a fix.** It said slot 0's root node is named
-`Curr`, and re-deriving that read base slot 0 for the first time, section 77. It said a font set
-declares more than one count and that the header's spare byte varies, and re-deriving those found
-the byte is the **first glyph code** and the count is not keyed on the architecture, section 78,
-which took the arch 12 safe mode container from 39.1% attributed to 99.6%. **Two are left**: base
-slot 1's seven byte length, three bytes here, and the log area's range. It is in the corpus now as
-`h525_safemode_ahcm` and deliberately out of the corpus wide claim lists until those two are
-re-derived. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the
-way: the version reply was matched as a whole byte, its length was fixed at twelve, and the region
-validator was hard coded. `docs/memory-map-525.md` holds the predictions against the measurements.
+asserts. **All six are re-derived and not one of them was a fix**, sections 77 to 79. Four became
+findings: base slot 0 is a list of named nodes, and a font set's second header byte is the **first
+glyph code** with the count not keyed on the architecture, which took the arch 12 safe mode
+container from 39.1% attributed to 99.6%. Two dissolved on measurement: base slot 1's extent is the
+gap to the next pointer like every section's, and the log area's range obeys every rule section 47
+states once it is not measured against a chip size taken from the same field.
+
+**It is in the corpus now**, `h525_safemode_ahcm`, and in the corpus wide claim lists rather than
+excluded from them, where it is the counterexample two of them name: its font sets start at code 32
+and declare four counts. **Excluding it would have left the corpus agreeing with itself**, which is
+the condition that hid the first glyph code. Three arch 12 assumptions came out of `packages/usb`
+on the way: the version reply was matched as a whole byte, its length was fixed at twelve, and the
+region validator was hard coded. `docs/memory-map-525.md` holds the predictions against the
+measurements.

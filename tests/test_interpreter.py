@@ -1097,6 +1097,12 @@ class TestTheFontTable(unittest.TestCase):
             c = gspm.parse(lab.load(name))
             counts = {f.count for f in c.font_sets()}
             with self.subTest(container=name):
+                if name == lab.ASCII_FONTS:
+                    # The counterexample, asserted rather than excluded: this container declares
+                    # four counts, so "one per container" is a habit of the generator and not a
+                    # property of the format. Section 78.
+                    self.assertEqual(counts, {91, 90, 50})
+                    continue
                 self.assertEqual(len(counts), 1, counts)
                 self.assertGreaterEqual(counts.pop(), 46)
 
@@ -1112,6 +1118,9 @@ class TestTheFontTable(unittest.TestCase):
             c = gspm.parse(lab.load(name))
             for font in c.font_sets():
                 with self.subTest(container=name, set=hex(font.address)):
+                    if name == lab.ASCII_FONTS:
+                        self.assertIn(font.first, (32, 72))
+                        continue
                     self.assertEqual(font.first, gspm.GLYPH_FIRST_CODE_DEFAULT)
 
     def test_the_count_offset_is_not_an_architecture_property(self):
@@ -1187,7 +1196,7 @@ class TestTheFontTable(unittest.TestCase):
                 total += sum(len(g) for g in sets)
         # 3933 until section 63 read arch 9's packing and added its 160 glyphs, 4093 until
         # section 76 put a second arch 9 config in the corpus, read off the bench 525.
-        self.assertEqual(total, 4236)
+        self.assertEqual(total, 4315)
 
     def test_every_inline_string_resolves_through_its_own_font(self):
         """The closure the wrong count destroyed, and the reason this section was corrected."""
@@ -1217,7 +1226,7 @@ class TestTheFontTable(unittest.TestCase):
         # they resolve through the fonts section 63 decoded, so the two findings check each other.
         # **Every one of the bench 525's own codes resolves too**, which is the first time that
         # closure has run on an arch 9 config this project read itself.
-        self.assertEqual(codes, 57389)
+        self.assertEqual(codes, 58068)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1746,7 +1755,7 @@ class TestTheLogArea(unittest.TestCase):
         return gspm.parse(lab.load(name)).log_area()
 
     def test_every_container_declares_one(self):
-        """Thirteen containers, four architectures, three format versions. None is NULL."""
+        """Fifteen containers, four architectures, three format versions. None is NULL."""
         for name in self.CONTAINERS:
             with self.subTest(container=name):
                 self.assertIsNotNone(self._area(name))
@@ -1770,6 +1779,29 @@ class TestTheLogArea(unittest.TestCase):
                 self.assertGreaterEqual(area.start, c.end_addr)
                 # 0x100000, 0x200000 and 0x400000 exactly; arch 8 stops 8 KiB short of 2 MiB.
                 self.assertIn(area.limit, (0x080000, 0x100000, 0x1FE000, 0x200000, 0x400000))
+
+    def test_a_safe_mode_container_names_a_smaller_chip_than_its_user_config(self):
+        """Section 79, and it is why the arch 9 safe mode container looked like a contradiction.
+
+        The region is the top of the flash, so its limit states the chip size the config was built
+        for, and a safe mode config ships with the firmware rather than being generated for a
+        unit. Both safe mode containers that carry a `u16` capacity name **1 MiB**, on two
+        architectures, and neither matches its own remote: the 700's user config names 2 MiB and
+        the 525's names 512 KiB. So the 525's safe mode container naming a region above 512 KiB
+        breaks no rule, and the 512 KiB it was measured against came from the same field in the
+        other container.
+        """
+        lab.require('h525_config', 'h525_safemode_ahcm', 'h700_config', 'h700_gspm')
+        self.assertEqual(self._area('h525_safemode_ahcm').limit, 0x100000)
+        self.assertEqual(self._area('h700_gspm').limit, 0x100000)
+        self.assertEqual(self._area('h525_config').limit, 0x080000)
+        self.assertEqual(self._area('h700_config').limit, 0x200000)
+        # And the capacity closure holds on all four, which is what says the field split is right
+        # whatever chip any of them was built for.
+        for name in ('h525_config', 'h525_safemode_ahcm', 'h700_config', 'h700_gspm'):
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertEqual(area.limit - area.start, area.capacity * area.stride)
 
     def test_the_wrong_field_split_does_not_close(self):
         """Calibration. Reading the leading field as a u24 on the eight byte architectures leaves

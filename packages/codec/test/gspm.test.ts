@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_TABLE_SLOT,
+  ARCH_RECORD_SLOT,
   EVENT_NONE,
   EVENT_PRESS,
   CLOCK_RECORD_LENGTH,
@@ -405,3 +406,18 @@ test('a flipped byte is caught', () => {
   damaged[0x40] = damaged[0x40]! ^ 0x01;
   assert.notEqual(trailerChecksum(damaged), c.trailerChecksum);
 });
+
+test('a three byte architecture record carries no version word',
+  skipUnless('h525_safemode_ahcm'), () => {
+    // Section 79. The record is seven bytes in every generated config and three here, so its
+    // extent is the gap to the next pointer like every other section's. A fixed seven byte read
+    // takes the word out of base slot 2 and reports 0x0012, which is plausible and wrong.
+    const c = parse(load('h525_safemode_ahcm') as Uint8Array);
+    assert.equal(c.sectionLength(ARCH_RECORD_SLOT), 3);
+    assert.equal(c.architecture, 9);
+    assert.equal(c.versionWord, undefined);
+    const full = load('h525_config');
+    if (full === undefined) return;
+    // The negative: the same architecture with room for the word does carry one.
+    assert.notEqual(parse(full).versionWord, undefined);
+  });

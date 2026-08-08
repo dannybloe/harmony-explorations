@@ -23,22 +23,24 @@ u16 checksum + end marker
 
 ## Outer container
 
-Validated against **sixteen samples across four architectures**, four base addresses
-(`0x002000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three pointer table
-lengths (20, 21, 22). Every consistency check passes on all sixteen. See `tests/test_gspm.py`.
-The sixteenth is the bench Harmony 525's own config, read over USB on 8 August 2026 and identical
-in every container field to the published arch 9 sample, section 76.
+Validated against **seventeen samples across four architectures**, five base addresses
+(`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three
+pointer table lengths (20, 21, 22). Every consistency check passes on all seventeen. See
+`tests/test_gspm.py`. The sixteenth is the bench Harmony 525's own config, read over USB on
+8 August 2026 and identical in every container field to the published arch 9 sample, section 76.
 
-A **seventeenth** container exists and is deliberately not in that set: the same remote's arch 9
-safe mode config, at flash `0x818000`. It contradicted six established claims at once, and the
-rule was that each needs re-deriving before it can be asserted against. Five are done, sections 77
-and 78, and neither was a fix: one read base slot 0 and the other read a font set's first glyph
-code. What is left is base slot 1's extent, three bytes here against seven everywhere else, and the
-log area's range. Section 76 lists them and `h525_safemode_ahcm` is the sample.
+**The seventeenth was held out of that set for a while**: the same remote's arch 9 safe mode
+config, at flash `0x818000`, which contradicted six established claims at once. All six are
+re-derived, sections 77 to 79, and none of them was a fix. Four became findings, base slot 0's
+nodes and the font set's first code among them; two were artefacts of reading a fixed length where
+the format states none. It is in the corpus now, as `h525_safemode_ahcm`, it brings the fifth base
+address with it, and it is the counterexample two corpus wide claims have to name.
 
 **Corrected here.** This paragraph said thirteen samples, five base addresses and four pointer
 table lengths. The count was stale, and the other two numbers never matched the list beside them:
-four addresses are named and the lengths are 20, 21 and 22. The counts are computed in
+four addresses were named at the time and the lengths are 20, 21 and 22. The fifth address is real
+now and it arrived with a seventeenth sample rather than by the number being right all along. The
+counts are computed in
 `tests/test_gspm.py` now rather than written down, so they cannot drift again.
 
 ```
@@ -568,7 +570,7 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**21503<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
+**21551<!--fact:screen_programs--> programs across 15<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -705,7 +707,7 @@ read at all. `findings.md` section 78.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4236<!--fact:glyphs--> glyphs and 57389<!--fact:inline_string_codes--> codes.
+are 4315<!--fact:glyphs--> glyphs and 58068<!--fact:inline_string_codes--> codes.
 
 * every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933

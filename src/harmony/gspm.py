@@ -114,6 +114,8 @@ ROOT_NODE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 # container was extracted from on three more.
 ARCH_RECORD_SLOT = 1
 ARCH_RECORD_LENGTH = 7
+# The version word sits at +2 and is a u16, so a record shorter than this does not carry one.
+ARCH_VERSION_WORD_END = 4
 
 # Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator
 # are their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly
@@ -2665,12 +2667,18 @@ def parse(data: bytes) -> Container:
     if len(container.sections) > ARCH_RECORD_SLOT:
         arch_addr = container.sections[ARCH_RECORD_SLOT].address
         o = arch_addr - flash_base if arch_addr else -1
-        if 0 <= o and o + ARCH_RECORD_LENGTH <= len(blob):
+        # The record is seven bytes in every generated config and **three** in the arch 9 safe
+        # mode container, so its extent is the distance to the next pointer like every other
+        # section's, section 36. Reading a fixed seven takes the version word out of slot 2 there
+        # and reports it as this section's, which is the quiet kind of wrong. Section 79.
+        room = container.section_length(ARCH_RECORD_SLOT) or 0
+        if 0 <= o and o + min(ARCH_RECORD_LENGTH, room) <= len(blob):
             # The architecture is stored twice. Reading it only when the two copies agree
             # keeps a coincidence from being reported as a fact.
-            if blob[o] == blob[o + 1]:
+            if room >= 2 and blob[o] == blob[o + 1]:
                 container.architecture = blob[o]
-            container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
+            if room >= ARCH_VERSION_WORD_END:
+                container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
 
     if len(container.sections) > CLOCK_RECORD_SLOT:
         clock_addr = container.sections[CLOCK_RECORD_SLOT].address

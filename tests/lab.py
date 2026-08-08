@@ -117,7 +117,16 @@ CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
     'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
     'arch8_config_d', 'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm',
+    # In the corpus deliberately, and it is the one member that breaks two corpus wide habits:
+    # its font sets start at code 32 and declare four different counts. Excluding it would leave
+    # the corpus agreeing with itself, which is exactly the condition that hid the first glyph
+    # code for a month. Sections 77 and 78.
+    'h525_safemode_ahcm',
 )
+
+# The one container whose fonts do not follow the generator's conventions. Named here rather than
+# spelled out in each test, so a claim that has to exclude it says why.
+ASCII_FONTS = 'h525_safemode_ahcm'
 
 
 def path(name):

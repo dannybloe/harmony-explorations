@@ -40,6 +40,10 @@ EXPECTED = {
     # field to the published sample from another owner, which is the second arch 9 sample this
     # table has wanted since the architecture was added. findings.md section 76.
     'h525_config_2': (b'AHCM', 0x020000, '1.4', 20, b'CMAH', 0),
+    # The 525's safe mode config, cut out of its firmware region at flash 0x818000. Its base is
+    # 0x018000, which is 0x800000 below the address READ_FLASH names, exactly as the user config's
+    # 0x020000 is below 0x820000: two containers, one offset. findings.md sections 76 to 79.
+    'h525_safemode_ahcm': (b'AHCM', 0x018000, '1.4', 20, b'CMAH', 0),
     'arch8_config_a': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
     'arch8_config_b': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
     'arch8_config_c': (b'TPTP', 0x020000, '1.5', 21, b'WLWL', 56),
@@ -141,22 +145,22 @@ class TestContainerAcrossSamples(unittest.TestCase):
             'versions': len({c.format_version for c in seen}),
             'lengths': len({c.pointer_count for c in seen}),
         }
-        self.assertEqual(counts, {'samples': 16, 'architectures': 4, 'bases': 4,
+        self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5,
                                   'versions': 3, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             'docs', 'config-format.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
-        self.assertIn('**sixteen samples across four architectures**, four base addresses', text)
-        self.assertIn('three format versions and three pointer table\nlengths (20, 21, 22)', text)
+        self.assertIn('**seventeen samples across four architectures**, five base addresses', text)
+        self.assertIn('three format versions and three\npointer table lengths (20, 21, 22)', text)
         # No assertion that the old wording is gone: the correction note below the paragraph
         # quotes it on purpose, and the two positive checks above already fail if it comes back.
 
         # Every base address the document names is one the corpus actually has, and vice versa.
         # Scoped to the sentence that names them, not the whole file, which quotes addresses for
         # a dozen other reasons.
-        sentence = re.search(r'four base addresses\s*\n?\(([^)]*)\)', text)
+        sentence = re.search(r'five base addresses\s*\n?\(([^)]*)\)', text)
         self.assertIsNotNone(sentence, 'the base address list moved')
         named = {int(m, 16) for m in re.findall(r'`0x([0-9A-Fa-f]+)`', sentence.group(1))}
         self.assertEqual(named, {c.flash_base for c in seen})
@@ -463,6 +467,24 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
         # And it is not the skin: the One's safe mode config is the same model as its user
         # config, same skin, yet carries an older word.
         self.assertNotEqual(word('one_config'), word('one_safemode'))
+
+    def test_a_three_byte_record_states_an_architecture_and_no_version_word(self):
+        """Section 79. The record's extent is the gap to the next pointer, like every section's.
+
+        Sixteen containers carry seven bytes and the arch 9 safe mode container carries three, so
+        a fixed seven byte read takes its version word out of base slot 2 and reports it as this
+        section's. Nothing would have failed: `0x0012` is a plausible word.
+        """
+        lab.require('h525_safemode_ahcm', 'h525_config')
+        short = gspm.parse(lab.load('h525_safemode_ahcm'))
+        self.assertEqual(short.section_length(gspm.ARCH_RECORD_SLOT), 3)
+        self.assertEqual(short.architecture, 9)
+        self.assertIsNone(short.version_word)
+        # The negative: the same architecture with room for the word does carry one, so this is
+        # about the extent and not about arch 9.
+        full = gspm.parse(lab.load('h525_config'))
+        self.assertEqual(full.section_length(gspm.ARCH_RECORD_SLOT), gspm.ARCH_RECORD_LENGTH)
+        self.assertIsNotNone(full.version_word)
 
 
 class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):

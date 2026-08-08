@@ -58,6 +58,7 @@ const DECODED: readonly [string, number, number][] = [
   ['h700_config_2', 6620, 553],
   ['h600_config', 4544, 463],
   ['h525_config', 157, 160],
+  ['h525_config_2', 111, 143],
   ['one_config', 1013, 501],
   ['one_config_unprogrammed', 586, 405],
   ['arch8_config_a', 394, 397],
@@ -69,6 +70,8 @@ const DECODED: readonly [string, number, number][] = [
   ['h600_safemode_gspm', 35, 46],
   ['h700_gspm', 35, 46],
   ['h650_safemode_gspm', 35, 46],
+  // The arch 9 safe mode container, whose 79 glyphs are the ASCII of section 78.
+  ['h525_safemode_ahcm', 48, 79],
 ];
 
 /**
@@ -78,10 +81,15 @@ const DECODED: readonly [string, number, number][] = [
  * program each of a mode's pages states outright: 20374 and 41793 before it. The glyph total
  * moved once, by section 63's 160 arch 9 glyphs; it does not move with the programs, because
  * glyphs come from base slot 7 and not from the programs that draw them.
+ *
+ * **This list had drifted from Python's and nothing said so**, because both sides pin their own
+ * totals: `h525_config_2` joined the Python corpus and not this one, and the two files then agreed
+ * with themselves and not with each other. So the list is the same fifteen samples as
+ * `lab.CONTAINERS` and the three totals are the numbers `tests/test_interpreter.py` asserts.
  */
-const CORPUS_PROGRAMS = 21392;
-const CORPUS_GLYPHS = 4093;
-const CORPUS_STRING_CODES = 55542;
+const CORPUS_PROGRAMS = 21551;
+const CORPUS_GLYPHS = 4315;
+const CORPUS_STRING_CODES = 58068;
 
 for (const [name, programs, glyphCount] of DECODED) {
   test(`${name} decodes ${programs} programs and ${glyphCount} glyphs`, skipUnless(name), () => {
@@ -130,13 +138,18 @@ for (const [name, programs, glyphCount] of DECODED) {
 }
 
 test('the set header byte below the height is the first glyph code', skipWithoutLab(), () => {
-  // Section 78. Every container in the corpus starts its sets at code 1, which is exactly why the
-  // byte read as a constant for so long, so the corpus is the wrong place to look for the meaning
-  // and the right place to pin the default.
+  // Section 78. Every container Logitech's generator produced starts its sets at code 1, which is
+  // exactly why the byte read as a constant for so long. The one that does not is in the list
+  // rather than excluded from it, and asserted to be the exception: a corpus that agrees with
+  // itself is what hid this field.
   for (const [name] of DECODED) {
     const data = load(name);
     if (data === undefined) continue;
     for (const font of fontSets(parse(data)) ?? []) {
+      if (name === 'h525_safemode_ahcm') {
+        assert.ok(font.first === 32 || font.first === 72, `${name} at ${font.address}`);
+        continue;
+      }
       assert.equal(font.first, GLYPH_FIRST_CODE_DEFAULT, `${name} at ${font.address}`);
     }
   }

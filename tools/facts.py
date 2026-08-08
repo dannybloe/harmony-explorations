@@ -62,6 +62,13 @@ SUPERSEDED = os.path.join(ROOT, 'reference', 'superseded.md')
 
 # A marked value: the number, then the comment naming what it states.
 MARKER = re.compile(r'([0-9][0-9,.]*%?)<!--fact:([a-z0-9_]+)-->')
+# Every marker, whether or not a number precedes it. A marker attached to a spelled out number is
+# silently invisible to `MARKER`, so the document says "thirteen containers" for as long as anyone
+# leaves it there and this tool reports that everything agrees. That happened, and it is the whole
+# failure mode this file exists to prevent, so an unattached marker is an error of its own.
+# The negative lookbehind keeps a marker quoted in prose out of it, since documenting the syntax
+# is not using it: the `finding` skill writes `<!--fact:name-->` inside backticks on purpose.
+ANY_MARKER = re.compile(r'(?<!`)<!--fact:([a-z0-9_]+)-->')
 
 # What a correction looks like in these documents, so a dead phrase quoted inside one is allowed.
 # Both forms are already in use: a blockquote for a long correction, italics for a short one.
@@ -214,6 +221,14 @@ def check_numbers(facts, write, edits=None):
     for doc in documents():
         text = open(doc, encoding='utf-8').read()
         changed = text
+        if len(ANY_MARKER.findall(text)) != len(MARKER.findall(text)):
+            attached = {m.group(2) for m in MARKER.finditer(text)}
+            for name in ANY_MARKER.findall(text):
+                if name in attached:
+                    attached.discard(name)
+                    continue
+                problems.append('%s: the `%s` marker has no number in front of it, so nothing '
+                                'checks it' % (rel(doc), name))
         for value, name in MARKER.findall(text):
             if name not in facts:
                 problems.append('%s: no such fact `%s`' % (rel(doc), name))

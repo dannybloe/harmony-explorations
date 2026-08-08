@@ -386,7 +386,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 21503<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
+Section 40 states 21551<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number

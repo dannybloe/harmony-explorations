@@ -130,6 +130,8 @@ const EMPTY_FRAME_LENGTH = 5;
 /** Section slot 1 is a seven byte record that states the architecture twice over. */
 export const ARCH_RECORD_SLOT = 1;
 export const ARCH_RECORD_LENGTH = 7;
+/** The version word is a `u16` at `+2`, so a shorter record does not carry one. Section 79. */
+export const ARCH_VERSION_WORD_END = 4;
 
 /**
  * Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator are
@@ -689,11 +691,15 @@ export function parse(data: Uint8Array): Container {
   const archSection = sections[ARCH_RECORD_SLOT];
   if (archSection !== undefined) {
     const o = archSection.address !== 0 ? archSection.address - flashBase : -1;
-    if (o >= 0 && o + ARCH_RECORD_LENGTH <= blob.length) {
+    // The record is seven bytes in every generated config and three in the arch 9 safe mode
+    // container, so its extent is the distance to the next pointer, like every other section's.
+    // Reading a fixed seven takes the version word out of slot 2 there. Sections 36 and 79.
+    const room = container.sectionLength(ARCH_RECORD_SLOT) ?? 0;
+    if (o >= 0 && o + Math.min(ARCH_RECORD_LENGTH, room) <= blob.length) {
       // The architecture is stored twice. Reading it only when the two copies agree keeps a
       // coincidence from being reported as a fact.
-      if (u8(blob, o) === u8(blob, o + 1)) container.architecture = u8(blob, o);
-      container.versionWord = u16(blob, o + 2);
+      if (room >= 2 && u8(blob, o) === u8(blob, o + 1)) container.architecture = u8(blob, o);
+      if (room >= ARCH_VERSION_WORD_END) container.versionWord = u16(blob, o + 2);
     }
   }
 
