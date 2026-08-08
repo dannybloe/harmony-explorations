@@ -409,6 +409,16 @@ Read with `gspm.tagged_list`. [findings.md](findings.md) section 39.
 Eight to sixteen entries, each pointing at a tagged list. **The largest index any config uses is
 exactly the count minus one, in all ten**, over counts from 8 to 16.
 
+**The pointer is the list**, unlike base slot 6's, which lands inside a record. Read a slot 9
+target as slot 6's shape, a `u8` and a `u24` back pointer, and not one of the 54 sets in the corpus
+gives an address below itself where all 1616 of slot 6's do. So the extent is the list's own
+declared length. [findings.md](findings.md) section 67.
+
+The sets sit in a pool of tagged lists packed end to end, which also holds one list per mode page.
+**Only the sets are claimed.** The pool's start is not derivable, because a tagged list walk tiles
+from dozens of wrong offsets as readily as from the right one, so the exact landing that locates the
+picture bank proves nothing here.
+
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming
 one's with **tag 1**, the same leave and enter arrangement base slot 6 has with tags 7 and 6.

@@ -35,6 +35,7 @@ import {
   taggedList,
   timers,
   touchPages,
+  bytes,
 } from '../src/index.ts';
 
 /** `[sample, event fallback, state header, modes, bindings, records per group]`. */
@@ -218,6 +219,55 @@ for (const [name, pages] of PAGES) {
     assert.equal(seen, pages);
   });
 }
+
+/**
+ * `[sample, sets, entries across them]`. findings.md section 67.
+ *
+ * Base slot 9's pointer lands on the list, not inside a record the way base slot 6's does. The
+ * check is the negative: read as slot 6's shape it would be `u8 kind` and a `u24` back pointer to
+ * a start below itself, and not one set in the corpus yields one, where all of slot 6's do. That
+ * is what makes the extent claimable at all.
+ */
+const HANDLER_SETS: readonly [string, number, number][] = [
+  ['one_config', 16, 448],
+  ['h600_config', 9, 221],
+  ['h700_config', 11, 289],
+  ['h525_config', 8, 170],
+  ['arch8_config_a', 9, 228],
+  ['one_safemode', 1, 8],
+];
+
+for (const [name, sets, entries] of HANDLER_SETS) {
+  test(`${name}: base slot 9's pointer lands on the list itself`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const addresses = handlerSets(c)?.addresses ?? [];
+    assert.equal(addresses.length, sets);
+    let total = 0;
+    for (const address of addresses) {
+      const list = taggedList(c, address);
+      assert.notEqual(list, undefined, `no list at ${address}`);
+      total += (list as { entries: unknown[] }).entries.length;
+      // The calibration: slot 6's records do give a backward address here and slot 9's must not,
+      // or the same misread section 52 corrected would apply and the extent would be wrong.
+      const off = c.blobOffsetOf(address) as number;
+      const back = bytes.u24(c.blob, off + 1) - c.flashBase;
+      assert.ok(back < 0 || back >= off, 'a slot 6 style back pointer would point below this');
+    }
+    assert.equal(total, entries);
+  });
+}
+
+test('base slot 6 does give the back pointer base slot 9 does not', skipUnless('h600_config'), () => {
+  // Without this the test above passes for a container that simply has no backward addresses
+  // anywhere, which would make it a statement about the corpus rather than about slot 9.
+  const c = parse(load('h600_config') as Uint8Array);
+  const records = modeRecords(c) ?? [];
+  assert.ok(records.length > 0);
+  for (const record of records) {
+    const off = c.blobOffsetOf(record.address) as number;
+    assert.ok((c.blobOffsetOf(record.start) as number) < off);
+  }
+});
 
 test('on arch 12 the stated program is never the computed root', skipUnless('one_config'), () => {
   // Section 53 computes a mode's program as the record start plus its list length, and on arch 12

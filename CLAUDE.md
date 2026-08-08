@@ -577,7 +577,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 97.0%<!--fact:coverage_arch8_config_a--> | 64.1%<!--fact:coverage_h525_config--> | 99.6%<!--fact:coverage_one_config--> | 99.6%<!--fact:coverage_h600_config--> |
+| 97.2%<!--fact:coverage_arch8_config_a--> | 65.1%<!--fact:coverage_h525_config--> | 99.8%<!--fact:coverage_one_config--> | 99.7%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -596,7 +596,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 6 | the mode table. A record carries a screen program, and its entry carries an array of pages | 37, 52, 53, 66 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
 | 8 | key press bindings | 38 |
-| 9 | the binding table: sets of button bindings with an enter and a leave handler | 39 |
+| 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67 |
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
 | 12 | the timer table | 43 |
@@ -667,11 +667,14 @@ produce a config the remote accepts and mishandles.
 Step 8, the contribution probe, exists. Step 6 is the next block: label what is left by the proven
 consumer method plus live RAM polling.
 
-**The remaining gap is two runs per container**, section 66. On arch 12 and arch 14 what is left is
-seven gaps, of which two hold almost all of it, and both follow a mode entry: 5854 bytes on the
-Harmony One, 2941 on the 600, 4845 on the 700. That is the sharpest target in the format. Arch 9's
-is different and mostly blocked: 24467 of its 28165 remaining bytes are infrared class 5, which
-wants a firmware nobody has. **Read the whole gap list before choosing a target**: `make coverage
+**The remaining gap is one pool of tagged lists**, sections 66 and 67. On arch 12 and arch 14 what
+is left is seven gaps holding 3948 bytes on the Harmony One, 1970 on the 600 and 3599 on the 700,
+almost all of it in two runs after a mode entry. Those runs are tagged lists packed end to end, one
+per mode page plus one per base slot 9 set, and **only slot 9's part is claimed**: the pool's start
+is not derivable, since a tagged list walk tiles from dozens of wrong offsets, and nothing in a
+container names the other lists. Finding what indexes them is the next step, not reading more bytes.
+Arch 9 is different and mostly blocked: 24467 of its 27420 remaining bytes are infrared class 5,
+which wants a firmware nobody has. **Read the whole gap list before choosing a target**: `make coverage
 --detail` prints only the twenty largest, and section 66 was found by asking for all of them and
 noticing two families with the same count.
 

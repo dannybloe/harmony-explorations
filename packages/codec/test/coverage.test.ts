@@ -22,19 +22,19 @@ import {
 
 /** `[sample, accounted, total]`, every container in the corpus. */
 const ACCOUNTED: readonly [string, number, number][] = [
-  ['h700_config', 974298, 979184],
-  ['h700_config_2', 974344, 979242],
-  ['h600_config', 735167, 738149],
-  ['h525_config', 50321, 78486],
-  ['one_config', 1666954, 1672832],
-  ['one_config_unprogrammed', 1229200, 1232237],
-  ['arch8_config_a', 430905, 444256],
-  ['arch8_config_b', 457748, 470619],
-  ['arch8_config_c', 477401, 490704],
-  ['arch8_config_d', 478779, 492150],
-  ['h600_safemode_gspm', 6990, 7115],
-  ['h700_gspm', 6990, 7115],
-  ['h650_safemode_gspm', 6990, 7115],
+  ['h700_config', 975585, 979184],
+  ['h700_config_2', 975635, 979242],
+  ['h600_config', 736179, 738149],
+  ['h525_config', 51066, 78486],
+  ['one_config', 1668884, 1672832],
+  ['one_config_unprogrammed', 1230209, 1232237],
+  ['arch8_config_a', 431953, 444256],
+  ['arch8_config_b', 458859, 470619],
+  ['arch8_config_c', 478549, 490704],
+  ['arch8_config_d', 479995, 492150],
+  ['h600_safemode_gspm', 6999, 7115],
+  ['h700_gspm', 6999, 7115],
+  ['h650_safemode_gspm', 6999, 7115],
 ];
 
 for (const [name, accounted, total] of ACCOUNTED) {

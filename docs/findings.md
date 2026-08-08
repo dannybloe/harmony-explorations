@@ -7132,6 +7132,107 @@ the obvious reading and it is not evidence, so it is not claimed here.
 * `tests/test_interpreter.py` `TestTheModePages`, and `packages/codec/test/sections.test.ts`, with
   every corpus total moved and the old value recorded beside the new one.
 
+## 67. The two runs are a pool of tagged lists, and only base slot 9's part of it is claimable
+
+Section 66 left the remaining unaccounted bytes as two runs per container, both following a mode
+entry: 5854 on the Harmony One, 2941 on the 600, 4845 on the 700. This says what is in them, claims
+the part that is derived, and records at length why the rest is not, because the tempting claim here
+fails a test it looks like it should pass.
+
+### They are tagged lists, packed end to end
+
+The first bytes of the Harmony 600's larger run:
+
+```
+02 89 cc 09 7f a2 33 00 7e | 02 89 cd 09 7f a2 33 00 7e | 01 a2 ...
+```
+
+which is the narrow tagged list form of section 39, `u8 count` then `{ u8 tag; u16 operand; u8
+opcode }[count]`, three lists in nineteen bytes. Walking each list by its own declared length from
+the run's first byte lands exactly on the run's end, in **25 runs across sixteen containers and four
+architectures**, with the wide form's `u8 0; u8 count` handled the same way. A run of zero bytes is a
+sequence of empty wide lists, which is why both runs begin with one.
+
+### Base slot 9's pointers land on a list, and that is the claim
+
+`coverage.ts` has refused to claim base slot 9's sets since section 52, in those words: slot 9's
+pointers land on lists that decode, but nothing had established that they land on the **start**
+rather than inside, and claiming an extent on that basis is what produced overlaps before.
+
+Settled by the negative. Read a slot 9 pointer's target as slot 6's shape, `u8 kind` followed by a
+`u24` back pointer, and ask whether that `u24` gives an address below the pointer itself:
+
+| | sets | that yield a backward address |
+|---|---|---|
+| base slot 9, six containers | 54 | **0** |
+| base slot 6, for calibration | 1616 | 1616 |
+
+Not one of 54. So the indirection base slot 6 has is not present here, the pointer is the list, and
+the list states its own length. Every one of the 54 decodes, 1364 entries between them, and their
+tags are `0x81` to `0xbf`, which is section 17's key code shape and matches section 39 calling this
+the binding table.
+
+Coverage, zero overlaps: **99.8% on a Harmony One**, 99.7% on a 600, 99.6% on a 700, 97.2% on arch 8
+and 65.1% on the 525.
+
+### What the rest is, and why it is not claimed
+
+The lists the walk finds, counted at the true run start:
+
+| container | arch | lists | pages | slot 9 sets | pages + sets |
+|---|---|---|---|---|---|
+| Harmony One | 12 | 346 | 330 | 16 | 346 |
+| Harmony One, spare after sync | 12 | 153 | 144 | 9 | 153 |
+| Harmony 600 | 14 | 263 | 254 | 9 | 263 |
+| Harmony 700, both | 14 | 437 | 426 | 11 | 437 |
+| 525 | 9 | 143 | 135 | 8 | 143 |
+| 880 a to d | 8 | 150, 183, 215, 215 | 141, 173, 204, 204 | 9, 10, 11, 11 | 150, 183, 215, 215 |
+| the safe mode containers | 12, 14 | 31, 36 | 30, 35 | 1, 1 | 31, 36 |
+
+**Sixteen of sixteen, exactly.** One list per page plus one per base slot 9 set, and the page half
+is not the list a page names: those are a different pool, above base slot 7's table, and only 62 of
+330 on the One are even byte identical to one here.
+
+**It is still not claimable, and the reason is a test that failed.** The picture bank of section 55
+is claimed without any pointer naming it, because its start is *derived*: candidate offsets are
+tried and exactly one satisfies both the exact landing and the presence of every addressed picture.
+The same derivation was run here, requiring the walk to land on the run's end and every base slot 9
+pointer in the run to fall on a list boundary, and it gives **41, 45, 50, 42, 35 and 1275 candidate
+starts** rather than one. A tagged list walk is far too permissive to locate anything: a wrong start
+tiles just as happily as the right one.
+
+So the exact landing, on its own, is **not** evidence here, and section 55's use of it was safe only
+because a second constraint did the work. Worth stating plainly, because the shape of the argument
+looks identical and is not.
+
+### The negatives, so the next attempt is cheaper
+
+**Nothing names these lists.** Every three byte value in the container was resolved against every
+list start: on the Harmony One 21 of 346 are named at all, 16 of them by base slot 9's own table and
+the other five from inside picture data and an action list operand, which is what coincidence looks
+like at that density. The two runs' own start addresses appear nowhere; what does appear is each
+run's **end**, in base slot 10's table, because that is simply where the next action list begins.
+
+**There is no fifth consumer in the firmware.** The tagged list runner `0x1B71E` has exactly four
+call sites on the Harmony 700 image: `0x167DE` and `0x168A0` are a mode record's list with tags 7
+and 6, `0x16938` and `0x16966` are a page's list and its fallback to the mode record's, and
+`0x1B718` is base slot 9's, reached from its consumer at `0x1B6FE` with the index in `0x3C3` and the
+tag in `0x3C4`. None of them reaches the pool. So whatever walks the other 330 lists either indexes
+them from a base this analysis has not found, or is not the tagged list runner at all.
+
+**They are not copies of the page lists**, tested byte for byte: 62 of 330 match on the One, 135 of
+254 on the 600, and a container whose modes are nearly empty matches 30 of 30, which is what an
+empty list matching an empty list gives.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 9.
+* `packages/codec/src/coverage.ts`: the `slot-9-list` claim, replacing the comment that said why
+  there was none.
+* `packages/codec/test/sections.test.ts`: the 54 sets, their entry counts, the absent back pointer,
+  and base slot 6 as the calibration that the test is not merely observing a corpus with no
+  backward addresses in it.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

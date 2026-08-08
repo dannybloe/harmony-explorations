@@ -210,10 +210,15 @@ export function claims(c: Container, withPictures = true): Claim[] {
     }
   }
 
-  // **Base slot 9's sets are still not claimed.** The same misread that section 52 corrected for
-  // base slot 6 may or may not apply here: slot 9's pointers land on lists that decode, but
-  // nothing has established that they land on the start rather than inside, and claiming an extent
-  // on that basis is what produced the overlaps in the first place.
+  // Base slot 9's sets, which this deliberately did not claim while it was open whether the
+  // pointer lands on the list or inside a record the way base slot 6's does. It does not: read as
+  // slot 6's shape, `u8 kind` and a `u24` back pointer, **not one of the 54 sets in the corpus
+  // gives an address below itself**, where all 1616 of slot 6's do. So the pointer is the start
+  // and the list states its own length. Section 67.
+  for (const address of handlerSets(c)?.addresses ?? []) {
+    const list = taggedList(c, address);
+    if (list !== undefined) at(address, list.length, 'slot-9-list');
+  }
 
   // The infrared database. This used to claim the group arrays alone, because a record's extent
   // was not established and the duration run was located as the longest alternating one, which is
