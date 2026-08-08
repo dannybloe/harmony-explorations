@@ -261,12 +261,16 @@ There is no `apps/` here. The application is FreeHarmony, and the workspace glob
 **The codec port is complete.** Every reader `src/harmony/gspm.py` has now exists in
 `packages/codec` too, bar base slot 16, the number sender, whose count is zero in every config so a
 port would be exercised by nothing. `packages/codec/src/coverage.ts` is the M2 progress number and
-`make coverage` prints it: 26.3% of a Harmony 700 and 8.0% of a Harmony One, zero overlaps
-everywhere. **It stops there and another reader will not move it**, because the rest is the region
-of section 49. Two extents are deliberately unclaimed and the reasons are in the code: a base slot
-5 record has none established, and every mode entry reads as the wide tagged list form with the
-longest at 255 entries, exactly where a `u8` count saturates. Both were found by the overlap
-detector rather than by reading the code.
+`make coverage` prints it; the current figures are in "Where the work stands" below.
+
+**This paragraph used to end "it stops there and another reader will not move it", and that was
+wrong twice over.** It read 26.3% of a Harmony 700 against 98.1% today, and seven readers have
+moved it since: sections 53, 54, 55, 61, 63, 64 and 65. The two extents it called deliberately
+unclaimed are both read now, base slot 5's record by section 61 and the mode entry by section 52,
+which found that the pointer does not land on the entry at all and that the "255 entries" was a
+misread tail rather than a saturating count. The lesson worth keeping is the one that still holds:
+**both were found by the overlap detector rather than by reading the code**, which is what the byte
+accounting is for.
 
 **The write rails live in `packages/usb/src/rails.ts`, and that is where they stay.** A rail
 enforced by a user interface is enforced until somebody writes a script. `WRITES_ENABLED` is off

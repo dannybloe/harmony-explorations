@@ -3,7 +3,7 @@
 This is the authoritative sequence. [plan.md](plan.md) is the earlier proposal this grew out of
 and is kept for its arguments, not as the plan of record.
 
-Status, 2026-08-05: steps 1, 2 and 4 are done, and step 3 is done as far as the firmware images can
+Status, 2026-08-08: steps 1, 2, 4, 5 and 8 are done, and step 3 is done as far as the firmware images can
 take it. Both directions of every command are documented, the container codec exists in TypeScript
 and is proven equal to the Python one field for field on thirteen samples, and the command layer and
 its write rails are written and tested against a scripted remote.
@@ -252,20 +252,24 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 |
-|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | **98.1%** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | **98.7%** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | **98.0%** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | **98.6%** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | **94.4%** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | **14.6%** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | **91.8%** |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 |
+|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **98.1%** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **98.7%** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **98.0%** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **98.6%** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **94.4%** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **55.1%** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **91.8%** |
 
-The last column is two readers landing the same day: base slot 13's records, found by asking the
+The sixth column is two readers landing the same day: base slot 13's records, found by asking the
 deliberately built config pair of section 58 one question, and the infrared records, whose header
-turned out to be 21 bytes pointing **backwards** at duration blocks below it. Arch 9 barely moves
-and that is now the whole of what is left, along with a handful of gaps under three kilobytes.
+turned out to be 21 bytes pointing **backwards** at duration blocks below it.
+
+**The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
+for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,
+one missing operand count was hiding every one of its mode programs, and its infrared records share
+class 1's header. Nothing else moved, because the other architectures were already at the ceiling.
 
 Neither of the last two columns is a reader. Section 53 is one rule, that a mode record carries its
 own screen program, and section 54 is two corrections: opcode 23 takes no operand, which is what
@@ -298,7 +302,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 20260 programs across the corpus and section 46 states 3933 glyphs and 40588
+Section 40 states 20374 programs across the corpus and section 46 states 3933 glyphs and 40588
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number
@@ -334,8 +338,11 @@ section 55 found that the pictures nothing addresses sit in the same array as th
 that walking it lands exactly on the trailer in all nine containers that have one. There was never a
 second referent.
 
-**What is left is arch 9 and the low part of a config**, not the region. The Harmony 525 sits at
-14.1% and its mode records decode only 43 of 114, so its record tail is a different shape.
+**What is left is arch 9 and the low part of a config**, not the region. *This used to add that the
+525 sits at 14.1% and that only 43 of its 114 mode records decode, "so its record tail is a
+different shape". The tail is not a different shape at all: section 64 found one missing operand
+count, and it is 114 of 114 and 55.1%. An architecture that will not decode is worth suspecting the
+reader for before the data.*
 
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a
@@ -344,6 +351,11 @@ referent and every target it names lands there, in every container that emits on
 that emit none, the arch 9 sample and the three safe mode containers, have no such region. So
 porting the remaining twelve readers takes coverage to roughly 35% and no further, and **decoding
 that region is what M2 actually needs next.**
+
+*The arch 9 half of that closure did not hold.* Section 62 found four pictures in the 525's config
+anyway, named by base slot 17, and section 64 found the opcode 2 instructions that draw them, in
+mode programs that were unreachable at the time. The safe mode containers still have no region, and
+the "roughly 35%" ceiling was itself beaten once the region turned out to be pictures.
 
 **Opcode 2's handler has now been read, and it does not explain the region.** Section 50: the
 instruction draws a bitmap with a five byte header that states its own size, and the sizes are 125
@@ -468,8 +480,11 @@ Still to do, in the order the application needs them:
   external config flash over SPI. `0xFE` and `0xFF` reach **internal program memory** by table
   read, which is where a PIC18 J-series part keeps its device id and configuration words, so that
   is the route to the `MCU_ID` that would measure the arch 12 part number instead of inferring it.
-  Anything else is refused. Which of `0xFE` and `0xFF` is which is not established, and the four
-  named PROM types do not map one-to-one onto what arch 14 implements.
+  *It is not: the window is two 64 KiB pages and a PIC18 keeps its device id at `0x3FFFFE`, so this
+  was closed as unreachable rather than answered. See the entry further down.*
+  Anything else is refused. **Both are pages rather than one selector and a dud**, and it is `0xFE`
+  that maps from program address zero; `docs/usb-protocol.md` has the measurement. The four named
+  PROM types do not map one-to-one onto what arch 14 implements.
 * **Done for the 600.** The first deliverable of our own read path was a complete firmware dump of
   the bench remotes. The 600's is read: 70336 bytes across both internal pages, where concordance
   truncated at 65536 and lost the entry point. It is not believed because the reader says so, it is
@@ -534,7 +549,7 @@ Still to do, in the order the application needs them:
   questions this step left open, `READ_FLASH`'s reply code, how the final short chunk is signalled
   and whether the wire count is biased, are answered in `docs/usb-protocol.md` section 4.
 
-### Step 5: M1, the read path and the bench instrument
+### Step 5: M1, the read path and the bench instrument. Done
 
 **The read pipeline. Done, on both architectures.** `packages/corpus`, with `bin/read-config.ts` as
 the command. Run against the spare Harmony One and the Harmony 600: 1232237 bytes in 40 seconds and
@@ -669,7 +684,7 @@ Ongoing rather than a step, and it applies to every step above: a confirmed fact
 or in the TypeScript package's own suite. `CLAUDE.md` and `README.md` state the product goal and
 these decisions so a future session does not relitigate them.
 
-### Step 8: the contribution probe, so other people's remotes count
+### Step 8: the contribution probe, so other people's remotes count. Tier 1 done
 
 The coverage section above is the argument: two architectures of at least eleven, and no way to
 learn anything about the other nine without hardware nobody here owns. The probe is how somebody

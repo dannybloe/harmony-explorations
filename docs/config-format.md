@@ -490,12 +490,12 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**20260 programs across thirteen containers and four architectures decode with nothing left over**,
+**20374 programs across thirteen containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
-base slot 14 lookup, and on arch 8 and arch 14 **from a mode record**, whose own program sits
-immediately after its tagged list. That third source is 2008 of the total and is where the full
-screen pictures are named. [findings.md](findings.md) section 53.
+base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
+immediately after its tagged list. That third source is 2119 roots and is where the full screen
+pictures are named. [findings.md](findings.md) sections 53, 54 and 64.
 
 Read with `gspm.screen_program` and `gspm.screen_program_roots`, or dump one with
 `tools/screen_dump.py`. [findings.md](findings.md) section 40.
@@ -553,12 +553,28 @@ almost nothing.
 
 #### What fills the region
 
-Not the bitmaps above. The region is **raw image data**: rows of 176 **big endian RGB565** pixels
-on arch 12, with a screen of 220 rows, so a full screen is 77440 bytes. Recovered on both Harmony
-Ones by minimising the vertical pixel difference over candidate widths, and the height is fixed
-independently by blank screens of exactly that length. There is **no header and no framing**, so
-where one image starts is unknown, and **nothing found so far addresses them**. The width on arch
-14 is not established. `harmony/region.py`, [findings.md](findings.md) section 51.
+The pictures above, and nothing else. The region is one contiguous array of them from the end of
+the named content to the trailer, walkable end to end in all nine containers that have a trailer,
+and screen opcode 2 inside a mode program is what addresses them.
+
+**This subsection used to say the opposite and the correction is worth reading.** It described the
+region as raw image data with **no header and no framing**, so that "where one image starts is
+unknown and nothing found so far addresses them", and it gave the arch 14 width as not established.
+All three were wrong, and each fell to a different finding:
+
+* the framing is the picture header, `u8 kind; u16 stride; u16 rows`, section 54;
+* what addresses them is screen opcode 2 in a mode record's own program, which was unreachable
+  until an operand count was fixed, sections 53, 54 and 64;
+* the arch 14 width is stated by `stride` like every other, so nothing has to be recovered.
+
+What survives is the arch 12 **geometry**, and it survives as an independent confirmation rather
+than as the reading: rows of 176 big endian RGB565 pixels over 220 rows, recovered on both Harmony
+Ones by minimising the vertical pixel difference across candidate widths, with the height fixed by
+blank screens of exactly 77440 bytes. Section 54 then found the header states `stride 176,
+rows 220`. A measurement and a declaration agreeing is worth more than either alone, which is why
+`harmony/region.py` is kept even though nothing needs it any more. It is reverse engineering only
+and deliberately not in `packages/codec`: a width recovered by minimisation is a measurement, not a
+reader. [findings.md](findings.md) sections 51, 54 and 55.
 
 ### Base slot 11: the screen program table
 
@@ -601,7 +617,9 @@ explained*: the firmware reads the pair as one `u16` and never bounds a code wit
 **A glyph code is one based**, because zero terminates an inline string, so the firmware indexes the
 set by the code minus one.
 
-Three checks, on twelve containers across three architectures:
+Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
+a glyph differently and has its own figures in the subsection below; the corpus totals including it
+are 4093 glyphs and 41793 codes.
 
 * every row comes to exactly `width`, for **3933 glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933
@@ -1527,14 +1545,18 @@ the 0.1 us storage unit and the clock.
 
 ## Open questions
 
-1. What are the 19, 20 or 21 section slots? Twelve are named now, so the question is the
-   remaining eight or so. Method in [roadmap.md](roadmap.md) step 6.
+1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted
+   for: two header records, sixteen named sections, and 18 and 19 NULL in all thirteen containers.
+   Section 47 closed the last one. What is open is now one level down, inside the sections, and
+   each entry above says which part of itself is not established.
 2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is
    traced. **Corrected here:** this entry used to say arch 8's second population with headers near
    303 / 310 was one of the other classes. It is not. Every record's first byte is its class, and
    all 2858 records on arch 8, 12 and 14 are class 1, so the records the framer cannot read are
    class 1 too. The other three classes are used by no config in the corpus at all, which makes
    them a firmware-only problem rather than a decoding one. `docs/findings.md` section 42.
+   Arch 9 reads a fifth value, 5, which is not one of the four the firmware dispatches over; its
+   header is read and its blocks are not, `docs/findings.md` section 65.
 3. The key table's semantic difference between architectures, and the meaning of `flags`
    (`0x00`, `0x07`, `0x73`, `0x7F` observed) and of `index` (sequential on the One, all zero on
    the 600, small values plus an outlier on arch 8).

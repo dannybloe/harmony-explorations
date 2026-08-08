@@ -596,10 +596,16 @@ words and the configuration words live at the top of program memory and are reac
 table read, which makes this the route to the **`MCU_ID`** that `docs/roadmap.md` wants in order to
 measure the arch 12 part number rather than infer it.
 
-Two things still not established: which of `0xFE` and `0xFF` is which, since the validator keeps
-the low bit of byte 1 as a sub-selector and both reach the same body, and how the 24-bit address
-maps onto the part's program memory. Both are cheap once a host implementation can issue the
-command and compare against the datasheet's device id.
+Two things were not established from the images: which of `0xFE` and `0xFF` is which, since the
+validator keeps the low bit of byte 1 as a sub-selector and both reach the same body, and how the
+24-bit address maps onto the part's program memory.
+
+> **Both were settled on hardware and neither answer is the one this section expected.** They are
+> two **pages** rather than a selector and a dud, and it is `0xFE` that maps from program address
+> zero; see "Internal memory: `0xFE` and `0xFF` are two pages" below. And `MCU_ID` is **not**
+> reachable by this route after all: the window is two 64 KiB pages and a PIC18 keeps its device id
+> at `0x3FFFFE`, so the arch 12 part number stays inferred. Read on before acting on the paragraph
+> above.
 
 **Somewhere in the flash machinery, a 16-bit remaining count is chunked at 63 bytes.** This was
 published as READ_FLASH's response chunking, and that attribution stays **withdrawn**: which

@@ -55,7 +55,7 @@ architecture, and the **pointer table is one table too**, with a couple of per a
 insertions, so a section labelled on one architecture transfers to the others by index.
 
 The **trailer checksum is derived**: a sixteen bit XOR of the container's little endian words
-seeded `0x4321`, recomputing on all fourteen containers. That was the last thing standing between
+seeded `0x4321`, recomputing on every container in the corpus. That was the last thing standing between
 a generated config and a remote that would accept it.
 
 **Every one of the twenty base slots is accounted for**, and every slot from 2 to 19 has a located
@@ -96,12 +96,13 @@ Harmony One gives nothing at all**: sixteen buttons from every region of it pull
 line, so arch 12 wakes differently from arch 14 and USB yields no part of its mapping.
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
-run length encoded glyphs at two bytes a pixel, and every one of 16054 inline string codes in the
-corpus resolves to a glyph of the font its own program selected. `tools/screen_dump.py --strings`
-draws them, and they come out as readable labels. **Action lists** are bytecode for an accumulator machine
-with a forty instruction queue and a binary search dispatcher, and a **second interpreter draws
-the screen**: its own one byte opcodes for text, bitmaps, a switch on a state variable and a jump,
-with 18252 programs across ten configs decoding with nothing left over. Its one instruction that
+run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrome 5xx panel, and
+every one of 41793 inline string codes in the corpus resolves to a glyph of the font its own
+program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
+labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
+a binary search dispatcher, and a **second interpreter draws the screen**: its own one byte opcodes
+for text, bitmaps, a switch on a state variable and a jump, with 20374 programs across thirteen
+containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
 is loaded, and the row loop stops drawing above row 128 while still consuming the stream.
