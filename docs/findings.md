@@ -9773,6 +9773,27 @@ The gate's other question, what would falsify this, has a cheap answer: a config
 number of devices and activities that reports a different pair. That is one sync away whenever a
 remote and the service are both to hand.
 
+### A second measurement, which agrees on the count and not on the numbering
+
+The action list language writes a state variable with opcode `0x80 | n`, so the writes to the
+activity variable can be counted directly. Every value written is inside the variable's range, in
+all fourteen containers, and **the number of distinct values written is the variable's highest
+value** in the twelve that have any activities at all:
+
+| highest value | distinct values written |
+|---|---|
+| 1 | 1 |
+| 3 | 3 |
+| 5 | 5 |
+| 8 | 8 |
+| 0, the arch 9 safe mode container | 1 |
+
+The values are `0` upwards with one exception, `one_config`, which writes 0 to 6 and 8 and never 7.
+So the count agrees with the reading twice over, and **which value means "no activity" does not**:
+either 0 is the idle state and the writes are one per activity starting at 0, or the top value is,
+and neither the safe mode container nor the deliberate pair separates them. Left open rather than
+guessed.
+
 ### What it does not read
 
 The activities have no names anywhere in base slot 0. A device's name is in the label of its

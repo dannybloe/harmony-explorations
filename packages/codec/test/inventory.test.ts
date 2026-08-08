@@ -19,6 +19,7 @@ import {
   archSlot,
   deviceCount,
   deviceIds,
+  STATE_WRITE_BASE,
   parse,
   reading,
   stateRecords,
@@ -183,5 +184,32 @@ test('every container with a name tree names exactly one activity state', skipWi
     assert.equal(found.length, 1, `${name}: activity state variables`);
     // And it is the qualified form, so a matcher on the whole label would miss it.
     assert.equal(found[0]?.label, `${ACTIVITY_STATE_NAME}_0`);
+  }
+});
+
+test('the activity variable is written as many times as it has values', skipWithoutLab(), () => {
+  // A second measurement of the same number, from the other interpreter: the action list language
+  // writes state variable `n` with opcode `0x80 | n`, so the writes can be counted without going
+  // near the name tree. Every value written is inside the range, and the number of distinct ones is
+  // the highest value. **Which value means "no activity" is deliberately not asserted**: the values
+  // run from zero, so either zero is idle or the top is, and no sample here separates them.
+  for (const [name, , activities] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const variable = stateVariables(c)
+      .find((v) => v.name.split('_')[0] === ACTIVITY_STATE_NAME) as { index: number };
+    // The opcode carries the variable in five bits, `0x80 | n`.
+    const opcode = STATE_WRITE_BASE | (variable.index & 0x1f);
+    const written = new Set<number>();
+    for (const list of c.actionLists() ?? []) {
+      for (const instruction of list) {
+        if (instruction.opcode === opcode) written.add(instruction.operand);
+      }
+    }
+    for (const value of written) {
+      assert.ok(value >= 0 && value <= activities, `${name}: writes ${value} of ${activities}`);
+    }
+    assert.equal(written.size, activities, `${name}: distinct values written`);
   }
 });
