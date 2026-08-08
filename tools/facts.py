@@ -21,7 +21,21 @@ recomputes the fact and compares:
 
 The marker is an HTML comment, so it is invisible in rendered markdown, and it sits directly after
 the value so extraction is unambiguous. `--write` updates every marked value in place, the same
-shape as `tools/golden.py --write`.
+shape as `tools/golden.py --write`, and **prints every value it changes**, because a silent rewrite
+of twelve numbers across six files is not something anyone reviews.
+
+**A marker is a claim about now, never about the past.** That distinction cost a commit on
+8 August 2026. `docs/roadmap.md` carries a coverage table with one column per finding that moved
+the number, and the live column's heading names that finding. Marking a historical column makes
+this tool rewrite history the next time anything moves, and marking the live column is right until
+a new finding lands, at which point the number changes and the heading does not. So:
+
+* a history column carries a plain number and **no marker**,
+* a new finding **adds a column**, it does not overwrite the live one,
+* and when `--write` reports a change you did not expect, that is the signal, which is the whole
+  reason it reports at all.
+
+The `finding` skill says the same thing at the point where it bites.
 
 **Superseded claims.** The other five were assertions a later finding falsified, corrected in
 `findings.md` in place but left standing in the summaries: that `MCU_ID` was reachable, that arch 9
@@ -154,8 +168,15 @@ def superseded_phrases():
     return out
 
 
-def check_numbers(facts, write):
-    """Compare every marked value against the computed fact. Returns a list of complaints."""
+def check_numbers(facts, write, edits=None):
+    """Compare every marked value against the computed fact. Returns a list of complaints.
+
+    Under `--write`, every value this replaces is appended to `edits` rather than changed
+    silently. A rewrite is the one operation here that can introduce drift instead of catching
+    it: it happily updates a number whose surrounding prose or column heading states which
+    finding produced it, and neither of those is something this tool can see. Reporting the
+    edits is what turns that from a trap into a diff somebody reads.
+    """
     problems = []
     for doc in documents():
         text = open(doc, encoding='utf-8').read()
@@ -170,6 +191,8 @@ def check_numbers(facts, write):
             if write:
                 changed = changed.replace('%s<!--fact:%s-->' % (value, name),
                                           '%s<!--fact:%s-->' % (want, name))
+                if edits is not None:
+                    edits.append((rel(doc), name, value, want))
             else:
                 problems.append('%s: %s says %s, the corpus says %s'
                                 % (rel(doc), name, value, want))
@@ -223,11 +246,22 @@ def main():
         return 0
 
     problems = []
+    edits = []
     if facts:
-        problems += check_numbers(facts, write)
+        problems += check_numbers(facts, write, edits)
     else:
         print('facts: no lab or no node, so the numeric check was skipped')
     problems += check_phrases()
+
+    # Every rewrite, named. A marker states what is true now, so a value moving is expected when a
+    # finding lands and is a mistake at any other time, and neither the prose beside a number nor
+    # the heading above it is something this tool can check. Read the list.
+    for doc, name, was, now in edits:
+        print('facts: rewrote %s in %s: %s -> %s' % (name, doc, was, now))
+    if edits:
+        print('facts: %d value(s) rewritten. Check the diff: a marked number is a claim about now,'
+              % len(edits))
+        print('facts: so a heading or a sentence that names an older finding is now wrong.')
 
     for p in problems:
         print('facts: %s' % p)

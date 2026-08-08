@@ -92,6 +92,23 @@ Say when that happened.
   is quoted, and `make facts-write` updates every copy. Add the fact to `tools/facts.py` if it is
   a new one.
 
+**`make facts-write` is not the end of step 4, it is the middle.** It prints every value it
+rewrote; read that list against the diff, because the two things a marker cannot see are the
+sentence beside the number and the heading above it.
+
+* **A marker is a claim about now, never about the past.** `docs/roadmap.md` carries a coverage
+  table with one column per finding that moved the number. History columns carry a plain number
+  and **no marker**. A new finding **adds a column**; it does not overwrite the live one, because
+  the live column's heading names the finding that produced it and `facts-write` cannot update a
+  heading.
+* That is not hypothetical. On 8 August 2026 a `facts-write` run put section 66's numbers under
+  section 65's heading and left the paragraph below asserting the other architectures had been at
+  their ceiling, one commit after the tool that was supposed to prevent exactly this.
+* So after a rewrite, **re-read the prose around every number it touched**, not the number. Phrases
+  like "nothing else moved", "at the ceiling", "about a third" are summaries of a figure with no
+  figure in them, so nothing mechanical will ever catch them. Kill them through
+  `reference/superseded.md` like any other dead claim.
+
 ## Finishing
 
 ```sh
