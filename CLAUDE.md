@@ -45,6 +45,17 @@ propose firmware modification as a route to anything.
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
    reserve for when we are genuinely stuck.
 8. **Version 1 of the application is read only.** Write code exists behind a flag that is off.
+9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 6936 lines and it was
+   measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
+   it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
+   and that has been cut. **No cutting line is better than another**: 140 references run between
+   sections and both an era split and a subject split push about 40% of them across a file boundary,
+   so the correction chains that give the document its value do not survive either. And it is **the
+   one document that has never drifted**, because every section in it carries a regression test,
+   where the eleven contradictions the audit found were all in summaries. What would reopen it is
+   size alone, at roughly 5700 bytes a section: if it outgrows rendering, split by era, keep section
+   numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
+   path stay correct.
 
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. Arch 8 stays a control for container claims rather than
