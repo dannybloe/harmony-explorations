@@ -468,6 +468,21 @@ rather than to read more of the dispatcher.
 validated by recompiling. The codec support for it is M2 and lives here; the editing experience does
 not.
 
+**Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
+same length and there is deliberately no way to insert, delete or resize anything, because a
+picture's position is implied by everything before it and base slot 15's group lengths are demanded
+by the firmware: a resize relocates everything above it and is a different milestone. Three rails
+are refusals rather than documentation. An edit outside every claim the byte accounting makes is
+refused, because a run no reader understands is a run whose consequences nobody can state. Two
+edits on one byte are refused. And a mode page's list cannot be edited without its copy, section 69,
+which is what `setPageListEntry` exists for.
+
+**That last one produced a demonstration worth keeping.** Writing the same operand into a page's
+list and into its copy leaves the trailer checksum **unchanged**, because the two edits write the
+same bytes at the same word parity and their contributions to a `u16` XOR cancel exactly. So a
+config can move two structures and still pass the only check the remote makes. Section 41 said the
+checksum was weak; this is what weak means, and it is pinned in `packages/codec/test/edit.test.ts`.
+
 **M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
 facing "write my config" is FH.

@@ -260,8 +260,9 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 
 ```
 packages/codec/                 TS: the one config codec, container through compiler,
-                                src/coverage.ts the M2 byte accounting and src/emit.ts
-                                the emitter that reads it back the other way
+                                src/coverage.ts the M2 byte accounting, src/emit.ts the
+                                emitter that reads it back the other way, and src/edit.ts
+                                the M3 groundwork: same length edits, rails as refusals
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
@@ -643,7 +644,9 @@ produce a config the remote accepts and mishandles.
 
 * **The trailer checksum is weak**, section 41: a `u16` XOR of little endian words seeded `0x4321`.
   Blind to two transposed words, so passing means the remote will not refuse the file, not that the
-  file is right.
+  file is right. **Demonstrated rather than argued now**: writing one operand into a mode page's
+  list and into its copy leaves the checksum bit for bit identical, because the two edits sit at the
+  same word parity and cancel. `packages/codec/test/edit.test.ts`.
 * **Base slot 15's group lengths are demanded by the firmware**, section 44. A group whose length
   differs is silently replaced by compiled in defaults. A group index is **not** portable between
   architectures, unlike every other indexed structure here.

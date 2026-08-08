@@ -18,3 +18,4 @@ export * from './emit.ts';
 export * from './tables.ts';
 export * from './font.ts';
 export * from './coverage.ts';
+export * from './edit.ts';
