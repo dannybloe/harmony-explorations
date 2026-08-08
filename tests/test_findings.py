@@ -199,6 +199,88 @@ class TestCycleDelayRoutine(unittest.TestCase):
         self.assertEqual(after.mnemonic, 'RETURN')
 
 
+class TestArch9Infrared(unittest.TestCase):
+    """The infrared chain on the Harmony 525, read out of the first arch 9 firmware.
+
+    Addresses are pinned rather than described, for the reason the rest of this file pins them:
+    finding them again is a search. `docs/findings.md` section 80.
+    """
+
+    BASE = 0x0000
+    PART = '4550'
+    SPI_READ_BYTE = 0x07F8E
+    SPI_WRITE_BYTE = 0x07F7A
+    CARRIER_ON = 0x07680
+    CARRIER_OFF = 0x076C0
+    PLAYER = 0x076CE
+    CLASS_DISPATCH = 0x05108
+    CLASS5 = 0x0513E
+    QUEUE_PUSH_PAIR = 0x0277C
+
+    def code(self):
+        return lab.load('h525_code')
+
+    def text(self, at, count):
+        return '\n'.join(disasm.disassemble(self.code(), self.BASE, at, count, self.PART))
+
+    def test_the_spi_primitive_is_the_config_choke_point(self):
+        """The arch 9 analogue of arch 14's 0x1B9AC: every config byte comes through here."""
+        lab.require('h525_code')
+        self.assertIn('MOVFF SSPBUF,0x75c', self.text(self.SPI_READ_BYTE, 4))
+        self.assertIn('MOVFF 0x3f3,SSPBUF', self.text(self.SPI_WRITE_BYTE, 4))
+        # And the write is what the read is built on, which is how an SPI read works: clock a
+        # dummy byte out to clock the answer in.
+        self.assertIn('RCALL 0x07f7a', self.text(self.SPI_READ_BYTE, 4))
+
+    def test_the_carrier_is_ccp1_in_pwm_mode(self):
+        """0x0C into CCP1CON is PWM mode. On the default register map that address is CCPR1H,
+        where the same byte is a duty cycle and says nothing, which is why the map is chosen."""
+        lab.require('h525_code')
+        on = self.text(self.CARRIER_ON, 32)
+        self.assertIn('MOVWF PR2', on)
+        self.assertIn('MOVLW 0x0c', on)
+        self.assertIn('MOVWF CCP1CON', on)
+        self.assertIn('BSF T2CON,2', on)
+        off = self.text(self.CARRIER_OFF, 8)
+        self.assertIn('CLRF CCP1CON', off)
+        self.assertIn('BCF T2CON,2', off)
+
+    def test_a_pulse_is_a_u16_whose_top_bit_is_the_carrier(self):
+        """The player reads pairs of bytes out of a RAM queue at 0x600 and tests bit 15."""
+        lab.require('h525_code')
+        instr = isa.decode(self.code(), 0x07744, self.BASE)
+        self.assertEqual(instr.mnemonic, 'BTFSS')
+        self.assertEqual(instr.fields['b'], 7)
+        carrier_on = self.text(0x07748, 1)
+        # Bit set means carry the duty over from 0x22c; bit clear means clear the duty, so the
+        # top bit is carrier on and the rest is a timer count.
+        self.assertIn('MOVFF 0x22c,CCPR1', carrier_on)
+        self.assertIn('CLRF CCPR1', self.text(0x07752, 1))
+
+    def test_the_class_byte_is_switched_on_at_a_single_place(self):
+        """Class 1 and class 5 each get their own arm, and everything else falls through."""
+        lab.require('h525_code')
+        text = self.text(self.CLASS_DISPATCH, 30)
+        self.assertIn('DECF 0x2a,B,W', text)     # class 1
+        self.assertIn('MOVLW 0x05', text)        # class 5
+        self.assertIn('SUBWF 0x2a,B,W', text)
+
+    def test_class_five_pushes_u16_words_it_reads_from_the_config(self):
+        """The loop this section stops at: a count, then that many words, each pushed as a pulse.
+
+        What is **not** established is where the words come from, so this pins the loop and not a
+        layout. `0x0658E` reads two bytes into the variable named by 0x14e and 0x14f.
+        """
+        lab.require('h525_code')
+        text = self.text(self.CLASS5, 80)
+        self.assertIn('CALL 0x0658e', text)
+        self.assertIn('CALL 0x0277c', text)
+        # And the push helper adds two to the queue's byte count, so a queue entry is a u16.
+        push = self.text(self.QUEUE_PUSH_PAIR, 16)
+        self.assertIn('MOVLW 0x02', push)
+        self.assertIn('ADDWF 0x2d8,F', push)
+
+
 class TestInfraredChain(unittest.TestCase):
     BASE = 0x9000
 

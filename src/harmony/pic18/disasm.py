@@ -32,14 +32,15 @@ def _flow_breaks_bank_tracking(instr: Instr) -> bool:
                               'RETLW', 'RESET')
 
 
-def _movff_operand(addr: int, adshr: bool) -> str:
+def _movff_operand(addr: int, adshr: bool, part: str = isa.DEFAULT_PART) -> str:
     """Name a MOVFF operand, which carries a full 12-bit address."""
     if addr >= 0xF00:
-        return isa.sfr_name(addr, adshr)
+        return isa.sfr_name(addr, adshr, part)
     return '0x%03x' % addr
 
 
-def format_instr(instr: Instr, bsr: Optional[int] = None, adshr: bool = False) -> str:
+def format_instr(instr: Instr, bsr: Optional[int] = None, adshr: bool = False,
+                 part: str = isa.DEFAULT_PART) -> str:
     """Render one instruction as assembly text."""
     f = instr.fields
     cat = instr.category
@@ -54,17 +55,17 @@ def format_instr(instr: Instr, bsr: Optional[int] = None, adshr: bool = False) -
     if cat == isa.LITERAL:
         return '%s 0x%02x' % (m, f['k'])
     if cat == isa.FILE_A:
-        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr)
+        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr, part)
         return '%s %s' % (m, name)
     if cat == isa.FILE_DA:
-        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr)
+        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr, part)
         return '%s %s,%s' % (m, name, 'F' if f['d'] else 'W')
     if cat == isa.BIT:
-        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr)
+        _, name = isa.resolve_file(f['f'], f['a'], bsr, adshr, part)
         return '%s %s,%d' % (m, name, f['b'])
     if cat == isa.MOVFF:
-        return 'MOVFF %s,%s' % (_movff_operand(f['src'], adshr),
-                                _movff_operand(f['dst'], adshr))
+        return 'MOVFF %s,%s' % (_movff_operand(f['src'], adshr, part),
+                                _movff_operand(f['dst'], adshr, part))
     if cat in (isa.REL8, isa.REL11, isa.ABS20):
         return '%s 0x%05x' % (m, f['target'])
     if cat == isa.LFSR:
@@ -94,8 +95,13 @@ def _adshr_change(instr: Instr, bsr: Optional[int]) -> Optional[bool]:
     return None
 
 
-def disassemble(code: bytes, base: int, start: int, count: int) -> Iterator[str]:
-    """Yield `count` formatted lines starting at address `start`."""
+def disassemble(code: bytes, base: int, start: int, count: int,
+                part: str = isa.DEFAULT_PART) -> Iterator[str]:
+    """Yield `count` formatted lines starting at address `start`.
+
+    `part` selects the SFR map, and it matters: the 525 is a `PIC18F4550` and 65 of its 139
+    register addresses disagree with the 67J50 family's. See `isa.PARTS`.
+    """
     offset = start - base
     bsr: Optional[int] = None
     # ADSHR is clear after reset, and this firmware sets it only in windows a few
@@ -107,7 +113,7 @@ def disassemble(code: bytes, base: int, start: int, count: int) -> Iterator[str]
     while emitted < count and offset + 2 <= len(code):
         instr = isa.decode(code, offset, base)
         raw = ' '.join('%02x' % b for b in code[offset:offset + 2 * instr.words])
-        yield '  %05x: %-11s %s' % (base + offset, raw, format_instr(instr, bsr, adshr))
+        yield '  %05x: %-11s %s' % (base + offset, raw, format_instr(instr, bsr, adshr, part))
 
         changed = _adshr_change(instr, bsr)
         if changed is not None:

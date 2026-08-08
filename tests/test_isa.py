@@ -170,6 +170,50 @@ class TestSfrMapIsTheJ50FamilyNotTheGenericOne(unittest.TestCase):
             self.assertEqual(isa.SFR[addr], name)
 
 
+class TestTheFourFiveFiveZeroMapIsADifferentPart(unittest.TestCase):
+    """
+    The Harmony 525 is a PIC18F4550 and 72 of its 139 register addresses disagree with the map
+    above. That is the hazard the class above was written to describe, arriving for real: an
+    arch 9 firmware exists now, and the default map names its infrared carrier setup wrongly in
+    a way that reads perfectly. `docs/findings.md` section 80.
+    """
+
+    def test_the_ccp_block_is_where_the_classic_parts_put_it(self):
+        self.assertEqual(isa.sfr_name(0xFBD, part='4550'), 'CCP1CON')
+        self.assertEqual(isa.sfr_name(0xFBD), 'CCPR1H')
+        self.assertEqual(isa.sfr_name(0xFBE, part='4550'), 'CCPR1')
+        self.assertEqual(isa.sfr_name(0xFC0, part='4550'), 'ADCON2')
+
+    def test_the_usb_block_moves_a_whole_page(self):
+        """Twenty six registers, and on the wrong map they read as the streaming parallel port."""
+        self.assertEqual(isa.sfr_name(0xF6D, part='4550'), 'UCON')
+        self.assertEqual(isa.sfr_name(0xF70, part='4550'), 'UEP0')
+        self.assertEqual(isa.sfr_name(0xF65, part='4550'), 'SPPCON')
+        self.assertEqual(isa.sfr_name(0xF65), 'UCON')
+
+    def test_the_two_maps_disagree_about_most_of_their_shared_addresses(self):
+        """Counted rather than asserted one name at a time, so a merge cannot quietly blur them.
+
+        139 addresses in common and 65 of them named differently, which is the number that says
+        this is a different part rather than a variant.
+        """
+        shared = set(isa.SFR) & set(isa.SFR_4550)
+        differing = [a for a in shared if isa.SFR[a] != isa.SFR_4550[a]]
+        self.assertEqual(len(isa.SFR_4550), 139)
+        self.assertEqual(len(shared), 139)
+        self.assertEqual(len(differing), 65)
+
+    def test_the_shadow_set_is_not_applied_to_a_part_that_has_none(self):
+        """ADSHR is WDTCON bit 4, and 0xFC0 is ADCON2 on this part, so there is nothing to swap."""
+        self.assertEqual(isa.sfr_name(0xFC1, adshr=True, part='4550'),
+                         isa.sfr_name(0xFC1, adshr=False, part='4550'))
+        self.assertNotEqual(isa.sfr_name(0xFC1, adshr=True), isa.sfr_name(0xFC1, adshr=False))
+
+    def test_an_unknown_part_is_an_error_rather_than_a_default(self):
+        with self.assertRaises(KeyError):
+            isa.sfr_name(0xFBD, part='18f452')
+
+
 class TestAdshrSelectsAShadowRegister(unittest.TestCase):
     """
     WDTCON bit 4 swaps a second register in at ten addresses.

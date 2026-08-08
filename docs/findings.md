@@ -8961,6 +8961,104 @@ list and not the other, and each file then agreed with itself. The list is the s
 as `lab.CONTAINERS` now.
 
 
+## 80. The arch 9 infrared chain, and the register map that nearly wrecked it
+
+The first work done in the Harmony 525's firmware, which arrived on 8 August 2026 and which
+section 65 named as the thing class 5 infrared wants. This does not read class 5's layout. It finds
+the code that plays it, states the shape of the loop, and records the two things that would have
+made a wrong answer look right.
+
+### The register map is a different part, and 65 of 139 names disagree
+
+`isa.py` has carried one SFR map since section 18, the PIC18F67J50 and 87J50 one, with a docstring
+naming the exact hazard: `0xFBD` is `CCP1CON` on a PIC18F4550 and `CCPR1H` here. **The 525 is a
+PIC18F4550**, so the hazard stopped being hypothetical the moment its firmware was read. The two
+maps share 139 addresses and disagree about 65 of them: the whole CCP block moves, `0xFC0` is
+`ADCON2` rather than `WDTCON`, so there is no `ADSHR` shadow set on this part at all, and the USB
+block sits at `0xF60` to `0xF7F` against `0xF4C` to `0xF65`.
+
+The carrier setup below writes `0x0C` to `0xFBD`. Under the right map that is `CCP1CON = 0x0C`,
+PWM mode, which is the whole point of the routine. Under the default map it is a duty cycle byte
+going into `CCPR1H`, which is readable, plausible and says nothing. So `disassemble` takes a part
+now, `isa.PARTS` holds the maps, and `tools/pic18_disasm.py --part 4550` is how an arch 9 listing
+is taken. An unknown part name is an error rather than a fallback.
+
+### The SPI primitive, which is arch 9's choke point
+
+`0x07F7A` writes one byte to `SSPBUF` and waits; `0x07F8E` reads one by clocking a dummy byte out
+through it. Above them sits an ordinary SPI NOR driver: `0x0756A` issues command `0x03`, read data,
+and `0x07524` and `0x07530` raise and lower chip select on `LATE` bit 2. Commands `0x05`, `0x06`,
+`0x04`, `0xD8` and `0xAB` appear at the neighbouring entry points.
+
+**This is the arch 9 analogue of arch 14's `0x1B9AC`**, the single point every config byte passes
+through, and it is what makes arch 9 tractable the way arch 14 is. Arch 12 has no such point.
+
+### A pulse is a `u16` and its top bit is the carrier
+
+The player at `0x076CE` reads pairs of bytes out of a RAM queue at `0x600`, indexed by `0x2D9` with
+`0x2D8` counting the bytes left. For each pair:
+
+* bit 15 set carries the saved duty from `0x22C` into `CCPR1`, and clear zeroes it. So the top bit
+  is **carrier on** and the low fifteen bits are a timer count.
+* six is subtracted from the count before it is loaded into TMR0, which is the loop's own overhead.
+
+`0x07680` starts the carrier, writing `PR2` from a computed period and putting CCP1 into PWM mode;
+`0x076C0` stops it. The producer side is `0x0277C`, which pushes two bytes and adds two to `0x2D8`.
+
+### The class byte is switched on in one place
+
+`0x05108`. The class is in `0x2A`, the access bank byte section 61 reads out of the record header at
+`+7`:
+
+| class | arm |
+|---|---|
+| 1 | `0x05116` |
+| 5 | `0x0513E` |
+| anything else | `0x051FE` |
+
+That is the first direct confirmation that the class byte is what selects the encoding, rather than
+an inference from which records decode.
+
+### What class 5's arm does, and what it does not say
+
+```
+seek the walking pointer 0x291..0x293 into the flash
+stop if it is NULL or if the remaining count 0x230..0x231 is zero
+read one byte -> 0x15C
+seek 0x22D..0x22F
+read a u16 -> 0x705
+refuse if 2 * that would overflow the 0xFE byte queue
+loop 0x705 times:
+    read a u16 -> 0x707
+    push it as a pulse
+advance the walking pointer by one and decrement the remaining count
+```
+
+So the words it pushes are **pulse words in the same form the player consumes**, a count followed by
+that many, with no terminator. That is already worth having, because section 61 recorded that arch
+9's blocks have no terminator where class 1's convention would put one, and a count prefix is
+exactly what that looks like from the outside.
+
+**Where the words come from is not established, and the obvious reading fails.** Reading a `u16`
+count at each of the two block pointers in a record header gives counts of 62786 and up, which is
+not a count of anything. The firmware reads them from `0x22D`, and one byte from the walking list
+becomes `0x15C`, which `0x066F4` multiplies by three and adds to `0x15B`: an index into a table of
+three byte entries. So there is a level of indirection between the record and its pulses that the
+header alone does not give, and section 65's "a shared descriptor, 66 distinct values over 200
+records" is very likely that table. **That is where the next session starts**, and it should start
+by settling what `0x22D` holds, since `0x22C` and `0x22D` are also written as carrier parameters
+elsewhere and the bank on those accesses is inferred rather than known.
+
+### Where it lands
+
+* `src/harmony/pic18/isa.py`, `SFR_4550` and `PARTS`; `tools/pic18_disasm.py --part`.
+* `tests/test_isa.py`, including the count of disagreeing addresses and the refusal of an unknown
+  part.
+* `tests/test_findings.py`, which pins every address above against the image, because finding them
+  again is a search.
+* `tests/lab.py`, `h525_code`, the 525's whole internal program flash.
+
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

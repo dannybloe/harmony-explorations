@@ -32,6 +32,10 @@ export const LAB: string | undefined = process.env['HARMONY_LAB'] || defaultLab(
  */
 export const IMAGES: Readonly<Record<string, string>> = {
   one34_code: 'one-3.4-code-base0x20000.bin',
+  // The 525's whole internal program flash, read over USB on 8 August 2026: the bootloader at
+  // 0x0000 and the application from 0x1000. The only arch 9 firmware this project has, and a
+  // PIC18F4550, so a listing needs `--part 4550`. findings.md sections 76 and 80.
+  h525_code: '20260808-harmony-525-internal-0x0000.bin',
   one34_region2: 'one-3.4-Region_2-decoded.bin',
   one_safemode: 'one-safemode-gspm-base0x2000-raw64k.bin',
   h700_code: '700-2.8-Region_2-code-base0x9000.bin',

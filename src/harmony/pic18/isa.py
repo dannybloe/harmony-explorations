@@ -25,7 +25,7 @@ notation:
 
 from __future__ import annotations
 
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Tuple
 
 # --------------------------------------------------------------------------------------
 # Categories
@@ -471,21 +471,92 @@ ACCESS_BANK_SFR_START = 0x60
 SFR_PAGE_START = 0xF40
 
 
-def sfr_name(addr: int, adshr: bool = False) -> str:
+# The PIC18F4550 map, which the Harmony 525 needs and which shares 74 of its 139 entries with
+# the map above and disagrees about the other 65. This is not a refinement, it is a different
+# part: the USB block sits at `0xF60` to `0xF7F` where the 67J50 family puts it at `0xF4C` to
+# `0xF65`, the whole CCP block moves, and `0xFC0` is `ADCON2` here against `WDTCON` there, so
+# there is no `ADSHR` shadow set on this part at all.
+#
+# The docstring above already named this hazard, `0xFBD` reading as `CCP1CON` on a 4550 and
+# `CCPR1H` on a 67J50, and it went from a note to a problem the moment an arch 9 firmware
+# existed. The infrared carrier setup at `0x07680` writes `0x0C` to `0xFBD`, which is PWM mode
+# in `CCP1CON` and nonsense in `CCPR1H`.
+#
+# Provenance: gputils 1.5.2 `p18f4550.inc`. Where that header names a sixteen bit pair by its
+# low address with no suffix, the L form above is kept, so listings read the same on both parts.
+#
+# `SFR_PAGE_START` differs too: this part has 2 KiB of general purpose registers and its bank 15
+# is SFRs from `0xF60` up, so `0xF00` to `0xF5F` is unimplemented rather than RAM.
+SFR_4550: Dict[int, str] = {
+    0xF62: 'SPPDATA', 0xF63: 'SPPCFG', 0xF64: 'SPPEPS', 0xF65: 'SPPCON',
+    0xF66: 'UFRM', 0xF67: 'UFRMH', 0xF68: 'UIR', 0xF69: 'UIE',
+    0xF6A: 'UEIR', 0xF6B: 'UEIE', 0xF6C: 'USTAT', 0xF6D: 'UCON',
+    0xF6E: 'UADDR', 0xF6F: 'UCFG', 0xF70: 'UEP0', 0xF71: 'UEP1',
+    0xF72: 'UEP2', 0xF73: 'UEP3', 0xF74: 'UEP4', 0xF75: 'UEP5',
+    0xF76: 'UEP6', 0xF77: 'UEP7', 0xF78: 'UEP8', 0xF79: 'UEP9',
+    0xF7A: 'UEP10', 0xF7B: 'UEP11', 0xF7C: 'UEP12', 0xF7D: 'UEP13',
+    0xF7E: 'UEP14', 0xF7F: 'UEP15', 0xF80: 'PORTA', 0xF81: 'PORTB',
+    0xF82: 'PORTC', 0xF83: 'PORTD', 0xF84: 'PORTE', 0xF89: 'LATA',
+    0xF8A: 'LATB', 0xF8B: 'LATC', 0xF8C: 'LATD', 0xF8D: 'LATE',
+    0xF92: 'DDRA', 0xF93: 'DDRB', 0xF94: 'DDRC', 0xF95: 'DDRD',
+    0xF96: 'DDRE', 0xF9B: 'OSCTUNE', 0xF9D: 'PIE1', 0xF9E: 'PIR1',
+    0xF9F: 'IPR1', 0xFA0: 'PIE2', 0xFA1: 'PIR2', 0xFA2: 'IPR2',
+    0xFA6: 'EECON1', 0xFA7: 'EECON2', 0xFA8: 'EEDATA', 0xFA9: 'EEADR',
+    0xFAB: 'RCSTA', 0xFAC: 'TXSTA', 0xFAD: 'TXREG', 0xFAE: 'RCREG',
+    0xFAF: 'SPBRG', 0xFB0: 'SPBRGH', 0xFB1: 'T3CON', 0xFB2: 'TMR3',
+    0xFB3: 'TMR3H', 0xFB4: 'CMCON', 0xFB5: 'CVRCON', 0xFB6: 'CCP1AS',
+    0xFB7: 'CCP1DEL', 0xFB8: 'BAUDCON', 0xFBA: 'CCP2CON', 0xFBB: 'CCPR2',
+    0xFBC: 'CCPR2H', 0xFBD: 'CCP1CON', 0xFBE: 'CCPR1', 0xFBF: 'CCPR1H',
+    0xFC0: 'ADCON2', 0xFC1: 'ADCON1', 0xFC2: 'ADCON0', 0xFC3: 'ADRESL',
+    0xFC4: 'ADRESH', 0xFC5: 'SSPCON2', 0xFC6: 'SSPCON1', 0xFC7: 'SSPSTAT',
+    0xFC8: 'SSPADD', 0xFC9: 'SSPBUF', 0xFCA: 'T2CON', 0xFCB: 'PR2',
+    0xFCC: 'TMR2', 0xFCD: 'T1CON', 0xFCE: 'TMR1L', 0xFCF: 'TMR1H',
+    0xFD0: 'RCON', 0xFD1: 'WDTCON', 0xFD2: 'HLVDCON', 0xFD3: 'OSCCON',
+    0xFD5: 'T0CON', 0xFD6: 'TMR0L', 0xFD7: 'TMR0H', 0xFD8: 'STATUS',
+    0xFD9: 'FSR2L', 0xFDA: 'FSR2H', 0xFDB: 'PLUSW2', 0xFDC: 'PREINC2',
+    0xFDD: 'POSTDEC2', 0xFDE: 'POSTINC2', 0xFDF: 'INDF2', 0xFE0: 'BSR',
+    0xFE1: 'FSR1L', 0xFE2: 'FSR1H', 0xFE3: 'PLUSW1', 0xFE4: 'PREINC1',
+    0xFE5: 'POSTDEC1', 0xFE6: 'POSTINC1', 0xFE7: 'INDF1', 0xFE8: 'WREG',
+    0xFE9: 'FSR0L', 0xFEA: 'FSR0H', 0xFEB: 'PLUSW0', 0xFEC: 'PREINC0',
+    0xFED: 'POSTDEC0', 0xFEE: 'POSTINC0', 0xFEF: 'INDF0', 0xFF0: 'INTCON3',
+    0xFF1: 'INTCON2', 0xFF2: 'INTCON', 0xFF3: 'PRODL', 0xFF4: 'PRODH',
+    0xFF5: 'TABLAT', 0xFF6: 'TBLPTRL', 0xFF7: 'TBLPTRH', 0xFF8: 'TBLPTRU',
+    0xFF9: 'PCL', 0xFFA: 'PCLATH', 0xFFB: 'PCLATU', 0xFFC: 'STKPTR',
+    0xFFD: 'TOSL', 0xFFE: 'TOSH', 0xFFF: 'TOSU',
+}
+
+# Named so a caller states which part it is reading, because the default silently produced a
+# readable and wrong listing on the 525. `docs/findings.md` section 80.
+PARTS: Dict[str, Tuple[Dict[int, str], int]] = {
+    '67j50': (SFR, SFR_PAGE_START),
+    '87j50': (SFR, SFR_PAGE_START),
+    '4550': (SFR_4550, 0xF60),
+}
+DEFAULT_PART = '67j50'
+
+
+def sfr_name(addr: int, adshr: bool = False, part: str = DEFAULT_PART) -> str:
     """Name an SFR address, honouring the ADSHR shadow set when that bit is set.
 
-    Below `SFR_PAGE_START` there is no SFR to name, so the address is reported as the general
+    Below the part's SFR page there is no SFR to name, so the address is reported as the general
     purpose register it is rather than as an unnamed peripheral.
+
+    `part` selects the register map. It defaults to the 67J50 family because that is what arch 12
+    and arch 14 are; arch 9 is a `PIC18F4550` and 65 of 139 addresses differ, so a listing taken
+    with the wrong map is readable and wrong. `PARTS` holds the names this accepts.
     """
-    if adshr and addr in SFR_SHADOW:
+    names, page_start = PARTS[part]
+    # ADSHR is a 67J50 family bit. The 4550 has no shadow set, and 0xFC0 is ADCON2 there, so
+    # honouring the flag on that part would name a register the instruction cannot reach.
+    if adshr and names is SFR and addr in SFR_SHADOW:
         return SFR_SHADOW[addr]
-    if addr in SFR:
-        return SFR[addr]
-    return ('gpr%03X' if addr < SFR_PAGE_START else 'sfr%03X') % addr
+    if addr in names:
+        return names[addr]
+    return ('gpr%03X' if addr < page_start else 'sfr%03X') % addr
 
 
 def resolve_file(f: int, a: int, bsr: Optional[int] = None,
-                 adshr: bool = False) -> tuple[Optional[int], str]:
+                 adshr: bool = False, part: str = DEFAULT_PART) -> tuple[Optional[int], str]:
     """Resolve a file operand to (data_address, display_name).
 
     With a=0 the operand is in the access bank: below `ACCESS_BANK_SFR_START` it is a
@@ -498,7 +569,7 @@ def resolve_file(f: int, a: int, bsr: Optional[int] = None,
     if a == 0:
         if f >= ACCESS_BANK_SFR_START:
             addr = 0xF00 | f
-            return addr, sfr_name(addr, adshr)
+            return addr, sfr_name(addr, adshr, part)
         return f, '0x%02x' % f
     if bsr is None:
         return None, '0x%02x,B' % f

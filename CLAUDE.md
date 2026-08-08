@@ -457,7 +457,7 @@ tools/ezextract.py     <file> [--list] [--out DIR] [--split] [--metadata]
 tools/gspm_parse.py    <file> [--json]
 tools/ir_extract.py    <file> [--json] [--pulses]   the infrared database, grouped
 tools/screen_dump.py   <file> [--json] [--all]      the screen language programs, disassembled
-tools/pic18_disasm.py  <file> <base> <addr> <count>
+tools/pic18_disasm.py  <file> <base> <addr> <count> [--part 4550]
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
@@ -501,7 +501,10 @@ over the runner-up before trusting its answer.
   swapped here, which inverted the stated sense of the infrared enable mask, the keypad columns
   and the reset key combination. All three are active low. Pinned in `tests/test_isa.py`,
   including a semantic check that does not depend on the datasheet.
-* **The SFR map is the PIC18F67J50 / 87J50 one, never the generic PIC18 map.** This family
+* **The SFR map is per part, and choosing wrong is silent.** `isa.PARTS` holds two: the
+  PIC18F67J50 / 87J50 map for arch 12 and arch 14, and the **PIC18F4550** map for arch 9, which
+  disagrees about 65 of 139 shared addresses. Pass `--part 4550` for a 525 listing. Section 80.
+* **The 67J50 map is not the generic PIC18 map either.** This family
   moves the whole capture, compare and analogue block, and puts the USB registers at `0xF4C`
   to `0xF65` where classic parts put the parallel port. `UCON` is `0xF65`, `WDTCON` is
   `0xFC0`, `CCP1CON` is `0xFBB`. The table here was the generic map until it was checked, and
@@ -664,10 +667,11 @@ produce a config the remote accepts and mishandles.
 * **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
   ten fields have a reading, section 59.
-* **Infrared class 5**, arch 9. The 21 byte header is read, section 65; the 24511 bytes below the
-  headers are not, and they are not duration streams. **The arch 9 firmware exists now**: read off
-  a 525's external flash at `0x810000` on 8 August 2026 over this project's own read path, no
-  concordance needed. Section 76. Nothing has been decoded out of it yet.
+* **Infrared class 5**, arch 9. The 21 byte header is read, section 65, and the **sender** is read
+  now, section 80: the class byte is switched on at `0x05108` and class 5's arm reads a `u16` count
+  and that many `u16` pulse words, which is why nothing terminates the way class 1's does. What is
+  open is **where the words are**, since the count is not at either block pointer and the firmware
+  reaches them through a three byte table indexed by a byte from a walking list.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
@@ -773,13 +777,15 @@ from 234 records to 462.
 `make coverage --detail` prints only the twenty largest of 128, and both this and section 66 came
 from asking for all of them and noticing families with the same count.
 
-What is left is arch 9's class 5 infrared, which does want an arch 9 firmware. **The lab has one**,
-read off the bench 525 at flash `0x810000`, loading at program `0x1000`. Section 76.
+What is left is arch 9's class 5 infrared, and the arch 9 firmware it wanted is in the lab and open,
+section 80: `h525_code` is the 525's whole internal program flash, loading at `0x0000` with the
+application from `0x1000`. Its SPI primitive at `0x07F8E` is arch 9's single config read choke
+point, the analogue of arch 14's `0x1B9AC`.
 
-**The Harmony 525 is on the bench and read**, section 76. Its config is the corpus's second arch 9
-sample and the arch 9 **firmware** is in the lab, at program `0x1000`, **confirmed byte for byte
-against the remote's own internal memory** rather than only derived. Nothing has been decoded out
-of it yet, so class 5 infrared is still open and now has something to appeal to.
+**Disassemble it with `--part 4550`.** The 525 is a PIC18F4550 and the default register map is the
+67J50 family's: 65 of 139 addresses disagree, the whole CCP block moves, and the infrared carrier
+setup reads as a duty cycle write instead of a PWM mode write. The wrong map produces a listing
+that is readable and wrong, which is the failure this project has recorded twice before.
 
 **Its safe mode config was the next piece of work and it was bigger than it looked.** Found at
 flash `0x818000`, it parses, its checksum recomputes, and it contradicted six claims the corpus
