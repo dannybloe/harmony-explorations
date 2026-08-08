@@ -138,10 +138,13 @@ the 26368 bytes that sample still has unaccounted. See
 
 ## Headline findings
 
-**`concordance --dump-firmware` does not return firmware.** This is why the firmware had not
-been examined before. On arch 12 it returns a small config blob from the wrong flash region.
-On arch 14 it returns real code, silently truncated to 64 KiB when the image is larger. Both
-read `flash_base` = 0. See [reference/concordance-notes.md](reference/concordance-notes.md).
+**`concordance --dump-firmware` returns no usable firmware on the two architectures here.** This
+is why the firmware had not been examined before. On arch 12 it returns a small config blob from
+the wrong flash region. On arch 14 it returns real code, silently truncated to 64 KiB when the
+image is larger. Both read `flash_base` = 0. It is an architecture table entry rather than the
+tool, though, and on **arch 8 and arch 9 the same command returns the whole firmware region**, so
+it stays the way to obtain an image for a model nobody here owns. See
+[reference/concordance-notes.md](reference/concordance-notes.md).
 
 **It is a Microchip PIC18, and it disassembles cleanly** once you have the right file at the
 right load address. 87% of the Harmony 700 image resolves into 521 functions.

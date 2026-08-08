@@ -2,11 +2,23 @@
 
 [jaymzh/concordance](https://github.com/jaymzh/concordance) is the tool everyone uses to talk
 to these remotes. Two defects in its firmware handling were found while working out the
-firmware layout, and they explain why the firmware had gone unexamined.
+firmware layout, and they explain why the firmware had gone unexamined **on the two
+architectures this project has hardware for**.
 
-## The firmware dump does not return firmware
+Everything below is asserted against a checkout in `tests/test_concordance_notes.py`, which reads
+the constants out of `libconcord/` and skips when there is no checkout to read. Measured against
+concordance 1.5.
 
-On both architectures examined, `--dump-safemode` and `--dump-firmware` produce
+## The firmware dump does not return firmware, on arch 12 and arch 14
+
+> **Corrected on 8 August 2026.** This section was written as though it described the tool, and it
+> describes two entries in the tool's architecture table. The reading is unchanged for arch 12 and
+> arch 14; what was wrong was the scope, which four documents had picked up and generalised. On
+> **arch 8 and arch 9 the dump works and returns the complete firmware**, and that matters
+> practically: it is how a stranger with an 880 can send a usable image, and how the incoming 525
+> will be dumped. See "Where the dump is fine" below.
+
+On both architectures examined here, `--dump-safemode` and `--dump-firmware` produce
 **byte-identical** output. From `libconcord/libconcord.cpp`:
 
 ```c
@@ -28,6 +40,31 @@ Consequences:
 
 `--dump-firmware` also wraps its output in an EZUp XML template with
 `<TYPE>Firmware_Main</TYPE>`, which reads as a claim about the payload but is a fixed string.
+`-b` writes the raw bytes instead, and the dump path modifies nothing: `dump_firmware()` calls
+`read_firmware_from_remote()` and writes the result. `_fix_magic_bytes()` runs on the write path
+only.
+
+## Where the dump is fine
+
+Both defects come from one architecture entry each, not from the code, so the same command on a
+different remote is a different proposition:
+
+| arch | flash_base | firmware_base | config_base | what `--dump-firmware` returns |
+|---|---|---|---|---|
+| 8 (720, 785, 880, 882, 885) | `0x000000` | `0x010000` | `0x020000` | the whole firmware region |
+| 9 (51x, 52x, 55x) | `0x800000` | `0x810000` | `0x820000` | the whole firmware region |
+| 12 (One) | `0x000000` | `0` | `0x040000` | a config blob, no code at all |
+| 14 (600, 700) | `0x000000` | `0x000000` | `0x030000` | real code, truncated at 64 KiB |
+
+On arch 8 and arch 9 `firmware_base` is its own region rather than a repeat of `flash_base`, so the
+two dumps differ; and `config_base - firmware_base` is `0x10000` on both, which is exactly
+`FIRMWARE_MAX_SIZE`. One read therefore covers the region with nothing truncated and nothing
+foreign included. So `concordance -b -f` is worth asking a contributor for on those two, and is
+worth nothing on ours.
+
+One consequence worth stating when asking: on arch 8 the serial number is at flash `0x000110`,
+below `firmware_base`, so a firmware dump cannot contain it. `--dump-safemode` reads the region
+that does.
 
 ## Suggested changes
 
