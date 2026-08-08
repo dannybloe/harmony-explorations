@@ -252,8 +252,10 @@ the gate for any editing at all, and it is squarely an API milestone.
 
 Of the three parts below, **the first two are complete for arch 12 and arch 14**: every reader
 reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes short on a Harmony
-One and 41 on a 600. Arch 9 is not there, and its remainder is infrared; the arch 9 firmware that
-would settle it arrived with the 525 on 8 August 2026 and has not been decoded yet. Arch 8 is there
+One and 41 on a 600. Arch 9 is not there, and its remainder is infrared. The arch 9 firmware that
+would settle it arrived with the 525 on 8 August 2026 and section 80 opened it: the class 5 sender
+reads a `u16` count and that many `u16` pulse words, and what is still open is where those words
+are, since the count is at neither of the record header's block pointers. Arch 8 is there
 as of section 75.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
