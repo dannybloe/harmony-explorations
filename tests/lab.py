@@ -102,6 +102,18 @@ def _find(filename):
     return found
 
 
+# Every config container in the corpus, in the order the coverage report prints them. One list,
+# because the same thirteen are walked by the Python tests, by `packages/codec/test/coverage.test.ts`
+# and by `tools/facts.py`, and a corpus total is only comparable between them if they agree on what
+# the corpus is. The two Harmony One sync-pair dumps are deliberately absent: they are two states of
+# one remote rather than two remotes, so counting them would double one unit in every total.
+CONTAINERS = (
+    'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
+    'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+    'arch8_config_d', 'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm',
+)
+
+
 def path(name):
     """Absolute path to a named image, or None when it is not available."""
     return _find(IMAGES[name])

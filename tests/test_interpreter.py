@@ -942,9 +942,10 @@ class TestTheParameterBlock(unittest.TestCase):
     """findings.md section 44: base slot 15, and the length the firmware demands of every group."""
 
     # Every container, including the three safe mode ones, which carry a full parameter block
-    # where they carry no timers at all.
-    CONTAINERS = TestTheStateVariableTable.CONFIGS + (
-        'h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    # where they carry no timers at all. Taken from `lab` rather than built here, so that this
+    # suite, the TypeScript coverage test and `tools/facts.py` cannot disagree about what the
+    # corpus is; a corpus total is not comparable between two lists.
+    CONTAINERS = lab.CONTAINERS
     # The guard routine and its call sites, per image. Recorded because finding them again is a
     # search, the same reason the rest of this file records addresses.
     GUARDS = {'h700_code': (0x9000, 0x0F8F0), 'one34_code': (0x20000, 0x23262)}

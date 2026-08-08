@@ -1,0 +1,245 @@
+#!/usr/bin/env python3
+"""
+Keep the documents honest about numbers and about claims that later findings killed.
+
+Usage:  facts.py [--write] [--list]
+
+**Why this exists.** On 8 August 2026 an audit of the documents against the code found eleven
+places where they had drifted, and all eleven had one cause: a fact stated in more than one place
+with only one of them executable. `docs/findings.md` had not drifted at all, because every section
+in it lands a regression test; the documents that *summarise* it had, because a summary is a copy
+with no test. So this tool makes the copies executable.
+
+Two checks, because the eleven fell into exactly two kinds.
+
+**Numbers.** Six of them were figures the test suites already pin, restated in prose: 20260
+programs where the tests said 20374, 40588 string codes where they said 41793, a coverage table
+frozen at a snapshot. A number in a document carries a marker naming the fact it states, and this
+recomputes the fact and compares:
+
+    **20374<!--fact:screen_programs--> programs across thirteen containers**
+
+The marker is an HTML comment, so it is invisible in rendered markdown, and it sits directly after
+the value so extraction is unambiguous. `--write` updates every marked value in place, the same
+shape as `tools/golden.py --write`.
+
+**Superseded claims.** The other five were assertions a later finding falsified, corrected in
+`findings.md` in place but left standing in the summaries: that `MCU_ID` was reachable, that arch 9
+had no picture region, that no further reader would move the coverage. `reference/superseded.md`
+lists the dead phrasings; this fails if one appears in a document without a correction marker
+beside it, which is what the house convention already asks a correction to carry.
+
+**The numeric check needs the lab and the phrase check does not.** Without a lab this reports the
+numbers as unavailable and still runs the phrases, because the phrase check is pure text and a
+fresh clone with no lab must still be protected by it.
+"""
+import os
+import re
+import subprocess
+import sys
+
+import _bootstrap  # noqa: F401
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tests'))
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, '..'))
+SUPERSEDED = os.path.join(ROOT, 'reference', 'superseded.md')
+
+# A marked value: the number, then the comment naming what it states.
+MARKER = re.compile(r'([0-9][0-9,.]*%?)<!--fact:([a-z0-9_]+)-->')
+
+# What a correction looks like in these documents, so a dead phrase quoted inside one is allowed.
+# Both forms are already in use: a blockquote for a long correction, italics for a short one.
+CORRECTION = ('>', '*', '~~')
+# And an explicit escape, for the common case that neither form fits: a sentence that quotes a dead
+# claim in the act of refuting it, mid paragraph. Structure cannot express that, so it is stated.
+# It is trivially abusable, and so is `git commit --no-verify`; the point of both is that the
+# person doing it has to mean it.
+QUOTED = '<!--superseded-->'
+
+
+def documents():
+    """Every published markdown file, which is everything not under .git or node_modules."""
+    for base, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in ('.git', 'node_modules', 'dist')]
+        for name in sorted(files):
+            if name.endswith('.md'):
+                yield os.path.join(base, name)
+
+
+def coverage_facts():
+    """Per sample byte accounting, taken from the codec rather than recomputed here.
+
+    Shelling out to the TypeScript tool is deliberate. `packages/codec/src/coverage.ts` is the one
+    implementation of the byte accounting, and a second one in Python would be a second opcode
+    table by another name: the two would diverge and both would look right.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/coverage.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[-1].endswith('%'):
+            found['coverage_' + parts[0]] = parts[-1]
+    return found
+
+
+def corpus_facts():
+    """The totals the documents quote, computed over the corpus the tests use."""
+    import lab
+    from harmony import gspm
+
+    if any(lab.path(n) is None for n in lab.CONTAINERS):
+        return {}
+
+    totals = dict.fromkeys(
+        ('screen_programs', 'inline_string_codes', 'glyphs', 'glyphs_two_byte_pixel',
+         'string_codes_two_byte_pixel', 'infrared_records', 'mode_records',
+         'mode_records_with_a_program'), 0)
+    for name in lab.CONTAINERS:
+        c = gspm.parse(lab.load(name))
+        packed = c.architecture in gspm.IMAGE_PACKED_ARCHITECTURES
+
+        glyphs = sum(len(s) for s in (c.images() or []))
+        totals['glyphs'] += glyphs
+        if not packed:
+            totals['glyphs_two_byte_pixel'] += glyphs
+
+        programs, _ = c.reachable_screen_programs()
+        totals['screen_programs'] += len(programs)
+
+        fonts = c.font_sets() or []
+        codes = 0
+        for program in programs.values():
+            selected = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_SELECT_FONT and instruction.operands:
+                    selected = instruction.operands[0]
+                if instruction.opcode != gspm.SCREEN_TEXT_INLINE or not instruction.glyphs:
+                    continue
+                if selected is None or selected >= len(fonts):
+                    continue
+                codes += len(instruction.glyphs)
+        totals['inline_string_codes'] += codes
+        if not packed:
+            totals['string_codes_two_byte_pixel'] += codes
+
+        totals['infrared_records'] += sum(len(g) for g in (c.ir_groups() or []))
+        records = c.mode_records() or []
+        totals['mode_records'] += len(records)
+        totals['mode_records_with_a_program'] += sum(
+            1 for r in records if c.screen_program(r.start + r.length) is not None)
+
+    totals['containers'] = len(lab.CONTAINERS)
+    return {k: str(v) for k, v in totals.items()}
+
+
+def superseded_phrases():
+    """The dead phrasings, read from the table in `reference/superseded.md`."""
+    if not os.path.exists(SUPERSEDED):
+        return []
+    out = []
+    for line in open(SUPERSEDED, encoding='utf-8'):
+        if not line.startswith('| `'):
+            continue
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) >= 2 and cells[0].startswith('`'):
+            out.append((cells[0].strip('`'), cells[1]))
+    return out
+
+
+def check_numbers(facts, write):
+    """Compare every marked value against the computed fact. Returns a list of complaints."""
+    problems = []
+    for doc in documents():
+        text = open(doc, encoding='utf-8').read()
+        changed = text
+        for value, name in MARKER.findall(text):
+            if name not in facts:
+                problems.append('%s: no such fact `%s`' % (rel(doc), name))
+                continue
+            want = facts[name]
+            if value == want:
+                continue
+            if write:
+                changed = changed.replace('%s<!--fact:%s-->' % (value, name),
+                                          '%s<!--fact:%s-->' % (want, name))
+            else:
+                problems.append('%s: %s says %s, the corpus says %s'
+                                % (rel(doc), name, value, want))
+        if write and changed != text:
+            open(doc, 'w', encoding='utf-8').write(changed)
+    return problems
+
+
+def check_phrases():
+    """A dead phrase may appear only inside a correction. Returns a list of complaints."""
+    problems = []
+    phrases = superseded_phrases()
+    for doc in documents():
+        if os.path.abspath(doc) == os.path.abspath(SUPERSEDED):
+            continue
+        lines = open(doc, encoding='utf-8').read().splitlines()
+        for i, line in enumerate(lines):
+            for phrase, killed_by in phrases:
+                if phrase.lower() not in line.lower():
+                    continue
+                if QUOTED in line:
+                    continue
+                # A correction may open on this line, the one before it or the one after: a
+                # blockquote usually introduces the quoted claim on its own line first, and an
+                # italic note usually follows the sentence it corrects.
+                context = [line.lstrip()]
+                if i:
+                    context.append(lines[i - 1].lstrip())
+                if i + 1 < len(lines):
+                    context.append(lines[i + 1].lstrip())
+                if any(c.startswith(CORRECTION) for c in context):
+                    continue
+                problems.append('%s:%d: superseded by %s: "%s"'
+                                % (rel(doc), i + 1, killed_by, phrase))
+    return problems
+
+
+def rel(path):
+    return os.path.relpath(path, ROOT)
+
+
+def main():
+    write = '--write' in sys.argv[1:]
+    facts = {}
+    facts.update(corpus_facts())
+    facts.update(coverage_facts())
+
+    if '--list' in sys.argv[1:]:
+        for name in sorted(facts):
+            print('%-34s %s' % (name, facts[name]))
+        return 0
+
+    problems = []
+    if facts:
+        problems += check_numbers(facts, write)
+    else:
+        print('facts: no lab or no node, so the numeric check was skipped')
+    problems += check_phrases()
+
+    for p in problems:
+        print('facts: %s' % p)
+    if problems:
+        print('facts: %d problem(s). `tools/facts.py --write` fixes the numeric ones.'
+              % len(problems))
+        return 1
+    marked = sum(len(MARKER.findall(open(d, encoding='utf-8').read())) for d in documents())
+    print('facts: %d marked value(s) agree, %d superseded phrase(s) absent'
+          % (marked, len(superseded_phrases())))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

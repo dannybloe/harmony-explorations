@@ -490,7 +490,7 @@ font table by the code minus one, and not one string in the corpus decodes as pr
 code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
 terminator cannot be found by scanning for a zero; no string in the corpus is wide.
 
-**20374 programs across thirteen containers and four architectures decode with nothing left over**,
+**20374<!--fact:screen_programs--> programs across thirteen<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -559,7 +559,7 @@ and screen opcode 2 inside a mode program is what addresses them.
 
 **This subsection used to say the opposite and the correction is worth reading.** It described the
 region as raw image data with **no header and no framing**, so that "where one image starts is
-unknown and nothing found so far addresses them", and it gave the arch 14 width as not established.
+unknown and nothing found so far addresses them", and it gave the arch 14 width as not<!--superseded--> established.
 All three were wrong, and each fell to a different finding:
 
 * the framing is the picture header, `u8 kind; u16 stride; u16 rows`, section 54;
@@ -619,11 +619,11 @@ set by the code minus one.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4093 glyphs and 41793 codes.
+are 4093<!--fact:glyphs--> glyphs and 41793<!--fact:inline_string_codes--> codes.
 
-* every row comes to exactly `width`, for **3933 glyphs**, with no stream ending mid row
+* every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933
-* every inline string resolves: **40588 glyph codes** land on a non-NULL glyph of the font their
+* every inline string resolves: **40588<!--fact:string_codes_two_byte_pixel--> glyph codes** land on a non-NULL glyph of the font their
   own program selected, none out of range and none on an empty slot
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.

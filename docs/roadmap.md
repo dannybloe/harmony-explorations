@@ -254,13 +254,13 @@ it the same day:
 
 | sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 |
 |---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **98.1%** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **98.7%** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **98.0%** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **98.6%** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **94.4%** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **55.1%** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **91.8%** |
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | **98.1%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | **98.7%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | **98.0%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | **98.6%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | **94.4%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | **55.1%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | **91.8%<!--fact:coverage_h700_gspm-->** |
 
 The sixth column is two readers landing the same day: base slot 13's records, found by asking the
 deliberately built config pair of section 58 one question, and the infrared records, whose header
@@ -302,7 +302,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 20374 programs across the corpus and section 46 states 3933 glyphs and 40588
+Section 40 states 20374<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 40588<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number
@@ -347,15 +347,16 @@ reader for before the data.*
 **And the accounting immediately found the thing that caps M2.** `docs/findings.md` section 49:
 most of a config is one region at the top of the file that no named section reaches, 62% of a
 Harmony 600 and 82% of a Harmony One, and it is not padding. Screen opcode 2 is its only known
-referent and every target it names lands there, in every container that emits one; the two kinds
-that emit none, the arch 9 sample and the three safe mode containers, have no such region. So
-porting the remaining twelve readers takes coverage to roughly 35% and no further, and **decoding
-that region is what M2 actually needs next.**
+referent and every target it names lands there, in every container that emits one; the containers
+that emit none were taken to have no such region.<!--superseded--> So porting the remaining twelve
+readers takes coverage to roughly 35% and no further, and **decoding that region is what M2
+actually needs next.**
 
-*The arch 9 half of that closure did not hold.* Section 62 found four pictures in the 525's config
-anyway, named by base slot 17, and section 64 found the opcode 2 instructions that draw them, in
-mode programs that were unreachable at the time. The safe mode containers still have no region, and
-the "roughly 35%" ceiling was itself beaten once the region turned out to be pictures.
+*Half of that closure did not hold, and the "roughly 35%" did not either.* Section 62 found four
+pictures in the 525's config regardless, named by base slot 17, and section 64 found the opcode 2
+instructions that draw them, inside mode programs nothing could reach at the time. Only the three
+safe mode containers really have no region. The ceiling went too, once the region turned out to be
+pictures rather than something a reader could not attribute.
 
 **Opcode 2's handler has now been read, and it does not explain the region.** Section 50: the
 instruction draws a bitmap with a five byte header that states its own size, and the sizes are 125

@@ -97,11 +97,11 @@ line, so arch 12 wakes differently from arch 14 and USB yields no part of its ma
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrome 5xx panel, and
-every one of 41793 inline string codes in the corpus resolves to a glyph of the font its own
+every one of 41793<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
 program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
 a binary search dispatcher, and a **second interpreter draws the screen**: its own one byte opcodes
-for text, bitmaps, a switch on a state variable and a jump, with 20374 programs across thirteen
+for text, bitmaps, a switch on a state variable and a jump, with 20374<!--fact:screen_programs--> programs across thirteen
 containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
@@ -117,11 +117,11 @@ defect it is.
 
 | | at the start | now |
 |---|---|---|
-| Harmony 700 | 11.4% | **98.1%** |
-| Harmony 600 | 9.5% | **98.7%** |
-| Harmony One | 3.2% | **98.0%** |
-| 880, arch 8 | 3.6% | **94.4%** |
-| 525, arch 9 | 7.2% | 55.1% |
+| Harmony 700 | 11.4% | **98.1%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | **98.7%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | **98.0%<!--fact:coverage_one_config-->** |
+| 880, arch 8 | 3.6% | **94.4%<!--fact:coverage_arch8_config_a-->** |
+| 525, arch 9 | 7.2% | 55.1%<!--fact:coverage_h525_config--> |
 
 Zero overlapping claims anywhere. `make coverage` prints it.
 

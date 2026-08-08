@@ -5752,7 +5752,7 @@ that, and the filled ones correlate at 352 bytes a row rather than 176.
 A pixel is two bytes, as it is in a glyph and as the encoded kind already assumed, so a raw picture
 is **`5 + 2 * stride * rows`**. The corpus closes it without ambiguity: consecutive pictures then sit
 exactly that far apart, 14 of the Harmony 600's 15 gaps, 17 of the 700's 20 and 23 of arch 8's 27,
-where under the halved reading not one gap matched anything. Section 50's "the pictures do not tile"
+where under the halved reading not one gap matched anything. Section 50's "the pictures do not tile"<!--superseded-->
 was an artefact of the halved extent and is corrected there.
 
 ### What the region is
@@ -6585,7 +6585,7 @@ What the two bytes ahead of the bank are is not established. They are zero in al
 ### Arch 9 has a region after all
 
 Section 55's closure was that the containers emitting no screen opcode 2, the arch 9 sample and the
-three safe mode containers, have no such region. Three of those four still hold. The arch 9 sample
+three safe mode containers, have no such region.<!--superseded--> Three of those four still hold. The arch 9 sample
 does not: it emits no opcode 2 and it carries four pictures regardless.
 
 **The faulty step was inferring absence from unreachability.** Nothing in the 525's programs draws a

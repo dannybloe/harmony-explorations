@@ -90,4 +90,22 @@ case "$staged" in
 	;;
 esac
 
+# 5. Documents contradicting the code. Only when a document is in the commit, so a code-only
+#    commit pays nothing. An audit on 8 August 2026 found eleven places where a summary document
+#    asserted something the code had stopped doing, and the reason none of them was caught is that
+#    a summary is a copy of a fact with no test attached. tools/facts.py attaches one.
+#
+#    It runs against the working tree rather than staged content, unlike the checks above. That is
+#    a deliberate weaker guarantee: the numeric half has to import the codec and read the corpus,
+#    which cannot be done from a blob, and a partially staged document is a far less dangerous
+#    failure than a partially staged firmware dump.
+case "$staged" in
+*.md*)
+	if command -v python3 >/dev/null 2>&1; then
+		python3 tools/facts.py >/dev/null 2>&1 ||
+			note "a document contradicts the code or restates a superseded claim: run make facts"
+	fi
+	;;
+esac
+
 exit $fail

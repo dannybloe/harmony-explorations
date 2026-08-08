@@ -237,6 +237,7 @@ tools/                          thin command line wrappers, no logic of their ow
 tools/ghidra/                   headless script plus extracted branch target seeds
 tests/                          one regression test per documented finding
 reference/checksums.md          provenance, load addresses, public sample checksums
+reference/superseded.md         claims a finding killed, which no document may restate
 reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
@@ -329,14 +330,32 @@ its docstring: two tools once carried diverging copies and both produced readabl
 listings. If a mnemonic is missing, add it there and assert its encoding in
 `tests/test_isa.py`.
 
-When something new is confirmed, three things happen together:
+When something new is confirmed, four things happen together:
 
 1. the **structured fact** goes in `docs/config-format.md`, which is what other tools consume
 2. the **reasoning and evidence** goes in `docs/findings.md`, which is why it is believed
 3. a **regression test** goes in `tests/`, which is what stops it silently rotting
+4. **everything that summarised the old answer gets swept**, which is what stops the rest of the
+   documents drifting away from it
 
 Step 3 is not optional. The analysis here is AI-produced and published as such, so a claim
 that is not executable is only an assertion.
+
+**Step 4 was added on 8 August 2026 after an audit found eleven places where the documents
+contradicted the code.** `docs/findings.md` had not drifted at all, because every section in it
+carries step 3; the documents that summarise it had, because a summary is a copy of a fact with no
+test. So the copies are executable now, and `make facts` is the check:
+
+* a number quoted in prose carries a marker naming the fact it states,
+  `20374<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
+* a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
+  check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
+  refute it is what `<!--superseded-->` on the line is for.
+
+It runs in `make all` and in the pre-commit hook, so a document that contradicts the code cannot be
+committed. The numeric half needs a lab and skips cleanly without one; the phrase half is pure text
+and always runs, because a fresh clone with no lab still has to be protected by it.
 
 ## Key facts
 
@@ -406,6 +425,7 @@ make test          run the suite; image-backed tests need a lab directory
 make test-verbose  one line per test
 make lint          byte-compile everything
 make prose         check documents for em-dashes and en-dashes
+make facts         check the documents against the code; facts-write fixes the numbers
 make corpus        inventory the dumps, and flag the undescribed ones
 make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
@@ -429,6 +449,7 @@ tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
 tools/golden.py        [--write]   golden vectors for the Python/TypeScript comparison
+tools/facts.py         [--write] [--list]   the document checks behind `make facts`
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
@@ -545,7 +566,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 94.4% | 55.1% | 98.0% | 98.7% |
+| 94.4%<!--fact:coverage_arch8_config_a--> | 55.1%<!--fact:coverage_h525_config--> | 98.0%<!--fact:coverage_one_config--> | 98.7%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 

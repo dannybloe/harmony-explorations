@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
+.PHONY: help test test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
 
 BENCH_PORT ?= 8731
 
@@ -38,6 +38,7 @@ help:
 	@echo "watch-keys   poll the keypad scanner's RAM on an attached remote, read only"
 	@echo "watch-columns report the matrix column of every key pressed, read only"
 	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
+	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "all          everything above except ghidra, bench and probe"
 
 test:
@@ -59,6 +60,16 @@ prose:
 	  n=$$($(PYTHON) -c "import sys;d=open(sys.argv[1]).read();print(sum(d.count(c) for c in '—–'))" $$f); \
 	  if [ "$$n" != "0" ]; then echo "$$f: $$n"; fail=1; fi; done; \
 	  if [ $$fail = 0 ]; then echo "prose clean"; else exit 1; fi
+
+# The documents must agree with the code. Two checks, both from one audit that found eleven places
+# where they did not: every value carrying a `fact:` marker is recomputed from the corpus, and every
+# phrasing listed in reference/superseded.md must not appear as a live assertion. The numeric half
+# needs a lab and skips cleanly without one; the phrase half is pure text and always runs.
+facts:
+	@$(PYTHON) tools/facts.py
+
+facts-write:
+	@$(PYTHON) tools/facts.py --write
 
 corpus:
 	@$(PYTHON) tools/corpus.py
@@ -127,7 +138,7 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint prose test ts audit
+all: lint prose facts test ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

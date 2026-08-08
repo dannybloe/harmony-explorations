@@ -1,18 +1,26 @@
 ---
 name: finding
-description: Record a confirmed reverse engineering finding across the three places it must land, with a regression test. Use when something new has been established about the config format, the firmware or the USB protocol and it needs writing up, when asked to document a finding, or when a claim in the documents turns out to be wrong and needs correcting in place.
+description: Record a confirmed reverse engineering finding across the four places it must land, with a regression test. Use when something new has been established about the config format, the firmware or the USB protocol and it needs writing up, when asked to document a finding, or when a claim in the documents turns out to be wrong and needs correcting in place.
 ---
 
 # Recording a finding
 
-Every confirmed fact lands in three places at once. Not two. The rule exists because the
-analysis here is AI-produced and published as such, so a claim that is not executable is only
-an assertion.
+Every confirmed fact lands in four places at once. Not three, and the fourth was learned the
+hard way. The rule exists because the analysis here is AI-produced and published as such, so a
+claim that is not executable is only an assertion.
 
 1. **The structured fact** in `docs/config-format.md`, which is what other tools consume.
 2. **The reasoning and the evidence** in `docs/findings.md`, which is why anyone should believe
    it.
 3. **A regression test** in `tests/`, which is what stops it silently rotting.
+4. **A sweep of everything that summarised the old answer**, which is what stops the other
+   documents drifting away from it.
+
+**Step 4 is new and it is the one that failed.** An audit on 8 August 2026 found eleven places
+where the documents contradicted the code. `docs/findings.md` had not drifted at all, because
+every section in it carries step 3. The documents that summarise it had, in eleven places,
+because a summary is a copy of a fact with no test. Five of those were claims a later finding had
+already corrected in `findings.md` and nowhere else.
 
 Work in that order, and do not start writing until the verification gate below is passed.
 
@@ -70,12 +78,30 @@ so far. Update the count in `README.md` and in the `docs/findings.md` preamble.
 The most instructive corrections are the ones where the wrong rule produced the right answer.
 Say when that happened.
 
+**Then kill the old phrasing everywhere else**, which is step 4 and is not optional:
+
+* Add the dead wording to the table in `reference/superseded.md`, in the same commit. `make facts`
+  then fails for anyone who restates it, including you in six weeks.
+* Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
+  that stays correct under a narrower scope does not belong in that table; mark the live value
+  with a `fact:` marker instead.
+* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/roadmap.md`,
+  `docs/config-format.md` and the memory maps. The table only catches the exact wording you
+  thought to record.
+* If the finding moves a corpus total, the value carries a `<!--fact:name-->` marker wherever it
+  is quoted, and `make facts-write` updates every copy. Add the fact to `tools/facts.py` if it is
+  a new one.
+
 ## Finishing
 
 ```sh
-make prose lint test
+make prose facts lint test
 make corpus
 ```
+
+`make facts` is the mechanical half of step 4: it recomputes every marked number from the corpus
+and refuses any superseded phrasing outside a correction. It also runs in the pre-commit hook, so
+a document that contradicts the code cannot be committed without `--no-verify`.
 
 Then a commit whose message says what changed in the understanding, not which files moved.
 The publication gate runs automatically before any commit, or by hand:
