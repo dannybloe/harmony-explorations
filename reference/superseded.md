@@ -63,4 +63,8 @@ and leave this table alone.
 | `flag rather than an address bit` | section 76 | bit 23 belongs to the read command's address on arch 9; a 525 is silent below `0x800000` and answers `AHCM` at `0x820000` |
 | `which the lab does not have` | section 76 | it has one: the arch 9 application image was read off a 525's external flash at `0x810000` on 8 August 2026 |
 | `twelve byte version block` | section 76 | seven on a 525, and the reply's low nibble states it; twelve is the arch 12 and arch 14 figure |
+| `every owner is rebuilt except base slot 0` | section 77 | every owner the accounting claims is rebuilt; what stays copied is what no reader claims |
+| `the one thing the emitter cannot touch` | section 77 | base slot 0 is read and rebuilt from fields |
+| `payload, starting with FRAME_PROLOGUE` | section 77 | the payload is a list of nodes, and those nine bytes are the first one |
+| `no field inside it has ever been read` | section 77 | tag, length, level, index and name, and level 1 names base slot 13 |
 

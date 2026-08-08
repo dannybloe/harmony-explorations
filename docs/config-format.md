@@ -79,7 +79,7 @@ Needed to turn the pointers into file offsets, and derivable from the blob itsel
 base = end_addr - (offset_of_end_marker - offset_of_cookie)
 ```
 
-Exact on all fifteen samples. Worth noting against concordance's table, which lists arch 9's
+Exact on all sixteen samples. Worth noting against concordance's table, which lists arch 9's
 `config_base` as `0x820000` where the derived value is `0x020000`.
 
 > **Corrected on 8 August 2026, section 76.** This used to end "bit 23 looks like a flag<!--superseded-->
@@ -123,7 +123,7 @@ the three bytes before the marker as padding, and recorded an ambiguity: whether
 arch 9 carried a trailing NULL slot or simply more padding. Both readings were wrong in the same
 way. Once the table starts at `0x0B` the length follows from the marker position with no
 remainder, so there is nothing left for padding to be ambiguous about. The evidence is arithmetic
-on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all fifteen samples
+on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all sixteen samples
 across four architectures, where the old reading could only close by subtracting three bytes it
 could not account for. Every address the old parser reported was still correct, because the slot
 it lacked is NULL everywhere. See `docs/findings.md` section 20.
@@ -197,13 +197,13 @@ Known so far:
 
 | Slot | Meaning | Evidence |
 |---|---|---|
-| 0 | the one `0xFEED` frame, holding a named tree rooted at `Root` | fifteen samples, below |
-| 1 | seven byte record stating the architecture | fifteen samples, below |
+| 0 | the one `0xFEED` frame, holding a list of named nodes by level and index | sixteen samples, below |
+| 1 | seven byte record stating the architecture | sixteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
 | 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
 | 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
-| 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | fifteen samples, three images, below |
+| 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | sixteen samples, three images, below |
 | 6 | the **mode table**: what `0x7E` and the event map both index | ten configs, four architectures, below |
 | 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | thirteen containers, two images, below |
 | 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
@@ -1100,7 +1100,7 @@ is where a press meets an action list; the key table is something else.
 
 ### Slot 0: the only `0xFEED` frame
 
-Exactly one frame per container, always at slot 0. Confirmed on fifteen samples across four
+Exactly one frame per container, always at slot 0. Confirmed on sixteen samples across four
 architectures, and confirmed as *exclusive* by validating every `0xFEED` byte pair in each
 container: no other one closes.
 
@@ -1108,11 +1108,26 @@ container: no other one closes.
 +0x00  u16      0xFEED        stored little endian, so `ed fe` in a hex dump
 +0x02  u16      length        counted from the cookie, stops short of the terminator
 +0x04  u8       00            zero in every sample
-+0x05  ...      payload       begins A7 08 00 00 00 00 00 "Root"
++0x05  ...      nodes         packed end to end, up to +length
 +len   u16      0xBEEF
 ```
 
-The frame therefore occupies `length + 2` bytes, and in all fifteen samples the slot 1 pointer
+A node:
+
+```
++0x00  u8       A7            the tag
++0x01  u16      n             4 + the name's length, so the field counts level, index and name
++0x03  u16      level         0 is the top of the tree
++0x05  u16      index         within its level
++0x07  char     name[n - 4]   ASCII, not terminated
+```
+
+**The nine bytes `A7 08 00 00 00 00 00 "Root"` are one node, not a header.** They were recorded<!--superseded-->
+here as a fixed prologue until section 77, and they are the node named `Root` at level 0 index 0,
+whose `08` is its own length field. Every config in the corpus happens to hold it first; the arch 9
+safe mode container holds it third, so a reader must not depend on the position.
+
+The frame therefore occupies `length + 2` bytes, and in all sixteen samples the slot 1 pointer
 lands on exactly that byte. That is an independent confirmation of the length rule, because the
 pointer and the length come from different places in the file.
 
@@ -1122,12 +1137,27 @@ length is 0 while its terminator sits five bytes in. Read `length == 0` as "empt
 as an offset. Whether the firmware's own parser special cases it that way is **unconfirmed**;
 no arch 12 or arch 14 config parser has been located in the firmware yet.
 
-The payload is a tree of named nodes. In the Harmony 700 sample it holds 62 names, of the shape
-`TV_Power_2`, `Receiver_Input_16`, `PowerOnDelay_<deviceid>_65278`, and the trailing number
-looks like the variable's range rather than its value. That reading is a **lead, not a
-finding**: the firmware routine that consumes the section has not been found, so what the
-section is *for* is still open. `.claude/skills/trace-section/SKILL.md` is the method that
-would settle it.
+The nodes tile the frame exactly, in every framed container: sixteen of the eighteen `make
+coverage` reports, the two exceptions being the One's safe mode config with its degenerate empty
+frame. The walk lands on the byte `length` names, with nothing left over and nothing short, and
+that is what validates the reading:
+`nameNodes` returns nothing at all rather than a partial list when it fails.
+
+Two properties hold corpus wide and are what make this a tree rather than a list of strings:
+
+* **Level 0's indices are a permutation of `0..n-1`**, in every container, whatever order the nodes
+  appear in. So the index is the node's place and the file order is free.
+* **Every level 1 index is below base slot 13's state variable count**, in every container, at 93
+  of 94 on a Harmony 700 and 19 of 21 on a 525. So **level 1 names base slot 13's table, entry by
+  entry.**
+
+Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
+
+In the Harmony 700 sample the frame holds 62 names, of the shape `TV_Power_2`,
+`Receiver_Input_16`, `PowerOnDelay_<deviceid>_65278`. The trailing number looks like the
+variable's range rather than its value, and **that part is still a lead**: no firmware routine
+consuming the section has been found, so the correspondence with slot 13 is established by the
+index and not by a consumer.
 
 ### Slot 1: the config states its own architecture
 
@@ -1140,7 +1170,7 @@ A fixed seven byte record:
 +0x04  u8[3]    00 00 00
 ```
 
-Confirmed on fifteen samples spanning architectures 8, 9, 12 and 14. Every one has its
+Confirmed on sixteen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
 field on nine of them and from the firmware package the container was extracted from on the
 other three, so each sample is a calibration case rather than a self-consistency check.
@@ -1202,7 +1232,7 @@ An eleven byte framed record:
 +0x09  u16      0xEFBF         terminator
 ```
 
-Confirmed on fifteen samples across all four architectures, and the field assignment is a search
+Confirmed on sixteen samples across all four architectures, and the field assignment is a search
 result rather than a reading: of the 24 permutations of the four date bytes, times two month
 bases, times seven weekday offsets, **exactly one is consistent with every sample**. See
 `docs/findings.md` section 21.

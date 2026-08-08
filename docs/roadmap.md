@@ -252,13 +252,15 @@ the gate for any editing at all, and it is squarely an API milestone.
 
 Of the three parts below, **the first two are complete for arch 12 and arch 14**: every reader
 reports its extent and the accounting reaches 100.0% with no overlaps, 24 bytes short on a Harmony
-One and 41 on a 600. Arch 9 is not there, and its remainder is infrared, on an architecture no
-firmware image exists for. Arch 8 is there as of section 75.
+One and 41 on a 600. Arch 9 is not there, and its remainder is infrared; the arch 9 firmware that
+would settle it arrived with the 525 on 8 August 2026 and has not been decoded yet. Arch 8 is there
+as of section 75.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
-number. Every structure `coverage` claims is rebuilt except one, the output is byte identical to
-the input on all seventeen containers, and what is left to copy is 198 to 2367 bytes of a config
-rather than the whole of it.
+number. **Every structure `coverage` claims is rebuilt**, the output is byte identical to the input
+on all eighteen containers, and what is left to copy is 22 to 73 bytes of a user config, which is
+exactly the residue no reader claims either. So the two halves of M2 now meet: what the accounting
+attributes and what the emitter can put back are the same set of bytes.
 
 **Three numbers, not one.** `framed` bytes are computed from typed fields, `carried` bytes came out
 of a reader as an opaque run, `copied` is what no rebuilder claims. Collapsing them is how an
@@ -271,10 +273,10 @@ and so this table cannot be mistaken for the coverage one below by anything look
 | sample | framed | what is carried |
 |---|---|---|
 | `one_config`, arch 12 | 13.4%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
-| `h600_config`, arch 14 | 28.1%<!--fact:framed_h600_config--> | 529 KB, the same |
-| `h700_config`, arch 14 | 25.9%<!--fact:framed_h700_config--> | 724 KB, the same |
+| `h600_config`, arch 14 | 28.3%<!--fact:framed_h600_config--> | 529 KB, the same |
+| `h700_config`, arch 14 | 26.1%<!--fact:framed_h700_config--> | 724 KB, the same |
 | `arch8_config_a` | 21.6%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
-| `h525_config`, arch 9 | 27.7%<!--fact:framed_h525_config--> | 31 KB, and 26 KB still copied: class 5 infrared |
+| `h525_config`, arch 9 | 28.1%<!--fact:framed_h525_config--> | 31 KB, and 26 KB still copied: class 5 infrared |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
@@ -290,11 +292,14 @@ exists to prevent. What does depend on it is **editing an image**, since a carri
 this codec can reproduce and cannot change. So it is a product question rather than a format one,
 and it is not scheduled here.
 
-**One structure is not rebuilt at all, and finding out which was worth the exercise.** Base slot 0,
-the `0xFEED` frame. The accounting counts it because the frame states its own length, and no field
-inside it has ever been read, so `coverage` reports 100% of a Harmony One config attributed while
-277 of those bytes are understood only as far as "this many of them". The emitter is what makes
-that difference visible, and `emit.test.ts` asserts the leftover set is exactly that one name.
+**One structure was not rebuilt at all, and finding out which was worth the exercise.** Base slot
+0, the `0xFEED` frame. The accounting counted it because the frame states its own length, while no
+field inside it had ever been read, so `coverage` reported 100% of a Harmony One config attributed
+with 277 of those bytes understood only as far as "this many of them". The emitter is what made
+that difference visible, and it is what put base slot 0 on the list at all: section 77 read it a
+day later, and `emit.test.ts` now asserts the leftover set is **empty**. The lesson generalises
+past this one section: an accounting that counts bytes cannot tell a read structure from a measured
+one, and an emitter can.
 
 **Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
 is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what

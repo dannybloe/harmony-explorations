@@ -514,16 +514,23 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         blob = data[c.blob_offset:c.blob_offset + c.length]
         self.assertGreater(blob.count(gspm.FRAME_COOKIE), 20)
 
-    def test_every_non_empty_frame_carries_the_same_prologue(self):
+    def test_every_non_empty_frame_holds_a_root_node(self):
+        """`Root` is a name at level 0, not a header.
+
+        This test used to assert that every frame *starts* with those nine bytes, which is true
+        of every config anyone has and is not what the bytes mean: they are one node of a list,
+        and the arch 9 safe mode container in the 525's firmware region puts `Root` third. So the
+        assertion is containment, and the position is deliberately not asserted. Section 77.
+        """
         for name in EXPECTED:
             with self.subTest(image=name):
                 data = lab.load(name)
                 c = gspm.parse(data)
                 if not c.frame_length:
                     continue
-                o = c.file_offset(c.sections[0].address)
-                self.assertEqual(data[o + 5:o + 5 + len(gspm.FRAME_PROLOGUE)],
-                                 gspm.FRAME_PROLOGUE)
+                o = c.blob_offset_of(c.sections[0].address)
+                frame = c.blob[o + 5:o + c.frame_length]
+                self.assertIn(gspm.ROOT_NODE, frame)
 
     def test_a_flipped_length_byte_stops_the_frame_validating(self):
         """A frame check that cannot fail is not a check."""

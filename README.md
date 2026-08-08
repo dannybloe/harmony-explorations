@@ -129,8 +129,11 @@ defect it is.
 
 Zero overlapping claims anywhere. `make coverage` prints it. **Both target architectures reach
 100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One config and 41 in a Harmony 600, which
-is the point at which an emitter can rebuild a config rather than copy a residue. What is left on
-the other two is infrared, on the two architectures no firmware image exists for.
+is the point at which an emitter can rebuild a config rather than copy a residue, and
+`packages/codec/src/emit.ts` now does: every owner the accounting claims is rebuilt from fields on
+all eighteen containers, and what stays copied is 22 to 73 bytes, exactly what no reader claims.
+What is left is arch 9's infrared, and the arch 9 firmware that would settle it arrived with the
+525 on 8 August 2026.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
 classes, which physical button each scan code is, and architecture 9's infrared, which is 24467 of

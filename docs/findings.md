@@ -49,7 +49,14 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Eighteen have been found and corrected so far. The newest is section 76's, and it is one this
+Nineteen have been found and corrected so far. The newest is section 77's, and it is the most
+productive kind: `FRAME_PROLOGUE`, a nine byte constant this project matched at the head of every
+`0xFEED` frame, was never a prologue. It was the first node of a list, and two of its bytes were
+that node's own length. Recording it as a fixed string is what kept base slot 0 unread for months,
+and the sample that exposed it did so by being the one container whose first node is named
+something else.
+
+Before it, section 76's, and it is one this
 project set up deliberately: `docs/memory-map-525.md` published nine predictions before a Harmony
 525 was connected, and the one that failed was not in the list at all. Two documents said bit 23 of
 arch 9's flash address "reads as a flag rather than an address bit", from concordance's table<!--superseded-->
@@ -8640,6 +8647,90 @@ disassemble at `0x1000`.
   mode container.
 * `packages/usb/src/remote.ts`: the one chunk cap moved into `readFlash`, so it covers arch 9's
   internal region as well as the `0xFE` window it was written for.
+
+
+## 77. Base slot 0 is a tree of named nodes, and level 1 names the state variables
+
+The one section the emitter could not touch, and the last one whose extent was known while none of
+its contents were. `coverage` counted its bytes because the `0xFEED` frame states its own length,
+so a Harmony One config could report 100% attributed with 277 bytes inside it understood only as
+"this many".
+
+**What opened it was a sample whose first node is not called `Root`.** Section 76 found an arch 9
+safe mode container in the 525's firmware region, and the first thing it contradicted was
+`FRAME_PROLOGUE`, a constant this project had carried for months:
+
+```
+a7 08 00 00 00 00 00 R o o t
+```
+
+That is not a prologue. It is the **first node**, which in every config anyone had happens to be
+named `Root` with both its fields zero. In the safe mode container the first node is
+`CurrentActivityState_PowerOff_1`, and `Root` is the third.
+
+### The reading
+
+```
+the frame
++0x00  u16   0xFEED
++0x02  u16   length, counted from the cookie, terminator excluded
++0x04  u8    zero in every sample
++0x05        nodes, packed end to end, up to +length
++len   u16   0xBEEF
+
+a node
++0x00  u8    0xA7
++0x01  u16   4 + the name's length
++0x03  u16   level
++0x05  u16   index
++0x07  char  name[]
+```
+
+The `u16` at `+0x01` is what makes the walk self checking: it counts the two fields and the name
+and not the tag, so `Root` states 8 and `State` states 9, which is `4 + 4` and `4 + 5`. It was
+sitting in the published layout the whole time as the second and third bytes of a fixed prologue.
+
+### The closures, all three corpus wide
+
+* **The nodes tile the frame exactly**, in every framed container, landing on the byte the
+  stated length names with nothing left over and nothing short. `nameNodes` returns undefined
+  rather than a partial list when they do not, which is the same discipline `glyphAt` uses.
+* **Level 0's indices are a permutation of `0..n-1`** in every container, whatever order the nodes
+  appear in. In the safe mode container the level 0 nodes are `State` at index 1 and `Root` at
+  index 0, in that file order, so the index is the node's place and the file's order is free.
+* **Every level 1 index is inside base slot 13's state variable count**, in every container. Not
+  loosely: the largest is 93 of 94 on a Harmony 700, 73 of 74 on a 600, 44 of 46 on a One, 19 of 21
+  on the bench 525. So **level 1 names base slot 13's table, entry by entry**, which is the
+  designer's prior in harmony-decompiler discussion #1 made executable for the first time.
+
+Level 2 exists on arch 8 and arch 9 and holds a small menu, `AssistantMenu` and `Show` under
+`HarmonyAssistant`, with indices that run within their own level.
+
+### What it rules out
+
+That `Root` is structural. Nothing in the frame distinguishes it; it is a name at level 0 like any
+other, and a reader that requires it refuses a container the remote accepts.
+
+That base slot 0 needs a firmware. It was read from four architectures of data and one sample that
+broke the pattern, with no arch 12 or arch 14 code opened at all. Sixteen of the eighteen containers `make coverage`
+reports carry nodes, and the two that do not are the One's safe mode config, whose frame is the
+degenerate empty one.
+
+### What would falsify it
+
+A frame whose nodes do not tile it. A level 0 index that repeats or skips. A level 1 index at or
+above base slot 13's count, which would mean the two tables are not the same table. A name
+containing a byte that is not text, which would suggest the field is not a name.
+
+### Where it lands
+
+* `docs/config-format.md`: base slot 0.
+* `packages/codec/src/sections.ts`: `nameNodes`, and the constants beside it.
+* `packages/codec/src/emit.ts`: base slot 0 is rebuilt from fields, so **every owner the accounting
+  claims is now rebuilt** and what stays copied is only what nothing claims: 22 bytes of a Harmony
+  One config, 39 of a 600.
+* `packages/codec/test/sections.test.ts`, including the negative: a node length one byte out stops
+  the frame tiling.
 
 
 ## References

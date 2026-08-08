@@ -28,6 +28,9 @@
 import {
   ARCH_RECORD_LENGTH,
   CLOCK_COOKIE,
+  FRAME_COOKIE,
+  FRAME_END,
+  FRAME_END_LENGTH,
   CLOCK_END,
   CLOCK_EPOCH_MS,
   Container,
@@ -41,7 +44,10 @@ import {
 import { countedPointers } from './valuemap.ts';
 import {
   EVENT_MAP_SLOT,
+  FRAME_HEADER,
   LOG_AREA_SLOT,
+  NAME_NODE_FIELDS,
+  NAME_NODE_TAG,
   LOG_AREA_WIDE_ARCHITECTURES,
   STATE_TABLE_SLOT,
   eventMap,
@@ -50,6 +56,7 @@ import {
   modeTable,
   stateRecords,
   logArea,
+  nameNodes,
   stateTable,
   taggedList,
   taggedListPools,
@@ -292,6 +299,29 @@ export function rebuilds(c: Container): Rebuild[] {
       .u8(month)
       .u8(year - 2000)
       .raw(CLOCK_END));
+  }
+
+  // Base slot 0, the `0xFEED` frame and its named nodes. **This was the one owner the emitter
+  // could not touch**, and it is what the exercise found: the accounting counted the section
+  // because the frame states its own length, and no field inside it had ever been read. Section 77
+  // read it, so it is framed here down to the last byte of every name.
+  const tree = c.sections[0];
+  const treeAt = tree === undefined || tree.isNull ? undefined : c.blobOffsetOf(tree.address);
+  const nodes = nameNodes(c);
+  if (treeAt !== undefined && nodes !== undefined && c.frameLength !== undefined) {
+    const w = new Writer(c.frameLength + FRAME_END_LENGTH)
+      .raw(FRAME_COOKIE)
+      .u16(c.frameLength)
+      .raw(c.blob.subarray(treeAt + 4, treeAt + FRAME_HEADER));
+    for (const node of nodes) {
+      w.u8(NAME_NODE_TAG)
+        .u16(NAME_NODE_FIELDS + node.name.length)
+        .u16(node.level)
+        .u16(node.index)
+        .ascii(node.name);
+    }
+    // The terminator sits outside the stated length, which is why the writer is two bytes longer.
+    partly(treeAt, 'slot-0-tree', w.raw(FRAME_END), c.frameLength + FRAME_END_LENGTH - 1);
   }
 
   // Base slot 2, the log area: a capacity and the bounds of a region above the config. The

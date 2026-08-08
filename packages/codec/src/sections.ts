@@ -96,6 +96,87 @@ export function eventMap(c: Container): EventMap | undefined {
   return { fallback: u24(c.blob, off), entries, length };
 }
 
+/** Base slot 0's node tag. Every node in every frame in the corpus opens with it. */
+export const NAME_NODE_TAG = 0xa7;
+/** Bytes of a node before its name: the tag, the length, and the two `u16` fields. */
+export const NAME_NODE_HEADER = 7;
+/** What the stated length counts besides the name: the two `u16` fields. */
+export const NAME_NODE_FIELDS = 4;
+/** The level whose nodes index base slot 13. */
+export const NAME_LEVEL_STATE_VARIABLE = 1;
+/** Bytes of the frame before the first node: the cookie, the length, and a zero byte. */
+export const FRAME_HEADER = 5;
+
+export interface NameNode {
+  /** Nesting level. 0 is the containers, 1 the state variables, 2 a menu below one of them. */
+  level: number;
+  /**
+   * An index. At level 0 it is the node's own place among the level 0 nodes, a permutation of
+   * `0..n-1` on every container. At level 1 it is the **base slot 13 state variable** the name
+   * belongs to, which is what makes this section the naming of that table.
+   */
+  index: number;
+  name: string;
+  /** Blob offset of the tag, and the whole node's length. */
+  start: number;
+  length: number;
+}
+
+/**
+ * Base slot 0: the `0xFEED` frame, as the list of named nodes it is.
+ *
+ * ```
+ * +0x00  u16   0xFEED
+ * +0x02  u16   length, from the cookie, terminator excluded
+ * +0x04  u8    zero in every sample
+ * +0x05        nodes, packed end to end, up to +length
+ * +len   u16   0xBEEF
+ *
+ * a node:
+ * +0x00  u8    0xA7
+ * +0x01  u16   4 + the name's length
+ * +0x03  u16   level
+ * +0x05  u16   index
+ * +0x07  char  name[]
+ * ```
+ *
+ * **This section was "understood only as far as how many bytes it has" until 8 August 2026**, and
+ * the emitter is what said so: the byte accounting counted it because the frame states its own
+ * length, and no field inside it had ever been read. What opened it was a sample whose first node
+ * is not called `Root`, which showed that `Root` was never a prologue but simply the first node.
+ *
+ * The closure is that the nodes tile the frame exactly on all fifteen framed containers, that
+ * level 0's indices are a permutation of `0..n-1` on every one, and that every level 1 index is
+ * inside base slot 13's state variable count. `docs/findings.md` section 77.
+ */
+export function nameNodes(c: Container): NameNode[] | undefined {
+  if (c.frameLength === undefined || c.frameLength === 0) return undefined;
+  const section = c.sections[0];
+  if (section === undefined || section.isNull) return undefined;
+  const start = c.blobOffsetOf(section.address);
+  if (start === undefined) return undefined;
+  const end = start + c.frameLength;
+  if (end > c.blob.length) return undefined;
+
+  const out: NameNode[] = [];
+  let at = start + FRAME_HEADER;
+  while (at < end) {
+    if (u8(c.blob, at) !== NAME_NODE_TAG) return undefined;
+    const stated = u16(c.blob, at + 1);
+    if (stated < NAME_NODE_FIELDS) return undefined;
+    const length = 3 + stated;
+    if (at + length > end) return undefined;
+    let name = '';
+    for (let i = at + NAME_NODE_HEADER; i < at + length; i += 1) {
+      name += String.fromCharCode(u8(c.blob, i));
+    }
+    out.push({ level: u16(c.blob, at + 3), index: u16(c.blob, at + 5), name, start: at, length });
+    at += length;
+  }
+  // A frame whose nodes do not land on its stated end is a misread, not a short list.
+  return at === end ? out : undefined;
+}
+
 export const LOG_AREA_SLOT = 2;
 /** The capacity field is a `u24` on arch 12, where the section is nine bytes rather than eight. */
 export const LOG_AREA_WIDE_ARCHITECTURES: ReadonlySet<number> = new Set([12]);

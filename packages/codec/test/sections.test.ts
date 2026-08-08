@@ -11,6 +11,14 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
+  Container,
+  FAMILIES,
+  FRAME_HEADER,
+  NAME_LEVEL_STATE_VARIABLE,
+  SECTION_ITEM_SIZE,
+  SECTION_TABLE_OFFSET,
+  Section,
+  nameNodes,
   ACTION_NOOP_LIMIT,
   ACTION_LIST_INDEX_OPCODE,
   archSlot,
@@ -917,4 +925,122 @@ test('a second group names blocks the first does not', skipUnless('arch8_config_
     }
   }
   assert.equal(twoGroup, 37);
+});
+
+/**
+ * Base slot 0's named nodes, section 77.
+ *
+ * The corpus wide closures are the argument, so they are the test: the nodes tile the frame
+ * exactly, level 0's indices are a permutation, and every level 1 index is inside base slot 13's
+ * count. Each one would fail on a wrong node stride, which is the mistake this reading could make.
+ */
+const FRAMED: readonly [string, number][] = [
+  ['h700_gspm', 2],
+  ['h600_safemode_gspm', 2],
+  ['h650_safemode_gspm', 2],
+  ['h525_config', 13],
+  ['h525_config_2', 9],
+  ['arch8_config_a', 12],
+  ['arch8_config_b', 17],
+  ['arch8_config_c', 18],
+  ['arch8_config_d', 18],
+  ['one_config', 14],
+  ['one_config_unprogrammed', 9],
+  ['h600_config', 43],
+  ['h700_config', 62],
+  ['h700_config_2', 62],
+  ['one_spare_before_sync', 9],
+  ['one_spare_after_sync', 7],
+];
+
+/**
+ * The two containers with no nodes, and they are not a gap in the reading. Both are the One's safe
+ * mode config, whose frame is the degenerate empty one: cookie, a zero length, a zero byte,
+ * terminator. `nameNodes` refusing them is the same refusal it gives a misread frame, which is why
+ * the caller checks `frameLength` first.
+ */
+const UNFRAMED = ['one34_region2', 'one_safemode'];
+
+for (const [name, count] of FRAMED) {
+  test(`${name} holds ${count} named nodes that tile its frame`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    const nodes = nameNodes(c);
+    assert.ok(nodes !== undefined, 'the frame did not read as nodes');
+    assert.equal(nodes.length, count);
+    // Tiling: `nameNodes` returns undefined unless the walk lands on the stated end, so this
+    // checks the arithmetic from the other side rather than trusting that refusal.
+    const total = nodes.reduce((n, node) => n + node.length, 0);
+    assert.equal(total + FRAME_HEADER, c.frameLength as number);
+
+    const level0 = nodes.filter((n) => n.level === 0).map((n) => n.index).sort((a, b) => a - b);
+    assert.deepEqual(level0, level0.map((_, i) => i), 'level 0 indices are a permutation');
+
+    const state = stateTable(c);
+    for (const node of nodes.filter((n) => n.level === NAME_LEVEL_STATE_VARIABLE)) {
+      assert.ok(state !== undefined && node.index < state.count,
+        `${node.name} indexes state variable ${node.index} of ${state?.count}`);
+    }
+  });
+}
+
+for (const name of UNFRAMED) {
+  test(`${name} has an empty frame and therefore no nodes`, skipUnless(name), () => {
+    const c = parse(load(name) as Uint8Array);
+    assert.equal(c.frameLength, 0);
+    assert.equal(nameNodes(c), undefined);
+  });
+}
+
+test('the framed containers span four architectures', () => {
+  // The house habit: a reading confirmed on one value of a variable is not confirmed. Sixteen of
+  // the eighteen containers are framed and they cover arch 8, 9, 12 and 14, so the node layout is
+  // not an arch 12 accident.
+  const architectures = new Set<number>();
+  for (const [name] of FRAMED) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const arch = parse(data).architecture;
+    if (arch !== undefined) architectures.add(arch);
+  }
+  if (architectures.size === 0) return; // no lab
+  assert.deepEqual([...architectures].sort((a, b) => a - b), [8, 9, 12, 14]);
+});
+
+test('a node stride one byte out stops the frame tiling', skipUnless('one_config'), () => {
+  // The negative. A walk that cannot fail proves nothing, and an off by one in the node header is
+  // exactly the mistake available here: the stated length counts the two u16 fields and not the
+  // tag, so reading it as either neighbour still produces plausible names for a while.
+  const c = parse(load('one_config') as Uint8Array);
+  const start = c.blobOffsetOf((c.sections[0] as { address: number }).address) as number;
+  const blob = Uint8Array.from(c.blob);
+  const at = start + FRAME_HEADER + 1; // the first node's stated length
+  blob[at] = ((blob[at] as number) + 1) & 0xff;
+  const broken = new Container({ ...c, blob });
+  assert.equal(nameNodes(broken), undefined);
+});
+
+test('the first node is not always called Root, which is what opened this section', () => {
+  // `Root` was recorded as a fixed prologue for months and it is simply the name of the first
+  // node in every config anyone had. The arch 9 safe mode container's first node is a state
+  // variable, so the prologue reading would refuse a container the firmware accepts. The container
+  // itself is not in the corpus yet, section 76, so this pins the shape rather than that sample.
+  const blob = new Uint8Array(64);
+  blob.set([0xed, 0xfe, 0x00, 0x00, 0x00], 0);
+  // One node, level 1, index 14, named "A".
+  blob.set([0xa7, 0x05, 0x00, 0x01, 0x00, 0x0e, 0x00, 0x41], FRAME_HEADER);
+  const length = FRAME_HEADER + 8;
+  blob[2] = length & 0xff;
+  blob.set([0xef, 0xbe], length);
+  const c = new Container({
+    // A nonzero flash base, because address zero is how a NULL section is spelled and slot 0
+    // has to be a real one here.
+    blobOffset: 0, length: blob.length, flashBase: 0x1000, endAddr: blob.length - 4,
+    formatRaw: 0x1400, pointerCount: 2, markerOffset: SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * 2,
+    marker: 'CMAH', family: FAMILIES[0] as (typeof FAMILIES)[number], trailerChecksum: 0, blob,
+    sections: [new Section(0, 0x1000), new Section(1, 0)],
+  });
+  c.frameLength = length;
+  const nodes = nameNodes(c);
+  assert.ok(nodes !== undefined);
+  assert.deepEqual(nodes.map((n) => [n.level, n.index, n.name]), [[1, 14, 'A']]);
 });

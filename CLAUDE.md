@@ -406,7 +406,7 @@ recorded, is ordered correctly by it.
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
 dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that
-`0x0B + 4 * N` hits the marker offset exactly on fifteen samples where the old reading needed an
+`0x0B + 4 * N` hits the marker offset exactly on sixteen samples where the old reading needed an
 unexplained `- 3`. Read three byte addresses and check `spare`, because a nonzero `spare` read as
 part of a `u32` adds `0x1000000` silently.
 
@@ -556,7 +556,7 @@ over the runner-up before trusting its answer.
 Output here is AI-produced and published as such, so claims are expected to be checkable.
 Established norms:
 
-* Prefer two independent samples. The container is validated against fifteen, spanning four
+* Prefer two independent samples. The container is validated against sixteen, spanning four
   architectures, four base addresses, three format versions and three pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
@@ -731,14 +731,15 @@ set, bounded below by a mode entry's end and above by the lowest address another
 That completes the first two of milestone M2's three parts on arch 8, 12 and 14.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
-the mirror of `claims`, owner name for owner name, and **every owner is rebuilt except base slot 0**;
-the bytes come back identical on all seventeen containers and the copied residue is 198 to 2367
-bytes of a config. It builds into a buffer filled with `0xA5` rather than into a copy of its input,
+the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
+rebuilt**; the bytes come back identical on all seventeen containers and the copied residue is 22 to
+73 bytes of a user config, which is exactly what no reader claims either. It builds into a buffer
+filled with `0xA5` rather than into a copy of its input,
 because **an emitter that starts from a copy passes a round trip test while writing nothing at
 all**, so the tests that carry weight are the negatives.
 
 **The number has a depth, the same way `actions.ts` does.** `framed` bytes come from typed fields,
-5.5% to 38.2% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
+5.5% to 38.3% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
 that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
 their pixels**: the encoder chose where to skip and where to emit literals and several encodings
 draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
@@ -746,10 +747,13 @@ means is already read, so framing the body would move the number 60 to 80 points
 becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
 one, which is a product question. `docs/roadmap.md`, milestone M2.
 
-**Base slot 0 is the one thing the emitter cannot touch**, and it is what the exercise found: the
-accounting counts it because its `0xFEED` frame states its own length, and no field inside it has
-ever been read. So a 100% coverage figure includes 277 bytes of a Harmony One config understood
-only as far as how many there are.
+**Base slot 0 is read**, section 77, and it was the emitter that found it worth reading: it was the
+one section whose bytes the accounting counted while nothing inside it had ever been named, because
+its `0xFEED` frame states its own length. It is a list of `0xA7` framed nodes, `u8 tag; u16 4 +
+len(name); u16 level; u16 index; char name[]`, and **level 1 names base slot 13's state variables,
+entry by entry**. What opened it was the arch 9 safe mode container, whose first node is not called
+`Root`: `FRAME_PROLOGUE` was never a prologue, it was the first node, and two of its nine bytes were
+that node's own length.
 
 **What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
 mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in
@@ -779,9 +783,10 @@ of it yet, so class 5 infrared is still open and now has something to appeal to.
 
 **Its safe mode config is the next piece of work and it is bigger than it looks.** Found at flash
 `0x818000`, it parses and its checksum recomputes, and it contradicts six claims the corpus
-asserts: base slot 1's seven byte length, the log area's range, slot 0's `Root` node, one font
-count per container, the font header's spare byte, and two corpus totals. It is deliberately **not**
-in the corpus until each is re-derived, because adding it would turn six properties into six
-exceptions in one commit. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the way:
+asserts. **The first of the six is settled and it was not a fix**: slot 0's `Root` node was a
+misreading of the whole section, and correcting it read base slot 0, section 77. Five are left:
+base slot 1's seven byte length, the log area's range, one font count per container, the font
+header's spare byte, and two corpus totals. It is deliberately **not** in the corpus until each is
+re-derived, because adding it would turn five properties into five exceptions in one commit. Section 76 has the table. Three arch 12 assumptions came out of `packages/usb` on the way:
 the version reply was matched as a whole byte, its length was fixed at twelve, and the region
 validator was hard coded. `docs/memory-map-525.md` holds the predictions against the measurements.

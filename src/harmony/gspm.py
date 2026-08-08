@@ -101,9 +101,13 @@ FRAME_END = b'\xef\xbe'
 # An empty frame carries length 0 and its terminator sits five bytes in, so the length rule
 # below does not apply to it. Seen only in the One's safe mode config so far.
 EMPTY_FRAME_LENGTH = 5
-# Every non-empty frame's payload starts with this. Twelve samples, four architectures. The
-# 0xA7 looks like a type tag and `Root` names the tree the rest of the section describes.
-FRAME_PROLOGUE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
+# The level 0 node named `Root`, which every non-empty frame in the corpus holds and which every
+# config in it happens to hold first. **This used to be called FRAME_PROLOGUE and was read as a<!--superseded-->
+# fixed nine byte header**, which is what kept the section unread: `0xA7` is a node tag and the
+# `\x08` after it is that node's own length field, `4 + len('Root')`. An arch 9 safe mode container
+# found in the 525's firmware region puts `Root` third. See `docs/findings.md` section 77; the
+# node walk itself lives in `packages/codec/src/sections.ts`, per decision 3.
+ROOT_NODE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 
 # Section slot 1 is a seven byte record that states the architecture twice over. Confirmed
 # against the EZHex header's <PROTOCOL> on nine samples and against the firmware package a
@@ -2534,7 +2538,7 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
         +0x00  u16     0xFEED
         +0x02  u16     length, counted from the cookie and excluding the terminator
         +0x04  u8      zero in every sample
-        +0x05  ...     payload, starting with FRAME_PROLOGUE
+        +0x05  ...     nodes, `u8 0xA7; u16 4 + len(name); u16 level; u16 index; char name[]`
         +len   u16     0xBEEF
 
     So the frame occupies `length + 2` bytes, and that lands exactly on the next section in

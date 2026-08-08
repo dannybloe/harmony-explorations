@@ -41,22 +41,22 @@ import {
 const REBUILT: readonly [string, number, number][] = [
   ['one34_region2', 2168, 1130],
   ['one_safemode', 2168, 1130],
-  ['h700_gspm', 1900, 5143],
-  ['h600_safemode_gspm', 1900, 5143],
-  ['h650_safemode_gspm', 1900, 5143],
-  ['h525_config', 21757, 30607],
-  ['h525_config_2', 14907, 24372],
-  ['arch8_config_a', 95871, 348063],
-  ['arch8_config_b', 174656, 295506],
-  ['arch8_config_c', 186704, 303503],
-  ['arch8_config_d', 188062, 303591],
-  ['one_config', 223887, 1448644],
-  ['one_config_unprogrammed', 67855, 1164176],
-  ['h600_config', 207354, 529184],
-  ['h700_config', 253243, 723574],
-  ['h700_config_2', 253271, 723604],
-  ['one_spare_before_sync', 67855, 1164176],
-  ['one_spare_after_sync', 141397, 1184969],
+  ['h700_gspm', 1929, 5144],
+  ['h600_safemode_gspm', 1929, 5144],
+  ['h650_safemode_gspm', 1929, 5144],
+  ['h525_config', 22063, 30608],
+  ['h525_config_2', 15079, 24373],
+  ['arch8_config_a', 96134, 348064],
+  ['arch8_config_b', 175042, 295507],
+  ['arch8_config_c', 187127, 303504],
+  ['arch8_config_d', 188485, 303592],
+  ['one_config', 224165, 1448645],
+  ['one_config_unprogrammed', 68038, 1164177],
+  ['h600_config', 208925, 529185],
+  ['h700_config', 255570, 723575],
+  ['h700_config_2', 255598, 723605],
+  ['one_spare_before_sync', 68038, 1164177],
+  ['one_spare_after_sync', 141572, 1184970],
 ];
 
 for (const [name, framed, carried] of REBUILT) {
@@ -81,11 +81,10 @@ for (const [name, framed, carried] of REBUILT) {
     assert.equal(report.framed + report.carried + report.copied, c.blob.length, 'a partition');
   });
 
-  test(`${name} leaves only base slot 0 unrebuilt`, skipUnless(name), () => {
-    // The difference between what `coverage` claims and what `emit` can put back, which is the
-    // remaining work stated as a set rather than as a number. Base slot 0 is the whole of it: its
-    // extent is read, from the `0xFEED` frame that states it, and not one field inside it ever
-    // was, so the accounting counts it and the emitter cannot touch it.
+  test(`${name} rebuilds every byte the accounting claims`, skipUnless(name), () => {
+    // The difference between what `coverage` claims and what `emit` can put back, which used to be
+    // base slot 0 and is now nothing. Section 77 read that frame, so what is left copied is only
+    // what no reader claims at all, and this test is what stops that gap reopening quietly.
     const c = parse(load(name) as Uint8Array);
     const done = new Uint8Array(c.blob.length);
     for (const rebuild of rebuilds(c)) {
@@ -100,10 +99,7 @@ for (const [name, framed, carried] of REBUILT) {
     // The trailer is written by `emit` after the rebuild list, because it covers what the list
     // wrote, so its absence here is the design and not a gap.
     left.delete('trailer');
-    // Two of the safe mode containers have no `0xFEED` frame at all, so nothing claims base slot 0
-    // there and the leftover set is empty rather than that one name.
-    const claimed = claims(c).some((claim) => claim.owner === 'slot-0-tree');
-    assert.deepEqual([...left], claimed ? ['slot-0-tree'] : []);
+    assert.deepEqual([...left], []);
   });
 }
 
@@ -148,9 +144,12 @@ test('a key record changed in the parse reaches the output', skipUnless('h600_co
 });
 
 test('a flipped payload byte breaks the trailer checksum', skipUnless('h600_config'), () => {
-  // The house habit: a checksum that cannot fail is not a check. The flipped byte is inside base
-  // slot 0, the one section no rebuilder touches, so it is copied through unchanged and the only
-  // thing that can catch it is the emitter recomputing the word rather than copying it.
+  // The house habit: a checksum that cannot fail is not a check. The flipped byte is a base slot 0
+  // node's level field, which the rebuilder reads and writes back faithfully, so the payload comes
+  // out matching its input and the only thing that can catch the flip is the emitter recomputing
+  // the trailer word rather than copying it. That held when slot 0 was copied through unread and it
+  // still holds now that section 77 rebuilds it, for the same reason: the emitter reproduces what
+  // it was given, so the checksum is the only place a changed payload can show up.
   const original = parse(load('h600_config') as Uint8Array);
   const blob = Uint8Array.from(original.blob);
   const tree = original.sections[0];

@@ -266,7 +266,7 @@ class TestTheStateVariableRecord(unittest.TestCase):
         for name, expected in (('one_spare_before_sync', {10, 12}), ('one_spare_after_sync', {23})):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
-                at = c.blob.find(gspm.FRAME_PROLOGUE)
+                at = c.blob_offset_of(c.sections[0].address)
                 names = [m.group().decode('ascii')
                          for m in re.finditer(rb'[ -~]{3,}', c.blob[at:at + c.frame_length])]
                 suffixes = {int(n.rsplit('_', 1)[1]) for n in names if re.search(r'_\d+$', n)}

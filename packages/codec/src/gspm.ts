@@ -120,8 +120,10 @@ export function trailerChecksum(blob: Uint8Array): number {
  * Section slot 0 is a single 0xFEED framed block. Stored little endian, so the cookie reads
  * `ed fe` in a hex dump.
  */
-const FRAME_COOKIE = new Uint8Array([0xed, 0xfe]);
-const FRAME_END = new Uint8Array([0xef, 0xbe]);
+export const FRAME_COOKIE = new Uint8Array([0xed, 0xfe]);
+export const FRAME_END = new Uint8Array([0xef, 0xbe]);
+/** The terminator sits outside the frame's stated length, so a frame occupies `length + 2`. */
+export const FRAME_END_LENGTH = 2;
 /** An empty frame carries length 0 and its terminator sits five bytes in. */
 const EMPTY_FRAME_LENGTH = 5;
 

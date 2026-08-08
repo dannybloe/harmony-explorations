@@ -145,7 +145,7 @@ class TestWhatTheChangeDid(unittest.TestCase):
         for name, expected in NAMES.items():
             with self.subTest(name):
                 c = container(name)
-                at = c.blob.find(gspm.FRAME_PROLOGUE)
+                at = c.blob_offset_of(c.sections[0].address)
                 self.assertNotEqual(at, -1)
                 frame = c.blob[at:at + c.frame_length]
                 found = {m.group().decode('ascii') for m in re.finditer(rb'[ -~]{3,}', frame)}
