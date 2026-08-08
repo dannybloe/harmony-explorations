@@ -84,6 +84,47 @@ for (const [name, accounted, total] of ACCOUNTED) {
   });
 }
 
+test('the gap families are computed over every gap, not the listed ones',
+  skipUnless('h525_config'), () => {
+    // The view that finds structures. `gaps` is capped at REPORT_LIMIT and sorted by size, so a
+    // family of forty equal gaps below the cut is invisible in it; sections 75 and 66 were both
+    // found by looking past that cut by hand. This is that view, and the totals below are what
+    // says it did not stop at the cap either.
+    const report = coverage(parse(load('h525_config') as Uint8Array));
+    assert.equal(report.gapCount, 203);
+    assert.equal(report.gapBytes, report.total - report.accounted);
+    assert.ok(report.gapCount > report.gaps.length, 'the listed gaps are a sample, not the list');
+    const biggest = report.gapFamilies[0];
+    assert.deepEqual(biggest, { length: 154, count: 43, bytes: 6622 });
+    // Sorted by total bytes, and the largest single gap is not the largest family: 1814 bytes in
+    // one run against 6622 in forty three, which is the whole point of the view.
+    assert.equal(report.gaps[0]?.length, 1814);
+    assert.ok((biggest?.bytes ?? 0) > 1814);
+  });
+
+test('a gap family counts equal lengths and nothing else', () => {
+  // A synthetic case, because the corpus cannot produce a container with a chosen gap layout and
+  // an off by one here would be invisible against real data.
+  const blob = new Uint8Array(64);
+  const report = coverage(new Container({
+    blobOffset: 0, length: blob.length, flashBase: 0x1000, endAddr: blob.length - 4,
+    formatRaw: 0x1400, pointerCount: 2, markerOffset: SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * 2,
+    marker: 'CMAH', family: FAMILIES[0] as (typeof FAMILIES)[number], trailerChecksum: 0, blob,
+    sections: [],
+  }));
+  // Whatever this container claims, every family's bytes are its length times its count and the
+  // families partition the gaps.
+  for (const family of report.gapFamilies) {
+    assert.equal(family.bytes, family.length * family.count);
+  }
+  assert.equal(
+    report.gapFamilies.reduce((n, f) => n + f.count, 0) <= report.gapCount,
+    true,
+    'families are capped, so they can only undercount',
+  );
+});
+
+
 test('the gaps and the accounted bytes partition the container', skipWithoutLab(), () => {
   // Not a restatement of the accounted count: `gaps` is truncated to the largest few for the
   // report, so this checks the untruncated arithmetic by asking that no gap and no claim

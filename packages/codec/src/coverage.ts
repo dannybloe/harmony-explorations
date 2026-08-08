@@ -51,12 +51,28 @@ export interface CoverageReport {
   byOwner: [string, number][];
   /** Runs nothing claims, largest first. Where the remaining work is. */
   gaps: { start: number; length: number }[];
+  /**
+   * Every gap grouped by its length, by total bytes.
+   *
+   * **This is the view that finds structures, and `gaps` is the one that hides them.** Sections 75
+   * and 66 were both found by asking for the whole gap list and noticing families with the same
+   * count: 37 short infrared headers, 37 unclaimed blocks and the 37 gaps between them, all of
+   * which sat below the twenty largest and so below the cut. Section 81's arch 9 remainder is
+   * 154 x 43, 213 x 30 and 157 x 35, which says "three structures with a fixed size" before any
+   * byte of it is read. Unlike `gaps` this is computed over all of them.
+   */
+  gapFamilies: { length: number; count: number; bytes: number }[];
+  /** How many gaps there are in total and how many bytes they hold, whatever `gaps` lists. */
+  gapCount: number;
+  gapBytes: number;
   /** Runs more than one claim wants. Always a defect in one of them. */
   overlaps: Overlap[];
 }
 
 /** How many of the largest gaps and overlaps a report carries. The rest are counted, not listed. */
 export const REPORT_LIMIT = 20;
+/** How many gap families a report carries, by total bytes. */
+export const FAMILY_LIMIT = 12;
 
 /**
  * Every claim this codec can make about `c`, in no particular order and possibly overlapping.
@@ -382,12 +398,21 @@ export function coverage(c: Container): CoverageReport {
   }
 
   const accounted = owner.reduce<number>((n, o) => (o === undefined ? n : n + 1), 0);
+  const gaps = runs(total, (i) => owner[i] === undefined);
+  const families = new Map<number, number>();
+  for (const gap of gaps) families.set(gap.length, (families.get(gap.length) ?? 0) + 1);
   return {
     total,
     accounted,
     fraction: total === 0 ? 0 : accounted / total,
     byOwner: [...byOwner.entries()].sort((a, b) => b[1] - a[1]),
-    gaps: runs(total, (i) => owner[i] === undefined).slice(0, REPORT_LIMIT),
+    gaps: gaps.slice(0, REPORT_LIMIT),
+    gapFamilies: [...families.entries()]
+      .map(([length, count]) => ({ length, count, bytes: length * count }))
+      .sort((a, b) => b.bytes - a.bytes || b.length - a.length)
+      .slice(0, FAMILY_LIMIT),
+    gapCount: gaps.length,
+    gapBytes: gaps.reduce((n, gap) => n + gap.length, 0),
     overlaps: mergeOverlaps(total, overlapping).slice(0, REPORT_LIMIT),
   };
 }

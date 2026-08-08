@@ -782,8 +782,10 @@ unclaimed blocks and the 37 gaps between them, and none of the counts moves when
 from 234 records to 462.
 
 **Read the whole gap list before choosing a target**, and this is the second finding it produced:
-`make coverage --detail` prints only the twenty largest of 128, and both this and section 66 came
-from asking for all of them and noticing families with the same count.
+`make coverage --detail` used to print only the largest few of 128, and both this and section 66
+came from asking for all of them and noticing families with the same count. **It prints the
+families now**, length times count sorted by total bytes, computed over every gap rather than the
+listed ones, so the next one of these does not need the hand count.
 
 What is left is arch 9's class 5 infrared, and the arch 9 firmware it wanted is in the lab and open,
 section 80: `h525_code` is the 525's whole internal program flash, loading at `0x0000` with the

@@ -44,6 +44,20 @@ function show(label: string, report: CoverageReport, architecture: number | unde
       `    gap at 0x${gap.start.toString(16).padStart(6, '0')}  ${String(gap.length).padStart(8)}\n`,
     );
   }
+  // The five largest gaps say where the biggest hole is; the families say whether it is one hole
+  // or forty of the same size, and that is the question that has twice named a structure. So the
+  // total is printed too: five lines of gaps out of two hundred used to read like the whole list.
+  if (report.gapCount > 0) {
+    process.stdout.write(
+      `    ${String(report.gapCount).padStart(4)} gaps, ${report.gapBytes} bytes, by family:\n`,
+    );
+    for (const family of report.gapFamilies) {
+      process.stdout.write(
+        `      ${String(family.length).padStart(6)} x ${String(family.count).padStart(4)}` +
+          ` = ${String(family.bytes).padStart(8)}\n`,
+      );
+    }
+  }
   for (const over of report.overlaps) {
     process.stdout.write(
       `    OVERLAP at 0x${over.start.toString(16)} for ${over.length}: ${over.owners.join(' and ')}\n`,
