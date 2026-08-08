@@ -595,7 +595,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 | arch 8 | arch 9 | arch 12 | arch 14 |
 |---|---|---|---|
-| 100.0%<!--fact:coverage_arch8_config_a--> | 99.9%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
+| 100.0%<!--fact:coverage_arch8_config_a--> | 100.0%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
 
 ## What is known, by base slot
 
@@ -613,7 +613,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 5 | the infrared database: groups, then records with a 21 byte header. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16 | 46, 63 |
-| 8 | key press bindings | 38 |
+| 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
 | 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67, 69 |
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
@@ -726,17 +726,18 @@ one table across architectures**, so they must not be ported.
 
 The byte accounting has **no architecture sized remainder left**. It used to name two: 5437 bytes<!--superseded-->
 in the arch 12 safe mode container, which was one font set the reader had cut to a single glyph,
-section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. What is left across
-the whole corpus is 24 to 75 bytes a container, six shapes, and they are the **same** six on every
-architecture: base slot 0's closing `0xBEEF`, three zero bytes before base slot 4, a tagged list
-above base slot 7's table, and a byte either side of base slot 17's table. One small finding, not
-four.
+section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. Section 83 then took
+the six shapes that were left in every container down to three: base slot 0's frame is `length + 2`
+because the terminator sits outside the field, an empty counted array is still an array, and the 4
+or 34 bytes above base slot 7's table are **base slot 8's leading action list**, which also turned
+up that every mode page's list is inside base slot 8's section.
 
-**All four architectures are at or above 99.9%**, sections 66, 67, 75 and 82, and zero overlaps in
-all nineteen containers. The last
+**Every user config is at 100.0%**, sections 66, 67, 75, 82 and 83, with zero overlaps in all
+nineteen containers and 4 to 68 bytes left in each. The last
 structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
 set, bounded below by a mode entry's end and above by the lowest address another reader names.
-That completes the first two of milestone M2's three parts on every architecture.
+That completes the first two of milestone M2's three parts on every architecture. What is left is
+named container by container in section 83, and it is a section's own tail three times out of four.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
 the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is

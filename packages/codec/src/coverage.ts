@@ -16,7 +16,8 @@
  * a variant which returns it. A second copy of a size rule is free to drift from the first, which
  * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
  */
-import { ARCH_RECORD_LENGTH, Container, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot }
+import { ARCH_RECORD_LENGTH, BINDING_SLOT, Container, EMPTY_FRAME_LENGTH, FRAME_END_LENGTH,
+  INSTRUCTION_LENGTH, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET, archSlot }
   from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
@@ -57,9 +58,9 @@ export interface CoverageReport {
    * **This is the view that finds structures, and `gaps` is the one that hides them.** Sections 75
    * and 66 were both found by asking for the whole gap list and noticing families with the same
    * count: 37 short infrared headers, 37 unclaimed blocks and the 37 gaps between them, all of
-   * which sat below the twenty largest and so below the cut. Section 81's arch 9 remainder is
-   * 154 x 43, 213 x 30 and 157 x 35, which says "three structures with a fixed size" before any
-   * byte of it is read. Unlike `gaps` this is computed over all of them.
+   * which sat below the twenty largest and so below the cut. Arch 9's remainder read as 154 x 43,
+   * 213 x 30 and 157 x 35, which said "three structures with a fixed size" before a byte of it was
+   * read, and section 82 read exactly three. Unlike `gaps` this is computed over all of them.
    */
   gapFamilies: { length: number; count: number; bytes: number }[];
   /** How many gaps there are in total and how many bytes they hold, whatever `gaps` lists. */
@@ -73,6 +74,13 @@ export interface CoverageReport {
 export const REPORT_LIMIT = 20;
 /** How many gap families a report carries, by total bytes. */
 export const FAMILY_LIMIT = 12;
+/**
+ * The longest section that may be claimed as an empty counted array.
+ *
+ * Three, because a count is one or two bytes and arch 12 pads base slot 16's to three. Anything
+ * longer that reads as nothing but zeros is a structure this codec has not read, not an absence.
+ */
+export const EMPTY_ARRAY_LIMIT = 3;
 
 /**
  * Every claim this codec can make about `c`, in no particular order and possibly overlapping.
@@ -120,9 +128,27 @@ export function claims(c: Container, withPictures = true): Claim[] {
   };
 
   // Slot 0 states its own length, which is what makes it the only section whose extent is read
-  // rather than inferred.
+  // rather than inferred. **The terminator sits outside that length**, so the frame is
+  // `length + 2` bytes and this used to claim two short in every container; the emitter has always
+  // written the extra pair, which is where the mismatch showed. An empty frame states a length of
+  // zero and is the fixed seven bytes of cookie, length, spare and terminator. Section 83.
   const tree = c.sections[0];
-  if (tree !== undefined && !tree.isNull) at(tree.address, c.frameLength, 'slot-0-tree');
+  if (tree !== undefined && !tree.isNull && c.frameLength !== undefined) {
+    const stated = c.frameLength === 0 ? EMPTY_FRAME_LENGTH : c.frameLength;
+    at(tree.address, stated + FRAME_END_LENGTH, 'slot-0-tree');
+  }
+
+  // Base slot 8's leading action list, `u8 count; { u16 operand; u8 opcode }[count]`, which is
+  // what section 27 used to fix where the section's records begin. Everything above it in the
+  // section is claimed already, as the mode page lists: **every page's list is inside base slot
+  // 8's section** in every container, and the leading list plus those lists account for the
+  // section exactly. Section 83.
+  const binding = slot(BINDING_SLOT);
+  if (binding !== undefined) {
+    const address = (c.sections[binding] as { address: number }).address;
+    const list = c.actionList(address);
+    if (list !== undefined) at(address, 1 + INSTRUCTION_LENGTH * list.length, 'slot-8-list');
+  }
 
   // Base slot 1's seven byte record, **bounded by whatever starts next**. The gap to base slot 2
   // is exactly seven on all sixteen other containers and three on the 525's safe mode config, so
@@ -150,11 +176,28 @@ export function claims(c: Container, withPictures = true): Claim[] {
   }
 
   // The six counted pointer arrays, each claiming exactly the bytes its own width rule settled on.
+  //
+  // **A count of zero is an array too**, and `pointerArrayAt` refuses one on purpose: with no
+  // entries there is nothing for `width + 3 * count === length` to check, so accepting it would
+  // let any short section pass as an array. So it is claimed here instead, under the same name,
+  // and only when the section is at most `EMPTY_ARRAY_LIMIT` bytes and every one of them is zero.
+  // That is the whole of base slot 16 in every container, since no config in the corpus uses the
+  // number sender, and of base slots 5 and 11 in the safe mode containers. Section 83.
   for (let i = 0; i < c.sections.length; i += 1) {
-    const array = c.pointerArrayAt(i);
-    if (array === undefined) continue;
     const base = c.architecture === undefined ? undefined : baseOf(c, i);
-    add(array.start, array.length, `slot-${base ?? i}-table`);
+    const array = c.pointerArrayAt(i);
+    if (array !== undefined) {
+      add(array.start, array.length, `slot-${base ?? i}-table`);
+      continue;
+    }
+    const section = c.sections[i];
+    const length = c.sectionLength(i);
+    if (section === undefined || section.isNull || length === undefined) continue;
+    if (length < 1 || length > EMPTY_ARRAY_LIMIT) continue;
+    const off = c.blobOffsetOf(section.address);
+    if (off === undefined || off + length > c.blob.length) continue;
+    if (c.blob.subarray(off, off + length).some((b) => b !== 0)) continue;
+    add(off, length, `slot-${base ?? i}-table`);
   }
 
   // What the action list table addresses. The extent is `1 + 3 * count` and the count is the list

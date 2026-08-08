@@ -1120,6 +1120,13 @@ An entry is an action list instruction with a tag byte in front. The walk consum
 exactly, on seven configs across architectures 8, 9, 12 and 14, and a walk that starts one byte out
 desynchronises immediately, which is what makes consuming it the validation.
 
+**The repeated records are the mode page lists**, section 83. Every mode page's list is inside this
+section in all nineteen containers, and the leading action list plus those lists tile the section
+exactly, so the walk above and the tagged list reading of base slot 6 are two names for one
+structure: a record is a narrow tagged list, and the `0x00` it skips is the wide form's lead byte.
+The leading list is the section's own and is `1 + 3 * count` bytes, 4 on arch 8 and arch 12 and 34
+on arch 9 and arch 14.
+
 **The tag is a key press.** Under the same `EVENT_MASK` and `SCAN_MASK` split as the key table,
 every tag in every sample is a press, `0x80`, and the scan codes are model specific: 2, 8, 9 and 34
 on architecture 14; 43, 44 and 48 to 53 on architecture 12; 30, 31, 38 and 39 on architecture 9;
@@ -1149,6 +1156,10 @@ container: no other one closes.
 +0x05  ...      nodes         packed end to end, up to +length
 +len   u16      0xBEEF
 ```
+
+**The section is `length + 2` bytes**, since the terminator sits outside the field, and an empty
+frame states a length of zero and is the seven fixed bytes above with no node. Both arch 12 safe
+mode containers carry one. Section 83.
 
 A node:
 

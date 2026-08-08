@@ -125,7 +125,8 @@ export const FRAME_END = new Uint8Array([0xef, 0xbe]);
 /** The terminator sits outside the frame's stated length, so a frame occupies `length + 2`. */
 export const FRAME_END_LENGTH = 2;
 /** An empty frame carries length 0 and its terminator sits five bytes in. */
-const EMPTY_FRAME_LENGTH = 5;
+/** An empty frame: cookie, a zero length, a spare byte, then the terminator. */
+export const EMPTY_FRAME_LENGTH = 5;
 
 /** Section slot 1 is a seven byte record that states the architecture twice over. */
 export const ARCH_RECORD_SLOT = 1;
@@ -268,6 +269,11 @@ export class KeyRecord {
 
 /** Base slot 10 is a table of addresses of action lists. `docs/findings.md` section 17. */
 export const ACTION_LIST_TABLE_SLOT = 10;
+/**
+ * Base slot 8, the key press bindings, whose section opens with one ordinary action list.
+ * `docs/findings.md` sections 27 and 83.
+ */
+export const BINDING_SLOT = 8;
 export const INSTRUCTION_LENGTH = 3;
 
 /**

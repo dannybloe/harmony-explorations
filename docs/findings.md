@@ -9303,6 +9303,97 @@ anything to do with infrared, and it is the next thing to do.
 * `tests/test_findings.py`, the firmware addresses, pinned against the image.
 
 
+## 83. Three rules take the residue to single figures, and one of them names base slot 8
+
+Section 82 left the accounting with the same six shapes in every container, four architectures
+included, and said that was one small finding rather than four. It is three, and the largest of them
+is a structure rather than padding.
+
+### Base slot 8 is its leading action list, and every mode page list
+
+Section 27 read base slot 8 as a leading action list followed by records, and used
+`1 + 3 * count` from the section's first byte to find where the records begin. That leading list was
+never claimed, so every container was short by exactly its length: 4 bytes on arch 8 and arch 12,
+34 on arch 9 and arch 14, where the counts are 1 and 11.
+
+Claiming it turned up the more interesting half. **Every mode page's list is inside base slot 8's
+section**, and the leading list plus those lists tile the section exactly:
+
+| sample | section | leading list | page lists | pages inside |
+|---|---|---|---|---|
+| `h700_gspm` | 104 | 34 | 70 | 35 of 35 |
+| `h600_config` | 1963 | 34 | 1929 | 254 of 254 |
+| `one_config` | 3928 | 4 | 3924 | 330 of 330 |
+| `arch8_config_a` | 2050 | 4 | 2046 | 141 of 141 |
+| `h525_config` | 1086 | 34 | 1052 | 135 of 135 |
+
+So section 27's "records", `u8 count; { u8 tag; u16 operand; u8 opcode }[count]`, and section 66's
+narrow tagged list, `u8 count; 4 byte entry[count]`, are the same bytes read twice, and the `0x00`
+bytes section 27 skipped between records are the wide form's lead byte, which section 66 read.
+Neither reading is wrong; they are one structure with two names, and the accounting is what made
+that visible, because both walks consume the section exactly and only one of them can own it.
+
+**This does not touch section 27's evidence.** The controlled pair still says slot 8 grew by 8 bytes
+when its owner added two buttons, which is two entries of a page's list, and the tags are still key
+presses with a per model scan code set. What changes is where those entries live: in the mode
+pages' own lists, which is where a page's bindings would be expected to live.
+
+The one container this does not hold on is `h525_safemode_ahcm`, whose 44 pages point at **two**
+lists between them. The claim is per page, so the tiling has to be counted per offset, which is what
+the byte accounting does anyway.
+
+### Base slot 0's frame is two bytes longer than the length it states
+
+The `0xBEEF` terminator sits **outside** the stated length, which `gspm.ts` has documented since
+section 20 and the emitter has always written. The accounting claimed the length alone, so every
+container in the corpus was two bytes short in the same place, and the two sides disagreed without
+any test noticing: `rebuilds` is checked against `claims` in one direction only.
+
+An empty frame states a length of zero and is seven fixed bytes: cookie, the zero length, a spare
+byte and the terminator. Both arch 12 safe mode containers carry one, and `nameNodes` returns
+nothing for it, so the emitter needed its own case or the claim would have been unrebuilt.
+
+### An empty counted array is an array
+
+`pointerArrayAt` refuses a count of zero on purpose: with no entries, `width + 3 * count === length`
+checks nothing, so accepting it would let any short section pass as a pointer array. The section is
+still the count field, so it is claimed separately, under the same name, and only when the section
+is at most three bytes and every one of them is zero. Three, because the count is one or two bytes
+and arch 12 pads base slot 16's to three.
+
+That is base slot 16 in every container, since **no config anybody has uses the number sender**, and
+base slots 5, 11 and 12 in the safe mode containers, which carry no infrared, no screen programs and
+no timers.
+
+### Where it leaves the accounting
+
+Every user config is at 100.0 percent, zero overlaps everywhere, and the emitter's copied residue is
+what is left:
+
+| container | bytes left | what they are |
+|---|---|---|
+| arch 14 and arch 9 user configs | 4 | 3 zero bytes above the clock record, 1 above base slot 17's count |
+| arch 12 user configs | 15 | those, plus 12 in base slot 15 between two parameter groups |
+| arch 8 user configs | 53 to 68 | those, plus one zero byte after each of 50 to 65 screen programs |
+| safe mode containers | 6 to 21 | the same shapes |
+
+Named individually so the next session starts from a list. Three of them look like a section's own
+tail: base slot 3's section is 14 bytes and the clock record is 11, and base slot 17's is one byte
+longer than its count. The arch 8 family is the interesting one, 50 gaps of one byte in a config,
+each a zero between a screen program's last instruction and a mode page record.
+
+**The arch 9 safe mode container is a separate matter**, at 86.0 percent with 2144 bytes left, and
+it is not in this list because what it has is structures rather than tails: a 1617 byte run above
+base slot 17 and four runs of 26 to 189 bytes that read as instructions.
+
+### Where it lands
+
+* `packages/codec/src/coverage.ts`, the three claims, and `emit.ts`, their rebuilders.
+* `packages/codec/test/coverage.test.ts`, all three as corpus wide rules rather than per sample
+  numbers, each named after what would falsify it.
+* `docs/config-format.md`, base slots 0 and 8.
+
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

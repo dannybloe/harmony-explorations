@@ -251,8 +251,8 @@ and recompile byte-identical across the whole corpus, and the trailer checksum r
 the gate for any editing at all, and it is squarely an API milestone.
 
 Of the three parts below, **the first two are complete on all four architectures**: every reader
-reports its extent and the accounting has no overlaps anywhere, 24 bytes short on a Harmony One, 41
-on a 600, 60 on an 880 and 43 on a 525. Arch 8 landed with section 75 and arch 9 with section 82,
+reports its extent and the accounting has no overlaps anywhere, 15 bytes short on a Harmony One, 4
+on a 600, 53 on an 880 and 4 on a 525. Arch 8 landed with section 75 and arch 9 with section 82,
 which read class 5 infrared out of the 525's own firmware: a record's pointer names a body of one
 byte indices into a shared table of short pulse blocks, so a code is spelled from a dictionary. What
 is left is the **same six gaps in every container**, four architectures included, and that is one
@@ -260,7 +260,7 @@ small finding rather than an architecture's worth of work.
 
 **The third part exists and round trips**, `packages/codec/src/emit.ts`, and `make emit` is its
 number. **Every structure `coverage` claims is rebuilt**, the output is byte identical to the input
-on all nineteen containers, and what is left to copy is 22 to 73 bytes of a user config, which is
+on all nineteen containers, and what is left to copy is 4 to 68 bytes of a user config, which is
 exactly the residue no reader claims either. So the two halves of M2 now meet: what the accounting
 attributes and what the emitter can put back are the same set of bytes.
 
@@ -309,15 +309,15 @@ fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answ
 `make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
 it the same day:
 
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | **99.9%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | **99.4%<!--fact:coverage_h700_gspm-->** |
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 | the residue, 83 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | 99.9% | **100.0%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | 99.4% | **99.9%<!--fact:coverage_h700_gspm-->** |
 
 **Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
 historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
@@ -334,10 +334,15 @@ groups it carries, and 37 records a config on arch 8 carry two. That closed arch
 97.7% to 100.0%, and moved arch 9 as well, and it needed no firmware: the reading came from the
 corpus, out of three gap families whose counts were all 37. Section 75.
 
-**The last column is arch 9's infrared**, and unlike the one before it, it needed the firmware.
+**The class 5 column is arch 9's infrared**, and unlike the one before it, it needed the firmware.
 Class 5 spells a code as indices into a shared table of pulse blocks, section 82, so 25776 of the
 25819 bytes the 525 had left were three structures nobody could size without the code that reads
-them. It closes the last architecture sized hole in the accounting.
+them. It closed the last architecture sized hole in the accounting.
+
+**The last column is the residue**, section 83: base slot 0's frame is two bytes longer than the
+length it states, an empty counted array is still an array, and the bytes above base slot 7's table
+are base slot 8's leading action list. Every user config is at 100.0% now, with 4 to 68 bytes left
+in each and a list of what they are.
 
 **The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
 for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,
@@ -811,9 +816,9 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   One, 2941 on the 600, 4845 on the 700, against the 268 and 237 separate gaps they replace. That
   is the next thing to read, and it is the same structure on every architecture.
 
-* **Those runs are a pool of tagged lists**, section 67, and reading them takes **both target
-  architectures to 100.0%**: 24 bytes unattributed in a 1.63 MB Harmony One config, 41 in a 600,
-  zero overlaps anywhere. Base slot 9's sets live in the pool, and the reason they were never
+* **Those runs are a pool of tagged lists**, section 67, and reading them took **both target
+  architectures to 100.0%**: 24 bytes unattributed in a 1.63 MB Harmony One config at that point,
+  41 in a 600, zero overlaps anywhere. Base slot 9's sets live in the pool, and the reason they were never
   claimed is settled by a negative: read as base slot 6's shape, `u8 kind` and a `u24` back pointer,
   not one of the 54 sets in the corpus gives an address below itself where all 1616 of slot 6's do.
 

@@ -15,7 +15,7 @@ here owns; this one differs in that the gap is about to close.
 ## Why architecture 9 is worth the trouble
 
 It **was** the worst covered architecture in the corpus by a wide margin, and it is not any more:
-the byte accounting reads **99.9%<!--fact:coverage_h525_config-->** against 100.0% on both target
+the byte accounting reads **100.0%<!--fact:coverage_h525_config-->** against 100.0% on both target
 architectures, with 43 bytes left in six gaps that every container in the corpus has. The reasons it
 lagged were all the same reason: there was no arch 9 firmware anywhere, so every structure that did
 not decode had nothing to appeal to. **That changed on 8 August 2026**, when the application image

@@ -126,15 +126,15 @@ defect it is.
 | Harmony 600 | 9.5% | **100.0%<!--fact:coverage_h600_config-->** |
 | Harmony One | 3.2% | **100.0%<!--fact:coverage_one_config-->** |
 | 880, arch 8 | 3.6% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| 525, arch 9 | 7.2% | 99.9%<!--fact:coverage_h525_config--> |
+| 525, arch 9 | 7.2% | 100.0%<!--fact:coverage_h525_config--> |
 
-Zero overlapping claims anywhere. `make coverage` prints it. **Both target architectures reach
-100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One config and 41 in a Harmony 600, which
-is the point at which an emitter can rebuild a config rather than copy a residue, and
+Zero overlapping claims anywhere. `make coverage` prints it. **Every user config reaches 100.0%**,
+with 15 bytes unattributed in a 1.63 MB Harmony One config and 4 in a Harmony 600, which is the
+point at which an emitter can rebuild a config rather than copy a residue, and
 `packages/codec/src/emit.ts` now does: every owner the accounting claims is rebuilt from fields on
-all nineteen containers, and what stays copied is 22 to 73 bytes, exactly what no reader claims.
-Arch 9 joined them once its own firmware was read: class 5 infrared is a dictionary encoding,
-section 82, and 43 bytes of that sample are left.
+all nineteen containers, and what stays copied is 4 to 68 bytes, exactly what no reader claims.
+Arch 9 joined the rest once its own firmware was read: class 5 infrared is a dictionary encoding,
+section 82.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding
 classes, and which physical button each scan code is. See

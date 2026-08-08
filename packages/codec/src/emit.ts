@@ -27,6 +27,8 @@
 
 import {
   ARCH_RECORD_LENGTH,
+  BINDING_SLOT,
+  EMPTY_FRAME_LENGTH,
   CLOCK_COOKIE,
   FRAME_COOKIE,
   FRAME_END,
@@ -64,7 +66,7 @@ import {
 import type { TaggedList } from './sections.ts';
 import { fontSets, glyphs } from './font.ts';
 import { bitmaps, pictureBank, reachablePrograms } from './screen.ts';
-import { namedContentEnd } from './coverage.ts';
+import { EMPTY_ARRAY_LIMIT, claims, namedContentEnd } from './coverage.ts';
 import {
   IR_CLASS_STREAM,
   IR_GROUP_COUNT_AT,
@@ -311,7 +313,16 @@ export function rebuilds(c: Container): Rebuild[] {
   const tree = c.sections[0];
   const treeAt = tree === undefined || tree.isNull ? undefined : c.blobOffsetOf(tree.address);
   const nodes = nameNodes(c);
-  if (treeAt !== undefined && nodes !== undefined && c.frameLength !== undefined) {
+  if (treeAt !== undefined && c.frameLength === 0) {
+    // An empty frame, which the arch 12 safe mode containers carry: cookie, a zero length, the
+    // spare byte and the terminator, with no node to read. `nameNodes` returns nothing for it, so
+    // without this the accounting would claim seven bytes the emitter never wrote. Section 83.
+    framed(treeAt, 'slot-0-tree', new Writer(EMPTY_FRAME_LENGTH + FRAME_END_LENGTH)
+      .raw(FRAME_COOKIE)
+      .u16(0)
+      .raw(c.blob.subarray(treeAt + 4, treeAt + FRAME_HEADER))
+      .raw(FRAME_END));
+  } else if (treeAt !== undefined && nodes !== undefined && c.frameLength !== undefined) {
     const w = new Writer(c.frameLength + FRAME_END_LENGTH)
       .raw(FRAME_COOKIE)
       .u16(c.frameLength)
@@ -463,6 +474,30 @@ export function rebuilds(c: Container): Rebuild[] {
       for (const instruction of list) w.u16(instruction.operand).u8(instruction.opcode);
       at(pointers[k] as number, 'slot-10-list', w);
     }
+  }
+
+  // Base slot 8's leading action list, the same shape one slot 10 entry down. Section 83.
+  const bindingSlot = slot(BINDING_SLOT);
+  if (bindingSlot !== undefined) {
+    const address = (c.sections[bindingSlot] as { address: number }).address;
+    const list = c.actionList(address);
+    if (list !== undefined) {
+      const w = new Writer(1 + 3 * list.length).u8(list.length);
+      for (const instruction of list) w.u16(instruction.operand).u8(instruction.opcode);
+      at(address, 'slot-8-list', w);
+    }
+  }
+
+  // A counted array whose count is zero, which `coverage` claims and nothing else here would: the
+  // section is the count field and, on arch 12's base slot 16, two zero bytes after it. Written as
+  // zeros rather than copied, so a section that is not actually empty fails the round trip.
+  for (const claim of claims(c)) {
+    if (!claim.owner.endsWith('-table')) continue;
+    if (claim.length > EMPTY_ARRAY_LIMIT) continue;
+    if (c.blob.subarray(claim.start, claim.start + claim.length).some((b) => b !== 0)) continue;
+    const w = new Writer(claim.length);
+    for (let i = 0; i < claim.length; i += 1) w.u8(0);
+    framed(claim.start, claim.owner, w);
   }
 
   // A tagged list, in either of its two forms.
