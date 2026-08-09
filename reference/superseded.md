@@ -92,3 +92,6 @@ and leave this table alone.
 | `count % FLASH_CHUNK_DATA == 1` | section 94 | the refusal is an odd count: the fetch loop reads a word, subtracts two and exits on zero, so 65 and 127 hang too |
 | `caps an internal read at one chunk` | section 93 | it refuses a count whose final chunk would be one byte; 64 and 124 byte reads are measured safe |
 | `the payload is the last N bytes of the file` | section 87 | the header ends at the line carrying the INFORMATION terminator; the declared length is a check on that split |
+| `at or above program address` | section 96 | there is no address threshold: the response sender has no bound, and the read returns if the flash byte `0x8C7` above the failing chunk is even |
+| `The parity rule is real but it is local` | section 96 | an odd count never terminates anywhere; what varies is whether the overwritten counter lands on an even value |
+| `a comparison somebody can find` | section 96 | there is no comparison; the deciding byte is 2247 bytes further into the data the loop is reading |

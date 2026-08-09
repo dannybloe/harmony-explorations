@@ -12,6 +12,7 @@ is what makes this a regression test.
 import unittest
 
 import lab
+from harmony import readloop
 from harmony.pic18 import chains, disasm, isa, trace
 
 # image -> (base, command dispatch chain, length nibble chain)
@@ -1409,3 +1410,98 @@ class TestTheArch12ReadFlashChunker(unittest.TestCase):
         self.assertEqual(self.at(code, 0x268B2).mnemonic, 'SUBWFB')
         self.assertEqual(self.at(code, 0x268B4).fields['k'], 0x02)
         self.assertEqual(self.at(code, 0x268B6).mnemonic, 'SUBWFB')
+
+
+class TestTheResponseSenderHasNoBound(unittest.TestCase):
+    """Section 96: the sender writes past the buffer, which is what decides the restart.
+
+    The threshold at program `0x010A56` reported in section 94 does not exist. What decides
+    whether an unterminated read ends is a byte of the memory being read, `DECIDING_DISTANCE`
+    above the failing chunk, because the sender walks its pointer into the loop's own counter.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    SENDER = 0x20394
+    #: The nine instructions of the sender, in order. A bound would have to be one of them.
+    SENDER_BODY = [
+        'MOVLB', 'MOVFF', 'MOVFF', 'INCF', 'MOVLW', 'ADDWFC', 'MOVFF', 'MOVLB', 'INCF', 'RETURN',
+    ]
+    #: Anything that could refuse a byte: a comparison, a skip, or a branch out.
+    TESTS = {'CPFSEQ', 'CPFSGT', 'CPFSLT', 'BTFSS', 'BTFSC', 'TSTFSZ', 'SUBLW', 'SUBWF',
+             'SUBFWB', 'SUBWFB', 'BC', 'BNC', 'BZ', 'BNZ', 'BRA', 'GOTO', 'DECFSZ', 'INCFSZ'}
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def walk(self, code, start, count):
+        addr, out = start, []
+        for _ in range(count):
+            instr = self.at(code, addr)
+            out.append(instr)
+            addr += instr.words * 2
+        return out
+
+    def test_the_sender_is_nine_instructions_and_none_of_them_is_a_test(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        body = self.walk(code, self.SENDER, len(self.SENDER_BODY))
+        self.assertEqual([i.mnemonic for i in body], self.SENDER_BODY)
+        # The negative is the whole point: if a bound is ever found, this is what has to give.
+        self.assertEqual([i.mnemonic for i in body if i.mnemonic in self.TESTS], [])
+
+    def test_the_write_pointer_is_reloaded_before_every_response(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # `MOVLW 0x68` / `MOVWF 0x2C7` then `MOVLW 0x04` / `MOVWF 0x2C8`, so the buffer base is
+        # 0x0468 and it is set per report rather than per command. That is what makes the deciding
+        # distance a constant instead of depending on how much came before.
+        self.assertEqual(self.at(code, 0x2015C).fields['k'], readloop.BUFFER_BASE & 0xFF)
+        self.assertEqual(self.at(code, 0x2015E).mnemonic, 'MOVWF')
+        self.assertEqual(self.at(code, 0x20160).fields['k'], readloop.BUFFER_BASE >> 8)
+        self.assertEqual(self.at(code, 0x20162).mnemonic, 'MOVWF')
+
+    def test_the_loop_sends_two_bytes_before_it_starts(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # The response code and 0x28C, so the loop's first data byte lands two into the buffer.
+        for site in (0x26B9C, 0x26BA8):
+            call = self.at(code, site)
+            self.assertEqual(call.mnemonic, 'CALL')
+            self.assertEqual(call.fields['target'], self.SENDER)
+        self.assertEqual(readloop.PREAMBLE, 2)
+
+    def test_the_counter_sits_that_far_above_where_the_loop_starts_writing(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # 0xD31 is the count, from `MOVFF 0x28A,0xD31` at 0x26BAC, and the address follows it at
+        # 0xD34 so the count is overwritten first. 0xD31 - 0x046A is 0x8C7, or 1124 passes.
+        self.assertEqual(self.at(code, 0x26BAC).mnemonic, 'MOVFF')
+        self.assertEqual(readloop.DECIDING_DISTANCE, 0x8C7)
+        self.assertGreater(readloop.ADDRESS, readloop.COUNTER)
+
+    def synthetic(self, deciding, elsewhere=0x00):
+        """A page whose only interesting byte is the one the model says decides the outcome."""
+        page = bytearray([elsewhere]) * 0x4000
+        page[62 + readloop.DECIDING_DISTANCE] = deciding
+        return readloop.word_reader(bytes(page), 0x010000)
+
+    def test_the_deciding_byte_decides_and_nothing_else_does(self):
+        # An odd count with an even byte in that one position comes back; the same read with an odd
+        # byte there does not. No image needed, so this runs without a lab.
+        self.assertTrue(readloop.read_returns(self.synthetic(0xFE), 0x010000, 63))
+        self.assertFalse(readloop.read_returns(self.synthetic(0x01), 0x010000, 63))
+
+    def test_an_even_count_comes_back_whatever_is_there(self):
+        # The loop's own arithmetic still terminates, so the sender never reaches its counter.
+        for count in (62, 64, 124):
+            self.assertTrue(readloop.read_returns(self.synthetic(0x01), 0x010000, count), count)
+
+    def test_a_neighbouring_byte_does_not_decide(self):
+        # The assertion that would fail if the distance were off by one, which is the mistake this
+        # reading is most likely to be making.
+        page = bytearray(0x4000)
+        for delta in (-1, 1, 2):
+            page[:] = bytearray(0x4000)
+            page[62 + readloop.DECIDING_DISTANCE + delta] = 0x01
+            reader = readloop.word_reader(bytes(page), 0x010000)
+            self.assertTrue(readloop.read_returns(reader, 0x010000, 63), delta)

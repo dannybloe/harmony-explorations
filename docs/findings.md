@@ -49,7 +49,14 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty one have been found and corrected so far. The newest is section 81's: the version word
+Twenty two have been found and corrected so far. The newest is section 96's: the restart hazard was
+written up as a threshold at a program address, and there is no threshold. The response sender has
+no bound, so an unterminated read walks over its own counter and what decides the outcome is the
+parity of a byte 2247 further on. The bisection that produced the threshold was real and its
+fourteen measurements are all predicted by the correct reading, but every offset it happened to try
+below the supposed boundary had an even byte in the deciding position.
+
+Before it, section 81's: the version word
 beside the architecture was recorded as per model rather than per config, and one Harmony One
 carries two different words either side of the sync section 58 watched. It is a skin number, and
 nothing on the remote reads the section it sits in.
@@ -11300,7 +11307,10 @@ explanations:
 
 So the original note reproduces, first hand this time, and **the offset is what matters**. 63 bytes
 is harmless at 0, 2 and `0x40` and fatal at `0x1000`, so there is a boundary between `0x40` and
-`0x1000` and it is a comparison somebody can find.
+`0x1000` and it is a comparison somebody can find.<!--superseded-->
+
+> Section 96: the offset matters, but only because it fixes which byte of flash lands on the loop's
+> counter. There is no boundary and no comparison.
 
 The remote **came back on its own in about three seconds**, at a new device path, and answered with
 its config byte identical. That is a sixth self-clearing restart and it is further reason to think
@@ -11345,15 +11355,27 @@ as 63 bytes from `0xA56`, and it survives. So what decides is where the read beg
 
 **And it is an absolute program address, not an offset.** The same offset `0xA56` on page `0xFE`
 survives. Page `0xFE` maps from program zero and page `0xFF` from program `0x010000`, section 22, so
-the boundary is at program **`0x010A56`**, which is why no read on page `0xFE` has ever hung: that
+the boundary is at program **`0x010A56`**, which is why no read on page `0xFE` has ever hung: that<!--superseded-->
 whole page lies below it.
+
+> **Corrected by section 96, on the same day.** There is no boundary. Whether an unterminated read
+> ends is decided by the parity of one flash byte `0x8C7` above where the failing chunk starts,
+> because the response sender has no bound and the loop eventually overwrites its own counter with
+> what it is reading. Every offset tried below `0xA56` happened to have an even byte there, and on
+> that reading 568 of the 1323 even offsets below it hang. The page `0xFE` observation is explained
+> the same way, by content rather than by a range. Everything measured below stands; the word
+> boundary does not, and neither does the search for the comparison it implies.
 
 ### What that reframes
 
-**The parity rule is real but it is local.** Above `0x010A56`, 62, 64 and 124 are fine and 63 and 65
+**The parity rule is real but it is local.** Above `0x010A56`, 62, 64 and 124 are fine and 63 and 65<!--superseded-->
 are fatal, which is the loop's arithmetic exactly. Below it, odd counts are harmless at every offset
 tried. So the loop reading explains the failure but not the boundary, and something about that
 address decides whether the failure can happen at all.
+
+> Also corrected by section 96. The parity rule is not local and it is not about the count reaching
+> zero by itself: an odd count never terminates at any address, and what varies is whether the
+> counter is overwritten with something even before the remote is beyond saving.
 
 ### What sits there, read off the remote
 
@@ -11379,10 +11401,15 @@ at `0xA40`, and the same record structure continues unbroken for at least three 
 it. So the boundary is neither the end of the image nor a record boundary, and the tidy explanation,
 that a read starting past the image hangs, is wrong.
 
-What remains is the strange part measured above: a read that **starts** past `0x010A56` hangs, while
+What remains is the strange part measured above: a read that **starts** past `0x010A56` hangs, while<!--superseded-->
 a read that starts below it and **reaches** past it is fine. That is not a property of the memory, it
 is a decision taken from the start address, so it is a comparison somewhere this section has not
 found rather than anything about what is stored there.
+
+> Wrong on both halves, section 96. It **is** a property of the memory, just not of the memory at
+> `0xA56`: the deciding byte sits `0x8C7` further on, which is why reading what is stored at the
+> supposed boundary explained nothing. And the start address matters only because it fixes which
+> byte that is.
 
 The rail is unchanged and does not depend on any of it: it refuses odd counts everywhere, which is
 more than the hazard needs on page `0xFE` and exactly what it needs above `0x010A56`.
@@ -11480,6 +11507,153 @@ batteries clear it.
 **Which command is not established.** `0xE0 0x02` is a reset and the client uses it after a write;
 whether a read only session should reset a remote at all is a product question rather than a
 protocol one, and the terminate entry point may be the gentler answer.
+
+## 96. There is no boundary: the response sender has no bound, so the loop overwrites its own counter
+
+Section 94 ended by saying the threshold at program `0x010A56` had to be a comparison somewhere in
+the firmware and that somebody could find it. There is no such comparison, and there is no
+threshold. What decides whether an unterminated read ends is **the byte the loop happens to read
+`0x8C7` bytes above where it starts**, because the byte sender writes past the end of the response
+buffer and eventually writes into the loop's own counter.
+
+### The sender does not bound anything
+
+`0x20394` is nine instructions and there is no length check among them:
+
+```
+20394: 02 01       MOVLB 0x2
+20396: c7 c2 e9 ff MOVFF 0x2c7,FSR0L      ; a 16 bit write pointer, 0x2C7/0x2C8
+2039a: c8 c2 ea ff MOVFF 0x2c8,FSR0H
+2039e: c7 2b       INCF 0x2c7,F           ; advanced before the byte lands
+203a0: 00 0e       MOVLW 0x00
+203a2: c8 23       ADDWFC 0x2c8,F
+203a4: cd c2 ef ff MOVFF 0x2cd,INDF0      ; the byte, wherever the pointer now points
+203a8: 04 01       MOVLB 0x4
+203aa: 0d 2b       INCF 0x40d,F           ; and the response length, also unbounded
+203ac: 12 00       RETURN
+```
+
+So a caller that sends more bytes than the buffer holds walks the pointer up through data memory,
+writing what it sends. The loop of section 94 is exactly such a caller: with an odd count it never
+reaches its exit test, and it emits two bytes an iteration for as long as it runs.
+
+### Where the pointer starts, and what it reaches
+
+The command layer reloads the pointer before **every** response, at `0x2015E`, after polling the
+descriptor bit that says the previous report has gone:
+
+```
+2014c: 04 01       MOVLB 0x4
+2014e: 0c bf       BTFSC 0x40c,7          ; previous report still pending, come back later
+20150: b5 d0       BRA 0x202bc
+20152: 05 0e       MOVLW 0x05
+20154: 02 01       MOVLB 0x2
+20156: 84 5d       SUBWF 0x284,W          ; the command state
+20158: 27 e0       BZ 0x201a8
+2015a: 02 01       MOVLB 0x2
+2015c: 68 0e       MOVLW 0x68
+2015e: c7 6f       MOVWF 0x2c7            ; buffer base 0x0468
+20160: 04 0e       MOVLW 0x04
+20162: c8 6f       MOVWF 0x2c8
+```
+
+The read body then sends two bytes before the loop starts, the response code at `0x26B9C` and
+`0x28C` at `0x26BA8`, so the loop's first data byte lands at **`0x046A`**. Its counter is `0xD31`,
+its scratch word `0xD32` and `0xD33`, and its 24 bit address `0xD34` to `0xD36`, all above the
+pointer and all in its path.
+
+`0xD31 - 0x046A` is **`0x8C7`**, which is 2247 bytes, or 1124 iterations. Until then nothing the
+loop writes changes anything it uses: the pointer only climbs, `0xD32` and `0xD33` are rewritten
+every iteration anyway, and the address bytes sit above the counter. At iteration 1124 the counter
+is overwritten with a byte read from flash, and from that moment:
+
+* if the byte is **even**, the count reaches zero and the read completes normally, having scribbled
+  2247 bytes of data memory on its way;
+* if it is **odd**, the loop carries on, the next writes land on the address bytes, the read jumps
+  somewhere else and the remote does not come back until it restarts.
+
+**So the rule is a parity test on one byte of flash, `0x8C7` above the start of the chunk that hangs.**
+Not a comparison, not a region, and nothing about `0x010A56` at all.
+
+### Every measurement so far, predicted
+
+A simulation of the loop, given the sender's behaviour above, the addresses out of the disassembly
+and the page `0xFF` image read off the spare, predicts **21 of 21** measurements from sections 93
+and 94, including the shape the bisection could not place: offset `0xA80`, where the read returns
+and the remote dies immediately afterwards, which is the even case with 2247 bytes of collateral.
+
+Two controls, because a simulation with a free parameter would predict anything:
+
+| the write pointer starts at | measurements predicted |
+|---|---|
+| `0x0466` to `0x0469` | 16 to 18 of 21 |
+| **`0x046A`, the value the firmware gives** | **21 of 21** |
+| `0x046B` to `0x046E` | 15 to 17 of 21 |
+
+and, with the sender given the bound it does not have, so that only the count decides:
+
+| model | measurements predicted |
+|---|---|
+| bounded sender, parity of the count alone | 11 of 21, and it cannot tell any two offsets apart |
+
+The constant was not fitted. `0x0468` is a literal at `0x2015E` and the two preamble bytes are two
+`CALL`s, so `0x046A` was read out of the firmware and then tested.
+
+The model is `src/harmony/readloop.py` and the 21 of 21 above is one command away for anyone holding
+the page. **The regression test deliberately does not run it against that page**, because page
+`0xFF` carries the remote's identity block and is the one image kept out of `tests/lab.py` for that
+reason. So the test pins the mechanism, which is where the argument actually lives: that the sender
+is nine instructions with no comparison, skip or branch among them, that the pointer is reloaded per
+report from `0x0468`, that two bytes precede the loop, and that the counter therefore sits `0x8C7`
+above where the loop starts writing. The model is then exercised on synthetic pages, including the
+negative that a byte one position either side of the deciding one changes nothing.
+
+There is a second, independent check that does not use the simulation at all. Take the fourteen
+bisection outcomes as fourteen parity constraints on an unknown offset `k`, and search every `k`
+from 1 to `0xD31`: 27 of 3377 satisfy all fourteen, and `0x8C7` is one of them. That sounds weak
+until the null is measured. Shuffling which outcomes were hangs, 300 times, **297 of the 300
+shuffles admit no `k` at all**, so a satisfiable pattern is itself the unlikely thing here.
+
+### What this kills
+
+**The threshold at `0x010A56` is an artefact of which offsets the bisection chose.** Every offset
+tried below it, `0`, `2`, `0x40`, `0x800`, `0xA00`, `0xA40`, `0xA50` and `0xA54`, happens to have an
+even byte `0x8C7` above its final chunk. They are round numbers, and round numbers in this image
+land in structured, zero rich data, so that is less of a coincidence than it looks. On the same
+reading **568 of the 1323 even offsets below `0xA56` hang**, and 983 offsets above it survive in the
+first `0x2000` alone.
+
+The bisection was not wasted: it is what forced the explanation to be content dependent, since no
+comparison produces a threshold at `0xA56`, and it is the data every part of this section is tested
+against. What it does not support is the word boundary.
+
+### The cheapest way to falsify this
+
+Two 63 byte reads on page `0xFF`, each with a 62 byte control first, on a remote whose page `0xFF`
+matches the image used here:
+
+| offset | deciding byte | predicted |
+|---|---|---|
+| `0x0004` | `0x01` at page offset `0x0909` | **hangs**, four bytes above an offset measured safe |
+| `0x0A66` | `0xFE` at page offset `0x136B` | **survives**, above the supposed threshold |
+
+Either one alone refutes the boundary reading, and both together refute it in each direction. The
+first is the better test, because the boundary reading and this one disagree about it maximally and
+because nothing about `0x0004` is otherwise interesting.
+
+### What it means for the rail
+
+Nothing changes and the reason is now better. `packages/usb` refuses an odd count on internal
+memory everywhere, and an odd total is exactly the condition for an odd final chunk, because the
+chunker emits 62 byte chunks and a remainder. What the refusal prevents is not a restart at certain
+addresses: it is a loop that writes an unbounded amount of flash content over data memory, whose
+best case is 2247 bytes of collateral damage and a successful looking reply. The reply from a
+"survived" odd read is not trustworthy either, which is a reason to refuse the count rather than
+tolerate the ones that return.
+
+**Whether the same defect exists on arch 9 and arch 14 is not established here** and is worth an
+hour: the sender is the same shape on all three, and the rail already refuses odd counts everywhere,
+so this is a question about how much a mistake would cost rather than about how the library behaves.
 
 ## References
 

@@ -1231,19 +1231,23 @@ And it is **not the size 63 by itself**, because 63 at offset zero is fine.
 What 63 has that 64 and 124 do not is **an odd byte count**, and that is diagnosed now rather than
 described: section 94 reads the loop, and a sixth deliberate restart on 9 August 2026 confirmed the
 case that separates the two readings, 65 bytes, which hangs a remote and is not `62n + 1`. Offset
-zero was **retested on 9 August 2026 and is exempt**: 63 bytes there returns 63 bytes and leaves the
-remote running, against the same read at `+0x1000` which restarts it. So a step in front of the loop
-decides that case and has not been found; section 94 says what is withdrawn because of it.
+zero was **retested on 9 August 2026 and returns**: 63 bytes there returns 63 bytes and leaves the
+remote running, against the same read at `+0x1000` which restarts it. That is not an exemption for
+offset zero, section 96: it is one byte of flash, `0x8C7` further on, that happens to be even.
 
 Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
 across three separate windows. So this is disruption rather than damage.
 
-**The boundary is measured now**, `docs/findings.md` section 94: the failure only happens at or
-above program address `0x010A56`, bisected over fourteen reads on the spare and deterministic three
-of three either side. Below it an odd count is harmless, which is why page `0xFE` has never hung. `packages/usb` refuses an
-odd count, which is a workaround rather than a fix. Worth stating plainly for anyone building on
-this: **every command involved was a read**, and reads of this region still restart a running
-remote.
+**There is no boundary and the whole hazard is read**, `docs/findings.md` section 96. An odd count
+never terminates at any address, section 94, and the response sender at `0x20394` has no bound, so
+the loop walks a write pointer up through data memory writing what it reads. After 2247 bytes it
+overwrites its own counter, and the read completes if and only if the flash byte it lands on is
+even. So the outcome is decided by content `0x8C7` above the failing chunk, not by where the read
+starts, and the threshold reported on 9 August 2026 was an artefact of which offsets the bisection
+tried. `packages/usb` refuses an odd count, which is now the right refusal for the right reason:
+even the case that returns has overwritten 2247 bytes of the remote's memory, so its reply is not
+trustworthy either. Worth stating plainly for anyone building on this: **every command involved was
+a read**, and reads of this region still restart a running remote.
 
 ~~It used to refuse an internal read of more than one chunk~~<!--superseded-->, which is a bound
 around the hazard rather than the hazard: 64 and 124 byte reads were already recorded as safe in the

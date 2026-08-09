@@ -224,11 +224,14 @@ primitive can only read a word, the loop emits two bytes and subtracts two, and 
 equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
 watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
 around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
-**The trigger has two halves and only one is understood.** The failure is the loop's arithmetic, and
-it can only happen **at or above program address `0x010A56`**, bisected on hardware over fourteen
-reads and deterministic three of three either side of it. Below that, odd counts are harmless, which
-is why no read on page `0xFE` has ever hung. What sits at that address is not established. The rail
-ignores all of it and refuses odd counts everywhere.
+**The trigger is read all the way through, section 96, and there is no address threshold.** The
+sender at `0x20394` has no bound, so an unterminated loop walks a write pointer up through data
+memory writing what it reads, and after 2247 bytes it overwrites its own counter. The read returns
+if and only if the flash byte it lands on, `0x8C7` above the failing chunk, is **even**. So the
+outcome is content, not location: the threshold at `0x010A56` reported earlier the same day was an
+artefact of which offsets the bisection tried, and it is corrected in place. The rail refuses odd
+counts everywhere, and the case that returns is no better, because it has already scribbled 2247
+bytes over the remote's memory.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
