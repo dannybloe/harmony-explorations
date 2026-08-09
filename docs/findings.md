@@ -11414,12 +11414,40 @@ And the entry point table's first value is **terminate**.
 So the remote is designed to be told when a session is over. Pulling the cable is not that, and it
 is not a case their software ever exercises.
 
+### How deep it goes, measured
+
+Reconnecting does not help. With the remote showing USB mode after its cable had been pulled, it was
+plugged back in and **did not enumerate at all**: sixteen seconds of polling, two other Logitech
+devices visible on the same machine and no Harmony among them. Only taking the batteries out clears
+it.
+
+So this is not a stale screen over a working stack. The remote stops presenting itself on the bus,
+and the host has no way back in, which means no command can rescue it either.
+
+### It also explains the freeze earlier the same day, and corrects a correction
+
+At midday a remote was found hung and not enumerating, and this document briefly blamed a 65 byte
+read, then retracted that when the owner's account showed successful operations and a charger to USB
+transition in between. **The retraction was right about the read and wrong to leave it unexplained.**
+This is the explanation: every session this project runs ends by closing a handle and pulling a
+cable, which is exactly the case that leaves a remote in this state. It is reproducible on purpose,
+which the midday event never was.
+
+So the cause is how a session ends rather than what the session did, and the odd count read is
+cleared of it a second time and for a better reason.
+
 ### What it means for the application
 
 **A session has to be ended, not abandoned.** Version 1 of FreeHarmony is read only and closing a
-handle is all it does, so it leaves a remote in USB mode exactly as observed. Ending it properly
-means sending a command, which is a state change and therefore sits behind `WRITES_ENABLED` in
-`packages/usb/src/rails.ts` along with everything else that changes a remote.
+handle is all it does, so it leaves a remote in USB mode exactly as observed, and unreachable until
+its owner takes the batteries out. Ending it properly means sending a command, which is a state
+change and therefore sits behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` along with
+everything else that changes a remote.
+
+That is an uncomfortable place for a read only product to be: **the polite way to finish is behind
+the flag that exists to stop it touching anything.** Worth deciding deliberately rather than
+discovering, and it is the strongest argument yet for a narrow exception with its own rail rather
+than for widening the write flag.
 
 That is worth having written down before the product is built, because it is the kind of thing that
 reads as a bug report from the first user and is a design decision here. Until then the honest
