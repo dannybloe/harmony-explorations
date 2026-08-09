@@ -11110,8 +11110,25 @@ So the separating case goes the way the firmware says: **65 hangs a remote and 6
 `count % 62 == 1` would have permitted it. The rail is an odd count, and it is now derived from the
 loop, confirmed against the loop's own prediction on hardware, and observed by two people.
 
-**The offset zero exemption is still unexplained and still unmeasured.** It was not worth a second
-restart in the same session.
+### Offset zero, predicted before measuring
+
+The one observation this reading cannot accommodate is the old note that **63 bytes at offset zero
+was fine, twice**. Written down before the retest, in the same session, so the answer cannot be
+fitted afterwards.
+
+**The prediction is that it hangs**, like every other odd count. The body this loop sits in is
+reached through a branch on the **top address byte**, `0x26BB2`, and there is no test of the offset
+anywhere between that branch and the loop. Nothing in the code distinguishes offset zero, so if the
+loop is entered at all the counter behaves the same way.
+
+If it does **not** hang, the reading is incomplete rather than wrong, and the two candidates worth
+separating are: the loop is never entered for that address, meaning some earlier check returns
+first; or it is entered and something ends it, which would have to be a reset from another cause,
+since the watchdog is fed inside it. A control of 62 bytes at the same address distinguishes "the
+address answers" from "the address is refused" before the odd read is tried.
+
+A single old observation with two trials is thin evidence either way, and the most likely outcome is
+that it was a misattribution made while the question was still "is it the chunk count".
 
 ## References
 
