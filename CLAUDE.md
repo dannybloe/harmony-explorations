@@ -693,7 +693,9 @@ produce a config the remote accepts and mishandles.
   USB never runs its application, so the keypad handler never runs. Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
   region of the One share one sense line. Finishing it needs a RAM write to drive the rows, which
-  the rails forbid, and **that is not proposed here.**
+  the rails forbid, and **that is not proposed here.** Neither of Logitech's own applications has
+  it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
+  hardware, so no host ever held the map. `docs/host-client.md`.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 

@@ -253,6 +253,45 @@ magic rather than per architecture.
 * Read selector 12 is `docs/usb-protocol.md`'s "not read yet" selector `0x0C`. The client uses
   it to ask what hardware features the remote has.
 
+## MyHarmony was checked and holds nothing, and why that is worth knowing
+
+*9 August 2026. A negative result, recorded because it closes a route that looked obvious and
+would otherwise be proposed again.*
+
+The classic client is one of Logitech's two desktop applications. The other is MyHarmony, which
+replaced it, and the reasonable expectation was that the newer software knows at least as much.
+It does not, and the reason is structural rather than accidental.
+
+**It is not a native application.** MyHarmony is a Silverlight application inside a Chromium
+shell, so the interesting half is managed .NET rather than machine code, and a disassembler is
+the wrong tool for it. The application itself is not installed either: it was downloaded from
+Logitech's servers at run time. What survives is 16 copies in the shell's browser cache, in two
+vintages, from the owner's own sessions. They decompile to about 244000 lines of readable C#.
+
+**Its USB layer carries no protocol constants at all.** In 17800 lines of driver code there are
+nine distinct byte-valued hex literals and not one of them is a command byte. Every operation is
+a *string name*, `readflashinterpreter`, `send`, `packet`, resolved against XML the server sends
+at run time. There is a packet writer and interpreter per platform family, arch 14 among them,
+and they assemble packets from a script rather than from knowledge. So the protocol knowledge
+was moved to the server between the two generations, and the server is gone.
+
+That inverts the expectation and it is the useful part: **the classic client is not merely the
+better source, it is plausibly the last copy of that knowledge outside the firmware itself.**
+
+**And the physical button map is not there either.** That was the stated justification for
+looking, since `Web.Library.ButtonMappingUtils` and a button mapping task module both sounded
+promising. Neither models a physical keypad: there is no row, no column, no scan code, nothing
+resembling a matrix anywhere in the client. `ButtonMappingUtils` turns out to be the on-screen
+keyboard, mapping characters to commands. Buttons are named entities that come from the server
+and the firmware resolves the name to hardware.
+
+So section 48's conclusion stands and is now stronger. The map is not obtainable from a host
+because **no host ever had it**, which is a better reason than "we have not found it yet". It
+stays open, and the route to it stays a RAM write the rails forbid.
+
+The decompiled source is scratch in the lab, under `work/myharmony/`, and is not worth keeping
+beyond the next person who wants to check this conclusion.
+
 ## Where the extraction lives
 
 The verbatim extraction, with Logitech's identifiers, is `software/classic/PROTOCOL-CONSTANTS.md`
