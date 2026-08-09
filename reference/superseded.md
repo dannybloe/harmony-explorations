@@ -97,3 +97,4 @@ and leave this table alone.
 | `a comparison somebody can find` | section 96 | there is no comparison; the deciding byte is 2247 bytes further into the data the loop is reading |
 | `is no longer the obvious next thing to read` | section 98 | nothing in the response machinery was: the endpoint's buffer descriptor is pointed straight at the capture buffer |
 | `the sort of coincidence that says one codebase` | section 98 | `0x40D` is the endpoint's byte count, fixed by the part, so all three would share it however they were written |
+| `The header layout is arch 12 only` | section 98, corrected the same day | arch 14 writes the same header through `INDF0` at `0x0938C`; the scan that missed it filtered out `0xEF` |

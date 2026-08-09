@@ -49,7 +49,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty two have been found and corrected so far. The newest is section 96's: the restart hazard was
+Twenty four have been found and corrected so far. The two newest are both in section 98 and both
+were made and caught within the same session, which is the useful thing about them. One read the USB
+buffer descriptor's byte count as a software counter and drew an inference about the codebase from
+three architectures sharing it, when the address is fixed by the part. The other concluded from a
+scan that arch 14 had no learn report header, when the scan had reported it and the filter dropped
+it: the store is through `INDF0`, whose address is `0xEF`, and this project's own pitfall list warns
+that indirect access is invisible to a search keyed on addresses.
+
+Before them, section 96's: the restart hazard was
 written up as a threshold at a program address, and there is no threshold. The response sender has
 no bound, so an unterminated read walks over its own counter and what decides the outcome is the
 parity of a byte 2247 further on. The bisection that produced the threshold was real and its
