@@ -242,8 +242,8 @@ export class HarmonyRemote {
       //   124 bytes at 0x1000  fine, twice, and that is two full chunks
       //
       // So it is not the chunk count: 124 is two chunks and is fine. What 63 has that 64 and 124 do
-      // not is a final chunk of exactly one byte. Offset 0 is somehow exempt. Beyond that it is not
-      // diagnosed, and five restarts was enough hardware for one question.
+      // not is a final chunk of exactly one byte. Offset 0 looked exempt, and is not: section 96
+      // predicted 63 bytes at offset 4 would hang, and it does, four bytes away.
       //
       // **The mechanism is read now, and it is not the chunk shape at all**, section 94. The fetch
       // at `0x26BC8` on the One calls a primitive that can only read a *word*, emits both bytes,
@@ -256,6 +256,13 @@ export class HarmonyRemote {
       // So this refuses odd counts. Two earlier refusals were both bounds around the hazard rather
       // than the hazard: `> FLASH_CHUNK_DATA` refused the 64 byte read Logitech's own client makes,
       // and `% FLASH_CHUNK_DATA == 1` would have let 65 and 127 through.
+      //
+      // **And an odd read that comes back is not a success**, section 96. The sender at `0x20394`
+      // has no bound, so the loop walks a write pointer up through data memory writing what it
+      // reads, and after 2247 bytes it overwrites its own counter with a byte of flash. An even byte
+      // there is the only reason a read ever returns, and by then it has scribbled over 2247 bytes
+      // of the remote's memory. So the refusal covers the case that looks fine as well, which is the
+      // main reason it is on the count rather than on the address.
       //
       // Every one of those restarts recovered on its own, and the config read back byte-identical to
       // its dump across three separate windows afterwards. So this is disruption, not damage. Still,

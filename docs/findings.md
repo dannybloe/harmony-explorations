@@ -11600,7 +11600,7 @@ The constant was not fitted. `0x0468` is a literal at `0x2015E` and the two prea
 `CALL`s, so `0x046A` was read out of the firmware and then tested.
 
 The model is `src/harmony/readloop.py` and the 21 of 21 above is one command away for anyone holding
-the page. **The regression test deliberately does not run it against that page**, because page
+the page. Two more were then predicted in advance and measured, below, for 23 of 23. **The regression test deliberately does not run it against that page**, because page
 `0xFF` carries the remote's identity block and is the one image kept out of `tests/lab.py` for that
 reason. So the test pins the mechanism, which is where the argument actually lives: that the sender
 is nine instructions with no comparison, skip or branch among them, that the pointer is reloaded per
@@ -11627,19 +11627,29 @@ The bisection was not wasted: it is what forced the explanation to be content de
 comparison produces a threshold at `0xA56`, and it is the data every part of this section is tested
 against. What it does not support is the word boundary.
 
-### The cheapest way to falsify this
+### Falsified on hardware, in both directions, the same day
 
-Two 63 byte reads on page `0xFF`, each with a 62 byte control first, on a remote whose page `0xFF`
-matches the image used here:
+Two 63 byte reads on page `0xFF`, each with a 62 byte control at the same offset first, written down
+here and committed before the spare One was plugged in. The unit was identified from what it holds,
+not from its path: its config base matches `one-spare-after-sync-config.bin` byte for byte.
 
-| offset | deciding byte | predicted |
-|---|---|---|
-| `0x0004` | `0x01` at page offset `0x0909` | **hangs**, four bytes above an offset measured safe |
-| `0x0A66` | `0xFE` at page offset `0x136B` | **survives**, above the supposed threshold |
+| offset | deciding byte | boundary reading | section 96 | measured |
+|---|---|---|---|---|
+| `0x0004`, 62 bytes | | returns | returns | 62 bytes in 4 ms |
+| `0x0004`, **63** bytes | `0x01` at page offset `0x0909` | returns, it is far below the threshold | **hangs** | **failed after 146 ms, remote gone** |
+| `0x0A66`, 62 bytes | | returns | returns | 62 bytes in 4 ms |
+| `0x0A66`, **63** bytes | `0xFE` at page offset `0x136B` | hangs, it is above the threshold | **returns** | **63 bytes in 45 ms** |
 
-Either one alone refutes the boundary reading, and both together refute it in each direction. The
-first is the better test, because the boundary reading and this one disagree about it maximally and
-because nothing about `0x0004` is otherwise interesting.
+**Both predictions hold and the two readings disagree about both.** `0x0004` is four bytes above an
+offset measured safe three times and 2642 bytes below the supposed threshold, and it hangs. `0x0A66`
+sits above the threshold and comes back. So the threshold is not a weak rule with exceptions, it is
+not a rule at all, and one byte of flash 2247 further on decides each case.
+
+The remote came back on its own in under two seconds at a new device path, a seventh self-clearing
+restart, and its config base read back identical afterwards.
+
+That takes the record to **23 of 23 measurements predicted**, of which these two were predicted in
+public before the remote was connected, which the other 21 were not.
 
 ### What it means for the rail
 
