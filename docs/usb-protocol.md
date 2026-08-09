@@ -1236,7 +1236,11 @@ remote running, against the same read at `+0x1000` which restarts it. So a step 
 decides that case and has not been found; section 94 says what is withdrawn because of it.
 
 Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
-across three separate windows. So this is disruption rather than damage. `packages/usb` refuses an
+across three separate windows. So this is disruption rather than damage.
+
+**The boundary is measured now**, `docs/findings.md` section 94: the failure only happens at or
+above program address `0x010A56`, bisected over fourteen reads on the spare and deterministic three
+of three either side. Below it an odd count is harmless, which is why page `0xFE` has never hung. `packages/usb` refuses an
 odd count, which is a workaround rather than a fix. Worth stating plainly for anyone building on
 this: **every command involved was a read**, and reads of this region still restart a running
 remote.

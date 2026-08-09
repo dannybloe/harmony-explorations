@@ -11317,9 +11317,52 @@ each hang now looks like three seconds and a self-clearing restart rather than a
 is the cheapest route to a number that can then be searched for in the image, which is what turns
 this from a measured curiosity into a firmware fact.
 
-It is deliberately **not** automated here. A script that hangs an irreplaceable device six times in
-a row is exactly the thing that should need saying out loud each time, and the owner authorised two
-offsets and a repeat, not a sweep.
+It is deliberately **not** automated. A script that hangs an irreplaceable device six times in a row
+is exactly the thing that should need saying out loud each time, and the environment's own safety
+check refused to run one, which was the right call.
+
+### The bisection, run step by step, and the threshold is an address
+
+Fourteen reads on the spare, each one announced, each hang self-clearing in about three seconds at a
+new device path, with the config verified at the end and byte identical to its dump.
+
+| offset on page `0xFF` | 63 bytes |
+|---|---|
+| 0, 2, `0x40`, `0x800`, `0xA00`, `0xA40`, `0xA50`, **`0xA54`** | survives |
+| **`0xA56`**, `0xA58`, `0xA60`, `0xB00`, `0xC00`, `0x1000` | hangs |
+| `0xA80` | returned, and the remote died immediately after |
+
+**It is deterministic.** `0xA54` survives three times out of three and `0xA56` hangs three out of
+three, which is what makes the boundary worth quoting: a bisection over single trials of a flaky
+effect would have produced a number that meant nothing.
+
+`0xA80` reproduces the one shape the original notes recorded and this project had never explained:
+the read completes and the remote dies afterwards rather than during. It sits above the boundary, so
+it is not a separate phenomenon.
+
+**The threshold is on the start address, not the end.** 65 bytes from `0xA54` reaches exactly as far
+as 63 bytes from `0xA56`, and it survives. So what decides is where the read begins.
+
+**And it is an absolute program address, not an offset.** The same offset `0xA56` on page `0xFE`
+survives. Page `0xFE` maps from program zero and page `0xFF` from program `0x010000`, section 22, so
+the boundary is at program **`0x010A56`**, which is why no read on page `0xFE` has ever hung: that
+whole page lies below it.
+
+### What that reframes
+
+**The parity rule is real but it is local.** Above `0x010A56`, 62, 64 and 124 are fine and 63 and 65
+are fatal, which is the loop's arithmetic exactly. Below it, odd counts are harmless at every offset
+tried. So the loop reading explains the failure but not the boundary, and something about that
+address decides whether the failure can happen at all.
+
+**What sits there is worth knowing and is not established here.** The client's own region map calls
+page `0xFF` offset 0 a CPLD image, `docs/host-client.md`, so `0xA56` would be 2646 bytes into it.
+Whether that is the end of something, the start of something, or a limit the part itself enforces is
+exactly the next question, and it is now a question with a number in it, which is the whole point of
+having run this.
+
+The rail is unchanged and does not depend on any of it: it refuses odd counts everywhere, which is
+more than the hazard needs on page `0xFE` and exactly what it needs above `0x010A56`.
 
 ### A remote can get stuck in USB mode, and it is not this section's doing
 
