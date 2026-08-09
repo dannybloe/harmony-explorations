@@ -233,6 +233,16 @@ artefact of which offsets the bisection tried, and it is corrected in place. The
 counts everywhere, and the case that returns is no better, because it has already scribbled 2247
 bytes over the remote's memory.
 
+**A session has to be ended, not abandoned, and that is a product decision waiting to be taken.**
+Pull the cable and a remote can stay in USB mode until its batteries come out, section 95, seen
+twice on 9 August 2026, the second time after a plain successful read. USB mode **does** have an
+exit and the firmware polls for the cable itself, section 99, but one of its two paths is gated on
+the command state variable `0x284` being zero, and the shared command exit clears that only for a
+packet it did **not** handle. `0xE0 0x01` clears it and is not a reset, where `0xE0 0x02` reboots,
+section 97. So the honest options are one command behind `WRITES_ENABLED`, or telling the user about
+the batteries. **Do not decide this in a commit**; it is the owner's, and it is one cheap experiment
+away from being decidable.
+
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
 profile does not add a write target and must not.
