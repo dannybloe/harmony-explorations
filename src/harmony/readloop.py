@@ -36,6 +36,22 @@ ADDRESS = 0xD34
 #: anything the loop uses.
 DECIDING_DISTANCE = COUNTER - (BUFFER_BASE + PREAMBLE)
 
+#: The same four numbers on every architecture with a firmware image here, read the same way. The
+#: defect is not arch 12's: all three share the buffer base, the response length counter at `0x40D`,
+#: the two byte preamble, and a loop counter that sits below its own address bytes so the counter is
+#: always the first thing the runaway pointer reaches. What differs is only how far it has to go.
+#:
+#: `(sender, loop head, exit test, buffer base, counter)`, and `distance` derived from the last two.
+PROFILES = {
+    12: {'sender': 0x20394, 'loop': 0x26BC8, 'exit': 0x26C16, 'buffer': 0x0468, 'counter': 0xD31},
+    14: {'sender': 0x172DA, 'loop': 0x0CA8A, 'exit': 0x0CAD6, 'buffer': 0x0468, 'counter': 0xD5D},
+    9: {'sender': 0x0173C, 'loop': 0x03372, 'exit': 0x033A4, 'buffer': 0x0468, 'counter': 0x70B},
+}
+
+for _profile in PROFILES.values():
+    _profile['distance'] = _profile['counter'] - (_profile['buffer'] + PREAMBLE)
+del _profile
+
 #: FSR0 is twelve bits, so the pointer wraps here rather than running off the end of the file
 #: registers. It matters only for reads that keep going long enough to come back round.
 FSR_MASK = 0xFFF

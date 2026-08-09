@@ -1610,3 +1610,74 @@ class TestTheRestartCommandAndTheEscape(unittest.TestCase):
             self.assertEqual(self.at(code, base, mode_site - 2).fields['k'], 0x03, name)
             self.assertEqual(self.at(code, base, mode_site).mnemonic, 'MOVWF', name)
             self.assertEqual(self.at(code, base, reset).mnemonic, 'RESET', name)
+
+
+class TestTheSameSenderDefectOnEveryArchitecture(unittest.TestCase):
+    """Section 96: the unbounded sender is not arch 12's, it is all three.
+
+    Named as not established when section 96 landed, and closed the same day. The four things that
+    make the defect a defect are asserted per architecture, so a future image that fixes any one of
+    them fails here rather than silently widening the claim.
+    """
+
+    IMAGES = {12: ('one34_code', 0x20000), 14: ('h700_code', 0x9000), 9: ('h525_code', 0x0000)}
+
+    def at(self, code, base, addr):
+        return isa.decode(code, addr - base, base)
+
+    def test_every_exit_test_is_equality_with_zero(self):
+        lab.require(*(name for name, _ in self.IMAGES.values()))
+        for arch, (name, base) in self.IMAGES.items():
+            code, profile = lab.load(name), readloop.PROFILES[arch]
+            # SUBLW 0x00 sets carry only for zero, and the branch back is BNC. A "less than" test
+            # would terminate on an odd count on any of them.
+            exit_test = self.at(code, base, profile['exit'])
+            self.assertEqual(exit_test.mnemonic, 'SUBLW', arch)
+            self.assertEqual(exit_test.fields['k'], 0, arch)
+            back = self.at(code, base, profile['exit'] + 2)
+            self.assertEqual(back.mnemonic, 'BNC', arch)
+            self.assertEqual(back.fields['target'], profile['loop'], arch)
+
+    def test_no_sender_bounds_anything(self):
+        lab.require(*(name for name, _ in self.IMAGES.values()))
+        tests = {'CPFSEQ', 'CPFSGT', 'CPFSLT', 'BTFSS', 'BTFSC', 'TSTFSZ', 'SUBLW', 'SUBWF',
+                 'SUBFWB', 'SUBWFB', 'BC', 'BNC', 'BZ', 'BNZ', 'DECFSZ', 'INCFSZ'}
+        for arch, (name, base) in self.IMAGES.items():
+            code, profile = lab.load(name), readloop.PROFILES[arch]
+            addr, seen = profile['sender'], []
+            while True:
+                instr = self.at(code, base, addr)
+                seen.append(instr.mnemonic)
+                if instr.mnemonic == 'RETURN' or len(seen) > 12:
+                    break
+                addr += instr.words * 2
+            self.assertIn('RETURN', seen, arch)
+            # The store through the pointer is there, and nothing decides whether to do it.
+            self.assertIn('MOVFF', seen, arch)
+            self.assertEqual([m for m in seen if m in tests], [], arch)
+
+    def test_the_buffer_base_is_the_same_literal_everywhere(self):
+        lab.require(*(name for name, _ in self.IMAGES.values()))
+        sites = {12: 0x2015C, 14: 0x170EE, 9: 0x0156A}
+        for arch, site in sites.items():
+            name, base = self.IMAGES[arch]
+            code = lab.load(name)
+            self.assertEqual(self.at(code, base, site).fields['k'], 0x68, arch)
+            self.assertEqual(self.at(code, base, site + 4).fields['k'], 0x04, arch)
+            self.assertEqual(readloop.PROFILES[arch]['buffer'], 0x0468, arch)
+
+    def test_the_counter_always_sits_below_the_address_it_would_corrupt(self):
+        # The ordering is what makes the outcome a parity test rather than a jump: the pointer only
+        # climbs, so whichever of the loop's variables is lowest is the one it reaches first.
+        addresses = {12: 0xD34, 14: 0xD60, 9: 0x70E}
+        for arch, address in addresses.items():
+            profile = readloop.PROFILES[arch]
+            self.assertLess(profile['counter'], address, arch)
+            self.assertEqual(profile['distance'], profile['counter'] - 0x046A, arch)
+
+    def test_arch_9_decides_soonest(self):
+        # Worth pinning as a number rather than as prose: a 525 reaches the deciding byte in a third
+        # of the passes, so it damages least and fails fastest.
+        self.assertLess(readloop.PROFILES[9]['distance'], readloop.PROFILES[12]['distance'])
+        self.assertLess(readloop.PROFILES[12]['distance'], readloop.PROFILES[14]['distance'])
+        self.assertEqual(readloop.PROFILES[9]['distance'], 0x2A1)

@@ -11673,9 +11673,40 @@ best case is 2247 bytes of collateral damage and a successful looking reply. The
 "survived" odd read is not trustworthy either, which is a reason to refuse the count rather than
 tolerate the ones that return.
 
-**Whether the same defect exists on arch 9 and arch 14 is not established here** and is worth an
-hour: the sender is the same shape on all three, and the rail already refuses odd counts everywhere,
-so this is a question about how much a mistake would cost rather than about how the library behaves.
+### The same defect is on all three architectures, and only the distance differs
+
+Established the same day, so the paragraph that used to end this section saying it was not is gone.
+Each image was read the same way, starting from the fetch primitive's own shape, a `TBLRD*+` and a
+`TBLRD*` six bytes apart feeding `PRODL` and `PRODH`, rather than from an address guessed by
+analogy.
+
+| | fetch | loop head | exit test | sender | buffer base | counter | distance |
+|---|---|---|---|---|---|---|---|
+| arch 12, One 3.4 | `0x2E70A` | `0x26BC8` | `0x26C16` | `0x20394` | `0x0468` | `0xD31` | `0x8C7`, 2247 |
+| arch 14, 700 2.8 | `0x1B558` | `0x0CA8A` | `0x0CAD6` | `0x172DA` | `0x0468` | `0xD5D` | `0x8F3`, 2291 |
+| arch 9, 525 | `0x07DC4` | `0x03372` | `0x033A4` | `0x0173C` | `0x0468` | `0x70B` | `0x2A1`, 673 |
+
+Everything that makes the defect a defect is common to all three:
+
+* the exit test is `SUBLW 0x00` then `BNC` on each, so an odd count never reaches zero;
+* the step is two, because the fetch can only read a word;
+* the sender advances a 16 bit pointer and stores through it with **no bound**, and increments the
+  same response length counter at `0x40D` on all three, which is the sort of coincidence that says
+  one codebase rather than three;
+* the buffer base is the literal `0x0468` on all three, reloaded per report;
+* two bytes precede the loop, so it starts writing at `0x046A` everywhere;
+* and the loop's counter sits **below** its own address bytes in every layout, so the runaway
+  pointer always reaches the counter first. That ordering is what makes the outcome a parity test on
+  one byte rather than a jump to an arbitrary address.
+
+**What differs is only how long the remote survives.** Arch 9 decides after 337 passes where arch 12
+takes 1124 and arch 14 1146, so a 525 scribbles a third as much of its memory before the byte that
+settles it, and reaches that byte three times sooner.
+
+`src/harmony/readloop.py` carries all three as `PROFILES`. The library's refusal is on the count and
+is architecture independent, so nothing about the rail changes; what this settles is that adding a
+read profile for a new architecture must not be taken as evidence that its internal read path is
+safe, because on the evidence here it will have the same defect.
 
 ## 97. Ending a session politely means resetting the remote, and the restart command does nothing on a One
 
