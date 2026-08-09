@@ -11486,6 +11486,18 @@ which the midday event never was.
 So the cause is how a session ends rather than what the session did, and the odd count read is
 cleared of it a second time and for a better reason.
 
+### Observed again the same day, and the sequence is fully known this time
+
+The spare One did it again after the section 96 falsification reads: cable pulled, remote stuck
+showing USB mode, batteries out to clear it. This one is worth recording because **nothing unusual
+preceded it**. The last command it received was an ordinary 32 byte `READ_FLASH` of the config base,
+which answered correctly and matched its dump, and the deliberate hang before that had already
+cleared itself and been verified healthy. So the pattern is exactly what this section claims: it is
+the disconnect, not the traffic.
+
+Two occurrences on the same unit on one day, and the second following a plain successful read, moves
+this from an owner's observation to something a bench session should simply expect.
+
 ### What it means for the application
 
 **A session has to be ended, not abandoned.** Version 1 of FreeHarmony is read only and closing a
