@@ -10255,6 +10255,33 @@ The last 64 KiB block is unexplained. It is one whole erase block, filled with a
 and `0xFF` except that the final two bytes are both `0x00`, and nothing here has looked for what
 writes it.
 
+### One sample, and the sample is the wrong one to generalise from
+
+Recorded before the second Harmony One was connected, because the gap is in this section's own
+reasoning rather than in the data.
+
+The unit read above is the **spare**, identified from its container header rather than its label:
+1326564 bytes, which is `one_spare_after_sync`. That unit had Logitech's own software write a
+config to it on 7 August 2026, section 58. So a firmware copy found on it is a firmware copy on a
+remote that recently had vendor software attached, and concluding "a Harmony One holds two copies"
+from that is a step this section is not entitled to.
+
+The programmed One has never had anything but reads from this project, and its previous owner last
+touched it years ago. Three outcomes, all informative:
+
+| what the second unit holds at `0x3D0000` | what it would mean |
+|---|---|
+| the same image, version `0x34` | a standing property of the model, and `WRITABLE_CEILING` is settled |
+| erased | the sync wrote it, which would be a much larger finding about what a config sync does |
+| an image of a **different** version than the one it runs | not a backup but a staging area, and the update mechanism is visible in it |
+
+The third is the one nobody has ruled out, and it is the reason this is worth a second remote at
+all. The same question applies to the `00 FF` block: a factory pattern or something the sync left.
+
+**Prediction**: the same image, version `0x34`, and the same pattern block. That is the dull
+outcome and it is what the client's separate declaration of a firmware region implies, since it
+declares the region for every arch 12 remote rather than for a state a remote can be in.
+
 ### A remote that has been idle loses the first command sent to it
 
 Found by nearly drawing the wrong conclusion from it. `read-window.ts` sent one command and got
