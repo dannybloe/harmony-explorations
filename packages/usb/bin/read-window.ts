@@ -15,8 +15,8 @@
  * That is the shape most address questions here take: does this address alias that one, which is
  * how a flash part that ignores an address bit gives itself away.
  *
- * Internal program memory is deliberately not reachable from here. It has its own path with a one
- * chunk cap, because a multi chunk internal read restarts the remote.
+ * Internal program memory is deliberately not reachable from here. It has its own path, which
+ * refuses a count whose final chunk would be one byte, because that is what restarts a remote.
  *
  * **It sends `GET_VERSION` first, and that is not politeness.** A remote that has been idle loses
  * the first command sent to it: a Harmony One returned nothing at its own config base on the first

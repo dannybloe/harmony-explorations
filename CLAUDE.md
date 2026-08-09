@@ -219,9 +219,11 @@ document:
 `READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the
 remote leave the USB bus. Reproduced deliberately on the spare One, then still unprogrammed: 5
 restarts, all self-recovering, config verified against the dump afterwards. Ruled out: ordering,
-chunk count, and the size 63 by itself. `packages/usb` caps an internal read at one chunk, and that
-cap is a workaround rather than an explanation, so it should not be lifted on a new architecture to
-find out whether that one shares the fault.
+chunk count, and the size 63 by itself. `packages/usb` refuses a count whose **final chunk would be
+one byte**, `count % 62 == 1`, which is the measured condition. It used to refuse more than one
+chunk, which was a bound around the hazard and refused reads Logitech's own client performs, section
+93. It is still a workaround rather than an explanation, so it should not be widened on a new
+architecture to find out whether that one shares the fault.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read

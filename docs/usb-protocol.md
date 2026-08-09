@@ -12,8 +12,8 @@ version block were **predicted from the 600 and then confirmed on the One**, whi
 firmware, hardware version, flash part and architecture.
 
 Three things the hardware corrected are marked in place rather than quietly fixed, and one thing it
-did was not expected: a multi chunk read of internal program memory **restarted a remote**. Section 4
-says what is known about that and `packages/usb` refuses the case.
+did was not expected: a read of internal program memory whose final chunk is one byte **restarted a
+remote**. Section 4 says what is known about that and `packages/usb` refuses that exact case.
 
 This document is the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was
 established rather than at the end.
@@ -1227,10 +1227,16 @@ exempt from it. Beyond that this is not diagnosed, and five restarts is enough h
 one question that has a cheap workaround.
 
 Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
-across three separate windows. So this is disruption rather than damage. `packages/usb` refuses an
-internal read of more than one chunk, which is a cap rather than a fix, and 62 bytes at a time is
-enough for what this region is wanted for. Worth stating plainly for anyone building on this: **every
-command involved was a read**, and reads of this region still restart a running remote.
+across three separate windows. So this is disruption rather than damage. `packages/usb` refuses a
+count whose final chunk would be one byte, which is a workaround rather than a fix. Worth stating
+plainly for anyone building on this: **every command involved was a read**, and reads of this region
+still restart a running remote.
+
+~~It used to refuse an internal read of more than one chunk~~<!--superseded-->, which is a bound
+around the hazard rather than the hazard: 64 and 124 byte reads were already recorded as safe in the
+table above when that cap was written. Narrowed to the measured condition on 9 August 2026, with the
+64 and 124 byte reads repeated on the spare across both internal pages and the config verified
+afterwards, `docs/findings.md` section 93.
 
 ### Live RAM, and upstream's selector confirmed wrong for this architecture
 

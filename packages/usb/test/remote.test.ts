@@ -325,25 +325,47 @@ test('all the bytes but no completion is an error, because the pipe is then dirt
   await assert.rejects(() => remote.readFlash(0x030000, 62), /no completion, so the pipe is dirty/);
 });
 
-test('a multi chunk internal memory read is refused, because they restart a remote', async () => {
+test('an internal read ending in a one byte chunk is refused, because they restart a remote', async () => {
   // Not a style preference. A 63 byte read of internal program memory made a Harmony One leave the
   // USB bus, five times over once it was reproduced on purpose, watched from both ends. Each time the
   // remote recovered with its config intact, but a read that restarts the device is not a read this
   // project performs by accident.
   const { transport, written } = scriptedRemote([], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
-  await assert.rejects(() => remote.readInternalMemory(0xff, 0, 63), /have restarted a remote/);
+  // 63, 125 and 187 are 62n + 1, which is the measured condition. Section 93.
+  for (const count of [63, 125, 187]) {
+    await assert.rejects(() => remote.readInternalMemory(0xff, 0, count), /restarted a remote/);
+  }
   assert.equal(written.length, 0, 'and it is refused before anything reaches the device');
 });
 
-test('the one chunk cap covers arch 9, where internal memory is at plain low addresses', async () => {
-  // The cap lived only in `readInternalMemory`, which builds an address in the `0xFE` window. On
+test('a two chunk internal read is allowed, because it was measured safe', async () => {
+  // The other half, and the one that matters: the refusal used to be `> 62`, which is a bound
+  // around the hazard rather than the hazard, and it refused the 64 byte read Logitech's own client
+  // uses for a unit GUID. 64 and 124 were repeated on the spare One on 9 August 2026 across both
+  // internal pages, with the config verified against its dump afterwards. Section 93.
+  //
+  // Asserted as "not refused for that reason" rather than as a success, because there is no device
+  // here: what this pins is the rule, and the transport then fails for its own reasons.
+  const { transport } = scriptedRemote([], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  for (const count of [64, 124]) {
+    await assert.rejects(
+      () => remote.readInternalMemory(0xff, 0x1000, count),
+      (error: Error) => !/restarted a remote/.test(error.message),
+      `${count} bytes must not be refused by the one byte chunk rule`,
+    );
+  }
+});
+
+test('the refusal covers arch 9, where internal memory is at plain low addresses', async () => {
+  // The rule lived only in `readInternalMemory`, which builds an address in the `0xFE` window. On
   // arch 9 there is no such window: internal program memory answers at 0x000000, so every caller
   // of `readFlash` could reach it uncapped while the documents said otherwise. Found by writing
   // the document and then checking the code rather than the other way round.
   const { transport, written } = scriptedRemote([], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 9 });
-  await assert.rejects(() => remote.readFlash(0x000000, 63), /have restarted a remote/);
+  await assert.rejects(() => remote.readFlash(0x000000, 63), /restarted a remote/);
   assert.equal(written.length, 0, 'refused before anything reaches the device');
   // And the same address on the default rule is ordinary config flash, so the cap must not fire
   // there: an arch 12 remote reads its config from below 0x200000 in chunks much larger than 62.

@@ -168,12 +168,14 @@ its load address is `0x1000`. Below `0x1000` is a bootloader that exists in no e
 3781 of its 4096 bytes are used, its reset vector stays inside itself and its interrupt vector
 jumps into the application.
 
-That has a safety consequence worth stating plainly. `packages/usb` caps an internal read at one
-chunk because an arch 12 remote leaves the USB bus when such a read ends in a one byte chunk, and
-the cap keys on the top bytes `0xFE` and `0xFF`. On arch 9 it therefore **protected nothing** until
-the region rule learned about the architecture. It now classifies top byte `0x00` on arch 9 as
-internal, so the cap covers it. Only one 62 byte read has been done there, and the cap should not
-be lifted to find out whether arch 9 shares the fault.
+That has a safety consequence worth stating plainly. `packages/usb` refuses an internal read whose
+final chunk would be one byte, because an arch 12 remote leaves the USB bus on exactly that, and the
+rule keys on the top bytes `0xFE` and `0xFF`. On arch 9 it therefore **protected nothing** until the
+region rule learned about the architecture. It now classifies top byte `0x00` on arch 9 as internal,
+so the refusal covers it. Only one 62 byte read has been done there, and the rule should not be
+widened to find out whether arch 9 shares the fault. Section 93 narrowed it from a one chunk cap on
+arch 12, where 64 and 124 byte reads are measured safe; **that measurement is arch 12's and no arch
+9 read has tested it.**
 
 ## The container, already known from one sample
 

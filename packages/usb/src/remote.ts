@@ -158,7 +158,7 @@ export class HarmonyRemote {
   async readFlash(address: number, count: number): Promise<Uint8Array> {
     // Throws for a top byte the device's own rule rejects, and tells us which region this is.
     const region = regionOf(address, this.architecture);
-    if (region === 'internal-program-memory' && count > FLASH_CHUNK_DATA) {
+    if (region === 'internal-program-memory' && count % FLASH_CHUNK_DATA === 1) {
       // The one chunk cap, enforced here rather than only in `readInternalMemory`. It lived there
       // alone until 8 August 2026, which was fine while internal memory was only reachable through
       // the `0xFE` window that method builds. On arch 9 it is at plain low addresses, so every
@@ -166,8 +166,8 @@ export class HarmonyRemote {
       // hazard is in `readInternalMemory`'s comment: a multi chunk read of this region has
       // restarted a remote, five times, on arch 12.
       throw new RemoteError(
-        `an internal memory read of ${count} bytes needs more than one chunk, and multi chunk ` +
-          `reads of this region have restarted a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
+        `an internal memory read of ${count} bytes ends in a final chunk of one byte, which has ` +
+          `restarted a remote; ask for any other count`,
       );
     }
     await this.transport.write(readFlashRequest(address, count));
@@ -231,9 +231,9 @@ export class HarmonyRemote {
    * single probe rather than from the device. `docs/findings.md` section 22.
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
-    if (count > FLASH_CHUNK_DATA) {
-      // A read of this region can restart the remote, and the cap is what avoids it. Measured on the
-      // spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
+    if (count % FLASH_CHUNK_DATA === 1) {
+      // A read of this region can restart the remote, and this refusal is what avoids it. Measured
+      // on the spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
       //
       //   63 bytes at 0x1000   restarts it, 3 times out of 3, wherever it sits in a sequence
       //   63 bytes at 0x0040   completed, and the remote died immediately afterwards
@@ -245,13 +245,20 @@ export class HarmonyRemote {
       // not is a final chunk of exactly one byte. Offset 0 is somehow exempt. Beyond that it is not
       // diagnosed, and five restarts was enough hardware for one question.
       //
+      // **The refusal used to be `count > FLASH_CHUNK_DATA`**, which is a bound around the hazard
+      // rather than the hazard, and it refused reads Logitech's own client performs: it reads a
+      // unit's 64 byte identity block in one go. Narrowed to the measured condition on 9 August
+      // 2026 after 64 and 124 byte reads were repeated on the spare across both internal pages,
+      // with the config verified against its dump afterwards. Section 93. It is still a workaround
+      // and not an explanation, so do not widen it further on an architecture nobody has tested.
+      //
       // Every one of those restarts recovered on its own, and the config read back byte-identical to
       // its dump across three separate windows afterwards. So this is disruption, not damage. Still,
       // "read only" and "harmless" are not the same sentence on this path, which is the reason for a
       // refusal here rather than a comment somewhere.
       throw new RemoteError(
-        `an internal memory read of ${count} bytes needs more than one chunk, and multi chunk reads ` +
-          `of this region have restarted a remote; ask for ${FLASH_CHUNK_DATA} or fewer`,
+        `an internal memory read of ${count} bytes ends in a final chunk of one byte, which has ` +
+          `restarted a remote; ask for any other count`,
       );
     }
     if (offset < 0 || offset > 0xffc0) {

@@ -2191,8 +2191,11 @@ self-recovering, config verified against the dump across three windows afterward
 `docs/usb-protocol.md` section 4; what it rules out is more useful than what it shows. Not the
 ordering, since the failing case fails last as readily as first. Not the chunk count, since 124 bytes
 is two chunks and is fine. Not the size 63 alone, since 63 at offset zero is fine. What is left is a
-final chunk of exactly one byte, with offset zero somehow exempt, and that is where it was left:
-`packages/usb` caps an internal read at one chunk, which is a cap and not an explanation.
+final chunk of exactly one byte, with offset zero somehow exempt, and that is where it was left.
+
+~~`packages/usb` caps an internal read at one chunk~~<!--superseded-->, which was a bound around the
+hazard rather than the hazard itself. It refuses the measured condition instead since 9 August 2026,
+`count % 62 == 1`, which is section 93. Still a workaround and not an explanation.
 
 ### An honest gap
 
@@ -10946,7 +10949,44 @@ calls it a PIC library.
 
 ### Measured
 
-To be filled in from the bench, on the spare, identified by its config rather than by its port.
+9 August 2026, on the spare Harmony One with both Ones attached at once. **The unit was identified
+by what it holds, not by its port**: its config base reads back the bytes of `one_spare_after_sync`
+where the other reads those of `one_config`, which is the only way to tell two Harmony Ones apart,
+since they enumerate identically and report no serial number.
+
+| read | bytes back | remote afterwards |
+|---|---|---|
+| page `0xFF`, offset `0xE000`, 64 bytes | 64 | answered `GET_VERSION` immediately |
+| page `0xFF`, offset `0x1000`, 64 bytes | 64 | answered |
+| page `0xFF`, offset `0x1000`, 124 bytes | 124 | answered |
+| page `0xFE`, offset `0x1000`, 64 bytes | 64 | answered |
+
+The 64 byte read at `0xE000` was run twice, in separate sessions. The config window at `0x040000`
+was read before the first and after the last and was byte identical, so nothing here disturbed the
+remote at all. **All three predictions hold.**
+
+The refusal is now the measured condition, `count % FLASH_CHUNK_DATA == 1`, and 63, 125 and 187 are
+each refused by the library without any traffic reaching the device.
+
+### A confirmation nobody asked for
+
+`GET_VERSION` field 8 is documented as the version of the image at page `0xFF` offset `0xE000`,
+read by the firmware from program `0x01E007`, and the Harmony One reports `0x34`. The 64 byte read
+above starts at `0xE000`, so its eighth byte is `0xE007`, and it is `0x34`. That accessor had been
+derived from disassembly and checked against the value the remote reports; this is the first time
+the byte has been read at the address directly.
+
+The two bytes after it are `0x48 0x47`, and the client's own image header builder writes `0x4748` at
+that position, so the region carries an image of the shape the client knows how to make. What the
+region is for is still only the client's word, `docs/host-client.md`.
+
+### What it does not settle
+
+**Why a one byte final chunk restarts a remote**, which is unchanged: the refusal is narrower now
+and it is still a workaround. Offset zero being exempt is unexplained too. Widening this on an
+architecture nobody has tested is the thing not to do, and the arch 9 remote is the one that would
+tempt somebody, since its internal memory sits at plain low addresses where every caller can reach
+it.
 
 ## References
 
