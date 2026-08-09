@@ -727,19 +727,18 @@ produce a config the remote accepts and mishandles.
   that service never emitted for these devices. A miss was "stored as-is in its original format",
   which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
   discontinued one, so learning a code without it means making that choice locally.
-* **Where a learn session's samples leave the remote**, section 91. The bracket is firmware fact:
-  `0x70` opens, `0x80` has its own one entry dispatch that exists only inside a session, any other
-  command ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. The **receiver exists
-  on all four architectures**, CCP2 in capture on both edges while CCP1 drives the transmit carrier.
-  And the samples **do** reach the host live, on the owner's first hand account of using the classic
-  software. What no search has found is the sender: no state body on either architecture emits
-  `0x90`, the byte sender's 32 callers are all in the command response region, and the response
-  buffer is touched only by the USB transport layer. **So an assumption is wrong**, and two of the
-  three candidates are dead: the owner has learned codes on every one of these remotes, and the
-  client's HID channel is one pipe with no report ids and no poll, so the reports arrive on the same
-  endpoint 1 IN as every command response. That forces the sender to fill the same buffer, and
-  `0x2AF1A` is the **only** site outside the USB transport that touches its descriptor at `0x40C`.
-  Read it before believing it.
+* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
+  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
+  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
+  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
+  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
+  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
+  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
+  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
+  what comes off the remote is already the shape a record wants. The arch 14 header is **not**
+  established, since it reaches the same buffers through `FSR`. **The reports are unsolicited**, so a
+  host must keep reading during the session; that settles section 91's disagreement between the two
+  clients in the classic one's favour.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on

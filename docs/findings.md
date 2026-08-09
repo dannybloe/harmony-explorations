@@ -10783,11 +10783,21 @@ packets after the start, an unspecified number after the stop, ending at the ack
 put the samples on the one IN endpoint and end at the same terminator, so **they can be one wire
 behaviour described from two heights**, and that would explain why no separate sender exists to be
 found. But which it is decides what an implementation does, keep reading during the session or read
-after the stop, and it is **not established**.
+after the stop, and it is **not established**.<!--superseded-->
 
-What it changes for the search: `0x2AF1A` is no longer the obvious next thing to read. The response
+> **Settled by section 98, and in the classic client's favour.** The reports are pushed: the
+> transport checks a toggle and two buffer status bytes on every pass and hands the endpoint
+> whichever of two buffers at `0x0600` and `0x0642` is full, consulting no command at all. A host
+> must keep reading during the session.
+
+What it changes for the search: `0x2AF1A` is no longer the obvious next thing to read. The response<!--superseded-->
 paths of the `0x70` and `0x80` handlers are, because both clients say the bytes come back the way
 every other response does.
+
+> Also wrong, section 98, and instructively. There is no response path to read, because the samples
+> never pass through the response machinery: the firmware points the endpoint's buffer descriptor
+> straight at the capture buffer. The search failed twice because both attempts assumed the bytes
+> would be sent, and `START_IRCAP` names the buffers in the four addresses it clears.
 
 **And the enter and leave commands are writes.** The restart command puts a remote into a mode, and
 its entry points cover far more than learning: config updates, firmware updates and upgrades. It sits
@@ -11691,8 +11701,14 @@ Everything that makes the defect a defect is common to all three:
 * the exit test is `SUBLW 0x00` then `BNC` on each, so an odd count never reaches zero;
 * the step is two, because the fetch can only read a word;
 * the sender advances a 16 bit pointer and stores through it with **no bound**, and increments the
-  same response length counter at `0x40D` on all three, which is the sort of coincidence that says
-  one codebase rather than three;
+  same byte at `0x40D` on all three;<!--superseded-->
+
+> **Corrected within the hour, section 98.** That line went on to call the shared `0x40D` "the sort
+> of coincidence that says one codebase rather than three". It is not a coincidence and it says
+> nothing about the codebase: `0x40C` is the USB buffer descriptor for endpoint 1 IN, `0x40D` is its
+> byte count and `0x40E` and `0x40F` its buffer address. Those are fixed by the part, so all three
+> would share them however they were written. The genuinely shared software choice is the buffer
+> base `0x0468`, and one address is thin evidence.
 * the buffer base is the literal `0x0468` on all three, reloaded per report;
 * two bytes precede the loop, so it starts writing at `0x046A` everywhere;
 * and the loop's counter sits **below** its own address bytes in every layout, so the runaway
@@ -11856,6 +11872,116 @@ batteries clear it, or find what does write that mode variable, which this secti
 **Nothing here has been sent to a remote.** Both commands are writes in the sense that matters, they
 change a device's state, so they belong behind `WRITES_ENABLED` exactly where `docs/host-client.md`
 already put them, and reading what they do does not change that.
+
+## 98. The learn samples are never sent: the endpoint is pointed straight at them
+
+Section 91 established the learn session's bracket from the firmware and then failed to find any
+code that sends capture data. It searched twice, for a routine emitting `0x90` and for a second
+caller of the byte sender, and found neither, and recorded that "an assumption is wrong" without
+saying which. This is which: **the samples do not go through the byte sender at all.** The firmware
+fills a buffer and hands the USB endpoint that buffer's address, so nothing ever "sends" the bytes
+one at a time and no code emits `0x90` in the sense the search was looking for.
+
+### What `0x40C` actually is, which is where the misreading started
+
+`0x40C` had been read as a response descriptor and `0x40D` as a length counter. They are the
+**buffer descriptor** for endpoint 1 IN, in the USB dual port RAM that starts at `0x400` on all
+three parts:
+
+| | |
+|---|---|
+| `0x40C` | status. Bit 7 is `UOWN`, which is why `BTFSC 0x40c,7` at `0x2014E` means "the previous report has not gone yet" |
+| `0x40D` | byte count, which is why the sender increments it once per byte |
+| `0x40E`, `0x40F` | the buffer's address |
+
+The proof is `0x2017A`, which sets the count to `0x40` and the address to `0x0468` with two
+literals, in that order, immediately after clearing the write pointer. So the "response buffer" is
+the endpoint's buffer and the "sender" is a routine that stores a byte into it and bumps the
+hardware count. Section 96 is unaffected: an unbounded store through a climbing pointer is exactly
+as bad either way, and rather worse when the pointer starts inside dual port RAM.
+
+**This also withdraws a claim of my own from an hour earlier**, that three architectures sharing
+`0x40D` says something about the codebase. It says something about the part.
+
+### A second producer, pointing the endpoint somewhere else
+
+`0x40D` and `0x40E` have one other writer, at `0x2028C`, and it does not use the `0x0468` buffer at
+all:
+
+```
+2026c: MOVFF 0xd67,FSR0L        ; the buffer chosen below
+20274: MOVLW 0x02 / ADDWF       ; skip its two byte header
+2027c: MOVLW 0x3f / ADDWF       ; and its 64th payload byte
+20284: MOVFF 0xd6b,INDF0        ;   holds the length
+2028a: MOVLW 0x40 / MOVWF 0x40d ; a full report
+2028e: MOVFF 0xd67,FSR0L        ; and the endpoint reads straight from the buffer + 2
+2029e: MOVFF FSR0L,0x40e
+202a2: MOVFF FSR0H,0x40f
+```
+
+`0xD67` is chosen at `0x201A8` from **two buffers at `0x0600` and `0x0642`**, by a toggle at
+`0x0684` and a status byte at the head of each. That is a ping pong pair, and the arm happens
+whenever one is ready rather than in response to anything.
+
+### The buffers are the learn session's, and `START_IRCAP` says so
+
+`0x26556` is `START_IRCAP`, the `0x70` handler. After setting the state to 5 it does exactly one
+other thing:
+
+```
+2655e: CLRF 0x600     ; buffer A status
+26562: CLRF 0x601     ;   and its length
+26566: CLRF 0x642     ; buffer B
+2656a: CLRF 0x643
+2656e: MOVLW 0x01 / MOVWF 0x684   ; and the toggle
+```
+
+**The arch 14 handler is the same handler**, `0x0C2B2` on the 700, clearing the same four addresses
+and setting the same toggle, and its transport picks a buffer at `0x16E5E` exactly as arch 12's does
+at `0x201B0`. So the mechanism is two architectures, not one.
+
+### The report layout, arch 12
+
+The producer is `0x2B68E`, called from fourteen sites in the capture path. It appends to whichever
+buffer is open, opening one with a header when the length is zero:
+
+| offset in the buffer | |
+|---|---|
+| `+0` | status: 1 while filling, 3 once handed to the endpoint |
+| `+1` | payload length so far, which starts at 4 and grows by 2 |
+| `+2` | `0x90`, the response code section 91 went looking for |
+| `+3` | a sequence byte, `0x28C`, which the same routine advances by `0x10` per report |
+| `+4` onward | samples |
+
+and what the host sees is the 64 bytes from `+2`, zero filled beyond the payload, **with the payload
+length repeated in the last byte of the report**. A buffer is closed once its length would pass
+`0x3D`, 61, and the other one takes over.
+
+**A sample is a big endian `u16`, high byte first**, appended two bytes at a time. The values are
+differences of the CCP2 capture register, `0x2B644` onward subtracting one capture from the previous
+with `SUBWF` and `SUBWFB`, so they are **durations, not timestamps**. The capture path also pushes
+literal `0x8000` and `0x0000` values as frame markers, and `0x8000` has bit 15 set, which is the
+same mark bit an infrared duration block uses in a stored config, section 32. So the learn stream
+and the config's own duration encoding agree, which is the closure worth having: what comes off the
+remote is already in the form a record wants.
+
+**The header layout is arch 12 only.** Arch 14 keeps the same two buffers and the same toggle but
+reaches them through `FSR`, so its bytes are written through `INDF` and no trace finds them; nothing
+in the 700 or 600 images stores `0x90` into `0x602`. What its header holds is not established here.
+
+### What it settles about the two clients
+
+Section 91 recorded a disagreement it could not resolve: the classic client takes learn reports off
+a queue a reader thread has already filled, which reads as the remote pushing them unsolicited,
+while the Desktop client models them as a command's response stream. **The firmware sides with the
+classic client.** Nothing in the arming path consults a command: the transport looks at the toggle
+and the two status bytes on every pass, and hands the endpoint whichever buffer is full. A host that
+waits for a request to answer will lose reports, and one that keeps reading during the session will
+not.
+
+That is a requirement for FreeHarmony rather than a curiosity, and it is the half of learning the
+dead service cannot take with it: the remote produces the timings, and section 92's carrier plus
+`packages/codec`'s record builder already turn timings into a record.
 
 ## References
 

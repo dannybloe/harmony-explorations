@@ -95,3 +95,5 @@ and leave this table alone.
 | `at or above program address` | section 96 | there is no address threshold: the response sender has no bound, and the read returns if the flash byte `0x8C7` above the failing chunk is even |
 | `The parity rule is real but it is local` | section 96 | an odd count never terminates anywhere; what varies is whether the overwritten counter lands on an even value |
 | `a comparison somebody can find` | section 96 | there is no comparison; the deciding byte is 2247 bytes further into the data the loop is reading |
+| `is no longer the obvious next thing to read` | section 98 | nothing in the response machinery was: the endpoint's buffer descriptor is pointed straight at the capture buffer |
+| `the sort of coincidence that says one codebase` | section 98 | `0x40D` is the endpoint's byte count, fixed by the part, so all three would share it however they were written |

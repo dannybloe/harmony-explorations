@@ -1681,3 +1681,85 @@ class TestTheSameSenderDefectOnEveryArchitecture(unittest.TestCase):
         self.assertLess(readloop.PROFILES[9]['distance'], readloop.PROFILES[12]['distance'])
         self.assertLess(readloop.PROFILES[12]['distance'], readloop.PROFILES[14]['distance'])
         self.assertEqual(readloop.PROFILES[9]['distance'], 0x2A1)
+
+
+class TestTheLearnSamplesAreNeverSent(unittest.TestCase):
+    """Section 98: the endpoint is pointed at the capture buffer, so nothing sends the samples.
+
+    Two searches failed by assuming the bytes go through the byte sender. The assertions here are
+    the ones that would have to break for that assumption to come back: `START_IRCAP` names the
+    buffers, and the transport writes their address into the endpoint's buffer descriptor.
+    """
+
+    ARCH = {12: ('one34_code', 0x20000, 0x26556), 14: ('h700_code', 0x9000, 0x0C2B2)}
+    #: The two ping pong buffers and the toggle, the same addresses on both architectures.
+    BUFFERS = (0x600, 0x601, 0x642, 0x643)
+    TOGGLE = 0x684
+
+    def at(self, code, base, addr):
+        return isa.decode(code, addr - base, base)
+
+    def test_start_ircap_clears_both_buffers_and_the_toggle_on_both_architectures(self):
+        lab.require(*(name for name, _, _ in self.ARCH.values()))
+        for arch, (name, base, handler) in self.ARCH.items():
+            code = lab.load(name)
+            cleared, addr = [], handler
+            for _ in range(12):
+                instr = self.at(code, base, addr)
+                if instr.mnemonic == 'CLRF':
+                    cleared.append(0x600 + instr.fields['f'])
+                addr += instr.words * 2
+            self.assertEqual(cleared, list(self.BUFFERS), arch)
+
+    def test_the_endpoint_descriptor_is_pointed_at_the_chosen_buffer(self):
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        # 0x40D is the buffer descriptor's byte count and 0x40E/0x40F its address. A full report,
+        # then the buffer's own address, which is what makes the samples never pass through a sender.
+        self.assertEqual(self.at(code, 0x20000, 0x2028A).fields['k'], 0x40)
+        self.assertEqual(self.at(code, 0x20000, 0x2028C).fields['f'], 0x0D)
+        self.assertEqual(self.at(code, 0x20000, 0x2029E).fields['dst'], 0x40E)
+        self.assertEqual(self.at(code, 0x20000, 0x202A2).fields['dst'], 0x40F)
+
+    def test_the_ordinary_response_path_uses_the_same_descriptor_with_a_fixed_buffer(self):
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        # The calibration: the command path sets the same count and the literal 0x0468, which is
+        # what identifies 0x40D..0x40F as the descriptor rather than as a software counter.
+        self.assertEqual(self.at(code, 0x20000, 0x2017A).fields['k'], 0x40)
+        self.assertEqual(self.at(code, 0x20000, 0x2017C).fields['f'], 0x0D)
+        self.assertEqual(self.at(code, 0x20000, 0x20180).fields['k'], 0x68)
+        self.assertEqual(self.at(code, 0x20000, 0x20184).fields['k'], 0x04)
+
+    def test_the_response_code_is_stored_into_the_buffer_not_emitted(self):
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        # Both buffers, at their payload offset. This is why a search for code that sends 0x90
+        # found nothing twice.
+        for site, target in ((0x2B742, 0x602), (0x2B7AA, 0x644)):
+            self.assertEqual(self.at(code, 0x20000, site).fields['k'], 0x90, hex(site))
+            self.assertEqual(0x600 + self.at(code, 0x20000, site + 2).fields['f'], target, hex(site))
+
+    def test_a_sample_is_a_difference_of_captures_so_it_is_a_duration(self):
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        # SUBWF then SUBWFB into the staged 16 bit value, and CCP2 is what feeds it.
+        self.assertEqual(self.at(code, 0x20000, 0x2B646).mnemonic, 'SUBWF')
+        self.assertEqual(self.at(code, 0x20000, 0x2B650).mnemonic, 'SUBWFB')
+        self.assertEqual(self.at(code, 0x20000, 0x2B66A).fields['f'], 0xB7)  # CCPR2L
+        self.assertEqual(self.at(code, 0x20000, 0x2B670).fields['f'], 0xB8)  # CCPR2H
+
+    def test_no_architecture_stores_the_arch_12_header_code_anywhere_else(self):
+        lab.require('one34_code', 'h700_code', 'h600_code_complete')
+        # The negative that keeps the write-up honest: the arch 14 header is not established, and
+        # this fails if someone later assumes it is 0x90 in the same place.
+        for name, base in (('h700_code', 0x9000), ('h600_code_complete', 0x9000)):
+            code = lab.load(name)
+            found = False
+            for addr in range(base, base + len(code) - 4, 2):
+                instr = self.at(code, base, addr)
+                if instr and instr.mnemonic == 'MOVLW' and instr.fields.get('k') == 0x90:
+                    nxt = self.at(code, base, addr + 2)
+                    if nxt and nxt.mnemonic == 'MOVWF' and nxt.fields.get('f') in (0x02, 0x44):
+                        found = True
+            self.assertFalse(found, name)
