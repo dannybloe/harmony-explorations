@@ -224,6 +224,9 @@ primitive can only read a word, the loop emits two bytes and subtracts two, and 
 equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
 watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
 around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
+**Offset zero is exempt and nobody knows why**, retested on hardware: 63 bytes there comes back and
+63 bytes at `+0x1000` does not, so a step in front of the loop has not been found. The rail ignores
+that and refuses odd counts everywhere.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read

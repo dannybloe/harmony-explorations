@@ -11130,6 +11130,47 @@ address answers" from "the address is refused" before the odd read is tried.
 A single old observation with two trials is thin evidence either way, and the most likely outcome is
 that it was a misattribution made while the question was still "is it the chunk count".
 
+### Measured, and the prediction is wrong
+
+It was not a misattribution. On the spare, minutes after the 65 byte restart and in the same
+session:
+
+| read | result |
+|---|---|
+| page `0xFF`, offset 0, **62** bytes, control | 62 bytes, remote answering |
+| page `0xFE`, offset 0, **62** bytes, control | 62 bytes, and **different bytes**, so the page selector is live |
+| page `0xFF`, offset 0, **63** bytes | **63 bytes back in 39 ms, remote answering** |
+
+`GET_VERSION` and the config window were unchanged afterwards, and the device path did not change,
+so nothing restarted. **Offset zero is genuinely exempt, and the old two trial note stands.**
+
+That is the third time in this project that a suggestive absence turned out to be worth retesting
+rather than explaining away, and this time the retest went against the reading rather than for it.
+
+### What survives and what is withdrawn
+
+**The loop is real and its arithmetic is as described.** It is why 65 hangs where 64 and 124 do not,
+which was measured on hardware after being predicted, and that case is not affected by anything
+here.
+
+**What is withdrawn is that the loop explains every internal read.** It cannot, because it does not
+distinguish offset zero and the device does. So there is a step in front of it that this section has
+not read.
+
+There is also an attribution to check. The branch at `0x26BB2` tests the top address byte against
+zero and against `0xFE` and sends everything else to `0x26C6C`, which is a shared exit and not a
+body, so on the face of it page `0xFF` never reaches this loop at all. It plainly does reach
+*something*, since it returns data and hangs on 65. The likely resolution is the one arch 14's
+validator already shows, that the top byte is normalised before this test with the page kept
+separately, and the two controls above support it: the same offset on the two pages returns
+different bytes, so a page selector survives the normalisation. **Likely is not established**, and
+reading the arch 12 validator is what would settle it.
+
+So the honest state is: an odd count hangs a remote, demonstrated; the loop that does it is read;
+and the path from the command to that loop has a step in it that decides offset zero differently
+and has not been found. The rail does not depend on any of that, because it refuses odd counts
+everywhere, which is strictly more than the hazard needs.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

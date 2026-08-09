@@ -1225,7 +1225,9 @@ And it is **not the size 63 by itself**, because 63 at offset zero is fine.
 What 63 has that 64 and 124 do not is **an odd byte count**, and that is diagnosed now rather than
 described: section 94 reads the loop, and a sixth deliberate restart on 9 August 2026 confirmed the
 case that separates the two readings, 65 bytes, which hangs a remote and is not `62n + 1`. Offset
-zero is still recorded as exempt and is still unexplained.
+zero was **retested on 9 August 2026 and is exempt**: 63 bytes there returns 63 bytes and leaves the
+remote running, against the same read at `+0x1000` which restarts it. So a step in front of the loop
+decides that case and has not been found; section 94 says what is withdrawn because of it.
 
 Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
 across three separate windows. So this is disruption rather than damage. `packages/usb` refuses a
