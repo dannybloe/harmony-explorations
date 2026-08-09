@@ -813,7 +813,8 @@ It comes from its own `RETLW` accessor beside the architecture one, and the two 
 same `SWAPF`, `ANDLW 0xF0`, `IORWF` shape as fields 0 and 1. Zero on all four application images and
 **4 on the safe mode image of each bench remote**, whose other four accessors are byte for byte
 identical to the application's. Logitech's firmware packages name the values in their own comments:
-0 and 4 are "application mode or Safe mode", 1 is Test mode and 3 is Boot mode.
+0 and 4 are "application mode or Safe mode", 1 is Test mode and 3 is Boot mode. The client names
+all five independently: 0 application, 1 test, 2 minimal, 3 bootloader, 4 safe mode.
 `docs/findings.md` section 87.
 
 So the reply says which of a remote's four firmware personalities is answering. Both bench remotes

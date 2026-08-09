@@ -16,7 +16,7 @@ import unittest
 
 import lab
 from harmony import ezfile, firmware, gspm
-from harmony.pic18 import loadaddr
+from harmony.pic18 import isa, loadaddr
 
 _DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
 _MAPS = ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md', 'memory-map-700.md')
@@ -351,6 +351,79 @@ class TestTheConfigurationWords(unittest.TestCase):
         findings = _doc('findings.md')
         self.assertIn('## 25.', findings)
         self.assertIn('18f67j50_g.lkr', findings)
+
+
+class TestTheBootloaderChoosesWhatToRun(unittest.TestCase):
+    """
+    Section 87. The first 4 KiB of internal program memory is a bootloader, and it makes the same
+    decision the same way on both architectures: scan the keypad, compare the code against two
+    literals, otherwise check that the image at `0x1000` carries the `48 47` header magic.
+
+    Written up because somebody asked which keys put a remote into safe mode. The answer this
+    settles is that a boot time key check exists and what its **scan code** is; which physical key
+    carries that code is section 48's open item and is not answered here.
+    """
+
+    # image -> (the two key literals, the address of the compare, the status codes)
+    #
+    # The two literals are in the same order in both images: the first keeps the bootloader
+    # running and answers with status 6, the second transfers to the image at 0x1000.
+    BOOTLOADERS = {
+        'one_internal_fe': (0x0E, 0x1E, 0x00080, 0x0009E),
+        'h600_internal_fe': (0x14, 0x2C, 0x00726, 0x00744),
+    }
+
+    ENTRY = 0x0100A          # the image at 0x1000, entered through its header's GOTO at +0x0A
+    MAGIC_ADDRESS = 0x001008  # where the validity check looks, which is that image's magic
+
+    def test_both_bootloaders_compare_two_key_codes_and_hand_off_to_the_same_entry(self):
+        lab.require(*self.BOOTLOADERS)
+        for image, (stay, handoff, compare, goto) in self.BOOTLOADERS.items():
+            with self.subTest(image):
+                page = lab.load(image)
+                first = isa.decode(page, compare, 0)
+                self.assertEqual((first.mnemonic, first.fields['k']), ('MOVLW', stay))
+                # The second compare sits eight instructions later on both, after the branch.
+                second = [isa.decode(page, a, 0) for a in range(compare, goto, 2)]
+                literals = [i.fields['k'] for i in second
+                            if i.mnemonic == 'MOVLW' and i.fields['k'] in (stay, handoff)]
+                self.assertIn(handoff, literals, 'the second key code is not compared')
+                transfer = isa.decode(page, goto, 0)
+                self.assertEqual((transfer.mnemonic, transfer.fields['target']),
+                                 ('GOTO', self.ENTRY))
+
+    def test_the_fallback_is_a_header_magic_check_rather_than_a_checksum(self):
+        """
+        The other route to the same entry, and it is cheap: two bytes. It reads `0x001008` and
+        compares `0x48` then `0x47`, which is the `48 47` magic at offset 8 of an image header,
+        section 4. So the bootloader validates that an image is present, not that it is intact.
+        """
+        for image, validator in (('h600_internal_fe', 0x00782), ('one_internal_fe', 0x001FE)):
+            with self.subTest(image):
+                page = lab.load(image)
+                # The 24 bit address is loaded a byte at a time into three consecutive registers.
+                loads = [isa.decode(page, a, 0) for a in range(validator, validator + 14, 2)]
+                literals = [i.fields['k'] for i in loads if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals[:2], [self.MAGIC_ADDRESS & 0xFF,
+                                                (self.MAGIC_ADDRESS >> 8) & 0xFF])
+                # And the two bytes it compares against.
+                window = [isa.decode(page, a, 0) for a in range(validator, validator + 40, 2)]
+                compared = [i.fields['k'] for i in window
+                            if i.mnemonic == 'MOVLW' and i.fields['k'] in (0x48, 0x47)]
+                self.assertEqual(compared, [0x48, 0x47])
+
+    def test_the_two_key_codes_of_the_600_sit_in_one_keypad_column(self):
+        """
+        A sanity check on the scan code reading rather than a claim about the keys. Section 48
+        gives the arch 14 column as `(code - 1) mod 4` over a 14 by 4 matrix, and both boot codes
+        land in the same column, ten rows and four rows down. Two keys in one column is what a
+        real keypad looks like; two codes that decoded to impossible positions would mean the
+        namespace was wrong.
+        """
+        stay, handoff = self.BOOTLOADERS['h600_internal_fe'][:2]
+        self.assertEqual((stay - 1) % 4, (handoff - 1) % 4)
+        for code in (stay, handoff):
+            self.assertLess((code - 1) // 4, 14, 'outside the 14 row matrix')
 
 
 class TestTheSharedMap(unittest.TestCase):

@@ -528,7 +528,7 @@ Only the One package was read when this table was written, so architecture **14,
 missing from it: the 700 package refuses that one too, in the same words. `reference/models.md`
 carries the full list.
 
-`SOFTWARETYPE`: **0 = application mode, 4 = safe mode, 1 = Test mode, 3 = Boot mode.**
+`SOFTWARETYPE`: **0 = application, 1 = test, 2 = minimal, 3 = bootloader, 4 = safe mode.**
 
 This used to read "0 = normal, 2 = Test mode, 3 = Boot mode", and the 2 was a misreading: the<!--superseded-->
 entry commented "Test mode" carries a 1. The two values a firmware package accepts are 0 and 4,
@@ -9949,6 +9949,11 @@ those comments for the architecture codenames. It also recorded the software typ
 | 1 | "Test mode", refused |
 | 3 | "Boot mode", refused |
 
+**Confirmed a second time, from a different place in the client**, which is worth having because
+the two do not depend on each other: it carries the five names against the same numbers, 0
+APPLICATION, 1 TEST, 2 MINIMAL, 3 BOOTLOADER, 4 SAFEMODE. So there is a fifth type no package
+mentions, and the value section 7 wrongly attributed to Test mode is the one that means minimal.
+
 So a remote has four firmware personalities and the file says which ones it is for. That leaves
 which of 0 and 4 is which, and the images settle it without any hardware.
 
@@ -9991,6 +9996,47 @@ running their application.
 as `0xE4` and a Harmony One as `0xC4`. That is worth having because it gives the application a way
 to know a remote is not in its normal state, which a write path needs and currently lacks. It is
 also the first thing here that would be read differently depending on how the remote was started.
+
+### The bootloader checks two keys at power on, and we cannot say which keys
+
+Asked which combination puts a remote into safe mode, which the prediction above needs if anyone
+ever wants to test it. The client does not know: it writes safe mode firmware and never tells a
+user how to get there. The bootloader does, and it is only 4 KiB.
+
+The first 4 KiB of internal program memory scans the keypad before anything else and compares the
+code it gets against **two literals**, then falls back on a check of the image at `0x1000`:
+
+| | Harmony One, arch 12 | Harmony 600, arch 14 |
+|---|---|---|
+| stay in the bootloader, status 6 | `0x0E` | `0x14` |
+| transfer to the image at `0x1000` | `0x1E` | `0x2C` |
+| otherwise, if that image is present | transfer to `0x0100A` | transfer to `0x0100A` |
+| and if it is not, status 9 | | |
+
+Two architectures, one design, down to the status codes. The fallback check is worth naming
+because it is weaker than it looks: it reads `0x001008` and compares `0x48` then `0x47`, which is
+the `48 47` magic at offset 8 of an image header, section 4. So the bootloader asks whether an
+image is **present**, not whether it is intact, and the checksum each image carries is verified by
+something else or by nobody.
+
+**Which physical keys carry codes `0x1E` and `0x2C` is not answered here, and cannot be.** That is
+section 48: a remote on USB never runs its keypad handler, arch 12 yields nothing at all because
+sixteen buttons share one sense line, and arch 14 yields the column only. The one thing the codes
+do is survive that reading: `(code - 1) mod 4` puts both of the 600's boot keys in the **same
+column**, ten rows and four rows down a 14 by 4 matrix. Two keys in one column is what a keypad
+looks like; two codes that decoded to impossible positions would have meant the namespace was
+wrong.
+
+So the practical answer is a negative one, and it is worth stating plainly: **this project cannot
+tell someone which buttons to hold**, and finding out by trying combinations on an irreplaceable
+remote is not a good trade for confirming a number that nothing depends on. The prediction is
+recorded so that a remote which ends up in safe mode by other means, most likely an interrupted
+firmware update, can be recognised rather than induced.
+
+One thing this does not settle: whether the image at `0x1000` stays and answers USB, or hands off
+to the application at `0x9000` and only stays when it cannot. It must do the second in the normal
+case, because both bench remotes report software type 0 rather than 4, and that image reports 4.
+Its own decision has not been read.
 
 ### An arch 12 package states its own split
 

@@ -42,7 +42,7 @@ argument that the reads are good is that all three images verify their own heade
 
 | Page and offset | Length | Contents | Source |
 |---|---|---|---|
-| `0xFE` `+0x0000` | 4096 | the **bootloader**, no header of its own, reset vector at zero | read off two remotes, identical |
+| `0xFE` `+0x0000` | 4096 | the **bootloader**, no header of its own, reset vector at zero. Scans the keypad and compares two codes, `0x0E` and `0x1E`, section 87 | read off two remotes, identical |
 | `0xFE` `+0x1000` | 45356 | an image, version 3.4, checksum `0xDB1C` | own checksum verifies |
 | `0xFF` `+0x0000` | 8438 | an image, version 1.6, checksum `0xCB09` | own checksum verifies; **this is version block field 9** |
 | `0xFF` `+0xE000` | 634 | an image, version 3.4, checksum `0xD9E9`, opening with a run of `BRA`, so a jump table into a callable library | own checksum verifies; **this is version block field 8** |
