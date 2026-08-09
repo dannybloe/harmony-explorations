@@ -9173,11 +9173,24 @@ carry it exactly:
 The two that miss are not arbitrary. Logitech's own classic software, in the private lab, carries a
 table of platform families against skin numbers, and it agrees with all six exact cases; the family
 it calls Gin is the arch 12 platform this project already names that way. In that table 59 and 73
-are unallocated, and each is the next free number inside its own family's block: Gin holds 54, and
-the family holding 66, 71 and 72 stops there. So both read as later members of the same family
-rather than as a different kind of value. The table dates from before the MyHarmony era, which is
-why a later skin would be missing from it, and that is also why this is a **lead confirmed in kind
-and not in detail**: what selects 54 over 59 for one remote is not established.
+are unallocated.
+
+**Corrected on 9 August 2026, when the whole table was read rather than the part that prompted
+this.** This paragraph said each orphan "is the next free number inside its own family's block:<!--superseded-->
+Gin holds 54, and the family holding 66, 71 and 72 stops there". Gin's block **is** 54 alone, but
+55 is allocated to another family, so that rule does not produce 59 and the sentence was doing work
+it could not do. The table is a set of contiguous runs, `9-25`, `39-41`, `44-45`, `48-50`, `52-58`,
+`60-68`, `71-72` and three singletons, and the rule that does hold is: each orphan is **the first
+free number above the run containing that remote's own skin.** 54 sits in `52-58`, whose first free
+number above is 59; 71 sits in `71-72`, whose first free number above is 73. Two cases, both exact,
+and computed from the table rather than read off it.
+
+So the conclusion survives, that both read as later members of the same numbering rather than as a
+different kind of value, and it now rests on something that can fail. The full table is in
+`reference/models.md` with its provenance, per `docs/host-client.md`. It dates from before the
+MyHarmony era, which is why a later skin would be missing from it, and that is also why this stays
+a **lead confirmed in kind and not in detail**: what selects 54 over 59 for one remote is not
+established.
 
 ### What it is not
 

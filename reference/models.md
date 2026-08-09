@@ -65,6 +65,87 @@ covers both arch 7 and arch 14, and the split is by platform generation rather t
 Do not infer an architecture from a model number. Read it out of the config, per
 `docs/config-format.md`: section slot 1 states it.
 
+## The platform codenames, and the skin number of every model
+
+*Source: Logitech's own classic desktop software, per `docs/host-client.md`. Client-sourced and
+therefore unconfirmed except where this project has measured the same number, which is marked.
+The tables are restated here rather than copied; the extraction is in the private lab.*
+
+The client identifies a connected remote in two steps that this project had only half of. First
+the USB product id names a **platform**, in Logitech's internal codenames, several models to a
+platform. Then a **skin number** selects the model within it.
+
+| vendor | product | platform |
+|---|---|---|
+| `0x046D` | `0xC110` | Espresso |
+| `0x046D` | `0xC111` | Mocha |
+| `0x046D` | `0xC112` | Cappuccino |
+| `0x046D` | `0xC113` | Sugar |
+| `0x046D` | `0xC114` | Whisky |
+| `0x046D` | `0xC11F` | Cognac, Hennessy and Vodka together |
+| `0x046D` | `0xC121` | **Gin**, confirmed: the Harmony One on this bench |
+| `0x046D` | `0xC122` | **Molson**, confirmed: the Harmony 600 on this bench |
+| `0x0400` | `0xC359` | the older 6xx and 7xx remotes |
+
+The last row is worth noticing: those remotes do not enumerate under Logitech's vendor id at all.
+Anything that finds remotes by scanning for `0x046D` will never see one.
+
+`Gin` is the name this project already used for arch 12, taken from the same source in section 81
+before the rule in `docs/host-client.md` existed. It is recorded properly here.
+
+**One product id is several models.** `0xC122` covers the 600, the 650 and the 700, which is why
+`packages/usb` cannot identify a model by product id alone and why `openHarmony` refusing an
+ambiguous selector was the right call for a reason nobody had written down.
+
+### Skin numbers
+
+Forty six entries. The five this project has measured independently all agree exactly, which is
+the calibration: they were derived from firmware literals and from live remotes, and the table
+was not consulted to produce any of them.
+
+| skin | model | skin | model |
+|---|---|---|---|
+| 3 | 768 | 45 | Corona, EMEA |
+| 7 | 748 | 48 | Mocha Grande, EMEA |
+| 9 | 659 | 49 | Cognac |
+| 10 | 688 | 50 | Khalua |
+| 11 | 655 | 52 | Cognac, Australia |
+| 12 | 676 | 53 | Cognac, EMEA |
+| 13 | 628 | **54** | **Gin, confirmed: the Harmony One** |
+| 14 | 680 | 55 | Cognac Pro |
+| **15** | **880, confirmed from four configs** | 56 | Cognac Pro, Australia |
+| 16 | 675 | 57 | Cognac Pro, EMEA |
+| 17 | 885 | 58 | Baileys |
+| 18 | 520 | 60 | Vodka S |
+| 19 | 890 | 61 | Vodka |
+| 20 | 891 | 62 | Hennessy, AMR |
+| 21 | 892 | 63 | Hennessy, EMEA |
+| **22** | **525, confirmed: the bench remote** | 64 | Hennessy, AUS |
+| 23 | 895 | 65 | 610 |
+| 24 | 896 | **66** | **700, confirmed from two configs** |
+| 25 | 897 | 67 | 515 |
+| 36 | Xbox 360 | 68 | 510 |
+| 39 | Espresso Pro | **71** | **600, confirmed: the bench remote** |
+| 40 | Cappuccino Pro | **72** | **650, confirmed from its safe mode container** |
+| 41 | Mocha Grande | | |
+| 44 | Corona, AMR | | |
+
+This sharpens section 81, which found that two containers carry a skin number the remote does not
+have, 59 on a Harmony One and 73 on a Harmony 600, and explained both as "the next free number<!--superseded-->
+inside its own family's block" from a partial view of this table. **That wording is wrong**: Gin's
+block is 54 alone and 55 is allocated to Cognac Pro.
+
+The full table is a set of contiguous runs, `9-25`, `39-41`, `44-45`, `48-50`, `52-58`, `60-68`,
+`71-72` and three singletons. Each orphan is **the first free number above the run containing that
+remote's own skin**: 54 sits in `52-58` and the orphan is 59, 71 sits in `71-72` and the orphan is
+73. Two cases, both exact, and computed rather than eyeballed in
+`tests/test_gspm.py`. So the conclusion section 81 reached survives, that both are later members
+of the same numbering rather than a different kind of value, and it now rests on a rule that can
+fail. What selects 54 over 59 for one remote is still not established.
+
+**The table predates MyHarmony**, which is why models that came later are missing from it and why
+it cannot be treated as the complete numbering.
+
 ## Three protocol families, and only one of them is addressable
 
 Architecture is a config format property. It is not the same question as how the host talks to the

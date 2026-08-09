@@ -180,6 +180,18 @@ One of the two is wrong about arch 9. Ours is a live measurement of a real remot
 client's is a constant, so the burden is on the client, but the disagreement is worth keeping
 because arch 9 is the architecture this project understands least.
 
+### Confirmed and moved out
+
+**The platform codenames and the skin number table**, 9 August 2026. A resource file carries nine
+USB vendor and product pairs against Logitech's internal platform names, and 46 skin numbers
+against models. Five skins this project had already measured, from firmware literals and from live
+remotes, all agree exactly, and the full table sharpened section 81's rule for the two containers
+that carry a skin their remote does not have. It is in `reference/models.md` with its provenance,
+and `tests/test_gspm.py` asserts the corpus against it rather than asserting the table.
+
+That one had already been used as a lead in section 81, before this document existed, which is
+part of why the rule needed writing down.
+
 ### Smaller leads
 
 * The container header carries an event offset at `+0x14` and a base date offset at `+0x18` on

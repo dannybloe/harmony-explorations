@@ -81,3 +81,4 @@ and leave this table alone.
 | `all 912 instances` | section 85 | 1080 and 776 row selects, eight per mode page, and the address is opcode 3's |
 | `eight byte values are not decoded` | section 86 | a transition: `u8 zero; i16 from; i16 to; u16 operand; u8 opcode` |
 | `the u16 at +0x02, unexplained` | section 86 | the variable's highest value, which its name states plus one |
+| `next free number inside its own family` | section 81, corrected 9 August 2026 | the first free number above the contiguous run containing that remote's own skin: Gin's block is 54 alone and 55 is allocated elsewhere |
