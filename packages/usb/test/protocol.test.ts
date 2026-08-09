@@ -283,3 +283,29 @@ test('nothing in the library can send a misc write with any selector but RAM', (
   assert.equal(request[1], MISC_RAM);
   assert.notEqual(request[1], 0x0a);
 });
+
+/**
+ * More consistency checks against the same client, `docs/host-client.md`. Again these assert what
+ * this project derived, not what the client says, and the interesting one is the disagreement.
+ */
+test('the version fields we derived are the ones the client reads, in order', () => {
+  // Its identify operation names six fields at six positions. Ours are the same six in the same
+  // order, so the reading derived from disassembly and a written prediction is corroborated by a
+  // source that never saw either. Field 4's nibbles are the part worth pinning.
+  const one = [0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c];
+  assert.equal((one[4] as number) >> 4, 12, 'architecture in the high nibble');
+  assert.equal((one[4] as number) & 0x0f, 0, 'software type in the low nibble, application');
+  assert.equal(one[5], 0x36, 'skin 54, which the client calls SKIN54');
+});
+
+test('a flash id comes from the remote, because the client table disagrees with our hardware', () => {
+  // The arch 9 skin declares 0x12 and 0xFF and the bench 525 reports exactly that, which is the
+  // agreement. The arch 12 skin declares 0xF9 and 0x01 and the bench One reports 0xC8 and 0x1F,
+  // which is not. So the table is a hypothesis and the remote is the fact, and this test exists to
+  // fail if anyone ever hard codes the former.
+  const h525 = [0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09];
+  assert.deepEqual([h525[2], h525[3]], [0x12, 0xff], 'arch 9 agrees with the client');
+
+  const one = [0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c];
+  assert.notDeepEqual([one[2], one[3]], [0xf9, 0x01], 'arch 12 does not, and that is the point');
+});

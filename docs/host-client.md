@@ -414,6 +414,90 @@ configuration types are current firmware, user configuration and embedded config
 implementation belongs behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` alongside the flash
 writes, and nothing in a read path may issue it.
 
+### The whole arch 12 config write, in order
+
+Read 9 August 2026 from the Desktop client's own file for the Harmony One. This is the sequence
+this project has never performed and, per decision 8, will not perform in version 1. It is recorded
+because a write rail is only as good as its knowledge of what a legitimate write looks like.
+
+Restated as commands, each with its acknowledgement:
+
+1. Reset the USB side, no reply expected.
+2. `WRITE_MISC` selector `0x0A`, the restart command from the learn section above, with the entry
+   point meaning **start upgrade**.
+3. `WRITE_MISC` selector `0x06`, address 0, value 0, then `READ_MISC` on the same selector and
+   address to confirm the byte reads back as 0.
+4. `WRITE_MISC` selector `0x02`, which the client calls invalidating the flash region. **This is the
+   ledger's first item confirmed by a second client**, independently.
+5. `ERASE_FLASH` per block, walking the region from its base for as many blocks as the file covers.
+6. Per chunk: `WRITE_FLASH` with a base address and a size, then 150 `WRITE_FLASH_DATA` packets of
+   63 bytes each, then a done packet. A chunk is 9450 bytes.
+7. `WRITE_MISC` selector `0x06`, address 0, value 2, then read it back to confirm.
+8. Reset the device, wait for it to reboot.
+
+**So selector `0x06` is an update status byte at address 0**, 0 meaning none and 2 meaning a new
+image is present, written before the erase and again after the write. That is what
+`docs/usb-protocol.md` calls one of the bodies this project located and never read, and it is the
+most testable item here.
+
+Addresses are three bytes and sizes two, high byte first, which agrees with this project's own
+encoder.
+
+**A caution about the literal bytes in these files.** They are inconsistent about whether the
+leading byte already carries the length nibble: some commands are written as the bare command code
+with the nibble left for the builder, and some are written with it folded in. So a byte from here is
+read as a command plus a selector plus arguments, and the nibble is recomputed rather than copied.
+This project's `encodeRequest` already computes it.
+
+### The arch 12 flash regions, including the two nobody here had named
+
+Seven named regions for the Harmony One, and the ones this project already knows agree exactly:
+
+| region | address | status here |
+|---|---|---|
+| boot loader | `0xFE0000` | internal, page `0xFE` |
+| safe mode | `0xFE1000` | internal, and the safe mode image this project has read |
+| normal mode | `0x3D0000` | the stored application firmware, already adopted as the write ceiling |
+| embedded config | `0x002000` | the safe mode container, known |
+| user config | `0x040000` | known |
+| CPLD image | `0xFF0000` | **new**, and unexplained here |
+| PIC library | `0xFFE000` | **new**, and unexplained here |
+
+The unit's own identity block is named separately, 64 bytes at `0xFFF400`, read with an ordinary
+`READ_FLASH`. That is the region this repository's policy keeps out of any published dump.
+
+The last two are candidates for the unexplained arch 12 regions in the ledger above.
+
+### Flash block geometry, which changes an erase rail
+
+The client states the block table for arch 12 as counts and sizes: **eight blocks of 8192 bytes,
+then sixty three of 65536**. The 64 KiB figure is what this project measured and built its erase
+rail on, and it is right for everything above the first 64 KiB. What is new is that **the bottom
+64 KiB of flash erases in 8 KiB blocks**, and that is exactly where the embedded config at
+`0x002000` lives.
+
+A rail that requires a 64 KiB aligned address and a whole 64 KiB block inside the region is
+therefore too coarse at the bottom of flash and would refuse a legitimate erase there, which is the
+safe direction, but it also means the rail's stated reason is wrong for that range. Client sourced,
+unconfirmed, and worth measuring before an erase rail is relied on for anything below `0x010000`.
+
+### The version reply's field map, which agrees with ours field for field
+
+The client's identify operation reads `GET_VERSION` and assigns the same fields this project derived
+from disassembly and prediction: firmware version and hardware version as nibble pairs, then flash
+device id, then flash manufacturer id, then a byte carrying the architecture in the high nibble and
+the software type in the low, then the skin. Six fields, the same six, in the same order.
+
+It stops there. It has no name for field 6, the compiled in `0x0C` this project cannot explain, nor
+for anything above it, so the client does not settle that and never did.
+
+**One agreement and one contradiction, both measured.** The arch 9 skin declares a flash device id
+of `0x12` and a manufacturer of `0xFF`, and the bench Harmony 525 reports exactly that pair. The
+Harmony One skin declares `0xF9` and `0x01`, and the bench Harmony One reports `0xC8` and `0x1F`.
+Either the One shipped with more than one flash part or the file is wrong; either way **a writer
+must take the flash id from the remote and never from this table**, and `rails.ts` already says the
+config's declared version is matched against the remote rather than against a constant.
+
 ### The read selector names, which reframe an earlier correction
 
 The client names the `READ_MISC` and `WRITE_MISC` selectors. Four are serviced for reading on arch
