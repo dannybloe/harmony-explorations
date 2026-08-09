@@ -1769,3 +1769,76 @@ class TestTheLearnSamplesAreNeverSent(unittest.TestCase):
         for name, base, site in (('one34_code', 0x20000, 0x2B6B0), ('h700_code', 0x9000, 0x0932E)):
             code = lab.load(name)
             self.assertEqual(self.at(code, base, site).fields['k'], 0x3D, name)
+
+
+class TestUsbModeHasAGatedExit(unittest.TestCase):
+    """Section 99: the exit from USB mode is conditional on the command state being zero.
+
+    This overturns section 97's "a polite end is a reboot, or it is nothing", so the chain it
+    rests on is asserted step by step rather than summarised.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    MODE = 0x315
+    STATE = 0x284
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_mode_one_polls_a_port_pin_and_the_suspend_bit(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # PORTA is 0xF80, read twice and masked with 0x10 each time. The polarity of that pin is
+        # deliberately not asserted anywhere: this only pins that the poll exists.
+        for site in (0x28CF2, 0x28CF8):
+            self.assertEqual(self.at(code, site).fields['f'], 0x80, hex(site))
+            self.assertEqual(self.at(code, site + 2).fields['k'], 0x10, hex(site))
+        # UCON is 0xF65 on this family and bit 1 is SUSPND, so the mask is 0x02.
+        self.assertEqual(self.at(code, 0x28D02).fields['f'], 0x65)
+        self.assertEqual(self.at(code, 0x28D04).fields['k'], 0x02)
+
+    def test_one_exit_is_conditional_on_the_command_state(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(self.at(code, 0x28D18).mnemonic, 'MOVF')
+        self.assertEqual(self.at(code, 0x28D18).fields['f'], self.STATE & 0xFF)
+        self.assertEqual(self.at(code, 0x28D1A).mnemonic, 'BNZ')
+
+    def test_the_other_exit_clears_the_command_state_first(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        call = self.at(code, 0x28D0E)
+        self.assertEqual(call.mnemonic, 'CALL')
+        self.assertEqual(call.fields['target'], 0x26366)
+        # And that routine is a full command reset, starting with the gate itself.
+        self.assertEqual(self.at(code, 0x26368).mnemonic, 'CLRF')
+        self.assertEqual(self.at(code, 0x26368).fields['f'], self.STATE & 0xFF)
+
+    def test_leaving_the_mode_drops_the_mode_variable(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # The exit releases two port bits and branches to the arm that clears 0x315, which is what
+        # puts the top level loop back where it can enter the application.
+        self.assertEqual(self.at(code, 0x28D24).mnemonic, 'BSF')
+        self.assertEqual(self.at(code, 0x28D28).fields['target'], 0x28D7C)
+        self.assertEqual(self.at(code, 0x28D7E).mnemonic, 'CLRF')
+        self.assertEqual(self.at(code, 0x28D7E).fields['f'], self.MODE & 0xFF)
+
+    def test_a_handled_command_leaves_the_state_set(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # The shared exit clears the state only when the packet was NOT handled, which is why a
+        # session that just stops can leave the gate closed.
+        self.assertEqual(self.at(code, 0x267E6).mnemonic, 'MOVF')
+        self.assertEqual(self.at(code, 0x267E8).mnemonic, 'BNZ')
+        self.assertEqual(self.at(code, 0x267EC).mnemonic, 'CLRF')
+        self.assertEqual(self.at(code, 0x267EC).fields['f'], self.STATE & 0xFF)
+        # Skipped when handled: the branch target is past the clear.
+        self.assertGreater(self.at(code, 0x267E8).fields['target'], 0x267EC)
+
+    def test_the_gentle_escape_clears_exactly_that_gate(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # Section 97's 0xE0 0x01, tied to section 99's gate: the same address.
+        self.assertEqual(self.at(code, 0x2645C).mnemonic, 'CLRF')
+        self.assertEqual(self.at(code, 0x2645C).fields['f'], self.STATE & 0xFF)

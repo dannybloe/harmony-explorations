@@ -11863,19 +11863,27 @@ decision would rest on.
 
 ### What it settles, and what it does not
 
-**It does not solve section 95.** Nothing read here takes the remote out of USB mode. `0xE0 0x01`
+**It does not solve section 95.** Nothing read here takes the remote out of USB mode. `0xE0 0x01`<!--superseded-->
 abandons the command state machine; the top level mode variable is untouched and only the reset path
 writes it. So of the two candidates, one is a reboot and the other does not do the thing that was
 wanted.
 
-That is a cleaner answer than the question expected: **a polite end is a reboot, or it is nothing.**
+That is a cleaner answer than the question expected: **a polite end is a reboot, or it is nothing.**<!--superseded-->
 The restart command's terminate entry point, which was the hopeful reading of the client's entry
 point table, is a no-op on arch 14 and the whole selector is a no-op on arch 12.
 
-For FreeHarmony the decision is therefore between three honest options, and it is the owner's:
+> **Overturned by section 99, later the same day, and it is the better answer.** USB mode does have
+> an exit, and it is **gated on the command state variable being zero**, which is exactly what
+> `0xE0 0x01` clears. So the gentle command is not useless: on the firmware's own structure it is
+> the thing that lets a remote leave USB mode when the cable goes. "A polite end is a reboot, or it
+> is nothing" is wrong, and it was written from having read only mode 3.
+
+For FreeHarmony the decision is therefore between three honest options, and it is the owner's:<!--superseded-->
 reboot the remote at the end of every read only session, leave it in USB mode and tell the user the
 batteries clear it, or find what does write that mode variable, which this section has not done.
 `0x315` on the One takes 1, 2 and 3 and only mode 3 is read here.
+
+> The third option is the one that was taken, immediately, and it is section 99.
 
 **Nothing here has been sent to a remote.** Both commands are writes in the sense that matters, they
 change a device's state, so they belong behind `WRITES_ENABLED` exactly where `docs/host-client.md`
@@ -12013,6 +12021,99 @@ not.
 That is a requirement for FreeHarmony rather than a curiosity, and it is the half of learning the
 dead service cannot take with it: the remote produces the timings, and section 92's carrier plus
 `packages/codec`'s record builder already turn timings into a record.
+
+## 99. USB mode does have an exit, and it is gated on the command state being zero
+
+Section 97 ended by saying a polite session end is a reboot or nothing, and offered finding what
+writes the top level mode variable as the third option. Taken immediately, and it overturns the
+conclusion: the exit exists, the firmware polls for the cable itself, and what stops it running is
+one byte that `0xE0 0x01` clears.
+
+### The mode loop, and what mode 1 is
+
+`0x315` on the One is a three valued mode selected at `0x28C9C`. Mode 3 is the reset, section 97.
+**Mode 1 is USB mode**, and its body polls a port pin and the USB module:
+
+```
+28cf2: 80 50       MOVF PORTA,W
+28cf4: 10 0b       ANDLW 0x10        ; PORTA bit 4
+28cf6: 0b e1       BNZ 0x28d0e
+28cf8: 80 50       MOVF PORTA,W      ; read again
+28cfa: 10 0b       ANDLW 0x10
+28cfc: 0c e1       BNZ 0x28d16
+28cfe: 01 0e       MOVLW 0x01
+28d00: 00 6e       MOVWF 0x00
+28d02: 65 50       MOVF UCON,W
+28d04: 02 0b       ANDLW 0x02        ; SUSPND
+28d06: 01 e0       BZ 0x28d0a
+28d08: 01 0e       MOVLW 0x01
+28d0a: 00 5c       SUBWF 0x00,W
+28d0c: 04 e1       BNZ 0x28d16
+28d0e: b3 ec 31 f1 CALL 0x26366      ; clear the command state, then leave
+28d12: 06 d0       BRA 0x28d20
+```
+
+**The polarity of `PORTA` bit 4 is deliberately not claimed.** This project has twice recorded a bit
+sense being inverted in its own notes, and nothing here establishes whether the pin is high or low
+when a cable is present. What the structure states without needing the polarity is that mode 1
+watches a pin and the USB `SUSPND` bit, and has two ways to reach the exit at `0x28D20`.
+
+### The two ways out, and only one of them is unconditional
+
+```
+28d16: 84 51       MOVF 0x284,W      ; the command state variable
+28d18: 01 e1       BNZ 0x28d1e       ; not idle: go round again, stay in USB mode
+28d1c: 01 d0       BRA 0x28d20       ; idle: leave
+28d20: 43 ec 5b f1 CALL 0x2b686      ; and the exit releases the pins and drops the mode
+28d24: 93 8c       BSF TRISB,6
+28d26: 8a 8c       BSF LATB,6
+28d28: 29 d0       BRA 0x28d7c       ; CLRF 0x315
+```
+
+`0x26366`, the routine the other path calls first, is a full command reset: it clears `0x284`, the
+three address bytes, three counters, and sets `0x28B`. So one path clears the gate and then leaves,
+and the other leaves **only if the gate is already clear**.
+
+Once `0x315` is zero the top level loop is back at its guard chain, which can enter mode 2 when two
+routines report ready, two deferred work flags at `0x25D` and `0x25E` are clear, and `0x2628E`
+reports idle. **Mode 2 is the application.**
+
+### Why a remote can be left stuck, without needing any of that polarity
+
+Every command body sets `0x284` to its own state number, and the shared exit at `0x267E4` clears it
+**only when the packet was not handled**:
+
+```
+267e4: 21 51       MOVF 0xd21,W      ; the packet handled flag
+267e6: 04 e1       BNZ 0x267f2       ; handled: skip the clear
+267ea: 84 6b       CLRF 0x284
+267ee: 8b 69       SETF 0x28b
+```
+
+So a handled command leaves the state variable holding its own number unless its own body clears it.
+That is the byte the conditional exit tests. **A session that ends by closing a handle leaves
+whatever the last command set**, and if that is nonzero the remote takes the conditional path and
+stays where it is, which is what section 95 recorded twice on the bench.
+
+**What is not established from the firmware alone** is which commands leave `0x284` nonzero at the
+moment a host walks away. `READ_FLASH` ends by clearing its state, `docs/usb-protocol.md`, so a
+plain read may well leave the gate open; the bench observation on 9 August 2026 followed exactly
+such a read and the remote still stuck, which means either the polarity puts that case on the
+conditional path with something else set, or the clear does not happen where it is assumed to. That
+is one hardware experiment, and it is not this section's to run.
+
+### What it changes
+
+**The polite end is `0xE0 0x01`, and it is not a reboot.** It is the one command that clears the
+gate, and clearing the gate is the difference between a remote that leaves USB mode when its cable
+goes and one that does not. Section 97 called that command "the one that is not a reset" and could
+not say what it was for; this is what it is for.
+
+It stays behind `WRITES_ENABLED`, because it changes a device's state and this project's rails do
+not bend for convenience. But the decision it feeds is no longer "reboot or nothing": it is whether
+a read only product may send one command whose whole effect is to zero a state variable, which is a
+far easier thing to argue than a reset. **The owner's call, and it is now a cheap experiment**: send
+it, pull the cable, see whether the remote leaves USB mode.
 
 ## References
 
