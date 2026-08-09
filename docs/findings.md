@@ -11291,7 +11291,35 @@ explanations:
   wrong about which odd values matter, and the original 3-of-3 note about 63 at `0x1000` would be
   about something else entirely.
 
-Not run. The remaining restarts cost a battery pull, which is now known rather than assumed.
+### The missing control, run at last: the offset decides
+
+| read | result |
+|---|---|
+| page `0xFF`, offset `0x1000`, 62 bytes, control | 62 bytes, remote answering |
+| page `0xFF`, offset `0x1000`, **63** bytes | **failed after 146 ms, remote gone** |
+
+So the original note reproduces, first hand this time, and **the offset is what matters**. 63 bytes
+is harmless at 0, 2 and `0x40` and fatal at `0x1000`, so there is a boundary between `0x40` and
+`0x1000` and it is a comparison somebody can find.
+
+The remote **came back on its own in about three seconds**, at a new device path, and answered with
+its config byte identical. That is a sixth self-clearing restart and it is further reason to think
+the earlier freeze belonged to the charger transition rather than to these reads.
+
+**The parity rule survives but only above the boundary.** At `0x1000`, 62, 64 and 124 are fine and
+63 and 65 are fatal, which is exactly the loop's arithmetic. Below the boundary the loop's
+arithmetic apparently does not apply, and nothing read so far says why.
+
+### What would find the constant, and what it costs
+
+A bisection between `0x40` and `0x1000` is about six reads and gives the boundary to a byte, and
+each hang now looks like three seconds and a self-clearing restart rather than a battery pull. That
+is the cheapest route to a number that can then be searched for in the image, which is what turns
+this from a measured curiosity into a firmware fact.
+
+It is deliberately **not** automated here. A script that hangs an irreplaceable device six times in
+a row is exactly the thing that should need saying out loud each time, and the owner authorised two
+offsets and a repeat, not a sweep.
 
 ### A remote can get stuck in USB mode, and it is not this section's doing
 
