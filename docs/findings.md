@@ -11157,18 +11157,46 @@ here.
 distinguish offset zero and the device does. So there is a step in front of it that this section has
 not read.
 
-There is also an attribution to check. The branch at `0x26BB2` tests the top address byte against
-zero and against `0xFE` and sends everything else to `0x26C6C`, which is a shared exit and not a
-body, so on the face of it page `0xFF` never reaches this loop at all. It plainly does reach
-*something*, since it returns data and hangs on 65. The likely resolution is the one arch 14's
-validator already shows, that the top byte is normalised before this test with the page kept
-separately, and the two controls above support it: the same offset on the two pages returns
-different bytes, so a page selector survives the normalisation. **Likely is not established**, and
-reading the arch 12 validator is what would settle it.
+### The attribution: settled by the validator, and the withdrawal is reversed
 
-So the honest state is: an odd count hangs a remote, demonstrated; the loop that does it is read;
-and the path from the command to that loop has a step in it that decides offset zero differently
-and has not been found. The rail does not depend on any of that, because it refuses odd counts
+The doubt was that `0x26BB2` tests the top address byte against zero and against `0xFE` and sends
+everything else to a shared exit, so page `0xFF` looked as though it never reached this loop. The
+arch 12 validator at `0x2637A` settles it, and it does exactly what arch 14's was said to do:
+
+```
+2637a: 87 c2 00 f0 MOVFF 0x287,0x000   ; the top address byte
+2637e: 00 90       BCF 0x00,0          ; clear bit 0, so 0xFF becomes 0xFE
+26384: fe 0e       MOVLW 0xfe
+26386: 00 18       XORWF 0x00,W        ; and compare with 0xFE: both pages match
+26390: 17 e0       BZ 0x263c0          ; taken: the internal path
+...
+263d4: fe 0e       MOVLW 0xfe
+263d6: 8b 6f       MOVWF 0x8b,B        ; 0x28B := 0xFE, written back unconditionally
+263d8: 01 0e       MOVLW 0x01
+263da: 87 17       ANDWF 0x87,B,F      ; 0x287 &= 1: the page bit is all that survives
+263dc: 01 0c       RETLW 0x01          ; accept
+```
+
+So **the low bit of the top address byte is the page selector**, the value the read body tests has
+already been normalised to `0xFE`, and the page bit becomes the top byte of the 24-bit address the
+loop is handed, which is why the two pages map to program `0x00xxxx` and `0x01xxxx`. Page `0xFF`
+reaches this loop. The withdrawal above is reversed: **the loop is the internal read body for both
+pages**, and the measurement agrees, since 65 bytes at page `0xFF` hangs exactly as the loop says it
+must.
+
+The validator also bounds the offset, at `0xFFF8` rather than the `0xFFC0` this project's library
+uses, and it does not touch the count at all.
+
+### What is still open, and it is narrower now
+
+**Offset zero.** The validator does not distinguish it, the loop does not distinguish it, and the
+device does. So the step that does is in neither of the two places this section has read, and the
+next one to look at is where `0x28A` gets its value: whether the loop is handed the whole request or
+one chunk of it decides what an odd total even means at this level.
+
+That is the whole of what is unexplained. An odd count hangs a remote, demonstrated on hardware
+after being predicted; the loop that does it is read; the validator in front of it is read; and one
+special case in between is not. The rail does not depend on it, because it refuses odd counts
 everywhere, which is strictly more than the hazard needs.
 
 ## References

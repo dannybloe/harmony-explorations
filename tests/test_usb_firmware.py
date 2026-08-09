@@ -1317,3 +1317,42 @@ class TestTheInternalReadLoopCannotEndOnAnOddCount(unittest.TestCase):
         # So the watchdog cannot end the loop either, which is why a remote hangs and drops off the
         # bus rather than resetting cleanly.
         self.assertEqual(self.at(code, self.LOOP_HEAD).mnemonic, 'CLRWDT')
+
+
+class TestTheArch12AddressValidatorNormalisesThePageBit(unittest.TestCase):
+    """Section 94: `0xFE` and `0xFF` are one internal path plus a page bit.
+
+    This is what settles that page `0xFF` reaches the read loop at `0x26BC8`, whose branch tests
+    the top byte against `0xFE` only. Asserted against the image because the whole argument is
+    three instructions and a write back.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    VALIDATOR = 0x2637A
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_bit_zero_of_the_top_byte_is_cleared_before_the_comparison(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        clear = self.at(code, 0x2637E)
+        self.assertEqual(clear.mnemonic, 'BCF')
+        self.assertEqual(clear.fields['b'], 0)
+        # And the value it is then compared against is 0xFE, so 0xFF matches too.
+        self.assertEqual(self.at(code, 0x26384).mnemonic, 'MOVLW')
+        self.assertEqual(self.at(code, 0x26384).fields['k'], 0xFE)
+        self.assertEqual(self.at(code, 0x26386).mnemonic, 'XORWF')
+
+    def test_the_normalisation_is_written_back_and_the_page_bit_kept(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # 0x28B := 0xFE unconditionally, which is the byte the read body branches on.
+        self.assertEqual(self.at(code, 0x263D4).fields['k'], 0xFE)
+        self.assertEqual(self.at(code, 0x263D6).mnemonic, 'MOVWF')
+        # 0x287 &= 1, so the page survives as the top byte of the address the loop is handed.
+        self.assertEqual(self.at(code, 0x263D8).fields['k'], 0x01)
+        self.assertEqual(self.at(code, 0x263DA).mnemonic, 'ANDWF')
+        # And the internal arm accepts.
+        self.assertEqual(self.at(code, 0x263DC).mnemonic, 'RETLW')
+        self.assertEqual(self.at(code, 0x263DC).fields['k'], 0x01)

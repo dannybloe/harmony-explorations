@@ -653,6 +653,12 @@ Two things were not established from the images: which of `0xFE` and `0xFF` is w
 validator keeps the low bit of byte 1 as a sub-selector and both reach the same body, and how the
 24-bit address maps onto the part's program memory.
 
+**The arch 12 validator says the same thing and it is read now**, `0x2637A`: it clears bit 0 of the
+top byte before comparing with `0xFE`, writes `0xFE` back so the read body's own branch matches, and
+reduces the top byte to its bit 0, which becomes the top byte of the address the read loop walks. So
+the two pages are program `0x00xxxx` and `0x01xxxx`. It bounds the offset at `0xFFF8`, and it does
+not touch the count. `docs/findings.md` section 94.
+
 > **Both were settled on hardware and neither answer is the one this section expected.** They are
 > two **pages** rather than a selector and a dud, and it is `0xFE` that maps from program address
 > zero; see "Internal memory: `0xFE` and `0xFF` are two pages" below. And `MCU_ID` is **not**
