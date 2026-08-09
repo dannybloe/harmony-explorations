@@ -11965,9 +11965,32 @@ same mark bit an infrared duration block uses in a stored config, section 32. So
 and the config's own duration encoding agree, which is the closure worth having: what comes off the
 remote is already in the form a record wants.
 
-**The header layout is arch 12 only.** Arch 14 keeps the same two buffers and the same toggle but
-reaches them through `FSR`, so its bytes are written through `INDF` and no trace finds them; nothing
-in the 700 or 600 images stores `0x90` into `0x602`. What its header holds is not established here.
+### The arch 14 header is the same, and the reason it looked otherwise is a lesson
+
+This section first said the header was arch 12 only, on the strength of a scan finding no store of
+`0x90` into `0x602` in the 700 or 600 images. That scan was right and the conclusion was wrong.
+Arch 14 reaches the same buffers through `FSR`, so the store is `MOVWF INDF0`, and the scan had in
+fact reported it, at `0x0938C` with `f=0xEF`. `0xEF` **is** `INDF0`. It was filtered out by a test
+for the literal buffer offsets, which is the project's own recorded pitfall about indirect access,
+made while writing the paragraph that warns about it.
+
+Read properly, the producer at `0x0926E` is the same routine:
+
+| | One 3.4 | 700 2.8 |
+|---|---|---|
+| gate | state 5 | state 5, `0xEC9` |
+| buffers | `0x0600` and `0x0642`, chosen on `0x0684` | the same three addresses |
+| status while filling | 1, at `+0` | 1, at `+0`, `0x0937C` |
+| response code at `+2` | `0x90`, `0x2B742` | `0x90`, `0x0938C` |
+| sequence at `+3` | `0x28C`, advanced by `0x10` | `0xED4`, advanced by `0x10` |
+| a sample | high byte then low byte, length `+= 2` | the same, `0x093C4` and `0x093D0` |
+| close a buffer at | length past `0x3D` | length past `0x3D`, `0x0932E` |
+
+So the report layout is two architectures, not one. **What is arch 12 only is the differencing**:
+`0x2B644` subtracts one capture from the previous with `SUBWF` and `SUBWFB`. On arch 14 the capture
+reaches the staging variable at `0x091CA` with a previous value kept beside it at `0x319`, which is
+the shape of a difference, but the arithmetic itself was not read and `0x090AC` is a re-arm of
+`CCP2CON` rather than the subtraction. Called a duration on arch 12 and left open on arch 14.
 
 ### What it settles about the two clients
 

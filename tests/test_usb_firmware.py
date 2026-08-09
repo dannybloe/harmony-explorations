@@ -1749,17 +1749,23 @@ class TestTheLearnSamplesAreNeverSent(unittest.TestCase):
         self.assertEqual(self.at(code, 0x20000, 0x2B66A).fields['f'], 0xB7)  # CCPR2L
         self.assertEqual(self.at(code, 0x20000, 0x2B670).fields['f'], 0xB8)  # CCPR2H
 
-    def test_no_architecture_stores_the_arch_12_header_code_anywhere_else(self):
-        lab.require('one34_code', 'h700_code', 'h600_code_complete')
-        # The negative that keeps the write-up honest: the arch 14 header is not established, and
-        # this fails if someone later assumes it is 0x90 in the same place.
-        for name, base in (('h700_code', 0x9000), ('h600_code_complete', 0x9000)):
+    def test_arch_14_stores_the_same_header_through_indf(self):
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        # This test replaces one that asserted arch 14 had no such store. That assertion passed and
+        # was misleading: arch 14 reaches the buffers through FSR, so the store is MOVWF INDF0 and a
+        # search keyed on the literal buffer offsets cannot see it. INDF0 is 0xEF.
+        self.assertEqual(self.at(code, 0x9000, 0x0938C).fields['k'], 0x90)
+        self.assertEqual(self.at(code, 0x9000, 0x0938E).mnemonic, 'MOVWF')
+        self.assertEqual(self.at(code, 0x9000, 0x0938E).fields['f'], 0xEF)
+        # The sequence byte follows it and advances by 0x10, as on arch 12.
+        self.assertEqual(self.at(code, 0x9000, 0x093A2).fields['k'], 0x10)
+        self.assertEqual(self.at(code, 0x9000, 0x093A6).mnemonic, 'ADDWF')
+        # And a buffer closes at the same length.
+        self.assertEqual(self.at(code, 0x9000, 0x0932E).fields['k'], 0x3D)
+
+    def test_both_architectures_cap_a_report_at_the_same_length(self):
+        lab.require('one34_code', 'h700_code')
+        for name, base, site in (('one34_code', 0x20000, 0x2B6B0), ('h700_code', 0x9000, 0x0932E)):
             code = lab.load(name)
-            found = False
-            for addr in range(base, base + len(code) - 4, 2):
-                instr = self.at(code, base, addr)
-                if instr and instr.mnemonic == 'MOVLW' and instr.fields.get('k') == 0x90:
-                    nxt = self.at(code, base, addr + 2)
-                    if nxt and nxt.mnemonic == 'MOVWF' and nxt.fields.get('f') in (0x02, 0x44):
-                        found = True
-            self.assertFalse(found, name)
+            self.assertEqual(self.at(code, base, site).fields['k'], 0x3D, name)

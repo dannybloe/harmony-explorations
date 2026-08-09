@@ -735,8 +735,10 @@ produce a config the remote accepts and mishandles.
   the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
   `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
   length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
-  what comes off the remote is already the shape a record wants. The arch 14 header is **not**
-  established, since it reaches the same buffers through `FSR`. **The reports are unsolicited**, so a
+  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
+  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
+  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
+  duration. **The reports are unsolicited**, so a
   host must keep reading during the session; that settles section 91's disagreement between the two
   clients in the classic one's favour.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
