@@ -223,6 +223,35 @@ and `tests/test_gspm.py` asserts the corpus against it rather than asserting the
 That one had already been used as a lead in section 81, before this document existed, which is
 part of why the rule needed writing down.
 
+**The erase block table and the writable ceiling**, 9 August 2026, now in
+`packages/usb/src/rails.ts` as `ERASE_BLOCK_SIZE` and `WRITABLE_CEILING`. Both are still client
+sourced, and they are in the code anyway because of which way they cut: **they make the rail
+refuse more.** Tightening a refusal on weak evidence costs a write that might have been fine.
+Loosening one costs a remote. Confirm them from the firmware before anything relies on the exact
+numbers.
+
+The client picks a flash block table from the chip's JEDEC manufacturer and device id, which it
+reads over USB. For every chip it lists against arch 12 the layout is `16K, 8K, 8K, 32K` and then
+uniform 64 KiB to 4 MiB, so **an erase anywhere in the arch 12 config region takes 64 KiB with
+it**, and the fine boot blocks are all below `0x010000` and outside anything the rails permit.
+Two consequences the rails now enforce:
+
+* an erase address must be a **block boundary**. The client walks its table from zero and starts
+  erasing at the first boundary at or after the address, so an unaligned caller gets neither the
+  erase it asked for nor an error.
+* the writable ceiling is `0x3D0000`, not the nominal `0x400000`, because the client declares the
+  remote's **stored application firmware** at `0x3D0000`, inside the region section 47's own
+  validator treats as config. A writer that trusted the nominal top would erase the firmware.
+
+`packages/usb/test/rails.test.ts` names those two addresses as the cases that used to be allowed.
+Confirmations that cost nothing and came with it: `ERASE_FLASH` is `0xD0` with a 24 bit address
+and no count, `WRITE_FLASH` is `0x30` and takes the same five bytes as `READ_FLASH`, and both are
+most significant byte first. All three were already read from the firmware.
+
+The one new protocol shape is a **sixth byte**: both flash commands have a variant that appends a
+memory type selector, and both erase variants likewise. Nothing here has seen one sent, and the
+firmware reading has the five byte form, so it is recorded and not acted on.
+
 **Base slot 0's frame length is 24 bits, not 16**, 9 August 2026. The client reads three bytes at
 `+0x02` of the `0xFEED` frame, where this project read two and described the byte at `+0x04` as a
 spare that is "zero in every sample". It is zero in every sample because the largest name tree in

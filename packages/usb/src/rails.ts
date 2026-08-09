@@ -4,8 +4,11 @@
  * That placement is the whole point. A rail enforced by a dialog box is enforced until somebody
  * writes a script; a rail enforced here is enforced for every caller. `CLAUDE.md` states these as
  * absolute, and the reason they are absolute rather than cautious is that the devices are
- * irreplaceable and Logitech's recovery servers are gone: there is no supported way back from a
- * bad write, only a dump taken beforehand.
+ * irreplaceable and the service that made them can be withdrawn without notice: there is no
+ * dependable way back from a bad write, only a dump taken beforehand. (This said "Logitech's
+ * recovery servers are gone", which is wrong and `CLAUDE.md` corrects it: the MyHarmony service
+ * answered on 7 August 2026 and compiled a config. The classic service is the one that is gone.
+ * The rail does not change, because the half that carries it is that a remote is irreplaceable.)
  *
  * Nothing in this module talks to a device. It answers one question, "is this write allowed", and
  * the answer is no unless every condition is met.
@@ -34,6 +37,40 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * separate from the read paths.
  */
 export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [12];
+
+/**
+ * The highest address a write or an erase may reach, per architecture.
+ *
+ * **Not the same as the top of the config region, and that is the point.** Arch 12's config region
+ * is nominally `0x040000` to `0x400000`, which is the range the log area's own writer enforces,
+ * section 47. But Logitech's client declares the remote's stored application firmware at
+ * `0x3D0000`, inside that range, so the last 192 KiB of the nominal region is not spare at all.
+ * A writer that trusted the nominal top would erase the firmware.
+ *
+ * Client sourced and unconfirmed, `docs/host-client.md`, and adopted anyway because of which way
+ * it cuts: it makes the rail **refuse more**. Tightening a refusal on weak evidence costs a write
+ * that might have been fine; loosening one costs a remote. Confirm it from the firmware before
+ * anything relies on the exact number.
+ */
+export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
+  12: 0x3d0000,
+};
+
+/**
+ * The flash erase block size, per architecture.
+ *
+ * `ERASE_FLASH` carries an address and no count, so the caller cannot scope an erase and the
+ * hardware decides how much goes. Logitech's client picks a block table from the flash chip's
+ * JEDEC manufacturer and device id, and for every chip it lists against arch 12 the region above
+ * `0x010000` is uniform 64 KiB blocks, so an erase anywhere in the config region takes 64 KiB
+ * with it. The boot block area below `0x010000` is finer, 16K then 8K, 8K, 32K, and it is outside
+ * the config region and therefore outside anything this module permits.
+ *
+ * Same provenance and same direction as `WRITABLE_CEILING`: it only ever refuses more.
+ */
+export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
+  12: 0x10000,
+};
 
 /**
  * The build flag. Off unless the environment says otherwise, and it is read once, here.
@@ -96,7 +133,15 @@ export function writableRange(p: WritePermission): { start: number; end: number 
   if (!Number.isInteger(p.configLength) || p.configLength <= 0) {
     throw new RailError(`implausible config length ${p.configLength}`);
   }
-  return { start, end: start + p.configLength };
+  const end = start + p.configLength;
+  const ceiling = WRITABLE_CEILING[p.architecture];
+  if (ceiling !== undefined && end > ceiling) {
+    throw new RailError(
+      `a config of ${p.configLength} bytes at 0x${start.toString(16)} ends at ` +
+        `0x${end.toString(16)}, past the writable ceiling 0x${ceiling.toString(16)}`,
+    );
+  }
+  return { start, end };
 }
 
 /**
@@ -124,16 +169,43 @@ export function assertFlashWriteAllowed(
  *
  * `ERASE_FLASH` takes an address and **no count**, so the erase granularity is the hardware's
  * sector size and the caller cannot scope it. Scoping therefore has to come from refusing
- * addresses, and the address alone has to be enough: an erase near the top of the config region
- * may well reach past it, and nothing here can tell.
+ * addresses.
+ *
+ * **This used to say "an erase near the top of the config region may well reach past it, and
+ * nothing here can tell", and now something can.** The block size is known, `ERASE_BLOCK_SIZE`,
+ * so the whole block an erase destroys is computable and the rail can require that all of it is
+ * permitted. Two conditions, both refusals:
+ *
+ * * the address is a block boundary, because an unaligned address does not erase what the caller
+ *   named. Logitech's own client walks its block table from zero and starts erasing at the first
+ *   boundary **at or after** the address, so the block containing an unaligned address is left
+ *   alone: the caller gets neither what it asked for nor an error.
+ * * the whole block lies inside the region, up to `WRITABLE_CEILING` rather than up to the end of
+ *   the config, since the bytes above a short config are still region and erasing them is not the
+ *   failure worth guarding against. Erasing the stored firmware is.
+ *
+ * An architecture with no recorded block size is refused outright rather than falling back to the
+ * old address-only check, which would be the weaker rail wearing the stronger one's name.
  */
 export function assertEraseAllowed(p: WritePermission, address: number): void {
   assertPermissionIsUsable(p);
-  const { start, end } = writableRange(p);
-  if (address < start || address >= end) {
+  const { start } = writableRange(p);
+  const block = ERASE_BLOCK_SIZE[p.architecture];
+  const ceiling = WRITABLE_CEILING[p.architecture];
+  if (block === undefined || ceiling === undefined) {
     throw new RailError(
-      `erase at 0x${address.toString(16)} is outside the config region ` +
-        `0x${start.toString(16)}..0x${end.toString(16)}`,
+      `no erase block size recorded for architecture ${p.architecture}: refusing to erase`,
+    );
+  }
+  if (address % block !== 0) {
+    throw new RailError(
+      `erase at 0x${address.toString(16)} is not on a 0x${block.toString(16)} block boundary`,
+    );
+  }
+  if (address < start || address + block > ceiling) {
+    throw new RailError(
+      `erasing 0x${block.toString(16)} bytes at 0x${address.toString(16)} leaves the writable ` +
+        `region 0x${start.toString(16)}..0x${ceiling.toString(16)}`,
     );
   }
 }

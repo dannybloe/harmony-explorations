@@ -208,7 +208,11 @@ document:
   into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
   emulator. Volatile, so it cannot brick anything, but it is still a write to a live device and
   it sits behind the same flag. `ERASE_FLASH` takes an address and **no** count, so an erase
-  cannot be scoped by the caller, only refused.
+  cannot be scoped by the caller, only refused. **How much it destroys is known now**: 64 KiB on
+  arch 12, so the rail requires a block aligned address and a whole block inside the region, and
+  the ceiling is `0x3D0000` rather than `0x400000` because the **stored application firmware**
+  sits inside the nominally writable region. Client sourced and adopted because it only refuses
+  more, `docs/host-client.md`.
 
 **Reads of internal program memory restart a remote, so read only is not the same as harmless.**
 `READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the

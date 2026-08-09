@@ -18,7 +18,9 @@ import { fileURLToPath } from 'node:url';
 import {
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   CONFIG_REGION_BASE,
+  ERASE_BLOCK_SIZE,
   RailError,
+  WRITABLE_CEILING,
   WRITES_ENABLED,
   assertEraseAllowed,
   assertFirmwareWriteRefused,
@@ -135,23 +137,47 @@ test('with writing enabled, the remaining conditions still each refuse on their 
   ]);
 });
 
-test('with writing enabled, an erase outside the config region is still refused', () => {
+test('with writing enabled, an erase must name a whole block inside the writable region', () => {
+  // The rail got stricter, and this test is where that shows. It used to allow any address in the
+  // config region, including 0x040fff, on the grounds that the block an erase destroys was
+  // unknown. It is known now, `ERASE_BLOCK_SIZE`, so an unaligned address is refused: Logitech's
+  // own client starts erasing at the first block boundary at or after the address, which means an
+  // unaligned caller gets neither the erase it asked for nor an error.
   const output = withWritesEnabled(`
     const IDEAL = ${JSON.stringify(IDEAL)};
     const results = [];
-    for (const address of [0x040000, 0x040fff, 0x03ffff, 0x041000, 0x000000, 0x020000]) {
-      try { rails.assertEraseAllowed(IDEAL, address); results.push('allowed'); }
-      catch { results.push('refused'); }
+    const cases = [
+      ['the first block of the region', 0x040000],
+      ['unaligned inside the region', 0x040fff],
+      ['aligned, one block below the region', 0x030000],
+      ['the last block below the ceiling', 0x3c0000],
+      ['the block the stored firmware starts in', 0x3d0000],
+      ['the nominal region top', 0x3f0000],
+      ['the reset vector', 0x000000],
+    ];
+    for (const [name, address] of cases) {
+      try { rails.assertEraseAllowed(IDEAL, address); results.push(name + ': ALLOWED'); }
+      catch { results.push(name + ': refused'); }
     }
     console.log(JSON.stringify(results));
   `);
-  // Inside the region twice, then just below, just above, the reset vector, and the firmware.
   assert.deepEqual(JSON.parse(output), [
-    'allowed',
-    'allowed',
-    'refused',
-    'refused',
-    'refused',
-    'refused',
+    'the first block of the region: ALLOWED',
+    'unaligned inside the region: refused',
+    'aligned, one block below the region: refused',
+    'the last block below the ceiling: ALLOWED',
+    // The two that the old rail would have allowed and that cost a remote: the stored application
+    // firmware sits at 0x3D0000, inside the nominally writable region.
+    'the block the stored firmware starts in: refused',
+    'the nominal region top: refused',
+    'the reset vector: refused',
   ]);
+});
+
+test('an architecture with no recorded block size is refused rather than loosely allowed', () => {
+  // The failure mode worth naming: adding a read profile for a new architecture must not quietly
+  // hand it the old address-only erase check. There is no fallback.
+  assert.equal(ERASE_BLOCK_SIZE[14], undefined);
+  assert.equal(WRITABLE_CEILING[14], undefined);
+  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['12']);
 });
