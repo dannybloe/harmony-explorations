@@ -821,6 +821,11 @@ class TestReadMisc(unittest.TestCase):
     """
     The command that makes live RAM readable over USB, which is what replaces the deferred
     emulator for section labelling and the button mapping experiment.
+
+    **On arch 12 and arch 14 only.** The 525 accepts selector 0x07 and answers zero for every
+    address, 1696 of them, so arch 9 has no live RAM at all and the emulator argument does not
+    carry there. That is a hardware fact and it is pinned where hardware can refute it,
+    `packages/usb/test/hardware.test.ts`. findings.md section 90.
     """
 
     BASE = 0x9000

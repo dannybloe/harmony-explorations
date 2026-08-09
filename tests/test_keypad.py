@@ -99,5 +99,93 @@ class TestTheHarmony600Keypad(unittest.TestCase):
         self.assertEqual([column_of(n) for n in absent], [3, 4])
 
 
+# Arch 9's matrix, from the 525's own firmware. `0x06FA4` binary searches one group of eight lines
+# and returns 1 to 8; `0x0701C` searches the second group and adds one of these to it. So a scan
+# code is `group * 8 + column` with both running 1 to 8, and the eight offsets below are the whole
+# of the second dimension. findings.md section 89.
+ARCH9_GROUP_OFFSETS = (0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38)
+ARCH9_COLUMNS = 8
+ARCH9_CONTAINERS = ('h525_config', 'h525_config_2', 'h525_safemode_ahcm')
+
+# The event bits of a key record, which a mode record's entries carry too. findings.md section 52.
+EVENT_MASK, SCAN_MASK, PRESS = 0xC0, 0x3F, 0x80
+
+
+def arch9_press_codes(name):
+    """Every scan code an arch 9 container binds with a press event.
+
+    Arch 9 has no key table at the marker, so the codes come out of the mode records, whose entries
+    have the same four byte layout. That equivalence is section 52's and is what makes this
+    extractable at all.
+    """
+    from harmony import gspm
+
+    container = gspm.parse(lab.load(name))
+    blob, out = container.blob, set()
+    for record in container.mode_records():
+        start = container.blob_offset_of(record.start)
+        for k in range(blob[start]):
+            at = start + 1 + 4 * k
+            if at + 4 <= len(blob) and blob[at] & EVENT_MASK == PRESS:
+                out.add(blob[at] & SCAN_MASK)
+    return out
+
+
+class TestTheHarmony525Keypad(unittest.TestCase):
+    """findings.md section 89: arch 9's keypad, derived rather than pressed.
+
+    No hardware measurement backs this one, and that is the point of it: the arch 14 census cost an
+    evening of pressing 54 buttons, and the arch 9 equivalent falls out of the firmware's own
+    lattice meeting the configs' own codes. What it does not give is which physical button a code
+    belongs to, because arch 9 senses on a single line.
+    """
+
+    def setUp(self):
+        lab.require(*ARCH9_CONTAINERS)
+
+    def test_the_group_offsets_are_eight_multiples_of_eight(self):
+        """The literals the combiner adds. Eight of them, evenly spaced, which is what makes the
+        matrix 8 by 8 rather than some other factorisation of 64."""
+        self.assertEqual(len(ARCH9_GROUP_OFFSETS), 8)
+        self.assertEqual(ARCH9_GROUP_OFFSETS,
+                         tuple(g * ARCH9_COLUMNS for g in range(8)))
+
+    def test_both_user_configs_bind_the_same_fifty_codes(self):
+        """Two configs of the same remote, generated years apart by Logitech's own software. A
+        keypad is a property of the model, so a difference here would mean the extraction is wrong
+        rather than that the remote changed."""
+        first, second = arch9_press_codes('h525_config'), arch9_press_codes('h525_config_2')
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 50)
+
+    def test_the_safe_mode_container_binds_a_subset(self):
+        """A recovery interface binds fewer keys, not different ones. A code outside the user
+        configs' set would mean the lattice is bigger than the user configs show."""
+        self.assertTrue(arch9_press_codes('h525_safemode_ahcm') <= arch9_press_codes('h525_config'))
+
+    def test_no_bound_code_is_a_multiple_of_eight(self):
+        """The closure, and the negative that carries it. The scanner can produce any code from 1
+        to 64, so the eight multiples of eight are reachable; no container binds one, which is what
+        says that column is unpopulated rather than that the reading is off by one."""
+        for name in ARCH9_CONTAINERS:
+            with self.subTest(container=name):
+                self.assertEqual({c for c in arch9_press_codes(name) if c % ARCH9_COLUMNS == 0},
+                                 set())
+
+    def test_the_bound_codes_are_contiguous_in_the_seven_of_eight_lattice(self):
+        """Not merely inside the lattice: contiguous from its first position to the highest bound
+        one, so the fifty are a prefix and the six above them are the only gap."""
+        lattice = [g + c for g in ARCH9_GROUP_OFFSETS for c in range(1, ARCH9_COLUMNS)]
+        codes = arch9_press_codes('h525_config')
+        self.assertTrue(codes <= set(lattice))
+        self.assertEqual(sorted(codes), [n for n in sorted(lattice) if n <= max(codes)])
+        self.assertEqual([n for n in sorted(lattice) if n > max(codes)], [58, 59, 60, 61, 62, 63])
+
+    def test_the_predicted_button_count_is_stated(self):
+        """Fifty matrix buttons on a Harmony 525. Unconfirmed against the physical remote, and
+        recorded here so that counting them later refutes something."""
+        self.assertEqual(len(arch9_press_codes('h525_config')), 50)
+
+
 if __name__ == '__main__':
     unittest.main()

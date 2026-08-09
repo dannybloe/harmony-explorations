@@ -1900,7 +1900,7 @@ key, which made the arch 14 table describe a keypad that cannot exist. See
 | 88x class config, arch 8 | 56 | 53 press codes plus the same three. Identical in all four arch 8 samples. |
 | One safe-mode config | 2 | press of scan 47 and scan 46. A two button recovery UI. |
 | 700 `Region_3` | 0 | empty |
-| 525 config, arch 9 | n/a | the byte where a count would sit after `CMAH` is zero, so no table is claimed there |
+| 525 config, arch 9 | n/a | the byte where a count would sit after `CMAH` is zero, so no table is claimed there. Arch 9 binds its keys in the mode records instead, see below |
 
 So arch 14 enumerates all three event types for every key while arch 12 and arch 8 record presses
 only. That is a real difference between the architectures rather than an artefact of the reading.
@@ -1936,6 +1936,25 @@ The count works out exactly, with nothing left over.
 
 So no translation layer between the scanner's index and the config's codes needs to exist, which
 was the open question here. The scanner's index **is** the config's scan code.
+
+### Arch 9 binds its keys in the mode records, and its keypad is 8 by 8
+
+A mode record's entries have the same four byte layout as a key record, so the bound scan codes are
+extractable even where no table sits at the marker. Taking every entry whose event bits are `0x80`:
+
+| Sample | distinct press codes | highest |
+|---|---|---|
+| 525 user config, arch 9 | 50 | 57 |
+| 525 second user config, arch 9 | 50 | 57 |
+| 525 safe mode container, arch 9 | 46 | 57 |
+
+The two user configs bind **the same fifty codes** and the safe mode container's forty six are a
+subset. The arch 9 scanner produces `group * 8 + column` with both running 1 to 8, so a code runs 1
+to 64; not one bound code in any of the three containers is a multiple of eight, so that column
+binds nothing, and within the resulting lattice of eight groups of seven the fifty are contiguous
+from 1 to 57. That implies fifty matrix buttons on a Harmony 525, which is a prediction about the
+physical remote and is **unconfirmed**: counting the buttons is what would settle it. See
+[findings.md](findings.md) section 89 for the firmware side.
 
 ### The key table is not the button to action map
 

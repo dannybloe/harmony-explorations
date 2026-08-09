@@ -613,7 +613,9 @@ Still to do, in the order the application needs them:
   an arbitrary data address through `FSR0` is **`0x07`**, not the `0x06` libconcord's header
   calls `MISC_RAM`. So live RAM of a running remote is readable over USB, which is what replaces
   the deferred emulator, and the upstream number would have read the wrong thing while still
-  returning a plausible byte. `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` are writes and are
+  returning a plausible byte. **On arch 12 and arch 14 only**: the 525 accepts the selector and
+  answers zero for all 1696 addresses tried, so arch 9 has no live RAM and this leg of decision 5
+  does not carry there, section 90. `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` are writes and are
   answered too, and negatively. `WRITE_MISC`'s selector chain is at parse time and services nine
   selectors. `0x07` **writes** an arbitrary data address, the mirror of the read, which is now in
   the rails. `0x09` is accepted and does nothing, and `0x03` is not serviced, so on upstream's
@@ -850,6 +852,15 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   What remains is the row on arch 14, 14 candidates per button. The route that would finish it is a
   RAM write to drive the rows from the host, and the rails allow no write target on arch 14, so it
   stays shut.
+
+  **Arch 9 was asked next and answered a different question**, sections 89 and 90. It never got as
+  far as a census: watching the 525's scan code variable while its keys were pressed showed nothing,
+  and the positive control showed why, since every port including `PORTC` read zero on a part that
+  was answering USB at that moment. `READ_MISC` selector `0x07` is serviced on arch 9 and returns
+  zero for every address, so there is no instrument there at all. The keypad came out of the
+  firmware instead: 8 by 8, `group * 8 + column`, sensed on one line, and both 525 configs bind the
+  same 50 codes in the seven of eight lattice that implies. **Fifty matrix buttons, unconfirmed
+  against the physical remote**, and that is the cheapest open item in this document.
 * **A mode has pages**, section 66, and that is where the last large structure was. Base slot 6's
   entry was read as four bytes and it is `6 + 3 * pages`: a `u16` count and an array of page
   addresses, each page naming a tagged list of its own and a screen program. Found by asking the

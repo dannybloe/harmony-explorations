@@ -27,6 +27,7 @@ import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST, isHarmony, listHarmony } f
 /** Product ids of the bench remotes, so a test can refuse to run against the wrong one. */
 const HARMONY_600 = 0xc122;
 const HARMONY_ONE = 0xc121;
+const HARMONY_525 = 0xc111;
 
 /**
  * Whether exactly one remote of this model is attached.
@@ -203,6 +204,43 @@ test('live RAM reads return varying values, and selector 0x06 is not the same ac
     const varied = new Set<number>();
     for (const address of [0x1c1, 0x08d, 0x3bf]) varied.add(await remote.readRam(address));
     assert.ok(varied.size > 1, 'every address returned the same byte, which is not a memory read');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('the RAM read is dead on arch 9: every address on the 525 answers zero', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_525))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 525 attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_525 }), {
+    timeoutMs: 500,
+  });
+  try {
+    // The wake up first, because a remote that has been idle loses the first command and here that
+    // loss would look exactly like the result being asserted. Section 88.
+    await retryingEmptyReply(() => remote.getVersion());
+
+    // A spread across general purpose banks and the special function register page. `0xF81` is
+    // PORTB and `0xF82` is PORTC, and PORTC carries the USB data lines of a part that is at this
+    // moment answering this very command: a zero there cannot be a reading of the port, which is
+    // what turns "nothing changed while keys were pressed" from a keypad result into an instrument
+    // failure. `0x2DE` is the arch 9 scan code variable, section 89.
+    const spread = [0x000, 0x0a0, 0x100, 0x2de, 0x300, 0x3c8, 0x700, 0x7ff, 0xe00, 0xf81, 0xf82];
+    const seen = new Map<number, number>();
+    for (const address of spread) seen.set(address, await remote.readRam(address));
+
+    for (const [address, value] of seen) {
+      assert.equal(value, 0, `0x${address.toString(16)} answered ${value}, not zero`);
+    }
+    // Stated as the positive too, so that this fails loudly rather than quietly widening if arch 9
+    // ever starts serving the read: the finding is that it answers and the answer is useless, not
+    // that it refuses. A refusal arrives as a thrown RemoteError from the lines above.
+    assert.equal(new Set(seen.values()).size, 1,
+      'some address returned a nonzero byte, so arch 9 does serve the RAM read after all and ' +
+      'docs/findings.md section 90 needs revisiting');
   } finally {
     await remote.close();
   }

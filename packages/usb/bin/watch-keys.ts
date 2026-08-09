@@ -29,6 +29,12 @@ import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
 const WATCH: Record<number, { name: string; addresses: number[] }> = {
   0xc122: { name: 'Harmony 600', addresses: [0x073d] },
   0xc121: { name: 'Harmony One', addresses: [0x02fb, 0x0202] },
+  // Arch 9, read out of the 525's own internal firmware. `0x0701C` returns the scan code and the
+  // handler at `0x070FA` holds the previous one in `0x2DE`, returning early when they are equal,
+  // which is the debounce; on a change it copies to `0x2DE` and `0x3C8` and then ORs the event
+  // type on elsewhere. Same three part shape as the 600's `0x73D`/`0x73F` and the 700's
+  // `0x3A2`/`0x3A4`, so the pair is watched for the same reason.
+  0xc111: { name: 'Harmony 525', addresses: [0x02de, 0x03c8] },
 };
 
 /** Health check: a byte whose value the firmware fixes, so a wrong answer is visible. */
@@ -97,6 +103,22 @@ const started = Date.now();
 // Seeded from the first read rather than from 0, so the resting value is not reported as an event.
 const previous = new Map<number, number>();
 try {
+  // A remote that has been idle loses the first command sent to it, and here that command would be
+  // the read that seeds the resting value: a lost read seeds a phantom, and every later comparison
+  // is against it. So the version exchange goes first and absorbs the loss, retried because it is
+  // itself a first command. Same reasoning as `read-window.ts`, `docs/findings.md` section 88.
+  let awake = false;
+  for (let attempt = 1; attempt <= 4 && !awake; attempt += 1) {
+    try {
+      await remote.getVersion();
+      awake = true;
+      if (attempt > 1) process.stderr.write(`(woke on attempt ${attempt})\n`);
+    } catch {
+      // Deliberately swallowed: the retry is the handling, and the failure is reported below.
+    }
+  }
+  if (!awake) fail('the remote is not answering');
+
   for (const address of addresses) previous.set(address, (await remote.readRam(address)) & mask);
   for (const [address, value] of previous) {
     process.stderr.write(`  resting 0x${address.toString(16)} = ${value}\n`);

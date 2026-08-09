@@ -469,6 +469,14 @@ The 16-bit parameter becomes `FSR0` and the byte at that data address is what co
 remote by hand. It also means the button mapping experiment is reachable, by watching the keypad
 scanner's index variable while pressing every key.
 
+**That is an arch 12 and arch 14 fact, and arch 9 does not have it.** Measured on the bench Harmony
+525 on 9 August 2026: the selector is accepted, the reply is a well formed `0xC2` echoing `0x07`,
+and the byte is **zero for every address**, over 1696 of them spanning six general purpose banks and
+the special function register page. The calibration is the same sweep on a 600 and a One, which
+return live data in the same banks, and the giveaway is that the 525 reports `PORTC` as zero while
+it is driving USB. Arch 9's `READ_MISC` body is not located in `h525_code` yet, so what it does
+instead is open. `docs/findings.md` section 90.
+
 **It is selector `0x07` here, not `0x06`.** libconcord's header names `MISC_RAM` as `0x06`, and
 `0x06` on arch 14 is a different accessor that goes through `0x1AB8A`. Whether the upstream
 number is right for another architecture is not established, and this is exactly why the project

@@ -43,7 +43,8 @@ propose firmware modification as a route to anything.
    "monorepo" wording, which put the app here too.
 5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
    IR cross learning between the two remotes, and live RAM polling over USB do most of what the
-   emulator was wanted for, at a fraction of the build.
+   emulator was wanted for, at a fraction of the build. **The RAM polling leg is per architecture**:
+   it works on arch 12 and arch 14 and the 525 answers zero for every address, section 90.
 6. **Safety rails are absolute.** See "Never write to a remote" below.
 7. **Own derivation first.** Upstream findings are hypotheses to test. The format's original
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
@@ -490,6 +491,12 @@ node packages/usb/bin/read-window.ts --address 0x... [--count 16] [--compare 0x.
                        read one window of external flash and print it, and optionally read a
                        second and say whether they are identical. For a question about a
                        specific address, which read-config.ts cannot answer. Opens the device.
+node packages/usb/bin/read-ram.ts --address 0x... [--count 64] [--summary]
+                       the same for data memory. Reach for this before believing a watcher's
+                       silence: watch-keys reports changes, so it cannot tell a variable that
+                       never moves from an address the remote does not serve, and on arch 9 it
+                       is the second. --summary counts nonzero bytes, which is the question a
+                       positive control asks. Opens the device.
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.
@@ -709,6 +716,11 @@ produce a config the remote accepts and mishandles.
   the rails forbid, and **that is not proposed here.** Neither of Logitech's own applications has
   it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
   hardware, so no host ever held the map. `docs/host-client.md`.
+  **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
+  the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
+  8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50
+  codes, none a multiple of eight and contiguous in the resulting lattice to 57. So **the 525 has
+  fifty matrix buttons**, which is the one part of it a person with the remote could refute.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 

@@ -55,6 +55,12 @@ header reading took it to 55.1%.
 | internal program memory | plain `0x000000`; 32 KiB read in 529 single chunk commands, no restart | health checked every 64 reads |
 | the safe mode config | flash `0x818000`, container base `0x018000` | the same `0x800000` offset the user config has |
 | the config | 51195 bytes, trailer checksum recomputes | read over USB by this project's own code |
+| **data memory** | **unreadable**: `READ_MISC` selector `0x07` answers and returns zero for all 1696 addresses tried | 9 August 2026, calibrated against a 600 and a One which return live data in the same banks |
+
+That last row was not predicted at all, and nothing in this document would have led anyone to
+predict it: live RAM over USB had worked on both other architectures and was treated as a property
+of the command layer rather than of the build. It is the reason the 525 gets no keypad census and
+the reason the arch 9 matrix had to come out of the firmware. `docs/findings.md` sections 89 and 90.
 
 The MCU is the `PIC18LF4550` concordance names for this architecture, and three things agree with
 it: the application entry is `GOTO 0x07FB4`, which fits 32 KiB; the reset vector lands below

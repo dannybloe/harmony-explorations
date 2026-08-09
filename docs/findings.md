@@ -10330,6 +10330,195 @@ reasons.
   client's word alone.
 
 
+## 89. Arch 9 scans an 8 by 8 keypad over one sense line, and its configs bind fifty of it
+
+The question that started this was whether the button census of section 48, run on the Harmony 600
+on 7 August 2026, was still worth running on the Harmony 525. The answer is no, and arriving at it
+produced the arch 9 keypad instead, out of the firmware and the configs rather than out of anybody's
+fingers.
+
+Section 48 left the reason to expect nothing as an upstream claim: arch 12 was measured to sense on
+one shared line, and the section noted that this is "the pattern upstream describes for arch 9".
+`h525_code` has been in the lab since 8 August 2026, so that no longer has to be borrowed.
+
+### The shape, and how the search for it went wrong first
+
+The arch 14 column reader is a run of `BTFSS port,bit ; RETLW n`. Scanning for it finds exactly one
+run in each arch 14 image and none in the other two:
+
+| image | runs of three or more | at |
+|---|---|---|
+| 700 2.8 | 1 | `0x19094`, four pairs, `PORTB` bits 4 to 7 returning 1 to 4 |
+| 600 0.2 complete | 1 | `0x17730`, the same four pairs |
+| One 3.4 | 0 | |
+| 525 internal | 0 | |
+
+**The first version of that scan reported zero everywhere, including the images that visibly have
+one.** A pair is four bytes, and stepping by two lands on the `RETLW`, which breaks every run at
+length one. Worth recording because the failure mode is the dangerous one: a search for a shape
+that silently finds nothing is indistinguishable from the shape being absent, which is the exact
+inference the scan was built to support.
+
+What arch 9 has instead is visible in a census of its port accesses. `PORTB` takes 70 accesses of
+which 64 are bit tests, and **58 of those test bit 7**, in two clusters of 29 at `0x00898` and
+`0x06FA8`. The first is below `0x1000` and therefore in the bootloader, the second in the
+application, so the same routine exists twice. One bit tested 58 times is not a column port.
+
+### The scanner
+
+Three routines, all in the application copy:
+
+* `0x06FA4` binary searches one group of eight lines and returns 1 to 8, or 0 for none. It writes a
+  mask through the helper at `0x0715A` and tests `PORTB,7` after each: `0x0F`, then `0x03` or
+  `0xF0`, then the individual bits. Eight leaves, each a `RETLW`.
+* `0x0701C` calls it, keeps the answer, then binary searches the second group through the helper at
+  `0x07156` and adds `0x00`, `0x08`, `0x10`, `0x18`, `0x20`, `0x28`, `0x30` or `0x38` to it. So the
+  scan code is **`group * 8 + column`, a linear index from 1 to 64**, with 0 for no key.
+* `0x070FA` calls `0x070C4`, which calls the scanner, and debounces: it returns immediately when
+  the fresh code equals the one already held, and on a change copies the fresh code to `0x2DE` and
+  `0x3C8` before ORing the event type on elsewhere, `0x80` for a press and `0x40` for a release.
+
+That is the same three part shape as the 600's `0x73D` and `0x73F` and the 700's `0x3A2` and
+`0x3A4`, so **`0x2DE` is arch 9's bare scan code variable**, with `0x3C8` as its partner.
+
+The two drive helpers differ in a way that explains where sixteen lines come from on a part whose
+port has eight. `0x0715A` writes `LATD` and settles. `0x07156` writes `LATD`, strobes `LATE` bit 0
+low and high, then sets `LATD` back to all ones: that is a write into an **external latch** clocked
+by `LATE` bit 0. Eight lines driven directly and eight through the latch, sensed on one line.
+
+| | arch 14, 600 and 700 | arch 12, One | arch 9, 525 |
+|---|---|---|---|
+| matrix | 14 by 4 | not established | 8 by 8 |
+| scan code | `row * 4 + column`, 1 to 56 | not established | `group * 8 + column`, 1 to 64 |
+| sense | four column lines, interrupt on change | one shared line | one line, `PORTB` bit 7 |
+| drive | `PORTA`, `PORTD`, `PORTE` | not established | `LATD`, plus a latch on `LATE` bit 0 |
+| scan code variable | `0x73D` / `0x3A2` | `0x2FB` or `0x202`, unsettled | `0x2DE` |
+
+### The closure, from the configs
+
+A mode record's entries are the same four bytes a key record is, section 52, so the bound scan
+codes are extractable on every architecture including the one with no key table at the marker.
+Taking every entry whose event bits are `0x80`:
+
+| container | distinct press codes | highest |
+|---|---|---|
+| 525 user config | 50 | 57 |
+| 525 second user config | 50 | 57 |
+| 525 safe mode container | 46 | 57 |
+
+**The two user configs bind exactly the same fifty codes**, and the safe mode container's forty six
+are a subset of them. Now the part that is a closure rather than a description. The scanner can
+produce any code from 1 to 64, and:
+
+* **not one bound code is a multiple of eight**, in any of the three containers, so the group
+  position that the mask `0x80` path reaches binds nothing at all;
+* every bound code lies in the resulting lattice of eight groups of seven;
+* and within that lattice the fifty are **contiguous from 1 to 57**, with only 58 to 63 above them.
+
+Nothing was fitted. The lattice comes from a firmware read on 9 August 2026 and the codes come from
+configs generated by Logitech's software years earlier. So arch 9's keypad is 8 by 8 with one column
+unpopulated, and **the Harmony 525 has fifty matrix buttons**. That last step is the falsifiable
+one: counting the buttons on the remote refutes it or confirms it, and no measurement here can.
+
+Compare the 600, which reached the same place from the other direction: 54 codes contiguous 1 to 54
+over 56 matrix positions, two unoccupied, confirmed by pressing all 54. The arch 9 version of that
+statement costs no presses because the firmware states the lattice.
+
+### What this does not give
+
+The row, or rather the group, and therefore which physical button a code belongs to. That is the
+same ceiling section 48 hit, and arch 9 sits below arch 14 rather than beside it: with one sense
+line a press is not even worth a column. The route that would finish it is a live read of `0x2DE`
+while somebody presses keys, and the next section is the measurement that says arch 9 does not
+offer one.
+
+### Where it lands
+
+* `docs/config-format.md`, the key table section, whose arch 9 row said no table is claimed after
+  `CMAH` and now also says where arch 9 binds its keys and how many.
+* `tests/test_keypad.py`, which gains the arch 9 lattice and the corpus check behind it.
+* `packages/usb/bin/watch-keys.ts`, which now knows the 525's addresses, for whenever arch 9 gets a
+  RAM read.
+
+
+## 90. `READ_MISC` selector `0x07` answers on arch 9 and returns zero for every address
+
+Live RAM of a running remote is readable over USB. That is section 48's instrument, it is the
+capability `docs/roadmap.md` accepted in place of the deferred emulator, and it was derived on arch
+14 and confirmed on arch 12. **It is not true on arch 9**, and this section is the measurement,
+taken on the bench Harmony 525 on 9 August 2026.
+
+### The negative that was nearly written down
+
+`watch-keys.ts` was pointed at `0x2DE` and `0x3C8`, the previous section's variables, and every
+button pressed on the 525 left both at 0. Section 48 has a ready made explanation for exactly that
+result, since a 600 and a One both park in sync mode without running their keypad handler, so the
+obvious write up was "arch 9 does the same, the ceiling is a property of the family".
+
+The positive control refused it. Watching the five ports and the two latches instead reported every
+one of them at 0, `PORTC` included, and `PORTC` carries the USB data lines of a part that is at
+that moment answering USB commands. A port that reads zero while it is switching is not a reading,
+it is an absence.
+
+### The calibration
+
+Four banks of the 525's own data memory against the same four on the 600, one byte per exchange:
+
+| bank | Harmony 525, arch 9 | Harmony 600, arch 14 |
+|---|---|---|
+| `0x100` | 0 of 256 nonzero | 25 of 256 |
+| `0x300` | 0 of 256 | 77 of 256 |
+| `0x700` | 0 of 256 | 41 of 256 |
+| `0xE00` | 0 of 256 | 159 of 256 |
+| `0xF60`, the SFR page | 0 of 160 | 84 of 160 |
+
+Plus `0x000` and `0x200` on the 525, also entirely zero, and `0x200` on a Harmony One at 107 of 128
+nonzero. **1696 distinct addresses on the 525, spanning general purpose banks and the special
+function register page, every one of them zero.**
+
+The remote is not refusing. A refusal arrives as a wrong reply kind or a wrong selector and the
+library raises on both; what comes back is a well formed `0xC2` misc reply echoing selector `0x07`
+and carrying a byte, and the byte is always zero. Every other selector in the chain, `0x01`, `0x02`,
+`0x06`, `0x08`, `0x09` and `0x0C`, answers the same way.
+
+So on arch 9 the selector is accepted and serviced by something that is not an indirect load. What
+that something is has **not** been read: the arch 14 primitive is
+`MOVFF x,FSR0L ; MOVFF y,FSR0H ; MOVFF INDF0,z` at `0x0CBF4`, and a search for that shape in
+`h525_code` returns 67 sites, none of them in a USB command handler. Arch 9's `READ_MISC` body is
+not located yet, so this section is a measurement and not yet a reading.
+
+### What it costs
+
+* **The button mapping experiment is unreachable on arch 9**, not merely capped as it is on arch 12
+  and arch 14. There is no instrument, so there is no ceiling to hit.
+* **`docs/usb-protocol.md`'s RAM read is an arch 12 and arch 14 fact**, and its own text left room
+  for this: "Whether the upstream number is right for another architecture is not established." It
+  is established now, in the negative, for the number and for the capability together.
+* The emulator argument is per architecture. Decision 5 in `docs/roadmap.md` deferred the emulator
+  partly on live RAM polling, and on arch 9 that leg is missing.
+
+### The instrument this needed and did not have
+
+`watch-keys.ts` reports **changes**. It therefore cannot distinguish a variable that never moves
+from an address the remote does not serve, and from the host those two look identical: a log with
+nothing after the resting line. That is how a wrong negative nearly reached a document, and it is
+the same shape as section 88's lost first command, where a silence had two causes.
+
+`packages/usb/bin/read-ram.ts` is the fix, the RAM analogue of `read-window.ts`: it prints content
+rather than changes, and `--summary` answers the question a positive control actually asks, which
+is whether a window contains anything at all. A watcher says what moved; only a reader says whether
+anybody is home.
+
+### Where it lands
+
+* `docs/usb-protocol.md`, where the RAM read gains the architecture it holds on and the one it does
+  not.
+* `packages/usb/bin/read-ram.ts`, new, and `watch-keys.ts`, which now wakes the remote first so that
+  the read seeding its resting value is not the command that gets lost.
+* `tests/test_usb_firmware.py`, which pins the arch 14 primitive's shape and its absence from the
+  arch 9 image, so that finding the arch 9 handler later has something to contradict.
+
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
