@@ -224,11 +224,22 @@ That one had already been used as a lead in section 81, before this document exi
 part of why the rule needed writing down.
 
 **The erase block table and the writable ceiling**, 9 August 2026, now in
-`packages/usb/src/rails.ts` as `ERASE_BLOCK_SIZE` and `WRITABLE_CEILING`. Both are still client
-sourced, and they are in the code anyway because of which way they cut: **they make the rail
-refuse more.** Tightening a refusal on weak evidence costs a write that might have been fine.
-Loosening one costs a remote. Confirm them from the firmware before anything relies on the exact
-numbers.
+`packages/usb/src/rails.ts` as `ERASE_BLOCK_SIZE` and `WRITABLE_CEILING`. They went into the code
+while still client sourced, because of which way they cut: **they make the rail refuse more.**
+Tightening a refusal on weak evidence costs a write that might have been fine. Loosening one costs
+a remote.
+
+**`WRITABLE_CEILING` was confirmed the same day, and by the device rather than by the firmware.**
+Reading a Harmony One's own flash at `0x3D0000` returns an application firmware image, byte
+identical to the archived package and to the copy the remote runs from. So the client was right and
+the top 192 KiB of the nominal config region is not spare. `docs/findings.md` section 88.
+`ERASE_BLOCK_SIZE` is still unconfirmed, and confirming it means erasing something, so it will stay
+that way for a while.
+
+The confirmation took as long as it did for a reason worth recording here rather than only in the
+finding: this project's own address validator refused every arch 12 address above `0x200000`, so
+the read that would have checked the client's claim was impossible until that was fixed. A wrong
+refusal hides exactly what it refuses.
 
 The client picks a flash block table from the chip's JEDEC manufacturer and device id, which it
 reads over USB. For every chip it lists against arch 12 the layout is `16K, 8K, 8K, 32K` and then

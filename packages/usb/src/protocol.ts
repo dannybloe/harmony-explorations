@@ -245,7 +245,14 @@ export const FLASH_TOP_BYTE_BOUND: Readonly<Record<number, number>> = {
   12: 0x40, // 4 MiB, an Atmel AT49BV322A
   14: 0x20, // 2 MiB, an EON F16
 };
-/** Arch 9 addresses its serial flash from here, one megabyte up. `0x80` to `0x87` on a 512 KiB part. */
+/**
+ * Arch 9 addresses its serial flash from here, one megabyte up, and it is the one architecture
+ * whose rule is a window rather than a ceiling.
+ *
+ * Measured on a live 525 by trying addresses until one answered, section 76, and **confirmed from
+ * its own firmware since**: the validator at `0x02E30` refuses below `0x80` and at or above `0x88`,
+ * which is eight 64 KiB blocks and exactly the 512 KiB the part holds. Section 88.
+ */
 export const ARCH9_FLASH_TOP_MIN = 0x80;
 export const ARCH9_FLASH_TOP_MAX = 0x87;
 

@@ -467,6 +467,65 @@ class TestWriteMisc(unittest.TestCase):
         self.assertNotIn(0x03, self.selectors())
 
 
+class TestEachValidatorBoundsAtItsOwnFlashSize(unittest.TestCase):
+    """
+    Section 88. Every firmware refuses a flash address outside a window, and the window is that
+    model's flash capacity. Three architectures, three different parts, three different windows.
+
+    The point is the agreement, not any one bound: a single firmware refusing addresses above its
+    flash would only show that somebody wrote a constant. Three whose constants track three
+    different chips shows what the constant is for.
+    """
+
+    # image -> (base, {address of the MOVLW: its literal}), and what the window means.
+    #
+    # Arch 9 is the one that needs a floor as well, because its serial flash is addressed a
+    # megabyte up. The other two start at zero and only need a ceiling.
+    VALIDATORS = {
+        'one34_code': (0x20000, {0x263B0: 0x40}, 0x400000),
+        'h700_code': (0x9000, {0x13E38: 0x20}, 0x200000),
+        'h525_code': (0x0000, {0x02E30: 0x80, 0x02E46: 0x88}, 0x080000),
+    }
+
+    def test_each_image_builds_its_own_bound_as_a_literal(self):
+        lab.require(*self.VALIDATORS)
+        for image, (base, literals, _) in self.VALIDATORS.items():
+            for address, expected in literals.items():
+                with self.subTest(image=image, at=hex(address)):
+                    instr = isa.decode(lab.load(image), address - base, base)
+                    self.assertEqual(instr.mnemonic, 'MOVLW')
+                    self.assertEqual(instr.fields['k'], expected)
+
+    def test_the_window_is_the_capacity_of_that_models_flash_part(self):
+        """
+        The closure. Each span times 64 KiB is the size of the chip the model carries, and the
+        three chips are a 4 MiB parallel NOR, a 2 MiB SPI and a 512 KiB SPI.
+        """
+        spans = {
+            'one34_code': (0x00, 0x40),   # Atmel AT49BV322A
+            'h700_code': (0x00, 0x20),    # EON F16
+            'h525_code': (0x80, 0x88),    # 25F040
+        }
+        for image, (low, high) in spans.items():
+            with self.subTest(image):
+                _, _, capacity = self.VALIDATORS[image]
+                self.assertEqual((high - low) << 16, capacity)
+
+    def test_the_three_windows_do_not_overlap_in_what_they_permit(self):
+        """
+        Which is why applying one architecture's rule to another is not a harmless approximation:
+        every address arch 9 permits is refused by both others, and half of what arch 12 permits is
+        refused by arch 14. That mistake was live in `packages/usb` until section 88.
+        """
+        arch12 = set(range(0x00, 0x40))
+        arch14 = set(range(0x00, 0x20))
+        arch9 = set(range(0x80, 0x88))
+        self.assertEqual(arch9 & arch12, set())
+        self.assertEqual(arch9 & arch14, set())
+        self.assertTrue(arch14 < arch12, 'arch 14 permits strictly less than arch 12')
+        self.assertEqual(len(arch12 - arch14), 0x20, 'the range that was wrongly refused')
+
+
 class TestGetVersion(unittest.TestCase):
     """Response code then twelve bytes out of a block another routine fills."""
 

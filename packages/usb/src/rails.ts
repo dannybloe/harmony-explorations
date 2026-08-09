@@ -47,10 +47,17 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [12];
  * `0x3D0000`, inside that range, so the last 192 KiB of the nominal region is not spare at all.
  * A writer that trusted the nominal top would erase the firmware.
  *
- * Client sourced and unconfirmed, `docs/host-client.md`, and adopted anyway because of which way
- * it cuts: it makes the rail **refuse more**. Tightening a refusal on weak evidence costs a write
- * that might have been fine; loosening one costs a remote. Confirm it from the firmware before
- * anything relies on the exact number.
+ * **Measured on 9 August 2026, on a Harmony One, and it was right.** This was adopted from the
+ * vendor client as an unconfirmed number, on the argument that it only makes the rail refuse more,
+ * with a note to confirm it before anything relied on it. Reading the remote's own flash at
+ * `0x3D0000` returns an image header with the `48 47` magic and version `0x34`, byte identical to
+ * the 3.4 package's application phase and to the running copy at `0x020000`. So the top 192 KiB of
+ * the nominal config region holds the firmware, on the actual device. `docs/findings.md`
+ * section 88.
+ *
+ * That read had never happened before because this library refused the address: arch 14's bound had
+ * been applied to arch 12 as well. Worth remembering as a shape: a wrong refusal hides whatever it
+ * refuses, and the thing it was hiding here is the reason this constant exists.
  */
 export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
   12: 0x3d0000,

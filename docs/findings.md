@@ -10154,15 +10154,25 @@ image and builds a different literal:
 263bc: 13 e2       BC 0x263e4        ; at or above 0x40, reject
 ```
 
-| architecture | first rejected top byte | so flash ends below | the part |
-|---|---|---|---|
-| 12, Harmony One | `0x40` | `0x400000`, 4 MiB | Atmel AT49BV322A, 32 Mbit |
-| 14, Harmony 600 | `0x20` | `0x200000`, 2 MiB | EON F16, 16 Mbit |
+**Arch 9 makes it three, and it is a window rather than a ceiling.** A Harmony 525 was on the
+bench too, and its validator at `0x02E30` compares against `0x80` and then against `0x88`, refusing
+below the first and at or above the second. It needs a floor because its serial flash is addressed
+a megabyte up, which section 76 measured on hardware and could not explain from any code.
 
-**Each bound is exactly the capacity of that model's flash part.** That is what makes the pair a
+| architecture | the window | span | the part |
+|---|---|---|---|
+| 9, Harmony 525 | `0x80` to `0x88` | 512 KiB | 25F040 |
+| 12, Harmony One | below `0x40` | 4 MiB | Atmel AT49BV322A, 32 Mbit |
+| 14, Harmony 600 | below `0x20` | 2 MiB | EON F16, 16 Mbit |
+
+**Each window is exactly the capacity of that model's flash part.** That is what makes this a
 measurement rather than a protocol detail: a single firmware refusing addresses above its flash
-would only show that somebody wrote a bound, and two firmwares whose bounds differ by exactly the
-ratio of their parts shows what the bound is for.
+would only show that somebody wrote a constant, and three whose constants track three different
+chips shows what the constant is for.
+
+It also settles arch 9's window from the other direction. `ARCH9_FLASH_TOP_MIN` and `MAX` were
+measured on a live 525 the day before, by trying addresses until one answered, and had no firmware
+behind them. They have one now, and the two agree exactly.
 
 So the arch 14 external flash is **2 MiB**, and the question section 87 left open is closed by the
 firmware, which is this project's authoritative source. The three routes that already said 2 MiB
@@ -10199,13 +10209,81 @@ number nobody committed to in advance is worth much less:
 
 That is one address behaving differently on two remotes, predicted from two disassembled validators.
 
+### The measurement, and it found more than it was for
+
+Both bench remotes attached at once, 9 August 2026, read only. Every read below went through
+`packages/usb`, and each one is preceded by a `GET_VERSION` for a reason given under the next
+heading.
+
+| address | Harmony One, arch 12 | Harmony 600, arch 14 |
+|---|---|---|
+| `0x200000` | **answers**, erased | **silent**, and awake: its version reply came back first |
+| `0x3F0000` | answers, and not erased | refused before the wire |
+| `0x400000` | refused before the wire | refused before the wire |
+
+One address, two remotes, opposite outcomes, predicted from two disassembled validators and
+committed before either remote was connected. `0x400000` is our own refusal rather than a device
+measurement, and that is what it should be: the bound comes from the firmware and the library
+enforces it before sending.
+
+**The upper half of a Harmony One's flash had never been read, and the reason is the bug being
+corrected.** `docs/memory-map-one.md` said "everything else is erased" of a region no read had ever
+reached, because `validateRegionByte` refused it. What is up there:
+
+| address | length | what |
+|---|---|---|
+| `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4 |
+| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, unidentified |
+
+The first is byte identical to the 3.4 package's `Firmware_Main` phase over the 64 bytes compared,
+carries the `48 47` header magic with version `0x34`, and is exactly 60050 bytes, the same length as
+the copy at `0x020000`. The two copies are identical over the 16 bytes compared. **So a Harmony One
+holds its application firmware twice**: the running copy at `0x020000`, which it executes in place,
+and a stored copy at `0x3D0000`.
+
+Not an alias of the low copy, which is worth stating because a flash that ignored an address bit
+would fake exactly this. The offset would have to be `0x3B0000`, which would put the config's
+`GSPM` at `0x040000` onto `0x3F0000`, and `0x3F0000` holds the repeating pattern instead.
+
+**`WRITABLE_CEILING` is measured now.** It was adopted from the vendor client as an unconfirmed
+constant, on the argument that it only makes the rail refuse more, with a note to confirm it from
+the firmware before anything relied on the number. It is confirmed by something better than the
+firmware: the remote itself. There really is an application firmware image at `0x3D0000` on a real
+Harmony One, and a writer that trusted the nominal `0x400000` top would have erased it.
+
+The last 64 KiB block is unexplained. It is one whole erase block, filled with alternating `0x00`
+and `0xFF` except that the final two bytes are both `0x00`, and nothing here has looked for what
+writes it.
+
+### A remote that has been idle loses the first command sent to it
+
+Found by nearly drawing the wrong conclusion from it. `read-window.ts` sent one command and got
+nothing back from a Harmony One **at its own config base**, an address that certainly works. Three
+reads of the same address immediately afterwards all returned the config. So the first command was
+lost, not refused.
+
+That matters here more than it would anywhere else, because this section's whole measurement is
+"does this address answer". A silence with two possible causes proves nothing, and the silence at
+`0x200000` on the 600 is the result the section rests on. So `read-window.ts` sends `GET_VERSION`
+first and reports a failure there as the remote not answering, rather than as an empty window. The
+600's version reply is in the log beside its silence, which is what makes that silence evidence.
+
+Logitech's own config headers carry a message for this: "press any button on your Harmony to wake
+it up". It was in the corpus the whole time, in the `CONFIGURATION` block section 87 read for other
+reasons.
+
 ### Where it lands
 
 * `packages/usb/src/protocol.ts`, the bound per architecture with no default.
 * `packages/usb/test/protocol.test.ts` and `test/remote.test.ts`, where `0x200000` is now the
   address that separates the two rather than a constant both refuse.
 * `docs/memory-map-600.md` and `docs/memory-map-700.md`, whose flash size was open and is not.
-* `packages/usb/bin/read-window.ts`, which is the tool this needed and did not have.
+* `docs/memory-map-one.md`, which gains the two rows above and loses a sentence that described a
+  region nothing had read.
+* `packages/usb/bin/read-window.ts`, which is the tool this needed and did not have, with the
+  version exchange it needed after the first measurement nearly went wrong.
+* `docs/host-client.md`, where `WRITABLE_CEILING` moves out of the ledger of things believed on the
+  client's word alone.
 
 
 ## References

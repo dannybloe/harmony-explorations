@@ -20,8 +20,19 @@ Memory mapped, and the application executes in place from it.
 | `0x002000` to `0x0042C6` | 8902 | the **safe mode config**, a `GSPM` container, format 1.6 | read off the device, and byte identical to the first part of the 3.4 package's `Region_2` |
 | `0x020000` to `0x02EA92` | 60050 | the **application firmware**, version 3.4 | read off the device, byte identical to the archived 3.4 package, own checksum verifies |
 | `0x040000` to `0x400000` | 3840 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex` |
+| `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4, a second copy | read off the device, byte identical to the copy at `0x020000` and to the archived 3.4 package |
+| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Unidentified | read off the device |
 
-Everything else is erased, including all of `0x010000` to `0x020000`.
+Everything else is erased, including all of `0x010000` to `0x020000` and `0x3DEA92` to `0x3F0000`.
+
+**The last two rows sit inside the user config region and were found on 9 August 2026**, which is
+late for a remote this project has read in full, and the reason is instructive: `packages/usb`
+refused every address above `0x200000` on this architecture, because arch 14's address bound had
+been applied to arch 12 as well. So the upper half of this flash had never been read and the
+sentence above used to claim it was erased. `findings.md` section 88.
+
+**The stored copy is what `WRITABLE_CEILING` protects.** A writer that took the nominal top of the
+config region at face value would erase the remote's own firmware.
 
 Two independent closures on the last row. concordance reports the config region as 3840 KiB, and
 `0x040000` plus 3840 KiB is exactly `0x400000`, which is the 4 MiB the part holds. The flash

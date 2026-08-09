@@ -14,6 +14,13 @@
  *
  * Internal program memory is deliberately not reachable from here. It has its own path with a one
  * chunk cap, because a multi chunk internal read restarts the remote.
+ *
+ * **It sends `GET_VERSION` first, and that is not politeness.** A remote that has been idle loses
+ * the first command sent to it: a Harmony One returned nothing at its own config base on the first
+ * try and the same read three times in a row immediately after. Since the question this tool
+ * usually answers is "does this address answer", a silence with two possible causes is worthless,
+ * so the version exchange goes first and its failure is reported as the remote not answering
+ * rather than as an empty window.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 
@@ -67,8 +74,22 @@ if (candidates.length > 1) {
 const found = candidates[0] as { productId: number };
 process.stdout.write(`product 0x${found.productId.toString(16)}\n`);
 
-const remote = new HarmonyRemote(await openHarmony({ productId: found.productId }));
+const architecture = number(argument('architecture'), 'the architecture');
+const remote = new HarmonyRemote(
+  await openHarmony({ productId: found.productId }),
+  architecture === undefined ? {} : { architecture },
+);
 try {
+  // The wake up and the go/no-go in one. See the note at the top: without it, a lost first command
+  // is indistinguishable from an address the device refuses, which is the thing this tool is for.
+  let version: Uint8Array;
+  try {
+    version = await remote.getVersion();
+  } catch (error) {
+    fail(`the remote is not answering: ${(error as Error).message}`);
+  }
+  process.stdout.write(`version   ${hex(version)}\n`);
+
   const first = await remote.readFlash(address, count);
   process.stdout.write(`0x${address.toString(16).padStart(6, '0')}  ${hex(first)}  |${ascii(first)}|\n`);
 
