@@ -11388,6 +11388,48 @@ is read, the validator in front of it is read, the chunker and the parse are rea
 case is in none of them. The rail does not depend on it, because it refuses odd counts everywhere,
 which is strictly more than the hazard needs.
 
+## 95. A remote stays in USB mode when the cable goes, and its own software never lets that happen
+
+An owner's observation on 9 August 2026, and it turns out to be a product requirement rather than a
+curiosity: pull the cable and the Harmony One keeps showing USB mode until the batteries come out.
+
+### The firmware can see the cable go
+
+The USB stack tests the bits that would tell it. `0x200E0` tests `UCON` bit 5, `SE0`, which is the
+bus reset and detach condition, and `0x2011A` tests `SUSPND`. The service routine at `0x2D886`
+handles `UIR` bit 3 `TRNIF` and bit 4 `IDLEIF` and bit 2 `ACTVIF`, and the state machine enables
+`URSTIE` and `IDLEIE` in `UIE` before it moves on. A detach looks exactly like idle, so the module
+notices.
+
+So the mechanism is not missing. What is missing is anything that takes the **application** out of
+USB mode on that event, and this section has not found one.
+
+### Logitech's own software never relies on it
+
+Every operation in the Desktop client's own files ends with an explicit command rather than with a
+disconnect, `docs/host-client.md`. The config write ends with a reset, `0xE0 0x02`, marked to wait
+for the remote to reboot. The learn session ends with a restart command carrying a stop entry point.
+And the entry point table's first value is **terminate**.
+
+So the remote is designed to be told when a session is over. Pulling the cable is not that, and it
+is not a case their software ever exercises.
+
+### What it means for the application
+
+**A session has to be ended, not abandoned.** Version 1 of FreeHarmony is read only and closing a
+handle is all it does, so it leaves a remote in USB mode exactly as observed. Ending it properly
+means sending a command, which is a state change and therefore sits behind `WRITES_ENABLED` in
+`packages/usb/src/rails.ts` along with everything else that changes a remote.
+
+That is worth having written down before the product is built, because it is the kind of thing that
+reads as a bug report from the first user and is a design decision here. Until then the honest
+behaviour is what this project already does: leave the remote alone, and tell the user that the
+batteries clear it.
+
+**Which command is not established.** `0xE0 0x02` is a reset and the client uses it after a write;
+whether a read only session should reset a remote at all is a product question rather than a
+protocol one, and the terminate entry point may be the gentler answer.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
