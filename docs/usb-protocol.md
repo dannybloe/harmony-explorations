@@ -309,8 +309,15 @@ length nibble is computed so its code byte is never a literal. Section 91 has th
 
 What is established instead is that **every architecture configures CCP2 as a capture on both
 edges** while CCP1 does the transmit carrier, so all four remotes have a working infrared receiver
-in firmware, arch 9 included. Whether its samples reach USB, or only the remote's own
-configuration, is the open question. The report layout the client expects is in
+in firmware, arch 9 included. And the samples **do** reach the host during a session: the owner
+used this feature with the classic software and the client recognised a received code immediately,
+which is a first hand account rather than a measurement and is still the best evidence available.
+
+**What no search has found is the sender.** No state body emits `0x90` on either architecture, 10
+states on the One and 70 on the 700; the byte at a time sender's 32 callers all lie in the command
+response region; and the response buffer's pointer and counter are touched only inside the USB
+transport layer. The capture driver touches none of it. So an assumption in that search is wrong,
+and section 91 lists the candidates. The report layout the client expects is in
 `docs/host-client.md`, marked unconfirmed.
 
 **This is why `0x40` WRITE_FLASH_DATA is absent from the main table.** WRITE_FLASH sets state

@@ -709,14 +709,15 @@ produce a config the remote accepts and mishandles.
   architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
-* **Whether a learn session's samples reach USB**, section 91. The bracket is firmware fact: `0x70`
-  opens, `0x80` has its own one entry dispatch that exists only inside a session, any other command
-  ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. And the **receiver exists on
-  all four architectures**, CCP2 in capture on both edges while CCP1 drives the transmit carrier,
-  with a start, a stop and a double read glitch check. What is not established is whether the
-  captured samples go to the host or only into the remote's own configuration: the capture driver's
-  callers were not walked to the top. The report layout a host would expect is in
-  `docs/host-client.md`, client sourced and unconfirmed.
+* **Where a learn session's samples leave the remote**, section 91. The bracket is firmware fact:
+  `0x70` opens, `0x80` has its own one entry dispatch that exists only inside a session, any other
+  command ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. The **receiver exists
+  on all four architectures**, CCP2 in capture on both edges while CCP1 drives the transmit carrier.
+  And the samples **do** reach the host live, on the owner's first hand account of using the classic
+  software. What no search has found is the sender: no state body on either architecture emits
+  `0x90`, the byte sender's 32 callers are all in the command response region, and the response
+  buffer is touched only by the USB transport layer. **So an assumption is wrong**, and the next
+  pass goes forward from the capture interrupt rather than backwards from the response builder.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on

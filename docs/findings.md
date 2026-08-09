@@ -10618,11 +10618,45 @@ clears; and `0x2B47E` reads the capture register **twice into two different pair
 them**, which is a glitch check on a value that can change under the read. `0x2B510` clears eight
 state bytes and jumps into the starter, so it is the session initialiser.
 
-So the capability is not in doubt on any architecture here. **What is still open is whether those
-samples ever reach USB**: the capture driver's callers were not walked to the top of the chain, and
-the arch 12 executor for states 6 and 7 acknowledges and returns like arch 14's does. A remote that
-learns into its own configuration standalone would need every part found so far and no USB path at
-all, so finding the receiver does not decide it.
+So the capability is not in doubt on any architecture here.
+
+### The samples do reach the host, and the firmware search cannot find how
+
+The owner used this feature. With the classic software the remote was put into a learning mode, a
+second remote was held against the back of it, a button was pressed, and **the client recognised
+the received code immediately** and moved on to processing it. That is a first hand account of
+observed behaviour, recorded here as such: it is not a measurement and it is not firmware, and it
+is still much better evidence about what the system did than anything derivable from a client that
+nobody has run.
+
+It settles the question this section was holding open. The samples reach the host live, during the
+session, which is exactly the model Logitech's own learning service implements. So a sender exists.
+
+**And an exhaustive search of the response path does not contain it.** On both architectures:
+
+* every state body in the machine emits its response codes as literals or as a code ORed with a
+  computed length nibble, and the scan sees both forms. The One has 10 states and the 700 has 70.
+  **Not one of them emits `0x90`**, on either architecture.
+* the byte at a time sender has 32 callers on the One and every one of them lies inside the command
+  response region, `0x26980` to `0x26D92`. None is in the capture driver.
+* the response buffer's write pointer and its length counter are touched only inside the USB
+  transport layer, `0x2003C` to `0x203BE`. The capture driver touches neither.
+* the internal `0xFE` pages carry no separate learner: the One's configures no capture at all, and
+  the 600's hits are its own application firmware at the same addresses.
+
+Every one of those is a fact, and together they say a search from the response path backwards has
+been run out. So **an assumption in that search is wrong**, and naming the candidates is more useful
+than another pass:
+
+* the sender may write into the endpoint buffer directly rather than through the queue that every
+  command response uses, in which case none of the four bullets above could ever have seen it;
+* the remote in the recollection may not have been a Harmony One, and arch 7, 8 and 9 are all
+  earlier and all plausible for the classic software;
+* the code byte may not be assembled anywhere near the data, for instance held in a table with the
+  rest of a report template.
+
+The next pass goes **forward from the capture interrupt** rather than backwards from the response
+builder, which is the direction that has not been tried. `0x2B46C` is where to start on the One.
 
 ### What the client supplies, and it is unconfirmed
 
