@@ -859,8 +859,10 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   was answering USB at that moment. `READ_MISC` selector `0x07` is serviced on arch 9 and returns
   zero for every address, so there is no instrument there at all. The keypad came out of the
   firmware instead: 8 by 8, `group * 8 + column`, sensed on one line, and both 525 configs bind the
-  same 50 codes in the seven of eight lattice that implies. **Fifty matrix buttons, unconfirmed
-  against the physical remote**, and that is the cheapest open item in this document.
+  same 50 codes in the seven of eight lattice that implies. **Fifty matrix buttons, predicted and
+  then counted on the remote**, with the prediction committed before the count. So on arch 9 every
+  matrix button is bound and every bound code has a button, which is a tighter fit than the 600's
+  and it cost one count rather than an evening at the keypad.
 * **A mode has pages**, section 66, and that is where the last large structure was. Base slot 6's
   entry was read as four bytes and it is `6 + 3 * pages`: a `u16` count and an array of page
   addresses, each page naming a tagged list of its own and a screen program. Found by asking the

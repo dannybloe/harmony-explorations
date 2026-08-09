@@ -105,6 +105,11 @@ class TestTheHarmony600Keypad(unittest.TestCase):
 # of the second dimension. findings.md section 89.
 ARCH9_GROUP_OFFSETS = (0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38)
 ARCH9_COLUMNS = 8
+
+# Counted by hand on the bench Harmony 525 on 9 August 2026, after the derivation predicting it had
+# been committed. The only hardware number in this half of the file, and the only one there needs to
+# be: arch 9 senses on one line, so pressing keys while the host watches yields nothing at all.
+BUTTONS_COUNTED_ON_THE_525 = 50
 ARCH9_CONTAINERS = ('h525_config', 'h525_config_2', 'h525_safemode_ahcm')
 
 # The event bits of a key record, which a mode record's entries carry too. findings.md section 52.
@@ -134,10 +139,10 @@ def arch9_press_codes(name):
 class TestTheHarmony525Keypad(unittest.TestCase):
     """findings.md section 89: arch 9's keypad, derived rather than pressed.
 
-    No hardware measurement backs this one, and that is the point of it: the arch 14 census cost an
-    evening of pressing 54 buttons, and the arch 9 equivalent falls out of the firmware's own
-    lattice meeting the configs' own codes. What it does not give is which physical button a code
-    belongs to, because arch 9 senses on a single line.
+    The arch 14 census cost an evening of pressing 54 buttons; the arch 9 equivalent falls out of
+    the firmware's own lattice meeting the configs' own codes, and the one hardware number it needs
+    is a count of the buttons. What it still does not give is which physical button a code belongs
+    to, because arch 9 senses on a single line.
     """
 
     def setUp(self):
@@ -181,10 +186,15 @@ class TestTheHarmony525Keypad(unittest.TestCase):
         self.assertEqual(sorted(codes), [n for n in sorted(lattice) if n <= max(codes)])
         self.assertEqual([n for n in sorted(lattice) if n > max(codes)], [58, 59, 60, 61, 62, 63])
 
-    def test_the_predicted_button_count_is_stated(self):
-        """Fifty matrix buttons on a Harmony 525. Unconfirmed against the physical remote, and
-        recorded here so that counting them later refutes something."""
-        self.assertEqual(len(arch9_press_codes('h525_config')), 50)
+    def test_the_bound_codes_match_the_buttons_counted_on_the_remote(self):
+        """The closure against hardware, and it needed no presses.
+
+        Fifty was derived from firmware plus config and committed before anyone looked, and the
+        owner then counted fifty buttons on the bench 525 on 9 August 2026. Equality in both
+        directions is the content: every matrix button is bound and every bound code has a button,
+        where the 600 has two matrix positions with neither.
+        """
+        self.assertEqual(len(arch9_press_codes('h525_config')), BUTTONS_COUNTED_ON_THE_525)
 
 
 if __name__ == '__main__':

@@ -1952,9 +1952,10 @@ The two user configs bind **the same fifty codes** and the safe mode container's
 subset. The arch 9 scanner produces `group * 8 + column` with both running 1 to 8, so a code runs 1
 to 64; not one bound code in any of the three containers is a multiple of eight, so that column
 binds nothing, and within the resulting lattice of eight groups of seven the fifty are contiguous
-from 1 to 57. That implies fifty matrix buttons on a Harmony 525, which is a prediction about the
-physical remote and is **unconfirmed**: counting the buttons is what would settle it. See
-[findings.md](findings.md) section 89 for the firmware side.
+from 1 to 57. That implies fifty matrix buttons on a Harmony 525, **confirmed on the physical remote
+on 9 August 2026**, its owner counting fifty. So every matrix button is bound and every bound code
+has a button, with nothing left over on either side. See [findings.md](findings.md) section 89 for
+the firmware side.
 
 ### The key table is not the button to action map
 

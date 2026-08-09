@@ -720,7 +720,9 @@ produce a config the remote accepts and mishandles.
   the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
   8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50
   codes, none a multiple of eight and contiguous in the resulting lattice to 57. So **the 525 has
-  fifty matrix buttons**, which is the one part of it a person with the remote could refute.
+  fifty matrix buttons**, predicted from firmware plus config and then **counted on the remote**,
+  which makes it the one architecture where every matrix button is bound and no bound code lacks a
+  button.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
