@@ -295,6 +295,100 @@ export function irCarrier(c: Container, address: number): IrCarrier | undefined 
   return { periodNs, onNs, hertz: periodNs === 0 ? 0 : 1e9 / periodNs };
 }
 
+/**
+ * Build a class 1 duration block from a bare list of pulses, the shape a learn session produces.
+ *
+ * The point of this function is that it takes **no container**. Everything else in this file reads
+ * a config that Logitech's service compiled; this makes the bytes of a code that has never existed,
+ * from nothing but timings and a carrier, which is what learning a code means and what
+ * `docs/findings.md` section 91 leaves open on the transport side. If it were only reachable
+ * through a container it could not answer the question it exists to answer.
+ *
+ * A duration above `IR_PULSE_MAX` is refused rather than truncated. Fifteen bits is the whole field
+ * and the firmware reads the sixteenth as the carrier flag, so a longer gap has to be spelled as
+ * several words, which is what the corpus does and what a caller must decide rather than this.
+ */
+export const IR_PULSE_MARK = 0x8000;
+export const IR_PULSE_MAX = 0x7fff;
+
+export class IrEncodeError extends Error {}
+
+export function irBuildBlock(pulses: readonly IrPulse[]): Uint8Array {
+  const bytes = new Uint8Array(2 * (pulses.length + 1));
+  pulses.forEach((pulse, i) => {
+    if (!Number.isInteger(pulse.microseconds) || pulse.microseconds < 0) {
+      throw new IrEncodeError(`pulse ${i} is not a whole number of microseconds`);
+    }
+    if (pulse.microseconds > IR_PULSE_MAX) {
+      throw new IrEncodeError(
+        `pulse ${i} is ${pulse.microseconds} us, above the ${IR_PULSE_MAX} a word holds`,
+      );
+    }
+    const word = pulse.microseconds | (pulse.mark ? IR_PULSE_MARK : 0);
+    bytes[2 * i] = word & 0xff;
+    bytes[2 * i + 1] = word >>> 8;
+  });
+  // The terminating zero word is already there, since the buffer starts zeroed and is one word
+  // longer than the pulse list.
+  return bytes;
+}
+
+/** The period a carrier frequency is stored as: truncated, never rounded. Section 92. */
+export function irPeriodFor(hertz: number): number {
+  if (!(hertz > 0)) throw new IrEncodeError('a carrier frequency must be positive');
+  const periodNs = Math.floor(1e9 / hertz);
+  if (periodNs > IR_CARRIER_MAX_NS) {
+    throw new IrEncodeError(`${hertz} Hz is slower than the firmware's ${IR_CARRIER_MAX_NS} ns cap`);
+  }
+  return periodNs;
+}
+
+export interface IrRecordFields {
+  /** Carrier period in nanoseconds. `irPeriodFor` turns a frequency into one. */
+  periodNs: number;
+  /** Where this record's own first byte lands. Placement, which the caller decides. */
+  start: number;
+  /** Block addresses, in slot order, NULLs included. Length must be a multiple of three. */
+  pointers: readonly number[];
+  /** The byte at `+0`, zero in every record of the corpus. */
+  spare?: number;
+  encoding?: number;
+}
+
+/**
+ * Build a class 1 record header from fields.
+ *
+ * Content and placement are separated deliberately. The carrier and the class come out of what was
+ * learned; `start` and `pointers` are addresses, which depend on where everything else in the
+ * config ended up, and section 55's rule that a picture's position is implied by everything before
+ * it applies here too. So this refuses to invent them.
+ */
+export function irBuildRecord(fields: IrRecordFields): Uint8Array {
+  const { periodNs, start, pointers } = fields;
+  if (pointers.length === 0 || pointers.length % IR_POINTERS_PER_GROUP !== 0) {
+    throw new IrEncodeError(`${pointers.length} pointers is not a whole number of groups`);
+  }
+  const groups = pointers.length / IR_POINTERS_PER_GROUP;
+  if (groups > 0xff) throw new IrEncodeError(`${groups} groups does not fit the count byte`);
+  if (periodNs <= 0 || periodNs > IR_CARRIER_MAX_NS) {
+    throw new IrEncodeError(`carrier period ${periodNs} ns is outside the firmware's range`);
+  }
+  const bytes = new Uint8Array(IR_HEADER_BASE + IR_HEADER_GROUP * groups);
+  const put24 = (at: number, value: number): void => {
+    bytes[at] = value & 0xff;
+    bytes[at + 1] = (value >>> 8) & 0xff;
+    bytes[at + 2] = (value >>> 16) & 0xff;
+  };
+  bytes[0] = fields.spare ?? 0;
+  put24(IR_CARRIER_AT, periodNs);
+  put24(IR_CARRIER_ON_AT, periodNs >> 1);
+  bytes[7] = fields.encoding ?? IR_CLASS_STREAM;
+  put24(8, start);
+  bytes[IR_GROUP_COUNT_AT] = groups;
+  pointers.forEach((pointer, i) => put24(IR_HEADER_BASE + 3 * i, pointer));
+  return bytes;
+}
+
 export interface IrGroup {
   addresses: number[];
   /** The group's own array, so the accounting claims exactly what was read. */

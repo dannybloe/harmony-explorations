@@ -14,8 +14,19 @@ import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   IR_CARRIER_AT,
   IR_CARRIER_MAX_NS,
+  IR_CLASS_STREAM,
+  IrEncodeError,
+  irBlockWords,
+  irBuildBlock,
+  irBuildRecord,
   irCarrier,
+  irClass,
   irGroups,
+  irHeaderLength,
+  irHeaderPointers,
+  irPeriodFor,
+  irRecordBlocks,
+  irRecordStart,
   parse,
   payloadOf,
 } from '../src/index.ts';
@@ -164,6 +175,86 @@ test('read the other way round the fields are not a carrier', skipWithoutLab(), 
   assert.ok(records > 0);
   assert.equal(halves, 0, 'big endian does not halve');
   assert.equal(inBand, 0, 'big endian is not a consumer carrier');
+});
+
+/**
+ * Milestone M2's third part asked the same question of a whole container. This asks it of one
+ * infrared code, built from nothing but timings: can this codec make the bytes of a code that has
+ * never existed. Learning a code produces a carrier and a list of durations and nothing else, so if
+ * those two are enough to reconstruct a record byte for byte, then a learn path does not need
+ * Logitech's service to store what it captured. `docs/findings.md` sections 91 and 92.
+ */
+for (const name of WITH_INFRARED) {
+  test(`${name} rebuilds every class 1 record from timings alone`, skipUnless(name), () => {
+    const c = container(name);
+    let records = 0;
+    let blocks = 0;
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        if (irClass(c, address) !== IR_CLASS_STREAM) continue;
+        const carrier = irCarrier(c, address);
+        const start = irRecordStart(c, address);
+        const off = start === undefined ? undefined : c.blobOffsetOf(start);
+        if (carrier === undefined || start === undefined || off === undefined) continue;
+
+        // The header, from the carrier and the addresses and nothing else.
+        const built = irBuildRecord({
+          periodNs: carrier.periodNs,
+          start,
+          pointers: irHeaderPointers(c, address),
+          spare: c.blob[off] ?? 0,
+        });
+        const original = c.blob.subarray(off, off + irHeaderLength(c, address));
+        assert.deepEqual([...built], [...original], `header of the record at ${start}`);
+        records += 1;
+
+        // And each duration block, from its pulses read back as a learn session would deliver
+        // them: marks and spaces in microseconds, with no word format in sight.
+        for (const block of irRecordBlocks(c, address)) {
+          const words = irBlockWords(c, block);
+          const at = c.blobOffsetOf(block);
+          if (words === undefined || at === undefined) continue;
+          const pulses = words.slice(0, -1).map((w) => ({
+            mark: w >> 15 === 1,
+            microseconds: w & 0x7fff,
+          }));
+          const rebuilt = irBuildBlock(pulses);
+          assert.deepEqual([...rebuilt], [...c.blob.subarray(at, at + 2 * words.length)]);
+          blocks += 1;
+        }
+      }
+    }
+    // Arch 9 is class 5 in every record, section 82, so it has nothing for this builder to make
+    // and saying so is worth more than skipping it: if a class 1 record ever turned up there, the
+    // corpus would have changed under a claim this file rests on.
+    if (c.architecture === 9) {
+      assert.equal(records, 0, 'arch 9 carries no class 1 record');
+      return;
+    }
+    assert.ok(records > 0, 'the sample has class 1 records');
+    assert.ok(blocks > 0, 'and they name duration blocks');
+  });
+}
+
+test('a period is built by truncating, which is what the corpus did', () => {
+  for (const [hertz, periodNs] of CARRIERS) assert.equal(irPeriodFor(hertz), periodNs);
+  // The negative for the whole builder: rounding is the plausible wrong choice and it is one byte
+  // away from the right one, so it gets its own assertion rather than resting on the table above.
+  assert.notEqual(irPeriodFor(36_000), Math.round(1e9 / 36_000));
+});
+
+test('the builder refuses what it cannot spell rather than truncating', () => {
+  // A gap longer than fifteen bits has to become several words, and which several is the caller's
+  // decision. Silently truncating would produce a config the remote accepts and mishandles, which
+  // is the failure mode every rail in this project exists to prevent.
+  assert.throws(() => irBuildBlock([{ mark: false, microseconds: 40_000 }]), IrEncodeError);
+  assert.throws(() => irBuildBlock([{ mark: true, microseconds: -1 }]), IrEncodeError);
+  // Two pointers is not a group. The firmware reads three per group and a short array would make
+  // it read the next record's bytes as an address.
+  assert.throws(() => irBuildRecord({ periodNs: 26_315, start: 0, pointers: [1, 2] }), IrEncodeError);
+  // And a carrier the firmware would clamp is refused here instead, because a clamp is a silent
+  // rewrite of what the caller asked for.
+  assert.throws(() => irPeriodFor(1_000), IrEncodeError);
 });
 
 /** Blob offset of the record `address` names, from the back pointer the firmware follows. */

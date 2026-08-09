@@ -10845,6 +10845,27 @@ five infrared groups and 56.3 kHz inside the fifth, alongside 38 kHz, so a group
 carrier either. Anything that learns a code has to state a carrier for it, and section 91 is where
 the measurement of one would come from.
 
+### A class 1 record can now be built from timings alone, which is the point of reading it
+
+`irBuildBlock` and `irBuildRecord` in `packages/codec/src/ir.ts` take **no container**. They take a
+carrier and a list of marks and spaces in microseconds, which is exactly what a learn session
+produces and all it produces, and they return the bytes. Every class 1 record in the corpus,
+across arch 8, arch 12 and arch 14, comes back byte for byte when its own carrier and pulses are
+fed back through them.
+
+That is worth stating plainly because of what it settles. Section 42 established that Logitech's
+**server** chose the encoding class, and section 91 that the classic service which did it is the
+discontinued one, which raised the question of whether learning a code is possible at all without
+it. It is: a class 1 record is a raw duration list plus a carrier, nothing in it is a choice the way
+a picture encoding is, and this codec can make one. What the server added was compression, matching
+against its database, and a name. Losing it costs the compression, not the capability.
+
+Two things this does not do, and neither is a detail. It does not place a record: `start` and the
+block addresses are parameters, because a record's position is implied by everything around it, the
+same rule section 55 states for pictures. And it does not measure a carrier, which is section 91's
+open transport question. **Building the bytes was the part that could be settled without hardware,
+and it is settled.**
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
