@@ -20,8 +20,8 @@ Memory mapped, and the application executes in place from it.
 | `0x002000` to `0x0042C6` | 8902 | the **safe mode config**, a `GSPM` container, format 1.6 | read off the device, and byte identical to the first part of the 3.4 package's `Region_2` |
 | `0x020000` to `0x02EA92` | 60050 | the **application firmware**, version 3.4 | read off the device, byte identical to the archived 3.4 package, own checksum verifies |
 | `0x040000` to `0x400000` | 3840 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex` |
-| `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4, a second copy | read off the device, byte identical to the copy at `0x020000` and to the archived 3.4 package |
-| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Unidentified | read off the device |
+| `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4, a second copy | read off **both** remotes, byte identical to the copy at `0x020000` and to the archived 3.4 package |
+| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Unidentified | read off **both** remotes, identical |
 
 Everything else is erased, including all of `0x010000` to `0x020000` and `0x3DEA92` to `0x3F0000`.
 

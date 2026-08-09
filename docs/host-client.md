@@ -231,8 +231,9 @@ a remote.
 
 **`WRITABLE_CEILING` was confirmed the same day, and by the device rather than by the firmware.**
 Reading a Harmony One's own flash at `0x3D0000` returns an application firmware image, byte
-identical to the archived package and to the copy the remote runs from. So the client was right and
-the top 192 KiB of the nominal config region is not spare. `docs/findings.md` section 88.
+identical to the archived package and to the copy the remote runs from, **on both Harmony Ones**,
+one of which has never had vendor software near it. So the client was right and the top 192 KiB of
+the nominal config region is not spare. `docs/findings.md` section 88.
 `ERASE_BLOCK_SIZE` is still unconfirmed, and confirming it means erasing something, so it will stay
 that way for a while.
 

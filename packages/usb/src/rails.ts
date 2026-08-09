@@ -52,8 +52,9 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [12];
  * with a note to confirm it before anything relied on it. Reading the remote's own flash at
  * `0x3D0000` returns an image header with the `48 47` magic and version `0x34`, byte identical to
  * the 3.4 package's application phase and to the running copy at `0x020000`. So the top 192 KiB of
- * the nominal config region holds the firmware, on the actual device. `docs/findings.md`
- * section 88.
+ * the nominal config region holds the firmware, on the actual device, and **on both Harmony Ones**:
+ * the programmed one has had nothing but reads from this project, so this is a property of the
+ * model rather than something a vendor sync left behind. `docs/findings.md` section 88.
  *
  * That read had never happened before because this library refused the address: arch 14's bound had
  * been applied to arch 12 as well. Worth remembering as a shape: a wrong refusal hides whatever it

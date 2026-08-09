@@ -10282,6 +10282,23 @@ all. The same question applies to the `00 FF` block: a factory pattern or someth
 outcome and it is what the client's separate declaration of a firmware region implies, since it
 declares the region for every arch 12 remote rather than for a state a remote can be in.
 
+**Measured the same day, and the dull outcome is what happened.** Both Harmony Ones were attached
+at once and read through their device paths, then identified from what they hold rather than from
+the path or the label: one config head matches `one_spare_after_sync` and the other matches the
+programmed One's own `.EZHex`, byte for byte over 32 bytes.
+
+| address | spare One | programmed One |
+|---|---|---|
+| `0x3D0000` | the 3.4 image, 64 of 64 bytes identical to the package | identical |
+| `0x3E0000` | erased | erased |
+| `0x3F0000` | `00 FF` repeating | identical |
+| `0x3FFFF0` | ends `00 00` | identical |
+
+The programmed One has had nothing but reads from this project and no vendor software near it. So
+the stored firmware copy is a property of the model, the staging area reading is ruled out because
+the stored copy is the version the remote runs, and **`WRITABLE_CEILING` now rests on two units**,
+one of which has never been written to by anything in living memory.
+
 ### A remote that has been idle loses the first command sent to it
 
 Found by nearly drawing the wrong conclusion from it. `read-window.ts` sent one command and got
