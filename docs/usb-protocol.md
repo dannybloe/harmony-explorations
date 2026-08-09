@@ -289,6 +289,24 @@ The dispatch at `0x0BDCA` is itself gated on that state, at `0x0BDB2`:
 * state 5: `0x0C5D4`
 * anything else: `0x0C5EE`
 
+### Learning infrared is a bracket, and only two commands are inside it
+
+The state 5 chain at `0x0C5D4` accepts **exactly one command, `0x80`**, and it sets the state
+variable to 6. So `0x80` STOP_IRCAP exists only inside a learning session, which is why it is
+absent from the idle dispatch table above. **Any other command during a session ends it**: the
+fall through at `0x0C5EE` clears the state to 0 and sets the error byte, with no error reply.
+
+States 6 and 7 share one executor, `0x0CB20`, which sets the state to 7 and emits `0xF0` then
+`0x70`: the same bare acknowledgement naming its command that WRITE_MISC gives. The 600 0.2 image
+carries the identical shape against its own addresses.
+
+So the firmware side of learning is `0x70` in, `0x80` out, `0xF0 0x70` acknowledged, states 5, 6, 7.
+**What is not here is the data.** Logitech's client expects the remote to push reports coded `0x90`
+while a session is open, and the response byte at `0x358` is never loaded with `0x90` anywhere in
+either arch 14 image. Nothing found so far sends pulse data during a session, and whether arch 12
+does is open. The report layout the client expects is in `docs/host-client.md`, marked unconfirmed,
+and the reasoning is `docs/findings.md` section 91.
+
 **This is why `0x40` WRITE_FLASH_DATA is absent from the main table.** WRITE_FLASH sets state
 2 as its first instruction, and state 2 is the only state in which the `0x40` chain runs, so
 the firmware accepts flash data only after it has agreed to a write. That is a property of

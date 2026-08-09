@@ -873,6 +873,96 @@ class TestReadMisc(unittest.TestCase):
         self.assertEqual(TestTheStateMachine.table()[0x0A], self.EXECUTOR)
 
 
+class TestInfraredLearningIsABracket(unittest.TestCase):
+    """findings.md section 91: what the firmware settles about learning infrared.
+
+    Two arch 14 images rather than one, because the addresses differ per build and the shape is
+    what is being claimed. The client dig said where to look; everything asserted here is read out
+    of the firmware, and the parts only the client knows are in `docs/host-client.md` instead,
+    unconfirmed, with no test asserting them as true.
+    """
+
+    # image -> (base, state 5 command chain, the shared state 6 and 7 executor, state variable)
+    LEARNING = {
+        'h700_code': (0x9000, 0x0C5D4, 0x0CB20, 0xEC9),
+        'h600_code_complete': (0x9000, 0x0C538, 0x0CA62, 0x1C1),
+    }
+
+    # Whichever file register the response builder reads, per image, as the bare offset a banked
+    # MOVWF encodes. The 700's is 0x358 and the 600's is 0x707, both already established here.
+    RESPONSE_BYTE = {'h700_code': (0x9000, 0x58), 'h600_code_complete': (0x9000, 0x07)}
+
+    def instructions(self, name, base, start, count):
+        image = lab.load(name)
+        out, at = [], start
+        for _ in range(count):
+            instr = isa.decode(image, at - base, base)
+            out.append((at, instr))
+            at += 2 * instr.words
+        return out
+
+    def test_a_learning_session_accepts_only_the_stop_command(self):
+        """The state 5 chain is one comparison against 0x80 and nothing else, so no other command
+        is serviced while learning. A second case appearing here would mean the bracket is wider
+        than section 91 claims."""
+        for name, (base, chain, _, _) in self.LEARNING.items():
+            with self.subTest(image=name):
+                literals = [i.fields['k'] for _, i in self.instructions(name, base, chain, 8)
+                            if i.mnemonic == 'XORLW']
+                self.assertEqual(literals, [0x80])
+
+    def test_the_stop_command_moves_the_state_from_five_to_six(self):
+        """The number is the content: 6 is a state the idle dispatch table never sets, so it can
+        only be reached from inside a session."""
+        for name, (base, chain, _, state) in self.LEARNING.items():
+            with self.subTest(image=name):
+                pairs = self.instructions(name, base, chain, 12)
+                loads = [(a, i) for a, i in pairs if i.mnemonic == 'MOVLW']
+                self.assertTrue(loads, 'no literal loaded in the stop branch')
+                self.assertEqual(loads[0][1].fields['k'], 6)
+                stores = [i for _, i in pairs if i.mnemonic == 'MOVWF']
+                self.assertEqual(stores[0].fields['f'], state & 0xFF)
+
+    def test_states_six_and_seven_share_an_executor_that_acknowledges(self):
+        """It sets state 7 and then emits 0xF0 followed by 0x70, which is the acknowledgement shape
+        WRITE_MISC uses: a bare acknowledgement naming the command it acknowledges."""
+        for name, (base, _, executor, state) in self.LEARNING.items():
+            with self.subTest(image=name):
+                pairs = self.instructions(name, base, executor, 16)
+                literals = [i.fields['k'] for _, i in pairs if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals[:3], [7, 0xF0, 0x70])
+                stores = [i for _, i in pairs if i.mnemonic == 'MOVWF']
+                self.assertEqual(stores[0].fields['f'], state & 0xFF)
+
+    def test_the_main_state_chain_points_both_states_at_it(self):
+        """Only checkable on the 700, whose state chain address is already derived here. Six and
+        seven sharing a target is what makes the executor re-entrant across the session."""
+        table = TestTheStateMachine.table()
+        self.assertEqual(table[6], self.LEARNING['h700_code'][2])
+        self.assertEqual(table[7], self.LEARNING['h700_code'][2])
+
+    def test_the_response_builder_never_emits_the_capture_data_code(self):
+        """The negative section 91 rests on, and it is stated as a negative deliberately.
+
+        The client expects reports coded 0x90 while a session is open. No literal 0x90 reaches the
+        response byte in either arch 14 image, so whatever sends pulse data does not go through
+        this builder. A 0x90 turning up here would mean the search stopped too early, which is
+        exactly what this should catch.
+        """
+        for name, (base, slot) in self.RESPONSE_BYTE.items():
+            with self.subTest(image=name):
+                image = lab.load(name)
+                seen = set()
+                for off in range(0, len(image) - 3, 2):
+                    a = isa.decode(image, off, base)
+                    b = isa.decode(image, off + 2, base)
+                    if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields['f'] == slot:
+                        seen.add(a.fields['k'])
+                self.assertIn(0x70, seen, 'the response byte was not found, so the scan proves nothing')
+                self.assertIn(0xF0, seen)
+                self.assertNotIn(0x90, seen)
+
+
 class TestReadFlash(unittest.TestCase):
     """
     The one command version 1 of the application actually needs.

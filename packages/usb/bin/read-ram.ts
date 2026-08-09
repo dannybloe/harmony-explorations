@@ -19,6 +19,7 @@
  * `packages/usb/src/rails.ts`.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
+import { MISC_RAM, readMiscRequest } from '../src/protocol.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -84,8 +85,25 @@ try {
   }
   if (!awake) fail('the remote is not answering');
 
+  // `--selector` exists because which selector reads data memory is per architecture and arch 9's
+  // is not known. Arch 14's is `0x07`, derived from the firmware, where libconcord and Logitech's
+  // own client both name `0x06` as the RAM one and `0x07` as something else. On arch 12 and arch
+  // 14 that naming is simply wrong about behaviour, but it is a reason to try `0x06` on an
+  // architecture where `0x07` answers nothing. `docs/findings.md` section 90.
+  const selector = number(argument('selector'), 'the selector') ?? MISC_RAM;
+  const readOne = async (at: number): Promise<number> => {
+    if (selector === MISC_RAM) return remote.readRam(at);
+    const reply = await (
+      remote as unknown as {
+        exchange(request: Uint8Array): Promise<{ kind: string; selector?: number; value?: number }>;
+      }
+    ).exchange(readMiscRequest(selector, at));
+    if (reply.kind !== 'misc') throw new Error(`selector 0x${selector.toString(16)} answered a ${reply.kind} reply`);
+    return reply.value ?? 0;
+  };
+
   const data = new Uint8Array(count);
-  for (let i = 0; i < count; i += 1) data[i] = await remote.readRam(address + i);
+  for (let i = 0; i < count; i += 1) data[i] = await readOne(address + i);
 
   if (process.argv.includes('--summary')) {
     const nonzero = [...data].filter((b) => b !== 0).length;

@@ -10493,6 +10493,18 @@ library raises on both; what comes back is a well formed `0xC2` misc reply echoi
 and carrying a byte, and the byte is always zero. Every other selector in the chain, `0x01`, `0x02`,
 `0x06`, `0x08`, `0x09` and `0x0C`, answers the same way.
 
+**It is not a selector numbering difference, and that was worth checking.** Logitech's own client
+names selector 6 as the memory one and 7 as something else, where this project derived 7 from the
+firmware and found 6 to be a different accessor. On an architecture where 7 answers nothing, 6 is
+the obvious candidate. It is not: over a window that returns 77 live bytes of 160 on a Harmony 600
+through selector 7, the 525 returns zero through **all nine** selectors tried, 0, 1, 2, 4, 5, 6, 7,
+8 and 12. Arch 9 serves no misc read at all.
+
+That check needed one correction on the way, and it is the same shape as the rest of this section.
+The first sweep used `0x300` to `0x35F` and reported zero on the 525 and zero on the 600, which
+looks like agreement and is worthless: that window is genuinely empty on both. A window has to be
+shown live on the calibration remote before its emptiness anywhere else means anything.
+
 So on arch 9 the selector is accepted and serviced by something that is not an indirect load. What
 that something is has **not** been read: the arch 14 primitive is
 `MOVFF x,FSR0L ; MOVFF y,FSR0H ; MOVFF INDF0,z` at `0x0CBF4`, and a search for that shape in
@@ -10529,6 +10541,92 @@ anybody is home.
   the read seeding its resting value is not the command that gets lost.
 * `tests/test_usb_firmware.py`, which pins the arch 14 primitive's shape and its absence from the
   arch 9 image, so that finding the arch 9 handler later has something to contradict.
+
+
+## 91. Infrared learning is a command family the firmware brackets and a stream nobody has found
+
+The last square of the client dig. `docs/host-client.md`'s rule is firmware first, and this section
+is a clean example of what that buys and what it costs: the client describes the whole of infrared
+learning, the firmware settles the half of it that is control flow, and the half that carries the
+actual pulse data is **not located in any image here** and therefore stays client-sourced.
+
+### What the firmware settles
+
+`0x70` START_IRCAP is already in the dispatch table, taking no arguments and setting state 5. What
+had not been read is what happens next, and the state machine says it plainly.
+
+* **State 5 has its own command chain**, at `0x0C5D4` in the 700 image. It accepts exactly one
+  command, `0x80`, and that sets the state variable to **6**. So `0x80` is the stop, and it is a
+  command that only exists inside a learning session.
+* **Any other command during a session aborts it.** The fall through at `0x0C5EE` clears the state
+  variable to 0 and sets the error byte, so a host that sends anything else mid-learn does not get
+  an error reply, it gets a session that quietly ended.
+* **States 6 and 7 share one executor**, `0x0CB20`, reached from the main state chain at `0x0C720`
+  where both cases point at it. It sets the state to 7, then emits two response bytes, `0xF0` and
+  then `0x70`. That is the acknowledgement shape this document already records for WRITE_MISC,
+  which replies `0xF0` then `0xA0`: a bare acknowledgement naming the command it acknowledges.
+* The 600 0.2 image carries the same three instruction shape with its own addresses, setting its
+  own state variable to 6 and its own error byte, so this is the architecture and not one build.
+
+So the bracket is firmware fact: `0x70` opens, `0x80` closes, `0xF0` plus the command echoes the
+close, and the states run 5, 6, 7.
+
+### What the firmware does not have, which is the interesting part
+
+The client expects the remote to push packets with code `0x90` while a session is open, each
+carrying pulse data, until a `0xF0` ends it. **No `0x90` is emitted by the response builder in
+either arch 14 image.** Enumerating every `MOVLW k ; MOVWF f` pair in the 700 and listing what the
+response byte at `0x358` can hold gives eighteen distinct literals, of which the command shaped ones
+are `0x30`, `0x50`, `0x70`, `0xA0`, `0xD0` and `0xF0`, all echoes. `0x90` is not among them.
+
+That is a negative about one path rather than about the feature: a stream of full reports would
+plausibly be built where `READ_FLASH`'s chunks are built, which is a different builder with its own
+framing. The honest statement is that **the arch 14 firmware acknowledges a learn session and
+nothing found so far sends data during one**, and that the same question on arch 12 is open. Arch 12
+is where it matters, because the classic software learned infrared on a Harmony One.
+
+### What the client supplies, and it is unconfirmed
+
+Restated in this project's own words, per rule 3. All of it belongs to `docs/host-client.md`'s
+ledger and none of it enters `docs/config-format.md`.
+
+A data report is: a code byte whose length nibble is **zero**, then a byte carrying two counters in
+its nibbles, then big endian `u16` words, and **the byte count in the last byte of the report**.
+That last part is the striking one, because every other command in this protocol declares its length
+in the low nibble of byte 0, and here that nibble is zero and the real count lives at the far end of
+the report. Word count is `(count - 2) / 2`.
+
+The two counters are a sequence, 0 to 15 and expected to increment, and a **dropped counter**. A
+change in the dropped counter means the remote lost samples, and the number lost is twice the
+increase, so **samples are dropped in pairs**, which fits data that alternates between two kinds.
+The client tolerates exactly one out of order report, holding it back until its partner arrives, and
+gives up on the second.
+
+The first three words of a session are **calibration, not data**: a last pulse on time, a first
+pulse time, and a clock count. The carrier period is the gap between the two times divided by one
+less than the clock count, in microseconds, and the frequency is a million over that. Section 32's
+carrier finding is about the same quantity from the transmit side, where 38 kHz implies a stored
+263, so the two are checkable against each other whenever a real session is captured.
+
+After calibration the words alternate envelope and gap, and **the unit of an envelope word depends
+on the architecture**: on the older ones it is a count of carrier cycles and has to be divided by
+the frequency just measured, and on the newer ones it is already microseconds. A gap word is total
+elapsed time rather than a duration, so the preceding envelope is subtracted from it. The
+architecture split is at architecture id 2, which is below everything this project targets, so for
+arch 8, 9, 12 and 14 the microsecond reading is the one that applies.
+
+Finally, the session is bracketed on the host side by two configuration state changes, one before
+and one after, and after the stop the client waits an architecture specific reboot delay before
+carrying on. So **stopping a learn can restart the remote**, which is worth knowing before anyone
+drives this.
+
+### Where it lands
+
+* `docs/usb-protocol.md`, the state machine and the two commands, from the firmware.
+* `docs/host-client.md`, the packet layout, the counters, the carrier arithmetic and the reboot
+  delay, in the ledger, marked unconfirmed.
+* `tests/test_usb_firmware.py`, which pins the state 5 chain and the shared executor on both arch 14
+  images, so the bracket cannot rot.
 
 
 ## References

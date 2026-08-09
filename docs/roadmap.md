@@ -167,7 +167,9 @@ image is a second sample rather than a stand in. Other models are iterated on la
   the high nibble, so `ERASE_FLASH` is `0xD0` and `RESET` is `0xE0` with a sub-command byte, and
   `STOP_IRCAP 0x80` is not dispatched at all in the idle table. The mapping is `0` to `7`
   literally, then `8`, `9` and `A` to 15, 31 and 63. Safe mode is a separate firmware and
-  unchecked.
+  unchecked. **`STOP_IRCAP`'s absence is not an omission**, section 91: it has its own one entry
+  dispatch that only exists while a learning session is open, and anything else sent during one
+  ends the session silently.
 * `READ_MISC`/`WRITE_MISC` carry a `MISC_RAM 0x06` sub-command, exposed upstream as
   `ReadRam`/`WriteRam`. **Live RAM of a running remote is readable over USB.** The header also
   defines `MISC_QUEUE_ACTION 0x03` and `MISC_QUEUE_EVENT 0x09`, which concordance never uses;

@@ -301,6 +301,45 @@ than by decompiled code. The skin table above is unaffected and still client sou
 0 application, 4 safe mode, 1 test, 3 boot. Section 87 places them in `GET_VERSION` field 4's low
 nibble by reading the same accessor out of each bench remote's application and safe mode images.
 
+### Infrared learning: the data stream's shape
+
+The firmware settles the bracket and this document holds the rest. `docs/findings.md` section 91
+has the full argument; what is believed on the client's word alone is:
+
+* A learn data report has a **zero length nibble** and carries its real byte count in the **last
+  byte of the report**, which no other command in this protocol does. Between them: a byte of two
+  nibble counters, then big endian `u16` words, `(count - 2) / 2` of them.
+* The two counters are a sequence 0 to 15 and a dropped counter. An increase in the dropped counter
+  means twice that many samples were lost, so **samples go in pairs**.
+* **The first three words are calibration**: a last pulse on time, a first pulse time and a clock
+  count. Carrier period is the gap between the times over one less than the count, in microseconds.
+* Then envelope and gap alternate. An envelope word is microseconds on every architecture this
+  project targets and a count of carrier cycles only below architecture id 2. A gap word is total
+  elapsed time, so the envelope before it is subtracted.
+* **Stopping a learn can restart the remote**: the client waits an architecture specific reboot
+  delay after the stop before doing anything else.
+
+Worth confirming in the order given: the report framing first, because it is what an implementation
+gets wrong silently, and the calibration arithmetic second, because section 32 already knows the
+carrier from the transmit side and the two should agree.
+
+### The read selector names, which reframe an earlier correction
+
+The client names the `READ_MISC` and `WRITE_MISC` selectors. Four are serviced for reading on arch
+14, and the client has a name for each: selector 1 is a state accessor, 6 is memory, 7 is registers,
+and 12 asks what hardware features the remote has. That last one is `docs/usb-protocol.md`'s "not
+read yet" body, and the first and second are bodies this project has located and not read either.
+
+**It does not overturn the `0x07` correction and it does sharpen it.** This project derived from the
+firmware that selector 7 turns its parameter into a pointer and returns the byte it names, and that
+6 is a different accessor. The client agrees there are two and disagrees about which one deserves
+the word memory. Nothing about behaviour changes: 7 is the one that reads an arbitrary data address
+on arch 12 and arch 14, measured on both.
+
+**Tested and refused on arch 9.** Since selector 7 answers zero for every address on a Harmony 525,
+the client's naming made 6 the obvious thing to try. All nine selectors return zero on a window that
+is demonstrably live on a 600. `docs/findings.md` section 90.
+
 ### Smaller leads
 
 * Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area
