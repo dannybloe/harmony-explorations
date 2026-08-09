@@ -10571,19 +10571,58 @@ had not been read is what happens next, and the state machine says it plainly.
 So the bracket is firmware fact: `0x70` opens, `0x80` closes, `0xF0` plus the command echoes the
 close, and the states run 5, 6, 7.
 
-### What the firmware does not have, which is the interesting part
+### A negative that did not survive being checked
 
-The client expects the remote to push packets with code `0x90` while a session is open, each
-carrying pulse data, until a `0xF0` ends it. **No `0x90` is emitted by the response builder in
-either arch 14 image.** Enumerating every `MOVLW k ; MOVWF f` pair in the 700 and listing what the
-response byte at `0x358` can hold gives eighteen distinct literals, of which the command shaped ones
-are `0x30`, `0x50`, `0x70`, `0xA0`, `0xD0` and `0xF0`, all echoes. `0x90` is not among them.
+This section first said the following, and it is wrong in its inference rather than its facts, so
+it is corrected here rather than deleted.
 
-That is a negative about one path rather than about the feature: a stream of full reports would
-plausibly be built where `READ_FLASH`'s chunks are built, which is a different builder with its own
-framing. The honest statement is that **the arch 14 firmware acknowledges a learn session and
-nothing found so far sends data during one**, and that the same question on arch 12 is open. Arch 12
-is where it matters, because the classic software learned infrared on a Harmony One.
+> No `0x90` is emitted by the response builder in either arch 14 image. Enumerating every
+> `MOVLW k ; MOVWF f` pair in the 700 and listing what the response byte at `0x358` can hold gives
+> eighteen distinct literals, of which the command shaped ones are `0x30`, `0x50`, `0x70`, `0xA0`,
+> `0xD0` and `0xF0`, all echoes.
+
+Every word of that is still true, and it establishes nothing. **The same scan finds no `0x60`
+either**, and `0x60` is the code of `READ_FLASH`'s data response, which certainly exists and which
+this project has driven thousands of times. A data response carries a **computed** length nibble,
+so its code byte is assembled at run time out of `0x60` and a count and never appears as a literal
+anywhere. A scan for literals therefore cannot see any data response, and using it to argue about
+one is a category error.
+
+It was caught by running the scan on the Harmony One to answer a follow up question and noticing
+`0x60` missing from a list that had to contain it. Worth recording as a shape: **a search that can
+only find one kind of thing proves nothing about a kind it cannot find**, and the way to notice is
+to run it against something already known to be there.
+
+### The receiver exists on every architecture, which is the real answer
+
+Asking the question of the hardware instead settles it. Learning needs a capture, and a PIC18 does
+that with a CCP module, whose mode is stated in the low nibble of its control register: `0100` to
+`0111` are the four capture modes, `10xx` compare, `11xx` PWM. What each image writes:
+
+| image | CCP1 | CCP2 |
+|---|---|---|
+| One 3.4, arch 12 | `0x0C` PWM at `0x2DA62` | `0x04` and `0x05` **capture**, at `0x2B46C`, `0x2B4D8`, `0x2041A` |
+| 700 2.8, arch 14 | `0x0C` PWM at `0x1AFB4` | the same three, at `0x0904C`, `0x090B8`, `0x0941E` |
+| 600 0.2, arch 14 | `0x0C` PWM at `0x196D8` | the same three, same addresses as the 700 |
+| 525, arch 9 | `0x0C` PWM at `0x076B8` | the same three, at `0x05EEC`, `0x05F58`, `0x0141A` |
+
+CCP1 in PWM is the carrier this project already read from the transmit side, section 32. **CCP2 in
+capture on both edges is the receiver**, and it is configured in all four images including arch 9.
+Modes `0x04` and `0x05` are every falling edge and every rising edge, which is exactly what
+measuring an envelope and a gap alternately requires, and it matches the alternation the client's
+reader expects.
+
+There is a driver around it, read on the One: `0x2B46C` selects falling edge capture, clears the
+CCP2 interrupt flag in `PIR2` and enables it in `PIE2`; `0x2B476` is the mirror that disables and
+clears; and `0x2B47E` reads the capture register **twice into two different pairs and compares
+them**, which is a glitch check on a value that can change under the read. `0x2B510` clears eight
+state bytes and jumps into the starter, so it is the session initialiser.
+
+So the capability is not in doubt on any architecture here. **What is still open is whether those
+samples ever reach USB**: the capture driver's callers were not walked to the top of the chain, and
+the arch 12 executor for states 6 and 7 acknowledges and returns like arch 14's does. A remote that
+learns into its own configuration standalone would need every part found so far and no USB path at
+all, so finding the receiver does not decide it.
 
 ### What the client supplies, and it is unconfirmed
 
@@ -10626,7 +10665,8 @@ drives this.
 * `docs/host-client.md`, the packet layout, the counters, the carrier arithmetic and the reboot
   delay, in the ledger, marked unconfirmed.
 * `tests/test_usb_firmware.py`, which pins the state 5 chain and the shared executor on both arch 14
-  images, so the bracket cannot rot.
+  images, so the bracket cannot rot, and the capture mode selection on all four.
+* `reference/superseded.md`, so the withdrawn inference cannot be restated.
 
 
 ## References

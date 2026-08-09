@@ -709,13 +709,16 @@ produce a config the remote accepts and mishandles.
   architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
-* **Where a learn session's data comes from**, section 91. The bracket is firmware fact: `0x70`
+* **Whether a learn session's samples reach USB**, section 91. The bracket is firmware fact: `0x70`
   opens, `0x80` has its own one entry dispatch that exists only inside a session, any other command
-  ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. What is missing is the stream.
-  Logitech's client expects reports coded `0x90` and **no arch 14 image ever loads `0x90` into its
-  response byte**, so a different builder sends them or arch 14 does not. Arch 12 is the one to
-  check, since the classic software learned infrared on a Harmony One. The report layout is in
+  ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. And the **receiver exists on
+  all four architectures**, CCP2 in capture on both edges while CCP1 drives the transmit carrier,
+  with a start, a stop and a double read glitch check. What is not established is whether the
+  captured samples go to the host or only into the remote's own configuration: the capture driver's
+  callers were not walked to the top. The report layout a host would expect is in
   `docs/host-client.md`, client sourced and unconfirmed.
+  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
+  and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
   USB never runs its application, so the keypad handler never runs. Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every

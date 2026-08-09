@@ -941,13 +941,18 @@ class TestInfraredLearningIsABracket(unittest.TestCase):
         self.assertEqual(table[6], self.LEARNING['h700_code'][2])
         self.assertEqual(table[7], self.LEARNING['h700_code'][2])
 
-    def test_the_response_builder_never_emits_the_capture_data_code(self):
-        """The negative section 91 rests on, and it is stated as a negative deliberately.
+    def test_a_literal_scan_cannot_see_a_data_response_at_all(self):
+        """The retraction, pinned so the wrong inference cannot come back.
 
-        The client expects reports coded 0x90 while a session is open. No literal 0x90 reaches the
-        response byte in either arch 14 image, so whatever sends pulse data does not go through
-        this builder. A 0x90 turning up here would mean the search stopped too early, which is
-        exactly what this should catch.
+        Section 91 first argued that no literal 0x90 reaches the response byte, so nothing sends
+        capture data. The facts hold and the inference does not: the identical scan finds no 0x60
+        either, and 0x60 is READ_FLASH's data code, which this project has driven thousands of
+        times. A data response carries a computed length nibble, so its code byte is assembled at
+        run time and is never a literal.
+
+        Asserting both absences together is the point. The 0x60 line is what makes the 0x90 line
+        worthless, and a future reader who finds only the second would draw the same wrong
+        conclusion.
         """
         for name, (base, slot) in self.RESPONSE_BYTE.items():
             with self.subTest(image=name):
@@ -960,7 +965,68 @@ class TestInfraredLearningIsABracket(unittest.TestCase):
                         seen.add(a.fields['k'])
                 self.assertIn(0x70, seen, 'the response byte was not found, so the scan proves nothing')
                 self.assertIn(0xF0, seen)
+                self.assertNotIn(0x60, seen, 'READ_FLASH returns data, so this absence is the '
+                                             'proof that the scan cannot see data responses')
                 self.assertNotIn(0x90, seen)
+
+
+class TestEveryArchitectureConfiguresAnInfraredReceiver(unittest.TestCase):
+    """findings.md section 91: the capture hardware, which is what settles the question a literal
+    scan could not.
+
+    A PIC18 states a CCP module's mode in the low nibble of its control register: 0100 to 0111 are
+    the four capture modes, 10xx compare, 11xx PWM. So which modes an image can select answers
+    whether it can receive infrared at all, without finding the code that ships the samples.
+    """
+
+    # image -> (base, part). The 525 is a PIC18F4550 and its register map disagrees with the
+    # 67J50 family about 65 of 139 addresses, so passing the part is not optional here.
+    IMAGES = {
+        'one34_code': (0x20000, '67j50'),
+        'h700_code': (0x9000, '67j50'),
+        'h600_code_complete': (0x9000, '67j50'),
+        'h525_code': (0x0000, '4550'),
+    }
+
+    def modes_written(self, name, base, part):
+        """Every literal written to a CCPxCON register, keyed by register name."""
+        image = lab.load(name)
+        sfr = isa.PARTS[part][0]
+        targets = {a: n for a, n in sfr.items() if n.startswith('CCP') and n.endswith('CON')}
+        out = {}
+        for off in range(0, len(image) - 3, 2):
+            a = isa.decode(image, off, base)
+            b = isa.decode(image, off + 2, base)
+            if a.mnemonic != 'MOVLW' or b.mnemonic != 'MOVWF':
+                continue
+            addr, _ = isa.resolve_file(b.fields['f'], b.fields.get('a', 0), part=part)
+            if addr in targets:
+                out.setdefault(targets[addr], set()).add(a.fields['k'])
+        return out
+
+    def test_every_image_selects_a_capture_mode(self):
+        """Arch 9, 12 and 14 alike. A remote that could not capture would have no capture mode
+        anywhere, and that is what this would catch."""
+        for name, (base, part) in self.IMAGES.items():
+            with self.subTest(image=name):
+                modes = self.modes_written(name, base, part)
+                captures = {v for values in modes.values() for v in values if 0x4 <= v & 0xF <= 0x7}
+                self.assertTrue(captures, 'no capture mode selected anywhere in this image')
+
+    def test_the_capture_is_on_both_edges_and_lives_on_ccp2(self):
+        """Both edges is the content: measuring an envelope and then a gap needs a falling edge and
+        a rising one, which is the alternation a learn stream is made of."""
+        for name, (base, part) in self.IMAGES.items():
+            with self.subTest(image=name):
+                self.assertEqual(self.modes_written(name, base, part).get('CCP2CON'), {0x04, 0x05})
+
+    def test_ccp1_is_the_transmitter_and_never_a_capture(self):
+        """PWM, which is section 32's carrier read from the other side. If this ever selected a
+        capture the two roles would not be separable and section 32's arithmetic would need
+        rechecking."""
+        for name, (base, part) in self.IMAGES.items():
+            with self.subTest(image=name):
+                self.assertEqual(self.modes_written(name, base, part).get('CCP1CON'), {0x0C})
 
 
 class TestReadFlash(unittest.TestCase):

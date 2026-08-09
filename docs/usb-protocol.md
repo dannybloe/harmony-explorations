@@ -301,11 +301,17 @@ States 6 and 7 share one executor, `0x0CB20`, which sets the state to 7 and emit
 carries the identical shape against its own addresses.
 
 So the firmware side of learning is `0x70` in, `0x80` out, `0xF0 0x70` acknowledged, states 5, 6, 7.
-**What is not here is the data.** Logitech's client expects the remote to push reports coded `0x90`
-while a session is open, and the response byte at `0x358` is never loaded with `0x90` anywhere in
-either arch 14 image. Nothing found so far sends pulse data during a session, and whether arch 12
-does is open. The report layout the client expects is in `docs/host-client.md`, marked unconfirmed,
-and the reasoning is `docs/findings.md` section 91.
+
+**What sends the data is still open, and one wrong answer is recorded rather than deleted.** This
+said the response byte is never loaded with `0x90` in either arch 14 image, which is true and
+proves nothing: the same scan finds no `0x60` either, and that is `READ_FLASH`'s data code, whose
+length nibble is computed so its code byte is never a literal. Section 91 has the correction.
+
+What is established instead is that **every architecture configures CCP2 as a capture on both
+edges** while CCP1 does the transmit carrier, so all four remotes have a working infrared receiver
+in firmware, arch 9 included. Whether its samples reach USB, or only the remote's own
+configuration, is the open question. The report layout the client expects is in
+`docs/host-client.md`, marked unconfirmed.
 
 **This is why `0x40` WRITE_FLASH_DATA is absent from the main table.** WRITE_FLASH sets state
 2 as its first instruction, and state 2 is the only state in which the `0x40` chain runs, so
