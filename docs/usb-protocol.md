@@ -335,6 +335,39 @@ that payload byte selects the kind of reset. Sub-command `0x05` is the one that 
 `0x0BDA8`, which is what makes that row an internal continuation rather than a command a host
 can send directly.
 
+**Arch 12 has the escape too**, at `0x26434`, with sub-commands `0x01`, `0x02` and `0x03` and
+without `0x05`. It is easy to miss because it tests with `SUBWF` where arch 14 uses `XORLW`, so it
+is not an XOR chain and does not turn up in a search for one. An unrecognised sub-command falls
+through into the ordinary command chain on both architectures rather than being rejected.
+
+**What the sub-commands do**, section 97, from the firmware on both bench architectures:
+
+| Sub-command | Effect | One 3.4 | 700 2.8 |
+|---|---|---|---|
+| `0x01` | clears the command state variable and invalidates the parsed address. **Not a reset.** | `0x2645A` | `0x0BD82` |
+| `0x02`, `0x03` | sets a flag that drives the top level mode to 3, which waits and then executes the PIC18 `RESET` instruction | `0x26468`, `RESET` at `0x28D4C` | `0x0BD92`, `RESET` at `0x1642C` |
+| `0x05` | arch 14 only, an internal continuation | absent | `0x0BDA0` |
+
+So the reset Logitech's client sends after a config write really does reboot the remote, and there
+is exactly one gentler operation, which ends the command session and changes nothing else. Neither
+takes a remote out of USB mode, which is what section 95 wanted.
+
+### `WRITE_MISC` selector `0x0A` is the restart command
+
+Entry point in the first byte after the selector, configuration type in the second, which is the
+same field order as every other selector's 16 bit address. **On arch 12 it does nothing at all**,
+along with selectors `0x05`, `0x08` and `0x0B`. On arch 14 it acts for entry points `0x05`, `0x07`,
+`0x08`, `0x09` and `0x0A` and does so by pushing two action list instructions into the interpreter,
+operand then opcode, at `0x1AD` through `0x1AF`:
+
+| | operand | opcode |
+|---|---|---|
+| first | the entry point, high byte `0xB0 \| (configuration type & 0x0F)` | `0x3F` |
+| second | `0xFFF4` | `0x07` |
+
+Every other entry point, including terminate, is acknowledged and ignored. `docs/host-client.md`
+carries the client's entry point names, whose order the firmware confirms.
+
 ### Every command's response, in one table
 
 | Command | Response | Where |

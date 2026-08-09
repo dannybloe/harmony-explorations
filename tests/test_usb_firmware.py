@@ -1505,3 +1505,108 @@ class TestTheResponseSenderHasNoBound(unittest.TestCase):
             page[62 + readloop.DECIDING_DISTANCE + delta] = 0x01
             reader = readloop.word_reader(bytes(page), 0x010000)
             self.assertTrue(readloop.read_returns(reader, 0x010000, 63), delta)
+
+
+class TestTheRestartCommandAndTheEscape(unittest.TestCase):
+    """Section 97: what a polite session end would actually cost.
+
+    Two candidate commands, read on both bench architectures. The claim a product decision rests
+    on is that `0xE0 0x01` is not a reset and `0xE0 0x02` is, so both halves are asserted.
+    """
+
+    IMAGES = {
+        'one34_code': (0x20000, 0x2666C),          # arch 12, the WRITE_MISC selector chain
+        'h700_code': (0x9000, 0x0C3AA),            # arch 14
+    }
+    #: Selectors serviced, per architecture. Arch 14 has one more.
+    SELECTORS = {
+        'one34_code': {0x01, 0x02, 0x05, 0x06, 0x07, 0x08, 0x0A, 0x0B},
+        'h700_code': {0x01, 0x02, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B},
+    }
+
+    def at(self, code, base, addr):
+        return isa.decode(code, addr - base, base)
+
+    def test_both_selector_chains_decode_and_0x07_is_the_known_ram_write(self):
+        lab.require(*self.IMAGES)
+        for name, (base, start) in self.IMAGES.items():
+            code = lab.load(name)
+            table = chains.chain_table(code, base, start)
+            self.assertEqual(set(table), self.SELECTORS[name], name)
+            # The calibration case: 0x07 is the RAM write this project already uses, so a chain
+            # that puts something else there has been decoded wrong.
+            body = table[0x07]
+            self.assertEqual(self.at(code, base, body).mnemonic, 'MOVFF', name)
+            self.assertEqual(self.at(code, base, body).fields['dst'], 0xFE9, name)  # FSR0L
+
+    def test_the_restart_selector_does_nothing_on_arch_12(self):
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        table = chains.chain_table(code, 0x20000, 0x2666C)
+        # Four instructions: set the packet handled flag, branch out. If a future reader finds the
+        # arch 12 restart doing something, this is what has to fail first.
+        for selector in (0x08, 0x0A, 0x0B):
+            body = table[selector]
+            got = [self.at(code, 0x20000, body + n).mnemonic for n in (0, 2, 4, 6)]
+            self.assertEqual(got, ['MOVLB', 'MOVLW', 'MOVWF', 'BRA'], hex(selector))
+        # 0x05 is the same nothing with an empty conditional in front of it: it reads the entry
+        # point byte and branches to the same address either way, which is source left in place.
+        body = table[0x05]
+        self.assertEqual(self.at(code, 0x20000, body + 2).mnemonic, 'MOVF')
+        self.assertEqual(self.at(code, 0x20000, body + 4).mnemonic, 'BNZ')
+        self.assertEqual(self.at(code, 0x20000, body + 4).fields['target'],
+                         self.at(code, 0x20000, body + 6).fields['target'])
+
+    def test_the_restart_selector_acts_on_five_entry_points_on_arch_14(self):
+        lab.require('h700_code')
+        code = lab.load('h700_code')
+        body = chains.chain_table(code, 0x9000, 0x0C3AA)[0x0A]
+        # Five `MOVLW n` / `SUBWF` / branch tests before the shared arm. Numbering the client's
+        # entry point list from zero these are start update, start learn, stop learn, start upgrade
+        # and stop upgrade, and the client's own learn sequence uses 0x07 and 0x08.
+        wanted = []
+        for step in range(5):
+            wanted.append(self.at(code, 0x9000, body + step * 8).fields['k'])
+        self.assertEqual(wanted, [0x07, 0x08, 0x05, 0x09, 0x0A])
+
+    def test_the_escape_exists_on_both_and_arch_12_tests_it_with_a_subtraction(self):
+        lab.require(*self.IMAGES)
+        # Arch 12 was missed once because a search for an XOR chain cannot see a SUBWF compare.
+        one = lab.load('one34_code')
+        self.assertEqual(self.at(one, 0x20000, 0x26434).fields['k'], 0xE0)
+        self.assertEqual(self.at(one, 0x20000, 0x26438).mnemonic, 'SUBWF')
+        seven = lab.load('h700_code')
+        self.assertEqual(self.at(seven, 0x9000, 0x0BD58).fields['k'], 0xE0)
+        self.assertEqual(self.at(seven, 0x9000, 0x0BD5C).mnemonic, 'SUBWF')
+
+    def test_sub_command_one_clears_the_command_state_and_is_not_a_reset(self):
+        lab.require(*self.IMAGES)
+        # `CLRF <command state>` then `SETF <parsed top address byte>`, the same two instructions on
+        # both architectures, and no RESET on that path.
+        for name, (base, clear, state, setf) in (
+            ('one34_code', (0x20000, 0x2645C, 0x284, 0x26460)),
+            ('h700_code', (0x9000, 0x0BD84, 0xEC9, 0x0BD88)),
+        ):
+            code = lab.load(name)
+            cleared = self.at(code, base, clear)
+            self.assertEqual(cleared.mnemonic, 'CLRF', name)
+            # And it is the command state that is cleared, not some neighbour: the low byte of the
+            # address, since a banked access carries only that.
+            self.assertEqual(cleared.fields['f'], state & 0xFF, name)
+            self.assertEqual(self.at(code, base, setf).mnemonic, 'SETF', name)
+            reached = [self.at(code, base, clear + n).mnemonic for n in range(0, 12, 2)]
+            self.assertNotIn('RESET', reached, name)
+
+    def test_sub_command_two_reaches_a_software_reset_on_both(self):
+        lab.require(*self.IMAGES)
+        # The flag, its one reader turning the top level mode into 3, and the RESET that mode 3
+        # runs. Asserted as the whole path, because six RESET instructions exist in the One image
+        # and finding one proves nothing.
+        for name, base, mode_site, reset in (
+            ('one34_code', 0x20000, 0x28C3E, 0x28D4C),
+            ('h700_code', 0x9000, 0x16340, 0x1642C),
+        ):
+            code = lab.load(name)
+            self.assertEqual(self.at(code, base, mode_site - 2).fields['k'], 0x03, name)
+            self.assertEqual(self.at(code, base, mode_site).mnemonic, 'MOVWF', name)
+            self.assertEqual(self.at(code, base, reset).mnemonic, 'RESET', name)

@@ -11677,6 +11677,155 @@ tolerate the ones that return.
 hour: the sender is the same shape on all three, and the rail already refuses odd counts everywhere,
 so this is a question about how much a mistake would cost rather than about how the library behaves.
 
+## 97. Ending a session politely means resetting the remote, and the restart command does nothing on a One
+
+Section 95 left a product question open: FreeHarmony ends every session by closing a handle and
+having its user pull a cable, which is exactly what leaves a remote stuck in USB mode. The polite
+alternative was assumed to be expensive, on the grounds that any command is a state change and
+belongs behind `WRITES_ENABLED`. This reads what the two candidate commands actually do, on both
+bench architectures, and the answer is worse and clearer than the assumption.
+
+### The restart command is `WRITE_MISC` selector `0x0A`, and on arch 12 it is a no-op
+
+`docs/host-client.md` records the Desktop client sending `0xA0 0x0A 0x07 0x00` to **a Harmony One**
+to enter learning, and the same with `0x08` to leave it. That is `WRITE_MISC` with selector `0x0A`,
+an entry point and a configuration type. Both selector chains decode with
+`harmony/pic18/chains.py`, never by hand:
+
+| | selectors serviced |
+|---|---|
+| One 3.4, chain at `0x2666C` | `0x01`, `0x02`, `0x05`, `0x06`, `0x07`, `0x08`, `0x0A`, `0x0B` |
+| 700 2.8, chain at `0x0C3AA` | the same, plus `0x09` |
+
+The decode is calibrated on a case whose answer is already known: `0x07` lands on the RAM write,
+`MOVFF` into `FSR0L`, `FSR0H` and `INDF0`, on both images, which is the selector this project
+already uses.
+
+On the One, selector `0x0A` is four instructions at `0x2670C`:
+
+```
+2670c: 0d 01       MOVLB 0xd
+2670e: 01 0e       MOVLW 0x01
+26710: 21 6f       MOVWF 0xd21      ; the "packet handled" flag, and nothing else
+26712: 04 d0       BRA 0x2671c
+```
+
+and `0x05`, `0x08` and `0x0B` are the same shape. `0x05` even reads the entry point byte and
+branches on it to the same address either way, which is an empty conditional left in the source.
+
+**So Logitech's own client sends a command to a Harmony One that the Harmony One ignores.** That is
+not a contradiction in the client, it is a host written across skins: arch 14 acts on it, arch 12
+does not need it, and the host sends it either way.
+
+### On arch 14 it acts, for five entry points, by injecting action list instructions
+
+`0x0C448` compares the entry point against `0x07`, `0x08`, `0x05`, `0x09` and `0x0A`, and anything
+else falls to the same "handled" flag and does nothing. For those five it builds two three byte
+records at `0x1AD`, `0x1AE`, `0x1AF` and calls `0x0EA36` for each:
+
+| | operand | opcode |
+|---|---|---|
+| first | entry point, with `0xB0 \| (configuration type & 0x0F)` as its high byte | `0x3F` |
+| second | `0xFFF4` | `0x07` |
+
+Three bytes, operand then opcode, handed one at a time to a single routine: that is an **action list
+instruction**, section 34, and `0x3F` and `0x07` are two of the bands section 73 read. So the
+restart command is not a protocol operation with its own machinery at all. It is a way for a host to
+push two instructions into the interpreter the config already programs.
+
+**And it confirms the client's entry point numbering from the firmware.** The client lists eleven
+entry points in order: terminate, default, before and after a config update, after a firmware
+update, start and stop update, start and stop learn, start and stop upgrade. Number them from zero
+and the five the firmware acts on are start update, start learn, stop learn, start upgrade and stop
+upgrade. The client's own learn sequence uses `0x07` and `0x08`, which land on start learn and stop
+learn, so two of the five are pinned by a source that never saw the firmware. **Terminate is entry
+point zero, and it is one of the six that do nothing.**
+
+### The escape is on both architectures, and it was nearly missed
+
+Section on `0xE0` in `docs/usb-protocol.md` had this for arch 14 only. Arch 12 has it too, at
+`0x26434`, and a scan for the chain style would never have found it because it tests with `SUBWF`
+where arch 14 uses `XORLW`:
+
+```
+2642e: f0 0e       MOVLW 0xf0
+26432: 1f 17       ANDWF 0xd1f,F     ; mask the command
+26434: e0 0e       MOVLW 0xe0
+26438: 1f 5d       SUBWF 0xd1f,W
+2643a: 1c e1       BNZ 0x26474       ; not the escape, take the ordinary command chain
+```
+
+Both then read one more byte and dispatch it. Sub-commands `0x01`, `0x02` and `0x03` on both, plus
+`0x05` on arch 14. An unrecognised sub-command falls through into the ordinary command chain rather
+than being rejected.
+
+### `0xE0 0x02` is a real reset, and the two images agree instruction for instruction
+
+Sub-commands `0x02` and `0x03` set one flag byte, `0x32C` on the One and `0x6FF` on the 700. One
+place reads it, and it turns a top level mode variable from 1 into 3:
+
+```
+28c30: 01 0e  MOVLW 0x01        |  16330: 01 0e  MOVLW 0x01
+28c32: 15 6f  MOVWF 0x315       |  16334: a5 6f  MOVWF 0x3a5
+28c36: 2c 51  MOVF 0x32c,W      |  16338: ff 51  MOVF 0x6ff,W
+28c38: 03 e0  BZ  0x28c40       |  1633a: 03 e0  BZ  0x16342
+28c3c: 03 0e  MOVLW 0x03        |  1633e: 03 0e  MOVLW 0x03
+28c3e: 15 6f  MOVWF 0x315       |  16340: a5 6f  MOVWF 0x3a5
+```
+
+and mode 3 is:
+
+```
+28d30: f4 0e  MOVLW 0xf4        |  16410: f4 0e  MOVLW 0xf4
+28d34: 01 0e  MOVLW 0x01        |  16414: 01 0e  MOVLW 0x01     ; 0x01F4, so 500 of something
+28d38: CALL 0x2ccac             |  16418: CALL 0x1a3ee
+28d3e: MOVF  0xec0,W            |  1641e: MOVF  0x1c1,W         ; poll until nonzero,
+28d42: CALL 0x2cb86             |  16422: CALL 0x1a2c4          ;   servicing meanwhile
+28d48: CALL 0x2cb80             |  16428: CALL 0x1a2be          ; then finish
+28d4c: ff 00  RESET             |  1642c: ff 00  RESET
+```
+
+`RESET` is the PIC18 software reset instruction. So the client's post write `0xE0 0x02` really does
+reboot the remote, after a bounded wait, and the same code does it on both architectures. Six such
+instructions exist in the One image and five in the 700's, so finding them is not the same as
+finding this one; what makes this one the reset is the path from the flag.
+
+### `0xE0 0x01` is the one that is not a reset
+
+```
+2645a: 84 6b       CLRF 0x284       |  0bd82: c9 6b  CLRF 0xec9
+26460: 8b 69       SETF 0x28b       |  0bd88: d5 69  SETF 0xed5
+```
+
+`0x284` is the One's command state variable, the one `READ_MISC` selector `0x07` reads back as ten
+while it is being read, section 90, and `0xEC9` is arch 14's. `0x28B` is the read path's top address
+byte, and `0xFF` is a value its own validator turns into `0xFE`, so setting it invalidates whatever
+address a half finished command had parsed.
+
+**So `0xE0 0x01` ends the command session and nothing more.** It is the same two instructions on
+both architectures, which is the two sample requirement met on the only claim here that a product
+decision would rest on.
+
+### What it settles, and what it does not
+
+**It does not solve section 95.** Nothing read here takes the remote out of USB mode. `0xE0 0x01`
+abandons the command state machine; the top level mode variable is untouched and only the reset path
+writes it. So of the two candidates, one is a reboot and the other does not do the thing that was
+wanted.
+
+That is a cleaner answer than the question expected: **a polite end is a reboot, or it is nothing.**
+The restart command's terminate entry point, which was the hopeful reading of the client's entry
+point table, is a no-op on arch 14 and the whole selector is a no-op on arch 12.
+
+For FreeHarmony the decision is therefore between three honest options, and it is the owner's:
+reboot the remote at the end of every read only session, leave it in USB mode and tell the user the
+batteries clear it, or find what does write that mode variable, which this section has not done.
+`0x315` on the One takes 1, 2 and 3 and only mode 3 is read here.
+
+**Nothing here has been sent to a remote.** Both commands are writes in the sense that matters, they
+change a device's state, so they belong behind `WRITES_ENABLED` exactly where `docs/host-client.md`
+already put them, and reading what they do does not change that.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

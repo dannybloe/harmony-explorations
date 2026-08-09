@@ -405,14 +405,27 @@ what an implementation has to do: keep reading during the session, or read after
 established, and it is the question to put to the firmware**, whose answer is the response path of
 the `0x70` and `0x80` handlers rather than a search for a sender that does not exist.
 
-The **restart command itself is not documented by this project at all** and it is wider than
+The **restart command is `WRITE_MISC` selector `0x0A`** and it is wider than
 learning. Its entry points cover terminate, default, before and after a config update, after a
 firmware update, start and stop update, start and stop learn, and start and stop upgrade; its
 configuration types are current firmware, user configuration and embedded configuration.
 
+**Read from the firmware on 9 August 2026, section 97, and it partly contradicts this file.** On
+arch 14 the selector acts for exactly five entry points, and numbering the client's list from zero
+those are start update, start learn, stop learn, start upgrade and stop upgrade. The client's own
+`0x07` and `0x08` land on start learn and stop learn, so **the firmware confirms this list's order**,
+which is the first check of it against anything. Terminate is entry point zero, and it does nothing.
+
+**On arch 12 the whole selector is a no-op**, four instructions that set a "packet handled" flag. So
+the `0xA0 0x0A 0x07 0x00` this file records the client sending **to a Harmony One** is ignored by the
+Harmony One. That is what a host written across skins looks like rather than an error in the
+reading, and it is this file's standing caveat in one example: the client says what it sends, never
+what the remote does with it.
+
 **It is a write, whatever the flash rails say.** Sending it restarts a remote into a mode, so an
 implementation belongs behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` alongside the flash
-writes, and nothing in a read path may issue it.
+writes, and nothing in a read path may issue it. Section 97 does not soften that: on arch 14 it
+injects two action list instructions into a running interpreter.
 
 ### The whole arch 12 config write, in order
 
