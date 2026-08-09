@@ -11241,6 +11241,32 @@ What each outcome would mean, so that none of them can be fitted afterwards:
   reading needs re-examining rather than patching, since 63 at `+0x1000` restarts a remote and would
   then be the special case rather than the rule.
 
+### Offset 2 survives, so it is a range and not one address
+
+| read | result |
+|---|---|
+| page `0xFF`, offset 2, 62 bytes, control | 62 bytes, remote answering |
+| page `0xFF`, offset 2, **63** bytes | **returned in 35 ms, remote answering** |
+
+`GET_VERSION` and the config window were unchanged afterwards. So the prediction is wrong for the
+second time on this question, and it is wrong in the direction that carries information: **offset
+zero is not uniquely exempt.** Whatever decides this is a comparison against a bound, not a test for
+a single address, and a bound is a constant somebody can find.
+
+`0x40` is the decisive one now, because the original note records it as fatal. If it hangs, the
+boundary sits between 2 and `0x40` and the constant can be searched for directly.
+
+### The failure mode is worse than "self-recovering"
+
+Recorded because a safety claim should not be more comfortable than the evidence. This document has
+said five times that every one of these restarts recovered on its own. **On 9 August 2026 one did
+not**: after the 65 byte test the remote was later found **hung**, not enumerating at all, and the
+owner had to intervene before it came back. It is healthy afterwards, config verified, but the
+sentence "disruption, not damage" was carrying more weight than it had earned.
+
+Nothing about the rail changes, since it already refuses odd counts. What changes is the cost of
+spending one deliberately: it is not free, and it is not reliably self-clearing.
+
 An odd count hangs a remote, demonstrated on hardware after being predicted. The loop that does it
 is read, the validator in front of it is read, the chunker and the parse are read, and one special
 case is in none of them. The rail does not depend on it, because it refuses odd counts everywhere,

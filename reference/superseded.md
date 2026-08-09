@@ -89,6 +89,7 @@ and leave this table alone.
 | `Low nibble a compiled in zero` | section 87 | field 4's low nibble is the software type; it reads 4 in each remote's safe mode image |
 | `PROTOCOL, SKIN, FLASH and BOARD. That is what a remote compares` | section 87 | six fields, and an absent or empty one matches anything |
 | `a u24 duration in units of 0.1 microseconds` | section 92 | nanoseconds, and the two values are a carrier period and its fifty percent on time |
+| `Every restart recovered on its own` | section 94 | one did not, on 9 August 2026: the remote was found hung and not enumerating, and needed intervention |
 | `count % FLASH_CHUNK_DATA == 1` | section 94 | the refusal is an odd count: the fetch loop reads a word, subtracts two and exits on zero, so 65 and 127 hang too |
 | `caps an internal read at one chunk` | section 93 | it refuses a count whose final chunk would be one byte; 64 and 124 byte reads are measured safe |
 | `the payload is the last N bytes of the file` | section 87 | the header ends at the line carrying the INFORMATION terminator; the declared length is a check on that split |
