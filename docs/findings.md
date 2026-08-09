@@ -10898,6 +10898,56 @@ same rule section 55 states for pictures. And it does not measure a carrier, whi
 open transport question. **Building the bytes was the part that could be settled without hardware,
 and it is settled.**
 
+## 93. The internal read cap is stricter than the hazard it was built for
+
+**Written before measuring, and committed before the remote was touched**, which is the only reason
+the numbers below are worth anything. `docs/host-client.md`'s Desktop client reads a unit's identity
+block as a single 64 byte `READ_FLASH` from internal memory, and this project's library refuses that
+read.
+
+### Where the cap came from, and the arithmetic that was missed
+
+`readInternalMemory` and `readFlash` both refuse an internal read of more than one chunk, 62 bytes,
+because a read of that region restarted a remote five times. The measurements behind it are in the
+code and they already say what the condition is:
+
+| read | result |
+|---|---|
+| 63 bytes at `0x1000` | restarted, 3 of 3 |
+| 63 bytes at `0x0040` | completed, then the remote died |
+| 63 bytes at `0x0000` | fine, twice |
+| **64 bytes at `0x1000`** | **fine, twice** |
+| 124 bytes at `0x1000` | fine, twice |
+
+A chunk carries 62 data bytes, one of the 63 the largest length nibble describes being the sequence
+number. So 63 bytes is 62 plus a final chunk of **one**, and 64 is 62 plus **two**, and 124 is two
+full chunks. The hazard is a final chunk of exactly one byte, which is `count % 62 == 1`, and the
+cap that was written to avoid it refuses everything above 62 instead.
+
+**64 bytes was already measured as safe when the cap was written.** The cap is not wrong, it is
+coarse, and this project has been describing it as the shape of the hazard rather than as a bound
+around it.
+
+### The prediction
+
+1. A 64 byte internal read on the spare Harmony One **succeeds and does not restart it**, at an
+   offset other than zero, reproducing the client's own shape.
+2. It returns 64 bytes, in two chunks.
+3. The remote answers a config window against its own lab dump afterwards, unchanged.
+
+If all three hold, the refusal should become `count % FLASH_CHUNK_DATA == 1` rather than
+`count > FLASH_CHUNK_DATA`, and the reason attached to it should be the final chunk rather than the
+chunk count.
+
+**The address is deliberately not the identity block.** `0xFFF400` is what the client reads and it
+holds the unit's serial GUIDs, which this repository does not publish and has no reason to read.
+`0xFF` offset `0xE000` is the same page and the same transfer shape, and the client's own region map
+calls it a PIC library.
+
+### Measured
+
+To be filled in from the bench, on the spare, identified by its config rather than by its port.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
