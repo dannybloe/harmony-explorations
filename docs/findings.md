@@ -11084,8 +11084,34 @@ to find out.
 
 An internal read of **65** bytes should hang a Harmony One where 64 and 124 do not, and 65 is not
 `62n + 1`. That is the experiment that separates this reading from section 93's, and it costs one
-deliberate restart of the spare, of the kind that has recovered five times already. **Not performed
-here**: a restart is not something to spend without asking.
+deliberate restart of the spare, of the kind that has recovered five times already.
+
+### Performed, and it holds
+
+9 August 2026, on the spare with the programmed One unplugged, the unit identified by its config
+window matching `one_spare_after_sync` rather than by its port. Prediction committed first, in the
+paragraph above.
+
+| step | result |
+|---|---|
+| `GET_VERSION` | `34 05 c8 1f c0 36 0c 34 34 16 34 34` |
+| control: 64 bytes at `0xFF` `+0x1000` | 64 bytes back, remote answering |
+| **65 bytes at the same address** | **failed after 146 ms, and the remote stopped answering** |
+
+**Confirmed from outside the software too**: the owner, watching the remote, reported that it reset.
+That matters because the host side can only see silence, and silence has more than one cause.
+
+It re-enumerated on its own at a **different device path**, which is what says it restarted rather
+than merely stalled, and afterwards `GET_VERSION` matched, three flash windows read, the config
+window was byte identical to the one taken before the experiment, and a 64 byte internal read
+worked again. Disruption, not damage, exactly as the five earlier restarts.
+
+So the separating case goes the way the firmware says: **65 hangs a remote and 64 does not**, and
+`count % 62 == 1` would have permitted it. The rail is an odd count, and it is now derived from the
+loop, confirmed against the loop's own prediction on hardware, and observed by two people.
+
+**The offset zero exemption is still unexplained and still unmeasured.** It was not worth a second
+restart in the same session.
 
 ## References
 

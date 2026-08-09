@@ -1222,9 +1222,10 @@ Three things are ruled out by that table. It is **not the ordering**, because th
 last as readily as first. It is **not the chunk count**, because 124 bytes is two chunks and is fine.
 And it is **not the size 63 by itself**, because 63 at offset zero is fine.
 
-What 63 has that 64 and 124 do not is **a final chunk of exactly one byte**. Offset zero is somehow
-exempt from it. Beyond that this is not diagnosed, and five restarts is enough hardware to spend on
-one question that has a cheap workaround.
+What 63 has that 64 and 124 do not is **an odd byte count**, and that is diagnosed now rather than
+described: section 94 reads the loop, and a sixth deliberate restart on 9 August 2026 confirmed the
+case that separates the two readings, 65 bytes, which hangs a remote and is not `62n + 1`. Offset
+zero is still recorded as exempt and is still unexplained.
 
 Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
 across three separate windows. So this is disruption rather than damage. `packages/usb` refuses a
