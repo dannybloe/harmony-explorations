@@ -40,39 +40,35 @@ is what placed those two fields.
 Architecture 14 reserves internal `0x000000` to `0x008FFF` for the bootloader, 36 KiB, of which only
 the first 4 KiB and the safe mode image are used.
 
-## External flash, SPI
+## External flash, 2 MiB SPI
 
 Not memory mapped, so this is storage rather than code the processor runs.
 
-**How big it is, is open, and the heading used to say 4 MiB.** Three routes say 2 MiB and one says
-4, and the one is the weakest of them. See the note below the table.
+**2 MiB, and this heading said 4 MiB until 9 August 2026.** The firmware's own address validator
+rejects any address at or above `0x200000`, section 88, and the remote on the bench confirmed it by
+answering at `0x1F0000` and refusing above.
 
 | Address | Length | Contents | Source |
 |---|---|---|---|
 | `0x000000` to `0x0112C0` | 70336 | the **application firmware as stored**, which the bootloader copies to internal `0x9000` | `concordance --dump-firmware` returns the first 64 KiB of exactly this image |
 | `0x020000` to `0x021BCB` | 7115 | the **safe mode config**, a `GSPM` container, format 1.4, 20 section slots | read off the device; all ten container checks pass and the recovered base is `0x020000` |
-| `0x030000` to `0x400000` | 3904 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex`, 738149 of 738149 bytes |
+| `0x030000` to `0x200000` | 1856 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex`, 738149 of 738149 bytes |
 
 The 1077 bytes after the safe mode container, up to the end of the 8192 that were read, are erased.
 Two stretches have never been examined: `0x0112C0` to `0x020000`, and the rest of `0x021BCB` to
 `0x030000`.
 
-Same closure as on the One: concordance reports the config region as 3904 KiB, and `0x030000` plus
-3904 KiB is exactly `0x400000`.
+**concordance's 3904 KiB is wrong, and that row used to end at `0x400000` because of it**,
+section 88. Its architecture table gives the arch 14 config region as 3904 KiB from `0x030000`,
+which lands on `0x400000` and needs a 4 MiB part. The firmware refuses every address at or above
+`0x200000`, so most of that claimed region is not addressable at all. Four routes agree on 2 MiB:
+the validator, the `FLASH` field's capacity byte `0x15`, the part number EON F16 which is a 16 Mbit
+device, and the vendor client's arch 14 block tables, which have a 1 MiB and a 2 MiB entry and no
+4 MiB one.
 
-**Whether the part actually holds 4 MiB is unresolved**, `docs/findings.md` section 87, and the
-closure above is the only thing that says it does. Three independent routes say **2 MiB**: the
-`FLASH` field this remote reports over USB, `0x15:0x1C`, whose capacity byte `0x15` is 2 MiB in
-JEDEC's power of two convention; the part number recorded for it, an EON F16, which is a 16 Mbit
-device; and Logitech's own client, which has exactly two arch 14 flash geometries, 1 MiB and 2 MiB,
-and no 4 MiB one. The one route that says 4 MiB is concordance's architecture table, which is the
-same table that is wrong about firmware on this architecture.
-
-Nothing here is changed on the argument alone, because every number derived from the 4 MiB figure
-is an upper bound on a region that a read path never reaches. **One read settles it**: sixteen
-bytes at `0x230000`, which is the config's own base plus 2 MiB. A 2 MiB part ignores the high
-address bit and returns the config's first bytes, `GSPM`; a 4 MiB part returns what is really at
-that address, which is erased. Seeing `GSPM` proves 2 MiB.
+The measurement, on the bench remote and read only: `0x130000` is erased and differs from
+`0x030000`, which is the calibration case and rules out a 1 MiB part; `0x1F0000` answers; and
+`0x230000` is refused.
 
 ## What is not established
 

@@ -8,8 +8,8 @@ Source material:
   architecture 12, protocol 12, external flash Atmel AT49BV322A (4 MiB, `0x1F:0xC8`),
   USB 046D:C121, config flash used 1634 of 3840 KiB.
 * **Harmony 600**, concordance 1.5 dump. Firmware 0.2, hardware 1.1.0, skin 71,
-  architecture 14, protocol 14, external flash EON F16-100HIP (`0x15:0x1C`, 2 or 4 MiB and
-  unresolved, section 87), USB 046D:C122, config flash used 721 of 3904 KiB.
+  architecture 14, protocol 14, external flash EON F16-100HIP (2 MiB, `0x15:0x1C`),
+  USB 046D:C122, config flash used 721 of 1856 KiB.
 * `harmony_one_firmware_3_4.hfw` and `harmony_700_firmware_2_8.hfw`, retrieved from
   harmonyremoterepair.com. The One image is exactly the version running on the
   dumped remote.
@@ -10113,6 +10113,99 @@ for a path these remotes do not use.
   `tests/test_usb_firmware.py`, where the software type replaces the assertion that the nibble was
   undetermined.
 * `docs/usb-protocol.md` and section 7 above, both corrected in place.
+
+
+## 88. Each firmware bounds a flash address at its own flash size, and they differ
+
+Section 87 left the arch 14 flash size open at 2 MiB by three routes against 4 MiB by concordance's
+architecture table, and named the read that would settle it: sixteen bytes at `0x230000` on the 600,
+which on a 2 MiB part would alias to the config's own first bytes.
+
+**The read was refused before it reached the wire, and the refusal is the answer.**
+
+### What the remote actually did
+
+A Harmony 600 on the bench, 9 August 2026, read only. `GET_VERSION` first as the go/no-go, which
+returned `02 11 1c 15 e0 47 0c 02 00 00 02 02`, byte for byte what this document already records,
+and its field 4 of `0xE0` is section 87's software type reading confirmed on a live device: an
+architecture 14 remote running its application.
+
+| address | result |
+|---|---|
+| `0x030000` | `47 53 50 4d ...`, the config's `GSPM` cookie |
+| `0x130000` | erased, and **different** from `0x030000` |
+| `0x1F0000` | erased, and answered |
+| `0x230000` | refused by our own library, because the firmware's validator rejects `0x23` |
+
+`0x130000` is the calibration case and it is the one that matters most: a 1 MiB part would alias
+there, and it does not, so the method can tell aliasing from a distinct address. `0x1F0000`
+answering fixes the top of the reachable range just under `0x200000`.
+
+### The two validators disagree, and each matches its own part
+
+The bound is a literal in each firmware's address validator. Arch 14's was already pinned at
+`0x13DFE` in the 700 image, with the bound `0x20`. Arch 12's had never been located here; this
+project had read one validator and applied it to both architectures. It is at `0x2637A` in the One's
+image and builds a different literal:
+
+```
+263b0: 40 0e       MOVLW 0x40
+263b2: 00 5c       SUBWF 0x00,W      ; the top address byte
+263bc: 13 e2       BC 0x263e4        ; at or above 0x40, reject
+```
+
+| architecture | first rejected top byte | so flash ends below | the part |
+|---|---|---|---|
+| 12, Harmony One | `0x40` | `0x400000`, 4 MiB | Atmel AT49BV322A, 32 Mbit |
+| 14, Harmony 600 | `0x20` | `0x200000`, 2 MiB | EON F16, 16 Mbit |
+
+**Each bound is exactly the capacity of that model's flash part.** That is what makes the pair a
+measurement rather than a protocol detail: a single firmware refusing addresses above its flash
+would only show that somebody wrote a bound, and two firmwares whose bounds differ by exactly the
+ratio of their parts shows what the bound is for.
+
+So the arch 14 external flash is **2 MiB**, and the question section 87 left open is closed by the
+firmware, which is this project's authoritative source. The three routes that already said 2 MiB
+were the `FLASH` field's capacity byte, the part number, and the vendor client's block tables. The
+one route that said 4 MiB was concordance's architecture table, and it is not merely unsupported
+now: the addresses it claims as config region above `0x200000` are addresses an arch 14 remote
+refuses.
+
+### The correction, and why it never bit
+
+`validateRegionByte` used `0x20` for both bench architectures. On arch 12 that refused every address
+from `0x200000` to `0x400000`, which is the upper half of a Harmony One's flash. Nothing noticed
+because the largest One config in the corpus is 1.6 MB and ends below `0x1D8000`, so no read this
+project has ever done wanted the range it was refusing.
+
+The table is `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts`, and an architecture that is
+not in it is refused rather than given a neighbour's bound. That is the same rule the erase block
+table follows and for the same reason: this is the second time a constant read from one architecture
+has been quietly applied to another, after section 87's font header, and the fix in both cases is a
+table with a hole in it rather than a default.
+
+**The write rails do not move.** `WRITABLE_CEILING` for arch 12 is `0x3D0000`, below `0x400000`, so
+it stays the tighter of the two and the loosened read bound does not reach a write path.
+
+### The prediction, recorded before the measurement
+
+Written down here and committed before a Harmony One was connected, because a confirmation of a
+number nobody committed to in advance is worth much less:
+
+* a Harmony One **answers** a `READ_FLASH` at `0x200000`, which is the address the 600 refuses, and
+  returns erased bytes because a One's config ends far below it
+* a Harmony One **refuses** `0x400000`, in the library and in the device
+* the same two addresses on the 600 behave the other way round at `0x200000`
+
+That is one address behaving differently on two remotes, predicted from two disassembled validators.
+
+### Where it lands
+
+* `packages/usb/src/protocol.ts`, the bound per architecture with no default.
+* `packages/usb/test/protocol.test.ts` and `test/remote.test.ts`, where `0x200000` is now the
+  address that separates the two rather than a constant both refuse.
+* `docs/memory-map-600.md` and `docs/memory-map-700.md`, whose flash size was open and is not.
+* `packages/usb/bin/read-window.ts`, which is the tool this needed and did not have.
 
 
 ## References

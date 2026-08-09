@@ -143,8 +143,23 @@ test('a flash read of a region the firmware rejects never reaches the wire', asy
   // "no reply".
   const { transport, written } = scriptedRemote([], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
-  await assert.rejects(() => remote.readFlash(0x200000, 16), /rejects 0x20/);
+  await assert.rejects(() => remote.readFlash(0x400000, 16), /rejects 0x40/);
   assert.equal(written.length, 0, 'nothing was written');
+});
+
+test('the same address is legal on one bench architecture and refused on the other', async () => {
+  // Section 88. `0x200000` used to be refused on both, because arch 14's bound had been applied to
+  // arch 12 as well; each firmware stops at its own flash size. This is the address that separates
+  // them, so it is the one worth a test rather than a constant.
+  const one = new HarmonyRemote(scriptedRemote([], 0).transport, { architecture: 12, timeoutMs: 1 });
+  const h600 = new HarmonyRemote(scriptedRemote([], 0).transport, { architecture: 14, timeoutMs: 1 });
+  // The One gets as far as the wire and then times out, which is what "not refused" looks like
+  // against a transport with nothing scripted on it.
+  await assert.rejects(() => one.readFlash(0x200000, 16), (error: Error) => {
+    assert.doesNotMatch(error.message, /rejects 0x20/, 'arch 12 must not refuse this address');
+    return true;
+  });
+  await assert.rejects(() => h600.readFlash(0x200000, 16), /rejects 0x20/);
 });
 
 test('an internal memory read is bounded to the window the firmware bounds it to', async () => {

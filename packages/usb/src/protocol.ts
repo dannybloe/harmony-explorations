@@ -207,9 +207,20 @@ export function readRamRequest(dataAddress: number): Uint8Array {
  * What a firmware's validator makes of the top address byte of a flash command.
  *
  * Not a host side politeness: this is the device's own rule, so a host that gets it wrong is
- * refused rather than obeyed. On arch 12 and arch 14 the rule is read out of the validator at
- * `0x13DFE`: below `0x20` is an ordinary config flash address, `0xFE` and `0xFF` select the MCU's
- * own program memory by table read, and everything else is rejected.
+ * refused rather than obeyed. `0xFE` and `0xFF` select the MCU's own program memory by table read,
+ * an ordinary config flash address is below a per architecture bound, and everything else is
+ * rejected.
+ *
+ * **The bound is that architecture's flash size, and it is not the same on the two bench
+ * remotes.** This module used to apply arch 14's `0x20` to arch 12 as well, on the strength of
+ * having read one validator and assumed the other matched. Arch 12's is at `0x2637A` in the One's
+ * image and its bound is `0x40`, so a One accepts addresses up to `0x400000` and a 600 stops at
+ * `0x200000`. Each bound is exactly the capacity of that model's flash part, which is what makes
+ * the pair a measurement of the flash size rather than only of the protocol.
+ * `docs/findings.md` section 88.
+ *
+ * The mistake never bit because a Harmony One config is 1.6 MB and ends below `0x200000`, so
+ * nothing this project has ever read needed the range it was refusing.
  *
  * **The rule is per architecture, which cost a session's first config read.** A Harmony 525 is
  * silent at `0x010000`, `0x020000` and `0x030000` and answers at `0x820000`, so external flash
@@ -221,6 +232,19 @@ export type Region = 'config-flash' | 'internal-program-memory';
 
 /** The architecture whose rule applies when a caller does not say. The two bench targets share it. */
 export const DEFAULT_REGION_ARCHITECTURE = 12;
+
+/**
+ * The first top address byte each firmware's validator rejects, per architecture.
+ *
+ * Read out of the validators themselves: `0x2637A` on the One and `0x13DFE` on the 700, both of
+ * which build the bound as a literal and branch on the carry. An architecture that is not listed
+ * has no reading and is refused rather than given a neighbour's bound, which is the mistake this
+ * table exists to prevent.
+ */
+export const FLASH_TOP_BYTE_BOUND: Readonly<Record<number, number>> = {
+  12: 0x40, // 4 MiB, an Atmel AT49BV322A
+  14: 0x20, // 2 MiB, an EON F16
+};
 /** Arch 9 addresses its serial flash from here, one megabyte up. `0x80` to `0x87` on a 512 KiB part. */
 export const ARCH9_FLASH_TOP_MIN = 0x80;
 export const ARCH9_FLASH_TOP_MAX = 0x87;
@@ -240,10 +264,20 @@ export function validateRegionByte(
       `arch 9 rejects 0x${topByte.toString(16)} as a top address byte; its flash is at 0x80 to 0x87`,
     );
   }
-  if (topByte < 0x20) return 'config-flash';
+  // The internal window is tested first and by masking bit 0 off, which is why both 0xFE and 0xFF
+  // select it: the One's validator does `BCF` then compares against 0xFE, so the two bytes are one
+  // case rather than two.
   if (topByte === 0xfe || topByte === 0xff) return 'internal-program-memory';
+  const bound = FLASH_TOP_BYTE_BOUND[architecture];
+  if (bound === undefined) {
+    throw new ProtocolError(
+      `no flash address bound recorded for architecture ${architecture}: refusing to guess one`,
+    );
+  }
+  if (topByte < bound) return 'config-flash';
   throw new ProtocolError(
-    `the firmware's validator rejects 0x${topByte.toString(16)} as a top address byte`,
+    `architecture ${architecture} rejects 0x${topByte.toString(16)} as a top address byte; ` +
+      `its flash ends below 0x${(bound << 16).toString(16)}`,
   );
 }
 

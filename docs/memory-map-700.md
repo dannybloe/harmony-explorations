@@ -28,14 +28,15 @@ intact, but nobody here has seen it sitting at that address.
 It is 6336 bytes longer than the 600's and reaches `0xFF` `+0xBB80`, still well below the read clamp
 that [memory-map.md](memory-map.md) describes.
 
-## External flash, SPI
+## External flash, SPI, 2 MiB on this architecture
 
-**Its size is open**, and this heading used to say 4 MiB. The 700 firmware package declares
-`FLASH 0x14:0x1C` where every arch 14 config declares `0x15:0x1C`, so the family has at least two
-capacities, and under the capacity byte reading those are 1 MiB and 2 MiB. `docs/findings.md`
-section 87 and the note in [memory-map-600.md](memory-map-600.md), where the measurement that
-settles it is written down. Nothing on this page depends on the answer: every address below is far
-inside the smallest candidate.
+The arch 14 firmware refuses any flash address at or above `0x200000`, section 88, which is 2 MiB
+and is what the 600 on the bench measured.
+
+**This model may hold half that.** The 700 firmware package declares `FLASH 0x14:0x1C` where every
+arch 14 config in the corpus declares `0x15:0x1C`, and under the capacity byte reading those are
+1 MiB and 2 MiB. So the family has at least two parts and the package we disassemble was built for
+the smaller. Nothing on this page depends on which: every address below is far inside 1 MiB.
 
 | Address | Length | Contents | Source |
 |---|---|---|---|

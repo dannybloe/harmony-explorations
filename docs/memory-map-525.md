@@ -132,7 +132,8 @@ space the container's own pointers use.
 | `0x870000` to `0x880000` | 65536 | the **log area** | base slot 2, `capacity 8192` at a stride of 8 |
 
 **The flash is 512 KiB, far below either of the other architectures**, and the chip is a 25F040.
-Arch 12's is 4 MiB; arch 14's is 2 or 4 and unresolved, `docs/findings.md` section 87.
+Arch 12's is 4 MiB and arch 14's is 2 MiB, both fixed by their own address validators,
+`docs/findings.md` section 88.
 That was first inferred here from one number, the log area's limit of `0x080000` with section 47's
 rule that the region sits above the config, and it agrees with what the sample's owner reported
 independently. It also fixes the config region at `0x020000` to `0x080000`, which is 384 KiB, and

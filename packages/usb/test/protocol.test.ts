@@ -30,6 +30,7 @@ import {
   readMiscRequest,
   readRamRequest,
   regionOf,
+  FLASH_TOP_BYTE_BOUND,
   validateRegionByte,
   writeFlashRequest,
 } from '../src/index.ts';
@@ -119,9 +120,38 @@ test('the region byte rule is the firmware validator, and it rejects', () => {
   assert.equal(validateRegionByte(0x1f), 'config-flash');
   assert.equal(validateRegionByte(0xfe), 'internal-program-memory');
   assert.equal(validateRegionByte(0xff), 'internal-program-memory');
-  for (const byte of [0x20, 0x21, 0x80, 0xfd]) {
+  for (const byte of [0x40, 0x41, 0x80, 0xfd]) {
     assert.throws(() => validateRegionByte(byte), ProtocolError, `0x${byte.toString(16)}`);
   }
+});
+
+test('the two bench architectures bound the address differently, at their flash size', () => {
+  // Section 88, and this test is the correction: 0x20 was arch 14's bound applied to arch 12 as
+  // well. Each firmware's validator stops at exactly the capacity of that model's flash part, so
+  // the pair measures the flash size and not only the protocol.
+  assert.equal(FLASH_TOP_BYTE_BOUND[12], 0x40, 'the One, 4 MiB');
+  assert.equal(FLASH_TOP_BYTE_BOUND[14], 0x20, 'the 600, 2 MiB');
+
+  // The address that separates them, which is the one worth naming: legal on a One, refused by a
+  // 600. Measured on both bench remotes on 9 August 2026.
+  assert.equal(validateRegionByte(0x20, 12), 'config-flash');
+  assert.throws(() => validateRegionByte(0x20, 14), ProtocolError);
+  assert.equal(validateRegionByte(0x3f, 12), 'config-flash');
+  assert.throws(() => validateRegionByte(0x40, 12), ProtocolError);
+
+  // Both still reach internal program memory, which is tested before the bound and by masking bit
+  // 0 off, so 0xFE and 0xFF are one case rather than two.
+  for (const architecture of [12, 14]) {
+    assert.equal(validateRegionByte(0xfe, architecture), 'internal-program-memory');
+    assert.equal(validateRegionByte(0xff, architecture), 'internal-program-memory');
+  }
+});
+
+test('an architecture with no recorded bound is refused rather than given a neighbour', () => {
+  // The mistake the table exists to prevent, stated as a test: adding a read profile for a new
+  // architecture must not silently inherit arch 12's range.
+  assert.equal(FLASH_TOP_BYTE_BOUND[8], undefined);
+  assert.throws(() => validateRegionByte(0x00, 8), ProtocolError);
 });
 
 test('arch 9 puts its flash a megabyte up, and the two rules disagree everywhere', () => {
