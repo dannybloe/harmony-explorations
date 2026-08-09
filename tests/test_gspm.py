@@ -192,6 +192,31 @@ class TestPointerTableLength(unittest.TestCase):
                     gspm.SECTION_TABLE_OFFSET + gspm.SECTION_ITEM_SIZE * c.pointer_count,
                     c.marker_offset)
 
+    def test_arch8_carries_21_slots_where_the_vendor_client_declares_20(self):
+        """The measurement that makes Logitech's own client a source of hypotheses, not truth.
+
+        `docs/host-client.md` records the client's per architecture container constants, which
+        reproduce this project's reading exactly on arch 9 (marker at 91) and arch 12 (99) and
+        state 20 slots with a marker at 91 for arch 8. Four real arch 8 configs put it at 95.
+
+        Pinned here rather than left in prose because the failure mode is somebody deciding the
+        vendor must know its own format and "correcting" the parser to agree. The client is
+        wrong, or it describes a variant nobody here has, and either way the corpus decides.
+        """
+        lab.require('arch8_config_a')
+        seen = 0
+        for name in EXPECTED:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                if c.architecture != 8:
+                    continue
+                self.assertEqual(c.pointer_count, 21)
+                self.assertEqual(c.marker_offset, 95)
+                seen += 1
+        # Guarded up front by lab.require, so a corpus that stopped covering arch 8 fails here
+        # rather than passing a loop that never ran. See CLAUDE.md on skip inside subTest.
+        self.assertEqual(seen, 4, 'the four arch 8 configs are what carry this claim')
+
     def test_the_base_layout_ends_in_two_null_sections(self):
         """Base slots 18 and 19 are NULL on all four architectures, wherever they land."""
         for name in EXPECTED:

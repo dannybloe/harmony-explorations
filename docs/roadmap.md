@@ -136,6 +136,23 @@ image is a second sample rather than a stand in. Other models are iterated on la
 8. **Version 1 of the app is read only.** Detect the remote, read the config, show the container
    and the labelled sections, export IR codes. The write code is written but sits behind a flag
    that is off in release builds.
+9. **Logitech's own client is a fallback source, not a forbidden one.** *Taken 9 August 2026, and
+   it narrows decision 2 rather than reversing it.* The firmware stays the default and the
+   preferred evidence, because it says what the remote does where the client only says what one
+   host believed. Where the firmware genuinely cannot settle something, the client may be the
+   source, and every such fact is marked as client-sourced wherever it appears. What travels is
+   the mechanism: addresses, command numbers, field widths, the order of operations. What does not
+   travel is expression: names, comments, code, structure. Everything here is implemented our own
+   way from a description of the behaviour, never by transcribing theirs. The reason the balance
+   moved is that discarding facts nobody can recover another way means remotes that stay
+   unrepairable, and that cost is real where an unqualified clean room claim is a comfort. The
+   basis is the interoperability exception in the Software Directive and article 45m of the Dutch
+   Auteurswet, which permits obtaining the information and does not permit republishing the code,
+   which is why the decompiled source stays in the private lab. **A licence change is not the
+   lever**: copying unlicensed proprietary code infringes whatever licence the result carries, so
+   MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
+   argument and the ledger of everything currently believed on the client's word alone are in
+   `docs/host-client.md`.
 
 ## Facts established during planning
 

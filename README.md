@@ -185,6 +185,8 @@ docs/roadmap.md             the plan of record: decisions, milestones, current s
 docs/findings.md            the authoritative technical reference
 docs/config-format.md       the config format spec, grows as sections are labelled
 docs/usb-protocol.md        the USB protocol, both directions of every command
+docs/host-client.md         Logitech's own client as a source: the rule, and a ledger of
+                            leads believed on its word alone, every one unconfirmed
 docs/memory-map.md          memory maps: addressing, and how the architectures compare
 docs/memory-map-one.md      where everything lives on a Harmony One, on one page
 docs/memory-map-600.md      the same for the Harmony 600

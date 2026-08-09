@@ -29,7 +29,11 @@ propose firmware modification as a route to anything.
 2. **The USB protocol is derived clean-room from the firmware**, with
    `concordance/specs/protocol.txt` as corroboration and concordance kept as a cross-check
    oracle. Both are also technically necessary: concordance has two known defects on these
-   architectures.
+   architectures. **That is the default and not the whole rule since 9 August 2026**: where the
+   firmware genuinely cannot settle something, Logitech's own host software may be the source,
+   marked as such per fact. The weighing, the legal basis and the ledger of everything currently
+   believed on the client's word alone are in `docs/host-client.md`. Its arch 8 constants
+   contradict four real configs, so it is a generator of hypotheses and not an authority.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
@@ -130,6 +134,7 @@ harmony/
     firmware/packages/        original Logitech .hfw files
     firmware/derived/         binaries decoded out of them
     ghidra/                   Ghidra projects
+    software/                 Logitech's own PC software, see docs/host-client.md
     work/                     scratch
 ```
 
@@ -236,6 +241,8 @@ docs/roadmap.md                 THE plan of record: decisions, milestones, seque
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
+docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
+                                what is believed on its word alone, all of it unconfirmed
 docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
