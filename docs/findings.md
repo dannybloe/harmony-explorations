@@ -11217,7 +11217,29 @@ cannot fail is worse than no test**, because it reads as evidence. What is left 
 narrower than before and no more than that: the byte sender and the USB layer behind it, which is
 the only other code every emitted byte passes through; the flash machinery around `0x268xx`, which
 does look at the address; an interrupt; or something about that particular address that no reading
-of this path will show. Two more deliberate restarts at neighbouring offsets would bound it cheaply.
+of this path will show.
+
+### Bounding it on hardware: predicted before measuring
+
+Two more offsets, on page `0xFF`, 63 bytes each, each with a 62 byte control at the same offset
+first. Written down before the remote was plugged in.
+
+**The prediction is that both hang**, making offset zero uniquely exempt. Offset `0x40` is the
+stronger of the two, because the original note already records 63 bytes there as having completed
+and then killed the remote, so a hang there is a reproduction rather than a new fact. Offset 2 is
+the one that carries information either way, because nothing has ever been tried next to zero.
+
+What each outcome would mean, so that none of them can be fitted afterwards:
+
+* **Both hang.** Offset zero alone is exempt, and whatever explains it is about that exact address
+  rather than about a range. That is the outcome the loop reading expects everywhere except at zero,
+  and it leaves the puzzle exactly where it is now, only sharper.
+* **Offset 2 survives and `0x40` hangs.** It is not offset zero but a low range, with a boundary
+  somewhere between them, and a boundary is something a comparison in the firmware can have. That
+  would be the most useful result, because it turns "why is zero special" into "find the constant".
+* **Both survive.** The exemption is wide, the original `0x40` note is wrong, and the odd count
+  reading needs re-examining rather than patching, since 63 at `+0x1000` restarts a remote and would
+  then be the special case rather than the rule.
 
 An odd count hangs a remote, demonstrated on hardware after being predicted. The loop that does it
 is read, the validator in front of it is read, the chunker and the parse are read, and one special
