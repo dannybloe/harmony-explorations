@@ -11189,15 +11189,40 @@ uses, and it does not touch the count at all.
 
 ### What is still open, and it is narrower now
 
-**Offset zero.** The validator does not distinguish it, the loop does not distinguish it, and the
-device does. So the step that does is in neither of the two places this section has read, and the
-next one to look at is where `0x28A` gets its value: whether the loop is handed the whole request or
-one chunk of it decides what an odd total even means at this level.
+**Offset zero, and the whole path is read now without finding it.** `0x28A` was the thing to check
+and it is the **chunk** size rather than the request's: `0x26B4C` does `DECF 0xD30,W` into it, so it
+is the clamped payload minus its sequence byte. The chunker in front of it, `0x26AF0`, is the arch
+12 twin of arch 14's `0x0C9B2`, comparing the 16-bit remaining count at `0x288` against 63 and
+clamping to 63, 31, 15 or 7. And the count itself is parsed verbatim at two identical sites,
+`0x264E8` for `WRITE_FLASH` and `0x26532` for `READ_FLASH`, each ending in the same call to the
+validator.
 
-That is the whole of what is unexplained. An odd count hangs a remote, demonstrated on hardware
-after being predicted; the loop that does it is read; the validator in front of it is read; and one
-special case in between is not. The rail does not depend on it, because it refuses odd counts
-everywhere, which is strictly more than the hazard needs.
+So a 63 byte request is chunked 62 then 1, at any offset, and the loop cannot end on the second
+chunk. **None of those four routines tests the offset**: the parse, the validator, the chunker and
+the loop each read the address only to range check it or to hand it on.
+
+**That is as far as the negative goes, and the first draft of it went further and was wrong.** It
+said the exemption is not in the `READ_FLASH` path at all, on the strength of a sweep for branches
+on the offset bytes across `0x264E8` to `0x26C1C`. Two things were wrong with that. The sweep was
+**vacuous**, testing a category name the decoder does not emit, so it counted zero whatever the
+image held. And the range spans several command bodies rather than this one path, so even a working
+sweep would have been answering a different question. Enumerating the accesses by hand instead found
+28 of them, including a real comparison at `0x268AC` of the whole 24-bit address against `0x020000`,
+the arch 12 execution base, which sets a flag bit. That one is in the flash machinery rather than on
+the path traced here, and it is pinned in the tests so the next reader does not have to find it
+again.
+
+The lesson is the project's own and it cost an hour here: **a negative asserted by a test that
+cannot fail is worse than no test**, because it reads as evidence. What is left is genuinely
+narrower than before and no more than that: the byte sender and the USB layer behind it, which is
+the only other code every emitted byte passes through; the flash machinery around `0x268xx`, which
+does look at the address; an interrupt; or something about that particular address that no reading
+of this path will show. Two more deliberate restarts at neighbouring offsets would bound it cheaply.
+
+An odd count hangs a remote, demonstrated on hardware after being predicted. The loop that does it
+is read, the validator in front of it is read, the chunker and the parse are read, and one special
+case is in none of them. The rail does not depend on it, because it refuses odd counts everywhere,
+which is strictly more than the hazard needs.
 
 ## References
 

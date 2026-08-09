@@ -1356,3 +1356,56 @@ class TestTheArch12AddressValidatorNormalisesThePageBit(unittest.TestCase):
         # And the internal arm accepts.
         self.assertEqual(self.at(code, 0x263DC).mnemonic, 'RETLW')
         self.assertEqual(self.at(code, 0x263DC).fields['k'], 0x01)
+
+
+class TestTheArch12ReadFlashChunker(unittest.TestCase):
+    """Section 94: `0x28A` is the chunk size, and nothing on the path tests the offset.
+
+    The second half is a negative and it is asserted rather than described, because a negative
+    nobody can check is what sends the next reader through the same four routines again.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    CLAMP = 0x26AF0
+    CHUNK_SIZE_WRITE = 0x26B50
+    PARSE_SITES = (0x264E8, 0x26532)
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_the_chunk_size_is_the_clamped_payload_less_its_sequence_byte(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(self.at(code, 0x26B4C).mnemonic, 'DECF')
+        store = self.at(code, self.CHUNK_SIZE_WRITE)
+        self.assertEqual(store.mnemonic, 'MOVWF')
+        self.assertEqual(store.fields['f'], 0x8A)
+
+    def test_the_remaining_count_is_clamped_at_63_like_arch_14(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(self.at(code, self.CLAMP + 2).fields['k'], 0x3F)
+        self.assertEqual(self.at(code, self.CLAMP + 4).mnemonic, 'SUBWF')
+
+    def test_both_parse_sites_end_in_the_validator(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # READ_FLASH and WRITE_FLASH parse into the same variables, which is why the two blocks are
+        # identical and why a claim about one has to name which.
+        for site in self.PARSE_SITES:
+            call = self.at(code, site + 0x1C)
+            self.assertEqual(call.mnemonic, 'RCALL')
+            self.assertEqual(call.fields['target'], 0x2637A)
+
+    def test_the_address_is_compared_against_the_execution_base(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # Found while checking a negative that turned out to be vacuous. `0x268AC` compares the
+        # whole 24 bit address against 0x020000, the arch 12 execution base, and sets or clears a
+        # flag bit accordingly. It is in the flash machinery rather than on the READ_FLASH path
+        # traced above, and it is pinned because it is the kind of thing a later reader will find
+        # again and wonder about.
+        self.assertEqual(self.at(code, 0x268AE).mnemonic, 'SUBWF')
+        self.assertEqual(self.at(code, 0x268B2).mnemonic, 'SUBWFB')
+        self.assertEqual(self.at(code, 0x268B4).fields['k'], 0x02)
+        self.assertEqual(self.at(code, 0x268B6).mnemonic, 'SUBWFB')
