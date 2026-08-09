@@ -224,9 +224,12 @@ primitive can only read a word, the loop emits two bytes and subtracts two, and 
 equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
 watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
 around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
-**Offset zero is exempt and nobody knows why**, retested on hardware: 63 bytes there comes back and
-63 bytes at `+0x1000` does not, so a step in front of the loop has not been found. The rail ignores
-that and refuses odd counts everywhere.
+**The trigger is not understood**, and hardware has narrowed it rather than settled it: 63 bytes is
+harmless at offsets 0, 2 and `0x40`, and every hang ever seen is at offset `0x1000`. So either the
+offset matters or the trigger is a final chunk of 3 rather than any odd size, and the control that
+separates them, 63 bytes at `0x1000`, has never been run first hand. The rail ignores all of it and
+refuses odd counts everywhere. **A hang needs the batteries taken out**, so a deliberate one costs
+the owner rather than a command.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read

@@ -1235,14 +1235,11 @@ zero was **retested on 9 August 2026 and is exempt**: 63 bytes there returns 63 
 remote running, against the same read at `+0x1000` which restarts it. So a step in front of the loop
 decides that case and has not been found; section 94 says what is withdrawn because of it.
 
-~~Every restart recovered on its own~~<!--superseded-->, and afterwards the config read back
-byte-identical to its dump across three separate windows. **One did not recover on its own**, on
-9 August 2026: after a deliberate 65 byte test the remote was later found hung and not enumerating,
-and needed intervention. Healthy afterwards and the config verified, but the failure mode is worse
-than this paragraph claimed. `docs/findings.md` section 94. So this is disruption rather than damage. `packages/usb` refuses a
-count whose final chunk would be one byte, which is a workaround rather than a fix. Worth stating
-plainly for anyone building on this: **every command involved was a read**, and reads of this region
-still restart a running remote.
+Every restart recovered on its own, and afterwards the config read back byte-identical to its dump
+across three separate windows. So this is disruption rather than damage. `packages/usb` refuses an
+odd count, which is a workaround rather than a fix. Worth stating plainly for anyone building on
+this: **every command involved was a read**, and reads of this region still restart a running
+remote.
 
 ~~It used to refuse an internal read of more than one chunk~~<!--superseded-->, which is a bound
 around the hazard rather than the hazard: 64 and 124 byte reads were already recorded as safe in the

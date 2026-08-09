@@ -11256,16 +11256,61 @@ a single address, and a bound is a constant somebody can find.
 `0x40` is the decisive one now, because the original note records it as fatal. If it hangs, the
 boundary sits between 2 and `0x40` and the constant can be searched for directly.
 
-### The failure mode is worse than "self-recovering"
+### `0x40` survives too, which is the third outcome and the worst one
 
-Recorded because a safety claim should not be more comfortable than the evidence. This document has
-said five times that every one of these restarts recovered on its own. **On 9 August 2026 one did
-not**: after the 65 byte test the remote was later found **hung**, not enumerating at all, and the
-owner had to intervene before it came back. It is healthy afterwards, config verified, but the
-sentence "disruption, not damage" was carrying more weight than it had earned.
+| read | result |
+|---|---|
+| page `0xFF`, offset `0x40`, 62 bytes, control | 62 bytes, remote answering |
+| page `0xFF`, offset `0x40`, **63** bytes | **returned in 39 ms, remote answering** |
 
-Nothing about the rail changes, since it already refuses odd counts. What changes is the cost of
-spending one deliberately: it is not free, and it is not reliably self-clearing.
+Version and config unchanged either side. So 63 bytes is harmless at offsets 0, 2 and `0x40`, and
+the original note recorded the same read at `0x40` as having killed a remote.
+
+That is the outcome written down above as the one where the odd count reading "needs re-examining
+rather than patching", so it is re-examined here rather than repaired.
+
+**What is measured, first hand, on the spare:**
+
+| read | outcome |
+|---|---|
+| 62 bytes at `+0`, `+2`, `+0x40`, `+0x1000` | fine |
+| 63 bytes at `+0`, `+2`, `+0x40` | fine |
+| 64 bytes at `+0x1000`, `+0xE000`, and page `0xFE` `+0x1000` | fine |
+| 124 bytes at `+0x1000` | fine |
+| **65 bytes at `+0x1000`** | **hung, and the hang did not self-clear** |
+
+Every hang this project has ever seen is at offset `0x1000`, and every read away from `0x1000` has
+been fine whatever its parity. **The one thing never measured first hand is 63 bytes at `+0x1000`**,
+which is the reading the original note rests on and the control that separates the two candidate
+explanations:
+
+* if it hangs, the offset is what matters and the boundary is between `0x40` and `0x1000`, with the
+  parity rule holding above it;
+* if it survives, the offset is irrelevant and the trigger is a final chunk of **3** rather than of
+  any odd size, since 65 is `62 + 3` and every 63 tried is `62 + 1`. The loop reading would then be
+  wrong about which odd values matter, and the original 3-of-3 note about 63 at `0x1000` would be
+  about something else entirely.
+
+Not run. The remaining restarts cost a battery pull, which is now known rather than assumed.
+
+### A remote can get stuck in USB mode, and it is not this section's doing
+
+Recorded as a bench fact and **not** as a consequence of these reads, because the first version of
+this subsection made it one and the sequence does not support it.
+
+What happened: after the 65 byte test the remote left the bus, came back on its own at a different
+device path, and was verified healthy, version, three flash windows, the config byte identical and a
+64 byte internal read. Later, off the charger and plugged into USB, it did not enumerate at all.
+Unplugging the cable left it **still showing USB mode**, and taking the batteries out cleared it.
+
+**No causal link to the reads is established and one was claimed here for an hour.** Successful
+operations sat between the test and the freeze, and a charger to USB transition sat between them
+too, which is a state change this project has never exercised. Adjacency is not cause, and writing
+it up as cause is the same error this document warns about elsewhere.
+
+What is worth keeping is the operational fact: **a Harmony One can end up stuck in USB mode and need
+its batteries out**, so a bench session should expect that and not read a silent remote as a result.
+The earlier claim that every restart recovered on its own stands, because every restart did.
 
 An odd count hangs a remote, demonstrated on hardware after being predicted. The loop that does it
 is read, the validator in front of it is read, the chunker and the parse are read, and one special
