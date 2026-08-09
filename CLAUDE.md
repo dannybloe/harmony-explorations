@@ -708,7 +708,12 @@ produce a config the remote accepts and mishandles.
 * **How big the arch 14 external flash is**, 2 MiB by three routes and 4 MiB by concordance's
   architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
-  problem rather than a decoding one, section 42.
+  problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
+  user manuals say the learned signal was uploaded to their web site, which did the pattern matching
+  and chose the storage form, so the class was a server decision and the unused ones are the ones
+  that service never emitted for these devices. A miss was "stored as-is in its original format",
+  which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
+  discontinued one, so learning a code without it means making that choice locally.
 * **Where a learn session's samples leave the remote**, section 91. The bracket is firmware fact:
   `0x70` opens, `0x80` has its own one entry dispatch that exists only inside a session, any other
   command ends it silently, and states 6 and 7 acknowledge with `0xF0 0x70`. The **receiver exists

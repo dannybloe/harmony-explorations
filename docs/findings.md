@@ -4524,6 +4524,32 @@ That is a different problem from the one the roadmap describes, and a harder one
 available is the firmware, and the only test available is that the reading is self consistent,
 since there is nothing to decode against.
 
+### Why they are unused: a server chose the class
+
+Logitech's own published user manuals say it outright, and they are a source class this project had
+not used: documentation written for users and distributed freely, which is neither firmware nor
+decompiled code and carries none of the latter's restrictions.
+
+The Harmony 880 manual, version 1.2, describes what happens when a button on the original remote is
+pressed at the learning sensor. The sensor learns the signal; the remote uploads it over the USB
+cable and the computer's internet connection to the Harmony web site; **the web site** tries to find
+a matching pattern; if none is found the signal is "stored as-is in its original format"; and if one
+is found the web site "converts the signal into a format for convenient storage". The Harmony 520
+manual carries the same five steps with the actor named more loosely as the software.
+
+So **the encoding class is a decision taken on Logitech's server**, after the signal has left the
+remote, and neither the remote nor the desktop client picks it. That explains the shape of the
+corpus exactly: every config here was compiled by that service, so every record carries whichever
+class the pattern match produced, and the classes the firmware can decode but no config uses are the
+ones the service never emitted for these particular devices. It also predicts that a signal the
+database could not match is stored in a **raw** form, which is a candidate for one of the three.
+
+Two consequences that are not about this section. The pattern matching was **server side**, and the
+classic service is the one that is discontinued, section 56, so anything that learns a code without
+it has to make that choice locally. And the sensor is a separate part: the 880 manual places an
+infrared sensor "at the end opposite to the USB connector" and its front panel description names a
+dedicated infrared learning port, so receiving does not share the transmit path.
+
 **The records section 32 cannot frame are class 1 as well**, 617 of them across the corpus. So the
 arch 8 "second population with headers near 303 and 310" that `docs/config-format.md` attributes to
 another encoding class is nothing of the sort. Whatever it is, it is inside class 1, and it needs a

@@ -83,6 +83,24 @@ far the rest can be trusted.
 | internal memory is two 64 KiB pages, `0xFE` and `0xFF`, so 128 KiB is reachable | it declares one `0xFE0000` region of `0x20000` |
 | base slot 3 is the clock, section 21 | its section index 3 is named for the clock |
 
+## Published user manuals are a third source, and a much easier one
+
+Added 9 August 2026. Logitech's user manuals are documentation written for owners and distributed
+freely, and several are still online. They are neither firmware nor decompiled code, so **none of
+the rules above applies to them**: quoting a sentence of a manual is ordinary citation, and there is
+no expression problem and no interoperability exception to lean on because none is needed.
+
+They are weak on mechanism and strong on intent, which is the opposite of the firmware. The manual
+does not say what a packet looks like; it says what the system was for, and that turns out to settle
+questions the bytes cannot. The one that paid: the Harmony 880 manual states that a learned infrared
+signal is uploaded to Logitech's web site, that **the web site** looks for a matching pattern, and
+that a match is converted to a compact form while a miss is stored in its original format. That is
+why three of the four infrared encoding classes appear in no config in this corpus, section 42, and
+no amount of firmware reading would have said so.
+
+Worth checking a manual before assuming a behaviour is undocumented. `reference/models.md` lists the
+forty retired models, and the manuals are indexed under Logitech's support assets.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in
