@@ -101,6 +101,38 @@ no amount of firmware reading would have said so.
 Worth checking a manual before assuming a behaviour is undocumented. `reference/models.md` lists the
 forty retired models, and the manuals are indexed under Logitech's support assets.
 
+## Harmony Desktop is a fourth source, and the richest one
+
+Added 9 August 2026, and it is a **different application** from the MyHarmony client the section
+near the end of this document reports as empty. That one is the Silverlight era. This one is
+`Harmony Desktop.app`, built January 2022, and it is the application the owner used on 7 August
+2026 to program a Harmony One, so it demonstrably still drives an arch 12 remote.
+
+**Its native half knows nothing.** The application binary is 141 KB and the two C++ frameworks
+beside it are a transport: a HID channel with a read and a write, a command object that holds
+outgoing packets, an expected packet count and a timeout, and a device record of vendor id, product
+id, version, report lengths and skin. There is no command name, no opcode, no config structure and
+no infrared symbol in any of it. That is a fact about the architecture rather than a jab: the
+intelligence is deliberately elsewhere.
+
+**Elsewhere is a hosted web application**, named by the bundle's own setup URL, and it is **data
+driven on top of that**. The packet layout for a given remote is not compiled into anything. It is
+one file per operation per model, served from Logitech's content network, and the client's own
+cache manifest enumerates all of them. Twenty three models, twenty three operations each, and
+three of the models are architectures this project works on: arch 12's Harmony One, arch 14 under
+an internal codename, and an arch 9 remote.
+
+**The rules above apply unchanged.** The files are Logitech's expression, they stay in the private
+lab, nothing is quoted here, and every fact taken from them is marked client sourced and enters the
+ledger below rather than `docs/config-format.md`. What makes this source better than the decompiled
+client is only that it is **legible**: a packet is stated as a packet rather than reconstructed from
+disassembly, so the cost of checking a claim against the firmware drops rather than the standard
+for believing one.
+
+**It is live, and that is the reason it was mirrored the same day it was found.** Everything the
+manifest lists is in the lab now, with provenance and a hash. The service could be withdrawn at any
+time, which is the same argument the write rails rest on.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in
@@ -340,6 +372,47 @@ has the full argument; what is believed on the client's word alone is:
 Worth confirming in the order given: the report framing first, because it is what an implementation
 gets wrong silently, and the calibration arithmetic second, because section 32 already knows the
 carrier from the transmit side and the two should agree.
+
+#### And the session around it, from the Desktop client, for the Harmony One specifically
+
+A second client, independently, and this one states the whole sequence rather than the report
+format. Four commands, and the two sources agree wherever they overlap:
+
+1. **Enter learning.** A restart command with a subcommand, an entry point selecting start learn,
+   and a configuration type selecting the current firmware: `0xA0 0x0A 0x07 0x00`. One reply packet,
+   beginning `0xF0 0xA0`.
+2. **Start capture.** `0x70`, with a timeout far longer than any other command here, answered by
+   exactly **two** packets.
+3. **Stop capture.** `0x80`, answered by an **unspecified number** of packets, the last of which
+   begins `0xF0 0x70`.
+4. **Leave learning.** The same restart command with the stop learn entry point,
+   `0xA0 0x0A 0x08 0x00`, preceded by a two byte no-op and ending on `0xF0 0xA0`.
+
+**This narrows what section 91 could not find, and does not close it.** That section established the
+bracket from the firmware, `0x70` opening and `0x80` closing and states 6 and 7 acknowledging with
+`0xF0 0x70`, and then failed to find any code that sends capture data. What this client adds is that
+the sample packets are **collected under the two capture commands and terminated by that same
+acknowledgement**: it reads a fixed two packets after the start and an unspecified number after the
+stop, stopping at `0xF0 0x70`. So the samples ride the ordinary response path on the one IN
+endpoint, which is why no separate sender was ever going to turn up.
+
+**The two clients do not obviously agree here**, and the disagreement is the useful part. The
+classic client, section 91, takes learn reports off a queue its reader thread has already filled,
+sending nothing, which reads as the remote pushing reports unsolicited while a session is open. This
+one models the same bytes as a command's response stream. Both end at `0xF0 0x70` on the same
+endpoint, so they can be the same wire behaviour described from two heights, but which it is decides
+what an implementation has to do: keep reading during the session, or read after the stop. **Not
+established, and it is the question to put to the firmware**, whose answer is the response path of
+the `0x70` and `0x80` handlers rather than a search for a sender that does not exist.
+
+The **restart command itself is not documented by this project at all** and it is wider than
+learning. Its entry points cover terminate, default, before and after a config update, after a
+firmware update, start and stop update, start and stop learn, and start and stop upgrade; its
+configuration types are current firmware, user configuration and embedded configuration.
+
+**It is a write, whatever the flash rails say.** Sending it restarts a remote into a mode, so an
+implementation belongs behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` alongside the flash
+writes, and nothing in a read path may issue it.
 
 ### The read selector names, which reframe an earlier correction
 

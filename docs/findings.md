@@ -10752,6 +10752,38 @@ and one after, and after the stop the client waits an architecture specific rebo
 carrying on. So **stopping a learn can restart the remote**, which is worth knowing before anyone
 drives this.
 
+### A second client, found the same day, and what two sources agree on
+
+Added 9 August 2026. `Harmony Desktop.app` is a different application from the decompiled classic
+client and from the MyHarmony one this project had checked, and its packet layouts are served per
+model as ordinary files. It describes the same session, for the Harmony One by name, and the two
+clients were written years apart by different means.
+
+**Where they agree, believe it more.** The classic client said the session is bracketed by two
+configuration state changes; this one gives the bytes, a restart command with a subcommand, an entry
+point selecting start or stop learn, and a configuration type. Both agree the capture opens with
+`0x70` and closes with `0x80`, which the firmware had already settled, and both terminate the read
+on `0xF0 0x70`, which the firmware had also settled. So the bracket now has three independent
+sources and the entry point values have one.
+
+**Where they disagree is the useful part.** The classic client takes learn reports off a queue its
+reader thread filled without sending anything, which reads as the remote pushing reports unsolicited
+during the session. The Desktop one models the same bytes as a command's response stream: two
+packets after the start, an unspecified number after the stop, ending at the acknowledgement. Both
+put the samples on the one IN endpoint and end at the same terminator, so **they can be one wire
+behaviour described from two heights**, and that would explain why no separate sender exists to be
+found. But which it is decides what an implementation does, keep reading during the session or read
+after the stop, and it is **not established**.
+
+What it changes for the search: `0x2AF1A` is no longer the obvious next thing to read. The response
+paths of the `0x70` and `0x80` handlers are, because both clients say the bytes come back the way
+every other response does.
+
+**And the enter and leave commands are writes.** The restart command puts a remote into a mode, and
+its entry points cover far more than learning: config updates, firmware updates and upgrades. It sits
+behind `WRITES_ENABLED` in `packages/usb/src/rails.ts` when it is implemented, and no read path may
+issue it. `docs/host-client.md` has the rest, marked client sourced.
+
 ### Where it lands
 
 * `docs/usb-protocol.md`, the state machine and the two commands, from the firmware.

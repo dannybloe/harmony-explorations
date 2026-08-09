@@ -162,6 +162,26 @@ read only; they live in the lab and are not publishable, so these are the checks
 `0x810000` image, which is what confirms both the load address and that the external image is the
 running code.
 
+## Harmony Desktop's web application, mirrored 9 August 2026
+
+Not a binary and not firmware, but the same rule applies: the files stay in the private lab and only
+provenance is published. Logitech's `Harmony Desktop.app` is a shell around a hosted web
+application, so the application itself is fetchable from their content network without an account.
+Everything its own cache manifest lists was mirrored the day it was found, because a live service
+can be withdrawn without notice. `docs/host-client.md` has the rule that governs using it.
+
+| what | value |
+|---|---|
+| bootstrap | `https://sl.dhg.myharmony.com/desktop/2/production/` |
+| discovery service it names | `https://svcs.myharmony.com/Discovery/Discovery.svc` |
+| files mirrored | 368, all answering 200 |
+| bundle | 5486245 bytes, sha256 `ce6bfb3f...5c7fb0fc` |
+| manifest of per file hashes | sha256 `45c25743...a06a6bf0` |
+
+The build identifier is in the asset paths, so those move; the bootstrap two levels up is the stable
+entry point. The six locale manifests list the same files plus locale variants of the two large
+script bundles, which are the same code with different strings.
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than

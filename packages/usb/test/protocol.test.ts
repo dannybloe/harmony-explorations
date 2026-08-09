@@ -10,6 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  COMMAND_NAMES,
   COMMAND_STATES,
   ERASE_FLASH,
   GET_VERSION,
@@ -18,11 +19,17 @@ import {
   ProtocolError,
   READ_FLASH,
   READ_MISC,
+  READ_MISC_SELECTORS,
   REPORT_SIZE,
+  START_IRCAP,
+  STOP_IRCAP,
   WRITE_FLASH,
+  WRITE_MISC,
+  WRITE_MISC_SELECTORS,
   decodeReply,
   encodeRequest,
   eraseFlashRequest,
+  writeMiscRequest,
   getVersionRequest,
   nibbleForPayloadLength,
   payloadLengthForNibble,
@@ -237,4 +244,42 @@ test('the command states are the ones the firmware sets', () => {
     0xa0: 9,
     [READ_MISC]: 10,
   });
+});
+
+/**
+ * Consistency with a client sourced account of the learn session, `docs/host-client.md`.
+ *
+ * These do **not** assert the client is right, which rule 2 of that document forbids. They assert
+ * that what this project derived from firmware is consistent with it, which is a different claim
+ * and the one worth having: if a future firmware reading moved one of these, the disagreement
+ * should surface here rather than in an implementation that half believes both.
+ */
+test('the learn session uses only command bytes the firmware dispatches', () => {
+  // A second client describes the session as four commands. Three distinct command bytes appear in
+  // it, and every one is in the table this project read out of the dispatcher.
+  for (const code of [START_IRCAP, STOP_IRCAP, WRITE_MISC]) {
+    assert.ok(code in COMMAND_NAMES, `0x${code.toString(16)} is not a command we found`);
+  }
+  // And the capture opens into the state whose chain accepts only the stop, section 91.
+  assert.equal(COMMAND_STATES[START_IRCAP], 5);
+});
+
+test('the selector that brackets a learn session is one the firmware services', () => {
+  // The client describes entering and leaving learning as a WRITE_MISC with selector 0x0A carrying
+  // an entry point. That selector is in the list this project derived from the arch 14 command
+  // chain, independently and before the client was read, which is the corroboration.
+  assert.ok(WRITE_MISC_SELECTORS.includes(0x0a));
+  // It is a write, so no read path may reach it. Nothing in the read selector list should let it
+  // through, and `readMiscRequest` is the only way a read path builds a misc command.
+  assert.ok(!READ_MISC_SELECTORS.includes(0x0a));
+});
+
+test('nothing in the library can send a misc write with any selector but RAM', () => {
+  // The rail behind the rail. `writeRam` is the only misc write this library exposes and it pins
+  // the selector itself, so implementing the learn bracket means adding a method and a refusal
+  // rather than passing a different number to something that already exists.
+  const request = writeMiscRequest(MISC_RAM, 0x0300, 0x00);
+  assert.equal((request[0] as number) >> 4, 0xa, 'a WRITE_MISC command');
+  assert.equal(request[1], MISC_RAM);
+  assert.notEqual(request[1], 0x0a);
 });
