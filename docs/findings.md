@@ -4550,6 +4550,13 @@ it has to make that choice locally. And the sensor is a separate part: the 880 m
 infrared sensor "at the end opposite to the USB connector" and its front panel description names a
 dedicated infrared learning port, so receiving does not share the transmit path.
 
+**Three manuals across three architectures, and the mechanism is only in the older two.** The 880
+is arch 8 and the 520 arch 9, and both carry the five steps. The Harmony 525's own manual, from the
+later era, documents the same feature as a per device Learn IR action with the same 5 to 10 cm
+spacing and **no description of what happens to the signal**, deferring to instructions delivered
+online. So the feature is not model specific, which is what the owner reports from having used it on
+every remote here, and the era that documented its mechanism is the era whose service is gone.
+
 **The records section 32 cannot frame are class 1 as well**, 617 of them across the corpus. So the
 arch 8 "second population with headers near 303 and 310" that `docs/config-format.md` attributes to
 another encoding class is nothing of the sort. Whatever it is, it is inside class 1, and it needs a
