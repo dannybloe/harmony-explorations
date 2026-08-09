@@ -10938,9 +10938,11 @@ around it.
 2. It returns 64 bytes, in two chunks.
 3. The remote answers a config window against its own lab dump afterwards, unchanged.
 
-If all three hold, the refusal should become `count % FLASH_CHUNK_DATA == 1` rather than
-`count > FLASH_CHUNK_DATA`, and the reason attached to it should be the final chunk rather than the
-chunk count.
+* If all three hold, the refusal should become `count % FLASH_CHUNK_DATA == 1` rather than
+  `count > FLASH_CHUNK_DATA`, and the reason attached to it should be the final chunk rather than
+  the chunk count.
+* *Left as written, because it is the committed prediction. It is also wrong, and section 94 says
+  why within the day: the condition is an odd count, and this one would have let 65 through.*
 
 **The address is deliberately not the identity block.** `0xFFF400` is what the client reads and it
 holds the unit's serial GUIDs, which this repository does not publish and has no reason to read.
@@ -10965,8 +10967,12 @@ The 64 byte read at `0xE000` was run twice, in separate sessions. The config win
 was read before the first and after the last and was byte identical, so nothing here disturbed the
 remote at all. **All three predictions hold.**
 
-The refusal is now the measured condition, `count % FLASH_CHUNK_DATA == 1`, and 63, 125 and 187 are
-each refused by the library without any traffic reaching the device.
+~~The refusal became `count % FLASH_CHUNK_DATA == 1` on the strength of this, as the measured~~<!--superseded-->
+~~condition~~, and it is not. It is a curve through four data
+points, and section 94 read the loop that same day: the fetch primitive can only read a word, the
+loop subtracts two and exits on zero, so **any odd count never terminates**. 65 and 127 are odd and
+are not `62n + 1`, so the rail installed here would have let them through. The refusal is an odd
+count now.
 
 ### A confirmation nobody asked for
 
@@ -10987,6 +10993,99 @@ and it is still a workaround. Offset zero being exempt is unexplained too. Widen
 architecture nobody has tested is the thing not to do, and the arch 9 remote is the one that would
 tempt somebody, since its internal memory sits at plain low addresses where every caller can reach
 it.
+
+## 94. An odd internal read count never terminates, and that is the whole restart
+
+Section 93 measured the hazard and narrowed a rail around it. This reads the firmware and finds the
+cause, which is neither the chunk count nor the final chunk's size: **an internal read of an odd
+number of bytes puts the Harmony One in a loop that cannot end**.
+
+### The loop
+
+`0x26BC8` on the Harmony One, inside the `READ_FLASH` body's branch for an internal top address
+byte. One pass:
+
+```
+26bc8: 04 00       CLRWDT              ; the watchdog is fed every pass
+26bca..26bd2                           ; the 24 bit address into the primitive's arguments
+26bd6: 85 ec 73 f1 CALL 0x2e70a        ; fetch
+26bda: f3 cf 32 fd MOVFF PRODL,0xd32
+26bde: f4 cf 33 fd MOVFF PRODH,0xd33
+26be2..26bf2                           ; address += 2
+26bf4..26bfc                           ; emit 0xd32 through the byte sender
+26c00..26c08                           ; emit 0xd33
+26c0c: 02 0e       MOVLW 0x02
+26c10: 31 5f       SUBWF 0xd31,F       ; remaining -= 2
+26c14: 31 51       MOVF 0xd31,W
+26c16: 00 08       SUBLW 0x00          ; carry only when remaining == 0
+26c18: d7 e3       BNC 0x26bc8         ; otherwise go round again
+```
+
+Three facts and they are enough.
+
+**The fetch can only read a word.** `0x2E70A` sets `TBLPTR` and does `TBLRD*+` then `TBLRD*`,
+returning two bytes in `PRODL` and `PRODH`. There is no single byte entry point. Its twin on arch 14
+is `0x1B558`, structurally identical, and both are the only routines of that shape in their images.
+
+**So the loop is committed to two bytes a pass**: it emits both, advances the address by two and
+subtracts two.
+
+**And the exit test is equality with zero**, not a signed comparison. From an odd count the
+remaining value steps 1, 255, 253, 251 and back to 1, and never equals zero. The loop runs forever,
+pushing bytes into the response buffer and walking the address through program memory, and
+`CLRWDT` at the top means the watchdog will not break it either.
+
+### Why the trigger looked like a final chunk of one byte
+
+The length clamp at `0x0C9B2` on the 700, whose arch 12 twin fronts this loop, picks the largest
+representable payload not exceeding what is left: 63, 31, 15, 7, or a literal 0 to 6. A payload
+carries one sequence byte, so the data a chunk can hold is 62, 30, 14, 6, or 0 to 5. **Every one of
+those is even except 1, 3 and 5**, which only occur when five or fewer bytes remain.
+
+Since every large chunk removes an even number, the parity of the remaining count never changes. An
+odd total is odd at the end. So:
+
+| request | chunks | outcome |
+|---|---|---|
+| 62 | 62 | terminates |
+| 63 | 62, 1 | **never terminates** |
+| 64 | 62, 2 | terminates |
+| 65 | 62, 3 | **never terminates** |
+| 124 | 62, 62 | terminates |
+| 125 | 62, 62, 1 | **never terminates** |
+| 128 | 62, 62, 4 | terminates |
+
+Every measurement this project has taken sits in that table, and the "final chunk of exactly one
+byte" reading of section 93 was a description of the only odd tail the sizes anyone had tried
+happened to produce. **63 and 125 are `62n + 1` and 65 and 127 are not**, so the rail section 93
+installed would have let a remote hang.
+
+### The rail
+
+`packages/usb` refuses an odd count for an internal read, and the reason attached to it is now a
+mechanism rather than a symptom. It is the third form of this refusal in one day and the first that
+is derived rather than fitted: `count > 62` was a bound around the hazard, `count % 62 == 1` was a
+curve fitted to four data points, and this is what the code does.
+
+### What is still not explained
+
+**`63` bytes at offset zero was recorded as fine, twice.** This reading says it should hang. Two
+trials is thin, the observation is nearly a year old in project time and was taken while the
+question was still "is it the chunk count", and the branch at `0x26BB2` that this body sits behind
+tests the **top address byte** rather than the offset, so there is no offset zero case in the code
+to appeal to. It should be re-measured before anyone builds on the exemption. It is not needed for
+the rail, which refuses odd counts everywhere.
+
+**Whether arch 14 and arch 9 share it** is untested on hardware. The word-only primitive exists on
+arch 14 at `0x1B558`, so the shape is there. Nothing here justifies trying an odd read on a remote
+to find out.
+
+### The prediction this makes, and it is cheap
+
+An internal read of **65** bytes should hang a Harmony One where 64 and 124 do not, and 65 is not
+`62n + 1`. That is the experiment that separates this reading from section 93's, and it costs one
+deliberate restart of the spare, of the kind that has recovered five times already. **Not performed
+here**: a restart is not something to spend without asking.
 
 ## References
 

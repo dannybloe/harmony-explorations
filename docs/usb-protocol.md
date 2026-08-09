@@ -1234,9 +1234,10 @@ still restart a running remote.
 
 ~~It used to refuse an internal read of more than one chunk~~<!--superseded-->, which is a bound
 around the hazard rather than the hazard: 64 and 124 byte reads were already recorded as safe in the
-table above when that cap was written. Narrowed to the measured condition on 9 August 2026, with the
-64 and 124 byte reads repeated on the spare across both internal pages and the config verified
-afterwards, `docs/findings.md` section 93.
+table above when that cap was written. Narrowed on 9 August 2026 with those reads repeated on the
+spare, `docs/findings.md` section 93, and then **explained** the same day: the fetch primitive can
+only read a word, the loop subtracts two and exits on zero, so an odd count never terminates,
+section 94. The refusal is an odd count.
 
 ### Live RAM, and upstream's selector confirmed wrong for this architecture
 

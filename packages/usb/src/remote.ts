@@ -158,7 +158,7 @@ export class HarmonyRemote {
   async readFlash(address: number, count: number): Promise<Uint8Array> {
     // Throws for a top byte the device's own rule rejects, and tells us which region this is.
     const region = regionOf(address, this.architecture);
-    if (region === 'internal-program-memory' && count % FLASH_CHUNK_DATA === 1) {
+    if (region === 'internal-program-memory' && count % 2 === 1) {
       // The one chunk cap, enforced here rather than only in `readInternalMemory`. It lived there
       // alone until 8 August 2026, which was fine while internal memory was only reachable through
       // the `0xFE` window that method builds. On arch 9 it is at plain low addresses, so every
@@ -166,8 +166,8 @@ export class HarmonyRemote {
       // hazard is in `readInternalMemory`'s comment: a multi chunk read of this region has
       // restarted a remote, five times, on arch 12.
       throw new RemoteError(
-        `an internal memory read of ${count} bytes ends in a final chunk of one byte, which has ` +
-          `restarted a remote; ask for any other count`,
+        `an internal memory read of ${count} bytes is an odd count, and the firmware's fetch loop ` +
+          `decrements by two and exits on zero, so an odd count never terminates; ask for an even one`,
       );
     }
     await this.transport.write(readFlashRequest(address, count));
@@ -231,7 +231,7 @@ export class HarmonyRemote {
    * single probe rather than from the device. `docs/findings.md` section 22.
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
-    if (count % FLASH_CHUNK_DATA === 1) {
+    if (count % 2 === 1) {
       // A read of this region can restart the remote, and this refusal is what avoids it. Measured
       // on the spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
       //
@@ -245,20 +245,25 @@ export class HarmonyRemote {
       // not is a final chunk of exactly one byte. Offset 0 is somehow exempt. Beyond that it is not
       // diagnosed, and five restarts was enough hardware for one question.
       //
-      // **The refusal used to be `count > FLASH_CHUNK_DATA`**, which is a bound around the hazard
-      // rather than the hazard, and it refused reads Logitech's own client performs: it reads a
-      // unit's 64 byte identity block in one go. Narrowed to the measured condition on 9 August
-      // 2026 after 64 and 124 byte reads were repeated on the spare across both internal pages,
-      // with the config verified against its dump afterwards. Section 93. It is still a workaround
-      // and not an explanation, so do not widen it further on an architecture nobody has tested.
+      // **The mechanism is read now, and it is not the chunk shape at all**, section 94. The fetch
+      // at `0x26BC8` on the One calls a primitive that can only read a *word*, emits both bytes,
+      // and does `count -= 2` with an exit test of `count == 0`. An odd count steps 1, 255, 253 and
+      // never lands on zero, so the loop runs forever, and `CLRWDT` at the top of it means the
+      // watchdog does not end it either. Every chunk size the length clamp can produce is even
+      // except 1, 3 and 5, so the parity of the remaining count never changes: an odd *total* is
+      // what hangs a remote.
+      //
+      // So this refuses odd counts. Two earlier refusals were both bounds around the hazard rather
+      // than the hazard: `> FLASH_CHUNK_DATA` refused the 64 byte read Logitech's own client makes,
+      // and `% FLASH_CHUNK_DATA == 1` would have let 65 and 127 through.
       //
       // Every one of those restarts recovered on its own, and the config read back byte-identical to
       // its dump across three separate windows afterwards. So this is disruption, not damage. Still,
       // "read only" and "harmless" are not the same sentence on this path, which is the reason for a
       // refusal here rather than a comment somewhere.
       throw new RemoteError(
-        `an internal memory read of ${count} bytes ends in a final chunk of one byte, which has ` +
-          `restarted a remote; ask for any other count`,
+        `an internal memory read of ${count} bytes is an odd count, and the firmware's fetch loop ` +
+          `decrements by two and exits on zero, so an odd count never terminates; ask for an even one`,
       );
     }
     if (offset < 0 || offset > 0xffc0) {

@@ -1268,3 +1268,52 @@ class TestTheEndpointSetup(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestTheInternalReadLoopCannotEndOnAnOddCount(unittest.TestCase):
+    """Section 94: an odd internal read count never terminates on a Harmony One.
+
+    The claim is about three instructions, so it is asserted against the image rather than
+    described. `0x26BC8` is the loop head and `0x26C18` branches back to it.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    LOOP_HEAD = 0x26BC8
+    LOOP_BACK = 0x26C18
+    WORD_READ = 0x2E70A
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_the_loop_subtracts_two_and_exits_only_on_zero(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # `SUBLW 0x00` sets carry only when the value is zero, and the branch back is `BNC`. A
+        # signed or a "less than" test would terminate on an odd count; this one cannot.
+        self.assertEqual(self.at(code, 0x26C16).mnemonic, 'SUBLW')
+        back = self.at(code, self.LOOP_BACK)
+        self.assertEqual(back.mnemonic, 'BNC')
+        self.assertEqual(back.fields['target'], self.LOOP_HEAD)
+        # And the step is two, so an odd remaining count steps 1, 255, 253 and never lands on zero.
+        self.assertEqual(self.at(code, 0x26C0C).mnemonic, 'MOVLW')
+        self.assertEqual(self.at(code, 0x26C0C).fields['k'], 2)
+        self.assertEqual(self.at(code, 0x26C10).mnemonic, 'SUBWF')
+
+    def test_the_fetch_it_calls_can_only_read_a_word(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # Two table reads and no single byte entry point, so the loop is committed to two bytes a
+        # pass whatever it was asked for.
+        self.assertEqual(self.at(code, 0x2E718).mnemonic, 'TBLRD*+')
+        self.assertEqual(self.at(code, 0x2E71E).mnemonic, 'TBLRD*')
+        # The loop calls exactly that routine.
+        call = self.at(code, 0x26BD6)
+        self.assertEqual(call.mnemonic, 'CALL')
+        self.assertEqual(call.fields['target'], self.WORD_READ)
+
+    def test_the_watchdog_is_fed_inside_the_loop(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # So the watchdog cannot end the loop either, which is why a remote hangs and drops off the
+        # bus rather than resetting cleanly.
+        self.assertEqual(self.at(code, self.LOOP_HEAD).mnemonic, 'CLRWDT')

@@ -16,7 +16,7 @@
  * how a flash part that ignores an address bit gives itself away.
  *
  * Internal program memory is deliberately not reachable from here. It has its own path, which
- * refuses a count whose final chunk would be one byte, because that is what restarts a remote.
+ * refuses an odd count, because the firmware's fetch loop subtracts two and exits on zero.
  *
  * **It sends `GET_VERSION` first, and that is not politeness.** A remote that has been idle loses
  * the first command sent to it: a Harmony One returned nothing at its own config base on the first
