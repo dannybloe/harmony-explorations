@@ -268,6 +268,27 @@ The same routine confirms two things already believed: the terminator is `0xBEEF
 architecture uses a different magic with a 16 bit length, which is why the width is stated per
 magic rather than per architecture.
 
+**The file format classes, 9 August 2026, and this one is different in kind**: it corrected four
+things and none of the corrections needed the client's word for anything. `docs/findings.md`
+section 87. The EZ container's split rule is structural rather than arithmetic, both declarations
+in the header are optional, the compatibility gate compares six fields rather than four, and an
+arch 12 firmware package states its own two way split in `<PHASE>` elements. Every one of those was
+then checked against files this project has held since the first week, so what the client supplied
+was the **question**, and the corpus supplied the answer.
+
+That is the shape this document argued the client was for, and it is worth naming as a fourth
+category beside the ledger, the confirmations and the dead ends: a source can be worth reading
+because of what it makes you go and measure, without a single fact travelling from it.
+
+**The platform codenames no longer rest on the client at all**, same date. Logitech's firmware
+packages carry a comment naming the architecture on every entry of the list they refuse, so
+Espresso, Mocha, Cappuccino, Cognac, Gin and Molson are corroborated by a shipped data file rather
+than by decompiled code. The skin table above is unaffected and still client sourced.
+
+**The software type values**, same date, and they came from a package rather than from the client:
+0 application, 4 safe mode, 1 test, 3 boot. Section 87 places them in `GET_VERSION` field 4's low
+nibble by reading the same accessor out of each bench remote's application and safe mode images.
+
 ### Smaller leads
 
 * Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area

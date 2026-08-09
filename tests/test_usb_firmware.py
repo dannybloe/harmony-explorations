@@ -572,13 +572,68 @@ class TestFieldFourIsTheArchitecture(unittest.TestCase):
                 self.assertEqual(self.literal(image, base, table, self.SKIN), skin)
                 self.assertEqual(self.literal(image, base, table, self.HIGH), architecture)
 
-    def test_the_low_nibble_is_zero_everywhere_so_it_is_undetermined(self):
-        """Field 4's other four bits are a compiled in zero on all four images, so they are a
-        second field whose meaning nothing here can reach."""
+    # The same five accessors inside each remote's **safe mode** image, which is a second
+    # firmware sitting beside the application in internal memory. Section 87.
+    SAFE_MODE = {
+        'h600_internal_fe': (0xFE0000, 0xFE41FA, 0x02, 71, 14),
+        'one_internal_fe': (0xFE0000, 0xFE54DE, 0x34, 54, 12),
+    }
+
+    def test_the_low_nibble_is_the_software_type(self):
+        """
+        Section 87, and this test used to say the nibble was undetermined.
+
+        It is zero on all four **application** images and 4 on both **safe mode** images, of the
+        same two remotes. Those two images differ in exactly one of the five accessors, which is
+        what makes this an identification rather than an observation about two numbers: the other
+        four, firmware version, skin, the field 6 constant and the architecture, are byte for byte
+        the same in a remote's two images.
+
+        Logitech's own firmware package names the values, in a comment beside the version list it
+        accepts: 3 is Boot mode, 1 is Test mode, and the two it accepts, 0 and 4, are "application
+        mode or Safe mode". Every user config in the corpus declares 0, and a user config is
+        written to a remote running its application, so 0 is the application and 4 is safe mode.
+        The images agree with that assignment rather than being read through it.
+        """
         lab.require(*self.TABLES)
         for image, (base, table, _, _, _) in self.TABLES.items():
             with self.subTest(image):
                 self.assertEqual(self.literal(image, base, table, self.LOW), 0)
+
+        lab.require(*self.SAFE_MODE)
+        for image, (base, table, firmware, skin, architecture) in self.SAFE_MODE.items():
+            with self.subTest(image):
+                self.assertEqual(self.literal(image, base, table, self.LOW), 4)
+                # The other four match the application image of the same remote, which is what
+                # rules out having found some unrelated run of RETLW.
+                self.assertEqual(self.literal(image, base, table, 0), firmware)
+                self.assertEqual(self.literal(image, base, table, self.SKIN), skin)
+                self.assertEqual(self.literal(image, base, table, self.CONSTANT), 0x0C)
+                self.assertEqual(self.literal(image, base, table, self.HIGH), architecture)
+
+    def test_the_version_block_ors_the_software_type_under_the_architecture(self):
+        """
+        Where the byte goes: `SWAPF` the architecture into the high nibble, mask, then `IORWF`
+        the software type into the low one. So a remote reports which of its images is running,
+        and both bench remotes read zero because both were running their application.
+
+        The prediction that follows, written down before anyone tries it: a Harmony 600 in safe
+        mode answers field 4 as `0xE4` and a Harmony One as `0xC4`.
+        """
+        code = lab.load('h600_code_complete')
+        base = 0x9000
+        # CALL the software type accessor, then the architecture one, then combine.
+        self.assertEqual(isa.decode(code, 0x1395E - base, base).mnemonic, 'SWAPF')
+        andlw = isa.decode(code, 0x13960 - base, base)
+        self.assertEqual((andlw.mnemonic, andlw.fields['k']), ('ANDLW', 0xF0))
+        self.assertEqual(isa.decode(code, 0x13962 - base, base).mnemonic, 'IORWF')
+        # And the operand of the IORWF is the byte the software type accessor was stored into,
+        # two instructions after its own call. The SWAPF reads a different byte, the one the
+        # architecture accessor filled, so the two nibbles come from two accessors and not from
+        # one value being taken apart.
+        software_type = isa.decode(code, 0x13954 - base, base).fields['f']
+        self.assertEqual(isa.decode(code, 0x13962 - base, base).fields['f'], software_type)
+        self.assertNotEqual(isa.decode(code, 0x1395E - base, base).fields['f'], software_type)
 
     def test_field_six_is_a_compiled_in_constant_and_not_a_field_count(self):
         """

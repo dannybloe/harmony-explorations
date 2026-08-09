@@ -63,7 +63,7 @@ Both architectures reserve a 128 KiB firmware area in external flash and put it 
 | | architecture 12 | architecture 14 |
 |---|---|---|
 | MCU | `PIC18F87J50`, inferred | `PIC18F67J50` |
-| external flash | 4 MiB parallel NOR | 4 MiB SPI |
+| external flash | 4 MiB parallel NOR | SPI, 2 or 4 MiB, unresolved, section 87 |
 | application stored at | external `0x020000` | external `0x000000` |
 | application runs from | external `0x020000`, in place | internal `0x9000`, copied |
 | safe mode config | external `0x002000`, below the firmware | external `0x020000`, above it |

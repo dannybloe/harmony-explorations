@@ -40,9 +40,12 @@ is what placed those two fields.
 Architecture 14 reserves internal `0x000000` to `0x008FFF` for the bootloader, 36 KiB, of which only
 the first 4 KiB and the safe mode image are used.
 
-## External flash, 4 MiB SPI
+## External flash, SPI
 
 Not memory mapped, so this is storage rather than code the processor runs.
+
+**How big it is, is open, and the heading used to say 4 MiB.** Three routes say 2 MiB and one says
+4, and the one is the weakest of them. See the note below the table.
 
 | Address | Length | Contents | Source |
 |---|---|---|---|
@@ -55,7 +58,21 @@ Two stretches have never been examined: `0x0112C0` to `0x020000`, and the rest o
 `0x030000`.
 
 Same closure as on the One: concordance reports the config region as 3904 KiB, and `0x030000` plus
-3904 KiB is exactly `0x400000`, the 4 MiB the part holds.
+3904 KiB is exactly `0x400000`.
+
+**Whether the part actually holds 4 MiB is unresolved**, `docs/findings.md` section 87, and the
+closure above is the only thing that says it does. Three independent routes say **2 MiB**: the
+`FLASH` field this remote reports over USB, `0x15:0x1C`, whose capacity byte `0x15` is 2 MiB in
+JEDEC's power of two convention; the part number recorded for it, an EON F16, which is a 16 Mbit
+device; and Logitech's own client, which has exactly two arch 14 flash geometries, 1 MiB and 2 MiB,
+and no 4 MiB one. The one route that says 4 MiB is concordance's architecture table, which is the
+same table that is wrong about firmware on this architecture.
+
+Nothing here is changed on the argument alone, because every number derived from the 4 MiB figure
+is an upper bound on a region that a read path never reaches. **One read settles it**: sixteen
+bytes at `0x230000`, which is the config's own base plus 2 MiB. A 2 MiB part ignores the high
+address bit and returns the config's first bytes, `GSPM`; a 4 MiB part returns what is really at
+that address, which is erased. Seeing `GSPM` proves 2 MiB.
 
 ## What is not established
 

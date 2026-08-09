@@ -84,7 +84,82 @@ test('INTENDEDVERSION pins the target remote', skipUnless('h525_config'), () => 
     SKIN: '22',
     FLASH: '0xFF:0x12',
     BOARD: '2.5.0',
+    // The fifth field, missed by the four field reading. It says which of the remote's images
+    // the file is aimed at: 0 is the application, 4 safe mode, 3 boot and 1 test. Section 87.
+    SOFTWARETYPE: '0',
   });
+});
+
+for (const name of EZHEX) {
+  test(`${name}'s two splits agree`, skipUnless(name), () => {
+    // The arithmetic split counts back from the end of the file; the structural one reads the
+    // header's own terminator. They have no reason to land on the same byte unless both are
+    // right, which is what makes this worth computing twice.
+    const blob = load(name) as Uint8Array;
+    const ez = parseEzhex(blob, name);
+    assert.equal(ez.structuralSplit, blob.length - (ez.declaredSize as number));
+    assert.equal(ez.lineEnding, 'crlf');
+  });
+}
+
+/**
+ * Byte for char and char for byte, so a text edit to the header leaves the payload alone.
+ *
+ * Neither of the platform's own converters can do this. `TextEncoder` only speaks UTF-8, so it
+ * turns every payload byte above `0x7F` into two. And `TextDecoder('latin1')` is **not** Latin-1:
+ * the label is an alias for windows-1252, which maps `0x80` to `0x20AC` and thirty odd others
+ * elsewhere, so decoding and re-encoding a config through it corrupts the payload silently. That
+ * cost a confusing failure here, and it is the same class of bug as reading a config as UTF-8.
+ */
+function latin1Text(data: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < data.length; i += 0x8000) {
+    out += String.fromCharCode(...data.subarray(i, Math.min(i + 0x8000, data.length)));
+  }
+  return out;
+}
+
+function latin1Bytes(text: string): Uint8Array {
+  const out = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i += 1) out[i] = text.charCodeAt(i) & 0xff;
+  return out;
+}
+
+test('a declared length that lies is caught rather than obeyed', skipUnless('h525_config'), () => {
+  const blob = load('h525_config') as Uint8Array;
+  const text = latin1Text(blob);
+  const mutated = latin1Bytes(text.replace('<BINARYDATASIZE>78486<', '<BINARYDATASIZE>78480<'));
+  const ez = parseEzhex(mutated, 'mutated');
+  assert.equal(ez.checks['the_two_splits_agree'], false);
+  assert.equal(ez.checks['payload_length_matches_declaration'], false);
+  // And the payload is still right, because the structural split wins.
+  assert.equal(ez.payload.length, 78486);
+});
+
+test('an absent declaration is not a failure', skipUnless('h525_config'), () => {
+  // Ours used to report the absence as a failed check, which conflates "this file does not say"
+  // with "this file is wrong". A firmware wrapper declares neither field and is perfectly valid.
+  const text = latin1Text(load('h525_config') as Uint8Array);
+  const stripped = text
+    .replace(/<BINARYDATASIZE>\d+<\/BINARYDATASIZE>/, '')
+    .replace(/<CHECKSUM>-?\d+<\/CHECKSUM>/, '');
+  const ez = parseEzhex(latin1Bytes(stripped), 'stripped');
+  assert.equal(ez.declaredSize, undefined);
+  assert.equal(ez.declaredChecksum, undefined);
+  assert.ok(allChecksPass(ez), JSON.stringify(ez.checks));
+  assert.equal(ez.payload.length, 78486);
+});
+
+test('a negative checksum reads as the byte it narrows to', skipUnless('h525_config'), () => {
+  // The consuming reader parses `<CHECKSUM>` as a signed 16 bit number and narrows it to a byte,
+  // so a value above 127 may legitimately be written negative. No sample does, which is exactly
+  // why a reader matching digits only would have failed silently on the first one that did.
+  const text = latin1Text(load('h525_config') as Uint8Array);
+  const rewritten = text.replace('<CHECKSUM>12</CHECKSUM>', '<CHECKSUM>-244</CHECKSUM>');
+  assert.notEqual(rewritten, text);
+  const ez = parseEzhex(latin1Bytes(rewritten), 'signed');
+  assert.equal(ez.declaredChecksum, -244);
+  assert.equal(ez.checks['checksum_matches_declaration'], true);
 });
 
 test('payloadOf unwraps XML and passes a raw dump through', skipUnless('h525_config', 'h700_code'), () => {

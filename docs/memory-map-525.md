@@ -131,7 +131,8 @@ space the container's own pointers use.
 | `0x820000` onward | 51195 on the bench unit, 78486 in the published sample | the **user config**, an `AHCM` container | measured |
 | `0x870000` to `0x880000` | 65536 | the **log area** | base slot 2, `capacity 8192` at a stride of 8 |
 
-**The flash is 512 KiB, not the 4 MiB both other architectures have**, and the chip is a 25F040.
+**The flash is 512 KiB, far below either of the other architectures**, and the chip is a 25F040.
+Arch 12's is 4 MiB; arch 14's is 2 or 4 and unresolved, `docs/findings.md` section 87.
 That was first inferred here from one number, the log area's limit of `0x080000` with section 47's
 rule that the region sits above the config, and it agrees with what the sample's owner reported
 independently. It also fixes the config region at `0x020000` to `0x080000`, which is 384 KiB, and

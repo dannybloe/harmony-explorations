@@ -135,21 +135,46 @@ it lacked is NULL everywhere. See `docs/findings.md` section 20.
 
 ## The EZHex wrapper
 
-A config as read off a remote or handed to it is an XML header, a `\r\n`, then the container as
-raw bytes. The header makes the split verifiable, and pins what remote will accept the file.
+A config as handed to a remote is an XML header followed by the container as raw bytes.
+
+**The header ends at the line carrying `</INFORMATION>`**, and the payload is everything after
+that line's terminator. That is the split, and everything else in the header is a check on it:
 
 ```
-<BINARYDATASIZE>   exact payload length in bytes; the payload is the last N bytes of the file
-<CHECKSUM>         XOR of every payload byte, seeded 0x69
-<INTENDEDVERSION>  PROTOCOL, SKIN, FLASH, BOARD that the remote must report
+</INFORMATION>     the last line of the header. The payload starts after its line terminator,
+                   which is CR LF in every config here and is not required to be
+<BINARYDATASIZE>   optional. The payload length, so the split is also the last N bytes
+<CHECKSUM>         optional. XOR of every payload byte, seeded 0x69, compared as a byte
+<INTENDEDVERSION>  PROTOCOL, SKIN, FLASH, BOARD, SOFTWARETYPE, ARCHITECTURE
 ```
 
-The size and checksum rules are verified on all eight config samples in the corpus,
-`src/harmony/ezfile.py`. The consequence of `INTENDEDVERSION` is **reported, not verified
-here**: harmony-decompiler states that a remote refuses a mismatched config with "This
-configuration file is not compatible with your Harmony Remote". Nothing has been written to a
-remote in this project, so treat that as the reason to match the header, not as our own
-observation.
+Three rules that a reader has to get right, all of them with a sample in the corpus:
+
+* **A file with no header at all is legal** and is the whole payload. The Harmony 700 package's
+  config region is one.
+* **An absent `BINARYDATASIZE` or `CHECKSUM` is not a failure.** Every firmware wrapper omits both.
+* **A `CHECKSUM` may be written signed**, because the value is narrowed to a byte before
+  comparison. No sample in the corpus does, so this is from the consuming reader rather than
+  measured.
+
+Both splits are computed and compared, `src/harmony/ezfile.py` and `packages/codec/src/ezhex.ts`,
+and they agree on all ten config samples. `docs/findings.md` section 87.
+
+`INTENDEDVERSION` is compared field by field, and **an absent or empty field matches anything**, so
+an entry with no fields at all matches every remote. `BOARD` is normalised on the file's side
+before comparison: `0.5` becomes `0.5.0`. `SOFTWARETYPE` says which firmware personality the file
+is for, 0 for the application, 4 for safe mode, 3 boot and 1 test; every config in the corpus
+declares 0.
+
+The consequence of a mismatch is **reported, not verified here**: harmony-decompiler states that a
+remote refuses a mismatched config with "This configuration file is not compatible with your
+Harmony Remote". Nothing has been written to a remote in this project, so treat that as the reason
+to match the header, not as our own observation.
+
+An `.EZUpgrade` carries its payload hex encoded in `<DATA>` elements instead, 32 bytes each with a
+short one at the end, grouped into a `<PHASE>` per destination with a `<TYPE>` naming it. An arch
+12 firmware package has two, `Configuration_Static` then `Firmware_Main`; arch 14 has one and ships
+the config as a separate region.
 
 Not to be confused with the trailer checksum inside the container, which is a different
 algorithm. This one covers the whole payload; that one is what the remote validates internally,

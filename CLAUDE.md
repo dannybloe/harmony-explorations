@@ -594,7 +594,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 75 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 87 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -688,9 +688,14 @@ produce a config the remote accepts and mishandles.
 
 * **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
-  ten fields have a reading, section 59. The installed image is ruled out as the explanation: the
-  One's own flash dump is byte identical to the package there, so what is left is what a `TBLRD`
-  does past the on-chip flash, which is a hardware question and not a firmware one.
+  ten fields have a reading, section 59 and section 87. The installed image is ruled out as the
+  explanation: the One's own flash dump is byte identical to the package there, so what is left is
+  what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
+  Field 6 is narrowed rather than open: it is one of five per image build constants beside the
+  firmware version, the software type, the skin and the architecture, and it is `0x09` on arch 9
+  where it is `0x0C` on both others.
+* **How big the arch 14 external flash is**, 2 MiB by three routes and 4 MiB by concordance's
+  architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on

@@ -93,6 +93,14 @@ Anything that finds remotes by scanning for `0x046D` will never see one.
 `Gin` is the name this project already used for arch 12, taken from the same source in section 81
 before the rule in `docs/host-client.md` existed. It is recorded properly here.
 
+**Six of these names are corroborated by a file Logitech shipped rather than by the client**, which
+matters because the client is the weaker source. The firmware packages in the lab carry a
+`NOTINTENDED` list of architectures they refuse, with a comment naming each: architecture 8 is
+Espresso, 9 Mocha, 10 Cappuccino, 11 Cognac, 12 Gin and 14 Molson, and 2, 3, 6 and 7 are named by
+model number rather than by codename. `docs/findings.md` section 7 has the table and section 87 the
+rest of what those comments settle. So the platform to architecture mapping does not rest on the
+decompiled client at all.
+
 **One product id is several models.** `0xC122` covers the 600, the 650 and the 700, which is why
 `packages/usb` cannot identify a model by product id alone and why `openHarmony` refusing an
 ambiguous selector was the right call for a reason nobody had written down.

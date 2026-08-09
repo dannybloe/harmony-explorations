@@ -1,7 +1,9 @@
 """
 The container readers, and the scrubber that must run before any `.hfw` is mirrored.
 """
+import re
 import unittest
+import zipfile
 
 import lab
 from harmony import ezfile, gspm
@@ -64,8 +66,10 @@ class TestHfwReader(unittest.TestCase):
         regions = ezfile.read_hfw(lab.path('h700_hfw'))
         self.assertEqual(sorted(regions), ['Region_2.EZUpgrade', 'Region_3.EZHex'])
         self.assertEqual(len(regions['Region_2.EZUpgrade'].payload), 76672)
-        self.assertEqual(regions['Region_3.EZHex'].encoding, 'raw-after-xml')
         self.assertTrue(regions['Region_3.EZHex'].looks_like_gspm)
+        # No XML at all: the file is the container, first byte to last. That is legal, and it
+        # is the corpus's one instance of the branch a header-less file takes.
+        self.assertEqual(regions['Region_3.EZHex'].encoding, 'bare-container')
         self.assertFalse(regions['Region_2.EZUpgrade'].looks_like_gspm,
                          'arch 14 ships code and config as separate regions')
 
@@ -141,10 +145,23 @@ class TestEzHexHeader(unittest.TestCase):
         ez = ezfile.parse_ezhex(lab.load('h525_config'), 'h525')
         self.assertEqual(ez.intended_version,
                          {'PROTOCOL': '9', 'SKIN': '22', 'FLASH': '0xFF:0x12',
-                          'BOARD': '2.5.0'})
+                          'BOARD': '2.5.0', 'SOFTWARETYPE': '0'})
         ez = ezfile.parse_ezhex(lab.load('arch8_config_a'), 'arch8')
         self.assertEqual(ez.intended_version['PROTOCOL'], '8')
         self.assertEqual(ez.intended_version['SKIN'], '15')
+
+    def test_every_config_states_a_software_type_and_none_states_an_architecture(self):
+        """The two fields the four field reading missed, section 87.
+
+        `SOFTWARETYPE` is compared and is present everywhere; `ARCHITECTURE` is compared and
+        appears in no user config, so it matches by being absent. A reader that knows only
+        four fields cannot tell those two cases apart.
+        """
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                ez = ezfile.parse_ezhex(lab.load(name), name)
+                self.assertEqual(ez.intended_version.get('SOFTWARETYPE'), '0')
+                self.assertNotIn('ARCHITECTURE', ez.intended_version)
 
     def test_payload_is_the_container_the_parser_then_reads(self):
         for name in self.CONFIGS:
@@ -153,6 +170,145 @@ class TestEzHexHeader(unittest.TestCase):
                 c = gspm.parse(ez.payload)
                 self.assertEqual(c.blob_offset, 0, 'payload starts at the container')
                 self.assertEqual(c.length, len(ez.payload))
+
+
+class TestTheSplitIsStructural(unittest.TestCase):
+    """
+    Section 87. The header ends at the line carrying `</INFORMATION>`; `BINARYDATASIZE` is a
+    check on that and not the definition of it. Both derivations are computed and compared,
+    which is the point: an arithmetic split from the end of the file and a structural one
+    from the header's own terminator have no reason to agree unless both are right.
+    """
+
+    CONFIGS = TestEzHexHeader.CONFIGS
+
+    def test_the_structural_and_declared_splits_agree_on_every_config(self):
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                ez = ezfile.parse_ezhex(lab.load(name), name)
+                self.assertIsNotNone(ez.structural_split)
+                self.assertEqual(ez.structural_split,
+                                 len(lab.load(name)) - ez.declared_size)
+
+    def test_the_header_terminator_is_followed_by_crlf_in_every_config(self):
+        """True of the corpus, and not required by the format: see the EZUp test below."""
+        for name in self.CONFIGS:
+            with self.subTest(config=name):
+                self.assertEqual(ezfile.parse_ezhex(lab.load(name), name).line_ending, 'crlf')
+
+    def test_a_file_with_no_header_at_all_is_all_payload(self):
+        """The 700 package's config region carries no XML. The old rule found it by
+        searching for a container cookie, which is a guess that happened to be right."""
+        lab.require('h700_hfw')
+        blob = ezfile.read_hfw(lab.path('h700_hfw'))
+        region = blob['Region_3.EZHex']
+        self.assertEqual(region.encoding, 'bare-container')
+        self.assertEqual(region.payload[:4], b'GSPM')
+        ez = ezfile.parse_ezhex(region.payload, 'Region_3')
+        self.assertFalse(ez.has_a_header)
+        self.assertEqual(len(ez.payload), len(region.payload))
+        self.assertTrue(ez.all_checks_pass, ez.checks)
+
+    def test_a_declared_length_that_lies_is_caught_rather_than_obeyed(self):
+        """A check that cannot fail is not a check. Shortening the declaration moves the
+        arithmetic split and leaves the structural one where it was."""
+        blob = bytearray(lab.load('h525_config'))
+        text = bytes(blob)
+        original = b'<BINARYDATASIZE>78486</BINARYDATASIZE>'
+        self.assertIn(original, text)
+        mutated = text.replace(original, b'<BINARYDATASIZE>78480</BINARYDATASIZE>')
+        # Same length, so nothing else moves.
+        self.assertEqual(len(mutated), len(text))
+        ez = ezfile.parse_ezhex(mutated, 'mutated')
+        self.assertFalse(ez.checks['the_two_splits_agree'])
+        self.assertFalse(ez.checks['payload_length_matches_declaration'])
+        # And the payload is still right, because the structural split wins.
+        self.assertEqual(len(ez.payload), 78486)
+
+    def test_an_absent_declaration_is_not_a_failure(self):
+        """The reader that consumes these files treats a missing size or checksum as pass.
+        Ours used to report the absence as a failed check, which conflates "this file does
+        not say" with "this file is wrong"."""
+        text = lab.load('h525_config')
+        stripped = re.sub(rb'<BINARYDATASIZE>\d+</BINARYDATASIZE>', b'', text)
+        stripped = re.sub(rb'<CHECKSUM>-?\d+</CHECKSUM>', b'', stripped)
+        ez = ezfile.parse_ezhex(stripped, 'stripped')
+        self.assertIsNone(ez.declared_size)
+        self.assertIsNone(ez.declared_checksum)
+        self.assertTrue(ez.all_checks_pass, ez.checks)
+        self.assertEqual(len(ez.payload), 78486)
+
+    def test_a_negative_checksum_reads_as_the_byte_it_narrows_to(self):
+        """The consuming reader parses `<CHECKSUM>` as a signed 16 bit number and narrows it
+        to a byte, so a value above 127 may legitimately be written negative. No sample does,
+        which is exactly why a reader that matched digits only would have failed silently on
+        the first one that did."""
+        text = lab.load('h525_config')
+        # 12 is the real value; -244 narrows to the same byte.
+        rewritten = text.replace(b'<CHECKSUM>12</CHECKSUM>', b'<CHECKSUM>-244</CHECKSUM>')
+        self.assertNotEqual(rewritten, text)
+        ez = ezfile.parse_ezhex(rewritten, 'signed')
+        self.assertEqual(ez.declared_checksum, -244)
+        self.assertTrue(ez.checks['checksum_matches_declaration'])
+
+
+class TestPhases(unittest.TestCase):
+    """
+    Section 87. An EZUp states its own contents: a `<PHASE>` per destination, each with a
+    `<TYPE>`. The arch 12 package's two phases are the split section 3 recomputed from the
+    container header, and the two routes agree to the byte.
+    """
+
+    def test_the_arch12_package_states_its_own_split(self):
+        lab.require('one_hfw')
+        with zipfile.ZipFile(lab.path('one_hfw')) as zf:
+            phases = ezfile.read_phases(zf.read('Region_2.EZUpgrade'))
+        self.assertEqual([p.kind for p in phases],
+                         ['Configuration_Static', 'Firmware_Main'])
+        self.assertEqual([len(p.payload) for p in phases], [8902, 60050])
+
+        # The independent route: the same two numbers out of the GSPM header's own length,
+        # with the phases thrown away.
+        payload = ezfile.load_image(lab.path('one_hfw'))
+        config, code = ezfile.split_arch12_region2(payload)
+        self.assertEqual(config, phases[0].payload)
+        self.assertEqual(code, phases[1].payload)
+
+    def test_the_arch14_package_carries_one_phase_and_the_config_is_a_separate_region(self):
+        lab.require('h700_hfw')
+        with zipfile.ZipFile(lab.path('h700_hfw')) as zf:
+            phases = ezfile.read_phases(zf.read('Region_2.EZUpgrade'))
+            self.assertEqual([p.kind for p in phases], ['Firmware_Main'])
+            self.assertEqual(len(phases[0].payload), 76672)
+            self.assertEqual(ezfile.read_phases(zf.read('Region_3.EZHex')), [])
+
+    def test_a_data_element_carries_32_bytes_and_the_last_one_the_remainder(self):
+        lab.require('one_hfw')
+        with zipfile.ZipFile(lab.path('one_hfw')) as zf:
+            blob = zf.read('Region_2.EZUpgrade')
+        for body in re.findall(rb'<PHASE>(.*?)</PHASE>', blob, re.S):
+            chunks = re.findall(rb'<DATA>([0-9A-Fa-f]*)</DATA>', body)
+            widths = [len(c) // 2 for c in chunks]
+            self.assertTrue(all(w == 32 for w in widths[:-1]), sorted(set(widths[:-1])))
+            self.assertLessEqual(widths[-1], 32)
+            self.assertGreater(widths[-1], 0)
+
+    def test_a_firmware_wrapper_declares_neither_a_length_nor_a_checksum(self):
+        """Which is why an absent declaration cannot be treated as a failure."""
+        lab.require('h700_hfw')
+        with zipfile.ZipFile(lab.path('h700_hfw')) as zf:
+            blob = zf.read('Region_2.EZUpgrade')
+        self.assertNotIn(b'<BINARYDATASIZE>', blob)
+        self.assertNotIn(b'<CHECKSUM>', blob)
+        # And its header ends its lines with bare LF after the first, which is the case the
+        # corpus of configs cannot show: every config is CR LF throughout. A reader that
+        # requires CR LF before the payload gets this file's split wrong by one byte per
+        # line, which is why the split is taken from the terminator and not from arithmetic
+        # over line counts.
+        self.assertIn(b'</INFORMATION>', blob)
+        header = blob[:blob.index(b'</INFORMATION>')]
+        self.assertEqual(header.count(b'\r\n'), 1, 'only the XML declaration ends CR LF')
+        self.assertEqual(header.count(b'\n'), 79, 'every other line ends with a bare LF')
 
 
 class TestLoadImage(unittest.TestCase):

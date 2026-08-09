@@ -981,7 +981,10 @@ Not optional, and they belong in the code rather than in a document:
   are discontinued devices and the supply only shrinks.
 * No write proceeds unless a verified original dump of that exact unit exists in the lab, with a
   matching checksum, and unless the config's `INTENDEDVERSION` matches the connected remote's
-  protocol, skin, board and flash id.
+  protocol, skin, board, flash id, **software type and architecture**. Six fields, and an absent or
+  empty one matches anything: section 87. The software type also means the remote can say whether
+  it is running its application or its safe mode firmware, which a write path should refuse to
+  guess at.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
   reported as a failure, not a warning.
 * Recovery paths are documented before the first write: the safe mode config already dumped for

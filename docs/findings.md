@@ -8,8 +8,8 @@ Source material:
   architecture 12, protocol 12, external flash Atmel AT49BV322A (4 MiB, `0x1F:0xC8`),
   USB 046D:C121, config flash used 1634 of 3840 KiB.
 * **Harmony 600**, concordance 1.5 dump. Firmware 0.2, hardware 1.1.0, skin 71,
-  architecture 14, protocol 14, external flash EON F16-100HIP (4 MiB, `0x15:0x1C`),
-  USB 046D:C122, config flash used 721 of 3904 KiB.
+  architecture 14, protocol 14, external flash EON F16-100HIP (`0x15:0x1C`, 2 or 4 MiB and
+  unresolved, section 87), USB 046D:C122, config flash used 721 of 3904 KiB.
 * `harmony_one_firmware_3_4.hfw` and `harmony_700_firmware_2_8.hfw`, retrieved from
   harmonyremoterepair.com. The One image is exactly the version running on the
   dumped remote.
@@ -271,8 +271,14 @@ The One's `Region_2.EZUpgrade` decodes to 68952 bytes that split in two:
 ```
 
 The first part is **byte-identical** to the GSPM blob read off the dumped remote at
-flash `0x2000`. That is what proves the split point. The split is discoverable from the
+flash `0x2000`. That is what proves the split point. The split is also discoverable from the
 data itself: the GSPM header's `end_addr` field marks where the config ends.
+
+> **The file states it too, and this section did not notice**, section 87. Those are two
+> `<PHASE>` elements typed `Configuration_Static` and `Firmware_Main`, and the reader here threw
+> the phase structure away before recovering the boundary from the container. Both routes give
+> 8902 and 60050, so the derivation was right and it was a derivation of something the file says
+> out loud.
 
 Arch 14 keeps the two parts in separate files instead: the 700's `.hfw` ships
 `Region_2.EZUpgrade` (code) and `Region_3.EZHex` (a GSPM config based at `0x020000`).
@@ -518,7 +524,17 @@ From the `NOTINTENDED` comments inside `Region_2.EZUpgrade`:
 | 7 | 659 | **12** | **Gin** |
 | 8 | Espresso | | |
 
-`SOFTWARETYPE`: 0 = normal, 2 = Test mode, 3 = Boot mode.
+Only the One package was read when this table was written, so architecture **14, Molson** is
+missing from it: the 700 package refuses that one too, in the same words. `reference/models.md`
+carries the full list.
+
+`SOFTWARETYPE`: **0 = application mode, 4 = safe mode, 1 = Test mode, 3 = Boot mode.**
+
+This used to read "0 = normal, 2 = Test mode, 3 = Boot mode", and the 2 was a misreading: the<!--superseded-->
+entry commented "Test mode" carries a 1. The two values a firmware package accepts are 0 and 4,
+under one comment reading
+"must be in application mode or Safe mode", and section 87 separates them by reading the same
+accessor out of each remote's two images.
 
 ## 8. LWJL, and a caution about reading too much into it
 
@@ -1177,9 +1193,19 @@ with `0x69`. Both verify on all eight config samples, so the split point is chec
 sniffed, and `src/harmony/ezfile.py` now uses the declared length in preference to searching for
 a magic.
 
-`INTENDEDVERSION` carries `PROTOCOL`, `SKIN`, `FLASH` and `BOARD`. That is what a remote compares
+> **Both sentences describe the corpus and neither is the rule**, section 87. The header ends at
+> the line carrying `</INFORMATION>`; the declared length is a check on that split rather than the
+> definition of it, and so is the checksum. Either may be absent, CR LF is not required, and a file
+> with no header at all is legal and is in the corpus. The reader computes both splits now and
+> compares them, which is a stronger check than either alone: they agree on all ten configs.
+
+`INTENDEDVERSION` carries `PROTOCOL`, `SKIN`, `FLASH` and `BOARD`. That is what a remote compares<!--superseded-->
 against before accepting a config, which makes it part of the eventual write path rather than a
 curiosity.
+
+> **Six fields, not four**, section 87: `SOFTWARETYPE` and `ARCHITECTURE` are compared too, and a
+> field that is absent or empty matches anything. The four field reading survived because every
+> config declares the same `SOFTWARETYPE` and none declares an `ARCHITECTURE`.
 
 **Small correction to upstream, recorded for calibration.** harmony-decompiler's sample README
 gives the 525's header as 3153 bytes plus a 2 byte separator, which totals two more than the
@@ -9842,6 +9868,205 @@ it reads as an initial value. Nothing has been traced to it and it is marked unc
   moves the arch 14 framed share by half a point.
 * `packages/codec/test/inventory.test.ts`, counts and shapes only, and `src/harmony/gspm.py`'s
   docstring, since the research library reads the same record.
+
+
+## 87. The wrapper states what we were deriving, and a remote says which image is running
+
+This section came out of reading Logitech's own file format classes, the last of the digs into the
+classic client. The expectation was confirmation of things already known, and most of it is exactly
+that. What was not expected is that **three separate things this project derives are stated
+outright in files it has held since the first week**, and that one of them opens a question nobody
+here had thought to ask.
+
+Two of the three corrections below are the good kind, where the wrong rule produced the right
+answer, and one of them is a rule this project had never applied at all.
+
+### The split is structural, and both declarations are optional
+
+Section 14 says config files are "an XML header, a two byte `\r\n`, then the container", and that
+`src/harmony/ezfile.py` uses the declared length "in preference to searching for a magic". Both
+halves are true of the corpus and neither is the rule.
+
+The rule is that the header ends at the line carrying `</INFORMATION>`, and the payload is
+everything after that line's terminator. `BINARYDATASIZE` is a **check** on that split, not the
+definition of it, and so is `CHECKSUM`. Three consequences, each with a sample:
+
+* **A file with no header at all is legal.** A reader that finds no XML on the first line treats
+  the whole file as payload. `Region_3.EZHex` in the Harmony 700 package is exactly that: 7115
+  bytes beginning `GSPM`, no XML anywhere. Our reader got it right by searching for a container
+  cookie, which is a guess that happened to land on offset zero.
+* **A file that declares neither length nor checksum is legal**, and a missing one passes rather
+  than fails. Every firmware wrapper in the corpus is one. Our reader reported the absence as a
+  failed check, which conflates "this file does not say" with "this file is wrong".
+* **CR LF is not required.** The `.hfw` firmware wrappers end their first line CR LF and every
+  other line with a bare LF, 79 of them. A split computed by counting header lines and assuming
+  two byte terminators is wrong by one byte per line on those files; a split taken from the
+  terminator itself is not. The consuming reader counts the difference explicitly, which is how
+  the question became visible.
+
+`parse_ezhex` now computes both splits and records whether they agree. **They agree on all ten
+configs**, across four architectures, four container cookies and three format versions. That is
+worth having as a check rather than a coincidence: one derivation counts backwards from the end of
+the file and the other reads forwards from the header's own terminator, and they have no reason to
+land on the same byte unless both are right.
+
+The checksum reading is confirmed exactly as recorded, an XOR of every payload byte seeded `0x69`,
+with one detail added: the consuming reader parses the declared value as a signed 16 bit number and
+then narrows it to a byte, so a checksum of `0x80` upwards may legitimately be written negative. No
+sample does. A reader that matched digits only, as both of ours did, would have failed silently on
+the first one that did.
+
+### The compatibility gate compares six fields, not four
+
+`INTENDEDVERSION` was recorded here as `PROTOCOL`, `SKIN`, `FLASH` and `BOARD`. The comparison is
+over six: those four plus **`SOFTWARETYPE`** and **`ARCHITECTURE`**. Three rules go with it, and
+each one changes what a match means:
+
+* **An absent or empty field matches anything.** That is not a quirk, it is how a file offers a
+  fallback: an entry whose `<VERSION>` is empty matches every remote, and the config headers here
+  use exactly that to attach a "not compatible with your remote" message to everything the entries
+  above it did not catch.
+* **A list of versions is a disjunction.** Any one matching is a match.
+* **`BOARD` is normalised before comparison**, and only on the file's side: a two part revision
+  such as `0.5` is extended to `0.5.0`, and a value with no separator at all is run through a
+  legacy conversion. So a file and a remote can state the same board differently and still match.
+
+Every config in the corpus declares `SOFTWARETYPE` 0 and none declares an `ARCHITECTURE`, which is
+why a four field reading survived: one of the two missing fields is constant and the other is
+absent, and absent means match. One arch 8 config also carries a `SOFTWARE` element, which looks
+like a version gate and is **not** one of the six, so it is never compared.
+
+### `SOFTWARETYPE` names which of the remote's four images is running
+
+The One and 700 firmware packages carry an `INTENDED` list of versions they may be applied to and a
+`NOTINTENDED` list they may not, and Logitech left a comment on every entry. Section 7 already used
+those comments for the architecture codenames. It also recorded the software types as
+"0 = normal, 2 = Test mode, 3 = Boot mode", and **the 2 is wrong**: the entries are<!--superseded-->
+
+| value | the package's own comment |
+|---|---|
+| 0 and 4 | "must be in application mode or Safe mode", both accepted |
+| 1 | "Test mode", refused |
+| 3 | "Boot mode", refused |
+
+So a remote has four firmware personalities and the file says which ones it is for. That leaves
+which of 0 and 4 is which, and the images settle it without any hardware.
+
+**Field 4's low nibble is the software type.** `docs/usb-protocol.md` had it as "a compiled in
+zero" and `tests/test_usb_firmware.py` asserted that it was undetermined, on the evidence that all
+four application images return zero from that accessor. The safe mode image of the same remote
+returns 4:
+
+| accessor | 600 application | 600 safe mode | One application | One safe mode |
+|---|---|---|---|---|
+| firmware version | `0x02` | `0x02` | `0x34` | `0x34` |
+| **software type** | `0x00` | **`0x04`** | `0x00` | **`0x04`** |
+| skin | `0x47` | `0x47` | `0x36` | `0x36` |
+| field 6's constant | `0x0C` | `0x0C` | `0x0C` | `0x0C` |
+| architecture | `0x0E` | `0x0E` | `0x0C` | `0x0C` |
+
+Two remotes, two architectures, five accessors each, and **exactly one of the five differs between
+a remote's two images**. That is what makes it an identification rather than a remark about two
+numbers: if the run had been found by pattern matching, the other four would not line up.
+
+Every user config declares 0, and a user config is written to a remote running its application, so
+**0 is application mode and 4 is safe mode**. The images agree with the package's comment rather
+than being read through it.
+
+Where the byte goes, from the 600's version block builder at `0x13952`:
+
+```
+CALL <software type>      -> 0x0D25
+CALL <architecture>       -> 0x0D26
+SWAPF 0x0D26,W            ; architecture into the high nibble
+ANDLW 0xF0
+IORWF 0x0D25,W            ; software type into the low one
+MOVWF 0x0D27              ; field 4
+```
+
+The One does the same at `0x269A6`. Both bench remotes reported a zero low nibble because both were
+running their application.
+
+**The prediction, written down before anyone tries it**: a Harmony 600 in safe mode answers field 4
+as `0xE4` and a Harmony One as `0xC4`. That is worth having because it gives the application a way
+to know a remote is not in its normal state, which a write path needs and currently lacks. It is
+also the first thing here that would be read differently depending on how the remote was started.
+
+### An arch 12 package states its own split
+
+Section 3 records that the One's `Region_2.EZUpgrade` decodes to 68952 bytes that split into 8902
+for the safe mode config and 60050 for the application code, and says "the split is discoverable
+from the data itself: the GSPM header's `end_addr` field marks where the config ends". True, and
+the file states it directly: those are two `<PHASE>` elements, typed `Configuration_Static` and
+`Firmware_Main`, each with its own `<DATAS>` block. Our reader concatenated every `<DATA>` element
+in the file and then recovered the boundary from the container header.
+
+The two routes agree to the byte, which is why this is a closure rather than only a correction:
+
+| phase | its own bytes | recomputed from the container header |
+|---|---|---|
+| `Configuration_Static` | 8902 | 8902 |
+| `Firmware_Main` | 60050 | 60050 |
+
+Arch 14 keeps them in separate regions instead, as section 3 says, and the 700 package's single
+phase is `Firmware_Main` at 76672 bytes. A `<DATA>` element carries 32 bytes and the last one of a
+phase carries the remainder, 6 bytes and 18 bytes in the One's two phases.
+
+`ezfile.read_phases` returns them separately now. `split_arch12_region2` stays, because it works on
+a decoded payload where the phases are gone, and because two routes agreeing is worth a test.
+
+### The arch 14 flash may be a quarter of the size this project records
+
+The `FLASH` field is the flash chip's JEDEC id, and section 13 records that it is read in a
+different order on the two architectures: manufacturer then device on arch 12's parallel part,
+capacity then manufacturer on arch 14's SPI one. Which makes the corpus say something odd.
+
+| file | `FLASH` |
+|---|---|
+| both Harmony 700 configs | `0x15:0x1C` |
+| the Harmony 600 config, and the live 600 over USB | `0x15:0x1C` |
+| the Harmony 700 **firmware package** | `0x14:0x1C` |
+
+`0x1C` is EON. A JEDEC SPI capacity byte is a power of two, so `0x15` is 2 MiB and `0x14` is 1 MiB,
+and the family therefore has at least two capacities with the firmware package aimed at the smaller
+one. Two further routes agree that the bench 600 holds **2 MiB**: the part number this document
+already records for it, an EON F16, is a 16 Mbit device, which is 2 MiB; and Logitech's client has
+exactly two arch 14 flash geometries, 16 and 32 blocks of 64 KiB, which is 1 MiB and 2 MiB, with no
+4 MiB entry at all.
+
+Against that, one route says 4 MiB: concordance's architecture table, which gives the arch 14 config
+region as 3904 KiB from `0x030000`, ending exactly at `0x400000`. `docs/memory-map-600.md` and
+`docs/memory-map-700.md` take their "4 MiB SPI" from it. That is the same table that is wrong about
+firmware on this architecture, `reference/concordance-notes.md`, so it is the weakest of the four
+and the other three do not depend on each other.
+
+**Unresolved, and one read settles it.** The 600's user config starts at `0x030000`. Read sixteen
+bytes at `0x230000`, which is that address plus 2 MiB. A 2 MiB part ignores the high address bit and
+returns the config's own first bytes, `GSPM`; a 4 MiB part returns whatever is really there, which
+at that address is erased. Seeing `GSPM` proves 2 MiB. Nothing here is changed on the strength of
+the argument alone, because the numbers derived from the 4 MiB figure are all upper bounds on a
+region and none of them is load bearing for a read path. It matters for a write path, which is why
+it is written down now rather than when a write is attempted.
+
+### What did not need correcting
+
+Recorded because a dig that only reports its surprises overstates them. The checksum seed and
+algorithm, the `.hfw` being a ZIP of regions, `<DATA>` elements being plain hex, `EZHex` and `EZUp`
+differing by payload placement rather than by extension, the architecture codenames of section 7,
+and the whole of `IntelHex32File`, which is a textbook Intel HEX reader with `0xFF` fill and no
+Harmony specific behaviour at all. Nothing in the corpus is an Intel HEX file; the class is there
+for a path these remotes do not use.
+
+### Where it lands
+
+* `docs/config-format.md`, the wrapper section, rewritten around the structural split.
+* `src/harmony/ezfile.py` and `packages/codec/src/ezhex.ts`: both splits computed and compared,
+  absent declarations no longer failures, a signed checksum accepted, six intended version fields,
+  and `read_phases` on the Python side.
+* `tests/test_ezfile.py`, `packages/codec/test/ezhex.test.ts`, and
+  `tests/test_usb_firmware.py`, where the software type replaces the assertion that the nibble was
+  undetermined.
+* `docs/usb-protocol.md` and section 7 above, both corrected in place.
 
 
 ## References

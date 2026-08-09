@@ -83,3 +83,7 @@ and leave this table alone.
 | `the u16 at +0x02, unexplained` | section 86 | the variable's highest value, which its name states plus one |
 | `next free number inside its own family` | section 81, corrected 9 August 2026 | the first free number above the contiguous run containing that remote's own skin: Gin's block is 54 alone and 55 is allocated elsewhere |
 | `+0x04  u8    zero in every sample` | section 77, widened 9 August 2026 | the frame's length is a `u24` at +0x02, so that byte is its high byte; no corpus sample separates the readings |
+| `0 = normal, 2 = Test mode` | section 87 | 0 is application mode, 4 safe mode, 1 Test mode, 3 Boot mode, from the packages' own comments |
+| `Low nibble a compiled in zero` | section 87 | field 4's low nibble is the software type; it reads 4 in each remote's safe mode image |
+| `PROTOCOL, SKIN, FLASH and BOARD. That is what a remote compares` | section 87 | six fields, and an absent or empty one matches anything |
+| `the payload is the last N bytes of the file` | section 87 | the header ends at the line carrying the INFORMATION terminator; the declared length is a check on that split |

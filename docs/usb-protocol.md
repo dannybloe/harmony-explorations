@@ -793,7 +793,7 @@ bytes exactly as predicted.
 | 1 | `0x11` | `0x05` | hardware version, as two nibbles: `1.1` and `0.5` |
 | 2 | `0x1c` | `0xc8` | flash device id |
 | 3 | `0x15` | `0x1f` | flash manufacturer id, so the pairs are `15:1C` and `1F:C8` |
-| 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble a compiled in zero |
+| 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble the **software type** |
 | 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
 | 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
 | 7 | `0x02` | `0x34` | **the version byte at program `0x000017`**, in the boot area |
@@ -807,6 +807,18 @@ of the values the reading predicts. Fields 2 and 3 are the 16-bit SPI read the f
 the chip select low, characterised as "the flash id" from the image alone; fields 0 and 1 are the
 packed nibble shape the `SWAPF`, `ANDLW 0xF0`, `IORWF` sequence builds. So two of the six are
 agreements between a disassembly and a device.
+
+**Field 4's low nibble is the software type, and this document said it was a compiled in zero.**<!--superseded-->
+It comes from its own `RETLW` accessor beside the architecture one, and the two are combined by the
+same `SWAPF`, `ANDLW 0xF0`, `IORWF` shape as fields 0 and 1. Zero on all four application images and
+**4 on the safe mode image of each bench remote**, whose other four accessors are byte for byte
+identical to the application's. Logitech's firmware packages name the values in their own comments:
+0 and 4 are "application mode or Safe mode", 1 is Test mode and 3 is Boot mode.
+`docs/findings.md` section 87.
+
+So the reply says which of a remote's four firmware personalities is answering. Both bench remotes
+read zero because both were running their application. **The prediction, recorded before anyone
+tries it**: a 600 in safe mode answers field 4 as `0xE4` and a One as `0xC4`.
 
 **Fields 8 and 9 are both placed now, and by the thing this paragraph used to say did not exist.** It read: "`0x16` on
 the One is the only value in the block that has no counterpart anywhere in concordance's output".
