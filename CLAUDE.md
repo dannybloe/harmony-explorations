@@ -486,6 +486,10 @@ tools/facts.py         [--write] [--list]   the document checks behind `make fac
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
+node packages/usb/bin/read-window.ts --address 0x... [--count 16] [--compare 0x...]
+                       read one window of external flash and print it, and optionally read a
+                       second and say whether they are identical. For a question about a
+                       specific address, which read-config.ts cannot answer. Opens the device.
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.
