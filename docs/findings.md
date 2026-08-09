@@ -11355,11 +11355,34 @@ are fatal, which is the loop's arithmetic exactly. Below it, odd counts are harm
 tried. So the loop reading explains the failure but not the boundary, and something about that
 address decides whether the failure can happen at all.
 
-**What sits there is worth knowing and is not established here.** The client's own region map calls
-page `0xFF` offset 0 a CPLD image, `docs/host-client.md`, so `0xA56` would be 2646 bytes into it.
-Whether that is the end of something, the start of something, or a limit the part itself enforces is
-exactly the next question, and it is now a question with a number in it, which is the whole point of
-having run this.
+### What sits there, read off the remote
+
+Read on 9 August 2026 in even chunks, so no odd count and no risk of the failure this section is
+about. Two things, and the second one kills the obvious explanation.
+
+**The region carries the image header this project predicted from the client's own file.** Its first
+ten bytes are a `u16`, then `FF FF`, then four bytes, then `48 47`, and the client's image builder
+writes a checksum at 0, `0xFFFF` at 2, four bytes at 4 and `0x4748` at 8, `docs/host-client.md`. So
+the shape was predicted from Logitech's build description and then found on the device, which is the
+first independent check of that description against hardware.
+
+**The body is a program, not a bitstream.** From `0xA40` it is records of exactly `0x50` bytes,
+found at `0xA40`, `0xA90`, `0xAE0` and `0xB30`, each opening `00 17 01 01 00 00 27 10` followed by
+three bytes, then about 28 bytes of mostly-set bit vector, then zero fill. `17 01 01` carries a
+32-bit operand and the values seen are round decimals, 10000, 5000 and 100000, which read as
+microseconds. Elsewhere the stream is dense in `12 xx` pairs. That is the shape of a player driving
+an external part with delays between vectors, which fits the client calling it a CPLD image, and it
+is a program rather than the raw bitstream a CPLD load would need.
+
+**And `0xA56` is not the end of anything.** It falls inside the bit vector of the record that starts
+at `0xA40`, and the same record structure continues unbroken for at least three more records past
+it. So the boundary is neither the end of the image nor a record boundary, and the tidy explanation,
+that a read starting past the image hangs, is wrong.
+
+What remains is the strange part measured above: a read that **starts** past `0x010A56` hangs, while
+a read that starts below it and **reaches** past it is fine. That is not a property of the memory, it
+is a decision taken from the start address, so it is a comparison somewhere this section has not
+found rather than anything about what is stored there.
 
 The rail is unchanged and does not depend on any of it: it refuses odd counts everywhere, which is
 more than the hazard needs on page `0xFE` and exactly what it needs above `0x010A56`.
