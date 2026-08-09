@@ -605,7 +605,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 87 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 92 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -678,6 +678,9 @@ produce a config the remote accepts and mishandles.
   error, section 43.
 * **Infrared duration blocks are shared** between records, section 61, so a writer cannot edit one
   in place without checking who else names it.
+* **A record's carrier period is truncated, not rounded**, section 92: it is `floor(1e9 / f)` in
+  nanoseconds, so 36 kHz is stored as 27777 and a writer that rounds emits 27778 and differs from
+  Logitech's generator by one byte per device. The carrier is per record, not per device.
 * **A picture's position is implied by everything before it**, section 55, so inserting or resizing
   one moves every later address.
 * **Every mode page's tagged list has a second copy that nothing reads**, section 69, whose position

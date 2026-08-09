@@ -250,6 +250,51 @@ export function irSymbolBlock(c: Container, address: number): IrSymbolBlock | un
   return { pulses, start, length };
 }
 
+/**
+ * The seven bytes below the class byte: `u8 zero; u24 period; u24 on time`, the carrier.
+ *
+ * Section 42 read the widths out of the class 1 arm of the record loader, `0x17F32` on the 700, and
+ * left the two `u24` values unnamed. They are the infrared carrier: a period and a 50% on time,
+ * both in **nanoseconds**. `docs/findings.md` section 92.
+ *
+ * The unit is not an assumption. `1e9 / period` lands on the standard consumer carriers across the
+ * whole corpus, two of them exactly: 25000 is 40.000 kHz and 27777 is 36.000 kHz. The firmware
+ * agrees twice over, since it clamps the period at 256000, which is a 3.9 kHz floor under this
+ * reading and 39 Hz under any other, and it divides by four and moves the Timer 2 prescaler exactly
+ * when the value no longer fits in sixteen bits, which is the arithmetic a period wants and not a
+ * duration.
+ */
+export const IR_CARRIER_AT = 1;
+export const IR_CARRIER_ON_AT = 4;
+/** The firmware's own ceiling on the period, so the slowest carrier a record may name. */
+export const IR_CARRIER_MAX_NS = 256000;
+
+export interface IrCarrier {
+  /** Period in nanoseconds, as stored. */
+  periodNs: number;
+  /** Carrier on time in nanoseconds, `periodNs >> 1` in all 3387 records of the corpus. */
+  onNs: number;
+  /** The frequency the period states, in hertz. Derived, not stored. */
+  hertz: number;
+}
+
+/**
+ * The carrier one record names, or nothing when the record is unreadable.
+ *
+ * Both fields are read as `u24` because that is what the firmware reads, even though the high byte
+ * is zero in every record here: a carrier slower than 15.3 kHz would set it, and the firmware has a
+ * whole prescaler arm for that case, so narrowing this to `u16` would be reading the corpus rather
+ * than the format.
+ */
+export function irCarrier(c: Container, address: number): IrCarrier | undefined {
+  const start = irRecordStart(c, address);
+  const off = start === undefined ? undefined : c.blobOffsetOf(start);
+  if (off === undefined || off + IR_HEADER_BASE > c.blob.length) return undefined;
+  const periodNs = u24(c.blob, off + IR_CARRIER_AT);
+  const onNs = u24(c.blob, off + IR_CARRIER_ON_AT);
+  return { periodNs, onNs, hertz: periodNs === 0 ? 0 : 1e9 / periodNs };
+}
+
 export interface IrGroup {
   addresses: number[];
   /** The group's own array, so the accounting claims exactly what was read. */

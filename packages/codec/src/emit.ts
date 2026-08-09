@@ -70,10 +70,11 @@ import { SCREEN_END, bitmaps, deadTerminator, pictureBank, pictureBankStart, rea
   from './screen.ts';
 import { EMPTY_ARRAY_LIMIT, claims, namedContentEnd } from './coverage.ts';
 import {
+  IR_CARRIER_AT,
   IR_CLASS_STREAM,
-  IR_GROUP_COUNT_AT,
   IR_HEADER_BASE,
   IR_HEADER_CLASSES,
+  irCarrier,
   irClass,
   irGroupCount,
   irGroups,
@@ -654,9 +655,10 @@ export function rebuilds(c: Container): Rebuild[] {
     partly(off, 'slot-13-record', w, record.length - 1);
   }
 
-  // Base slot 5. The group arrays and the pointer part of a record header are typed; the eleven
-  // bytes in front of the group count are not read, and a duration block is a stream this codec
-  // walks to its terminator without decoding.
+  // Base slot 5. The group arrays and the whole of a record header are typed now: section 92 read
+  // the carrier out of the seven bytes below the class byte, which used to be copied. One byte of a
+  // header is still unread, the zero at +0. A duration block is a stream this codec walks to its
+  // terminator without decoding.
   for (const group of irGroups(c) ?? []) {
     const w = new Writer(group.length).u8(0).u16(group.addresses.length);
     for (const address of group.addresses) w.u24(address);
@@ -671,11 +673,20 @@ export function rebuilds(c: Container): Rebuild[] {
       const start = irRecordStart(c, address);
       const off = start === undefined ? undefined : c.blobOffsetOf(start);
       if (off === undefined) continue;
+      const carrier = irCarrier(c, address);
+      if (carrier === undefined || start === undefined) continue;
       const w = new Writer(irHeaderLength(c, address))
-        .raw(c.blob.subarray(off, off + IR_GROUP_COUNT_AT))
+        // The one byte nothing has read. Carried rather than written as a zero: it is zero in all
+        // 3387 records here, and asserting that in the emitter would make a container that
+        // disagreed round trip wrong instead of loudly.
+        .raw(c.blob.subarray(off, off + IR_CARRIER_AT))
+        .u24(carrier.periodNs)
+        .u24(carrier.onNs)
+        .u8(encoding)
+        .u24(start)
         .u8(irGroupCount(c, address));
       for (const pointer of irHeaderPointers(c, address)) w.u24(pointer);
-      partly(off, 'slot-5-header', w, irHeaderLength(c, address) - IR_HEADER_BASE + 1);
+      partly(off, 'slot-5-header', w, irHeaderLength(c, address) - IR_CARRIER_AT);
       // The same two pointers, a different thing behind them: class 1 a duration stream, class 5 a
       // body naming a shared symbol table. Section 82.
       for (const block of irRecordBlocks(c, address)) {

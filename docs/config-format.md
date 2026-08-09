@@ -1061,9 +1061,9 @@ per group:    u8  zero            the same spare byte the section table carries
               u16 count
               u24 record_address[count]
 
-per record:   u16                 } seven bytes, the same for every record of one device
-              u16                 }
-              u8                  }
+per record:   u8  zero            not read by anything; zero in all 3387 records
+              u24 carrier_period  nanoseconds
+              u24 carrier_on      nanoseconds, the period halved
               u8  class           the pointer array lands HERE, seven bytes in
               u24 start             the record's own first byte
               u8
@@ -1084,10 +1084,25 @@ record's durations. [findings.md](findings.md) section 61.
 the header is `12 + 9 * count`:
 
 ```
-+0x00  ...  eleven bytes: the class at +7, the record's own start at +8
++0x00  u8   zero, unread
++0x01  u24  carrier period, nanoseconds
++0x04  u24  carrier on time, nanoseconds
++0x07  u8   class
++0x08  u24  the record's own start
 +0x0B  u8   count
 +0x0C  group[count]
 ```
+
+**The two `u24` values below the class byte are the infrared carrier**, section 92, and they used to
+be part of the eleven bytes this listing called unread. A stored period is `floor(1e9 / f)` for a
+frequency in whole hundreds of hertz, so 40 kHz is 25000 exactly, 38 kHz is 26315 and 36 kHz is
+27777, which reads back as 36001 Hz. **Truncated, not rounded**: a writer that rounds emits 27778
+and differs from Logitech's own generator by one byte per device. The on time is the period halved,
+in every record of the corpus, which is a fifty percent duty cycle. The firmware clamps the period
+at 256000 and moves the Timer 2 prescaler when it no longer fits in sixteen bits.
+
+The carrier is **per record, not per config and not per device**. One Harmony One config carries
+56.3 kHz and 38 kHz inside a single infrared group.
 
 The count is **1 in every record on arch 12, arch 14 and most of arch 9**, and that case is exactly
 the 21 byte header with two pointers and a trailing NULL that section 61 described. On arch 8 it is
@@ -1982,9 +1997,14 @@ subtracted, 19 cycles for the period and 8 for the on-time, clamped at zero. Off
 computed as `period - on`.
 
 The `* 4 / 10` implies 4 instruction cycles per 0.1 microsecond, so a 4 MIPS core at 16 MHz.
-Cross-checked against a real carrier: 38 kHz is a 26.3 us period, so the stored value is 263,
-and `263 * 4 / 10` = 105 cycles, which at 4 MIPS is 26.25 us. That closes, and it confirms both
-the 0.1 us storage unit and the clock.
+Cross-checked against a real carrier: 38 kHz is a 26.3 us period, so the value in **this RAM pair**
+is 263, and `263 * 4 / 10` = 105 cycles, which at 4 MIPS is 26.25 us. That closes, and it confirms
+both this structure's 0.1 us unit and the clock.
+
+**The unit here is the modulator's, not the config's.** The config states the same carrier in
+nanoseconds, 26315 for that example, section 92, and 26315 divided by 100 is 263.15. So the two
+readings agree and the prediction above was made before any value had been read out of a config.
+Where the division happens is not established.
 
 ## Open questions
 

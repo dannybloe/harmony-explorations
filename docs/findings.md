@@ -4565,10 +4565,15 @@ better class 1 reader.
 ### What the class 1 loader reads
 
 Enough of it to say where section 32's header of fourteen skipped bytes comes from. From the
-record's real start the loader reads a `u8`, then a `u24` duration in units of 0.1 microseconds
-which it clamps to 256000 and divides by four when it exceeds a byte, setting the Timer 2
-prescaler to match, then a second `u24` the same way, and writes both into a RAM pair. Those are
-the two values the carrier timer is loaded from.
+record's real start the loader reads a `u8`, then a `u24` duration which it clamps to 256000 and
+divides by four when it exceeds a byte, setting the Timer 2 prescaler to match, then a second `u24`
+the same way, and writes both into a RAM pair. Those are the two values the carrier timer is loaded
+from.
+
+~~This used to say the `u24` is "in units of 0.1 microseconds". It is nanoseconds, and the two~~<!--superseded-->
+values are a carrier period and its fifty percent on time. The unit here was inherited from section
+12's prediction rather than measured, and no value had been read out of the corpus when it was
+written. Section 92.
 
 ### What is not established
 
@@ -4578,7 +4583,8 @@ firmware implements or a different field entirely, and the corpus cannot tell th
 **Classes 2, 3 and 4**, for the reason above.
 
 **The rest of the class 1 record**, beyond the two carrier durations and section 32's mark and
-space stream.
+space stream. Narrowed to one byte by section 92, which named the two durations: what is left is
+the `u8` at `+0x00`, zero in every record of the corpus.
 
 ## 43. Base slot 12 is the timer table
 
@@ -6644,9 +6650,9 @@ following, because the record is laid out the opposite way round from everything
 > with it the "zero in every record seen" at `+0x12`, which is the first group's third pointer.
 
 ```
-+0x00  u16  } seven bytes, the same in every record of one device
-+0x02  u16  }
-+0x06  u8   }
++0x00  u8   zero, and nothing has been found that reads it
++0x01  u24  the carrier period in nanoseconds, section 92
++0x04  u24  the carrier on time, the period halved, section 92
 +0x07  u8   the encoding class, and where the group array's pointer lands
 +0x08  u24  the record's own start, the back pointer of section 42
 +0x0B  u8   the number of pointer groups that follow, section 75
@@ -8478,7 +8484,8 @@ Section 61 read the header as a flat 21 bytes: a class byte at `+7`, the record'
 and it is every record on arch 12, arch 14 and arch 9's own 139, which is why it held.
 
 ```
-+0x00  ...  eleven bytes, class at +7 and the record's own start at +8
++0x00  ...  eleven bytes: the carrier at +1 and +4 by section 92, class at +7,
+            and the record's own start at +8
 +0x0B  u8   count, how many pointer groups follow
 +0x0C  group[count], each { u24 block; u24 block; u24 block }
 ```
@@ -10754,6 +10761,89 @@ drives this.
   images, so the bracket cannot rot, and the capture mode selection on all four.
 * `reference/superseded.md`, so the withdrawn inference cannot be restated.
 
+
+## 92. The seven bytes below an infrared record's class byte are its carrier
+
+The last unread field of a class 1 record, and the one a writer cannot do without. Section 42 read
+the **widths** out of the firmware and left the values unnamed: from the record's real start the
+loader reads a `u8`, then a `u24`, then a second `u24`, which is `+0x00` to `+0x06`, the seven bytes
+that sit below the class byte at `+0x07`. Those two `u24` values are the infrared carrier, a period
+and a fifty percent on time, in **nanoseconds**.
+
+```
++0x00  u8   zero in all 3387 records here; what it selects is not established
++0x01  u24  carrier period, nanoseconds
++0x04  u24  carrier on time, nanoseconds, the period halved
++0x07  u8   class
++0x08  u24  the record's own start, which is where the loader reads from
++0x0B  u8   how many nine byte pointer groups follow
+```
+
+### Why it is the carrier and not some other pair of durations
+
+Four things, and no single one of them would be enough.
+
+**The halving.** The second value is `period >> 1` in every record of the corpus, exactly, to the
+bit. That is a square wave at fifty percent duty, which is what an infrared carrier is and what
+almost nothing else is.
+
+**The frequencies.** Read as nanoseconds, `1e9 / period` lands on the frequencies consumer infrared
+actually uses and on nothing else. Nine values across the corpus, the common ones being 38.0, 36.0,
+37.9, 36.4, 36.2, 40.0 and 56.3 kHz. Under any other unit they are not carriers: as tenths of a
+microsecond, which is what section 42 assumed, every record here would read as 380 Hz.
+
+**The truncation, which is the closure.** A stored period is `floor(1e9 / f)` for a frequency in
+whole hundreds of hertz. 40 kHz divides exactly and is stored as 25000. 38 kHz is 26315.79 and is
+stored as 26315. 36 kHz is 27777.78 and is stored as 27777, which is 36001 Hz read back, and that
+is the detail that makes the direction of the arithmetic checkable: the generator truncated rather
+than rounding, so a writer that rounds emits 27778 and differs from Logitech by one byte per
+device. The first version of the regression test asserted 27777 was 36 kHz to the hertz and failed,
+which is how the truncation was noticed at all.
+
+**The firmware's own arithmetic.** The class 1 arm at `0x17F48` on the Harmony 700, reached from the
+record loader's dispatch at `0x17F32`, clamps the first `u24` at 256000 and, when the value no
+longer fits in sixteen bits, divides it by four and sets the Timer 2 prescaler to four to match.
+Both are period arithmetic. The clamp is a 3.9 kHz floor under the nanosecond reading and 39 Hz
+under the tenths of a microsecond one, and the prescaler arm engages below 15.3 kHz, which is
+exactly where a Timer 2 period register would need help. It then stores the two values as a `u16`
+pair through `FSR0`, the second one two bytes above the first, which is a period and a duty side by
+side.
+
+### It agrees with a prediction made in section 12, which is the independent route
+
+Section 12 derived the core clock from the software carrier modulator and tested it against a real
+carrier: 38 kHz is a 26.3 us period, so the config would store 263, and `263 * 4 / 10` is 105
+cycles, which at 4 MIPS is 26.25 us. The config stores **26315**, and 26315 divided by 100 is
+263.15. So the number section 12 predicted from the transmit side is this field scaled from
+nanoseconds to tenths of a microsecond, and a closure derived years apart in this document from two
+different directions lands on the same value.
+
+That does not settle where the division by 100 happens. The class 1 arm read here does not do it,
+and the class 2 arm immediately above it at `0x18002` loads a literal 100 within eight instructions
+of its own first read, so the scaling is somewhere in the path between this pair and the modulator's
+`0x08E`. Not established, and not needed for a writer, which states the field in the unit the field
+is in.
+
+### Correction: the unit in section 42
+
+Section 42 says the loader reads "a `u24` duration in units of 0.1 microseconds". The width is
+right and the unit is wrong; it was inherited from section 12's prediction about the modulator's
+input rather than measured on the field, and no value had been read out of the corpus at the time.
+Corrected here rather than silently, per the house convention. Nothing else in section 42 depends
+on it: the clamp, the prescaler and the storage are all described correctly.
+
+### What it changes
+
+The emitter frames the whole record header now, where it used to copy the eleven bytes in front of
+the group count. One byte of a record is still unread, the zero at `+0x00`, and it is carried
+rather than written as a zero, because asserting a value that is constant across the corpus would
+turn a container that disagreed into a wrong round trip instead of a loud one.
+
+For a writer this is the field that says what a device's codes are modulated at, and **it is per
+record rather than per config**: a Harmony One config in the corpus carries 38 kHz for four of its
+five infrared groups and 56.3 kHz inside the fifth, alongside 38 kHz, so a group is not a single
+carrier either. Anything that learns a code has to state a carrier for it, and section 91 is where
+the measurement of one would come from.
 
 ## References
 

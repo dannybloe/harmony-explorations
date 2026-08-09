@@ -294,11 +294,11 @@ and so this table cannot be mistaken for the coverage one below by anything look
 
 | sample | framed | what is carried |
 |---|---|---|
-| `one_config`, arch 12 | 13.4%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
-| `h600_config`, arch 14 | 28.4%<!--fact:framed_h600_config--> | 529 KB, the same |
-| `h700_config`, arch 14 | 26.2%<!--fact:framed_h700_config--> | 724 KB, the same |
-| `arch8_config_a` | 21.7%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
-| `h525_config`, arch 9 | 62.7%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
+| `one_config`, arch 12 | 13.6%<!--fact:framed_one_config--> | 1.45 MB of picture and glyph bodies |
+| `h600_config`, arch 14 | 28.6%<!--fact:framed_h600_config--> | 529 KB, the same |
+| `h700_config`, arch 14 | 26.5%<!--fact:framed_h700_config--> | 724 KB, the same |
+| `arch8_config_a` | 22.2%<!--fact:framed_arch8_config_a--> | 348 KB, the same |
+| `h525_config`, arch 9 | 65.3%<!--fact:framed_h525_config--> | 31 KB of glyph and picture bodies. Its infrared is framed, section 82 |
 
 **Carried is not a shortcut, it is a rail.** A glyph and an encoded picture decode to pixels, and
 pixels do not determine the bytes back: the encoder chose where to skip and where to emit literals,
