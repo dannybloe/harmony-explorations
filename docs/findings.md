@@ -10645,18 +10645,37 @@ session, which is exactly the model Logitech's own learning service implements. 
   the 600's hits are its own application firmware at the same addresses.
 
 Every one of those is a fact, and together they say a search from the response path backwards has
-been run out. So **an assumption in that search is wrong**, and naming the candidates is more useful
-than another pass:
+been run out. So **an assumption in that search is wrong** rather than the feature being absent.
 
-* the sender may write into the endpoint buffer directly rather than through the queue that every
-  command response uses, in which case none of the four bullets above could ever have seen it;
-* the remote in the recollection may not have been a Harmony One, and arch 7, 8 and 9 are all
-  earlier and all plausible for the classic software;
-* the code byte may not be assembled anywhere near the data, for instance held in a table with the
-  rest of a report template.
+### Two of the three candidates die on the client's transport layer
 
-The next pass goes **forward from the capture interrupt** rather than backwards from the response
-builder, which is the direction that has not been tried. `0x2B46C` is where to start on the One.
+The owner's next remark killed the easiest one: he has learned codes on **all** of these remotes,
+repeatedly, and the feature is called Learn Command in the classic software. So it is not a case of
+reading the wrong firmware.
+
+Reading the client's HID channel kills a second. It is one pipe in each direction with no report
+ids, and the read side hands every report it gets straight to whichever service is listening. There
+is no second endpoint the capture could be using, and this project's own descriptor work agrees:
+**one interrupt IN endpoint, number 1**, `docs/usb-protocol.md`.
+
+And it is genuinely unsolicited. The learning service calls something on every packet that looks
+like a poll and is not: it only takes the next item off a queue the reader thread has already
+filled, with a timeout, and sends nothing to the remote. So the remote pushes reports of its own
+accord while a session is open, and no request is outstanding to carry them as a reply.
+
+### Which says exactly where the sender has to be
+
+If the reports arrive on endpoint 1 IN, the firmware has to fill **the same buffer every command
+response uses**, whose descriptor is at `0x40C` and whose byte count at `0x40D` the response builder
+increments once per appended byte. There is no other way out of the part.
+
+`0x40D` is touched in four places, all inside the transport. `0x40C` is touched in nine, and
+**eight are in the transport and one is not**: `0x2AF1A`, in a routine at `0x2AEF4` that gates on a
+mode variable and clears the descriptor's bit 6. That is the only code in the image outside the USB
+layer that touches the input endpoint's descriptor, which makes it the one place worth reading next.
+Whether it is the learn sender or ordinary USB plumbing that happens to sit outside the region this
+project drew around the transport is **not established**, and it should be read before it is
+believed: this section has already retracted one conclusion drawn from a suggestive absence.
 
 ### What the client supplies, and it is unconfirmed
 

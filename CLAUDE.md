@@ -716,8 +716,12 @@ produce a config the remote accepts and mishandles.
   And the samples **do** reach the host live, on the owner's first hand account of using the classic
   software. What no search has found is the sender: no state body on either architecture emits
   `0x90`, the byte sender's 32 callers are all in the command response region, and the response
-  buffer is touched only by the USB transport layer. **So an assumption is wrong**, and the next
-  pass goes forward from the capture interrupt rather than backwards from the response builder.
+  buffer is touched only by the USB transport layer. **So an assumption is wrong**, and two of the
+  three candidates are dead: the owner has learned codes on every one of these remotes, and the
+  client's HID channel is one pipe with no report ids and no poll, so the reports arrive on the same
+  endpoint 1 IN as every command response. That forces the sender to fill the same buffer, and
+  `0x2AF1A` is the **only** site outside the USB transport that touches its descriptor at `0x40C`.
+  Read it before believing it.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
