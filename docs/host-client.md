@@ -115,6 +115,37 @@ the correspondence between the code and what it does is open, and the honest sta
 the negative one: **no path in the vendor's own software returns a remote to a factory state.**
 The nearest thing is invalidate and overwrite.
 
+### Base slot 2's region is a timestamped event log the host reads back
+
+Section 47 read base slot 2 as three numbers reserving a region of flash that the firmware
+appends to and never erases, and identified what appends: ten call sites on one operand ladder.
+What it could not say is what an entry means. The client says, and its reading of the reserving
+record is identical to section 47's, stride of 8 included, which section 47 derived from
+arithmetic across thirteen containers with no code at all.
+
+An entry is eight bytes, and the byte at `+0x07` says how many are used:
+
+| `+0x07` | layout |
+|---|---|
+| 5 | `u8 type; u8 index; u24 ticks` |
+| 7 | `u16 type; u16 index; u24 ticks` |
+| 255 | erased |
+| anything else | present, and not parsed |
+
+`ticks` is **signed 24 bit seconds relative to the config's build date**, which is base slot 3.
+That ties two sections together that nothing here had connected: slot 3 is the epoch for slot 2's
+journal. The host stops reading after more than three consecutive erased entries, which is the
+mirror of the firmware's own scan for the last byte that is not `0xFF`.
+
+**This layout is arch 7, 8 and 9 only.** On arch 12 and 14 the client reads the region in raw 256
+byte blocks and does not parse it, so it does not know those architectures' layout either, and
+neither do we. On arch 12 it does not read the region at all unless a hardware flag is set, which
+it asks for with read selector 12.
+
+Worth confirming from the firmware because it is the one part of a config that records what the
+owner actually did with the remote, and because an application that offers to show it should be
+sure what it is showing.
+
 ### Arch 14 keeps per model settings in internal program memory
 
 A run of twelve 64 byte records above the application firmware, at `0x01F400` and every `0x40`
@@ -192,16 +223,31 @@ and `tests/test_gspm.py` asserts the corpus against it rather than asserting the
 That one had already been used as a lead in section 81, before this document existed, which is
 part of why the rule needed writing down.
 
+**Base slot 0's frame length is 24 bits, not 16**, 9 August 2026. The client reads three bytes at
+`+0x02` of the `0xFEED` frame, where this project read two and described the byte at `+0x04` as a
+spare that is "zero in every sample". It is zero in every sample because the largest name tree in
+the corpus is 2326 bytes, twenty eight times below the 16 bit boundary, so **no sample here can
+separate the two readings**.
+
+Adopted anyway, in both codecs, because the readings cannot disagree on anything this project has
+and the wider one survives a config the corpus does not contain. `tests/test_gspm.py` states
+exactly that: the byte is zero everywhere, the narrow read equals the wide one everywhere, and the
+largest tree is pinned so a sample that could tell them apart fails loudly.
+
+The same routine confirms two things already believed: the terminator is `0xBEEF` at
+`start + length`, which is section 83's `length + 2` from a different direction, and an older
+architecture uses a different magic with a 16 bit length, which is why the width is stated per
+magic rather than per architecture.
+
 ### Smaller leads
 
-* The container header carries an event offset at `+0x14` and a base date offset at `+0x18` on
-  every architecture from 8 upward. Base slot 3's timestamp is section 21; what an event offset
-  in the header is has never been asked here.
-* Base slot 2 is named for flash storage in every architecture class, which fits the log area
-  reading in section 47 and suggests the name should be broader than "log area".
 * Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area
   pointer on arch 14 would have to point. Section 47 found the writer is arch 12 only, so this
   says the region exists on arch 14 even though nothing writes it.
+* **The pointer table starts at `0x08` on arch 7**, not `0x0B`. The client's three per
+  architecture offsets are all `table_start + 1 + 4 * slot`, exactly, for slots 0, 2 and 3, which
+  gives 11 on arch 8, 9, 12 and 14 and 8 on arch 7. There is no arch 7 sample here, so this is a
+  prediction for whenever one arrives rather than something to act on.
 * Arch 12 and arch 14 each declare an embedded configuration region, `0x1E000` and `0x4000`,
   distinct from the safe mode image and from the user config.
 * Read selector 12 is `docs/usb-protocol.md`'s "not read yet" selector `0x0C`. The client uses

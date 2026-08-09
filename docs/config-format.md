@@ -1203,11 +1203,16 @@ container: no other one closes.
 
 ```
 +0x00  u16      0xFEED        stored little endian, so `ed fe` in a hex dump
-+0x02  u16      length        counted from the cookie, stops short of the terminator
-+0x04  u8       00            zero in every sample
++0x02  u24      length        counted from the cookie, stops short of the terminator
 +0x05  ...      nodes         packed end to end, up to +length
 +len   u16      0xBEEF
 ```
+
+**The length is three bytes, and that is client sourced and unconfirmed.** This read a `u16` with
+the byte at `+0x04` listed as a spare that is zero in every sample. It is zero because the largest
+name tree in the corpus is 2326 bytes, so **no sample here separates the two readings**; both
+codecs take the wider one because it is the one that survives a bigger tree. See
+`docs/host-client.md` for the provenance rule and `tests/test_gspm.py` for the corpus statement.
 
 **The section is `length + 2` bytes**, since the terminator sits outside the field, and an empty
 frame states a length of zero and is the seven fixed bytes above with no node. Both arch 12 safe

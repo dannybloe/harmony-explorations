@@ -127,8 +127,7 @@ export interface NameNode {
  *
  * ```
  * +0x00  u16   0xFEED
- * +0x02  u16   length, from the cookie, terminator excluded
- * +0x04  u8    zero in every sample
+ * +0x02  u24   length, from the cookie, terminator excluded
  * +0x05        nodes, packed end to end, up to +length
  * +len   u16   0xBEEF
  *

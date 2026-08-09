@@ -124,8 +124,7 @@ export const FRAME_COOKIE = new Uint8Array([0xed, 0xfe]);
 export const FRAME_END = new Uint8Array([0xef, 0xbe]);
 /** The terminator sits outside the frame's stated length, so a frame occupies `length + 2`. */
 export const FRAME_END_LENGTH = 2;
-/** An empty frame carries length 0 and its terminator sits five bytes in. */
-/** An empty frame: cookie, a zero length, a spare byte, then the terminator. */
+/** An empty frame: cookie, a three byte zero length, then the terminator five bytes in. */
 export const EMPTY_FRAME_LENGTH = 5;
 
 /** Section slot 1 is a seven byte record that states the architecture twice over. */
@@ -591,8 +590,7 @@ export function findMarker(blob: Uint8Array): number {
  *
  * ```
  * +0x00  u16     0xFEED
- * +0x02  u16     length, counted from the cookie and excluding the terminator
- * +0x04  u8      zero in every sample
+ * +0x02  u24     length, counted from the cookie and excluding the terminator
  * +0x05  ...     payload, starting with 0xA7 then "Root"
  * +len   u16     0xBEEF
  * ```
@@ -601,12 +599,20 @@ export function findMarker(blob: Uint8Array): number {
  * twelve samples. The length is validated by requiring the terminator where it says, which is
  * what distinguishes a real frame from the `ed fe` byte pair that turns up by chance roughly once
  * per 64 KiB: the One's 1.6 MB config holds 31 of those pairs and only one of them is a frame.
+ *
+ * **The length is 24 bits and not 16.** This read a `u16` with the byte at `+0x04` described as
+ * "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB. Logitech
+ * 's own client reads three bytes here, `docs/host-client.md`, and that is client sourced and
+ * unconfirmed. It is adopted anyway because the two readings cannot disagree on any sample this
+ * project has, `test/gspm.test.ts` says so, and the wider one is the one that survives a config
+ * the corpus does not contain. Same family as the font header's spare byte, which was the first
+ * glyph code, section 78: when a byte next to a length is always zero, suspect the length.
  */
 export function frameLength(blob: Uint8Array, off: number): number | undefined {
   if (!matchesAt(blob, off, FRAME_COOKIE)) return undefined;
-  const length = u16(blob, off + 2);
+  const length = u24(blob, off + 2);
   if (length === 0) {
-    // Degenerate empty frame: cookie, a zero length, a zero byte, terminator.
+    // Degenerate empty frame: cookie, a zero length, terminator.
     return matchesAt(blob, off + EMPTY_FRAME_LENGTH, FRAME_END) ? 0 : undefined;
   }
   if (!matchesAt(blob, off + length, FRAME_END)) return undefined;

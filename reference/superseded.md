@@ -82,3 +82,4 @@ and leave this table alone.
 | `eight byte values are not decoded` | section 86 | a transition: `u8 zero; i16 from; i16 to; u16 operand; u8 opcode` |
 | `the u16 at +0x02, unexplained` | section 86 | the variable's highest value, which its name states plus one |
 | `next free number inside its own family` | section 81, corrected 9 August 2026 | the first free number above the contiguous run containing that remote's own skin: Gin's block is 54 alone and 55 is allocated elsewhere |
+| `+0x04  u8    zero in every sample` | section 77, widened 9 August 2026 | the frame's length is a `u24` at +0x02, so that byte is its high byte; no corpus sample separates the readings |

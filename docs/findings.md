@@ -8741,8 +8741,7 @@ named `Root` with both its fields zero. In the safe mode container the first nod
 ```
 the frame
 +0x00  u16   0xFEED
-+0x02  u16   length, counted from the cookie, terminator excluded
-+0x04  u8    zero in every sample
++0x02  u24   length, counted from the cookie, terminator excluded
 +0x05        nodes, packed end to end, up to +length
 +len   u16   0xBEEF
 
@@ -8757,6 +8756,22 @@ a node
 The `u16` at `+0x01` is what makes the walk self checking: it counts the two fields and the name
 and not the tag, so `Root` states 8 and `State` states 9, which is `4 + 4` and `4 + 5`. It was
 sitting in the published layout the whole time as the second and third bytes of a fixed prologue.
+
+**Widened on 9 August 2026.** The frame's length was published here as a `u16` at `+0x02` with the
+byte at `+0x04` a spare that is "zero in every sample". Logitech's own client reads three bytes<!--superseded-->
+there, `docs/host-client.md`, and it is right that the sample evidence proves nothing either way:
+the largest name tree in the corpus is 2326 bytes, twenty eight times below the 16 bit boundary,
+so the high byte would be zero under both readings. Both codecs take the wider one, because two
+readings that cannot be separated by any available sample should be settled by which one survives
+a sample nobody has. **This is client sourced and stays marked as unconfirmed**, and
+`tests/test_gspm.py` asserts the corpus statement rather than the claim: the byte is zero in every
+container, the narrow read equals the wide one in every container, and the largest tree is pinned
+so a container that could tell them apart fails there instead of being absorbed.
+
+That is the third time here that a byte beside a length turned out to belong to it, after the font
+header's first glyph code in section 78 and the wide tagged list in the pitfall list. The rule
+those three make is already written down: infer a structure's form from the byte that states it,
+and when a byte next to a length is always zero, suspect the length.
 
 ### The closures, all three corpus wide
 
@@ -9400,8 +9415,8 @@ section 20 and the emitter has always written. The accounting claimed the length
 container in the corpus was two bytes short in the same place, and the two sides disagreed without
 any test noticing: `rebuilds` is checked against `claims` in one direction only.
 
-An empty frame states a length of zero and is seven fixed bytes: cookie, the zero length, a spare
-byte and the terminator. Both arch 12 safe mode containers carry one, and `nameNodes` returns
+An empty frame states a length of zero and is seven fixed bytes: cookie, the three byte zero length
+and the terminator. Both arch 12 safe mode containers carry one, and `nameNodes` returns
 nothing for it, so the emitter needed its own case or the claim would have been unrebuilt.
 
 ### An empty counted array is an array

@@ -319,19 +319,19 @@ export function rebuilds(c: Container): Rebuild[] {
   const treeAt = tree === undefined || tree.isNull ? undefined : c.blobOffsetOf(tree.address);
   const nodes = nameNodes(c);
   if (treeAt !== undefined && c.frameLength === 0) {
-    // An empty frame, which the arch 12 safe mode containers carry: cookie, a zero length, the
-    // spare byte and the terminator, with no node to read. `nameNodes` returns nothing for it, so
-    // without this the accounting would claim seven bytes the emitter never wrote. Section 83.
+    // An empty frame, which the arch 12 safe mode containers carry: cookie, a zero length and the
+    // terminator, with no node to read. `nameNodes` returns nothing for it, so without this the
+    // accounting would claim seven bytes the emitter never wrote. Section 83.
     framed(treeAt, 'slot-0-tree', new Writer(EMPTY_FRAME_LENGTH + FRAME_END_LENGTH)
       .raw(FRAME_COOKIE)
-      .u16(0)
-      .raw(c.blob.subarray(treeAt + 4, treeAt + FRAME_HEADER))
+      .u24(0)
       .raw(FRAME_END));
   } else if (treeAt !== undefined && nodes !== undefined && c.frameLength !== undefined) {
+    // The length is three bytes, so what used to be copied through from `+0x04` is written from
+    // the field now. See `frameLength` in gspm.ts for why the width changed.
     const w = new Writer(c.frameLength + FRAME_END_LENGTH)
       .raw(FRAME_COOKIE)
-      .u16(c.frameLength)
-      .raw(c.blob.subarray(treeAt + 4, treeAt + FRAME_HEADER));
+      .u24(c.frameLength);
     for (const node of nodes) {
       w.u8(NAME_NODE_TAG)
         .u16(NAME_NODE_FIELDS + node.name.length)

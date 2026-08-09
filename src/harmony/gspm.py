@@ -2588,8 +2588,7 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
     The frame is:
 
         +0x00  u16     0xFEED
-        +0x02  u16     length, counted from the cookie and excluding the terminator
-        +0x04  u8      zero in every sample
+        +0x02  u24     length, counted from the cookie and excluding the terminator
         +0x05  ...     nodes, `u8 0xA7; u16 4 + len(name); u16 level; u16 index; char name[]`
         +len   u16     0xBEEF
 
@@ -2598,12 +2597,19 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
     which is what distinguishes a real frame from the `ed fe` byte pair that turns up by
     chance roughly once per 64 KiB: the One's 1.6 MB config holds 31 of those pairs and only
     one of them is a frame.
+
+    **The length is 24 bits and not 16.** This read a `u16` with the byte at +0x04 described
+    as "zero in every sample", which it is, because no name tree in the corpus reaches 64 KiB.
+    Logitech's own client reads three bytes here, `docs/host-client.md`, and that is client
+    sourced and unconfirmed. Adopted anyway because the two readings cannot disagree on any
+    sample this project has and the wider one survives a config the corpus does not contain.
+    Same family as the font header's spare byte, which was the first glyph code, section 78.
     """
     if blob[off:off + 2] != FRAME_COOKIE:
         return None
-    length = struct.unpack_from('<H', blob, off + 2)[0]
+    length = int.from_bytes(blob[off + 2:off + 5], 'little')
     if length == 0:
-        # Degenerate empty frame: cookie, a zero length, a zero byte, terminator.
+        # Degenerate empty frame: cookie, a zero length, terminator.
         return 0 if blob[off + EMPTY_FRAME_LENGTH:off + 7] == FRAME_END else None
     if blob[off + length:off + length + 2] != FRAME_END:
         return None

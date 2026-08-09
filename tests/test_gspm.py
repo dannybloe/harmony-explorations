@@ -597,6 +597,33 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
             with self.subTest(image=name):
                 self.assertIsNotNone(gspm.parse(lab.load(name)).frame_length)
 
+    def test_the_length_is_three_bytes_and_no_sample_can_tell(self):
+        """Why the width was widened on a claim this corpus cannot check. `docs/host-client.md`.
+
+        The reader took a `u16` at +0x02 and called the byte at +0x04 "zero in every sample".
+        Logitech's own client reads three bytes there, which is client sourced and unconfirmed,
+        and this is the honest statement of what the corpus can say about it: the byte is zero
+        everywhere, so the two readings agree everywhere, so **no sample here falsifies either
+        one**. The wider reading was taken because it is the one that survives a name tree past
+        64 KiB, and the largest in the corpus is nowhere near that.
+
+        Stated as a test rather than a comment so that a sample which *could* tell them apart
+        fails here loudly instead of being absorbed.
+        """
+        largest = 0
+        for name in EXPECTED:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                o = c.blob_offset_of(c.sections[0].address)
+                self.assertEqual(c.blob[o + 4], 0, 'a sample that separates u16 from u24')
+                narrow = int.from_bytes(c.blob[o + 2:o + 4], 'little')
+                self.assertEqual(narrow, c.frame_length)
+                largest = max(largest, c.frame_length or 0)
+        # And how far the corpus is from being able to tell, so the claim is not open ended.
+        # The largest name tree here is 2326 bytes, twenty eight times below the 16 bit
+        # boundary, so this is not a case of the corpus nearly reaching it.
+        self.assertEqual(largest, 2326)
+
     def test_the_frame_ends_exactly_where_the_next_section_starts(self):
         """
         The frame occupies length + 2 bytes: the length counts from the cookie and stops
