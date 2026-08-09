@@ -49,6 +49,7 @@ and leave this table alone.
 | `never at the same rank in their pools` | section 69 | the k-th copy is the k-th page, in mode table order |
 | `address a second operand space` | section 72 | the operand carries the rest of the opcode, and `0xC000` is the lowest band the dispatcher tests |
 | `nothing found so far sends data during one` | section 91 | a literal scan cannot see a data response at all, since its length nibble is computed; CCP2 is a capture on both edges in all four images |
+| `the protocol knowledge was moved to the server between the two generations, and the server is gone` | sections 56 and 58 | the MyHarmony service answers and compiled a config that week; the classic service is the discontinued one |
 | `a second dispatcher, not read yet` | section 73 | both dispatchers are read to the end, band by band |
 | `consume the next three off the queue` | section 73 | three bytes, not three instructions: the queue reader pops one byte |
 | `unknown; in the second operand space` | section 73 | `0x1F` is a register machine and `0x07` thirteen nullary operations |

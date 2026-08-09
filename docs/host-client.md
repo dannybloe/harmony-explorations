@@ -392,10 +392,23 @@ nine distinct byte-valued hex literals and not one of them is a command byte. Ev
 a *string name*, `readflashinterpreter`, `send`, `packet`, resolved against XML the server sends
 at run time. There is a packet writer and interpreter per platform family, arch 14 among them,
 and they assemble packets from a script rather than from knowledge. So the protocol knowledge
-was moved to the server between the two generations, and the server is gone.
+was moved to the server between the two generations.
+
+> ~~and the server is gone~~. **Wrong, corrected 9 August 2026, and it is the second time this
+> project has killed a live service on paper.** `svcs.myharmony.com` answered on 7 August 2026,
+> its certificate had been renewed that July, and section 58 had it compile a config for a device
+> chosen from its catalogue that week and sync it to a remote. The classic service is the one that
+> is discontinued, section 56, and this sentence collapsed the two again exactly as `CLAUDE.md`
+> warns.
 
 That inverts the expectation and it is the useful part: **the classic client is not merely the
 better source, it is plausibly the last copy of that knowledge outside the firmware itself.**
+
+**The correction changes what MyHarmony is worth, and upwards.** If the packet scripts are XML the
+server sends at run time, and the server answers, then those scripts are **retrievable** rather than
+lost. That is a larger prize than the device catalogue: it would be an independent statement of the
+command layer per platform family, including families whose firmware nobody here has. It is
+untested, and it is the reason this section no longer ends the conversation.
 
 **And the physical button map is not there either.** That was the stated justification for
 looking, since `Web.Library.ButtonMappingUtils` and a button mapping task module both sounded
