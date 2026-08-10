@@ -12216,6 +12216,50 @@ samples of anything. What makes it worth stating is that the test is a **read**:
 comparing them against a healthy remote settles it without writing anything. It does need a
 deliberate hang, which is the owner's call and not something to schedule here.
 
+### The test, prepared, and its predictions committed first
+
+`packages/usb/bin/idle-flags-after-hang.ts`, gated on `HARMONY_ODD_READ_EXPERIMENT=1`. Four steps: a
+baseline on a healthy remote, the deliberate hang at page `0xFF` offset `0x1000`, the same reads
+after it recovers, and a window of data memory compared against the page `0xFF` image. Every step is
+a `READ_MISC` or a `READ_FLASH`; nothing is written.
+
+**Prediction one, the hypothesis itself: at least one of the four idle flags reads nonzero
+afterwards**, where all four read zero before. `0x2628E` returns "idle" only when all four are zero,
+and that routine is one of the two ways the guard chain in front of the application can be satisfied.
+
+**Prediction two, the negative control: `0x284` and `0x315` are unchanged.** Both sit below `0x046A`
+and the write pointer only climbs, so the runaway cannot reach them. If they move, the model of where
+the pointer goes is wrong and prediction one means nothing either way.
+
+**Prediction three, and this is the sharp one: a window of data memory reproduces a known stretch of
+flash, byte for byte.** The runaway deposits what it reads. Its pointer starts at `0x046A` and the
+chunk that never terminates starts at page offset `0x1000 + 62`, so data address `a` should hold page
+`0xFF` byte `0x103E + (a - 0x046A)`. The script reads 48 bytes from `0x0480`, which is above the few
+bytes each reply overwrites in the endpoint buffer and below `0xD31` where the runaway corrupts its
+own address and the correspondence stops. **48 of 48 or the model is wrong**, and unlike the other two
+this one cannot be explained by anything else: data memory containing a predictable stretch of program
+flash is not a coincidence available to any other reading.
+
+What each failure would mean, written down so none of them can be fitted afterwards:
+
+* **Flags nonzero, controls unchanged, window matches.** The mechanism is confirmed end to end, and
+  the stranding of 9 August 2026 has a cause. Section 95's story becomes a consequence of section 96.
+* **Window matches, flags still zero.** The deposit is real and reaches data memory as described, but
+  it is not those four flags that strand a remote, so the guard chain needs reading further: `0x27826`
+  and `0x2A942` are the other two conditions and neither has been opened.
+* **Window does not match, flags nonzero anyway.** Then something else disturbs the flags and the
+  deposit model is wrong, which is the worst outcome because it makes section 96's arithmetic suspect
+  where 23 measurements currently support it.
+* **Everything unchanged.** The recovery is a real device reset rather than a re-enumeration, and data
+  memory is reinitialised before anything can be read. That is separable and costs nothing to check:
+  a real reset also resets the remote's clock, so the screen answers it.
+
+**The last outcome is the likeliest way this experiment fails to say anything**, and it is worth
+stating in advance rather than discovering: everything here is read *after* the remote comes back, and
+if coming back means resetting, the evidence is gone by then. If that is what happens, the next
+version has to read the flags **while** the remote is still hung, which the USB layer cannot do, and
+the question would go back to the firmware.
+
 **What it already changes for FreeHarmony is the part that mattered.** A read only session that ends
 normally does not strand a remote, so version 1 needs to send nothing at the end, and the awkward
 choice section 95 posed does not arise. The gentle escape stays implemented, gated and unused, which

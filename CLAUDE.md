@@ -245,7 +245,13 @@ leaves the gate open.
 stick. Section 96's runaway writes over data memory from `0x046A` up, and `0x2628E`'s four idle flags
 at `0xED5`, `0xED6`, `0xEDC` and `0xEDD` are in its path while `0x284` and `0x315` are below it. A
 hypothesis, not a finding, and its test is a **read**: `READ_MISC` selector `0x07` on those four
-after a hang. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
+after a hang. **The test is written and unrun**,
+`packages/usb/bin/idle-flags-after-hang.ts`, with three predictions committed first in section 99, of
+which the sharp one is that 48 bytes of data memory reproduce page `0xFF` from offset `0x103E` byte
+for byte. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is now a **named door** in
+`rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
+`remote.ts` and patching it back, and a rail edited under time pressure with nothing in the tests to
+say so is worse than a door that announces itself. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
 `packages/usb/bin/end-session-experiment.ts` exists, is gated by `assertSessionEndAllowed`, and is
 **deliberately unrun** because the control made it unnecessary.
 
@@ -536,6 +542,11 @@ node packages/usb/bin/session-end-control.ts
                        says which outcome it saw. Enumeration after a replug is the machine
                        readable proxy, since a stuck remote does not come back on the bus.
                        Opens the device once, for the read. One round per run, on purpose.
+HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts
+                       hangs the remote on purpose and then reads what the runaway left in its
+                       data memory: the four idle flags, two controls below the write pointer,
+                       and 48 bytes against the page 0xFF image. All reads. Unrun; section 99
+                       holds its three predictions. Take the batteries out afterwards.
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

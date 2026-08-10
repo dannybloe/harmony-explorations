@@ -39,6 +39,7 @@ import {
 import {
   assertEraseAllowed,
   assertFlashWriteAllowed,
+  assertDeliberateHangAllowed,
   assertRamWriteAllowed,
   assertSessionEndAllowed,
   type WritePermission,
@@ -173,6 +174,17 @@ export class HarmonyRemote {
           `decrements by two and exits on zero, so an odd count never terminates; ask for an even one`,
       );
     }
+    return this.readFlashUnchecked(address, count);
+  }
+
+  /**
+   * `readFlash`'s body with the odd count refusal already decided by the caller.
+   *
+   * Private, and the only other caller is `readInternalMemoryExpectingAHang`, which has its own
+   * gate. Factored out rather than duplicated so that a fix to the transfer loop cannot apply to one
+   * path and not the other.
+   */
+  private async readFlashUnchecked(address: number, count: number): Promise<Uint8Array> {
     await this.transport.write(readFlashRequest(address, count));
 
     const out = new Uint8Array(count);
@@ -308,6 +320,26 @@ export class HarmonyRemote {
     assertRamWriteAllowed(p);
     const reply = await this.exchange(writeMiscRequest(MISC_RAM, dataAddress, value));
     if (reply.kind !== 'ack') throw new RemoteError('the RAM write was not acknowledged');
+  }
+
+  /**
+   * Read internal memory with a count that will not terminate, on purpose.
+   *
+   * The only caller is an experiment whose subject is the hang. `assertDeliberateHangAllowed`
+   * refuses unless `HARMONY_ODD_READ_EXPERIMENT=1`, and refuses an even count too, so this cannot
+   * quietly become a second ordinary read path. The ordinary refusal in `readInternalMemory` is
+   * untouched.
+   *
+   * It throws when the remote stops answering, which is the expected outcome rather than a failure,
+   * so a caller catches it and carries on.
+   */
+  async readInternalMemoryExpectingAHang(
+    subSelector: 0xfe | 0xff,
+    offset: number,
+    count: number,
+  ): Promise<Uint8Array> {
+    assertDeliberateHangAllowed(count);
+    return this.readFlashUnchecked((subSelector << 16) | offset, count);
   }
 
   /**

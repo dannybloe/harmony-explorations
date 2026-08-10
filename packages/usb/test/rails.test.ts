@@ -25,6 +25,7 @@ import {
   assertEraseAllowed,
   assertFirmwareWriteRefused,
   assertFlashWriteAllowed,
+  assertDeliberateHangAllowed,
   assertRamWriteAllowed,
   assertSessionEndAllowed,
   writableRange,
@@ -228,5 +229,39 @@ test('with writing enabled, the session end escape refuses everything but itself
     'arch 9, whose escape nobody has read: refused',
     // And the conservative condition that keeps this an experiment rather than a product decision.
     'not the spare remote: refused',
+  ]);
+});
+
+test('the deliberate hang door is shut in the shipped state', () => {
+  // Sections 94 and 96. The ordinary refusal is not what this checks: this is the named door, which
+  // exists because the refusal was bypassed twice by editing the source and editing it back.
+  assert.throws(() => assertDeliberateHangAllowed(63), /HARMONY_ODD_READ_EXPERIMENT/);
+});
+
+test('with the hang door open, it still refuses an even count', () => {
+  const output = execFileSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `import * as rails from '${join(fileURLToPath(new URL('.', import.meta.url)), '..', 'src', 'index.ts').replaceAll('\\\\', '/')}';
+       const out = [];
+       for (const count of [63, 65, 1, 62, 64, 0]) {
+         try { rails.assertDeliberateHangAllowed(count); out.push(count + ': allowed'); }
+         catch { out.push(count + ': refused'); }
+       }
+       console.log(JSON.stringify(out));`,
+    ],
+    { env: { ...process.env, HARMONY_ODD_READ_EXPERIMENT: '1' }, encoding: 'utf8' },
+  ).trim();
+  // An even count terminates, so it is not this entry point's business. Without that check the door
+  // would quietly become a second ordinary read path, which is how a rail stops meaning anything.
+  assert.deepEqual(JSON.parse(output), [
+    '63: allowed',
+    '65: allowed',
+    '1: allowed',
+    '62: refused',
+    '64: refused',
+    '0: refused',
   ]);
 });

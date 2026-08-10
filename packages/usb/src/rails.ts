@@ -294,6 +294,42 @@ export function assertSessionEndAllowed(
 }
 
 /**
+ * The one door through the odd count refusal, for an experiment that needs the hang itself.
+ *
+ * `readInternalMemory` refuses an odd count because such a read never terminates and the response
+ * sender has no bound, sections 94 and 96. That refusal stays. But twice now an experiment has
+ * needed the hang as its subject rather than as an accident, and both times the refusal was
+ * bypassed by editing `remote.ts` and editing it back afterwards. **That is worse than a named
+ * door**: a safety rail modified under time pressure, twice, with nothing in the tests to say it
+ * happened.
+ *
+ * So this is the door, and it is shaped like the write flag: off unless the environment says
+ * otherwise, and it says what it will do rather than what it permits. A caller that reaches for it
+ * has to have set `HARMONY_ODD_READ_EXPERIMENT=1`, which is not something anybody sets by accident.
+ *
+ * **It will hang the remote.** Every hang so far has cleared itself in about three seconds at a new
+ * device path, and the config read back identical afterwards, but the loop scribbles at least 2247
+ * bytes of flash content over data memory on its way, so a remote is not the same afterwards until
+ * its batteries come out.
+ */
+export const ODD_READ_EXPERIMENT: boolean = process.env['HARMONY_ODD_READ_EXPERIMENT'] === '1';
+
+export function assertDeliberateHangAllowed(count: number): void {
+  if (!ODD_READ_EXPERIMENT) {
+    throw new RailError(
+      'a deliberate hang needs HARMONY_ODD_READ_EXPERIMENT=1: this read never terminates and ' +
+        'writes flash content over the remote\'s data memory, sections 94 and 96',
+    );
+  }
+  if (count % 2 === 0) {
+    throw new RailError(
+      `a count of ${count} is even, so it terminates: this entry point is for the hang itself, ` +
+        'and an even count belongs on the ordinary read path',
+    );
+  }
+}
+
+/**
  * The firmware is never written, by any path.
  *
  * There is no permission object that makes this return, which is why it takes none. It exists so
