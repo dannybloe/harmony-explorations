@@ -126,8 +126,11 @@ image is a second sample rather than a stand in. Other models are iterated on la
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
    diff after every write, IR cross learning between the two remotes, and live RAM polling over
-   USB. **The last of those is weaker than it reads**, section 110: a remote on USB has not loaded
-   its config, so RAM polling can see hardware state and not a config being interpreted, which is
+   USB. **The last of those is weaker than it reads and it is per architecture**, sections 110 and
+   111: on arch 14 the config loader's own variables read zero on a connected 600, so RAM polling sees
+   hardware state and not a config being interpreted; on arch 12 a connected Harmony One has read its
+   base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
+   in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
    what activity semantics would need. The decision stands on the first three.
 6. **Safety rails are absolute.** Firmware is never written. The spare Harmony One
    is the only write target. Details below.
@@ -854,8 +857,9 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   reserving a region of flash above the config that the arch 12 firmware appends to and never
   erases. All twenty base slots are now accounted for.
 * The button mapping experiment was **run and it does not work this way**, section 48. A remote on
-  USB sits in sync mode and never runs its application, so the scanner never runs and the variable
-  the mapping was to be read from never changes. Checked three ways, including that sync comes up
+  USB sits in sync mode and never runs its keypad scanner, so the variable the mapping was to be read
+  from never changes. (This said "never runs its application" until section 111 watched a connected
+  Harmony One's clock tick. The measurement is unaffected; the scanner is the part that does not run.) Checked three ways, including that sync comes up
   before the host sends anything. What the firmware does instead is park all fourteen rows low and
   wait for an interrupt on the column port, which makes the **column** readable and the row not, so
   a press yields `(code - 1) mod 4`.
@@ -1055,10 +1059,13 @@ Not optional, and they belong in the code rather than in a document:
 * The LWJL difference between architectures, and the translation from the scanner's linear index
   to config event codes.
 * Whether the firmware implements event injection over USB.
-* **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete;
-  what remains is what the five append cases record, and why the region is measured in eight byte
-  units on the three architectures whose firmware never reads it. Nothing in the corpus appends,
-  so this is a firmware only question, like the three unused IR classes above.
+* **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
+  **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
+  copied in descending significance, so its record is a timestamp. What remains is the other four, and
+  why the region is measured in eight byte units on the three architectures whose firmware never reads
+  it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
+  classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
+  declared region written, so the appender disarms itself at the first attempt, section 111.
 * **What the glyph codes mean.** Base slot 7 is the font table and the whole text path is traced,
   section 46: opcode 16 loads `0x398` from the slot, and a string's code minus one indexes it. What
   is left is that the codes are a per config character set, so nothing says code 5 is a space in

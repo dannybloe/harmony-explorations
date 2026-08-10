@@ -1978,6 +1978,61 @@ class TestTheLogArea(unittest.TestCase):
                 self.assertGreaterEqual(area.start, low)
                 self.assertLessEqual(area.limit, high)
 
+    # Section 111: what the boot scan recovers from a region that is not erased, and what the
+    # append's own bound then does with it. The pattern is the top sixteen bytes of the block the
+    # Harmony One carries at `0x3F0000`, read off the spare on 10 August 2026.
+    ARCH12_MEASURED_REGION = bytes.fromhex('00ff00ff00ff00ff00ff00ff00ff0000')
+    LOG_ERASED = 0xFF
+
+    @classmethod
+    def _recovered(cls, area, contents):
+        """What `0x2DB4C` leaves in its two variables, given what the region holds.
+
+        It walks `capacity` bytes and, for each byte that is not `0xFF`, records the cursor and the
+        remaining count. The read helper advances the cursor **before** the address is reconstructed,
+        so a non erased byte at offset k records `start + k + 1` and the count `capacity - k`. Both
+        halves matter: the count is what stops an overrun and the address is what the append checks.
+        """
+        address, remaining = 0, 0
+        for k in range(area.capacity):
+            if contents[k] != cls.LOG_ERASED:
+                address, remaining = area.start + k + 1, area.capacity - k
+        return address, remaining
+
+    def test_a_region_whose_last_byte_is_written_disables_the_appender(self):
+        """Section 111, and it is the rail section 47 read the other way round.
+
+        The One's declared region is the top sixteen bytes of flash, and on both bench units those
+        bytes are not erased: the boot scan therefore hands the append an address of `0x400000`,
+        which is the append's own exclusive upper bound, and the failure branch zeroes the remaining
+        count. So the bound this project read as protection against a badly declared region is what
+        fires on a well declared one.
+        """
+        low, high = self.WINDOW
+        for name in ('one_config', 'one_config_unprogrammed'):
+            area = self._area(name)
+            with self.subTest(container=name):
+                self.assertEqual((area.start, area.limit, area.capacity), (0x3FFFF0, high, 16))
+                self.assertEqual(len(self.ARCH12_MEASURED_REGION), area.capacity)
+                address, remaining = self._recovered(area, self.ARCH12_MEASURED_REGION)
+                self.assertEqual(address, high, 'the position after the last written byte')
+                self.assertEqual(remaining, 1, 'and one unit still declared unused')
+                # Which the append refuses, because its bound is exclusive.
+                self.assertFalse(low <= address < high)
+
+    def test_an_erased_region_would_leave_the_appender_armed(self):
+        """The negative, so the test above is about the contents and not about the arithmetic."""
+        area = self._area('one_config')
+        address, remaining = self._recovered(area, bytes([self.LOG_ERASED]) * area.capacity)
+        self.assertEqual((address, remaining), (0, 0), 'nothing recorded, so the scan found nothing')
+        # And a region with one byte written near the start leaves room and a legal address.
+        contents = bytearray([self.LOG_ERASED] * area.capacity)
+        contents[0] = 0x00
+        address, remaining = self._recovered(area, bytes(contents))
+        low, high = self.WINDOW
+        self.assertTrue(low <= address < high)
+        self.assertEqual(remaining, area.capacity)
+
     def test_the_arch_fourteen_firmware_never_seeks_it(self):
         """Why the section stayed unnamed while the rest of the table fell: the architecture this
         project decodes first declares it and does not read it."""

@@ -84,7 +84,12 @@ const BENCH = [
     name: 'Harmony One',
     productId: HARMONY_ONE,
     configBase: 0x040000,
-    dumps: ['one_config', 'one_config_unprogrammed'],
+    // Four, because there are two Harmony Ones and the spare has been synced since: its dump before
+    // the sync and its dump after are different configs. **This list held two of the four until 10
+    // August 2026**, when the attached One matched none of them and the test reported "the read
+    // matches none of the stored dumps" about a remote it simply could not name. A test whose whole
+    // job is to identify a unit has to know every unit.
+    dumps: ['one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync'],
   },
 ] as const;
 
@@ -243,6 +248,89 @@ test('the flash journal has never been written on this 600', async (t) => {
     // address with content answers with content. A test whose only assertion is 0xFF would pass
     // against a remote that answered 0xFF to everything.
     const cookie = await retryingEmptyReply(() => remote.readFlash(0x030000, 4));
+    assert.deepEqual([...cookie], [0x47, 0x53, 0x50, 0x4d], 'GSPM at the config base');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('a Harmony One on USB is executing, which its clock says and its timer confirms', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and one Harmony One attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
+  try {
+    // Section 111, and it is the test that refutes "a remote on USB never runs its application".
+    // `UCON` first as the positive control: a part actively driving USB cannot have it zero, so a
+    // zero here would mean the SFR reads are not landing rather than that the remote is idle. That
+    // distinction decided a measurement on arch 9, where every SFR reads back zero, section 90.
+    assert.notEqual(await retryingEmptyReply(() => remote.readRam(0xf65)), 0, 'UCON, USBEN set');
+
+    // Timer 1 running, from base slot 3's own configuration: `0x1E` plus `TMR1ON`.
+    assert.equal(await remote.readRam(0xfcd), 0x1f, 'T1CON');
+    const timer = [] as number[];
+    for (let round = 0; round < 3; round += 1) {
+      timer.push((await remote.readRam(0xfcf)) << 8 | (await remote.readRam(0xfce)));
+    }
+    assert.ok(new Set(timer).size > 1, 'TMR1 never moved, so the clock source is not running');
+
+    // And the seconds field of the clock advances, which is software rather than a peripheral. It
+    // steps by four every four seconds, so five seconds is enough to see one step and not enough to
+    // wrap. Asserted as a change rather than as a delta, because the step lands where it lands.
+    const before = await remote.readRam(0x108);
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    const after = await remote.readRam(0x108);
+    assert.notEqual(after, before, 'the clock is not ticking, so nothing is executing');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('a Harmony One on USB holds a display light state, not zeros', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and one Harmony One attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
+  try {
+    // Section 111, the half that needs no config: the three bytes have to agree with each other
+    // through section 103's band to state map, and the level has to be inside the range the setter
+    // accepts. Whether the level is the attached unit's own config's is asserted in
+    // `packages/corpus`, which has the codec to hand; this package deliberately does not depend on it.
+    const band = await retryingEmptyReply(() => remote.readRam(0x110));
+    const state = await remote.readRam(0x112);
+    const level = await remote.readRam(0x113);
+    assert.ok(band <= 3, `the band is 0 to 3, got ${band}`);
+    assert.equal(state, band + 2, 'state 6 maps band 0 to 3 onto states 2 to 5');
+    assert.ok(level > 0 && level <= 0x1b, `the level is 1 to 27, got ${level}`);
+    // And the battery gauge, whose eight levels come from groups 5 and 6. Nonzero on a remote that
+    // is by definition on the charger, which is the prediction section 111 got wrong the other way.
+    assert.ok((await remote.readRam(0x111)) > 0, 'the battery gauge is zero while on the charger');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('the arch 12 log region is not erased, so the appender is disarmed', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_ONE))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and one Harmony One attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
+  try {
+    // Sections 47 and 111. Base slot 2 declares `[0x3FFFF0, 0x400000)` on both Ones, which is the
+    // top sixteen bytes of the block that carries the `00 FF` pattern. The last byte is what matters:
+    // it is not `0xFF`, so the boot scan recovers `0x400000` and the append's own bound refuses it.
+    const region = await retryingEmptyReply(() => remote.readFlash(0x3ffff0, 16));
+    assert.equal(region.length, 16);
+    assert.notEqual(region[15], 0xff, 'the last unit of the region is written, so the log is full');
+    assert.ok([...region].some((b) => b === 0xff), 'and not every byte, which would be a dead bus');
+    // The control, as for the 600: an address with content answers with content.
+    const cookie = await retryingEmptyReply(() => remote.readFlash(0x040000, 4));
     assert.deepEqual([...cookie], [0x47, 0x53, 0x50, 0x4d], 'GSPM at the config base');
   } finally {
     await remote.close();

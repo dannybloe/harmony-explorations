@@ -21,9 +21,20 @@ Memory mapped, and the application executes in place from it.
 | `0x020000` to `0x02EA92` | 60050 | the **application firmware**, version 3.4 | read off the device, byte identical to the archived 3.4 package, own checksum verifies |
 | `0x040000` to `0x400000` | 3840 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex` |
 | `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4, a second copy | read off **both** remotes, byte identical to the copy at `0x020000` and to the archived 3.4 package |
-| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Unidentified | read off **both** remotes, identical |
+| `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Who writes it is unidentified; **what it does is not**, see below | read off **both** remotes, identical |
 
 Everything else is erased, including all of `0x010000` to `0x020000` and `0x3DEA92` to `0x3F0000`.
+The `0x010000` claim had been asserted of a region no read had reached until 10 August 2026, when
+`0x01F580` and `0x01F5C0` came back erased over USB, `findings.md` section 111.
+
+**The pattern block kills the log area.** Base slot 2 declares the arch 12 log region as
+`[0x3FFFF0, 0x400000)`, capacity 16, in both One configs, which is the **top sixteen bytes of this
+block**, so the region a config reserves was written before any config asked. Its last byte is
+`0x00`, which is what matters: the boot scan at `0x2DB4C`
+recovers the position after the last non erased byte, which is `0x400000`, and the appender's own
+upper bound at `0x2DC1A` rejects that address by zeroing the remaining count. The facility is dead on
+both units, and using it would need a 64 KiB erase inside the config region. `findings.md` sections 47
+and 111.
 
 **The last two rows sit inside the user config region and were found on 9 August 2026**, which is
 late for a remote this project has read in full, and the reason is instructive: `packages/usb`

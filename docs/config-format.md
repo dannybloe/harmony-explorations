@@ -295,12 +295,21 @@ stored. The append routine at `0x2DC0A` writes one byte per call, refuses an add
 branches of the same operand ladder that drives timers, operand high `0xE1` to `0xE5`, appending
 one to six bytes each.
 
-Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
-[findings.md](findings.md) section 47.
+**On both bench Harmony Ones this region is already full, so the facility is dead**, measured on
+10 August 2026. `0x3FFFF0` to `0x400000` reads `00 ff` repeating with the last byte `0x00`, in the
+64 KiB block that has held that pattern on both units since before this project read them. The boot
+scan therefore recovers the position after offset 15, which is `0x400000`, and the append's own upper
+bound rejects it by zeroing the remaining count. **A writer cannot use this region without erasing a
+64 KiB block inside the config region first**, which the rails refuse.
 
-*What is logged is not established*, nor is the stride of 8 on the three architectures whose
-firmware never reads this section. **No config in the corpus appends to it**, so a writer that
-copies these three numbers unchanged is doing everything the corpus does.
+Read with `gspm.log_area`; `gspm.log_reference` names the append case an instruction selects.
+[findings.md](findings.md) sections 47 and 111.
+
+**Case 3's record is a timestamp**: its six bytes reversed are year, month, day, hour, minute and
+second, taken from the clock's broken out fields at data memory `0x108` to `0x10E` on arch 12. The
+other four cases are shapes without meanings. The stride of 8 on the three architectures whose
+firmware never reads this section is *not established*. **No config in the corpus appends to it**, so a
+writer that copies these three numbers unchanged is doing everything the corpus does.
 
 ### Base slot 4: the firmware event map
 
@@ -1453,8 +1462,14 @@ are zero in all nineteen containers. The record closes at `0xEFBF`, so those thr
 section's own tail rather than part of the framing, and a writer emits them as zeros.
 `docs/findings.md` section 84.
 
-What the firmware does with it is **not established**, so this is not a section label. What is
-established is what the bytes are.
+**What the arch 12 firmware does with it is established**, section 111: it subtracts the record from
+its own clock and accumulates the difference in seconds and in days, so what the remote computes is
+how long ago the config was built. The clock's seven data memory bytes at `0x108` to `0x10E` carry
+**this record's encoding field for field**, including the zero based month and the Saturday epoch
+weekday, and the subtraction skips the weekday on both sides because the firmware derives it.
+*Whether the clock is also initialised from the record is unconfirmed*: a remote was read holding its
+own config's build date to the day and the minute, which is suggestive and is one battery pull from
+settled.
 
 Two things worth having for free:
 

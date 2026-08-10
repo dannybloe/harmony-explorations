@@ -45,13 +45,15 @@ propose firmware modification as a route to anything.
    IR cross learning between the two remotes, and live RAM polling over USB do most of what the
    emulator was wanted for, at a fraction of the build. **The RAM polling leg is per architecture**:
    it works on arch 12 and arch 14 and the 525 answers zero for every address, section 90.
-   **And it cannot watch a config being interpreted, which was the biggest thing it was standing in
-   for**, section 110: a remote on USB has not loaded its config, so the loader's own variables read
-   zero and no subsystem is live. What RAM polling is good for is hardware state the firmware sets up
-   anyway, the battery scale and the flash id. That does not reopen the emulator by itself, since the
-   substitutes that carry the most weight are the round trip and the read back, but a question that
-   genuinely needs a config being interpreted has no cheap route and the decision should not pretend
-   otherwise.
+   **Whether it can watch a config being interpreted is also per architecture, and the answer is not
+   the one this file carried for a day.** On arch 14 it cannot, section 110: the journal's five
+   variables are zero on a connected 600, so nothing loaded the config. On **arch 12 it can**, section
+   111: a connected Harmony One's display light band, saved state and cached level agree with each
+   other through its own base slot 15, its clock is ticking and `TMR1` is running. The mechanism is in
+   the key facts table below, since arch 12 executes its config in place and has no load step to skip.
+   So poll RAM on the One, not on the 600, which is the reverse of the architecture this project
+   prefers for reading code. What RAM polling is good for on both is hardware state the firmware sets
+   up anyway, the battery scale and the flash id, and the SFRs answer on arch 12 as well.
 6. **Safety rails are absolute.** See "Never write to a remote" below.
 7. **Own derivation first.** Upstream findings are hypotheses to test. The format's original
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
@@ -680,7 +682,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 110 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 111 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -764,7 +766,12 @@ produce a config the remote accepts and mishandles.
 * **A section's size is not the gap to the next pointer**, section 36. Slot 4 holds 125 bytes where
   the gap is up to 1532, because slot 5's group arrays sit inside it.
 * **The log area's writer refuses out of range rather than erroring**, section 47: an address
-  outside `[0x040000, 0x400000)` zeroes the remaining count instead of writing.
+  outside `[0x040000, 0x400000)` zeroes the remaining count instead of writing. **On arch 12 that is
+  what actually happens**, section 111: both One configs declare `[0x3FFFF0, 0x400000)`, which is the
+  top sixteen bytes of a 64 KiB block both bench units carry a `00 FF` pattern in, so the boot scan
+  recovers `0x400000` and the writer disarms itself. The rail read as protection against a bad config
+  is what fires on a good one, and using the facility at all would need a 64 KiB erase inside the
+  config region.
 * **A glyph and an encoded picture cannot be re-encoded from their pixels**, which the emitter
   found rather than the firmware: several control streams draw the same image, so re-encoding one
   produces a valid file that is not the original. An editor carries every image it did not change
@@ -783,11 +790,14 @@ produce a config the remote accepts and mishandles.
   Field 6 is narrowed rather than open: it is one of five per image build constants beside the
   firmware version, the software type, the skin and the architecture, and it is `0x09` on arch 9
   where it is `0x0C` on both others.
-* **What the One's analogue channel 1 measures**, section 103, which is what the display light's four
-  levels and four device levels are chosen by. Two readings fit and they differ only in the sensor's
-  wiring, so the firmware cannot settle it. `read-ram.ts --address 0x110` on a connected remote can,
-  and the three predictions are written down. Two of them say the sampler does not run on USB at all,
-  which is a fact FreeHarmony needs either way. Channel 0 is the battery, `0x111`, eight levels.
+* **What the One's analogue channel 1 measures**, section 103, and **USB cannot settle it**, section
+  111. Two readings fit and they differ only in the sensor's wiring, so the firmware cannot choose, and
+  the bench read that was meant to choose landed on outcome 2: the converter is off and its result
+  register frozen across 60 seconds while the clock ticks in the same poll, so covering the sensor
+  cannot move `0x110`. What the read did settle is that the band, the state and the level in RAM agree
+  with each other through the config's own base slot 15, which is how we know an arch 12 remote on USB
+  has read its config. Finishing the sensor needs the remote off USB, which no read path reaches.
+  Channel 0 is the battery, `0x111`, eight levels, and it reads 7 of 8 on a charging remote.
 * **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
   both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
   is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
@@ -824,11 +834,13 @@ produce a config the remote accepts and mishandles.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
-  USB never runs its application, so the keypad handler never runs. **It does not even load its
-  config**, section 110, measured in the 600's own data memory: the journal's five variables are zero,
-  so neither the container's marker check nor the allocator has run. So there is no loaded config on
-  the remote to ask about and no derived state to compare against; anything the application wants to
-  know it computes from the bytes itself. Arch 14 yields the **column**
+  USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
+  run the rest of its application, section 111, and "never runs its application" was the wording here
+  until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
+  110: the journal's five variables are zero on the 600, so neither the container's marker check nor
+  the allocator has run, and anything the host wants to know it computes from the bytes itself. On arch
+  12 it does load it, section 111, because the config is memory mapped and there is no load step.
+  Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
   region of the One share one sense line. Finishing it needs a RAM write to drive the rows, which
   the rails forbid, and **that is not proposed here.** Neither of Logitech's own applications has

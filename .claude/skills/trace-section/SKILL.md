@@ -119,14 +119,21 @@ to generate candidates, never as evidence.
 
 Two dynamic routes exist, both read-only:
 
-* **RAM over USB**, and **not for labelling a section**. `READ_MISC` with sub-command
-  `MISC_RAM 0x06` reads live RAM off a running remote, and it works: `packages/usb` is built and
-  `read-ram.ts` is the instrument. What does not work is the method this entry used to describe,
-  polling a candidate pointer variable while operating the remote by hand: **a remote on USB has not
-  loaded its config**, `docs/findings.md` section 110, measured in a Harmony 600's own data memory,
-  where the config loader's own variables are all zero. So no section is live, no on-screen action
-  can be performed, and there is no per subsystem pointer variable to poll. Use it for hardware
-  state the firmware sets up regardless, which is what sections 105 and 110 used it for.
+* **RAM over USB, and which architecture decides whether it is any use.** `READ_MISC` with
+  sub-command `MISC_RAM 0x06` reads live RAM off a running remote; `packages/usb` is built and
+  `read-ram.ts` is the instrument. **On arch 14 it cannot label a section**: a connected Harmony 600
+  has not loaded its config, `docs/findings.md` section 110, and the loader's own variables are all
+  zero, so no section is live and there is no per subsystem pointer variable to poll. **On arch 12 it
+  can**, section 111: a connected Harmony One has read its base slot 15 and is executing, so a
+  candidate variable can hold a real value. Two things temper it even there. A remote on USB is in USB
+  mode, so its normal user interface cannot be driven by hand and the values are whatever the last
+  normal mode pass left; and its analogue sampler does not run, so anything downstream of a
+  measurement is frozen. Use it for hardware state the firmware sets up regardless, which is what
+  sections 105 and 110 used it for, and on arch 12 for asking whether a variable a config should have
+  filled is filled.
+  **This entry said "a remote on USB has not loaded its config" flat, for one day**<!--superseded-->, on the strength
+  of one architecture. That is the mistake the pitfall about arch 14 at the end of this file warns
+  about, made in the dynamic route rather than the static one.
 * **The emulator**, deferred by decision 5 in `docs/roadmap.md`. If a question genuinely needs
   an ordered trace of every config byte read, that is the argument for building it, and it
   should be made explicitly rather than by drifting into it.

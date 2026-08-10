@@ -49,13 +49,22 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty one have been found and corrected so far, and section 110 is worth reading beside them: it is
-not a correction, it is four predictions out of five measured wrong, with the record of what the
-prediction got wrong kept in place. The newest correction is in section 109 and it is a field name
-this project took from concordance and never questioned: `GET_VERSION`'s flash id is not a
-manufacturer and a device byte, it is a capacity code and a manufacturer. The firmware compares one of
-the two against three literals to choose a flash size, and only a capacity code can do that. Measured
-on the bench 600 the same afternoon the mechanism was read.
+Thirty three have been found and corrected so far, and sections 110 and 111 are worth reading beside
+them: neither is only a correction, each is a set of predictions with most of them measured wrong and
+the record of what the prediction got wrong kept in place. The newest are in section 111. **A remote
+attached to USB does run its application**, which section 48 denied and four summaries had copied, and
+**a remote on USB does load its config on arch 12**, which section 110 concluded of remotes in general
+from one measurement on one architecture. Both were caught by one hardware session a day later, and
+both are the same failure: a claim measured on one architecture and stated of all of them.
+
+Before them, section 109, and its own framing needed correcting too. It reported `GET_VERSION`'s flash
+id as a field name this project took from concordance and never questioned<!--superseded-->. **It had been questioned
+and got right**, in `reference/concordance-notes.md` and in section 3's table above, both of which say
+the One reports manufacturer then device and the 600 reports JEDEC capacity then manufacturer. So what
+section 109 found was **drift in two other places**, `docs/usb-protocol.md` and a test comment, which
+had flattened the two orderings into concordance's arch 12 one. The mechanism it read is unaffected:
+the firmware compares one of the two bytes against three literals to choose a flash size, and only a
+capacity code can do that.
 
 Before it, section 108: `packages/codec` resolved
 the second dispatcher's four opcodes as exact values where the firmware compares against them as
@@ -2462,6 +2471,21 @@ message and is the obvious next step, since the corpus cannot.
 
 Until then, nothing in this project should treat the record as establishing an order between two
 configs of the same remote.
+
+### What the firmware does with it, added in section 111
+
+The arch 12 firmware **subtracts the record from its own clock**. `0x27F20` seeks slot 3, steps two
+bytes past the `0xADDF` cookie and calls two helpers: `0x27CC0` differences the record's second, minute
+and hour against data memory `0x108`, `0x109` and `0x10A`, and `0x27DFA` differences its day, month and
+year against `0x10B`, `0x10D` and `0x10E`, with one extra cursor step in between that **skips the day
+of week byte on both sides**. The results accumulate as seconds and as days into `0xF2D` to `0xF2F`,
+gated on two bits of `0x1A4`. So what the remote computes from this record is **how long ago the config
+was built**.
+
+That is also what fixes the encoding of the clock's own seven bytes, since a subtraction pairs each one
+with a record field whose meaning is already confirmed on sixteen samples, including the zero based
+month and the Saturday epoch weekday. Section 111 has the measurement, on a remote whose clock was
+reading its own config's build date.
 
 ## 22. The internal read window is two pages, and one of them holds the remote's identity
 
@@ -5246,13 +5270,27 @@ the naming rest on the firmware alone.
 addresses mean at the moment of the call has not been traced, and no config triggers one to
 observe.
 
+> **Case 3 is traced, section 111.** `0x108` to `0x10E` are the clock's broken out fields, named from
+> the firmware and confirmed on a running remote, so case 3's six bytes reversed are year, month, day,
+> hour, minute, second. The record is a timestamp, and it omits `0x10C` because the day of week is
+> derived rather than kept. The other four cases still stand as shapes without meanings.
+
 **The stride of 8 on arch 8, 9 and 14.** It is exact in nine containers, so it is a field boundary
 rather than a coincidence, but no code that reads this section on those architectures has been
 found. The arch 14 application does not, and the obvious remaining candidate is the bootloader in
 the internal `0xFE` page, which has not been searched.
 
-**Whether anything is in there.** Reading `0x3FFFF0` off a Harmony One would say whether those
+**Whether anything is in there.** Reading `0x3FFFF0` off a Harmony One would say whether those<!--superseded-->
 sixteen bytes are erased, and that read has not been done.
+
+> **Done, and this paragraph outlived it by a day.** The block containing those sixteen bytes was read
+> off both Harmony Ones on 9 August 2026 and has been in `docs/memory-map-one.md` since, and section
+> 111 read the sixteen bytes themselves: `00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 00`. **They are
+> not erased, and the consequence is a rail.** The boot scan records the position after the last non
+> erased byte, which is `0x400000`, and the append's own upper bound rejects that address by zeroing
+> the remaining count. So on both bench units this facility disables itself at the first attempt, and
+> the range test read here as protection against a bad config is what fires on a good one. Section 111
+> has the arithmetic.
 
 ### Where it lands
 
@@ -5342,10 +5380,17 @@ Measured 7 August 2026 on the bench Harmony 600, firmware 0.2, every one of its 
 by hand while the host watched over USB.
 
 **Predictions 1 to 5 are all unresolved rather than confirmed or refuted, because the premise
-underneath them is wrong.** A remote attached to USB shows a sync screen and **does not run its
+underneath them is wrong.** A remote attached to USB shows a sync screen and **does not run its<!--superseded-->
 application**, so the keypad handler never runs, `0x73D` and `0x73F` never change, and no scan code
 is ever computed. The resting values are 0 and 6 and they stayed at 0 and 6 through every press of
 the session. Prediction 1 is technically true of `0x73D` and means nothing.
+
+> **The measurement stands and the wording above is too strong**, section 111. USB mode is a mode of
+> the application's own loop, section 99, and a connected Harmony One is demonstrably executing: its
+> clock ticks, `TMR1` runs, and its display light state machine holds values only its config states.
+> What does not run is the keypad handler, which is what this section measured and what its conclusion
+> rests on. The broad sentence had been copied into four summaries by the time it was checked, and
+> each of them is corrected rather than deleted, because the narrow claim is still load bearing.
 
 That is not a setup mistake, and it was checked three ways. The remote enters sync mode
 **immediately on being plugged in**, before the host sends anything, so it is not our traffic that
@@ -12847,6 +12892,14 @@ sensor while the remote is on USB should move it. Three outcomes, committed befo
 Outcomes 2 and 3 are the likely ones and they are worth having: they would say this whole subsystem
 is unobservable over USB, which is a fact FreeHarmony needs about what it can and cannot show.
 
+> **Outcome 2, measured on 10 August 2026**, section 111. `0x110` is 1, `0x112` is 3 and `0x113` is
+> 20, and the three agree with each other through this config's own group 1 and the band to state map
+> above, so the value is config derived rather than a default or a leftover zero. Nothing recomputes
+> it: over 60 seconds the converter stayed off, its result register stayed at 966, and the four bytes
+> stayed put while the clock's seconds moved. So the band is readable and stale, covering the sensor
+> cannot move it, **and what channel 1 measures is still not established.** The one thing this section
+> did not consider is the one that mattered: a stale value is evidence that the config was read.
+
 ### What this does to the reading depth
 
 Selector 17 is a meaning by the definition in `packages/codec/src/actions.ts`: its effect is tied to
@@ -13454,7 +13507,17 @@ work needs content on one side: `0x0E4358` against `0x1E4358`, the same offset o
 back **different**, and `0x030000` answering with a cookie is what makes an `0xFF` window information
 rather than the tool's default.
 
-### The flash id in `GET_VERSION` is the JEDEC id, and its two bytes are the wrong way round
+### The flash id in `GET_VERSION` is the JEDEC id, and two documents had flattened its two orderings
+
+> **This heading said "its two bytes are the wrong way round" and the section said the field name came
+> from concordance and was never questioned. Both are corrected here**, on 10 August 2026. It was
+> questioned: `reference/concordance-notes.md` has a section called "the two flash ID orderings are not
+> a bug" and section 3's table above carries `0x1F:0xC8` as manufacturer and device on arch 12 against
+> `0x15:0x1C` as capacity and manufacturer on arch 14. Nothing is the wrong way round; **the two
+> architectures genuinely differ**, because one part is parallel NOR and the other is SPI. What section
+> 109 actually found is that `docs/usb-protocol.md` and a comment in the hardware test had copied arch
+> 12's ordering onto arch 14, which is drift in a summary rather than a wrong fact at the root, and it
+> is exactly the failure mode step 4 of the `finding` skill is for. The mechanism below stands.
 
 Not predicted, and it fell out of the version reply that was only meant to be a go/no-go.
 
@@ -13538,7 +13601,7 @@ allocator stores them.
 
 **What is expected, and it is not confident.** The chip identification demonstrably runs on USB,
 because the version block carries the JEDEC pair section 109 measured, so `0x688` is the most likely
-of the five to be set. The config load is the uncertain one: a remote on USB never runs its
+of the five to be set. The config load is the uncertain one: a remote on USB never runs its<!--superseded-->
 application, section 48, and whether it validates and loads a config on the way to USB mode has never
 been established here. So the honest expectation is `0x688` set and the other four unknown, and the
 value of the read is in which of the three states above comes back.
@@ -13561,14 +13624,23 @@ reads cannot change anything on a remote.
 
 **It is the third state: neither the container check nor the journal init has run.** The floor at
 `0x0F9` is zero, so nothing validated a config's `LWJL` marker; the region at `0x0F3` and `0x0F6` is
-zero, so the allocator never ran. **A remote on USB does not load its config at all**, which
+zero, so the allocator never ran. **A remote on USB does not load its config at all**, which<!--superseded-->
 corroborates section 48 from a new direction: that section established that the application does not
 run, and this says the load that precedes it does not either.
 
+> **True of arch 14 and false of arch 12, and the correction came one day later**, section 111. A
+> Harmony One on USB holds display light values that only its own config states, so it has read base
+> slot 15, and its clock is running, so its application is executing. The mechanism is the difference
+> already in this project's key facts table: arch 12 executes its config in place out of memory mapped
+> NOR and has no load step to skip, where arch 14 must copy from SPI serial flash. **What this section
+> measured stands for the 600**, and every sentence that generalised it to "a remote" is narrowed. The
+> corroboration of section 48 falls away with it, because section 48's own broad wording is wrong too.
+
 That matters for the application rather than only for this document. Reading a config over USB is
-reading flash and nothing else; there is no loaded config on the remote to ask about, and no derived
-state to compare against. Anything FreeHarmony wants to know about the config it has to compute from
-the bytes itself.
+reading flash and nothing else; on arch 14 there is no loaded config on the remote to ask about, and
+no derived state to compare against. Anything FreeHarmony wants to know about the config it has to
+compute from the bytes itself, which is the safe assumption on both architectures even though an arch
+12 remote turns out to have some derived state to offer.
 
 ### The one thing that did run, and it settles section 109 in RAM
 
@@ -13618,12 +13690,13 @@ on a remote that has loaded its config, and a remote on USB never has.
 `0x688` are deliberately **not** pinned, because uninitialised memory is not a fact about the
 firmware.
 
-## 111. Two open items measured on a Harmony One
+## 111. Two open items measured on a Harmony One, which turns out to be running while it is read
 
 A Harmony One is on the bench, so section 103's display light band and section 47's log area can both
 be read. Section 103's three outcomes were committed when it was written; the rest go here, before
-anything is read, and **section 110 sharpens all of them**: a remote on USB has not loaded its config,
-so anything a config states is not in RAM.
+anything is read, and **section 110 sharpens all of them**: a remote on USB has not loaded its config,<!--superseded-->
+so anything a config states is not in RAM. *(That premise is what the measurement below refutes, and
+these predictions are left exactly as they were committed.)*
 
 ### The predictions
 
@@ -13653,7 +13726,259 @@ this section can be trusted and the read stops there.
 
 ### What the remote said
 
-Not yet measured.
+Measured on 10 August 2026, one session, every read through `packages/usb` and every one of them a
+read. The predictions above went in as commit `cd0a81a` before the cable went in.
+
+**1. The unit is the spare, and the test that should have said so could not.** The version reply is
+`34 05 c8 1f c0 36 0c 34 34 16 34 34`, and 32 bytes at `0x040000` are
+`47 53 50 4d e0 3d 18 00 00 16 00 00 0b 24 06 00 ...`, byte for byte `one_spare_after_sync`. The
+gated hardware test reported "the read matches none of the stored dumps", and the fault was in the
+test: `BENCH`'s dump list named `one_config` and `one_config_unprogrammed` and neither of the spare's
+two dumps, so the test whose whole job is to identify a unit could not identify half the bench.
+Corrected in the same commit as this section.
+
+**2 and 3. Both wrong, and how they are wrong is the finding.** The four bytes read `01 07 03 14`,
+identical on a second read:
+
+| address | what section 103 calls it | predicted | measured |
+|---|---|---|---|
+| `0x110` | the band, four levels from group 4's thresholds | 0 | **1** |
+| `0x111` | the battery gauge, eight levels from group 5 or 6 | 0 | **7** |
+| `0x112` | the saved state | 0 | **3** |
+| `0x113` | the cached light level | 0 | **20** |
+
+They are not arbitrary and they are not compiled in defaults. `0x110` is band 1; section 103's state
+6 maps band 0 to 3 onto states 2 to 5, so band 1 is state 3, and `0x112` is 3. Base slot 15 group
+1's entries 2 to 5 are the four levels and this config's are `20, 20, 26, 26`, so band 1's level is
+entry 3, which is 20, and `0x113` is 20. The firmware's own defaults are `9, 16, 24, 27` and contain
+no 20 at all. **So three data memory bytes agree with each other through a table that only the config
+states**, which is the independent closure this project's standard asks for and it is the opposite of
+what prediction 2 said.
+
+A second subsystem says the same by a different route. `LATC` reads `0x37`, so bit 5 is set, and
+section 106 reads that pin as the enable of the I2C device at address 0x60 and says the firmware
+never sets it: only a config does, through `0x3F` band `0xC0` selector 16.
+
+**Section 103's outcome 2, and with a liveness control in the same poll.** 357 rounds over 60
+seconds, reading the converter and the four bytes and the clock's seconds together:
+
+| watched | distinct values in 60 s |
+|---|---|
+| `ADCON0` | 1, and it is `0x00`, so the converter is off |
+| `ADRESH:ADRESL` | 1, and it is `0x03C6`, 966 of 1023 |
+| `0x110`, `0x111`, `0x112`, `0x113` | 1 each |
+| `0x108`, the clock's seconds | **15** |
+
+So the analogue sampler does not run while the remote is on USB, and the remote is not idle either.
+That is outcome 2 rather than outcome 3, and outcome 1 is excluded by measurement rather than by
+assumption: covering the sensor cannot move a band nothing is recomputing. 966 of 1023 is also what a
+charging battery reads, which is `0x111` being 7 of 8, so the last conversion this remote performed
+agrees with the level cached beside it.
+
+What FreeHarmony needs out of that is one sentence: on a connected Harmony One the display light
+band is **readable and stale**, so an interface may show it and must not present it as live.
+
+**4. A remote on USB runs its application, and the phrase this project has been repeating is wrong.**
+Section 48 concluded "a remote on USB never runs its application, so the keypad handler never runs"<!--superseded-->,
+and section 99 had already contradicted the first half without either being reconciled: **mode 1 is
+USB mode**, a mode of the application's own loop, with a body that polls and an exit gate. The
+measurement settles it four ways:
+
+* `T1CON` is `0x1F`, which is the `0x1E` base slot 3's routine writes plus `TMR1ON`, so the config's
+  clock was started and is running;
+* `TMR1H:TMR1L` advanced `0x1FE4`, `0x202C`, `0x2195` across three rounds of nine reads;
+* `UCON` is `0x08`, `USBEN` set, which is the positive control that the reads land at all;
+* of 256 data memory bytes from `0x100`, **exactly one moved** in twenty seconds, and it moved by 20.
+
+Section 48's real finding is the narrower one it also states, and that one stands: the keypad handler
+never runs, because USB mode's body does not scan the matrix. What does not stand is "the
+application". The four places that had copied the broad wording are swept.
+
+**The special function registers answer on arch 12**, which is worth recording on its own, because on
+arch 9 they read back zero and that difference decided a measurement, section 89. `PORTA` `0x29`,
+`PORTC` `0xB8`, `LATC` `0x37`, `WDTCON` `0xC1`, `ADCON1` `0x86`. So the whole register file of a
+connected One is observable, and that is a bench capability nobody had established.
+
+**5. The one byte that moved is a clock, and all seven of its fields are named.** `0x108` advanced
+`0x27` to `0x3B` in twenty seconds. The firmware says what it is, at `0x27A0E`:
+
+```
+27a0e: MOVF  0x34,B,W      ; the elapsed whole seconds
+27a12: ADDWF 0x108,F       ; into the seconds field
+27a14: MOVLW 0x3c          ; 60
+27a18: SUBWF 0x108,W
+27a1a: BNC   0x27a2c       ; under a minute: done
+27a1c: CALL  0x20072       ; carry into the minute
+27a24: SUBWF 0x108,F       ; subtract 60
+27a28: BSF   0xf31,1       ; and flag that the minute changed
+27a2a: BRA   0x27a14       ; while it is still 60 or more
+```
+
+`0x27F78` is the calendar above it. It reads `0x10B + 1` and `0x10D + 1` and `0x10E`, switches on the
+second of those through an `XORLW` chain whose case values are 1 to 12, and groups them
+`{1,5} {2,6} {3,11} {4,7} {8} {9,12} {10}`. **Those are exactly the months whose first day falls on
+the same weekday in a March to February year**, so it is a day of week computation and the field
+really is a month. The span is the detail worth keeping: grouping inside one calendar year gives
+`{1,10} {2,3,11} {4,7} {5} {6} {8} {9,12}` and does not match, and the difference is what the
+"January and February belong to the previous year" test at `0x28008` is for, which is the standard
+way of putting the leap day at the end of the year. The comparisons against 90 and 100 on the year
+field are the rest of the same algorithm, and the result is stored to `0x10C` at `0x2806C`. `0x280E0`
+is the day rollover, month modulo 12. Eleven of the twelve months are cases: June reaches February's
+arm by falling through the last `BNZ`, which is the group the calendar puts it in.
+
+**What names the fields exactly, rather than up to an offset, is that the firmware subtracts them
+from base slot 3's record.** `0x27F20` seeks slot 3, advances the cursor two bytes past the `0xADDF`
+cookie, and calls two helpers. `0x27CC0` copies `0x108`, `0x109`, `0x10A` into scratch, reads the next
+three config bytes, and computes the difference in seconds. `0x27DFA` copies `0x10B`, `0x10D`, `0x10E`,
+reads three more config bytes with **one extra cursor advance between the first and the second**, and
+computes the difference in days. Line the two up against the record in
+[config-format.md](config-format.md):
+
+| record | field | paired with |
+|---|---|---|
+| `+0x02` | second, 0 to 59 | `0x108` |
+| `+0x03` | minute | `0x109` |
+| `+0x04` | hour, 24 hour | `0x10A` |
+| `+0x05` | day of month, 1 to 31 | `0x10B` |
+| `+0x06` | day of week, 0 = Saturday | **skipped**, which is what the extra advance is |
+| `+0x07` | month, 0 = January | `0x10D` |
+| `+0x08` | year, offset from 2000 | `0x10E` |
+
+So the clock's seven data memory bytes carry **exactly base slot 3's encoding, field for field**,
+including its two unusual choices: a zero based month and a weekday counted from a Saturday epoch.
+`0x10C` is the derived one, which is why the subtraction skips it on both sides.
+
+| address | field | measured | how it is confirmed |
+|---|---|---|---|
+| `0x108` | second | 47, 55, 3, 11, 23, 31 | the firmware's own modulo 60 loop, and the wrap was observed |
+| `0x109` | minute | 53, 53, **54**, 54, 54, 54 | it carried in the same read where the second wrapped |
+| `0x10A` | hour | 18 | the carry chain above the minute |
+| `0x10B` | day of month | 6 | paired with record `+0x05`, which is 1 to 31 |
+| `0x10C` | day of week | 5, and 6 August 2026 is a Thursday | the calendar's own output, under the record's epoch |
+| `0x10D` | month, 0 = January | 7, so August | the month grouping above, and record `+0x07` |
+| `0x10E` | year since 2000 | 26 | compared against 90 and 100, and record `+0x08` |
+
+**The date is therefore 6 August 2026 and this section read it as the 7th first.** The first pass took
+the calendar's `INCF ...,W` as evidence that the day field is zero based, which fixed the weekday's
+epoch by fitting rather than by reading, and Friday the 7th fits a Monday epoch exactly as well as
+Thursday the 6th fits a Saturday one. The subtraction settles it because it pairs each RAM byte with a
+record field whose encoding is confirmed on sixteen config samples, and the weekday then agrees with
+the calendar independently: under the record's epoch 5 is Thursday, and 6 August 2026 is a Thursday.
+**A field split fixed by fitting one observation is not a reading**, which is the same lesson as the
+key code and the light band's flag bit.
+
+**And that answers a question section 21 left open.** It says of the build timestamp that "what the
+firmware does with it is not established". What it does, on arch 12, is compute **how long ago the
+config was built**: `0x27F20` accumulates the seconds difference and the days difference into
+`0xF2D` to `0xF2F`, gated on two bits of `0x1A4`.
+
+**The step is four seconds, not one, and the observed value set proves it.** The seconds took 15
+distinct values in 60 seconds, all of them congruent to 3 modulo 4, spanning 3 to 59. That is exactly
+`{3, 7, ..., 59}`: the update adds four and 60 is a multiple of four, so a power cycle's residue
+class survives every wrap. It also predicts the wrap that was measured, since 55 plus 4 is 59 and 59
+plus 4 is 63, which the "subtract 60 while it is still 60 or more" loop turns into 3.
+
+**And that names one of section 47's log records.** Case 3 of the log appender copies six bytes,
+`0x108`, `0x109`, `0x10A`, `0x10B`, `0x10D`, `0x10E`, **in that order reversed**. Reversed, they are
+year, month, day, hour, minute, second: the record is a timestamp in descending significance, and it
+skips `0x10C` because the day of week is derived. Section 47 said what is logged "has not been
+traced", and one of the five cases is traced now. The order is also an independent confirmation of
+the field assignment above, since no other assignment makes that copy a sensible record.
+
+**6. What the clock reads is its own config's build date, and that is one battery pull from a
+finding.** It says **6 August 2026, 18:54**, and the session that read it was 15:41 on 10 August. Two
+things follow. **A free running clock cannot show a past date after a power cycle**, and this unit has
+had its batteries out repeatedly, so something initialises it from stored data. And the stored date it
+shows is `one_spare_after_sync`'s own build timestamp, `2026-08-06 13:54:22`, to the **day and the
+minute**, with the whole difference being 5 hours 0 minutes and 25 seconds.
+
+That is a strong hypothesis and it is not yet a finding, because the difference should be the uptime
+and an uptime whose minutes come out at zero is a one in sixty coincidence. It is at least consistent
+in the small: 25 seconds is congruent to 1 modulo 4, which is exactly what carries the seconds field
+from the record's residue 2 into the residue 3 it was measured in, and a first tick that adds an odd
+number of whole seconds is what the adder at `0x27A0E` does.
+
+**One round of hardware settles it**, and the prediction is seven values rather than a shape: take the
+batteries out, put them back, and read `0x108` to `0x10E` at once. If the clock comes from the config
+it reads `22 54 13 06 05 07 26`, which is the record's own fields in the order established above. If it
+reads zeros, or a fixed epoch such as 1 January 2000, the initialiser is compiled in and the agreement
+above is the coincidence. **Either way it matters to an editor**, because a config whose timestamp sets
+the remote's clock is a config field with a user visible effect.
+
+**7. Prediction 4 is wrong, and the way it is wrong is worse than the error.** `0x3FFFF0` is not
+erased. It reads `00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 00`, and **this repository already
+knew that**: `docs/memory-map-one.md` has carried the `0x3F0000` block as `00 FF` repeating with the
+last two bytes both `0x00`, read off both remotes, since 9 August 2026. Section 47's own "what is not
+established" still said the read "has not been done", and the prediction was written from that stale
+paragraph. **A prediction copied out of an open item that a later section closed is the same drift
+step 4 of the `finding` skill exists to stop, with a hardware bill attached.** The correction is
+in place below.
+
+The reads confirm the shape and extend it. Every 64 KiB block from `0x3C0000` to `0x400000` was read:
+`0x3C0000` and `0x3E0000` erased, `0x3D0000` to `0x3DEA91` the stored application firmware, 59391
+bytes of it not `0xFF`, and `0x3F0000` to `0x400000` the pattern, 32769 bytes of `0x00` at every even
+offset and `0xFF` at every odd one except the last, which is `0x00`.
+
+**What the pattern does is the finding, and section 47's last open point closes on it.** Base slot 2
+declares the arch 12 log region as capacity 16, start `0x3FFFF0`, limit `0x400000`, in **both** One
+configs. That is the top sixteen bytes of the pattern block, so the region a config reserves for the
+log has been written before any config ever asked. Follow the boot scan with those bytes in hand:
+
+* `0x2DB4C` walks `capacity` bytes from `start`, and for each byte that is not `0xFF` it records the
+  cursor and the remaining count. The read helper `0x2B8F8` advances the cursor before `0x2B88A`
+  reconstructs the address, so a non erased byte at offset k records `start + k + 1` with count
+  `capacity - k`.
+* The last non erased byte is offset 15. So the recovered state is address `0x400000` and count 1.
+* The append at `0x2DC0A` tests that address against `0x400000` at `0x2DC1A`, and the failure branch
+  **zeroes the remaining count**.
+
+So the arch 12 log facility switches itself off the first time anything asks. **The rail section 47
+read as protection against a badly written config is what fires on a well written one**, on both
+bench Harmony Ones, because of what is in the flash rather than what is in the config. No config in
+the corpus emits an append opcode either, so the facility is dead twice over, and a writer that
+someday wants to use it has to erase a 64 KiB block first, which is an erase inside the config region
+and therefore something the rails refuse.
+
+What wrote the pattern is still unidentified. A block filled with the sixteen bit word `0xFF00`, one
+word of `0x0000` at the very top, on two units that have nothing else in common, reads like something
+written before the remotes were assembled rather than by either firmware; it is not claimed here.
+
+**8. Prediction 5 confirmed.** `0x01F580` and `0x01F5C0` both read 64 and 16 bytes of `0xFF` over
+USB. So the dual address hazard section 105 recorded is exactly as recorded and no worse: a firmware
+`TBLRD` at `0x01F5C0` reads the on chip page `0xFF`, where this family of units keeps 94 and
+`0xFFFF`, and a `READ_FLASH` at the same number reads the external part, which is erased. The first
+word is therefore distinguishable between the two memories and the second is not. It also gives
+`docs/memory-map-one.md`'s "everything else is erased" its first evidence for the
+`0x010000` to `0x020000` range, which had been asserted of a region no read had reached.
+
+**9. What this does to section 110, one day later.** Section 110 measured five journal variables at
+zero on a Harmony 600 and concluded that a remote on USB has not loaded its config<!--superseded-->. **On arch 12 that
+is false**, and the sweep that carried the broad wording into `CLAUDE.md` and the `trace-section`
+skill is narrowed to arch 14 here. The mechanism is the architecture difference this project has had
+in its key facts table all along: arch 12 executes its config in place out of memory mapped NOR and
+needs no load step, where arch 14 must copy from SPI serial flash. So the RAM polling method is alive
+on arch 12 and dead on arch 14, which is the reverse of the architecture this project prefers to read
+code on, and it is the third time "prefer arch 14, then port" has gone wrong about **finding** rather
+than about reading.
+
+### Where it lands
+
+`packages/usb/test/hardware.test.ts`, gated on the flag and on the One: the clock advancing with
+`TMR1` and `T1CON` beside it and `UCON` as the control, the display light bytes agreeing with each
+other, and `0x3FFFF0` not erased with the container cookie as the negative. Its `BENCH` dump list is
+corrected there too.
+
+**The test that ties the RAM to the config is in `packages/corpus`**, not there, because it needs the
+codec and `packages/usb` deliberately does not depend on it. It identifies the attached unit from its
+own container, reads group 1 out of that container rather than out of a literal, and checks that the
+cached level is the level that config states for the band the remote is in. Its negative is that no
+arch 12 config's four levels include any of the firmware's defaults, which is what makes the positive
+mean the config was read; that half runs without a remote.
+
+`tests/test_clock.py` pins the seven fields against base slot 3's record, the modulo 60 loop, the
+month grouping derived from the calendar rather than tabulated, and the log record's order.
+`tests/test_interpreter.py` pins the boot scan arithmetic, that a region whose last byte is written
+disables the appender, and the negative that an erased one does not.
 
 ## References
 

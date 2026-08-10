@@ -90,8 +90,9 @@ table from something that provably could not describe its own keypad into 54 key
 event types, exactly.
 
 **That has now been checked against the remote**, by pressing all 54 of its buttons while the host
-watched the keypad port over USB. A remote on USB never runs its application, so the scan code is
-never computed and only the matrix **column** is observable, a quarter of the mapping. That quarter
+watched the keypad port over USB. A remote on USB never runs its **keypad handler**, so the scan code
+is never computed and only the matrix **column** is observable, a quarter of the mapping. (It does run
+the rest of its application, section 111. The broader claim stood here for three days.) That quarter
 closes: the measured census is 14, 14, 13, 13 buttons per column, a column holds at most 14, and
 the unit's own config carries scan codes contiguous 1 to 54, whose two absentees fall in exactly
 the two columns that are short. Which button carries which of the 54 codes is still open. **The

@@ -536,9 +536,22 @@ Anything else falls through the chain.
 
 The 16-bit parameter becomes `FSR0` and the byte at that data address is what comes back. So
 **live RAM of a running remote is readable over USB**, which is the capability
-`docs/roadmap.md` wants in place of the deferred emulator: poll a variable while operating the
-remote by hand. It also means the button mapping experiment is reachable, by watching the keypad
-scanner's index variable while pressing every key.
+`docs/roadmap.md` wants in place of the deferred emulator.
+
+**What it is actually good for is narrower than this section first claimed**, and it took two
+measurements to bound. A remote on USB is in USB mode, so its interface cannot be driven by hand and
+the button mapping experiment is not reachable this way: the keypad scanner never runs, section 48. On
+**arch 14** the config is not loaded either, so no per subsystem variable holds anything, section 110.
+On **arch 12** it is loaded, section 111, so a variable a config should have filled can be read: a
+connected Harmony One's display light band, saved state and cached level agree with each other through
+its own base slot 15, and its clock is ticking. Its analogue sampler is stopped, though, so anything
+downstream of a measurement is frozen at whatever the last normal mode pass left.
+
+**The special function registers answer on arch 12 as well**, which is worth stating because it is a
+whole address range and because arch 9 answers zero for all of it. Measured on the spare One on 10
+August 2026: `UCON` `0x08`, `PORTA` `0x29`, `PORTC` `0xB8`, `LATC` `0x37`, `T1CON` `0x1F`, and
+`TMR1H:TMR1L` advancing between reads. `UCON` is the positive control, since a part driving USB cannot
+have it zero.
 
 **That is an arch 12 and arch 14 fact, and arch 9 does not have it.** Measured on the bench Harmony
 525 on 9 August 2026: the selector is accepted, the reply is a well formed `0xC2` echoing `0x07`,
