@@ -49,7 +49,9 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty one have been found and corrected so far. The newest is in section 109 and it is a field name
+Thirty one have been found and corrected so far, and section 110 is worth reading beside them: it is
+not a correction, it is four predictions out of five measured wrong, with the record of what the
+prediction got wrong kept in place. The newest correction is in section 109 and it is a field name
 this project took from concordance and never questioned: `GET_VERSION`'s flash id is not a
 manufacturer and a device byte, it is a capacity code and a manufacturer. The firmware compares one of
 the two against three literals to choose a flash size, and only a capacity code can do that. Measured
@@ -13547,7 +13549,74 @@ worth most, and it is the reason this read is worth a commit before it happens.
 
 ### What the remote said
 
-Not yet measured.
+The same Harmony 600, 10 August 2026, four `READ_MISC` windows of data memory. Read only, and RAM
+reads cannot change anything on a remote.
+
+| address | measured |
+|---|---|
+| `0x0F0` to `0x0FF` | sixteen zero bytes |
+| `0x680` to `0x68F` | `00 00 00 00 00 00 15 1c 1a 1e 03 16 00 00 00 00` |
+| the same window again | identical, so nothing there is a live counter |
+| `0x0F0`, 64 bytes, counted | 11 of 64 nonzero, so the read itself is not answering zero to everything |
+
+**It is the third state: neither the container check nor the journal init has run.** The floor at
+`0x0F9` is zero, so nothing validated a config's `LWJL` marker; the region at `0x0F3` and `0x0F6` is
+zero, so the allocator never ran. **A remote on USB does not load its config at all**, which
+corroborates section 48 from a new direction: that section established that the application does not
+run, and this says the load that precedes it does not either.
+
+That matters for the application rather than only for this document. Reading a config over USB is
+reading flash and nothing else; there is no loaded config on the remote to ask about, and no derived
+state to compare against. Anything FreeHarmony wants to know about the config it has to compute from
+the bytes itself.
+
+### The one thing that did run, and it settles section 109 in RAM
+
+`0x686` is `0x15` and `0x687` is `0x1C`, at exactly the addresses section 108 derived from the
+firmware. Three things at once:
+
+* the RAM read's address numbering **is** the firmware's data address numbering, on this
+  architecture, pinned against two bytes with a known value;
+* the chip identification runs on USB even though the config load does not;
+* and the split section 109 corrected is now **measured** rather than argued: the capacity code
+  `0x15` sits in `0x686`, which is the byte the firmware compares against `0x13`, `0x14` and `0x15`,
+  and the manufacturer `0x1C` sits in `0x687`. The version block reports them in the other order,
+  which is why concordance's naming survived as long as it did.
+
+**And the size beside them was never stored**, which is the part no prediction anticipated. `0x688` to
+`0x68A` hold `1a 1e 03`, stable across two reads, and the sizing arms only ever store `0x08`, `0x10` or
+`0x20` in the high byte with the low two cleared. So those three bytes are uninitialised, and this
+firmware does not zero all of data memory at reset.
+
+The reason is two entry points to one identification. `0x686` and `0x687` are written in **two**
+places: `0x108FA`, inside the routine that goes on to store a size, and `0x1097C`, inside `0x10974`,
+which is the accessor `docs/usb-protocol.md` traced for the version block's flash id field. Only the
+second ran. So the remote read its flash's JEDEC id **because the host asked for a version block**,
+and nothing on the remote has decided how big its flash is.
+
+### The prediction record, which is the point of the two commits
+
+Five predicted values, and four of the five wrong: the region, its size, the floor and the chip size
+are all zero where the arithmetic said they would be set. The fifth, `0x68E` bit 4 clear, is right by
+accident, since nothing initialised the byte.
+
+The stated expectation was "`0x688` set and the other four unknown", and **`0x688` is the one that is
+not set** while the two bytes beside it are. That distinction did not exist in the prediction, because
+it took the identification for one routine when it is two, and only the one that skips the size store
+runs on USB. A prediction that had been written after the read would have been about the three
+states; it would not have exposed this.
+
+**Section 108's arithmetic is neither confirmed nor refuted by this**, and that has to be said
+plainly. The allocator did not run, so the region it would compute was not measured. What section 109
+measured stands: both candidate regions are erased. What would settle the arithmetic is the same read
+on a remote that has loaded its config, and a remote on USB never has.
+
+### Where it lands
+
+`packages/usb/test/hardware.test.ts`, gated on the flag and the 600: the JEDEC pair asserted at
+`0x686` and `0x687`, and the journal's five variables asserted zero. The three uninitialised bytes at
+`0x688` are deliberately **not** pinned, because uninitialised memory is not a fact about the
+firmware.
 
 ## References
 

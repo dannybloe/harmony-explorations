@@ -194,6 +194,34 @@ test('the version block is twelve bytes and the flash id in it matches concordan
   }
 });
 
+test('a 600 on USB has not loaded its config, but it has read its flash id', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_600))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_600 }), { timeoutMs: 500 });
+  try {
+    // Section 110. The JEDEC pair the firmware read with `0x9F`, at the two addresses section 108
+    // derived: `0x686` is the capacity code and `0x687` the manufacturer, which is section 109's
+    // correction to concordance's naming, measured in RAM this time. It doubles as the proof that
+    // the RAM read's address numbering is the firmware's, since these two have a known value.
+    assert.equal(await remote.readRam(0x686), 0x15, 'capacity code, 16 Mbit');
+    assert.equal(await remote.readRam(0x687), 0x1c, 'manufacturer, EON');
+
+    // And the journal's own variables are all zero, so neither the container check that sets the
+    // floor nor the init that calls the allocator has run: a remote on USB does not load its config.
+    // `0x688` to `0x68A`, the chip size, is among them, because the identification that runs here is
+    // the version block's accessor and it stores the pair without storing a size. Those three bytes
+    // are uninitialised and are deliberately not asserted: uninitialised memory is not a fact.
+    for (const address of [0x0f0, 0x0f3, 0x0f6, 0x0f9, 0x0fc]) {
+      assert.equal(await remote.readRam(address), 0, `0x${address.toString(16)}`);
+    }
+  } finally {
+    await remote.close();
+  }
+});
+
 test('the flash journal has never been written on this 600', async (t) => {
   if (!HARDWARE || !(await present(HARMONY_600))) {
     t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');

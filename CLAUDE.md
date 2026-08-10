@@ -673,7 +673,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 109 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 110 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -817,7 +817,11 @@ produce a config the remote accepts and mishandles.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
-  USB never runs its application, so the keypad handler never runs. Arch 14 yields the **column**
+  USB never runs its application, so the keypad handler never runs. **It does not even load its
+  config**, section 110, measured in the 600's own data memory: the journal's five variables are zero,
+  so neither the container's marker check nor the allocator has run. So there is no loaded config on
+  the remote to ask about and no derived state to compare against; anything the application wants to
+  know it computes from the bytes itself. Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
   region of the One share one sense line. Finishing it needs a RAM write to drive the rows, which
   the rails forbid, and **that is not proposed here.** Neither of Logitech's own applications has
