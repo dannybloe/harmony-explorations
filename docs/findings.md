@@ -12512,6 +12512,89 @@ are right and neither is complete on its own, so a number quoted from either nee
 attached. Worth stating because the earlier superseded figure for this was 912, and a reader meeting
 912, 1080 and 1992 for the same opcode would reasonably conclude that two of them are wrong.
 
+## 102. Arch 12's `0x3F` band `0xC0` is three fields and three mechanisms, and it is still placement
+
+The largest single item left in the action list language: 424 uses on arch 12, described as
+"a peripheral operation selected by operand bits 4 to 8" and marked placement only.<!--superseded--> Read here as far
+as it goes, which is further than that and short of meaning, and the honest headline is that **the
+reading depth figure does not move**.
+
+### The operand is three fields, and the dispatcher states the split
+
+`0x25330`'s arm for a high byte at or above `0xC0`:
+
+```
+2540a: c0 0e       MOVLW 0xc0
+2540c: be 5d       SUBWF 0xbe,B,W      ; the operand's high byte
+2540e: 01 e2       BC 0x25412
+25412: 01 0e       MOVLW 0x01
+25414: bd 15       ANDWF 0xbd,B,W      ; bit 0
+25418: bc 6f       MOVWF 0xebc
+2541c: bd 41       RRNCF 0xebd,W
+2541e: 7f 0b       ANDLW 0x7f
+25420: 07 0b       ANDLW 0x07          ; bits 1 to 3
+25424: bb 6f       MOVWF 0xebb
+25426: bd ce 00 f0 MOVFF 0xebd,0x000   ; and the whole operand, shifted four
+2542a: be ce 01 f0 MOVFF 0xebe,0x001
+25432: 01 32       RRCF 0x01,F         ; four times
+2543a: 1f 0e       MOVLW 0x1f
+2543c: 00 14       ANDWF 0x00,W        ; bits 4 to 8, five bits
+```
+
+So the instruction carries `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and the third is a **five bit
+selector** rather than the four the old description implied.
+
+### Three mechanisms behind it, and the corpus respects the bound exactly
+
+`0x24F24` branches on the selector:
+
+| selector | what runs |
+|---|---|
+| 16 | sets `LATC` bit 5 when bits 1 to 3 are nonzero, clears it when they are zero |
+| 17 | copies bit 0 and bits 1 to 3 into `gprF11` and `gprF10` and jumps to the state machine at `0x23952` |
+| 0 to 12 | bounded here, then `0x2492E`, which seeks and reads a **config byte** at an offset of `0x10 + 4 * bit0 + (selector >> 2)` through the address register at `0x19C` |
+| 13 to 15, 18 to 31 | fall to the exit; nothing runs |
+
+**The closure is that the corpus uses exactly the accepted values and nothing else.** Across both
+Harmony One configs the selector takes 0 to 12, 16 and 17, fifteen distinct values out of a possible
+thirty two, and never once one of the seventeen the handler refuses. A five bit field whose data
+respects a bound stated only in the firmware is the field split confirming itself.
+
+### The uses are boilerplate, which is what makes the rest hard
+
+The two arch 12 configs are **identical** in this band: 106 uses each, 33 distinct field
+combinations each, the same counts for each combination. One of those configs has five devices and
+eight activities and the other has one and one, section 86. So nothing about this band varies with
+what the remote is set up to control, and 64 of the 106 are the single combination selector 17 with
+bits 1 to 3 equal to 6.
+
+That is worth having and it is also why this stops at placement. A band whose uses do not vary with
+content cannot be tied to content by comparing configs, which is the technique that named most of the
+sections in this document. What it points at instead is a fixed part of the generator's output, and
+naming that needs the state machine at `0x23952` read, which dispatches on bits 1 to 3 as a state
+from 7 downwards and shares `LATC` bit 5 with the selector 16 case.
+
+**`LATC` bit 5 is not identified.** Ten sites drive it, three of them inside the same subsystem as
+`0x23952` and five in a routine at `0x2E53E` that runs Timer 1 with `T1CON` set to `0x1E` and toggles
+the pin in a loop. That is the shape of a bit banged output, and this document has one identified
+`PORTC` bit already, bit 2 as the infrared LED, section 13. Bit 5 is left unnamed rather than guessed
+at, because the last time a peripheral was named from its shape here the polarity came out inverted
+in three places, and a pin has no polarity to check against.
+
+### One defect fixed on the way
+
+`packages/codec` built the arch 12 band by renaming arch 14's `0xB0` entry to `0xC0`, which kept
+arch 14's description sitting on arch 12's handler. Section 73 warns about exactly that, and the
+warning is a few lines above the code that did it. It survived because the borrowed text was vague
+enough to read as true of both. Arch 12 has its own entry now.
+
+### What would move the number
+
+Not this band by itself. `readingCoverage` counts placement as placement however well described, so
+the One stays at 97.0% and saying otherwise would be the depth distinction this project introduced
+precisely to stop that. What would move it is the state machine at `0x23952`, and that is a subsystem
+rather than an opcode: eight states, a predicate at `0x23CA6`, and a peripheral nobody has named.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

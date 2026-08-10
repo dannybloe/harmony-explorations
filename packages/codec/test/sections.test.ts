@@ -1197,3 +1197,44 @@ test('the first node is not always called Root, which is what opened this sectio
   assert.ok(nodes !== undefined);
   assert.deepEqual(nodes.map((n) => [n.level, n.index, n.name]), [[1, 14, 'A']]);
 });
+
+/**
+ * findings.md section 102: the arch 12 `0x3F` band `0xC0` selector respects a firmware bound.
+ *
+ * `0x24F24` accepts 0 to 12 plus 16 and 17 and drops the other seventeen values of a five bit
+ * field. That the data never uses one of the dropped values is the field split confirming itself,
+ * and it is the only closure this band has, since its uses do not vary with what the config
+ * describes.
+ */
+test('the arch 12 0xC0 band only ever selects what its handler accepts',
+    skipUnless('one_config', 'one_config_unprogrammed'), () => {
+  const accepted = new Set([...Array.from({ length: 13 }, (_, i) => i), 16, 17]);
+  const perConfig: { total: number; distinct: number; dominant: number }[] = [];
+  for (const name of ['one_config', 'one_config_unprogrammed']) {
+    const c = parse(load(name) as Uint8Array);
+    const combinations = new Map<string, number>();
+    let total = 0;
+    for (const address of c.pointerArray(archSlot(c.architecture as number, 10)) ?? []) {
+      for (const i of c.actionList(address) ?? []) {
+        if (i.opcode !== 0x3f) continue;
+        const high = i.operand >>> 8;
+        if (high < 0xc0 || high > 0xcf) continue;
+        total += 1;
+        const selector = (i.operand >>> 4) & 0x1f;
+        assert.ok(accepted.has(selector), `selector ${selector} is one the handler drops`);
+        const key = `${selector}/${(i.operand >>> 1) & 7}/${i.operand & 1}`;
+        combinations.set(key, (combinations.get(key) ?? 0) + 1);
+      }
+    }
+    perConfig.push({
+      total,
+      distinct: combinations.size,
+      dominant: combinations.get('17/6/0') ?? 0,
+    });
+  }
+  // Identical in both, which is the finding: one config has five devices and eight activities and
+  // the other has one and one, so this band carries none of that. A future config that differs here
+  // is the sample that could tie it to content, and it should fail this test loudly.
+  assert.deepEqual(perConfig[0], perConfig[1]);
+  assert.deepEqual(perConfig[0], { total: 106, distinct: 33, dominant: 64 });
+});

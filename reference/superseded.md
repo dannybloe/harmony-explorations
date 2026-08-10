@@ -103,3 +103,4 @@ and leave this table alone.
 | `a self-clearing restart rather than a battery pull` | section 100 | a genuine device reset: the clock is reset too, so data memory is reinitialised and no corruption survives the hang |
 | `No arch 9 firmware routine has been traced to it` | section 101 | `0x046D6` reads it and `0x038EC` derives from it; the transfer sends `0xB0 | row`, a page address command |
 | `the return matching opcode 22; one per mode program` | section 101 | that is arch 12's reading; on arch 9 opcode 23 is the page transfer, paired one to one with opcode 22 |
+| `a peripheral operation selected by operand bits 4 to 8` | section 102 | arch 14's description on arch 12's handler; the field is five bits and selects between three mechanisms |

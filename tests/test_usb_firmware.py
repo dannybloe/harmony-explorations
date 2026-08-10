@@ -1842,3 +1842,68 @@ class TestUsbModeHasAGatedExit(unittest.TestCase):
         # Section 97's 0xE0 0x01, tied to section 99's gate: the same address.
         self.assertEqual(self.at(code, 0x2645C).mnemonic, 'CLRF')
         self.assertEqual(self.at(code, 0x2645C).fields['f'], self.STATE & 0xFF)
+
+
+class TestArch12Band0xC0(unittest.TestCase):
+    """Section 102: three fields and three mechanisms, and the corpus respects the bound.
+
+    The claim that carries weight is the field split, so it is asserted from the dispatcher rather
+    than from the values the data happens to hold. The corpus side of the closure lives in the
+    TypeScript tests, where the configs are.
+    """
+
+    NAME, BASE = 'one34_code', 0x20000
+    DISPATCH_ARM = 0x2540A
+    HANDLER = 0x24F24
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_the_band_is_tested_against_0xc0_not_0xb0(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # Arch 14's lowest band is 0xB0 and arch 12's is 0xC0, which is the one place the second
+        # operand space is not one table across architectures.
+        self.assertEqual(self.at(code, self.DISPATCH_ARM).fields['k'], 0xC0)
+        self.assertEqual(self.at(code, self.DISPATCH_ARM + 2).mnemonic, 'SUBWF')
+
+    def test_the_operand_splits_into_one_three_and_five_bits(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # bit 0, then bits 1 to 3 after one rotate, then bits 4 to 8 after four shifts. The five bit
+        # width is the correction: the old description implied four.
+        self.assertEqual(self.at(code, 0x25412).fields['k'], 0x01)
+        self.assertEqual(self.at(code, 0x2541C).mnemonic, 'RRNCF')
+        self.assertEqual(self.at(code, 0x25420).fields['k'], 0x07)
+        self.assertEqual(self.at(code, 0x2542E).fields['k'], 0x04)  # the shift count
+        self.assertEqual(self.at(code, 0x2543A).fields['k'], 0x1F)
+
+    def test_the_handler_accepts_16_and_17_specially_and_bounds_the_rest_at_12(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(self.at(code, self.HANDLER).fields['k'], 0x10)
+        self.assertEqual(self.at(code, 0x24F46).fields['k'], 0x11)
+        # And the bound on the remaining family, which is what the corpus then respects.
+        self.assertEqual(self.at(code, 0x24F62).fields['k'], 0x0C)
+
+    def test_selector_16_drives_latc_bit_5_both_ways(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # LATC is 0xF8A on this family, so the banked operand is 0x8B... which is LATC's low byte
+        # plus one: the assertion is on the mnemonic pair and the bit, since the set and the clear
+        # together are what make it an output rather than a test.
+        setter, clearer = self.at(code, 0x24F3C), self.at(code, 0x24F42)
+        self.assertEqual(setter.mnemonic, 'BSF')
+        self.assertEqual(clearer.mnemonic, 'BCF')
+        self.assertEqual(setter.fields['b'], 5)
+        self.assertEqual(clearer.fields['b'], 5)
+        self.assertEqual(setter.fields['f'], clearer.fields['f'])
+
+    def test_selector_17_jumps_to_the_state_machine(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        jump = self.at(code, 0x24F54)
+        self.assertEqual(jump.mnemonic, 'GOTO')
+        self.assertEqual(jump.fields['target'], 0x23952)
+        # Which dispatches on the three bit field as a state, starting at 7.
+        self.assertEqual(self.at(code, 0x23952).fields['k'], 0x07)

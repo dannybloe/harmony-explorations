@@ -837,7 +837,14 @@ the table, `reading` gives one instruction's, `readingCoverage` gives a config's
 Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5% on arch 14, 97.6%
 on arch 8, 97.1% on arch 9 and **97.0% on the One**, whose gap section 74 closed. What is left is
 mostly one thing, `0x3F` band `0xC0` on arch 12 at 424 uses, and it is hardware state rather than
-config structure.
+config structure. **Read as far as it goes in section 102 and it stays placement**, which is the
+point of having a depth: three fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms,
+selector 16 driving `LATC` bit 5, selector 17 entering a state machine at `0x23952`, and 0 to 12
+reading a config byte. The closure is that the corpus uses **exactly** the fifteen selector values the
+handler accepts out of thirty two. **Do not expect the number to move by describing it better**: what
+would move it is `0x23952`, which is a subsystem with eight states and an unnamed peripheral, and the
+band's uses are identical in both One configs despite one having five devices and eight activities and
+the other one and one, so comparing configs cannot tie it to content.
 
 **The two biggest items turned out to be things the remote does, not things a config describes.**
 `0x75` is the **beeper**, four tones from 461 Hz to 4.7 kHz, gated by `0x3F` high byte `0xF3`; and

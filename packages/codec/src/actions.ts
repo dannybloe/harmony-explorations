@@ -165,19 +165,30 @@ const BANDS_07: readonly Band[] = [
 ];
 
 /**
- * Arch 12 moves `0x3F`'s lowest band up a nibble, from `0xB0` to `0xC0`, and puts a different
- * routine behind it.
+ * Arch 12's own lowest `0x3F` band, at `0xC0` where arch 14 has `0xB0`.
  *
  * This is the one place the second operand space is not one table across architectures, which is
  * why the architecture is a required argument rather than an optional one. Reading an arch 12
  * `0x3F 0xC0` through the arch 14 handler says it indexes base slot 8, and the corpus refutes
  * that: indices reach 194 where that slot's leading byte is 1.
+ *
+ * **It used to be built by renaming arch 14's `0xB0` entry to `0xC0`**, which kept arch 14's
+ * description on arch 12's handler. That is the mistake section 73 warns about in the same breath,
+ * committed one line below the warning, and the text survived only because it was vague enough to
+ * read as true. Arch 12 has its own entry now, from `0x24F24` reached by the dispatcher at
+ * `0x25330`, section 102.
  */
+const BAND_3F_C0_ARCH12: Reading = placed(
+  'three fields: bits 4 to 8 select, bits 1 to 3 and bit 0 are its arguments. ' +
+    'Selector 16 drives LATC bit 5; 17 hands the other two to a state machine; 0 to 12 read a ' +
+    'config byte at an offset the selector and bit 0 compute',
+  102,
+);
 function bandsFor(opcode: number, architecture: number): readonly Band[] | undefined {
   switch (opcode) {
     case 0x3f:
       return architecture === 12
-        ? BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, b[1]] as const) : b))
+        ? BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, BAND_3F_C0_ARCH12] as const) : b))
         : BANDS_3F;
     case 0x1f:
       return BANDS_1F;

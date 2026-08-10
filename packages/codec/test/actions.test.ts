@@ -125,7 +125,13 @@ test('0x3F band 0xC0 resolves differently on the two architectures', () => {
   const arch12 = reading({ opcode: 0x3f, operand: 0xc001 }, 12);
   const arch14 = reading({ opcode: 0x3f, operand: 0xc001 }, 14);
   assert.ok(arch12 && arch14);
-  assert.equal(arch12.what, arch14.what, 'the same band text, since both are the lowest band');
+  // This line used to assert the two descriptions were EQUAL, "since both are the lowest band",
+  // which pinned the defect rather than the property: the band was built by renaming arch 14's
+  // entry, so arch 14's description sat on arch 12's handler. Section 102 read arch 12's own
+  // handler, and the whole point of the divergence is that the two do different things.
+  assert.notEqual(arch12.what, arch14.what, 'two different handlers must not share a description');
+  assert.match(arch12.what, /bits 4 to 8 select/);
+  assert.equal(arch12.section, 102);
   // But `0xB0` itself is only a band on arch 14: on arch 12 it falls off the end of the chain.
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 12)?.noop, true);
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 14)?.noop, undefined);
