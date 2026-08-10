@@ -13377,6 +13377,53 @@ not been done and it is read only.
 
 **Which array `0x76` walks**, above.
 
+## 109. What the flash journal holds on a real remote
+
+Section 108 read a writer and could not say whether anything has ever gone through it. A Harmony 600
+is on the bench, so this section is written in two halves: the predictions first, committed before any
+read, and then what the remote said. The convention is the `probe-remote` skill's, and it exists
+because a measurement that confirms a number nobody committed to in advance is worth much less.
+
+### What the arithmetic says about this unit
+
+The 600's own config, from the lab dump that is verified byte for byte against the device:
+
+| | value |
+|---|---|
+| `endAddr`, the trailing `PTYY` marker | `0x0E4361` |
+| the allocator's floor, `endAddr + 3` | `0x0E4364` |
+| the chip size, section 88's EON F16 | `0x200000` |
+| **the region section 108's allocator computes** | `[0x180000, 0x200000)`, eight blocks, 512 KiB |
+| **the region base slot 2 declares** | `[0x1E0000, 0x200000)`, capacity 16384, stride 8, 128 KiB |
+
+Eight blocks is the allocator's maximum and it fits, because the config ends more than 512 KiB below
+the top of a 2 MiB part. So the two regions share a limit and disagree about the start, which is what
+section 108 argued from the firmware alone.
+
+### The predictions
+
+1. **A window at `0x0E4358` matches the lab dump for its first thirteen bytes**, with `PTYY` at
+   offset 9, and its **last three bytes read `0xFF`**. That is the calibration case: it is the only
+   read here whose answer is already known, it proves the address arithmetic and the read path
+   together, and its tail is the first byte of evidence about what is above a config.
+2. **`0x180000` reads sixteen `0xFF` bytes.** Nothing has ever been appended, because the appender is
+   reached only from `0x0F`'s `0xE0` band and from `0x65` and `0x66`, and **no config in the corpus
+   emits any of the three**. If it is not erased, something writes it that section 108 did not find,
+   and that is the outcome worth having.
+3. **`0x1E0000` reads sixteen `0xFF` bytes**, for the same reason and also because nothing on arch 14
+   reads base slot 2 at all.
+4. **The two windows are identical**, which is what `--compare` reports, and which also says the part
+   is not aliasing one address onto the other.
+
+What would falsify the section rather than a prediction: a mismatch in the first window. The whole
+allocator argument is arithmetic on `endAddr`, so if the control does not land where it is computed to
+land, nothing else measured here means anything.
+
+### What the remote said
+
+Not yet measured. This half is filled in from a read of the attached unit, and until then the
+predictions above stand alone and unconfirmed.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
