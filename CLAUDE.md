@@ -45,6 +45,13 @@ propose firmware modification as a route to anything.
    IR cross learning between the two remotes, and live RAM polling over USB do most of what the
    emulator was wanted for, at a fraction of the build. **The RAM polling leg is per architecture**:
    it works on arch 12 and arch 14 and the 525 answers zero for every address, section 90.
+   **And it cannot watch a config being interpreted, which was the biggest thing it was standing in
+   for**, section 110: a remote on USB has not loaded its config, so the loader's own variables read
+   zero and no subsystem is live. What RAM polling is good for is hardware state the firmware sets up
+   anyway, the battery scale and the flash id. That does not reopen the emulator by itself, since the
+   substitutes that carry the most weight are the round trip and the read back, but a question that
+   genuinely needs a config being interpreted has no cheap route and the decision should not pretend
+   otherwise.
 6. **Safety rails are absolute.** See "Never write to a remote" below.
 7. **Own derivation first.** Upstream findings are hypotheses to test. The format's original
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in

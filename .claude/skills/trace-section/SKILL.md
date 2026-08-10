@@ -119,10 +119,14 @@ to generate candidates, never as evidence.
 
 Two dynamic routes exist, both read-only:
 
-* **RAM over USB.** `READ_MISC` with sub-command `MISC_RAM 0x06` reads live RAM off a running
-  remote. Poll a candidate pointer variable while operating the remote by hand and see which
-  section is live for which on-screen action. Needs `packages/usb` from `docs/roadmap.md` step
-  3.
+* **RAM over USB**, and **not for labelling a section**. `READ_MISC` with sub-command
+  `MISC_RAM 0x06` reads live RAM off a running remote, and it works: `packages/usb` is built and
+  `read-ram.ts` is the instrument. What does not work is the method this entry used to describe,
+  polling a candidate pointer variable while operating the remote by hand: **a remote on USB has not
+  loaded its config**, `docs/findings.md` section 110, measured in a Harmony 600's own data memory,
+  where the config loader's own variables are all zero. So no section is live, no on-screen action
+  can be performed, and there is no per subsystem pointer variable to poll. Use it for hardware
+  state the firmware sets up regardless, which is what sections 105 and 110 used it for.
 * **The emulator**, deferred by decision 5 in `docs/roadmap.md`. If a question genuinely needs
   an ordered trace of every config byte read, that is the argument for building it, and it
   should be made explicitly rather than by drifting into it.

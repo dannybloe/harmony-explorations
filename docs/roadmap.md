@@ -126,7 +126,9 @@ image is a second sample rather than a stand in. Other models are iterated on la
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
    diff after every write, IR cross learning between the two remotes, and live RAM polling over
-   USB.
+   USB. **The last of those is weaker than it reads**, section 110: a remote on USB has not loaded
+   its config, so RAM polling can see hardware state and not a config being interpreted, which is
+   what activity semantics would need. The decision stands on the first three.
 6. **Safety rails are absolute.** Firmware is never written. The spare Harmony One
    is the only write target. Details below.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
