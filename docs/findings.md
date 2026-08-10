@@ -13905,6 +13905,19 @@ reads zeros, or a fixed epoch such as 1 January 2000, the initialiser is compile
 above is the coincidence. **Either way it matters to an editor**, because a config whose timestamp sets
 the remote's clock is a config field with a user visible effect.
 
+**A refinement, written before the round and after the cable came out.** Two things the prediction as
+committed does not say, and the second is the one that makes a negative result readable.
+
+* The read needs the cable and the power cycle must not have it, because the port charges the remote
+  and buspower would keep it running. So the remote boots on batteries and is attached afterwards, and
+  a minute or so of uptime sits between the two. Only the seconds field moves in that time, so the
+  claim is the **date and the hour and minute**: `06 05 07 26` exactly, hour 13, minute 54 or a little
+  past. Seconds are `22` plus the elapsed, which predicts nothing.
+* **A third outcome exists and it is about the procedure rather than the clock**: a reading near the
+  time of day the previous session saw, which today is around 19:00, means nothing reset and the round
+  has to be repeated. Without naming it in advance, that outcome would read as the second one and
+  would retire a live hypothesis on a failed experiment.
+
 **7. Prediction 4 is wrong, and the way it is wrong is worse than the error.** `0x3FFFF0` is not
 erased. It reads `00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 00`, and **this repository already
 knew that**: `docs/memory-map-one.md` has carried the `0x3F0000` block as `00 FF` repeating with the
