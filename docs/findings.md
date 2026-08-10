@@ -13971,6 +13971,18 @@ write search comes back with only the calendar's three, and the pointer is not s
 this is a behavioural finding with a firmware sized hole in it, and the hole is the one this project's
 own method notes name first.
 
+**And this is arch 12 only, which is worth saying loudly because two of today's corrections were
+exactly this mistake.** Arch 14 and arch 9 carry the same eleven byte record and neither has been power
+cycled and read, so nothing here licenses "a remote sets its clock from its config". Three sentences in
+`CLAUDE.md` said it unscoped within an hour of this section being written, and they are corrected.
+
+**What that leaves open is bounded, and the boundary is the useful part.** The write rail is to stamp
+the record with the moment of writing, and that is the right value on an architecture that ignores it
+for its clock as much as on one that does not, since it is the provenance field either way. So the open
+question would change a sentence in a document and no line of code. The arch 14 round is also the
+weaker one: a 600 on USB has not loaded its config at all, section 110, so a null result there would be
+ambiguous between "the clock is not config derived" and "USB mode never got that far".
+
 ### What it means for an editor, which is less than the finding suggests
 
 This section first wrote the consequence up as though the clock mattered to somebody. **It does not**,

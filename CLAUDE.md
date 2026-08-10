@@ -483,11 +483,14 @@ order two configs of the same remote: it contradicts the recorded direction of t
 and that is unresolved, though the section 58 pair, whose direction was observed rather than
 recorded, is ordered correctly by it.
 
-**It is also what the remote's clock is set to**, at every boot, section 111: a power cycled Harmony One
-read this record's date exactly and its time plus its ninety seconds of uptime. So a writer stamps it
-with the moment of writing, because a stale timestamp is a wrong clock on the screen by exactly that
-staleness. Reproducing the input's timestamp is right for a round trip and wrong for a save, and it is
-the first field where those two come apart.
+**On arch 12 it is also what the remote's clock is set to**, at every boot, section 111: a power cycled
+Harmony One read this record's date exactly and its time plus its ninety seconds of uptime. **Arch 14
+and arch 9 are not measured and must not be assumed**, since both carry the same record and neither has
+been power cycled and read. The **rail does not depend on that scope**: a writer stamps this record with
+the moment of writing, and on an architecture that ignores it for its clock that is still the correct
+provenance value, so the action is right either way and only the reason changes. Reproducing the input's
+timestamp is right for a round trip and wrong for a save, and it is the first field where those two come
+apart.
 
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
@@ -714,7 +717,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for | 20, 77, 86 |
 | 1 | seven bytes stating the architecture, the only place the config says it | 20 |
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
-| 3 | the clock. Starts Timer 1, and its build timestamp is what the remote's clock is set to | 21, 38, 111 |
+| 3 | the clock. Starts Timer 1; on arch 12 its build timestamp is what the clock is set to | 21, 38, 111 |
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
@@ -747,10 +750,12 @@ corpus decode with nothing left over.
 Collected here because they are scattered across a dozen findings and every one of them is a way to
 produce a config the remote accepts and mishandles.
 
-* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: the remote sets its
-  clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. This is
-  the one field where reproducing the input byte for byte, which is what a round trip test wants, is
-  the wrong thing for a save.
+* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote sets
+  its clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. The
+  rail holds on the other architectures too without needing their measurement, because stamping the
+  moment of writing is the right provenance value whatever the remote does with it. This is the one
+  field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
+  thing for a save.
 * **The trailer checksum is weak**, section 41: a `u16` XOR of little endian words seeded `0x4321`.
   Blind to two transposed words, so passing means the remote will not refuse the file, not that the
   file is right. **Demonstrated rather than argued now**: writing one operand into a mode page's
@@ -808,6 +813,24 @@ produce a config the remote accepts and mishandles.
   with each other through the config's own base slot 15, which is how we know an arch 12 remote on USB
   has read its config. Finishing the sensor needs the remote off USB, which no read path reaches.
   Channel 0 is the battery, `0x111`, eight levels, and it reads 7 of 8 on a charging remote.
+* **Whether arch 14 and arch 9 also set their clocks from base slot 3**, section 111. Measured on arch
+  12 and on nothing else, and all three carry the same eleven byte record. **Not a blocker for anything**:
+  the write rail is to stamp the record at write time, which is the right value whichever way this goes,
+  so the answer would change a sentence and no code. One round of hardware settles it per architecture,
+  the same one as on the One: batteries out, batteries in, cable in, read `0x108` to `0x10E` on arch 12's
+  numbering or wherever the equivalent fields sit. **The 600 is the awkward one**, because a remote on
+  arch 14 does not load its config on USB at all, section 110, so its clock may have no config derived
+  value to show and a null result there would mean less than it looks.
+* **Where the minute is incremented on arch 12**, section 111. No direct write to `0x109` exists in the
+  image and no `LFSR` reaches the range, so the pointer comes from a variable, which is the `FSR` dead
+  end `trace-section` names first. The field is named from the firmware's own subtraction against the
+  record and its behaviour is measured twice, so **this is an attribution gap and not a reading gap**,
+  and nothing depends on closing it.
+* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
+  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, by the owner's
+  decision on 10 August 2026: it would need the One left alone for a day and read at both ends, and no
+  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
+  measurement.
 * **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
   both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
   is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
