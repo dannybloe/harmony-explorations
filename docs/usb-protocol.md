@@ -461,7 +461,14 @@ without any further work:
 
 * `0x14244` clears `LATF` bit 7, the external flash chip select, then calls `0x10974` and takes a
   **16-bit** result out of `PROD`. A 16-bit value read over SPI from the flash chip is the flash
-  id, which the corpus already records per remote as a manufacturer and device byte pair.
+  id, which the corpus already records per remote as a manufacturer and device byte pair.<!--superseded-->
+
+  **Corrected in section 109.** `0x10974` sends the JEDEC `0x9F` and keeps two of the three bytes it
+  gets back, and the pair is **the capacity code and the manufacturer**, not a manufacturer and a
+  device id, which is concordance's split. The mechanism decides it: the firmware compares one of the
+  two against `0x13`, `0x14` and `0x15` to choose a flash size of 512 KiB, 1 MiB or 2 MiB, and only a
+  capacity code can do that. On the bench 600 the pair is `0x15` and `0x1C`, 16 Mbit and EON, which is
+  the part section 88 identified from the address validator instead.
 * `0x14268` takes two separately fetched values and packs them into one byte, `SWAPF` then
   `ANDLW 0xf0` then `IORWF`, so one of the twelve bytes is **two four-bit fields**. A major and
   minor version pair is the obvious candidate.

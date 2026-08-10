@@ -49,7 +49,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty have been found and corrected so far. The newest is in section 108: `packages/codec` resolved
+Thirty one have been found and corrected so far. The newest is in section 109 and it is a field name
+this project took from concordance and never questioned: `GET_VERSION`'s flash id is not a
+manufacturer and a device byte, it is a capacity code and a manufacturer. The firmware compares one of
+the two against three literals to choose a flash size, and only a capacity code can do that. Measured
+on the bench 600 the same afternoon the mechanism was read.
+
+Before it, section 108: `packages/codec` resolved
 the second dispatcher's four opcodes as exact values where the firmware compares against them as
 floors, so it answered "no reading at all" for `0x20` where the remote runs `0x1F`'s handler. It never
 showed up in a number because no config emits anything but the canonical four, which is the same shape
@@ -13421,8 +13427,71 @@ land, nothing else measured here means anything.
 
 ### What the remote said
 
-Not yet measured. This half is filled in from a read of the attached unit, and until then the
-predictions above stand alone and unconfirmed.
+A Harmony 600 on the bench, 10 August 2026, read only, thirteen windows of sixteen bytes each.
+`GET_VERSION` first as the go/no-go, which returned `02 11 1c 15 e0 47 0c 02 00 00 02 02`, byte for
+byte what sections 87 and 88 already record for this unit.
+
+| address | result |
+|---|---|
+| `0x0E4358` | `00 00 00 00 00 00 00 49 d3 50 54 59 59 ff ff ff`: the lab dump's last thirteen bytes, `PTYY` at offset 9, then three erased |
+| `0x180000` | sixteen `0xFF` |
+| `0x1E0000` | sixteen `0xFF`, and `--compare` says identical |
+| `0x030000` | `47 53 50 4d ...`, the `GSPM` cookie |
+| `0x0E4368`, `0x0F0000`, `0x100000`, `0x140000`, `0x190000`, `0x1C0000`, `0x1FFFF0` | sixteen `0xFF` each |
+
+**All four predictions hold.** The control landed exactly where the arithmetic put it, which is the
+one that had to; both candidate regions are erased; and nothing anywhere above the config has ever
+been written, from three bytes past the end marker to the last sixteen bytes of the chip. So the
+journal exists in the firmware and has never been used on this remote, which is what a facility no
+config reaches should look like.
+
+**One prediction was badly framed and saying so is the point of writing them down.** Prediction 4
+claimed that two identical windows also showed the part is not aliasing one address onto the other.
+Two **erased** windows are identical whatever the part does, so it showed nothing. The test that does
+work needs content on one side: `0x0E4358` against `0x1E4358`, the same offset one megabyte up, came
+back **different**, and `0x030000` answering with a cookie is what makes an `0xFF` window information
+rather than the tool's default.
+
+### The flash id in `GET_VERSION` is the JEDEC id, and its two bytes are the wrong way round
+
+Not predicted, and it fell out of the version reply that was only meant to be a go/no-go.
+
+`docs/usb-protocol.md` had already traced field accessor `0x14244`: it clears `LATF` bit 7 and calls
+`0x10974` for a sixteen bit result, and recorded that the corpus already had the pair per remote as a
+manufacturer and a device byte,<!--superseded--> which is concordance's naming. `0x10974` is the routine section
+108 read: it sends `0x9F`, keeps two of the three bytes in `0x686` and `0x687`, and those two are the
+only sources in the image for the version block's pair. So the field is **the JEDEC id read over SPI
+at the moment the version block is built**, and the split is not manufacturer and device:
+
+| byte | on this 600 | what it is |
+|---|---|---|
+| `0x686`, version field 3 | `0x15` | the **capacity code**, which the firmware compares against `0x13`, `0x14` and `0x15` to choose 512 KiB, 1 MiB or 2 MiB |
+| `0x687`, version field 2 | `0x1C` | the **manufacturer id**, EON |
+
+The mechanism is what settles it rather than the convention: one byte selects a size and the other
+does not, and only the capacity code can select a size. `0x1C` is EON's registered id and `0x15` is
+the 16 Mbit capacity code in the family these parts come from.
+
+**So the bench 600 reports the pair `(EON, 16 Mbit)` and section 108's table accepts exactly that
+pair at 2 MiB.** Section 88 identified the same part from a different direction, the address
+validator's own ceiling plus which addresses the remote refuses. Three routes, one part, and this one
+is the remote saying it over USB.
+
+### Where it lands
+
+* `docs/usb-protocol.md`, the field pair renamed, and `packages/usb/test/hardware.test.ts`, whose
+  comment on those two fields carried concordance's split.
+* `packages/usb/test/hardware.test.ts`: the two regions read and asserted erased, gated on the
+  hardware flag and on the 600 being attached.
+* `tests/test_interpreter.py`, `TestTheLogArea`: the allocator's arithmetic on each arch 14 **user**
+  config, against what base slot 2 declares, plus the marker's position, which is the half of the
+  measurement that can be checked without a remote.
+
+**One thing the test found on the way**, and it sharpens what slot 2 is. The three arch 14 **safe
+mode** containers declare a limit of `0x100000` where the user configs declare `0x200000`. So the
+declared limit is the **generator's** idea of the chip size, not the remote's: those images were built
+for a 1 MiB part. That is consistent with the section being host side reservation, and it is why the
+comparison above is restricted to user configs.
 
 ## References
 

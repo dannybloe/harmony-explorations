@@ -123,3 +123,4 @@ and leave this table alone.
 | `emit one to three bytes on a diagnostic channel` | section 108 | it appends them to a region of the external serial flash, through a page program with a status poll |
 | `peripherals and a diagnostic output channel, plus register moves` | section 108 | the channel is the flash journal: `0x0F`'s `0xE0` band appends bytes to a region of the external flash |
 | `2 MiB by three routes and 4 MiB by concordance's` | section 108 | not open at all: section 88 closed it at 2 MiB on 9 August 2026 and the summary was never swept |
+| `the corpus already records per remote as a manufacturer and device byte pair` | section 109 | the JEDEC pair is a capacity code and a manufacturer: the firmware compares one against 0x13, 0x14 and 0x15 to choose a flash size, and only a capacity code can do that |

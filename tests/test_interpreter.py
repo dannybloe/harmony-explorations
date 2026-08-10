@@ -1826,6 +1826,78 @@ class TestTheLogArea(unittest.TestCase):
             with self.subTest(container=name):
                 self.assertEqual(self._area(name).stride, gspm.LOG_STRIDE[architecture])
 
+    # Section 108's allocator, on arch 14: the largest run of 64 KiB blocks in this range that fits
+    # below the chip size and still starts above the config's own end plus three.
+    ARCH14_CHIP_SIZE = 0x200000
+    # The user configs only. The three arch 14 safe mode containers declare a limit of 0x100000, so
+    # the declared limit is the **generator's** idea of the chip size and not the remote's: those
+    # images were built for a 1 MiB part. Comparing a computed region against one of those would be
+    # comparing two different chips.
+    ARCH14_USER_CONFIGS = ('h600_config', 'h700_config', 'h700_config_2')
+    BLOCK = 0x10000
+    BLOCKS = range(8, 1, -1)
+    FLOOR_ADJUSTMENT = 3
+
+    @classmethod
+    def _computed(cls, container):
+        """Where the arch 14 firmware would put the journal, from the config's own end address."""
+        floor = container.end_addr + cls.FLOOR_ADJUSTMENT
+        for blocks in cls.BLOCKS:
+            span = blocks * cls.BLOCK
+            if span >= cls.ARCH14_CHIP_SIZE:
+                continue
+            start = cls.ARCH14_CHIP_SIZE - span
+            if start <= floor:
+                continue
+            return start, cls.ARCH14_CHIP_SIZE
+        return None
+
+    def test_the_arch_fourteen_firmware_computes_a_different_region_than_the_config_declares(self):
+        """Section 108, and it is why the arch 14 census found no seek of this slot.
+
+        The remote does not read the reservation, it makes its own: the top of the detected chip, in
+        whole 64 KiB erase blocks, as many as fit above the config. On every arch 14 user config in
+        the corpus that comes out as eight blocks where the section declares two, so the two share a
+        limit and disagree about the start. A writer must not assume they describe the same bytes.
+        """
+        from harmony import gspm
+        checked = 0
+        for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if c.architecture != 14 or name not in self.ARCH14_USER_CONFIGS:
+                continue
+            area = c.log_area()
+            computed = self._computed(c)
+            with self.subTest(container=name):
+                self.assertIsNotNone(computed, 'the allocator finds a region')
+                start, limit = computed
+                self.assertEqual(limit, area.limit, 'they agree about the top of the chip')
+                self.assertLess(start, area.start, 'and the firmware claims more of it')
+                self.assertEqual(limit - start, 8 * self.BLOCK, 'eight blocks, the maximum')
+                checked += 1
+        self.assertEqual(checked, len(self.ARCH14_USER_CONFIGS), 'all three, or none')
+
+    def test_neither_region_has_ever_been_written_on_the_bench_600(self):
+        """Section 109, measured on the attached remote and pinned here.
+
+        Thirteen windows on 10 August 2026, all of them erased from three bytes above the config's
+        end marker to the last sixteen bytes of the chip, with the config's own cookie as the control
+        that says an `0xFF` window is information. What this test can check without hardware is the
+        half the measurement rested on: that the marker really is where the arithmetic put it, since
+        the whole allocator argument is arithmetic on `end_addr`.
+
+        The live half is `packages/usb/test/hardware.test.ts`, gated on the remote being attached.
+        """
+        from harmony import gspm
+        c = gspm.parse(lab.load('h600_config'))
+        offset = c.end_addr - c.flash_base
+        self.assertEqual(c.blob[offset:offset + 4], b'PTYY', 'the end marker sits at end_addr')
+        # And the config stops there: three bytes of trailer after the marker's first byte, which is
+        # why the measured window's last three bytes were the first erased ones.
+        self.assertEqual(len(c.blob) - offset, 4)
+        self.assertEqual(self._computed(c), (0x180000, 0x200000))
+        self.assertEqual((c.log_area().start, c.log_area().limit), (0x1E0000, 0x200000))
+
     def test_the_region_sits_above_the_config_and_ends_at_the_top_of_flash(self):
         """What makes 'a region reserved for the firmware' the reading rather than a coincidence."""
         from harmony import gspm

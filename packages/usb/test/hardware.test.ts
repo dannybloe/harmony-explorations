@@ -181,9 +181,41 @@ test('the version block is twelve bytes and the flash id in it matches concordan
     assert.equal(fields.length, 12);
     // Fields 2 and 3 are the flash id, which concordance prints for this unit as 15:1C. Asserted
     // rather than printed, because the block also carries values that identify the remote.
-    assert.equal(fields[3], 0x15, 'flash manufacturer id');
-    assert.equal(fields[2], 0x1c, 'flash device id');
+    //
+    // **They are not a manufacturer and a device id**, which is concordance's split and was this
+    // project's too until section 109. They are the JEDEC id the firmware reads with `0x9F` at the
+    // moment it builds the block: field 3 is the **capacity code**, which it compares against 0x13,
+    // 0x14 and 0x15 to choose 512 KiB, 1 MiB or 2 MiB, and field 2 is the **manufacturer**, EON.
+    assert.equal(fields[3], 0x15, 'capacity code, 16 Mbit');
+    assert.equal(fields[2], 0x1c, 'manufacturer, EON');
     assert.equal(fields[5], 71, 'skin, which concordance and bcdDevice both say is 71');
+  } finally {
+    await remote.close();
+  }
+});
+
+test('the flash journal has never been written on this 600', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_600))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 600 attached');
+    return;
+  }
+  const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_600 }), { timeoutMs: 500 });
+  try {
+    // Section 109. `0x180000` is where section 108's allocator would put the journal on this unit,
+    // eight blocks below the top of a 2 MiB part; `0x1E0000` is where base slot 2 declares it. Both
+    // erased, because the appender is reached only from `0x0F`'s `0xE0` band and from `0x65` and
+    // `0x66`, and no config in the corpus emits any of the three.
+    for (const address of [0x180000, 0x1e0000]) {
+      const window = await retryingEmptyReply(() => remote.readFlash(address, 16));
+      assert.equal(window.length, 16, `0x${address.toString(16)}`);
+      assert.ok([...window].every((b) => b === 0xff), `0x${address.toString(16)} is erased`);
+    }
+    // The negative control, and it is what makes the two above information rather than a default: an
+    // address with content answers with content. A test whose only assertion is 0xFF would pass
+    // against a remote that answered 0xFF to everything.
+    const cookie = await retryingEmptyReply(() => remote.readFlash(0x030000, 4));
+    assert.deepEqual([...cookie], [0x47, 0x53, 0x50, 0x4d], 'GSPM at the config base');
   } finally {
     await remote.close();
   }
