@@ -12322,6 +12322,10 @@ it is cheap to exercise: charge the remote, move it to USB, read something, pull
 as the next question rather than as an answer, because two events sharing a circumstance is a lead and
 not a cause, and this section exists because the previous lead was wrong.
 
+> It was wrong again. Two subsections down it was exercised and it did not reproduce, so this suspect
+> is dead as well and the stranding is unexplained. Left standing here because the order in which the
+> leads died is the useful part.
+
 ### The charger round, prepared, and this prediction is the weakest of the three
 
 `session-end-control.ts --from-charger`, which is the same round with the transition put back in front
@@ -12344,6 +12348,38 @@ mistakes the silence for a conclusion. Two remaining differences would still be 
 and both are worth naming now rather than reaching for afterwards: those sessions ran many commands
 where these ran one, and both happened after hours of continuous bench work rather than to a remote
 picked up cold.
+
+### It did not reproduce, so the stranding is unexplained
+
+Run on 10 August 2026, with the remote off USB and on its charger before the script was started, which
+the script now refuses to proceed without.
+
+| step | result |
+|---|---|
+| taken off the charger, plugged into USB | **enumerated after 16 s** |
+| one 32 byte `READ_FLASH` of the config base | 32 bytes, identical to every other round |
+| cable pulled | **USB mode disappeared**, the screen went back to normal |
+| plugged back in | enumerated after 12 s, the proxy agreeing with the screen |
+
+**So the charger lead is dead too, and the two events of 9 August 2026 are unexplained.** Written that
+way deliberately. Three leads have now been followed and all three are dead: the disconnect on its own,
+falsified by three control rounds; the odd count hang's RAM corruption, refuted by mechanism because
+the hang ends in a device reset; and the charger to USB transition, which behaved exactly like every
+other round. Nobody should read the end of this section as a narrowing.
+
+**One caveat on this round, recorded rather than smoothed over**: how long the remote sat on the
+charger is not recorded, only that it was there and off USB when the script started. If anyone wants to
+close this harder, the run to do is the same one after a long charge, and a genuinely flat remote
+brought up to charge is a different state again.
+
+**What is still untested, named now so that a later reader does not have to invent it.** Those two
+sessions ran dozens of commands each where every round here ran one, and both happened after hours of
+continuous bench work on a remote that had been power cycled repeatedly, rather than to a remote picked
+up cold. Either could matter and neither is a lead until something suggests a mechanism. What has not
+been observed even once is a stranding that anybody was watching for, and the honest summary of this
+whole thread is that **a bench session should expect it, a battery pull clears it, and nothing here
+knows why**, which is where section 95 started and is now the considered position rather than the
+first guess.
 
 ### Two things the baseline measured on the way
 

@@ -246,14 +246,15 @@ re-enumeration does not do. So data memory is reinitialised and no corruption su
 refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
 the weaker name for two days.
 
-**What does strand one is still unexplained, and the suspect is now the charger.** Both occurrences on
-9 August 2026 involved a charger to USB transition; every run on 10 August went USB to unplugged to
-USB with no charger, three controls and one hang, and none stranded. A lead, not a cause, and cheap to
-exercise: `session-end-control.ts --from-charger`, written and unrun, whose **first wait is the
-experiment** because the first stranding's signature was not enumerating at all. Its prediction is
-committed in section 100 and marked as the weakest of the session: it predicts from a coincidence
-rather than from a mechanism. **If it does not reproduce, the two events are unexplained**, and that is
-what goes in the document, so nobody mistakes the silence for a conclusion.
+**What does strand one is unexplained, and it is written down as unexplained.** Three leads followed
+and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
+corruption, refuted by mechanism since the hang resets the device; and the charger to USB transition,
+which behaved like every other round on 10 August 2026. **Do not read that as a narrowing.** A bench
+session should expect a stranding, a battery pull clears it, and nothing here knows why. Untested and
+not leads until something suggests a mechanism: those two sessions ran dozens of commands where every
+round here ran one, and both followed hours of continuous bench work rather than a remote picked up
+cold. `session-end-control.ts [--from-charger]` is the instrument, and its charger mode refuses to
+start with the remote already on USB because its first wait is the measurement.
 `packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
 demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
 `rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
