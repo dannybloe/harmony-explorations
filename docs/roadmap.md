@@ -796,8 +796,9 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
 
   **What is left is not a codec problem.** The largest remaining family is `0x3F` band `0xC0` on
   arch 12. Section 103 read the majority of it, selector 17, which sets the display's light level
-  from four levels and four timeouts base slot 15 states. What is left of it is a pin and thirteen
-  properties, both unnamed, and it is hardware state rather than config structure, which is what the
+  from four levels base slot 15 states, and section 106 read the rest: the pin is the enable of an
+  I2C device at address 0x60 and the thirteen properties are that device's channels. **Which device
+  it is** is what is left, and it is hardware state rather than config structure, which is what the
   rest of the remainder is too.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing

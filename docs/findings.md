@@ -49,8 +49,14 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty six have been found and corrected so far. The newest two are in sections 103 and 104, and
-they have the same cause read from two sides. Section 84 called base slot 15's twelve spare bytes
+Twenty eight have been found and corrected so far. The newest two are in section 106 and they are
+both mine, made in section 103 and caught by reading one call deeper the same day: group 9 is four
+pairs of device levels and not four timeouts, because `0x249A0` sends both halves straight out over
+I2C and nothing counts them down, and the flag that indexes the twelve spare bytes is operand bits 1
+to 3 normalised to a boolean rather than bit 0. The first is this document's own rule about naming a
+structure by its consumer, failed by stopping one call short of the consumer.
+
+Before them, sections 103 and 104, which have the same cause read from two sides. Section 84 called base slot 15's twelve spare bytes
 "a shape rather than a reading" because they are the size of six `u16` values with no count byte;
 they are not that shape at all, they are the group before them continuing past its declared length,
 and the reader arrives by arithmetic rather than by a pointer. Section 73 recorded `0x1F` band `0xFC`
@@ -4848,7 +4854,8 @@ pairs two apart, which is the shape of three thresholds with hysteresis. Arch 9'
 is `600, 602, 766, 769`. What they threshold is not established.<!--superseded-->
 
 > **Section 103 reads it**: the four sample sum of analogue channel 1, giving a band 0 to 3, and the
-> band chooses the display light's level and its timeout. What channel 1 physically measures is
+> band chooses the display light's level and the pair of device levels section 106 reads. What
+> channel 1 physically measures is
 > still not established, and that is a different question from what the group thresholds.
 
 ### The numbering is per architecture
@@ -4864,7 +4871,8 @@ other section indexed so far transfers between architectures by base slot.
 name.<!--superseded-->
 
 > **Groups 0, 1 and 9 are named in section 103**: the display light's fade delay, its four levels and
-> its four timeouts. Groups 2, 3, 8 and 10 are still only a consumer and a length.
+> four pairs of device levels, which section 103 called timeouts and section 106 corrected. Groups 2,
+> 3, 8 and 10 are still only a consumer and a length.
 
 **Whether the curves really are millivolts**, per the paragraph above. Section 105 supports the
 reading with the charger input and a calibration word in flash, and the arithmetic between converter
@@ -4872,7 +4880,7 @@ counts and millivolts is still not read.
 
 **The twelve spare bytes** in the arch 12 run.<!--superseded-->
 
-> **Read in section 103**: group 9's fourth timeout pair, then a table of two bit fields that band
+> **Read in section 103**: group 9's fourth device level pair, then a table of two bit fields that band
 > `0xC0` selectors 0 to 12 index. Two readers, twelve bytes, no remainder. What the thirteen
 > properties are is what is left, and both One configs carry the same table so no comparison can
 > name them.
@@ -9665,7 +9673,7 @@ numbers, and this is the first claim to use it deliberately.<!--superseded-->
 > **Section 103 decodes them, and the "shape rather than a reading" was the right instinct pointed
 > at the wrong shape.** They are not six `u16` values with a missing count byte. They are group 9
 > continuing past the six entries its own header declares: four bytes that `0x249A0` reads as one
-> more timeout pair, then eight that `0x2492E` reads as bytes, four two bit fields each. The reason
+> more device level pair, then eight that `0x2492E` reads as bytes, four two bit fields each. The reason
 > nothing points at them is that nothing needs to, because their reader arrives by adding an offset
 > to the group before them. They stay carried rather than framed, which is now a choice about the
 > emitter rather than an admission about the reading.
@@ -12624,10 +12632,16 @@ from 7 downwards and shares `LATC` bit 5 with the selector 16 case.
 
 **`LATC` bit 5 is not identified.** Ten sites drive it, three of them inside the same subsystem as
 `0x23952` and five in a routine at `0x2E53E` that runs Timer 1 with `T1CON` set to `0x1E` and toggles
-the pin in a loop. That is the shape of a bit banged output, and this document has one identified
+the pin in a loop. That is the shape of a bit banged output,<!--superseded--> and this document has one identified
 `PORTC` bit already, bit 2 as the infrared LED, section 13. Bit 5 is left unnamed rather than guessed
 at, because the last time a peripheral was named from its shape here the polarity came out inverted
 in three places, and a pin has no polarity to check against.
+
+> **Section 106 names it, and the shape was misleading.** It is an enable, not a data line: it is set
+> at the end of a device's power up sequence and cleared at the start of its power down, and the data
+> goes over I2C through the hardware MSSP. `0x2E53E`, the loop that made it look bit banged, has no
+> callers at all. The caution was still the right call, since the shape on its own would have named
+> it wrong.
 
 ### One defect fixed on the way
 
@@ -12646,15 +12660,16 @@ rather than an opcode: eight states, a predicate at `0x23CA6`, and a peripheral 
 > **Read in section 103, and the number does move.** Selector 17 is the display's light level and
 > that is a meaning, so 68 of the band's 106 uses per config leave the placement column. What
 > stayed placement is selector 16 and selectors 0 to 12, and the "peripheral nobody has named" was
-> two peripherals: `CVREF`, which the datasheet names for us, and `LATC` bit 5, which is still
-> unnamed.
+> two peripherals: `CVREF`, which the datasheet names for us, and `LATC` bit 5, which **section 106**
+> reads as the enable of an I2C device at address 0x60 whose thirteen channels the selectors are.
 
 ## 103. The `0x3F` band `0xC0` state machine sets the display's light level, and base slot 15's twelve spare bytes are read after all
 
 Section 102 stopped at the door of `0x23952` and said what was behind it would need a subsystem
 read rather than an opcode. It did, and the subsystem turns out to be the one part of the remote's
-own behaviour that the config controls end to end: four brightness levels, four timeouts, three
-thresholds and a fade rate, all stated by base slot 15, driving one analogue output and one pin.
+own behaviour that the config controls end to end: four brightness levels, four pairs of device
+levels, three thresholds and a fade rate, all stated by base slot 15, driving one analogue output and
+one pin.
 
 ### The state machine is eight states over one variable
 
@@ -12664,7 +12679,7 @@ thresholds and a fade rate, all stated by base slot 15, driving one analogue out
 |---|---|
 | 7 | continues only if the light is currently on, `0x23CA6` being "is the cached level nonzero", then falls to 6 |
 | 6 | re-derives the band from the measurement, `0x2346A`, then maps band 0 to 3 onto states 2 to 5 |
-| 5, 4, 3, 2 | target level = the band's level, and program the band's timeout |
+| 5, 4, 3, 2 | target level = the band's level, and send the band's pair of device levels |
 | 1, 0 | target level = 0, which turns it off |
 
 Every arm converges on `0x23B7E`, which saves the state in `0x112` and, when the target is nonzero,
@@ -12728,7 +12743,7 @@ lengths it demands are the ones section 44 already predicted from the call sites
 | 0 | 1 | the fade's per step delay | 44 | 50 |
 | 1 | 6 | entries 2 to 5 are the four levels; entries 0 and 1 are read and discarded | 20, 20, 26, 26 | 9, 16, 24, 27 |
 | 4 | 6 | three threshold pairs, two apart, that turn the measurement into a band 0 to 3 | 96, 98, 308, 310, 768, 770 | none, the band stays put |
-| 9 | 6 | four timeout pairs at `4 * band`, so band 3's pair is past the declared end | 16, 16, 64, 64, 128, 128 | 64 |
+| 9 | 6 | four pairs at `4 * band`, so band 3's pair is past the declared end. **Called timeouts here first and they are not**, section 106: both halves go straight out over I2C as device register values | 16, 16, 64, 64, 128, 128 | 64 |
 
 Group 1's first two entries are the interesting detail: the code reads six `u16` values and keeps
 the last four. Both One configs carry 38 there, which is **above the ceiling of 27**, so they could
@@ -12751,20 +12766,29 @@ group 9's declared entries    10 00 10 00 40 00 40 00 80 00 80 00
 the twelve bytes above them   ff 00 ff 00  00 00 00 00  55 55 55 55
                               \________/   \_________________________/
                               band 3's     a table of two bit fields
-                              timeout      band 0xC0 selectors 0 to 12 index
+                              pair         band 0xC0 selectors 0 to 12 index
 ```
 
 `0x249A0` adds `4 * band` to the cursor and reads two `u16` values, so band 3 reads bytes 12 to 15
 of a group whose header declares six entries. It gets 255 and 255, which continues 16, 64, 128 as a
 ratchet upwards rather than being noise. `0x2492E`, which is band `0xC0`'s handler for selectors 0
-to 12, reads a **single byte** at `0x10 + 4 * bit0 + (selector >> 2)` and then extracts the two bit
-field `selector & 3` from it, so eight bytes hold sixteen fields per value of bit 0, thirteen of
+to 12, reads a **single byte** at `0x10 + 4 * flag + (selector >> 2)` and then extracts the two bit
+field `selector & 3` from it, so eight bytes hold sixteen fields per value of the flag, thirteen of
 which the selector range uses. The values are `0x00` four times and `0x55` four times, which is
-every field zero for bit 0 clear and every field one for bit 0 set.
+every field zero for the flag clear and every field one for it set.
 
-So the instruction is "set property `selector` to the state base slot 15 gives for bit 0", and both
-One configs make that a plain on and off. What the thirteen properties are is not established, and
-the corpus cannot help: both configs carry the same table.
+**`flag` is bits 1 to 3, squashed to a boolean, and this section said bit 0 for a few hours.**
+`0x24F6C` reads `0xEBB`, which the dispatcher filled from bits 1 to 3, tests it against zero and
+normalises it to 0 or 1 before handing it on; bit 0 reaches `0x2492E` not at all. The corpus agrees
+with the corrected reading and not the wrong one: every use of selectors 0 to 12 has bit 0 clear, and
+they come in pairs with bits 1 to 3 zero and nonzero, which under the wrong reading would have been
+the same instruction twice. The mistake is the one this project keeps recording in other forms: the
+field split was read correctly out of the dispatcher and then the wrong field was carried into the
+handler.
+
+So the instruction is "set property `selector` to the state base slot 15 gives for bits 1 to 3 being
+nonzero", and both One configs make that a plain on and off. What the thirteen properties are is
+section 106, and it is a device rather than thirteen loose ends.
 
 **Twelve bytes, twelve accounted for, in both One configs.** The accounting number does not move,
 because section 84 had already claimed them; what moves is that arch 12's base slot 15 no longer
@@ -12941,6 +12965,104 @@ identity block is `+0xF400` and is never published here, and the page's other pe
 The word at `0x01F5C0`, 94 on both units, and its partner at `0x01F5C2`, which is erased on both so
 its consumer runs on the substituted 1. Both are read by the same helper and neither has a caller
 traced here. And what the flag `0x2385C` raises at 3400 mV is used for.
+
+## 106. `LATC` bit 5 enables an I2C device, and band `0xC0`'s thirteen properties are its channels
+
+Three loose ends left by sections 102 and 103: an unnamed pin, thirteen unnamed properties, and the
+loop at `0x2E53E` that also drives the pin. They are one thing, and following the pin found it.
+
+### The bus is I2C, in hardware, and only on arch 12
+
+`0x2D2E6` writes and `0x2D32E` reads through `0x2DCCC` and `0x2DD0E`, which are not bit banging at
+all. They drive the MSSP: `SSP1CON2` bit 0 for a start, bit 1 for a repeated start, bit 2 for a stop,
+bits 4 and 5 for the acknowledge, `SSP1BUF` for the byte, `SSP1STAT` bit 0 for buffer full and
+`SSP1CON1` bit 7 for a write collision. That is the I2C master, and the address byte is `0xC0` to
+write and `0xC1` to read, so the device is at **7 bit address 0x60**.
+
+**The same peripheral is in a different mode on arch 14, and counting the registers says so.** The
+Harmony One's image touches `SSP1CON2` ten times; the Harmony 600's and the 700's touch it **not at
+all** and use `SSP1BUF` six times each. `SSP1CON2` exists only for I2C, so arch 14 runs the MSSP as
+SPI, which is exactly what section 8's config read primitive at `0x1B9AC` needs. So the reason band
+`0xC0` is arch 12 only is not a quirk of the opcode table: **the device it talks to is arch 12 only**,
+and there is no bus free to talk to one on arch 14.
+
+### What the device looks like from the firmware's side
+
+Everything written to it, and nothing is ever read:
+
+| what | where from | register | values seen |
+|---|---|---|---|
+| thirteen two bit channel states | `0x2D254`, 40 call sites | a RAM bitmap at `0x259`, then the device | 0, 1 and 2 |
+| an eight bit level | `0x249A0`, from base slot 15 group 9 | 2 and 3, high byte first | 16, 64, 128, 255 by band |
+| a second eight bit level | `0x249A0`, the pair's other half | 4 and 5 | the same values |
+| an eight bit level | `0x23D1C`, computed | 2 and 3 | 3, 15, 63, 255 |
+| its enable | `0x23DF0` and band `0xC0` selector 16 | `LATC` bit 5 | set on, clear off |
+
+`0x23DF0` is the on and off sequence, and it is where the pin gets its name. Powering up calls
+`0x23E52` and `0x23F10`, which set channels to 1, and then **sets** the pin. Powering down calls
+`0x23E0C` for channels 12 down to 8 and `0x23EA2` for 0 up to 7, all thirteen to 0, and then
+**clears** it. A pin set at the end of a device's
+initialisation and cleared at the start of its shutdown is that device's enable, and that is as far as
+naming it goes here.
+
+**The firmware's own four levels are a logarithmic ladder.** `0x23CB2` with its argument 2 to 5
+computes `0xFF >> (2 * (5 - argument))`, which is 3, 15, 63 and 255, and writes it to registers 2 and
+3 with every channel enabled. Group 9's four values, 16, 64, 128 and 255, are the same shape from the
+config: four steps ending at full scale, spaced so the low end is finely divided. Two independent
+sources agreeing on the range and the top of it is what makes 255 full scale rather than a
+coincidence.
+
+### Group 9 is not four timeouts, and section 103 said it was
+
+`0x249A0` reads group 9's pair for the band and does exactly two things with it: sends the first half
+to registers 2 and 3 and the second to 4 and 5. There is no countdown, no scheduler entry and no
+comparison. **So "timeout" was wrong**, and it was inferred from the values ascending 16, 64, 128, 255
+and from the routine sitting inside the display light's states. Corrected in place in section 103.
+
+The structure the section derived from it is untouched: four bytes a band, band 3's pair in the spare
+run, twelve bytes accounted for. Only the name of the thing was wrong, which is the failure mode this
+document's own rule about naming a section by its consumer exists to prevent. The consumer was one
+call deeper than the reading went.
+
+### Most of the subsystem is unreachable, and the config is what switches it on
+
+This is the part worth carrying into the application.
+
+* **`0x23CB2` is only ever called with its argument zero**, from `0x28CAE` and `0x2C9A6`, both
+  shutdown paths. `gprF14` is written nowhere else in the image. So of `0x23DF0`'s two arms only the
+  power-down one runs, and `0x23E52`, `0x23F10` and the four level ladder at `0x23D00` are
+  unreachable.
+* **`0x2D32E`, the I2C read, has no callers at all.** The device is write only in this build.
+* **`0x2E53E` has no callers either**, and its one variable `0x303` is read there and written nowhere.
+  It starts Timer 1 from the 32.768 kHz oscillator, `T1CON` `0x1E` giving 16384 Hz after the 1:2
+  prescale, and then loops forever driving `LATC` bit 5 from bits of `TMR1H`. Bit 6 of the high byte
+  is timer bit 14, which at that rate toggles every two seconds. It is dead code that would have
+  blinked the device's enable, and it is the routine whose shape made section 102 read the pin as a
+  bit banged output rather than as an enable.
+
+So the firmware turns this device **off** at shutdown and never turns it on. Everything that switches
+it on or sets a channel comes from a config, through band `0xC0` selectors 16 and 0 to 12, and
+everything that sets its level comes from a config, through selector 17 and group 9.
+
+**That answers a question section 102 raised and could not settle.** It asked why the band's uses are
+identical in both One configs when one has five devices and eight activities and the other has one and
+one, and treated it as a dead end for naming. The reason is that they are not content at all: they are
+the generator's fixed initialisation sequence for this device, emitted into every config, one pass
+setting each of the thirteen channels off and one setting each on. A config that omitted them would
+leave the device disabled, which is a rail a writer has to respect and could not have guessed.
+
+### What is not established
+
+**Which device it is.** Thirteen channels of three states, two eight bit level registers, an enable
+pin and no readback is the shape of an LED driver, and on this remote the obvious load is the keypad
+backlight, dimmed by the same band that dims the screen. **That is an inference and it is not
+confirmed**, so the documents say "the device at 0x60". Naming a peripheral from its shape is what
+inverted three polarities in section 13, and a part number guessed from a register map cannot be
+checked against anything here.
+
+What would settle it: the address, the register numbers and the value ranges are enough to identify
+the part from a datasheet search, and a photograph of the board would do it outright. Neither is
+firmware work.
 
 ## References
 

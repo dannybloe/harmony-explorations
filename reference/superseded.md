@@ -104,11 +104,15 @@ and leave this table alone.
 | `No arch 9 firmware routine has been traced to it` | section 101 | `0x046D6` reads it and `0x038EC` derives from it; the transfer sends `0xB0 | row`, a page address command |
 | `the return matching opcode 22; one per mode program` | section 101 | that is arch 12's reading; on arch 9 opcode 23 is the page transfer, paired one to one with opcode 22 |
 | `a peripheral operation selected by operand bits 4 to 8` | section 102 | arch 14's description on arch 12's handler; the field is five bits and selects between three mechanisms |
-| `their contents are **unread**` | section 103 | group 9's fourth timeout pair and a table of two bit fields, reached by overrunning the group on purpose |
-| `so that is a shape rather than a reading` | section 103 | not six `u16` values with a missing count byte: four bytes are a timeout pair and eight are read as bytes |
+| `their contents are **unread**` | section 103 | group 9's fourth device level pair and a table of two bit fields, reached by overrunning the group on purpose |
+| `so that is a shape rather than a reading` | section 103 | not six `u16` values with a missing count byte: four bytes are a device level pair and eight are read as bytes |
 | `not gaps: `0x1F` band `0xFC`` | section 104 | `0x1F` band `0xFC` is intercepted by the instruction fetch before the dispatcher sees it, on all four architectures, so the dispatcher's arm doing nothing is not the instruction doing nothing |
 | `Read as far as it goes in section 102 and it stays placement` | section 103 | selector 17 sets the display's light level, which is a meaning, and it is 68 of the band's 106 uses per config |
 | `an unnamed peripheral` | section 103 | `CVREF`, the comparator voltage reference, whose 27 distinct settings the level table is |
-| `What they threshold is not established` | section 103 | the four sample sum of analogue channel 1, giving a band that chooses the display light's level and its timeout |
+| `What they threshold is not established` | section 103 | the four sample sum of analogue channel 1, giving a band that chooses the display light's level and the device levels it sends |
 | `a conjecture rather than a finding` | section 105 | it is a finding: the scale is 4 + trim/65536 millivolts a count from two words in page 0xFF, and the firmware compares the result against the literal 3400 |
 | `The four small records in the `0xFF` page.` | section 105 | `+0xF580` is the battery gauge's scale, and its second word is the per unit trim two Harmony Ones differ in |
+| `four timeout pairs` | section 106 | four pairs of device levels: `0x249A0` sends both halves to the I2C device's registers 2 to 5 and nothing counts them down |
+| `program the band's timeout` | section 106 | it sends the band's pair of eight bit levels to a device at I2C address 0x60 |
+| `the operand's bit 0 chooses which of the two` | section 106 | selectors 0 to 12 read bits 1 to 3 normalised to a boolean at `0x24F6C`, not bit 0; bit 0 is the display light's fade against snap and belongs to selector 17 alone |
+| `That is the shape of a bit banged output` | section 106 | it is an enable: set at the end of a power up sequence and cleared at the start of a power down, with the data going over the hardware I2C master; the loop that gave it that shape has no callers |

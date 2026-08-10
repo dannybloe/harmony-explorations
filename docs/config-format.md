@@ -884,12 +884,12 @@ to this section by position, and **the firmware reaches them by overrunning grou
 
 | bytes above group 9's first entry | read by | as |
 |---|---|---|
-| 12 to 15 | `0x249A0` | the fourth timeout pair, at four bytes a band |
+| 12 to 15 | `0x249A0` | the fourth pair of device levels, at four bytes a band |
 | 16 to 23 | `0x2492E` | a table of two bit fields, four to a byte |
 
 So group 9 is in effect a 24 byte structure whose header declares only its first six `u16` values. A
 writer reproduces all twelve bytes; an editor that changed the declared length would move both
-readers' targets without any check refusing it. `docs/findings.md` sections 84 and 103.
+readers' targets without any check refusing it. `docs/findings.md` sections 84, 103 and 106.
 
 **The firmware demands the section's count and every group's length.** The count is 9 on arch 14
 and 11 on arch 12. Each group is read only when its length matches the number that build expects,
@@ -925,7 +925,7 @@ the firmware, used when the length does not match:
 | 4 | three threshold pairs, two apart, turning the four sample sum of analogue channel 1 into a band 0 to 3 with hysteresis | 96, 98, 308, 310, 768, 770 | none |
 | 5, 6 | two measurement to level curves over analogue channel 0, eight levels, chosen by the charger input on `PORTB` bit 1: group 6 when it is clear | 3000 to 4051, and 3000 to 4170 | none |
 | 7 | a timeout in seconds, handed to the one second scheduler | 0 | 10 |
-| 9 | four timeout pairs at four bytes a band; band 3's pair is in the spare run | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
+| 9 | four pairs at four bytes a band, both halves sent to the I2C device at address 0x60 as its registers 2/3 and 4/5; band 3's pair is in the spare run | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
 
 A level above 27 is *silently refused* by the setter, which is a rail: 27 is the number of distinct
 `CVREF` voltages the part can produce, and the ladder that maps a level to one is in the firmware.
@@ -936,8 +936,10 @@ channel 0 and `A` and `B` are two `u16` in the remote's own internal page `0xFF`
 converter count, and the firmware compares the result against the literal 3400. `findings.md`
 section 105.
 
-What analogue channel 1 measures is *not established*. Groups 2, 3, 8 and 10 are *not established*,
-and so are the thirteen properties the two bit table names.
+What analogue channel 1 measures is *not established*. Groups 2, 3, 8 and 10 are *not established*.
+The thirteen two bit fields are channels of the I2C device at address 0x60, and **which device that
+is is not established**: thirteen channels of three states, two eight bit level registers, an enable
+pin and no readback, `findings.md` section 106.
 
 Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 and 105.
 
@@ -1733,17 +1735,20 @@ drops the other seventeen, and the corpus uses exactly the fifteen:
 
 | selector | what it does | uses per config |
 |---|---|---|
-| 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a timeout from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off | 68 |
-| 0 to 12 | sets property `selector` to the two bit value base slot 15's spare run states for bit 0. The properties are *not established* | 36 |
-| 16 | drives `LATC` bit 5 from bits 1 to 3. The pin's load is *not established* | 2 |
+| 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a pair of device levels from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off | 68 |
+| 0 to 12 | sets channel `selector` of the I2C device at address 0x60 to the two bit value base slot 15's spare run states for bits 1 to 3 being nonzero. Which device it is is *not established* | 36 |
+| 16 | enables that device, `LATC` bit 5, set when bits 1 to 3 are nonzero | 2 |
 | 13 to 15, 18 to 31 | nothing: the handler falls to its exit | 0 |
 
 64 of the 68 are selector 17 state 6 without a fade. **The band's uses are identical in both One
 configs**, one of which has five devices and eight activities where the other has one and one, so
-nothing here varies with what the remote is set up to control.
+nothing here varies with what the remote is set up to control. **They are the generator's fixed
+initialisation sequence for the device at 0x60**, one pass setting each channel off and one setting
+each on, and the firmware itself never enables that device: it only switches it off at shutdown. So a
+config that omits them leaves the device disabled. `findings.md` section 106.
 
 `actions.BAND_3F_C0_SELECTOR` extracts the selector and `actions.reading` resolves the instruction.
-[findings.md](findings.md) sections 102 and 103.
+[findings.md](findings.md) sections 102, 103 and 106.
 
 #### `0x75` sounds a tone
 

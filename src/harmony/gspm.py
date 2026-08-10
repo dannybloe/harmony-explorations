@@ -535,15 +535,18 @@ PARAMETER_FADE_DELAY_GROUP = 0      # one value: the display light fade's per st
 PARAMETER_LIGHT_LEVEL_GROUP = 1     # entries 2 to 5 are the four light levels, 0 to 27
 PARAMETER_BAND_GROUP = 4            # three threshold pairs on analogue channel 1, with hysteresis
 PARAMETER_BATTERY_GROUPS = (5, 6)   # the two millivolt curves, chosen by the charger input
-PARAMETER_TIMEOUT_GROUP = 9         # four timeout pairs at 4 * band, the fourth in the spare run
+# Four pairs at 4 * band, the fourth in the spare run. Both halves of a pair are sent to the I2C
+# device at address 0x60, as its registers 2/3 and 4/5. Section 103 read them as timeouts, which they
+# are not: nothing counts them down, section 106.
+PARAMETER_DEVICE_LEVEL_GROUP = 9
 
 # The ceiling the display light setter enforces, and therefore the highest value a level may carry.
 # It is also the number of distinct `CVREF` voltages the part can produce, which is the closure.
 LIGHT_LEVEL_CEILING = 27
 # The twelve bytes above group 9 on arch 12, which no group's header declares and two sites read:
-# four as band 3's timeout pair, then eight as a table of two bit fields. Section 103.
+# four as band 3's device level pair, then eight as a table of two bit fields. Sections 103 and 106.
 PARAMETER_SPARE_BYTES = {12: 12}
-PARAMETER_SPARE_TIMEOUT_BYTES = 4
+PARAMETER_SPARE_LEVEL_BYTES = 4
 PARAMETER_SPARE_PROPERTY_BYTES = 8
 
 # Base slot 12 is the timer table. Two more branches of the same descending ladder start and

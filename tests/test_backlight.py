@@ -1,9 +1,10 @@
 """
 The display light subsystem behind `0x3F` band `0xC0` selector 17. `docs/findings.md` section 103.
 
-Also the two things reading it turned up: the instruction fetch's interception of `0x1F` band
-`0xFC` on all four architectures, section 104, and the charger input that closes section 44's
-battery conjecture, section 105.
+Also the three things reading it turned up: the instruction fetch's interception of `0x1F` band
+`0xFC` on all four architectures, section 104, the charger input that closes section 44's battery
+conjecture, section 105, and the I2C device whose enable is `LATC` bit 5 and whose channels are the
+band's thirteen properties, section 106.
 
 Addresses are recorded per image because finding them again is a search, the same reason
 `test_interpreter.py` gives. Everything is asserted against decoded instructions rather than
@@ -43,7 +44,7 @@ BAND_CHAIN = 0x23980            # the first XORLW of state 6's band to state map
 PREDICATE = 0x23CA6             # "is the cached level nonzero"
 FADE = 0x23C02                  # walk one index at a time
 GUARD = 0x23262                 # base slot 15's group guard, section 44
-TIMEOUT_READER = 0x249A0        # group 9 at 4 * band
+LEVEL_READER = 0x249A0          # group 9 at 4 * band, straight out over I2C
 PROPERTY_READER = 0x2492E       # band 0xC0 selectors 0 to 12
 BAND_READER = 0x234D4           # channel 1 -> a band 0 to 3 through group 4
 CHARGER = 0x24042               # PORTB bit 1 and a software flag
@@ -63,12 +64,12 @@ GROUP_STRIDE = 3
 FADE_DELAY_GROUP = 0
 LEVEL_GROUP = 1
 THRESHOLD_GROUP = 4
-TIMEOUT_GROUP = 9
+DEVICE_LEVEL_GROUP = 9
 
 # What the firmware falls back on when a group's length is wrong, section 44's mechanism.
 DEFAULT_LEVELS = (9, 16, 24, 27)
 DEFAULT_FADE_DELAY = 0x32
-DEFAULT_TIMEOUT = 0x0040
+DEFAULT_DEVICE_LEVEL = 0x0040
 
 # The fetch's interception of `0x1F` band `0xFC`, section 104. Value is the address of the `MOVLW
 # 0x1F` that starts the two comparisons.
@@ -94,6 +95,22 @@ CURVE_LOW = 3000
 CURVE_HIGH_ON_CHARGE = 4170
 # The literal the firmware compares the result against, in the same units.
 LOW_BATTERY_MILLIVOLTS = 3400
+
+# Section 106: the I2C device band 0xC0 selectors 0 to 16 talk to.
+SSP1CON2 = 0x0FC5
+SSP1CON1 = 0x0FC6
+SSP1BUF = 0x0FC9
+LATC = 0x0F8B
+DEVICE_WRITE_ADDRESS = 0xC0
+DEVICE_ADDRESS = 0x60
+ON_OFF_SEQUENCE = 0x23DF0
+CHANNEL_SETTER = 0x2D254        # channel in gprF25F, value in gprF260, 40 call sites
+POWER_DOWN_HIGH = 0x23E0C       # channels 12 down to 8, all zero
+POWER_DOWN_LOW = 0x23EA2        # channels 0 up to 7, all zero
+BAND_3F_C0_CHANNELS = 13
+# Where the dispatcher puts bits 1 to 3 of the operand. The handler for selectors 0 to 12 reads this
+# one and not the bit 0 register at 0xEBC, which section 103 had the wrong way round.
+OPERAND_MID_FIELD = 0xBB
 
 
 def page_ff(unit):
@@ -313,21 +330,23 @@ class ParameterBlockTest(unittest.TestCase):
         self.assertEqual(self._guard_call(0x239B8), (LEVEL_GROUP, 6))
         self.assertEqual(self._guard_call(0x23C0C), (FADE_DELAY_GROUP, 1))
         self.assertEqual(self._guard_call(BAND_READER + 0x0A, 12), (THRESHOLD_GROUP, 6))
-        self.assertEqual(self._guard_call(TIMEOUT_READER), (TIMEOUT_GROUP, 6))
-        self.assertEqual(self._guard_call(PROPERTY_READER), (TIMEOUT_GROUP, 6))
+        self.assertEqual(self._guard_call(LEVEL_READER), (DEVICE_LEVEL_GROUP, 6))
+        self.assertEqual(self._guard_call(PROPERTY_READER), (DEVICE_LEVEL_GROUP, 6))
 
-    def test_the_fade_delay_and_timeout_defaults(self):
+    def test_the_fade_delay_and_device_level_defaults(self):
         fade = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x23C3A, 2)
                 if i.mnemonic == 'MOVLW']
         self.assertEqual(fade, [DEFAULT_FADE_DELAY])
-        timeout = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x249F8, 3)
-                   if i.mnemonic == 'MOVLW']
-        self.assertEqual(timeout, [DEFAULT_TIMEOUT & 0xFF])
+        level = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x249F8, 3)
+                 if i.mnemonic == 'MOVLW']
+        self.assertEqual(level, [DEFAULT_DEVICE_LEVEL & 0xFF])
 
-    def test_the_timeout_reader_indexes_at_four_bytes_a_band(self):
+    def test_the_level_reader_indexes_at_four_bytes_a_band(self):
         # `4 * band` bytes, so band 3 reads bytes 12 to 15 of a group whose header declares six
         # `u16` entries. That overrun is the first four of the twelve spare bytes, section 103.
-        got = instructions('one34_code', ONE_BASE, TIMEOUT_READER, 18)
+        # Both halves go out over I2C as device register values; section 103 called them timeouts and
+        # section 106 corrected that, because nothing counts them down.
+        got = instructions('one34_code', ONE_BASE, LEVEL_READER, 18)
         muls = [i for _, i in got if i.mnemonic == 'MULWF']
         self.assertEqual(len(muls), 1, 'one multiply, and its multiplicand is the stride')
         before = [i.fields['k'] for a, i in got if i.mnemonic == 'MOVLW' and a < 0x249C0]
@@ -335,7 +354,7 @@ class ParameterBlockTest(unittest.TestCase):
 
     def test_the_property_reader_indexes_past_the_declared_entries(self):
         # `0x10 + 4 * bit0 + (selector >> 2)`, a byte rather than a `u16`, so the eight bytes above
-        # band 3's timeout. The `0x10` is the whole point: twelve `u16` entries end at byte 12.
+        # band 3's pair. The `0x10` is the whole point: twelve `u16` entries end at byte 12.
         literals = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x2494A, 12)
                     if i.mnemonic in ('MOVLW', 'ADDLW', 'ANDLW')]
         self.assertIn(0x10, literals)
@@ -454,6 +473,147 @@ class ChargerTest(unittest.TestCase):
         self.assertEqual((literals[1] << 8) | literals[0], LOW_BATTERY_MILLIVOLTS)
         self.assertLess(CURVE_LOW, LOW_BATTERY_MILLIVOLTS)
         self.assertLess(LOW_BATTERY_MILLIVOLTS, CURVE_HIGH_ON_CHARGE)
+
+
+class DeviceTest(unittest.TestCase):
+    """Section 106: the pin enables an I2C device, and the thirteen properties are its channels."""
+
+    def test_the_bus_is_the_hardware_i2c_master(self):
+        # `SSP1CON2` exists only in I2C mode, so its bits name the transaction: SEN, RSEN, PEN and
+        # the acknowledge. Asserted through the SFR map, so a wrong `--part` fails this.
+        # start, repeated start, stop. `0x2DCCC` clears an interrupt flag first; the other two open
+        # with the bit set, so each is found rather than indexed at a fixed offset.
+        wanted = {0x2DCCC: 0, 0x2DCDA: 1, 0x2DCE6: 2}
+        for start, bit in wanted.items():
+            with self.subTest(hex(start)):
+                sets = [i for _, i in instructions('one34_code', ONE_BASE, start, 3)
+                        if i.mnemonic == 'BSF' and absolute(i) == SSP1CON2]
+                self.assertEqual(len(sets), 1)
+                self.assertEqual(sets[0].fields['b'], bit)
+        # And the byte goes through SSP1BUF, with the write collision flag checked afterwards.
+        got = instructions('one34_code', ONE_BASE, 0x2DD16, 3)
+        self.assertEqual(got[0][1].fields.get('src'), 0x30E)
+        self.assertEqual(got[0][1].fields.get('dst'), SSP1BUF)
+        self.assertEqual(absolute(got[1][1]), SSP1CON1)
+        self.assertEqual(got[1][1].fields['b'], 7)
+
+    def test_only_arch_12_runs_the_peripheral_in_i2c_mode(self):
+        """The reason band `0xC0` is arch 12 only: arch 14 needs the same peripheral for SPI.
+
+        Counted rather than argued. `SSP1CON2` has no meaning outside I2C master mode, so an image
+        that never writes it is not running an I2C master.
+        """
+        lab.require('one34_code', 'h600_code_complete', 'h700_code')
+        counts = {}
+        for name, base in (('one34_code', ONE_BASE), ('h600_code_complete', 0x9000),
+                           ('h700_code', 0x9000)):
+            code = lab.load(name)
+            seen = {SSP1CON2: 0, SSP1BUF: 0}
+            offset = 0
+            while offset < len(code) - 1:
+                try:
+                    instr = isa.decode(code, offset, base)
+                except Exception:                       # noqa: BLE001, a data byte is not an error
+                    offset += 2
+                    continue
+                address = absolute(instr)
+                if address in seen:
+                    seen[address] += 1
+                offset += 2 * instr.words
+            counts[name] = seen
+        self.assertGreater(counts['one34_code'][SSP1CON2], 0, 'arch 12 is an I2C master')
+        for name in ('h600_code_complete', 'h700_code'):
+            self.assertEqual(counts[name][SSP1CON2], 0, f'{name} never writes an I2C only register')
+            self.assertGreater(counts[name][SSP1BUF], 0, f'{name} still uses the peripheral')
+
+    def test_the_address_byte_is_a_write_to_0x60(self):
+        # `0xC0` to write and `0xC1` to read, so the seven bit address is 0x60.
+        write = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x2D30C, 6)
+                 if i.mnemonic == 'MOVLW']
+        self.assertEqual(write, [DEVICE_WRITE_ADDRESS])
+        read = [i.fields['k'] for _, i in instructions('one34_code', ONE_BASE, 0x2D348, 4)
+                if i.mnemonic == 'MOVLW']
+        self.assertEqual(read, [DEVICE_WRITE_ADDRESS | 1])
+        self.assertEqual(DEVICE_WRITE_ADDRESS >> 1, DEVICE_ADDRESS)
+
+    def test_the_level_pair_goes_to_registers_2_to_5(self):
+        # `register = 2 * flag + 3` then `2 * flag + 2`, so the pair fills 2 and 3 for flag 0 and 4
+        # and 5 for flag 1. This is what makes group 9 device levels rather than timeouts: the two
+        # halves leave the remote and nothing counts them down.
+        got = instructions('one34_code', ONE_BASE, 0x2D2E6, 18)
+        adds = [i.fields['k'] for _, i in got if i.mnemonic == 'ADDLW']
+        self.assertEqual(adds, [3, 2])
+        self.assertEqual([i.mnemonic for _, i in got].count('ADDWF'), 2, 'flag doubled each time')
+
+    def test_the_pin_is_set_after_power_up_and_cleared_before_power_down(self):
+        # Which is what makes it an enable rather than a signal.
+        got = instructions('one34_code', ONE_BASE, ON_OFF_SEQUENCE, 14)
+        bits = [(a, i.mnemonic) for a, i in got if i.category == isa.BIT and absolute(i) == LATC]
+        self.assertEqual([m for _, m in bits], ['BSF', 'BCF'])
+        # The set is the last thing the on arm does and the clear is followed only by a RETURN.
+        for address, _ in bits:
+            after = instructions('one34_code', ONE_BASE, address + 2, 1)
+            self.assertEqual(after[0][1].mnemonic, 'RETURN')
+
+    def test_the_power_down_arm_writes_every_channel_to_zero(self):
+        """Thirteen channels, each with the value zero, and no fourteenth.
+
+        The arm is two straight line routines rather than one, `0x23E0C` for channels 12 down to 8
+        and `0x23EA2` for 0 up to 7, each ending in a tail call to the channel setter. Walking a
+        fixed number of instructions instead runs off the end into the unreachable on arm at
+        `0x23E52`, which writes the same channels with the value one, so each routine is walked to
+        its own `GOTO` and not to an instruction count.
+        """
+        code = lab.load('one34_code')
+        channels = []
+        for start in (POWER_DOWN_HIGH, POWER_DOWN_LOW):
+            offset = start - ONE_BASE
+            value = None
+            literal = None
+            while True:
+                instr = isa.decode(code, offset, ONE_BASE)
+                if instr.mnemonic == 'CLRF' and instr.fields.get('f') == 0x60:
+                    value = 0
+                elif instr.mnemonic == 'MOVLW':
+                    literal = instr.fields['k']
+                elif instr.mnemonic == 'MOVWF' and instr.fields.get('f') == 0x60:
+                    value = literal
+                elif instr.mnemonic == 'MOVWF' and instr.fields.get('f') == 0x5F:
+                    channels.append((literal, value))
+                elif instr.mnemonic == 'CLRF' and instr.fields.get('f') == 0x5F:
+                    channels.append((0, value))
+                offset += 2 * instr.words
+                if instr.mnemonic == 'GOTO':                # the tail call ends the routine
+                    self.assertEqual(instr.fields['target'], CHANNEL_SETTER)
+                    break
+        self.assertEqual(len(channels), BAND_3F_C0_CHANNELS)
+        self.assertEqual(sorted(c for c, _ in channels), list(range(BAND_3F_C0_CHANNELS)))
+        self.assertEqual({v for _, v in channels}, {0}, 'every channel to zero')
+
+    def test_the_firmware_never_switches_the_device_on(self):
+        """`gprF14` is written only with zero, so only the power-down arm is reachable.
+
+        The consequence is a rail rather than a curiosity: everything that enables this device or
+        sets a channel comes out of a config.
+        """
+        from harmony.pic18 import trace
+        code = lab.load('one34_code')
+        hits = trace.trace(code, ONE_BASE, [0xF14])
+        writes = [a for a in hits[0xF14] if 'WRITE' in a.kind]
+        self.assertEqual(sorted(a.addr for a in writes), [0x28CAE, 0x2C9A6])
+        for site in writes:
+            with self.subTest(hex(site.addr)):
+                instr = instructions('one34_code', ONE_BASE, site.addr, 1)[0][1]
+                self.assertEqual(instr.mnemonic, 'CLRF', 'the only value written is zero')
+
+    def test_the_channel_selector_uses_bits_1_to_3_and_not_bit_0(self):
+        # The correction section 106 makes to section 103. `0x24F6C` reads the bits 1 to 3 register,
+        # normalises it to a boolean and hands that on; the bit 0 register is not touched.
+        got = instructions('one34_code', ONE_BASE, 0x24F6C, 12)
+        self.assertEqual(got[0][1].fields.get('f'), OPERAND_MID_FIELD)
+        moves = [(i.fields.get('src'), i.fields.get('dst')) for _, i in got if i.mnemonic == 'MOVFF']
+        self.assertIn((0xEBB, 0xF21), moves, 'bits 1 to 3 become the flag')
+        self.assertNotIn(0xEBC, [source for source, _ in moves], 'bit 0 never reaches the handler')
 
 
 if __name__ == '__main__':

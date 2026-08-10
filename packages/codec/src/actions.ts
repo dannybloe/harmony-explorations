@@ -223,20 +223,30 @@ function band3fC0Arch12(operand: number): Reading {
   if (selector === BAND_3F_C0_LIGHT) {
     return means(
       "set the display's light level: bits 1 to 3 pick one of eight states and bit 0 fades " +
-        'rather than snaps. States 2 to 5 take a level and a timeout from base slot 15 groups 1 ' +
-        'and 9, state 6 picks the state from the measured band, states 0 and 1 turn it off',
+        'rather than snaps. States 2 to 5 take a level from base slot 15 group 1 and a pair of ' +
+        "device levels from group 9, state 6 picks the state from the measured band, states 0 " +
+        'and 1 turn it off',
       103,
     );
   }
   if (selector === BAND_3F_C0_PIN) {
-    return placed('drives LATC bit 5 from bits 1 to 3, set when they are nonzero', 103);
+    // Placement, deliberately. Section 106 names the pin as the enable of the I2C device at 0x60,
+    // which is its immediate effect and not what it means for a config: nobody knows what the
+    // device does, so there is nothing here to put in front of a user.
+    return placed(
+      'enables the I2C device at address 0x60, LATC bit 5, set when bits 1 to 3 are nonzero',
+      106,
+    );
   }
   if (selector <= BAND_3F_C0_PROPERTY_LIMIT) {
+    // Bits 1 to 3, not bit 0: `0x24F6C` normalises `0xEBB` to a boolean and bit 0 never reaches the
+    // handler. Section 103 had this the other way round for a few hours.
     return placed(
-      'sets property ' +
+      'sets channel ' +
         String(selector) +
-        ' to the two bit value base slot 15 states for bit 0, in the twelve bytes above group 9',
-      103,
+        ' of the I2C device at 0x60 to the two bit value base slot 15 states for bits 1 to 3 ' +
+        'being nonzero, in the twelve bytes above group 9',
+      106,
     );
   }
   // 13 to 15 and 18 to 31 fall to the handler's exit, and the corpus never emits one.

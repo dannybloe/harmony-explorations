@@ -136,7 +136,9 @@ test('0x3F band 0xC0 resolves differently on the two architectures', () => {
   // entry, so arch 14's description sat on arch 12's handler. Section 102 read arch 12's own
   // handler, and the whole point of the divergence is that the two do different things.
   assert.notEqual(arch12.what, arch14.what, 'two different handlers must not share a description');
-  assert.equal(arch12.section, 103);
+  // Selector 0 on arch 12, so the section is 106, which named the channels; selector 17's is 103.
+  assert.equal(arch12.section, 106);
+  assert.equal(reading({ opcode: 0x3f, operand: 0xc000 | (17 << 4) }, 12)?.section, 103);
   // But `0xB0` itself is only a band on arch 14: on arch 12 it falls off the end of the chain.
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 12)?.noop, true);
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 14)?.noop, undefined);
@@ -145,9 +147,12 @@ test('0x3F band 0xC0 resolves differently on the two architectures', () => {
 test('0x3F band 0xC0 resolves by selector on arch 12, and only selector 17 has a meaning', () => {
   // The band's handler dispatches again on operand bits 4 to 8, so this table does too. One reading
   // for the band would have to call the whole thing placement, which is what section 102 did and
-  // what understated 68 of the 106 uses in each One config. Section 103.
-  const at = (selector: number, mid = 0, bit0 = 0) =>
-    reading({ opcode: 0x3f, operand: 0xc000 | (selector << 4) | (mid << 1) | bit0 }, 12);
+  // what understated 68 of the 106 uses in each One config. Sections 103 and 106.
+  //
+  // `mid` is operand bits 1 to 3 and `fade` is bit 0. Selector 17 reads both; selectors 0 to 12 read
+  // `mid` only, as a boolean, which section 106 corrected from bit 0.
+  const at = (selector: number, mid = 0, fade = 0) =>
+    reading({ opcode: 0x3f, operand: 0xc000 | (selector << 4) | (mid << 1) | fade }, 12);
 
   const light = at(BAND_3F_C0_LIGHT, 6);
   assert.equal(light?.depth, 'meaning');
@@ -159,7 +164,7 @@ test('0x3F band 0xC0 resolves by selector on arch 12, and only selector 17 has a
   for (const selector of [0, 6, BAND_3F_C0_PROPERTY_LIMIT]) {
     const r = at(selector);
     assert.equal(r?.depth, 'placement', `selector ${selector}`);
-    assert.match(r!.what, new RegExp(`property ${selector} `));
+    assert.match(r!.what, new RegExp(`channel ${selector} `));
   }
 
   // The selector is five bits, so bit 8 belongs to it as well as to the band's high byte: 16 and 17

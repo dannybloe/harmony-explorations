@@ -673,7 +673,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 105 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 106 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -779,7 +779,7 @@ produce a config the remote accepts and mishandles.
 * **How big the arch 14 external flash is**, 2 MiB by three routes and 4 MiB by concordance's
   architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **What the One's analogue channel 1 measures**, section 103, which is what the display light's four
-  levels and four timeouts are chosen by. Two readings fit and they differ only in the sensor's
+  levels and four device levels are chosen by. Two readings fit and they differ only in the sensor's
   wiring, so the firmware cannot settle it. `read-ram.ts --address 0x110` on a connected remote can,
   and the three predictions are written down. Two of them say the sampler does not run on USB at all,
   which is a fact FreeHarmony needs either way. Channel 0 is the battery, `0x111`, eight levels.
@@ -790,11 +790,11 @@ produce a config the remote accepts and mishandles.
   and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
   the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
   says two remotes differ at `+0xF582`.
-* **`LATC` bit 5 on arch 12**, ten sites, three of them in the display light subsystem and five in a
-  bit banged loop at `0x2E53E`. Left unnamed rather than guessed at, sections 102 and 103.
-* **The thirteen properties band `0xC0` selectors 0 to 12 set**, from a two bit table in base slot
-  15's spare run through a serial transaction to a device addressed `0xC0`, section 103. Both One
-  configs carry the same table, so comparing configs cannot name them.
+* **Which I2C device sits at address 0x60 on the Harmony One**, section 106. Thirteen channels of
+  three states, two eight bit level registers, an enable on `LATC` bit 5 and no readback, which is the
+  shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
+  the screen. **Not confirmed and deliberately not named.** A datasheet search on the address and the
+  register numbers, or a photograph of the board, settles it; firmware cannot.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
   user manuals say the learned signal was uploaded to their web site, which did the pattern matching
@@ -863,9 +863,10 @@ What is left is mostly one thing, `0x3F` band `0xC0` on arch 12, and it is hardw
 config structure. Section 102 read it and it stayed placement; **section 103 read the state machine
 behind selector 17 and it did not**, which is 68 of the band's 106 uses per config. The band is three
 fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms: selector 17 sets the display's
-light level, from four levels, four timeouts, three thresholds and a fade rate that base slot 15
-states; selector 16 drives `LATC` bit 5, unnamed; and 0 to 12 set a property from a two bit table in
-base slot 15's twelve spare bytes, also unnamed. Two closures: the corpus uses **exactly** the fifteen
+light level, from four levels, three thresholds and a fade rate that base slot 15 states; selector 16
+enables an I2C device at address 0x60 through `LATC` bit 5; and 0 to 12 set that device's thirteen
+channels from a two bit table in base slot 15's twelve spare bytes. **Which device it is is not
+established**, section 106, and the firmware never switches it on: only a config does. Two closures: the corpus uses **exactly** the fifteen
 selector values the handler accepts out of thirty two, and the light level is an index into the 27
 distinct `CVREF` voltages the part can produce, a table derivable from the datasheet. **Do not expect
 what is left to move by comparing configs**: the band's uses are identical in both One configs despite
@@ -901,7 +902,7 @@ longer than the clock record and base slot 17's is two where it names the pictur
 table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
 bytes belong to base slot 15 and to no group, by position rather than by reading. **Those twelve are
 read now**, section 103: group 9 continuing past the six entries its header declares, four bytes as
-one more timeout pair and eight as a table of two bit fields, with no remainder.
+one more pair of device levels and eight as a table of two bit fields, with no remainder.
 
 **Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
 overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:
