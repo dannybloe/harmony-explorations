@@ -240,15 +240,18 @@ the end, and the awkward choice section 95 posed does not arise. USB mode's exit
 `0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
 leaves the gate open.
 
-**What does strand one is unexplained, and the suspect is an odd count read.** Both occurrences on
-9 August 2026 followed a session containing a deliberate hang; the session containing none did not
-stick. Section 96's runaway writes over data memory from `0x046A` up, and `0x2628E`'s four idle flags
-at `0xED5`, `0xED6`, `0xEDC` and `0xEDD` are in its path while `0x284` and `0x315` are below it. A
-hypothesis, not a finding, and its test is a **read**: `READ_MISC` selector `0x07` on those four
-after a hang. **The test is written and unrun**,
-`packages/usb/bin/idle-flags-after-hang.ts`, with three predictions committed first in section 99, of
-which the sharp one is that 48 bytes of data memory reproduce page `0xFF` from offset `0x103E` byte
-for byte. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is now a **named door** in
+**A hang does not strand one either, and it ends in a genuine device reset**, section 100, measured on
+10 August 2026: the remote reboots, comes up in USB mode, and **its clock is reset**, which a
+re-enumeration does not do. So data memory is reinitialised and no corruption survives a hang, which
+refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
+the weaker name for two days.
+
+**What does strand one is still unexplained, and the suspect is now the charger.** Both occurrences on
+9 August 2026 involved a charger to USB transition; every run on 10 August went USB to unplugged to
+USB with no charger, three controls and one hang, and none stranded. A lead, not a cause, and cheap to
+exercise: charge it, move it to USB, read something, pull the cable.
+`packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
+demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
 `rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
 `remote.ts` and patching it back, and a rail edited under time pressure with nothing in the tests to
 say so is worse than a door that announces itself. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;

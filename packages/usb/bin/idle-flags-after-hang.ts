@@ -24,6 +24,17 @@
  *
  * Step 4 is the one that can fail sharply. Steps 1 to 3 could be explained by a dozen things; a
  * window of data memory that reproduces a known stretch of flash cannot.
+ *
+ * **Run on 10 August 2026, and it answered a different question, section 100.** The hang ends in a
+ * genuine device reset, which the remote's reset clock proves, so data memory is reinitialised before
+ * step 3 can read anything and step 4 is unreachable by this route. That refutes the hypothesis by
+ * mechanism, so the script is kept for two lesser reasons rather than repaired: it is the only thing
+ * here that demonstrates the reset, and its baseline leg is a two second check that a remote's idle
+ * flags are clean.
+ *
+ * Its post-hang leg reported "the remote is not answering", which is explained rather than a bug: it
+ * opens the device as soon as it enumerates, and a remote that has just reset needs longer. Left as it
+ * is, because fixing it would only make the unreachable steps fail more slowly.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

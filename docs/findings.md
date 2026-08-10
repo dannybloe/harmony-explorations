@@ -11341,7 +11341,7 @@ arithmetic apparently does not apply, and nothing read so far says why.
 ### What would find the constant, and what it costs
 
 A bisection between `0x40` and `0x1000` is about six reads and gives the boundary to a byte, and
-each hang now looks like three seconds and a self-clearing restart rather than a battery pull. That
+each hang now looks like three seconds and a self-clearing restart rather than a battery pull. That<!--superseded-->
 is the cheapest route to a number that can then be searched for in the image, which is what turns
 this from a measured curiosity into a firmware fact.
 
@@ -12264,6 +12264,83 @@ the question would go back to the firmware.
 normally does not strand a remote, so version 1 needs to send nothing at the end, and the awkward
 choice section 95 posed does not arise. The gentle escape stays implemented, gated and unused, which
 is the right place for it.
+
+## 100. A hang ends in a real device reset, which kills the idle flag hypothesis by mechanism
+
+Run on 10 August 2026, on the spare, with all three predictions and all four failure modes committed
+first. The fourth failure mode is the one that happened, and it turned out to be a finding rather
+than a wasted run.
+
+### What was measured
+
+| step | result |
+|---|---|
+| baseline, four idle flags `0xED5`, `0xED6`, `0xEDC`, `0xEDD` | `00 00 00 00`, as prediction one required |
+| baseline controls `0x284`, `0x315` | `0A 00` |
+| 63 bytes at page `0xFF` offset `0x1000` | stopped answering, as every recorded hang has |
+| it came back on the bus | yes, on its own |
+| reading anything afterwards | **the remote did not answer** |
+| the screen, before the batteries came out | **it rebooted, came up in USB mode, and its clock had been reset** |
+
+**The clock settles it.** A reset clock is not something a USB re-enumeration does. So what this
+project has been calling a self-clearing restart for two days is a **genuine device reset**, and the
+remote's data memory is reinitialised as part of it.
+
+### Which refutes the hypothesis without ever reading the flags
+
+Section 99 proposed that a hang strands a remote by leaving `0x2628E`'s four idle flags nonzero. That
+requires the corruption to **survive** the hang. It cannot: the hang ends in a reset, and a reset
+clears data memory. So the mechanism is unavailable, and the flags after recovery are guaranteed clean
+whatever the runaway did to them.
+
+**This is a better refutation than a measurement would have been**, and worth being explicit about
+why: reading the flags and finding them zero would have left two explanations standing, the hypothesis
+being wrong and the reset having wiped the evidence. The clock separates them, and it was the screen
+that answered rather than anything the host could see. The pre-registered note that this was the
+likeliest way the experiment would say nothing is what made the question worth asking of the operator
+at all.
+
+**Prediction three is untested and stays that way.** The window of data memory reproducing page `0xFF`
+byte for byte was the sharp one, and it cannot be read after a reset. Reading it needs the flags read
+**while** the remote is hung, and it is hung precisely by not answering, so the USB path cannot do it.
+That question goes back to the firmware or nowhere.
+
+### And it takes the stranding's cause with it
+
+**The remote did not strand.** It rebooted, came up in USB mode, and when the cable was pulled it left
+USB mode and showed its normal display, exactly as the three control rounds did. So a hang does not
+strand a remote either, and section 99's suspect is gone along with its mechanism.
+
+**What both stranding events on 9 August 2026 share is a charger.** The first followed the remote being
+taken off the charger and plugged into USB; the second followed a session after which the remote went
+back on the charger and later returned to USB. Every run on 10 August, three controls and this hang,
+went from USB to unplugged and back to USB with no charger in the sequence, and none of them stranded.
+
+So the suspect is **the charger to USB transition**, which section 95 floated in one clause and then
+dropped in favour of the disconnect. It is a state change nothing here has exercised deliberately, and
+it is cheap to exercise: charge the remote, move it to USB, read something, pull the cable. Recorded
+as the next question rather than as an answer, because two events sharing a circumstance is a lead and
+not a cause, and this section exists because the previous lead was wrong.
+
+### Two things the baseline measured on the way
+
+**`0x284` reads `0x0A` while it is being read**, which is the tenth state, the one `READ_MISC` itself
+sets. That is section 90's closure observed again from our own code on arch 12 rather than arch 14.
+
+**`0x315` reads `0x00` with a host attached and mid command**, and section 99 called mode 1 "USB
+mode". That is loose and this tightens it: **zero is the state a serviced remote sits in**, the arm at
+`0x28B1E` that falls through to the USB service call when `0x315` is zero. Mode 1 is not where a
+remote lives while a host talks to it; it is the arm the loop computes afterwards, which polls the
+cable and either leaves or goes round again. Nothing in section 99's chain depends on the label, since
+the gate and the exit are in mode 1's body either way, but the label was wrong and is corrected here.
+
+### What the script is for now
+
+`packages/usb/bin/idle-flags-after-hang.ts` answered its question and cannot answer the one it was
+built for. It is kept, because it is the only thing here that demonstrates the reset, and because its
+baseline leg is a useful two second check that a remote's idle flags are clean. Its post-hang leg
+failed with "the remote is not answering", which is now explained rather than a bug to fix: it opened
+the device as soon as it enumerated, and a remote that has just reset needs longer than that.
 
 ## References
 
