@@ -12322,6 +12322,29 @@ it is cheap to exercise: charge the remote, move it to USB, read something, pull
 as the next question rather than as an answer, because two events sharing a circumstance is a lead and
 not a cause, and this section exists because the previous lead was wrong.
 
+### The charger round, prepared, and this prediction is the weakest of the three
+
+`session-end-control.ts --from-charger`, which is the same round with the transition put back in front
+of it. **The first wait is the experiment**, not the setup: the first stranding's signature was that
+the remote, taken off the charger and plugged into USB, did not enumerate at all, so a remote that
+never appears is the result and the script says so instead of timing out with a shrug.
+
+**The prediction is that it reproduces**, most likely at the enumeration step, and it is worth saying
+plainly that this is a weaker prediction than the ones before it. The two earlier experiments predicted
+from a mechanism read out of the firmware. **This one predicts from a coincidence**: two events shared
+a charger, four events without one behaved. Nothing here explains what a charger would do, and the only
+candidate worth writing down is that `PORTA` bit 4, the pin mode 1 polls, might be asserted by the
+charger as well as by USB, so a remote arriving from a charger never sees a transition at all. That is
+speculation and is marked as such; it is not the reason for the prediction, it is the shape a reason
+might have.
+
+**If it does not reproduce, the two events of 9 August 2026 are unexplained**, and that is what gets
+written down. Not narrowed, not left implied: unexplained, with three leads dead, so that nobody later
+mistakes the silence for a conclusion. Two remaining differences would still be untested at that point
+and both are worth naming now rather than reaching for afterwards: those sessions ran many commands
+where these ran one, and both happened after hours of continuous bench work rather than to a remote
+picked up cold.
+
 ### Two things the baseline measured on the way
 
 **`0x284` reads `0x0A` while it is being read**, which is the tenth state, the one `READ_MISC` itself

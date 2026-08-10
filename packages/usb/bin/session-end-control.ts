@@ -2,6 +2,17 @@
  * One round of the session-end control: does a clean read only session strand a remote?
  *
  *   node packages/usb/bin/session-end-control.ts
+ *   node packages/usb/bin/session-end-control.ts --from-charger
+ *
+ * `--from-charger` is the same round with one thing added in front of it, and that thing is the only
+ * remaining suspect for a remote that strands, section 100. Both stranding events on 9 August 2026
+ * involved a charger to USB transition; the four runs that had none, three of these rounds and one
+ * deliberate hang, all ended cleanly. So the round is run again with the transition put back.
+ *
+ * **The first wait is itself the experiment in that mode.** The first stranding's signature was that
+ * the remote, moved off the charger and plugged into USB, did not enumerate at all: sixteen seconds
+ * of polling and nothing. So a remote that never appears is not a setup failure here, it is the
+ * result, and this script says so rather than timing out with a shrug.
  *
  * `docs/findings.md` sections 95 and 99. The first round was run by hand on 10 August 2026 and the
  * remote left USB mode; this script exists so the repeats are cheap and, more to the point, so their
@@ -63,6 +74,32 @@ async function waitUntil(wanted: boolean, limitMs: number): Promise<number | und
     await sleep(POLL_MS);
   }
   return undefined;
+}
+
+const FROM_CHARGER = process.argv.includes('--from-charger');
+/** Long, because it covers charging the remote and carrying it to the desk. */
+const CHARGER_WAIT_MS = 300_000;
+
+if (FROM_CHARGER) {
+  process.stdout.write(
+    'charger mode, section 100.\n' +
+      '\n' +
+      '  1. put the remote on its charger and leave it there until it has settled\n' +
+      '  2. then take it off and plug it into USB\n' +
+      '\n' +
+      'Waiting for it to appear. If it never does, that is not a setup problem: it is the first\n' +
+      'stranding of 9 August 2026 reproducing, and the batteries clear it.\n\n',
+  );
+  const appeared = await waitUntil(true, CHARGER_WAIT_MS);
+  if (appeared === undefined) {
+    process.stdout.write(
+      `it did NOT enumerate within ${CHARGER_WAIT_MS / 60000} minutes of being asked for.\n` +
+        '  If the cable is in, this reproduces the charger to USB stranding and the lead is confirmed.\n' +
+        '  Say what the screen shows, then take the batteries out.\n',
+    );
+    process.exit(0);
+  }
+  process.stdout.write(`  it enumerated after ${(appeared / 1000).toFixed(0)} s\n\n`);
 }
 
 if (!(await attached())) fail('attach the Harmony One first, then run this again');

@@ -249,7 +249,11 @@ the weaker name for two days.
 **What does strand one is still unexplained, and the suspect is now the charger.** Both occurrences on
 9 August 2026 involved a charger to USB transition; every run on 10 August went USB to unplugged to
 USB with no charger, three controls and one hang, and none stranded. A lead, not a cause, and cheap to
-exercise: charge it, move it to USB, read something, pull the cable.
+exercise: `session-end-control.ts --from-charger`, written and unrun, whose **first wait is the
+experiment** because the first stranding's signature was not enumerating at all. Its prediction is
+committed in section 100 and marked as the weakest of the session: it predicts from a coincidence
+rather than from a mechanism. **If it does not reproduce, the two events are unexplained**, and that is
+what goes in the document, so nobody mistakes the silence for a conclusion.
 `packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
 demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
 `rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
@@ -539,7 +543,7 @@ node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
                        the contribution probe: a few kilobytes of JSON describing a config's
                        shape and nothing of its contents, meant to be published. Opens the
                        device unless --file is given.
-node packages/usb/bin/session-end-control.ts
+node packages/usb/bin/session-end-control.ts [--from-charger]
                        one round of the session-end control: a plain read, close the handle, then
                        it walks the operator through pulling the cable and plugging back in and
                        says which outcome it saw. Enumeration after a replug is the machine
