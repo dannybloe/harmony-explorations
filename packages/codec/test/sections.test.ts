@@ -1209,7 +1209,13 @@ test('the first node is not always called Root, which is what opened this sectio
 test('the arch 12 0xC0 band only ever selects what its handler accepts',
     skipUnless('one_config', 'one_config_unprogrammed'), () => {
   const accepted = new Set([...Array.from({ length: 13 }, (_, i) => i), 16, 17]);
-  const perConfig: { total: number; distinct: number; dominant: number }[] = [];
+  const perConfig: {
+    total: number;
+    distinct: number;
+    dominant: number;
+    light: number;
+    pin: number;
+  }[] = [];
   for (const name of ['one_config', 'one_config_unprogrammed']) {
     const c = parse(load(name) as Uint8Array);
     const combinations = new Map<string, number>();
@@ -1230,11 +1236,69 @@ test('the arch 12 0xC0 band only ever selects what its handler accepts',
       total,
       distinct: combinations.size,
       dominant: combinations.get('17/6/0') ?? 0,
+      light: [...combinations].filter(([k]) => k.startsWith('17/'))
+        .reduce((n, [, v]) => n + v, 0),
+      pin: [...combinations].filter(([k]) => k.startsWith('16/')).reduce((n, [, v]) => n + v, 0),
     });
   }
   // Identical in both, which is the finding: one config has five devices and eight activities and
   // the other has one and one, so this band carries none of that. A future config that differs here
   // is the sample that could tie it to content, and it should fail this test loudly.
   assert.deepEqual(perConfig[0], perConfig[1]);
-  assert.deepEqual(perConfig[0], { total: 106, distinct: 33, dominant: 64 });
+  // `light` is selector 17, the display light state machine, and it is the majority. `dominant` is
+  // its state 6 without a fade, "bring the light up to whatever the band says", which is 64 of the
+  // 68 on its own. Section 103.
+  assert.deepEqual(perConfig[0],
+    { total: 106, distinct: 33, dominant: 64, light: 68, pin: 2 });
+});
+
+/**
+ * findings.md section 103: what base slot 15's four display light groups carry, in the config.
+ *
+ * The firmware side is `tests/test_backlight.py`. This is the other half: the values a real config
+ * puts in those groups, checked against the constraints the firmware imposes on them rather than
+ * against a copy of themselves. A level above the ceiling would be silently refused by the setter,
+ * so a writer needs this to be a rail.
+ */
+test('base slot 15s display light groups obey the bounds the firmware imposes',
+    skipUnless('one_config', 'one_config_unprogrammed'), () => {
+  const LEVEL_CEILING = 27; // the number of distinct CVREF settings the part can produce
+  for (const name of ['one_config', 'one_config_unprogrammed']) {
+    const c = parse(load(name) as Uint8Array);
+    const groups = parameterGroups(c);
+    assert.ok(groups !== undefined, name);
+    const values = (index: number) => (groups[index] as { values: number[] }).values;
+
+    // Group 1: six entries, of which the code reads all six and keeps the last four as levels.
+    const group1 = values(1);
+    assert.equal(group1.length, 6, `${name}: the length the guard demands`);
+    const levels = group1.slice(2);
+    for (const level of levels) {
+      assert.ok(level <= LEVEL_CEILING, `${name}: level ${level} is above the ceiling`);
+    }
+    assert.deepEqual(levels, [...levels].sort((a, b) => a - b), `${name}: brighter with the band`);
+    // And the two entries nothing reads are above the ceiling, which is how we know nothing does.
+    for (const spare of group1.slice(0, 2)) {
+      assert.ok(spare > LEVEL_CEILING, `${name}: entry ${spare} could have been a level`);
+    }
+
+    // Group 4: three threshold pairs, each pair two apart, which is the hysteresis.
+    const group4 = values(4);
+    assert.equal(group4.length, 6, name);
+    for (let i = 0; i < 6; i += 2) {
+      assert.ok((group4[i] as number) < (group4[i + 1] as number), `${name}: pair ${i / 2}`);
+    }
+    assert.deepEqual(group4, [...group4].sort((a, b) => a - b), `${name}: ascending bands`);
+
+    // Group 9: four timeout pairs at four bytes each, so the declared six entries hold three and
+    // the fourth is in the spare run. The three declared ones ascend, and the spare pair continues.
+    const group9 = values(9);
+    assert.equal(group9.length, 6, name);
+    assert.deepEqual(group9, [...group9].sort((a, b) => a - b), `${name}: longer with the band`);
+
+    // Group 0: one value, the fade's per step delay, and it has to fit the byte it is copied into.
+    const group0 = values(0);
+    assert.equal(group0.length, 1, name);
+    assert.ok((group0[0] as number) <= 0xff, `${name}: the delay is copied into a byte`);
+  }
 });

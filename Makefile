@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
+.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading all clean
 
 BENCH_PORT ?= 8731
 
@@ -39,6 +39,7 @@ help:
 	@echo "watch-columns report the matrix column of every key pressed, read only"
 	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
 	@echo "emit         how much of each sample the emitter can put back; EMIT_ARGS=--detail"
+	@echo "reading      the step 6 depth number; READING_ARGS=--detail for one line a sample"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "all          everything above except ghidra, bench and probe"
@@ -134,6 +135,9 @@ coverage:
 
 emit:
 	@node packages/codec/bin/emit.ts $(EMIT_ARGS)
+
+reading:
+	@node packages/codec/bin/reading.ts $(READING_ARGS)
 
 # The button mapping experiment: poll the keypad scanner's own variable over USB while a human
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.

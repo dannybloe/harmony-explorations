@@ -17,6 +17,10 @@ import {
   readingCoverage,
   stateRecords,
   stateTable,
+  BAND_3F_C0_LIGHT,
+  BAND_3F_C0_PIN,
+  BAND_3F_C0_PROPERTY_LIMIT,
+  BAND_3F_C0_SELECTOR,
   STATE_WRITE_BASE,
 } from '../src/index.ts';
 import type { Instruction } from '../src/index.ts';
@@ -110,8 +114,10 @@ test('a reading distinguishes meaning from placement', () => {
 });
 
 test('a band the dispatcher tests and ignores is a reading, not a gap', () => {
-  // `0x1F` with high byte `0xFC` sits in the gap between two live bands and does nothing.
-  const r = reading({ opcode: 0x1f, operand: 0xfc00 }, 14);
+  // `0x1F` with high byte `0xE0` reaches the dispatcher's floor and does nothing. This test used
+  // `0xFC` as its example until section 104 found that one is intercepted before the dispatcher, so
+  // the example was the one band on the list that is not a no-op.
+  const r = reading({ opcode: 0x1f, operand: 0xe000 }, 14);
   assert.equal(r?.noop, true);
   assert.equal(r?.depth, 'meaning');
   // So does everything below `0x07`, where the operand is never looked at.
@@ -130,11 +136,54 @@ test('0x3F band 0xC0 resolves differently on the two architectures', () => {
   // entry, so arch 14's description sat on arch 12's handler. Section 102 read arch 12's own
   // handler, and the whole point of the divergence is that the two do different things.
   assert.notEqual(arch12.what, arch14.what, 'two different handlers must not share a description');
-  assert.match(arch12.what, /bits 4 to 8 select/);
-  assert.equal(arch12.section, 102);
+  assert.equal(arch12.section, 103);
   // But `0xB0` itself is only a band on arch 14: on arch 12 it falls off the end of the chain.
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 12)?.noop, true);
   assert.equal(reading({ opcode: 0x3f, operand: 0xb001 }, 14)?.noop, undefined);
+});
+
+test('0x3F band 0xC0 resolves by selector on arch 12, and only selector 17 has a meaning', () => {
+  // The band's handler dispatches again on operand bits 4 to 8, so this table does too. One reading
+  // for the band would have to call the whole thing placement, which is what section 102 did and
+  // what understated 68 of the 106 uses in each One config. Section 103.
+  const at = (selector: number, mid = 0, bit0 = 0) =>
+    reading({ opcode: 0x3f, operand: 0xc000 | (selector << 4) | (mid << 1) | bit0 }, 12);
+
+  const light = at(BAND_3F_C0_LIGHT, 6);
+  assert.equal(light?.depth, 'meaning');
+  assert.match(light!.what, /display's light level/);
+
+  assert.equal(at(BAND_3F_C0_PIN)?.depth, 'placement');
+  assert.match(at(BAND_3F_C0_PIN)!.what, /LATC bit 5/);
+
+  for (const selector of [0, 6, BAND_3F_C0_PROPERTY_LIMIT]) {
+    const r = at(selector);
+    assert.equal(r?.depth, 'placement', `selector ${selector}`);
+    assert.match(r!.what, new RegExp(`property ${selector} `));
+  }
+
+  // The selector is five bits, so bit 8 belongs to it as well as to the band's high byte: 16 and 17
+  // arrive as high byte 0xC1. Reading it as four bits puts the light on selector 1.
+  assert.equal(BAND_3F_C0_SELECTOR(0xc000 | (17 << 4)), 17);
+  assert.equal((0xc000 | (17 << 4)) >>> 8, 0xc1);
+
+  // 13 to 15 and 18 to 31 are the seventeen values the handler drops, and the corpus never uses
+  // one. `sections.test.ts` asserts that from the configs; this asserts the table agrees.
+  for (const selector of [13, 15, 18, 31]) {
+    assert.equal(at(selector)?.noop, true, `selector ${selector}`);
+  }
+});
+
+test('0x1F band 0xFC is intercepted by the fetch, so it is not the no-op it looked like', () => {
+  // Section 104. The dispatcher's arm really does nothing, which is why reading the dispatcher
+  // alone gave the wrong answer: the fetch tests for this opcode and band first and never dispatches
+  // it. All four architectures do it, and no config in the corpus emits one.
+  for (const architecture of [8, 9, 12, 14]) {
+    const r = reading({ opcode: 0x1f, operand: 0xfc0e }, architecture);
+    assert.equal(r?.depth, 'meaning', `arch ${architecture}`);
+    assert.notEqual(r?.noop, true, 'a reading, not an absence of one');
+    assert.equal(r?.section, 104);
+  }
 });
 
 test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('one_config'), () => {
@@ -163,7 +212,8 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 const COVERAGE: [string, number, number, number][] = [
   ['h700_config', 19370, 279, 2],
   ['h600_config', 11996, 196, 2],
-  ['one_config', 11419, 221, 0],
+  // Section 103 moved 68 instructions from placement to meaning, the selector 17 uses of band 0xC0.
+  ['one_config', 11487, 153, 0],
   ['h525_config', 1013, 30, 0],
   ['arch8_config_a', 3213, 98, 0],
 ];

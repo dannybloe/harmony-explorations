@@ -518,6 +518,7 @@ make hooks         install .githooks/pre-commit, once per clone
 make golden        compare the golden vectors; golden-write regenerates them
 make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
 make emit          how much of each sample the emitter puts back, and whether it round trips
+make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
@@ -672,7 +673,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 95 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 105 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -777,6 +778,23 @@ produce a config the remote accepts and mishandles.
   where it is `0x0C` on both others.
 * **How big the arch 14 external flash is**, 2 MiB by three routes and 4 MiB by concordance's
   architecture table alone, section 87. One read of the 600 settles it and it is written down.
+* **What the One's analogue channel 1 measures**, section 103, which is what the display light's four
+  levels and four timeouts are chosen by. Two readings fit and they differ only in the sensor's
+  wiring, so the firmware cannot settle it. `read-ram.ts --address 0x110` on a connected remote can,
+  and the three predictions are written down. Two of them say the sampler does not run on USB at all,
+  which is a fact FreeHarmony needs either way. Channel 0 is the battery, `0x111`, eight levels.
+* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
+  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
+  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
+  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
+  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
+  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
+  says two remotes differ at `+0xF582`.
+* **`LATC` bit 5 on arch 12**, ten sites, three of them in the display light subsystem and five in a
+  bit banged loop at `0x2E53E`. Left unnamed rather than guessed at, sections 102 and 103.
+* **The thirteen properties band `0xC0` selectors 0 to 12 set**, from a two bit table in base slot
+  15's spare run through a serial transaction to a device addressed `0xC0`, section 103. Both One
+  configs carry the same table, so comparing configs cannot name them.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
   user manuals say the learned signal was uploaded to their web site, which did the pattern matching
@@ -828,23 +846,30 @@ opcode reaches is not knowing what it means for a config, and counting the first
 reported 100% for a language a tenth of which nobody can name. `packages/codec/src/actions.ts` is
 the table, `reading` gives one instruction's, `readingCoverage` gives a config's:
 
-| | share of 97537 instructions |
+| | share of 87005<!--fact:action_instructions--> instructions |
 |---|---|
-| meaning | 97.9% |
-| placement only | 2.1% |
-| no reading at all | 6 instructions, one opcode, `0x6E` |
+| meaning | 98.2%<!--fact:reading_meaning--> |
+| placement only | 1.8%<!--fact:reading_placement--> |
+| no reading at all | 6<!--fact:reading_unread--> instructions, one opcode, `0x6E` |
 
-Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5% on arch 14, 97.6%
-on arch 8, 97.1% on arch 9 and **97.0% on the One**, whose gap section 74 closed. What is left is
-mostly one thing, `0x3F` band `0xC0` on arch 12 at 424 uses, and it is hardware state rather than
-config structure. **Read as far as it goes in section 102 and it stays placement**, which is the
-point of having a depth: three fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms,
-selector 16 driving `LATC` bit 5, selector 17 entering a state machine at `0x23952`, and 0 to 12
-reading a config byte. The closure is that the corpus uses **exactly** the fifteen selector values the
-handler accepts out of thirty two. **Do not expect the number to move by describing it better**: what
-would move it is `0x23952`, which is a subsystem with eight states and an unnamed peripheral, and the
-band's uses are identical in both One configs despite one having five devices and eight activities and
-the other one and one, so comparing configs cannot tie it to content.
+Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5%<!--fact:reading_arch14-->
+on arch 14, 98.3%<!--fact:reading_arch12--> on arch 12, 97.6%<!--fact:reading_arch8--> on arch 8 and
+96.0%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
+that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
+section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
+all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
+
+What is left is mostly one thing, `0x3F` band `0xC0` on arch 12, and it is hardware state rather than
+config structure. Section 102 read it and it stayed placement; **section 103 read the state machine
+behind selector 17 and it did not**, which is 68 of the band's 106 uses per config. The band is three
+fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms: selector 17 sets the display's
+light level, from four levels, four timeouts, three thresholds and a fade rate that base slot 15
+states; selector 16 drives `LATC` bit 5, unnamed; and 0 to 12 set a property from a two bit table in
+base slot 15's twelve spare bytes, also unnamed. Two closures: the corpus uses **exactly** the fifteen
+selector values the handler accepts out of thirty two, and the light level is an index into the 27
+distinct `CVREF` voltages the part can produce, a table derivable from the datasheet. **Do not expect
+what is left to move by comparing configs**: the band's uses are identical in both One configs despite
+one having five devices and eight activities and the other one and one.
 
 **The two biggest items turned out to be things the remote does, not things a config describes.**
 `0x75` is the **beeper**, four tones from 461 Hz to 4.7 kHz, gated by `0x3F` high byte `0xF3`; and
@@ -874,7 +899,9 @@ two more: a screen program carries a `SCREEN_END` even where a jump means nothin
 was the whole arch 8 family of 49 to 64 single zero bytes; base slot 3's section is three bytes
 longer than the clock record and base slot 17's is two where it names the picture bank; the key
 table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
-bytes belong to base slot 15 and to no group, by position rather than by reading.
+bytes belong to base slot 15 and to no group, by position rather than by reading. **Those twelve are
+read now**, section 103: group 9 continuing past the six entries its header declares, four bytes as
+one more timeout pair and eight as a table of two bit fields, with no remainder.
 
 **Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
 overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:

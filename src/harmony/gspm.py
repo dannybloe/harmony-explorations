@@ -521,8 +521,30 @@ PARAMETER_SLOT = 15
 # for arch 8 or arch 9, so they have no row at all.
 PARAMETER_GROUP_COUNTS: Dict[int, Dict[int, int]] = {
     14: {0: 1, 1: 4, 2: 1, 3: 4, 5: 14, 6: 14, 7: 1},
-    12: {0: 1, 1: 6, 4: 6, 5: 16, 7: 1, 9: 6, 10: 8},
+    # Group 6 was missing here until section 105. The site that reads groups 5 and 6 is one routine
+    # with two arms, and the scan that built this table had taken the arm that falls through and not
+    # the one behind a `BRA`, so only group 5 was recorded. Both demand sixteen.
+    12: {0: 1, 1: 6, 4: 6, 5: 16, 6: 16, 7: 1, 9: 6, 10: 8},
 }
+
+# Base slot 15's group indices, as `docs/findings.md` sections 103 and 105 name them. The firmware's
+# own argument is a byte offset into the group pointer array, so the index is that offset divided by
+# three; reading it as an index directly is what made group 9 look like group 27 for a while.
+PARAMETER_GROUP_STRIDE = 3
+PARAMETER_FADE_DELAY_GROUP = 0      # one value: the display light fade's per step delay
+PARAMETER_LIGHT_LEVEL_GROUP = 1     # entries 2 to 5 are the four light levels, 0 to 27
+PARAMETER_BAND_GROUP = 4            # three threshold pairs on analogue channel 1, with hysteresis
+PARAMETER_BATTERY_GROUPS = (5, 6)   # the two millivolt curves, chosen by the charger input
+PARAMETER_TIMEOUT_GROUP = 9         # four timeout pairs at 4 * band, the fourth in the spare run
+
+# The ceiling the display light setter enforces, and therefore the highest value a level may carry.
+# It is also the number of distinct `CVREF` voltages the part can produce, which is the closure.
+LIGHT_LEVEL_CEILING = 27
+# The twelve bytes above group 9 on arch 12, which no group's header declares and two sites read:
+# four as band 3's timeout pair, then eight as a table of two bit fields. Section 103.
+PARAMETER_SPARE_BYTES = {12: 12}
+PARAMETER_SPARE_TIMEOUT_BYTES = 4
+PARAMETER_SPARE_PROPERTY_BYTES = 8
 
 # Base slot 12 is the timer table. Two more branches of the same descending ladder start and
 # cancel a timer, and the operand's low byte is the index into this section in both. A record

@@ -784,13 +784,21 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   and 6, closed by a thirty day month table and a modulo 12.
 
   **The number is executable**, in `packages/codec/src/actions.ts`, and it carries a depth, because
-  knowing which routine runs is not knowing what an instruction means for a config. **97.9% of the
-  corpus has a meaning**, 2.1% has a placement only, and 6 instructions of 97537 have neither. Per
-  architecture: 98.5% on the 700, 97.6% on arch 8, 97.1% on arch 9, 97.0% on the One.
+  knowing which routine runs is not knowing what an instruction means for a config.
+  **98.2%<!--fact:reading_meaning--> of the corpus has a meaning**, 1.8%<!--fact:reading_placement-->
+  has a placement only, and 6<!--fact:reading_unread--> instructions of
+  87005<!--fact:action_instructions--> have neither. Per architecture:
+  98.5%<!--fact:reading_arch14--> on arch 14, 98.3%<!--fact:reading_arch12--> on arch 12,
+  97.6%<!--fact:reading_arch8--> on arch 8, 96.0%<!--fact:reading_arch9--> on arch 9. `make reading`
+  prints it, and it did not until section 103: the figures were quoted here and in two other
+  documents with nothing recomputing them, and the population they were quoted against does not
+  reproduce.
 
   **What is left is not a codec problem.** The largest remaining family is `0x3F` band `0xC0` on
-  arch 12, 424 uses, a peripheral selected by operand bits 4 to 8. Hardware state, not config
-  structure, which is what the rest of the remainder is too.
+  arch 12. Section 103 read the majority of it, selector 17, which sets the display's light level
+  from four levels and four timeouts base slot 15 states. What is left of it is a pin and thirteen
+  properties, both unnamed, and it is hardware state rather than config structure, which is what the
+  rest of the remainder is too.
 * **Second target is section slot 8**, the only section whose size changed under the described
   change. Candidate, not a label: two other sections were rewritten as heavily without changing
   size. Confirm it the proper way, from the routine that reads the pointer, which on arch 14 is

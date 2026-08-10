@@ -469,8 +469,13 @@ test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWit
   // Section 44 saw these and called them the only untidy number in the section. They sit between
   // the tenth and eleventh group of arch 12's eleven, they are byte identical in all six arch 12
   // containers, and no `u24` anywhere in any container names their address. So whose they are is
-  // settled by position; what they say is not, which is why the emitter carries them rather than
-  // framing them.
+  // settled by position, which is what this test asserts.
+  //
+  // **What they say is settled too**, section 103, and the test below this one asserts that: the
+  // firmware reaches them by overrunning group 9 deliberately, four bytes as one more timeout pair
+  // and eight as a table of two bit fields. They stay carried rather than framed all the same,
+  // because their reader indexes them as bytes and the emitter has nothing to gain from splitting
+  // a run it would only put back the same way.
   const known = [0xff, 0x00, 0xff, 0x00, 0, 0, 0, 0, 0x55, 0x55, 0x55, 0x55];
   let arch12 = 0;
   for (const [name] of ACCOUNTED) {
@@ -492,6 +497,34 @@ test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWit
     assert.ok(Math.min(...groups) < start && Math.max(...groups) > start, `${name}: not a tail`);
   }
   assert.ok(arch12 >= 6, `only ${arch12} arch 12 containers, expected six`);
+});
+
+test('the twelve spare bytes are group 9 overrun by two readers, with nothing left', () => {
+  // Section 103. Both readers start from group 9's first entry, and neither stops at the six entries
+  // its header declares.
+  //
+  //   0x249A0  reads two u16 values at 4 * band, so band 3 takes bytes 12 to 15
+  //   0x2492E  reads one byte at 0x10 + 4 * bit0 + (selector >> 2), so bytes 16 to 23
+  //
+  // Twelve bytes above twelve declared ones, and the two ranges are adjacent and disjoint. That is
+  // the arithmetic; the test exists because it is the whole reason the run is not a mystery, and
+  // because a change to either constant should fail here rather than in a document.
+  const declared = 6 * 2; // six u16 entries
+  const timeout = 4 * 3; // band 3's pair, at 4 * band
+  assert.equal(timeout, declared, 'band 3 starts exactly where the declared entries end');
+  const properties = [];
+  for (let bit0 = 0; bit0 <= 1; bit0 += 1) {
+    for (let selector = 0; selector <= 12; selector += 1) {
+      properties.push(0x10 + 4 * bit0 + (selector >>> 2));
+    }
+  }
+  const lowest = Math.min(...properties);
+  const highest = Math.max(...properties);
+  assert.equal(lowest, timeout + 4, 'the byte table starts where band 3s pair ends');
+  assert.equal(highest, 0x17);
+  assert.equal(highest + 1 - declared, 12, 'twelve bytes above the declared entries, exactly');
+  // Four fields to a byte, and the selector range uses thirteen of the sixteen per value of bit 0.
+  assert.equal(new Set(properties).size, 8, 'eight bytes hold all of it');
 });
 
 test('the key table claims the mode record it is, in whichever form', skipWithoutLab(), () => {

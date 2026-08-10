@@ -96,8 +96,13 @@ const MAIN: ReadonlyMap<number, Reading> = new Map([
  * A band is `[floor, reading]`: the first entry whose floor the sub opcode reaches wins, which is
  * how the firmware's descending chain of `SUBWF` and `BNC` behaves. Anything below the last floor
  * falls off the end of the chain and does nothing.
+ *
+ * A band's reading may be a **function of the whole operand** instead of a constant, for the one
+ * band whose handler dispatches again on a field of its own. Arch 12's `0xC0` is that band: one
+ * Reading for it would have to pick a single depth for three unrelated mechanisms, and the honest
+ * answer differs per selector. Section 103.
  */
-type Band = readonly [number, Reading];
+type Band = readonly [number, Reading | ((operand: number) => Reading)];
 
 const BANDS_3F: readonly Band[] = [
   [0xf0, placed('six stores, disjoint between architectures; nibble 3 is the sound enable', 74)],
@@ -110,7 +115,14 @@ const BANDS_1F: readonly Band[] = [
   [0xff, means('select the current binding table entry, base slot 9', 39)],
   [0xfe, placed('add the low byte to a set the interpreter keeps', 73)],
   [0xfd, placed('remove the low byte from that set', 73)],
-  [0xfc, noop(73)],
+  // Not a no-op, and the dispatcher is not where to look for it: the instruction **fetch** tests
+  // for this exact opcode and band before dispatching, and routes the low byte to the stack of
+  // active handlers instead. So the dispatcher's arm genuinely does nothing and the instruction
+  // never reaches it. Section 104, and no config in the corpus emits one.
+  [
+    0xfc,
+    means('deliver the low byte as a firmware event to the innermost handler that accepts it', 104),
+  ],
   [0xfb, means('load the byte register with the low byte', 73)],
   [0xfa, means('add the low byte to the byte register', 73)],
   [0xf9, means('multiply the byte register by the low byte', 73)],
@@ -177,18 +189,65 @@ const BANDS_07: readonly Band[] = [
  * committed one line below the warning, and the text survived only because it was vague enough to
  * read as true. Arch 12 has its own entry now, from `0x24F24` reached by the dispatcher at
  * `0x25330`, section 102.
+ *
+ * **And it resolves by selector rather than carrying one reading**, section 103, because `0x24F24`
+ * dispatches on the selector into three unrelated mechanisms and only one of them has a meaning.
+ * The single reading it had before was accurate and had to call the whole band placement, which
+ * understated 68 of the 106 uses in each One config.
  */
-const BAND_3F_C0_ARCH12: Reading = placed(
-  'three fields: bits 4 to 8 select, bits 1 to 3 and bit 0 are its arguments. ' +
-    'Selector 16 drives LATC bit 5; 17 hands the other two to a state machine; 0 to 12 read a ' +
-    'config byte at an offset the selector and bit 0 compute',
-  102,
-);
+
+/**
+ * The selector, operand bits 4 to 8. Five bits, so bit 8 is shared with the band's own high byte:
+ * selectors 0 to 15 arrive with high byte `0xC0` and 16 to 31 with `0xC1`.
+ */
+export const BAND_3F_C0_SELECTOR = (operand: number): number => (operand >>> 4) & 0x1f;
+
+/** Selector 17, the display light state machine at `0x23952`. */
+export const BAND_3F_C0_LIGHT = 17;
+/** Selector 16, which drives `LATC` bit 5 and nothing this project can name. */
+export const BAND_3F_C0_PIN = 16;
+/** Selectors 0 to this, the bit table in base slot 15's spare run. */
+export const BAND_3F_C0_PROPERTY_LIMIT = 12;
+
+/**
+ * What one arch 12 `0x3F` `0xC0` instruction does, by selector, the way `0x24F24` decides it.
+ *
+ * Only selector 17 is a meaning. Its effect is stated by base slot 15 groups 0, 1, 4 and 9, so an
+ * editor could offer "turn the display light off", "bring it up to the automatic level" and "fade
+ * rather than snap" and be describing the config rather than the silicon. The other two are
+ * placement: `LATC` bit 5 has no name, and neither do the thirteen properties, whose table is the
+ * same in both One configs so no comparison can name them either.
+ */
+function band3fC0Arch12(operand: number): Reading {
+  const selector = BAND_3F_C0_SELECTOR(operand);
+  if (selector === BAND_3F_C0_LIGHT) {
+    return means(
+      "set the display's light level: bits 1 to 3 pick one of eight states and bit 0 fades " +
+        'rather than snaps. States 2 to 5 take a level and a timeout from base slot 15 groups 1 ' +
+        'and 9, state 6 picks the state from the measured band, states 0 and 1 turn it off',
+      103,
+    );
+  }
+  if (selector === BAND_3F_C0_PIN) {
+    return placed('drives LATC bit 5 from bits 1 to 3, set when they are nonzero', 103);
+  }
+  if (selector <= BAND_3F_C0_PROPERTY_LIMIT) {
+    return placed(
+      'sets property ' +
+        String(selector) +
+        ' to the two bit value base slot 15 states for bit 0, in the twelve bytes above group 9',
+      103,
+    );
+  }
+  // 13 to 15 and 18 to 31 fall to the handler's exit, and the corpus never emits one.
+  return noop(103);
+}
+
 function bandsFor(opcode: number, architecture: number): readonly Band[] | undefined {
   switch (opcode) {
     case 0x3f:
       return architecture === 12
-        ? BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, BAND_3F_C0_ARCH12] as const) : b))
+        ? BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b))
         : BANDS_3F;
     case 0x1f:
       return BANDS_1F;
@@ -219,7 +278,9 @@ export function reading(instruction: Instruction, architecture: number): Reading
 
   // Opcodes from `0x1F` up dispatch on the operand's high byte, those below it on the low byte.
   const sub = opcode >= 0x1f ? operand >>> 8 : operand & 0xff;
-  for (const [floor, what] of bands) if (sub >= floor) return what;
+  for (const [floor, what] of bands) {
+    if (sub >= floor) return typeof what === 'function' ? what(operand) : what;
+  }
 
   // Past the end of the chain: the firmware falls through to its common exit. A reading rather
   // than a gap, since the instruction is well formed and does nothing.

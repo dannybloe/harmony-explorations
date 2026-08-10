@@ -144,6 +144,30 @@ def emit_facts():
     return found
 
 
+def reading_facts():
+    """The step 6 progress number and its depth, per architecture and for the corpus.
+
+    Shelled out for the same reason as the two above, and added on 10 August 2026 for a reason of
+    its own: this was the project's most quoted number and the one with nothing behind it. Every
+    document said 97537 instructions and 97.9% with a meaning, and when section 103 moved the figure
+    for the first time, no sample list reproduced 97537 at all. The population is stated in
+    `packages/codec/bin/reading.ts` now, and the copies carry markers.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/reading.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and re.fullmatch(r'(action_instructions|reading_[a-z0-9]+)', parts[0]):
+            found[parts[0]] = parts[1]
+    return found
+
+
 def corpus_facts():
     """The totals the documents quote, computed over the corpus the tests use."""
     import lab
@@ -312,6 +336,7 @@ def main():
     facts.update(corpus_facts())
     facts.update(coverage_facts())
     facts.update(emit_facts())
+    facts.update(reading_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

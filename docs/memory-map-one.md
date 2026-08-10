@@ -58,8 +58,8 @@ argument that the reads are good is that all three images verify their own heade
 | `0xFF` `+0x0000` | 8438 | an image, version 1.6, checksum `0xCB09` | own checksum verifies; **this is version block field 9** |
 | `0xFF` `+0xE000` | 634 | an image, version 3.4, checksum `0xD9E9`, opening with a run of `BRA`, so a jump table into a callable library | own checksum verifies; **this is version block field 8** |
 | `0xFF` `+0xF400` | 64 | the **identity block**: serial and two GUIDs at `+0x00`, `+0x10` and `+0x20`, then sixteen zero bytes | all three match `concordance -i` for that unit |
-| `0xFF` `+0xF580` | 4 | unidentified | |
-| `0xFF` `+0xF5C0` | 2 | unidentified | |
+| `0xFF` `+0xF580` | 4 | the **battery gauge's scale**, two `u16`: 4 on both units, then a per unit trim. Millivolts a converter count is `4 + trim/65536`, about 4.284, `findings.md` section 105 | read off two remotes, and the trim is one of the 39 bytes they differ in |
+| `0xFF` `+0xF5C0` | 4 | two more `u16` read by the same helper, 94 then `0xFFFF`. Their consumer is not traced | read off two remotes, identical |
 | `0xFF` `+0xF640` | 11 | unidentified, `09 00 20 11 02 18 e0 3c 00 67 01` on the spare | |
 | `0xFF` `+0xFFF8` | 6 | the **configuration words**, program `0x1FFF8` to `0x1FFFD` | gputils `18f87j50_g.lkr`; `findings.md` section 25 |
 
@@ -71,10 +71,26 @@ in 39 bytes across the whole of both pages, and every one of them is inside `+0x
 `+0xF643`. That is the evidence that these pages are firmware rather than per unit state that
 happens to look like code, and it is also why the block's contents are never published here.
 
+**`+0xF582` is now explained by that fact rather than in spite of it**, section 105: it is the fine
+trim on the battery gauge's millivolts per count, and a factory calibration constant is precisely a
+thing that differs unit to unit. Both facts had been recorded here for a day, next to each other,
+without being joined up. The four values are published because they are instrument calibration and
+not identity; `+0xF400` still is not.
+
+**Two memories answer to `0x01F580`, and that has already cost a wrong claim.** This part carries
+128 KiB of program flash on chip at `0x000000` to `0x01FFFF`, and only addresses above it leave on
+the external bus, which is why the application sits at `0x020000`. So a `TBLRD` in the firmware at
+`0x01F580` reads **this page**, while a `READ_FLASH` over USB at `0x01F580` reads the **external**
+part and answers `0xFF`, since the internal window is reached by the top address byte `0xFF` instead.
+The row above and the external table's "everything else is erased" are both correct and they are not
+about the same silicon.
+
 ## What is not established
 
 * **The roles of the three internal images.** They verify, they are versioned, and what they do has
   not been traced. The one at `+0xE000` is a callable library by its shape alone.
-* **The four small records in the `0xFF` page.** Offsets and lengths only.
+* **Two of the four small records in the `0xFF` page.** `+0xF580` is the battery gauge's scale,
+  section 105; `+0xF5C0`'s two words are fetched by the same helper and their consumer is not traced;
+  `+0xF640` is offsets and lengths only.
 * **The table at external `0x000000`.** Named in `findings.md` section 8 and unidentified since.
 * **The part number**, per the last section of [memory-map.md](memory-map.md).

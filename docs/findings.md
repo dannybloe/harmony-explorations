@@ -49,8 +49,18 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty four have been found and corrected so far. The two newest are both in section 98 and both
-were made and caught within the same session, which is the useful thing about them. One read the USB
+Twenty six have been found and corrected so far. The newest two are in sections 103 and 104, and
+they have the same cause read from two sides. Section 84 called base slot 15's twelve spare bytes
+"a shape rather than a reading" because they are the size of six `u16` values with no count byte;
+they are not that shape at all, they are the group before them continuing past its declared length,
+and the reader arrives by arithmetic rather than by a pointer. Section 73 recorded `0x1F` band `0xFC`
+as a no-op because the dispatcher's arm for it does nothing; the instruction never reaches the
+dispatcher, because the fetch tests for it first. Both times the structure was found and the thing
+that reaches it was not, which is the same mistake as this project's own rule about following
+control flow rather than variables, one level higher up.
+
+Before them, section 98's two, which were made and caught within the same session, which is the
+useful thing about them. One read the USB
 buffer descriptor's byte count as a software counter and drew an inference about the codebase from
 three architectures sharing it, when the address is fixed by the part. The other concluded from a
 scan that arch 14 had no learn report header, when the scan had reported it and the filter dropped
@@ -4818,7 +4828,13 @@ into a small integer. The values are non decreasing and end in a repeated sentin
 | Harmony One | 12 | 3000, 3015, 3627 ... 4025, 4051, then 9999 twice |
 | Harmony 880 | 8 | 2500, 2515, 3600 ... 4030, 4045, then 9999 four times |
 
-**Read as millivolts these are battery curves, and that is a conjecture rather than a finding.**
+**Read as millivolts these are battery curves, and that is a conjecture rather than a finding.**<!--superseded-->
+
+> **Section 105 turns it into a finding, without a meter.** The conversion is arithmetic:
+> `mean * word(0x01F580) + ((mean * word(0x01F582)) >> 16)`, which is `4 + trim/65536` millivolts a
+> converter count, about 4.284. The two words are per unit calibration in internal page `0xFF`, and
+> the firmware compares the result against the literal 3400, in the same units as the curve.
+
 What supports it: the same module reads the analogue converter, `ADCON0` and `ADRESL`/`ADRESH` at
 `0x0F938`, and the ranges are the right ones for the cells those remotes take. The 600 runs on two
 alkaline cells, and 2025 to 2525 mV is 1.01 to 1.26 V each. The One has a lithium pack in a
@@ -4829,7 +4845,11 @@ the converter's counts and those numbers was not followed through.
 
 **Group 4 is `96, 98, 308, 310, 768, 770` in all twelve containers on arch 8, 12 and 14**, three
 pairs two apart, which is the shape of three thresholds with hysteresis. Arch 9's equivalent group
-is `600, 602, 766, 769`. What they threshold is not established.
+is `600, 602, 766, 769`. What they threshold is not established.<!--superseded-->
+
+> **Section 103 reads it**: the four sample sum of analogue channel 1, giving a band 0 to 3, and the
+> band chooses the display light's level and its timeout. What channel 1 physically measures is
+> still not established, and that is a different question from what the group thresholds.
 
 ### The numbering is per architecture
 
@@ -4841,11 +4861,21 @@ other section indexed so far transfers between architectures by base slot.
 ### What is not established
 
 **What groups 0, 1, 2, 3, 8, 9 and 10 hold.** Each has a consumer address and a length; none has a
-name.
+name.<!--superseded-->
 
-**Whether the curves really are millivolts**, per the paragraph above.
+> **Groups 0, 1 and 9 are named in section 103**: the display light's fade delay, its four levels and
+> its four timeouts. Groups 2, 3, 8 and 10 are still only a consumer and a length.
 
-**The twelve spare bytes** in the arch 12 run.
+**Whether the curves really are millivolts**, per the paragraph above. Section 105 supports the
+reading with the charger input and a calibration word in flash, and the arithmetic between converter
+counts and millivolts is still not read.
+
+**The twelve spare bytes** in the arch 12 run.<!--superseded-->
+
+> **Read in section 103**: group 9's fourth timeout pair, then a table of two bit fields that band
+> `0xC0` selectors 0 to 12 index. Two readers, twelve bytes, no remainder. What the thirteen
+> properties are is what is left, and both One configs carry the same table so no comparison can
+> name them.
 
 ## 45. Base slot 17 is the touch screen hit map, and that is the last unnamed pointer
 
@@ -8453,6 +8483,13 @@ What is left is small and mostly one thing, `0x3F` band `0xC0` on arch 12 at 424
 selected by operand bits 4 to 8 that drives `LATC` bit 5 among others. It is hardware state rather
 than config structure, which is what the rest of the remainder is too.
 
+> **This table is where the section stood, and two things about it are worth a reader's caution.**
+> Section 103 moved arch 12 by reading the band above, so the live figures are the marked ones in
+> `CLAUDE.md` and `docs/roadmap.md` and `make reading` prints them. And the population these
+> percentages were taken over was never written down: on 10 August 2026 no sample list reproduced
+> 97537, so the shares here are sound relative to each other and the denominator is not recoverable.
+> That is the reason `packages/codec/bin/reading.ts` exists.
+
 ### What would falsify it
 
 An arch 14 config issuing `0x75`, or an arch 12 config using nibble 6 or 7 of the `0x3F` `0xF0`
@@ -9615,12 +9652,23 @@ contiguous with their neighbours, and the pointer array names the eleventh outri
 They are byte identical in all six arch 12 containers, `ff 00 ff 00 00 00 00 00 55 55 55 55`, and no
 `u24` anywhere in any container names their address. Twelve bytes is six `u16` values, which is the
 body of a six value group without its count byte, but a count of `0xff` cannot be read out of the
-first byte and nothing points at them, so that is a shape rather than a reading.
+first byte and nothing points at them, so that is a shape rather than a reading.<!--superseded-->
+
+*Corrected by section 103, in the blockquote below the next paragraph: the shape was wrong and the
+instinct behind it was right.*
 
 **So this claim is an attribution and not a decoding, and the emitter says so**: whose the bytes are
 is settled by position, inside base slot 15's run between two of its groups, and what they say is
 not, so they are carried rather than framed. That distinction is the reason the emitter reports two
-numbers, and this is the first claim to use it deliberately.
+numbers, and this is the first claim to use it deliberately.<!--superseded-->
+
+> **Section 103 decodes them, and the "shape rather than a reading" was the right instinct pointed
+> at the wrong shape.** They are not six `u16` values with a missing count byte. They are group 9
+> continuing past the six entries its own header declares: four bytes that `0x249A0` reads as one
+> more timeout pair, then eight that `0x2492E` reads as bytes, four two bit fields each. The reason
+> nothing points at them is that nothing needs to, because their reader arrives by adding an offset
+> to the group before them. They stay carried rather than framed, which is now a choice about the
+> emitter rather than an admission about the reading.
 
 ### Where it leaves the accounting
 
@@ -12591,9 +12639,308 @@ enough to read as true of both. Arch 12 has its own entry now.
 ### What would move the number
 
 Not this band by itself. `readingCoverage` counts placement as placement however well described, so
-the One stays at 97.0% and saying otherwise would be the depth distinction this project introduced
+the One stays at 97.0%<!--superseded--> and saying otherwise would be the depth distinction this project introduced
 precisely to stop that. What would move it is the state machine at `0x23952`, and that is a subsystem
 rather than an opcode: eight states, a predicate at `0x23CA6`, and a peripheral nobody has named.
+
+> **Read in section 103, and the number does move.** Selector 17 is the display's light level and
+> that is a meaning, so 68 of the band's 106 uses per config leave the placement column. What
+> stayed placement is selector 16 and selectors 0 to 12, and the "peripheral nobody has named" was
+> two peripherals: `CVREF`, which the datasheet names for us, and `LATC` bit 5, which is still
+> unnamed.
+
+## 103. The `0x3F` band `0xC0` state machine sets the display's light level, and base slot 15's twelve spare bytes are read after all
+
+Section 102 stopped at the door of `0x23952` and said what was behind it would need a subsystem
+read rather than an opcode. It did, and the subsystem turns out to be the one part of the remote's
+own behaviour that the config controls end to end: four brightness levels, four timeouts, three
+thresholds and a fade rate, all stated by base slot 15, driving one analogue output and one pin.
+
+### The state machine is eight states over one variable
+
+`0xF10` is the state, and the arms are a descending chain plus two tests above it:
+
+| state | what it does |
+|---|---|
+| 7 | continues only if the light is currently on, `0x23CA6` being "is the cached level nonzero", then falls to 6 |
+| 6 | re-derives the band from the measurement, `0x2346A`, then maps band 0 to 3 onto states 2 to 5 |
+| 5, 4, 3, 2 | target level = the band's level, and program the band's timeout |
+| 1, 0 | target level = 0, which turns it off |
+
+Every arm converges on `0x23B7E`, which saves the state in `0x112` and, when the target is nonzero,
+applies it. The operand's **bit 0** picks how: `0x23BA0` sets the level in one step, `0x23C02` walks
+one index at a time towards it with a delay between steps. So bit 0 is fade against snap, and bits
+1 to 3 are the state, which is exactly the field split section 102 read out of the dispatcher
+without knowing what either field selected.
+
+### The level is an index into the comparator reference, and the table proves it
+
+`0x23BA0` is nine lines of arithmetic and one store:
+
+```
+23ba0: MOVF  gprF12,W        ; the level
+23ba4: SUBLW 0x1b            ; refuse anything above 27
+23baa: MOVF  0x113,W         ; the cached level
+23bb0: BZ    0x23c00         ; and do nothing when it has not changed
+23bb2: BSF   WDTCON,4
+23be2: TBLRD*                ; from 0x2EA54 + level
+23be6: MOVWF CVRCON
+23bf6: BSF   LATA,5          ; when the level is nonzero
+23bfa: BCF   LATA,5          ; when it is zero
+```
+
+`CVRCON` is `0x0F77`, the comparator voltage reference control, and the 28 bytes at `0x2EA54` are
+**not a tuned list**. `CVREF` with `CVRSS` clear takes `CVR/24` of `AVDD` in the low range and
+`1/4 + CVR/32` in the high range, thirty settings for `CVR` 1 to 15 in each, three of which collide
+at `0.375`, `0.5` and `0.625`. Merge the two ranges, prefer the high range on a tie, and you get 27
+distinct voltages in ascending order. The table is `0x00` for off followed by exactly those 27, in
+exactly that order, and the code's own ceiling of 27 is their count:
+
+```
+00  e1 e2 e3 e4 e5 e6 c1 e7 c2 e8 c3 c4 c5 ea c6 eb c7 c8 c9 ed ca ee cb cc cd ce cf
+```
+
+That is the independent numeric closure this project's standard asks for: the table is derivable
+from the part's datasheet and from nothing in the config, and the derivation reproduces both the
+byte order and the bound. `packages/codec` does not need the table, so it is asserted in
+`tests/test_backlight.py` against the derivation rather than against a copy of itself.
+
+**A second build carries the same routine.** The One's safe mode image, internal page `0xFE`, has
+it at `0x04F16` with the same `SUBLW 0x1b`, the same `MOVWF CVRCON`, the same `LATA` bit 5, and the
+same 28 bytes at `0xC0E0`. Two independently built images, one architecture; there is no arch 14 or
+arch 9 equivalent, which is consistent with band `0xC0` being the one part of the second operand
+space that does not port.
+
+**Do not read the `ADSHR` window around the store as evidence.** `0xF77` is not one of the ten
+shadowed addresses, so `BSF WDTCON,4` changes nothing there, and the same empty bracket appears at
+`0x23440` and `0x232AE` with **no instruction at all** between the set and the clear. It is a
+compiler idiom for a block that might have needed the shadow set, and a listing that treats every
+occurrence as meaningful will invent a second register.
+
+### Base slot 15 states all of it, and four groups get names
+
+The guard `0x23262` is the one section 44 read: its first argument is a **byte offset into the
+pointer array**, so offset `3 * n` reaches group `n`. Four groups feed this subsystem, and the
+lengths it demands are the ones section 44 already predicted from the call sites:
+
+| group | length | what it holds | the Harmony One's values | firmware default |
+|---|---|---|---|---|
+| 0 | 1 | the fade's per step delay | 44 | 50 |
+| 1 | 6 | entries 2 to 5 are the four levels; entries 0 and 1 are read and discarded | 20, 20, 26, 26 | 9, 16, 24, 27 |
+| 4 | 6 | three threshold pairs, two apart, that turn the measurement into a band 0 to 3 | 96, 98, 308, 310, 768, 770 | none, the band stays put |
+| 9 | 6 | four timeout pairs at `4 * band`, so band 3's pair is past the declared end | 16, 16, 64, 64, 128, 128 | 64 |
+
+Group 1's first two entries are the interesting detail: the code reads six `u16` values and keeps
+the last four. Both One configs carry 38 there, which is **above the ceiling of 27**, so they could
+not be levels even if something read them. Whatever they were for, nothing in this firmware reads
+them.
+
+Section 44 left group 4 as "three thresholds with hysteresis, what they threshold is not
+established".<!--superseded--> What they threshold is the four sample sum of analogue channel 1, and
+the hysteresis is real: inside a band the level only moves if it has crossed the whole band,
+`0x2353A`.
+
+### The twelve spare bytes are read by exactly two sites, and nothing is left over
+
+Section 44 called them "the only untidy number here" and section 84 claimed them by position rather
+than by reading. They are read, they are read by this band, and the two readers account for all
+twelve:
+
+```
+group 9's declared entries    10 00 10 00 40 00 40 00 80 00 80 00
+the twelve bytes above them   ff 00 ff 00  00 00 00 00  55 55 55 55
+                              \________/   \_________________________/
+                              band 3's     a table of two bit fields
+                              timeout      band 0xC0 selectors 0 to 12 index
+```
+
+`0x249A0` adds `4 * band` to the cursor and reads two `u16` values, so band 3 reads bytes 12 to 15
+of a group whose header declares six entries. It gets 255 and 255, which continues 16, 64, 128 as a
+ratchet upwards rather than being noise. `0x2492E`, which is band `0xC0`'s handler for selectors 0
+to 12, reads a **single byte** at `0x10 + 4 * bit0 + (selector >> 2)` and then extracts the two bit
+field `selector & 3` from it, so eight bytes hold sixteen fields per value of bit 0, thirteen of
+which the selector range uses. The values are `0x00` four times and `0x55` four times, which is
+every field zero for bit 0 clear and every field one for bit 0 set.
+
+So the instruction is "set property `selector` to the state base slot 15 gives for bit 0", and both
+One configs make that a plain on and off. What the thirteen properties are is not established, and
+the corpus cannot help: both configs carry the same table.
+
+**Twelve bytes, twelve accounted for, in both One configs.** The accounting number does not move,
+because section 84 had already claimed them; what moves is that arch 12's base slot 15 no longer
+has a run whose only justification is that it sits between two things.
+
+### The band it responds to is not the battery, and separating the two closes something else
+
+There are two four sample-or-more analogue quantities in this firmware and only two analogue
+channels, and the earlier reading of this subsystem had them confused.
+
+* **Channel 0**, eight samples averaged at `0x2372A`, then compared against base slot 15 group 5 or
+  group 6 at `0x238BC`, giving an **eight** level result in `0x111`. That is section 44's millivolt
+  curve, and it is the battery.
+* **Channel 1**, four samples summed at `0x235D2`, then group 4's three pairs at `0x234D4`, giving
+  a **four** level result in `0x110`. That is what this subsystem reads.
+
+**What channel 1 measures is not established and is deliberately not named here.** Two readings fit
+and they differ only in how the sensor is wired: an ambient light sensor whose voltage rises with
+light, in which case a brighter room gets a brighter screen for longer, or one whose voltage rises
+in the dark, in which case a dark room does. The firmware cannot distinguish them, and this project
+has already recorded what happens when a peripheral is named from its shape, section 13's inverted
+polarities. It is left as "the band".
+
+**A read only bench measurement settles it in one command, and the prediction goes here first.**
+`0x110` is a single data memory byte, so `read-ram.ts --address 0x110` reads it, and covering the
+sensor while the remote is on USB should move it. Three outcomes, committed before anyone looks:
+
+1. it reads 0 to 3 and changes when the sensor is covered, which names the polarity and therefore
+   the sensor;
+2. it reads a plausible value and never changes, which means the sampler does not run while the
+   remote is on USB, section 48's finding about the keypad applied to the analogue path;
+3. it reads 0 always, which is the same conclusion with less information.
+
+Outcomes 2 and 3 are the likely ones and they are worth having: they would say this whole subsystem
+is unobservable over USB, which is a fact FreeHarmony needs about what it can and cannot show.
+
+### What this does to the reading depth
+
+Selector 17 is a meaning by the definition in `packages/codec/src/actions.ts`: its effect is tied to
+data the config states, and an editor could put "turn the display light off", "bring it up to the
+automatic level" and "fade rather than snap" in front of a user. Selector 16 and selectors 0 to 12
+stay placement, because `LATC` bit 5 and the thirteen properties have no names.
+
+So the band resolves by selector now, the way the firmware does, rather than carrying one reading
+for three mechanisms. The split in each One config is 68 uses of selector 17 against 36 of
+selectors 0 to 12 and 2 of selector 16, and 65 of the 68 are state 6 without a fade, which is
+"bring the light up to whatever the band says". Three instructions in the whole corpus set bit 0.
+
+## 104. `0x1F` band `0xFC` is intercepted before the dispatcher, on all four architectures
+
+Found while asking how a band change reaches a config. `0x2346A` announces one by calling
+`0x24BF0`, which pushes three bytes onto the action list queue: the code, `0xFC`, `0x1F`. The queue
+is popped in the same order into operand low, operand high and opcode, so the instruction is
+`0x1F` with operand `0xFC00 | code`.
+
+`packages/codec` said that instruction does nothing. It says so because section 73 read the `0x1F`
+dispatcher and its `0xFC` arm genuinely falls through to the common exit. **The dispatcher never
+sees it.** The instruction fetch tests for it first:
+
+```
+24dd2: RCALL 0x24b40        ; pop three bytes
+24dde: RCALL 0x24b40
+24de4: MOVLW 0x1f
+24de6: SUBWF 0xd46,W        ; the opcode
+24de8: BNZ   0x24df8        ; not this: dispatch normally
+24dea: MOVLW 0xfc
+24dec: SUBWF 0xd45,W        ; the operand's high byte
+24dee: BNZ   0x24df8
+24df0: MOVFF 0xd44,0xeb2    ; the low byte becomes the event code
+24df4: GOTO  0x24d40        ; and the dispatcher is skipped entirely
+```
+
+`0x24D40` walks the stack of active handlers downwards from `0xE19` and offers the code to each
+until one accepts it. So the reading is "deliver the low byte as an event to the innermost handler
+that will take it", and a table built from the dispatcher alone cannot see that.
+
+**All four architectures do it, with the same two comparisons in the same place:** arch 12
+`0x24DE4`, the Harmony 600 `0x0E752`, the Harmony 700 `0x0EB38`, the Harmony 525 `0x01BB4`. So this
+is not an arch 12 divergence, unlike band `0xC0`.
+
+**No config in the corpus uses it**, in any of the six samples, which is why nothing caught it: the
+wrong reading was never exercised. That also means the correction moves no numbers. It is worth
+recording anyway, because the shape of the mistake generalises: this project's rule is "read a
+dispatcher, not one handler at a time", and the rule has a second half it did not state, which is
+that a dispatcher is not the only thing that can consume an opcode. Anything upstream of it gets a
+first look.
+
+## 105. `PORTB` bit 1 is the charger input, and the battery curve really is millivolts
+
+Section 44 read groups 5 and 6 as a measurement to level curve, noted that "the consumer picks
+between them on a run time condition", and read them as millivolts while calling that "a conjecture
+rather than a finding".<!--superseded--> The condition is readable, and so is the arithmetic the
+conjecture needed.
+
+`0x24042` is four instructions:
+
+```
+24042: MOVF  PORTB,W
+24044: ANDLW 0x02
+24046: BNZ   0x24050       ; PORTB<1> set: return 0
+24048: MOVF  0x2d7,W
+2404a: ANDLW 0x01
+2404e: BZ    0x24052       ; and a software flag clear: return 1
+```
+
+`0x238A2` uses the answer to choose group 6 when it is 1 and group 5 when it is 0. So the polarity is
+stated: **`PORTB` bit 1 clear is charging.**
+
+### The scale is millivolts per count, and the trim word is per unit
+
+Section 44 wanted a meter on a board. It does not need one, because the conversion is arithmetic and
+every constant in it is readable.
+
+`0x2372A` sums **eight** samples of analogue channel 0 and shifts right three, so it holds a mean in
+0 to 1023. Then two words come out of flash through the helper at `0x2E70A`, which is nothing but
+"read a `u16` at a fixed address":
+
+| routine | address | value |
+|---|---|---|
+| `0x231B0` | `0x01F580` | 4, on both Harmony Ones |
+| `0x231CE` | `0x01F582` | 18724 on one unit, 18416 on the other |
+| `0x231EC` | `0x01F5C0` | 94, on both |
+| `0x2320A` | `0x01F5C2` | `0xFFFF`, on both |
+
+The caller tests each for `0xFFFF` and substitutes 1, so an erased word means "not calibrated". Then
+`0x2E874` multiplies, twice, and the result is
+
+```
+millivolts = mean * word(0x01F580) + ((mean * word(0x01F582)) >> 16)
+```
+
+which is `mean * (4 + 18724/65536)`, or **4.2857 mV a count**. Full scale is then 4384 mV, and that
+is the closure: the curve runs 3000 to 4051, which needs 700 to 945 counts of the 1023 available, so
+the whole of a lithium cell's range fits with headroom and nothing else does. A scale of 4 would put
+a full cell off the top of the curve and a scale of 8 would put an empty one below its bottom.
+
+**And the firmware compares the result against a literal in the same units.** At `0x2385C` it tests
+the result against `0x0D48`, which is 3400, with the charger absent, and raises a flag. 3400 mV is a
+low battery warning for a single lithium cell, it sits inside the config's own curve, and it is a
+constant in the code rather than anything a config states. Two numbers in the same units, one from
+the config and one from the firmware, agreeing about what a battery is.
+
+So section 44's conjecture is a finding. Five things support it and none of them is the shape of the
+numbers: the eight sample mean, the scale word, the second word's per unit trim, the literal at 3400,
+and the curve pair.
+
+### The trim word was already in the lab, filed as unidentified
+
+**A claim written earlier in this section said nothing here had read those four words, and that was
+wrong.** The reasoning was that the arch 12 dumps cover flash `0x000000` to `0x010000` and
+`0x020000` upwards, so `0x01F580` falls in the gap. It does, in **external** flash. The processor's
+`TBLPTR` does not reach external flash there: this part has 128 KiB of on-chip program memory at
+`0x000000` to `0x01FFFF`, and only addresses above it go out on the external bus, which is why the
+application lives at `0x020000`. So `0x01F580` is **internal**, page `0xFF` offset `0xF580`, and both
+Harmony Ones' `0xFF` pages have been read in full.
+
+That is worth stating as a hazard rather than as a slip. **The same numeric address names two
+different memories depending on who asks.** A `TBLRD` at `0x01F580` reads on-chip flash; a
+`READ_FLASH` over USB at `0x01F580` reads the external part and answers `0xFF`, because the internal
+window is reached by the top address byte `0xFF` instead. Both are correct and they disagree, and
+`docs/memory-map-one.md` lists them as separate rows without saying they overlap.
+
+`docs/memory-map-one.md` already had these bytes, as two rows reading "unidentified": `0xFF`
+`+0xF580`, four bytes, and `0xFF` `+0xF5C0`, two. It also already recorded that two Harmony Ones
+differ in 39 bytes and that `+0xF582` is one of the three places they do. Which is exactly what a per
+unit calibration trim would look like, and nothing had connected the two facts.
+
+Publishing these four values is deliberate. They are instrument calibration and not identity: the
+identity block is `+0xF400` and is never published here, and the page's other per unit record at
+`+0xF640` is already quoted in the memory map on the same reasoning.
+
+### What is still not established
+
+The word at `0x01F5C0`, 94 on both units, and its partner at `0x01F5C2`, which is erased on both so
+its consumer runs on the substituted 1. Both are read by the same helper and neither has a caller
+traced here. And what the flag `0x2385C` raises at 3400 mV is used for.
 
 ## References
 

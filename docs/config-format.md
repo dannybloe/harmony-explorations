@@ -879,9 +879,17 @@ The groups are laid out in one run immediately before the pointer array. On arch
 arch 14 the run is exactly the sum of the groups; arch 12 has twelve spare bytes in it.
 
 Those twelve sit **between the tenth and eleventh group**, they are `ff 00 ff 00 00 00 00 00 55 55
-55 55` in all six arch 12 containers, and no `u24` in any container names their address. So they
-belong to this section by position and their contents are **unread**; a writer carries them through
-unchanged. `docs/findings.md` section 84.
+55 55` in all six arch 12 containers, and no `u24` in any container names their address. They belong
+to this section by position, and **the firmware reaches them by overrunning group 9 on purpose**:
+
+| bytes above group 9's first entry | read by | as |
+|---|---|---|
+| 12 to 15 | `0x249A0` | the fourth timeout pair, at four bytes a band |
+| 16 to 23 | `0x2492E` | a table of two bit fields, four to a byte |
+
+So group 9 is in effect a 24 byte structure whose header declares only its first six `u16` values. A
+writer reproduces all twelve bytes; an editor that changed the declared length would move both
+readers' targets without any check refusing it. `docs/findings.md` sections 84 and 103.
 
 **The firmware demands the section's count and every group's length.** The count is 9 on arch 14
 and 11 on arch 12. Each group is read only when its length matches the number that build expects,
@@ -895,7 +903,7 @@ and otherwise the subsystem silently uses constants compiled into the firmware:
 | 3 | 4 | |
 | 4 | | 6 |
 | 5 | 14 | 16 |
-| 6 | 14 | |
+| 6 | 14 | 16 |
 | 7 | 1 | 1 |
 | 9 | | 6 |
 | 10 | | 8 |
@@ -907,14 +915,31 @@ this table and `gspm.parameter_group_lengths_match` checks a container against i
 **A group index is not portable between architectures.** Arch 9's five groups line up with a subset
 of arch 12's in a different order, which is unlike every other indexed structure in this format.
 
-Group 7 is a single value handed to the one second scheduler, with a firmware default of 10, and
-every config carries 0. Groups 5 and 6 are two versions of a non decreasing curve walked against a
-measurement to produce a level, and reading them as battery millivolts fits the cells those remotes
-take but is *a conjecture, not established*. Group 4 is `96, 98, 308, 310, 768, 770` in all twelve
-arch 8, 12 and 14 containers, and what it thresholds is *not established*. The rest are
-*not established*.
+What the arch 12 groups hold, from the routines that read them. Every default below is a literal in
+the firmware, used when the length does not match:
 
-Read with `gspm.parameter_groups`. [findings.md](findings.md) section 44.
+| group | what it is | the Harmony One's values | default |
+|---|---|---|---|
+| 0 | the display light fade's per step delay | 44 | 50 |
+| 1 | entries 2 to 5 are four display light levels, 0 to 27; entries 0 and 1 are read and discarded | 38, 38, 20, 20, 26, 26 | 9, 16, 24, 27 |
+| 4 | three threshold pairs, two apart, turning the four sample sum of analogue channel 1 into a band 0 to 3 with hysteresis | 96, 98, 308, 310, 768, 770 | none |
+| 5, 6 | two measurement to level curves over analogue channel 0, eight levels, chosen by the charger input on `PORTB` bit 1: group 6 when it is clear | 3000 to 4051, and 3000 to 4170 | none |
+| 7 | a timeout in seconds, handed to the one second scheduler | 0 | 10 |
+| 9 | four timeout pairs at four bytes a band; band 3's pair is in the spare run | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
+
+A level above 27 is *silently refused* by the setter, which is a rail: 27 is the number of distinct
+`CVREF` voltages the part can produce, and the ladder that maps a level to one is in the firmware.
+
+**Groups 5 and 6 are battery millivolts**, confirmed rather than conjectured. On arch 12 the value
+walked against them is `mean * A + ((mean * B) >> 16)` where the mean is eight samples of analogue
+channel 0 and `A` and `B` are two `u16` in the remote's own internal page `0xFF`, giving 4.284 mV a
+converter count, and the firmware compares the result against the literal 3400. `findings.md`
+section 105.
+
+What analogue channel 1 measures is *not established*. Groups 2, 3, 8 and 10 are *not established*,
+and so are the thirteen properties the two bit table names.
+
+Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 and 105.
 
 ### Base slot 12: the timer table
 
@@ -1689,9 +1714,36 @@ codec needs from them is this:
 is the only structure in the format so far that is not one table across architectures, so a `0x3F`
 band **must not** be ported between them. The failed prediction that found it is in section 73.
 
-Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` band
-`0xFC`, `0x1F` below `0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles
-3 and 5. The corpus uses several of them, 84 times for the last alone.
+Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below
+`0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles 3 and 5. The corpus
+uses several of them, 84 times for the last alone.
+
+**`0x1F` band `0xFC` is not one of them, and used to be listed as one.** The dispatcher's arm for it
+really does nothing, and the instruction never reaches the dispatcher: the fetch tests for opcode
+`0x1F` with operand high byte `0xFC` first, on all four architectures, and delivers the low byte to
+the innermost active handler that accepts it instead. It is how the firmware raises its own events,
+and **no config in the corpus emits one**. Section 104.
+
+#### Arch 12's `0x3F` band `0xC0` resolves by selector
+
+**Confirmed on two arch 12 configs and two images**, 106 uses each. The operand carries three
+fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and the third is a five bit selector, so selectors 0
+to 15 arrive with high byte `0xC0` and 16 to 31 with `0xC1`. The handler accepts fifteen values and
+drops the other seventeen, and the corpus uses exactly the fifteen:
+
+| selector | what it does | uses per config |
+|---|---|---|
+| 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a timeout from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off | 68 |
+| 0 to 12 | sets property `selector` to the two bit value base slot 15's spare run states for bit 0. The properties are *not established* | 36 |
+| 16 | drives `LATC` bit 5 from bits 1 to 3. The pin's load is *not established* | 2 |
+| 13 to 15, 18 to 31 | nothing: the handler falls to its exit | 0 |
+
+64 of the 68 are selector 17 state 6 without a fade. **The band's uses are identical in both One
+configs**, one of which has five devices and eight activities where the other has one and one, so
+nothing here varies with what the remote is set up to control.
+
+`actions.BAND_3F_C0_SELECTOR` extracts the selector and `actions.reading` resolves the instruction.
+[findings.md](findings.md) sections 102 and 103.
 
 #### `0x75` sounds a tone
 
