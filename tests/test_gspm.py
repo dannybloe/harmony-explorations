@@ -1878,6 +1878,213 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
         with self.assertRaises(gspm.GspmError):
             gspm.base_slot(7, 0)
 
+    def test_arch_10_has_no_alignment_and_therefore_no_readers(self):
+        """
+        Section 117: arch 10 is **not** a relabelling of the base layout, so it must stay out of
+        `INSERTED_SLOTS` and every reader must refuse rather than read the neighbouring section.
+
+        This is the gate the two Harmony 890 configs sit behind. Adding an entry here without
+        deriving the mapping would turn twenty refusals into twenty plausible wrong answers, which
+        is the failure mode the arch 9 register map already cost this project once.
+        """
+        self.assertNotIn(10, gspm.INSERTED_SLOTS)
+        for base in (0, 3, 5, 10, 17):
+            with self.subTest(base=base):
+                with self.assertRaises(gspm.GspmError):
+                    gspm.arch_slot(10, base)
+
+
+class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
+    """
+    Section 117. The base used to come out of the end marker's position, and the check that was
+    meant to validate it asked whether `end_addr` lands on the marker, which it then always did.
+
+    These tests are about the two halves of that: the anchor recovers every base that was already
+    established, and the check it frees up can now fail on a real sample.
+    """
+
+    def test_every_container_holds_exactly_one_validating_clock_record(self):
+        """The premise. One record is what makes it an anchor rather than a search."""
+        lab.require(*lab.CONTAINERS)
+        for name in lab.CONTAINERS:
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                self.assertEqual(len(gspm.find_clock_records(c.blob)), 1)
+
+    def test_the_anchor_recovers_every_base_the_old_reading_got_right(self):
+        """
+        The calibration, and it is the whole argument: 23 containers had a base established by the
+        marker subtraction and the anchor agrees with all of them, across five architectures and
+        six distinct bases.
+        """
+        expected = {
+            'one_safemode': 0x002000, 'h700_gspm': 0x020000, 'h600_safemode_gspm': 0x020000,
+            'h650_safemode_gspm': 0x020000, 'h525_safemode_ahcm': 0x018000,
+            'one_config': 0x040000, 'one_config_unprogrammed': 0x040000,
+            'h600_config': 0x030000, 'h700_config': 0x030000, 'h700_config_2': 0x030000,
+            'h525_config': 0x020000, 'h525_config_2': 0x020000,
+            'arch8_config_a': 0x020000, 'arch8_config_885': 0x020000,
+            'h890_config': 0x030000,
+        }
+        lab.require(*expected)
+        for name, base in sorted(expected.items()):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                anchored = gspm.recover_flash_base(
+                    c.blob, [s.address for s in c.sections], c.end_addr)
+                self.assertEqual(anchored, base)
+                self.assertEqual(c.flash_base, base)
+
+    def test_the_two_readings_disagree_on_one_sample_and_the_anchor_is_right(self):
+        """
+        `H890-Bedroom-2` is the counterexample. Its header declares an end 864 bytes before its own
+        end marker, so the marker subtraction returns a base 864 too low, silently.
+
+        The anchor is believed over it for two independent reasons stated here rather than in
+        prose: the other 890 config, which is consistent, gives 0x030000 too, and the clock record
+        the anchor lands on validates its own day of week.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        c = gspm.parse(lab.load('h890_config_2'))
+        marker_reading = c.end_addr - (len(c.blob) - len(c.family.end_marker))
+        self.assertEqual(marker_reading, 0x02FCA0)
+        self.assertEqual(c.flash_base, 0x030000)
+        self.assertEqual(c.flash_base - marker_reading, 864)
+        # The consistent sibling agrees, and both are linked at a flash block boundary.
+        self.assertEqual(gspm.parse(lab.load('h890_config')).flash_base, 0x030000)
+        self.assertEqual(c.flash_base % gspm.FLASH_BASE_ALIGNMENT, 0)
+
+    def test_the_end_marker_check_can_now_fail_and_does(self):
+        """
+        The negative. Under the old reading no input could fail this check, because the base was
+        derived from the thing it tested. A check that cannot fail is not a check.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        self.assertTrue(gspm.parse(lab.load('h890_config'))
+                        .checks['end_addr_points_at_end_marker'])
+        self.assertFalse(gspm.parse(lab.load('h890_config_2'))
+                         .checks['end_addr_points_at_end_marker'])
+
+    def test_a_container_with_no_clock_record_falls_back_rather_than_guessing(self):
+        """
+        The anchor refuses when it has nothing to anchor on, which is why `parse` keeps the marker
+        subtraction as a fallback. Nothing in the corpus reaches this path, so it is exercised by
+        damaging a copy rather than by a sample.
+        """
+        lab.require('h600_config')
+        c = gspm.parse(lab.load('h600_config'))
+        damaged = bytearray(c.blob)
+        off = gspm.find_clock_records(c.blob)[0]
+        damaged[off:off + 2] = b'\x00\x00'
+        self.assertEqual(gspm.find_clock_records(bytes(damaged)), [])
+        self.assertIsNone(gspm.recover_flash_base(
+            bytes(damaged), [s.address for s in c.sections], c.end_addr))
+        self.assertEqual(gspm.parse(bytes(damaged)).flash_base, c.flash_base)
+
+    def test_a_wrong_base_is_silent_which_is_why_the_anchor_exists(self):
+        """
+        The cost of getting it wrong, asserted rather than argued. Under the base the marker
+        subtraction returns for this sample, the container still passes `sections_within_blob`: a
+        wrong base does not fail, it reads the neighbouring bytes.
+        """
+        lab.require('h890_config_2')
+        c = gspm.parse(lab.load('h890_config_2'))
+        wrong = 0x02FCA0
+        self.assertTrue(all(s.is_null or 0 <= s.address - wrong < len(c.blob)
+                            for s in c.sections))
+        # And the version word in slot 1 reads differently under each, which is the quiet kind of
+        # wrong this guards: two numbers, no error, one of them meaningless.
+        self.assertNotEqual(c.blob[c.sections[1].address - wrong],
+                            c.blob[c.sections[1].address - c.flash_base])
+
+
+class TestTheTwoHarmony890Configs(unittest.TestCase):
+    """
+    Section 117. Arch 10 is in the corpus and nothing reads it; these tests pin what is measured
+    about it so that a later reader cannot be built on a guess.
+    """
+
+    def test_both_are_format_1_7_with_23_pointer_slots(self):
+        lab.require('h890_config', 'h890_config_2')
+        for name in ('h890_config', 'h890_config_2'):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                self.assertEqual(c.format_raw, 0x1700)
+                self.assertEqual(c.pointer_count, 23)
+                self.assertEqual(c.family.magic, b'TPTP')
+                self.assertEqual(c.marker, b'WLWL')
+                # 23 is deliberately not in KNOWN_POINTER_COUNTS: the count is measured and the
+                # layout is not, so the check reports that rather than blessing it.
+                self.assertFalse(c.checks['pointer_count_known'])
+
+    def test_the_clock_record_sits_one_slot_later_than_everywhere_else(self):
+        """
+        The one thing the mapping does say. On arch 8, 9, 12 and 14 the clock is base slot 3 at raw
+        slot 3; on arch 10 the single validating record is the target of raw slot 4. So arch 10
+        inserts a slot below 3, and `slot3_is_a_timestamp` fails for that reason rather than for
+        want of a record.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        for name in ('h890_config', 'h890_config_2'):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                off = gspm.find_clock_records(c.blob)[0]
+                landing = [i for i, s in enumerate(c.sections)
+                           if not s.is_null and s.address - c.flash_base == off]
+                self.assertEqual(landing, [4])
+                self.assertFalse(c.checks['slot3_is_a_timestamp'])
+                self.assertIsNone(c.built_at)
+
+    def test_neither_config_carries_a_name_tree(self):
+        """
+        No validating 0xFEED frame anywhere in either payload, so an arch 10 config does not state
+        the names of its devices and activities the way section 86 reads them everywhere else.
+
+        Stated as the measurement and not as an interpretation: what is established is that this
+        parser's frame validator finds nothing, not that the format has no equivalent structure.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        for name in ('h890_config', 'h890_config_2'):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                frames = [off for off in range(len(c.blob) - 7)
+                          if c.blob[off:off + 2] == gspm.FRAME_COOKIE
+                          and gspm.frame_length(c.blob, off) is not None]
+                self.assertEqual(frames, [])
+                self.assertFalse(c.checks['slot0_is_a_feed_frame'])
+
+    def test_the_pair_agrees_on_every_pointer_and_was_generated_minutes_apart(self):
+        """
+        Two configs of one setup, generated three minutes apart, agreeing on all 23 addresses and
+        differing in almost every byte after the first 4875. The agreement is why the second one's
+        base could be checked against the first at all.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        a = gspm.parse(lab.load('h890_config'))
+        b = gspm.parse(lab.load('h890_config_2'))
+        self.assertEqual([s.address for s in a.sections], [s.address for s in b.sections])
+        self.assertEqual(a.end_addr, b.end_addr)
+        # Same version word once the base is right, which is one more agreement the wrong base
+        # destroyed: it reported two different numbers for a field both files share.
+        self.assertEqual(a.version_word, b.version_word)
+        stamps = [gspm.clock_record(c.blob, gspm.find_clock_records(c.blob)[0]) for c in (a, b)]
+        self.assertEqual(len({s.date() for s in stamps}), 1)
+        self.assertLess(abs((stamps[0] - stamps[1]).total_seconds()), 600)
+
+    def test_only_the_last_section_differs_in_length(self):
+        """
+        Which is why one file can be 864 bytes longer while every pointer stays put: the growth is
+        all in the final section, the picture bank, and `end_addr` is the only header field that
+        should have moved with it. In the inconsistent file it did not.
+        """
+        lab.require('h890_config', 'h890_config_2')
+        a = gspm.parse(lab.load('h890_config'))
+        b = gspm.parse(lab.load('h890_config_2'))
+        self.assertEqual(len(b.blob) - len(a.blob), 864)
+        for slot in range(a.pointer_count - 1):
+            with self.subTest(slot=slot):
+                self.assertEqual(a.section_length(slot), b.section_length(slot))
+
 
 class TestArch12SafeModeConfig(unittest.TestCase):
     def test_two_key_recovery_ui(self):

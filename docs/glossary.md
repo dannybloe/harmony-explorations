@@ -93,7 +93,9 @@ belongs to but **not** which architecture, because two architectures can share o
 
 **end marker** (our name). Four bytes at the very end, `PTYY`, `DKDK` or `MCHA` respectively. That
 the header's stated end address lands exactly on it is one of the checks that makes a parse
-trustworthy.
+trustworthy, and it became one only in section 117: while the base address was computed from the
+marker's position, that check tested its own assumption and could not fail. One Harmony 890 config
+fails it, and the failure is real.
 
 **pointer table** (our name). A list near the start of the file saying where each part of the
 config lives. Each entry is a spare byte plus a three byte address.

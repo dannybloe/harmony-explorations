@@ -80,23 +80,52 @@ a different layout.
 Note that `format` is not an architecture identifier: arch 9 and arch 14 both carry `0x1400`.
 It is a generation of the format, and the cookie is what says which architecture.
 
-**Arch 10 is the newest row and nothing beyond this table is read from it**, section 115: two
-Harmony 890 configs, format 1.7 and **23 pointer slots**, based at flash `0x030000`. The framing
-verifies, the end address lands on the end marker and one of the two recomputes its trailer
-checksum, so the container layout above holds. The **slot mapping does not**: 23 is a length with
-no derivation, so `arch_slot` cannot translate and every section reader is gated off. Do not read
-an arch 10 section by assuming which slots the three extra ones are.
+**Arch 10 is the newest row and nothing beyond this table is read from it**, sections 115 and 117:
+two Harmony 890 configs, format 1.7 and **23 pointer slots**, both based at flash `0x030000`. The
+framing verifies and one of the two recomputes its trailer checksum, so the container layout above
+holds.
+
+The **slot mapping does not, and it is not a relabelling of the twenty**, section 117. All 1330 ways
+of placing three insertions were scored by asking seventeen readers to parse; the best reaches 34 of
+47 with an eight way tie, where arch 8, 9 and 14 each score 47 uniquely. Five readers are satisfied
+by no mapping at all, so the name tree, the log area, the mode records, the font sets and the value
+maps differ in form on arch 10 and not merely in position. `INSERTED_SLOTS` therefore has no entry
+for 10, `arch_slot` refuses, and every section reader is gated off. **Do not add an entry to ungate
+them**: a guessed mapping turns twenty refusals into twenty plausible wrong answers.
+
+Two things the samples do say. The single validating clock record is raw slot 4's target in both, so
+arch 10 inserts a slot below base slot 3. And **no `0xFEED` frame validates anywhere in either
+payload**, so an arch 10 config is not known to state the names of its devices and activities at
+all, which every other architecture does in base slot 0.
 
 ### Recovering the base address
 
-Needed to turn the pointers into file offsets, and derivable from the blob itself:
+Needed to turn the pointers into file offsets, and derivable from the blob itself. **Anchored on
+the clock record, not on the end marker**, section 117:
 
 ```
-base = end_addr - (offset_of_end_marker - offset_of_cookie)
+candidates = { address_of_slot - offset_of_the_clock_record : slot in table, slot not NULL }
+base       = the single candidate that is a multiple of 0x1000 and leaves every
+             non-NULL pointer inside the blob
 ```
 
-Exact on all sixteen samples. Worth noting against concordance's table, which lists arch 9's
-`config_base` as `0x820000` where the derived value is `0x020000`.
+Exactly one candidate survives on all 24 containers, spanning five architectures and six distinct
+bases from `0x002000` to `0x040000`. The anchor is a closure rather than a cookie match: a clock
+record is only accepted when its stored day of week agrees with its stored date, and there is
+exactly one accepted record per container.
+
+Worth noting against concordance's table, which lists arch 9's `config_base` as `0x820000` where
+the derived value is `0x020000`.
+
+> **Corrected on 10 August 2026, section 117.** This used to read
+> `base = end_addr - (offset_of_end_marker - offset_of_cookie)` and call it exact on all<!--superseded-->
+> sixteen samples. That reading is right on 23 of 24 containers and wrong by 864 bytes on
+> `H890-Bedroom-2`, whose header declares an end before its own end marker. It was also
+> **circular**: the check `end_addr_points_at_end_marker` tested the assumption the base had just
+> been computed from, so no input could fail it. With the base anchored on content instead, that
+> check is real and it fails on exactly that sample. The marker subtraction remains in both
+> implementations as the fallback for a container with no clock record; nothing in the corpus
+> reaches it.
 
 > **Corrected on 8 August 2026, section 76.** This used to end "bit 23 looks like a flag<!--superseded-->
 > rather than an address bit". Both numbers are right and they are different address spaces: a

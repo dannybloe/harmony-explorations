@@ -62,6 +62,7 @@ const CONTAINERS = [
   // records rather than hides. Sections 113 and 115.
   'arch8_config_885',
   'h890_config',
+  'h890_config_2',
 ];
 
 for (const name of CONTAINERS) {

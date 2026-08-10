@@ -175,3 +175,21 @@ test('no section content reaches the report', skipUnless('h700_config'), () => {
   }
   assert.ok(checked > 10, 'should have checked most slots');
 });
+
+test('the base is the codec derivation and not a second copy of it',
+  skipUnless('h890_config_2', 'h700_config'), () => {
+    // Section 117. This file carried its own `endAddr - (blob.length - 4)` reading, which the codec
+    // had abandoned as circular, and `H890-Bedroom-2` is the one sample where the two disagree: the
+    // old reading gives 0x02FCA0 for a container linked at 0x030000. So the disagreement is the
+    // test, and a reintroduced copy fails here rather than on a remote nobody can check.
+    const blob = container('h890_config_2') as Uint8Array;
+    const report = containerReport(blob);
+    assert.equal(report.flashBase, parse(blob).flashBase);
+    assert.equal(report.flashBase, 0x030000);
+    assert.notEqual(report.flashBase, report.endAddr - (blob.length - 4));
+    // And the negative: on a consistent container the two readings coincide, which is why this went
+    // unnoticed for as long as the corpus held only consistent containers.
+    const fine = container('h700_config') as Uint8Array;
+    const ok = containerReport(fine);
+    assert.equal(ok.flashBase, ok.endAddr - (fine.length - 4));
+  });

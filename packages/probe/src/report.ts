@@ -32,6 +32,7 @@ import {
   bytes as byteUtil,
   findMarker,
   parse,
+  recoverFlashBase,
   trailerChecksum,
 } from '@harmony/codec';
 
@@ -98,10 +99,16 @@ function formatVersionOf(format: number): string {
  * The container's shape, from its bytes, without needing the codec to recognise it.
  *
  * Everything below is derived rather than tabulated, which is what makes the report useful on a
- * model nobody here has: the base address comes from `end_addr` and the marker position, the slot
- * count comes from the marker offset, and the section lengths come from the pointers ascending.
- * Only `family` and `checks` need the magic to be one this project knows, and both are allowed to
- * come back empty.
+ * model nobody here has: the base address is anchored on the clock record, the slot count comes
+ * from the marker offset, and the section lengths come from the pointers ascending. Only `family`
+ * and `checks` need the magic to be one this project knows, and both are allowed to come back
+ * empty.
+ *
+ * **The base derivation is the codec's and not a copy of it.** This file carried its own
+ * `endAddr - (blob.length - 4)` until section 117, which is the reading the codec had abandoned as
+ * circular, so for one commit two derivations of the same number disagreed on one sample. That is
+ * the state `CLAUDE.md` warns about for the opcode table, and nothing in either suite could see it,
+ * because both copies were right on everything the tests loaded.
  */
 export function containerReport(blob: Uint8Array): ContainerReport {
   if (blob.length < 0x68) {
@@ -113,9 +120,6 @@ export function containerReport(blob: Uint8Array): ContainerReport {
   const format = byteUtil.u32(blob, 8);
   const markerOffset = findMarker(blob);
   const pointerCount = (markerOffset - SECTION_TABLE_OFFSET) / SECTION_ITEM_SIZE;
-  // The end marker sits at end_addr, and the blob runs from the cookie to the end of it, so the
-  // base follows from the two without knowing what the marker says.
-  const flashBase = endAddr - (blob.length - 4);
 
   const raw: { slot: number; spare: number; address: number }[] = [];
   for (let i = 0; i < pointerCount; i += 1) {
@@ -126,6 +130,11 @@ export function containerReport(blob: Uint8Array): ContainerReport {
       address: byteUtil.uint(blob, item + 1, POINTER_SIZE),
     });
   }
+  // One derivation, the codec's, with the same fallback it uses. A probe of an unknown model is
+  // exactly where a wrong base would go unnoticed, since there is nothing to compare its numbers
+  // against.
+  const flashBase =
+    recoverFlashBase(blob, raw.map((s) => s.address)) ?? endAddr - (blob.length - 4);
   const sections: SectionReport[] = raw.map((s, i) => {
     if (s.address === 0) return { ...s, lengthUpperBound: undefined };
     const next = raw.slice(i + 1).find((o) => o.address !== 0);

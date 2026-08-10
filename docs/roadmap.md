@@ -67,8 +67,11 @@ rather more than that.
 So the container claims are validated across **five** architectures and the USB claims across
 **three**, out of at least eleven. The fifth arrived on 10 August 2026 with the kkong42 contribution,
 which also brought the first arch 8 firmware: sections 113 to 115. **Arch 10 parses and nothing reads
-it**, because 23 pointer slots is a layout nobody has derived, and every codec reader is gated off
-until it is derived rather than guessed. **Arch 8 has firmware and is still a control**, and what the
+it**, and section 117 turned that from an absent derivation into a result: arch 10's 23 slots are not
+the base twenty with three inserted, because five readers are satisfied by none of the 1330 possible
+placements. Every codec reader stays gated, and the thing not to do is add a mapping to open them.
+That section also corrected the container's base recovery, which had been circular since the first
+day and was wrong on one of the two 890 configs. **Arch 8 has firmware and is still a control**, and what the
 images bought was three counterexamples: the skin rule, `GET_VERSION` field 6's fourth value, and the
 discovery that a firmware image can parse as a container, which had quietly admitted a program image
 to a corpus wide percentage. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
@@ -995,8 +998,9 @@ contents:
 A few kilobytes of JSON, which the contributor can read before sending. It answers the questions
 that actually block generalisation: how many slots does arch 16 carry, does the USB command layer work
 at all on a model this project has never seen. **The arch 10 half of that question is answered without
-the probe**, section 115: two Harmony 890 configs arrived on 10 August 2026, the pointer table rule
-holds, and 23 slots is the open part.
+the probe**, sections 115 and 117: two Harmony 890 configs arrived on 10 August 2026, the pointer
+table rule holds, both are based at flash `0x030000`, and what the 23 slots mean is not open but
+answered in the negative: they are not the base twenty relabelled.
 
 **The point of tier 1 is that it is publishable.** A concordance dump is not: it records what
 equipment somebody owns and carries their remote's GUIDs, which is why there is not one in this
@@ -1018,7 +1022,7 @@ than a unit.
 a backup and wrong here. The probe instead tries each base this project has evidence for, sixteen
 bytes at a time, and accepts any four uppercase letters as a container cookie with an `end_addr`
 that lands plausibly above the base. Everything the report states is then derived rather than looked
-up: the flash base from `end_addr` and the blob length, the slot count from the marker offset, the
+up: the flash base from the codec's clock anchor, the slot count from the marker offset, the
 section lengths from the pointers ascending. So an unknown magic still yields a full section table,
 and the codec's refusal is reported verbatim next to it, because on a new architecture the refusal
 is the interesting part.

@@ -5,9 +5,10 @@ The format is specified in `docs/config-format.md`. It is one container with a p
 architecture four letter cookie rather than one format per architecture, which is why this
 module is written against the shape and not against a model table:
 
-  * The flash base address the blob was linked for is recoverable from the header's
-    absolute `end_addr` field, because `end_addr` points at the trailing end marker:
-    `base = end_addr - (offset_of_end_marker - offset_of_magic)`.
+  * The flash base address the blob was linked for is recovered from a **content anchor**, the
+    single slot 3 clock record, and not from the header's `end_addr` field. See
+    `recover_flash_base` for why: the obvious `base = end_addr - offset_of_end_marker` reading
+    is right on 23 of the 24 containers here and silently wrong on the 24th.
   * The pointer table length differs per architecture and is not stated in the header, but
     it follows from where the marker after the table sits:
     `count = (marker_offset - 3 - 0x0C) / 4`.
@@ -79,6 +80,11 @@ KNOWN_POINTER_COUNTS = (20, 21, 22)
 # to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
 TRAILER_CHECKSUM_SEED = 0x4321
 TRAILER_CHECKSUM_OFFSET = 6      # from the end of the container, ahead of the four byte marker
+
+# A container is written at the start of a flash block, so its base is a multiple of this. Every
+# base established here is: 0x002000, 0x018000, 0x01E000, 0x020000, 0x030000 and 0x040000. It is
+# what makes the clock anchor in `recover_flash_base` land on one answer instead of a dozen.
+FLASH_BASE_ALIGNMENT = 0x1000
 
 
 def trailer_checksum(blob: bytes) -> int:
@@ -2641,6 +2647,71 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
     return length
 
 
+def find_clock_records(blob: bytes) -> List[int]:
+    """Every offset in `blob` where a clock record validates.
+
+    Exactly one in all 24 containers this project holds, which is what makes it usable as an
+    anchor. `clock_record` requires the stored day of week to agree with the stored date, so a
+    hit is a closure rather than a two byte cookie match: the cookie pair turns up by chance
+    roughly once per 32 KiB and none of those chance hits validates.
+    """
+    out: List[int] = []
+    off = blob.find(CLOCK_COOKIE)
+    while off >= 0:
+        if clock_record(blob, off) is not None:
+            out.append(off)
+        off = blob.find(CLOCK_COOKIE, off + 1)
+    return out
+
+
+def recover_flash_base(blob: bytes, addresses: List[int], end_addr: int) -> Optional[int]:
+    """The flash address the container was linked for, anchored on the clock record.
+
+    **This used to be `end_addr - (offset_of_end_marker - offset_of_magic)`, and that reading is
+    circular.** The base came out of the marker's position, and the check that was supposed to
+    validate it asked whether `end_addr` lands on the marker, which it then always did. A check
+    that cannot fail is not a check, and this one hid a real error for as long as it existed.
+
+    The error it hid: `H890-Bedroom-2` carries 864 bytes between the end its header declares and
+    its end marker, so the subtraction returned a base 864 too low. Nothing said so. Every
+    pointer in the container then resolved 864 bytes late, which is the quiet kind of wrong,
+    because a wrong base does not fail, it just reads the neighbouring bytes.
+
+    So the base comes from the data instead. Each non-NULL pointer is an absolute address, and
+    exactly one of them targets the clock record, so `address - offset_of_clock_record` is a
+    candidate base for each pointer. The candidates are filtered by two conditions:
+
+      * the base is a multiple of `FLASH_BASE_ALIGNMENT`, because a container is written at the
+        start of a flash block, and
+      * every non-NULL pointer resolves inside the blob under it.
+
+    One candidate survives in all 24 containers. Calibration, which is the point: 23 of them had
+    a base already established by the old reading and the anchor recovers every one, spanning
+    five architectures and six distinct bases from `0x002000` to `0x040000`. The 24th is
+    `H890-Bedroom-2`, where the two disagree, and the anchor is the one that agrees with an
+    independent fact: its trailer checksum fails, which is how the file was known to be
+    inconsistent before this function existed. `docs/findings.md` section 117.
+
+    Returns None when the anchor is unavailable or ambiguous, which leaves the caller to fall
+    back rather than having this guess. Nothing in the corpus reaches that path; it exists
+    because a container with no clock record is permitted by everything else in the format.
+    """
+    clocks = find_clock_records(blob)
+    if len(clocks) != 1:
+        return None
+    clock_off = clocks[0]
+    candidates = set()
+    for address in addresses:
+        if not address:
+            continue
+        base = address - clock_off
+        if base < 0 or base % FLASH_BASE_ALIGNMENT:
+            continue
+        if all(0 <= a - base < len(blob) for a in addresses if a):
+            candidates.add(base)
+    return candidates.pop() if len(candidates) == 1 else None
+
+
 def clock_record(blob: bytes, off: int) -> Optional[datetime.datetime]:
     """The timestamp in the slot 3 record at `off`, or None if there is not one there.
 
@@ -2676,7 +2747,6 @@ def parse(data: bytes) -> Container:
         raise GspmError('blob too short to hold a header: %d bytes' % len(blob))
 
     end_addr, format_raw = struct.unpack_from('<II', blob, 4)
-    flash_base = end_addr - (end_marker - start)
 
     marker_offset = find_marker(blob)
     pointer_count = (marker_offset - SECTION_TABLE_OFFSET) // SECTION_ITEM_SIZE
@@ -2691,6 +2761,15 @@ def parse(data: bytes) -> Container:
         item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * i
         address = int.from_bytes(blob[item + 1:item + 1 + POINTER_SIZE], 'little')
         sections.append(Section(i, address, blob[item]))
+
+    # The pointers are absolute and so are readable before the base is known, which is what lets
+    # the base be anchored on one of them instead of on the marker. The marker subtraction stays
+    # as the fallback for a container with no usable clock record, and it is the reading that
+    # `end_addr_points_at_end_marker` can only test once it is no longer the reading that
+    # produced the base. See `recover_flash_base`.
+    flash_base = recover_flash_base(blob, [s.address for s in sections], end_addr)
+    if flash_base is None:
+        flash_base = end_addr - (end_marker - start)
 
     container = Container(
         blob_offset=start,
@@ -2738,6 +2817,10 @@ def parse(data: bytes) -> Container:
 
     end_off = end_addr - flash_base
     container.checks = {
+        # A real check since the base stopped coming out of the marker's position. It asks
+        # whether the end the header declares is where the end marker actually is, and it fails
+        # on `H890-Bedroom-2`, whose header describes a container 864 bytes shorter than the body
+        # behind it. Under the old circular reading this could not fail on any input at all.
         'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
         # The table has to end exactly where the marker begins, which fails if the marker offset
         # is not congruent to the table start. This is the check that would have caught the off
@@ -2827,7 +2910,7 @@ def report(c: Container):
     yield 'architecture     %s        (stated by section slot %d, version word %s)' % (
         c.architecture if c.architecture is not None else 'unstated', ARCH_RECORD_SLOT,
         c.version_word if c.version_word is not None else '?')
-    yield 'flash base       0x%06X   (recovered from end_addr)' % c.flash_base
+    yield 'flash base       0x%06X   (anchored on the clock record)' % c.flash_base
     yield 'end_addr         0x%06X' % c.end_addr
     yield 'format version   %s   (raw 0x%04X)' % (c.format_version, c.format_raw)
     yield 'slot 0 frame     %s' % (

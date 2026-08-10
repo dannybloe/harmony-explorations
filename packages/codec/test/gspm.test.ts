@@ -21,12 +21,15 @@ import {
   EVENT_PRESS,
   CLOCK_RECORD_LENGTH,
   CLOCK_RECORD_SLOT,
+  FLASH_BASE_ALIGNMENT,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   TRAILER_CHECKSUM_SEED,
   archSlot,
   baseSlot,
+  findClockRecords,
   parse,
+  recoverFlashBase,
   trailerChecksum,
   type Container,
 } from '../src/index.ts';
@@ -420,4 +423,96 @@ test('a three byte architecture record carries no version word',
     if (full === undefined) return;
     // The negative: the same architecture with room for the word does carry one.
     assert.notEqual(parse(full).versionWord, undefined);
+  });
+
+// Section 117. The base used to come out of the end marker's position, and the check meant to
+// validate it asked whether `endAddr` lands on the marker, which it then always did. These are the
+// two halves: the anchor recovers every base already established, and the check it frees up fails
+// on a real sample. The Python side asserts the same things in `tests/test_gspm.py`.
+
+test('every container holds exactly one validating clock record', skipWithoutLab(), () => {
+  // The premise. One record is what makes it an anchor rather than a search.
+  for (const name of NAMES) {
+    const data = load(name);
+    if (data === undefined) continue;
+    assert.equal(findClockRecords(parse(data).blob).length, 1, name);
+  }
+});
+
+test('the clock anchor recovers every base the marker subtraction got right',
+  skipWithoutLab(), () => {
+    // The calibration, and it is the argument: every container whose base was already established
+    // is recovered, across five architectures and six distinct bases.
+    for (const name of NAMES) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const anchored = recoverFlashBase(c.blob, c.sections.map((s) => s.address));
+      assert.equal(anchored, EXPECTED[name]?.base, name);
+      assert.equal(c.flashBase, EXPECTED[name]?.base, name);
+    }
+  });
+
+test('the two readings disagree on one sample and the anchor is the right one',
+  skipUnless('h890_config', 'h890_config_2'), () => {
+    // `H890-Bedroom-2` declares an end 864 bytes before its own end marker, so the marker
+    // subtraction returns a base 864 too low, silently. Believed over it because the consistent
+    // sibling gives the same answer and because the record the anchor lands on validates its own
+    // day of week.
+    const c = parse(load('h890_config_2') as Uint8Array);
+    const markerReading = c.endAddr - (c.blob.length - c.family.endMarker.length);
+    assert.equal(markerReading, 0x02fca0);
+    assert.equal(c.flashBase, 0x030000);
+    assert.equal(c.flashBase - markerReading, 864);
+    assert.equal(c.flashBase % FLASH_BASE_ALIGNMENT, 0);
+    assert.equal(parse(load('h890_config') as Uint8Array).flashBase, 0x030000);
+  });
+
+test('the end marker check can now fail, and does', skipUnless('h890_config', 'h890_config_2'),
+  () => {
+    // The negative. Under the old reading no input could fail this check at all.
+    assert.equal(parse(load('h890_config') as Uint8Array).checks['end_addr_points_at_end_marker'],
+      true);
+    assert.equal(parse(load('h890_config_2') as Uint8Array).checks['end_addr_points_at_end_marker'],
+      false);
+  });
+
+test('a container with no clock record falls back rather than guessing',
+  skipUnless('h600_config'), () => {
+    // Nothing in the corpus reaches this path, so it is exercised by damaging a copy.
+    const c = parse(load('h600_config') as Uint8Array);
+    const damaged = Uint8Array.from(c.blob);
+    const off = findClockRecords(c.blob)[0] as number;
+    damaged[off] = 0;
+    damaged[off + 1] = 0;
+    assert.deepEqual(findClockRecords(damaged), []);
+    assert.equal(recoverFlashBase(damaged, c.sections.map((s) => s.address)), undefined);
+    assert.equal(parse(damaged).flashBase, c.flashBase);
+  });
+
+test('arch 10 has no slot alignment, so every reader refuses', () => {
+  // The gate the two Harmony 890 configs sit behind. An entry here without a derived mapping turns
+  // twenty refusals into twenty plausible wrong answers.
+  for (const base of [0, 3, 5, 10, 17]) {
+    assert.throws(() => archSlot(10, base), /alignment/);
+    assert.throws(() => baseSlot(10, base), /alignment/);
+  }
+});
+
+test('the arch 10 clock record sits one slot later than everywhere else',
+  skipUnless('h890_config', 'h890_config_2'), () => {
+    // The one thing the mapping does say: the single validating record is raw slot 4's target,
+    // where every other architecture has it at raw slot 3. So `slot3_is_a_timestamp` fails for
+    // want of an alignment and not for want of a record.
+    for (const name of ['h890_config', 'h890_config_2']) {
+      const c = parse(load(name) as Uint8Array);
+      const off = findClockRecords(c.blob)[0] as number;
+      const landing = c.sections
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => !s.isNull && s.address - c.flashBase === off)
+        .map(({ i }) => i);
+      assert.deepEqual(landing, [4], name);
+      assert.equal(c.checks['slot3_is_a_timestamp'], false, name);
+      assert.equal(c.builtAt, undefined, name);
+    }
   });

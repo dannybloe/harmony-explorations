@@ -191,9 +191,15 @@ The configs. Their names are the owner's room names and **the skin is the author
 | `H890-Bedroom-2.EZHex` | 10 | 19 | 400894 |
 
 All eleven are distinct files, `UserId` 0, no session data, and each was published by its owner who
-recorded having reviewed the contents first. Full digests are in the lab's own `META.md`; the two
-that the test suite reaches are `H885-LivingRoom.EZHex` `69c61fb2...6f5a4f05` and
-`H890-Bedroom-1.EZHex` `93c9733e...8a4236d8`.
+recorded having reviewed the contents first. Full digests are in the lab's own `META.md`; the three
+that the test suite reaches are `H885-LivingRoom.EZHex` `69c61fb2...6f5a4f05`,
+`H890-Bedroom-1.EZHex` `93c9733e...8a4236d8` and `H890-Bedroom-2.EZHex` `4394835d...76b713c8`.
+
+**`H890-Bedroom-2.EZHex` is in the suite for being inconsistent with itself**, section 117: its
+header declares an end 864 bytes before its own end marker and its trailer checksum does not
+recompute, so it is the sample that turned a check no input could fail into one that fails. Its
+sibling is consistent, and the two agree on the base once it is anchored on content, which is what
+made the disagreement readable at all.
 
 **`H885-LivingRoom.txt` accompanies one of them**, a hand written sheet naming the remote's devices
 and buttons, and it belongs to the EZHex of the same name. It is the only labelled sample in the

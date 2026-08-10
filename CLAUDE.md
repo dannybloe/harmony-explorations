@@ -61,7 +61,7 @@ propose firmware modification as a route to anything.
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
    reserve for when we are genuinely stuck.
 8. **Version 1 of the application is read only.** Write code exists behind a flag that is off.
-9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 6936 lines and it was
+9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 14957 lines and it was
    measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
    it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
    and that has been cut. **No cutting line is better than another**: 140 references run between
@@ -88,10 +88,25 @@ its fourth value, and they showed that "whatever in the lab table parses as a co
 corpus. Reach for them when a claim holds on every architecture here, because a claim that nothing can
 contradict is the failure mode this file warns about throughout.
 
-**Arch 10 exists in the corpus and nothing reads it**, section 115: two Harmony 890 configs, format
-1.7, 23 pointer slots, config flash base `0x030000`. The container framing verifies and the slot
-mapping is unknown, so every reader is gated off, which is correct and must stay that way until the
-mapping is derived rather than guessed.
+**Arch 10 exists in the corpus and nothing reads it**, sections 115 and 117: two Harmony 890
+configs, format 1.7, 23 pointer slots, both based at flash `0x030000`. The container framing
+verifies and **the slot mapping is not a relabelling of the twenty**, which is stronger than the
+"unknown" this said for a day: all 1330 placements of three insertions were scored against
+seventeen readers and the best reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely, with
+five readers satisfied by no mapping at all. So every reader stays gated, and **adding an entry to
+`INSERTED_SLOTS` to ungate them is the one thing not to do**: a guessed mapping turns twenty
+refusals into twenty plausible wrong answers. Two things the samples do say: the clock record is raw
+slot 4's target, so arch 10 inserts a slot below base slot 3, and no `0xFEED` frame validates
+anywhere in either payload, so an 890 is not known to name its devices and activities at all.
+
+**The container's base address is anchored on the clock record, not on the end marker**, section
+117, and that correction is the instructive one in this file. The old
+`base = end_addr - offset_of_end_marker` was right on 23 of 24 containers and 864 bytes wrong on the
+second 890, and it was **circular**: `end_addr_points_at_end_marker` tested the assumption the base
+had just been computed from, so no input could fail it. A wrong base does not error, it reads the
+neighbouring bytes. The anchor is one candidate per pointer, filtered by `0x1000` alignment, and
+exactly one survives on all 24. `packages/probe` had a second copy of the old reading, which is the
+two-diverging-derivations state this file warns about below, and it now calls the codec's.
 
 ## The two repositories
 
@@ -721,7 +736,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 116 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 117 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -786,6 +801,17 @@ produce a config the remote accepts and mishandles.
   moment of writing is the right provenance value whatever the remote does with it. This is the one
   field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
   thing for a save.
+* **`end_addr` is restamped when anything changes length, and a real generator got that wrong**,
+  section 117: the second Harmony 890 config declares an end 864 bytes before its own end marker,
+  which is exactly its last section's growth. Nothing on the remote would report it as such; what it
+  breaks is the trailer checksum, so the file simply gets refused. It is also why the container's
+  base is anchored on the clock record here rather than computed from the marker.
+* **Parsing is not validating, and somebody else's experiment is the proof**, section 117:
+  harmony-decompiler's author cloned a device into an arch 9 config, and the result passed both
+  checksums, rendered every screen pixel identical, closed its counts and **was accepted by this
+  project's parser**, while every infrared command in it addressed the wrong place. Inserting bytes
+  moved the class 5 symbol tables that section 82 reads, and pointers inside a carried run are
+  checked by nothing here. This is the demonstration behind `edit.ts` refusing to change a length.
 * **The trailer checksum is weak**, section 41: a `u16` XOR of little endian words seeded `0x4321`.
   Blind to two transposed words, so passing means the remote will not refuse the file, not that the
   file is right. **Demonstrated rather than argued now**: writing one operand into a mode page's

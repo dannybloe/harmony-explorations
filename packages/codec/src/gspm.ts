@@ -8,9 +8,10 @@
  * It is one container with a per architecture four letter cookie rather than one format per
  * architecture, which is why this is written against the shape and not against a model table:
  *
- *   * The flash base address the blob was linked for is recoverable from the header's absolute
- *     `endAddr` field, because `endAddr` points at the trailing end marker:
- *     `base = endAddr - (offsetOfEndMarker - offsetOfMagic)`.
+ *   * The flash base address the blob was linked for is recovered from a **content anchor**, the
+ *     single slot 3 clock record, and not from the header's `endAddr` field. See
+ *     `recoverFlashBase`: the obvious `base = endAddr - offsetOfEndMarker` reading is right on 23
+ *     of the 24 containers here and silently wrong on the 24th.
  *   * The pointer table length differs per architecture and is not stated in the header, but it
  *     follows from where the marker after the table sits:
  *     `count = (markerOffset - 0x0B) / 4`.
@@ -653,6 +654,67 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
   return `${p(year, 4)}-${p(month + 1)}-${p(day)}T${p(hour)}:${p(minute)}:${p(second)}`;
 }
 
+/**
+ * Every offset in `blob` where a clock record validates.
+ *
+ * Exactly one in all 24 containers this project holds, which is what makes it usable as an
+ * anchor. `clockRecord` requires the stored day of week to agree with the stored date, so a hit
+ * is a closure and not a two byte cookie match: the pair turns up by chance roughly once per
+ * 32 KiB and none of those chance hits validates.
+ */
+export function findClockRecords(blob: Uint8Array): number[] {
+  const out: number[] = [];
+  for (let off = 0; off + 11 <= blob.length; off += 1) {
+    if (!matchesAt(blob, off, CLOCK_COOKIE)) continue;
+    if (clockRecord(blob, off) !== undefined) out.push(off);
+  }
+  return out;
+}
+
+/**
+ * A container is written at the start of a flash block, so its base is a multiple of this. Every
+ * base established here is: 0x002000, 0x018000, 0x01E000, 0x020000, 0x030000 and 0x040000. It is
+ * what makes the clock anchor land on one answer instead of a dozen.
+ */
+export const FLASH_BASE_ALIGNMENT = 0x1000;
+
+/**
+ * The flash address the container was linked for, anchored on the clock record.
+ *
+ * **This used to be `endAddr - (offsetOfEndMarker - offsetOfMagic)`, and that reading is
+ * circular.** The base came out of the marker's position, and the check meant to validate it
+ * asked whether `endAddr` lands on the marker, which it then always did. A check that cannot fail
+ * is not a check, and this one hid a real error for as long as it existed: `H890-Bedroom-2` has
+ * 864 bytes between the end its header declares and its end marker, so the subtraction returned a
+ * base 864 too low and every pointer resolved 864 bytes late. A wrong base does not fail, it
+ * reads the neighbouring bytes.
+ *
+ * So the base comes from the data. Each non-NULL pointer is absolute and exactly one targets the
+ * clock record, so `address - offsetOfClockRecord` is a candidate base per pointer, filtered by
+ * block alignment and by every other pointer resolving inside the blob. One candidate survives in
+ * all 24 containers: 23 where the base was already established, spanning five architectures and
+ * six bases, plus the one where the two readings disagree and this one agrees with the
+ * independent fact that its trailer checksum fails. `docs/findings.md` section 117.
+ *
+ * Undefined when the anchor is unavailable or ambiguous, so the caller falls back rather than
+ * this guessing. Nothing in the corpus reaches that path.
+ */
+export function recoverFlashBase(blob: Uint8Array, addresses: number[]): number | undefined {
+  const clocks = findClockRecords(blob);
+  if (clocks.length !== 1) return undefined;
+  const clockOff = clocks[0] as number;
+  const candidates = new Set<number>();
+  for (const address of addresses) {
+    if (!address) continue;
+    const base = address - clockOff;
+    if (base < 0 || base % FLASH_BASE_ALIGNMENT !== 0) continue;
+    if (addresses.every((a) => !a || (a - base >= 0 && a - base < blob.length))) {
+      candidates.add(base);
+    }
+  }
+  return candidates.size === 1 ? [...candidates][0] : undefined;
+}
+
 /** The seven fields of the slot 3 record sit here, after the `0xADDF` cookie. */
 export const CLOCK_FIELDS_OFFSET = 2;
 export const CLOCK_FIELD_COUNT = 7;
@@ -711,7 +773,6 @@ export function parse(data: Uint8Array): Container {
 
   const endAddr = u32(blob, 4);
   const formatRaw = u32(blob, 8);
-  const flashBase = endAddr - (endMarker - start);
 
   const markerOffset = findMarker(blob);
   const pointerCount = Math.floor((markerOffset - SECTION_TABLE_OFFSET) / SECTION_ITEM_SIZE);
@@ -725,6 +786,14 @@ export function parse(data: Uint8Array): Container {
     const item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * i;
     sections.push(new Section(i, u24(blob, item + 1), u8(blob, item)));
   }
+
+  // The pointers are absolute and so are readable before the base is known, which is what lets
+  // the base be anchored on one of them rather than on the marker's position. The marker
+  // subtraction stays as the fallback, and it is the reading that `end_addr_points_at_end_marker`
+  // can only test once it is no longer the reading that produced the base. See
+  // `recoverFlashBase`, and `docs/findings.md` section 117.
+  const flashBase =
+    recoverFlashBase(blob, sections.map((s) => s.address)) ?? endAddr - (endMarker - start);
 
   const container = new Container({
     blobOffset: start,
@@ -775,6 +844,10 @@ export function parse(data: Uint8Array): Container {
 
   const endOff = endAddr - flashBase;
   container.checks = {
+    // A real check since the base stopped coming out of the marker's position. It asks whether the
+    // end the header declares is where the end marker actually is, and it fails on
+    // `H890-Bedroom-2`, whose header describes a container 864 bytes shorter than the body behind
+    // it. Under the old circular reading it could not fail on any input at all.
     end_addr_points_at_end_marker: matchesAt(blob, endOff, bytesOf(family.endMarker)),
     // The table has to end exactly where the marker begins, which fails if the marker offset is
     // not congruent to the table start. This is the check that would have caught the off by one

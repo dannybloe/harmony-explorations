@@ -55,6 +55,11 @@ CONTAINERS = (
     # arch 10 container: 23 pointer slots and format 1.7, so four of its checks fail and the vector
     # records that rather than hiding it. Sections 113 and 115.
     'arch8_config_885', 'h890_config',
+    # The second 890, whose vector records a container that disagrees with itself: five of its
+    # eleven checks fail, including `end_addr_points_at_end_marker`, which no input could fail
+    # before section 117. Both implementations have to agree about that too, and they have to agree
+    # about the base the clock anchor recovers where the marker subtraction got it wrong.
+    'h890_config_2',
 )
 
 

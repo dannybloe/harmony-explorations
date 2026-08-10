@@ -49,13 +49,21 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty seven have been found and corrected so far. **The newest is in section 116 and it corrected a
-section written four hours earlier**, which is the shortest life any claim here has had. Section 114
-read `GET_VERSION` field 6 as "the architecture on three architectures out of four" and offered a
-generation number that stopped advancing as the guess. Two more images took the population from four
-to eleven and the shape resolved: it names a **platform**, and arch 12 and arch 14 are one platform
-under it. The lesson is not that the first reading was careless, it is that four samples could not
-distinguish it from the right one, and the section said so at the time.
+Thirty eight have been found and corrected so far. **The newest is in section 117 and it is the
+oldest error in the project**: the container's flash base was recovered from the end marker's
+position, and the check that was supposed to validate it re-derived its own premise, so no input
+could ever fail it. It was right on 23 of 24 containers and silently wrong on the 24th, where it
+displaced every pointer by 864 bytes without anything reporting a problem. Sections 113 to 116 all
+came from asking what a new sample contradicts; this one came from asking what a check can fail on,
+which is a question worth asking of the others.
+
+The one before it is in section 116, and it corrected a section written four hours earlier, which is
+the shortest life any claim here has had. Section 114 read `GET_VERSION` field 6 as "the architecture
+on three architectures out of four" and offered a generation number that stopped advancing as the
+guess. Two more images took the population from four to eleven and the shape resolved: it names a
+**platform**, and arch 12 and arch 14 are one platform under it. The lesson is not that the first
+reading was careless, it is that four samples could not distinguish it from the right one, and the
+section said so at the time.
 
 Before it, two in section 113, and they are the
 kind that matter most, because both were in **shipped code that answered without failing**. The skin
@@ -14784,6 +14792,163 @@ A **safe mode** image, software type 4. Arch 12 and arch 14 have one each, insid
 memory beside the bootloader, and on arch 8 no dump has produced one. Either it is somewhere neither
 `-f` nor `-s` reaches, or arch 8's boot mode does the job that later platforms split in two. Nothing
 here decides which, and no claim depends on it.
+
+## 117. The container's base address was recovered circularly, and a second Harmony 890 said so
+
+The second of the two Harmony 890 configs was filed on 10 August 2026 as an anomaly with two
+symptoms: its recovered flash base was `0x02FCA0`, which is not a flash block boundary, and its
+trailer checksum did not recompute. Section 115 recorded both and guessed they had one cause. They
+do, and finding it exposed **a check in this project's own parser that no input could ever fail**.
+
+### The circularity
+
+The base was recovered as `end_addr - (offset_of_end_marker - offset_of_magic)`. The container's
+header states `end_addr`, an absolute address, and the end marker is found in the data, so the
+subtraction gives the address the first byte was linked at. That reading has been in
+`src/harmony/gspm.py` since the first day and it is right on 23 of the 24 containers here.
+
+The check next to it, `end_addr_points_at_end_marker`, asked whether `end_addr` lands on the marker
+under the recovered base. **It cannot fail.** The base was computed by assuming exactly that, so the
+check re-derived its own premise. It has reported PASS for every container ever parsed, including one
+where the base was wrong.
+
+This is the same defect as three found two days earlier, in `find_block`, in the coverage population
+and in `tools/corpus.py`: a necessary condition used as a sufficient one, or a test whose subject was
+chosen to make it pass. It is worth naming the family rather than the instances, because the
+instances keep arriving.
+
+### What the wrong base cost, which is nothing visible
+
+`H890-Bedroom-2` carries 864 bytes between the end its header declares and its end marker. So the
+subtraction returned `0x030000 - 864`, and every pointer in the container then resolved 864 bytes
+late. Nothing failed. `sections_within_blob` still passed, because a container is large and a
+displacement of 864 bytes leaves every pointer inside it. Slot 1's version word read 24969 instead of
+30022, which is a plausible number.
+
+**A wrong base does not error, it reads the neighbouring bytes.** That is the whole hazard, and it is
+the reason this got a finding rather than a commit.
+
+### The base comes from the data now
+
+Every pointer in the table is an absolute address, so the pointers are readable before the base is
+known. Exactly one of them targets the clock record. So `address - offset_of_clock_record` is a
+candidate base for each pointer, and two conditions cut the candidates down:
+
+* the base is a multiple of `0x1000`, because a container is written at the start of a flash block,
+  and
+* every other non-NULL pointer resolves inside the blob under it.
+
+**One candidate survives in all 24 containers.** The anchor is a closure and not a cookie match:
+`clock_record` refuses a record whose stored day of week disagrees with its stored date, and the
+`0xADDF` byte pair turns up by chance roughly once per 32 KiB without a single chance hit validating.
+
+The calibration is the point of the exercise. 23 of the 24 containers had a base already established
+by the old reading, spanning five architectures and six distinct bases, `0x002000`, `0x018000`,
+`0x01E000`, `0x020000`, `0x030000` and `0x040000`, and the anchor recovers every one of them. The
+24th is `H890-Bedroom-2`, where the two readings disagree by 864 bytes and the anchor is the one that
+agrees with an independent fact: that config's trailer checksum fails, which is how it was known to
+be inconsistent before any of this.
+
+`end_addr_points_at_end_marker` is a real check as a result, and it fails on exactly one sample.
+
+### Arch 10's base is `0x030000` on both samples
+
+Which is what section 115 recorded from one of them. The evidence is now two samples and a closure
+rather than one clean looking number:
+
+| | `H890-Bedroom-1` | `H890-Bedroom-2` |
+|---|---|---|
+| payload | 396927 | 397737 |
+| end marker at | 396221 | 397085 |
+| `end_addr` | `0x090BBD` | `0x090BBD`, identical |
+| marker subtraction | `0x030000` | `0x02FCA0` |
+| clock anchor | `0x030000` | `0x030000` |
+| trailer checksum | `0x5AC7`, recomputes | `0x5DE1`, does not |
+| clock record says | 14 May 2025, 21:40:26 | 14 May 2025, 21:37:44 |
+
+Three minutes apart, and they agree on all 23 pointer addresses, on `end_addr`, on slot 1's version
+word once the base is right, and on the length of every section but the last. Their first 4875 bytes
+are identical and after that their blobs share nothing but the four byte marker, which is the same
+picture as the three arch 8 configs generated ten minutes apart: **a small logical change reshuffles
+almost every byte.**
+
+The 864 bytes are all in the final section, the picture bank. So the only header field that had to
+move with the growth was `end_addr`, and in the second file it did not. One cause, two symptoms, and
+the file is not damaged in transport: its payload is exactly as long as its own `<BINARYDATASIZE>`
+element says.
+
+**What is not established is why a generator emitted it.** It is most likely a file the remote would
+refuse, since the trailer checksum is the one check the boot validator performs.
+
+### Arch 10's slot mapping is not a relabelling of the base table, and that is a negative result
+
+Worth the space because the temptation is strong: arch 10 carries 23 slots where the base layout has
+20, arch 8 inserts one and arch 12 inserts two, so three insertions should map arch 10 onto the same
+twenty sections and ungate every reader at once.
+
+It does not. The derivation attempted: for each of the 1330 ways to place three insertions among the
+slots that leave the two trailing NULLs in place, force that mapping and ask seventeen readers
+whether they parse, weighted by how strong each one's validation is out of 47.
+
+Calibrated first, which is what makes the negative result mean anything:
+
+| architecture | best | score | ties |
+|---|---|---|---|
+| arch 14 | `()` | 47 of 47 | unique |
+| arch 9 | `()` | 47 of 47 | unique |
+| arch 8 | `(8)` | 47 of 47 | unique, runner up 44 |
+| arch 12 | `(8, 18)` | 44 of 47 | three way, all within the trailing NULLs |
+| **arch 10** | `(0, 10, 13)` | **34 of 47** | **eight way** |
+
+Five readers are never satisfied under any of the 1330 mappings: the name tree, the log area, the
+mode records, the font sets and the value maps. A relabelling cannot produce that. So at least those
+five structures differ in **form** on arch 10 and not only in position, and `INSERTED_SLOTS` must
+stay without an entry for 10, which keeps every reader refusing. A mapping guessed here would turn
+twenty refusals into twenty plausible wrong answers, which is what the arch 9 register map cost once
+already, section 80.
+
+The same search is what confirms the base independently of the clock: `H890-Bedroom-1` scores 34 at
+`0x030000` and 10 at `0x02FCA0`, and `H890-Bedroom-2` scores 24 against the same 10. Both files point
+the same way, and the wrong base costs 24 points on the file where it is definitely wrong.
+
+**One thing the mapping does say.** The single validating clock record is raw slot 4's target in both
+configs, where every other architecture has it at raw slot 3. So arch 10 inserts a slot below base
+slot 3, and `slot3_is_a_timestamp` fails for want of an alignment rather than for want of a record.
+
+**And one thing arch 10 does not have.** No `0xFEED` frame validates anywhere in either payload. On
+every other architecture that frame is base slot 0's name tree, and section 86 reads a config's
+devices and activities out of it. Stated as the measurement rather than the interpretation: what is
+established is that this parser's frame validator finds nothing, not that the format has no
+equivalent. If it has none, an 890 cannot name its own devices and activities and
+`packages/codec/src/inventory.ts` has nothing to report for one.
+
+### A rail from somebody else's experiment, which this project could not have run
+
+harmony-decompiler's author reported on 10 August 2026 that he built a fifth device into an arch 9
+config offline, by cloning the smallest device already in it. The file passed both checksums, all 135
+of its screens rendered pixel identical, its device and mode counts closed, and **this project's
+parser accepted it.** It was still wrong: inserting bytes moved the infrared symbol tables, and the
+pointers into them sit in a region his decompiler treats as opaque, so every infrared command in the
+config addressed the wrong place.
+
+That is his measurement and not ours, and it is recorded here because of what it demonstrates rather
+than what it claims. The mechanism is section 82, our own reading of arch 9's class 5 infrared: a
+header pointer names a body of one byte indices, the body names a symbol table, and the table names
+pulse blocks that every code with the same pulse pair reuses. Three levels of pointer, all inside
+bytes the accounting carries as an opaque run.
+
+So the rail already in `packages/codec/src/edit.ts`, that every edit replaces a run with a run of the
+same length and the API cannot move a byte, has an external demonstration of why. And the honest note
+about our own side: nothing in either suite checks that a pointer inside a carried run still lands on
+anything, so a file broken this way would pass every check this project applies, exactly as it did.
+The checks prove a container is well formed. **They do not prove it means anything.**
+
+### One byte of trivia, recorded so nobody spends an hour on it
+
+The EZHex header's `<CHECKSUM>` element is not a checksum of the payload. It is 15 in every arch 12
+and arch 14 config in the corpus, 11 in every arch 8 config, 12 on arch 9, and 33 and 118 in the two
+890s. Seven candidate algorithms over the payload were tried and none reproduces any of the 21
+values. `<BINARYDATASIZE>`, in the same header, is exact on all 21.
 
 ## References
 
