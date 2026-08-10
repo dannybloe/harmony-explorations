@@ -81,6 +81,16 @@ const FROM_CHARGER = process.argv.includes('--from-charger');
 const CHARGER_WAIT_MS = 300_000;
 
 if (FROM_CHARGER) {
+  // Refused rather than trusted, because a remote already on USB makes the wait below return
+  // instantly and the transition this mode exists to exercise never happens. The run would then look
+  // like every other round and mean nothing, which is the failure that has already cost one
+  // discarded round today.
+  if (await attached()) {
+    fail(
+      'charger mode needs the remote NOT on USB when this starts, because the wait below is the\n' +
+        'experiment. Unplug it, put it on the charger, and run this again.',
+    );
+  }
   process.stdout.write(
     'charger mode, section 100.\n' +
       '\n' +
