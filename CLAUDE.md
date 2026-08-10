@@ -673,7 +673,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 106 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 107 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -848,20 +848,22 @@ the table, `reading` gives one instruction's, `readingCoverage` gives a config's
 
 | | share of 87005<!--fact:action_instructions--> instructions |
 |---|---|
-| meaning | 98.2%<!--fact:reading_meaning--> |
-| placement only | 1.8%<!--fact:reading_placement--> |
-| no reading at all | 6<!--fact:reading_unread--> instructions, one opcode, `0x6E` |
+| meaning | 98.4%<!--fact:reading_meaning--> |
+| placement only | 1.6%<!--fact:reading_placement--> |
+| no reading at all | 0<!--fact:reading_unread--> instructions, nothing left anywhere in the corpus |
 
 Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5%<!--fact:reading_arch14-->
-on arch 14, 98.3%<!--fact:reading_arch12--> on arch 12, 97.6%<!--fact:reading_arch8--> on arch 8 and
+on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12, 98.1%<!--fact:reading_arch8--> on arch 8 and
 96.0%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
 that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
 section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
 all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
 
-What is left is mostly one thing, `0x3F` band `0xC0` on arch 12, and it is hardware state rather than
-config structure. Section 102 read it and it stayed placement; **section 103 read the state machine
-behind selector 17 and it did not**, which is 68 of the band's 106 uses per config. The band is three
+**The unread column is empty**, section 107: `0x6E` was the last opcode in it, six instructions, and
+it is a modulo. What is left is all placement and mostly one thing, `0x3F` band `0xC0` on arch 12, and
+it is hardware state rather than config structure. Section 102 read it and it stayed placement;
+**section 103 read the state machine behind selector 17 and it did not**, which is 68 of the band's
+106 uses per config. The band is three
 fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms: selector 17 sets the display's
 light level, from four levels, three thresholds and a fade rate that base slot 15 states; selector 16
 enables an I2C device at address 0x60 through `LATC` bit 5; and 0 to 12 set that device's thirteen
@@ -886,8 +888,15 @@ Above `0x65` the opcode is the instruction and the binary search at `0x0EC8E` na
 each; `0x80 | n` is one instruction with a five bit field, a write into state variable `n`. **Below
 `0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
 thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
-which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not
+which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->
 one table across architectures**, so they must not be ported.
+
+**Two structures are not one table, not one**, section 107: `0x3F`'s bands, and the whole opcode block
+`0x65` to `0x6E`, which only arch 14 implements. Arch 9 and arch 12 test each of those ten opcodes in
+the same ladder and branch to the dispatcher's exit, and their configs never emit one. So the shift,
+the boolean operations, the device record writer and the **modulo** are arch 14's alone, while the
+multiply and divide just above them, `0x78` and `0x77`, are everyone's. `0x6F` belongs to nobody: it
+tests the accumulator and returns from both arms, on all three architectures we hold firmware for.
 
 The byte accounting has **no architecture sized remainder left**. It used to name two: 5437 bytes<!--superseded-->
 in the arch 12 safe mode container, which was one font set the reader had cut to a single glyph,

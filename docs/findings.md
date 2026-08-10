@@ -49,14 +49,22 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty eight have been found and corrected so far. The newest two are in section 106 and they are
-both mine, made in section 103 and caught by reading one call deeper the same day: group 9 is four
-pairs of device levels and not four timeouts, because `0x249A0` sends both halves straight out over
-I2C and nothing counts them down, and the flag that indexes the twelve spare bytes is operand bits 1
-to 3 normalised to a boolean rather than bit 0. The first is this document's own rule about naming a
+Twenty nine have been found and corrected so far. The newest is in section 107, and it is a claim two
+documents made in the same words: that arch 12's `0x3F` bands are **the only** structure in the format
+that is not one table across architectures. They are one of two. The opcode block `0x65` to `0x6E` is
+arch 14 only, and the reason it went unnoticed is that no arch 8, 9 or 12 config emits an instruction
+from it, so nothing in the corpus contradicted the claim; only the other architectures' dispatchers
+do. A rule that says "port this by index" is worth checking against the firmware of the architecture
+you are porting to, not only against its configs.
+
+Before it, two in section 106, both mine, made in section 103 and caught by reading one call deeper
+the same day: group 9 is four pairs of device levels and not four timeouts, because `0x249A0` sends
+both halves straight out over I2C and nothing counts them down, and the flag that indexes the twelve
+spare bytes is operand bits 1 to 3 normalised to a boolean rather than bit 0. The first is this document's own rule about naming a
 structure by its consumer, failed by stopping one call short of the consumer.
 
-Before them, sections 103 and 104, which have the same cause read from two sides. Section 84 called base slot 15's twelve spare bytes
+Before them, sections 103 and 104, which have the same cause read from two sides. Section 84 called
+base slot 15's twelve spare bytes
 "a shape rather than a reading" because they are the size of six `u16` values with no count byte;
 they are not that shape at all, they are the group before them continuing past its declared length,
 and the reader arrives by arithmetic rather than by a pointer. Section 73 recorded `0x1F` band `0xFC`
@@ -13063,6 +13071,174 @@ checked against anything here.
 What would settle it: the address, the register numbers and the value ranges are enough to identify
 the part from a datasheet search, and a photograph of the board would do it outright. Neither is
 firmware work.
+
+## 107. The action list language has multiply, divide and modulo, and the block one of them sits in is arch 14 only
+
+`0x6E` was the last opcode in the corpus with no reading at all, six instructions in three configs.
+Reading it took one arm of one dispatcher and turned over four other things, which is the third time
+in this document that following the cheapest remaining item was worth more than choosing a target by
+size.
+
+### One helper, two answers
+
+The arm at `0x0F01C` on the Harmony 700 copies the accumulator and the operand into a scratch frame,
+calls `0x1BAF6`, and stores what comes back into the accumulator. `0x1BAF6` is a **restoring binary
+division**: sixteen iterations of a 32 bit shift left, a trial subtract of the divisor from the high
+half, and on no borrow a real subtract plus a set of the quotient's low bit. So the quotient is built
+in the dividend's own registers as it shifts out, and the remainder is left above it.
+
+`0x77`, twelve instructions higher in the same ladder, calls **the same routine** and takes `0x020`,
+the quotient. `0x6E` takes `0x01C`, the remainder. That is the whole difference between the two
+opcodes, and it is what makes both readings safe rather than one:
+
+| opcode | helper | result slot | what it is |
+|---|---|---|---|
+| `0x77` | `0x1BAF6` | `0x020`, the dividend's own registers | accumulator divided by the operand |
+| `0x6E` | `0x1BAF6` | `0x01C`, above it | accumulator modulo the operand |
+| `0x78` | `0x1B23C` | `0x01E` | accumulator times the operand, low sixteen bits |
+
+`0x1B23C` is a 16 by 16 multiply into 32 bits, four `MULWF` partial products added with carry, and
+`0x78` takes only the low word. **Section 34 had `0x77` and `0x78` as "an accumulator operation
+through a helper", a placement**, because it found the arms and not the helpers. Both are meanings
+now.
+
+**The argument frame is one frame and its order is the same in all four images**: the remainder
+lowest, then the product's low word, then the dividend, then the divisor. Different addresses per
+build, same order, which is what says the three opcodes share the compiler's arithmetic frame rather
+than each having its own.
+
+**A zero operand is defined, not a trap.** The loop always runs sixteen iterations, so nothing hangs:
+a divisor of zero makes every trial subtract succeed, which leaves `0xFFFF` in the quotient and the
+dividend itself in the remainder. A writer gets no error and no useful answer.
+
+### The block is arch 14 only, and that is the second divergence in the language
+
+`0x6E` sits inside `0x65` to `0x6E`, the accumulator machine section 71 read. On the Harmony One the
+same descending ladder tests **every one of those ten opcodes** and branches to the dispatcher's
+common exit at `0x25892`, doing nothing: `0x6E` at `0x25302`, `0x6D` at `0x2530A`, `0x6B` at
+`0x25312` covering `0x6B` and `0x6C`, `0x6A`, `0x69`, and `0x68` at `0x2532A` with no test below it
+so `0x65` to `0x68` land there too. The 525 is the same and shorter: its ladder stops at `0x6F` and
+everything below falls to `0x023E4`.
+
+So the shift, the boolean operations, the device record writer and the modulo are all arch 14's, and
+the reading table has to answer per architecture. **That is the second structure in this format that
+is not one table across architectures**, after arch 12's `0x3F` band `0xC0`, section 102, and the two
+are unrelated: one is a band inside an opcode, this is ten whole opcodes.
+
+**The corpus agrees without being asked.** Of the eleven opcodes `0x65` to `0x6F`, exactly two are
+used anywhere: `0x6C` 7552 times and `0x6E` six times, both on arch 14 only, and no arch 8, 9 or 12
+config touches one. A generator emitting an instruction its target ignores is the kind of thing that
+would show up here, and it does not.
+
+### `0x6F` is a no-op with a mechanism
+
+The arm above `0x6E` reads the accumulator, ORs its two bytes to test for zero, and then branches to
+the dispatcher's exit **from both arms of the test**. It is on all three architectures whose firmware
+we hold, identically. No config uses it. A compiler emitted a comparison whose two outcomes are the
+same code, which is what an empty `if` compiles to, so the instruction is a defined nothing and not
+an unread one.
+
+### `0x70` and `0x71` are eight operations, not one
+
+Both opcodes reach one handler, which reads the state variable the operand's low byte names and then
+dispatches on the **low nibble of the operand's high byte** through an `XORLW` chain: `0x0EEAE` on
+the 700 and `0x25198` on the One, the same chain.
+
+| nibble | what it does |
+|---|---|
+| 0, 1 | condition: the left side is equal to, and is not equal to, the variable |
+| 2, 3 | condition: greater than, and less than |
+| 4, 5 | condition: greater than or equal to, and less than or equal to |
+| 6 | the left side **is added to** the variable, clamped to its stated range |
+| 7 | the same, negated first, so **subtracted from** it |
+| 8 to 15 | nothing: no arm of the chain, after the variable has been read |
+
+**The order is `docs/config-format.md`'s, from section 34, and checking it against that document is
+what caught a slip here**: the chain tests nibble 7 first and falls through to nibble 0, so pairing
+its `BZ` targets with nibbles in the order they appear puts 3, 4 and 5 in the wrong places. The first
+draft of this section did exactly that, and the earlier document was right.
+
+The left side is the accumulator for `0x70` and a byte register for `0x71`. Six comparisons in
+complementary pairs is a complete set, which is the closure on the chain; nibble 7 negates by
+multiplying by `0xFFFF` and then reaches nibble 6's writer, which reads the variable, adds and
+clamps against the range base slot 13 states.
+
+**Section 34 called both opcodes "compare".** Six of the eight are, and the corpus uses nibbles 0 to
+5 for 2353 instructions against 9 for nibble 7, with nibble 6 and the dead nibbles never emitted at
+all. But the nine are load bearing: they are what a
+generator builds a remainder out of, so the wrong name hid the rest of this section.
+
+### What the six instructions are for
+
+The corpus idiom is eight instructions and identical in all three arch 14 configs bar the variable
+numbers:
+
+```
+accumulator = X                 the value being edited
+scratch = accumulator           save it
+accumulator = X
+accumulator = X mod n           n is 5 or 10
+call a list holding one instruction: scratch = scratch - accumulator
+accumulator = scratch
+X = accumulator
+```
+
+So `X` becomes `X - (X mod n)`, the largest multiple of `n` at or below it. **What `X` is comes out of
+the config rather than the firmware**: every other list touching it copies it to or from a state
+variable whose base slot 0 name is a device's inter device delay for the `n` of 5 and its power on
+delay for the `n` of 10, and two more lists step the same variable up by that `n` and down by it.
+Three configs, two models, six instances, and the modulus equals the step every time. The instruction
+snaps a delay onto the grid its plus and minus buttons move on.
+
+### The closure is an identity, and the other architectures supply the other half
+
+Arch 8 and arch 12 have no modulo, and their generator computes a remainder anyway:
+
+```
+accumulator = accumulator / n
+accumulator = accumulator * n
+call a list holding one instruction: variable = variable - accumulator
+```
+
+which is `x - (x / n) * n`, the remainder. **Every multiply in the corpus is the second half of that
+pair**: eight multiplies, eight preceded by a divide with the same operand, in four arch 8 configs
+and two arch 12 ones. Arch 14 uses neither opcode and reaches for `0x6E`.
+
+So the two generations of generator compute the two halves of `x = (x / n) * n + (x mod n)`, each
+with a subtract and the primitive its architecture has. Reading either confirms the other, and
+neither reading can be an accident of one image, because the identity is arithmetic and the two
+idioms were emitted by different software for different remotes.
+
+### Where it leaves the number
+
+The step 6 depth number has no unread instructions left anywhere in the corpus. `0x6E` was the last,
+and `make reading` prints zero:
+
+| | before section 107 | after |
+|---|---|---|
+| meaning | 98.2% | 98.4%<!--fact:reading_meaning--> |
+| placement | 1.8% | 1.6%<!--fact:reading_placement--> |
+| no reading at all | 6 instructions | 0<!--fact:reading_unread--> |
+
+Per architecture the divide and multiply move arch 8 the furthest, from 97.6% to
+98.1%<!--fact:reading_arch8-->, because 76 of its 116 corpus divides are its own. Arch 12 goes to
+98.5%<!--fact:reading_arch12-->, arch 14 stays at 98.5%<!--fact:reading_arch14--> and arch 9 stays at
+96.0%<!--fact:reading_arch9--> since it uses none of these opcodes at all.
+
+### What is not established
+
+**What the remaining placement is.** 1.6% of the corpus, and most of it is arch 12's `0x3F` band
+`0xC0` selectors 0 to 12 and 16, which section 106 read as far as the firmware allows: the channels
+of a device nobody has named.
+
+**`0x65`, `0x66` and `0x76`.** Section 71 names a handler for each and no config in the corpus uses
+one, so they cost the number nothing and are left alone deliberately. `0x66` and `0x65` share
+`0x0F146`, which passes the operand to `0x159F4`; `0x76` passes it to `0x16A34`.
+
+**Why the block is arch 14 only.** The plausible reading is that it was added for the generator that
+produced the 600 and 700 configs and never backported, since arch 8 is older and arch 9 older still,
+and the arch 12 firmware carries the ladder entries without the code. Nothing here tests that, and
+the One's own firmware is younger than the 700's by version number alone.
 
 ## References
 

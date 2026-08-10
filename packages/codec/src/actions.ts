@@ -62,10 +62,70 @@ const noop = (section: number): Reading => ({
  * Opcodes at or above `SECOND_SPACE_LIMIT`, where the opcode is the whole instruction.
  *
  * `0x80` and above are not here: they are one family with a parameter, resolved in `reading`.
- * `0x66`, `0x6E`, `0x6F` and `0x76` are absent because they have no reading at all; `0x6E` is the
- * only one of the four the corpus uses.
+ * `0x65`, `0x66` and `0x76` are absent because they have no reading at all. Section 71 names a
+ * handler for each and no config in the corpus uses one, so nothing here is counted against them.
+ *
+ * **The block `0x65` to `0x6E` is arch 14 only**, `ARITHMETIC_BLOCK`, section 107. Arch 9 and arch
+ * 12 test every one of those opcodes in the same descending ladder and branch to the dispatcher's
+ * exit, so an entry below is a reading for arch 14 and a no-op everywhere else. This is the second
+ * place the language is not one table across architectures, after arch 12's `0x3F` band `0xC0`.
+ *
+ * An entry may be a **function of the operand**, for the opcodes whose handler dispatches again on
+ * a field of its own: `0x70` and `0x71` resolve eight operations out of the operand's high nibble.
  */
-const MAIN: ReadonlyMap<number, Reading> = new Map([
+type MainEntry = Reading | ((operand: number) => Reading);
+
+/**
+ * The operations `0x70` and `0x71` select with the low nibble of the operand's high byte.
+ *
+ * Six comparisons in complementary pairs and two updates, from the `XORLW` chain at `0x0EEA8` on
+ * the Harmony 700 and `0x25198` on the One, which are the same chain. The left hand side is the
+ * accumulator for `0x70` and a byte register for `0x71`; the right hand side is always the state
+ * variable the operand's low byte names. Nibbles 8 to 15 fall off the end of the chain.
+ *
+ * Section 34 read this as "compare" alone, which is what six of the eight are. Nibble 7 is what a
+ * generator builds a remainder out of, so calling it a comparison hid the whole of section 107.
+ */
+const STATE_OPERATIONS: readonly (readonly [string, boolean])[] = [
+  ['is equal to', true],
+  ['is not equal to', true],
+  ['is greater than', true],
+  ['is less than', true],
+  ['is greater than or equal to', true],
+  ['is less than or equal to', true],
+  ['is added to', false],
+  ['is subtracted from', false],
+];
+
+/** Opcodes only arch 14 implements: elsewhere the ladder tests them and returns. Section 107. */
+export const ARITHMETIC_BLOCK: ReadonlySet<number> = new Set([
+  0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
+]);
+
+/**
+ * `0x70` and `0x71`, whose high nibble picks one of eight operations on a state variable.
+ *
+ * A comparison is a meaning: it sets the condition flag the caller's next instruction consumes. An
+ * update is a meaning too, and a stronger one, because the value written is clamped to the range
+ * base slot 13 states for that variable, which is a rail an editor has to respect.
+ */
+function stateOperation(opcode: number, operand: number): Reading {
+  const nibble = (operand >>> 8) & 0x0f;
+  const entry = STATE_OPERATIONS[nibble];
+  // Nibbles 8 to 15 reach no arm of the chain. The variable has already been read by then, so the
+  // instruction costs a read and changes nothing, which is a reading and not a gap.
+  if (entry === undefined) return noop(107);
+  const left = opcode === 0x70 ? 'the accumulator' : 'the byte register';
+  const [what, compares] = entry;
+  return means(
+    compares
+      ? `condition: ${left} ${what} the state variable the low byte names`
+      : `${left} ${what} the state variable the low byte names, clamped to its stated range`,
+    compares ? 34 : 107,
+  );
+}
+
+const MAIN: ReadonlyMap<number, MainEntry> = new Map<number, MainEntry>([
   [0x67, placed('third producer into the infrared queue, tag 5', 42)],
   [0x68, means('accumulator shifted right by the low byte', 34)],
   [0x69, means('accumulator XOR operand', 34)],
@@ -73,14 +133,31 @@ const MAIN: ReadonlyMap<number, Reading> = new Map([
   [0x6b, means('accumulator AND operand', 34)],
   [0x6c, means('write a device record', 71)],
   [0x6d, means('accumulator shifted left by the low byte', 34)],
-  [0x70, means('compare, accumulator against a state variable', 34)],
-  [0x71, means('compare, byte register against a state variable', 34)],
+  // The remainder of the same division the divide opcode below takes the quotient of: one helper,
+  // two result slots. Arch 14 only, like the rest of this block. Section 107.
+  [0x6e, means('accumulator modulo the operand, unsigned', 107)],
+  // Not absent and not a gap: the handler reads the accumulator, tests it for zero and returns by
+  // the same path either way, on all three architectures whose firmware we hold. Section 107.
+  [
+    0x6f,
+    {
+      what: 'nothing: the handler tests the accumulator for zero and both arms return',
+      section: 107,
+      depth: 'meaning',
+      noop: true,
+    },
+  ],
+  [0x70, (operand: number): Reading => stateOperation(0x70, operand)],
+  [0x71, (operand: number): Reading => stateOperation(0x71, operand)],
   [0x72, means("map a state variable's value through base slot 14", 39)],
   [0x73, means('run the base slot 11 screen program the operand indexes', 73)],
   [0x74, means('accumulate a digit into a twenty four bit value', 74)],
   [0x75, means('sound a tone: low byte the half period, high byte the cycles', 74)],
-  [0x77, placed('an accumulator operation through a helper', 34)],
-  [0x78, placed('an accumulator operation through a helper', 34)],
+  // Section 34 could only say "an accumulator operation through a helper" because it had not read
+  // the helpers. They are a restoring division and a 16 by 16 multiply, and both are compiled into
+  // all four images. Section 107.
+  [0x77, means('accumulator divided by the operand, unsigned; the quotient', 107)],
+  [0x78, means('accumulator times the operand, the low sixteen bits', 107)],
   [0x79, means('add the operand to the accumulator', 34)],
   [0x7a, means('load the accumulator with the operand', 34)],
   [0x7b, means('build an instruction at runtime and queue it', 34)],
@@ -277,7 +354,13 @@ export function reading(instruction: Instruction, architecture: number): Reading
   if (opcode >= STATE_WRITE_BASE) {
     return means(`state variable ${opcode - STATE_WRITE_BASE} = the operand`, 73);
   }
-  if (opcode >= SECOND_SPACE_LIMIT) return MAIN.get(opcode);
+  if (opcode >= SECOND_SPACE_LIMIT) {
+    // The arithmetic block exists only on arch 14. Everywhere else the ladder tests the opcode and
+    // branches to the exit, so the reading is "nothing" rather than the arch 14 one. Section 107.
+    if (architecture !== 14 && ARITHMETIC_BLOCK.has(opcode)) return noop(107);
+    const entry = MAIN.get(opcode);
+    return typeof entry === 'function' ? entry(operand) : entry;
+  }
 
   // Below `ACTION_NOOP_LIMIT` the dispatcher returns before looking at the operand at all, so
   // there is no sub opcode to resolve and every operand value means the same nothing.

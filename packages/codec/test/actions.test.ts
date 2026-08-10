@@ -21,6 +21,7 @@ import {
   BAND_3F_C0_PIN,
   BAND_3F_C0_PROPERTY_LIMIT,
   BAND_3F_C0_SELECTOR,
+  ARITHMETIC_BLOCK,
   STATE_WRITE_BASE,
 } from '../src/index.ts';
 import type { Instruction } from '../src/index.ts';
@@ -108,9 +109,12 @@ test('the state variable band of 0x1F stays inside the table too', skipUnless('h
 test('a reading distinguishes meaning from placement', () => {
   // The distinction is the point of the table: without it the first draft reported 100%.
   assert.equal(reading({ opcode: 0x7f, operand: 0 }, 14)?.depth, 'meaning');
-  assert.equal(reading({ opcode: 0x77, operand: 0 }, 14)?.depth, 'placement');
+  // `0x77` was the placement example here until section 107 read its helper, and `0x6E` was the
+  // no-reading one until the same section. Both were the obvious choices at the time, which is the
+  // reason this test now picks its examples from opcodes nobody is currently reading.
+  assert.equal(reading({ opcode: 0x67, operand: 0 }, 14)?.depth, 'placement');
   // No reading at all is a third state, not a placement.
-  assert.equal(reading({ opcode: 0x6e, operand: 0 }, 14), undefined);
+  assert.equal(reading({ opcode: 0x66, operand: 0 }, 14), undefined);
 });
 
 test('a band the dispatcher tests and ignores is a reading, not a gap', () => {
@@ -214,13 +218,17 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 });
 
 // name, meaning, placement, unread
+//
+// Section 103 moved 68 instructions from placement to meaning in each One config, the selector 17
+// uses of band 0xC0. Section 107 moved the rest: the two modulos in each arch 14 config out of
+// unread, and every divide and multiply out of placement, which is why the last column is zero
+// everywhere and no sample has an unread instruction left.
 const COVERAGE: [string, number, number, number][] = [
-  ['h700_config', 19370, 279, 2],
-  ['h600_config', 11996, 196, 2],
-  // Section 103 moved 68 instructions from placement to meaning, the selector 17 uses of band 0xC0.
-  ['one_config', 11487, 153, 0],
+  ['h700_config', 19372, 279, 0],
+  ['h600_config', 11998, 196, 0],
+  ['one_config', 11509, 131, 0],
   ['h525_config', 1013, 30, 0],
-  ['arch8_config_a', 3213, 98, 0],
+  ['arch8_config_a', 3233, 78, 0],
 ];
 
 for (const [name, meaning, placement, unread] of COVERAGE) {
@@ -233,9 +241,10 @@ for (const [name, meaning, placement, unread] of COVERAGE) {
   });
 }
 
-test('exactly one opcode in the whole corpus has no reading', skipUnless('one_config'), () => {
+test('no opcode in the whole corpus is left without a reading', skipUnless('one_config'), () => {
   // Guards against the table quietly growing to cover something nobody read, and against a new
-  // sample introducing an opcode that slips past unnoticed.
+  // sample introducing an opcode that slips past unnoticed. This asserted `['0x6e']` until section
+  // 107 read it, which is why the assertion is the whole list and not its length.
   const names = ['one_config', 'h700_config', 'h600_config', 'h525_config', 'arch8_config_a'];
   const left = new Map<string, number>();
   for (const name of names) {
@@ -245,7 +254,181 @@ test('exactly one opcode in the whole corpus has no reading', skipUnless('one_co
       left.set(k, (left.get(k) ?? 0) + n);
     }
   }
-  assert.deepEqual([...left.keys()], ['0x6e']);
+  assert.deepEqual([...left.keys()], []);
+});
+
+/**
+ * Section 107: the arithmetic block, and the two idioms a generator builds a remainder out of.
+ *
+ * The closure these tests carry is an identity rather than a firmware address. `x - (x / n) * n` is
+ * `x mod n` and `x - (x mod n)` is `(x / n) * n`, so the arch 8 and arch 12 generators computing
+ * one with a divide and a multiply, and the arch 14 generator computing the other with a modulo,
+ * are two readings of the same arithmetic. Neither could be right on its own accident.
+ */
+const MODULO = 0x6e;
+const DIVIDE = 0x77;
+const MULTIPLY = 0x78;
+const STATE_OPERATION = 0x70;
+const SUBTRACT_NIBBLE = 7;
+
+test('the arithmetic opcodes read as arithmetic, and only on arch 14 for the block', () => {
+  const at = (opcode: number, operand: number, architecture: number) =>
+    reading({ opcode, operand }, architecture);
+
+  // Modulo is arch 14's, and the same opcode is nothing on the three other architectures.
+  assert.match(at(MODULO, 5, 14)!.what, /modulo/);
+  assert.equal(at(MODULO, 5, 14)!.depth, 'meaning');
+  for (const architecture of [8, 9, 12]) {
+    assert.equal(at(MODULO, 5, architecture)?.noop, true, `arch ${architecture}`);
+  }
+  // Divide and multiply are outside the block, so they read the same everywhere.
+  for (const architecture of [8, 9, 12, 14]) {
+    assert.match(at(DIVIDE, 6, architecture)!.what, /divided/, `arch ${architecture}`);
+    assert.match(at(MULTIPLY, 6, architecture)!.what, /times/, `arch ${architecture}`);
+    assert.equal(at(DIVIDE, 6, architecture)!.depth, 'meaning');
+    assert.equal(at(MULTIPLY, 6, architecture)!.depth, 'meaning');
+  }
+  // And the whole block goes quiet off arch 14, not just the one opcode the corpus uses.
+  for (const opcode of [0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e]) {
+    assert.equal(at(opcode, 0, 12)?.noop, true, `0x${opcode.toString(16)} on arch 12`);
+    assert.ok(ARITHMETIC_BLOCK.has(opcode));
+  }
+  // 0x6F is not in the block: it is the same dead test on every architecture we hold firmware for.
+  assert.equal(ARITHMETIC_BLOCK.has(0x6f), false);
+  for (const architecture of [9, 12, 14]) {
+    assert.equal(at(0x6f, 0, architecture)?.noop, true, `arch ${architecture}`);
+  }
+});
+
+test('0x70 and 0x71 resolve eight operations, six comparisons and two updates', () => {
+  const at = (opcode: number, nibble: number) =>
+    reading({ opcode, operand: (nibble << 8) | 0x2d }, 14)!;
+
+  for (let nibble = 0; nibble <= 5; nibble += 1) {
+    assert.match(at(STATE_OPERATION, nibble).what, /^condition:/, `nibble ${nibble}`);
+    assert.equal(at(STATE_OPERATION, nibble).section, 34, 'a comparison is section 34s reading');
+  }
+  // The order is the one `docs/config-format.md` already recorded from section 34, which is worth
+  // saying because reading the chain's `BZ` targets in the order they appear gives 3, 4 and 5 the
+  // wrong way round: the chain tests nibble 7 first and falls through to nibble 0.
+  assert.match(at(STATE_OPERATION, 0).what, /is equal to/);
+  assert.match(at(STATE_OPERATION, 1).what, /is not equal to/);
+  assert.match(at(STATE_OPERATION, 2).what, /is greater than the/);
+  assert.match(at(STATE_OPERATION, 3).what, /is less than the/);
+  assert.match(at(STATE_OPERATION, 4).what, /is greater than or equal to/);
+  assert.match(at(STATE_OPERATION, 5).what, /is less than or equal to/);
+
+  // 6 and 7 are updates, and they carry the clamp, which is the rail an editor needs.
+  for (const nibble of [6, 7]) {
+    assert.match(at(STATE_OPERATION, nibble).what, /clamped to its stated range/);
+    assert.equal(at(STATE_OPERATION, nibble).section, 107);
+  }
+  assert.match(at(STATE_OPERATION, 6).what, /is added to/);
+  assert.match(at(STATE_OPERATION, 7).what, /is subtracted from/);
+
+  // The two opcodes differ only in the left hand side.
+  assert.match(at(0x70, 0).what, /the accumulator/);
+  assert.match(at(0x71, 0).what, /the byte register/);
+
+  // Nibbles 8 to 15 reach no arm of the chain.
+  for (const nibble of [8, 12, 15]) {
+    assert.equal(at(STATE_OPERATION, nibble).noop, true, `nibble ${nibble}`);
+  }
+});
+
+test('every corpus multiply follows a divide by the same operand', skipUnless('one_config'), () => {
+  // The arch 8 and arch 12 remainder idiom, and the reason both opcodes are believed: eight
+  // multiplies in the whole corpus, eight of them the second half of `x / n * n`. A multiply used
+  // for anything else would break this, and so would a divide that did not truncate.
+  const names = [
+    'one_config',
+    'one_config_unprogrammed',
+    'arch8_config_a',
+    'arch8_config_b',
+    'arch8_config_c',
+    'arch8_config_d',
+    'h700_config',
+    'h600_config',
+    'h525_config',
+  ];
+  let multiplies = 0;
+  let paired = 0;
+  const modulo = new Map<number, number[]>();
+  for (const name of names) {
+    if (!load(name)) continue;
+    const { lists: all, architecture } = lists(name);
+    for (const list of all) {
+      list.forEach((instruction, at) => {
+        if (instruction.opcode === MULTIPLY) {
+          multiplies += 1;
+          const before = list[at - 1];
+          if (before?.opcode === DIVIDE && before.operand === instruction.operand) paired += 1;
+        }
+        if (instruction.opcode === MODULO) {
+          assert.equal(architecture, 14, `${name}: a modulo off arch 14 would do nothing`);
+          modulo.set(architecture, [...(modulo.get(architecture) ?? []), instruction.operand]);
+        }
+      });
+    }
+  }
+  assert.ok(multiplies > 0, 'no multiplies found, so this proves nothing');
+  assert.equal(paired, multiplies, 'every multiply is the second half of a remainder');
+  // And the moduli are the step sizes, 5 and 10, one of each per arch 14 config.
+  for (const [, operands] of modulo) {
+    assert.deepEqual([...new Set(operands)].sort((a, b) => a - b), [5, 10]);
+  }
+});
+
+test('the arch 14 modulo idiom rounds a value down to a multiple', skipUnless('h700_config'), () => {
+  // Eight instructions, and the shape is what makes the reading a meaning rather than a placement:
+  //
+  //   accumulator = X;  scratch = accumulator;  accumulator = X
+  //   accumulator = X mod n
+  //   call a list whose one instruction is `scratch = scratch - accumulator`
+  //   accumulator = scratch;  X = accumulator
+  //
+  // so X becomes X - (X mod n), the largest multiple of n at or below X. The step the neighbouring
+  // lists add and subtract is the same n, which is the closure: a rounding to a grid the plus and
+  // minus buttons move on.
+  for (const name of ['h700_config', 'h700_config_2', 'h600_config']) {
+    if (!load(name)) continue;
+    const { lists: all, architecture } = lists(name);
+    assert.equal(architecture, 14);
+    const found: number[] = [];
+    for (const list of all) {
+      const at = list.findIndex((i) => i.opcode === MODULO);
+      if (at < 0) continue;
+      assert.equal(list.length, 8, `${name}: the idiom is eight instructions`);
+      assert.equal(at, 3, `${name}: the modulo is the fourth`);
+      const target = list[at + 1]!;
+      assert.equal(target.opcode, 0x7f, `${name}: the call comes next`);
+      // The called list subtracts the accumulator from the scratch variable, and nothing else.
+      const called = all[target.operand] ?? [];
+      assert.equal(called[0]!.opcode, STATE_OPERATION);
+      assert.equal((called[0]!.operand >>> 8) & 0x0f, SUBTRACT_NIBBLE);
+      const scratch = called[0]!.operand & 0xff;
+      // The scratch is the variable the second instruction saved the value into, and the last
+      // instruction writes the result back where the first read it from.
+      assert.equal(list[1]!.operand & 0xff, scratch, `${name}: the saved copy is the one updated`);
+      assert.equal(list[0]!.operand & 0xff, list[7]!.operand & 0xff, `${name}: read and written`);
+      assert.equal(list[6]!.operand & 0xff, scratch, `${name}: the result comes back from it`);
+      found.push(list[at]!.operand);
+
+      // The step: some other list adds this modulus to the same variable, and another subtracts it.
+      const variable = list[0]!.operand & 0xff;
+      const steps = new Set<number>();
+      for (const other of all) {
+        if (other.length !== 3 || other[1]!.opcode !== 0x79) continue;
+        if ((other[0]!.operand & 0xff) !== variable) continue;
+        if ((other[2]!.operand & 0xff) !== variable) continue;
+        steps.add(other[1]!.operand);
+      }
+      const n = list[at]!.operand;
+      assert.ok(steps.has(n), `${name}: variable ${variable} is stepped up by ${n}`);
+      assert.ok(steps.has((0x10000 - n) & 0xffff), `${name}: and down by the same`);
+    }
+    assert.deepEqual(found.sort((a, b) => a - b), [5, 10], `${name}: one grid each`);
+  }
 });
 
 /**

@@ -1713,8 +1713,10 @@ codec needs from them is this:
 | `0x3F` | operand high byte | four bands, one of which is the six byte instruction above |
 
 **`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ.** This
-is the only structure in the format so far that is not one table across architectures, so a `0x3F`
+is the only structure in the format so far that is not one table across architectures,<!--superseded--> so a `0x3F`
 band **must not** be ported between them. The failed prediction that found it is in section 73.
+
+**It is one of two**, section 107: the opcode block `0x65` to `0x6E` is arch 14 only, below.
 
 Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below
 `0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles 3 and 5. The corpus
@@ -1844,13 +1846,15 @@ Placed by their handlers:
 |---|---|
 | `0x7A` | load the sixteen bit accumulator with the operand |
 | `0x79` | add the operand to the accumulator |
-| `0x78`, `0x77` | two more accumulator operations, through helper routines |
+| `0x78`, `0x77` | ~~two more accumulator operations, through helper routines~~<!--superseded--> **multiply and divide**, section 107: one 16 by 16 multiply and one restoring division, `0x78` taking the product's low sixteen bits and `0x77` the quotient |
 | `0x7B` | build an instruction from a runtime byte and push it back on the queue |
-| `0x71` | **compare**: low byte indexes a lookup, low nibble of the high byte selects the operator, left hand side is a byte variable |
-| `0x70` | the same comparison, with the accumulator as the left hand side |
+| `0x71` | **eight operations on a state variable**: low byte indexes it, low nibble of the high byte selects, left hand side is a byte variable. Six comparisons and two updates, section 107 |
+| `0x70` | the same eight, with the accumulator as the left hand side |
 | `0x72` | **map a state variable's value**: low byte a state variable, high byte a base slot 14 record |
 | `0x6D`, `0x68` | accumulator **shifted left** or **right** by the operand's low byte; a count of zero is a defined no-op |
 | `0x6B`, `0x6A`, `0x69` | accumulator **AND**, **OR**, **XOR** operand |
+| `0x6E` | accumulator **modulo** the operand: the same division as `0x77`, taking the remainder instead of the quotient. Arch 14 only, section 107 |
+| `0x6F` | **nothing**, with a mechanism: the handler tests the accumulator for zero and both arms return, section 107 |
 | `0x6C` | **write a device record**: the accumulator from a preceding `0x7A` selects it, bit 15 of the operand selects one of two fields and the rest is the value, below |
 | `0x67` | the third producer into the infrared queue of `0x7C` and `0x7D`, tag `0x5`. What it means is unconfirmed |
 | `0x74`, `0x75` | ~~**one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode~~<!--superseded--> **two instructions**, section 74. Arch 14 issues neither, and the arch 12 dispatcher tests both: `0x75` **sounds a tone**, `0x74` accumulates a digit |
@@ -1869,8 +1873,30 @@ The comparison selector is `0` equal, `1` not equal, `2` greater, `3` less, `4` 
 nothing else**, over 2164 uses in ten configs, which is what made its high byte look like a group of
 six. `0x70` uses `0` to `3` and also `7`, nine times.
 
+**What `6` and `7` are is read**, section 107: the left hand side is **added to** the variable and,
+for `7`, negated first and so **subtracted from** it, in both cases clamped to the range base slot 13
+states for that variable. Selectors `8` to `15` reach no arm and do nothing. So the eight are six
+comparisons and two updates, and the nine uses of `7` are what an arch 8 or arch 12 generator builds
+a remainder out of.
+
 The lookup all three of `0x70`, `0x71` and `0x72` index with their low byte is the **state variable
-table**, base slot 13. [findings.md](findings.md) sections 34, 35 and 39.
+table**, base slot 13. [findings.md](findings.md) sections 34, 35, 39 and 107.
+
+#### The arithmetic block `0x65` to `0x6E` is arch 14 only
+
+Not one table across architectures, and the second such structure in the format after arch 12's
+`0x3F` band `0xC0`. Arch 9 and arch 12 test every one of those ten opcodes in the same descending
+ladder and branch to the dispatcher's exit, so the shift, the boolean operations, the device record
+writer and the modulo exist on arch 14 alone. `0x6F` is **not** in the block: it is the same
+do-nothing handler everywhere.
+
+The corpus agrees without being asked: of the eleven opcodes `0x65` to `0x6F` exactly two are used
+anywhere, `0x6C` and `0x6E`, both arch 14 only. A writer must not emit one for another architecture,
+where it is accepted and ignored. [findings.md](findings.md) section 107.
+
+**A zero operand to `0x6E`, `0x77` or `0x78` is defined rather than an error.** The division loop runs
+sixteen iterations whatever it is given, so a divisor of zero returns `0xFFFF` from `0x77` and the
+dividend itself from `0x6E`. Nothing traps and nothing hangs.
 
 #### The rest of the inventory, not established
 
