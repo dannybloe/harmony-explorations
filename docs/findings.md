@@ -13493,6 +13493,62 @@ declared limit is the **generator's** idea of the chip size, not the remote's: t
 for a 1 MiB part. That is consistent with the section being host side reservation, and it is why the
 comparison above is restricted to user configs.
 
+## 110. The journal's own variables on a running remote
+
+Section 109 read the flash and found the region erased, which says nothing about whether the firmware
+ever computed a region at all. The four variables the allocator writes are in data memory, and
+`READ_MISC` reads data memory off a running remote. So the arithmetic section 108 derived can be
+compared against what the remote actually holds, which is a stronger check than an erased window.
+
+Predictions first and committed before the read, per the `probe-remote` skill.
+
+### The three states the read can distinguish
+
+The setup is two independent steps, which is what makes one window informative rather than a coin
+flip:
+
+* **the container check**, `0x164B4`: reads the config's four byte marker, compares it against
+  `4C 57 4A 4C`, which is `LWJL`, and only then takes the header's `end_addr` at offset 4 and stores
+  `end_addr + 3` into `0x0F9` as the allocator's floor;
+* **the journal init**, `0x1594A`, called once from `0x1623C`: clears `0x0F0` to `0x0F8` and calls the
+  allocator, which fills `0x0F3` with the region's start and `0x0F6` with its size.
+
+So the window says which of the two ran:
+
+| what the window shows | what it means |
+|---|---|
+| floor set, region set | both ran, and section 108's arithmetic can be compared against the values |
+| floor set, region zero | the config was validated and the journal was never set up |
+| both zero | neither ran, and USB mode skips more of the config load than this project assumed |
+
+### The predictions
+
+All four values are 24 bit and **little endian, low byte at the lowest address**, which is how the
+allocator stores them.
+
+| address | predicted | what it is |
+|---|---|---|
+| `0x0F3` | `00 00 18` | the region's start, `0x180000` |
+| `0x0F6` | `00 00 08` | its size, `0x080000`, eight blocks |
+| `0x0F9` | `64 43 0E` | the floor, `0x0E4364`, this unit's `end_addr` plus three |
+| `0x688` | `00 00 20` | the chip size, `0x200000`, from the JEDEC capacity code |
+| `0x68E` bit 4 | clear | the container base selector: clear is the user config at `0x030000`, set is safe mode |
+
+**What is expected, and it is not confident.** The chip identification demonstrably runs on USB,
+because the version block carries the JEDEC pair section 109 measured, so `0x688` is the most likely
+of the five to be set. The config load is the uncertain one: a remote on USB never runs its
+application, section 48, and whether it validates and loads a config on the way to USB mode has never
+been established here. So the honest expectation is `0x688` set and the other four unknown, and the
+value of the read is in which of the three states above comes back.
+
+**What would falsify section 108 rather than a prediction.** If `0x0F3` and `0x0F6` are set to
+anything other than `0x180000` and `0x080000`, the allocator has been misread. That is the outcome
+worth most, and it is the reason this read is worth a commit before it happens.
+
+### What the remote said
+
+Not yet measured.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
