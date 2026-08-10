@@ -530,6 +530,12 @@ node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
                        the contribution probe: a few kilobytes of JSON describing a config's
                        shape and nothing of its contents, meant to be published. Opens the
                        device unless --file is given.
+node packages/usb/bin/session-end-control.ts
+                       one round of the session-end control: a plain read, close the handle, then
+                       it walks the operator through pulling the cable and plugging back in and
+                       says which outcome it saw. Enumeration after a replug is the machine
+                       readable proxy, since a stuck remote does not come back on the bus.
+                       Opens the device once, for the read. One round per run, on purpose.
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses
