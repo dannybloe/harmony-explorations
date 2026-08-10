@@ -13,11 +13,15 @@ The claims under test, in the order they are argued in the section:
   subtracts them, and the pairing skips the record's day of week byte on both sides;
 * the log appender's case 3 copies six of those bytes in descending order of significance, so its
   record is a timestamp;
-* what was measured on the bench remote is consistent with all of it.
+* the clock is **initialised from that record at boot**, which a power cycle measured: the remote
+  read its config's build timestamp plus ninety seconds of uptime;
+* and the tick that feeds it can only lose time, by an eight bit read, modify and write on a running
+  timer, which is why the owner's account of years of use is that it runs badly wrong.
 
 The measured values are pinned as a **relation** and not only as bytes: a seconds field that steps
-by four cannot leave its residue class modulo 4, and the observed set is exactly that class. A test
-that asserted `0x108 == 0x2f` would pass for the wrong reason and fail on the next remote.
+by four cannot leave its residue class modulo 4, and the observed set is exactly that class, while the
+power cycle's seven values are checked as the record plus an uptime. A test that asserted
+`0x108 == 0x2f` would pass for the wrong reason and fail on the next remote.
 
 Nothing here needs a remote. The hardware half is in `packages/usb/test/hardware.test.ts`.
 """
@@ -93,6 +97,20 @@ MEASURED_DISTINCT_SECONDS_IN_A_MINUTE = 15
 SECONDS_STEP = 4
 MEASURED_UNIT = 'one_spare_after_sync'
 
+# And what it held 90 seconds after a power cycle, which is the round that turned the initialisation
+# from a hypothesis into a finding. Six fields predicted exactly and the seventh is the uptime.
+AFTER_REBOOT = {SECOND: 52, MINUTE: 55, HOUR: 13, DAY: 6, WEEKDAY: 5, MONTH: 7, YEAR: 26}
+UPTIME_SECONDS = 90
+
+# The tick that feeds the clock, and the two ways it can only lose time. Section 111.
+TICK = 0x27BC8
+TIMER_HIGH = 0x0FCF             # TMR1H, and the tick does a read, modify, write on it
+T1CON = 0x0FCD
+RD16_BIT = 7                    # clear in the measured 0x1F, so every access is eight bits
+MEASURED_T1CON = 0x1F
+PHASE_MASK = 0x3F               # what it ANDs into the timer: bits 15 and 14 are one second each
+PHASE_BITS = 2
+
 
 def instructions(start, count, name=IMAGE, base=ONE_BASE):
     """`count` decoded instructions from `start`, as (address, Instr) pairs."""
@@ -131,6 +149,20 @@ def banked_reads(pairs, addresses):
         if src in wanted:
             out.append(src)
     return out
+
+
+def absolute(instr):
+    """The full data address an access names, or None when it is banked rather than access bank.
+
+    Same helper as `test_backlight.py`, and for the same reason: an SFR is in the access bank, so a
+    write to `TMR1H` names it unambiguously while a write to a general purpose register does not.
+    """
+    f = instr.fields.get('f')
+    if f is None:
+        return None
+    if instr.fields.get('a') == 0 and f >= 0x60:
+        return 0xF00 | f
+    return None
 
 
 def month_group(month):
@@ -195,6 +227,43 @@ class TheSecondsFieldTest(unittest.TestCase):
                 value -= SECONDS_PER_MINUTE
         self.assertEqual(value, 3)
         self.assertIn(3, MEASURED_SECONDS_SEEN)
+
+
+class TheTickTest(unittest.TestCase):
+    """Why the clock loses time, which is a claim about the access width and not about the crystal."""
+
+    def test_the_tick_consumes_whole_seconds_from_the_timer_itself(self):
+        got = instructions(TICK, 12)
+        # It saves the high byte, then clears the two bits it consumed in the running timer, which is
+        # what carries the fraction of a second across ticks rather than dropping it.
+        reads = [a for a, i in got if i.mnemonic == 'MOVFF' and i.fields.get('src') == TIMER_HIGH]
+        self.assertEqual(len(reads), 1, 'the high byte is taken once')
+        anded = [(a, i) for a, i in got
+                 if i.mnemonic == 'ANDWF' and absolute(i) == TIMER_HIGH and i.fields.get('d') == 1]
+        self.assertEqual(len(anded), 1, 'and written back with the consumed bits cleared')
+        self.assertLess(reads[0], anded[0][0], 'read first, write after: a read, modify, write')
+        literals = [i.fields['k'] for _, i in got if i.mnemonic == 'MOVLW']
+        self.assertIn(PHASE_MASK, literals)
+        # Two bits kept, so the phase cannot express more than three seconds of absence.
+        self.assertEqual(bin(0xFF ^ PHASE_MASK).count('1'), PHASE_BITS)
+        self.assertIn((1 << PHASE_BITS) - 1, [3])
+
+    def test_the_measured_timer_configuration_makes_the_access_eight_bit(self):
+        # `RD16` clear is what turns that read, modify, write into a lossy one: without the latch, a
+        # rollover of the low byte inside the window is written back over. Measured on the remote, so
+        # this pins the value the argument rests on rather than an assumption about the part.
+        self.assertEqual((MEASURED_T1CON >> RD16_BIT) & 1, 0, 'RD16 clear, so no 16 bit latch')
+        self.assertEqual(MEASURED_T1CON & 1, 1, 'and TMR1ON set, so it is running while written')
+
+    def test_the_loss_is_one_directional(self):
+        # A discarded carry removes 256 counts and can never add any, which is why this explains a
+        # clock that runs slow rather than one that wanders. Stated as arithmetic, not as a listing.
+        prescaled_hz = 16384
+        lost = 256 / prescaled_hz
+        self.assertAlmostEqual(lost, 0.015625)
+        per_day = lost * (24 * 60 * 60 / SECONDS_STEP)
+        self.assertLess(per_day / 60, 6, 'the upper bound is minutes a day, not hours')
+        self.assertGreater(per_day / 60, 5)
 
 
 class TheCalendarTest(unittest.TestCase):
@@ -340,6 +409,27 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
         # pull. The hour does not, and that difference is the whole open question.
         self.assertEqual(built.minute, MEASURED[MINUTE] + 1)
         self.assertNotEqual(built.hour, MEASURED[HOUR])
+
+    def test_the_clock_after_a_power_cycle_is_the_build_timestamp_plus_the_uptime(self):
+        """The round that settles it: six fields predicted exactly, the seventh is the uptime."""
+        skip = lab.require(MEASURED_UNIT)
+        if skip:
+            raise unittest.SkipTest(skip)
+        container = gspm.parse(lab.load(MEASURED_UNIT))
+        slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
+        offset = container.blob_offset_of(container.sections[slot].address)
+        built = gspm.clock_record(container.blob, offset)
+        read = datetime.datetime(2000 + AFTER_REBOOT[YEAR], AFTER_REBOOT[MONTH] + 1,
+                                 AFTER_REBOOT[DAY], AFTER_REBOOT[HOUR], AFTER_REBOOT[MINUTE],
+                                 AFTER_REBOOT[SECOND])
+        self.assertEqual((read - built).total_seconds(), UPTIME_SECONDS)
+        # The date fields are the record's exactly, which is the half that predicts nothing about time.
+        for field, name in ((DAY, 'day'), (MONTH, 'month'), (YEAR, 'year')):
+            self.assertEqual(AFTER_REBOOT[field],
+                             container.blob[offset + RECORD_FIELDS[name]], name)
+        self.assertEqual(AFTER_REBOOT[WEEKDAY], container.blob[offset + RECORD_FIELDS['weekday']])
+        # And the residue class is per power cycle, not fixed: this one is not the earlier one's.
+        self.assertNotEqual(AFTER_REBOOT[SECOND] % SECONDS_STEP, MEASURED[SECOND] % SECONDS_STEP)
 
     def test_the_measured_month_field_is_zero_based_like_the_record(self):
         # August is 8 and the field is 7, on both sides. Asserted because a one based reading of

@@ -483,6 +483,12 @@ order two configs of the same remote: it contradicts the recorded direction of t
 and that is unresolved, though the section 58 pair, whose direction was observed rather than
 recorded, is ordered correctly by it.
 
+**It is also what the remote's clock is set to**, at every boot, section 111: a power cycled Harmony One
+read this record's date exactly and its time plus its ninety seconds of uptime. So a writer stamps it
+with the moment of writing, because a stale timestamp is a wrong clock on the screen by exactly that
+staleness. Reproducing the input's timestamp is right for a round trip and wrong for a save, and it is
+the first field where those two come apart.
+
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
 dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that
@@ -708,7 +714,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for | 20, 77, 86 |
 | 1 | seven bytes stating the architecture, the only place the config says it | 20 |
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
-| 3 | the clock. Starts Timer 1, and holds the config's build timestamp | 21, 38 |
+| 3 | the clock. Starts Timer 1, and its build timestamp is what the remote's clock is set to | 21, 38, 111 |
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
@@ -741,6 +747,10 @@ corpus decode with nothing left over.
 Collected here because they are scattered across a dozen findings and every one of them is a way to
 produce a config the remote accepts and mishandles.
 
+* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: the remote sets its
+  clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. This is
+  the one field where reproducing the input byte for byte, which is what a round trip test wants, is
+  the wrong thing for a save.
 * **The trailer checksum is weak**, section 41: a `u16` XOR of little endian words seeded `0x4321`.
   Blind to two transposed words, so passing means the remote will not refuse the file, not that the
   file is right. **Demonstrated rather than argued now**: writing one operand into a mode page's

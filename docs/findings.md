@@ -2474,7 +2474,12 @@ configs of the same remote.
 
 ### What the firmware does with it, added in section 111
 
-The arch 12 firmware **subtracts the record from its own clock**. `0x27F20` seeks slot 3, steps two
+**It sets the remote's clock from it.** Measured on 10 August 2026: a Harmony One was power cycled and
+read 90 seconds later, and its clock held this record's date exactly and its time plus 90 seconds. So
+this record is not only provenance, it is the remote's idea of the current time until somebody changes
+it, which makes a stale timestamp in a written config a visible defect.
+
+The arch 12 firmware also **subtracts the record from that clock**. `0x27F20` seeks slot 3, steps two
 bytes past the `0xADDF` cookie and calls two helpers: `0x27CC0` differences the record's second, minute
 and hour against data memory `0x108`, `0x109` and `0x10A`, and `0x27DFA` differences its day, month and
 year against `0x10B`, `0x10D` and `0x10E`, with one extra cursor step in between that **skips the day
@@ -13808,11 +13813,20 @@ connected One is observable, and that is a bench capability nobody had establish
 27a14: MOVLW 0x3c          ; 60
 27a18: SUBWF 0x108,W
 27a1a: BNC   0x27a2c       ; under a minute: done
-27a1c: CALL  0x20072       ; carry into the minute
+27a1c: CALL  0x20072       ; a once a minute routine, and not the minute itself
 27a24: SUBWF 0x108,F       ; subtract 60
 27a28: BSF   0xf31,1       ; and flag that the minute changed
 27a2a: BRA   0x27a14       ; while it is still 60 or more
 ```
+
+**Where the minute is incremented is not located, and this section said `0x20072` first.** That routine
+reads `PORTA` bit 4 and `UCON` bit 3, so it is charger and USB housekeeping that happens to run once a
+minute; the increment is somewhere below it or in one of its callees. Neither `pic18_trace` nor an
+image wide scan finds a direct write to `0x109` at all, which is the `FSR` dead end the
+`trace-section` skill names first: an `LFSR` into the range does not exist either, so the pointer is
+loaded from a variable. **That the carry happens is measured twice**, once as `0x109` advancing in the
+same read where the seconds wrapped and once as the whole clock landing where the section below
+predicts, so the gap is in the attribution and not in the reading.
 
 `0x27F78` is the calendar above it. It reads `0x10B + 1` and `0x10D + 1` and `0x10E`, switches on the
 second of those through an `XORLW` chain whose case values are 1 to 12, and groups them
@@ -13917,6 +13931,100 @@ committed does not say, and the second is the one that makes a negative result r
   time of day the previous session saw, which today is around 19:00, means nothing reset and the round
   has to be repeated. Without naming it in advance, that outcome would read as the second one and
   would retire a live hypothesis on a failed experiment.
+
+### The clock comes from the config, measured
+
+The round was run on 10 August 2026 at 14:28 UTC: cable out, batteries out for about twenty seconds,
+batteries in, cable in, read. **The first outcome, to the minute.**
+
+| | predicted | measured |
+|---|---|---|
+| `0x10E`, year | 26 | **26** |
+| `0x10D`, month | 7, August | **7** |
+| `0x10B`, day of month | 6 | **6** |
+| `0x10C`, day of week | 5 | **5** |
+| `0x10A`, hour | 13 | **13** |
+| `0x109`, minute | 54, or a little past | **55** |
+| `0x108`, second | 22 plus the uptime | **52** |
+
+The config's record is `2026-08-06 13:54:22` and the remote read `2026-08-06 13:55:52`, so the whole
+difference is **90 seconds**, which is the time between the batteries going in and the read. **A
+Harmony One initialises its clock from base slot 3's build timestamp at boot.** Six of the seven
+fields were predicted exactly and the seventh is the uptime, from a value that differs per config, so
+this is not a shape that any initialiser would satisfy.
+
+**It also settles what the earlier reading was.** That session found 18:54:47, which is the same
+record plus 5 hours 0 minutes 25 seconds of uptime. The minute agreeing exactly was a genuine one in
+sixty coincidence, and it pointed at the right answer: the reason to run the round was a coincidence
+worth one battery pull, and the round is what makes it a finding.
+
+**Two things came with it, both corroborating section 111's other half.** The display light state read
+band 1, state 3, level 20 again, and this time it cannot be days old: it was computed inside the 90
+seconds this remote had been running, on a fresh boot, from this config's group 1. And the battery
+gauge read **6** where the earlier session read 7, on a unit that had just spent twenty seconds with
+its batteries out and had not been charging. So the sampler does run in normal mode and stops in USB
+mode, which is exactly outcome 2 rather than a converter that never runs.
+
+**What is not established is the code that does it.** The initialisation is confirmed by measurement,
+sharply, and no routine that writes `0x108` to `0x10E` from the record has been found: the direct
+write search comes back with only the calendar's three, and the pointer is not set up by an `LFSR`. So
+this is a behavioural finding with a firmware sized hole in it, and the hole is the one this project's
+own method notes name first.
+
+### What it means for an editor, which is less than the finding suggests
+
+This section first wrote the consequence up as though the clock mattered to somebody. **It does not**,
+on the account of the owner of two of these remotes, who has used one for years: the time is small on
+the screen, it runs badly wrong after a while, and he has never used it. That is the only evidence
+about the feature's value anyone here has, it comes from the person the feature was for, and it is
+worth more than an inference from the firmware.
+
+So the consequence is narrow and it is still a rail. **Write a config with a stale timestamp and the
+remote's clock is wrong by exactly that staleness, on every power cycle, until somebody sets it by
+hand.** Stamping the record with the moment of writing costs nothing and a wrong clock on the screen is
+a visible defect, so FreeHarmony stamps it. The part worth keeping is the general shape rather than the
+clock: a round trip test that reproduces an input config byte for byte would **reproduce the wrong
+clock on purpose**, which is right for a round trip and wrong for a save. That is the first field in
+this project where emitting the input exactly and emitting the correct thing come apart, and there will
+be others.
+
+### Why it runs badly wrong, which the owner's complaint pointed at
+
+A 32.768 kHz crystal does not lose minutes a day. The tick that feeds the clock can, and it is eleven
+instructions at `0x27BC8`:
+
+```
+27bc8: MOVFF TMR1H,0xd47    ; take the high byte of a running timer
+27bcc: MOVLW 0x3f
+27bce: ANDWF TMR1H,F        ; and clear bits 7 and 6 of it, in the timer itself
+27bd2: RLNCF 0xd47,W        ; the two bits that were there are the elapsed phase
+27bd4: RLNCF WREG,F
+27bd6: ANDLW 0x03
+27be0: SUBFWB 0xf23,W       ; against the phase the previous tick left
+27bec: MOVFF 0xd49,gprF34   ; and the difference is the elapsed whole seconds
+```
+
+Bits 15 and 14 of Timer 1 are one second each, since the prescaled rate is 16384 Hz, so consuming them
+by clearing them is arithmetically right: the bits below stay, and the fraction of a second is carried
+rather than dropped. **The loss is in how they are cleared.** `T1CON` is `0x1F`, measured on the remote
+this session, and bit 7 of it is `RD16`, so the 16 bit read and write latch is **off** and every access
+to this timer is an ordinary 8 bit one. `ANDWF TMR1H,F` is therefore a read, modify and write on the
+high byte of a counter clocked from a crystal that does not stop for it. Whenever the low byte rolls
+over inside that window, the carry it made into the high byte is written back over and **256 counts are
+gone**. Never gained: the write can only discard an increment, never invent one. 256 counts is 15.6 ms,
+the tick runs about once every four seconds, and a loss on every tick would be 5.6 minutes a day.
+
+There is a second mechanism in the same eleven instructions and it also only loses. The phase is **two
+bits**, so it can express at most three seconds of elapsed time. Anything that keeps this routine from
+running for four seconds or more, and a remote that spends time in an interrupt or asleep will, aliases
+whole four second blocks to nothing.
+
+**What is claimed and what is not.** The two mechanisms are read and both are one directional, so the
+clock loses time by construction. **The rate is not measured**: how often the rollover falls inside the
+window depends on timing this project has not modelled, so 5.6 minutes a day is an upper bound and not
+a prediction. What corroborates it is the owner's own account of years of use, which is that the clock
+runs badly wrong, and an upper bound of minutes a day is the right order for that. Measuring the rate
+needs the remote left alone for a day and read twice, which is cheap and has not been done.
 
 **7. Prediction 4 is wrong, and the way it is wrong is worse than the error.** `0x3FFFF0` is not
 erased. It reads `00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 ff 00 00`, and **this repository already

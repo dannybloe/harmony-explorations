@@ -1462,14 +1462,22 @@ are zero in all nineteen containers. The record closes at `0xEFBF`, so those thr
 section's own tail rather than part of the framing, and a writer emits them as zeros.
 `docs/findings.md` section 84.
 
-**What the arch 12 firmware does with it is established**, section 111: it subtracts the record from
-its own clock and accumulates the difference in seconds and in days, so what the remote computes is
-how long ago the config was built. The clock's seven data memory bytes at `0x108` to `0x10E` carry
-**this record's encoding field for field**, including the zero based month and the Saturday epoch
-weekday, and the subtraction skips the weekday on both sides because the firmware derives it.
-*Whether the clock is also initialised from the record is unconfirmed*: a remote was read holding its
-own config's build date to the day and the minute, which is suggestive and is one battery pull from
-settled.
+**What the arch 12 firmware does with it is established**, section 111, and it is two things.
+
+**It initialises the remote's clock from it, at every boot.** Measured: a Harmony One was power cycled
+and read 90 seconds later, and it held this record's date exactly and its time plus 90 seconds. So the
+clock's seven data memory bytes at `0x108` to `0x10E` carry **this record's encoding field for field**,
+including the zero based month and the Saturday epoch weekday. The code that performs the copy has not
+been located, so the mechanism is behavioural; the field pairing is not, being read out of the
+subtraction below.
+
+**And it subtracts the record from that clock**, accumulating the difference in seconds and in days, so
+the remote can compute how long ago the config was built. The subtraction skips the weekday on both
+sides because the firmware derives it.
+
+**A writer stamps this record with the moment it writes.** A stale timestamp is a wrong clock on the
+remote's screen after every power cycle, by exactly the staleness. Reproducing an input config's
+timestamp is right for a round trip and wrong for a save.
 
 Two things worth having for free:
 

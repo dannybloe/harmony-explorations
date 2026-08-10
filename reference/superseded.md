@@ -132,3 +132,5 @@ and leave this table alone.
 | `its two bytes are the wrong way round` | section 111 | nothing is the wrong way round: arch 12 reports manufacturer then device and arch 14 reports JEDEC capacity then manufacturer, and `reference/concordance-notes.md` had both right before section 109 |
 | `took from concordance and never questioned` | section 111 | it had been questioned and got right in two places; what section 109 found was two summaries flattening the two orderings into one |
 | `Reading 0x3FFFF0 off a Harmony One would say whether those` | section 111 | it was read, twice: the block on 9 August 2026 and the sixteen bytes on 10 August, and they are not erased |
+| `Whether the clock is also initialised from the record is unconfirmed` | section 111 | it is confirmed: a power cycled Harmony One read its config's build date exactly and its build time plus its uptime |
+| `carry into the minute` | section 111 | `0x20072` is charger and USB housekeeping that runs once a minute; where the minute is incremented is not located, and no direct write to `0x109` exists in the image |
