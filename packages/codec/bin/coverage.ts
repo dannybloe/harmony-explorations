@@ -18,6 +18,7 @@ import { IMAGES, load } from '@harmony/lab';
 
 import { coverage, parse, payloadOf } from '../src/index.ts';
 import type { CoverageReport } from '../src/index.ts';
+import { CONTAINERS } from './corpus.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -79,16 +80,14 @@ if (file !== undefined) {
   show(file, coverage(container), container.architecture);
 } else {
   let anything = false;
-  for (const name of Object.keys(IMAGES)) {
+  for (const name of CONTAINERS) {
+    // A named population rather than "whatever in IMAGES parses", because an arch 8 firmware image
+    // parses. See `corpus.ts` for what is deliberately excluded and why.
+    if (IMAGES[name] === undefined) throw new Error(`no lab entry named ${name}`);
     const data = load(name);
     if (data === undefined) continue;
-    let container;
-    try {
-      container = parse(data);
-    } catch {
-      continue; // not a container: the lab table holds firmware images too
-    }
     anything = true;
+    const container = parse(data);
     show(name, coverage(container), container.architecture);
   }
   if (!anything) {

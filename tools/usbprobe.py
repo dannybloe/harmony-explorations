@@ -24,6 +24,9 @@ Usage:  usbprobe.py [--json]
 import json
 import sys
 
+import _bootstrap  # noqa: F401
+from harmony.usbdesc import skin_id
+
 TRANSFER_TYPES = ('control', 'isochronous', 'bulk', 'interrupt')
 
 # Logitech's vendor id, and the product id range Harmony remotes fall in. The range rather
@@ -44,16 +47,10 @@ def remotes():
             'vendor': dev.idVendor,
             'product': dev.idProduct,
             'bcd_device': dev.bcdDevice,
-            'skin': _skin(dev.bcdDevice),
+            'skin': skin_id(dev.bcdDevice),
             'configurations': [_configuration(cfg) for cfg in dev],
         })
     return out
-
-
-def _skin(bcd_device):
-    """Same BCD reading as harmony.usbdesc.skin_id, kept local so this tool stands alone."""
-    low = bcd_device & 0xFF
-    return (low >> 4) * 10 + (low & 0x0F)
 
 
 def _configuration(cfg):
@@ -106,8 +103,12 @@ def main():
         return
 
     for dev in found:
-        print('%04X:%04X  bcdDevice 0x%04X, so skin %d'
-              % (dev['vendor'], dev['product'], dev['bcd_device'], dev['skin']))
+        # A skin of None means the high byte of bcdDevice is one no generation here accounts
+        # for, which is a finding rather than a formatting problem: say so instead of printing
+        # a number that was guessed.
+        skin = 'skin %d' % dev['skin'] if dev['skin'] is not None else 'skin UNREADABLE'
+        print('%04X:%04X  bcdDevice 0x%04X, so %s'
+              % (dev['vendor'], dev['product'], dev['bcd_device'], skin))
         for cfg in dev['configurations']:
             print('  configuration %d: bmAttributes 0x%02X, %d mA'
                   % (cfg['value'], cfg['attributes'], cfg['max_power_ma']))

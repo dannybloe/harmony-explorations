@@ -17,8 +17,10 @@ Reads:
   * `META.md`      the provenance and description record, if present
 
 A dump directory normally has all three. Publicly shared sample configs arrive without a
-concordance run attached, so a directory with a `META.md` and a config counts too, and the
-device details then come out of the config's own XML header instead.
+concordance run attached, so a directory holding a config counts too, and the device details
+then come out of the config's own XML header instead. **A config with no `META.md` beside it
+counts as well**, and it used to be skipped: that is precisely the dump this tool exists to
+report, and skipping it made the summary at the bottom say nothing was missing.
 
 Usage:
     corpus.py [lab_directory] [--json]
@@ -47,8 +49,14 @@ INFO_FIELDS = {
     'Config Flash Used': 'flash_used',
 }
 # A META.md counts as described once these template placeholders are gone from its content
-# section. Code spans and fenced blocks are stripped before the check, because real content
-# legitimately contains angle brackets, for example `<id>` in a variable name pattern.
+# section, and once it does not say outright that nothing has been recorded. Code spans and
+# fenced blocks are stripped before the check, because real content legitimately contains angle
+# brackets, for example `<id>` in a variable name pattern.
+#
+# The undescribed marker is a **convention**, stated in `dumps/META-template.md`, rather than a
+# guess at prose, and it has to be: "not recorded by the contributor" appears in the corpus's
+# best documented dump, immediately before the description that was read out of the file
+# instead. A looser match would report that one as undescribed.
 UNDESCRIBED_MARKERS = ('Not yet recorded', 'not yet recorded')
 PLACEHOLDER = re.compile(r'<[a-z][^>]{3,}>')          # prose placeholder like <make and model>
 CODE_SPAN = re.compile(r'`[^`]*`|```.*?```', re.S)
@@ -137,7 +145,13 @@ def scan(lab):
         dirs[:] = [d for d in dirs if not d.startswith('.')]
         info = [f for f in files if f.endswith('-info.txt')]
         cfg = sorted(f for f in files if f.lower().endswith('.ezhex'))
-        if not info and not (cfg and 'META.md' in files):
+        # A directory of configs is a dump whether or not anybody has written it up. The filter
+        # here used to require a META.md alongside them, which **skipped exactly the case this
+        # tool exists to report**: the kkong42 drop of 10 August 2026, eleven configs and no
+        # write up, was invisible to `make corpus` while the summary line at the bottom said
+        # nothing was missing. `meta_state` already has a value for the absence; it just was
+        # never reached.
+        if not info and not cfg:
             continue
         entry = {
             'path': os.path.relpath(root, lab),

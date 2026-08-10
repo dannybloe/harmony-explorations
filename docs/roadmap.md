@@ -61,10 +61,17 @@ rather more than that.
 | named models in concordance's skin table | 71, in 120 table positions |
 | architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
 | architectures with hardware on this bench | **3** (arch 9, arch 12 and arch 14) |
-| architectures with sample files only | 1 (arch 8) |
+| architectures with sample files only | **2** (arch 8 and arch 10) |
+| architectures with firmware in the lab | **4** (arch 8, 9, 12 and 14) |
 
-So the container claims are validated across four architectures and the USB claims across **three**,
-out of at least eleven. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
+So the container claims are validated across **five** architectures and the USB claims across
+**three**, out of at least eleven. The fifth arrived on 10 August 2026 with the kkong42 contribution,
+which also brought the first arch 8 firmware: sections 113 to 115. **Arch 10 parses and nothing reads
+it**, because 23 pointer slots is a layout nobody has derived, and every codec reader is gated off
+until it is derived rather than guessed. **Arch 8 has firmware and is still a control**, and what the
+images bought was three counterexamples: the skin rule, `GET_VERSION` field 6's fourth value, and the
+discovery that a firmware image can parse as a container, which had quietly admitted a program image
+to a corpus wide percentage. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
 every one of them an arch 12 assumption written as a universal: section 76. One boundary is already visible without owning anything: the 900, 1000 and 1100
 are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
 reach them at all, never mind parse them.
@@ -565,10 +572,13 @@ API. The learning interface is FH.
   contributor, source, permission status and the device details read out of the file itself.
   Checksums match the upstream `SHA256SUMS.txt` and are recorded in
   `reference/checksums.md`.
-* `tools/corpus.py` now accepts a dump directory that has a `META.md` and a config but no
-  concordance identity output, taking the device details from the config's own XML header. The
-  corpus reports 5 dumps over 4 architectures, with the arch 8 set correctly flagged as having
-  no recorded description.
+* `tools/corpus.py` accepts a dump directory with no concordance identity output, taking the device
+  details from the config's own XML header, **and one with no `META.md` either**. That second case
+  used to be skipped, which meant the eleven config kkong42 drop was invisible while the summary
+  line said nothing was missing: the one dump the tool exists to report was the one it could not
+  see. The corpus now reports 9 dumps over 5 architectures, with two sets flagged as undescribed.
+  The undescribed marker is a stated convention, `dumps/META-template.md`, because a looser match
+  reports the best documented dump in the corpus as undescribed.
 
 Still open from this step: all three `lab/dumps/danny/*/META.md` record "Publishing the dump
 itself or its contents: no". If any of those dumps has since been shared publicly, the META files
@@ -983,8 +993,10 @@ contents:
 * the outcome of each of the ten container checks, and any parse failure in full
 
 A few kilobytes of JSON, which the contributor can read before sending. It answers the questions
-that actually block generalisation: does the pointer table rule hold on arch 10, how many slots does
-arch 16 carry, does the USB command layer work at all on a model this project has never seen.
+that actually block generalisation: how many slots does arch 16 carry, does the USB command layer work
+at all on a model this project has never seen. **The arch 10 half of that question is answered without
+the probe**, section 115: two Harmony 890 configs arrived on 10 August 2026, the pointer table rule
+holds, and 23 slots is the open part.
 
 **The point of tier 1 is that it is publishable.** A concordance dump is not: it records what
 equipment somebody owns and carries their remote's GUIDs, which is why there is not one in this

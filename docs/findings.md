@@ -49,7 +49,17 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty four have been found and corrected so far. The newest is in section 112 and is the ordinary
+Thirty six have been found and corrected so far. The newest two are in section 113 and they are the
+kind that matter most, because both were in **shipped code that answered without failing**. The skin
+rule read `bcdDevice`'s low byte as BCD on every architecture, which is right on two of the four and
+turns a Harmony 885 into a Harmony 655 on a third; it had three copies, and the one remote that would
+have exposed it, an 885, arrived on 10 August 2026. And `usbdesc.find_block` returned the first
+descriptor chain that validates, which on the Harmony 525 is a Microchip stock descriptor left in the
+image by the USB stack, so the tool reported vendor `0x04D8` and skin 0 for a Logitech remote. Both
+are the same failure as the field split pitfalls in `CLAUDE.md`: a necessary test used as a sufficient
+one, producing a plausible answer.
+
+Before them, section 112, the ordinary
 kind: `docs/config-format.md` and section 78 both said the one arch 9 config draws no inline strings
 at all, which was true of the **decoder** when it was written and never revisited after section 85
 read the packing. That config draws 1435 codes. Sections 110 and 111 are worth reading beside
@@ -9378,8 +9388,8 @@ agree, and one unit can disagree with itself.
 
 ### What the low byte is
 
-A skin number, in Logitech's own numbering. Six of the eight containers whose remote's skin is known
-carry it exactly:
+A skin number, in Logitech's own numbering, and **in plain binary**. Seven of the nine containers
+whose remote's skin is known carry it exactly:
 
 | | word | low byte | the remote's skin |
 |---|---|---|---|
@@ -9389,11 +9399,17 @@ carry it exactly:
 | Harmony 650, safe mode | `0x0D48` | 72 | 72 |
 | Harmony 525, both configs | `0x0D16` | 22 | 22 |
 | Harmony 880, all four configs | `0x0D0F` | 15 | 15 |
+| Harmony 885, contributed 10 August 2026 | `0x0D11` | **17** | 17 |
 | Harmony One, the 2023 configs | `0x0D3B` | **59** | 54 |
 | Harmony 600, user config | `0x0D49` | **73** | 71 |
 
+The 885 is the seventh model and the one that matters most, because **it is the only entry that
+separates a plain reading from a BCD one**: `0x11` is 17 in binary and 11 in BCD, where `0x0F` is 15
+either way. That is what section 113 rests on, and it is why the skin rule in the USB code was wrong
+for two architectures until an 885 arrived.
+
 The two that miss are not arbitrary. Logitech's own classic software, in the private lab, carries a
-table of platform families against skin numbers, and it agrees with all six exact cases; the family
+table of platform families against skin numbers, and it agrees with all seven exact cases; the family
 it calls Gin is the arch 12 platform this project already names that way. In that table 59 and 73
 are unallocated.
 
@@ -10014,6 +10030,33 @@ doing: `one_spare_after_sync` was compiled by Logitech's own service on 6 August
 **one device and one activity**, chosen that day and written down before the remote was read. It
 reports one and one. The other end is the arch 9 safe mode container, which drives nothing: one
 named variable, the activity state, highest value zero.
+
+**A second calibration arrived on 10 August 2026, and it is the only one from a config nobody here
+compiled.** One of the eleven contributed configs, an arch 8 Harmony 885, came with a hand written
+sheet its owner made of that remote's own screens: the devices screen, the activity screen, and the
+custom buttons of each. The reader was run against it without the sheet having been used to build
+anything:
+
+| | the reader | the owner's sheet |
+|---|---|---|
+| devices | 7 | 7, listed by make and model |
+| activities | 9 | 9 on the activity screen |
+
+Seven of seven and nine of nine, on an architecture whose inventory had never been checked against
+anything but itself. **The sheet's own detail section describes only eight activities**, and the
+discrepancy is in the sheet rather than the config: its activity screen lists nine, and the ninth is
+the one the author did not write up. So the reader was right and reading the prose rather than the
+screen listing would have called it wrong, which is a fair warning about ground truth supplied in
+prose.
+
+The transition rule above holds on it too, every record covering its whole range evenly, which is
+worth more than the tally growing: that config is **deliberately outside** the fifteen container
+population the counts of 83, two and one are taken over, so the rule is confirmed on a sample that
+does not feed it. Admitting the eleven contributed configs to the corpus wide figures is its own
+piece of work, because it moves every one of them at once and both suites have to move together.
+
+`reference/checksums.md` records the contribution; nothing out of the sheet is quoted here or
+anywhere else in this repository, because it names its owner's own equipment.
 
 The gate's other question, what would falsify this, has a cheap answer: a config built for a known
 number of devices and activities that reports a different pair. That is one sync away whenever a
@@ -14297,6 +14340,332 @@ configs disagree about codes for characters they both draw.
 **No decoded string is printed by any tool here and none is quoted in a test.** A config's strings
 are its owner's own equipment names and this repository is public, so `make text --names` counts the
 matches and never shows them.
+
+## 113. What `bcdDevice` says, and the two ways its low byte is read
+
+A skin is Logitech's own index into its model list, so the number names the remote. That has been
+used here since section 19 and the reading of it was wrong for two of the four architectures, in
+three separate copies of the rule, in shipped code. The 885 is what found it.
+
+### What a skin is, said three times by three different files
+
+| statement | where | authority |
+|---|---|---|
+| `<SKIN>17</SKIN>` | the EZHex header of every config | the host software that built it |
+| `bcdDevice` low byte | the firmware's USB device descriptor | the remote itself |
+| base slot 1 byte 2 | inside the container | copied by an editor, section 81 |
+
+The third is the weakest and section 81 says why: nothing on the remote reads base slot 0 or base
+slot 1, so a stale value there is never caught. Two containers in the corpus carry a skin their
+remote does not report. The first two are independent of each other, produced by different halves of
+Logitech's toolchain, and they agree in every pair available:
+
+| model | skin | `bcdDevice` | protocol |
+|---|---|---|---|
+| Harmony 880 | 15 | `0x080F` | 8 |
+| Harmony 885 | 17 | `0x0811` | 8 |
+| Harmony 525 | 22 | `0x0916` | 9 |
+| Harmony One | 54 | `0x1054` | 12 |
+| Harmony 700 | 66 | `0x1066` | 14 |
+| Harmony 600 | 71 | `0x1071` | 14 |
+| Harmony 650 | 72 | `0x1072` | 14 |
+
+Resolved against the model table in concordance's `remote_info.h`, all seven name the right remote,
+and so does the 890's 19, from its config alone since no arch 10 firmware is available. That table is
+used here as a name for a number and never as evidence for the encoding, which is what the rest of
+this section is about.
+
+### The encoding is per firmware generation, and one formula silently names the wrong remote
+
+The high byte says which:
+
+* **`0x08` and `0x09`**: the low byte is the skin in plain binary, and the high byte is the protocol
+  number. `0x080F` is protocol 8 skin 15.
+* **`0x10`**: the low byte is the skin in **BCD**, on arch 12 and arch 14 alike, so there the high
+  byte is a constant and not the protocol. `0x1054` is protocol 12 skin 54.
+
+`skin_id` applied the BCD reading to everything. **The 880 alone would never have caught that**,
+because `0x0F` is 15 under either rule; malformed BCD, and the formula happens to be right about it.
+The 885's `0x11` is 17 in binary and 11 in BCD, and Logitech's model list has a **Harmony 655** at
+11. The mistake in the other direction is the same shape: a 700's `0x1066` read as binary is 102,
+which is a **Harmony Ultimate One**. Two wrong readings, two remotes that exist, no error either
+way.
+
+That is why the two rules are kept apart rather than unified, and why an unrecognised high byte
+returns nothing at all. `0x0A` for the 890 is the obvious next entry and it is deliberately **not**
+implemented: no arch 10 firmware exists here to check it against, and a prediction in the code is
+indistinguishable from a measurement once it is committed.
+
+### An argument that was wrong while its conclusion was right
+
+`tests/test_usbdesc.py` justified BCD with "0x66 read as hex is 102, and there is no skin 102".<!--superseded-->
+There is. The conclusion held for arch 14 on other grounds, the agreement with two configs' stated
+skins, but the reasoning was an invented negative control, and it is replaced by a checked one. Two
+fixtures in `packages/usb/test/remote.test.ts` were invented the same way, `0x1015` for an 880 and
+`0x1022` for a 525, and both are values no remote reports.
+
+### Why the two generations differ, which the container answers
+
+Base slot 1 carries the skin as a **plain byte on every architecture**, section 81, including arch 12
+and arch 14: `0x0D36` for a Harmony One is 54, `0x0D42` for a 700 is 66. So the skin itself is not a
+BCD quantity anywhere. What is BCD is the USB field, and that follows the specification: `bcdDevice`
+is by convention a binary coded decimal device release number, so whoever built the arch 12 and arch
+14 descriptors honoured the convention and whoever built the arch 8 and arch 9 ones did not.
+
+The 885 extends section 81's table by a seventh model, `0x0D11` for skin 17, and it is the only
+entry in it that separates the two readings. The corpus's four arch 8 configs are all one model, an
+880, which is why this could not have been found before the 10 August 2026 contribution.
+
+### A second descriptor block that validates just as well as the real one
+
+`usbdesc.find_block` returned the first candidate whose chain walks, and the 525's image holds two:
+
+| address | vendor:product | `bcdDevice` |
+|---|---|---|
+| `0x00E92` | `04D8:000B` | `0x0000` |
+| `0x07DFE` | `046D:C111` | `0x0916` |
+
+`04D8` is **Microchip**, and `000B` with a zero release is its stock demonstration descriptor, left
+in the image by the USB stack the firmware is built on. It walks perfectly: eighteen byte device
+descriptor, configuration, interface. So the tool reported vendor `0x04D8` and skin 0 for a Logitech
+remote, and nothing failed. The block whose `idVendor` is Logitech's now wins, with the first
+validating chain as a fallback for an image where none names it. **The chain walk is a necessary
+test and it was being used as a sufficient one**, which is the same error as reading a field's form
+from its contents rather than from the byte that states it.
+
+Nothing downstream had noticed because the descriptor tests walk two images, the One's and the 700's,
+and the 525's was never in that list. It is now.
+
+### Where it lands
+
+`src/harmony/usbdesc.py` holds the one Python copy. **The rule had three copies and now has two**,
+one per language: `tools/usbprobe.py` kept a local duplicate on the stated grounds that the tool
+stands alone, and every other tool in that directory imports `harmony` through `_bootstrap`, so the
+reason was unfounded. `packages/usb/src/transport.ts` is the TypeScript one, and it cannot be shared,
+so `packages/usb/test/remote.test.ts` asserts the same seven pairs the Python test derives from the
+files. Both return an absent value rather than a number when the generation is unknown, and both
+tools print `skin UNREADABLE` rather than a guess.
+
+`tests/test_usbdesc.py` carries the closure, each firmware image against a config of the same model,
+and the two negative controls above as assertions rather than as prose.
+
+## 114. The first arch 8 firmware, and an arch 8 safe mode config inside it
+
+Contributed on 10 August 2026 through harmony-decompiler discussion 17, two images dumped with
+`concordance -b -f`. **That command works on arch 8 precisely where it fails on arch 12 and arch
+14**, and the reason is in `reference/concordance-notes.md`: arch 8 gives `firmware_base` its own
+region at `0x010000` with `config_base - firmware_base` exactly `FIRMWARE_MAX_SIZE`, so the flat
+64 KiB read lands on the firmware region and nothing else. Asking a contributor for it is therefore
+the route to an arch 8 image, which is what happened.
+
+### Two images of one build, differing in the skin and nothing else
+
+65536 bytes each, and they differ at exactly two offsets, `0x1C4A` and `0xA63C`, `0x0F` against
+`0x11`: skins 15 and 17, an 880 and an 885. So one firmware build serves both models and states
+which one it is twice, in a constant table and in its USB descriptor.
+
+The stored checksum is identical in both, and that is arithmetic rather than luck. The image checksum
+is a `u16` XOR of even offset bytes into one seed and odd offset bytes into another, and the two skin
+bytes sit at the same parity, so `0x0F ^ 0x11` cancels between them. **A model number that changes
+without changing the checksum is a rail a writer would want to know about**, and it is the same
+weakness the container's trailer has, section 41.
+
+### The load address, with the runner up reported
+
+`loadaddr.find_base` gives `0x010000`: 985 of 995 branch targets in range and **979 landing on an
+instruction boundary**, against 602 for the runner up at `0x00D000` and 552 for the one after it. It
+agrees with concordance's `firmware_base` for arch 8, which is the calibration this derivation asks
+for: a value already believed on other grounds.
+
+### The checksum verifies, and the shorter lengths that also verify are an artefact
+
+Same algorithm and the same two seeds as arch 12 and arch 14, over the whole 65536 bytes.
+
+| length | verifies |
+|---|---|
+| `0x08000` | no |
+| `0x0C000` | no |
+| `0x0F000` | no |
+| `0x0FB90` | yes |
+| `0x0FF00` | yes |
+| `0x0FFF0` | yes |
+| `0x0FFFE` | **no** |
+| `0x10000` | yes |
+
+The last non `0xFF` byte is at `0x0FB88`, so everything above `0x0FB90` is padding, and a whole
+number of `0xFFFF` words XORs to nothing. Each length in the table that verifies drops an **even**
+number of padding words; `0x0FFFE` drops one, which is odd, and it fails. So the three short passes
+say nothing about where the image ends, and the one failure is what demonstrates that. Worth stating
+because a checksum that verifies over four different lengths looks like a weak checksum and is
+actually a strong one meeting a run of identical bytes.
+
+### The header layout is not arch 12's, and the parser does not know that
+
+| offset | arch 12 and arch 14 | arch 8 |
+|---|---|---|
+| 0 | `u16` checksum | `u16` checksum |
+| 2 | `0xFFFF` | `0xFF00` |
+| 4 | `u16` size field | **the `HG` magic** |
+| 6 | family, version BCD | `0x0000` |
+| 8 | the `HG` magic | `0xC000` |
+| 10 | a `GOTO` to the entry point | `0x1020` |
+
+Which is concordance's `firmware_4847_offset`, 4 for arch 8 against 8 for the others, confirmed from
+the bytes rather than taken from the table. **`firmware.parse_header` reads it as arch 12's anyway
+and answers without complaining**: it reports a size field of 18248, which is the two magic bytes
+read as a `u16`, and `recover_size` then returns 83792 for a 64 KiB image. `verify_checksum` is
+unaffected, since that field is at offset 0 on both. The arch 9 image is worse and in a way that is
+at least visible: it has no image header at all at offset 0, because that dump starts at the
+bootloader's reset vector, so the version reads `0xFF` and the magic is absent. **This is recorded as
+a defect and not fixed here**, because only two of the arch 8 header's fields are read, and a parser
+that guesses the rest would be the same mistake in a new place. See "Open".
+
+### The version block's five constants, and a new value for the one field with no reading
+
+The five consecutive `RETLW` instructions section 57 identified are at `0x11C46`, in the same order:
+field 0, field 4's low nibble, field 5, field 6, field 4's high nibble.
+
+| | 880 | 885 | what it is |
+|---|---|---|---|
+| field 0 | `0x44` | `0x44` | firmware version 4.4, BCD |
+| field 4 low | `0x00` | `0x00` | software type 0 |
+| field 5 | `0x0F` | `0x11` | **skin, 15 and 17** |
+| field 6 | `0x08` | `0x08` | no reading, see below |
+| field 4 high | `0x08` | `0x08` | architecture 8 |
+
+The order is not assumed, it is checked by where the skin lands: field 5 is the only one of the five
+that differs between the images, and it differs by exactly the two skins the configs state. Three of
+the other four agree with the XML header too, which gives protocol 8 and software type 0.
+
+**Field 6 is the one `GET_VERSION` field with no reading at all**, sections 59 and 87, and this is a
+fourth value for it:
+
+| architecture | 8 | 9 | 12 | 14 |
+|---|---|---|---|---|
+| field 6 | `0x08` | `0x09` | `0x0C` | `0x0C` |
+
+So field 6 **is** the architecture on three architectures out of four and is not on the fourth, which
+is a narrowing rather than an answer: it rules out "the architecture" as the reading, since arch 14
+would then be `0x0E`, and it rules out the idea that the constant is arbitrary per build. What it
+looks like is a generation number that stopped advancing at 12. The `bcdDevice` high byte from section
+113 goes `0x08, 0x09, 0x10, 0x10` over the same four, which is the same shape and a different value in
+the pair, so the two are not copies of one variable. Nothing here settles it and no code depends on
+it.
+
+The USB descriptor block is at `0x1A630`, decoded in section 113.
+
+### An arch 8 safe mode container, inside the firmware region
+
+`gspm.parse` finds a complete container in the image, at blob offset `0xE000`, which is flash
+`0x01E000`: the last 8 KiB of the firmware region, immediately below `config_base` at `0x020000`.
+
+| | value |
+|---|---|
+| cookie and marker | `TPTP` / `WLWL` / `DKDK`, the arch 8 family |
+| format | `0x1500` |
+| pointer slots | 21 |
+| length | 7049 bytes |
+| built | 3 April 2005, 00:55:31 |
+| checks | all eleven pass, trailer checksum included |
+
+**This is the first arch 8 safe mode container anywhere in this project**, and the third
+architecture to have one after arch 12 and arch 9. It is byte identical in both images, which follows
+from the two differing bytes both sitting below `0xE000`. Its timestamp makes it the oldest artefact
+in the corpus by two years.
+
+One thing in it disagrees with every user config: **its base slot 1 is two bytes of zero**, where an
+arch 8 user config carries the seven byte record `08 08 <skin> 0d 00 00 00`. So the container that
+ships with the firmware does not state its own architecture at all. Section 79 met the short form on
+arch 9, whose safe mode container is three bytes, `09 09 12`, and section 78 settled that the extent
+is simply the gap to the next pointer like every other section's; here the gap is two.
+
+Those three bytes are worth a line of their own, because **the arch 9 safe mode container names a
+skin its remote is not**: `0x12` is 18, and 18 is a Harmony 520 where the remote it was read off is a
+525, which is 22. Both are the skin Logitech's table calls Mocha Decaf. The arch 12 safe mode
+container names 54, which is its own model exactly. So one safe mode container is per model, one is
+per skin family, and arch 8's names nothing, from three architectures. Nothing here depends on it and
+a writer must not read a model out of this field.
+
+### What is missing from the image, and how to get it
+
+**The reset vector is not in it.** The dump starts at `0x010000` and a PIC18 begins at `0x000000`, so
+the whole region below the firmware, which holds the bootloader and the safe mode code that would
+recover a bricked remote, is absent. `concordance -s` reads exactly that: `read_safemode_from_remote`
+takes `FIRMWARE_MAX_SIZE` from `ri.arch->flash_base`, and arch 8's `flash_base` is `0x000000`. It is
+gated on `is_fw_dump_supported()`, which refuses only Z remotes, so it will run.
+
+That is the one thing worth asking the contributor for, and it is worth asking before anything else
+about arch 8: everything above rests on an image whose entry point nobody has seen.
+
+## 115. Architecture 10 arrives, and what it measures
+
+Two Harmony 890 configs came with the same 10 August 2026 contribution, protocol 10, skin 19, board
+0.1.0. **Arch 10 is a real fifth architecture in the corpus and its container is a fourth shape**,
+which is worth recording now even though nothing reads it yet, so that the predictions are written
+down before the work rather than after it.
+
+| | arch 10 | what the corpus had |
+|---|---|---|
+| format word | `0x1700` | `0x1400`, `0x1500`, `0x1600` |
+| pointer slots | **23** | 20, 21, 22 |
+| config flash base | `0x030000` | `0x020000` on arch 8 |
+| cookie | `TPTP` family | as arch 8 |
+
+So format is confirmed once more not to be an architecture identifier: three architectures and three
+format words here, but arch 9 and arch 14 still share `0x1400`.
+
+### Which checks pass, and which do not
+
+Of the eleven the container reader applies, `H890-Bedroom-1` fails four:
+
+| check | why |
+|---|---|
+| `pointer_count_known` | 23 is a length the reader has no layout for |
+| `slot0_is_a_feed_frame` | the `0xFEED` frame is not where a 20 slot table puts it |
+| `slot1_states_the_architecture` | reads as a long run of bytes, not a seven byte record |
+| `slot3_is_a_timestamp` | likewise |
+
+The three structural ones pass: `end_addr_points_at_end_marker`, `section_table_ends_at_the_marker`
+and `trailer_checksum_recomputes`. **So the container framing is the same format and only the slot
+mapping is unknown**, which is what a fourth pointer table length predicts: arch 8 inserts a NULL at
+base slot 8, arch 12 inserts that plus a real section at base slot 18, and arch 10 inserts three
+somewhere nobody has looked. Until that mapping is derived, `gspm.arch_slot` cannot translate an arch
+10 slot and every reader is correctly gated off rather than producing plausible sections.
+
+### The wrapper behaves, which is the reason the container's own numbers can be trusted
+
+Section 14's `BINARYDATASIZE` and `CHECKSUM` rules hold on a fifth architecture without amendment:
+
+| | header ends | `BINARYDATASIZE` | blob offset | file |
+|---|---|---|---|---|
+| `H890-Bedroom-1` | 3154 | 396927 | 3156 | 400083 |
+| `H890-Bedroom-2` | 3155 | 397737 | 3157 | 400894 |
+
+`blob_offset + BINARYDATASIZE` is the file length in both to the byte, with the two byte `\r\n`
+between the header and the payload exactly where section 87 says. The payload checksum verifies too, 33 and 118 against
+the same `0x69` seed.
+
+**That is what makes the rest of this section a container problem rather than a file problem**: the
+payload's extent is stated and checked, so a container whose length disagrees with it is disagreeing
+with a verified number and not with a guess. And it does disagree. On every other architecture the
+container's own length is the payload length **exactly**, zero bytes either side, on six configs
+spanning arch 8, 9, 12 and 14. On arch 10 there are **702 bytes left over** in one file and 648 in the
+other, above a container that nonetheless lands its own end marker where its header says. Whether that
+is 700 odd bytes of something after the trailer or a container header this reader is misreading is not
+established, and it is the first thing to settle about arch 10.
+
+### The one measurement that does not fit
+
+`H890-Bedroom-2` declares its flash base as `0x02FCA0` where the other declares `0x030000`, and it is
+the only container of the two whose **trailer checksum does not recompute**. `0x030000 - 0x02FCA0` is
+`0x360`, an unround offset for a config region, so the likeliest reading is that its container does not
+start where the reader thinks and both symptoms are one cause. Not investigated: arch 10 is not a
+target yet, and this is written down so that whoever picks it up starts from the discrepancy rather
+than rediscovering it.
+
+Both are in `tools/golden.py`'s vector list, failing checks and all, so the Python and TypeScript
+readers are held to agreeing about arch 10 while neither understands it. That is deliberate: the
+comparison is worth more before the readers are written than after.
 
 ## References
 

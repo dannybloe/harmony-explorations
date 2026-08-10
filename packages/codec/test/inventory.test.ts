@@ -60,6 +60,37 @@ for (const [name, variables, activities, devices, ids] of INVENTORY) {
     });
 }
 
+test('the reader agrees with a config whose owner wrote out its own screens by hand',
+  skipUnless('arch8_config_885'), () => {
+    // The second calibration for section 86, and the only one from a config nobody here compiled.
+    // One of the eleven configs contributed on 10 August 2026 came with a hand written sheet of that
+    // remote's devices screen and activity screen. Seven devices and nine activities on the sheet,
+    // and this reader had never seen it.
+    //
+    // **The sheet's prose describes only eight activities**, while its own activity screen lists
+    // nine and the ninth is simply the one the author did not write up. So the reader is right and
+    // believing the prose over the listing would have called it wrong.
+    //
+    // Nothing out of the sheet is quoted here or anywhere in this repository: it names its owner's
+    // own equipment by make and model.
+    const c = parse(load('arch8_config_885') as Uint8Array);
+    assert.equal(deviceCount(c), 7);
+    assert.equal(activityCount(c), 9);
+    // And the rule from the test above holds on it, which is the point of checking a sample that is
+    // outside the population that tallies it: every record covers its whole range evenly.
+    for (const variable of stateVariables(c)) {
+      const record = variable.record;
+      if (record === undefined || record.count === 0) continue;
+      const tally = new Map<number, number>();
+      for (const value of record.values) tally.set(value.to, (tally.get(value.to) ?? 0) + 1);
+      for (let value = 0; value <= record.second; value += 1) {
+        assert.ok(tally.has(value), `variable ${variable.index} skips value ${value}`);
+      }
+      assert.equal(new Set(tally.values()).size, 1, `variable ${variable.index} is uneven`);
+      assert.equal(record.count, (tally.get(0) as number) * (record.second + 1));
+    }
+  });
+
 test('a safe mode container has no activities and no devices', skipUnless('h525_safemode_ahcm'),
   () => {
     // The other end of the calibration: a container that drives nothing says so. Its one named
@@ -96,6 +127,11 @@ test('a record that enumerates anything enumerates every value the same number o
     // two of them and 4 in one. So the eight byte entries belong to the variable's range rather
     // than being a list that happens to sit after the header, and the count is the number of
     // transitions rather than the number of values.
+    //
+    // The distribution is over `INVENTORY`, which is the fifteen container corpus and deliberately
+    // not the two samples added on 10 August 2026. The test below checks the rule itself against one
+    // of those, because the rule holding on a config outside the population is worth more than the
+    // tally growing.
     const perValue = new Map<number, number>();
     let empty = 0;
     for (const [name] of INVENTORY) {

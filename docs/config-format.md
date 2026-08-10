@@ -25,7 +25,10 @@ u16 checksum + end marker
 
 Validated against **seventeen samples across four architectures**, five base addresses
 (`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three
-pointer table lengths (20, 21, 22). Every consistency check passes on all seventeen. See
+pointer table lengths (20, 21, 22). Every consistency check passes on all seventeen. A fifth
+architecture and a fourth of each arrived on 10 August 2026 and is **not** in that set: arch 10,
+format 1.7, 23 slots, whose framing verifies while four of the checks fail on the slot mapping.
+See the cookie table below and section 115. See
 `tests/test_gspm.py`. The sixteenth is the bench Harmony 525's own config, read over USB on
 8 August 2026 and identical in every container field to the published arch 9 sample, section 76.
 
@@ -67,6 +70,7 @@ position dependent and cannot simply be relocated.
 | 9 | 36x, 51x, 52x, 55x | `AHCM` | `MCHA` | `CMAH`, contents unestablished | `0x1400` |
 | 12 | One | `GSPM` | `PTYY` | `LWJL`, key table | `0x1600` |
 | 14 | 600, 700 | `GSPM` | `PTYY` | `LWJL`, key table | `0x1400` |
+| 10 | 89x | `TPTP` | `DKDK` | `WLWL` | **`0x1700`** |
 
 The cookies agree with concordance's own per architecture table, which also lists `BMBM` for
 arch 7 (the older 6xx). No arch 7 sample has been seen here, so its end marker is unknown and
@@ -75,6 +79,13 @@ a different layout.
 
 Note that `format` is not an architecture identifier: arch 9 and arch 14 both carry `0x1400`.
 It is a generation of the format, and the cookie is what says which architecture.
+
+**Arch 10 is the newest row and nothing beyond this table is read from it**, section 115: two
+Harmony 890 configs, format 1.7 and **23 pointer slots**, based at flash `0x030000`. The framing
+verifies, the end address lands on the end marker and one of the two recomputes its trailer
+checksum, so the container layout above holds. The **slot mapping does not**: 23 is a length with
+no derivation, so `arch_slot` cannot translate and every section reader is gated off. Do not read
+an arch 10 section by assuming which slots the three extra ones are.
 
 ### Recovering the base address
 
@@ -1421,6 +1432,15 @@ three, with base slot 2 starting immediately after, so the extent is the gap to 
 like every other section's and a reader that takes a fixed seven reads slot 2's first byte as part
 of the version word. Section 79.
 
+**And a container can carry the record without stating anything in it.** The arch 8 safe mode
+container, found inside the arch 8 firmware images at flash `0x01E000`, has two bytes and both are
+zero, so it declares architecture 0. Section 114. That makes three behaviours over three safe mode
+containers: arch 12's names its own model exactly, arch 9's names skin 18 where the remote it was
+read off is skin 22 (both are what Logitech's table calls the Mocha Decaf family), and arch 8's
+names nothing. **So a reader must not take a model or an architecture out of a safe mode
+container**, and the field is only load bearing for user configs, which is where the application
+needs it.
+
 Confirmed on sixteen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
 field on nine of them and from the firmware package the container was extracted from on the
@@ -1446,8 +1466,11 @@ configs that differ in 73 to 84 percent of their bytes share it), and **not per 
 spare Harmony One carries 3387 before the sync of section 58 and 3382 after it, which is one unit
 and two configs from the same service.
 
-What the **low byte** is, section 81: a skin number in Logitech's own numbering. Six of the eight
-containers whose remote's skin is known independently carry it exactly, 54, 66, 71, 72, 22 and 15;
+What the **low byte** is, section 81: a skin number in Logitech's own numbering, in **plain binary**
+on every architecture, which is what settles that the BCD in the USB descriptor's `bcdDevice` is a
+property of that field and not of the skin. Section 113. Seven of the nine
+containers whose remote's skin is known independently carry it exactly, 54, 66, 71, 72, 22, 15 and
+**17**, the last from a Harmony 885 contributed on 10 August 2026;
 the two that do not carry 59 and 73, each unallocated in Logitech's classic software table and each
 the next free number inside its own platform's block. So it names a model the way a skin does, and
 what selects 54 over 59 for one remote is **not established**. The high byte is `0x0D` in every

@@ -36,6 +36,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // 0x0000 and the application from 0x1000. The only arch 9 firmware this project has, and a
   // PIC18F4550, so a listing needs `--part 4550`. findings.md sections 76 and 80.
   h525_code: '20260808-harmony-525-internal-0x0000.bin',
+  // The first arch 8 firmware this project has ever held, two images of one build differing in
+  // two bytes: the skin, 0x0F for the 880 and 0x11 for the 885. Contributed on 10 August 2026
+  // through harmony-decompiler discussion 17, dumped with `concordance -b -f`, which works on
+  // arch 8 precisely where it fails on arch 12 and 14. They load at 0x010000. Sections 113 and 114.
+  arch8_code_880: 'H880-firmware.bin',
+  arch8_code_885: 'H885-firmware.bin',
   one34_region2: 'one-3.4-Region_2-decoded.bin',
   one_safemode: 'one-safemode-gspm-base0x2000-raw64k.bin',
   h700_code: '700-2.8-Region_2-code-base0x9000.bin',
@@ -74,6 +80,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   arch8_config_b: 'Update-1.EZHex',
   arch8_config_c: 'Update-2.EZHex',
   arch8_config_d: 'Update-3.EZHex',
+  // Two of the eleven configs kkong42 posted on 10 August 2026. Deliberately in IMAGES and not in
+  // CONTAINERS: they are here as headers to check a skin against, and adding them to the corpus
+  // would move every coverage figure in one commit with the reading of them unexamined. The 885 is
+  // the case that breaks the tie, since 0x0F reads as 15 under either rule and 0x11 does not. The
+  // 890 is arch 10, a fourth format version and 23 pointer slots.
+  arch8_config_885: 'H885-LivingRoom.EZHex',
+  h890_config: 'H890-Bedroom-1.EZHex',
   one_config: 'harmony-one-programmed-config.EZHex',
   one_config_unprogrammed: 'harmony-one-config.EZHex',
   h600_config: 'harmony-600-programmed-config.EZHex',

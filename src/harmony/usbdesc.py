@@ -11,10 +11,18 @@ The block is found by validation rather than by pattern. A device descriptor is 
 starting `12 01`, which is a common enough pair of bytes in code, so a candidate is
 accepted only if the whole chain behind it walks: every descriptor's `bLength` must land
 exactly on the next descriptor, and the types must run device, configuration, interface.
-That is a strong enough test that both images yield exactly one candidate.
+
+**That test is necessary and it is not sufficient, which the 525 found.** Its image carries
+two blocks that both validate: a Microchip stock descriptor at `0x00E92` claiming
+`04D8:000B` with `bcdDevice` zero, left over from the vendor's USB stack the firmware is
+built on, and the remote's own at `0x07DFE` claiming `046D:C111`. Taking the first one
+reported vendor 0x04D8 and skin 0 for a Logitech remote, without failing. So a block whose
+`idVendor` is Logitech's wins over one that merely walks, and the fallback is only for an
+image where no candidate names it.
 
 Descriptor layouts are from the USB 2.0 specification, chapter 9, and the HID class
-specification 1.11. Nothing here is Harmony specific except `skin_id`.
+specification 1.11. Two things here are Harmony specific and say so: `skin_id` and the
+vendor preference above.
 """
 
 from __future__ import annotations
@@ -38,6 +46,10 @@ TYPE_NAMES: Dict[int, str] = {
 DEVICE_LENGTH = 18
 # The three types that must appear, in this order, for a candidate block to be believed.
 CHAIN_PROLOGUE = (DEVICE, CONFIGURATION, INTERFACE)
+
+# Logitech's vendor id, in the device descriptor at offset 8. Harmony specific, and here for
+# one reason: an image can hold a second block that validates just as well as the real one.
+LOGITECH_VENDOR = 0x046D
 
 
 class UsbDescError(Exception):
@@ -103,9 +115,15 @@ def walk(image: bytes, base: int, start: int, limit: int = 64) -> List[Descripto
 def find_block(image: bytes, base: int) -> Optional[int]:
     """Address of the device descriptor, or None if the image has no descriptor block.
 
-    Returns the first block whose chain validates. The 600 0.2 image has none, because
-    concordance truncates that dump at 65536 of 70336 bytes and the block is past the cut.
+    Every block whose chain validates is a candidate, and the one whose `idVendor` is
+    Logitech's wins. That preference is not cosmetic: the 525's image holds a Microchip stock
+    descriptor that validates perfectly and claims `04D8:000B`, so returning the first match
+    reported the wrong vendor and skin 0 with nothing failing. See the module docstring.
+
+    The 600 0.2 image has no block at all, because concordance truncates that dump at 65536
+    of 70336 bytes and the block is past the cut.
     """
+    validating = []
     for candidate in _candidates(image, base):
         chain = walk(image, base, candidate, limit=len(CHAIN_PROLOGUE))
         if len(chain) < len(CHAIN_PROLOGUE):
@@ -114,8 +132,13 @@ def find_block(image: bytes, base: int) -> Optional[int]:
             continue
         if chain[0].length != DEVICE_LENGTH:
             continue
-        return candidate
-    return None
+        if chain[0].u16(8) == LOGITECH_VENDOR:
+            return candidate
+        validating.append(candidate)
+    # No candidate names Logitech, so the image is either not a Harmony's or its descriptor is
+    # built at run time. Hand back the first that walks rather than nothing, and let the caller
+    # see the vendor id it reports.
+    return validating[0] if validating else None
 
 
 def _candidates(image: bytes, base: int) -> List[int]:
@@ -188,19 +211,43 @@ def report_geometry(blob: bytes) -> Dict[str, object]:
     return result
 
 
-def skin_id(bcd_device: int) -> int:
-    """The skin number out of a device descriptor's `bcdDevice`.
+def skin_id(bcd_device: int) -> Optional[int]:
+    """The skin number out of a device descriptor's `bcdDevice`, or None if unreadable.
 
-    The low byte reads as BCD: the Harmony One 3.4 image carries 0x1054 and that remote is
-    skin 54, the Harmony 700 2.8 image carries 0x1066 and that remote is skin 66. The high
-    byte is 0x10 in both, and what it means is not established.
+    A skin is Logitech's own index into its model list, so the number names the remote: 15 is
+    a Harmony 880, 17 an 885, 19 an 890, 22 a 525, 54 a Harmony One, 66 a 700, 71 a 600, 72 a
+    650. Each config states its own in the `<SKIN>` element of its EZHex header, which is the
+    independent oracle every case below is checked against.
 
-    This is worth more than it looks. The 600 and the 700 share product id 0xC122, so the
-    USB product id does not identify an arch 14 model, and `bcdDevice` does it without
-    reading a single config byte.
+    This is worth more than it looks. The 600 and the 700 share product id 0xC122, so the USB
+    product id does not identify an arch 14 model, and `bcdDevice` does it without reading a
+    single config byte.
+
+    **The low byte's encoding is per firmware generation, and reading it wrong is silent.**
+    The high byte says which:
+
+    * `0x08` and `0x09`: the high byte is the protocol number, and the skin is the low byte in
+      plain binary. 0x080F is a Harmony 880 and 0x0811 an 885, both protocol 8; 0x0916 is a
+      525, protocol 9.
+    * `0x10`: the skin is the low byte in **BCD**. 0x1054 is a Harmony One and 0x1071 a 600,
+      protocol 12 and 14, so on this generation the high byte is a constant rather than the
+      protocol, and what it means is not established.
+
+    Anything else returns None, because a guess produces a readable wrong model rather than an
+    error. Reading an 885's 0x0811 as BCD gives 11, which is a Harmony 655; reading a 700's
+    0x1066 as binary gives 102, which is a Harmony Ultimate One. Both are the failure this
+    project keeps meeting: a wrong rule that yields a plausible answer.
+
+    `0x0A` for the 890 is the obvious prediction and it is deliberately **not** implemented,
+    because no arch 10 firmware exists here to check it against. `docs/findings.md` section
+    113.
     """
-    low = bcd_device & 0xFF
-    return (low >> 4) * 10 + (low & 0x0F)
+    high, low = bcd_device >> 8, bcd_device & 0xFF
+    if high == 0x10:
+        return (low >> 4) * 10 + (low & 0x0F)
+    if high in (0x08, 0x09):
+        return low
+    return None
 
 
 def summary(image: bytes, base: int) -> Optional[Dict[str, object]]:

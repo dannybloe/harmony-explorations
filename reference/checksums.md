@@ -145,6 +145,49 @@ Note the 600 firmware file listed under derived binaries is **truncated**: the r
 70336 bytes and concordance returns only the first 65536. Use the 700 image for arch 14 work,
 since it is complete.
 
+## Contributed by kkong42, 10 August 2026
+
+Eleven configs and two firmware images, posted as issues 18 to 28 and discussion 17 of
+harmony-decompiler. The **first arch 8 firmware and the first arch 10 configs** anywhere in this
+project. `docs/findings.md` sections 113, 114 and 115.
+
+The firmware was dumped with `concordance -b -f`, which returns the complete firmware region on arch
+8 and nothing usable on arch 12 or arch 14; `reference/concordance-notes.md` has why. Two images of
+one build, 65536 bytes each, load base `0x010000`, differing at exactly two offsets which are both
+the skin byte.
+
+| File | Model | SHA-256 |
+|---|---|---|
+| `H880-firmware.bin` | 880, skin 15 | `815c0933...376c2f86` |
+| `H885-firmware.bin` | 885, skin 17 | `8c6b4ef0...11c19a799` |
+
+The configs. Their names are the owner's room names and **the skin is the authority on the model**:
+`H885-Bedroom` carries skin 15, so by its own header it is an 880.
+
+| File | Protocol | Skin | Bytes |
+|---|---|---|---|
+| `H880-Bedroom.EZHex` | 8 | 15 | 396194 |
+| `H880-Bedroom-Spare-1.EZHex` | 8 | 15 | 396194 |
+| `H880-Bedroom-Spare-2.EZHex` | 8 | 15 | 396194 |
+| `H880-Bedroom-Spare-3.EZHex` | 8 | 15 | 396194 |
+| `H885-Bedroom.EZHex` | 8 | 15 | 396194 |
+| `H885-LivingRoom.EZHex` | 8 | 17 | 533078 |
+| `H885-LivingRoom-Spare-1.EZHex` | 8 | 17 | 533078 |
+| `H885-LivingRoom-Spare-2.EZHex` | 8 | 17 | 533078 |
+| `H885-LivingRoom-Spare-3.EZHex` | 8 | 17 | 533078 |
+| `H890-Bedroom-1.EZHex` | 10 | 19 | 400083 |
+| `H890-Bedroom-2.EZHex` | 10 | 19 | 400894 |
+
+All eleven are distinct files, `UserId` 0, no session data, and each was published by its owner who
+recorded having reviewed the contents first. Full digests are in the lab's own `META.md`; the two
+that the test suite reaches are `H885-LivingRoom.EZHex` `69c61fb2...6f5a4f05` and
+`H890-Bedroom-1.EZHex` `93c9733e...8a4236d8`.
+
+**`H885-LivingRoom.txt` accompanies one of them**, a hand written sheet naming the remote's devices
+and buttons, and it belongs to the EZHex of the same name. It is the only labelled sample in the
+whole corpus, which is what `tools/corpus.py` exists to ask for, and it validated the text decoder of
+section 112 against a human's own reading.
+
 ## Read off a Harmony 525, 8 August 2026
 
 Architecture 9, the first arch 9 hardware here. All three read over USB by this project's own code,

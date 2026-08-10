@@ -249,11 +249,30 @@ test('device matching is the Logitech vendor and the Harmony product range', () 
   assert.ok(!isHarmony(0x045e, 0xc111), 'another vendor');
 });
 
-test('the skin id is the low byte of bcdDevice, in BCD', () => {
-  // Confirmed against the bench Harmony 600, whose bcdDevice is 0x1071 and whose skin is 71.
-  assert.equal(skinId(0x1071), 71);
-  assert.equal(skinId(0x1015), 15);
-  assert.equal(skinId(0x1022), 22);
+test('the skin id is the low byte of bcdDevice, and its encoding is per firmware generation', () => {
+  // Seven pairs, each an image's bcdDevice against the `<SKIN>` a config of that model states.
+  // The Python side asserts the same table from the files themselves, in `tests/test_usbdesc.py`;
+  // this one pins the arithmetic so the two implementations cannot drift.
+  //
+  // The two cases that used to be here, 0x1015 and 0x1022, were invented rather than measured, and
+  // they were wrong: an 880 is 0x080F and a 525 is 0x0916, neither of them 0x10 anything. Inventing
+  // a fixture is how a wrong rule gets a passing test.
+  assert.equal(skinId(0x080f), 15, 'Harmony 880, protocol 8');
+  assert.equal(skinId(0x0811), 17, 'Harmony 885, protocol 8');
+  assert.equal(skinId(0x0916), 22, 'Harmony 525, protocol 9');
+  assert.equal(skinId(0x1054), 54, 'Harmony One, protocol 12');
+  assert.equal(skinId(0x1066), 66, 'Harmony 700, protocol 14');
+  assert.equal(skinId(0x1071), 71, 'Harmony 600, measured on the bench remote');
+  assert.equal(skinId(0x1072), 72, 'Harmony 650, protocol 14');
+});
+
+test('an unreadable bcdDevice is undefined rather than a plausible wrong model', () => {
+  // The 885 is what separates the two rules: 0x0F is 15 either way and 0x11 is 17 or 11, and
+  // Logitech's model list has a Harmony 655 at 11. So a single formula names the wrong remote
+  // without failing, which is why an unknown high byte returns nothing at all.
+  assert.equal(skinId(0x0a13), undefined, '0x0A is the arch 10 prediction, with nothing to check');
+  assert.equal(skinId(0x0000), undefined, 'the Microchip stock descriptor in the 525 image');
+  assert.equal(skinId(0x1154), undefined);
 });
 
 test('RemoteError is what a caller can catch', () => {

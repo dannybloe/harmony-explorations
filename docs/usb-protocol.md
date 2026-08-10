@@ -136,12 +136,27 @@ individual model or firmware version: the live arch 14 remote matches the other 
 image, not the arch 12 one. The measured bytes are pinned in `tests/test_usbdesc.py`, which
 turns the measurement into a regression test.
 
-### `bcdDevice` carries the skin
+### `bcdDevice` carries the skin, in one of two encodings
 
-The low byte of the device release number, read as BCD, is the remote's skin number. `0x1054`
-on a remote known to be skin 54, `0x1066` on one known to be skin 66. Two samples, two
-architectures, both known independently, and no other field in the descriptor block plausibly
-encodes 54 and 66. The high byte is `0x10` in both and is not identified.
+The low byte of the device release number is the remote's skin number, and **how it is encoded
+depends on the high byte**, which is what tells the two firmware generations apart. Seven pairs,
+each an image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an
+independent oracle produced by the other half of Logitech's toolchain:
+
+| high byte | reading | pairs |
+|---|---|---|
+| `0x08`, `0x09` | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
+| `0x10` | the low byte is the skin in **BCD**, and the high byte is a constant whose meaning is not identified | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72 |
+
+**This document said "read as BCD" without qualification until 10 August 2026**, and so did three<!--superseded-->
+copies of the code. It is right for arch 12 and arch 14 and wrong for arch 8 and arch 9, and the
+failure is silent: `0x0811` read as BCD is 11, which is a Harmony 655. The 880 could not have
+exposed it, because `0x0F` is 15 under either rule. `docs/findings.md` section 113, which also
+records why the two generations differ: base slot 1 carries the skin as a plain byte everywhere, so
+what is BCD is the USB field, following the specification's own convention for `bcdDevice`.
+
+`0x0A` for the 890 is the obvious next entry and is deliberately not implemented, because no arch 10
+firmware exists here to check it against.
 
 This is more useful than it sounds. **The 600 and the 700 share product id `0xC122`**, so the
 product id does not identify an arch 14 model, and the skin does, before a single config byte
@@ -149,9 +164,13 @@ is read. It is directly load bearing for the write rails in `docs/roadmap.md`, w
 must refuse to proceed unless the config's `INTENDEDVERSION` matches the connected remote's
 skin.
 
-This was recorded here as a prediction before it was checked: the Harmony 600 should report
-`bcdDevice 0x1071`, because that remote is skin 71. **Measured, and it does.** Three samples
-now, three skins, two architectures.
+The arch 14 case was recorded here as a prediction before it was checked: the Harmony 600 should
+report `bcdDevice 0x1071`, because that remote is skin 71. **Measured, and it does.**
+
+**A firmware image can hold a second descriptor block that validates as well as the real one.** The
+525's carries a Microchip stock descriptor at `0x00E92` claiming `04D8:000B` with a zero release,
+left in by the USB stack the firmware is built on, alongside the remote's own at `0x07DFE`. The
+chain walk cannot tell them apart, so the block naming Logitech's vendor id wins. Section 113.
 
 ### The one byte the two architectures disagree on
 
@@ -955,9 +974,14 @@ image without running anything. On the 700 2.8 they are at `0x10648`, on the com
 | 600 0.2 | `0x02` | `0x47`, so skin 71 | `0x0e` | 14 |
 | 650 0.4 | `0x04` | `0x48`, so skin 72 | `0x0e` | 14 |
 | One 3.4 | `0x34` | `0x36`, so skin 54 | `0x0c` | 12 |
+| 880 4.4 | `0x44` | `0x0f`, so skin 15 | `0x08` | 8 |
+| 885 4.4 | `0x44` | `0x11`, so skin 17 | `0x08` | 8 |
 
 Three arch 14 images with three different firmware versions and three different skins all report
-14, and the arch 12 image reports 12, so the byte tracks the architecture and nothing else. It also
+14, the arch 12 image reports 12, and **the two arch 8 images report 8**, so the byte tracks the
+architecture and nothing else across three architectures now. The arch 8 pair is the sharpest case in
+the table: one build, two models, and field 5 is the only one of the five constants that differs
+between them. It also
 matches the architecture each bench remote's own config states in base slot 1, on all three units.
 That agreement is evidence rather than a tautology, because the accessor has exactly one caller and
 the firmware never compares the constant against the config. Read as "protocol" until then;
@@ -1338,7 +1362,10 @@ to settle, and a list that only ever grows is not a status.
   have a reading**, from sections 57 and 59 of `docs/findings.md`: field 4 is the architecture, from
   a compiled in literal in four images, and fields 7, 10 and 11 are version bytes at program
   addresses the accessors state outright. Only **field 6** has no reading, and only **field 9's
-  accessor** is located without explaining its value.
+  accessor** is located without explaining its value. Field 6 has four values now, `0x08`, `0x09`,
+  `0x0C`, `0x0C` over architectures 8, 9, 12 and 14, so it equals the architecture on three of them
+  and not on the fourth. That rules out the obvious reading rather than supplying one; section 114
+  compares it against the `bcdDevice` high byte, which has the same shape and different values.
 
 ### The Harmony One drops its first command, sometimes
 

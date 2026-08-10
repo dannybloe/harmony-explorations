@@ -21,6 +21,7 @@ import { IMAGES, load } from '@harmony/lab';
 
 import { emit, parse, payloadOf, roundTrip } from '../src/index.ts';
 import type { Container } from '../src/index.ts';
+import { CONTAINERS } from './corpus.ts';
 
 const detail = process.argv.includes('--detail');
 
@@ -58,17 +59,14 @@ if (file !== undefined) {
   show(file, parse(blob));
 } else {
   let anything = false;
-  for (const name of Object.keys(IMAGES)) {
+  for (const name of CONTAINERS) {
+    // The same named population `coverage.ts` uses, and for the same reason: an arch 8 firmware
+    // image parses as a container, so "whatever in IMAGES parses" is not the corpus.
+    if (IMAGES[name] === undefined) throw new Error(`no lab entry named ${name}`);
     const data = load(name);
     if (data === undefined) continue;
-    let container;
-    try {
-      container = parse(data);
-    } catch {
-      continue; // not a container: the lab table holds firmware images too
-    }
     anything = true;
-    show(name, container);
+    show(name, parse(data));
   }
   if (!anything) {
     process.stderr.write('no containers found; set HARMONY_LAB or pass --file\n');

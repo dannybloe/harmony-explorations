@@ -30,10 +30,30 @@ export function isHarmony(vendorId: number, productId: number): boolean {
   );
 }
 
-/** The skin id is the low byte of `bcdDevice`, in BCD. Confirmed against the bench Harmony 600. */
-export function skinId(bcdDevice: number): number {
+/**
+ * The skin id out of a device descriptor's `bcdDevice`, or undefined if it cannot be read.
+ *
+ * A skin is Logitech's own index into its model list, so the number names the remote: 15 is an 880,
+ * 17 an 885, 19 an 890, 22 a 525, 54 a Harmony One, 66 a 700, 71 a 600, 72 a 650. Every config
+ * states its own in the `<SKIN>` element of its EZHex header, which is what these cases are checked
+ * against. It matters because the 600 and the 700 share product id 0xC122, so the product id does
+ * not name an arch 14 model and this does, before a single config byte is read.
+ *
+ * **The low byte's encoding is per firmware generation and reading it wrong is silent**, so the
+ * high byte decides: `0x08` and `0x09` carry the skin in plain binary, and there the high byte is
+ * the protocol number; `0x10` carries it in BCD, on arch 12 and arch 14 alike, so there it is a
+ * constant whose meaning is not established. Anything else is undefined rather than guessed,
+ * because a guess names the wrong remote: an 885's 0x0811 read as BCD is 11, a Harmony 655.
+ *
+ * Kept in step with `harmony.usbdesc.skin_id` by `packages/usb/test/remote.test.ts`, which asserts
+ * the same table. `docs/findings.md` section 113.
+ */
+export function skinId(bcdDevice: number): number | undefined {
+  const high = bcdDevice >> 8;
   const low = bcdDevice & 0xff;
-  return (low >> 4) * 10 + (low & 0x0f);
+  if (high === 0x10) return (low >> 4) * 10 + (low & 0x0f);
+  if (high === 0x08 || high === 0x09) return low;
+  return undefined;
 }
 
 /**

@@ -510,17 +510,25 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
         # The high byte is the same on both, so what moved is the low one.
         self.assertEqual(before >> 8, after >> 8)
 
-    def test_the_low_byte_is_the_remotes_skin_in_six_containers_of_eight(self):
+    def test_the_low_byte_is_the_remotes_skin_in_seven_containers_of_nine(self):
         """Section 81. Stated as the count it is, with the two exceptions named rather than hidden.
 
         A skin is known independently: from the EZHex header for a config that has one, and from
-        `bcdDevice` for a remote on the bench. Six containers carry it exactly in the low byte and
+        `bcdDevice` for a remote on the bench. Seven containers carry it exactly in the low byte and
         two carry a number unallocated in Logitech's own table, one per family.
+
+        **The 885 is the entry that carries the weight**, and it arrived on 10 August 2026. It is
+        the only one of the nine that distinguishes a plain reading of this byte from a BCD one,
+        since `0x11` is 17 in binary and 11 in BCD where `0x0F` is 15 either way. Section 113 is
+        what needed that: the skin rule in `packages/usb` and `harmony.usbdesc` had read the USB
+        descriptor's `bcdDevice` as BCD on every architecture, and this byte is what says the skin
+        itself is not a BCD quantity anywhere.
         """
         known = {
             'one_safemode': 54, 'one_spare_after_sync': 54,
             'h700_config': 66, 'h700_gspm': 66, 'h600_safemode_gspm': 71,
             'h650_safemode_gspm': 72, 'h525_config': 22, 'arch8_config_a': 15,
+            'arch8_config_885': 17,
         }
         exceptions = {'one_config': (59, 54), 'h600_config': (73, 71)}
         lab.require(*known, *exceptions)

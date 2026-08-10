@@ -46,6 +46,15 @@ CONTAINERS = (
     # is a duplicate on purpose: the alternative is a special case in the test that asserts every
     # container sample has one, and a special case there is worth less than a duplicate file.
     'one_spare_before_sync', 'one_spare_after_sync',
+    # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
+    # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
+    # passes. The two images carry it identically, since they differ only in the skin byte, so the
+    # second vector is a duplicate for the same reason the sync pair's first one is. Section 114.
+    'arch8_code_880', 'arch8_code_885',
+    # An 885 user config, the sample that settles which way arch 8 encodes a skin, and the first
+    # arch 10 container: 23 pointer slots and format 1.7, so four of its checks fail and the vector
+    # records that rather than hiding it. Sections 113 and 115.
+    'arch8_config_885', 'h890_config',
 )
 
 

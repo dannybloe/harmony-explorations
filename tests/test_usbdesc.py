@@ -9,6 +9,7 @@ Two closures make the location of the block trustworthy on its own. The chain wa
 descriptors, each one's bLength landing exactly on the next. And the configuration
 descriptor's wTotalLength, 0x29, is the sum of itself and the four descriptors under it.
 """
+import re
 import unittest
 
 import lab
@@ -40,6 +41,20 @@ HARMONY_600_LIVE_ENDPOINTS = [
 
 def summary(name):
     return usbdesc.summary(lab.load(name), BASES[name])
+
+
+def header_skin(blob):
+    """The skin a config states in the `<SKIN>` element of its EZHex header.
+
+    The independent oracle for `skin_id`: this number comes from the host software that built
+    the config, and the `bcdDevice` it is compared against comes from the firmware's own
+    descriptor. Deliberately a two line regular expression rather than a call into
+    `harmony.ezfile`, so that a change to the container reader cannot make both sides agree by
+    moving together.
+    """
+    found = re.search(rb'<SKIN>(\d+)</SKIN>', blob[:4096])
+    assert found is not None, 'the config states no skin'
+    return int(found.group(1))
 
 
 class TestTheBlockIsFoundAndValidates(unittest.TestCase):
@@ -156,27 +171,78 @@ class TestTheTransport(unittest.TestCase):
 
 class TestBcdDeviceCarriesTheSkin(unittest.TestCase):
     """
-    The device release number's low byte is the skin, in BCD.
+    The device release number's low byte is the skin, and its encoding is per generation.
 
-    Two samples, two architectures, and both were known independently: the Harmony One on
-    the bench reports skin 54 and its image carries 0x1054, the publicly posted Harmony 700
-    config is skin 66 and the 700 image carries 0x1066.
+    Four architectures, each with an independent oracle: every config states its own skin in
+    the `<SKIN>` element of its EZHex header, and the firmware image of the same model carries
+    a `bcdDevice`. The pairs are 880 (15, 0x080F), 885 (17, 0x0811), 525 (22, 0x0916), One
+    (54, 0x1054), 700 (66, 0x1066), 600 (71, 0x1071) and 650 (72, 0x1072).
+
+    Arch 8 and arch 9 carry the skin as plain binary with the protocol in the high byte; arch
+    12 and arch 14 carry it as BCD under a constant 0x10. **The 885 is what settles that**,
+    because 0x0F reads as 15 under either rule and 0x11 does not.
 
     This is the only thing that separates a 600 from a 700 before any config is read, since
-    both are product id 0xC122.
+    both are product id 0xC122. findings.md section 113.
     """
 
-    def test_the_two_known_pairs(self):
+    def test_the_bcd_generation(self):
         self.assertEqual(summary('one34_code')['bcd_device'], 0x1054)
         self.assertEqual(summary('one34_code')['skin'], 54)
         self.assertEqual(summary('h700_code')['bcd_device'], 0x1066)
         self.assertEqual(summary('h700_code')['skin'], 66)
 
-    def test_bcd_decoding_rejects_a_plain_hex_reading(self):
-        """0x66 read as hex is 102, and there is no skin 102. BCD is the only reading."""
+    def test_the_binary_generation(self):
+        """Arch 8 and arch 9, where the low byte is the skin and the high byte the protocol."""
+        lab.require('arch8_code_880', 'arch8_code_885', 'h525_code')
+        self.assertEqual(usbdesc.summary(lab.load('arch8_code_880'), 0x10000)['bcd_device'],
+                         0x080F)
+        self.assertEqual(usbdesc.summary(lab.load('arch8_code_880'), 0x10000)['skin'], 15)
+        self.assertEqual(usbdesc.summary(lab.load('arch8_code_885'), 0x10000)['bcd_device'],
+                         0x0811)
+        self.assertEqual(usbdesc.summary(lab.load('arch8_code_885'), 0x10000)['skin'], 17)
+        # The 525's real block, not the Microchip stock one that also validates in its image.
+        self.assertEqual(usbdesc.summary(lab.load('h525_code'), 0x0000)['bcd_device'], 0x0916)
+        self.assertEqual(usbdesc.summary(lab.load('h525_code'), 0x0000)['skin'], 22)
+
+    def test_each_image_agrees_with_a_config_that_states_its_skin(self):
+        """
+        The closure, and the reason the rule is believed rather than fitted: the skin comes out
+        of the firmware's descriptor and out of a config's XML header, which are different
+        files produced by different halves of Logitech's toolchain.
+        """
+        pairs = [('arch8_code_880', 0x10000, 'arch8_config_a'),
+                 ('arch8_code_885', 0x10000, 'arch8_config_885'),
+                 ('h525_code', 0x0000, 'h525_config'),
+                 ('one34_code', 0x20000, 'one_config'),
+                 ('h700_code', 0x9000, 'h700_config')]
+        lab.require(*[name for name, _, _ in pairs], *[c for _, _, c in pairs])
+        for image, base, config in pairs:
+            stated = header_skin(lab.load(config))
+            found = usbdesc.summary(lab.load(image), base)['skin']
+            self.assertEqual(found, stated, '%s against %s' % (image, config))
+
+    def test_a_wrong_reading_names_a_different_remote_rather_than_failing(self):
+        """
+        Why the encoding is keyed on the high byte instead of one formula being applied to all.
+
+        Both wrong readings produce a number in range, so neither raises: the 885's 0x0811 read
+        as BCD is 11, and the 700's 0x1066 read as binary is 102. Logitech's own model list has
+        entries at both, a Harmony 655 and a Harmony Ultimate One. That is the failure mode this
+        project keeps meeting, a wrong rule with a plausible answer, so the two rules are kept
+        apart and an unknown generation returns None.
+        """
+        self.assertEqual(usbdesc.skin_id(0x0811), 17)
+        self.assertEqual((0x11 >> 4) * 10 + (0x11 & 0x0F), 11, 'the reading that was shipped')
         self.assertEqual(usbdesc.skin_id(0x1066), 66)
-        # Predicted for the 600 from the other two, then measured on the live device: 0x1071.
-        self.assertEqual(usbdesc.skin_id(0x1071), 71)
+        self.assertEqual(0x66, 102, 'the reading that would be wrong the other way')
+
+    def test_an_unknown_generation_is_none_rather_than_a_guess(self):
+        # 0x0A is the obvious prediction for the 890, and no arch 10 firmware exists here to
+        # check it, so it must not be implemented. This test is what would fail if it were.
+        self.assertIsNone(usbdesc.skin_id(0x0A13))
+        self.assertIsNone(usbdesc.skin_id(0x0000), 'the Microchip stock descriptor')
+        self.assertIsNone(usbdesc.skin_id(0x1154))
 
     def test_product_ids(self):
         self.assertEqual(summary('one34_code')['product'], 0xC121)

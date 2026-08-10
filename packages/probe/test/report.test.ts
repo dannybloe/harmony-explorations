@@ -94,7 +94,10 @@ test('the usb half never carries a serial number', () => {
   const report = usbReport({
     vendorId: 0x046d,
     productId: 0xc122,
-    release: 0x0203,
+    // The bench Harmony 600's own bcdDevice, so the fixture agrees with the model it names. It
+    // used to be 0x0203, which no remote reports, and which the shipped skin rule turned into
+    // skin 3 without complaint.
+    release: 0x1071,
     manufacturer: 'Logitech',
     product: 'Harmony 600',
     // A serial passed in anyway is not in the output type and cannot reach it.
@@ -107,7 +110,7 @@ test('the usb half never carries a serial number', () => {
     'skinId',
     'vendorId',
   ]);
-  assert.equal(report.skinId, 3);
+  assert.equal(report.skinId, 71, 'which names the Harmony 600 in Logitech own model list');
 });
 
 test('the probe finds a base by reading sixteen bytes at each candidate', async () => {

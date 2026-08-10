@@ -15,16 +15,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { goldenVector, load, skipUnlessGolden } from '@harmony/lab';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { parse, summary } from '../src/index.ts';
 
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
+
 /**
- * Same list as `CONTAINERS` in `tools/golden.py`, including the four samples that are not
- * somebody's configuration. An implementation can agree on the ordinary cases and diverge on the
- * degenerate ones: the empty 0xFEED frame only occurs in a safe mode config.
+ * Same list as `CONTAINERS` in `tools/golden.py`, including the samples that are not somebody's
+ * configuration. An implementation can agree on the ordinary cases and diverge on the degenerate
+ * ones: the empty 0xFEED frame only occurs in a safe mode config.
  *
- * This list is duplicated rather than derived, so adding a sample on the Python side and not here
- * loses the comparison silently. `tools/golden.py` writes a vector either way and this file is what
- * decides whether anything reads it.
+ * The list is written out rather than derived, because a test should say what it covers. **But the
+ * comment that used to stand here, saying duplication is what stops a sample being lost, was
+ * exactly wrong**: `h525_config_2` had been on the Python side and not on this one, so its
+ * comparison had never run and nothing said so. The last test in this file compares the two lists
+ * now, so the duplication is checked instead of trusted.
  */
 const CONTAINERS = [
   'one_safemode',
@@ -38,6 +46,7 @@ const CONTAINERS = [
   'h700_config',
   'h700_config_2',
   'h525_config',
+  'h525_config_2',
   'arch8_config_a',
   'arch8_config_b',
   'arch8_config_c',
@@ -45,6 +54,14 @@ const CONTAINERS = [
   'h525_safemode_ahcm',
   'one_spare_before_sync',
   'one_spare_after_sync',
+  // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
+  // rather than in a file of its own. Section 114.
+  'arch8_code_880',
+  'arch8_code_885',
+  // An 885 user config, and the first arch 10 container, whose four failing checks the vector
+  // records rather than hides. Sections 113 and 115.
+  'arch8_config_885',
+  'h890_config',
 ];
 
 for (const name of CONTAINERS) {
@@ -71,6 +88,18 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
     assert.ok(Array.isArray(sections) && sections.length >= 19, 'a vector has no section table');
     assert.ok(Object.keys(vector['checks'] as object).length >= 7, 'a vector has no checks');
   }
+});
+
+test('the list above covers exactly what the Python side writes a vector for', () => {
+  // The check that should always have been here. `h525_config_2` sat in `tools/golden.py` and not
+  // in this file, so a vector was written and never read, which looks identical to a passing
+  // comparison. Parsed out of the tuple rather than imported, since one side is Python.
+  const source = readFileSync(join(REPO_ROOT, 'tools', 'golden.py'), 'utf8');
+  const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
+  assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
+  const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
+  assert.ok(python.length >= 19, 'the tuple was read as empty, so this test proves nothing');
+  assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
 test('a mutated container does not match its vector', () => {

@@ -41,8 +41,11 @@ def main():
         return
 
     print('descriptor block at 0x%05X, USB %s' % (info['block_at'], info['usb_version']))
-    print('  %04X:%04X, bcdDevice 0x%04X, so skin %d'
-          % (info['vendor'], info['product'], info['bcd_device'], info['skin']))
+    # An unreadable skin is said rather than printed as a number: see harmony.usbdesc.skin_id,
+    # where the encoding is per firmware generation and a guess names the wrong model.
+    skin = 'skin %d' % info['skin'] if info['skin'] is not None else 'skin UNREADABLE'
+    print('  %04X:%04X, bcdDevice 0x%04X, so %s'
+          % (info['vendor'], info['product'], info['bcd_device'], skin))
     print('  interface class 0x%02X (%s), subclass 0x%02X, protocol 0x%02X'
           % (info['interface_class'], CLASS_NAMES.get(info['interface_class'], 'unknown'),
              info['interface_subclass'], info['interface_protocol']))
