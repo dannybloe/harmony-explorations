@@ -13618,6 +13618,43 @@ on a remote that has loaded its config, and a remote on USB never has.
 `0x688` are deliberately **not** pinned, because uninitialised memory is not a fact about the
 firmware.
 
+## 111. Two open items measured on a Harmony One
+
+A Harmony One is on the bench, so section 103's display light band and section 47's log area can both
+be read. Section 103's three outcomes were committed when it was written; the rest go here, before
+anything is read, and **section 110 sharpens all of them**: a remote on USB has not loaded its config,
+so anything a config states is not in RAM.
+
+### The predictions
+
+1. **Which unit it is.** Two Harmony Ones enumerate identically, so the unit is identified by which
+   lab dump a read at `0x040000` matches, never by the product id. A 256 byte read matches exactly one
+   of the four arch 12 dumps byte for byte, and that is the health check as well.
+2. **`0x110`, the display light's band: zero.** Section 103 offered three outcomes and called 2 and 3
+   the likely ones. Section 110 makes it outcome **3** rather than a guess: the band is computed by
+   comparing a measured sum against base slot 15 group 4's three threshold pairs, and no config is
+   loaded, so there are no thresholds. `0x112`, the saved state, and `0x113`, the cached level, should
+   be zero for the same reason.
+3. **`0x111`, the battery gauge: zero too**, and this is the one worth being wrong about. Its eight
+   levels come from groups 5 and 6, which are equally absent, so a nonzero value would mean the
+   sampler runs on USB with thresholds from somewhere other than the config, and that would be a
+   finding rather than a footnote.
+4. **`0x3FFFF0`, sixteen bytes of flash: erased.** Section 47 left this as the one thing it could not
+   say about the arch 12 log area. No config in the corpus emits any of the five append opcodes, so
+   nothing has ever written there, exactly as the 600's journal turned out in section 109.
+5. **`0x01F580` over USB: `0xFF`.** The control for the dual address hazard section 105 recorded. A
+   firmware `TBLRD` at that number reads the **on chip** page `0xFF`, where both units' battery
+   calibration words live and neither is `0xFF`; a `READ_FLASH` at the same number over USB reads the
+   **external** part. If the window is not erased the hazard is worse than recorded, because the two
+   memories would both be plausible and nothing would flag which was answered.
+
+**What would falsify rather than inform.** If the unit's config does not match a dump, nothing else in
+this section can be trusted and the read stops there.
+
+### What the remote said
+
+Not yet measured.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
