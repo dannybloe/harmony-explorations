@@ -240,8 +240,12 @@ exit and the firmware polls for the cable itself, section 99, but one of its two
 the command state variable `0x284` being zero, and the shared command exit clears that only for a
 packet it did **not** handle. `0xE0 0x01` clears it and is not a reset, where `0xE0 0x02` reboots,
 section 97. So the honest options are one command behind `WRITES_ENABLED`, or telling the user about
-the batteries. **Do not decide this in a commit**; it is the owner's, and it is one cheap experiment
-away from being decidable.
+the batteries. **Do not decide this in a commit**; it is the owner's. **The experiment is written and
+unrun**: `packages/usb/bin/end-session-experiment.ts`, with the prediction committed first in
+section 99, and **its control comes first**, which is pulling the cable after a plain read to check
+the command is needed at all. `assertSessionEndAllowed` is the rail: `0xE0 0x01` only, the two reboot
+sub-commands refused by number, arch 9 refused because nobody has read its escape, and the spare
+remote only.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
@@ -524,6 +528,11 @@ node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
                        the contribution probe: a few kilobytes of JSON describing a config's
                        shape and nothing of its contents, meant to be published. Opens the
                        device unless --file is given.
+HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
+                       THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
+                       `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses
+                       to start without the flag. Unrun; section 99 holds its prediction and
+                       names the control that comes first.
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three

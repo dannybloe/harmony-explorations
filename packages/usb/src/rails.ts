@@ -14,6 +14,8 @@
  * the answer is no unless every condition is met.
  */
 
+import { ESCAPE_END_SESSION, ESCAPE_SUB_COMMANDS } from './protocol.ts';
+
 export class RailError extends Error {}
 
 /**
@@ -233,6 +235,61 @@ export function assertRamWriteAllowed(p: Pick<WritePermission, 'targetIsTheSpare
   }
   if (!p.targetIsTheSpareRemote) {
     throw new RailError('the spare unprogrammed remote is the only write target, RAM included');
+  }
+}
+
+/**
+ * Throws unless the session-end escape may be sent to this remote.
+ *
+ * `0xE0 0x01` clears the command state variable and nothing else, `docs/findings.md` sections 97 and
+ * 99. It touches no storage, volatile or otherwise, so it cannot corrupt anything: the worst it can
+ * do is abandon a command that was in progress, and abandoning commands is what closing a handle
+ * already does. It is here rather than on the read path anyway, because it changes a device's state
+ * and the point of a read only build is that it does not.
+ *
+ * **Why it exists at all.** A remote whose command state is left nonzero cannot take the
+ * unconditional path out of USB mode when its cable goes, so it sits there until its batteries come
+ * out. That was seen twice on the bench on 9 August 2026. This command clears exactly that gate.
+ *
+ * **What this rail deliberately does not decide.** Whether FreeHarmony may send it at the end of
+ * every read only session is the owner's call and is not settled by this function existing: the
+ * conditions below keep it to the spare remote and to an architecture whose escape has actually been
+ * read, which is enough for the experiment and not enough for a product. Lifting
+ * `targetIsTheSpareRemote` is the decision, and it belongs in a commit that says so.
+ *
+ * Arch 9 is refused because nobody has read its escape. A read profile is not a write profile,
+ * which is the same rule `ARCHITECTURES_WITH_A_WRITE_TARGET` states for flash.
+ */
+export function assertSessionEndAllowed(
+  p: Pick<WritePermission, 'architecture' | 'targetIsTheSpareRemote'>,
+  subCommand: number,
+): void {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (subCommand !== ESCAPE_END_SESSION) {
+    throw new RailError(
+      `escape sub-command 0x${subCommand.toString(16)} is not the session end: 0x02 and 0x03 ` +
+        'reboot the remote and this project does not implement a reboot',
+    );
+  }
+  const known = ESCAPE_SUB_COMMANDS[p.architecture];
+  if (known === undefined) {
+    throw new RailError(
+      `architecture ${p.architecture} has no escape read from its firmware, so sending one is refused`,
+    );
+  }
+  if (!known.includes(subCommand)) {
+    throw new RailError(
+      `architecture ${p.architecture} does not dispatch escape sub-command 0x${subCommand.toString(16)}`,
+    );
+  }
+  if (!p.targetIsTheSpareRemote) {
+    throw new RailError(
+      'the spare remote is the only unit this may be sent to until the session-end question is decided',
+    );
   }
 }
 

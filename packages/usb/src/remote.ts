@@ -21,6 +21,7 @@
  * already waiting.
  */
 import {
+  ESCAPE_END_SESSION,
   FLASH_CHUNK_DATA,
   GET_VERSION,
   MISC_RAM,
@@ -28,6 +29,7 @@ import {
   nextFlashSequence,
   VERSION_FIELD_COUNT_MIN,
   decodeReply,
+  escapeRequest,
   getVersionRequest,
   readFlashRequest,
   readRamRequest,
@@ -38,6 +40,7 @@ import {
   assertEraseAllowed,
   assertFlashWriteAllowed,
   assertRamWriteAllowed,
+  assertSessionEndAllowed,
   type WritePermission,
 } from './rails.ts';
 import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from './protocol.ts';
@@ -305,6 +308,27 @@ export class HarmonyRemote {
     assertRamWriteAllowed(p);
     const reply = await this.exchange(writeMiscRequest(MISC_RAM, dataAddress, value));
     if (reply.kind !== 'ack') throw new RemoteError('the RAM write was not acknowledged');
+  }
+
+  /**
+   * End the command session: `0xE0 0x01`, which clears the command state variable and nothing else.
+   *
+   * `docs/findings.md` sections 97 and 99. This is the one thing that lets a remote take the
+   * unconditional path out of USB mode when its cable goes, instead of sitting in USB mode until its
+   * batteries come out. It writes no storage of any kind.
+   *
+   * **It sends no reply**, so this does not wait for one: the arch 12 handler returns before the
+   * shared exit that appends an acknowledgement. A method that waited would time out on success,
+   * which is the sort of thing that gets "fixed" by removing the check rather than the wait.
+   *
+   * Gated all the same, by `assertSessionEndAllowed`, because it changes a device's state. Whether a
+   * read only product may send it is not decided by this method existing.
+   */
+  async endSession(
+    p: Pick<WritePermission, 'architecture' | 'targetIsTheSpareRemote'>,
+  ): Promise<void> {
+    assertSessionEndAllowed(p, ESCAPE_END_SESSION);
+    await this.transport.write(escapeRequest(ESCAPE_END_SESSION));
   }
 }
 

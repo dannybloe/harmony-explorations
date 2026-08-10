@@ -199,6 +199,37 @@ export const WRITE_MISC_SELECTORS: readonly number[] = [
 ];
 
 /** Read one byte of the data memory of a running remote. Volatile, and read only. */
+/**
+ * The escape's sub-commands, `docs/findings.md` section 97, read from both bench architectures.
+ *
+ * `0x01` clears the command state variable and invalidates whatever address a half finished
+ * command had parsed. It is **not** a reset, and it sends no reply at all: the arch 12 path returns
+ * `0` directly rather than falling through the shared exit that appends an acknowledgement. So a
+ * caller must not wait for one, which is a thing worth stating in code because every other command
+ * here does wait.
+ *
+ * `0x02` and `0x03` set a flag whose single reader drives the top level mode to 3, and mode 3 waits
+ * and then executes the PIC18 `RESET` instruction. This library does not implement them, and
+ * `assertSessionEndAllowed` refuses them by number rather than leaving them merely unused.
+ */
+export const ESCAPE_END_SESSION = 0x01;
+export const ESCAPE_RESET = 0x02;
+export const ESCAPE_RESET_ALT = 0x03;
+
+/** The sub-commands each architecture's escape dispatches. Arch 9 has not been read. */
+export const ESCAPE_SUB_COMMANDS: Readonly<Record<number, readonly number[]>> = {
+  12: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT],
+  14: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT, 0x05],
+};
+
+/** `0xE0` with one payload byte, which is the byte the protocol is known by as `0xE1`. */
+export function escapeRequest(subCommand: number): Uint8Array {
+  if (!Number.isInteger(subCommand) || subCommand < 0 || subCommand > 0xff) {
+    throw new ProtocolError(`escape sub-command ${subCommand} is not a byte`);
+  }
+  return encodeRequest(ESCAPE, [subCommand]);
+}
+
 export function readRamRequest(dataAddress: number): Uint8Array {
   return readMiscRequest(MISC_RAM, dataAddress);
 }

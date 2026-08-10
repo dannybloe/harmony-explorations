@@ -26,6 +26,7 @@ import {
   assertFirmwareWriteRefused,
   assertFlashWriteAllowed,
   assertRamWriteAllowed,
+  assertSessionEndAllowed,
   writableRange,
 } from '../src/index.ts';
 
@@ -180,4 +181,52 @@ test('an architecture with no recorded block size is refused rather than loosely
   assert.equal(ERASE_BLOCK_SIZE[14], undefined);
   assert.equal(WRITABLE_CEILING[14], undefined);
   assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['12']);
+});
+
+test('the session end escape is refused in the shipped state, and only for the right reason', () => {
+  // Sections 97 and 99. This command writes no storage at all, which is exactly why it needs its
+  // own rail rather than a share of the flash one: none of the flash conditions mean anything for
+  // it, so reusing them would be a rail that reads strict and checks nothing relevant.
+  assert.throws(
+    () => assertSessionEndAllowed({ architecture: 12, targetIsTheSpareRemote: true }, 0x01),
+    /read only/,
+  );
+});
+
+test('with writing enabled, the session end escape refuses everything but itself', () => {
+  const output = withWritesEnabled(`
+    const spare12 = { architecture: 12, targetIsTheSpareRemote: true };
+    const refusals = [];
+    const check = (name, permission, sub) => {
+      try {
+        rails.assertSessionEndAllowed(permission, sub);
+        refusals.push(name + ': ALLOWED');
+      } catch (error) {
+        refusals.push(name + ': refused');
+      }
+    };
+    check('arch 12 spare, sub-command 0x01', spare12, 0x01);
+    check('arch 14 spare, sub-command 0x01', {...spare12, architecture: 14}, 0x01);
+    check('the reset, 0x02', spare12, 0x02);
+    check('the other reset, 0x03', spare12, 0x03);
+    check('arch 14 only sub-command 0x05', {...spare12, architecture: 14}, 0x05);
+    check('arch 9, whose escape nobody has read', {...spare12, architecture: 9}, 0x01);
+    check('not the spare remote', {...spare12, targetIsTheSpareRemote: false}, 0x01);
+    console.log(JSON.stringify(refusals));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Both architectures whose escape has been read are allowed, because unlike a flash write this
+    // has no write target to speak of: it changes one variable in a running remote.
+    'arch 12 spare, sub-command 0x01: ALLOWED',
+    'arch 14 spare, sub-command 0x01: ALLOWED',
+    // The reboots are refused by number, not merely unimplemented. An unimplemented thing gets
+    // implemented by whoever needs it next; a refused one has to be argued for.
+    'the reset, 0x02: refused',
+    'the other reset, 0x03: refused',
+    'arch 14 only sub-command 0x05: refused',
+    // A read profile is not a write profile, which is the same rule the flash rails state.
+    'arch 9, whose escape nobody has read: refused',
+    // And the conservative condition that keeps this an experiment rather than a product decision.
+    'not the spare remote: refused',
+  ]);
 });

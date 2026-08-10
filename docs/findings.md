@@ -12115,6 +12115,38 @@ a read only product may send one command whose whole effect is to zero a state v
 far easier thing to argue than a reset. **The owner's call, and it is now a cheap experiment**: send
 it, pull the cable, see whether the remote leaves USB mode.
 
+### The experiment, prepared, with the prediction committed first
+
+`packages/usb/bin/end-session-experiment.ts` runs it, and it exists in this commit so that the
+prediction below is on record before any remote is attached. That ordering is the `probe-remote`
+skill's rule and it is what makes the answer worth having: a measurement that confirms a number
+nobody committed to in advance is worth much less.
+
+**The prediction: the remote leaves USB mode when the cable is pulled**, and returns to its normal
+display without needing its batteries out. The reasoning is section 99's chain: the last command the
+script sends before the cable comes out is `0xE0 0x01`, which clears `0x284`, and the conditional
+exit at `0x28D16` leaves USB mode exactly when `0x284` is zero.
+
+What each outcome means, written down now so that none of them can be fitted afterwards:
+
+* **It leaves USB mode.** The chain holds end to end, and the session end question becomes a policy
+  question rather than a technical one: one command, no reboot, no storage touched.
+* **It stays in USB mode.** Then the gate is not the only thing holding it, and the next suspect is
+  the pin polarity this section deliberately declined to claim, or the guard chain in front of mode 2
+  rather than the exit from mode 1. The correction goes in this section, not into the script.
+* **It leaves USB mode without the command**, which the script cannot tell on its own and which one
+  extra run answers: pull the cable after a plain read and see. If that also works, then the two
+  bench observations on 9 August 2026 had a cause this section has not found, and the command is
+  irrelevant rather than sufficient. **This is the control, and it is worth running first**, because
+  it costs nothing and it is the only run that can make the other two meaningless.
+
+The script identifies the unit from its config rather than from its port, refuses to run without
+`HARMONY_ENABLE_WRITES=1`, and reads the same window before and after the command so that "cleared a
+variable" is distinguishable from "left the command layer confused". Sending it needs
+`assertSessionEndAllowed`, which refuses the two reboot sub-commands by number, refuses arch 9
+because nobody has read its escape, and refuses anything but the spare remote until the policy
+question is decided.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
