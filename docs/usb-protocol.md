@@ -976,10 +976,14 @@ image without running anything. On the 700 2.8 they are at `0x10648`, on the com
 | One 3.4 | `0x34` | `0x36`, so skin 54 | `0x0c` | 12 |
 | 880 4.4 | `0x44` | `0x0f`, so skin 15 | `0x08` | 8 |
 | 885 4.4 | `0x44` | `0x11`, so skin 17 | `0x08` | 8 |
+| 880 boot 4.0 | `0x40` | `0x0f`, so skin 15 | `0x08` | 8 |
+| 885 boot 4.0 | `0x40` | `0x11`, so skin 17 | `0x08` | 8 |
 
 Three arch 14 images with three different firmware versions and three different skins all report
-14, the arch 12 image reports 12, and **the two arch 8 images report 8**, so the byte tracks the
-architecture and nothing else across three architectures now. The arch 8 pair is the sharpest case in
+14, the arch 12 image reports 12, and **the four arch 8 images report 8**, so the byte tracks the
+architecture and nothing else across three architectures now. The last two of those are the arch 8
+**bootloaders**, section 116, whose software type nibble is 3 where an application's is 0 and a safe
+mode image's is 4, so they are a third value of that field on a third architecture. The arch 8 pair is the sharpest case in
 the table: one build, two models, and field 5 is the only one of the five constants that differs
 between them. It also
 matches the architecture each bench remote's own config states in base slot 1, on all three units.
@@ -1362,10 +1366,13 @@ to settle, and a list that only ever grows is not a status.
   have a reading**, from sections 57 and 59 of `docs/findings.md`: field 4 is the architecture, from
   a compiled in literal in four images, and fields 7, 10 and 11 are version bytes at program
   addresses the accessors state outright. Only **field 6** has no reading, and only **field 9's
-  accessor** is located without explaining its value. Field 6 has four values now, `0x08`, `0x09`,
-  `0x0C`, `0x0C` over architectures 8, 9, 12 and 14, so it equals the architecture on three of them
-  and not on the fourth. That rules out the obvious reading rather than supplying one; section 114
-  compares it against the `bcdDevice` high byte, which has the same shape and different values.
+  accessor** is located without explaining its value. **Field 6 has a reading now**, section 116, and
+  it is unconfirmed rather than absent: it names a **platform** and not an architecture. `0x0C` on
+  arch 12 and arch 14 alike across six images, `0x09` on arch 9, `0x08` on arch 8, and the same value
+  in a remote's safe mode image as in its application. What moved it was the population going from
+  four images to eleven, which is what separates "equals the architecture, except once" from "equals
+  the platform, always". The `bcdDevice` high byte has the same shape and different values, so the two
+  are not one variable.
 
 ### The Harmony One drops its first command, sometimes
 

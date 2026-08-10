@@ -78,9 +78,11 @@ the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 
 August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what
 was predicted before it was connected against what it measured. Other models are iterated on later.
 
-**Arch 8 has firmware now and is still not a target**, sections 113 and 114: two images of one build,
-an 880 and an 885, contributed on 10 August 2026, plus eleven configs and an arch 8 safe mode
-container found inside the firmware itself. It stays a control for container claims, and what the
+**Arch 8 has firmware now and is still not a target**, sections 113, 114 and 116: two application
+images of one build, an 880 and an 885, contributed on 10 August 2026, plus **two bootloaders**, plus
+eleven configs and an arch 8 safe mode container found inside the application firmware itself. The
+bootloaders carry the reset vector and hand both interrupt vectors to the application, so arch 8 is
+the only architecture here whose whole program flash is accounted for. It stays a control for container claims, and what the
 images bought is a **counterexample supply**: they broke the skin rule, they gave `GET_VERSION` field 6
 its fourth value, and they showed that "whatever in the lab table parses as a container" is not a
 corpus. Reach for them when a claim holds on every architecture here, because a claim that nothing can
@@ -719,7 +721,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 115 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 116 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -830,12 +832,14 @@ produce a config the remote accepts and mishandles.
   ten fields have a reading, section 59 and section 87. The installed image is ruled out as the
   explanation: the One's own flash dump is byte identical to the package there, so what is left is
   what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
-  Field 6 is narrowed rather than open: it is one of five per image build constants beside the
-  firmware version, the software type, the skin and the architecture, and **arch 8 supplies a fourth
-  value**, section 114. It runs `0x08`, `0x09`, `0x0C`, `0x0C` over architectures 8, 9, 12 and 14, so
-  it equals the architecture on three and not on arch 14, which rules that reading out rather than
-  supplying one. The `bcdDevice` high byte has the same shape and different values, `0x08`, `0x09`,
-  `0x10`, `0x10`, so the two are not one variable.
+  **Field 6 has a reading now and it is unconfirmed rather than absent**, section 116: it names a
+  **platform**, not an architecture, and arch 12 and arch 14 are one platform under it. `0x0C` on both
+  of those across six images, `0x09` on arch 9, `0x08` on arch 8, and the same value in a remote's safe
+  mode image as in its application. Everything else already grouped those two: same MCU family, same
+  `GSPM` cookie, and Logitech's own platform table calls arch 12 the Gin family. What moved it was the
+  population going from four images to eleven; four could not tell "equals the architecture, except
+  once" from "equals the platform, always". The `bcdDevice` high byte has the same shape and different
+  values, `0x08`, `0x09`, `0x10`, `0x10`, so the two are not one variable.
 * **What the One's analogue channel 1 measures**, section 103, and **USB cannot settle it**, section
   111. Two readings fit and they differ only in the sensor's wiring, so the firmware cannot choose, and
   the bench read that was meant to choose landed on outcome 2: the converter is off and its result

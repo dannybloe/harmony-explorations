@@ -639,6 +639,86 @@ class TestFieldFourIsTheArchitecture(unittest.TestCase):
         'one_internal_fe': (0xFE0000, 0xFE54DE, 0x34, 54, 12),
     }
 
+    # And inside the two arch 8 images `concordance --dump-safemode` produced on 10 August 2026.
+    # They are the same table at the same address in both, and what they declare is **software
+    # type 3**, which is Boot mode and not safe mode. Section 116.
+    BOOT = {
+        'arch8_boot_880': (0x0, 0x1972, 0x40, 15, 8),
+        'arch8_boot_885': (0x0, 0x1972, 0x40, 17, 8),
+    }
+
+    def test_the_arch_8_dump_is_a_bootloader_and_says_so_in_this_table(self):
+        """
+        Section 116, and it is the third time on this project that a file named for safe mode has
+        held something else. `concordance --dump-safemode` reads `FIRMWARE_MAX_SIZE` from
+        `flash_base`, which on arch 8 is `0x000000`, so the flag names the command and not the
+        contents.
+
+        The identification is Logitech's own: the software type nibble is **3**, which their
+        firmware package's comment calls Boot mode, against 4 for safe mode on the two remotes
+        above and 0 for every application image. So this is a third value of a field that had two,
+        on a third architecture, and it is read out of the image rather than inferred from what the
+        file is called.
+
+        The other four accessors are what rule out having found an unrelated run of `RETLW`: the
+        skin matches the model and the architecture matches the platform, both against the
+        application image of the same remote.
+        """
+        lab.require(*self.BOOT)
+        for image, (base, table, firmware, skin, architecture) in self.BOOT.items():
+            with self.subTest(image):
+                self.assertEqual(self.literal(image, base, table, self.LOW), 3, 'Boot mode')
+                self.assertEqual(self.literal(image, base, table, 0), firmware)
+                self.assertEqual(self.literal(image, base, table, self.SKIN), skin)
+                self.assertEqual(self.literal(image, base, table, self.HIGH), architecture)
+                # And field 6's constant is zero here, where every application and both arch 12
+                # and arch 14 safe mode images carry a nonzero platform number. A bootloader has
+                # no use for it, which is the reading, and it is why the value is not evidence
+                # against field 6 being per platform.
+                self.assertEqual(self.literal(image, base, table, self.CONSTANT), 0)
+
+    def test_the_bootloader_carries_the_reset_vector_the_application_image_lacks(self):
+        """
+        Why this dump was worth asking for. A PIC18 begins at `0x000000` and the arch 8
+        application image starts at `0x010000`, so everything section 114 read rested on a file
+        whose entry point nobody had seen.
+
+        Three vectors, all of them `GOTO`: reset into this image, and **both interrupt vectors
+        into the application**, at `0x010400` and `0x010800`. That is the closure that says the
+        two images are halves of one program rather than two unrelated dumps, and it is checked
+        by decoding rather than by pattern matching a byte pair.
+        """
+        lab.require(*self.BOOT)
+        for image in self.BOOT:
+            with self.subTest(image):
+                code = lab.load(image)
+                reset = isa.decode(code, 0x0000, 0x0)
+                self.assertEqual(reset.mnemonic, 'GOTO')
+                # The reset target is inside this image and differs between the two, because these
+                # are two builds rather than one build with a skin byte, unlike the applications.
+                self.assertLess(reset.fields['target'], len(code))
+                for at, expected in ((0x0008, 0x010400), (0x0018, 0x010800)):
+                    vector = isa.decode(code, at, 0x0)
+                    self.assertEqual(vector.mnemonic, 'GOTO', 'at 0x%04X' % at)
+                    self.assertEqual(vector.fields['target'], expected, 'at 0x%04X' % at)
+
+    def test_the_two_bootloaders_are_two_builds_where_the_applications_are_one(self):
+        """
+        The contrast, stated as counts. The 880 and 885 **application** images differ in exactly
+        two bytes, both the skin. Their bootloaders differ in thousands, scattered, including the
+        reset vector itself, so they were compiled separately. Why is not established.
+        """
+        lab.require('arch8_code_880', 'arch8_code_885', *self.BOOT)
+        app = [lab.load('arch8_code_880'), lab.load('arch8_code_885')]
+        boot = [lab.load('arch8_boot_880'), lab.load('arch8_boot_885')]
+        self.assertEqual(len(app[0]), len(app[1]))
+        self.assertEqual(len(boot[0]), len(boot[1]))
+        app_diff = sum(1 for x, y in zip(*app) if x != y)
+        boot_diff = sum(1 for x, y in zip(*boot) if x != y)
+        self.assertEqual(app_diff, 2, 'the applications are one build')
+        self.assertGreater(boot_diff, 1000, 'the bootloaders are not')
+        self.assertNotEqual(boot[0][:4], boot[1][:4], 'even the reset vector differs')
+
     def test_the_low_nibble_is_the_software_type(self):
         """
         Section 87, and this test used to say the nibble was undetermined.

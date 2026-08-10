@@ -49,7 +49,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty six have been found and corrected so far. The newest two are in section 113 and they are the
+Thirty seven have been found and corrected so far. **The newest is in section 116 and it corrected a
+section written four hours earlier**, which is the shortest life any claim here has had. Section 114
+read `GET_VERSION` field 6 as "the architecture on three architectures out of four" and offered a
+generation number that stopped advancing as the guess. Two more images took the population from four
+to eleven and the shape resolved: it names a **platform**, and arch 12 and arch 14 are one platform
+under it. The lesson is not that the first reading was careless, it is that four samples could not
+distinguish it from the right one, and the section said so at the time.
+
+Before it, two in section 113, and they are the
 kind that matter most, because both were in **shipped code that answered without failing**. The skin
 rule read `bcdDevice`'s low byte as BCD on every architecture, which is right on two of the four and
 turns a Harmony 885 into a Harmony 655 on a third; it had three copies, and the one remote that would
@@ -14545,11 +14553,16 @@ fourth value for it:
 | field 6 | `0x08` | `0x09` | `0x0C` | `0x0C` |
 
 So field 6 **is** the architecture on three architectures out of four and is not on the fourth, which
-is a narrowing rather than an answer: it rules out "the architecture" as the reading, since arch 14
-would then be `0x0E`, and it rules out the idea that the constant is arbitrary per build. What it
-looks like is a generation number that stopped advancing at 12. The `bcdDevice` high byte from section
-113 goes `0x08, 0x09, 0x10, 0x10` over the same four, which is the same shape and a different value in
-the pair, so the two are not copies of one variable. Nothing here settles it and no code depends on
+rules out "the architecture" as the reading, since arch 14 would then be `0x0E`, and rules out the
+constant being arbitrary per build. The `bcdDevice` high byte from section 113 goes `0x08, 0x09,
+0x10, 0x10` over the same four, which is the same shape and a different value in the pair, so the two
+are not copies of one variable.
+
+**"A generation number that stopped advancing at 12" was the guess offered here, and section 116 has<!--superseded-->
+the better reading a few hours later**: field 6 names a **platform**, and arch 12 and arch 14 are one
+platform under it. Two more images settle the shape, taking the population from four to eleven, and
+the point is that four images could not distinguish "equals the architecture, except once" from
+"equals the platform, always". Nothing here settles what the number is for and no code depends on
 it.
 
 The USB descriptor block is at `0x1A630`, decoded in section 113.
@@ -14666,6 +14679,111 @@ than rediscovering it.
 Both are in `tools/golden.py`'s vector list, failing checks and all, so the Python and TypeScript
 readers are held to agreeing about arch 10 while neither understands it. That is deliberate: the
 comparison is worth more before the readers are written than after.
+
+## 116. The arch 8 dump called safe mode is a bootloader, and it says so itself
+
+Asked for at the end of section 114 and delivered the same day, 10 August 2026: two 65536 byte
+images from `concordance --dump-safemode` on an 880 and an 885. **They are not safe mode**, and the
+thing that says so is a field this project had already read for another reason.
+
+### The identification is Logitech's own word, not an inference
+
+Section 87 found the five `RETLW` accessors the version block calls, and named the software type
+nibble among them from a comment in Logitech's own firmware package: **3 is Boot mode**, 1 is Test
+mode, and 0 and 4 are application mode and safe mode. Every image in the corpus carries exactly one
+such run of five, and there are now eleven of them:
+
+| image | version | software type | skin | field 6 | architecture |
+|---|---|---|---|---|---|
+| One 3.4 application | `0x34` | 0 | 54 | `0x0C` | `0x0C` |
+| 700 2.8 | `0x28` | 0 | 66 | `0x0C` | `0x0E` |
+| 650 0.4 | `0x04` | 0 | 72 | `0x0C` | `0x0E` |
+| 600 0.2 | `0x02` | 0 | 71 | `0x0C` | `0x0E` |
+| 525 3.0 | `0x30` | 0 | 22 | `0x09` | `0x09` |
+| 880 4.4 application | `0x44` | 0 | 15 | `0x08` | `0x08` |
+| 885 4.4 application | `0x44` | 0 | 17 | `0x08` | `0x08` |
+| One safe mode | `0x34` | **4** | 54 | `0x0C` | `0x0C` |
+| 600 safe mode | `0x02` | **4** | 71 | `0x0C` | `0x0E` |
+| **880, this dump** | `0x40` | **3** | 15 | **0** | `0x08` |
+| **885, this dump** | `0x40` | **3** | 17 | **0** | `0x08` |
+
+So the arch 8 images declare Boot mode, a third value of that nibble on a third architecture, and
+they declare it from their own accessor rather than being labelled by us. The other four constants
+are what rule out having found an unrelated run: the skin is the model's, the architecture is the
+platform's, and both agree with the application image of the same remote.
+
+**This is the third time here that a file named for safe mode has held something else.** On arch 14
+the file called `-safe.bin` is the application firmware truncated at 64 KiB, `CLAUDE.md` warns about
+it, and the cause is the same both times: the name records the command that produced the file, not
+what came back. `concordance --dump-safemode` reads `FIRMWARE_MAX_SIZE` from `ri.arch->flash_base`,
+and on arch 8 `flash_base` is `0x000000`, so the flag is a synonym for "the bottom 64 KiB" there.
+The files keep their names and the corpus calls them `arch8_boot_880` and `arch8_boot_885`.
+
+### What was actually missing, and is now not
+
+Section 114 closed by saying that everything it read rested on an image whose entry point nobody had
+seen. That gap is closed and the closure is better than a single vector:
+
+| vector | target |
+|---|---|
+| reset, `0x0000` | inside this image, `0x0637C` on the 880 |
+| high priority interrupt, `0x0008` | `0x010400` |
+| low priority interrupt, `0x0018` | `0x010800` |
+
+**Both interrupt vectors point into the application image.** That is what makes the two dumps halves
+of one program rather than two files off one device: the bottom 64 KiB owns the vector table, and it
+hands every interrupt to code that lives in the region section 114 read. `0x010400` and `0x010800`
+are `0x400` and `0x800` into the application, which is where a PIC18 build puts its own relocated
+vectors.
+
+The load base is `0x000000`, derived rather than assumed: 342 branch targets landing on an
+instruction boundary against 46 for the runner up. It agrees with concordance's `flash_base` for
+arch 8, which is the calibration this derivation asks for.
+
+### Two things it does not contain, and one contrast
+
+**No config.** `gspm.parse` finds nothing here, on either image. So the arch 8 safe mode container
+really is where section 114 found it, inside the application region at flash `0x01E000`, and this
+region is code only. Worth stating because the obvious expectation was the opposite: on arch 12 the
+safe mode container sits at flash `0x002000`, which is inside the bottom 64 KiB.
+
+**No image header and no checksum.** The first bytes are the reset vector, so there is nothing at
+offset 0 to verify and `firmware.verify_checksum` correctly returns false. The arch 9 internal dump
+behaves the same way and for the same reason, section 114.
+
+**And the two are two builds where the applications are one.** The 880 and 885 application images
+differ in exactly two bytes, both the skin. Their bootloaders differ in 15694 bytes across 1225
+runs, including the reset vector itself, `0x0637C` against `0x06392`. So one application was
+compiled for both models and the bootloaders were not. Why is not established, and the honest guess
+is that they were built at different times rather than for different purposes, since the code ends
+at `0x0639B` and `0x063B1`, a 22 byte difference.
+
+### What it says about field 6, which is the one field with no reading
+
+Field 6 had four values before this and the reading offered in section 114 was that it equals the
+architecture on three architectures and not on arch 14. **That is true and it is the wrong way to
+look at it.** The corrected reading, with eleven images rather than four:
+
+* `0x0C` on **both** arch 12 and arch 14, across six images and three firmware versions
+* `0x09` on arch 9, `0x08` on arch 8
+* the same value in a remote's safe mode image as in its application, on arch 12 and arch 14
+
+So field 6 does not identify an architecture, it identifies a **platform**, and arch 12 and arch 14
+are one platform under it. Everything else already said so: they share the `PIC18F67J50` family,
+they share the `GSPM` cookie, and Logitech's own platform table calls the arch 12 family Gin. The
+number is the lowest architecture in its platform, on all three platforms available.
+
+The bootloaders' zero is not evidence against that. They are the one role that has no use for a
+platform constant, they are the oldest builds here at version 4.0 against the application's 4.4, and
+their nibble is a mode nobody had seen. **It stays unconfirmed** and it is no longer without a
+reading, which is what "narrowed rather than open" should have meant when section 114 said it.
+
+### What is still missing on arch 8
+
+A **safe mode** image, software type 4. Arch 12 and arch 14 have one each, inside internal program
+memory beside the bootloader, and on arch 8 no dump has produced one. Either it is somewhere neither
+`-f` nor `-s` reaches, or arch 8's boot mode does the job that later platforms split in two. Nothing
+here decides which, and no claim depends on it.
 
 ## References
 

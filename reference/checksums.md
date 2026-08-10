@@ -156,10 +156,22 @@ The firmware was dumped with `concordance -b -f`, which returns the complete fir
 one build, 65536 bytes each, load base `0x010000`, differing at exactly two offsets which are both
 the skin byte.
 
-| File | Model | SHA-256 |
-|---|---|---|
-| `H880-firmware.bin` | 880, skin 15 | `815c0933...376c2f86` |
-| `H885-firmware.bin` | 885, skin 17 | `8c6b4ef0...11c19a799` |
+| File | Model | Role | Load base | SHA-256 |
+|---|---|---|---|---|
+| `H880-firmware.bin` | 880, skin 15 | application, 4.4 | `0x010000` | `815c0933...376c2f86` |
+| `H885-firmware.bin` | 885, skin 17 | application, 4.4 | `0x010000` | `8c6b4ef0...11c19a799` |
+| `H880-safemode.bin` | 880, skin 15 | **bootloader**, 4.0 | `0x000000` | `30340b74...1332a788` |
+| `H885-safemode.bin` | 885, skin 17 | **bootloader**, 4.0 | `0x000000` | `4acf023a...dd531339` |
+
+The two files named `-safemode` came from `concordance --dump-safemode` on 10 August 2026, and **they
+are not safe mode images**: both declare software type 3, which Logitech's own firmware package calls
+Boot mode, where an arch 12 or arch 14 safe mode image declares 4. The flag names the command, which
+reads 64 KiB from `flash_base`, and on arch 8 that is `0x000000`. Section 116, and the third time on
+this project that a file named for safe mode has held something else. The corpus calls them
+`arch8_boot_880` and `arch8_boot_885`; the file names are left as the contributor sent them.
+
+Unlike the applications, which are one build differing in two bytes, the two bootloaders differ in
+15694 bytes including the reset vector, so they were compiled separately.
 
 The configs. Their names are the owner's room names and **the skin is the authority on the model**:
 `H885-Bedroom` carries skin 15, so by its own header it is an 880.
@@ -238,6 +250,8 @@ obviously failing.
 | 525 flash `0x810000` | `0x1000` | `GOTO 0x07FB4` at `0x1008` | derived at 717 boundary hits against 326, then **confirmed against the device's own internal memory**; framed `HG` at `+4` and `GH` at `0x6FFE` |
 | 525 flash `0x800000` | `0x1000` | `GOTO 0x0BF5*2` at `0x1008` | the safe mode application, 182 boundary hits of 183 |
 | 525 internal | `0x0000` | reset `GOTO 0x0EF6` | bootloader below `0x1000`, application above it |
+| 880 / 885 application | `0x010000` | not in the image | the `HG` magic is at offset **4** here, not 8; 979 boundary hits against 602 |
+| 880 / 885 bootloader | `0x000000` | reset `GOTO 0x0637C` on the 880 | 342 boundary hits against 46; both interrupt vectors go to `0x010400` and `0x010800`, inside the application |
 
 Ghidra language: `PIC-18:LE:24:PIC-18`. Only a generic variant exists, so SFRs come out
 unnamed; `tools/pic18_disasm.py` resolves them instead.

@@ -42,6 +42,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // arch 8 precisely where it fails on arch 12 and 14. They load at 0x010000. Sections 113 and 114.
   arch8_code_880: 'H880-firmware.bin',
   arch8_code_885: 'H885-firmware.bin',
+  // What `concordance --dump-safemode` returns on arch 8, and **it is not safe mode**: both images
+  // declare software type 3, which Logitech's own firmware package calls Boot mode, where arch 12 and
+  // arch 14 safe mode declares 4. So these are bootloaders. They carry the reset vector the
+  // application images lack, load at 0x000000, and hand both interrupt vectors to the application at
+  // 0x010400 and 0x010800. Section 116. Named for what they hold rather than for the flag that
+  // produced them, which is the third time a file called "safe" here has held something else.
+  arch8_boot_880: 'H880-safemode.bin',
+  arch8_boot_885: 'H885-safemode.bin',
   one34_region2: 'one-3.4-Region_2-decoded.bin',
   one_safemode: 'one-safemode-gspm-base0x2000-raw64k.bin',
   h700_code: '700-2.8-Region_2-code-base0x9000.bin',
