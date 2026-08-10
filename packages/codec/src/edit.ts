@@ -38,11 +38,16 @@
 import { ACTION_LIST_INDEX_OPCODE, modeRecords, pageListCopies, taggedList } from './sections.ts';
 import type { TaggedEntry } from './sections.ts';
 import {
+  CLOCK_FIELDS_OFFSET,
+  CLOCK_FIELD_COUNT,
+  CLOCK_FIRST_YEAR,
+  CLOCK_LAST_YEAR,
   CLOCK_RECORD_SLOT,
   Container,
   GspmError,
   TRAILER_CHECKSUM_OFFSET,
   clockRecord,
+  clockRecordFields,
   trailerChecksum,
 } from './gspm.ts';
 import { claims } from './coverage.ts';
@@ -203,15 +208,6 @@ export function applyEdits(c: Container, edits: Edit[]): EditReport {
   return { bytes, changed: diffRanges(c.blob, bytes) };
 }
 
-/** `YYYY-MM-DDTHH:MM:SS`, the shape `Container.builtAt` uses and the shape `clockRecord` reads. */
-const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
-/** The year field is a `u8` offset from 2000, so this is the whole range the record can express. */
-const FIRST_YEAR = 2000;
-const LAST_YEAR = FIRST_YEAR + 0xff;
-/** Where the seven fields sit inside the eleven byte record, after the `0xADDF` cookie. */
-const FIRST_FIELD = 2;
-const FIELD_COUNT = 7;
-
 /**
  * A local wall clock timestamp for `saveEdits`, from a `Date`.
  *
@@ -237,23 +233,15 @@ export function localTimestamp(when: Date): string {
  * list before applying it can, and so it goes through exactly the same rails as any other edit.
  */
 export function timestampEdit(c: Container, builtAt: string): Edit[] {
-  const parts = TIMESTAMP.exec(builtAt);
-  if (parts === null) throw new EditError(`${builtAt} is not YYYY-MM-DDTHH:MM:SS`);
-  const [year, month, day, hour, minute, second] = parts.slice(1).map(Number) as [
-    number, number, number, number, number, number,
-  ];
-  if (year < FIRST_YEAR || year > LAST_YEAR) {
-    throw new EditError(`${year} is outside ${FIRST_YEAR} to ${LAST_YEAR}, which the u8 year holds`);
+  // One encoder, in `gspm.ts` beside the decoder it inverts. The day of week is computed there and
+  // never taken from a caller, so nothing here can build a record `clockRecord` would reject.
+  const bytes = clockRecordFields(builtAt);
+  if (bytes === undefined) {
+    throw new EditError(
+      `${builtAt} is not a timestamp this record can hold: YYYY-MM-DDTHH:MM:SS, `
+      + `year ${CLOCK_FIRST_YEAR} to ${CLOCK_LAST_YEAR}, and a date that exists`,
+    );
   }
-  if (hour > 23 || minute > 59 || second > 59) throw new EditError(`${builtAt} is not a time`);
-  const utc = new Date(Date.UTC(year, month - 1, day));
-  if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) {
-    throw new EditError(`${builtAt} is not a date that exists`);
-  }
-  // Days since 1 January 2000 modulo 7, so 0 is a Saturday. Derived, never carried: see FIELD_RULES.
-  const days = Math.floor((utc.getTime() - Date.UTC(2000, 0, 1)) / 86_400_000);
-  const weekday = ((days % 7) + 7) % 7;
-
   const section = c.sections[CLOCK_RECORD_SLOT];
   if (section === undefined || section.isNull) {
     throw new EditError('this container has no base slot 3, so a save cannot stamp it');
@@ -265,11 +253,8 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
     // unreadable record is refused rather than overwritten: whatever is there is not what we think.
     throw new EditError('base slot 3 does not hold a clock record, so it is not ours to overwrite');
   }
-  const bytes = Uint8Array.from([
-    second, minute, hour, day, weekday, month - 1, year - FIRST_YEAR,
-  ]);
-  if (bytes.length !== FIELD_COUNT) throw new EditError('the record is seven fields');
-  return [{ start: off + FIRST_FIELD, bytes, owner: 'slot-3-timestamp' }];
+  if (bytes.length !== CLOCK_FIELD_COUNT) throw new EditError('the record is seven fields');
+  return [{ start: off + CLOCK_FIELDS_OFFSET, bytes, owner: 'slot-3-timestamp' }];
 }
 
 /**

@@ -14000,6 +14000,20 @@ clock on purpose**, which is right for a round trip and wrong for a save. That i
 this project where emitting the input exactly and emitting the correct thing come apart, and there will
 be others.
 
+**Landing it produced a defect worth recording, and it was not the one predicted.** The next step
+after `FIELD_RULES` was proposed as "give the emitter the same distinction", on the reasoning that
+`emit.ts` always rebuilds base slot 3 from the container it read. Checking the premise first, as this
+project's own note about restructures asks, the emitter turns out to be **right as it is**: it exists
+to prove the readers are complete by reproducing its input byte for byte, so carrying the timestamp is
+exactly its job and stamping would break the measurement. What was actually wrong is that `emit.ts`
+and `edit.ts` had each derived the day of week themselves, with a different spelling of the same
+epoch and a different parser for the same string. **Two copies of one derivation, both correct, and
+nothing would have failed while they diverged**, which is the defect this project bans for the opcode
+table and had reintroduced within a day. There is one encoder now, `clockRecordFields` in `gspm.ts`
+beside the decoder it inverts, and the test that guards it walks all eighteen containers asserting the
+two are inverses on real records. The emitter's round trip only property is asserted from its own side
+as well, because a later change that made it stamp would look like an improvement.
+
 **That distinction is code now**, `FIELD_RULES` in `packages/codec/src/edit.ts`: every field whose
 treatment on a write is not "carry it unchanged", with the section that establishes it and why it is
 not the obvious other policy. `applyEdits` is the faithful path and `saveEdits` stamps, and neither is

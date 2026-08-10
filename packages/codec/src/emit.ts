@@ -23,6 +23,15 @@
  * **What it is not.** Nothing here goes near a remote. It produces bytes; writing them to hardware
  * is a later milestone behind `packages/usb/src/rails.ts`, and version 1 of the application is
  * read only. `docs/roadmap.md`, milestone M2.
+ *
+ * **And it is not a save path**, which is worth saying in code rather than leaving to be inferred.
+ * This rebuilds a container to be **byte identical to its input**, which is the whole measurement:
+ * anything that differs is a reader that does not understand its own structure. A save is the
+ * opposite operation on one field, because base slot 3's timestamp is what an arch 12 remote sets
+ * its clock from, section 111, so reproducing it faithfully reproduces a stale clock. Editing goes
+ * through `edit.ts`, whose `FIELD_RULES` says which fields are carried and which are recomputed, and
+ * whose `saveEdits` stamps. If a caller ever wants these bytes written to a remote, that is the
+ * route, not this one.
  */
 
 import {
@@ -35,13 +44,12 @@ import {
   FRAME_END,
   FRAME_END_LENGTH,
   CLOCK_END,
-  CLOCK_EPOCH_MS,
   Container,
   GspmError,
-  MS_PER_DAY,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   TRAILER_CHECKSUM_OFFSET,
+  clockRecordFields,
   trailerChecksum,
 } from './gspm.ts';
 import { countedPointers } from './valuemap.ts';
@@ -290,24 +298,24 @@ export function rebuilds(c: Container): Rebuild[] {
   // rather than stored back, so emitting it recomputes days since 1 January 2000 modulo 7 and the
   // round trip is a second confirmation of section 21's field assignment, on every container that
   // has one.
+  //
+  // **`c.builtAt` on purpose, which is the round trip and not a save.** The remote sets its clock
+  // from this record, section 111, so writing a config back with the timestamp it came in with is
+  // reproducing a stale clock. That is correct here and wrong for a save, and the distinction lives
+  // in `edit.ts` as `FIELD_RULES`: this emitter is the instrument that proves the readers are
+  // complete, and it is not the write path. See the note at the top of this file.
+  //
+  // The fields come from `clockRecordFields`, which is also what `edit.ts` stamps with. Each of them
+  // derived the weekday itself until 10 August 2026, with a different spelling of the same epoch.
   const clockAt = sectionStart(3);
   if (clockAt !== undefined && c.builtAt !== undefined) {
-    const t = c.builtAt;
-    const year = Number(t.slice(0, 4));
-    const month = Number(t.slice(5, 7)) - 1;
-    const day = Number(t.slice(8, 10));
-    const dow = ((Math.floor((Date.UTC(year, month, day) - CLOCK_EPOCH_MS) / MS_PER_DAY) % 7) + 7) % 7;
+    const fields = clockRecordFields(c.builtAt);
+    if (fields === undefined) throw new GspmError(`slot 3 holds an unencodable ${c.builtAt}`);
     // Fourteen bytes: the record, then the three zeros the section carries past it. Written as
     // zeros rather than copied, so a tail that is not zero fails the round trip. Section 84.
     framed(clockAt, 'slot-3-clock', new Writer(CLOCK_SECTION_LENGTH)
       .raw(CLOCK_COOKIE)
-      .u8(Number(t.slice(17, 19)))
-      .u8(Number(t.slice(14, 16)))
-      .u8(Number(t.slice(11, 13)))
-      .u8(day)
-      .u8(dow)
-      .u8(month)
-      .u8(year - 2000)
+      .raw(fields)
       .raw(CLOCK_END)
       .u8(0).u8(0).u8(0));
   }

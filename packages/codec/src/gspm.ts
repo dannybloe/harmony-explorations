@@ -653,6 +653,50 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
   return `${p(year, 4)}-${p(month + 1)}-${p(day)}T${p(hour)}:${p(minute)}:${p(second)}`;
 }
 
+/** The seven fields of the slot 3 record sit here, after the `0xADDF` cookie. */
+export const CLOCK_FIELDS_OFFSET = 2;
+export const CLOCK_FIELD_COUNT = 7;
+/** The year is a `u8` offset from 2000, so this is the whole range the record can express. */
+export const CLOCK_FIRST_YEAR = 2000;
+export const CLOCK_LAST_YEAR = CLOCK_FIRST_YEAR + 0xff;
+/** `YYYY-MM-DDTHH:MM:SS`, which is what `clockRecord` returns and what this takes back. */
+const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+
+/**
+ * The seven field bytes of a slot 3 record for `builtAt`, or undefined if it cannot hold it.
+ *
+ * **The exact inverse of `clockRecord`, and it lives beside it on purpose.** Two callers need this,
+ * the emitter and the edit layer, and before they shared it they each derived the day of week
+ * themselves with a different spelling of the same epoch. That is the shape of defect this project
+ * bans for the opcode table: two copies of one derivation, both plausible, diverging quietly. So
+ * there is one encoder, one decoder, and a test that walks the corpus asserting they are inverses.
+ *
+ * The day of week is **computed** rather than taken from the caller, because `clockRecord` refuses a
+ * record whose weekday disagrees with its date and that refusal is the reason to trust the whole
+ * reading, section 21. So nothing here can produce a record our own reader would reject.
+ *
+ * Undefined rather than an error, mirroring the decoder, so each caller can raise the error its own
+ * layer promises. `edit.ts` turns it into an `EditError`.
+ */
+export function clockRecordFields(builtAt: string): Uint8Array | undefined {
+  const parts = TIMESTAMP.exec(builtAt);
+  if (parts === null) return undefined;
+  const [year, month, day, hour, minute, second] = parts.slice(1).map(Number) as [
+    number, number, number, number, number, number,
+  ];
+  if (year < CLOCK_FIRST_YEAR || year > CLOCK_LAST_YEAR) return undefined;
+  if (month < 1 || month > 12 || day < 1) return undefined;
+  if (hour > 23 || minute > 59 || second > 59) return undefined;
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  // Rejects a day its month does not have, which Date.UTC rolls over instead.
+  if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return undefined;
+  const days = Math.floor((utc.getTime() - CLOCK_EPOCH_MS) / MS_PER_DAY);
+  const weekday = ((days % 7) + 7) % 7;
+  return new Uint8Array([
+    second, minute, hour, day, weekday, month - 1, year - CLOCK_FIRST_YEAR,
+  ]);
+}
+
 export function parse(data: Uint8Array): Container {
   const { family, offset: start } = findMagic(data);
   const endMarker = indexOf(data, bytesOf(family.endMarker), start);

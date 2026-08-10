@@ -28,6 +28,7 @@ import {
   parse,
   rebuilds,
   roundTrip,
+  saveEdits,
 } from '../src/index.ts';
 
 /**
@@ -171,3 +172,18 @@ test('a flipped payload byte breaks the trailer checksum', skipUnless('h600_conf
     `expected a difference in the checksum word at ${word}, got ${result.firstDifference}`,
   );
 });
+
+test('the emitter reproduces the timestamp, which is why it is not a save path',
+  skipUnless('h600_config'), () => {
+    // Section 111 gave base slot 3's timestamp a second meaning: an arch 12 remote sets its clock
+    // from it. So reproducing it faithfully, which is what this emitter does and must do, is
+    // reproducing a stale clock. That is correct for a round trip and wrong for a save, and the two
+    // operations live in different files on purpose. Asserted from this side as well as from
+    // `edit.test.ts`, because a future change that made the emitter stamp would look like an
+    // improvement and would break the measurement this whole file exists to make.
+    const c = parse(load('h600_config') as Uint8Array);
+    const { bytes } = emit(c);
+    assert.equal(parse(bytes).builtAt, c.builtAt, 'the emitter carries it');
+    const saved = parse(saveEdits(c, [], '2026-08-10T16:45:09').bytes);
+    assert.notEqual(saved.builtAt, c.builtAt, 'and a save does not');
+  });

@@ -532,6 +532,13 @@ generator's reservation that no config in the corpus appends to, section 47. Bot
 identical after a save rather than merely left alone, and a rule added without a test fails the
 suite.
 
+**`emit.ts` is the round trip side and stays there**, which was checked rather than assumed: the
+obvious next step was to give the emitter the same two paths, and its premise does not hold, because
+byte equality with its input is the entire measurement M2 makes. What the check did find is that the
+emitter and the edit layer had each derived base slot 3's day of week themselves, with a different
+spelling of the same epoch, so there is one encoder now beside the decoder it inverts and a test that
+walks all eighteen containers asserting they are inverses.
+
 **M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
 facing "write my config" is FH.

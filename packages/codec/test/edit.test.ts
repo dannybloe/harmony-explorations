@@ -21,6 +21,7 @@ import {
   TRAILER_CHECKSUM_OFFSET,
   applyEdits,
   archSlot,
+  clockRecordFields,
   localTimestamp,
   saveEdits,
   timestampEdit,
@@ -360,4 +361,67 @@ test('localTimestamp is the wall clock, and it round trips through the record', 
   const when = new Date(2026, 7, 10, 16, 45, 9);
   assert.equal(localTimestamp(when), '2026-08-10T16:45:09');
   assert.equal(localTimestamp(new Date(2026, 0, 1, 0, 0, 0)), '2026-01-01T00:00:00');
+});
+
+/**
+ * The encoder and the decoder are inverses, on every container in the corpus.
+ *
+ * **This is the test the duplication would have hidden.** The emitter and this edit layer each
+ * derived the day of week themselves until 10 August 2026, with a different spelling of the same
+ * epoch, and both were right; two copies of one derivation is the shape of defect this project bans
+ * for the opcode table, and nothing failed while it existed. So the guard is not "the two agree", it
+ * is that there is one implementation and it inverts the reader on eighteen real records.
+ */
+const ALL_CONTAINERS = [
+  'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm', 'h650_safemode_gspm',
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+  'h525_safemode_ahcm', 'one_spare_before_sync', 'one_spare_after_sync',
+];
+
+test('the clock encoder reproduces every stored record byte for byte',
+  skipUnless(...ALL_CONTAINERS), () => {
+    let checked = 0;
+    for (const name of ALL_CONTAINERS) {
+      const c = parse(load(name) as Uint8Array);
+      const builtAt = c.builtAt;
+      assert.ok(builtAt !== undefined, `${name} carries a timestamp`);
+      const at = clockFieldsAt(c);
+      assert.ok(at !== undefined, `${name} has a base slot 3`);
+      const encoded = clockRecordFields(builtAt);
+      assert.ok(encoded !== undefined, `${name}: ${builtAt} does not encode`);
+      assert.deepEqual([...encoded], [...c.blob.slice(at, at + encoded.length)],
+        `${name}: the encoder disagrees with the bytes the decoder read`);
+      checked += 1;
+    }
+    // Spread rather than a count: one architecture agreeing proves much less than four.
+    assert.equal(checked, ALL_CONTAINERS.length);
+  });
+
+test('the clock encoder derives the weekday rather than trusting anyone', () => {
+  // 1 January 2000 is the epoch and the record calls it 0, which is a Saturday. Checked against the
+  // calendar rather than against a stored byte, so this fails if the epoch is ever "simplified".
+  const fields = clockRecordFields('2000-01-01T00:00:00');
+  assert.ok(fields !== undefined);
+  assert.equal(fields[4], 0, 'the epoch day is 0');
+  assert.equal(new Date(Date.UTC(2000, 0, 1)).getUTCDay(), 6, 'and it is a Saturday');
+  // A whole week, so a wrong modulus shows up rather than a wrong offset only.
+  for (let day = 1; day <= 7; day += 1) {
+    const when = `2000-01-0${day}T00:00:00`;
+    const got = clockRecordFields(when);
+    assert.ok(got !== undefined, when);
+    assert.equal(got[4], (day - 1) % 7, when);
+  }
+});
+
+test('the encoder refuses what the decoder would refuse', () => {
+  // The same seven inputs the edit layer refuses, at the layer below it, so the refusal is the
+  // encoder's property and not a check the edit layer happens to do first.
+  for (const bad of [
+    '2026-08-10 16:45:09', '2026-8-10T16:45:09', '1999-12-31T23:59:59', '2256-01-01T00:00:00',
+    '2026-02-30T00:00:00', '2026-08-10T24:00:00', '2026-08-10T16:60:09',
+  ]) {
+    assert.equal(clockRecordFields(bad), undefined, bad);
+  }
+  assert.equal(clockRecordFields('2255-12-31T23:59:59')?.[6], 0xff, 'and the last year it can hold');
 });

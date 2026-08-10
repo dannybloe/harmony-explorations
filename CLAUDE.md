@@ -332,9 +332,10 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 ```
 packages/codec/                 TS: the one config codec, container through compiler,
                                 src/coverage.ts the M2 byte accounting, src/emit.ts the
-                                emitter that reads it back the other way, and src/edit.ts
-                                the M3 groundwork: same length edits, rails as refusals, and
-                                FIELD_RULES, which is why a round trip and a save differ
+                                emitter that reads it back the other way and is the round trip
+                                side on purpose, and src/edit.ts the M3 groundwork: same length
+                                edits, rails as refusals, and FIELD_RULES, which is why a round
+                                trip and a save differ
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
@@ -414,6 +415,14 @@ harmony/usbdesc.py         find and decode the USB descriptor block in an image
 its docstring: two tools once carried diverging copies and both produced readable but wrong
 listings. If a mnemonic is missing, add it there and assert its encoding in
 `tests/test_isa.py`.
+
+**The rule is about derivations and not only about that table**, and it was broken inside the
+TypeScript codec on 10 August 2026 without anything failing: `emit.ts` and `edit.ts` each derived
+base slot 3's day of week, with a different spelling of the same epoch and a different parser for the
+same string, both correct. **Two right copies is the state that precedes two diverging ones**, and no
+test can see it, so it is caught by looking. A field's encoder lives next to its decoder, once:
+`clockRecordFields` beside `clockRecord` in `packages/codec/src/gspm.ts`, with a test that walks the
+corpus asserting they invert.
 
 When something new is confirmed, four things happen together:
 
