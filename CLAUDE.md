@@ -246,7 +246,10 @@ re-enumeration does not do. So data memory is reinitialised and no corruption su
 refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
 the weaker name for two days.
 
-**What does strand one is unexplained, and it is written down as unexplained.** Three leads followed
+**What does strand one is unexplained, and it is PARKED**, by the owner's decision on 10 August 2026,
+whose reading is that it may be an anomaly of that one unit: the spare has been synced by Logitech's
+software, hung deliberately more than a dozen times and had its batteries pulled repeatedly, and it is
+the only remote it has ever happened to. **What reopens it is another occurrence, nothing else.** Three leads followed
 and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
 corruption, refuted by mechanism since the hang resets the device; and the charger to USB transition,
 which behaved like every other round on 10 August 2026. **Do not read that as a narrowing.** A bench
@@ -254,7 +257,10 @@ session should expect a stranding, a battery pull clears it, and nothing here kn
 not leads until something suggests a mechanism: those two sessions ran dozens of commands where every
 round here ran one, and both followed hours of continuous bench work rather than a remote picked up
 cold. `session-end-control.ts [--from-charger]` is the instrument, and its charger mode refuses to
-start with the remote already on USB because its first wait is the measurement.
+start with the remote already on USB because its first wait is the measurement. **Do not re-derive the
+dead leads**: each cost a round of hardware, and if it happens again the two things to capture in the
+moment are how many commands the session had sent and whether the screen still said USB mode before
+anything was unplugged. Every previous occurrence lost both.
 `packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
 demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
 `rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching

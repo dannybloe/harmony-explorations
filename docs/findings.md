@@ -12381,6 +12381,25 @@ whole thread is that **a bench session should expect it, a battery pull clears i
 knows why**, which is where section 95 started and is now the considered position rather than the
 first guess.
 
+### Parked, on 10 August 2026, and what would reopen it
+
+The owner's decision, and his reading of it: **it may be an anomaly of this particular unit.** That is
+a reasonable candidate and it is not testable with what is here, because the spare has had an unusual
+life. It was synced by Logitech's own software on 7 August 2026, deliberately hung well over a dozen
+times since, and had its batteries pulled repeatedly, and it is the only unit any stranding has been
+seen on. The programmed Harmony One has had nothing but reads and has never done it.
+
+So the thread stops here rather than continuing to generate leads at a decreasing rate. **What would
+reopen it is one thing: another occurrence.** If it happens again, the two facts to capture at the
+moment it happens, both of which every previous occurrence lost, are how many commands the session had
+sent and whether the screen still showed USB mode before anything was unplugged. The instrument for
+either is `session-end-control.ts`, and the third stranding is worth more than any further round of
+the ones already run.
+
+**Do not re-derive the dead leads.** The disconnect, the hang's corruption and the charger are all
+followed and all dead, and each cost a round of hardware. A future session that reads section 95 and
+proposes one of them has re-derived a negative that is already here.
+
 ### Two things the baseline measured on the way
 
 **`0x284` reads `0x0A` while it is being read**, which is the tenth state, the one `READ_MISC` itself
