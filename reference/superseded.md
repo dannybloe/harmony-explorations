@@ -99,3 +99,4 @@ and leave this table alone.
 | `the sort of coincidence that says one codebase` | section 98 | `0x40D` is the endpoint's byte count, fixed by the part, so all three would share it however they were written |
 | `The header layout is arch 12 only` | section 98, corrected the same day | arch 14 writes the same header through `INDF0` at `0x0938C`; the scan that missed it filtered out `0xEF` |
 | `a polite end is a reboot, or it is nothing` | section 99 | USB mode has an exit gated on the command state being zero, which is exactly what `0xE0 0x01` clears |
+| `it is the disconnect, not the traffic` | section 99, 10 August 2026 | a session of one plain read then a cable pull left the remote out of USB mode; both sticking sessions had contained a deliberate odd count hang |

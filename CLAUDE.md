@@ -233,19 +233,21 @@ artefact of which offsets the bisection tried, and it is corrected in place. The
 counts everywhere, and the case that returns is no better, because it has already scribbled 2247
 bytes over the remote's memory.
 
-**A session has to be ended, not abandoned, and that is a product decision waiting to be taken.**
-Pull the cable and a remote can stay in USB mode until its batteries come out, section 95, seen
-twice on 9 August 2026, the second time after a plain successful read. USB mode **does** have an
-exit and the firmware polls for the cable itself, section 99, but one of its two paths is gated on
-the command state variable `0x284` being zero, and the shared command exit clears that only for a
-packet it did **not** handle. `0xE0 0x01` clears it and is not a reset, where `0xE0 0x02` reboots,
-section 97. So the honest options are one command behind `WRITES_ENABLED`, or telling the user about
-the batteries. **Do not decide this in a commit**; it is the owner's. **The experiment is written and
-unrun**: `packages/usb/bin/end-session-experiment.ts`, with the prediction committed first in
-section 99, and **its control comes first**, which is pulling the cable after a plain read to check
-the command is needed at all. `assertSessionEndAllowed` is the rail: `0xE0 0x01` only, the two reboot
-sub-commands refused by number, arch 9 refused because nobody has read its escape, and the spare
-remote only.
+**A clean read only session does not strand a remote, and that is measured.** On 10 August 2026 a
+session of one plain 32 byte read, then the cable out, left the spare One **out** of USB mode and on
+its normal display. So version 1 of FreeHarmony needs to send nothing at the end, and the awkward
+choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
+`0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
+leaves the gate open.
+
+**What does strand one is unexplained, and the suspect is an odd count read.** Both occurrences on
+9 August 2026 followed a session containing a deliberate hang; the session containing none did not
+stick. Section 96's runaway writes over data memory from `0x046A` up, and `0x2628E`'s four idle flags
+at `0xED5`, `0xED6`, `0xEDC` and `0xEDD` are in its path while `0x284` and `0x315` are below it. A
+hypothesis, not a finding, and its test is a **read**: `READ_MISC` selector `0x07` on those four
+after a hang. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
+`packages/usb/bin/end-session-experiment.ts` exists, is gated by `assertSessionEndAllowed`, and is
+**deliberately unrun** because the control made it unnecessary.
 
 **A new architecture refuses writes by construction**, because the gate is
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read

@@ -11508,13 +11508,20 @@ cleared of it a second time and for a better reason.
 
 The spare One did it again after the section 96 falsification reads: cable pulled, remote stuck
 showing USB mode, batteries out to clear it. This one is worth recording because **nothing unusual
-preceded it**. The last command it received was an ordinary 32 byte `READ_FLASH` of the config base,
+preceded it**. The last command it received was an ordinary 32 byte `READ_FLASH` of the config base,<!--superseded-->
 which answered correctly and matched its dump, and the deliberate hang before that had already
-cleared itself and been verified healthy. So the pattern is exactly what this section claims: it is
-the disconnect, not the traffic.
+cleared itself and been verified healthy.
+So the pattern is exactly what this section claims: it is the disconnect, not the traffic.<!--superseded-->
 
 Two occurrences on the same unit on one day, and the second following a plain successful read, moves
 this from an owner's observation to something a bench session should simply expect.
+
+> **Wrong, and the control that shows it was run on 10 August 2026.** A session containing nothing
+> but one plain 32 byte read, followed by pulling the cable, left the remote **out** of USB mode and
+> back on its normal display. So a disconnect on its own does not strand a remote, and this
+> subsection's "nothing unusual preceded it" was reading "the last command" as "the session". Both
+> sticking occurrences followed sessions that contained a deliberate odd count hang; the one that did
+> not, did not stick. Section 99 has the control and what it points at.
 
 ### What it means for the application
 
@@ -12146,6 +12153,53 @@ variable" is distinguishable from "left the command layer confused". Sending it 
 `assertSessionEndAllowed`, which refuses the two reboot sub-commands by number, refuses arch 9
 because nobody has read its escape, and refuses anything but the spare remote until the policy
 question is decided.
+
+### The control ran first, and it is the outcome that makes the experiment unnecessary
+
+10 August 2026, on the spare, with nothing sent but one 32 byte `READ_FLASH` of the config base:
+
+| step | result |
+|---|---|
+| `read-window --address 0x040000 --count 32` | 32 bytes, identical to the previous day's read |
+| cable pulled | **the remote left USB mode and returned to its normal display** |
+
+**So the premise is gone.** No command was needed. The third outcome written down above was the one
+that "can make the other two meaningless", and it is the one that happened, so the session-end
+experiment was not run: it would now be asking whether a command also achieves something the remote
+already does by itself.
+
+**And the chain in this section survives it intact**, which is worth being clear about because it
+would be easy to read this as the section being wrong. `READ_FLASH` clears its own state when it
+completes, `docs/usb-protocol.md`, so after a completed read the gate at `0x284` is open and the
+unconditional exit is available. The control is what section 99 predicts for a clean session. What
+was wrong was section 95's inference, and mine on top of it, that the disconnect alone strands a
+remote.
+
+### What it points at instead, as a hypothesis with a read only test
+
+**Both sticking occurrences followed a session containing a deliberate odd count hang**, and the
+session that contained none did not stick. Section 96 says what such a read does: it walks an
+unbounded write pointer up through data memory from `0x046A`, writing flash content over whatever it
+passes.
+
+`0x284`, `0x315` and the deferred work flags at `0x25D` and `0x25E` all sit **below** `0x046A`, so
+the runaway cannot reach them. **`0x2628E`'s four idle flags do not**: they are `0xED5`, `0xED6`,
+`0xEDC` and `0xEDD`, and that routine returns 1 only when all four are zero. It is one of the two
+ways the guard chain in front of mode 2 can be satisfied. So a remote whose runaway left any of those
+four nonzero cannot enter the application by that route, and would sit wherever it is until a power
+cycle clears data memory. That fits the shape of what was seen: not "the cable did not register" but
+"there was nowhere to go".
+
+**Unconfirmed, and it is a hypothesis rather than a finding**, because one session of each is not two
+samples of anything. What makes it worth stating is that the test is a **read**: `READ_MISC` selector
+`0x07` returns any data address, so reading `0xED5`, `0xED6`, `0xEDC` and `0xEDD` after a hang and
+comparing them against a healthy remote settles it without writing anything. It does need a
+deliberate hang, which is the owner's call and not something to schedule here.
+
+**What it already changes for FreeHarmony is the part that mattered.** A read only session that ends
+normally does not strand a remote, so version 1 needs to send nothing at the end, and the awkward
+choice section 95 posed does not arise. The gentle escape stays implemented, gated and unused, which
+is the right place for it.
 
 ## References
 
