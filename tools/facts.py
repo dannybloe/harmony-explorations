@@ -168,6 +168,27 @@ def reading_facts():
     return found
 
 
+def text_facts():
+    """How much of the corpus's on screen text reads back as characters.
+
+    Shelled out for the same reason as the three above: `packages/codec/src/text.ts` is the one
+    decoder and the one glyph shape table, and a Python copy of either would be free to disagree.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/text.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] in ('text_read', 'text_glyphs'):
+            found[parts[0]] = parts[1]
+    return found
+
+
 def corpus_facts():
     """The totals the documents quote, computed over the corpus the tests use."""
     import lab
@@ -337,6 +358,7 @@ def main():
     facts.update(coverage_facts())
     facts.update(emit_facts())
     facts.update(reading_facts())
+    facts.update(text_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

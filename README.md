@@ -174,6 +174,14 @@ executes in place. Arch 14 uses an SPI serial flash, which is not executable, so
 bootloader copies the image into internal flash. That conclusion was reached twice
 independently, once from branch target analysis and once from finding the SPI code.
 
+**The screen's text reads back, and a glyph code turns out not to be a character.** It is an index
+into the config's own font table, assigned per config in the order characters first appear in the
+generator's string list, so two configs of the same remote disagree about it. What is stable is the
+typeface, so a code is resolved by matching its glyph's pixels: seven hand read alphabets cover the
+corpus and 65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs come back as
+characters. The closure is that a decoded string turns up verbatim inside a base slot 0 name, which is
+ASCII and which the decoder never reads. `make text`, and section 112.
+
 **The infrared carrier is generated in software**, not by a hardware PWM, with cycle-counted
 delays and a per-half-cycle enable mask. The config supplies a 16-bit carrier period and an
 8-bit duty value, scaled by `value * 4 / 10` into instruction cycles. Cross-checked: 38 kHz

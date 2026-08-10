@@ -49,7 +49,10 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty three have been found and corrected so far, and sections 110 and 111 are worth reading beside
+Thirty four have been found and corrected so far. The newest is in section 112 and is the ordinary
+kind: `docs/config-format.md` and section 78 both said the one arch 9 config draws no inline strings
+at all, which was true of the **decoder** when it was written and never revisited after section 85
+read the packing. That config draws 1435 codes. Sections 110 and 111 are worth reading beside
 them: neither is only a correction, each is a set of predictions with most of them measured wrong and
 the record of what the prediction got wrong kept in place. The newest are in section 111. **A remote
 attached to USB does run its application**, which section 48 denied and four summaries had copied, and
@@ -9069,8 +9072,11 @@ glyphs.
 
 This also gives the arch 9 glyph decoder its first readable text. Section 63 derived the two bit
 packing from the encoder's own regularities and recorded that it could not run section 46's third
-closure, because the one arch 9 config had no inline string codes at all. It has one now, in
-letters.
+closure. **The reason it gave was wrong**, and section 112 caught it: it said the one arch 9 config
+had no inline string codes at all<!--superseded-->, and that config draws 1435 of them in 179 strings
+and selects a font 244 times. What could not run the closure was the decoder, which refused an arch 9
+glyph outright at the time. All 1435 land on a non-NULL glyph, so the closure holds on arch 9 as
+well.
 
 ### And the count is not keyed on the architecture
 
@@ -14137,6 +14143,160 @@ mean the config was read; that half runs without a remote.
 month grouping derived from the calendar rather than tabulated, and the log record's order.
 `tests/test_interpreter.py` pins the boot scan arithmetic, that a region whose last byte is written
 disables the appender, and the negative that an erased one does not.
+
+## 112. The screen's text reads back, and a glyph code is not a character
+
+The application needs to show a config's activities and devices by name. Section 86 found the
+devices, in base slot 0's name tree, and found that nothing there names an activity. What does name
+one is the screen: a mode page's program draws the activity's own label, and section 46 left that
+unreadable, with **what the glyph codes mean** standing as its last open item. This section reads
+them, on all four architectures, and the corpus comes to 65454<!--fact:text_read--> of
+65456<!--fact:text_glyphs--> drawn glyphs.
+
+### The codes are per config, and the order they are assigned in says why
+
+A `SCREEN_TEXT_INLINE` instruction carries codes, and the code minus one indexes the font set that
+opcode 16 last chose. Section 46 established that and stopped, on the correct observation that
+nothing decodes as ASCII.
+
+The assignment turns out to be **the order characters first appear in the generator's own string
+list**. Three things say so, and the first is the one that made it obvious. On a Harmony One,
+rendering base slot 7 and reading the shapes gives codes 3 to 17 as
+
+```
+S u n M o T e W d h F r i a t
+```
+
+which is exactly the distinct characters of `Sun Mon Tue Wed Thu Fri Sat` in order of first
+appearance. Code 10 is absent from the font set that was rendered, and `W` was **predicted** for it
+from that order before any set carrying it was drawn. Second, both One configs carry
+`1 2 : 3 4 5 6 7 8 9 0` as a run, at codes 18 to 28, and the arch 8 configs carry the same run at
+codes 3 to 13. Third, on arch 14 the run reads `( space 0 s e c )` then `.` then `1 2 3`, which is
+`(0 sec)` followed by `(0.1 sec)`, and those are the delay labels section 46 already read off the
+bitmaps.
+
+The list is **not** the order the strings sit in the file. Walking every string in increasing
+address order and noting each code the first time it appears gives, on the Harmony One,
+`8 12 9 30 31 16 17 14 2 32 33 15 34 7 35 ...`: the codes above 29 arrive strictly in order, and
+everything below 29 was assigned before the first string in the file was reached. So the boilerplate
+the remote shows at the top of the file is not the top of the generator's list.
+
+**Every alphabet in the corpus begins `H`, `y`.** Four generators, four architectures, and all four
+put those two characters first, ahead of anything a string in the file needs. `Hy` is the pair a font
+measurement routine conventionally renders to get cap height and descender depth, so the reading is
+that the generator measures the typeface before it lays out any text. **Unconfirmed**, and it is a
+reading of a coincidence rather than of any code.
+
+### Which is why a code table would be wrong
+
+The prefix is shared, because the list starts with the same boilerplate in every config of a skin,
+and then it diverges the moment the user's own strings enter it. Two Harmony One configs agree about
+codes 1 to 19 and disagree from 20: a colon in one, the digit `1` in the other. Across their font
+sets 148 of 268 shared (set, code) pairs carry the same pixels and 120 do not. A fixed table
+therefore decodes one config of a pair correctly and the other into plausible words, which is the
+failure mode this project has recorded three times in other guises.
+
+What **is** stable is the typeface. The same character at the same size has the same pixels in every
+config of a skin, so the decoder keys on the pixels: one config per typeface had its alphabet read
+by eye, and every other config is decoded by matching shapes, whatever codes its generator handed
+out. That is `packages/codec/src/text.ts`, with the seeds in
+`packages/codec/bin/alphabets.ts` and the generated shape table in
+`packages/codec/src/alphabets.ts`.
+
+### Seven typefaces, and two of them cost nothing to read
+
+| alphabet | seed | covers |
+|---|---|---|
+| `one` | a Harmony One config | all four arch 12 user configs |
+| `h600` | the Harmony 600 config | the 600 and both Harmony 700 configs |
+| `arch8` | one arch 8 config | all four |
+| `h525` | the Harmony 525 config | itself |
+| `ascii` | the arch 9 safe mode container | itself |
+| `one-safemode` | the arch 12 safe mode container | itself and its region 2 twin |
+| `h700-safemode` | the arch 14 safe mode container | all three arch 14 safe mode containers |
+
+Two of the seven were nearly free. **The arch 9 safe mode container draws ASCII**, which section 78
+had already noticed and which nothing had used: its font sets start at code 32, the code **is** the
+character, and so its own shapes name themselves. The 525's user config shares that typeface, so
+more than thirty of its shapes are named by the safe mode container and only what that container
+never draws had to be read by eye.
+
+The negative in the same table matters as much. **The arch 12 safe mode container shares not one
+shape with the arch 12 user configs**, same remote, same architecture, same glyph height. A decoder
+keyed on codes would have read one through the other and produced words.
+
+### Three rules the pixels needed, each learned by getting it wrong
+
+**Height is part of a shape's identity.** `I` and `l` are the same pixels in these typefaces at
+several sizes, so a table keyed on pixels alone reads a tall `l` as an `I` borrowed from a smaller
+set, and then the evidence from two sizes contradicts itself.
+
+**Evidence is intersected across sizes, not counted.** A size where two characters share a shape
+says less than a size where they do not, and what survives every size is the answer. Voting instead
+lets the ambiguous sizes outnumber the decisive one.
+
+**A blank glyph is a space and is evidence about nothing else.** A font set carries a blank slot for
+codes it does not draw, and the same code is a real letter in another set. Reading the blank as
+evidence made three arch 8 codes decode as spaces when they are `V`, `?` and `x`, which is visible
+in the output as `Is the T  on ` and reads like a font problem rather than like a decoder bug.
+
+**What survives is honest.** Eight shapes in the corpus draw two characters, all of them `I` against
+`l`, and a code that only ever appears at those sizes stays ambiguous: `characterMap` reports it and
+falls back to what the seed config assigned to the same code. One to two codes per container.
+
+### The closure: the same words, through a section this decoder never reads
+
+Base slot 0 spells a state variable's name in ASCII, and a device's name is the leading part of it.
+The drawn text is a different encoding of the same words, reached through a different section, so
+agreement is not something the decoder could have arranged. On the owner's own synced Harmony One
+the screen draws `Denon AV Receiver` and the name tree carries `Denon_AV_Receiver_Input_23`.
+
+Counted across the corpus, thirteen containers carry a name tree and twelve of them draw between
+three and eleven distinct strings that appear verbatim inside one of their own names. The thirteenth
+is the arch 9 safe mode container, which names one variable, holds no devices and draws none of it.
+
+The second closure is the boilerplate. Every seed's own container decodes to English: `The battery
+level is low!`, `Bootloader`, `Real Time Clock`, `Update Successful`, `Choose Activity:`,
+`Everything is OK >`, `On / Off`. Each seed carries one such string as a proof in the generator, run
+against the generated table rather than against the seed string, because the trap here is an **off by
+one**: a seed written with one character left out still decodes, into words that look like a font
+problem. That happened, and `Volume` came out as `V2 cme`.
+
+### What is left, and it is two glyphs
+
+`make text` reports it per container. Seventeen of the eighteen containers read every glyph they
+draw. The exception is the Harmony 700 pair, where one code is drawn once in each, in a string that
+reads `Options` followed by it, and its shape is a small mark this section does not identify. Two
+glyphs in 65456.
+
+### What this does not settle
+
+**Which activity a name belongs to.** The names are readable now and the tie from a drawn string to
+an activity number is not established. Two routes were tried and neither carries it:
+
+* **No screen switch reads the activity variable.** Opcodes 18 and 19 switch on a state variable
+  index, and in both One configs no reachable switch names the index that base slot 0 calls
+  `CurrentActivityState`.
+* **Base slot 14's value maps do not point at text.** Their targets draw nothing, so they are action
+  list entry points rather than screen programs.
+
+What is left to try is the touch map: base slot 17's areas on arch 12 name key codes, base slot 8
+and 9 bind those to action lists, and an action list that starts an activity writes the activity's
+number into the variable. That chain is stated in the config and none of its links are new.
+
+### Where it lands
+
+`packages/codec/src/text.ts` is the decoder, `packages/codec/src/alphabets.ts` the generated table,
+`packages/codec/bin/alphabets.ts` the seeds and the method for reading an eighth typeface, and
+`packages/codec/bin/text.ts` the per container report behind `make text`.
+`packages/codec/test/text.test.ts` carries the closure and, more importantly, the negatives: that an
+unknown typeface reads as nothing rather than as nonsense, that an unresolved code decodes to a
+marker rather than to a guess, that a shape drawing two characters keeps both, and that the two 700
+configs disagree about codes for characters they both draw.
+
+**No decoded string is printed by any tool here and none is quoted in a test.** A config's strings
+are its owner's own equipment names and this repository is public, so `make text --names` counts the
+matches and never shows them.
 
 ## References
 

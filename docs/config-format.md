@@ -618,9 +618,10 @@ count
 ```
 
 **The inline strings are glyph indices, not characters.** The renderer resolves one by indexing a
-font table by the code minus one, and not one string in the corpus decodes as printable ASCII. A
-code with bit 7 set is the first half of a wide one and takes a second byte with it, so a
-terminator cannot be found by scanning for a zero; no string in the corpus is wide.
+font table by the code minus one. A code with bit 7 set is the first half of a wide one and takes a
+second byte with it, so a terminator cannot be found by scanning for a zero; no string in the corpus
+is wide. What a code means is under base slot 7 below: the assignment is per config, and the text is
+recovered from the glyph's pixels rather than from the code.
 
 **21552<!--fact:screen_programs--> programs across 15<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
@@ -808,13 +809,63 @@ kind `6` run read 1, and 160 of 160 glyph cells open with a full width kind `6` 
 
 *Unconfirmed for want of a second sample*: the leader's high nibble is `0x20` in all 1730 rows, so
 whether it is a tag or part of a longer length field is open, and values 0 and 3 never appear, so
-whether the panel has four levels is open too. The one arch 9 config has **no inline string codes
-at all**, so section 46's third check is unavailable here.
+whether the panel has four levels is open too.
+
+**Corrected.** This said the one arch 9 config has no inline string codes at all<!--superseded-->, so
+section 46's third check was unavailable here. It draws **1435 codes in 179 strings and selects a font
+244 times**, and all 1435 land on a non-NULL glyph, so the check runs on arch 9 and passes. The claim
+was true of the decoder rather than of the config: when it was written `gspm` refused to decode an
+arch 9 glyph at all, section 46, and section 85 then read the packing above without anyone revisiting
+the sentence. Found by section 112, which needed those strings.
 
 160 glyphs on this encoding, which takes the corpus total to **4093**.
 
-Read with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`; draw them with
-`tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) sections 46 and 63.
+#### What a glyph code means, and how the text is recovered
+
+**A code is not a character and not an encoding.** It is assigned per config, in the order
+characters first appear in the generator's own string list, which is not the order the strings sit in
+the file. So two configs of the same remote agree about the codes their shared boilerplate needs and
+diverge from the first code the user's own strings reach: on the two Harmony Ones code 20 is a colon
+in one and the digit `1` in the other.
+
+What is stable is the **typeface**. The same character at the same size has the same pixels in every
+config of a skin, so a code is resolved by matching its glyph's pixels:
+
+* a shape is keyed by `(font height, pixels)`. Height is part of it because `I` and `l` are the same
+  pixels at several sizes, and a size blind key reads a tall `l` as an `I` from a smaller set.
+* evidence is **intersected** across the sets a code appears in, not counted: a size where two
+  characters share a shape says less than a size where they do not.
+* a **blank** glyph is a space and is evidence about nothing else. A set carries a blank slot for
+  codes it does not draw, and the same code is a real letter in another set.
+* a shape that draws two characters keeps both. Eight in the corpus do, all `I` against `l`, and a
+  code that only appears at those sizes stays ambiguous and is reported as such.
+
+Seven typefaces cover the corpus, one alphabet each: the Harmony One skin (all four arch 12 user
+configs), arch 14 (the 600 and both 700s), arch 8 (all four), the Harmony 525, the arch 9 safe mode
+container, the arch 12 safe mode container and the arch 14 safe mode container. **The arch 12 safe
+mode container shares not one shape with the arch 12 user configs**, so an alphabet is per typeface
+and not per architecture or per remote.
+
+**The arch 9 safe mode container's codes are ASCII outright**, its sets starting at code 32, which is
+both how the field at `+0x01` was read, section 78, and how the 525's user config was decoded without
+reading its glyphs: the two share a typeface.
+
+65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs across the corpus come back as
+characters. The two that do not are one code drawn once in each Harmony 700 config. The closure is
+that a decoded string turns up verbatim inside a base slot 0 name, which is ASCII and which this
+decoder never reads: twelve of the thirteen containers with a name tree do it, between three and
+eleven distinct strings each.
+
+A **writer** gets no shortcut from any of this: to add text it has to build a font set and number it,
+because the codes are the generator's own and nothing looks a character up.
+
+Read with `characterMap`, `screenStrings` and `textCoverage` in `packages/codec/src/text.ts`, the
+alphabets in `packages/codec/src/alphabets.ts`, and `make text` for the per container figures.
+[findings.md](findings.md) section 112.
+
+Read the sets and glyphs with `gspm.font_sets`, `gspm.Container.images` and `gspm.Container.glyph`;
+draw them with `tools/screen_dump.py --images` or `--strings`. [findings.md](findings.md) sections 46
+and 63.
 
 ### Base slot 17: the touch screen hit map
 

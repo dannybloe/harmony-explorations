@@ -18,5 +18,7 @@ export * from './emit.ts';
 export * from './tables.ts';
 export * from './inventory.ts';
 export * from './font.ts';
+export * from './alphabets.ts';
+export * from './text.ts';
 export * from './coverage.ts';
 export * from './edit.ts';

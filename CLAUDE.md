@@ -335,7 +335,8 @@ packages/codec/                 TS: the one config codec, container through comp
                                 emitter that reads it back the other way and is the round trip
                                 side on purpose, and src/edit.ts the M3 groundwork: same length
                                 edits, rails as refusals, and FIELD_RULES, which is why a round
-                                trip and a save differ
+                                trip and a save differ. src/text.ts reads the screen's text, with
+                                src/alphabets.ts generated from the seeds in bin/alphabets.ts
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
@@ -547,6 +548,8 @@ make golden        compare the golden vectors; golden-write regenerates them
 make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
 make emit          how much of each sample the emitter puts back, and whether it round trips
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
+make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
@@ -701,7 +704,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 111 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 112 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -731,7 +734,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 4 | the firmware event map | 36, 39 |
 | 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
-| 7 | the font table, indexed by screen opcode 16 | 46, 63 |
+| 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
 | 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67, 69 |
 | 10 | the action list table | 38 |
@@ -900,6 +903,21 @@ produce a config the remote accepts and mishandles.
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
 ## Next
+
+**The screen's text reads back**, section 112, which is what the application needed before it could
+show a config's activities: their names are drawn by a mode page's screen program and nothing else
+names them. A glyph code is **not** a character and not an encoding: it indexes the config's own font
+table and is assigned per config, in the order characters first appear in the generator's string list,
+so two configs of one remote disagree about code 20. What is stable is the typeface, so a code is
+resolved from its glyph's **pixels** against a hand read alphabet, seven of which cover the corpus.
+65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
+seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets.ts`.
+
+**What is not settled is which activity a drawn name belongs to**, and two routes are ruled out: no
+screen switch reads the `CurrentActivityState` variable index, and base slot 14's value maps point at
+targets that draw no text. What is left to try is the touch map, base slot 17 to a key code to a
+binding to the action list that writes the activity number. Until that lands an interface can list
+the names and cannot say which entry starts which activity.
 
 Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
 both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so

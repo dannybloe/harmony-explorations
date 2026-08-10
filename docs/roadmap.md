@@ -503,8 +503,16 @@ not.
 started without: **a device is an infrared group**, and one state variable, `CurrentActivityState`,
 states the **number of activities**. Base slot 0's name for a variable says what it is for and how
 many values it takes, and the eight byte records under it are transitions carrying one action list
-instruction each. `packages/codec/src/inventory.ts` is that view. Activity **names** are not found
-yet; the place to look is the text a mode page's screen program draws.
+instruction each. `packages/codec/src/inventory.ts` is that view.
+
+**Activity names are readable now**, section 112: a mode page's screen program draws them, and a
+glyph code turns back into a character by matching the glyph's pixels against a hand read alphabet
+per typeface. `packages/codec/src/text.ts`, `make text`, and 65454<!--fact:text_read--> of
+65456<!--fact:text_glyphs--> drawn glyphs across the corpus. What is **not** settled is which
+activity a given name belongs to: two routes were tried and ruled out, and the one left to try is
+the touch map, base slot 17's areas to key codes to a binding to the action list that writes the
+activity number. Until that lands the interface can show the names it finds but cannot say which
+entry starts which activity.
 
 **Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
 same length and there is deliberately no way to insert, delete or resize anything, because a
@@ -1084,7 +1092,10 @@ Not optional, and they belong in the code rather than in a document:
   it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
   classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
   declared region written, so the appender disarms itself at the first attempt, section 111.
-* **What the glyph codes mean.** Base slot 7 is the font table and the whole text path is traced,
-  section 46: opcode 16 loads `0x398` from the slot, and a string's code minus one indexes it. What
-  is left is that the codes are a per config character set, so nothing says code 5 is a space in
-  anyone else's config, and a writer that wants to add text has to build a set and number it.
+* **Which activity a drawn name belongs to.** The codes are read, section 112: a glyph's pixels name
+  its character, seven typefaces cover the corpus, and all but two of 65456<!--fact:text_glyphs-->
+  drawn glyphs come back. So the names an interface needs are readable. The tie from a name to an
+  activity number is not: no screen switch reads `CurrentActivityState` and base slot 14's value maps
+  point at no text, which leaves the touch map. A **writer** still has to build a font set and number
+  it rather than look a character up, since the codes are assigned per config in the order characters
+  first appear in the generator's string list.

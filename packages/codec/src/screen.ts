@@ -90,8 +90,9 @@ export interface ScreenInstruction {
   /** The raw operand bytes: mostly coordinates and identifiers whose meaning is not established. */
   operands: Uint8Array;
   /**
-   * Set only by `SCREEN_TEXT_INLINE`. Glyph indices and **not characters**: the renderer indexes
-   * a font by the code minus one, and none of it decodes as ASCII. See section 46.
+   * Set only by `SCREEN_TEXT_INLINE`. Glyph indices and **not characters**: the renderer indexes a
+   * font by the code minus one, and the assignment is per config rather than an encoding. `text.ts`
+   * turns them back into characters by matching the glyph's pixels. Sections 46 and 112.
    */
   glyphs?: Uint8Array;
   /** Where the stream continues, for the opcodes that transfer control. */
