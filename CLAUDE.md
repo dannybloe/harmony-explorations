@@ -2,7 +2,9 @@
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
 Read `README.md` first for orientation, then `docs/roadmap.md` for the sequence and
-`docs/findings.md` for the technical detail.
+`docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
+use, and says per term whether it is Logitech's word, this project's invention or a standard one,
+which is a distinction the other documents assume rather than state.
 
 **The end goal is an application**: local, cross-platform, self-contained, which reads a config
 off a remote, edits devices and activities, learns new IR codes and writes the result back. The
@@ -316,6 +318,7 @@ README.md                       front page: status, headline findings, quickstar
 docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track
+docs/glossary.md                the vocabulary: which terms are Logitech's, which are ours
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed

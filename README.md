@@ -193,6 +193,7 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 docs/roadmap.md             the plan of record: decisions, milestones, current step
 docs/findings.md            the authoritative technical reference
 docs/config-format.md       the config format spec, grows as sections are labelled
+docs/glossary.md            the vocabulary, if a term in here is unfamiliar. Start there
 docs/usb-protocol.md        the USB protocol, both directions of every command
 docs/host-client.md         Logitech's own client as a source: the rule, and a ledger of
                             leads believed on its word alone, every one unconfirmed
