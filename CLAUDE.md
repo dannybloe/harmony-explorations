@@ -140,12 +140,16 @@ harmony/
 ```
 
 The tooling finds `../lab` automatically, so no environment variable is needed in a normal
-checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present, and **that is now
-enforced rather than assumed**: `make test` and `make ts` were both run against a nonexistent lab
-and nine Python tests plus ten TypeScript ones failed instead of skipping. The cause is the same
+checkout; `HARMONY_LAB` overrides it. Tests skip cleanly when no lab is present, and **`make test-nolab`
+is what enforces that, in `make all`**. It used to say "enforced rather than assumed" on the strength of
+having been run by hand once, and nothing ran it afterwards: on 10 August 2026 trelowney pointed
+`HARMONY_LAB` at a directory that does not exist and found one Python test and one TypeScript test that
+had slipped through. **A claim of enforcement with no check behind it is the failure this file warns
+about everywhere else**, so the check exists now. The cause is the same
 on both sides. A skip raised inside `subTest`, or a per sample `skipUnless`, skips that sample and
 lets the loop finish, so a corpus wide total afterwards is asserted against zero. Guard such a test
-up front with `lab.require(...)` in Python or `skipWithoutLab()` in TypeScript. The TypeScript one
+up front with `lab.require(...)` in Python or `skipUnless(...)` in TypeScript, listing the samples once
+so the guard and the loop cannot drift apart. The TypeScript one
 deliberately skips only when there is **no lab at all**, because a lab that is present and missing
 a sample should still fail loudly. That
 directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
@@ -501,6 +505,7 @@ Three project skills carry the rituals that are easy to half-perform:
 
 ```
 make test          run the suite; image-backed tests need a lab directory
+make test-nolab    the suite against a nonexistent lab: it must skip, never assert
 make test-verbose  one line per test
 make lint          byte-compile everything
 make prose         check documents for em-dashes and en-dashes

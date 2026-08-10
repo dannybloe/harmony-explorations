@@ -610,6 +610,12 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         Stated as a test rather than a comment so that a sample which *could* tell them apart
         fails here loudly instead of being absorbed.
         """
+        # Guarded up front, because the corpus wide assertion below is not skippable. A skip
+        # raised inside `subTest` skips that sample and lets the loop finish, so without this the
+        # aggregate runs with `largest == 0` and fails against 2326 while saying nothing at all
+        # about the format. Reported by trelowney on 10 August 2026 against a nonexistent
+        # `HARMONY_LAB`: 567 passed, 921 skipped, and this one failure.
+        lab.require(*EXPECTED)
         largest = 0
         for name in EXPECTED:
             with self.subTest(image=name):

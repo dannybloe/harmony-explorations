@@ -12420,6 +12420,98 @@ baseline leg is a useful two second check that a remote's idle flags are clean. 
 failed with "the remote is not answering", which is now explained rather than a bug to fix: it opened
 the device as soon as it enumerated, and a remote that has just reset needs longer than that.
 
+## 101. Arch 9's screen opcodes 22 and 23 are a page select and a page transfer
+
+An outside lead, verified here rather than adopted. On 10 August 2026 trelowney, who maintains
+harmony-decompiler and published the arch 9 config this project uses as a control, wrote with two
+firmware addresses and a reading of what they do, having noticed that
+`docs/config-format.md` left arch 9's opcode 22 without a traced consumer.
+
+**Decision 7 applies and was followed**: an upstream finding is a hypothesis to test. Every address
+below was checked against this project's own 525 image, read off the remote on 8 August 2026, and the
+dispatcher was decoded with `harmony/pic18/chains.py` rather than by eye. What came from outside is a
+pointer to where to look; what is asserted here is this project's own reading of its own image.
+
+### The dispatcher, and both handlers
+
+`0x04650`, fourteen opcodes, and the two in question:
+
+| opcode | handler | |
+|---|---|---|
+| 22 | `0x046D6` | reads one operand byte into `0xD9`, calls `0x038EC` |
+| 23 | `0x046E8` | no operand, drives the panel |
+
+```
+038ec: d9 c0 c0 f0 MOVFF 0x0d9,0x0c0   ; the row index, kept
+038f0: 08 0e       MOVLW 0x08
+038f4: d9 03       MULWF 0x0d9
+038f6: f3 cf c1 f0 MOVFF PRODL,0x0c1   ; row * 8
+038fa: 07 0e       MOVLW 0x07
+038fc: f3 24       ADDWF PRODL,W
+038fe: c2 6f       MOVWF 0x0c2         ; row * 8 + 7
+```
+
+and opcode 23:
+
+```
+046e8: 8d 84       BSF LATE,2          ; the external latch arch 9 clocks with LATE
+046ea: 89 9a       BCF LATA,5
+046ee: 60 0e       MOVLW 0x60          ; 96, the panel's width
+046f4: d7 6b       CLRF 0x0d7
+04714: 4c ec 1c f0 CALL 0x03898        ; the transfer
+04718: 89 8a       BSF LATA,5
+0471a: 8d 94       BCF LATE,2
+0471c: b5 ec 3a f0 CALL 0x0756a
+```
+
+### The closure the lead did not have
+
+`0x03898` opens with two instructions that name the hardware:
+
+```
+03898: b0 0e       MOVLW 0xb0
+0389c: c0 11       IORWF 0x0c0,W       ; 0xB0 | row
+0389e: c1 d9       RCALL 0x03c22       ; and out to the panel
+```
+
+`0xB0 | page` is the **page address command** of the SSD1306 family of monochrome display
+controllers, which address a 128 by 64 panel as eight pages of eight pixel rows. So `0xC0` is not a
+row marked for later use by something else: it is a page index sent to the panel as a command, and
+`0xC1` and `0xC2` are that page's first and last pixel rows, kept for whatever needs to clip to it.
+
+That settles the open question `docs/config-format.md` recorded beside opcode 22, and it settles it
+by naming the part rather than by describing the arithmetic. **Opcode 22 selects a page, opcode 23
+transfers 96 pixels into it.** Eight of each per mode page is one full 96 by 64 screen, which is
+exactly what section 85 measured from the data without knowing why it was eight.
+
+### Opcode 23 is not arch 12 only, and the table said it was
+
+The same message reported that as a stale line, and it is. Counted rather than eyeballed, over every
+screen program in each container:
+
+| sample | architecture | opcode 22 | opcode 23 |
+|---|---|---|---|
+| `one_config` | 12 | 330 | 268 |
+| `one_config_unprogrammed` | 12 | 152 | 111 |
+| `h525_config` | 9 | 1992 | 1992 |
+| `h525_config_2` | 9 | 1376 | 1376 |
+| the three arch 14 and the arch 8 control | 14, 8 | 0 | 0 |
+
+**On arch 9 they are paired one to one**, which is what a select and a transfer should be, and on
+arch 12 they are not, because there a call does not have to return through opcode 23 on every path.
+
+Nothing was broken by the stale line: `packages/codec` accepts opcode 23 globally with zero operands,
+so every arch 9 program has always decoded. It was the comment that drifted, which is the failure mode
+step 4 of this project's own convention exists to catch and which caught nothing here because the
+sweep was of the numbers, not of the words beside them.
+
+**And two counts that look contradictory are not.** Section 85 gives 1080 opcode 22s for
+`h525_config` and the table above gives 1992. The populations differ: 1080 is the mode pages, eight
+per page across 135 pages, and the remaining 912 sit in programs base slot 11 addresses directly. Both
+are right and neither is complete on its own, so a number quoted from either needs its population
+attached. Worth stating because the earlier superseded figure for this was 912, and a reader meeting
+912, 1080 and 1992 for the same opcode would reasonably conclude that two of them are wrong.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

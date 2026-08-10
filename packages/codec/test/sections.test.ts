@@ -945,14 +945,21 @@ test('a device assignment is refused unless both halves are there', () => {
  * The corpus check is the closure. Exactly five opcodes appear below the limit, one per range the
  * dispatcher splits into, and not one instruction lands in a band the firmware states it ignores.
  */
-test('the second operand space is a sub opcode field, and nothing lands outside it', () => {
+// The names this needs, listed once so the guard and the loop cannot drift apart. Guarded up front
+// rather than by `continue`, because the totals below are corpus wide: skipping a sample inside the
+// loop lets the loop finish and the aggregates then assert against zero. Same shape as the Python
+// failure trelowney reported on 10 August 2026, and `make test-nolab` now runs both sides.
+const SECOND_SPACE_SAMPLES = ['h700_config', 'h700_config_2', 'h600_config', 'one_config',
+  'one_config_unprogrammed', 'arch8_config_a', 'h525_config'];
+
+test('the second operand space is a sub opcode field, and nothing lands outside it',
+    skipUnless(...SECOND_SPACE_SAMPLES), () => {
   const seen = new Map<number, number>();
   let total = 0;
   let ignored = 0;
   let noop = 0;
   let noopArgument = 0;
-  for (const name of ['h700_config', 'h700_config_2', 'h600_config', 'one_config',
-    'one_config_unprogrammed', 'arch8_config_a', 'h525_config']) {
+  for (const name of SECOND_SPACE_SAMPLES) {
     const blob = load(name);
     if (blob === undefined) continue;
     const c = parse(blob);

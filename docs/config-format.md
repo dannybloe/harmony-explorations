@@ -565,7 +565,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 20 | `u24` | jump |
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
 | 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
-| 23 | none | *arch 12 only*, the return matching opcode 22; one per mode program |
+| 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
 
 **Opcode 22 is the one opcode whose operand width is not the same everywhere**, so a parser has to
 know the architecture before it can walk past one.
@@ -580,10 +580,14 @@ ordinary opcode 3 drawing a 96 by 8 strip at `y = 8 * row`. Every mode page's pr
 eight of them once each, and every strip on a page comes from the same picture, which is 96 by 64
 in every arch 9 user config: the 525's whole panel, drawn in eight rows.
 
-What the row index is **for** is not established. It marks the strip rather than positioning it,
-since the position is in the opcode 3 already, and the obvious guess is that a key press is
-attributed to a row by it, which would make it arch 9's equivalent of the touch hit map. No arch 9
-firmware routine has been traced to it.
+What the row index is for is **read now**, section 101, and it is not what was guessed here. It is a
+**page index sent to the panel**: `0x038EC` keeps it at `0xC0` and derives `row * 8` and `row * 8 + 7`
+beside it, and the transfer at `0x03898` sends `0xB0 | row`, which is the page address command of the
+SSD1306 family. So the 525 addresses its screen as eight pages of eight pixel rows, opcode 22 selects
+one and **opcode 23 transfers 96 pixels into it**. The guess recorded here, that a key press is
+attributed to a row and this is arch 9's touch hit map, was wrong: nothing reads it back.
+
+The lead came from trelowney and the addresses were verified against this project's own 525 image.
 
 Corrected: this document said **11 operands, the last three naming a picture**, which read the
 opcode 3 that follows as part of opcode 22. Both readings consume the same twelve bytes and end on

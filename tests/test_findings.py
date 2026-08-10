@@ -9,7 +9,7 @@ import unittest
 
 import lab
 from harmony import firmware, gspm
-from harmony.pic18 import disasm, isa, trace
+from harmony.pic18 import chains, disasm, isa, trace
 
 
 class TestFirmwareHeader(unittest.TestCase):
@@ -510,3 +510,66 @@ class TestArch14UsesSpi(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestArch9ScreenOpcodes22And23(unittest.TestCase):
+    """Section 101: a page select and a page transfer, not a row marker.
+
+    The lead was trelowney's, on 10 August 2026, and decision 7 says an upstream finding is a
+    hypothesis. So every address is asserted against this project's own 525 image, and the
+    dispatcher through `chains` rather than by eye.
+    """
+
+    NAME, BASE = 'h525_code', 0x0000
+    DISPATCH = 0x0465C
+    OPCODE_22, OPCODE_23 = 22, 23
+    ROW_MATH = 0x038EC
+    TRANSFER = 0x03898
+
+    def at(self, code, addr):
+        return isa.decode(code, addr - self.BASE, self.BASE)
+
+    def test_the_dispatcher_names_a_handler_for_both(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        table = chains.chain_table(code, self.BASE, self.DISPATCH)
+        self.assertIn(self.OPCODE_22, table)
+        self.assertIn(self.OPCODE_23, table)
+        self.assertEqual(table[self.OPCODE_22], 0x046D6)
+        self.assertEqual(table[self.OPCODE_23], 0x046E8)
+
+    def test_opcode_22_takes_one_byte_and_derives_the_page_bounds(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # One operand byte into 0xD9, then the call that keeps it and computes row * 8 and + 7.
+        call = self.at(code, 0x046E2)
+        self.assertEqual(call.mnemonic, 'CALL')
+        self.assertEqual(call.fields['target'], self.ROW_MATH)
+        self.assertEqual(self.at(code, 0x038F0).fields['k'], 8)
+        self.assertEqual(self.at(code, 0x038F4).mnemonic, 'MULWF')
+        self.assertEqual(self.at(code, 0x038FA).fields['k'], 7)
+
+    def test_the_transfer_sends_a_page_address_command(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # 0xB0 | page is the SSD1306 family's page address command, and it is what makes the operand
+        # a page index rather than a marker. This is the assertion the whole reading rests on.
+        self.assertEqual(self.at(code, self.TRANSFER).mnemonic, 'MOVLW')
+        self.assertEqual(self.at(code, self.TRANSFER).fields['k'], 0xB0)
+        self.assertEqual(self.at(code, 0x0389C).mnemonic, 'IORWF')
+        # And opcode 23 loads the panel's width before calling it.
+        self.assertEqual(self.at(code, 0x046EE).fields['k'], 0x60)
+        transfer = self.at(code, 0x04714)
+        self.assertEqual(transfer.mnemonic, 'CALL')
+        self.assertEqual(transfer.fields['target'], self.TRANSFER)
+
+    def test_opcode_23_brackets_the_transfer_with_two_port_bits(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        # LATE bit 2 and LATA bit 5 around it, restored after. Asserted because a later reader
+        # changing the transfer has to keep the bracket, and because the arch 9 external latch is
+        # clocked with LATE.
+        self.assertEqual(self.at(code, 0x046E8).mnemonic, 'BSF')
+        self.assertEqual(self.at(code, 0x046EA).mnemonic, 'BCF')
+        self.assertEqual(self.at(code, 0x04718).mnemonic, 'BSF')
+        self.assertEqual(self.at(code, 0x0471A).mnemonic, 'BCF')

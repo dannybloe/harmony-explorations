@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
+.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage all clean
 
 BENCH_PORT ?= 8731
 
@@ -40,6 +40,7 @@ help:
 	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
 	@echo "emit         how much of each sample the emitter can put back; EMIT_ARGS=--detail"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
+	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
 	@echo "all          everything above except ghidra, bench and probe"
 
 test:
@@ -50,6 +51,21 @@ test:
 
 test-verbose:
 	@$(PYTHON) -m unittest discover -s $(TESTS) -v
+
+# A fresh clone with no lab must skip cleanly, and this is what makes that enforced instead of
+# asserted. CLAUDE.md has claimed it was enforced since 8 August 2026 and nothing ran it: one test
+# slipped through and trelowney found it on 10 August 2026 by doing exactly this. The shape it
+# catches is a corpus wide assertion after a `subTest` loop, because a skip inside `subTest` skips
+# that sample and lets the loop finish, so the aggregate then runs against zero.
+test-nolab:
+	@HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover -s $(TESTS) \
+	  > /dev/null 2>&1 && echo "skips cleanly with no lab" || \
+	  { echo "FAILED with no lab: something asserts rather than skipping"; \
+	    HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover -s $(TESTS) 2>&1 \
+	      | grep -E '^(FAIL|ERROR):' ; exit 1; }
+	@HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PNPM) test \
+	  > /dev/null 2>&1 && echo "TypeScript skips cleanly with no lab" || \
+	  { echo "FAILED with no lab on the TypeScript side: run it yourself to see which"; exit 1; }
 
 lint:
 	@$(PYTHON) -m compileall -q $(SRC) $(TESTS) tools && echo "compiles clean"
@@ -142,7 +158,7 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint prose facts test ts audit
+all: lint prose facts test test-nolab ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true
