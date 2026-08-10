@@ -25,8 +25,19 @@ import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 const CONFIG_BASE = 0x040000;
 const WINDOW = 32;
 const PRODUCT_ONE = 0xc121;
-/** Section 95 polled for sixteen seconds and saw nothing, so this waits longer before concluding. */
-const REPLUG_WAIT_MS = 25_000;
+/**
+ * How long to wait for the remote to come back after a replug.
+ *
+ * **This was 25 seconds and that was too short, which cost a false negative on 10 August 2026.**
+ * Section 95's stuck remote was polled for sixteen seconds, so 25 looked like margin. It is not:
+ * the margin has to cover an operator walking to the desk and finding the socket, and round two of
+ * the control took 17 seconds to re-enumerate for exactly that reason. A window that an unhurried
+ * human can miss turns "the remote is stuck" and "the cable was not in yet" into the same output,
+ * and the script then reports the first with a straight face.
+ *
+ * Two minutes, and the message on timeout now names both possibilities instead of one.
+ */
+const REPLUG_WAIT_MS = 120_000;
 const POLL_MS = 1000;
 
 function fail(message: string): never {
@@ -104,8 +115,9 @@ process.stdout.write('\n');
 if (back === undefined) {
   process.stdout.write(
     `it did NOT enumerate within ${REPLUG_WAIT_MS / 1000} s.\n` +
-      '  consistent with the remote being stuck in USB mode, section 95.\n' +
-      '  the batteries clear it. Say what the screen showed before you plugged it back in.\n',
+      '  EITHER the remote is stuck in USB mode, section 95, OR the cable was not back in yet.\n' +
+      '  This script cannot tell those apart, so it does not claim to: say which it was, and what\n' +
+      '  the screen showed when the cable came out. If it is stuck, the batteries clear it.\n',
   );
 } else {
   process.stdout.write(
