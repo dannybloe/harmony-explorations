@@ -12154,14 +12154,34 @@ variable" is distinguishable from "left the command layer confused". Sending it 
 because nobody has read its escape, and refuses anything but the spare remote until the policy
 question is decided.
 
-### The control ran first, and it is the outcome that makes the experiment unnecessary
+### The control ran first, three times, and it is the outcome that makes the experiment unnecessary
 
-10 August 2026, on the spare, with nothing sent but one 32 byte `READ_FLASH` of the config base:
+10 August 2026, on the spare, each round sending nothing but one 32 byte `READ_FLASH` of the config
+base and then closing the handle. The screen is the evidence; enumeration after a replug is a proxy,
+because a remote stuck in USB mode does not come back on the bus.
 
-| step | result |
-|---|---|
-| `read-window --address 0x040000 --count 32` | 32 bytes, identical to the previous day's read |
-| cable pulled | **the remote left USB mode and returned to its normal display** |
+| round | how | cable out | screen | replug proxy |
+|---|---|---|---|---|
+| 1 | `read-window` by hand | | **left USB mode** | not run |
+| 2 | `session-end-control.ts` | after 19 s | **left USB mode** | enumerated after 17 s, agrees |
+| 3 | `session-end-control.ts` | after 7 s | **left USB mode** | reported nothing in 25 s, **wrong** |
+
+**Three of three, so this is measured rather than observed.** A clean read only session does not
+strand a remote.
+
+**Round three's proxy was a false negative and the tool was at fault**, which is worth recording
+rather than quietly fixing. The replug window was 25 seconds, chosen because section 95's stuck
+remote had been polled for sixteen, and that is not margin: it has to cover somebody walking to the
+desk and finding the socket, which round two shows takes 17 seconds. So the window turned "the remote
+is stuck" and "the cable was not in yet" into one output and the script reported the interesting one.
+It waits two minutes now and names both possibilities. **A script that cannot tell two outcomes apart
+must not report one of them**, and this one did for exactly one round.
+
+**A fourth run is deliberately not counted.** It was started by accident while checking that the
+script refuses with nothing attached, on a bench where something was attached, so no one was watching
+the screen. It was a read and the config came back identical, but an unobserved round is not a round.
+The rule it broke is this project's own: enumerating is not opening, and "checking that it refuses"
+is not a reason to open an irreplaceable device.
 
 **So the premise is gone.** No command was needed. The third outcome written down above was the one
 that "can make the other two meaningless", and it is the one that happened, so the session-end

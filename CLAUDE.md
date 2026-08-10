@@ -233,10 +233,10 @@ artefact of which offsets the bisection tried, and it is corrected in place. The
 counts everywhere, and the case that returns is no better, because it has already scribbled 2247
 bytes over the remote's memory.
 
-**A clean read only session does not strand a remote, and that is measured.** On 10 August 2026 a
-session of one plain 32 byte read, then the cable out, left the spare One **out** of USB mode and on
-its normal display. So version 1 of FreeHarmony needs to send nothing at the end, and the awkward
-choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
+**A clean read only session does not strand a remote, and that is measured three times out of three.**
+On 10 August 2026 three rounds of one plain 32 byte read, then the cable out, each left the spare One
+**out** of USB mode and on its normal display. So version 1 of FreeHarmony needs to send nothing at
+the end, and the awkward choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
 `0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
 leaves the gate open.
 
