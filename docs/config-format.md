@@ -1477,7 +1477,10 @@ sides because the firmware derives it.
 
 **A writer stamps this record with the moment it writes.** A stale timestamp is a wrong clock on the
 remote's screen after every power cycle, by exactly the staleness. Reproducing an input config's
-timestamp is right for a round trip and wrong for a save.
+timestamp is right for a round trip and wrong for a save, and that distinction is executable:
+`FIELD_RULES` in `packages/codec/src/edit.ts` lists every field whose treatment on a write is not
+"carry it unchanged", `applyEdits` is the faithful path and `saveEdits` stamps. The day of week is
+recomputed there rather than carried, since both parsers refuse a record where it disagrees.
 
 Two things worth having for free:
 

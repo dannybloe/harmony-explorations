@@ -18,17 +18,113 @@
  * changing. Two edits touching one byte are refused. And the trailer checksum is recomputed rather
  * than carried, because it is the one field the remote checks.
  *
+ * **A round trip and a save are not the same operation**, and that distinction is `FIELD_RULES`
+ * below. Carrying every byte you did not edit is exactly right for a round trip and wrong for a
+ * save, because two fields are not descriptions of the config: the trailer checksum, which stops
+ * being true the moment anything changes, and base slot 3's timestamp, which an arch 12 remote sets
+ * its clock from at every boot, section 111. Reproduce that and the remote's clock is wrong by
+ * however stale the input was. So `applyEdits` is the faithful path and `saveEdits` is the other
+ * one, and neither is the default: a caller has to say which it means.
+ *
+ * The rules are a table rather than prose because the interesting entries are the **negatives**.
+ * Base slot 1's version word looks computable and is not, section 81. Base slot 2's log area looks
+ * like something a writer should fill in and is copied by every config in the corpus, section 47.
+ * Getting either of those wrong produces a file the remote accepts and mishandles, which is the
+ * failure mode this whole layer exists to make impossible.
+ *
  * Nothing here goes near a remote. It produces bytes; writing them is gated by
  * `packages/usb/src/rails.ts` and version 1 of the application is read only.
  */
 import { ACTION_LIST_INDEX_OPCODE, modeRecords, pageListCopies, taggedList } from './sections.ts';
 import type { TaggedEntry } from './sections.ts';
-import { Container, GspmError, TRAILER_CHECKSUM_OFFSET, trailerChecksum } from './gspm.ts';
+import {
+  CLOCK_RECORD_SLOT,
+  Container,
+  GspmError,
+  TRAILER_CHECKSUM_OFFSET,
+  clockRecord,
+  trailerChecksum,
+} from './gspm.ts';
 import { claims } from './coverage.ts';
 import { parameterGroups, timers } from './tables.ts';
 
 /** What a caller may not do. Separate from `GspmError` so an editor can catch only its own. */
 export class EditError extends GspmError {}
+
+/**
+ * What happens to a field that nobody edited, when the bytes are written back.
+ *
+ * * `recompute-always`: it is derived from the rest of the file, so carrying it is carrying a lie.
+ * * `recompute-on-save`: carrying it is right for a round trip and wrong for a save.
+ * * `carry`: it looks derivable and is not, so an editor copies it. These are the load bearing ones.
+ * * `mirror`: it exists twice and both copies move together, or the remote reads a mismatch.
+ */
+export type FieldPolicy = 'recompute-always' | 'recompute-on-save' | 'carry' | 'mirror';
+
+export interface FieldRule {
+  /** What the field is, in the same words the documents use. */
+  field: string;
+  policy: FieldPolicy;
+  /** The `docs/findings.md` section that establishes it. */
+  section: number;
+  /** Why it is that policy and not the obvious other one. */
+  why: string;
+}
+
+/**
+ * Every field in this format whose treatment on a write is not "carry it through unchanged".
+ *
+ * Exported because it is the answer to a question that otherwise lives in somebody's memory: does
+ * this field go across, or does it get recomputed? `test/edit.test.ts` fails if a rule is added
+ * without a test covering it, so the table cannot drift away from the code the way a comment would.
+ */
+export const FIELD_RULES: readonly FieldRule[] = [
+  {
+    field: 'trailer checksum',
+    policy: 'recompute-always',
+    section: 41,
+    why: 'the one field the remote checks, and it is a u16 XOR of the payload, so any edit voids it',
+  },
+  {
+    field: 'base slot 3 build timestamp',
+    policy: 'recompute-on-save',
+    section: 111,
+    why: 'an arch 12 remote sets its clock from it at boot, so a carried timestamp is a wrong clock '
+      + 'by exactly its staleness. Stamping is also the right provenance value on an architecture '
+      + 'that ignores it, so the rail does not wait on arch 14 and arch 9 being measured',
+  },
+  {
+    field: 'base slot 3 day of week byte',
+    policy: 'recompute-always',
+    section: 21,
+    why: 'derived from the date as days since 1 January 2000 modulo 7, and both parsers refuse a '
+      + 'record where it disagrees, so a stamped date has to bring its own weekday',
+  },
+  {
+    field: 'base slot 1 version word',
+    policy: 'carry',
+    section: 81,
+    why: 'it is per config rather than per model and an editor copies it rather than computing it: '
+      + 'one Harmony One carries two different words either side of one sync, and its low byte '
+      + 'names a skin the remote does not have to report',
+  },
+  {
+    field: 'base slot 2 log area',
+    policy: 'carry',
+    section: 47,
+    why: 'three numbers reserving flash, and the limit is the generator\'s idea of the chip size '
+      + 'rather than the remote\'s. No config in the corpus appends, so copying them unchanged is '
+      + 'doing everything the corpus does',
+  },
+  {
+    field: 'a mode page tagged list copy',
+    policy: 'mirror',
+    section: 69,
+    why: 'nothing reads the copy and an emitter still has to reproduce it, so an edit to a page\'s '
+      + 'list that leaves the copy behind passes every check the remote makes and is still wrong. '
+      + '`setPageListEntry` writes both, and opcode 0x7F is refused because the two differ there',
+  },
+];
 
 /** One same length replacement, as a blob offset. */
 export interface Edit {
@@ -105,6 +201,89 @@ export function applyEdits(c: Container, edits: Edit[]): EditReport {
   bytes[at] = sum & 0xff;
   bytes[at + 1] = (sum >>> 8) & 0xff;
   return { bytes, changed: diffRanges(c.blob, bytes) };
+}
+
+/** `YYYY-MM-DDTHH:MM:SS`, the shape `Container.builtAt` uses and the shape `clockRecord` reads. */
+const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+/** The year field is a `u8` offset from 2000, so this is the whole range the record can express. */
+const FIRST_YEAR = 2000;
+const LAST_YEAR = FIRST_YEAR + 0xff;
+/** Where the seven fields sit inside the eleven byte record, after the `0xADDF` cookie. */
+const FIRST_FIELD = 2;
+const FIELD_COUNT = 7;
+
+/**
+ * A local wall clock timestamp for `saveEdits`, from a `Date`.
+ *
+ * **The one place a timezone enters this codec**, and deliberately: the record carries no zone, the
+ * remote displays it as the time of day, so a save wants the wall clock of whoever is saving rather
+ * than UTC. `clockRecord` stays zone free on the way back out, which is what keeps the golden
+ * vectors independent of where the tests run, so the two are not symmetrical on purpose.
+ */
+export function localTimestamp(when: Date): string {
+  const p = (n: number, w = 2): string => String(n).padStart(w, '0');
+  return `${p(when.getFullYear(), 4)}-${p(when.getMonth() + 1)}-${p(when.getDate())}`
+    + `T${p(when.getHours())}:${p(when.getMinutes())}:${p(when.getSeconds())}`;
+}
+
+/**
+ * The edit that stamps base slot 3's record with `builtAt`.
+ *
+ * Seven bytes, and the day of week is **computed** rather than taken from the caller, because both
+ * parsers refuse a record whose weekday disagrees with its date, section 21. So a caller cannot
+ * produce a record this project's own readers would reject, which is the closure worth having here.
+ *
+ * Exported on its own as well as through `saveEdits`, so a caller who wants to see it in the edit
+ * list before applying it can, and so it goes through exactly the same rails as any other edit.
+ */
+export function timestampEdit(c: Container, builtAt: string): Edit[] {
+  const parts = TIMESTAMP.exec(builtAt);
+  if (parts === null) throw new EditError(`${builtAt} is not YYYY-MM-DDTHH:MM:SS`);
+  const [year, month, day, hour, minute, second] = parts.slice(1).map(Number) as [
+    number, number, number, number, number, number,
+  ];
+  if (year < FIRST_YEAR || year > LAST_YEAR) {
+    throw new EditError(`${year} is outside ${FIRST_YEAR} to ${LAST_YEAR}, which the u8 year holds`);
+  }
+  if (hour > 23 || minute > 59 || second > 59) throw new EditError(`${builtAt} is not a time`);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) {
+    throw new EditError(`${builtAt} is not a date that exists`);
+  }
+  // Days since 1 January 2000 modulo 7, so 0 is a Saturday. Derived, never carried: see FIELD_RULES.
+  const days = Math.floor((utc.getTime() - Date.UTC(2000, 0, 1)) / 86_400_000);
+  const weekday = ((days % 7) + 7) % 7;
+
+  const section = c.sections[CLOCK_RECORD_SLOT];
+  if (section === undefined || section.isNull) {
+    throw new EditError('this container has no base slot 3, so a save cannot stamp it');
+  }
+  const off = c.blobOffsetOf(section.address);
+  if (off === undefined) throw new EditError('base slot 3 is outside the container');
+  if (clockRecord(c.blob, off) === undefined) {
+    // A save that silently stamped nothing is the failure this whole distinction is about, so an
+    // unreadable record is refused rather than overwritten: whatever is there is not what we think.
+    throw new EditError('base slot 3 does not hold a clock record, so it is not ours to overwrite');
+  }
+  const bytes = Uint8Array.from([
+    second, minute, hour, day, weekday, month - 1, year - FIRST_YEAR,
+  ]);
+  if (bytes.length !== FIELD_COUNT) throw new EditError('the record is seven fields');
+  return [{ start: off + FIRST_FIELD, bytes, owner: 'slot-3-timestamp' }];
+}
+
+/**
+ * Apply the edits **as a save**: everything `applyEdits` does, plus base slot 3's timestamp.
+ *
+ * The difference from `applyEdits` is one field and it is not cosmetic. See `FIELD_RULES`, and see
+ * `docs/findings.md` section 111 for the measurement that put the timestamp in it: a power cycled
+ * Harmony One reads its config's build timestamp as the time of day.
+ *
+ * An empty edit list is meaningful here where it is the identity in `applyEdits`: it means "write
+ * this config back unchanged", and the timestamp still moves, because the file is being saved now.
+ */
+export function saveEdits(c: Container, edits: Edit[], builtAt: string): EditReport {
+  return applyEdits(c, [...edits, ...timestampEdit(c, builtAt)]);
 }
 
 /**

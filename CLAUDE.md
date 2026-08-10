@@ -333,7 +333,8 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 packages/codec/                 TS: the one config codec, container through compiler,
                                 src/coverage.ts the M2 byte accounting, src/emit.ts the
                                 emitter that reads it back the other way, and src/edit.ts
-                                the M3 groundwork: same length edits, rails as refusals
+                                the M3 groundwork: same length edits, rails as refusals, and
+                                FIELD_RULES, which is why a round trip and a save differ
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured
 packages/corpus/                TS: read a config off a remote and file it, composes the other three

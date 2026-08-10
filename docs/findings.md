@@ -14000,6 +14000,17 @@ clock on purpose**, which is right for a round trip and wrong for a save. That i
 this project where emitting the input exactly and emitting the correct thing come apart, and there will
 be others.
 
+**That distinction is code now**, `FIELD_RULES` in `packages/codec/src/edit.ts`: every field whose
+treatment on a write is not "carry it unchanged", with the section that establishes it and why it is
+not the obvious other policy. `applyEdits` is the faithful path and `saveEdits` stamps, and neither is
+the default, so a caller has to say which operation it means. The **negatives** are what the table is
+really for, since they are the entries that cost something: base slot 1's version word looks computable
+and is per config, section 81, and base slot 2's log area looks like something a writer should fill in
+and is copied by every config in the corpus, section 47. Both are asserted byte identical after a save
+rather than merely left alone in the code, a rule added without a test fails the suite, and the sharp
+test is that a save of an unedited config changes **exactly** two runs: the seven timestamp bytes and
+the two checksum bytes, on four containers spanning all four architectures.
+
 ### Why it runs badly wrong, which the owner's complaint pointed at
 
 A 32.768 kHz crystal does not lose minutes a day. The tick that feeds the clock can, and it is eleven

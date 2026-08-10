@@ -521,6 +521,17 @@ same bytes at the same word parity and their contributions to a `u16` XOR cancel
 config can move two structures and still pass the only check the remote makes. Section 41 said the
 checksum was weak; this is what weak means, and it is pinned in `packages/codec/test/edit.test.ts`.
 
+**A round trip and a save are two operations now, and `FIELD_RULES` is the reason.** Carrying every
+byte nobody edited is exactly right for a round trip and wrong for a save, because two fields are not
+descriptions of the config: the trailer checksum, which any edit voids, and base slot 3's timestamp,
+which an arch 12 remote sets its clock from at every boot, section 111. So `applyEdits` is faithful
+and `saveEdits` stamps, and neither is the default: a caller says which it means. The table also
+carries the **negatives**, which are the entries that cost something to get wrong: base slot 1's
+version word is per config and not computable, section 81, and base slot 2's log area is the
+generator's reservation that no config in the corpus appends to, section 47. Both are asserted byte
+identical after a save rather than merely left alone, and a rule added without a test fails the
+suite.
+
 **M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
 facing "write my config" is FH.
