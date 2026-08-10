@@ -110,11 +110,39 @@ test('a reading distinguishes meaning from placement', () => {
   // The distinction is the point of the table: without it the first draft reported 100%.
   assert.equal(reading({ opcode: 0x7f, operand: 0 }, 14)?.depth, 'meaning');
   // `0x77` was the placement example here until section 107 read its helper, and `0x6E` was the
-  // no-reading one until the same section. Both were the obvious choices at the time, which is the
-  // reason this test now picks its examples from opcodes nobody is currently reading.
+  // no-reading one until the same section. Both were the obvious choices at the time.
   assert.equal(reading({ opcode: 0x67, operand: 0 }, 14)?.depth, 'placement');
-  // No reading at all is a third state, not a placement.
-  assert.equal(reading({ opcode: 0x66, operand: 0 }, 14), undefined);
+  // No reading at all is a third state, and since section 108 **nothing** is in it: every opcode
+  // resolves. The state stays in the type because a new architecture or a new sample can reach it,
+  // and the test below is what would notice if one did.
+  for (let opcode = 0; opcode <= 0xff; opcode += 1) {
+    assert.ok(reading({ opcode, operand: 0 }, 14) !== undefined, `0x${opcode.toString(16)}`);
+  }
+});
+
+test('the second dispatcher resolves by range, so 0x20 behaves like 0x1F', () => {
+  // Section 108. Reading it as four exact opcodes cost the number nothing, because no config emits
+  // anything but the canonical four, and it was still a wrong claim about the firmware.
+  for (const [canonical, other] of [
+    [0x3f, 0x40],
+    [0x3f, 0x64],
+    [0x1f, 0x20],
+    [0x1f, 0x3e],
+    [0x0f, 0x10],
+    [0x0f, 0x1e],
+    [0x07, 0x08],
+    [0x07, 0x0e],
+  ]) {
+    for (const operand of [0xf000, 0xe000, 0x00ff, 0x0000]) {
+      assert.deepEqual(
+        reading({ opcode: other as number, operand }, 14),
+        reading({ opcode: canonical as number, operand }, 14),
+        `0x${(other as number).toString(16)} against 0x${(canonical as number).toString(16)}`,
+      );
+    }
+  }
+  // And below the lowest floor the dispatcher returns before looking at the operand at all.
+  assert.equal(reading({ opcode: 0x06, operand: 0xffff }, 14)?.noop, true);
 });
 
 test('a band the dispatcher tests and ignores is a reading, not a gap', () => {
@@ -270,6 +298,53 @@ const DIVIDE = 0x77;
 const MULTIPLY = 0x78;
 const STATE_OPERATION = 0x70;
 const SUBTRACT_NIBBLE = 7;
+
+test('every opcode in the main space has a reading, and three of them nothing uses', () => {
+  // Section 108 read the last three, `0x65`, `0x66` and `0x76`. They are placement: two append
+  // operand bytes to a region of the serial flash and one positions a cursor in it, and what the
+  // bytes are for is not named. The corpus uses none of them, which is asserted below rather than
+  // assumed, because a placement nobody exercises is exactly where a wrong reading would survive.
+  for (let opcode = 0x65; opcode <= 0x7f; opcode += 1) {
+    const r = reading({ opcode, operand: 0 }, 14);
+    assert.ok(r !== undefined, `0x${opcode.toString(16)} has no reading`);
+  }
+  for (const opcode of [0x65, 0x66, 0x76]) {
+    assert.equal(reading({ opcode, operand: 0 }, 14)!.depth, 'placement');
+    assert.equal(reading({ opcode, operand: 0 }, 14)!.section, 108);
+  }
+  // `0x76` is outside the arch 14 only block, so it reads the same on every architecture; `0x65`
+  // and `0x66` are inside it.
+  for (const architecture of [8, 9, 12]) {
+    assert.equal(reading({ opcode: 0x76, operand: 0 }, architecture)!.section, 108);
+    assert.equal(reading({ opcode: 0x65, operand: 0 }, architecture)!.noop, true);
+  }
+});
+
+test('nothing in the corpus uses the three flash journal opcodes', skipUnless('one_config'), () => {
+  const names = [
+    'h700_config',
+    'h700_config_2',
+    'h600_config',
+    'h525_config',
+    'one_config',
+    'one_config_unprogrammed',
+    'arch8_config_a',
+    'arch8_config_b',
+  ];
+  let seen = 0;
+  let checked = 0;
+  for (const name of names) {
+    if (!load(name)) continue;
+    checked += 1;
+    for (const list of lists(name).lists) {
+      for (const instruction of list) {
+        if ([0x65, 0x66, 0x76].includes(instruction.opcode)) seen += 1;
+      }
+    }
+  }
+  assert.ok(checked >= 5, `only ${checked} samples, which proves little`);
+  assert.equal(seen, 0);
+});
 
 test('the arithmetic opcodes read as arithmetic, and only on arch 14 for the block', () => {
   const at = (opcode: number, operand: number, architecture: number) =>

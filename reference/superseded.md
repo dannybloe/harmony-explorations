@@ -120,3 +120,6 @@ and leave this table alone.
 | `0x3F`'s bands are the only structure in the format that is not | section 107 | the same, from the other document; two structures diverge and the second is ten whole opcodes |
 | `two more accumulator operations, through helper routines` | section 107 | a 16 by 16 multiply and a restoring division: `0x78` takes the product's low word and `0x77` the quotient |
 | `exactly one opcode in the whole corpus has no reading` | section 107 | none: `0x6E` was the last and it is the accumulator modulo the operand |
+| `emit one to three bytes on a diagnostic channel` | section 108 | it appends them to a region of the external serial flash, through a page program with a status poll |
+| `peripherals and a diagnostic output channel, plus register moves` | section 108 | the channel is the flash journal: `0x0F`'s `0xE0` band appends bytes to a region of the external flash |
+| `2 MiB by three routes and 4 MiB by concordance's` | section 108 | not open at all: section 88 closed it at 2 MiB on 9 August 2026 and the summary was never swept |

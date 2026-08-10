@@ -62,8 +62,9 @@ const noop = (section: number): Reading => ({
  * Opcodes at or above `SECOND_SPACE_LIMIT`, where the opcode is the whole instruction.
  *
  * `0x80` and above are not here: they are one family with a parameter, resolved in `reading`.
- * `0x65`, `0x66` and `0x76` are absent because they have no reading at all. Section 71 names a
- * handler for each and no config in the corpus uses one, so nothing here is counted against them.
+ * Every opcode in this space has a reading since section 108, which read the last three, `0x65`,
+ * `0x66` and `0x76`. No config in the corpus uses any of those, so they cost the number nothing;
+ * they are here because an absent entry and a placement are different claims.
  *
  * **The block `0x65` to `0x6E` is arch 14 only**, `ARITHMETIC_BLOCK`, section 107. Arch 9 and arch
  * 12 test every one of those opcodes in the same descending ladder and branch to the dispatcher's
@@ -126,6 +127,11 @@ function stateOperation(opcode: number, operand: number): Reading {
 }
 
 const MAIN: ReadonlyMap<number, MainEntry> = new Map<number, MainEntry>([
+  // `0x65` and `0x66` are two more producers into the diagnostic channel `0x0F`'s `0xE0` band
+  // feeds, which section 108 read to the end: it is a byte at a time page program into a region of
+  // the external serial flash. Placement, because nothing names what the bytes are for.
+  [0x65, placed("appends the operand's low byte and then its high byte to the flash journal", 108)],
+  [0x66, placed("appends the operand's high byte to the flash journal", 108)],
   [0x67, placed('third producer into the infrared queue, tag 5', 42)],
   [0x68, means('accumulator shifted right by the low byte', 34)],
   [0x69, means('accumulator XOR operand', 34)],
@@ -156,6 +162,16 @@ const MAIN: ReadonlyMap<number, MainEntry> = new Map<number, MainEntry>([
   // Section 34 could only say "an accumulator operation through a helper" because it had not read
   // the helpers. They are a restoring division and a 16 by 16 multiply, and both are compiled into
   // all four images. Section 107.
+  // Positions a serial flash cursor at the record its operand indexes, in a three byte pointer
+  // array the section could not identify. Section 108.
+  [
+    0x76,
+    placed(
+      'positions a serial flash cursor at the record its operand indexes, remembering the index ' +
+        'so a later instruction walks forward instead of restarting',
+      108,
+    ),
+  ],
   [0x77, means('accumulator divided by the operand, unsigned; the quotient', 107)],
   [0x78, means('accumulator times the operand, the low sixteen bits', 107)],
   [0x79, means('add the operand to the accumulator', 34)],
@@ -227,7 +243,7 @@ const BANDS_1F: readonly Band[] = [
 
 const BANDS_0F: readonly Band[] = [
   [0xf0, noop(73)],
-  [0xe0, placed('emit one to three bytes on a diagnostic channel', 73)],
+  [0xe0, placed('append one to three bytes to the flash journal, `0x159F4`', 108)],
   [0xc0, placed('a two field peripheral operation', 73)],
   [0xb0, placed('a one field peripheral operation', 73)],
   [0xa0, placed('a boolean peripheral operation', 73)],
@@ -330,21 +346,29 @@ function band3fC0Arch12(operand: number): Reading {
   return noop(103);
 }
 
+/**
+ * The second dispatcher tests **ranges**, not the four canonical opcodes.
+ *
+ * `0x0F160` on the Harmony 700 and `0x25330` on the One are the same descending pair of
+ * comparisons: at or above `0x3F` takes the `0x3F` bands, at or above `0x1F` the `0x1F` bands, at or
+ * above `0x0F` the `0x0F` bands, and the rest the `0x07` ones. So `0x20` behaves exactly like
+ * `0x1F`. Every config in the corpus emits only the four canonical values, which is why reading this
+ * as four exact cases cost nothing; it was still wrong. Section 108.
+ */
+const BAND_FLOORS: readonly (readonly [number, readonly Band[]])[] = [
+  [0x3f, BANDS_3F],
+  [0x1f, BANDS_1F],
+  [0x0f, BANDS_0F],
+  [ACTION_NOOP_LIMIT, BANDS_07],
+];
+
 function bandsFor(opcode: number, architecture: number): readonly Band[] | undefined {
-  switch (opcode) {
-    case 0x3f:
-      return architecture === 12
-        ? BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b))
-        : BANDS_3F;
-    case 0x1f:
-      return BANDS_1F;
-    case 0x0f:
-      return BANDS_0F;
-    case 0x07:
-      return BANDS_07;
-    default:
-      return undefined;
+  for (const [floor, bands] of BAND_FLOORS) {
+    if (opcode < floor) continue;
+    if (bands !== BANDS_3F || architecture !== 12) return bands;
+    return BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b));
   }
+  return undefined;
 }
 
 /** What an instruction does, or nothing when its opcode has not been read. */
@@ -369,7 +393,8 @@ export function reading(instruction: Instruction, architecture: number): Reading
   const bands = bandsFor(opcode, architecture);
   if (bands === undefined) return undefined;
 
-  // Opcodes from `0x1F` up dispatch on the operand's high byte, those below it on the low byte.
+  // Opcodes from `0x1F` up dispatch on the operand's high byte, those below it on the low byte. The
+  // boundary is the band floor, not the canonical opcode, for the same reason as `BAND_FLOORS`.
   const sub = opcode >= 0x1f ? operand >>> 8 : operand & 0xff;
   for (const [floor, what] of bands) {
     if (sub >= floor) return typeof what === 'function' ? what(operand) : what;

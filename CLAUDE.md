@@ -673,7 +673,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 107 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 108 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -776,8 +776,6 @@ produce a config the remote accepts and mishandles.
   Field 6 is narrowed rather than open: it is one of five per image build constants beside the
   firmware version, the software type, the skin and the architecture, and it is `0x09` on arch 9
   where it is `0x0C` on both others.
-* **How big the arch 14 external flash is**, 2 MiB by three routes and 4 MiB by concordance's
-  architecture table alone, section 87. One read of the 600 settles it and it is written down.
 * **What the One's analogue channel 1 measures**, section 103, which is what the display light's four
   levels and four device levels are chosen by. Two readings fit and they differ only in the sensor's
   wiring, so the firmware cannot settle it. `read-ram.ts --address 0x110` on a connected remote can,
@@ -859,8 +857,11 @@ that is new: the table used to quote 97537 instructions and 97.9% and nothing ch
 section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
 all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
 
-**The unread column is empty**, section 107: `0x6E` was the last opcode in it, six instructions, and
-it is a modulo. What is left is all placement and mostly one thing, `0x3F` band `0xC0` on arch 12, and
+**The unread column is empty and the state is unreachable**, sections 107 and 108: `0x6E` was the
+last opcode in it, six instructions, and it is a modulo, and section 108 read the last three opcodes
+that had a handler and no reading, `0x65`, `0x66` and `0x76`. **An action list can make a remote write
+to its own external flash**, which is what those first two do, and the region they write to is one the
+firmware allocates itself rather than the one base slot 2 declares. What is left is all placement and mostly one thing, `0x3F` band `0xC0` on arch 12, and
 it is hardware state rather than config structure. Section 102 read it and it stayed placement;
 **section 103 read the state machine behind selector 17 and it did not**, which is 68 of the band's
 106 uses per config. The band is three
@@ -891,8 +892,10 @@ thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F`
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->
 one table across architectures**, so they must not be ported.
 
-**Two structures are not one table, not one**, section 107: `0x3F`'s bands, and the whole opcode block
-`0x65` to `0x6E`, which only arch 14 implements. Arch 9 and arch 12 test each of those ten opcodes in
+**Below `0x65` the dispatcher tests ranges rather than those four values**, section 108, so `0x20`
+behaves exactly like `0x1F`; the corpus only ever emits the canonical four, which is why reading it as
+four exact cases never showed up in a number. **Two structures are not one table, not one**, section
+107: `0x3F`'s bands, and the whole opcode block `0x65` to `0x6E`, which only arch 14 implements. Arch 9 and arch 12 test each of those ten opcodes in
 the same ladder and branch to the dispatcher's exit, and their configs never emit one. So the shift,
 the boolean operations, the device record writer and the **modulo** are arch 14's alone, while the
 multiply and divide just above them, `0x78` and `0x77`, are everyone's. `0x6F` belongs to nobody: it

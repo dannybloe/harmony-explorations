@@ -49,7 +49,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Twenty nine have been found and corrected so far. The newest is in section 107, and it is a claim two
+Thirty have been found and corrected so far. The newest is in section 108: `packages/codec` resolved
+the second dispatcher's four opcodes as exact values where the firmware compares against them as
+floors, so it answered "no reading at all" for `0x20` where the remote runs `0x1F`'s handler. It never
+showed up in a number because no config emits anything but the canonical four, which is the same shape
+as the correction below it: a claim no sample could contradict.
+
+Before it, section 107, and it is a claim two
 documents made in the same words: that arch 12's `0x3F` bands are **the only** structure in the format
 that is not one table across architectures. They are one of two. The opcode block `0x65` to `0x6E` is
 arch 14 only, and the reason it went unnoticed is that no arch 8, 9 or 12 config emits an instruction
@@ -8222,7 +8228,7 @@ On the low byte, and mostly not about the config at all:
 | band | what |
 |---|---|
 | `0xF0` | nothing |
-| `0xE0` | emit one to three bytes on a diagnostic channel through `0x159F4`. Nibble 6 emits `0xAA` twice, nibble 4 emits the constants 3, 2, 1 |
+| `0xE0` | emit one to three bytes on a diagnostic channel<!--superseded--> through `0x159F4`. Nibble 6 emits `0xAA` twice, nibble 4 emits the constants 3, 2, 1. **Section 108 read `0x159F4`**: the channel is a page program into a region of the external serial flash |
 | `0xC0`, `0xB0`, `0xA0` | peripheral operations with two fields, one field, and a boolean |
 | `0x80` | move between the byte register and the accumulator, both directions |
 | `0x70`, `0x60`, `0x50` | nothing |
@@ -13239,6 +13245,137 @@ one, so they cost the number nothing and are left alone deliberately. `0x66` and
 produced the 600 and 700 configs and never backported, since arch 8 is older and arch 9 older still,
 and the arch 12 firmware carries the ladder entries without the code. Nothing here tests that, and
 the One's own firmware is younger than the 700's by version number alone.
+
+## 108. The diagnostic channel writes to the serial flash, and the arch 14 firmware sizes the chip itself
+
+Three opcodes were left with a handler and no reading: `0x65`, `0x66` and `0x76`. No config in the
+corpus uses one, so they cost the depth number nothing, which is exactly why they were still there.
+Reading them settled an open item that four other routes had only bounded.
+
+### `0x65` and `0x66` append to a region of the external flash
+
+Their arm is six instructions and they share it. `0x66` puts the operand's **high** byte in `0x0FC`
+and calls `0x159F4`; `0x65` puts the **low** byte there, calls the same routine, and then **falls
+through into `0x66`'s arm**, so one opcode sends two bytes and the other one, out of the same code.
+
+`0x159F4` is the routine section 73 already found from the other side and called "a diagnostic
+channel", because `0x0F`'s `0xE0` band feeds it fixed byte patterns. Followed to the end it is a
+**write to the external serial flash**, one byte at a time:
+
+| routine | command | what |
+|---|---|---|
+| `0x18D98` | `0x03` | READ, then the three address bytes out of `TBLPTR`, high first |
+| `0x18DBC` | | one byte in, `0x1B9AC`, the config read primitive of section 8 |
+| `0x18DEA` | `0x02` | PAGE PROGRAM: the address, one byte, then poll `0x05` until bit 0 clears |
+| `0x18DC0` | `0xD8` | BLOCK ERASE, with the same poll |
+| `0x18D30` | `0x9F` | READ ID, three bytes back |
+
+So the SPI vocabulary is five commands, and `LATF` **bit 7 is the chip select**: `0x18CEC` is a
+`BSF` followed by a `BCF`, a deassert then an assert, which is what frames every one of them.
+`TBLPTR` is the cursor into the serial flash rather than into program memory, which is the second
+half of an upstream hypothesis this project had listed as worth checking; the first half named
+`LATE` bit 2 as the chip select, on arch 9, and on arch 14 it is `LATF` bit 7.
+
+**An action list can therefore make a remote write to its own flash.** That is a rail rather than a
+curiosity, and the flag it sits behind is not in the config: it is whether the region exists at all.
+
+### The region is computed, not declared, and base slot 2 does not decide it
+
+`0x159F4` reads five values and returns without writing if either the region's start or its size is
+zero. Those two come from `0x15D3A`, which allocates:
+
+* **upper bound**: the detected chip size, `0x688`;
+* **lower bound**: the container header's `end_addr` at offset 4, plus three, so the first byte after
+  the config's end marker;
+* **size**: the largest `N * 64 KiB` for `N` from 8 down to 2 that fits below the upper bound and
+  still starts above the lower one. 64 KiB is the erase block of the parts it identifies.
+
+The region is the top of the chip. **Section 47's base slot 2 declares 128 KiB at `0x1E0000` in both
+arch 14 user configs, and this allocator would compute 512 KiB at `0x180000` for the same configs**,
+because eight blocks fit above a config that ends around `0x120000`. So the two do not agree, and the
+census that section ran, no seek of slot 2 anywhere in the arch 14 image, now has a mechanism rather
+than only a count: **the remote does not read the reservation, it makes its own.** A writer must not
+assume the two describe the same bytes.
+
+### The chip size comes from a JEDEC id, and 2 MiB is the largest the firmware knows
+
+`0x18D30` sends `0x9F` and reads three bytes; the firmware keeps the capacity code and the
+manufacturer id and compares them against a table of accepted pairs. Each arm stores the **high byte
+of a 24 bit size**:
+
+| capacity code | size | manufacturers accepted |
+|---|---|---|
+| `0x13` | `0x080000`, 512 KiB | `0x20` ST, `0x1C` EON |
+| `0x14` | `0x100000`, 1 MiB | `0xC2` Macronix, `0x1C` EON |
+| `0x15` | `0x200000`, **2 MiB** | `0xC2` Macronix, `0x1C` EON, `0xEF` Winbond |
+
+Anything else leaves the size **zero**, which disables the journal and nothing else, since config
+reads address the flash through `TBLPTR` directly.
+
+**This corroborates section 88 and does not settle anything, because section 88 already did.** That
+section closed the arch 14 flash size at 2 MiB from the address validator's own literal and a live
+600, and named the part on the board: an EON F16, 16 Mbit. The table here is the same firmware's list
+of parts it will accept, derived independently, and **the pair it accepts at 2 MiB includes EON**,
+`0x1C` with capacity `0x15`, which is that part. So the identification table and the validator agree,
+and a 4 MiB chip would be one this remote's own firmware cannot identify.
+
+**`CLAUDE.md` still listed the size as open**, which is drift of exactly the kind step 4 of the
+finding rule exists to stop: section 88 answered it on 9 August 2026 and the summary was never swept.
+Removed in the same commit as this section.
+
+**Three images, and the table is per build.** The Harmony 700 and the 650 accept the same seven
+(capacity, manufacturer) pairs, at almost the same address. The Harmony 600's table is elsewhere and
+accepts six of the seven, dropping EON at 1 MiB. So the list is a build time choice and one image
+would have made it look like a constant; what all three agree on is where it stops.
+
+### `0x76` positions a cursor and nothing names what it walks
+
+`0x16A34` keeps a sixteen bit index at `0xF23` and a flash cursor at `0xF25`. Given a new index it
+reads the index-th **three byte pointer** of an array, through the same `index * 3` helper the six
+counted pointer arrays use, starts a read there and remembers the index so a later instruction walks
+forward instead of restarting. Records end at `0xFEFE` and the reader takes `0x2A` bytes at a time.
+
+Which array is **not established**. It is not reached through the section seeker in this routine, and
+no config uses the opcode, so there is nothing to compare against. Placement, deliberately, and named
+in the reading table by what it does rather than by what it does it to.
+
+### The second dispatcher tests ranges, not four opcodes
+
+Found while checking where `0x65` sits in the ladder, and it is a correction to this project's own
+table. `0x0F160` on the 700 and `0x25330` on the One are the same descending pair of comparisons: at
+or above `0x3F` takes the `0x3F` bands, at or above `0x1F` the `0x1F` bands, at or above `0x0F` the
+`0x0F` bands, and the rest the `0x07` ones. So **`0x20` behaves exactly like `0x1F`** and `0x40` like
+`0x3F`.
+
+`packages/codec` resolved those four as exact cases and answered "no reading at all" for every other
+value in the range. Every config in the corpus emits only the canonical four, which is why the number
+never noticed, and it was still a wrong claim about the firmware. With the ranges in place **no
+opcode anywhere returns "no reading at all"**, on any architecture.
+
+### Where it leaves the table
+
+Every opcode in `0x65` to `0x7F` has a reading, every band below `0x65` has one, and the third state
+the depth distinction allows for is now unreachable. The number does not move, because nothing in the
+corpus uses the three opcodes this section read, and that is the point worth keeping: **a placement
+nobody exercises is where a wrong reading survives longest.**
+
+This is the third structure in the position section 39's number sender and section 47's log ladder
+are in: firmware that exists, is reachable, and that Logitech's generator never emitted. Three of
+them now, all in the same subsystem family, which starts to look less like an accident and more like
+a facility the host software used during development and never shipped.
+
+### What is not established
+
+**What is in the journal.** The bytes an appender sends are whatever the instruction carries, and
+`0x0F`'s `0xE0` band sends fixed patterns like `0xAA 0xAA` and `3 2 1`. Nothing reads the region back
+on the remote, so what is written is only meaningful to whoever reads the chip afterwards.
+
+**Whether any region exists on a real remote.** The allocator needs a recognised chip and a config
+whose end leaves at least two blocks free, and both bench remotes' configs do. Reading `0x1E0000` or
+`0x180000` off the 600 over USB would say whether either region has ever been written; that read has
+not been done and it is read only.
+
+**Which array `0x76` walks**, above.
 
 ## References
 

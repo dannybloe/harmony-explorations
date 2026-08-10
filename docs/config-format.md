@@ -1709,7 +1709,7 @@ codec needs from them is this:
 |---|---|---|
 | `0x1F` | operand high byte | a register machine: a byte register, a sixteen bit accumulator, load and arithmetic on each, and load and store against the base slot 13 state variable table |
 | `0x07` | operand low byte | thirteen operations with no argument: a push and pop stack, timer cancellation, clock and state variable reads |
-| `0x0F` | operand low byte | peripherals and a diagnostic output channel, plus register moves. Little to do with the config |
+| `0x0F` | operand low byte | peripherals and the **flash journal**, plus register moves. Little to do with the config: its `0xE0` band appends bytes to a region of the external flash, section 108 |
 | `0x3F` | operand high byte | four bands, one of which is the six byte instruction above |
 
 **`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ.** This
@@ -1721,6 +1721,11 @@ band **must not** be ported between them. The failed prediction that found it is
 Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below
 `0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles 3 and 5. The corpus
 uses several of them, 84 times for the last alone.
+
+**The four opcodes above are floors, not values**, section 108: the dispatcher compares the opcode
+against `0x3F`, `0x1F`, `0x0F` and `0x07` in descending order, so `0x20` reaches the same handler as
+`0x1F` and `0x40` the same as `0x3F`. Every config in the corpus emits only the four canonical values,
+and a writer should keep to them.
 
 **`0x1F` band `0xFC` is not one of them, and used to be listed as one.** The dispatcher's arm for it
 really does nothing, and the instruction never reaches the dispatcher: the fetch tests for opcode
@@ -1857,6 +1862,8 @@ Placed by their handlers:
 | `0x6F` | **nothing**, with a mechanism: the handler tests the accumulator for zero and both arms return, section 107 |
 | `0x6C` | **write a device record**: the accumulator from a preceding `0x7A` selects it, bit 15 of the operand selects one of two fields and the rest is the value, below |
 | `0x67` | the third producer into the infrared queue of `0x7C` and `0x7D`, tag `0x5`. What it means is unconfirmed |
+| `0x66`, `0x65` | **append to the flash journal**: `0x66` the operand's high byte, `0x65` its low byte and then its high byte. Arch 14 only, section 108 |
+| `0x76` | **position the serial flash cursor** at the record its operand indexes, remembering the index so a later instruction walks forward. Which array it indexes is *not established*, section 108 |
 | `0x74`, `0x75` | ~~**one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode~~<!--superseded--> **two instructions**, section 74. Arch 14 issues neither, and the arch 12 dispatcher tests both: `0x75` **sounds a tone**, `0x74` accumulates a digit |
 | `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
 | `0x73` | **run the base slot 11 screen program** the operand indexes |
