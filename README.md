@@ -71,26 +71,13 @@ carries your remote's **serial number and unique GUIDs**. Firmware is Logitech's
 nothing of yours. Nothing you send is published or committed anywhere, and if you would rather not
 send the serial number, leave the `-i` output out and say the model instead.
 
-### If you would rather send nothing of your config at all
+That is the whole ask: two files and a model name.
 
-There is a report for that: a few kilobytes of JSON with the **shape** of a config and none of its
-contents, meant to be published, so it can go straight in a discussion.
-
-```sh
-make probe                                     # a remote attached over USB
-node packages/probe/bin/probe.ts --file cfg    # a config already on disk, no remote
-```
-
-It holds addresses, lengths, counts, the container header and the outcome of each check, and that is
-enforced rather than promised: `packages/probe/test/report.test.ts` pulls a sixteen byte run out of
-every populated section of a real config and asserts none of it survives into the report. Read the
-output before you send it, which is the other reason it is small. What makes it worth running on an
-unfamiliar model is that it derives everything rather than looking it up: an unknown container cookie
-still yields the flash base, the slot count and the section table, with the parser's refusal recorded
-next to them, because on a new architecture the refusal is the interesting part.
-
-Honest caveat: this means cloning the checkout and building a native module, so today it is for people
-who already do that. A runnable file per platform belongs with FreeHarmony.
+If you would rather send nothing of your config at all, there is a structural report that carries the
+**shape** of a config and none of its contents, so it can go in a public discussion instead:
+`make probe`, or `node packages/probe/bin/probe.ts --file <config>`. It needs a checkout and a build,
+so today it is for people who already do that. [docs/roadmap.md](docs/roadmap.md) step 8 has the
+reasoning and `packages/probe` has the tests that keep it empty of contents.
 
 ## What is deliberately not here
 
