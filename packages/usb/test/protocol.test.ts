@@ -37,6 +37,8 @@ import {
   readMiscRequest,
   readRamRequest,
   regionOf,
+  ARCH9_WINDOWS,
+  ARCHITECTURES_WITH_A_WRITE_TARGET,
   FLASH_TOP_BYTE_BOUND,
   validateRegionByte,
   writeFlashRequest,
@@ -172,6 +174,43 @@ test('arch 9 puts its flash a megabyte up, and the two rules disagree everywhere
   assert.equal(validateRegionByte(0x00, 9), 'internal-program-memory');
   // And 0xFE is not a window here at all, so the arch 12 route into program memory is refused.
   assert.throws(() => validateRegionByte(0xfe, 9), ProtocolError);
+});
+
+test('arch 9 serves four windows below its flash, and three of them are not flash at all', () => {
+  // Section 119, read out of the validator's own XORLW chain at 0x02E14 in the application and
+  // 0x01836 in the safe mode image, identically. Section 88 read from 0x02E30, which is the default
+  // arm: the four cases are tested above it, so this library refused three regions the firmware
+  // serves and the documented reason described only what an unmatched top byte gets.
+  assert.equal(validateRegionByte(0x20, 9), 'eeprom');
+  assert.equal(validateRegionByte(0x30, 9), 'arch9-tag-30');
+  assert.equal(validateRegionByte(0x40, 9), 'data-memory');
+  assert.equal(validateRegionByte(0x00, 9), 'internal-program-memory');
+  // The bounds, which are the closure: each is a documented size of the PIC18F4550, so the chain
+  // and the datasheet agree without either being fitted to the other.
+  assert.equal(ARCH9_WINDOWS[0x20]?.bound, 0x0100); // 256 bytes of EEPROM
+  assert.equal(ARCH9_WINDOWS[0x40]?.bound, 0x0800); // 2048 bytes of RAM
+  assert.equal(ARCH9_WINDOWS[0x00]?.bound, 0x8000); // 32 KiB of program flash
+  // And they are enforced, because the firmware enforces them: a read past a window's end is
+  // refused here rather than sent and answered with whatever the device does about it.
+  assert.equal(regionOf(0x2000ff, 9), 'eeprom');
+  assert.throws(() => regionOf(0x200100, 9), ProtocolError, 'one past the EEPROM');
+  assert.throws(() => regionOf(0x400800, 9), ProtocolError, 'one past data memory');
+  assert.throws(() => regionOf(0x008000, 9), ProtocolError, 'one past program flash');
+  // Still nothing between 0x41 and 0x7F, which is the negative that keeps this a window table
+  // rather than a widening.
+  for (const byte of [0x10, 0x21, 0x41, 0x50, 0x7f, 0x88, 0xfe]) {
+    assert.throws(() => validateRegionByte(byte, 9), ProtocolError, `0x${byte.toString(16)}`);
+  }
+});
+
+test('the arch 9 windows are readable and none of them becomes writable', () => {
+  // The rail that matters about the change above. Reading a region and writing it are decided by
+  // different tables on purpose: the write path goes through CONFIG_REGION_BASE and
+  // ARCHITECTURES_WITH_A_WRITE_TARGET, neither of which knows what regionOf answers. So naming the
+  // EEPROM did not make the EEPROM a write target, and arch 9 has no write target at all.
+  assert.equal(regionOf(0x200000, 9), 'eeprom');
+  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
 });
 
 test('each architecture refuses the other one is allowed', () => {

@@ -541,20 +541,19 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
   distinct from the safe mode image and from the user config.
 * Read selector 12 is `docs/usb-protocol.md`'s "not read yet" selector `0x0C`. The client uses
   it to ask what hardware features the remote has.
-* **Flash `0x200000` is the firmware update state cell on arch 9**, `0x00` while an image is being
-  staged and `0x02` to install it, with `0x200010` holding the serial. Out of concordance rather than
-  Logitech's client, `libconcord/remote.cpp`'s `PrepFirmware` and `FinishFirmware`, which take that
-  branch on any architecture whose `firmware_update_base` equals its `firmware_base`. **Unconfirmed
-  against the 525's own firmware, and the standing rule has an extra edge here**: section 88 read that
-  architecture's `READ_FLASH` validator as refusing every top byte outside `0x80` to `0x87`, so either
-  writes go through a different validator or the region is special, and nothing here has read the cell.
-  It is on this ledger because it is the documented way out of arch 9 safe mode, section 118, and not
-  because it is believed. Adopted as knowledge and **not** as an action: this project does not perform
-  that write. **No concordance command line reaches that step alone**, section 118: `--firmware` runs
-  the whole sequence, whose `erase_firmware` would destroy the staged image and whose
-  `invalidate_flash` would discard a config arch 9 would otherwise keep. `finish_firmware` is exported,
-  so the step is reachable as `init_concord`, `get_identity`, `finish_firmware`, `deinit_concord`,
-  which belongs in the private lab and never in this MIT repository since it calls into GPLv3 code.
+* **Flash `0x200000` on arch 9 has left this ledger**, section 119, and it is the first entry to do so
+  by being confirmed rather than refuted. It was here as concordance's claim that the address is a
+  firmware update state cell, `0x00` while staging and `0x02` to install, with `0x200010` holding the
+  serial, and with the awkward note that section 88 read the 525's validator as refusing every top
+  byte outside `0x80` to `0x87`. Both halves are now read out of the 525's own firmware. The
+  validator's chain has four windows above its flash range test and `0x20` is the **on chip EEPROM**,
+  bounded to 256 bytes, which is why `0x200010` is the serial and why section 88's rule described only
+  the default arm. The bootloader reads EEPROM byte 0 at every boot and `0x02` is the value that makes
+  it install the application. So the client was right, and it was right about something it had no way
+  to explain. What has **not** changed is the action: this project does not perform that write, arch 9
+  has no write target, and **no concordance command line reaches that step alone**, section 118, so it
+  is reachable only as four library calls that belong in the private lab and never in this MIT
+  repository since they call into GPLv3 code.
 
 ## MyHarmony was checked and holds nothing, and why that is worth knowing
 

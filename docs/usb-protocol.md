@@ -694,6 +694,20 @@ at plain `0x000000` there, with no `0xFE` window at all, which matters because t
 on internal reads keys on `0xFE` and `0xFF` and therefore protected nothing on arch 9 until
 `validateRegionByte` learned about the architecture.
 
+**Arch 9's address space is a set of tagged windows and only one of them is flash**, section 119. The
+validator is an `XORLW` chain and the flash range test is its default arm, so four windows sit above
+it: `0x00` is 32 KiB of internal program flash, `0x20` is 256 bytes of **on chip EEPROM**, `0x40` is
+2048 bytes of **data memory**, and `0x30` is eight bytes whose read arm fetches nothing. Every bound
+is a documented size of the PIC18F4550. `ARCH9_WINDOWS` in `packages/usb/src/protocol.ts` carries
+them with those bounds enforced, and reading three of them is new: the library refused them while the
+firmware served them. The EEPROM one is what concordance writes to in order to finish a firmware
+update, and its byte 0 is the bootloader's image selector.
+
+**Data memory at tag `0x40` is a second route to RAM on arch 9**, distinct from `READ_MISC`
+selector `0x06`. Both answer all zeros on the bench 525, which is what section 90 already recorded,
+so this does not reopen RAM polling there. It does mean the zeros are the remote's answer twice over
+rather than one path being wrong.
+
 **A rejected address produces silence, not an error.** So a host with the wrong base looks like a
 host with a broken cable, and that is how it presented: the first arch 9 config read failed with
 "flash read returned 0 of 16 bytes".

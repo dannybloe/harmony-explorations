@@ -259,7 +259,15 @@ export function readRamRequest(dataAddress: number): Uint8Array {
  * bench on 8 August 2026; `docs/findings.md` section 76. The device says no by saying nothing,
  * which is why a wrong base looks like a broken cable rather than a rejected address.
  */
-export type Region = 'config-flash' | 'internal-program-memory';
+export type Region =
+  | 'config-flash'
+  | 'internal-program-memory'
+  // The three arch 9 regions below the flash window. All read from its own firmware, section 119,
+  // and none of them is flash: the address space the protocol calls "flash" is a set of tagged
+  // windows onto different memories, and only one of them is the serial chip.
+  | 'eeprom'
+  | 'data-memory'
+  | 'arch9-tag-30';
 
 /** The architecture whose rule applies when a caller does not say. The two bench targets share it. */
 export const DEFAULT_REGION_ARCHITECTURE = 12;
@@ -281,25 +289,61 @@ export const FLASH_TOP_BYTE_BOUND: Readonly<Record<number, number>> = {
  * whose rule is a window rather than a ceiling.
  *
  * Measured on a live 525 by trying addresses until one answered, section 76, and **confirmed from
- * its own firmware since**: the validator at `0x02E30` refuses below `0x80` and at or above `0x88`,
- * which is eight 64 KiB blocks and exactly the 512 KiB the part holds. Section 88.
+ * its own firmware since**: the validator refuses below `0x80` and at or above `0x88`, which is
+ * eight 64 KiB blocks and exactly the 512 KiB the part holds. Section 88.
  */
 export const ARCH9_FLASH_TOP_MIN = 0x80;
 export const ARCH9_FLASH_TOP_MAX = 0x87;
 
+/**
+ * The four windows arch 9's validator accepts before it reaches the flash range test, with the
+ * offset bound each one carries. Read out of the validator's own `XORLW` chain, section 119.
+ *
+ * **This table is why section 88's reading was incomplete rather than wrong.** That section read
+ * from `0x02E30`, which is the *default arm*: four cases are tested above it at `0x02E14`, and the
+ * bound test only applies to a top byte that matched none of them. So "arch 9's flash is 0x80 to
+ * 0x87" describes what a top byte outside these four gets, and this library refused three regions
+ * the firmware serves.
+ *
+ * Each bound is the literal the validator subtracts against, and each is exactly a documented size
+ * of the PIC18F4550, which is the independent closure: 256 bytes of EEPROM, 2048 of RAM, 32 KiB of
+ * program flash. The `0x30` window is 8 bytes and its read handler branches straight to the common
+ * exit without fetching anything, so it is named for its tag and not for a memory.
+ */
+export const ARCH9_WINDOWS: Readonly<Record<number, { region: Region; bound: number }>> = {
+  0x00: { region: 'internal-program-memory', bound: 0x8000 },
+  0x20: { region: 'eeprom', bound: 0x0100 },
+  0x30: { region: 'arch9-tag-30', bound: 0x0008 },
+  0x40: { region: 'data-memory', bound: 0x0800 },
+};
+
 export function validateRegionByte(
   topByte: number,
   architecture: number = DEFAULT_REGION_ARCHITECTURE,
+  offset?: number,
 ): Region {
   if (architecture === 9) {
     // Internal program memory is at plain low addresses on this part, a PIC18LF4550 with 32 KiB
     // of it, so the top byte is `0x00` and there is no `0xFE` window. It is still reported as
     // internal, which is what keeps `readInternalMemory`'s one chunk cap over it: arch 12 restarts
     // when such a read ends in a one byte chunk and nothing establishes that arch 9 does not.
-    if (topByte === 0x00) return 'internal-program-memory';
+    const window = ARCH9_WINDOWS[topByte];
+    if (window) {
+      // The bound is the firmware's, so enforcing it here only ever agrees with the device. Checked
+      // when the caller passes an offset, which `regionOf` always does: a top byte on its own is
+      // still answerable, which is what keeps this callable from a test.
+      if (offset !== undefined && offset >= window.bound) {
+        throw new ProtocolError(
+          `arch 9 window 0x${topByte.toString(16)} ends at 0x${window.bound.toString(16)}, ` +
+            `and 0x${offset.toString(16)} is past it`,
+        );
+      }
+      return window.region;
+    }
     if (topByte >= ARCH9_FLASH_TOP_MIN && topByte <= ARCH9_FLASH_TOP_MAX) return 'config-flash';
     throw new ProtocolError(
-      `arch 9 rejects 0x${topByte.toString(16)} as a top address byte; its flash is at 0x80 to 0x87`,
+      `arch 9 rejects 0x${topByte.toString(16)} as a top address byte; its flash is at 0x80 to ` +
+        `0x87 and its other windows are 0x00, 0x20, 0x30 and 0x40`,
     );
   }
   // The internal window is tested first and by masking bit 0 off, which is why both 0xFE and 0xFF
@@ -320,7 +364,7 @@ export function validateRegionByte(
 }
 
 export function regionOf(address: number, architecture?: number): Region {
-  return validateRegionByte((address >>> 16) & 0xff, architecture);
+  return validateRegionByte((address >>> 16) & 0xff, architecture, address & 0xffff);
 }
 
 /**

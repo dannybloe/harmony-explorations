@@ -162,6 +162,28 @@ Nothing was predicted, and the answer is that **there is no `0xFE` window here a
 program memory answers at plain `0x000000`, and the first four bytes are `7b ef 07 f0`, a
 `GOTO 0x0EF6`, which is the reset vector landing in a bootloader below the application.
 
+## The address space is a set of windows, and three of them are not flash
+
+Read out of the validator's own `XORLW` chain, section 119, present identically in the application and
+the safe mode image. Every bound is a documented size of the PIC18F4550, which is why the table is
+believed as a whole rather than window by window.
+
+| top byte | offset below | what it is | what is at the bottom of it |
+|---|---|---|---|
+| `0x00` | `0x8000` | internal program flash, 32 KiB | the reset vector above |
+| `0x20` | `0x0100` | on chip EEPROM, 256 bytes | byte 0 is the bootloader's image selector |
+| `0x30` | `0x0008` | eight bytes, read arm fetches nothing | unread |
+| `0x40` | `0x0800` | data memory, 2048 bytes | answers all zeros, as `READ_MISC` does |
+| `0x80` to `0x87` | the block | the serial flash chip, 512 KiB | everything in the table above |
+
+The EEPROM is the one that mattered: concordance's firmware update state cell, which its table calls
+flash `0x200000`<!--superseded-->, is EEPROM byte 0. Its five values are read in section 119 and the value on this
+remote, stranded in safe mode, is 0.
+
+**Section 88 read this validator from its default arm**, so its rule described only what a top byte
+matching none of the four gets, and `packages/usb` refused three windows the remote serves. Corrected
+in `ARCH9_WINDOWS`.
+
 `0x1000` to `0x7FFF` is the application, and it is **byte identical** to the external image at
 `0x810000` over all 28672 bytes, which confirms both that the image is the running code and that
 its load address is `0x1000`. Below `0x1000` is a bootloader that exists in no external image:

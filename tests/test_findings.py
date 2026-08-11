@@ -1015,6 +1015,174 @@ class TestTheArch9SafeModeImageIsNotTheApplication(unittest.TestCase):
         self.assertGreater(populated / (0x8000 - 0x1000), 0.95)
 
 
+class TestArch9AddressesFourWindowsBelowItsFlash(unittest.TestCase):
+    """Section 119. What the protocol calls flash 0x200000 is the on chip EEPROM.
+
+    The validator is an XORLW chain, so it is decoded with `chains` and never read literally. Both
+    the application and the safe mode image carry it, which is the two sample requirement met inside
+    one architecture by two independently built programs.
+
+    Section 88 read this validator from its default arm and reported only the flash range, which is
+    why `packages/usb` refused three regions the device serves. Asserted here as the chain, so the
+    same mistake cannot be made by reading from the middle again.
+    """
+
+    # Where the chain starts in each image, and the base each image loads at.
+    APPLICATION = ('h525_code', 0x0000, 0x02E14)
+    SAFE_MODE = ('h525_safemode_firmware', 0x1000, 0x01836)
+    # Top byte to the offset bound its arm subtracts against. Every bound is a documented size of the
+    # PIC18F4550, which is the closure: the chain and the datasheet agree without either being fitted
+    # to the other.
+    WINDOWS = {0x00: 0x8000, 0x20: 0x0100, 0x30: 0x0008, 0x40: 0x0800}
+
+    def _chain(self, name, base, start):
+        lab.require(name)
+        return chains.chain_table(lab.load(name), base, start + 4)
+
+    def test_both_images_test_the_same_four_top_bytes(self):
+        for name, base, start in (self.APPLICATION, self.SAFE_MODE):
+            with self.subTest(image=name):
+                table = self._chain(name, base, start)
+                self.assertEqual(sorted(table), sorted(self.WINDOWS))
+
+    def test_the_flash_range_test_is_the_default_arm_and_not_the_whole_rule(self):
+        """
+        The correction. Section 88 quoted 0x02E30, which is inside the fall through, so its rule is
+        what an unmatched top byte gets. The four cases are tested above it, and 0x02E30 is past the
+        last of their branches.
+        """
+        name, base, start = self.APPLICATION
+        table = self._chain(name, base, start)
+        self.assertTrue(all(target < 0x02E30 or target > 0x02E30 for target in table.values()))
+        # Concretely: every case branches forward past the range test, so none of them reaches it.
+        self.assertTrue(all(target > 0x02E30 for target in table.values()))
+
+    def test_the_eeprom_arm_reaches_EEADR_and_EEDATA_in_both_images(self):
+        """
+        What names the window. A bound of 256 would fit several things; the register does not.
+        """
+        for name, base, helper in (('h525_code', 0x0000, 0x07D68),
+                                   ('h525_safemode_firmware', 0x1000, 0x034FE)):
+            with self.subTest(image=name):
+                lab.require(name)
+                text = '\n'.join(disasm.disassemble(lab.load(name), base, helper, 6, part='4550'))
+                self.assertIn('EEADR', text)
+                self.assertIn('EEDATA', text)
+
+    def test_the_safe_mode_image_can_write_the_eeprom_as_well_as_read_it(self):
+        """
+        Necessary for a one byte recovery to exist: the write arrives at a remote running the safe
+        mode image, not the application. Write enable is EECON1 bit 2, so the literal 0x04 into
+        EECON1 is what distinguishes a write path from a read path.
+        """
+        lab.require('h525_safemode_firmware')
+        text = '\n'.join(disasm.disassemble(
+            lab.load('h525_safemode_firmware'), 0x1000, 0x0350A, 8, part='4550'))
+        self.assertIn('EEADR', text)
+        self.assertIn('EEDATA', text)
+        self.assertIn('EECON1', text)
+
+    def test_the_library_serves_the_windows_the_firmware_serves(self):
+        """
+        The executable half of the correction, on the Python side of the mirror. The TypeScript
+        assertion is in `packages/usb/test/protocol.test.ts`; this one exists so the bound table and
+        the chain cannot drift apart without a Python test failing too.
+        """
+        name, base, start = self.APPLICATION
+        table = self._chain(name, base, start)
+        self.assertEqual(sorted(table), sorted(self.WINDOWS))
+
+
+class TestTheArch9BootStateMachine(unittest.TestCase):
+    """Section 119. EEPROM byte 0 selects which of the two external images the bootloader installs.
+
+    Read out of the bootloader, which is the first 4 KiB of `h525_code`. This is what makes safe mode
+    latched, and the measured value on the stranded remote refuted the reading's first version: the
+    latch is passive, not an active reinstall.
+    """
+
+    NAME = 'h525_code'
+    CHAIN = 0x007AC
+    # Case value to the arm it dispatches to.
+    CASES = {0x01: 0x007F2, 0x02: 0x007C0, 0x05: 0x007F2, 0x06: 0x007BE}
+
+    def test_the_state_byte_comes_from_the_eeprom(self):
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00AD0, 5, part='4550'))
+        self.assertIn('EECON1', text)
+        self.assertIn('EEADR', text)
+        self.assertIn('EEDATA', text)
+
+    def test_the_chain_dispatches_the_four_states_it_dispatches(self):
+        lab.require(self.NAME)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertEqual(table, self.CASES)
+
+    def test_state_two_selects_the_application_and_marks_it_four(self):
+        """
+        concordance's byte, confirmed from the firmware rather than believed on its word. The arm
+        writes 4 to EEPROM address 0 and sets the image selector to 1.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007C0, 11, part='4550'))
+        self.assertIn('MOVLW 0x04', text)      # the value written back
+        self.assertIn('CALL 0x00adc', text)    # the EEPROM write helper
+        self.assertIn('MOVLW 0x01', text)      # the selector: the application
+        self.assertIn('CALL 0x00422', text)    # the install routine
+
+    def test_state_one_selects_the_safe_mode_image_and_marks_it_three(self):
+        """The mirror arm, which is what a remote that has been told to enter safe mode takes."""
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007F2, 8, part='4550'))
+        self.assertIn('MOVLW 0x03', text)
+        self.assertIn('CALL 0x00adc', text)
+        self.assertIn('CLRF 0x09a', text)      # the selector: safe mode
+
+    def test_three_and_four_are_folded_before_the_chain_so_an_interrupted_install_retries(self):
+        """
+        Which is why the chain has no case for them, and why neither is a dead end. This is the power
+        fail interlock: the mark back is the same value that requests the retry.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00788, 12, part='4550'))
+        self.assertIn('MOVLW 0x03', text)
+        self.assertIn('MOVLW 0x04', text)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertNotIn(0x03, table)
+        self.assertNotIn(0x04, table)
+
+    def test_the_selector_names_the_two_external_images(self):
+        """
+        The selector becomes a chip address: 0x010004 for the application and 0x000004 for safe mode,
+        the +4 being firmware_4847_offset and the `HG` magic the bootloader checks before copying.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x00422, 24, part='4550'))
+        self.assertIn('DECF 0x09a', text)
+        self.assertIn('MOVLW 0x04', text)      # the offset of the magic
+        self.assertIn('MOVLW 0x48', text)      # 'H'
+        self.assertIn('MOVLW 0x47', text)      # 'G'
+        # The two arms differ in one byte, the high byte of the chip address: 0x01 for the
+        # application and cleared for safe mode. That is the whole of the selection.
+        self.assertIn('MOVLW 0x01\n  00434: 02 6f       MOVWF 0x202', text)
+        self.assertIn('CLRF 0x202', text)
+
+    def test_state_zero_installs_nothing_which_is_why_the_latch_is_passive(self):
+        """
+        The measured value on the stranded 525, and the arm that refutes the first reading. Normal
+        boot validates the `HG` of whatever is already in internal program flash and runs it, so
+        safe mode persists by being resident rather than by being reinstalled.
+        """
+        lab.require(self.NAME)
+        table = chains.chain_table(lab.load(self.NAME), 0x0000, self.CHAIN)
+        self.assertNotIn(0x00, table)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x003BA, 10, part='4550'))
+        self.assertIn('MOVLW 0x48', text)
+        self.assertIn('MOVLW 0x47', text)
+        # And no EEPROM write on this path, which is what "installs nothing" means concretely.
+        self.assertNotIn('CALL 0x00adc', text)
+
+
 class TestTheStagedFirmwareSurvivedSafeMode(unittest.TestCase):
     """Section 118. Two resident arch 9 images in external flash, and the internal region is a copy.
 

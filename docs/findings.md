@@ -49,8 +49,17 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty two have been found and corrected so far. **The four newest are all in section 118**, and the
-newest of them was found by a segfault: the section said libconcord's progress callbacks are
+Forty four have been found and corrected so far. **The two newest are in section 119, and one of them
+is a prediction this document made and then measured wrong.** It predicted that the stranded 525's
+EEPROM byte 0 would be 3, on a reading where safe mode reinstalls itself at every boot; the byte is 0,
+which is the arm that installs nothing, so the latch is passive and safe mode persists by being
+resident. Both readings predict a remote that never leaves safe mode, so no behaviour could separate
+them and only the byte could. The other is section 88's arch 9 address rule, which was read from the
+validator's **default arm** and reported as the whole rule: four windows are tested above it, so this
+project's own library refused three regions the device serves and recorded one of them as unreadable.
+
+**The four before those are all in section 118**, and one of them was found by a segfault: the section
+said libconcord's progress callbacks are
 optional, having checked every `cb` use in `remote.cpp`, and the unguarded one is in the file above
 it. A lab script passing NULL died inside `get_identity` two calls before the write it was there to
 make. Same shape as the one before it, and both are the shape this project keeps producing: a rule
@@ -15399,14 +15408,19 @@ concordance takes its first branch in `PrepFirmware` and `FinishFirmware`, `libc
 
 | step | what concordance does |
 |---|---|
-| prepare | `WRITE_MISC` selector `0x09` `MISC_RESTART_CONFIG`, then write `0x00` to flash `0x200000` |
+| prepare | `WRITE_MISC` selector `0x09` `MISC_RESTART_CONFIG`, then write `0x00` to flash `0x200000`<!--superseded--> |
 | stage | write the image to `0x810000` |
-| finish | write **`0x02`** to flash `0x200000` |
+| finish | write **`0x02`** to flash `0x200000`<!--superseded--> |
 
-So flash `0x200000` is a one byte update state cell, `0x00` staging and `0x02` install, and
-`0x200010` is where the same table puts the serial. **That is the latch**, or the nearest thing to it
-that is documented: safe mode persists because nothing has told the bootloader the staged image is
-complete.
+So that address is a one byte update state cell, `0x00` staging and `0x02` install, and `0x200010` is
+where the same table puts the serial. **That is the latch**, or the nearest thing to it that is
+documented: safe mode persists because nothing has told the bootloader the staged image is complete.
+
+**Every word of that is concordance's, including calling the address flash, and section 119 reads it
+out of the firmware instead.** It is not flash: top byte `0x20` selects the on chip EEPROM, the cell
+is EEPROM byte 0, and the latch is not what this paragraph guesses. The table is left as written
+because it is a faithful description of what the client does, which is a different claim from what the
+remote is.
 
 Two cautions, because this is a route and not a recipe:
 
@@ -15631,6 +15645,147 @@ trap this project could fall into. He found `16 <u24>` matching inside an opcode
 coordinate happened to be `0x16`, which is a **byte pattern search finding its pattern in the middle
 of an instruction**. The defence is the one `chains.py` already states for switch tables: decode the
 stream, do not scan it.
+
+## 119. Address `0x200000` is not flash at all: it is the EEPROM, and the boot state machine is in it
+
+The one thing section 118 could not settle. concordance writes `0x02` there to finish a firmware
+update and calls the destination flash `0x200000`<!--superseded-->, this project adopted that on the
+client's word, and the address was unreadable because our own validator refused it. All three parts of that are now wrong or
+resolved, out of the 525's own firmware, and the answer is better than the claim it replaces.
+
+### The protocol's "flash" address space is a set of tagged windows
+
+`READ_FLASH` and `WRITE_FLASH` take a 24 bit address whose top byte selects a window. Arch 9's
+validator is an `XORLW` chain at `0x02E14` in the application image, and identically at `0x01836` in
+the safe mode image, so both agree and the chain is decoded with `chains.py` rather than by hand:
+
+| top byte | offset must be below | what it is |
+|---|---|---|
+| `0x00` | `0x8000` | internal program flash, 32 KiB |
+| `0x20` | `0x0100` | the on chip EEPROM, 256 bytes |
+| `0x30` | `0x0008` | eight bytes, and its read arm fetches nothing |
+| `0x40` | `0x0800` | data memory, 2048 bytes |
+| `0x80` to `0x87` | the block | the serial flash chip, 512 KiB |
+
+Everything else returns `RETLW 0x00`, refused. The tag is stored in `0xB0` and the read handler
+dispatches on it at `0x0335A`: `0x20` reaches `0x07D68`, which is `CLRF EECON1`, `MOVFF` into
+`EEADR`, `BSF EECON1,0`, `MOVF EEDATA,W`, and `0x40` reaches a loop that reads `INDF0` through
+`FSR0`, which is data memory by definition.
+
+**Three closures, none of them fitted to the others.** Each bound is a documented size of the
+PIC18F4550: 256 bytes of EEPROM, 2048 of RAM, 32 KiB of program flash. concordance's own table puts
+the serial at `0x200010`, which is EEPROM offset `0x10` under this reading and inside the 256 byte
+bound. And the two firmware images, an application and a safe mode image built years apart in the
+same family, carry the identical chain.
+
+**Section 88 was incomplete rather than wrong, and the reason is instructive.** It read the validator
+from `0x02E30` and reported "refuses below `0x80` and at or above `0x88`". That is the **default arm**:
+the four cases above it are tested first, so the range test only ever sees a top byte that matched
+none of them. So the sentence describes what an unmatched byte gets, and reading a validator from the
+middle produced a rule that is true of every input it was tested on and refuses three regions the
+device serves. `packages/usb` refused them too, which is why `0x200000` was recorded as unreadable.
+
+### The bootloader's boot state machine, read
+
+The 525's bootloader reads EEPROM address 0 at every boot, `0x00AD0`, and dispatches on it with
+another `XORLW` chain at `0x007AC`. Before the chain, two values are folded: 3 becomes 1 and 4
+becomes 2.
+
+| EEPROM byte 0 | what the bootloader does | what it writes back |
+|---|---|---|
+| 1 or 5 | selector 0, install the safe mode image | 3 |
+| 2 | selector 1, install the application | 4 |
+| 3 | handled as 1 | 3 |
+| 4 | handled as 2 | 4 |
+| 0, 6 or anything else | normal boot, install nothing | unchanged |
+
+The selector is `0x09A`, and `0x00422` turns it into an address: `0x010004` when it is 1 and
+`0x000004` when it is 0, which are the chip offsets of the application and the safe mode image, at
+`+4` because that is `firmware_4847_offset` and the `HG` magic. It checks the header there before
+copying, at four places in the bootloader.
+
+**So safe mode is latched by design, and this is the mechanism.** State 3 is folded to 1 at every
+boot, which reinstalls the safe mode image and writes 3 again. Nothing decays, no timer expires, and a
+power cycle is not a way out because the power cycle is what performs the reinstall. Section 118
+measured that a power cycle does not clear it; this is why.
+
+The fold is a power fail interlock: 3 means "a safe mode install was requested and may not have
+finished", so it runs again, and 4 says the same about the application. Both are idempotent, which is
+what makes reinstalling on every boot a reasonable design rather than a bug.
+
+**And concordance's byte is confirmed.** Writing 2 makes the bootloader install the application and
+mark it 4. That is exactly `FinishFirmware`'s arch 9 arm, `data[0] = 0x02` into `0x200000`, and it is
+no longer believed on the client's word: `docs/host-client.md` loses the entry.
+
+### A prediction, before the remote is read
+
+The bench 525 has been stranded in safe mode since 10 August 2026 and is still connected. Under the
+reading above, its EEPROM byte 0 must be **3**: safe mode was installed, the bootloader marked it 3,
+and every boot since has folded 3 to 1 and done it again.
+
+Falsifiable three ways. A 1 would mean the mark back is not written, so the fold is doing all the
+work. A 0 or a 4 would mean the state machine is not what latches safe mode and the reading is wrong.
+Anything above 6 would mean EEPROM address 0 is not this cell at all.
+
+Measured immediately afterwards, on 11 August 2026, over USB, read only, through the window table
+above:
+
+```
+0x200000  00 ff ff ff 25 ff ff ff ff ff ff ff ff ff ff ff
+```
+
+**Byte 0 is zero, so the prediction is wrong**, and it is wrong in the third of the three ways listed
+above. Recorded rather than quietly replaced, because the explanation that fits is better than the one
+that was predicted and the difference between them is the point.
+
+Under the state machine, 0 is the arm that installs nothing and boots normally, and normal boot is
+`0x003BA`: read internal program flash at `0x1004`, check the `HG` there, and run what is resident.
+**So the latch is passive.** Nothing reinstalls safe mode at every boot. Safe mode persists because it
+is what is sitting in internal program flash and no state byte asks for that to change. A power cycle
+does not help because a power cycle is not a request.
+
+The active reading was wrong about the mechanism and right about the consequence, which is the shape
+worth noticing: both readings predict that the remote stays in safe mode indefinitely, so the
+behaviour section 118 measured could not distinguish them, and only the byte could.
+
+Two things this leaves open, stated rather than papered over. **Whether the key combination touches
+EEPROM byte 0 at all** is not read, and the byte's value before 10 August was never measured, so
+"it has always been 0 on this unit" and "it was 4 and the safe mode entry zeroed it" both fit. And
+the folds mean a remote sitting at 4 reinstalls its application at every boot, which is a plausible
+cache refresh design and is not something a remote at 0 demonstrates.
+
+### The safe mode image serves the EEPROM too, which is what makes the recovery reachable
+
+Necessary for any of this to be useful, and not to be assumed: the write goes to a remote running the
+safe mode image, not the application. Both images implement all three tag dispatches, and for tag
+`0x20` both reach the EEPROM:
+
+| | application | safe mode image |
+|---|---|---|
+| read arm | `0x0335A` case `0x20`, helper `0x07D68` | `0x01CFE`, helper `0x034FE` |
+| write arm | `0x0313C` case `0x20`, helper `0x07D74` | `0x01AFA`, helper `0x0350A` |
+
+`0x0350A` is `MOVFF` into `EEADR`, `MOVFF` into `EEDATA`, `MOVLW 0x04` into `EECON1` for write enable,
+then the unlock sequence and a spin on `EECON1` bit 1. So a stranded 525 can be told which image to
+boot, which is the only reason a one byte recovery exists at all.
+
+The read window corroborates itself the same way: tag `0x40` and tag `0x30` both answer all zeros on
+this remote, which is what section 90 already recorded about arch 9 data memory, while tag `0x20`
+answers content. A window table that returned zeros everywhere would prove nothing.
+
+### What this changes, and what it does not
+
+`packages/usb/src/protocol.ts` carries the window table now, `ARCH9_WINDOWS`, with the firmware's own
+offset bounds enforced because a bound this library shares with the device can only ever agree with
+it. Three regions became readable and **nothing became writable**: the write path is decided by
+`CONFIG_REGION_BASE` and `ARCHITECTURES_WITH_A_WRITE_TARGET`, which do not consult `regionOf`, and arch
+9 is in neither. There is a test whose only job is to say so.
+
+The recovery is understood rather than attempted. One byte, into 256 bytes of on chip EEPROM, at an
+address the firmware bounds to that size, served by the image the remote is actually running, into a
+cell whose five states are read. What remains is that this project does not perform it: arch 9 has no
+write target, nothing here has ever written to a remote, and a first write should not be the one that
+installs firmware. The script that does it lives in the private lab.
 
 ## References
 

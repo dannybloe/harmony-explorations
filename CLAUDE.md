@@ -263,10 +263,21 @@ document:
   image at `0x800000`, whose five version accessors are exactly what a stranded 525 reported. That
   second identification is the calibration worth remembering, because the label was written from the
   header on 8 August and the device confirmed it on 11 August. So nothing is transferred from a host to
-  enter safe mode and nothing has to be to leave it. What tells the bootloader to install is one byte,
-  `0x02` into flash `0x200000`, concordance's `FinishFirmware` on this architecture. **Client sourced
-  and this project must not be what performs it**: it has never written to a remote, and a first write
-  should not install firmware on an irreplaceable unit.
+  enter safe mode and nothing has to be to leave it. What tells the bootloader which image to install
+  is **byte 0 of the on chip EEPROM**, section 119, and `0x02` selects the application: 1 and 5 request
+  safe mode and mark it 3, 2 requests the application and marks it 4, 3 and 4 are folded back so an
+  interrupted install retries, and 0 installs nothing and runs whatever is resident. **The address
+  space the protocol calls flash is a set of tagged windows and only one of them is flash**: on arch 9
+  top byte `0x00` is 32 KiB of internal program flash, `0x20` is 256 bytes of EEPROM, `0x40` is 2048
+  bytes of data memory, `0x30` is eight bytes, and `0x80` to `0x87` is the serial chip. Every bound is
+  a documented size of the PIC18F4550. So concordance's `FinishFirmware` byte is **confirmed from the
+  firmware and no longer client sourced**, and section 88's arch 9 rule was the validator's default arm
+  read as the whole rule, which is why `packages/usb` refused three regions the device serves.
+  `ARCH9_WINDOWS` carries them now. **A read only measurement refuted the first reading of the latch**:
+  the stranded 525's EEPROM byte 0 is 0, not the 3 predicted, so safe mode persists by being resident
+  and not by being reinstalled, and only the byte could tell those apart. **This project must still not
+  be what performs the write**: it has never written to a remote, arch 9 has no write target, and a
+  first write should not install firmware on an irreplaceable unit.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.
@@ -770,7 +781,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 117 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 119 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
