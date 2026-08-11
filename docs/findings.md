@@ -49,8 +49,12 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty nine have been found and corrected so far. **The newest is in section 118**, and it is the
-cheapest kind to make: a number quoted with no population attached. Section 101 explained 1992 opcode
+Forty have been found and corrected so far. **The two newest are both in section 118**, and one of
+them was refuted by hardware within a day of being written: section 116 supported its reading of
+`GET_VERSION` field 6 partly on safe mode images carrying the same value as their applications, and a
+live Harmony 525 in safe mode reports zero. The platform reading survives on its other two legs and is
+now scoped to an application image. The other is the cheapest kind of error to make: a number quoted
+with no population attached. Section 101 explained 1992 opcode
 22s against 1080 by naming a section that turns out to contain no opcode 22 at all, and the figure
 came from a one off script that walked the roots without deduplicating them. It went into a document
 because it agreed with what somebody expected. The check that would have caught it is the one this
@@ -15231,6 +15235,94 @@ rather than induced:
 
 The low nibble is the one worth the trouble. Section 87 read it out of arch 8 firmware constants and
 Logitech's own comment naming value 4 safe mode, and no live remote had ever reported anything but 0.
+
+### Measured, and the remote names its own state
+
+Read the same day, read only throughout, and the headline is that **the prediction holds**:
+
+```
+version   20 25 12 ff 94 16 00
+```
+
+| field | normal boot | safe mode | |
+|---|---|---|---|
+| 0, firmware version | `0x30`, 3.0 | `0x20`, **2.0** | a different image is answering |
+| 1, 2, 3 | `0x25 0x12 0xFF` | unchanged | board and flash id are the hardware's |
+| **4** | `0x90` | **`0x94`** | **predicted**, architecture 9 and software type 4 |
+| 5, the skin | `0x16`, 22 | unchanged | as predicted |
+| **6, the platform** | `0x09` | **`0x00`** | **refuted**, see below |
+
+So **software type 4 is confirmed on a live device for the first time.** It had been read from arch 8
+firmware constants and from Logitech's own comment naming the value, on an architecture whose firmware
+this project did not hold when the reading was made, and the confirmation arrives on a third
+architecture from a remote reporting its own state.
+
+Before any command was sent, enumeration alone already said so: the remote's USB **product string is
+`Harmony Safe Mode!`**, on both the manufacturer and the product descriptor. Its product id is
+unchanged at `0xC111` and its `bcdDevice` unchanged at `0x0916`, so a host that keys on either sees
+an ordinary 525. **The HID report descriptor differs in exactly one byte**, `0x81 0x02` where the
+application reports `0x81 0x06`: the input report is declared Absolute rather than Relative, one bit
+of the HID Input item's flags.
+
+### Field 6 is zero in safe mode, which refutes a claim in section 116
+
+Section 116 gave field 6 its first reading, a platform id, and supported it partly with "the same
+value in a remote's safe mode image as in its application, on arch 12<!--superseded--> and arch 14".
+A live arch 9 remote in safe mode reports **`0x00`** where the same unit reports `0x09` running
+normally.
+
+That is not a small correction, because it removes one of the three legs the platform reading stood
+on. What survives is the other two, `0x0C` on both arch 12 and arch 14 across six images and `0x09`
+against `0x08` on arch 9 and arch 8, and those are the legs that made it a platform rather than an
+architecture.
+
+And the refutation has a shape: **the arch 8 bootloaders also report field 6 as zero**, section 116,
+which that section explained away as "the one role that has no use for a platform constant". Two
+recovery role images out of two now report zero, one of them measured on hardware. So the honest
+reading is narrower than section 116's: field 6 names a platform **in an application image**, and a
+recovery image reports zero. Section 116's arch 12 and arch 14 safe mode figures were read out of the
+images' own constants rather than off a remote, and they disagree with this measurement, which is
+either an architecture difference or a difference between what an image contains and what it answers.
+**Not resolved here**, and it needs an arch 12 or arch 14 remote put into safe mode to settle, which
+the procedure above now makes possible.
+
+### Safe mode is latched, and that is new
+
+The procedure enters it. **A clean power cycle does not leave it**: battery out, a minute's wait,
+battery back in with no key held, and the 525 came up in safe mode again. So it is not a live key
+test whose effect ends with the boot that read it; something non-volatile is holding it.
+
+Where is not established. The 525's bootloader carries EEPROM read and write primitives at `0x00130`
+and `0x00150`, block routines taking their base address from `0x422`, so internal EEPROM is the
+obvious candidate and the callers have not been traced. What the mode is waiting for is presumably a
+completed firmware transfer, which is what the instruction sheet has the reader do next, and this
+project will not be the one to try that: it is a write.
+
+**Reads work in safe mode**, which is worth recording for the application. `READ_FLASH` answers, and
+at flash `0x820000` it returns this unit's ordinary user config, `AHCM` with `end_addr 0x0002C7F7` and
+format `0x1400`. So a config can be read off a remote in safe mode, and a recovery tool can identify
+what it is looking at before doing anything. `GET_VERSION` is **flaky** here in a way it is not
+normally: `probe.ts` gave up after three polls of 2000 ms, and `read-window.ts`, which retries four
+times, got a reply. The retry loop was added for an idle remote on 9 August 2026 and it earned itself
+again.
+
+### A bug in this project's own tooling, which only this state could expose
+
+`read-window.ts` read the version block, printed it, and then **threw the architecture away**: the
+region validator fell back to `DEFAULT_REGION_ARCHITECTURE`, which is 12, so a legitimate read of a
+525's flash was refused with a message naming an architecture the remote had just contradicted in the
+line above. The only way through was to repeat by hand what the remote had already said.
+
+Two reasons it survived: the refusal is in the **safe** direction, so nothing broke, and the bench
+habit is to read arch 12 and arch 14, where the default happens to be right for half of them.
+
+Fixed by putting the derivation where it belongs. `architectureFromVersion` and
+`softwareTypeFromVersion` are in `protocol.ts` next to the field constants, so field 4's two nibbles
+are decoded in one place rather than shifted by hand at each call site, and `HarmonyRemote.useArchitecture`
+**narrows only**: it adopts what the remote states when the caller supplied nothing, and a caller who
+pinned an architecture that disagrees gets a refusal rather than a silent override. The write rails
+are untouched, because `ARCHITECTURES_WITH_A_WRITE_TARGET` is consulted separately and is `[12]`, so
+learning that a remote is arch 9 cannot make it writable.
 
 ### One thing he suggests that is already done
 

@@ -25,7 +25,14 @@
  * so the version exchange goes first and its failure is reported as the remote not answering
  * rather than as an empty window.
  */
-import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
+import {
+  HarmonyRemote,
+  SOFTWARE_TYPE_SAFE_MODE,
+  architectureFromVersion,
+  listHarmony,
+  openHarmony,
+  softwareTypeFromVersion,
+} from '../src/index.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -110,6 +117,23 @@ try {
   }
   if (version === undefined) fail(`the remote is not answering: ${lastError}`);
   process.stdout.write(`version   ${hex(version)}\n`);
+
+  // The remote has just stated its own architecture and its own software type. Use them, rather
+  // than letting the region validator fall back to arch 12 with the answer sitting right here:
+  // that refused a legitimate 525 read while printing a reply that said 9. Section 118.
+  const stated = architectureFromVersion(version);
+  const software = softwareTypeFromVersion(version);
+  if (software === SOFTWARE_TYPE_SAFE_MODE) {
+    process.stdout.write('          this remote is in SAFE MODE (software type 4)\n');
+  }
+  if (architecture === undefined && stated !== undefined) {
+    process.stdout.write(`          using architecture ${stated}, as the remote states it\n`);
+    remote.useArchitecture(stated);
+  } else if (architecture !== undefined && stated !== undefined && stated !== architecture) {
+    // A disagreement is worth stopping for: one of the two is wrong about which address rule
+    // applies, and guessing which would be exactly the silent wrong answer this tool exists to avoid.
+    fail(`--architecture ${architecture} but the remote states ${stated}`);
+  }
 
   const first = await remote.readFlash(address, count);
   process.stdout.write(`0x${address.toString(16).padStart(6, '0')}  ${hex(first)}  |${ascii(first)}|\n`);

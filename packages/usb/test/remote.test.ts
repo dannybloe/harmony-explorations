@@ -16,9 +16,12 @@ import {
   MISC_RAM,
   READ_FLASH,
   RemoteError,
+  SOFTWARE_TYPE_SAFE_MODE,
+  architectureFromVersion,
   decodeReply,
   isHarmony,
   skinId,
+  softwareTypeFromVersion,
   transportOver,
   type Transport,
 } from '../src/index.ts';
@@ -392,4 +395,44 @@ test('the refusal covers arch 9, where internal memory is at plain low addresses
   // there: an arch 12 remote reads its config from below 0x200000 in chunks much larger than 62.
   const other = new HarmonyRemote(scriptedRemote([], 0).transport, { timeoutMs: 1 });
   await assert.rejects(() => other.readFlash(0x000000, 63), /flash read returned 0 of 63/);
+});
+
+test('field 4 decodes into an architecture and a software type, in one place', () => {
+  // Section 118, and the values are measurements. The 525 answered 0x90 running normally on
+  // 8 August 2026 and 0x94 in safe mode on 11 August, same unit, same field.
+  const normal = new Uint8Array([0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09]);
+  const safe = new Uint8Array([0x20, 0x25, 0x12, 0xff, 0x94, 0x16, 0x00]);
+  assert.equal(architectureFromVersion(normal), 9);
+  assert.equal(softwareTypeFromVersion(normal), 0);
+  assert.equal(architectureFromVersion(safe), 9);
+  assert.equal(softwareTypeFromVersion(safe), SOFTWARE_TYPE_SAFE_MODE);
+  // The architecture is the same in both, which is the point: safe mode changes the type nibble
+  // and not the hardware, so a tool must not conclude a different remote.
+  assert.equal(architectureFromVersion(normal), architectureFromVersion(safe));
+});
+
+test('a version block too short to hold field 4 yields undefined rather than zero', () => {
+  // Undefined, not 0, because 0 is a real software type meaning the application is running. A
+  // truncated reply that reported "application on architecture 0" would be a plausible wrong answer.
+  assert.equal(architectureFromVersion(new Uint8Array([0x30, 0x25])), undefined);
+  assert.equal(softwareTypeFromVersion(new Uint8Array([])), undefined);
+});
+
+test('useArchitecture narrows and never overrides what a caller pinned', async () => {
+  // The rail on the fix: adopting the remote's own answer must not let it contradict a caller who
+  // deliberately pinned one, since the caller may be testing exactly that refusal. Asserted through
+  // readFlash because the region rule has no other entry point, and 0x82 is arch 9's flash window
+  // and outside arch 12's whole address space, so the two answers cannot be confused.
+  const pinned = new HarmonyRemote(scriptedRemote([], 0).transport, {
+    architecture: 12,
+    timeoutMs: 1,
+  });
+  pinned.useArchitecture(9);
+  await assert.rejects(() => pinned.readFlash(0x820000, 16), /architecture 12/);
+
+  // With nothing pinned, the remote's own answer is adopted and the read reaches the wire, which is
+  // the case that was refused on a real 525 in safe mode before section 118.
+  const learned = new HarmonyRemote(scriptedRemote([], 0).transport, { timeoutMs: 1, idlePolls: 1 });
+  learned.useArchitecture(9);
+  await assert.rejects(() => learned.readFlash(0x820000, 16), /returned 0 of 16 bytes/);
 });

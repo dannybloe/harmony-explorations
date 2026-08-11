@@ -388,6 +388,43 @@ export const VERSION_NIBBLE_LONG = 8;
  */
 export const VERSION_FIELD_COUNT_MIN = 7;
 
+/**
+ * Field 4 carries the architecture in its high nibble and the software type in its low one.
+ *
+ * `docs/findings.md` sections 87 and 116. The software type is Logitech's own word and their own
+ * values: 0 application, 1 test mode, 3 boot mode, 4 safe mode.
+ */
+export const VERSION_FIELD_ARCH_AND_TYPE = 4;
+/** Software type 4, which a remote in safe mode reports. Measured on a 525, section 118. */
+export const SOFTWARE_TYPE_SAFE_MODE = 4;
+
+/**
+ * The architecture a remote states in its own version block, or undefined if the block is too short.
+ *
+ * **This exists because the tools were reading the version block, printing the architecture, and
+ * then throwing it away.** `read-window.ts` defaulted the region validator to arch 12 while holding
+ * a reply that said 9, so a legitimate read of a 525's flash was refused with a message naming the
+ * wrong architecture, and the only way through was to repeat by hand what the remote had just said.
+ * Found on a Harmony 525 in safe mode, section 118. The refusal was in the safe direction, which is
+ * why nothing caught it sooner.
+ */
+export function architectureFromVersion(fields: Uint8Array): number | undefined {
+  const byte = fields[VERSION_FIELD_ARCH_AND_TYPE];
+  return byte === undefined ? undefined : byte >> 4;
+}
+
+/**
+ * The software type from the same field: 0 in normal operation, 4 in safe mode.
+ *
+ * Worth having separately from the architecture because a caller that reads flash needs the first
+ * and a caller reporting on a remote's state needs the second, and one of them used to be a
+ * hand written nibble shift at the call site.
+ */
+export function softwareTypeFromVersion(fields: Uint8Array): number | undefined {
+  const byte = fields[VERSION_FIELD_ARCH_AND_TYPE];
+  return byte === undefined ? undefined : byte & 0x0f;
+}
+
 export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
   | { kind: 'misc'; selector: number; value: number }

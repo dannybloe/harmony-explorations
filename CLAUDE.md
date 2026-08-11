@@ -876,8 +876,8 @@ produce a config the remote accepts and mishandles.
   what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
   **Field 6 has a reading now and it is unconfirmed rather than absent**, section 116: it names a
   **platform**, not an architecture, and arch 12 and arch 14 are one platform under it. `0x0C` on both
-  of those across six images, `0x09` on arch 9, `0x08` on arch 8, and the same value in a remote's safe
-  mode image as in its application. Everything else already grouped those two: same MCU family, same
+  of those across six images, `0x09` on arch 9, `0x08` on arch 8. **For an application image only**,
+  section 118: a live 525 in safe mode reports `0x00`, as the arch 8 bootloaders do. Everything else already grouped those two: same MCU family, same
   `GSPM` cookie, and Logitech's own platform table calls arch 12 the Gin family. What moved it was the
   population going from four images to eleven; four could not tell "equals the architecture, except
   once" from "equals the platform, always". The `bcdDevice` high byte has the same shape and different

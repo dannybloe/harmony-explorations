@@ -1368,10 +1368,11 @@ to settle, and a list that only ever grows is not a status.
   addresses the accessors state outright. Only **field 6** has no reading, and only **field 9's
   accessor** is located without explaining its value. **Field 6 has a reading now**, section 116, and
   it is unconfirmed rather than absent: it names a **platform** and not an architecture. `0x0C` on
-  arch 12 and arch 14 alike across six images, `0x09` on arch 9, `0x08` on arch 8, and the same value
-  in a remote's safe mode image as in its application. What moved it was the population going from
-  four images to eleven, which is what separates "equals the architecture, except once" from "equals
-  the platform, always". The `bcdDevice` high byte has the same shape and different values, so the two
+  arch 12 and arch 14 alike across six images, `0x09` on arch 9, `0x08` on arch 8. What moved it was the
+  population going from four images to eleven, which is what separates "equals the architecture,
+  except once" from "equals the platform, always". **A third leg fell away**, section 118: a live 525
+  in safe mode reports field 6 as `0x00`, so a recovery role image answers zero and the reading holds
+  for an application image only. The `bcdDevice` high byte has the same shape and different values, so the two
   are not one variable.
 
 ### The Harmony One drops its first command, sometimes

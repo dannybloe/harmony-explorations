@@ -340,7 +340,7 @@ summary is a copy of a fact with no test.
 Most of it is still offline analysis of files, so most of it is independently checkable, and it
 should be checked. The write-ups show their verification method rather than only their conclusions,
 and they record the places where earlier conclusions were wrong and got corrected, on purpose, so
-the rest can be calibrated against them. Thirty nine so far, all documented in
+the rest can be calibrated against them. Forty so far, all documented in
 [docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
 described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
 are nested inside the GSPM layer. That advised people away from reusable work. One is instructive

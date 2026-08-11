@@ -69,13 +69,28 @@ export class HarmonyRemote {
   private readonly transport: Transport;
   private readonly timeoutMs: number;
   private readonly idlePolls: number;
-  private readonly architecture: number | undefined;
+  private architecture: number | undefined;
 
   constructor(transport: Transport, options: RemoteOptions = {}) {
     this.transport = transport;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.idlePolls = options.idlePolls ?? DEFAULT_IDLE_POLLS;
     this.architecture = options.architecture;
+  }
+
+  /**
+   * Adopt the architecture the remote itself stated, once its version block has been read.
+   *
+   * Narrows rather than overrides: it refuses to change an architecture the caller supplied, so a
+   * script that pinned one keeps it and a caller that pinned the wrong one still gets the refusal
+   * it asked for. It exists because the address rule has to come from somewhere and the remote's
+   * own answer is the best source available, section 118.
+   *
+   * **This does not touch the write rails.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is consulted
+   * separately and is `[12]`, so learning that a remote is arch 9 cannot make it writable.
+   */
+  useArchitecture(architecture: number): void {
+    if (this.architecture === undefined) this.architecture = architecture;
   }
 
   async close(): Promise<void> {
