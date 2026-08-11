@@ -405,6 +405,9 @@ tests/                          one regression test per documented finding
 reference/checksums.md          provenance, load addresses, public sample checksums
 reference/superseded.md         claims a finding killed, which no document may restate
 reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
+reference/capabilities.md       what each model's hardware can do, per skin, with a verification
+                                column. Third party and unconfirmed except where that column says
+                                otherwise, and `packages/usb/src/models.ts` is the executable form
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
@@ -422,7 +425,9 @@ packages/codec/                 TS: the one config codec, container through comp
                                 trip and a save differ. src/text.ts reads the screen's text, with
                                 src/alphabets.ts generated from the seeds in bin/alphabets.ts
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
-packages/usb/                   TS: the command protocol and the write rails, read path measured
+packages/usb/                   TS: the command protocol and the write rails, read path measured,
+                                plus src/models.ts, which turns the skin a remote reports into a
+                                model and its hardware capabilities
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
 packages/bench/                 TS: the bench instrument, a server plus a page in web/
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
@@ -1015,9 +1020,22 @@ seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets
 
 **What is not settled is which activity a drawn name belongs to**, and two routes are ruled out: no
 screen switch reads the `CurrentActivityState` variable index, and base slot 14's value maps point at
-targets that draw no text. What is left to try is the touch map, base slot 17 to a key code to a
-binding to the action list that writes the activity number. Until that lands an interface can list
-the names and cannot say which entry starts which activity.
+targets that draw no text. Until it lands an interface can list the names and cannot say which entry
+starts which activity.
+
+**The route is the soft keys and not the touch map**, which is a correction the owner made on
+11 August 2026: this file proposed base slot 17 to a key code to a binding, and slot 17 is a touch hit
+map on arch 12 only. A 525 has no touch panel, it has four buttons flanking four screen zones, so the
+zone to key code step is fixed in hardware and there is nothing to calibrate. **Scouted, not yet a
+finding**: the four soft keys are the only key tags whose bindings vary per mode page, tags 158, 159,
+166 and 167, which under section 89's split are event type `0x80` with scan codes 30, 31, 38 and 39,
+a two by two block of columns 6 and 7 in groups 3 and 4. Their bindings are three opcodes in both 525
+configs: `0x7F` runs a base slot 10 action list, 153 and 79 times; `0x7E` enters a base slot 6 mode, 57
+and 18 times; and `0x72` maps a state variable through base slot 14, exactly 6 times in each
+regardless of config size. So the remaining step is to walk the `0x7F` lists for a write to the
+variable base slot 0 calls `CurrentActivityState`. The `0x7E` count also explains something the
+capability table states independently, that the 5xx has no page button: paging is a soft key binding
+there.
 
 Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
 both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so

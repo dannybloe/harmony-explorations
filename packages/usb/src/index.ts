@@ -12,3 +12,4 @@ export * from './protocol.ts';
 export * from './rails.ts';
 export * from './transport.ts';
 export * from './remote.ts';
+export * from './models.ts';
