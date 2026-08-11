@@ -1,8 +1,8 @@
 # Working brief
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
-Read `README.md` first for orientation, then `docs/roadmap.md` for the sequence and
-`docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
+Read `README.md` first for orientation, then `docs/status.md` for where the work stands,
+`docs/roadmap.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
 use, and says per term whether it is Logitech's word, this project's invention or a standard one,
 which is a distinction the other documents assume rather than state.
 
@@ -383,7 +383,10 @@ All current documents report zero.
 ## Where things go
 
 ```
-README.md                       front page: status, headline findings, quickstart
+README.md                       front page: what this is, where to read, how to contribute a dump.
+                                Kept short on purpose; the status content moved to docs/status.md
+docs/status.md                  where the work stands: what reads, what the corpus holds per
+                                architecture, the headline findings. A snapshot, not the plan
 docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track
@@ -803,7 +806,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 119 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 121 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

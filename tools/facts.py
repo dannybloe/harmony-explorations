@@ -190,6 +190,48 @@ def text_facts():
     return found
 
 
+def contribution_facts():
+    """What the corpus holds, per architecture, for the table in `README.md`.
+
+    **Through `tools/corpus.py`'s own scan rather than a second walk of the dumps directory.** The
+    front page invites strangers to contribute against these numbers, so a stale count is a worse
+    failure here than anywhere else in the documents: it asks for something already held, or fails to
+    ask for the one thing missing.
+    """
+    sys.path.insert(0, os.path.join(ROOT, 'tools'))
+    try:
+        import corpus
+    except ImportError:
+        return {}
+    lab = os.environ.get('HARMONY_LAB') or os.path.join(ROOT, '..', 'lab')
+    if not os.path.isdir(lab):
+        return {}
+    dumps = corpus.scan(lab)
+    if not dumps:
+        return {}
+    # Strings, not ints: every other producer here hands back the text it read, and the checker
+    # compares without coercing. An int passes `--list` and fails the check with a message that says
+    # a number differs from itself.
+    found = {
+        'corpus_dumps': str(len(dumps)),
+        'corpus_configs': str(sum(d['configs'] for d in dumps)),
+        'corpus_contributors': str(len({d['contributor'] for d in dumps})),
+    }
+    per_architecture = {}
+    for d in dumps:
+        arch = (d.get('device') or {}).get('arch')
+        if arch is None:
+            continue
+        seen = per_architecture.setdefault(str(arch), {'dumps': 0, 'configs': 0})
+        seen['dumps'] += 1
+        seen['configs'] += d['configs']
+    for arch, seen in per_architecture.items():
+        found['corpus_arch%s_dumps' % arch] = str(seen['dumps'])
+        found['corpus_arch%s_configs' % arch] = str(seen['configs'])
+    found['corpus_architectures'] = str(len(per_architecture))
+    return found
+
+
 def corpus_facts():
     """The totals the documents quote, computed over the corpus the tests use."""
     import lab
@@ -355,6 +397,7 @@ def rel(path):
 def main():
     write = '--write' in sys.argv[1:]
     facts = {}
+    facts.update(contribution_facts())
     facts.update(corpus_facts())
     facts.update(coverage_facts())
     facts.update(emit_facts())
