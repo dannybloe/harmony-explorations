@@ -671,3 +671,286 @@ class TestTheArch9DisplayControllerIsST7565Class(unittest.TestCase):
         self.assertEqual(ins.fields['k'], 0x89)
         self.assertNotIn(0x89, self.ST7565_ONLY)
         self.assertNotIn(0x89, self.SSD1306_ONLY)
+
+
+class TestScreenProgramPopulations(unittest.TestCase):
+    """Section 118: a count with no population attached, and what each population holds.
+
+    Section 101 explained a discrepancy by naming base slot 11, which carries no opcode 22 at all.
+    These tests pin each population separately, because the error was possible only while the
+    figures floated free of the code that produced them.
+    """
+
+    ARCH9 = ('h525_config', 'h525_config_2', 'h525_safemode_ahcm')
+
+    def containers(self):
+        lab.require(*self.ARCH9)
+        return [(n, gspm.parse(lab.load(n))) for n in self.ARCH9]
+
+    def count(self, container, addresses, opcode):
+        total = 0
+        for address in addresses:
+            for instruction in container.screen_program(address) or []:
+                total += instruction.opcode == opcode
+        return total
+
+    def test_base_slot_11_holds_no_screen_draw_at_all(self):
+        """The claim section 101 got wrong, asserted as the negative it is."""
+        for name, c in self.containers():
+            with self.subTest(sample=name):
+                slot = gspm.arch_slot(c.architecture, gspm.SCREEN_TABLE_SLOT)
+                addresses = c.pointer_array(slot) or []
+                self.assertTrue(addresses)
+                opcodes = set()
+                for address in addresses:
+                    opcodes |= {i.opcode for i in c.screen_program(address) or []}
+                # An end, a queued action list instruction, and in the safe mode container a
+                # switch. **No drawing opcode of any kind**, which is the claim: these programs
+                # queue work and branch, they do not put pixels on the panel. Asserted as a set
+                # difference rather than an equality, because the exact set is per container and
+                # an equality here would fail on the next sample without meaning anything.
+                self.assertEqual(opcodes - {gspm.SCREEN_END, gspm.SCREEN_QUEUE_INSTRUCTION,
+                                            gspm.SCREEN_SWITCH_NARROW, gspm.SCREEN_SWITCH_WIDE},
+                                 set())
+                for drawing in (2, 3, 4, 5, gspm.SCREEN_CALL):
+                    self.assertEqual(self.count(c, addresses, drawing), 0)
+
+    def test_every_mode_record_root_is_also_a_page_program(self):
+        """
+        The mechanism behind the double count, and the reason the total is not the sum of its
+        populations. Address identity, which holds on all three, rather than a product of counts.
+        """
+        for name, c in self.containers():
+            with self.subTest(sample=name):
+                pages = {p.program for p in c.mode_pages()}
+                roots = c.mode_program_roots()
+                self.assertTrue(roots)
+                self.assertTrue(set(roots) <= pages)
+
+    def test_the_product_of_counts_is_a_coincidence_the_safe_mode_container_breaks(self):
+        """
+        `records * 8` matches on the two user configs and not on the safe mode container, which
+        holds one page program drawing four rows instead of eight. Asserted so that nobody
+        reintroduces the arithmetic as the explanation.
+        """
+        lab.require(*self.ARCH9)
+        for name in ('h525_config', 'h525_config_2'):
+            with self.subTest(sample=name):
+                c = gspm.parse(lab.load(name))
+                roots = c.mode_program_roots()
+                self.assertEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots))
+        c = gspm.parse(lab.load('h525_safemode_ahcm'))
+        roots = c.mode_program_roots()
+        self.assertNotEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots))
+        self.assertEqual(self.count(c, roots, gspm.SCREEN_CALL), 8 * len(roots) - 4)
+
+    def test_the_reachable_walk_deduplicates_and_the_naive_one_does_not(self):
+        """Where 1992 came from. The deduplicated figure is the one a document may quote."""
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        programs, failed = c.reachable_screen_programs()
+        self.assertEqual(failed, [])
+        deduped = sum(i.opcode == gspm.SCREEN_CALL
+                      for prog in programs.values() for i in prog)
+        roots = c.screen_program_roots()
+        naive = self.count(c, roots, gspm.SCREEN_CALL)
+        self.assertEqual(deduped, 1080)
+        self.assertEqual(naive, 1992)
+        self.assertGreater(len(roots), len(set(roots)))
+
+
+class TestScreenOpcode3IsDestinationFirst(unittest.TestCase):
+    """Section 118. The order is settled by the page opcode 22 selected, not by the layout.
+
+    trelowney's lead, verified here against this project's own configs, and given a closure his
+    typographic argument does not need: a transfer cannot reach a page that is not selected.
+    """
+
+    DRAW = 3
+    ASYMMETRIC = (0, 12, 0, 0, 96, 1)
+
+    def draws(self, c):
+        """Every opcode 3, with the page selected when it runs."""
+        out = []
+        programs, _ = c.reachable_screen_programs()
+        for _, program in sorted(programs.items()):
+            page = None
+            for instruction in program:
+                if instruction.opcode == gspm.SCREEN_CALL and instruction.operands:
+                    page = instruction.operands[0]
+                elif instruction.opcode == self.DRAW and len(instruction.operands) >= 6:
+                    out.append((page, list(instruction.operands)))
+        return out
+
+    def test_the_asymmetric_draws_are_one_shape_naming_one_picture(self):
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        draws = self.draws(c)
+        asymmetric = [o for _, o in draws if tuple(o[0:2]) != tuple(o[2:4])]
+        self.assertEqual(len(draws), 1114)
+        self.assertEqual(len(asymmetric), 34)
+        self.assertEqual({tuple(o[0:6]) for o in asymmetric}, {self.ASYMMETRIC})
+        pictures = {int.from_bytes(bytes(o[6:9]), 'little') for o in asymmetric}
+        self.assertEqual(len(pictures), 1)
+        # A 96 by 64 bitmap, so a rule is one row off the top of a full screen of solid ink.
+        picture = c.bitmap_at(pictures.pop())
+        self.assertEqual((picture.stride, picture.rows), (96, 64))
+
+    def test_the_first_pair_is_the_one_inside_the_selected_page(self):
+        """
+        The closure. A page holds rows `8 * page` to `8 * page + 7` and a transfer cannot reach
+        outside it, so whichever pair lands inside is the destination. 55 of 55 against 0 of 55.
+        """
+        lab.require('h525_config', 'h525_config_2')
+        first = second = total = 0
+        for name in ('h525_config', 'h525_config_2'):
+            c = gspm.parse(lab.load(name))
+            for page, operands in self.draws(c):
+                if page is None or tuple(operands[0:2]) == tuple(operands[2:4]):
+                    continue
+                total += 1
+                low, high, height = page * 8, page * 8 + 7, operands[5]
+                first += low <= operands[1] and operands[1] + height - 1 <= high
+                second += low <= operands[3] and operands[3] + height - 1 <= high
+        self.assertEqual(total, 55)
+        self.assertEqual(first, 55)
+        self.assertEqual(second, 0)
+
+    def test_the_symmetric_draws_are_the_calibration_case(self):
+        """
+        A test that only fires on the disputed instructions proves nothing about the rule. Every
+        symmetric draw lands inside its own selected page too, which is the case whose answer was
+        never in doubt.
+        """
+        lab.require('h525_config')
+        c = gspm.parse(lab.load('h525_config'))
+        inside = total = 0
+        for page, operands in self.draws(c):
+            if page is None or tuple(operands[0:2]) != tuple(operands[2:4]):
+                continue
+            total += 1
+            low, high = page * 8, page * 8 + 7
+            inside += low <= operands[1] and operands[1] + operands[5] - 1 <= high
+        self.assertEqual(total, 1080)
+        self.assertEqual(inside, 1080)
+
+
+class TestAConfigCannotChooseWhereItWrites(unittest.TestCase):
+    """Section 118, against the caveat that a config could write to arbitrary flash.
+
+    The path is real and section 108 read it. These tests pin the two things that bound it, so a
+    later change to either is visible: the write routine's own refusals, and the fact that the one
+    architecture whose firmware shares flash with its config does not implement the opcodes.
+    """
+
+    ARCH14, ARCH14_BASE = 'h700_code', 0x9000
+    ARCH12, ARCH12_BASE = 'one34_code', 0x020000
+    APPEND = 0x159F4          # what opcodes 0x65 and 0x66 reach
+    OUT_OF_RANGE = 0x15BDE    # where the bounds test sends an address it will not write
+
+    def test_the_append_routine_refuses_before_it_writes(self):
+        """
+        Five zero tests and two range tests, every one of them ending in a RETURN rather than in a
+        send. Asserted by counting the refusals, because the claim is that the routine cannot be
+        entered with a bad region and proceed anyway.
+        """
+        lab.require(self.ARCH14)
+        code = lab.load(self.ARCH14)
+        returns = 0
+        for addr in range(self.APPEND, self.APPEND + 0x90, 2):
+            ins = isa.decode(code, addr - self.ARCH14_BASE, self.ARCH14_BASE)
+            if ins is not None and ins.mnemonic == 'RETURN':
+                returns += 1
+        self.assertGreaterEqual(returns, 5)
+        # And the out of range arm returns too, rather than clamping and carrying on.
+        tail = [isa.decode(code, a - self.ARCH14_BASE, self.ARCH14_BASE)
+                for a in range(self.OUT_OF_RANGE, self.OUT_OF_RANGE + 0x1A, 2)]
+        self.assertTrue(any(i is not None and i.mnemonic == 'RETURN' for i in tail))
+
+    def test_arch_12_implements_none_of_the_flash_writing_opcodes(self):
+        """
+        The structural half, and the one that matters for the write rails: arch 12 is where firmware
+        and config share one mapped NOR, and its dispatcher sends every opcode in 0x65 to 0x6E to
+        the common exit. Section 107 read the ladder; this asserts the consequence.
+        """
+        lab.require(self.ARCH12)
+        c12 = [gspm.parse(lab.load(n)) for n in ('one_config', 'one_config_unprogrammed')
+               if lab.path(n)]
+        self.assertTrue(c12)
+        for container in c12:
+            lists = container.action_lists() or []
+            self.assertTrue(lists)
+            used = {i.opcode for l in lists for i in l}
+            # No arch 12 config emits one, which is the corpus agreeing with the firmware.
+            self.assertEqual(used & {0x65, 0x66}, set())
+
+    def test_no_config_in_the_corpus_writes_to_flash(self):
+        """The corpus wide negative, across every architecture, so a new sample that does stands out."""
+        lab.require(*lab.CONTAINERS)
+        for name in lab.CONTAINERS:
+            with self.subTest(sample=name):
+                container = gspm.parse(lab.load(name))
+                used = {i.opcode for l in container.action_lists() or [] for i in l}
+                self.assertEqual(used & {0x65, 0x66}, set())
+
+
+class TestTheArch12BootloaderDoesNotTestAKey(unittest.TestCase):
+    """Section 118. The safe mode trigger is a cold boot key hold, and it is not in the bootloader.
+
+    A negative result, asserted because it is the half that is measured. The procedure itself comes
+    from a third party repair sheet and is deliberately **not** asserted here: a published
+    instruction is not a property of this image, and confirming it needs the remote.
+    """
+
+    PORTS = frozenset({0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86})
+    READS = ('BTFSS', 'BTFSC', 'MOVF')
+    BOOTLOADER_END = 0x1000
+
+    def port_access(self, code, low, high, reads_only):
+        out = []
+        for off in range(low, min(high, len(code) - 1), 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None or ins.fields.get('a') != 0:
+                continue
+            if ins.fields.get('f') not in self.PORTS:
+                continue
+            if reads_only and ins.mnemonic not in self.READS:
+                continue
+            out.append((off, ins.mnemonic))
+        return out
+
+    def test_the_bootloader_reads_no_port_at_all(self):
+        """
+        So the key cannot be tested there. Both halves asserted: no reads, and writes present, since
+        "no reads" from a scan that finds nothing at all would prove only that the scan is broken.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        self.assertEqual(self.port_access(code, 0, self.BOOTLOADER_END, True), [])
+        writes = self.port_access(code, 0, self.BOOTLOADER_END, False)
+        self.assertGreaterEqual(len(writes), 10)
+
+    def test_the_safe_mode_image_does_read_the_matrix(self):
+        """The positive control for the scan, and consistent with a mode that answers buttons."""
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        reads = self.port_access(code, self.BOOTLOADER_END, 0x8000, True)
+        self.assertGreaterEqual(len(reads), 10)
+
+    def test_no_literal_config_base_reaches_the_table_pointer(self):
+        """
+        The remaining thread, recorded as a measurement: the config base arrives in a variable, so
+        neither container address appears as a literal into TBLPTRU. Zero sites, which is why the
+        obvious search for the safe mode container's address finds nothing.
+        """
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        base, tblptru, sites = 0x020000, 0xFF8, 0
+        for off in range(0, len(code) - 3, 2):
+            a = isa.decode(code, off, base)
+            b = isa.decode(code, off + 2, base)
+            if a is None or b is None:
+                continue
+            if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields.get('f') == tblptru:
+                sites += 1
+        self.assertEqual(sites, 0)

@@ -249,6 +249,22 @@ document:
   internal `0xFE+0x1000`, which verifies its own checksum and was first read in August 2026. A rail
   that says "restore from the safe dump" would have restored the wrong thing on arch 14.
   The hardwired reset key combination at `0x19120` is the other path.
+  **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
+  pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
+  no config, no host and no USB command, which is why searching the running firmware for it failed.
+  The source is a third party repair business rather than Logitech, so it is a hypothesis of the same
+  standing as an upstream finding, and **the cheap confirmation is read only hardware on the spare
+  One** rather than more firmware reading. Firmware side, narrowed not closed: the arch 12 internal
+  bootloader has **zero** port reads so it does not test the key, the safe mode image does read the
+  matrix, and the config base reaches `TBLPTRU` from a variable with no literal anywhere.
+* **A config cannot choose where the remote writes**, section 118, which is the measured answer to the
+  caveat that a config might make the runtime write to arbitrary flash including firmware. The path is
+  real, action list opcodes `0x65` and `0x66`, and section 108 read it. It is bounded three ways, all
+  in the firmware: five zero tests and two range tests that return rather than write, and a region the
+  firmware computes rather than the config declaring it. The structural half is stronger than the
+  bounds: **arch 14 writes over SPI to a chip its firmware does not live on, and arch 12, whose
+  firmware does share the mapped NOR with its config, implements neither opcode.** Scoped to three
+  architectures and to the action list language, and no config in the corpus emits either opcode.
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes an arbitrary byte
   into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
   emulator. Volatile, so it cannot brick anything, but it is still a write to a live device and

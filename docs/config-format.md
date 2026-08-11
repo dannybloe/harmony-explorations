@@ -605,7 +605,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 0 | none | end |
 | 1 | 4 bytes, `u16` | repeat a primitive |
 | 2 | 2 position bytes, `u24` | draw the **bitmap** at that address, below |
-| 3 | 6 bytes, `u24` | the same with a larger position record |
+| 3 | 6 bytes, `u24` | the same with **destination, source, size**, below |
 | 4 | 2 position bytes, `u24` | draw the glyph string at that address |
 | 5 | 2 position bytes, then the string | draw the glyph string inline |
 | 16 | 1 byte | index base slot 7 by it |
@@ -615,6 +615,21 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
 | 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
+
+**Opcode 3's six position bytes are `dx, dy, sx, sy, w, h`, destination first.** Section 118. The
+order cannot be read off most of them: 1080 of the 1114 in `h525_config` carry the same pair twice,
+which is a full page strip copied to where it already sits. The 34 that differ are all
+`(0, 12, 0, 0, 96, 1)`, a one pixel rule, and they settle it two ways:
+
+* **The selected page contains the first pair and not the second**, on 55 of 55 across both arch 9
+  user configs and 0 of 55 the other way. Opcode 22 has just selected page 1, rows 8 to 15, and a
+  destination of `y = 0` is not in it. The 1080 symmetric draws are the calibration: all of them
+  land inside their own selected page too.
+* Typographically the rule sits between a title at `y = 0` and text at `y = 13`, which is where a
+  heading rule belongs and where `y = 12` puts it.
+
+The source is `(0, 0)` of a 96 by 64 solid ink bitmap, so a rule is one row taken off the top of a
+filled rectangle. Reading the pairs the other way round draws all 34 along the top edge.
 
 **Opcode 22 is the one opcode whose operand width is not the same everywhere**, so a parser has to
 know the architecture before it can walk past one.

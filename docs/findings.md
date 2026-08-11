@@ -49,8 +49,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Thirty eight have been found and corrected so far. **The newest is in section 117 and it is the
-oldest error in the project**: the container's flash base was recovered from the end marker's
+Thirty nine have been found and corrected so far. **The newest is in section 118**, and it is the
+cheapest kind to make: a number quoted with no population attached. Section 101 explained 1992 opcode
+22s against 1080 by naming a section that turns out to contain no opcode 22 at all, and the figure
+came from a one off script that walked the roots without deduplicating them. It went into a document
+because it agreed with what somebody expected. The check that would have caught it is the one this
+project already runs on every corpus total: recompute it from the code.
+
+Before that, section 117, which is the
+oldest error in the project: the container's flash base was recovered from the end marker's
 position, and the check that was supposed to validate it re-derived its own premise, so no input
 could ever fail it. It was right on 23 of 24 containers and silently wrong on the 24th, where it
 displaced every pointer by 864 bytes without anything reporting a problem. Sections 113 to 116 all
@@ -12760,10 +12767,14 @@ sweep was of the numbers, not of the words beside them.
 
 **And two counts that look contradictory are not.** Section 85 gives 1080 opcode 22s for
 `h525_config` and the table above gives 1992. The populations differ: 1080 is the mode pages, eight
-per page across 135 pages, and the remaining 912 sit in programs base slot 11 addresses directly. Both
-are right and neither is complete on its own, so a number quoted from either needs its population
-attached. Worth stating because the earlier superseded figure for this was 912, and a reader meeting
-912, 1080 and 1992 for the same opcode would reasonably conclude that two of them are wrong.
+per page across 135 pages, and the 1992 counts several of those programs twice. Both are right and
+neither is complete on its own, so a number quoted from either needs its population attached.
+
+> **Corrected on 11 August 2026, and the correction is section 118.** This said the remaining 912
+> "sit in programs base slot 11 addresses directly". They do not. Base slot 11 holds<!--superseded-->
+> 22 programs in `h525_config` and between them they contain **two** opcodes, 0 and 17, so there is
+> no opcode 22 in that slot at all. The 912 is the mode records, and it is the same programs counted
+> a second time.
 
 ## 102. Arch 12's `0x3F` band `0xC0` is three fields and three mechanisms, and it is still placement
 
@@ -15010,8 +15021,240 @@ and arch 14 config in the corpus, 11 in every arch 8 config, 12 on arch 9, and 3
 890s. Seven candidate algorithms over the payload were tried and none reproduces any of the 21
 values. `<BINARYDATASIZE>`, in the same header, is exact on all 21.
 
+## 118. A count with no population, and opcode 3's destination comes first
+
+Two corrections and one new field reading, all from trelowney's mail of 10 August 2026, all measured
+here before being believed, per decision 7. The instructive part is that his **observation** is right
+in both cases and his **explanation** is right in one, and separating those took one measurement each.
+
+### The 912 was never base slot 11's
+
+Section 101 explained a discrepancy between 1080 and 1992 opcode 22s in `h525_config` by saying the
+extra 912 "sit in programs base slot 11 addresses directly". His objection: base slot 11 in his 525
+holds 22 programs containing exactly two opcodes, 0 and 17, so there is no opcode 22 in that slot at
+all.
+
+Measured here, on our own 525 config, which is a different remote from his:
+
+| population | addresses | opcodes present | opcode 22 |
+|---|---|---|---|
+| base slot 11 | 22 | **0 and 17 only** | **0** |
+| base slot 14 value map targets | 22 | 0 and 17 only | 0 |
+| mode pages | 135 | 0, 3, 4, 5, 16, 22, 23 | **1080** |
+| mode records | 114 | 0, 3, 4, 5, 16, 22, 23 | **912** |
+
+His count of slot 11 reproduces exactly. So the sentence in section 101 was wrong, and wrong about
+the one population it named.
+
+Where 1992 came from is now plain: 293 roots of which 157 are distinct, walked without
+deduplication. `reachable_screen_programs` dedupes and returns 1080. The number 1992 was produced by
+a one off script that did not, and it went into a document because it agreed with a figure somebody
+was expecting.
+
+### His explanation is a coincidence, and the safe mode container is what shows it
+
+He offers the arithmetic: 114 mode records times eight display rows is 912 exactly, so<!--superseded-->
+every mode's page program is being visited a second time by way of its mode record. The conclusion is
+right. The arithmetic is not the mechanism, and it fails on a third sample:
+
+| sample | mode records | records times 8 | opcode 22 actually reached through them |
+|---|---|---|---|
+| `h525_config` | 114 | 912 | 912 |
+| `h525_config_2` | 75 | 600 | 600 |
+| **`h525_safemode_ahcm`** | 44 | **352** | **348** |
+
+The arch 9 safe mode container holds one page program with **four** opcode 22s where every other
+program in the corpus has eight, so it draws half a screen. That breaks `records * 8` and leaves the
+real mechanism standing: **every mode record root is also a page program address**, 114 of 114, 75 of
+75 and 44 of 44. It is the same programs reached twice, which is what he concluded, established by
+address identity rather than by a product that happens to match.
+
+This is the third time that container has been the counterexample. It broke the font rule in section
+78, it broke the picture width rule in section 85, and it breaks this. **A corpus that agrees with
+itself is the condition every one of those hid in.**
+
+### Opcode 3 is destination, source, size
+
+His second report, and it is a field reading this project had not attempted: opcode 3's six position
+bytes are `dx, dy, sx, sy, w, h`, with the destination first.
+
+Most of them cannot say. In `h525_config`, 1080 of 1114 carry the same pair twice, which is a page
+strip copied to where it already sits, so either order reads the same. Our corpus reproduces his
+figures to the instruction: 1114 total, 1080 symmetric, 34 asymmetric, and all 34 are the same shape
+`(0, 12, 0, 0, 96, 1)` naming the same 96 by 64 solid ink bitmap at `0x032C86`.
+
+His argument is typographic: the rule sits between a title and text at `y = 13`, so 12 is a
+destination and it is the line under a menu heading. Correct, and there is a closure that does not
+depend on reading the layout:
+
+**Opcode 22 has already selected a page, and the destination has to be inside it.** The instruction
+before each of these draws is `22 [1]`, page 1, which is rows 8 to 15. A destination of `y = 12` is
+in that page and a destination of `y = 0` is not, and nothing can be transferred to a page that is
+not selected.
+
+| | first pair inside the selected page | second pair inside it |
+|---|---|---|
+| `h525_config`, 34 asymmetric | **34** | 0 |
+| `h525_config_2`, 21 asymmetric | **21** | 0 |
+| `h525_config`, 1080 symmetric, the calibration | 1080 | 1080 |
+
+55 of 55 against 0 of 55, with the symmetric draws as the calibration case: the test has to pass on
+the instructions whose answer is not in dispute, and it does. So the order is read off the hardware's
+own addressing rather than off the typography, which is the stronger of the two arguments and the one
+this project's standard asks for.
+
+**Nothing in this repository was wrong**, which is worth saying plainly rather than claiming a save:
+`bitmap_reference` takes opcode 3's last three bytes and no reader here has ever consumed the six
+position bytes. His renderer had them swapped and was drawing all 34 rules along the top edge. Ours
+draws nothing at all, so it could not have the bug, and it also could not have found it. That is the
+argument for building the renderer, not against it.
+
+### Glen's caveat about a config writing to arbitrary flash, measured
+
+A separate mail passes on a caveat from the format's original designer: a config could in principle
+contain an instruction sequence that makes the runtime write to arbitrary flash, including firmware
+or the bootloader. Flagged as unverified by everyone who passed it on, and taken seriously here
+because it bears on the write rails.
+
+The premise is right and it is not a hypothesis: **section 108 read that path out of the firmware**.
+Action list opcodes `0x65` and `0x66` feed `0x159F4`, which is a write to the external serial flash
+through a five command SPI vocabulary. So an action list can make a remote write to flash, and no
+config in the corpus does.
+
+What the caveat leaves open is whether the address is the config's to choose, and it is not. Three
+bounds, all in the firmware and none of them in the config:
+
+* `0x159F4` reads five values and **returns without writing** if any of them is zero, which is five
+  separate `RETURN`s before anything is sent.
+* It then compares the region limit at `0xD3D` against both the write cursor and the cursor plus the
+  length, at `0x15A88` and `0x15A98`. Out of range branches to `0x15BDE`, which **updates a variable
+  and returns**, again without writing. That matches section 47's finding that the log area's writer
+  refuses out of range rather than erroring, which was read from the other end.
+* The region itself is computed by `0x15D3A` from the detected chip size and the config's own end,
+  and section 108 already established that **base slot 2's declared reservation does not decide it**.
+  The config cannot move the target because the config is not asked.
+
+So on arch 14 the reachable target is an append region at the top of the serial flash. And the
+structural point is the one worth carrying, because it is not an argument about bounds at all:
+**arch 14 keeps its firmware in internal program memory and its config in a separate SPI serial
+chip.** The write path here speaks SPI to that chip. It cannot reach the firmware because the
+firmware is not on it.
+
+Arch 12 is where firmware and config do share one memory, the mapped parallel NOR, so on the One the
+question would be live. **Opcodes `0x65` and `0x66` do not exist there.** Section 107 read the arch 12
+ladder: every opcode from `0x65` to `0x6E` is tested and branches to the dispatcher's common exit
+doing nothing, and the 525 is the same. So the architecture whose firmware shares flash with its
+config does not implement the instruction, and the architecture that implements it keeps its firmware
+somewhere the instruction cannot address.
+
+**What this does not establish**, stated plainly because the caveat deserves better than a
+reassurance:
+
+* It is three architectures of at least eleven, and only the ones whose firmware is in the lab.
+* It is the reachable path from the **action list** language. The screen language queues action list
+  instructions through opcode 17 and is therefore covered, but a claim that no other route exists is
+  a claim about everything, and this project does not have it.
+* `0x76` remains placement only: it walks an array nothing names, section 108.
+
+The rails do not change and none of them rested on this. Writing stays behind
+`HARMONY_ENABLE_WRITES`, `WRITE_FLASH` stays restricted to the config region, and arch 14 has no
+write target at all because only one arch 14 remote is on the bench.
+
+### How safe mode is entered: the procedure is documented, the mechanism is half read
+
+Written up here twice in one sitting, because the first version said safe mode is a mode this
+project can read and cannot enter. **There is a published procedure**, and finding it changed the
+question from "how is it triggered" to "where in the firmware is that trigger".
+
+The procedure, from harmonyremoterepair.com's own instruction sheet, which is the archive
+`reference/checksums.md` already cites for firmware packages:
+
+1. charge the remote in its cradle, because the step below needs a charged battery;
+2. remove the battery and wait at least a minute;
+3. press and **hold** the Off button at the top of the remote;
+4. keeping it held, **insert the battery**;
+5. hold for up to 30 seconds, until the splash screen reads "Safe Mode".
+
+**It is a cold boot key test**, and that is why the searches in the first draft of this section
+looked in the wrong place. Nothing about it involves the config, the host, or a command over USB: the
+key is already down when power arrives. The sheet also notes that a remote with a blank or white
+display may show no message and still be in safe mode, which matters to anyone verifying it.
+
+Source quality, stated because it decides how the claim is marked: this is a **third party repair
+business**, not Logitech, so it is a hypothesis of the same standing as an upstream finding under
+decision 7. It is worth having anyway because it is specific and falsifiable, and because it does not
+contradict anything read here.
+
+What the firmware says, measured on the One's own internal page and application image:
+
+* **The internal bootloader does not test a key.** Every port access in `0x000000` to `0x001000` is a
+  write: `PORTA` through `PORTG` cleared or loaded once in the init block at `0x000B58`, plus five
+  `PORTC` bit 5 toggles. **Zero reads.** So the reset path that section 116's arch 8 analogue made
+  interesting is not where the choice is made on arch 12.
+* **The safe mode image does read the keypad**, fifteen port reads from `0x004D8C` on, `PORTB`,
+  `PORTA` bit 4, `PORTF` and `PORTG`, which is the same set section 13 names for the One's matrix.
+  That is what a mode has to do to respond to buttons once it is running, so it is consistent with
+  the procedure and it does not identify the trigger.
+* No literal `0x002000` or `0x040000` reaches `TBLPTRU` anywhere in the application image, **zero
+  sites**, so the config base arrives in a variable. That is the indirect access dead end
+  `trace-section` names as its most common one, and it is the remaining thread.
+* `0x19120` is a hardwired `RESET` behind a key combination, section 13. A `RESET` is a reboot, so it
+  is plausibly how a held key survives into a fresh boot rather than how a container is chosen, and
+  nothing read here connects it to either.
+
+So the mechanism is narrowed rather than closed: not the internal bootloader, and reachable from a
+key held across power-on. **The cheap next step is hardware, not firmware**, and it is read only: the
+spare Harmony One is on the bench, the procedure needs no host software to reach step 5, and either
+the screen says "Safe Mode" or it does not. That would turn a repair shop's instruction sheet into a
+measurement on a unit whose contents are backed up byte for byte.
+
+**This matters to the write rails and it improves them.** A recovery route the owner can trigger by
+hand, with no host and no software, is a better rail than one that depends on our own code being
+correct. It is the reason the rails can treat a bad config as recoverable rather than fatal, which is
+what the caveat above was really asking about.
+
+**Confirmed on a Harmony 525, 11 August 2026**, by the owner following the procedure on a remote the
+sheet does not name: battery out, hold the key, battery in, and it entered safe mode. So the procedure
+generalises off the models it was written for, and arch 9 has it too.
+
+Predictions recorded before the remote was read, and section 87 had already written this one down for
+exactly this case, so that a remote which ends up in safe mode by other means can be recognised
+rather than induced:
+
+| | normal boot, measured 8 August 2026 | predicted in safe mode |
+|---|---|---|
+| `GET_VERSION` reply byte | `0x27` | `0x27`, seven fields |
+| **field 4** | **`0x90`** | **`0x94`**, architecture 9 and software type 4 |
+| field 5, the skin | `0x16`, 22 | unchanged |
+| field 6, the platform | `0x09` | unchanged, since section 116 found it identical in a remote's safe mode image and in its application |
+| field 0, the firmware version | `0x30`, 3.0 | may differ, because a different image is answering |
+
+The low nibble is the one worth the trouble. Section 87 read it out of arch 8 firmware constants and
+Logitech's own comment naming value 4 safe mode, and no live remote had ever reported anything but 0.
+
+### One thing he suggests that is already done
+
+The Harmony 650 is in the corpus, and has been since before this exchange: the update package's
+firmware image and its safe mode container, arch 14, all eleven checks passing, with golden vectors
+on both sides. His note that a 650 places the first byte of the file at `0x030000` and ours records
+`0x020000` is not a disagreement: **a safe mode container sits at `0x020000` on arch 14 and a user
+config at `0x030000`**, which is the same split arch 12 has at `0x002000` and `0x040000`. He has a
+user config and we have the package.
+
+### And three of his own claims withdrawn, none of which this project adopted
+
+He withdrew a twelve byte block header per keyboard matrix row, a seven byte record trailer holding a
+pointer to its own bytecode, and 124 references buried in record bodies. Checked: none of the three
+appears in any document or reader here. The third is worth recording as a method note, since it is a
+trap this project could fall into. He found `16 <u24>` matching inside an opcode 4 whose `y`
+coordinate happened to be `0x16`, which is a **byte pattern search finding its pattern in the middle
+of an instruction**. The defence is the one `chains.py` already states for switch tables: decode the
+stream, do not scan it.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance
 * harmony-decompiler discussions: https://github.com/trelowney/harmony-decompiler/discussions
 * firmware and legacy software archive: https://www.harmonyremoterepair.com/software-firmware.html
+* safe mode entry procedure, third party and unconfirmed here, section 118:
+  https://www.harmonyremoterepair.com/files/theme/Documents/Safe_Mode_Instructions.pdf
