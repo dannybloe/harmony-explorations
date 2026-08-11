@@ -550,7 +550,11 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
   writes go through a different validator or the region is special, and nothing here has read the cell.
   It is on this ledger because it is the documented way out of arch 9 safe mode, section 118, and not
   because it is believed. Adopted as knowledge and **not** as an action: this project does not perform
-  that write.
+  that write. **No concordance command line reaches that step alone**, section 118: `--firmware` runs
+  the whole sequence, whose `erase_firmware` would destroy the staged image and whose
+  `invalidate_flash` would discard a config arch 9 would otherwise keep. `finish_firmware` is exported,
+  so the step is reachable as `init_concord`, `get_identity`, `finish_firmware`, `deinit_concord`,
+  which belongs in the private lab and never in this MIT repository since it calls into GPLv3 code.
 
 ## MyHarmony was checked and holds nothing, and why that is worth knowing
 

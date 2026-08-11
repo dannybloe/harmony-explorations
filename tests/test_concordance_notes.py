@@ -201,3 +201,55 @@ class TestArch9KeepsItsFirmwareInExternalFlash(unittest.TestCase):
         self.assertEqual(code[0x1000 + 4:0x1000 + 6], b'HG')
         # And the region below is the bootloader, which safe mode leaves alone.
         self.assertNotEqual(code[0x0000:0x0002], b'\xff\xff')
+
+
+@skipWithoutSource
+class TestNoCommandLineDoesTheFinishStepAlone(unittest.TestCase):
+    """Section 118. Asked whether `concordance` can run only the finalise step. It cannot.
+
+    Asserted against the checkout because the answer is a property of concordance's source and the
+    whole point of this file is not to quote that from memory. It matters because two steps of the
+    full sequence would destroy exactly what makes a stranded arch 9 remote recoverable.
+    """
+
+    def test_no_cli_mode_reaches_finish_firmware(self):
+        cli = _read('concordance', 'concordance.c')
+        self.assertIn('update_firmware(', cli)
+        # The finalise step is never invoked on its own from the command line, so the only route to
+        # it is the library. If a later concordance grows such a mode, this fails and the section
+        # needs rewriting rather than quietly going stale.
+        self.assertNotIn('finish_firmware(', cli)
+        self.assertNotIn('prep_firmware(', cli)
+
+    def test_the_full_sequence_erases_the_region_that_holds_the_good_image(self):
+        """Which is why the full sequence is the wrong tool when the staged image is already right."""
+        lib = _read('libconcord', 'libconcord.cpp')
+        sequence = lib[lib.index('int update_firmware('):]
+        sequence = sequence[:sequence.index('\n}')]
+        for step in ('prep_firmware', 'invalidate_flash', 'erase_firmware',
+                     'write_firmware_to_remote', 'finish_firmware'):
+            with self.subTest(step=step):
+                self.assertIn(step, sequence)
+
+    def test_the_finish_step_is_exported_so_the_library_reaches_it(self):
+        header = _read('libconcord', 'libconcord.h')
+        for symbol in ('init_concord', 'get_identity', 'finish_firmware', 'deinit_concord'):
+            with self.subTest(symbol=symbol):
+                self.assertIn(symbol, header)
+
+    def test_a_raw_image_is_not_an_acceptable_firmware_file(self):
+        """
+        So the documented `--firmware` route cannot be pointed at a dump. The parser wants a zip or
+        an XML envelope, which is why the section says a package would have to be fabricated.
+        """
+        opfile = _read('libconcord', 'operationfile.cpp')
+        self.assertIn('ReadZipFile', opfile)
+        self.assertIn('INFORMATION', opfile)
+
+    def test_an_arch_9_config_survives_a_firmware_update(self):
+        """
+        concordance's own rule, and it is the reassuring half: the two bases differ on arch 9, so a
+        firmware update there does not take the config with it.
+        """
+        arch9 = _arch_table()[9]
+        self.assertNotEqual(arch9['firmware_update_base'], arch9['config_base'])

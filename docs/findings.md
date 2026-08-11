@@ -15406,6 +15406,49 @@ tool for it. What this section contributes is the part worth having beforehand: 
 verified against a known good copy, so the operation is a well understood one rather than a blind
 reflash, and if it goes wrong `h525_code` is a second copy of the same bytes.
 
+### There is no concordance command line that does the finish step alone
+
+Looked for, and the answer is no. `concordance.c` has thirteen modes and none of them reaches
+`finish_firmware`; `--firmware` sets `MODE_WRITE_FIRMWARE`, which calls `update_firmware`, and that is
+the whole sequence:
+
+```
+prep_firmware        write 0x00 to flash 0x200000
+invalidate_flash     WRITE_MISC, COMMAND_MISC_INVALIDATE_FLASH
+erase_firmware       erase the firmware region
+write_firmware_to_remote
+finish_firmware      write 0x02 to flash 0x200000
+reset_remote
+_set_time
+```
+
+Two of those steps are actively unwanted on a remote whose staged image is already the right one.
+`erase_firmware` erases `0x810000`, which is the one good copy of the application currently on the
+device, and `invalidate_flash` marks the config unusable. The config would otherwise survive:
+concordance's own `is_config_safe_after_fw` returns safe whenever `firmware_update_base` differs from
+`config_base`, and on arch 9 they are `0x810000` and `0x820000`.
+
+`--firmware` is also not usable with a raw image. `OperationFile::ReadAndParseOpFile` accepts a zip or
+a plain file carrying an `<INFORMATION>` XML envelope, so `h525_code` would have to be wrapped in a
+fabricated package first, and there is no published 525 firmware package: the archive that has the One,
+the 650 and the 700 has no 5xx.
+
+**`finish_firmware` is exported, so the finish step is reachable without the command line.**
+`libconcord.h` declares `init_concord`, `get_identity`, `finish_firmware` and `deinit_concord`, the
+callbacks are optional because every call site is guarded by `if (cb)`, and `get_identity` is what
+populates the `ri` that `FinishFirmware` reads its architecture from. So four calls, and on arch 9 the
+third is one `WRITE_FLASH` of one byte. `libconcord.dylib` is installed on this bench, so ctypes
+reaches it with nothing to compile.
+
+Recorded as the route and **not** as something this project does or ships:
+
+* It is still a write, and the standing rails do not bend because the write is small.
+* Anything calling into libconcord is GPLv3 territory and this repository is MIT, decision 1. A
+  recovery script belongs in the private lab directory and must never be committed here.
+* `0x200000`'s meaning remains client sourced, `docs/host-client.md`. What is measured is that the
+  image staged at `0x810000` is byte identical to the application that was running, which is the half
+  that decides whether the operation is worth attempting at all.
+
 ### A bug in this project's own tooling, which only this state could expose
 
 `read-window.ts` read the version block, printed it, and then **threw the architecture away**: the
