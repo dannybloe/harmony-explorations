@@ -265,8 +265,10 @@ document:
   header on 8 August and the device confirmed it on 11 August. So nothing is transferred from a host to
   enter safe mode and nothing has to be to leave it. What tells the bootloader which image to install
   is **byte 0 of the on chip EEPROM**, section 119, and `0x02` selects the application: 1 and 5 request
-  safe mode and mark it 3, 2 requests the application and marks it 4, 3 and 4 are folded back so an
-  interrupted install retries, and 0 installs nothing and runs whatever is resident. **The address
+  safe mode, 2 requests the application, the bootloader marks 3 or 4 **before** copying, writes **6** on
+  success, and the running image consumes the 6 by writing 0 and putting a message on the screen. So 3
+  and 4 are in progress marks that make an interrupted install retry, and **0 is the resting value**, at
+  which nothing is installed and whatever is resident runs. **The address
   space the protocol calls flash is a set of tagged windows and only one of them is flash**: on arch 9
   top byte `0x00` is 32 KiB of internal program flash, `0x20` is 256 bytes of EEPROM, `0x40` is 2048
   bytes of data memory, `0x30` is eight bytes, and `0x80` to `0x87` is the serial chip. Every bound is
@@ -275,9 +277,14 @@ document:
   read as the whole rule, which is why `packages/usb` refused three regions the device serves.
   `ARCH9_WINDOWS` carries them now. **A read only measurement refuted the first reading of the latch**:
   the stranded 525's EEPROM byte 0 is 0, not the 3 predicted, so safe mode persists by being resident
-  and not by being reinstalled, and only the byte could tell those apart. **This project must still not
-  be what performs the write**: it has never written to a remote, arch 9 has no write target, and a
-  first write should not install firmware on an irreplaceable unit.
+  and not by being reinstalled, and only the byte could tell those apart. **The recovery has been
+  performed and it worked**, by the owner, on 11 August 2026, from the private lab script: the 525 came
+  back with software type 0, its version reply matching 8 August byte for byte, its application region
+  restored including two offsets that were erased flash while it was stranded, and its config intact.
+  Its screen said the upgrade was complete, which was observed **before** the firmware path that emits
+  that message had been found, and looking for what emitted it is what completed the state machine.
+  **This project must still not be what performs the write**: it has never written to a remote, arch 9
+  has no write target, and a first write should not install firmware on an irreplaceable unit.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.

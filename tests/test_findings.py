@@ -1167,6 +1167,40 @@ class TestTheArch9BootStateMachine(unittest.TestCase):
         self.assertIn('MOVLW 0x01\n  00434: 02 6f       MOVWF 0x202', text)
         self.assertIn('CLRF 0x202', text)
 
+    def test_a_successful_install_leaves_six_and_the_application_clears_it(self):
+        """
+        The step the first reading of this section missed, and the measured zero is what found it. The
+        bootloader's 3 and 4 are in progress marks written before the copy; on success it writes 6 and
+        jumps to the application entry point, and the application consumes the 6 by writing 0 and
+        setting a status bit. That bit is why a recovered remote says so on its screen.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        after = '\n'.join(disasm.disassemble(code, 0x0000, 0x0082A, 10, part='4550'))
+        self.assertIn('MOVF 0x20c', after)      # the success flag
+        self.assertIn('MOVLW 0x06', after)      # the value written on success
+        self.assertIn('CALL 0x00adc', after)    # the EEPROM write helper
+        self.assertIn('GOTO 0x01008', after)    # the application entry point
+        consumer = '\n'.join(disasm.disassemble(code, 0x0000, 0x07900, 18, part='4550'))
+        self.assertIn('MOVLW 0x06', consumer)    # what it compares against
+        self.assertIn('CALL 0x07d74', consumer)  # the application's EEPROM write
+        self.assertIn('CLRF 0x25e', consumer)    # EEDATA = 0
+        self.assertIn('CLRF 0x25d', consumer)    # EEADR = 0
+        # The status bit, which is the only other thing this path does and therefore what makes the
+        # 6 a message. Matched on the bit number rather than the spacing of the mnemonic.
+        self.assertRegex(consumer, r'BSF 0x109\s*,\s*5')
+
+    def test_a_failed_application_install_falls_back_to_safe_mode(self):
+        """
+        The safety net. Both failure branches of the value 2 arm land on the value 1 arm, so a remote
+        whose application copy goes wrong ends up in safe mode rather than with nothing bootable.
+        """
+        lab.require(self.NAME)
+        text = '\n'.join(disasm.disassemble(lab.load(self.NAME), 0x0000, 0x007D4, 12, part='4550'))
+        self.assertEqual(text.count('BZ 0x007f2'), 2)
+        # And 0x007F2 is the arm that installs the safe mode image, which the test above pins.
+        self.assertIn('CALL 0x00422', text)
+
     def test_state_zero_installs_nothing_which_is_why_the_latch_is_passive(self):
         """
         The measured value on the stranded 525, and the arm that refutes the first reading. Normal

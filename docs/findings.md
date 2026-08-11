@@ -54,7 +54,9 @@ is a prediction this document made and then measured wrong.** It predicted that 
 EEPROM byte 0 would be 3, on a reading where safe mode reinstalls itself at every boot; the byte is 0,
 which is the arm that installs nothing, so the latch is passive and safe mode persists by being
 resident. Both readings predict a remote that never leaves safe mode, so no behaviour could separate
-them and only the byte could. The other is section 88's arch 9 address rule, which was read from the
+them and only the byte could. The zero is also what sent that section back to the bootloader and turned
+up the step it had stopped short of, where a completed install leaves a 6 that the running image
+consumes, which is the message a recovered remote puts on its screen. The other is section 88's arch 9 address rule, which was read from the
 validator's **default arm** and reported as the whole rule: four windows are tested above it, so this
 project's own library refused three regions the device serves and recorded one of them as unreadable.
 
@@ -15693,10 +15695,10 @@ becomes 2.
 
 | EEPROM byte 0 | what the bootloader does | what it writes back |
 |---|---|---|
-| 1 or 5 | selector 0, install the safe mode image | 3 |
-| 2 | selector 1, install the application | 4 |
-| 3 | handled as 1 | 3 |
-| 4 | handled as 2 | 4 |
+| 1 or 5 | selector 0, install the safe mode image | 3, then 6 on success |
+| 2 | selector 1, install the application | 4, then 6 on success |
+| 3 | handled as 1 | as 1 |
+| 4 | handled as 2 | as 2 |
 | 0, 6 or anything else | normal boot, install nothing | unchanged |
 
 The selector is `0x09A`, and `0x00422` turns it into an address: `0x010004` when it is 1 and
@@ -15704,18 +15706,37 @@ The selector is `0x09A`, and `0x00422` turns it into an address: `0x010004` when
 `+4` because that is `firmware_4847_offset` and the `HG` magic. It checks the header there before
 copying, at four places in the bootloader.
 
-**So safe mode is latched by design, and this is the mechanism.** State 3 is folded to 1 at every
-boot, which reinstalls the safe mode image and writes 3 again. Nothing decays, no timer expires, and a
-power cycle is not a way out because the power cycle is what performs the reinstall. Section 118
-measured that a power cycle does not clear it; this is why.
+**The 4 and the 3 are in progress marks, not resting states**, which is the part this section got
+wrong twice before the remote settled it. Written *before* the copy, and on success the bootloader
+overwrites the cell again at `0x0082C`: if the install succeeded it puts **6** there and then jumps to
+`0x01008`, the application's entry point past its own header. So the full cycle has one more step than
+the table above, and the resting value is neither 3 nor 4:
 
-The fold is a power fail interlock: 3 means "a safe mode install was requested and may not have
-finished", so it runs again, and 4 says the same about the application. Both are idempotent, which is
-what makes reinstalling on every boot a reasonable design rather than a bug.
+| value | who writes it | what it means |
+|---|---|---|
+| 2 | a host | install the application |
+| 1 or 5 | a host | install the safe mode image |
+| 4 or 3 | the bootloader, before copying | an install is in progress |
+| 6 | the bootloader, after a successful copy | the install finished, tell the user |
+| 0 | the running image, having seen 6 | nothing outstanding, run what is resident |
 
-**And concordance's byte is confirmed.** Writing 2 makes the bootloader install the application and
-mark it 4. That is exactly `FinishFirmware`'s arch 9 arm, `data[0] = 0x02` into `0x200000`, and it is
-no longer believed on the client's word: `docs/host-client.md` loses the entry.
+The consumer of 6 is in the **application**, at `0x07900`: it reads EEPROM byte 0, compares it against
+6, and if it matches writes 0 back and sets bit 5 of `0x109`. That is what makes 6 a message rather
+than a state, and it is why the cell reads 0 on a healthy remote.
+
+The folds are the power fail interlock, and this is the reading that makes them make sense. 3 and 4
+mean "a copy was started and nothing has confirmed it finished", because the confirmation is the 6 and
+then the 0. A remote that loses power mid copy comes up on a mark, retries, and reaches 6. A remote
+that finished comes up on 0 and copies nothing, so nothing is reinstalled at every boot.
+
+**The failure path is a safety net worth recording.** If installing the application fails, either the
+header check at `0x00422` or the copy at `0x002D4`, the value 2 arm does not give up: it branches into
+the value 1 arm at `0x007F2` and installs the **safe mode image** instead. So a 525 whose application
+copy goes wrong lands in safe mode rather than nowhere.
+
+**And concordance's byte is confirmed.** Writing 2 makes the bootloader install the application. That
+is exactly `FinishFirmware`'s arch 9 arm, `data[0] = 0x02`, and it is no longer believed on the
+client's word: `docs/host-client.md` loses the entry.
 
 ### A prediction, before the remote is read
 
@@ -15746,13 +15767,54 @@ does not help because a power cycle is not a request.
 
 The active reading was wrong about the mechanism and right about the consequence, which is the shape
 worth noticing: both readings predict that the remote stays in safe mode indefinitely, so the
-behaviour section 118 measured could not distinguish them, and only the byte could.
+behaviour section 118 measured could not distinguish them, and only the byte could. **And the zero is
+what sent this section back to the bootloader**, where the 6 and its consumer were sitting unread; the
+first version of the state table stopped at the in progress marks because nothing had contradicted
+them yet.
 
-Two things this leaves open, stated rather than papered over. **Whether the key combination touches
-EEPROM byte 0 at all** is not read, and the byte's value before 10 August was never measured, so
-"it has always been 0 on this unit" and "it was 4 and the safe mode entry zeroed it" both fit. And
-the folds mean a remote sitting at 4 reinstalls its application at every boot, which is a plausible
-cache refresh design and is not something a remote at 0 demonstrates.
+**The reading was checked before it was believed, and the window is what it turns on.** A byte that is
+zero everywhere would satisfy any of this, so the address arithmetic was tested rather than assumed:
+`0x200004` answers `25` and `0x200008` answers `0xFF`, so the window honours the low address byte and
+byte 0 is genuinely zero. Two neighbouring windows corroborate the table the other way, tag `0x40` and
+tag `0x30` both answering all zeros, which is what section 90 already recorded about arch 9 data
+memory. A window table that returned zeros everywhere would have proved nothing.
+
+One thing this leaves open, stated rather than papered over: **whether the key combination touches
+EEPROM byte 0 at all** is not read. The cell is 0 both before and after the recovery, so entry by key
+is consistent with never touching it, and nothing measures that directly.
+
+### The recovery, performed by the owner, and the screen confirmed a firmware path before it was read
+
+On 11 August 2026 the owner ran the four library calls against the stranded 525. The remote displayed
+**"upgrade voltooid"**, its Dutch for upgrade complete, which needed a battery pull to clear, and came
+up on its normal screen.
+
+That message is the closure, and it is the good kind because it was observed before the path that
+emits it had been found. Nothing predicted a message; the section had the bootloader writing 4 and
+stopping there. Looking for what cleared the 4 is what turned up `0x0082C` writing 6 and `0x07900`
+consuming it, and the only thing `0x07900` does on a match is set a status bit. So a user visible event
+nobody had asked the firmware about is explained by the one path that fires on 6.
+
+Verified afterwards over USB, read only:
+
+| | before, in safe mode | after |
+|---|---|---|
+| USB product string | `Harmony Safe Mode!` | `Harmony Remote 0-3.0.0` |
+| `GET_VERSION` | `20 25 12 ff 94 16 00` | `30 25 12 ff 90 16 09` |
+| software type | 4, safe mode | 0, application |
+| EEPROM byte 0 | 0 | 0 |
+| internal `0x1000` to `0x7FFF` | an image under 10 KiB, erased above `0x3800` | byte identical to `h525_code` at five offsets including `0x3800` and `0x7000` |
+| config at `0x820000` | not checked | byte identical to its lab dump at two offsets, `AHCM` framing intact |
+
+So the version reply is exactly what the same unit answered on 8 August, the application region is
+restored including the two offsets that were erased flash while it was stranded, and the config
+survived, which is what concordance's `is_config_safe_after_fw` predicts on an architecture whose
+`firmware_update_base` differs from its `config_base`.
+
+**This project still did not perform the write**, and that is not a formality. The four calls ran from
+a script in the private lab, by the owner, on his own remote, after the reading above was in place. The
+rails are unchanged: arch 9 is not in `ARCHITECTURES_WITH_A_WRITE_TARGET`, and nothing in this
+repository has ever written to a remote.
 
 ### The safe mode image serves the EEPROM too, which is what makes the recovery reachable
 
