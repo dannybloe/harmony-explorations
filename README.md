@@ -1,60 +1,78 @@
 # harmony-explorations
 
-Reverse engineering the Logitech Harmony config format, so configs can be generated again.
+Collecting everything needed to program a Logitech Harmony remote again, without Logitech.
 
-A config already on a remote can be read off it, but nobody outside Logitech can generate a new one.
-The goal is to change that, and the route is **generating config files rather than modifying
-firmware**: a config is a program in a data format and the firmware is its interpreter, so the
-firmware is the authoritative specification for every config field. That turns format work from
-inference into fact finding.
+## The problem
 
-**This repository holds the specification, the evidence and the libraries.** The documents argue for
-the format, the TypeScript packages implement it, and the two live together because a codec in a
-second repository drifts away from the spec it implements. All MIT.
+On 28 May 2025 Logitech discontinued the Harmony Remote Software, the desktop program that 40 of
+these remotes were set up with. `members.harmonyremote.com` now serves a discontinuation notice and
+nothing else. `reference/models.md` lists the models it covered.
 
-**The application is [FreeHarmony](https://github.com/dannybloe/FreeHarmony)**, a separate
-repository, AGPL-3.0: a local, cross platform program that reads a config off a remote, edits its
-devices and activities, learns infrared codes and writes the result back. Version 1 is read only.
+The newer service, MyHarmony, does still answer, and in August 2026 it still compiled a config and
+synced it to a remote on this bench. That is worth being accurate about, because this project has
+twice written it off on paper and been wrong. But it is a hosted service nobody here controls, it can
+be switched off without notice, and it does not cover the older models at all.
 
-Related effort, and a privileged source of hypotheses:
-[trelowney/harmony-decompiler](https://github.com/trelowney/harmony-decompiler).
+So the position today is simple. A config already on a remote can be read off it. **Nobody outside
+Logitech can generate a new one.** That is the thing to fix.
 
-## Start here
+## Where this is going
+
+[FreeHarmony](https://github.com/dannybloe/FreeHarmony): a local, cross platform application that
+reads the config off your remote, lets you edit its devices and activities, learns infrared codes
+from your old remotes, and writes it back. Nothing hosted, nothing to switch off. Version 1 will be
+read only, because the first write to an irreplaceable device should not be a guess.
+
+That application does not exist yet, and it cannot be built until the config format is understood.
+
+## What this repository is for
+
+**Collecting the knowledge and the code that FreeHarmony will be built on.** Two kinds of thing, kept
+together on purpose:
+
+* the **documents**, which work out what every byte of a config means and why anyone should believe it
+* the **libraries** that read a remote and parse a config, which are those documents in executable
+  form, so a finding cannot land in a document and quietly never reach the code
+
+The route is generating config files, never modifying firmware. A config is a program in a data
+format and the firmware is its interpreter, so the firmware is the authoritative specification for
+every config field. Nothing has ever been written to a remote here.
+
+This repository is MIT. FreeHarmony is AGPL-3.0 and consumes these libraries.
+
+## Progress and findings
 
 | | |
 |---|---|
-| **[docs/status.md](docs/status.md)** | **where the work stands**: what reads today, what the corpus holds, the headline findings |
-| [docs/roadmap.md](docs/roadmap.md) | the plan of record: decisions, milestones, what is answered next and why that one |
-| [docs/findings.md](docs/findings.md) | the authoritative technical reference, 121 numbered sections, every claim with its evidence and its corrections |
-| [docs/config-format.md](docs/config-format.md) | the format as a specification, structured, with everything unconfirmed marked as such |
-| [docs/glossary.md](docs/glossary.md) | the vocabulary, and per term whether it is Logitech's word, ours, or a standard one |
+| [docs/status.md](docs/status.md) | **where the work stands**: what reads today, and what the corpus of dumps holds |
+| [docs/findings.md](docs/findings.md) | every finding, numbered, with its evidence and its corrections |
+| [docs/config-format.md](docs/config-format.md) | the format as a specification, with anything unconfirmed marked as such |
+| [docs/roadmap.md](docs/roadmap.md) | the plan: what gets answered next, and why that one |
 
-Five architectures are covered and six are not. **Nothing has ever been written to a remote.**
+Five architectures are covered and six are not. The analysis was produced by an AI and is published as
+such, so every claim is written to be checkable: a confirmed fact lands as a structured spec entry, a
+written argument, and a regression test, and mistakes are corrected in place rather than quietly, so
+the rest can be calibrated against them.
 
-## Can you help? Send a dump of your remote
+## Contribute: send a dump of your remote
 
-**This is the bottleneck.** Almost every open question in this project is open because nobody
-involved owns the remote that would answer it. A single config off a model nobody here has seen is
-worth more than another week of reading the firmware we already have.
+**This is the bottleneck.** Almost every open question here is open because nobody involved owns the
+remote that would answer it. One config off a model nobody has seen is worth more than another week of
+reading the firmware we already have.
 
-[docs/status.md](docs/status.md#what-the-corpus-holds) has the coverage table: which architectures
-are covered, which firmware is held, and what would help most. The short version:
+Most wanted right now:
 
-* **A Harmony 890 or 895 firmware dump is the hardest blocker in the project.** Two 890 configs are
-  here and cannot be read, because arch 10's twenty three pointer slots are provably not a
-  relabelling of the twenty and no firmware exists to settle them.
-* **Arch 7 has eight models and not one sample**: 610, 620, 628, 659, 670, 676, 680, 688.
-* Also unseen: the 745, the 748 and the 768, and the 720 and 785 on arch 8, and any 55x.
+* **a Harmony 890 or 895 firmware dump.** Two 890 configs are here and cannot be read, and no firmware
+  exists to settle them. This is the hardest blocker in the project.
+* **anything at all from a 610, 620, 628, 659, 670, 676, 680 or 688.** Eight models, no sample.
+* also unseen: the 745, the 748, the 768, the 720, the 785, and any 55x.
 
-### How to send one
+[docs/status.md](docs/status.md#what-the-corpus-holds) has the full table of what is covered.
 
-**Email it to freeharmony@bloemeland.nl.** Please do not attach it to an issue or a discussion: this
-repository is public, and a config is Logitech generated data including an infrared database compiled
-from Logitech's own, so it cannot be published here. That is the same reason firmware is not in this
-repository either. Issues and discussions are very welcome for everything else.
+### How
 
-To make a dump, [concordance](https://github.com/jaymzh/concordance) is the tool. Install it, plug the
-remote in with its USB cable, and run these in whatever directory you want the files in:
+[concordance](https://github.com/jaymzh/concordance) is the tool. Install it, plug the remote in with
+its USB cable, and run these where you want the files:
 
 ```sh
 concordance -c                              # the config. Writes config.EZHex
@@ -64,128 +82,56 @@ concordance -b -f                           # the firmware. Writes firmware.bin.
                                             # models listed below
 ```
 
+**Then email the files to freeharmony@bloemeland.nl, and say which model they came off.** Anything you
+remember about what was set up on it is worth having too: a description is what lets a structure in the
+file be matched to something in the world, and it is much harder to reconstruct later.
+
+Please do not attach a dump to an issue or a discussion. This repository is public, and a config is
+Logitech generated data including an infrared database compiled from Logitech's own, so it cannot be
+published here. That is also why no firmware or config is in this repository. Issues and discussions
+are very welcome for everything else.
+
 **Lower case flags only.** `-c` reads the config off the remote and `-C` writes one to it; `-f` reads
 the firmware and `-F` overwrites it. The flag you want and the flag that reflashes your remote differ
-by one shift key. `-r` reboots it. And never pass a bare filename: `concordance somefile` is
-"automatic mode", which works out what to do with the file, and for a config that means writing it to
-the remote.
+by one shift key. `-r` reboots it. And never pass a bare filename: `concordance somefile` works out
+for itself what the file is for, and for a config that means writing it to the remote.
 
-**The firmware dump only works on some models**, and that is a defect in concordance's architecture
-table rather than in your remote: on the 51x, 52x, 55x, 720, 785, 880, 882 and 885 it returns the
-complete firmware, and on the One, 600, 650 and 700 it returns something that is not usable firmware
-at all. [reference/concordance-notes.md](reference/concordance-notes.md) has the reason and the patch.
-**Nobody knows which it does on an 890 or an 895**, and finding out is itself useful, so if you have
-one: run it, and say what you got. It is a read command either way.
+**The firmware dump only works on some models.** On the 51x, 52x, 55x, 720, 785, 880, 882 and 885 it
+returns the complete firmware. On the One, 600, 650 and 700 it returns something that is not usable
+firmware, which is a defect in concordance's architecture table rather than a problem with your remote.
+Nobody knows which it does on an 890 or an 895, so if you have one, running it is itself useful. It is
+a read command either way.
 
-That is the whole ask: two files and a model name.
+**What is in the files, so you can decide.** A config holds an equipment inventory and the device and
+activity names you chose, and no account data; that was checked rather than assumed. The `-i` output
+holds your remote's serial number and unique identifiers. Firmware is Logitech's own code and holds
+nothing of yours. Nothing you send is published or committed anywhere, and if you would rather not
+send the serial number, leave the `-i` output out and just say the model.
 
-If you would rather send nothing of your config at all, there is a structural report that carries the
-**shape** of a config and none of its contents, so it can go in a public discussion instead:
-`make probe`, or `node packages/probe/bin/probe.ts --file <config>`. It needs a checkout and a build,
-so today it is for people who already do that. [docs/roadmap.md](docs/roadmap.md) step 8 has the
-reasoning and `packages/probe` has the tests that keep it empty of contents.
+## Working on the code
 
-## What is deliberately not here
-
-**No firmware or config binaries, no config dumps, no Ghidra projects.** Unlicensed proprietary
-Logitech code and data, per above. The archived `.hfw` firmware packages additionally contain a
-`Data.xml` carrying the original downloader's Logitech `UserId`, account GUIDs, `ServerID` and an
-`ASPSESSIONID` session cookie, so redistributing one redistributes a stranger's session details.
-[reference/checksums.md](reference/checksums.md) publishes SHA-256 checksums and provenance instead,
-so you can obtain the files yourself and confirm you have the identical ones.
-
-Binaries live in a private `lab` directory beside this checkout, which the tooling finds
-automatically. Tests skip cleanly when it is absent, and `make test-nolab` is what enforces that.
-`.githooks/pre-commit` checks staged content, so a rename or a `git add -f` gets caught anyway;
-install it with `make hooks`, once per clone.
-
-## Layout
-
-```
-docs/                the specification, the plan and the evidence, per "Start here" above
-src/harmony/         the research library: one shared PIC18 decoder, plus the format readers
-packages/            TypeScript: codec, usb, corpus, probe, lab, bench
-tools/               command line wrappers around the library, no logic of their own
-tests/               one regression test per documented finding
-reference/           checksums and provenance, model and capability tables, button drawings
-```
-
-There is one instruction decoder, in `src/harmony/pic18/isa.py`, and that is enforced rather than
-conventional: an earlier version of this work carried a copy of the opcode table in each tool and two
-of the copies disagreed with the datasheet, which produced listings that were readable and wrong. The
-same rule now applies to the codec, after `emit.ts` and `edit.ts` were each found deriving one field
-independently and both getting it right, which is the state that precedes two diverging copies.
-
-## Quickstart
-
-Python 3 and nothing else for the analysis side, Node 24 for the TypeScript packages. Both need a
-firmware image or a config, which are not in this repository:
-[reference/checksums.md](reference/checksums.md) says how to obtain and verify one.
+Python 3 for the analysis, Node 24 for the TypeScript packages. Neither needs anything else installed:
+every dependency is pinned to an exact version and the test runner is Node's own.
 
 ```sh
-python3 tools/ezextract.py harmony_700_firmware_2_8.hfw --out ./work   # unwrap a .hfw
-python3 tools/gspm_parse.py work/Region_3.EZHex                        # parse a config container
-python3 tools/pic18_disasm.py work/Region_2.EZUpgrade 0x9000 0x194a4 30 # disassemble, with SFR names
-python3 tools/pic18_trace.py work/Region_2.EZUpgrade 0x9000 0x3BF      # every access to a variable
-
-make test lint prose ts    # the suites, the document conventions, the TypeScript packages
-make all                   # everything except Ghidra and the bench instrument
-make corpus coverage text   # what the lab holds, the byte accounting, the readable text
+make all        # the suites, the document checks and the TypeScript packages
+make corpus     # what the local collection of dumps holds
+make coverage   # the byte accounting: how much of each config is understood
 ```
 
-`pic18_trace.py` is the highest value one: the entire infrared chain came out of pointing it at three
-variables. Starting on a model nobody has looked at yet, find its load address first, because a
-disassembler given the wrong base produces a plausible listing rather than an obvious failure:
-
-```python
-from harmony.pic18 import loadaddr
-best, ranked = loadaddr.find_base(open('image.bin', 'rb').read())
-print(best)            # check the margin over ranked[1] before trusting it
-```
-
-Every npm dependency is pinned to an exact version, no `^` and no `~`, and `pnpm-lock.yaml` is
-committed, so a dependency update is a diff someone has to approve rather than a decision made by
-whoever published last. The test runner is Node's own: `vitest` was rejected for bringing 71 packages
-including a CSS toolchain.
-
-## Provenance
-
-**The analysis and tools here were produced by Claude (Anthropic's AI)**, working from concordance
-dumps, archived Logitech firmware packages, configs other people published, and four remotes on the
-bench read over USB by this project's own code. No insider information, and nothing has ever been
-written to a remote.
-
-So claims are expected to be checkable, and they are written to be. Every confirmed fact lands in four
-places at once: the structured fact in [docs/config-format.md](docs/config-format.md), the reasoning and
-the evidence in [docs/findings.md](docs/findings.md), a regression test, and a sweep of everything that
-summarised the old answer. A claim that is not executable is only an assertion.
-
-**Corrections are recorded in place rather than quietly fixed**, so the rest can be calibrated against
-them. Forty six so far, all in [docs/findings.md](docs/findings.md). The instructive ones are collected
-there: a field split that produced nonsense which the analysis then explained away instead of
-suspecting, a derivation rule that was wrong and still gave the right answer on the only sample that
-exercised it, and a register map that was assumed to be the generic PIC18 layout when eight of 93 names
-differ. [reference/superseded.md](reference/superseded.md) lists the dead wordings and `make facts`
-refuses them anywhere outside a correction.
-
-The item most worth verifying before relying on it: the arch 12 part number is inferred rather than read
-off a board.
-
-## Licence
-
-MIT, see [LICENSE](LICENSE). That covers everything in this repository: the tools, the
-documents and the derived data.
-
-It does **not** cover the Logitech firmware and config binaries the tools operate on. Those
-are not here and are not ours to license. Obtaining them is your affair, and
-[reference/checksums.md](reference/checksums.md) says where they came from.
+Firmware images and configs are not in this repository, so the tests that need them skip cleanly
+without them. [reference/checksums.md](reference/checksums.md) says how to obtain and verify the files
+yourself. `CLAUDE.md` is the working brief and documents the layout and the conventions in full.
 
 ## Safety
 
-**Do not write to, erase, or flash a remote.** These devices are irreplaceable. Note that patching a
-concordance architecture constant to fix the firmware dump also redirects `erase_firmware()` and
-`write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
+These remotes are irreplaceable and this project treats them that way. Read paths only: writing is
+behind a flag that is off, the rails are enforced in the library rather than in a user interface, and
+no write has ever been performed. If you are experimenting with your own remote, take a full dump
+first and keep it.
 
-This used to add "and Logitech's recovery servers are gone", which is wrong, and the rail stands
-anyway: a service that answers today can be withdrawn tomorrow, and it has not been shown to
-compile a config any more. See section 56 of [findings.md](docs/findings.md).
+## Licence
+
+MIT, see [LICENSE](LICENSE). Logitech, Harmony and the model names are trademarks of Logitech
+International S.A., used here only to identify the hardware. This project is not affiliated with
+Logitech.
