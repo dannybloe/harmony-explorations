@@ -253,3 +253,51 @@ class TestNoCommandLineDoesTheFinishStepAlone(unittest.TestCase):
         """
         arch9 = _arch_table()[9]
         self.assertNotEqual(arch9['firmware_update_base'], arch9['config_base'])
+
+    def test_the_progress_callback_is_not_optional_because_one_call_site_is_unguarded(self):
+        """
+        The correction. Section 118 said the callbacks are optional on the strength of every `cb` use
+        in `remote.cpp` being guarded by `if (cb)`, and they all are. `_report_stages` is in
+        `libconcord.cpp` and is not, so a caller passing NULL segfaults inside `get_identity`, which
+        is what happened on 11 August 2026.
+
+        Asserted both ways round, because the interesting part is the disagreement between the two
+        files: the guard the reading was based on is real, and it is not where the crash is.
+        """
+        lib = _read('libconcord', 'libconcord.cpp')
+        body = lib[lib.index('void _report_stages('):]
+        body = body[:body.index('\n}')]
+        self.assertIn('cb(LC_CB_STAGE_NUM_STAGES', body)
+        self.assertNotIn('if (cb)', body)
+        # And `get_identity` reaches it, so it is the first call a ctypes caller makes and the first
+        # one that can die.
+        identity = lib[lib.index('int get_identity('):]
+        identity = identity[:identity.index('\n}')]
+        self.assertIn('_report_stages(', identity)
+
+    def test_the_guard_that_justified_the_wrong_claim_really_is_there(self):
+        """
+        The other half, and the reason this is a scoping error rather than a misreading: every `cb`
+        use in `FinishFirmware` is guarded, so the reading was correct about the file it read.
+        """
+        remote = _read('libconcord', 'remote.cpp')
+        body = remote[remote.index('int CRemote::FinishFirmware('):]
+        body = body[:body.index('\n}\n')]
+        self.assertGreater(body.count('cb('), 1)
+        # Every call is preceded by the guard, so the count of guards is the count of calls less the
+        # one in the signature's own parameter list.
+        self.assertEqual(body.count('if (cb)'), body.count('cb(cb_stage'))
+
+    def test_the_arch_9_finish_step_writes_one_byte_of_0x02(self):
+        """
+        What the write actually is, quoted from the source rather than from concordance's table. The
+        branch is taken on arch 9 because its two bases are equal, which the row above asserts.
+        """
+        remote = _read('libconcord', 'remote.cpp')
+        body = remote[remote.index('int CRemote::FinishFirmware('):]
+        body = body[:body.index('\n}\n')]
+        self.assertIn('ri.arch->firmware_update_base == ri.arch->firmware_base', body)
+        self.assertIn('data[0] = 0x02', body)
+        self.assertIn('WriteFlash(0x200000, 1, data', body)
+        arch9 = _arch_table()[9]
+        self.assertEqual(arch9['firmware_update_base'], arch9['firmware_base'])

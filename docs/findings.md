@@ -49,9 +49,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty one have been found and corrected so far. **The three newest are all in section 118.** The
-newest of those was wrong for an hour, in the section that made it, and it is a scoping error of the
-kind this project keeps making: "there is no room for a resident safe mode image"<!--superseded--> is true of the
+Forty two have been found and corrected so far. **The four newest are all in section 118**, and the
+newest of them was found by a segfault: the section said libconcord's progress callbacks are
+optional, having checked every `cb` use in `remote.cpp`, and the unguarded one is in the file above
+it. A lab script passing NULL died inside `get_identity` two calls before the write it was there to
+make. Same shape as the one before it, and both are the shape this project keeps producing: a rule
+confirmed on the population that was looked at.
+
+That one was wrong for an hour, in the section that made it, and it is a scoping error of the
+same kind: "there is no room for a resident safe mode image"<!--superseded--> is true of the
 525's internal program flash and false as a sentence, because arch 9 keeps both images resident in
 **external** flash and copies one of them in. Unscoped it reads as "safe mode is transferred from a
 host", which is the opposite of what happens, and it went into `CLAUDE.md` as a rail before anything
@@ -59,7 +65,7 @@ looked at the 64 KiB below the staged application. What found it was looking in 
 the remote: the image had been dumped and correctly labelled three days earlier and nothing had opened
 it.
 
-Of the other two, one was refuted by hardware within a day of being written: section 116 supported its
+Of the remaining two, one was refuted by hardware within a day of being written: section 116 supported its
 reading of `GET_VERSION` field 6 partly on safe mode images carrying the same value as their applications, and a
 live Harmony 525 in safe mode reports zero. The platform reading survives on its other two legs and is
 now scoped to an application image. The other is the cheapest kind of error to make: a number quoted
@@ -15551,11 +15557,34 @@ fabricated package first, and there is no published 525 firmware package: the ar
 the 650 and the 700 has no 5xx.
 
 **`finish_firmware` is exported, so the finish step is reachable without the command line.**
-`libconcord.h` declares `init_concord`, `get_identity`, `finish_firmware` and `deinit_concord`, the
-callbacks are optional because every call site is guarded by `if (cb)`, and `get_identity` is what
-populates the `ri` that `FinishFirmware` reads its architecture from. So four calls, and on arch 9 the
-third is one `WRITE_FLASH` of one byte. `libconcord.dylib` is installed on this bench, so ctypes
-reaches it with nothing to compile.
+`libconcord.h` declares `init_concord`, `get_identity`, `finish_firmware` and `deinit_concord`, and
+`get_identity` is what populates the `ri` that `FinishFirmware` reads its architecture from. So four
+calls, and on arch 9 the third is one `WRITE_FLASH` of one byte: `FinishFirmware` at `remote.cpp:433`
+branches on `firmware_update_base == firmware_base`, which holds on arch 9, and that arm is
+`data[0] = 0x02` then `WriteFlash(0x200000, 1, ...)`. `libconcord.dylib` is installed on this bench,
+so ctypes reaches it with nothing to compile.
+
+**The progress callbacks are not optional, and this paragraph said they were.**<!--superseded--> The
+claim was that every call site is guarded by `if (cb)`, which is true of `remote.cpp` and is where it
+was checked. `_report_stages` in `libconcord.cpp:610` is not guarded: its whole body is `cb(...)`, and
+`get_identity` calls it before anything else. So a ctypes caller passing NULL takes SIGSEGV inside
+`get_identity`, which is what a lab script did on 11 August 2026, exit 139 with `init_concord` having
+already returned 0.
+
+Three things worth keeping from that, none of them about libconcord:
+
+* **It failed at the safe end.** The crash is two calls before the write, so nothing was written. That
+  is luck rather than design, and the design lesson is the ordering: identify first, write last, so a
+  wrong assumption about the binding surfaces before the byte does.
+* **A guard checked in one file is not a guard.** The reading was of `remote.cpp`, where every one of
+  the nine `cb` uses is guarded, and the unguarded one is in the file above it. Same shape as the
+  `--part 4550` register map and the `0xB0 | page` controller: a rule confirmed on the population that
+  was looked at.
+* **Buffered output turned a crash into silence.** The script printed nothing at all on its first run,
+  because stdout is block buffered when captured and a SIGSEGV never flushes it. That read as "nothing
+  happened", which is the worst possible report from a script that is one step from a firmware write.
+  Anything that calls into a library that can take the process down flushes every line and announces
+  each call before making it.
 
 Recorded as the route and **not** as something this project does or ships:
 
