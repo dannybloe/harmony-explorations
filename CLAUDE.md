@@ -249,6 +249,20 @@ document:
   internal `0xFE+0x1000`, which verifies its own checksum and was first read in August 2026. A rail
   that says "restore from the safe dump" would have restored the wrong thing on arch 14.
   The hardwired reset key combination at `0x19120` is the other path.
+  **Entering safe mode on arch 9 destroys the application firmware**, section 118, measured on the
+  bench 525 by reading its internal flash before and after: the bootloader is byte identical, the
+  28 KiB application is gone, and an image under 10 KiB sits in its place with everything above
+  `0x3800` erased. The part has 32 KiB, so there is no room for a resident safe mode image and it has
+  to be loaded over the application. **So safe mode is not a free fallback on arch 9 and must never be
+  entered as an experiment**: a power cycle does not leave it, and leaving it needs the firmware
+  written back, which is why the rail demanding a verified dump of that exact unit is what separates a
+  recoverable remote from a lost one. Arch 14 keeps both images resident and does not have this
+  problem. **The way out is on the remote**: arch 9 keeps its firmware in **external** flash at
+  `0x810000`, per concordance's own table which nothing here had read, and the staged image there is
+  byte identical to the working application, so the bootloader has its own recovery source. What tells
+  it to install is one byte, `0x02` into flash `0x200000`, concordance's `FinishFirmware` on this
+  architecture. **Client sourced and this project must not be what performs it**: it has never written
+  to a remote, and a first write should not install firmware on an irreplaceable unit.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.

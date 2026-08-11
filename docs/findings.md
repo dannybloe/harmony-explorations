@@ -15306,6 +15306,106 @@ normally: `probe.ts` gave up after three polls of 2000 ms, and `read-window.ts`,
 times, got a reply. The retry loop was added for an idle remote on 9 August 2026 and it earned itself
 again.
 
+### On arch 9, entering safe mode overwrites the application firmware
+
+The reason safe mode is latched, and it is not a flag. **There is nothing else on the remote to
+boot.** Read out of the connected 525 and compared against `h525_code`, which is that same unit's
+internal program flash read over USB on 8 August 2026:
+
+| internal address | 8 August | in safe mode |
+|---|---|---|
+| `0x000000`, `0x000800` | bootloader | **byte identical** |
+| `0x001000` | an `HG` image header, `GOTO 0x7FB4` | an `HG` image header, `GOTO 0x17EA` |
+| `0x002000`, `0x003000`, `0x003400` | application code | different code |
+| `0x003800` and above, to `0x008000` | 99% populated | **erased, `0xFF`** |
+
+So the bootloader is untouched and the 28 KiB application is gone, replaced by an image of under
+10 KiB whose own entry point is at `0x17EA` rather than `0x7FB4`. That resident image is what reports
+firmware 2.0 and software type 4, and it is **not in the 8 August dump**: its five accessors would
+read `20 04 16 00 09` and no such run exists anywhere in those 32 KiB, where the application's
+`30 00 16 09 09` sits at `0x05774`.
+
+**The mechanism makes this expected rather than alarming.** The part is a PIC18F4550 with 32 KiB of
+program flash. The bootloader takes 4 KiB and the application takes the remaining 28. There is no room
+for a resident safe mode image, so safe mode has to be **loaded into** the application's space, and
+loading it means erasing what was there. Arch 14 does not have this problem: its safe mode image sits
+at internal `0xFE + 0x1000` and its application at `+0x9000`, both resident, which is why a 600 can
+enter and leave safe mode without losing anything.
+
+Attribution, stated carefully because the claim is that a documented procedure is destructive. The
+application was complete and running on 8 August, reporting firmware 3.0 and software type 0, and it
+was read in full. The only event between then and now is the safe mode entry. No write has ever been
+sent to this remote by this project, and the reads that could disturb it, the odd count internal reads
+of section 96, write into **data** memory and are refused by `packages/usb` anyway.
+
+**So this is a rail, and it is the strongest one this section produces.** Do not enter safe mode on
+arch 9 as an experiment. It is not reversible by a power cycle, and leaving it needs the application
+firmware written back. That is fine for the purpose the instruction sheet has in mind, where the
+reader is about to reflash regardless, and it is not fine as a way of looking around.
+
+It also sharpens the assurance that a bad config cannot brick a remote, which is what the caveat
+earlier in this section was about. That assurance holds, and **safe mode is not the free fallback it
+sounds like on arch 9**: reaching it costs the application image. The recovery is only as good as the
+firmware dump you already hold, which is precisely why the rails require a verified dump of that exact
+unit before any write. Here that requirement is met, `h525_code`, and it is the difference between a
+recoverable remote and a lost one.
+
+### The way out, and the application firmware is still on the remote
+
+The overwrite above is recoverable without our own firmware dump, because **arch 9 keeps its firmware
+in external serial flash and the internal copy is the working one.** concordance's architecture table
+says so and this project had never read that row: arch 9 has `flash_base 0x800000`,
+**`firmware_base 0x810000`**, `config_base 0x820000` and `firmware_update_base 0x810000`, with
+`firmware_4847_offset 4`, which is the same `HG` at offset 4 that section 114 read on arch 8.
+
+Read off the connected remote in safe mode, against the 8 August internal dump:
+
+| external | internal in the dump | |
+|---|---|---|
+| `0x810000` | `0x1000` | **identical**, the `HG` header and `GOTO 0x7FB4` |
+| `0x810010` | `0x1010` | identical |
+| `0x811000` | `0x2000` | identical |
+| `0x814000` | `0x5000` | identical |
+| `0x817000` | | `0xFF`, past the image |
+
+So `external 0x810000 + N` is `internal 0x1000 + N`, and **the application image the safe mode entry
+erased from internal flash is intact in external flash**, byte for byte the firmware that was running
+on 8 August. The bootloader's job is to copy it in, which is why a 32 KiB part can afford to hand its
+whole application region to safe mode.
+
+What tells it to copy is one byte. On arch 9 `firmware_update_base` equals `firmware_base`, so
+concordance takes its first branch in `PrepFirmware` and `FinishFirmware`, `libconcord/remote.cpp`:
+
+| step | what concordance does |
+|---|---|
+| prepare | `WRITE_MISC` selector `0x09` `MISC_RESTART_CONFIG`, then write `0x00` to flash `0x200000` |
+| stage | write the image to `0x810000` |
+| finish | write **`0x02`** to flash `0x200000` |
+
+So flash `0x200000` is a one byte update state cell, `0x00` staging and `0x02` install, and
+`0x200010` is where the same table puts the serial. **That is the latch**, or the nearest thing to it
+that is documented: safe mode persists because nothing has told the bootloader the staged image is
+complete.
+
+Two cautions, because this is a route and not a recipe:
+
+* **It is client sourced**, from concordance's table and code, and unconfirmed against the 525's own
+  firmware. `docs/host-client.md` is where that standing is recorded. The staged image being byte
+  identical to a known working one is measured here; the meaning of `0x200000` is not.
+* **Our own read validator refuses top byte `0x20` on arch 9**, and correctly by what section 88 read:
+  the firmware's `READ_FLASH` validator at `0x02E30` refuses below `0x80` and at or above `0x88`. So
+  either the write path uses a different validator or that region is handled specially, and **the
+  value at `0x200000` has not been read.** Deliberately not worked around: extending a validator to
+  reach an address the firmware is read as refusing would be guessing, and it is a write we would be
+  reaching for anyway.
+
+**This project is not the thing that should perform that write.** It has never written to a remote,
+the rails put arch 9 outside `ARCHITECTURES_WITH_A_WRITE_TARGET`, and a first write should not be the
+one that installs firmware on an irreplaceable unit. concordance has done this for years and is the
+tool for it. What this section contributes is the part worth having beforehand: the staged image is
+verified against a known good copy, so the operation is a well understood one rather than a blind
+reflash, and if it goes wrong `h525_code` is a second copy of the same bytes.
+
 ### A bug in this project's own tooling, which only this state could expose
 
 `read-window.ts` read the version block, printed it, and then **threw the architecture away**: the

@@ -16,6 +16,8 @@ import os
 import re
 import unittest
 
+import lab
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -158,3 +160,44 @@ class TestArch8And9DumpTheWholeFirmware(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@skipWithoutSource
+class TestArch9KeepsItsFirmwareInExternalFlash(unittest.TestCase):
+    """Section 118. The row that made a stranded 525 recoverable, and nothing here had read it.
+
+    Asserted against the checkout rather than quoted, because the whole point of this file is that a
+    claim about concordance's table is checked against concordance's table.
+    """
+
+    def test_the_arch_9_row_puts_firmware_at_its_own_base(self):
+        arch9 = _arch_table()[9]
+        self.assertEqual(arch9['flash_base'], 0x800000)
+        self.assertEqual(arch9['firmware_base'], 0x810000)
+        self.assertEqual(arch9['config_base'], 0x820000)
+        # Equal to firmware_base, which is what selects concordance's first update branch and so
+        # what makes flash 0x200000 the update state cell rather than RAM address 0.
+        self.assertEqual(arch9['firmware_update_base'], arch9['firmware_base'])
+
+    def test_the_hg_magic_offset_is_four_on_arch_9_as_on_arch_8(self):
+        """
+        Section 114 read the arch 8 header's magic at offset 4 and recorded that
+        `firmware.parse_header` misreads it. The same offset is declared for arch 9, so the defect
+        is not arch 8's alone and the note in section 114 understates its scope.
+        """
+        table = _arch_table()
+        self.assertEqual(table[9]['firmware_4847_offset'], 4)
+        self.assertEqual(table[8]['firmware_4847_offset'], 4)
+
+    def test_the_dump_is_the_image_the_external_region_stages(self):
+        """
+        The measured half, from the dump alone: the internal application starts at 0x1000 and its
+        header carries the `HG` magic at offset 4, which is what makes `external 0x810000 + N ==
+        internal 0x1000 + N` a claim about the same image rather than about two coincidences. The
+        live comparison is in the section.
+        """
+        lab.require('h525_code')
+        code = lab.load('h525_code')
+        self.assertEqual(code[0x1000 + 4:0x1000 + 6], b'HG')
+        # And the region below is the bootloader, which safe mode leaves alone.
+        self.assertNotEqual(code[0x0000:0x0002], b'\xff\xff')

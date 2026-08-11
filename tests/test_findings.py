@@ -954,3 +954,57 @@ class TestTheArch12BootloaderDoesNotTestAKey(unittest.TestCase):
             if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields.get('f') == tblptru:
                 sites += 1
         self.assertEqual(sites, 0)
+
+
+class TestTheArch9SafeModeImageIsNotTheApplication(unittest.TestCase):
+    """Section 118. Entering safe mode on arch 9 overwrites the application, so the images differ.
+
+    The live remote is not available to a test run, so what is asserted here is the half that lives
+    in the dump: the application's own accessors, and the absence of the safe mode ones. That
+    absence is what proved the resident image is a different one, so it is the assertion worth
+    keeping. The measured live bytes are in the section.
+    """
+
+    NAME = 'h525_code'
+    # Section 87's five accessors, in order: firmware version, software type, skin, platform,
+    # architecture. Read off the live remote as 30 / 0 / 22 / 9 / 9 running normally.
+    APPLICATION_ACCESSORS = 0x05774
+    APPLICATION = (0x30, 0x00, 0x16, 0x09, 0x09)
+    # What the same five must be in the image that answers in safe mode, from the version reply
+    # `20 25 12 ff 94 16 00` measured on 11 August 2026.
+    SAFE_MODE = (0x20, 0x04, 0x16, 0x00, 0x09)
+
+    def test_the_application_carries_its_five_accessors_where_expected(self):
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        for i, value in enumerate(self.APPLICATION):
+            addr = self.APPLICATION_ACCESSORS + 2 * i
+            with self.subTest(field=i):
+                ins = isa.decode(code, addr, 0)
+                self.assertEqual(ins.mnemonic, 'RETLW')
+                self.assertEqual(ins.fields['k'], value)
+
+    def test_the_safe_mode_accessors_are_nowhere_in_the_dump(self):
+        """
+        The negative that identifies the resident image as a different one. Searched as the RETLW
+        run it would have to be, not as bare bytes, so a coincidental data match cannot satisfy it.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        run = b''.join(bytes([value, 0x0C]) for value in self.SAFE_MODE)
+        self.assertEqual(code.find(run), -1)
+        # The control: the application's own run is found this way, so the search works.
+        control = b''.join(bytes([value, 0x0C]) for value in self.APPLICATION)
+        self.assertEqual(code.find(control), self.APPLICATION_ACCESSORS)
+
+    def test_the_application_fills_the_part_leaving_no_room_for_a_second_image(self):
+        """
+        The mechanism behind the overwrite, from the dump alone: 32 KiB, a 4 KiB bootloader and an
+        application that populates almost all of the rest. A resident safe mode image would have to
+        fit somewhere, and there is nowhere.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        self.assertEqual(len(code), 0x8000)
+        populated = sum(1 for b in code[0x1000:0x8000] if b != 0xFF)
+        self.assertGreater(populated / (0x8000 - 0x1000), 0.95)

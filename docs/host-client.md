@@ -541,6 +541,16 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
   distinct from the safe mode image and from the user config.
 * Read selector 12 is `docs/usb-protocol.md`'s "not read yet" selector `0x0C`. The client uses
   it to ask what hardware features the remote has.
+* **Flash `0x200000` is the firmware update state cell on arch 9**, `0x00` while an image is being
+  staged and `0x02` to install it, with `0x200010` holding the serial. Out of concordance rather than
+  Logitech's client, `libconcord/remote.cpp`'s `PrepFirmware` and `FinishFirmware`, which take that
+  branch on any architecture whose `firmware_update_base` equals its `firmware_base`. **Unconfirmed
+  against the 525's own firmware, and the standing rule has an extra edge here**: section 88 read that
+  architecture's `READ_FLASH` validator as refusing every top byte outside `0x80` to `0x87`, so either
+  writes go through a different validator or the region is special, and nothing here has read the cell.
+  It is on this ledger because it is the documented way out of arch 9 safe mode, section 118, and not
+  because it is believed. Adopted as knowledge and **not** as an action: this project does not perform
+  that write.
 
 ## MyHarmony was checked and holds nothing, and why that is worth knowing
 
