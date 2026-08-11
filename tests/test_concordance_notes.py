@@ -43,6 +43,15 @@ def _read(*parts):
         return fh.read()
 
 
+_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _read_repo(*parts):
+    """A file in this repository, so a test can check what a document tells a stranger to run."""
+    with open(os.path.join(_REPO, *parts), encoding='utf-8') as fh:
+        return fh.read()
+
+
 # An architecture entry is a brace block introduced by a `/* arch N */` comment, and every field in
 # it is a value followed by a trailing comment naming it. Reading the names rather than counting
 # positions means an inserted field cannot silently shift what this test believes it is reading.
@@ -301,3 +310,80 @@ class TestNoCommandLineDoesTheFinishStepAlone(unittest.TestCase):
         self.assertIn('WriteFlash(0x200000, 1, data', body)
         arch9 = _arch_table()[9]
         self.assertEqual(arch9['firmware_update_base'], arch9['firmware_base'])
+
+
+class TestTheFrontPageOnlyTellsStrangersToRead(unittest.TestCase):
+    """The command block in `README.md` is the one text here a stranger copies onto their own remote.
+
+    **No lab and no concordance checkout needed**, deliberately: this is the assertion that has to run
+    in a fresh clone, because the harm it prevents lands on somebody else's irreplaceable device.
+
+    concordance's read and write modes differ by one shift key. `-c` dumps the config and `-C` writes
+    one; `-f` dumps the firmware and `-F` overwrites it. It also has an automatic mode, where a bare
+    filename with no flag at all makes it work out what to do, and for a config that means writing it
+    to the remote. So a helpful edit to the front page could turn an instruction to read into an
+    instruction to reflash, and nothing else in this repository would notice: `make prose` checks
+    punctuation and `tools/facts.py` checks numbers and dead phrasings.
+    """
+
+    # Everything that only reads, plus the two that print and exit. `-s` dumps safe mode, which is a
+    # read even though what it returns is mislabelled on arch 8.
+    READ_ONLY = frozenset('-c -i -f -b -s -v -w -k -V -h'.split())
+    # Named rather than inferred, so the message says which one was found.
+    WRITES = {
+        '-C': 'writes a config to the remote',
+        '-F': 'overwrites the remote firmware',
+        '-K': 'sets the remote clock',
+        '-r': 'reboots the remote',
+        '-R': 'suppresses the reboot after a write, so it implies one',
+        '-l': 'starts a learn session, which writes to the remote',
+        '-t': 'runs a connectivity test, which writes',
+    }
+
+    def _invocations(self):
+        """Every concordance command line inside a fenced block in `README.md`."""
+        text = _read_repo('README.md')
+        fenced = re.findall(r'```[a-z]*\n(.*?)```', text, re.S)
+        out = []
+        for block in fenced:
+            for line in block.splitlines():
+                bare = line.split('#')[0].strip()
+                if bare.startswith('concordance'):
+                    out.append(bare)
+        return out
+
+    def test_the_front_page_does_invoke_concordance(self):
+        # Without this the rest passes vacuously the moment somebody reformats the section.
+        self.assertGreaterEqual(len(self._invocations()), 2, self._invocations())
+
+    def test_every_flag_on_the_front_page_only_reads(self):
+        for line in self._invocations():
+            with self.subTest(line=line):
+                for token in line.split()[1:]:
+                    if token.startswith('>'):
+                        break
+                    if not token.startswith('-'):
+                        continue
+                    self.assertNotIn(token, self.WRITES,
+                                     '%s %s' % (token, self.WRITES.get(token, '')))
+                    self.assertIn(token, self.READ_ONLY, '%s is not a known read flag' % token)
+
+    def test_no_invocation_passes_a_bare_filename(self):
+        # Automatic mode. `concordance <file>` with no flag decides for itself what the file is for,
+        # and for a config that is a write to the remote.
+        for line in self._invocations():
+            with self.subTest(line=line):
+                tokens = line.split()[1:]
+                for index, token in enumerate(tokens):
+                    if token.startswith('>'):
+                        break
+                    if token.startswith('-'):
+                        continue
+                    # An argument to a flag that takes one is fine; a first bare token is not.
+                    self.assertTrue(index > 0 and tokens[index - 1].startswith('-'),
+                                    'bare filename in: %s' % line)
+
+    def test_the_long_form_of_b_is_not_used_on_the_front_page(self):
+        # Because concordance's own help documents `--binary-only` and its getopt registers `binary`,
+        # per the test above. The short form is the only spelling that works everywhere.
+        self.assertNotIn('--binary-only', _read_repo('README.md'))

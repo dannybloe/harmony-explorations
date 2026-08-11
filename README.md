@@ -53,23 +53,29 @@ repository is public, and a config is Logitech generated data including an infra
 from Logitech's own, so it cannot be published here. That is the same reason firmware is not in this
 repository either. Issues and discussions are very welcome for everything else.
 
-To make a dump, [concordance](https://github.com/jaymzh/concordance) is the tool:
+To make a dump, [concordance](https://github.com/jaymzh/concordance) is the tool. Install it, plug the
+remote in with its USB cable, and run these in whatever directory you want the files in:
 
 ```sh
-concordance -c              # the config: <model>-config.EZHex
-concordance -i              # what the remote says it is: model, skin, firmware, flash chip
-concordance -b -f           # the firmware, which works on arch 8 and arch 9 and is what a 890 needs
+concordance -c                              # the config. Writes config.EZHex
+concordance -i > harmony-600-info.txt       # what the remote says it is. Prints to the screen, so
+                                            # redirect it, and end the name in -info.txt
+concordance -b -f                           # the firmware. Writes firmware.bin. Only worth it on the
+                                            # models listed below
 ```
 
-Please say **which model it came off**, and anything you remember about what is set up on it. A dump
-plus a description is worth several dumps without one: the description is what lets a structure in the
-file be matched to something in the world, and it is far harder to reconstruct later.
+**Lower case flags only.** `-c` reads the config off the remote and `-C` writes one to it; `-f` reads
+the firmware and `-F` overwrites it. The flag you want and the flag that reflashes your remote differ
+by one shift key. `-r` reboots it. And never pass a bare filename: `concordance somefile` is
+"automatic mode", which works out what to do with the file, and for a config that means writing it to
+the remote.
 
-**What is in the files, so you can decide.** A config carries an equipment inventory, the device and
-activity names you chose, and no account data; that was checked rather than assumed. The `-i` output
-carries your remote's **serial number and unique GUIDs**. Firmware is Logitech's own code and carries
-nothing of yours. Nothing you send is published or committed anywhere, and if you would rather not
-send the serial number, leave the `-i` output out and say the model instead.
+**The firmware dump only works on some models**, and that is a defect in concordance's architecture
+table rather than in your remote: on the 51x, 52x, 55x, 720, 785, 880, 882 and 885 it returns the
+complete firmware, and on the One, 600, 650 and 700 it returns something that is not usable firmware
+at all. [reference/concordance-notes.md](reference/concordance-notes.md) has the reason and the patch.
+**Nobody knows which it does on an 890 or an 895**, and finding out is itself useful, so if you have
+one: run it, and say what you got. It is a read command either way.
 
 That is the whole ask: two files and a model name.
 
