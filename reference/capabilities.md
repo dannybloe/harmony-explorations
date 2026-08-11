@@ -33,8 +33,12 @@ measured here, below.
 
 **The images are not usable and are not here.** The page's product photos carry no licence to third
 parties: its terms grant rights to the operator, not to visitors, and the photos are most plausibly
-Logitech's own. They are in the private lab as bench reference. Anything FreeHarmony ships has to be
-asked for or drawn.
+Logitech's own. They are in the private lab as bench reference, full size only. **Drawn is the answer**,
+and `reference/silhouettes/` is where those live: outline only, no fill and no grey, one shape per
+button with an id, so a drawing is our own work and is also the physical button map in a form code can
+address. The 525 is drawn. Its count came out at fifty, which is what section 89 derived from the
+firmware and the config before anything was drawn, so the drawing is a third independent count of a
+number that had cost a firmware read and a hardware census.
 
 ## The models this library can address
 

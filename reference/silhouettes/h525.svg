@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 880" width="240" height="880"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Harmony 525, button silhouette</title>
+  <desc id="desc">Outline drawing of the Harmony 520 and 525 front face, one shape per button, drawn
+    from a product photograph rather than traced from it. Fifty buttons, which is the count section 89
+    derived from the firmware and the config before this was drawn. Stroke only, no fill and no grey,
+    so it takes the viewer's colour.</desc>
+
+  <!--
+    Why this exists and why it is here rather than in FreeHarmony.
+
+    It is the physical button map in executable form. `docs/findings.md` section 89 established that
+    the 525 has fifty matrix buttons, scan code `group * 8 + column` running 1 to 64, with fifty
+    codes bound by both of its configs. That is a set of numbers with no positions attached, and a
+    position is what a user interface has to show. So each shape here carries an id, and a
+    `data-scan` attribute wherever the code is actually known.
+
+    **Almost none of them is known, and the file says so rather than guessing.** Only the four soft
+    keys have been narrowed, to the set {30, 31, 38, 39}, and not individually: the assignment inside
+    that block needs to know which of columns 6 and 7 is the left one, which nothing here has
+    established. `data-scan-candidates` marks that honestly. Filling these in is what a key press
+    census on the remote would produce, and section 48 explains why USB alone cannot: a remote on USB
+    never runs its keypad handler.
+
+    Drawn, not traced. The reference photograph is third party and unpublishable,
+    `../lab/reference/forum-images/PROVENANCE.md`; this is our own geometry and carries no such
+    problem, which is the whole reason for drawing rather than shipping a photo.
+  -->
+
+  <style>
+    /* currentColor throughout, so the page decides light or dark and this follows. */
+    .body { fill: none; stroke: currentColor; stroke-width: 2; }
+    .key  { fill: none; stroke: currentColor; stroke-width: 1.4; }
+    .lcd  { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 4 3; }
+    .lbl  { fill: currentColor; stroke: none; font: 8px system-ui, sans-serif; text-anchor: middle; }
+    .lbl-sm { fill: currentColor; stroke: none; font: 6px system-ui, sans-serif; text-anchor: middle; }
+    .zone { fill: none; stroke: currentColor; stroke-width: 0.8; stroke-dasharray: 2 2; }
+  </style>
+
+  <!-- The case. One rounded outline, no shading: the silhouette is the point. -->
+  <rect class="body" x="14" y="10" width="212" height="858" rx="34" />
+
+  <g id="power-and-mode">
+    <!-- 1 -->
+    <circle class="key" id="k-power" cx="42" cy="44" r="11" />
+    <text class="lbl-sm" x="42" y="66">power</text>
+    <!-- 2 -->
+    <rect class="key" id="k-activities" x="62" y="76" width="120" height="17" rx="8.5" />
+    <text class="lbl" x="122" y="88">Activities</text>
+    <!-- 3, 4 -->
+    <rect class="key" id="k-devices" x="46" y="101" width="70" height="16" rx="8" />
+    <text class="lbl" x="81" y="112">Devices</text>
+    <rect class="key" id="k-help" x="124" y="101" width="70" height="16" rx="8" />
+    <text class="lbl" x="159" y="112">Help</text>
+  </g>
+
+  <!-- The screen, and the four buttons flanking it. Not a button itself, so it is dashed. -->
+  <g id="screen">
+    <rect class="lcd" x="52" y="146" width="136" height="86" rx="4" />
+    <line class="zone" x1="120" y1="146" x2="120" y2="232" />
+    <line class="zone" x1="52" y1="189" x2="188" y2="189" />
+    <text class="lbl-sm" x="86" y="170">zone 1</text>
+    <text class="lbl-sm" x="154" y="170">zone 2</text>
+    <text class="lbl-sm" x="86" y="213">zone 3</text>
+    <text class="lbl-sm" x="154" y="213">zone 4</text>
+  </g>
+
+  <!--
+    The four soft keys, 5 to 8. Two on each side of the screen, each answering the zone beside it,
+    which is what makes this remote's screen navigable without a touch panel or a page button.
+
+    Their scan codes are the set below and the assignment within it is open, so every one of the four
+    carries the same candidate list rather than a guess. Section 119's capability table records the
+    other half of this: the 5xx has no page button, and these carry the mode switches instead.
+  -->
+  <g id="soft-keys">
+    <rect class="key" id="k-soft-upper-left"  x="30" y="152" width="14" height="30" rx="6"
+          data-scan-candidates="30 31 38 39" data-zone="1" />
+    <rect class="key" id="k-soft-lower-left"  x="30" y="196" width="14" height="30" rx="6"
+          data-scan-candidates="30 31 38 39" data-zone="3" />
+    <rect class="key" id="k-soft-upper-right" x="196" y="152" width="14" height="30" rx="6"
+          data-scan-candidates="30 31 38 39" data-zone="2" />
+    <rect class="key" id="k-soft-lower-right" x="196" y="196" width="14" height="30" rx="6"
+          data-scan-candidates="30 31 38 39" data-zone="4" />
+  </g>
+
+  <!-- 9, 10: the two arrow bars under the screen. -->
+  <g id="arrow-bars">
+    <rect class="key" id="k-prev-page" x="46" y="244" width="66" height="15" rx="7.5" />
+    <text class="lbl" x="79" y="255">&#9664;&#9664;</text>
+    <rect class="key" id="k-next-page" x="128" y="244" width="66" height="15" rx="7.5" />
+    <text class="lbl" x="161" y="255">&#9654;&#9654;</text>
+  </g>
+
+  <!-- 11 to 18: two rows of four round transport keys. -->
+  <g id="transport">
+    <circle class="key" id="k-stop"   cx="58"  cy="286" r="13" />
+    <circle class="key" id="k-replay" cx="94"  cy="286" r="13" />
+    <circle class="key" id="k-skip"   cx="146" cy="286" r="13" />
+    <circle class="key" id="k-play"   cx="182" cy="286" r="13" />
+    <text class="lbl-sm" x="58"  y="306">Stop</text>
+    <text class="lbl-sm" x="94"  y="306">Replay</text>
+    <text class="lbl-sm" x="146" y="306">Skip</text>
+    <text class="lbl-sm" x="182" y="306">Play</text>
+
+    <circle class="key" id="k-record" cx="58"  cy="330" r="13" />
+    <circle class="key" id="k-rewind" cx="94"  cy="330" r="13" />
+    <circle class="key" id="k-forward" cx="146" cy="330" r="13" />
+    <circle class="key" id="k-pause"  cx="182" cy="330" r="13" />
+    <text class="lbl-sm" x="58"  y="350">Rec</text>
+    <text class="lbl-sm" x="94"  y="350">Rew</text>
+    <text class="lbl-sm" x="146" y="350">Fwd</text>
+    <text class="lbl-sm" x="182" y="350">Pause</text>
+  </g>
+
+  <!-- 19 to 24: three rows of two. -->
+  <g id="menu-keys">
+    <rect class="key" id="k-guide" x="46" y="366" width="70" height="16" rx="8" />
+    <text class="lbl" x="81" y="377">Guide</text>
+    <rect class="key" id="k-info" x="124" y="366" width="70" height="16" rx="8" />
+    <text class="lbl" x="159" y="377">Info</text>
+
+    <rect class="key" id="k-exit" x="46" y="390" width="70" height="16" rx="8" />
+    <text class="lbl" x="81" y="401">Exit</text>
+    <rect class="key" id="k-menu" x="124" y="390" width="70" height="16" rx="8" />
+    <text class="lbl" x="159" y="401">Menu</text>
+
+    <rect class="key" id="k-mute" x="46" y="414" width="70" height="16" rx="8" />
+    <text class="lbl" x="81" y="425">Mute</text>
+    <rect class="key" id="k-prev" x="124" y="414" width="70" height="16" rx="8" />
+    <text class="lbl" x="159" y="425">Prev</text>
+  </g>
+
+  <!-- 25 to 33: the two rockers and the direction pad. -->
+  <g id="rockers-and-pad">
+    <rect class="key" id="k-volume-up"   x="34" y="444" width="24" height="20" rx="8" />
+    <text class="lbl" x="46" y="458">+</text>
+    <rect class="key" id="k-volume-down" x="34" y="508" width="24" height="20" rx="8" />
+    <text class="lbl" x="46" y="522">&#8722;</text>
+    <text class="lbl-sm" x="46" y="484">Vol</text>
+
+    <rect class="key" id="k-channel-up"   x="182" y="444" width="24" height="20" rx="8" />
+    <text class="lbl" x="194" y="458">+</text>
+    <rect class="key" id="k-channel-down" x="182" y="508" width="24" height="20" rx="8" />
+    <text class="lbl" x="194" y="522">&#8722;</text>
+    <text class="lbl-sm" x="194" y="484">Ch</text>
+
+    <circle class="key" id="k-pad" cx="120" cy="486" r="42" />
+    <circle class="key" id="k-ok" cx="120" cy="486" r="15" />
+    <text class="lbl" x="120" y="489">OK</text>
+    <path class="key" id="k-up"    d="M113 456 h14 l-7 -9 z" />
+    <path class="key" id="k-down"  d="M113 516 h14 l-7 9 z" />
+    <path class="key" id="k-left"  d="M90 479 v14 l-9 -7 z" />
+    <path class="key" id="k-right" d="M150 479 v14 l9 -7 z" />
+  </g>
+
+  <!-- 34: the backlight. -->
+  <rect class="key" id="k-glow" x="86" y="546" width="68" height="16" rx="8" />
+  <text class="lbl" x="120" y="557">Glow</text>
+
+  <!-- 35 to 46: the keypad, three by four. -->
+  <g id="keypad">
+    <rect class="key" id="k-1" x="40" y="614" width="44" height="20" rx="6" />
+    <text class="lbl" x="62" y="628">1</text>
+    <rect class="key" id="k-2" x="98" y="614" width="44" height="20" rx="6" />
+    <text class="lbl" x="120" y="628">2 abc</text>
+    <rect class="key" id="k-3" x="156" y="614" width="44" height="20" rx="6" />
+    <text class="lbl" x="178" y="628">3 def</text>
+
+    <rect class="key" id="k-4" x="40" y="642" width="44" height="20" rx="6" />
+    <text class="lbl" x="62" y="656">4 ghi</text>
+    <rect class="key" id="k-5" x="98" y="642" width="44" height="20" rx="6" />
+    <text class="lbl" x="120" y="656">5 jkl</text>
+    <rect class="key" id="k-6" x="156" y="642" width="44" height="20" rx="6" />
+    <text class="lbl" x="178" y="656">6 mno</text>
+
+    <rect class="key" id="k-7" x="40" y="670" width="44" height="20" rx="6" />
+    <text class="lbl" x="62" y="684">7 pqrs</text>
+    <rect class="key" id="k-8" x="98" y="670" width="44" height="20" rx="6" />
+    <text class="lbl" x="120" y="684">8 tuv</text>
+    <rect class="key" id="k-9" x="156" y="670" width="44" height="20" rx="6" />
+    <text class="lbl" x="178" y="684">9 wxyz</text>
+
+    <rect class="key" id="k-star" x="40" y="698" width="44" height="20" rx="6" />
+    <text class="lbl" x="62" y="712">&#42;</text>
+    <text class="lbl-sm" x="62" y="728">clear</text>
+    <rect class="key" id="k-0" x="98" y="698" width="44" height="20" rx="6" />
+    <text class="lbl" x="120" y="712">0</text>
+    <rect class="key" id="k-hash" x="156" y="698" width="44" height="20" rx="6" />
+    <text class="lbl" x="178" y="712">&#35;</text>
+    <text class="lbl-sm" x="178" y="728">enter</text>
+  </g>
+
+  <!-- 47 to 50: the coloured keys, outlined and named rather than filled, so no grey and no colour. -->
+  <g id="colour-keys">
+    <circle class="key" id="k-red"    cx="62"  cy="746" r="8" />
+    <text class="lbl-sm" x="62"  y="765">red</text>
+    <circle class="key" id="k-green"  cx="101" cy="746" r="8" />
+    <text class="lbl-sm" x="101" y="765">green</text>
+    <circle class="key" id="k-yellow" cx="139" cy="746" r="8" />
+    <text class="lbl-sm" x="139" y="765">yellow</text>
+    <circle class="key" id="k-blue"   cx="178" cy="746" r="8" />
+    <text class="lbl-sm" x="178" y="765">blue</text>
+  </g>
+
+  <text class="lbl-sm" x="120" y="840">Harmony 520 / 525</text>
+</svg>

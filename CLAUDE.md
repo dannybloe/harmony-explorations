@@ -408,6 +408,9 @@ reference/models.md             the 40 models Logitech retired in 2025, mapped t
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
                                 otherwise, and `packages/usb/src/models.ts` is the executable form
+reference/silhouettes/          the physical button map as a drawing, one SVG per model, outline
+                                only. Drawn rather than traced, so it is ours to publish, and
+                                tested: the count has to match what the firmware implies
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
@@ -1003,7 +1006,14 @@ produce a config the remote accepts and mishandles.
   codes, none a multiple of eight and contiguous in the resulting lattice to 57. So **the 525 has
   fifty matrix buttons**, predicted from firmware plus config and then **counted on the remote**,
   which makes it the one architecture where every matrix button is bound and no bound code lacks a
-  button.
+  button. **Counted a third way on 11 August 2026 and it is fifty**, from a product photograph, which
+  is a free confirmation of a number that had cost a firmware read and a hardware census.
+  `reference/silhouettes/h525.svg` is that count in a form a user interface can use, and what it does
+  **not** carry is any scan code: the positions are drawn and the assignment is open, since section 48
+  is why no read path here can produce it. The four soft keys are narrowed to the set
+  `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
+  columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
+  filling one in has to be a deliberate change with a measurement behind it.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
