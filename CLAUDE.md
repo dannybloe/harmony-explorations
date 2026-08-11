@@ -408,12 +408,16 @@ reference/models.md             the 40 models Logitech retired in 2025, mapped t
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
                                 otherwise, and `packages/usb/src/models.ts` is the executable form
-reference/silhouettes/          the physical button map as a drawing, one SVG per model, outline
+reference/silhouettes/          which buttons a model has, as a drawing, one SVG per model, outline
                                 only bar the teletext keys. Drawn rather than traced, so it is ours
                                 to publish, and tested: the count has to match what the firmware
                                 implies, and the case has to be a measured contour rather than a
                                 rounded box. The three bench remotes are drawn, 50, 54 and 44
-                                buttons; the 700 and the 650 are next
+                                buttons. **Not the button map: placement is schematic**, since every
+                                key sits on a horizontal axis where real rows are angled or curved,
+                                so a hit region must not be taken from these coordinates. Drawing
+                                the other 33 models was started on 11 August 2026 and stopped for
+                                that reason; it is parked until FreeHarmony needs it
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
@@ -1011,9 +1015,10 @@ produce a config the remote accepts and mishandles.
   which makes it the one architecture where every matrix button is bound and no bound code lacks a
   button. **Counted a third way on 11 August 2026 and it is fifty**, from a product photograph, which
   is a free confirmation of a number that had cost a firmware read and a hardware census.
-  `reference/silhouettes/h525.svg` is that count in a form a user interface can use, and what it does
+  `reference/silhouettes/h525.svg` is that count as a drawing, and what it does
   **not** carry is any scan code: the positions are drawn and the assignment is open, since section 48
-  is why no read path here can produce it. The four soft keys are narrowed to the set
+  is why no read path here can produce it. Nor is it a usable map of **where** the keys are, since every
+  key in it sits on a horizontal axis and a 525's rows do not. The four soft keys are narrowed to the set
   `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
   columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
   filling one in has to be a deliberate change with a measurement behind it.

@@ -35,8 +35,16 @@ measured here, below.
 parties: its terms grant rights to the operator, not to visitors, and the photos are most plausibly
 Logitech's own. They are in the private lab as bench reference, full size only. **Drawn is the answer**,
 and `reference/silhouettes/` is where those live: one shape per button with an id, no grey and no fill
-bar the teletext keys, so a drawing is our own work and is also the physical button map in a form code
-can address. All three bench remotes are drawn.
+bar the teletext keys, so a drawing is our own work. All three bench remotes are drawn.
+
+**What a silhouette is good for is narrower than "the button map in a form code can address", which is
+what this said for a day.** Every key in all three files sits on a horizontal axis, and on a real Harmony
+many rows sit at an angle or follow a curve across the face. So the case contour is measured and the
+placement inside it is schematic: the drawings say which keys exist and roughly where, and they are not
+accurate enough to put a hit region on a screen. Thirty three further drawings were started on 11 August
+2026 and stopped for exactly that reason, by the owner, who saw it in the output. The rule the case
+outline already follows, sample the photograph rather than draw the obvious shape, has to apply to the key
+rows too before the fleet is worth having, and the work is parked until FreeHarmony needs it.
 
 **Two of the three counts are confirmed and the third cannot be**, which is the useful thing the set
 says. The 525 came out at **fifty**, what section 89 derived from the firmware and the config before

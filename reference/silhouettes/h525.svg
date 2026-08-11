@@ -11,6 +11,19 @@
     than decoration.</desc>
 
   <!--
+    A stated limitation, from the owner on 11 August 2026, and it is about the buttons rather than the
+    case. **Every key in this file sits on a horizontal axis**, and on a real Harmony many rows do not:
+    they sit at an angle or follow a curve across the face. The contour is measured and the placement
+    within it is schematic, so this drawing is good for saying which keys exist and roughly where, and
+    not for putting a hit region on a screen at the right place.
+
+    That is why the fleet of thirty odd further drawings was stopped rather than finished. The rule the
+    case outline already follows, sample the photograph rather than draw the obvious shape, has to
+    apply to the key rows too, and it did not. The work is parked until FreeHarmony needs it, since the
+    interface that would expose the difference does not exist yet.
+  -->
+
+  <!--
     Why this exists and why it is here rather than in FreeHarmony.
 
     It is the physical button map in executable form. `docs/findings.md` section 89 established that
