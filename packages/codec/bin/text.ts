@@ -34,6 +34,8 @@ if (LAB === undefined) {
 
 let glyphs = 0;
 let read = 0;
+let referenced = 0;
+let strings = 0;
 for (const name of SAMPLES) {
   const blob = load(name);
   if (blob === undefined) {
@@ -45,11 +47,15 @@ for (const name of SAMPLES) {
   const coverage = textCoverage(c);
   glyphs += coverage.glyphs;
   read += coverage.read;
+  referenced += coverage.referenced;
+  strings += coverage.strings;
   const share = coverage.glyphs === 0 ? '' : `${((100 * coverage.read) / coverage.glyphs).toFixed(1)}%`;
   console.log(
     `arch ${String(c.architecture).padStart(2)} ${name.padEnd(24)} ` +
       `alphabet ${(map?.alphabet ?? 'NONE').padEnd(14)} ` +
-      `${String(coverage.strings).padStart(5)} strings ${String(coverage.read).padStart(6)}/${String(coverage.glyphs).padEnd(6)} ${share}`,
+      `${String(coverage.strings).padStart(5)} strings ` +
+      `${String(coverage.referenced).padStart(5)} by reference ` +
+      `${String(coverage.read).padStart(6)}/${String(coverage.glyphs).padEnd(6)} ${share}`,
   );
   if (detail && map !== undefined) {
     if (map.ambiguous.size > 0) {
@@ -80,8 +86,14 @@ for (const name of SAMPLES) {
   }
 }
 console.log(`\ncorpus ${read}/${glyphs} glyphs read, ${((100 * read) / glyphs).toFixed(1)}%`);
+console.log(
+  `       ${strings} draws, of which ${referenced} name a string another program carries, ` +
+    `${((100 * referenced) / strings).toFixed(1)}%`,
+);
 
-// Machine readable, for `tools/facts.py`: the two numbers the documents quote, from the one place
-// that computes them.
+// Machine readable, for `tools/facts.py`: the numbers the documents quote, from the one place that
+// computes them.
 process.stdout.write(`text_read ${read}\n`);
 process.stdout.write(`text_glyphs ${glyphs}\n`);
+process.stdout.write(`text_referenced ${referenced}\n`);
+process.stdout.write(`text_draws ${strings}\n`);

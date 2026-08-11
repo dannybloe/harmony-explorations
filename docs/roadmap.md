@@ -517,12 +517,17 @@ instruction each. `packages/codec/src/inventory.ts` is that view.
 
 **Activity names are readable now**, section 112: a mode page's screen program draws them, and a
 glyph code turns back into a character by matching the glyph's pixels against a hand read alphabet
-per typeface. `packages/codec/src/text.ts`, `make text`, and 65454<!--fact:text_read--> of
-65456<!--fact:text_glyphs--> drawn glyphs across the corpus. What is **not** settled is which
-activity a given name belongs to: two routes were tried and ruled out, and the one left to try is
-the touch map, base slot 17's areas to key codes to a binding to the action list that writes the
-activity number. Until that lands the interface can show the names it finds but cannot say which
-entry starts which activity.
+per typeface. `packages/codec/src/text.ts`, `make text`, and 146844<!--fact:text_read--> of
+146846<!--fact:text_glyphs--> drawn glyphs across the corpus. **And which activity a name belongs to is
+read now on three architectures of four**, sections 120 and 121: a key press reaches an activity in four
+hops, all of an activity's keys are on one page, and the modes that activity enters draw its own name, so
+the page's string that relates to one of theirs is its label. 23 of 35 activities and all 13 on arch 14.
+
+Arch 12 is the exception and it is a proof rather than a gap: no fixed scan code to row map can exist on
+a touch panel, so a Harmony One needs base slot 17's hit map, which is the route this document named and
+which turns out to be arch 12's alone rather than everyone's. So the interface can start an activity by
+name on a 525, a 600, a 700 and an 880, and on a One it can list the names and the keys without pairing
+them.
 
 **Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
 same length and there is deliberately no way to insert, delete or resize anything, because a
@@ -1109,7 +1114,7 @@ Not optional, and they belong in the code rather than in a document:
   classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
   declared region written, so the appender disarms itself at the first attempt, section 111.
 * **Which activity a drawn name belongs to.** The codes are read, section 112: a glyph's pixels name
-  its character, seven typefaces cover the corpus, and all but two of 65456<!--fact:text_glyphs-->
+  its character, seven typefaces cover the corpus, and all but two of 146846<!--fact:text_glyphs-->
   drawn glyphs come back. So the names an interface needs are readable. The tie from a name to an
   activity number is not: no screen switch reads `CurrentActivityState` and base slot 14's value maps
   point at no text, which leaves the touch map. A **writer** still has to build a font set and number

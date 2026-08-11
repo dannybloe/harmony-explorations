@@ -49,8 +49,16 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty four have been found and corrected so far. **The two newest are in section 119, and one of them
-is a prediction this document made and then measured wrong.** It predicted that the stranded 525's
+Forty six have been found and corrected so far. **The two newest are in sections 120 and 121, and both
+are cases where a document said something in as many words and nobody checked it.** Section 86 said
+value 0 of the activity variable means "no activity running"; the count it drew from that was right and
+the reason was wrong, and the field that does say it had been sitting in base slot 13 marked unconfirmed
+since section 60. And `packages/codec/src/screen.ts` said opcode 2 is the only screen instruction naming<!--superseded-->
+a place outside its own program, which is the sentence that would have prompted somebody to follow
+opcode 4's pointer; two thirds of the corpus's drawn text was on the other side of it.
+
+The two before those are in section 119, and one of them
+is a prediction this document made and then measured wrong. It predicted that the stranded 525's
 EEPROM byte 0 would be 3, on a reading where safe mode reinstalls itself at every boot; the byte is 0,
 which is the arm that installs nothing, so the latch is passive and safe mode persists by being
 resident. Both readings predict a remote that never leaves safe mode, so no behaviour could separate
@@ -14310,8 +14318,8 @@ The application needs to show a config's activities and devices by name. Section
 devices, in base slot 0's name tree, and found that nothing there names an activity. What does name
 one is the screen: a mode page's program draws the activity's own label, and section 46 left that
 unreadable, with **what the glyph codes mean** standing as its last open item. This section reads
-them, on all four architectures, and the corpus comes to 65454<!--fact:text_read--> of
-65456<!--fact:text_glyphs--> drawn glyphs.
+them, on all four architectures, and the corpus comes to 146844<!--fact:text_read--> of
+146846<!--fact:text_glyphs--> drawn glyphs.
 
 ### The codes are per config, and the order they are assigned in says why
 
@@ -15848,6 +15856,221 @@ address the firmware bounds to that size, served by the image the remote is actu
 cell whose five states are read. What remains is that this project does not perform it: arch 9 has no
 write target, nothing here has ever written to a remote, and a first write should not be the one that
 installs firmware. The script that does it lives in the private lab.
+
+## 120. Which key starts which activity: four hops, and the field that says what idle means
+
+An application that reads a config has to be able to say "this is the Watch TV activity and this
+button starts it". Until now it could do neither half. Section 112 read the drawn text, so the names
+were readable, and it closed with the honest statement that **which activity a drawn name belongs to
+was not settled**, having ruled out two routes: no screen switch reads the `CurrentActivityState`
+variable index, and base slot 14's value maps point at targets that draw no text. `CLAUDE.md` proposed
+a third, the arch 12 touch hit map, and the owner corrected it in one sentence: a Harmony 525 has no
+touch panel at all, it has four keys beside the screen matching four zones on it. That correction is
+what opened this, because it moved the question from geometry to key bindings, where the format is
+explicit.
+
+### The chain
+
+Four hops, and the length is the finding. Nothing in the format names an activity.
+
+1. A mode page's tagged list binds a key code to opcode `0x7F`, whose operand indexes base slot 10.
+2. That action list carries opcode `0x1F` with operand `0xFF | set`. `docs/config-format.md` already
+   records that band as selecting the current binding table entry, the low byte being the index into
+   base slot 9.
+3. That base slot 9 entry has a tagged list of its own, and it carries another `0x7F` naming a second
+   base slot 10 list.
+4. That list writes `CurrentActivityState` with `0x80 | index`, and the operand is the activity.
+
+`activityBindings` in `packages/codec/src/inventory.ts` walks it. Per container:
+
+| | arch | activities | writer lists | bindings | pages |
+|---|---|---|---|---|---|
+| `h700_config` | 14 | 5 | 5 | 10 | 3 |
+| `h700_config_2` | 14 | 5 | 5 | 10 | 3 |
+| `h600_config` | 14 | 3 | 3 | 6 | 2 |
+| `h525_config` | 9 | 3 | 3 | 3 | 1 |
+| `h525_config_2` | 9 | 1 | 1 | 1 | 1 |
+| `one_config` | 12 | 8 | 8 | 8 | 3 |
+| `one_config_unprogrammed` | 12 | 1 | 1 | 1 | 1 |
+| `arch8_config_a` | 8 | 1 | 1 | 1 | 1 |
+| `arch8_config_b` | 8 | 2 | 2 | 2 | 1 |
+| `arch8_config_c` | 8 | 3 | 3 | 3 | 1 |
+| `arch8_config_d` | 8 | 3 | 3 | 3 | 1 |
+| `h525_safemode_ahcm` | 9 | 0 | 1 | 0 | 0 |
+
+Three properties hold in all of them, and each is a way the reading could have failed and did not:
+
+* **Every activity is reachable from a key**, and the number of base slot 10 lists that write the
+  variable is the activity count. So there is one list per activity and no spares.
+* **All of an activity's keys are on one page**, so an activity belongs to one screen. That is what
+  makes "the page that names this activity" a well formed phrase.
+* **Every binding is event type `0x80`**, a press, never a release or a repeat. Section 17's key code
+  split is what makes that checkable, and a chain assembled out of the wrong split would have produced
+  a mixture.
+
+Arch 14 binds two keys per activity and the others one, which matches `reference/capabilities.md`
+saying the 600 and 700 have physical activity buttons **and** soft keys where the 5xx has soft keys
+only.
+
+### The closure: an activity page gets a fresh run of action lists
+
+An activity page's `0x7F` operands are a contiguous ascending run of base slot 10 indices, in the
+tagged list's own order. On the Harmony 525's page 47 that is `0x1D2, 0x1D3, 0x1D4` for three keys; on
+the One's page 45, `0xF8A` to `0xF8E` for five.
+
+It holds on **16 of 16** activity pages in the corpus. The control is what makes it evidence: across
+all 1152 pages with two or more `0x7F` entries, 373 are not contiguous, so a third of pages generally
+fail a property every activity page has. The generator allocates a fresh run of action lists when it
+lays out an activity menu, and that is a way to recognise one without walking the chain at all.
+
+### The idle value, and a field that was unconfirmed for a reason
+
+The writes do not cover the variable's whole range. In `h700_config` the highest value is 5 and the
+values written are 0 to 4; in `one_config` the highest is 8 and the written set is
+`{0,1,2,3,4,5,6,8}`, which skips **7**. Exactly one value in `0` to `highest` is never written, in
+every container.
+
+That value is base slot 13's `first` field, the `u16` at +0x00. Section 60 read it as an initial value
+and marked it **unconfirmed**, because nothing had been traced to it: it is at most `second` in all 735
+records and zero in most. Eleven containers of eleven now agree that it is exactly the value no
+activity binding writes.
+
+The agreement is not arithmetic, and `one_config` is why. In ten containers `first` equals `second`, so
+any rule of the form "the top value is idle" fits them. In `one_config` `first` is 7 while `second` is
+8, and the value 8 **is** bound to a key while 7 is bound to nothing. So the field states it, and a rule
+inferred from the other ten would have been wrong about this config while looking right.
+
+**This corrects section 86 in place.** That section read the count as `second` on the grounds that
+"value 0 is no activity running and the rest are the activities". The count is right and the reason was
+wrong: 0 is an activity in every user config here. There are `second + 1` states, one of them idle, so
+`second` of them are activities however the values are distributed.
+
+`h525_safemode_ahcm` is the counterexample that confirms rather than annoys: it is the only container
+whose lists write the idle value, and the only one with zero activities. Its single list returns the
+remote to idle rather than starting anything, which is exactly what a safe mode container should do,
+and it is why "writer lists equals activity count" is 1 against 0 there and nowhere else.
+
+### What it does not settle
+
+Which of a page's drawn strings is the activity's name. `activityBindings` gets to the page; section
+121 gets to the string, and to the architecture where it cannot.
+
+## 121. The commoner text opcode points at another program's string, and it names the activities
+
+Section 120 gets from a key to an activity. What was still missing is the other end: which of the
+strings a page draws is that activity's name. Chasing it turned up something larger, which is that
+**two thirds of a config's drawn text had never been read at all**, and the reason nobody noticed is
+instructive.
+
+### Opcode 4 draws a string that lives somewhere else
+
+`docs/config-format.md` has recorded since section 40 that screen opcode 4 is "2 position bytes, `u24`,
+draw the glyph string at that address". Nothing followed the pointer. `screenStrings`, `drawnCodes` and
+`textCoverage` all read opcode 5, the inline form, and ignored opcode 4 entirely.
+
+It is the **commoner** of the two by two to one. Across the corpus:
+
+| | opcode 4 instructions | distinct targets |
+|---|---|---|
+| `h700_config` | 1800 | 265 |
+| `one_config` | 1701 | 225 |
+| `h525_config` | 1053 | 179 |
+| `arch8_config_c` | 986 | 208 |
+| `h600_config` | 880 | 201 |
+| `h525_safemode_ahcm` | 117 | 56 |
+| `h600_safemode_gspm` | 9 | 5 |
+
+12052 in total. The closure is that there is **no exception**: every one of them lands on the glyph
+payload of an opcode 5 instruction somewhere in another reachable program, three bytes past that
+instruction's start. So a string is stored once, inline, by whichever program draws it that way, and
+every other program that wants it names those bytes. The distinct target count against the instruction
+count is the same fact from the other side: `one_config` draws 1701 referenced strings out of 225 stored
+ones.
+
+**Why nobody noticed** is the part worth keeping. The byte accounting reached 100.0% with zero overlaps
+on every container, and it did so **because** the referenced bytes were already claimed, by the base
+slot 11 program that carries them inline. Nothing was missing, so nothing pointed at the gap. And a
+comment in `packages/codec/src/screen.ts` said in as many words that opcode 2 "is the only screen<!--superseded-->
+instruction naming a place outside its own program", which is exactly the sentence that would have
+prompted somebody to check. It is corrected in place.
+
+The consequences for the numbers are large. `make text` now reads 146846<!--fact:text_glyphs--> drawn
+glyphs where it read 65456 before, and 19523<!--fact:text_draws--> draws of which
+12738<!--fact:text_referenced--> are references. Every sample still reads at 100.0%, which is the check
+that the reference reading is right rather than merely bigger: 12052 addresses that all resolved to
+readable text in the container's own alphabet would be an unlikely accident. Two glyphs in the whole
+corpus remain unread, as before.
+
+Three smaller facts came with it:
+
+* The run is terminated exactly as opcode 5's is, and a code with bit 7 set takes a second byte. Sharing
+  that rule is not tidiness: since every target **is** an inline payload, a different terminator here
+  would mean two readings of the same bytes.
+* A referenced run may be **empty**. Nine references in each arch 8 config name a zero length string, a
+  blank label drawn at a position, and a reader that treated an empty run as a failure would report
+  those as unreadable.
+* **The bytes are shared**, so a writer that edits a string in place changes every draw that names it.
+  Same family as the shared infrared duration blocks of section 61, and it belongs with the other
+  writer rails.
+
+### Which activity a name belongs to
+
+With opcode 4 read, the activity pages come out with as many labels as they have activities, and the
+attribution follows without any geometry.
+
+An activity's action lists also carry opcode `0x7E`, which enters a base slot 6 mode. Those modes' own
+pages draw the activity's name, because a remote entering an activity says which one it entered. So the
+page's string that relates to one of those strings is that activity's label.
+
+"Relates to" is containment either way rather than equality, and the Harmony 700 is why. Its menu label
+is the name plus a qualifier and its splash screen is a verb plus the name, so the two share the name
+and neither equals it. On the Harmony 600 the relation is exact: the mode's own title **is** the menu
+label, and the splash is that title with an eight letter word and a space in front.
+
+Two filters turn a set of candidates into a function, and both were found by having them fail:
+
+* **Chrome.** A page's title and footer relate to every activity's modes, because every activity's
+  screens carry the same boilerplate. A key several activities of a page claim is therefore chrome. That
+  alone leaves a page with only one activity holding its own footer as a rival, so the second rule is
+  that a key another activity page of the same mode draws identically is chrome too.
+* **One label, one activity**, which is a constraint to propagate rather than a preference. On the arch
+  8 pages two of three activities resolve on their own and the third is then the only claimant left on
+  what the other two gave up.
+
+What counts as one label needed three attempts, and each failure named a real layout. Keying on the row
+merged arch 8's two columns, which put two activities' labels at one `y`. Keying on the position split
+the 525's selected and unselected copies of one label, drawn twice on a row at two `x` values. The key
+that works is page, row and text: same row and same text is one label however often it is drawn, and
+two columns differ because their words do.
+
+That names **23 of the corpus's 35 activities, and arch 14 completely**, 13 of 13.
+
+### Arch 12 names none, and that is a proof
+
+A Harmony One resolves nothing, and the reason is structural rather than a shortfall in the method.
+
+Its activity mode does not repeat the name its menu draws. And its scan codes cannot stand in for
+position, which is demonstrable from one container: the three activity pages of `one_config` bind
+activities on scans {50,51,52}, {50,48,49} and {48,49}, while all three draw their labels on the same
+rows, 57, 111 and 165. If a scan code named a row then code 48 would name one row on page 46 and a
+different one on page 47, and so would 49. No assignment satisfies both.
+
+So the One needs base slot 17's touch hit map, and section 45 already says why that is the right shape
+for it: nine page shapes, a rectangle per page carrying the key code a hit reports. The One is the only
+touch model here, `packages/usb/src/models.ts`, and it is the only architecture where the scan code is
+not a physical key. `CLAUDE.md`'s proposed route was therefore right for arch 12 and wrong as a general
+route, and the owner's correction was right that it is no route at all for a 525.
+
+The remaining five, four on arch 8 and one on arch 9, fail for a duller reason: a short generic word
+inside a longer label satisfies containment, leaving two candidates where one is wanted. Nothing here
+guesses between them.
+
+### Where it landed
+
+`packages/codec/src/inventory.ts` holds `activityNames`, which returns the activity, its page, its scan
+codes, the modes it enters and, where it resolves, the label and where on the screen it is drawn.
+`packages/codec/src/text.ts` gained `referencedStringAddress` and `glyphRunAt`, and `screenStrings`
+marks a referenced draw with `referencedFrom` so a writer can tell a shared string from an owned one.
 
 ## References
 

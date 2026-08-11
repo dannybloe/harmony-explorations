@@ -34,7 +34,13 @@
 import { Container } from './gspm.ts';
 import { fontSets, glyphAt } from './font.ts';
 import type { Glyph } from './font.ts';
-import { reachablePrograms, SCREEN_TEXT_INLINE, SCREEN_SELECT_FONT } from './screen.ts';
+import {
+  reachablePrograms,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  SCREEN_SELECT_FONT,
+} from './screen.ts';
+import type { ScreenInstruction } from './screen.ts';
 import { ALPHABETS } from './alphabets.ts';
 import type { Alphabet } from './alphabets.ts';
 
@@ -105,15 +111,58 @@ export interface CharacterMap {
 }
 
 /** Every glyph code a container's strings actually draw. */
+/**
+ * The address a `SCREEN_TEXT_AT` names: two position bytes, then a `u24` little endian.
+ *
+ * Returns undefined for any other opcode, so a caller can hand it every instruction of a program
+ * without filtering first.
+ */
+export function referencedStringAddress(instruction: ScreenInstruction): number | undefined {
+  if (instruction.opcode !== SCREEN_TEXT_AT) return undefined;
+  const o = instruction.operands;
+  if (o.length < 5) return undefined;
+  return (o[2] as number) + ((o[3] as number) << 8) + ((o[4] as number) << 16);
+}
+
+/**
+ * The glyph run at a flash address, read the way the inline one is read.
+ *
+ * Terminated by a zero byte, with a code whose bit 7 is set taking a second byte with it, exactly as
+ * `SCREEN_TEXT_INLINE` is decoded. Sharing that rule matters: every target in the corpus **is** an
+ * inline instruction's payload, so a different terminator here would mean two readings of the same
+ * bytes.
+ */
+export function glyphRunAt(c: Container, address: number): Uint8Array | undefined {
+  const start = c.blobOffsetOf(address);
+  if (start === undefined || start >= c.blob.length) return undefined;
+  let end = start;
+  while (end < c.blob.length && c.blob[end] !== 0) end += (c.blob[end] as number) & 0x80 ? 2 : 1;
+  if (end > c.blob.length) return undefined;
+  return c.blob.subarray(start, end);
+}
+
 export function drawnCodes(c: Container): Set<number> {
   const out = new Set<number>();
   for (const [, program] of reachablePrograms(c)) {
     for (const instruction of program) {
-      if (instruction.opcode !== SCREEN_TEXT_INLINE || instruction.glyphs === undefined) continue;
-      for (const code of instruction.glyphs) out.add(code);
+      // Both text opcodes, because a code that only ever appears in a referenced string is still
+      // drawn on the screen. Counting the inline ones alone was an undercount and not a definition:
+      // it hid 131 unreadable strings in one container and 12052 draws across the corpus.
+      const glyphs =
+        instruction.opcode === SCREEN_TEXT_INLINE
+          ? instruction.glyphs
+          : glyphsReferencedBy(c, instruction);
+      if (glyphs === undefined) continue;
+      for (const code of glyphs) out.add(code);
     }
   }
   return out;
+}
+
+/** The glyph run a `SCREEN_TEXT_AT` draws, or undefined for any other instruction. */
+function glyphsReferencedBy(c: Container, instruction: ScreenInstruction): Uint8Array | undefined {
+  const address = referencedStringAddress(instruction);
+  return address === undefined ? undefined : glyphRunAt(c, address);
 }
 
 /**
@@ -227,6 +276,14 @@ export interface ScreenString {
   program: number;
   /** Blob offset of the instruction, so two copies of the same text can be told apart. */
   at: number;
+  /**
+   * The address the glyphs were read from when the instruction was a `SCREEN_TEXT_AT`, and undefined
+   * when it carried them inline.
+   *
+   * The distinction is what a writer needs: the bytes behind a referenced string belong to another
+   * program, so editing them in place changes every draw that names them. Section 121.
+   */
+  referencedFrom?: number;
   /** The base slot 7 entry the last `SCREEN_SELECT_FONT` chose, or -1 before any. */
   font: number;
   x: number;
@@ -242,6 +299,11 @@ export interface ScreenString {
  * Font selection is per program and carries forward within it, which is how the remote reads it:
  * the opcode sets a variable the text opcode uses. It does not carry between programs here,
  * because the walk order is not the run order.
+ *
+ * **Both text opcodes**, since section 121. One draw is one entry, so a string referenced twenty
+ * times appears twenty times with twenty positions, which is what a reader asking "what does this
+ * page say" wants. `referencedFrom` tells the two apart, and the shared bytes appear once as the
+ * inline draw and once per reference on purpose.
  */
 export function screenStrings(c: Container, map = characterMap(c)): ScreenString[] {
   if (map === undefined) return [];
@@ -250,16 +312,22 @@ export function screenStrings(c: Container, map = characterMap(c)): ScreenString
     let font = -1;
     for (const instruction of instructions) {
       if (instruction.opcode === SCREEN_SELECT_FONT) font = instruction.operands[0] ?? -1;
-      if (instruction.opcode !== SCREEN_TEXT_INLINE || instruction.glyphs === undefined) continue;
+      const referencedFrom = referencedStringAddress(instruction);
+      const glyphs =
+        instruction.opcode === SCREEN_TEXT_INLINE
+          ? instruction.glyphs
+          : glyphsReferencedBy(c, instruction);
+      if (glyphs === undefined) continue;
       let unread = 0;
-      for (const code of instruction.glyphs) if (!map.codes.has(code)) unread += 1;
+      for (const code of glyphs) if (!map.codes.has(code)) unread += 1;
       out.push({
         program,
         at: instruction.start,
+        ...(referencedFrom === undefined ? {} : { referencedFrom }),
         font,
         x: instruction.operands[0] ?? 0,
         y: instruction.operands[1] ?? 0,
-        text: decode(instruction.glyphs, map),
+        text: decode(glyphs, map),
         unread,
       });
     }
@@ -267,21 +335,38 @@ export function screenStrings(c: Container, map = characterMap(c)): ScreenString
   return out.sort((a, b) => a.at - b.at);
 }
 
-/** How much of a container's drawn text has a character behind it. */
-export function textCoverage(c: Container): { glyphs: number; read: number; strings: number } {
+/**
+ * How much of a container's drawn text has a character behind it.
+ *
+ * **Counted per draw and over both text opcodes**, since section 121, so `referenced` is included in
+ * `strings` and its glyphs in `glyphs`. The figures grew by roughly a factor of four when the
+ * referenced draws were added, and the growth is a correction of an undercount: opcode 4 is the
+ * commoner of the two and nothing had followed its pointer.
+ */
+export function textCoverage(c: Container): {
+  glyphs: number;
+  read: number;
+  strings: number;
+  /** Of `strings`, how many were drawn by reference rather than inline. */
+  referenced: number;
+} {
   const map = characterMap(c);
   let glyphs = 0;
   let read = 0;
   let strings = 0;
+  let referenced = 0;
   for (const [, program] of reachablePrograms(c)) {
     for (const instruction of program) {
-      if (instruction.opcode !== SCREEN_TEXT_INLINE || instruction.glyphs === undefined) continue;
+      const inline = instruction.opcode === SCREEN_TEXT_INLINE;
+      const codes = inline ? instruction.glyphs : glyphsReferencedBy(c, instruction);
+      if (codes === undefined) continue;
       strings += 1;
-      for (const code of instruction.glyphs) {
+      if (!inline) referenced += 1;
+      for (const code of codes) {
         glyphs += 1;
         if (map !== undefined && map.codes.has(code)) read += 1;
       }
     }
   }
-  return { glyphs, read, strings };
+  return { glyphs, read, strings, referenced };
 }

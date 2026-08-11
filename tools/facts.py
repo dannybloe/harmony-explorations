@@ -184,7 +184,8 @@ def text_facts():
     found = {}
     for line in out.stdout.splitlines():
         parts = line.split()
-        if len(parts) == 2 and parts[0] in ('text_read', 'text_glyphs'):
+        if len(parts) == 2 and parts[0] in ('text_read', 'text_glyphs',
+                                           'text_referenced', 'text_draws'):
             found[parts[0]] = parts[1]
     return found
 

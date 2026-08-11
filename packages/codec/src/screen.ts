@@ -44,6 +44,16 @@ export const SCREEN_FIXED_OPERANDS: Readonly<Record<number, number>> = {
 };
 
 export const SCREEN_END = 0;
+/**
+ * Two position bytes then a `u24` naming a glyph run that lives **somewhere else**, section 121.
+ *
+ * The out of line twin of `SCREEN_TEXT_INLINE`, and the more common of the two by four to one. Its
+ * target is never a place of its own: in all 12052 instances across the corpus it is the glyph
+ * payload of some `SCREEN_TEXT_INLINE` instruction in another reachable program, so a string is
+ * stored once by whichever program draws it inline and referenced by every other program that wants
+ * it. That is why the byte accounting closed without anybody reading this opcode.
+ */
+export const SCREEN_TEXT_AT = 4;
 /** Two position bytes then a terminated run of glyph codes. */
 export const SCREEN_TEXT_INLINE = 5;
 /** One operand: the base slot 7 entry every later string in the program draws with. */
@@ -321,8 +331,12 @@ export function reachablePrograms(
 }
 
 /**
- * Opcode 2 draws a picture that lives at an address rather than inline, which makes it the only
- * screen instruction naming a place outside its own program. `docs/findings.md` section 50.
+ * Opcode 2 draws a picture that lives at an address rather than inline. `docs/findings.md` section 50.
+ *
+ * This used to add "which makes it the only screen instruction naming a place outside its own<!--superseded-->
+ * program", and `SCREEN_TEXT_AT` is the counterexample: it names a glyph run in another program and
+ * is four times more common. The wrong half of that sentence is why nothing followed opcode 4's
+ * pointer for as long as the picture pointer had been followed.
  */
 export const SCREEN_DRAW_IMAGE = 2;
 /** `u8 kind` then two `u16`, so the pixels start five bytes in. */

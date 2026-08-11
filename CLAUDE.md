@@ -1035,27 +1035,44 @@ names them. A glyph code is **not** a character and not an encoding: it indexes 
 table and is assigned per config, in the order characters first appear in the generator's string list,
 so two configs of one remote disagree about code 20. What is stable is the typeface, so a code is
 resolved from its glyph's **pixels** against a hand read alphabet, seven of which cover the corpus.
-65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
+146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
 seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets.ts`.
 
-**What is not settled is which activity a drawn name belongs to**, and two routes are ruled out: no
-screen switch reads the `CurrentActivityState` variable index, and base slot 14's value maps point at
-targets that draw no text. Until it lands an interface can list the names and cannot say which entry
-starts which activity.
+**Which key starts which activity is read**, section 120, and **which drawn name it carries is read on
+three architectures of four**, section 121. The chain is four hops, because nothing in the format names
+an activity: a mode page's tagged list binds a key to `0x7F`, that base slot 10 list carries `0x1F` with
+operand `0xFF | set` selecting a base slot 9 entry, that entry's list writes `CurrentActivityState` with
+`0x80 | n`. Eleven of eleven containers, four architectures. Every binding is a press, every activity is
+reachable, and **all of an activity's keys are on one page**, which is what makes "the page that names
+this activity" mean something. The structural closure is that an activity page's `0x7F` operands are a
+contiguous ascending run of base slot 10 indices, 16 of 16 activity pages against 373 of 1152 pages
+generally that are not.
 
-**The route is the soft keys and not the touch map**, which is a correction the owner made on
-11 August 2026: this file proposed base slot 17 to a key code to a binding, and slot 17 is a touch hit
-map on arch 12 only. A 525 has no touch panel, it has four buttons flanking four screen zones, so the
-zone to key code step is fixed in hardware and there is nothing to calibrate. **Scouted, not yet a
-finding**: the four soft keys are the only key tags whose bindings vary per mode page, tags 158, 159,
-166 and 167, which under section 89's split are event type `0x80` with scan codes 30, 31, 38 and 39,
-a two by two block of columns 6 and 7 in groups 3 and 4. Their bindings are three opcodes in both 525
-configs: `0x7F` runs a base slot 10 action list, 153 and 79 times; `0x7E` enters a base slot 6 mode, 57
-and 18 times; and `0x72` maps a state variable through base slot 14, exactly 6 times in each
-regardless of config size. So the remaining step is to walk the `0x7F` lists for a write to the
-variable base slot 0 calls `CurrentActivityState`. The `0x7E` count also explains something the
-capability table states independently, that the 5xx has no page button: paging is a soft key binding
-there.
+**The idle value is base slot 13's `first`**, the field section 60 marked unconfirmed, and it is exactly
+the value no binding writes. `one_config` is what makes that a finding rather than arithmetic: `first` is
+7 where the highest is 8 and 8 **is** bound to a key. So section 86's "value 0 is no activity running"
+was the wrong reason for a right count, corrected in section 120.
+
+**The name comes from the modes the chain enters**, not from geometry: an activity's lists also carry
+`0x7E`, and the mode they enter draws the activity's own name, so the page's string that relates to one
+of those is its label. 23 of 35 activities and **all 13 on arch 14**. Two filters make it a function, a
+per mode chrome test and the constraint that one label belongs to one activity, and each was found by
+having it fail.
+
+**Arch 12 names none and that is a proof, not a gap**: `one_config`'s three activity pages bind scans
+{50,51,52}, {50,48,49} and {48,49} while all three draw labels on the same rows, so no fixed code to row
+map can exist on a touch panel. Base slot 17's hit map is what a One needs, and section 45's nine page
+shapes are why. So this file's old proposal was right for arch 12 and wrong as a general route, and the
+owner's correction on 11 August 2026 was right that a 525 has no touch panel at all.
+
+**Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
+way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is
+the payload of an opcode 5 instruction in **another** program, so a string is stored once inline and
+referenced everywhere else. `make text` went from 65456 glyphs to 146846<!--fact:text_glyphs--> and every
+sample still reads at 100.0%. Nobody had followed the pointer because the byte accounting never
+complained: the bytes were already claimed by the program holding them, and a comment in `screen.ts`
+said opcode 2 was the only instruction naming a place outside its own program. **A shared string is a
+writer rail**: editing one in place changes every draw that names it.
 
 Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
 both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so

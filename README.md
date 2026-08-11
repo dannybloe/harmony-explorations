@@ -178,9 +178,21 @@ independently, once from branch target analysis and once from finding the SPI co
 into the config's own font table, assigned per config in the order characters first appear in the
 generator's string list, so two configs of the same remote disagree about it. What is stable is the
 typeface, so a code is resolved by matching its glyph's pixels: seven hand read alphabets cover the
-corpus and 65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs come back as
+corpus and 146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs come back as
 characters. The closure is that a decoded string turns up verbatim inside a base slot 0 name, which is
 ASCII and which the decoder never reads. `make text`, and section 112.
+
+**Two thirds of that text is drawn by reference, and nothing read it for months.** Screen opcode 4 draws
+the glyph string at an address, and in 12052 of 12052 instances across the corpus that address is the
+payload of an opcode 5 instruction in **another** program: a string is stored once inline and referenced
+everywhere else. The byte accounting never complained, because the bytes were already claimed by the
+program holding them. Section 121.
+
+**A config says which key starts which activity**, sections 120 and 121, in four hops through a page's
+key bindings, an action list, a base slot 9 set and a write to `CurrentActivityState`. The value that
+means "no activity" is a field base slot 13 had carried unconfirmed since section 60, and one config
+separates it from every rule that would have guessed it. Naming the activities works on arch 8, 9 and 14;
+on the touch driven Harmony One it provably cannot work this way, and needs the hit map instead.
 
 **The infrared carrier is generated in software**, not by a hardware PWM, with cycle-counted
 delays and a per-half-cycle enable mask. The config supplies a 16-bit carrier period and an
@@ -340,7 +352,7 @@ summary is a copy of a fact with no test.
 Most of it is still offline analysis of files, so most of it is independently checkable, and it
 should be checked. The write-ups show their verification method rather than only their conclusions,
 and they record the places where earlier conclusions were wrong and got corrected, on purpose, so
-the rest can be calibrated against them. Forty four so far, all documented in
+the rest can be calibrated against them. Forty six so far, all documented in
 [docs/findings.md](docs/findings.md), including one that had a real cost: arch 12 and 14 were
 described as using a container unrelated to the Harmony 525's, when in fact the 525's frames
 are nested inside the GSPM layer. That advised people away from reusable work. One is instructive

@@ -13,7 +13,16 @@
  */
 import { Container } from './gspm.ts';
 import { irGroups } from './ir.ts';
-import { nameNodes, stateRecords } from './sections.ts';
+import {
+  handlerSets,
+  modePages,
+  modeRecords,
+  nameNodes,
+  stateRecords,
+  taggedList,
+} from './sections.ts';
+import { characterMap, screenStrings } from './text.ts';
+import type { ScreenString } from './text.ts';
 import type { StateRecord } from './sections.ts';
 
 /**
@@ -80,18 +89,28 @@ export function stateVariables(c: Container): StateVariable[] {
 }
 
 /**
+ * The state variable that counts the activities, or undefined where the container has no name tree.
+ *
+ * Matched on the **first token**, because a level 1 name is `<label>_<qualifier>_<values>` and this
+ * one is `CurrentActivityState_0_<values>` in every container that has it. One copy on purpose: three
+ * readers here need it, and two right copies of a derivation is the state that precedes two diverging
+ * ones.
+ */
+function activityVariable(c: Container): StateVariable | undefined {
+  return stateVariables(c).find((v) => v.name.split('_')[0] === ACTIVITY_STATE_NAME);
+}
+
+/**
  * How many activities the config defines, or undefined when it has no name tree to say so.
  *
- * The reading is that value 0 is "no activity running" and the rest are the activities, so the
- * count is the variable's highest value rather than its number of values. The calibration is the
- * pair of section 58: a config compiled by Logitech's own service for exactly one activity, read
- * off the remote afterwards, reports one. A safe mode container reports zero.
+ * The count is the variable's highest value rather than its number of values, and section 121 is why:
+ * the values are `0` upward with one of them, `idleActivityValue`, meaning no activity, so `highest`
+ * of `highest + 1` values are activities. The calibration is the pair of section 58: a config compiled
+ * by Logitech's own service for exactly one activity, read off the remote afterwards, reports one. A
+ * safe mode container reports zero, and it is the one container whose lists write the idle value.
  */
 export function activityCount(c: Container): number | undefined {
-  // Matched on the first token, because the name carries a qualifier between the label and the
-  // count: this one is `CurrentActivityState_0_<values>` in every container that has it.
-  const found = stateVariables(c).find((v) => v.name.split('_')[0] === ACTIVITY_STATE_NAME);
-  return found?.record?.second;
+  return activityVariable(c)?.record?.second;
 }
 
 /**
@@ -116,4 +135,393 @@ export function deviceIds(c: Container): number[] {
     }
   }
   return out;
+}
+
+/**
+ * The instruction that writes a state variable: `0x80 | index`, one instruction with a five bit
+ * field. Section 73.
+ */
+const STATE_WRITE_BASE = 0x80;
+/** Opcode `0x7F`, whose operand indexes base slot 10. Section 34. */
+const ACTION_LIST_INDEX = 0x7f;
+/**
+ * Opcode `0x1F` with operand `0xFFxx` selects the current binding table entry, the low byte being
+ * the index into base slot 9. `docs/config-format.md`, from the register machine's own band.
+ */
+const SELECT_BINDING_SET = 0x1f;
+const SELECT_BINDING_SET_MASK = 0xff00;
+
+/** One way a button reaches one activity. */
+export interface ActivityBinding {
+  /**
+   * The value written into `CurrentActivityState`.
+   *
+   * **Zero is an activity like any other**, which corrects the reading section 86 gave: it said value<!--superseded-->
+   * 0 is "no activity running" and the rest are the activities. The idle value is the record's own
+   * `first`, which happens to equal `second` in ten of the eleven containers and is 7 where the
+   * highest is 8 in the other. `idleActivityValue` is that number, and no binding here ever writes it.
+   */
+  activity: number;
+  /** Index into `modePages`, which is the screen the button belongs to. */
+  page: number;
+  /** The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`. Section 17. */
+  tag: number;
+  /** The scan code alone, which is what a silhouette would eventually name. */
+  scan: number;
+  /** The base slot 10 list the binding runs, which is where the selection happens. */
+  list: number;
+  /** The base slot 9 set that list selects. */
+  set: number;
+}
+
+/**
+ * Every button binding that starts an activity, and which activity it starts.
+ *
+ * **This is the chain an interface needs and it took four hops to find.** Section 120. A page's
+ * tagged list binds a key to opcode `0x7F`, which names a base slot 10 action list; that list
+ * carries `0x1F` with operand `0xFF | set`, which selects a base slot 9 binding set; that set's own
+ * tagged list carries another `0x7F`, naming the list that writes `CurrentActivityState`.
+ *
+ * Two routes were ruled out before this one, section 112: no screen switch reads the variable's
+ * index, and base slot 14's value maps point at targets that draw no text. A third was proposed in
+ * `CLAUDE.md` and was wrong, the touch hit map, which exists on arch 12 alone.
+ *
+ * The closure is a count. The number of base slot 10 lists that write the variable equals the
+ * activity count exactly, in every container that has a name tree, across four architectures. So
+ * there is one such list per activity and no spares.
+ */
+export function activityBindings(c: Container): ActivityBinding[] {
+  const variable = activityVariable(c);
+  const lists = c.actionLists();
+  const sets = handlerSets(c);
+  if (variable === undefined || lists === undefined || sets === undefined) return [];
+  const writeOpcode = STATE_WRITE_BASE + variable.index;
+
+  // Hop one: which base slot 10 lists write the variable, and to what value.
+  const writes = new Map<number, number>();
+  lists.forEach((list, index) => {
+    const found = list.find((i) => i.opcode === writeOpcode);
+    if (found !== undefined) writes.set(index, found.operand);
+  });
+
+  // Hop two: which base slot 9 sets run one of those.
+  const setActivity = new Map<number, number>();
+  sets.addresses.forEach((address, index) => {
+    for (const entry of taggedList(c, address)?.entries ?? []) {
+      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      const activity = writes.get(entry.operand);
+      if (activity !== undefined) setActivity.set(index, activity);
+    }
+  });
+
+  // Hop three: which action lists select one of those sets.
+  const selects = new Map<number, { activity: number; set: number }>();
+  lists.forEach((list, index) => {
+    for (const i of list) {
+      if (i.opcode !== SELECT_BINDING_SET) continue;
+      if ((i.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) continue;
+      const set = i.operand & 0xff;
+      const activity = setActivity.get(set);
+      if (activity !== undefined) selects.set(index, { activity, set });
+    }
+  });
+
+  // Hop four: which page bindings run one of those lists.
+  const out: ActivityBinding[] = [];
+  modePages(c).forEach((page, index) => {
+    for (const entry of taggedList(c, page.list)?.entries ?? []) {
+      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      const hit = selects.get(entry.operand);
+      if (hit === undefined) continue;
+      out.push({
+        activity: hit.activity,
+        page: index,
+        tag: entry.tag,
+        scan: entry.tag & 0x3f,
+        list: entry.operand,
+        set: hit.set,
+      });
+    }
+  });
+  return out;
+}
+
+/**
+ * How many base slot 10 lists write `CurrentActivityState`, which should be the activity count.
+ *
+ * Separate from `activityBindings` on purpose: it is the closure the whole chain rests on, so it has
+ * to be checkable without walking the other three hops. A container where these two disagree has
+ * either an activity nothing starts or a list that writes a value no activity has.
+ */
+export function activityWriterCount(c: Container): number | undefined {
+  const variable = activityVariable(c);
+  const lists = c.actionLists();
+  if (variable === undefined || lists === undefined) return undefined;
+  const writeOpcode = STATE_WRITE_BASE + variable.index;
+  return lists.filter((list) => list.some((i) => i.opcode === writeOpcode)).length;
+}
+
+/**
+ * The value `CurrentActivityState` holds when no activity is running.
+ *
+ * Base slot 13's record states it, at +0x00, the field section 60 read as an initial value and marked
+ * **unconfirmed** because nothing had been traced to it. This is the confirmation, and it comes from
+ * the other side: it is exactly the value no activity binding writes, in all eleven containers of the
+ * corpus that name the variable. Ten of them have it equal to the highest value and one has 7 where
+ * the highest is 8, so the agreement is not arithmetic.
+ *
+ * The arch 9 safe mode container is the single case where a list **does** write it, and that is why
+ * it reports zero activities: its one list returns the remote to idle rather than starting anything.
+ */
+export function idleActivityValue(c: Container): number | undefined {
+  return activityVariable(c)?.record?.first;
+}
+
+/** An activity, the page whose keys start it, and its name where the config lets us name it. */
+export interface ActivityName {
+  activity: number;
+  /** Index into `modePages`: the one page in the container whose keys start this activity. */
+  page: number;
+  /** The scan codes on that page which start it, in the page's own order. */
+  scans: number[];
+  /** The base slot 6 modes the chain enters, which is where the name comes from. */
+  modes: number[];
+  /** The label drawn on the page for this activity, when exactly one string resolves to it. */
+  name?: string;
+  /** Where that label is drawn, which is what makes it attributable in the first place. */
+  at?: { x: number; y: number };
+}
+
+/**
+ * Which activity a drawn name belongs to, section 121.
+ *
+ * The question the application could not answer: a mode page's screen program draws the activity
+ * names and nothing else names them, section 112, so listing them was possible and saying which entry
+ * starts which activity was not. `activityBindings` gets as far as the **page**. This gets to the
+ * string on it, and the route is not geometry:
+ *
+ * 1. the activity's chain enters one or more base slot 6 modes, by opcode `0x7E`
+ * 2. those modes' own pages draw text, and one of their strings is the activity's name, because a
+ *    remote entering an activity puts its name on the screen
+ * 3. so the page's string that relates to one of those is this activity's label
+ *
+ * "Relates to" is containment either way rather than equality, which is what the Harmony 700 needs:
+ * its menu label is the name plus a qualifier and its splash screen is a verb plus the name, so the
+ * two share the name and neither equals it.
+ *
+ * **A string several activities of one page claim is chrome**, a title or a footer, and is dropped.
+ * That is what separates the label from the "Starting" splash text every row shares.
+ *
+ * Where this leaves a gap is stated rather than guessed: on **arch 12** no string resolves, because a
+ * One's activity mode does not repeat the name its menu draws, and its scan codes cannot stand in for
+ * position either. Three pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and
+ * {48,49} while each draws its labels at the same rows, so no fixed code to row map exists on a touch
+ * panel and base slot 17's hit map is what would be needed. Section 121.
+ */
+export function activityNames(c: Container): ActivityName[] {
+  const bindings = activityBindings(c);
+  if (bindings.length === 0) return [];
+  const lists = c.actionLists() ?? [];
+  const sets = handlerSets(c);
+  const records = modeRecords(c) ?? [];
+  const pages = records.flatMap((record) => record.pages);
+  const map = characterMap(c);
+  const drawn = map === undefined ? [] : screenStrings(c, map);
+  const textOf = (program: number): ScreenString[] => drawn.filter((one) => one.program === program);
+  const useful = (one: ScreenString): boolean => one.text.trim().length >= SHORTEST_USEFUL_LABEL;
+
+  interface Draft {
+    binding: ActivityBinding;
+    scans: number[];
+    modes: number[];
+    /** Label key to the string that draws it, for every candidate this activity has. */
+    candidates: Map<string, ScreenString>;
+  }
+
+  const drafts: Draft[] = [];
+  for (const activity of [...new Set(bindings.map((b) => b.activity))].sort((a, b) => a - b)) {
+    const mine = bindings.filter((b) => b.activity === activity);
+    const binding = mine[0] as ActivityBinding;
+
+    // Hop one: every mode the chain enters. The bound list may enter one itself, and the base slot 9
+    // set it selects has its own tagged list whose entries enter more.
+    const modes = new Set<number>();
+    const walked = new Set<number>();
+    const walk = (index: number, depth: number): void => {
+      if (depth > CHAIN_DEPTH_LIMIT || walked.has(index)) return;
+      walked.add(index);
+      for (const i of lists[index] ?? []) {
+        if (i.opcode === ENTER_MODE) modes.add(i.operand);
+        if (i.opcode === ACTION_LIST_INDEX) walk(i.operand, depth + 1);
+      }
+    };
+    walk(binding.list, 0);
+    for (const entry of taggedList(c, sets?.addresses[binding.set] ?? 0)?.entries ?? []) {
+      if (entry.opcode === ENTER_MODE) modes.add(entry.operand);
+      if (entry.opcode === ACTION_LIST_INDEX) walk(entry.operand, 1);
+    }
+
+    // Hop two: what those modes put on the screen. One of these strings is the activity's own name,
+    // because a remote entering an activity says which one it entered.
+    const spoken: string[] = [];
+    for (const mode of modes) {
+      for (const page of records[mode]?.pages ?? []) {
+        for (const one of textOf(page.program)) if (useful(one)) spoken.push(one.text);
+      }
+    }
+
+    // Hop three: the page's strings that relate to one of those. Containment either way rather than
+    // equality, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and
+    // its splash screen is a verb plus the name, so the two share the name and neither equals it.
+    const target = pages[binding.page];
+    const candidates = new Map<string, ScreenString>();
+    for (const one of target === undefined ? [] : textOf(target.program)) {
+      if (!useful(one)) continue;
+      if (!spoken.some((said) => one.text.includes(said) || said.includes(one.text))) continue;
+      const key = labelKey(binding.page, one);
+      if (!candidates.has(key)) candidates.set(key, one);
+    }
+    drafts.push({ binding, scans: mine.map((b) => b.scan), modes: [...modes], candidates });
+  }
+
+  // Hop four: drop the page's chrome, then propagate.
+  //
+  // **Chrome first, because it is not a label and would jam the propagation.** A page's title and its
+  // footer relate to every activity's modes, since every activity's screens carry the same
+  // boilerplate. Two rules find them, and both are needed: a key every activity of a page claims is
+  // chrome, which is what catches a footer on a page with several activities; and a key some other
+  // activity page of the same mode draws identically is chrome too, which is what catches it on a page
+  // with only one. Testing only the first left the Harmony 600's single activity page holding its
+  // footer as a rival candidate.
+  const perPage = new Map<number, Draft[]>();
+  for (const draft of drafts) {
+    const on = perPage.get(draft.binding.page) ?? [];
+    on.push(draft);
+    perPage.set(draft.binding.page, on);
+  }
+  const activityPages = new Set(drafts.map((draft) => draft.binding.page));
+  const elsewhere = new Map<number, Set<string>>();
+  for (const page of activityPages) {
+    const mode = modeOfPage(records, page);
+    const others = new Set<string>();
+    for (const sibling of activityPages) {
+      if (sibling === page || modeOfPage(records, sibling) !== mode) continue;
+      const program = pages[sibling]?.program;
+      if (program === undefined) continue;
+      for (const one of textOf(program)) {
+        if (useful(one)) others.add(sameRowElsewhere(labelKey(sibling, one)));
+      }
+    }
+    elsewhere.set(page, others);
+  }
+  for (const [page, on] of perPage) {
+    const claims = new Map<string, number>();
+    for (const draft of on) for (const key of draft.candidates.keys()) {
+      claims.set(key, (claims.get(key) ?? 0) + 1);
+    }
+    const sharedElsewhere = elsewhere.get(page) ?? new Set<string>();
+    for (const draft of on) {
+      for (const key of [...draft.candidates.keys()]) {
+        const everyone = on.length > 1 && claims.get(key) === on.length;
+        if (everyone || sharedElsewhere.has(sameRowElsewhere(key))) draft.candidates.delete(key);
+      }
+    }
+  }
+
+  // **One label belongs to one activity**, so a candidate another activity has been assigned is no
+  // longer a candidate here. That is a constraint rather than a preference, and propagating it is what
+  // finishes the arch 8 pages: two of three activities resolve on their own and the third is then the
+  // only claimant left on the label the other two gave up.
+  const assigned = new Map<number, ScreenString>();
+  for (let progress = true; progress; ) {
+    progress = false;
+    for (const draft of drafts) {
+      if (assigned.has(draft.binding.activity) || draft.candidates.size !== 1) continue;
+      const [key, label] = [...draft.candidates][0] as [string, ScreenString];
+      assigned.set(draft.binding.activity, label);
+      for (const other of drafts) {
+        if (other === draft) continue;
+        other.candidates.delete(key);
+      }
+      progress = true;
+    }
+  }
+
+  return drafts.map((draft): ActivityName => {
+    const base = {
+      activity: draft.binding.activity,
+      page: draft.binding.page,
+      scans: draft.scans,
+      modes: draft.modes,
+    };
+    const label = assigned.get(draft.binding.activity);
+    if (label === undefined) return base;
+    return { ...base, name: label.text, at: { x: label.x, y: label.y } };
+  });
+}
+
+/** Which base slot 6 record a flattened page index belongs to, since chrome is a per mode notion. */
+function modeOfPage(
+  records: readonly { pages: readonly unknown[] }[],
+  page: number,
+): number | undefined {
+  let seen = 0;
+  for (const [index, record] of records.entries()) {
+    if (page < seen + record.pages.length) return index;
+    seen += record.pages.length;
+  }
+  return undefined;
+}
+
+/** The same label key with the page dropped, so one page's chrome can be recognised on another. */
+function sameRowElsewhere(key: string): string {
+  return key.slice(key.indexOf(',') + 1);
+}
+
+/**
+ * What makes two draws the same label: the page, the row and the text.
+ *
+ * **The row alone is not enough and neither is the position.** Arch 8 lays its activity menu out in
+ * two columns, so two activities of one page have labels at the same `y`, which keying on the row
+ * merged. And a 525 draws one label twice on a row at two `x` values, a selected and an unselected
+ * copy, which keying on the position split. The text settles both: same row and same text is one
+ * label however many times it is drawn, and two columns differ because their words do.
+ */
+function labelKey(page: number, one: ScreenString): string {
+  return `${page},${one.y},${one.text}`;
+}
+
+/** Opcode `0x7E`: enter the base slot 6 mode the operand indexes. Section 36. */
+const ENTER_MODE = 0x7e;
+/**
+ * How far to follow `0x7F` from the bound list.
+ *
+ * Three is enough for every container here and the limit is a guard rather than a reading: an action
+ * list may name another, so an unbounded walk would visit most of base slot 10 for every activity.
+ */
+const CHAIN_DEPTH_LIMIT = 3;
+/** A string this short says nothing about which activity it belongs to. */
+const SHORTEST_USEFUL_LABEL = 2;
+
+/** The one string on `page` that relates to something the activity's own modes say. */
+function resolveLabel(
+  c: Container,
+  page: number,
+  spoken: readonly string[],
+  pages: readonly { program: number }[],
+  textOf: (program: number) => ScreenString[],
+): { name?: string; at?: { x: number; y: number } } {
+  const target = pages[page];
+  if (target === undefined) return {};
+  const useful = spoken.filter((one) => one.trim().length >= SHORTEST_USEFUL_LABEL);
+  const hits = textOf(target.program).filter(
+    (one) =>
+      one.text.trim().length >= SHORTEST_USEFUL_LABEL &&
+      useful.some((said) => one.text.includes(said) || said.includes(one.text)),
+  );
+  // Several draws of one string at one row are one label; several rows are an unresolved case.
+  const rows = new Set(hits.map((one) => one.y));
+  if (rows.size !== 1) return {};
+  const label = hits[0] as ScreenString;
+  return { name: label.text, at: { x: label.x, y: label.y } };
 }

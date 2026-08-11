@@ -16,13 +16,18 @@ import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ALPHABETS,
   ASCII_FIRST_CODE,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
   characterMap,
   decode,
   drawnCodes,
   fontSets,
   glyphAt,
+  glyphRunAt,
   isBlank,
   parse,
+  reachablePrograms,
+  referencedStringAddress,
   screenStrings,
   shapeKey,
   stateVariables,
@@ -264,4 +269,114 @@ test('the same typeface serves the 600 and the 700, so it belongs to the archite
       return other !== undefined && other !== character;
     });
     assert.ok(differing.length > 0, 'the two configs agree about every code, so nothing is proven');
+  });
+
+test('the commoner text opcode names a string another program carries', skipUnless(...SAMPLES), () => {
+  // Section 121, and the closure is that there is **no exception**: every `SCREEN_TEXT_AT` target in
+  // the corpus is the glyph payload of a `SCREEN_TEXT_INLINE` instruction somewhere in a reachable
+  // program. So a string is stored once by whichever program draws it inline and referenced by every
+  // other program that wants it, which is why the byte accounting closed while nobody had read this
+  // opcode: the bytes were already claimed by the program holding them.
+  let references = 0;
+  let onAPayload = 0;
+  let distinct = 0;
+  for (const name of SAMPLES) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const programs = reachablePrograms(c);
+    // Every place an inline string's glyphs begin: the instruction, plus its two position bytes.
+    const payloads = new Set<number>();
+    for (const [, instructions] of programs) {
+      for (const one of instructions) {
+        if (one.opcode === SCREEN_TEXT_INLINE && one.glyphs !== undefined) {
+          payloads.add(one.start + 3);
+        }
+      }
+    }
+    const targets = new Set<number>();
+    for (const [, instructions] of programs) {
+      for (const one of instructions) {
+        const address = referencedStringAddress(one);
+        if (address === undefined) continue;
+        references += 1;
+        targets.add(address);
+        const offset = c.blobOffsetOf(address);
+        if (offset !== undefined && payloads.has(offset)) onAPayload += 1;
+      }
+    }
+    distinct += targets.size;
+    // And a container references far fewer strings than it draws, which is what makes this a shared
+    // store rather than an odd way of spelling the same thing twice.
+    const drawnByReference = [...programs.values()]
+      .flat()
+      .filter((one) => one.opcode === SCREEN_TEXT_AT).length;
+    if (drawnByReference > 0) {
+      assert.ok(targets.size <= drawnByReference, `${name}: ${targets.size} strings, ${drawnByReference} draws`);
+    }
+  }
+  assert.ok(references > 10000, `enough references to mean something, got ${references}`);
+  assert.equal(onAPayload, references, 'every reference lands on an inline payload');
+  assert.ok(distinct * 3 < references, `a string is shared: ${distinct} distinct, ${references} draws`);
+});
+
+test('a referenced draw is counted and marked, and there are more of them than inline ones',
+  skipUnless(...SAMPLES), () => {
+    // The correction section 121 makes to the coverage number. `screenStrings` and `textCoverage`
+    // read only `SCREEN_TEXT_INLINE` until then, which was an undercount rather than a definition:
+    // two thirds of the corpus's draws are references, so the old figure described a third of the
+    // screen. A reader that regressed to inline only would pass every other test in this file.
+    let inline = 0;
+    let referenced = 0;
+    for (const name of SAMPLES) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const coverage = textCoverage(c);
+      inline += coverage.strings - coverage.referenced;
+      referenced += coverage.referenced;
+      // The two agree with each other, which is the check that `screenStrings` and `textCoverage`
+      // cannot drift apart: they are two walks over the same programs.
+      const strings = screenStrings(c);
+      assert.equal(strings.length, coverage.strings, `${name}: draws counted the same way twice`);
+      assert.equal(
+        strings.filter((one) => one.referencedFrom !== undefined).length,
+        coverage.referenced,
+        `${name}: references counted the same way twice`,
+      );
+      // A marked draw really does point at a glyph run, and an unmarked one carries its own. The run
+      // may be **empty**: nine references in each arch 8 config name a zero length string, which is a
+      // blank label drawn at a position, and a reader that treated an empty run as a failure would
+      // report those as unreadable text. So what is asserted is that the address resolves, not that
+      // it resolves to something.
+      for (const one of strings) {
+        if (one.referencedFrom === undefined) continue;
+        const run = glyphRunAt(c, one.referencedFrom);
+        assert.ok(run !== undefined, `${name}: the reference at ${one.at} resolves`);
+        assert.equal(one.text.length, run.length, `${name}: the draw at ${one.at} decodes its run`);
+      }
+    }
+    assert.ok(referenced > inline, `references outnumber inline draws: ${referenced} to ${inline}`);
+  });
+
+test('a code that only ever appears in a referenced string is still a drawn code',
+  skipUnless(...SAMPLES), () => {
+    // Why `drawnCodes` had to change too. It scores which alphabet explains a container, so leaving
+    // two thirds of the draws out of it was scoring the choice on a third of the evidence. The
+    // assertion is the containment: every code an inline string draws is in the set, and so is every
+    // code a referenced one draws.
+    for (const name of SAMPLES) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const codes = drawnCodes(c);
+      for (const [, instructions] of reachablePrograms(c)) {
+        for (const one of instructions) {
+          const address = referencedStringAddress(one);
+          const glyphs = address === undefined ? one.glyphs : glyphRunAt(c, address);
+          if (glyphs === undefined || one.opcode === SCREEN_TEXT_AT === (address === undefined)) continue;
+          for (const code of glyphs) assert.ok(codes.has(code), `${name}: code ${code} is drawn`);
+        }
+      }
+    }
   });

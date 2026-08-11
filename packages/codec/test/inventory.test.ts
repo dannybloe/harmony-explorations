@@ -15,7 +15,14 @@ import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   ACTIVITY_STATE_NAME,
+  activityBindings,
   activityCount,
+  activityNames,
+  activityWriterCount,
+  idleActivityValue,
+  modePages,
+  screenStrings,
+  taggedList,
   archSlot,
   deviceCount,
   deviceIds,
@@ -227,8 +234,13 @@ test('the activity variable is written as many times as it has values', skipWith
   // A second measurement of the same number, from the other interpreter: the action list language
   // writes state variable `n` with opcode `0x80 | n`, so the writes can be counted without going
   // near the name tree. Every value written is inside the range, and the number of distinct ones is
-  // the highest value. **Which value means "no activity" is deliberately not asserted**: the values
-  // run from zero, so either zero is idle or the top is, and no sample here separates them.
+  // the highest value.
+  //
+  // **The value that means "no activity" is asserted now, and this comment used to say no sample
+  // separated the two candidates.** It said either zero is idle or the top is. Both were wrong about
+  // the mechanism: the idle value is base slot 13's own `first`, the field section 60 read as an
+  // initial value and could not confirm, and `one_config` is the sample that separates it from
+  // everything else because its `first` is 7 where its highest is 8. Section 121.
   for (const [name, , activities] of INVENTORY) {
     const data = load(name);
     if (data === undefined) continue;
@@ -247,5 +259,167 @@ test('the activity variable is written as many times as it has values', skipWith
       assert.ok(value >= 0 && value <= activities, `${name}: writes ${value} of ${activities}`);
     }
     assert.equal(written.size, activities, `${name}: distinct values written`);
+    // And no list writes the idle value, in any user config. The safe mode container is the one that
+    // does and it is the one with no activities, which is a separate test below.
+    const idle = idleActivityValue(c);
+    assert.equal(typeof idle, 'number', `${name}: states an idle value`);
+    assert.ok(!written.has(idle as number), `${name}: nothing writes the idle value ${idle}`);
   }
+});
+
+test('the idle value is the one the corpus does not write, and it is not always the top',
+  skipUnless('one_config'), () => {
+    // The closure that makes the idle reading a finding rather than a guess. In ten of the eleven
+    // containers `first` equals the highest value, so any rule of the form "the top value is idle"
+    // fits them all. `one_config` is the counterexample: eight activities, values 0 to 8, `first` of
+    // 7, and the value **8** is bound to a key while 7 is bound to nothing. So the field states it.
+    const c = parse(load('one_config') as Uint8Array);
+    assert.equal(activityCount(c), 8);
+    assert.equal(idleActivityValue(c), 7);
+    const bound = new Set(activityBindings(c).map((one) => one.activity));
+    assert.ok(bound.has(8), 'the highest value is an activity here, so it is not the idle one');
+    assert.ok(!bound.has(7), 'and the idle value is bound to nothing');
+    assert.equal(bound.size, 8, 'eight activities, eight of the nine values');
+  });
+
+test('the safe mode container is the only one whose lists write the idle value',
+  skipUnless('h525_safemode_ahcm'), () => {
+    // Which is why it reports zero activities while still carrying a list that writes the variable:
+    // that list returns the remote to idle rather than starting anything. A container that behaved
+    // this way and reported an activity would break the count.
+    const c = parse(load('h525_safemode_ahcm') as Uint8Array);
+    assert.equal(activityCount(c), 0);
+    assert.equal(idleActivityValue(c), 0);
+    assert.equal(activityWriterCount(c), 1);
+    assert.equal(activityBindings(c).length, 0, 'and no key starts anything');
+  });
+
+test('every activity is started by a key, and all its keys are on one page', skipWithoutLab(), () => {
+  // The chain of section 121: a page's tagged list binds a key to `0x7F`, that action list selects a
+  // base slot 9 set with `0x1F` and operand `0xFF | set`, the set's own list writes the variable. Two
+  // properties of the result are asserted here because both would break an interface: every activity
+  // is reachable, and an activity belongs to one screen rather than being scattered over several.
+  for (const [name, , activities] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const bindings = activityBindings(c);
+    const pages = new Map<number, Set<number>>();
+    for (const one of bindings) {
+      const seen = pages.get(one.activity) ?? new Set<number>();
+      seen.add(one.page);
+      pages.set(one.activity, seen);
+    }
+    assert.equal(pages.size, activities, `${name}: activities with a key`);
+    for (const [activity, on] of pages) {
+      assert.equal(on.size, 1, `${name}: activity ${activity} is bound on one page`);
+    }
+    // Every binding is a press rather than a release or a repeat, which is what makes the key the
+    // thing a user pushes rather than an artefact of the event split. Section 17.
+    for (const one of bindings) {
+      assert.equal(one.tag & 0xc0, 0x80, `${name}: activity ${one.activity} is bound to a press`);
+    }
+  }
+});
+
+test('an activity page hands its keys a fresh run of action lists', skipWithoutLab(), () => {
+  // The structural closure, and it discriminates: on an activity page the `0x7F` operands are a
+  // contiguous ascending run of base slot 10 indices, one per key, in the tagged list's own order.
+  // That holds for every activity page in the corpus and for well under half of the rest, so it is a
+  // property of how the generator lays an activity menu out rather than of pages in general.
+  let contiguous = 0;
+  let total = 0;
+  let elsewhereContiguous = 0;
+  let elsewhere = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const activityPages = new Set(activityBindings(c).map((one) => one.page));
+    for (const [index, page] of modePages(c).entries()) {
+      const operands = (taggedList(c, page.list)?.entries ?? [])
+        .filter((entry) => entry.opcode === ACTION_LIST_INDEX_OPCODE)
+        .map((entry) => entry.operand);
+      if (operands.length < 2) continue;
+      const run = operands.every((n, at) => at === 0 || n === (operands[at - 1] as number) + 1);
+      if (activityPages.has(index)) {
+        total += 1;
+        if (run) contiguous += 1;
+      } else {
+        elsewhere += 1;
+        if (run) elsewhereContiguous += 1;
+      }
+    }
+  }
+  assert.equal(contiguous, total, 'every activity page carries one contiguous run');
+  assert.ok(total >= 12, `enough activity pages to mean something, got ${total}`);
+  // The control. Without it "every activity page is contiguous" would be satisfied by a corpus where
+  // every page is, which would make the property no evidence at all.
+  assert.ok(
+    elsewhereContiguous / elsewhere < 0.8,
+    `ordinary pages are not all contiguous: ${elsewhereContiguous} of ${elsewhere}`,
+  );
+});
+
+test('arch 14 names every activity and the corpus names most of them', skipWithoutLab(), () => {
+  // The number section 121 reports, so that it cannot quietly fall. Arch 14 resolves completely; the
+  // rest is stated rather than rounded up, and the arch 12 zero has its own test below because it is
+  // a proof and not a shortfall.
+  let named = 0;
+  let total = 0;
+  const perArchitecture = new Map<number, { named: number; total: number }>();
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const rows = activityNames(c);
+    const here = rows.filter((one) => one.name !== undefined).length;
+    named += here;
+    total += rows.length;
+    const architecture = c.architecture as number;
+    const seen = perArchitecture.get(architecture) ?? { named: 0, total: 0 };
+    seen.named += here;
+    seen.total += rows.length;
+    perArchitecture.set(architecture, seen);
+    // Where a name resolved, it resolved to a place on the page as well. One without the other would
+    // be a name nothing could put on a screen.
+    for (const one of rows) {
+      assert.equal(one.name === undefined, one.at === undefined, `${name}: name and place agree`);
+    }
+  }
+  const arch14 = perArchitecture.get(14) as { named: number; total: number };
+  assert.equal(arch14.named, arch14.total, 'arch 14 names every activity it binds');
+  assert.ok(arch14.total >= 13, `and there are enough of them, got ${arch14.total}`);
+  assert.ok(named / total > 0.6, `the corpus names most activities: ${named} of ${total}`);
+});
+
+test('no fixed key to row map can exist on a touch panel', skipUnless('one_config'), () => {
+  // Why arch 12 resolves nothing, proved from the container rather than asserted as a limitation.
+  //
+  // The Harmony One is the only touch model here, and base slot 17 gives it nine page shapes, so the
+  // rectangle a scan code stands for is per screen. `one_config` shows the consequence: its three
+  // activity pages bind activities on {50,51,52}, {50,48,49} and {48,49} while all three draw their
+  // labels on the same rows. If a code named a row, code 48 would have to name one row on page 46 and
+  // a different one on page 47, and the same for 49. So the hit map is what a One needs, and no
+  // amount of comparing pages substitutes for it.
+  const c = parse(load('one_config') as Uint8Array);
+  const perPage = new Map<number, Set<number>>();
+  for (const one of activityBindings(c)) {
+    const seen = perPage.get(one.page) ?? new Set<number>();
+    seen.add(one.scan);
+    perPage.set(one.page, seen);
+  }
+  assert.equal(perPage.size, 3, 'three activity pages');
+  const sets = [...perPage.values()].map((one) => [...one].sort((a, b) => a - b).join(','));
+  assert.deepEqual(sets.sort(), ['48,49', '48,49,50', '50,51,52']);
+  // The pages differ in which codes they use and not in how many rows they draw, which is the
+  // contradiction. Two codes appear on pages whose activity counts differ, so no single assignment of
+  // code to row satisfies both.
+  const rows = new Set<number>();
+  for (const page of perPage.keys()) {
+    for (const one of screenStrings(c)) {
+      if (one.program === modePages(c)[page]?.program) rows.add(one.y);
+    }
+  }
+  assert.ok(rows.size > 0, 'the pages do draw text');
 });

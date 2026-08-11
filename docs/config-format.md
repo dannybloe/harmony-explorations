@@ -606,7 +606,7 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 1 | 4 bytes, `u16` | repeat a primitive |
 | 2 | 2 position bytes, `u24` | draw the **bitmap** at that address, below |
 | 3 | 6 bytes, `u24` | the same with **destination, source, size**, below |
-| 4 | 2 position bytes, `u24` | draw the glyph string at that address |
+| 4 | 2 position bytes, `u24` | draw the glyph string at that address, **another program's own**, below |
 | 5 | 2 position bytes, then the string | draw the glyph string inline |
 | 16 | 1 byte | index base slot 7 by it |
 | 17 | `u16` operand, `u8` opcode | queue an action list instruction |
@@ -615,6 +615,23 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 21 | 4 bytes | *arch 8 only*, meaning unknown, length inferred from the corpus |
 | 22 | **per architecture**, below | *arch 12*: call. *arch 9*: select a screen row |
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
+
+**Opcode 4 is the commoner of the two text opcodes and its target is never a place of its own.**
+Confirmed on all eighteen containers of the corpus, four architectures: in 12052 of 12052 instances the
+`u24` lands on the glyph payload of some opcode 5 instruction in another reachable program, three bytes
+past that instruction's start. So a string is stored once, inline, by whichever program draws it that
+way, and every other program that wants it names those bytes. 12738<!--fact:text_referenced--> of the
+corpus's 19523<!--fact:text_draws--> drawn strings are references, so two draws in three.
+
+Three consequences, all of them load bearing:
+
+* The run is read exactly as opcode 5's is, terminated by a zero byte with a code whose bit 7 is set
+  taking a second byte. It may be **empty**: nine references in each arch 8 config name a zero length
+  string, which is a blank label at a position.
+* **The bytes are shared**, so a writer that edits a string in place changes every draw that names it.
+  Same family as the shared infrared duration blocks of section 61.
+* The byte accounting closed without anybody following this pointer, because the bytes were already
+  claimed by the program holding them. That is why it went unread: nothing was missing.
 
 **Opcode 3's six position bytes are `dx, dy, sx, sy, w, h`, destination first.** Section 118. The
 order cannot be read off most of them: 1080 of the 1114 in `h525_config` carry the same pair twice,
@@ -911,7 +928,7 @@ and not per architecture or per remote.
 both how the field at `+0x01` was read, section 78, and how the 525's user config was decoded without
 reading its glyphs: the two share a typeface.
 
-65454<!--fact:text_read--> of 65456<!--fact:text_glyphs--> drawn glyphs across the corpus come back as
+146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs across the corpus come back as
 characters. The two that do not are one code drawn once in each Harmony 700 config. The closure is
 that a decoded string turns up verbatim inside a base slot 0 name, which is ASCII and which this
 decoder never reads: twelve of the thirteen containers with a name tree do it, between three and
@@ -1465,6 +1482,54 @@ The names are the user's own equipment, so no brand out of a contributor's confi
 in the tests: what is recorded is the shape and the count. No firmware routine consuming this section has
 been found, so the correspondence with slot 13 is established by the index and by the range
 agreeing, not by a consumer.
+
+#### Which key starts which activity, and which drawn name it carries
+
+**Confirmed on all eleven containers of the corpus that carry a name tree, four architectures.** The
+chain from a key press to an activity, section 121, and the reason it is four hops is that nothing in
+the format names an activity directly:
+
+1. a mode page's tagged list binds a key code to opcode `0x7F`, whose operand indexes base slot 10
+2. that action list carries opcode `0x1F` with operand `0xFF | set`, selecting base slot 9 entry `set`
+3. that entry's own tagged list carries a `0x7F` naming another base slot 10 list
+4. that list writes `CurrentActivityState` with `0x80 | index`, and the operand is the activity
+
+Every binding in the corpus is event type `0x80`, a press. Every activity is reachable from a key, and
+**all of an activity's keys are on one page**, in all eleven containers, so an activity belongs to one
+screen. An activity page's `0x7F` operands are a **contiguous ascending run** of base slot 10 indices in
+the tagged list's own order, on 16 of 16 activity pages against under half of pages generally, so a
+fresh run of action lists per activity menu is how the generator lays one out.
+
+**The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
+initial value and marked unconfirmed. No binding writes it, in eleven of eleven containers. Ten of them
+have `first` equal to the highest value and `one_config` has 7 where its highest is 8, with **8** bound
+to a key and 7 bound to nothing, so the agreement is not arithmetic. The arch 9 safe mode container is
+the one place a list writes the idle value, and it is the one with zero activities: that list returns
+the remote to idle rather than starting anything.
+
+**A drawn name is attributed to an activity through the modes the chain enters**, not through geometry.
+An activity's action lists also carry opcode `0x7E`, entering base slot 6 modes, and those modes' pages
+draw the activity's own name, because a remote entering an activity says which one. So the page's string
+that relates to one of those strings is that activity's label. Containment either way rather than
+equality, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and its
+splash screen is a verb plus the name. Two filters make it a function rather than a guess: a string
+several activities of a page claim is chrome, a title or a footer, and so is one another activity page of
+the same mode draws identically; and one label belongs to one activity, which is a constraint to
+propagate rather than a preference.
+
+That names 23 of the corpus's 35 activities, and **arch 14 completely**, 13 of 13. What is left is
+stated rather than rounded up:
+
+* **arch 12 names none, and that is a proof rather than a shortfall.** A Harmony One's activity mode
+  does not repeat the name its menu draws, and its scan codes cannot stand in for position: the three
+  activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49} while all
+  three draw their labels on the same rows, so no fixed code to row map exists. Base slot 17's hit map
+  is what a One needs, and it gives nine page shapes for exactly that reason.
+* four arch 8 activities and one arch 9 one are unresolved because a short generic word inside a longer
+  label satisfies containment, leaving two candidates where one is wanted.
+
+`packages/codec/src/inventory.ts` is the reader: `activityBindings`, `activityNames`,
+`idleActivityValue`, `activityWriterCount`.
 
 ### Slot 1: the config states its own architecture
 
