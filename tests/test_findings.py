@@ -1000,11 +1000,118 @@ class TestTheArch9SafeModeImageIsNotTheApplication(unittest.TestCase):
     def test_the_application_fills_the_part_leaving_no_room_for_a_second_image(self):
         """
         The mechanism behind the overwrite, from the dump alone: 32 KiB, a 4 KiB bootloader and an
-        application that populates almost all of the rest. A resident safe mode image would have to
-        fit somewhere, and there is nowhere.
+        application that populates almost all of the rest. A second image would have to fit somewhere
+        in here, and there is nowhere.
+
+        Scoped to internal program flash on purpose. Both images are resident in **external** flash,
+        which is where the one this erases comes from, so the crowding is what makes the copy
+        destructive rather than what makes safe mode a transfer.
+        `TestTheStagedFirmwareSurvivedSafeMode` is that half.
         """
         lab.require(self.NAME)
         code = lab.load(self.NAME)
         self.assertEqual(len(code), 0x8000)
         populated = sum(1 for b in code[0x1000:0x8000] if b != 0xFF)
         self.assertGreater(populated / (0x8000 - 0x1000), 0.95)
+
+
+class TestTheStagedFirmwareSurvivedSafeMode(unittest.TestCase):
+    """Section 118. Two resident arch 9 images in external flash, and the internal region is a copy.
+
+    The claim these pin is not "external flash holds firmware", which section 118 argues from
+    concordance's table. It is the narrower measured one, in three parts: the copy read while the
+    remote was stranded in safe mode is byte identical to the copy read before any of it happened;
+    the 64 KiB below it is a second, distinct image carrying the accessor values a safe mode remote
+    reports; and internal program flash right now is a copy of that lower image. So entering safe
+    mode is a copy between two images the remote already holds, and leaving it is the other copy.
+    """
+
+    APPLICATION = 0x1000
+    END = 0x8000
+    LENGTH = END - APPLICATION
+
+    def test_the_safe_mode_read_matches_the_running_application(self):
+        lab.require('h525_staged_firmware', 'h525_code')
+        staged = lab.load('h525_staged_firmware')
+        code = lab.load('h525_code')
+        self.assertEqual(len(staged), self.LENGTH)
+        self.assertEqual(staged, code[self.APPLICATION:self.END])
+
+    def test_the_safe_mode_read_matches_the_august_read_of_the_same_address(self):
+        """
+        The second leg, and the reason the correction in section 118 was owed: this read was offered
+        as a missing backup when the lab already held the whole region. It is a confirmation, and a
+        confirmation needs the earlier copy to compare against.
+        """
+        lab.require('h525_staged_firmware', 'h525_external_firmware')
+        staged = lab.load('h525_staged_firmware')
+        external = lab.load('h525_external_firmware')
+        self.assertGreaterEqual(len(external), len(staged))
+        self.assertEqual(staged, external[:len(staged)])
+
+    def test_the_august_read_holds_the_safe_mode_container_above_the_application(self):
+        """
+        Why the earlier read is longer, and the check that its tail is content rather than erased
+        flash: the arch 9 safe mode container sits at region offset 0x8000, which is flash 0x818000.
+        """
+        lab.require('h525_external_firmware')
+        external = lab.load('h525_external_firmware')
+        self.assertEqual(len(external), 0x10000)
+        self.assertEqual(external[self.END:self.END + 4], b'AHCM')
+
+    def test_the_two_external_images_are_distinct_and_each_holds_one_accessor_run(self):
+        """
+        The pair that explains the overwrite: both images live in external flash, so the single
+        internal application region holds whichever one the bootloader copied in.
+
+        The accessor runs are what identify them, and they identify them exclusively: the safe mode
+        values are in the lower image and nowhere in the upper one, and the application's are the
+        other way round. Asserted as the `RETLW` run rather than as bare bytes, for the same reason
+        as the search above.
+        """
+        lab.require('h525_safemode_firmware', 'h525_external_firmware')
+        safemode = lab.load('h525_safemode_firmware')
+        staged = lab.load('h525_external_firmware')
+        self.assertNotEqual(safemode, staged)
+        # Section 87's five accessors, as the remote reports them in each state. The safe mode row is
+        # the version reply `20 25 12 ff 94 16 00` measured on 11 August 2026.
+        safe_run = b''.join(bytes([v, 0x0C]) for v in (0x20, 0x04, 0x16, 0x00, 0x09))
+        app_run = b''.join(bytes([v, 0x0C]) for v in (0x30, 0x00, 0x16, 0x09, 0x09))
+        self.assertEqual(safemode.find(safe_run), 0x1406)
+        self.assertEqual(safemode.find(app_run), -1)
+        self.assertEqual(staged.find(app_run), 0x4774)
+        self.assertEqual(staged.find(safe_run), -1)
+
+    def test_the_internal_region_read_in_safe_mode_is_a_copy_of_the_lower_image(self):
+        """
+        The measured window, pinned so the image and the device cannot drift apart.
+
+        62 bytes read off the stranded remote at internal `0x002400`, which under the convention the
+        0x810000 read established is external file offset `0x1400`. Written down as a prediction
+        before the read and confirmed by it, along with the negative: internal `0x001406`, where the
+        other convention would have put the run, holds something else.
+        """
+        lab.require('h525_safemode_firmware')
+        safemode = lab.load('h525_safemode_firmware')
+        live = bytes.fromhex(
+            '9b6f7fef1af0200c040c160c000c090ce2c3eef0e3c3eff072ec16f00001'
+            'da5103e115ec16f0fad7120090ec1bf0ffec0bf03dec19f0deec0bf0deec0bf0')
+        self.assertEqual(len(live), 62)
+        self.assertEqual(safemode[0x1400:0x1400 + len(live)], live)
+        # The negative window, also read off the remote. It is not the run, and the assertion is
+        # against the live bytes rather than against the image, since the point is what the device
+        # holds.
+        other = bytes.fromhex('e552e5cfdaff110000001dd889 9a0001'.replace(' ', ''))
+        self.assertEqual(len(other), 16)
+        self.assertNotIn(b''.join(bytes([v, 0x0C]) for v in (0x20, 0x04)), other)
+
+    def test_the_three_copies_are_not_trivially_equal(self):
+        """
+        The negative. Comparing 0xFF against 0xFF would satisfy every assertion above, so the shared
+        bytes have to be an image: mostly populated, and carrying the arch 9 firmware header.
+        """
+        lab.require('h525_staged_firmware')
+        staged = lab.load('h525_staged_firmware')
+        self.assertEqual(staged[4:6], b'HG')
+        populated = sum(1 for b in staged if b != 0xFF)
+        self.assertGreater(populated / len(staged), 0.95)

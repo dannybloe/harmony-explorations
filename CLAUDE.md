@@ -252,17 +252,21 @@ document:
   **Entering safe mode on arch 9 destroys the application firmware**, section 118, measured on the
   bench 525 by reading its internal flash before and after: the bootloader is byte identical, the
   28 KiB application is gone, and an image under 10 KiB sits in its place with everything above
-  `0x3800` erased. The part has 32 KiB, so there is no room for a resident safe mode image and it has
-  to be loaded over the application. **So safe mode is not a free fallback on arch 9 and must never be
-  entered as an experiment**: a power cycle does not leave it, and leaving it needs the firmware
-  written back, which is why the rail demanding a verified dump of that exact unit is what separates a
-  recoverable remote from a lost one. Arch 14 keeps both images resident and does not have this
-  problem. **The way out is on the remote**: arch 9 keeps its firmware in **external** flash at
-  `0x810000`, per concordance's own table which nothing here had read, and the staged image there is
-  byte identical to the working application, so the bootloader has its own recovery source. What tells
-  it to install is one byte, `0x02` into flash `0x200000`, concordance's `FinishFirmware` on this
-  architecture. **Client sourced and this project must not be what performs it**: it has never written
-  to a remote, and a first write should not install firmware on an irreplaceable unit.
+  `0x3800` erased. The part has 32 KiB, so there is no room for a second image **in internal program
+  flash** and safe mode has to be copied over the application. **So safe mode is not a free fallback on
+  arch 9 and must never be entered as an experiment**: a power cycle does not leave it, and leaving it
+  needs the application copied back, which is why the rail demanding a verified dump of that exact unit
+  is what separates a recoverable remote from a lost one. Arch 14 keeps both images resident in
+  internal flash and does not have this problem. **On arch 9 both images are resident too, in external
+  flash, and the internal region is a copy of whichever the bootloader last put there**: the
+  application at `0x810000`, read twice and matching the internal copy byte for byte, and the safe mode
+  image at `0x800000`, whose five version accessors are exactly what a stranded 525 reported. That
+  second identification is the calibration worth remembering, because the label was written from the
+  header on 8 August and the device confirmed it on 11 August. So nothing is transferred from a host to
+  enter safe mode and nothing has to be to leave it. What tells the bootloader to install is one byte,
+  `0x02` into flash `0x200000`, concordance's `FinishFirmware` on this architecture. **Client sourced
+  and this project must not be what performs it**: it has never written to a remote, and a first write
+  should not install firmware on an irreplaceable unit.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.

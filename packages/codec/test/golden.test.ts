@@ -52,6 +52,10 @@ const CONTAINERS = [
   'arch8_config_c',
   'arch8_config_d',
   'h525_safemode_ahcm',
+  // The same container in situ, at blob offset 0x8000 of the 64 KiB external firmware region it was
+  // cut out of. A deliberate duplicate: it is what checks the cut was made in the right place, since
+  // both parses have to agree about the base, the end address and every check. Section 118.
+  'h525_external_firmware',
   'one_spare_before_sync',
   'one_spare_after_sync',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000

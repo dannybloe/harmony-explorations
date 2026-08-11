@@ -215,13 +215,33 @@ read only; they live in the lab and are not publishable, so these are the checks
 |---|---|---|
 | `20260808T1645Z-harmony-525-config.bin` | `a5bdb588638d81fb0b491eb47a90cfd2f9e9a4bd1ca374ad16550af0e0910ffb` | the user config, 51195 bytes, flash `0x820000` |
 | `20260808-harmony-525-flash-810000.bin` | `2c29005c1080690a9d6716c94b3bb1e49856b47b448a452c329ec1c41a1e6282` | the application firmware image, 65536 bytes |
-| `20260808-harmony-525-flash-800000.bin` | `dbb57d128aa8b3b0f03a7ec0de9522f09dd04cb30c350c804a25ba91b4c1412a` | a second `HG` framed image, the safe mode application |
+| `20260808-harmony-525-flash-800000.bin` | `dbb57d128aa8b3b0f03a7ec0de9522f09dd04cb30c350c804a25ba91b4c1412a` | a second `HG` framed image, the safe mode application, and that label is confirmed rather than inferred: see below |
 | `20260808-harmony-525-internal-0x0000.bin` | `21a8cb3d1e0f512738a2cae3b7981512bfb893271d8b4056e315b8727e5626d0` | internal program memory, 32768 bytes, read in 529 single chunk commands |
 | `20260808-harmony-525-safemode-ahcm.bin` | `cf0d0ece48352d7078c7333d98de68473a38945fa8a77bd78ab11f17d15bac68` | the safe mode config, cut out of the `0x810000` dump at offset `0x8000` |
 
 `0x1000` to `0x7FFF` of the internal read is byte identical to the first 28672 bytes of the
 `0x810000` image, which is what confirms both the load address and that the external image is the
 running code.
+
+## Read off the same Harmony 525 while it was stranded in safe mode, 11 August 2026
+
+The remote was put into safe mode by the published key procedure and would not come out, so the state
+was measured rather than wasted. Read only, over USB, by this project's own code. Section 118.
+
+| File | SHA-256 | What |
+|---|---|---|
+| `20260811-harmony-525-flash-810000-safemode.bin` | `facf26f411f39432cc0fac674c729177c21840791821d06470d606d50be1e0b9` | the staged application image, 28672 bytes, external `0x810000` |
+
+Its whole value is a comparison, so the digest above is also the digest of the first 28672 bytes of
+the 8 August `0x810000` read and of `0x1000` to `0x7FFF` of the 8 August internal read. Three copies,
+one value: entering safe mode erased internal program flash and left external flash alone.
+
+**The 8 August dump of `0x800000` is what the label on it said.** Section 87's five accessors are
+emitted as a `RETLW` run, and the values a safe mode remote reports, `20 04 16 00 09`, sit at file
+offset `0x1406` of that image and nowhere in the `0x810000` one, where the application's
+`30 00 16 09 09` sits at `0x4774`. The label was written on 8 August from the header alone and the
+device agreed with it on 11 August. A 62 byte window read at internal `0x002400` in safe mode is byte
+identical to file offset `0x1400` of that image, so the internal application region is a copy of it.
 
 ## Harmony Desktop's web application, mirrored 9 August 2026
 

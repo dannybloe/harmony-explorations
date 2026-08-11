@@ -49,9 +49,18 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty have been found and corrected so far. **The two newest are both in section 118**, and one of
-them was refuted by hardware within a day of being written: section 116 supported its reading of
-`GET_VERSION` field 6 partly on safe mode images carrying the same value as their applications, and a
+Forty one have been found and corrected so far. **The three newest are all in section 118.** The
+newest of those was wrong for an hour, in the section that made it, and it is a scoping error of the
+kind this project keeps making: "there is no room for a resident safe mode image"<!--superseded--> is true of the
+525's internal program flash and false as a sentence, because arch 9 keeps both images resident in
+**external** flash and copies one of them in. Unscoped it reads as "safe mode is transferred from a
+host", which is the opposite of what happens, and it went into `CLAUDE.md` as a rail before anything
+looked at the 64 KiB below the staged application. What found it was looking in the lab rather than at
+the remote: the image had been dumped and correctly labelled three days earlier and nothing had opened
+it.
+
+Of the other two, one was refuted by hardware within a day of being written: section 116 supported its
+reading of `GET_VERSION` field 6 partly on safe mode images carrying the same value as their applications, and a
 live Harmony 525 in safe mode reports zero. The platform reading survives on its other two legs and is
 now scoped to an application image. The other is the cheapest kind of error to make: a number quoted
 with no population attached. Section 101 explained 1992 opcode
@@ -15327,10 +15336,16 @@ read `20 04 16 00 09` and no such run exists anywhere in those 32 KiB, where the
 
 **The mechanism makes this expected rather than alarming.** The part is a PIC18F4550 with 32 KiB of
 program flash. The bootloader takes 4 KiB and the application takes the remaining 28. There is no room
-for a resident safe mode image, so safe mode has to be **loaded into** the application's space, and
-loading it means erasing what was there. Arch 14 does not have this problem: its safe mode image sits
-at internal `0xFE + 0x1000` and its application at `+0x9000`, both resident, which is why a 600 can
-enter and leave safe mode without losing anything.
+for a second image **in internal program flash**, so safe mode has to be **loaded into** the
+application's space, and loading it means erasing what was there. Arch 14 does not have this problem:
+its safe mode image sits at internal `0xFE + 0x1000` and its application at `+0x9000`, both resident,
+which is why a 600 can enter and leave safe mode without losing anything.
+
+The words "in internal program flash" are load bearing and were missing here for an hour. Both arch 9
+images **are** resident, in external flash a 64 KiB apart, and the internal region holds a copy of
+whichever one the bootloader last put there. That is measured two subsections below, and it is a
+better account of the same overwrite: nothing is transferred from a host to enter safe mode, and
+nothing has to be to leave it.
 
 Attribution, stated carefully because the claim is that a documented procedure is destructive. The
 application was complete and running on 8 August, reporting firmware 3.0 and software type 0, and it
@@ -15405,6 +15420,108 @@ one that installs firmware on an irreplaceable unit. concordance has done this f
 tool for it. What this section contributes is the part worth having beforehand: the staged image is
 verified against a known good copy, so the operation is a well understood one rather than a blind
 reflash, and if it goes wrong `h525_code` is a second copy of the same bytes.
+
+### The whole staged image read back, and the safe mode entry did not touch it
+
+The four sampled offsets above were a spot check, so the region was read in full: 28672 bytes from
+external `0x810000`, in seven passes of 4096, on 11 August 2026. Three way comparison, all identical:
+
+| | sha256 prefix |
+|---|---|
+| external `0x810000`, read today in safe mode | `facf26f411f39432` |
+| external `0x810000`, read on 8 August | the same over these 28672 bytes |
+| internal `0x1000` in `h525_code`, 8 August | `facf26f411f39432` |
+
+So the staged image is byte for byte the application that was running before any of this, and **the
+safe mode entry erased internal program flash while leaving external flash alone.** That is the
+asymmetry the recovery depends on, and now it is measured rather than sampled.
+
+**A correction to what this project told its owner an hour earlier.** The read was proposed as
+producing "a third copy", on the grounds that only four offsets had been compared. The lab already
+held the whole thing: `20260808-harmony-525-flash-810000.bin` is 65536 bytes covering the entire
+firmware region, including the arch 9 safe mode container at offset `0x8000` that section 76 cut out of
+it. So the backup was never missing and the read is a **confirmation**, which is a smaller claim than
+the one made for it. It is still the confirmation that matters, because it is what rules out the safe
+mode entry having disturbed the staged copy, and nothing else could have ruled that out. The habit
+worth keeping from this: look in the lab before offering to read a remote.
+
+### Both arch 9 images are resident in external flash, and the safe mode one was already in the lab
+
+Looking in the lab rather than at the remote turned up the other half of the mechanism, and it had
+been sitting there since 8 August under a filename that says what it is. Three reads of the 525's
+external flash, all in `../lab/reads`:
+
+| | length | populated | first bytes |
+|---|---|---|---|
+| `0x800000` | 65536 | 10061 | `26 16 ff ff 48 47 00 70 f5 ef 0b f0` |
+| `0x810000` | 65536 | 43559 | `fb 6a ff ff 48 47 00 70 da ef 3f f0` |
+| `0x810000`, today, in safe mode | 28672 | 27798 | the same twelve bytes |
+
+Two distinct `HG` framed images, a whole 64 KiB apart, differing in their header checksum word and in
+the target of the `GOTO` at offset 8. `checksums.md` has called the lower one "the safe mode
+application" since 8 August, from its header alone.
+
+**That guess is a finding now, and the closure came from the stranded remote.** Section 87's five
+accessors are emitted as a `RETLW` run, and the run for the values a safe mode remote reports is in
+the lower image and nowhere else:
+
+| searched for | in `0x800000` | in `0x810000` |
+|---|---|---|
+| `20 04 16 00 09`, safe mode | file offset `0x1406` | absent |
+| `30 00 16 09 09`, the application | absent | file offset `0x4774` |
+
+So the five bytes a live 525 answered on 11 August are inside an image that was dumped and labelled
+on 8 August, before safe mode had ever been entered on it. The label was recorded first and the
+device agreed with it afterwards, which is the calibration this project asks for and which a
+comparison made the other way round would not have been.
+
+This also answers the question section 118 opened above better than the paragraph about a 32 KiB part
+does. Arch 9 does not lack a resident safe mode image: it keeps **both** images off chip, and the
+single internal application region holds whichever one the bootloader last copied in. That is why
+entering safe mode is destructive to the internal copy and costs nothing permanent, and it is why the
+recovery is a copy rather than a reflash from a host.
+
+**A prediction, written down before it is measured**, because the remote is still connected and in
+this state, and the internal read that settles it is a single 62 byte window:
+
+* If external file offset zero is internal `0x1000`, which is the convention the `0x810000` read
+  established, then internal `0x002400` right now holds external `0x800000` file offset `0x1400`, and
+  the accessor run sits at internal `0x002406`.
+* The alternative convention, file offset zero being internal `0x0000`, puts it at internal `0x001406`
+  instead. Both windows are read, so the measurement distinguishes them rather than only confirming
+  one.
+* Either way the run must be **present** in internal flash now and it is **absent** from the 8 August
+  internal dump, which is already asserted by
+  `test_the_safe_mode_accessors_are_nowhere_in_the_dump`. If neither window holds it, the bootloader
+  does something other than copy an image in, and the account above is wrong.
+
+Measured immediately afterwards, on 11 August 2026, both windows read off the connected remote, which
+announced itself as software type 4 and architecture 9 in the same command:
+
+```
+0x002400  9b 6f 7f ef 1a f0 20 0c 04 0c 16 0c 00 0c 09 0c e2 c3 ee f0 ...   62 bytes
+0x001406  e5 52 e5 cf da ff 11 00 00 00 1d d8 89 9a 00 01                   16 bytes
+```
+
+| internal | what it holds |
+|---|---|
+| `0x002400` | external `0x800000` file offset `0x1400`, byte for byte over all 62, run at `0x002406` |
+| `0x001406` | not the run, and not anything resembling a `RETLW` chain |
+
+So the first convention is the right one, the two external images are addressed the same way, and
+**the internal application region is a copy of one of them.** The 525 is running the image at
+`0x800000` and the image at `0x810000` is untouched, which is the whole of the recovery situation in
+one sentence.
+
+**What this changes about the recovery is the risk, not who performs it.** concordance's staging step
+would write the image at `0x810000` over the bytes already at `0x810000`, which we have now read twice
+and compared to a third copy, so the transfer has nothing to get wrong that a verification read would
+not catch. What still needs a write is whatever tells the bootloader to copy the upper image back in,
+and the only candidate for that is the `0x200000` state cell above, which is client sourced,
+unconfirmed and unreadable by our own validator. **The rails are unchanged**: arch 9 is not in
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, this project has never written to a remote, and a first write
+should not be the one that installs firmware. The contribution here is that the operation is now
+fully characterised beforehand.
 
 ### There is no concordance command line that does the finish step alone
 

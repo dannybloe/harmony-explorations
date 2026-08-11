@@ -42,6 +42,12 @@ CONTAINERS = (
     # claim lists, section 78, and a golden vector is exactly the thing it should have: the two
     # implementations have to agree about the container that disagrees with everything else.
     'h525_safemode_ahcm',
+    # The same arch 9 safe mode container, still **inside** the 64 KiB external firmware region it
+    # was cut out of, at blob offset 0x8000. Its vector is a duplicate of the one above, deliberately
+    # and for a third reason beyond the two given below: it is what checks that the cut was made in
+    # the right place, since the in situ parse and the cut out parse have to agree about the base,
+    # the end address and every check. They do. Section 118.
+    'h525_external_firmware',
     # The section 58 pair. The first is byte identical to `one_config_unprogrammed`, so its vector
     # is a duplicate on purpose: the alternative is a special case in the test that asserts every
     # container sample has one, and a special case there is worth less than a duplicate file.

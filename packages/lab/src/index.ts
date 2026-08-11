@@ -50,6 +50,19 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // produced them, which is the third time a file called "safe" here has held something else.
   arch8_boot_880: 'H880-safemode.bin',
   arch8_boot_885: 'H885-safemode.bin',
+  // The 64 KiB below the staged application, read over USB on 8 August 2026. Named "the safe mode
+  // application" in checksums.md on the strength of its `HG` header alone, and that label was
+  // confirmed three days later by a remote stranded in safe mode reporting five accessor values that
+  // are inside this image and inside no other. Section 118.
+  h525_safemode_firmware: '20260808-harmony-525-flash-800000.bin',
+  // The 525's whole external firmware region, read over USB on 8 August 2026: the staged application
+  // from 0x810000 and the arch 9 safe mode container at +0x8000 that section 76 cut out of it.
+  h525_external_firmware: '20260808-harmony-525-flash-810000.bin',
+  // The same staged application, read again on 11 August 2026 while the remote was stranded in safe
+  // mode. Kept alongside rather than replacing anything, because its whole value is the comparison:
+  // it is byte identical to the other two copies, which is how we know entering safe mode erased
+  // internal program flash and left external flash alone. Section 118.
+  h525_staged_firmware: '20260811-harmony-525-flash-810000-safemode.bin',
   one34_region2: 'one-3.4-Region_2-decoded.bin',
   one_safemode: 'one-safemode-gspm-base0x2000-raw64k.bin',
   h700_code: '700-2.8-Region_2-code-base0x9000.bin',
