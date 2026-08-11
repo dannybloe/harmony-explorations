@@ -631,10 +631,16 @@ in every arch 9 user config: the 525's whole panel, drawn in eight rows.
 
 What the row index is for is **read now**, section 101, and it is not what was guessed here. It is a
 **page index sent to the panel**: `0x038EC` keeps it at `0xC0` and derives `row * 8` and `row * 8 + 7`
-beside it, and the transfer at `0x03898` sends `0xB0 | row`, which is the page address command of the
-SSD1306 family. So the 525 addresses its screen as eight pages of eight pixel rows, opcode 22 selects
-one and **opcode 23 transfers 96 pixels into it**. The guess recorded here, that a key press is
-attributed to a row and this is arch 9's touch hit map, was wrong: nothing reads it back.
+beside it, and the transfer at `0x03898` sends `0xB0 | row`, the page address command of a page
+addressed display controller. So the 525 addresses its screen as eight pages of eight pixel rows,
+opcode 22 selects one and **opcode 23 transfers 96 pixels into it**, preceded by a column address in
+two nibbles where **the panel's column 0 is the controller's column 3**. The guess recorded here, that
+a key press is attributed to a row and this is arch 9's touch hit map, was wrong: nothing reads it
+back.
+
+The controller is **ST7565 class and not an SSD1306**, which section 101 corrected on 10 August 2026:
+six ST7565 only commands appear in the driver's init sequence and none of the ten SSD1306 only ones
+do. The exact part is not established.
 
 The lead came from trelowney and the addresses were verified against this project's own 525 image.
 

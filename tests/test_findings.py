@@ -552,8 +552,10 @@ class TestArch9ScreenOpcodes22And23(unittest.TestCase):
     def test_the_transfer_sends_a_page_address_command(self):
         lab.require(self.NAME)
         code = lab.load(self.NAME)
-        # 0xB0 | page is the SSD1306 family's page address command, and it is what makes the operand
-        # a page index rather than a marker. This is the assertion the whole reading rests on.
+        # 0xB0 | page is the page address command of a page addressed controller, and it is what
+        # makes the operand a page index rather than a marker. This is the assertion the whole
+        # reading rests on. Which controller is a separate question, below: one command names a
+        # family of families, and naming a part on it was the error this section corrected.
         self.assertEqual(self.at(code, self.TRANSFER).mnemonic, 'MOVLW')
         self.assertEqual(self.at(code, self.TRANSFER).fields['k'], 0xB0)
         self.assertEqual(self.at(code, 0x0389C).mnemonic, 'IORWF')
@@ -573,3 +575,99 @@ class TestArch9ScreenOpcodes22And23(unittest.TestCase):
         self.assertEqual(self.at(code, 0x046EA).mnemonic, 'BCF')
         self.assertEqual(self.at(code, 0x04718).mnemonic, 'BSF')
         self.assertEqual(self.at(code, 0x0471A).mnemonic, 'BCF')
+
+
+class TestTheArch9DisplayControllerIsST7565Class(unittest.TestCase):
+    """Section 101, corrected on 10 August 2026: the page command names a family of families.
+
+    The reading of screen opcodes 22 and 23 rests on `0xB0 | page`, which the ST7565 and the
+    SSD1306 both use, so it cannot name a part. The rest of the driver can, and the test is the
+    positive and the negative together: an init sequence full of one family's commands is only
+    evidence if the other family's are absent.
+    """
+
+    NAME, BASE = 'h525_code', 0x0000
+    # The display driver, which holds both the init sequence and the page transfer.
+    LOW, HIGH = 0x03500, 0x03D00
+    LITERALS = ('MOVLW', 'IORLW', 'ADDLW')
+
+    # Commands only the ST7565 and UC1701 family define.
+    ST7565_ONLY = {0xE2: 'software reset', 0xA2: 'LCD bias', 0x24: 'resistor ratio 4',
+                   0x25: 'resistor ratio 5', 0x2F: 'power control', 0xF8: 'booster ratio'}
+    # Commands only the SSD1306 defines. The negative control, and an SSD1306 cannot be brought up
+    # without 0x8D at least, so their joint absence is the strong half of this.
+    SSD1306_ONLY = {0x8D: 'charge pump', 0xD5: 'display clock divide', 0xD9: 'precharge',
+                    0xDA: 'COM pins', 0xDB: 'VCOMH deselect', 0xA8: 'multiplex ratio',
+                    0xD3: 'display offset', 0x21: 'column address range',
+                    0x22: 'page address range'}
+
+    def sites(self, code):
+        """Every literal load in the driver region, value to offsets."""
+        out = {}
+        for off in range(self.LOW, min(self.HIGH, len(code)) - 1, 2):
+            ins = isa.decode(code, off, self.BASE)
+            if ins is None or ins.mnemonic not in self.LITERALS:
+                continue
+            k = ins.fields.get('k')
+            if k is not None:
+                out.setdefault(k, []).append(off)
+        return out
+
+    def test_every_st7565_only_command_appears_in_the_driver(self):
+        lab.require(self.NAME)
+        sites = self.sites(lab.load(self.NAME))
+        for value, name in sorted(self.ST7565_ONLY.items()):
+            with self.subTest(command='0x%02X %s' % (value, name)):
+                self.assertTrue(sites.get(value), '0x%02X %s is absent' % (value, name))
+
+    def test_no_ssd1306_only_command_appears_anywhere_in_the_driver(self):
+        """The negative control. Without this the positive result is just a list of byte values."""
+        lab.require(self.NAME)
+        sites = self.sites(lab.load(self.NAME))
+        found = {'0x%02X %s' % (v, n): sites.get(v) for v, n in self.SSD1306_ONLY.items()
+                 if sites.get(v)}
+        self.assertEqual(found, {})
+
+    def test_the_init_sequence_is_that_family_in_order(self):
+        """
+        Scattered literals are weak and a sequence is strong, so the order is asserted too: the
+        commands the family documents for bring-up, in the positions the firmware issues them.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        expected = [(0x0357A, 0xC0), (0x03582, 0xA0), (0x03586, 0x25), (0x0358E, 0x81),
+                    (0x03594, 0xA2), (0x0359C, 0xC0), (0x035A0, 0x24), (0x035C2, 0xF8),
+                    (0x035CA, 0x40), (0x035CE, 0xAF), (0x035D8, 0xE2), (0x035DE, 0xAE)]
+        for addr, value in expected:
+            with self.subTest(addr='0x%05X' % addr):
+                ins = isa.decode(code, addr - self.BASE, self.BASE)
+                self.assertEqual(ins.mnemonic, 'MOVLW')
+                self.assertEqual(ins.fields['k'], value)
+
+    def test_the_transfer_addresses_a_column_three_to_the_right_of_the_panels(self):
+        """
+        The renderer facing half. A page command alone would not need a column, and the offset of
+        three is what a controller with more RAM than panel produces.
+        """
+        lab.require(self.NAME)
+        code = lab.load(self.NAME)
+        at = lambda a: isa.decode(code, a - self.BASE, self.BASE)   # noqa: E731
+        self.assertEqual(at(0x038BA).fields['k'], 3)
+        self.assertEqual(at(0x038C0).fields['k'], 3)
+        # The high nibble command is 0x10 | (col >> 4), built out of a swap and a mask.
+        self.assertEqual(at(0x03C3E).fields['k'], 0xF0)
+        self.assertEqual(at(0x03C40).mnemonic, 'SWAPF')
+        self.assertEqual(at(0x03C44).mnemonic, 'IORLW')
+        self.assertEqual(at(0x03C44).fields['k'], 0x10)
+        # And the low nibble is 0x00 | (col & 0x0F), which is why the mask is asserted rather than
+        # an OR: on this family the low nibble command's opcode bits are zero.
+        self.assertEqual(at(0x038C6).mnemonic, 'ANDLW')
+        self.assertEqual(at(0x038C6).fields['k'], 0x0F)
+
+    def test_one_command_in_the_init_is_unexplained_and_stays_recorded(self):
+        """Recorded rather than explained, so it cannot be quietly dropped from the sequence."""
+        lab.require(self.NAME)
+        ins = isa.decode(lab.load(self.NAME), 0x0357E - self.BASE, self.BASE)
+        self.assertEqual(ins.fields['k'], 0x89)
+        self.assertNotIn(0x89, self.ST7565_ONLY)
+        self.assertNotIn(0x89, self.SSD1306_ONLY)

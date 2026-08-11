@@ -12667,15 +12667,75 @@ and opcode 23:
 0389e: c1 d9       RCALL 0x03c22       ; and out to the panel
 ```
 
-`0xB0 | page` is the **page address command** of the SSD1306 family of monochrome display
-controllers, which address a 128 by 64 panel as eight pages of eight pixel rows. So `0xC0` is not a
-row marked for later use by something else: it is a page index sent to the panel as a command, and
-`0xC1` and `0xC2` are that page's first and last pixel rows, kept for whatever needs to clip to it.
+`0xB0 | page` is the **page address command** of the page addressed monochrome display controllers,
+which address a panel as eight pages of eight pixel rows. So `0xC0` is not a row marked for later use
+by something else: it is a page index sent to the panel as a command, and `0xC1` and `0xC2` are that
+page's first and last pixel rows, kept for whatever needs to clip to it.
 
-That settles the open question `docs/config-format.md` recorded beside opcode 22, and it settles it
-by naming the part rather than by describing the arithmetic. **Opcode 22 selects a page, opcode 23
-transfers 96 pixels into it.** Eight of each per mode page is one full 96 by 64 screen, which is
-exactly what section 85 measured from the data without knowing why it was eight.
+That settles the open question `docs/config-format.md` recorded beside opcode 22. **Opcode 22 selects
+a page, opcode 23 transfers 96 pixels into it.** Eight of each per mode page is one full 96 by 64
+screen, which is exactly what section 85 measured from the data without knowing why it was eight.
+
+> **Corrected on 10 August 2026.** This said `0xB0 | page` is the page address command **of the
+> SSD1306 family**, and named that part, and the sentence after it said the question was settled "by
+> naming the part rather than by describing the arithmetic". The arithmetic was right and the part
+> was wrong, and the part was the load bearing half of that sentence. See the next subsection: the
+> controller's command set is ST7565 class and it is not an SSD1306. Nothing about opcodes 22 and 23
+> changes, because `0xB0 | page` is common to both families, which is exactly why one command was
+> not enough to name a part on.
+
+### The controller is ST7565 class, not an SSD1306, and the whole command set says so
+
+`0xB0 | page` identifies a family of families. Reading the rest of the driver names it properly, and
+the correction is worth having because a renderer needs the column offset below and because the
+earlier attribution was made from a single command.
+
+Two things the transfer does after the page command, at `0x038BA` onwards:
+
+```
+038ba: 03 0e       MOVLW 0x03
+038bc: d7 25       ADDWF 0xd7,B,W      ; the column, plus three
+038be: bf d9       RCALL 0x03c3e       ; 0x10 | (col >> 4), the high nibble
+038c0: 03 0e       MOVLW 0x03
+038c4: d7 25       ADDWF 0x0d7,W
+038c6: 0f 0b       ANDLW 0x0f          ; 0x00 | (col & 0x0F), the low nibble
+038c8: ac d9       RCALL 0x03c22
+```
+
+and `0x03C3E` is the high nibble command in full, `ANDLW 0xF0`, `SWAPF`, `ANDLW 0x0F`, `IORLW 0x10`.
+So a transfer is page, then column high, then column low, then 96 data bytes, and **the panel's
+column 0 is the controller's column 3**. That offset is a fact a renderer needs and it is also
+evidence: a controller whose RAM is wider than its panel is what produces one.
+
+The init sequence at `0x0357A` to `0x035FE` is where the part is actually named. Sorted by which
+family each command belongs to, counted over the driver region `0x03500` to `0x03D00`:
+
+| | commands present | of |
+|---|---|---|
+| shared by both families | `0x40` start line, `0x81` contrast, `0xA0` segment direction, `0xA4` and `0xA5` all pixels, `0xAE` and `0xAF` display off and on, `0xC0` COM direction | 8 of 10 |
+| **ST7565 and UC1701 only** | `0xE2` software reset, `0xA2` LCD bias, `0x24` and `0x25` resistor ratio, `0x2F` power control, `0xF8` booster ratio | **6 of 10** |
+| **SSD1306 only** | none | **0 of 10** |
+
+The SSD1306 column is the negative control and it is empty. Not one of `0x8D` charge pump, `0xD5`
+display clock divide, `0xD9` precharge, `0xDA` COM pins, `0xDB` VCOMH, `0xA8` multiplex ratio or
+`0xD3` display offset appears anywhere in the driver, and an SSD1306 cannot be brought up without
+the charge pump command at least. The scan's one apparent hit, `0x20` at `0x03AA0`, is
+`MOVLW 0x20` followed by `ANDWF 0x05,W`: a bit mask outside the driver, not a memory addressing mode.
+
+Meanwhile the ST7565 commands are not scattered, they are the init sequence in the order that family
+documents: reset, bias, segment direction, COM direction, resistor ratio, power control, booster
+ratio, contrast, start line, display on. `0x81` is a two byte contrast command there, and `0xF8` a
+two byte booster ratio, and both are called through `0x03C2E`, which sends two bytes where `0x03C12`
+sends one.
+
+**What is claimed and what is not.** The command set is ST7565 class, on six positive and ten
+negative signatures. The exact part is **not** established and is deliberately not named: this is one
+firmware image, the only arch 9 one that exists here, and a datasheet search or a photograph of the
+board is what would finish it. The 96 by 64 panel with a three column offset narrows the candidates
+and does not close them.
+
+One command in the init is unnamed in either family, `0x89` at `0x0357E`, recorded rather than
+explained.
 
 ### Opcode 23 is not arch 12 only, and the table said it was
 
