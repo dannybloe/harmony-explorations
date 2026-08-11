@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 900" width="240" height="900"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Harmony One, button silhouette</title>
+  <desc id="desc">Outline drawing of the Harmony One front face, one shape per button, drawn from a
+    product photograph rather than traced from it. Forty four buttons, counted off the photograph,
+    with no firmware derived cross check: arch 12 senses sixteen buttons on one line, so a USB
+    census yields nothing here. The screen is a touch surface and is not one of the forty four. The
+    One has one skin and no regional alias, so unlike the 525 this file does not have to choose which
+    member of a pair it serves. Stroke only, no fill and no grey, so it takes the viewer's colour.</desc>
+
+  <!--
+    Why this exists and why it is here rather than in FreeHarmony.
+
+    It is the physical button map in executable form, the same argument as `h525.svg`. What differs
+    is what can be checked.
+
+    **The count has no independent confirmation and the file says so.** `docs/findings.md` section 48
+    measured the button map as far as USB allows: on arch 14 a press yields its matrix column,
+    `(code - 1) mod 4`, and **on arch 12 it yields nothing at all**, because sixteen buttons from
+    every region of the One share one sense line. So there is no arch 12 equivalent of section 89's
+    fifty, which is the number that made the 525's drawing a third independent count. Forty four is a
+    count of this photograph and nothing else. If a census ever contradicts it, the drawing is what
+    is wrong.
+
+    **No `data-scan` anywhere, and not even a candidate set.** The 525's four soft keys carry
+    `data-scan-candidates` because section 89 narrowed them to a block of four; nothing here narrows
+    anything, so silence is the honest state. Section 48 also explains why no read path can fix that:
+    a remote on USB never runs its keypad handler.
+
+    **The screen is a touch surface, and that is the one capability this project confirmed on its
+    own.** Base slot 17 is a touch hit map on arch 12 and names the picture bank on every other
+    architecture, sections 45 and 62, and the One is the only arch 12 model. So the surface is drawn
+    dashed like a screen and carries no `k-` id: touching it is not a key press and a hit lands in a
+    map rather than in the keypad scanner. `reference/capabilities.md`.
+
+    **The One has no teletext colour keys.** Checked against the photograph rather than assumed from
+    the 525, which has four. The red dot on the record key is a printed marking and is drawn unfilled
+    like every other marking here, because it identifies nothing that the shape and the word do not.
+
+    Drawn, not traced. The reference photograph is third party and unpublishable,
+    `../lab/reference/forum-images/PROVENANCE.md`; this is our own geometry and carries no such
+    problem, which is the whole reason for drawing rather than shipping a photo.
+  -->
+
+  <style>
+    /* currentColor throughout, so the page decides light or dark and this follows. */
+    .body { fill: none; stroke: currentColor; stroke-width: 2; }
+    .region { fill: none; stroke: currentColor; stroke-width: 1.2; }
+    .key  { fill: none; stroke: currentColor; stroke-width: 1.4; }
+    .lcd  { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 4 3; }
+    .mark { fill: none; stroke: currentColor; stroke-width: 1.2; }
+    .lbl  { fill: currentColor; stroke: none; font: 8px system-ui, sans-serif; text-anchor: middle; }
+    .lbl-sm { fill: currentColor; stroke: none; font: 6px system-ui, sans-serif; text-anchor: middle; }
+  </style>
+
+  <!--
+    The case, as one closed contour. Sampled half widths from the photograph, left edge against row,
+    which is what the curves below are fitted to: 30 at y=28, 26 at 52, 22 at 97, 16 at 305 (the
+    widest point), 27 at 514 (the waist), 21 at 662 (a second swell across the keypad), 47 at 841.
+    Mirrored about x=120. The One is the least rectangular of the three: a domed top, a long shallow
+    taper and a broad rounded foot, and none of that survives a rounded rectangle.
+  -->
+  <path class="body" d="M 120 8
+    C 78 8 38 13 30 28
+    C 22 90 17 190 16 305
+    C 16 370 24 470 27 514
+    C 26 560 21 620 21 662
+    C 22 730 32 800 47 841
+    C 66 876 90 892 120 892
+    C 150 892 174 876 193 841
+    C 208 800 218 730 219 662
+    C 219 620 214 560 213 514
+    C 216 470 224 370 224 305
+    C 223 190 218 90 210 28
+    C 202 13 162 8 120 8 Z" />
+
+  <!-- 1: the power key, marked Off on this model rather than All Off. -->
+  <circle class="key" id="k-power" cx="46" cy="46" r="11" />
+  <text class="lbl-sm" x="46" y="68">Off</text>
+
+  <!--
+    The touch surface. Not a button and deliberately not counted: a hit here goes through base slot
+    17's hit map, not through the keypad matrix, which is what makes this the one arch 12 model.
+  -->
+  <g id="screen">
+    <rect class="lcd" id="touch-surface" x="50" y="84" width="140" height="170" rx="5" />
+    <text class="lbl-sm" x="120" y="163">touch surface</text>
+    <text class="lbl-sm" x="120" y="174">base slot 17 hit map</text>
+  </g>
+
+  <!-- 2, 3: the two page keys flanking the screen, the One's only hard screen navigation. -->
+  <path class="key" id="k-page-left"  d="M40 158 v24 l-12 -12 z" />
+  <path class="key" id="k-page-right" d="M200 158 v24 l12 -12 z" />
+
+  <!--
+    4, 5: the two unmarked keys below the screen, each answering the on screen item drawn above it.
+    They carry no printed text at all, which is why they carry no label here: what they say is
+    whatever the config draws in the bottom row of the panel.
+
+    `data-zone` here means the left and right half of that bottom row, so two zones rather than the
+    525's four quadrants. That is geometric adjacency and nothing stronger, the same standing the
+    525's four have, and it is the only thing about these keys that is not open.
+  -->
+  <g id="soft-keys">
+    <rect class="key" id="k-soft-left"  x="58" y="264" width="56" height="14" rx="7" data-zone="1" />
+    <rect class="key" id="k-soft-right" x="126" y="264" width="56" height="14" rx="7" data-zone="2" />
+  </g>
+
+  <!-- 6, 7 -->
+  <g id="mode-keys">
+    <rect class="key" id="k-activities" x="44" y="292" width="70" height="18" rx="9" />
+    <text class="lbl" x="79" y="305">Activities</text>
+    <rect class="key" id="k-help" x="126" y="292" width="70" height="18" rx="9" />
+    <text class="lbl" x="161" y="305">Help</text>
+  </g>
+
+  <!-- 8 to 13: two rows of two, with the list rocker between them. -->
+  <g id="menu-keys">
+    <rect class="key" id="k-menu" x="40" y="328" width="60" height="21" rx="10" />
+    <text class="lbl" x="70" y="342">Menu</text>
+    <rect class="key" id="k-info" x="140" y="328" width="60" height="21" rx="10" />
+    <text class="lbl" x="170" y="342">Info</text>
+
+    <rect class="key" id="k-exit" x="40" y="357" width="60" height="21" rx="10" />
+    <text class="lbl" x="70" y="371">Exit</text>
+    <rect class="key" id="k-guide" x="140" y="357" width="60" height="21" rx="10" />
+    <text class="lbl" x="170" y="371">Guide</text>
+
+    <!-- The two halves of one rocker, which is two scan codes and so two shapes. -->
+    <rect class="key" id="k-scroll-up" x="106" y="328" width="28" height="21" rx="10" />
+    <text class="lbl" x="120" y="343">&#9650;</text>
+    <rect class="key" id="k-scroll-down" x="106" y="357" width="28" height="21" rx="10" />
+    <text class="lbl" x="120" y="372">&#9660;</text>
+  </g>
+
+  <!--
+    14 to 22: the two rockers and the direction pad. `k-pad` is the bezel drawn around the pad, not a
+    key, and `tests/test_silhouettes.py` excludes it by name.
+  -->
+  <g id="rockers-and-pad">
+    <rect class="key" id="k-volume-up" x="32" y="400" width="26" height="22" rx="9" />
+    <text class="lbl" x="45" y="415">+</text>
+    <rect class="key" id="k-volume-down" x="32" y="464" width="26" height="22" rx="9" />
+    <text class="lbl" x="45" y="479">&#8722;</text>
+    <text class="lbl-sm" x="45" y="446">Vol</text>
+
+    <rect class="key" id="k-channel-up" x="182" y="400" width="26" height="22" rx="9" />
+    <text class="lbl" x="195" y="415">+</text>
+    <rect class="key" id="k-channel-down" x="182" y="464" width="26" height="22" rx="9" />
+    <text class="lbl" x="195" y="479">&#8722;</text>
+    <text class="lbl-sm" x="195" y="446">Ch</text>
+
+    <circle class="key" id="k-pad" cx="120" cy="443" r="44" />
+    <circle class="key" id="k-ok" cx="120" cy="443" r="16" />
+    <text class="lbl" x="120" y="446">OK</text>
+    <path class="key" id="k-up"    d="M113 414 h14 l-7 -10 z" />
+    <path class="key" id="k-down"  d="M113 472 h14 l-7 10 z" />
+    <path class="key" id="k-left"  d="M89 436 v14 l-10 -7 z" />
+    <path class="key" id="k-right" d="M151 436 v14 l10 -7 z" />
+  </g>
+
+  <!-- 23, 24: mute and the back key, both marked with an icon and no word. -->
+  <g id="mute-and-back">
+    <rect class="key" id="k-mute" x="76" y="500" width="40" height="20" rx="9" />
+    <text class="lbl-sm" x="96" y="514">mute</text>
+    <rect class="key" id="k-prev" x="124" y="500" width="40" height="20" rx="9" />
+    <text class="lbl-sm" x="144" y="514">back</text>
+  </g>
+
+  <!--
+    25 to 32: the transport block. Play and pause are two keys in one raised column, which the
+    photograph shows as a seam across it, so they are two shapes here.
+  -->
+  <g id="transport">
+    <rect class="key" id="k-rewind" x="40" y="540" width="56" height="20" rx="10" />
+    <text class="lbl" x="68" y="554">&#9664;&#9664;</text>
+    <rect class="key" id="k-forward" x="144" y="540" width="56" height="20" rx="10" />
+    <text class="lbl" x="172" y="554">&#9654;&#9654;</text>
+    <rect class="key" id="k-play" x="104" y="534" width="32" height="38" rx="14" />
+    <text class="lbl" x="120" y="558">&#9654;</text>
+
+    <rect class="key" id="k-replay" x="40" y="574" width="56" height="20" rx="10" />
+    <text class="lbl" x="68" y="588">|&#9664;&#9664;</text>
+    <text class="lbl-sm" x="68" y="604">Replay</text>
+    <rect class="key" id="k-skip" x="144" y="574" width="56" height="20" rx="10" />
+    <text class="lbl" x="172" y="588">&#9654;&#9654;|</text>
+    <text class="lbl-sm" x="172" y="604">Skip</text>
+    <rect class="key" id="k-pause" x="104" y="578" width="32" height="34" rx="14" />
+    <text class="lbl" x="120" y="600">&#10073;&#10073;</text>
+
+    <!-- The record dot is a printed marking, so it is outlined like every other marking here. -->
+    <rect class="key" id="k-record" x="40" y="608" width="56" height="20" rx="10" />
+    <circle class="mark" cx="60" cy="618" r="4" />
+    <text class="lbl-sm" x="80" y="621">rec</text>
+    <rect class="key" id="k-stop" x="144" y="608" width="56" height="20" rx="10" />
+    <text class="lbl" x="172" y="622">&#9632;</text>
+  </g>
+
+  <!-- 33 to 44: the keypad, three by four. The bottom row is plus, zero and E, not star and hash. -->
+  <g id="keypad">
+    <rect class="key" id="k-1" x="40" y="646" width="44" height="26" rx="10" />
+    <text class="lbl" x="62" y="663">1</text>
+    <rect class="key" id="k-2" x="98" y="646" width="44" height="26" rx="10" />
+    <text class="lbl" x="120" y="663">2</text>
+    <text class="lbl-sm" x="120" y="679">abc</text>
+    <rect class="key" id="k-3" x="156" y="646" width="44" height="26" rx="10" />
+    <text class="lbl" x="178" y="663">3</text>
+    <text class="lbl-sm" x="178" y="679">def</text>
+
+    <rect class="key" id="k-4" x="40" y="686" width="44" height="26" rx="10" />
+    <text class="lbl" x="62" y="703">4</text>
+    <text class="lbl-sm" x="62" y="719">ghi</text>
+    <rect class="key" id="k-5" x="98" y="686" width="44" height="26" rx="10" />
+    <text class="lbl" x="120" y="703">5</text>
+    <text class="lbl-sm" x="120" y="719">jkl</text>
+    <rect class="key" id="k-6" x="156" y="686" width="44" height="26" rx="10" />
+    <text class="lbl" x="178" y="703">6</text>
+    <text class="lbl-sm" x="178" y="719">mno</text>
+
+    <rect class="key" id="k-7" x="40" y="726" width="44" height="26" rx="10" />
+    <text class="lbl" x="62" y="743">7</text>
+    <text class="lbl-sm" x="62" y="759">pqrs</text>
+    <rect class="key" id="k-8" x="98" y="726" width="44" height="26" rx="10" />
+    <text class="lbl" x="120" y="743">8</text>
+    <text class="lbl-sm" x="120" y="759">tuv</text>
+    <rect class="key" id="k-9" x="156" y="726" width="44" height="26" rx="10" />
+    <text class="lbl" x="178" y="743">9</text>
+    <text class="lbl-sm" x="178" y="759">wxyz</text>
+
+    <rect class="key" id="k-clear" x="40" y="766" width="44" height="26" rx="10" />
+    <text class="lbl" x="62" y="783">+</text>
+    <text class="lbl-sm" x="62" y="799">clear</text>
+    <rect class="key" id="k-0" x="98" y="766" width="44" height="26" rx="10" />
+    <text class="lbl" x="120" y="783">0</text>
+    <rect class="key" id="k-enter" x="156" y="766" width="44" height="26" rx="10" />
+    <text class="lbl" x="178" y="783">E</text>
+    <text class="lbl-sm" x="178" y="799">enter</text>
+  </g>
+
+  <!--
+    The chrome foot. On the One the case changes material below the keypad, and that seam is most of
+    what makes the shape recognisable from the front, so it is drawn. Measured at y=845, where the
+    photograph's brightness across the case jumps from 78 to 165. An open arc rather than a closed
+    region, because its other three sides are the case contour and drawing them twice would put a
+    second stroke on top of an existing one. No `k-` id, so nothing counts it as a button.
+  -->
+  <path class="region" id="base-cap" d="M 48 843 C 78 852 162 852 192 843" />
+
+  <text class="lbl-sm" x="120" y="872">Harmony One</text>
+</svg>

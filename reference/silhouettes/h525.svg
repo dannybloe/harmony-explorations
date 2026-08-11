@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 880" width="240" height="880"
      role="img" aria-labelledby="title desc">
   <title id="title">Harmony 525, button silhouette</title>
-  <desc id="desc">Outline drawing of the Harmony 520 and 525 front face, one shape per button, drawn
-    from a product photograph rather than traced from it. Fifty buttons, which is the count section 89
-    derived from the firmware and the config before this was drawn. Stroke only, no fill and no grey,
-    so it takes the viewer's colour.</desc>
+  <desc id="desc">Outline drawing of the Harmony 525 front face, one shape per button, drawn from a
+    product photograph rather than traced from it. Fifty buttons, which is the count section 89
+    derived from the firmware and the config before this was drawn. It names one member of the
+    520 and 525 pair rather than both, because a regional alias is not the same hardware: the two
+    photographs of that pair differ by exactly the four teletext colour keys below, and this drawing
+    was made from the one that has them. So a silhouette belongs to a skin rather than to a model.
+    Stroke only apart from those four colour keys, where the colour is the button's identity rather
+    than decoration.</desc>
 
   <!--
     Why this exists and why it is here rather than in FreeHarmony.
@@ -35,10 +39,55 @@
     .lbl  { fill: currentColor; stroke: none; font: 8px system-ui, sans-serif; text-anchor: middle; }
     .lbl-sm { fill: currentColor; stroke: none; font: 6px system-ui, sans-serif; text-anchor: middle; }
     .zone { fill: none; stroke: currentColor; stroke-width: 0.8; stroke-dasharray: 2 2; }
+    .region { fill: none; stroke: currentColor; stroke-width: 1.2; }
+    /* The teletext keys keep the currentColor stroke as well as the fill, so the shape still reads
+       against a light and a dark background. These four fills are the only ones in the file. */
+    .key-colour { stroke: currentColor; stroke-width: 1.2; }
+    .c-red    { fill: #d23c3c; }
+    .c-green  { fill: #2f9e44; }
+    .c-yellow { fill: #d9c22b; }
+    .c-blue   { fill: #3b6fd4; }
   </style>
 
-  <!-- The case. One rounded outline, no shading: the silhouette is the point. -->
-  <rect class="body" x="14" y="10" width="212" height="858" rx="34" />
+  <!--
+    The case, as one closed contour.
+
+    **This one is the counterexample to its own brief.** The instruction that produced it said the 5xx
+    is a near rectangle with slightly drawn in sides, and the sides are not drawn in at all: sampling
+    the photograph row by row gives a half width of 110 from y=31 to y=830 with a wobble of one pixel,
+    which is jpeg noise and not a taper. So the sides are drawn straight, because that is what the
+    measurement says, and what actually distinguishes this remote is the pair of very generous ends,
+    a shallow domed top with a flat apex 62 wide and a tightly rounded foot. The curves below are
+    fitted to those samples: the top reaches full width by y=31, the foot leaves it at y=830.
+  -->
+  <path class="body" d="M 14 31
+    C 14 20 42 10 89 10
+    C 110 8 130 8 151 10
+    C 198 10 226 20 226 31
+    L 226 830
+    C 226 845 216 862 190 869
+    C 172 873 68 873 50 869
+    C 24 862 14 845 14 830 Z" />
+
+  <!--
+    The recessed black panel, which is how a 5xx reads at a glance: a tall bay holding everything from
+    the power key down to the backlight, pinching in at the rockers and closing in a horseshoe under
+    the direction pad. Measured left edge 33 from y=29 down to y=464, then stepping in to 56 and
+    closing by y=600. Not a button, and no `k-` id, so nothing counts it.
+  -->
+  <path class="region" id="panel-recess" d="M 42 28
+    L 198 28
+    C 204 28 208 32 208 38
+    L 208 430
+    C 208 452 176 452 176 470
+    L 176 530
+    C 176 570 168 602 140 602
+    L 100 602
+    C 72 602 64 570 64 530
+    L 64 470
+    C 64 452 32 452 32 430
+    L 32 38
+    C 32 32 36 28 42 28 Z" />
 
   <g id="power-and-mode">
     <!-- 1 -->
@@ -191,17 +240,40 @@
     <text class="lbl-sm" x="178" y="728">enter</text>
   </g>
 
-  <!-- 47 to 50: the coloured keys, outlined and named rather than filled, so no grey and no colour. -->
+  <!--
+    47 to 50: the teletext keys. The only filled shapes in this file, because here the colour is the
+    button and the printed face carries no word at all: four identical outlined circles would have
+    thrown away the only thing that tells one from another. Named as well as filled, so the drawing
+    still says which is which where the fill does not render.
+
+    They are also why this file names one member of the 520 and 525 pair rather than both, and the
+    standing of that is worth stating precisely because it is weaker than it first looks.
+
+    **What the photographs establish.** Two images of the 5xx exist in the lab reference set and they
+    differ by exactly these four keys: one has them and one does not, everything else identical. And
+    the 880 and 885 pair splits the same way, four small coloured dots below the direction pad on one
+    and a pair of chevrons on the other. Two independent pairs differing in the same feature, with a
+    mechanism, since colour keys are teletext and teletext is European. So a regional alias is not the
+    same hardware and a silhouette belongs to a skin rather than to a model. That much is solid.
+
+    **What they do not establish is which name goes with which**, on this pair. The 885 image carries
+    "HARMONY 885" on its own face, so there the direction is printed on the product. Both 5xx images
+    carry "Harmony 520" on the face, so the only thing assigning the colour keyed variant to the 525
+    is the community site's own file naming, plus the analogy to the 880 pair. That is a hypothesis of
+    upstream standing, not a measurement, and the file name here follows it because this drawing is
+    made from the colour keyed image. If it turns out backwards, the drawing is right and its name is
+    wrong, which is the cheaper of the two errors.
+  -->
   <g id="colour-keys">
-    <circle class="key" id="k-red"    cx="62"  cy="746" r="8" />
+    <circle class="key-colour c-red"    id="k-red"    cx="62"  cy="746" r="8" />
     <text class="lbl-sm" x="62"  y="765">red</text>
-    <circle class="key" id="k-green"  cx="101" cy="746" r="8" />
+    <circle class="key-colour c-green"  id="k-green"  cx="101" cy="746" r="8" />
     <text class="lbl-sm" x="101" y="765">green</text>
-    <circle class="key" id="k-yellow" cx="139" cy="746" r="8" />
+    <circle class="key-colour c-yellow" id="k-yellow" cx="139" cy="746" r="8" />
     <text class="lbl-sm" x="139" y="765">yellow</text>
-    <circle class="key" id="k-blue"   cx="178" cy="746" r="8" />
+    <circle class="key-colour c-blue"   id="k-blue"   cx="178" cy="746" r="8" />
     <text class="lbl-sm" x="178" y="765">blue</text>
   </g>
 
-  <text class="lbl-sm" x="120" y="840">Harmony 520 / 525</text>
+  <text class="lbl-sm" x="120" y="840">Harmony 525</text>
 </svg>

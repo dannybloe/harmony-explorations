@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 960" width="260" height="960"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Harmony 600, button silhouette</title>
+  <desc id="desc">Outline drawing of the Harmony 600 front face, one shape per button, drawn from a
+    product photograph rather than traced from it. Fifty four buttons, which is the count sections 17
+    and 48 derived from the firmware and from a hardware census before this was drawn. The case is a
+    contour rather than a rounded box: a wide shoulder, a waist below the direction pad and a narrow
+    rounded foot, all measured off the photograph. The panel is monochrome and is not a touch surface,
+    so the four keys flanking it are how its four screen labels are reached. The 600 has one skin and
+    no regional alias, so unlike the 525 this file does not have to choose which member of a pair it
+    serves. Stroke only apart from the four teletext colour keys, where the colour is the button's
+    identity rather than decoration.</desc>
+
+  <!--
+    Why this exists and why it is here rather than in FreeHarmony.
+
+    It is the physical button map in executable form, the same argument as `h525.svg`, and like the
+    525 it has a count to be checked against.
+
+    **Fifty four, derived twice before it was drawn.** `docs/findings.md` section 17: an event code is
+    an event type plus a scan code, mask `0xC0` and `0x3F`, so arch 14's key table is 54 scan codes
+    times three event types, press, release and repeat. And section 48: a hardware census, pressing
+    every button on the bench 600, gave a per column distribution of 14, 14, 13 and 13, which is 54.
+    This drawing came to 54 independently, by counting the photograph. That makes it a third count of
+    the number, which is the same standing the 525's fifty has.
+
+    **No `data-scan` anywhere, and not even a candidate set.** Section 48: arch 14 yields the matrix
+    **column** of a press, `(code - 1) mod 4`, which is a property of a code rather than a way of
+    attaching a code to a position, so the distribution above is all the census could buy. A remote on
+    USB never runs its keypad handler, so no read path here can close the gap.
+
+    **The contour is measured, not styled.** The left and right edge of the case were sampled row by
+    row off the photograph and the path's curves are fitted to those samples, because a rounded
+    rectangle is not recognisable as any particular remote and recognisability by shape is the point.
+    What the samples say about this one: the widest point is level with the screen, there is a waist
+    just below the direction pad, a second slight swell across the keypad, and a narrow rounded foot.
+    `screen-bezel` is the recessed black panel around the screen, which is most of how a 600 reads at
+    a glance, so it is outlined too; it carries no `k-` id and is not a button.
+
+    **The four keys flanking the screen carry the screen's four labels**, like the 525's, because this
+    panel has no touch layer: base slot 17 is a touch hit map on arch 12 only and the 600 is arch 14,
+    sections 45 and 62, confirmed against the owner's own remote in `reference/capabilities.md`. What
+    the 525 does not have is the fifth key, `k-screen-bottom`, whose printed marking is a bar and
+    whose on screen counterpart is the bar drawn across the bottom of the panel. `data-zone` records
+    those five adjacencies and nothing stronger.
+
+    **The colour keys are filled and they are the only filled shapes here.** Four teletext keys, red,
+    green, yellow and blue, and on those the colour is what tells one from another: four identical
+    outlined lozenges would have thrown the only distinguishing information away. The red dot on the
+    record key is a printed marking rather than an identity, so it stays unfilled like every other
+    marking.
+
+    Drawn, not traced. The reference photograph is third party and unpublishable,
+    `../lab/reference/forum-images/PROVENANCE.md`; this is our own geometry and carries no such
+    problem, which is the whole reason for drawing rather than shipping a photo.
+  -->
+
+  <style>
+    /* currentColor throughout, so the page decides light or dark and this follows. */
+    .body { fill: none; stroke: currentColor; stroke-width: 2; }
+    .region { fill: none; stroke: currentColor; stroke-width: 1.2; }
+    .key  { fill: none; stroke: currentColor; stroke-width: 1.4; }
+    .lcd  { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 4 3; }
+    .mark { fill: none; stroke: currentColor; stroke-width: 1.2; }
+    .lbl  { fill: currentColor; stroke: none; font: 8px system-ui, sans-serif; text-anchor: middle; }
+    .lbl-sm { fill: currentColor; stroke: none; font: 6px system-ui, sans-serif; text-anchor: middle; }
+    .zone { fill: none; stroke: currentColor; stroke-width: 0.8; stroke-dasharray: 2 2; }
+    /* The teletext keys keep the currentColor stroke as well as the fill, so the shape still reads
+       against a light and a dark background. These four fills are the only ones in the file. */
+    .key-colour { stroke: currentColor; stroke-width: 1.2; }
+    .c-red    { fill: #d23c3c; }
+    .c-green  { fill: #2f9e44; }
+    .c-yellow { fill: #d9c22b; }
+    .c-blue   { fill: #3b6fd4; }
+  </style>
+
+  <!--
+    The case, as one closed contour. Sampled half widths from the photograph, left edge against row,
+    which is what the curves below are fitted to: 30 at y=46, 26 at 75, 22 at 121, 16 at 250 to 311,
+    23 at 446, 29 at 566 (the waist), 26 at 700, 40 at 851, 68 at 918. Mirrored about x=130.
+  -->
+  <path class="body" d="M 130 8
+    C 96 8 38 16 30 46
+    C 24 90 18 160 16 250
+    C 16 330 24 470 29 566
+    C 29 615 26 660 26 700
+    C 27 780 38 860 68 918
+    C 88 942 108 952 130 952
+    C 152 952 172 942 192 918
+    C 222 860 233 780 234 700
+    C 234 660 231 615 231 566
+    C 236 470 244 330 244 250
+    C 242 160 236 90 230 46
+    C 222 16 164 8 130 8 Z" />
+
+  <!-- 1: the power key, marked All Off on this model. -->
+  <circle class="key" id="k-power" cx="67" cy="50" r="10" />
+  <text class="lbl-sm" x="67" y="70">All Off</text>
+
+  <!--
+    2 to 6: four dedicated activity keys and Help. This is what the One spends its touch panel on
+    instead, and it is why the 600 has three more keys up here than the One has.
+  -->
+  <g id="activity-keys">
+    <rect class="key" id="k-activity-1" x="79" y="76" width="42" height="14" rx="7" />
+    <text class="lbl-sm" x="100" y="99">Watch TV</text>
+    <rect class="key" id="k-activity-2" x="140" y="76" width="42" height="14" rx="7" />
+    <text class="lbl-sm" x="161" y="99">Watch a Movie</text>
+
+    <rect class="key" id="k-activity-3" x="48" y="104" width="44" height="16" rx="8" />
+    <text class="lbl-sm" x="70" y="130">Listen to Music</text>
+    <rect class="key" id="k-help" x="113" y="104" width="35" height="16" rx="8" />
+    <text class="lbl" x="130" y="116">Help</text>
+    <rect class="key" id="k-activity-4" x="169" y="104" width="44" height="16" rx="8" />
+    <text class="lbl-sm" x="191" y="130">More Activities</text>
+  </g>
+
+  <!--
+    The recessed black panel around the screen, measured at x 44 to 216 and y 150 to 316. Not a
+    button, and no `k-` id, so nothing counts it. It is here because it is the feature that makes a
+    600 recognisable from across a room.
+  -->
+  <rect class="region" id="screen-bezel" x="44" y="150" width="172" height="166" rx="10" />
+
+  <!--
+    The screen. Monochrome, no touch layer, so it is dashed like the 525's and is not a button. Its
+    four quadrant labels and its bottom bar are what the five keys around it answer.
+  -->
+  <g id="screen">
+    <rect class="lcd" x="82" y="174" width="97" height="109" rx="3" />
+    <line class="zone" x1="130" y1="174" x2="130" y2="266" />
+    <line class="zone" x1="82" y1="220" x2="179" y2="220" />
+    <line class="zone" x1="82" y1="266" x2="179" y2="266" />
+    <text class="lbl-sm" x="106" y="200">zone 1</text>
+    <text class="lbl-sm" x="155" y="200">zone 2</text>
+    <text class="lbl-sm" x="106" y="246">zone 3</text>
+    <text class="lbl-sm" x="155" y="246">zone 4</text>
+    <text class="lbl-sm" x="130" y="278">zone 5</text>
+  </g>
+
+  <!--
+    7 to 10: the four soft keys, two on each side, each answering the quadrant beside it. They sit
+    flush against the bezel's edge on the real remote, which is why they are drawn there. The 525 puts
+    these in the same arrangement, which is what makes the arrangement the architecture's rather than
+    the model's, but nothing here narrows their scan codes the way section 89 narrowed the 525's, so
+    they carry a zone and no candidate list.
+  -->
+  <g id="soft-keys">
+    <rect class="key" id="k-soft-upper-left"  x="46" y="193" width="10" height="28" rx="5" data-zone="1" />
+    <rect class="key" id="k-soft-lower-left"  x="46" y="236" width="10" height="28" rx="5" data-zone="3" />
+    <rect class="key" id="k-soft-upper-right" x="204" y="193" width="10" height="28" rx="5" data-zone="2" />
+    <rect class="key" id="k-soft-lower-right" x="204" y="236" width="10" height="28" rx="5" data-zone="4" />
+  </g>
+
+  <!--
+    11 to 13: the row below the bezel, which the 525 does not have in this form. Two page arrows and a
+    fifth screen key whose printed marking is a bar, matching the bar the panel draws across its
+    bottom row. Drawn as a line rather than as a text glyph, so no dash character enters the file.
+  -->
+  <g id="screen-row">
+    <rect class="key" id="k-page-prev" x="61" y="316" width="35" height="18" rx="9" />
+    <text class="lbl" x="78" y="329">&#9664;</text>
+    <rect class="key" id="k-screen-bottom" x="110" y="316" width="40" height="18" rx="9" data-zone="5" />
+    <line class="mark" x1="120" y1="325" x2="140" y2="325" />
+    <rect class="key" id="k-page-next" x="164" y="316" width="35" height="18" rx="9" />
+    <text class="lbl" x="181" y="329">&#9654;</text>
+  </g>
+
+  <!-- 14 to 19: two rows of two, with the list rocker between them. -->
+  <g id="menu-keys">
+    <rect class="key" id="k-menu" x="44" y="350" width="62" height="20" rx="10" />
+    <text class="lbl" x="75" y="363">Menu</text>
+    <rect class="key" id="k-info" x="154" y="350" width="62" height="20" rx="10" />
+    <text class="lbl" x="185" y="363">Info</text>
+
+    <rect class="key" id="k-exit" x="44" y="388" width="62" height="20" rx="10" />
+    <text class="lbl" x="75" y="401">Exit</text>
+    <rect class="key" id="k-guide" x="154" y="388" width="62" height="20" rx="10" />
+    <text class="lbl" x="185" y="401">Guide</text>
+
+    <!-- The two halves of one rocker, which is two scan codes and so two shapes. -->
+    <rect class="key" id="k-scroll-up" x="115" y="350" width="30" height="20" rx="10" />
+    <text class="lbl" x="130" y="364">&#9650;</text>
+    <rect class="key" id="k-scroll-down" x="115" y="388" width="30" height="20" rx="10" />
+    <text class="lbl" x="130" y="402">&#9660;</text>
+  </g>
+
+  <!--
+    20 to 23: the teletext keys. The only filled shapes in this file, because here the colour is the
+    button and the printed face carries no word at all. Named as well as filled, so the drawing still
+    says which is which where the fill does not render.
+  -->
+  <g id="colour-keys">
+    <rect class="key-colour c-red"    id="k-red"    x="38" y="430" width="34" height="13" rx="6" />
+    <text class="lbl-sm" x="55" y="456">red</text>
+    <rect class="key-colour c-green"  id="k-green"  x="88" y="430" width="34" height="13" rx="6" />
+    <text class="lbl-sm" x="105" y="456">green</text>
+    <rect class="key-colour c-yellow" id="k-yellow" x="138" y="430" width="34" height="13" rx="6" />
+    <text class="lbl-sm" x="155" y="456">yellow</text>
+    <rect class="key-colour c-blue"   id="k-blue"   x="188" y="430" width="34" height="13" rx="6" />
+    <text class="lbl-sm" x="205" y="456">blue</text>
+  </g>
+
+  <!--
+    24 to 32: the two rockers and the direction pad. `k-pad` is the bezel drawn around the pad, not a
+    key, and `tests/test_silhouettes.py` excludes it by name.
+
+    The volume keys carry a speaker icon and no text, unlike this model's channel keys, which carry a
+    printed plus and minus. So the icon is drawn and no word is invented for it: the only printed word
+    in the pair is Vol.
+  -->
+  <g id="rockers-and-pad">
+    <rect class="key" id="k-volume-up" x="36" y="472" width="28" height="26" rx="11" />
+    <path class="mark" d="M46 482 l6 -5 v16 l-6 -5 h-3 v-6 z" />
+    <path class="mark" d="M55 482 a6 6 0 0 1 0 10" />
+    <rect class="key" id="k-volume-down" x="36" y="530" width="28" height="26" rx="11" />
+    <path class="mark" d="M46 540 l6 -5 v16 l-6 -5 h-3 v-6 z" />
+    <text class="lbl-sm" x="50" y="518">Vol</text>
+
+    <rect class="key" id="k-channel-up" x="196" y="472" width="28" height="26" rx="11" />
+    <text class="lbl" x="210" y="489">+</text>
+    <rect class="key" id="k-channel-down" x="196" y="530" width="28" height="26" rx="11" />
+    <text class="lbl" x="210" y="547">&#8722;</text>
+    <text class="lbl-sm" x="210" y="518">Ch</text>
+
+    <circle class="key" id="k-pad" cx="130" cy="514" r="44" />
+    <circle class="key" id="k-ok" cx="130" cy="514" r="17" />
+    <text class="lbl" x="130" y="517">OK</text>
+    <path class="key" id="k-up"    d="M123 480 h14 l-7 -10 z" />
+    <path class="key" id="k-down"  d="M123 548 h14 l-7 10 z" />
+    <path class="key" id="k-left"  d="M99 507 v14 l-10 -7 z" />
+    <path class="key" id="k-right" d="M161 507 v14 l10 -7 z" />
+  </g>
+
+  <!-- 33, 34: mute and the back key, both marked with an icon and no word. -->
+  <g id="mute-and-back">
+    <rect class="key" id="k-mute" x="84" y="566" width="40" height="20" rx="9" />
+    <text class="lbl-sm" x="104" y="580">mute</text>
+    <rect class="key" id="k-prev" x="136" y="566" width="40" height="20" rx="9" />
+    <text class="lbl-sm" x="156" y="580">back</text>
+  </g>
+
+  <!--
+    35 to 42: the transport block. Play and pause are two keys in one raised column, which the
+    photograph shows as a seam across it, so they are two shapes here.
+  -->
+  <g id="transport">
+    <rect class="key" id="k-rewind" x="44" y="603" width="58" height="22" rx="11" />
+    <text class="lbl" x="73" y="618">&#9664;&#9664;</text>
+    <rect class="key" id="k-forward" x="158" y="603" width="58" height="22" rx="11" />
+    <text class="lbl" x="187" y="618">&#9654;&#9654;</text>
+    <rect class="key" id="k-play" x="112" y="612" width="36" height="42" rx="16" />
+    <text class="lbl" x="130" y="638">&#9654;</text>
+
+    <rect class="key" id="k-replay" x="44" y="642" width="58" height="22" rx="11" />
+    <text class="lbl" x="73" y="657">|&#9664;&#9664;</text>
+    <text class="lbl-sm" x="73" y="674">Replay</text>
+    <rect class="key" id="k-skip" x="158" y="642" width="58" height="22" rx="11" />
+    <text class="lbl" x="187" y="657">&#9654;&#9654;|</text>
+    <text class="lbl-sm" x="187" y="674">Skip</text>
+    <rect class="key" id="k-pause" x="112" y="660" width="36" height="38" rx="16" />
+    <text class="lbl" x="130" y="684">&#10073;&#10073;</text>
+
+    <!-- The record dot is a printed marking, so it is outlined rather than filled. -->
+    <rect class="key" id="k-record" x="44" y="681" width="58" height="22" rx="11" />
+    <circle class="mark" cx="64" cy="692" r="4" />
+    <text class="lbl-sm" x="84" y="695">rec</text>
+    <rect class="key" id="k-stop" x="158" y="681" width="58" height="22" rx="11" />
+    <text class="lbl" x="187" y="696">&#9632;</text>
+  </g>
+
+  <!-- 43 to 54: the keypad, three by four. The bottom row is clear, zero and E, not star and hash. -->
+  <g id="keypad">
+    <rect class="key" id="k-1" x="44" y="720" width="48" height="25" rx="10" />
+    <text class="lbl" x="68" y="736">1</text>
+    <rect class="key" id="k-2" x="106" y="720" width="48" height="25" rx="10" />
+    <text class="lbl" x="130" y="736">2</text>
+    <text class="lbl-sm" x="130" y="751">abc</text>
+    <rect class="key" id="k-3" x="168" y="720" width="48" height="25" rx="10" />
+    <text class="lbl" x="192" y="736">3</text>
+    <text class="lbl-sm" x="192" y="751">def</text>
+
+    <rect class="key" id="k-4" x="44" y="757" width="48" height="25" rx="10" />
+    <text class="lbl" x="68" y="773">4</text>
+    <text class="lbl-sm" x="68" y="788">ghi</text>
+    <rect class="key" id="k-5" x="106" y="757" width="48" height="25" rx="10" />
+    <text class="lbl" x="130" y="773">5</text>
+    <text class="lbl-sm" x="130" y="788">jkl</text>
+    <rect class="key" id="k-6" x="168" y="757" width="48" height="25" rx="10" />
+    <text class="lbl" x="192" y="773">6</text>
+    <text class="lbl-sm" x="192" y="788">mno</text>
+
+    <rect class="key" id="k-7" x="44" y="794" width="48" height="25" rx="10" />
+    <text class="lbl" x="68" y="810">7</text>
+    <text class="lbl-sm" x="68" y="825">pqrs</text>
+    <rect class="key" id="k-8" x="106" y="794" width="48" height="25" rx="10" />
+    <text class="lbl" x="130" y="810">8</text>
+    <text class="lbl-sm" x="130" y="825">tuv</text>
+    <rect class="key" id="k-9" x="168" y="794" width="48" height="25" rx="10" />
+    <text class="lbl" x="192" y="810">9</text>
+    <text class="lbl-sm" x="192" y="825">wxyz</text>
+
+    <rect class="key" id="k-clear" x="44" y="831" width="48" height="25" rx="10" />
+    <text class="lbl" x="68" y="847">&#8226;+</text>
+    <text class="lbl-sm" x="68" y="862">clear</text>
+    <rect class="key" id="k-0" x="106" y="831" width="48" height="25" rx="10" />
+    <text class="lbl" x="130" y="847">0</text>
+    <rect class="key" id="k-enter" x="168" y="831" width="48" height="25" rx="10" />
+    <text class="lbl" x="192" y="847">E</text>
+    <text class="lbl-sm" x="192" y="862">enter</text>
+  </g>
+
+  <text class="lbl-sm" x="130" y="890">Harmony 600</text>
+</svg>

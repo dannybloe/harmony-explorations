@@ -34,11 +34,25 @@ measured here, below.
 **The images are not usable and are not here.** The page's product photos carry no licence to third
 parties: its terms grant rights to the operator, not to visitors, and the photos are most plausibly
 Logitech's own. They are in the private lab as bench reference, full size only. **Drawn is the answer**,
-and `reference/silhouettes/` is where those live: outline only, no fill and no grey, one shape per
-button with an id, so a drawing is our own work and is also the physical button map in a form code can
-address. The 525 is drawn. Its count came out at fifty, which is what section 89 derived from the
-firmware and the config before anything was drawn, so the drawing is a third independent count of a
-number that had cost a firmware read and a hardware census.
+and `reference/silhouettes/` is where those live: one shape per button with an id, no grey and no fill
+bar the teletext keys, so a drawing is our own work and is also the physical button map in a form code
+can address. All three bench remotes are drawn.
+
+**Two of the three counts are confirmed and the third cannot be**, which is the useful thing the set
+says. The 525 came out at **fifty**, what section 89 derived from the firmware and the config before
+anything was drawn. The 600 came out at **54**, which section 17 gets from the key table's field split
+and section 48's hardware census gets from a per column distribution of 14, 14, 13 and 13, so three
+routes agree. The One came out at **44** and nothing checks it: section 48 explains why, since sixteen
+of its buttons share one sense line and a USB census on arch 12 yields nothing at all. So the first
+two drawings are third independent counts of numbers that had cost a firmware read and a census, and
+the third is a first count with no cross check, marked as such.
+
+**A silhouette belongs to a skin, not to a model**, which the photographs establish and which matters
+for the table above: the two images of the 520 and 525 pair differ by exactly four teletext colour
+keys, and the 880 and 885 pair splits the same way. Two independent pairs, one feature, and a
+mechanism, since teletext is European. **Which name carries them is settled on one pair only**: the
+885's own face says 885. Both 5xx images say "Harmony 520" on the face, so there the direction rests on
+the community site's file naming and the analogy, which is upstream standing and not measurement.
 
 ## The models this library can address
 

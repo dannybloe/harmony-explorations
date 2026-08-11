@@ -409,8 +409,11 @@ reference/capabilities.md       what each model's hardware can do, per skin, wit
                                 column. Third party and unconfirmed except where that column says
                                 otherwise, and `packages/usb/src/models.ts` is the executable form
 reference/silhouettes/          the physical button map as a drawing, one SVG per model, outline
-                                only. Drawn rather than traced, so it is ours to publish, and
-                                tested: the count has to match what the firmware implies
+                                only bar the teletext keys. Drawn rather than traced, so it is ours
+                                to publish, and tested: the count has to match what the firmware
+                                implies, and the case has to be a measured contour rather than a
+                                rounded box. The three bench remotes are drawn, 50, 54 and 44
+                                buttons; the 700 and the 650 are next
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
@@ -1014,6 +1017,13 @@ produce a config the remote accepts and mishandles.
   `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
   columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
   filling one in has to be a deliberate change with a measurement behind it.
+  **The 600 and the One are drawn too**, and the pair is instructive about what a third count is
+  worth. The **600 came to 54**, which is exactly what section 17's field split and section 48's
+  column census of 14, 14, 13 and 13 both give, so three independent routes agree. The **One came to
+  44 and nothing can check it**: arch 12 yields no column from a USB census because sixteen buttons
+  share one sense line, so that number is a count of a photograph and the drawing says so rather than
+  implying confirmation. Neither carries a `data-scan` or even a candidate set, since nothing narrows
+  either.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
