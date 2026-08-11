@@ -67,6 +67,11 @@ const CONTAINERS = [
   'arch8_config_885',
   'h890_config',
   'h890_config_2',
+  // Two second reads of the 890s, section 122. The good one is a control and the bad one is the
+  // reason to cross check: it defeats the anchor, so both codecs have to agree about what the
+  // fallback then returns, and a divergence there would be invisible in every other test.
+  'h890_config_rescan',
+  'h890_config_2_rescan',
 ];
 
 for (const name of CONTAINERS) {

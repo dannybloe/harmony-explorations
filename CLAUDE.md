@@ -105,8 +105,16 @@ anywhere in either payload, so an 890 is not known to name its devices and activ
 second 890, and it was **circular**: `end_addr_points_at_end_marker` tested the assumption the base
 had just been computed from, so no input could fail it. A wrong base does not error, it reads the
 neighbouring bytes. The anchor is one candidate per pointer, filtered by `0x1000` alignment, and
-exactly one survives on all 24. `packages/probe` had a second copy of the old reading, which is the
-two-diverging-derivations state this file warns about below, and it now calls the codec's.
+exactly one survives on 26 of the 27 containers here. `packages/probe` had a second copy of the old
+reading, which is the two-diverging-derivations state this file warns about below, and it now calls
+the codec's.
+
+**The 27th is where the anchor refuses, and that is the behaviour to keep**, section 122: a second
+read of the same 890 has its clock record 54 bytes off its pointer, so no candidate is aligned and
+none survives. The fallback then returns an unaligned base and the circular check pronounces the file
+consistent. So the refusal is the finding and the fallback is the warning, and **why that file is
+damaged is now read**: an arch 10 read duplicates whole 54 byte chunks, 16 in the first read of that
+remote and 2 in the second, which is what section 117 measured as a generator error.
 
 ## The two repositories
 
@@ -871,11 +879,21 @@ produce a config the remote accepts and mishandles.
   moment of writing is the right provenance value whatever the remote does with it. This is the one
   field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
   thing for a save.
-* **`end_addr` is restamped when anything changes length, and a real generator got that wrong**,
-  section 117: the second Harmony 890 config declares an end 864 bytes before its own end marker,
-  which is exactly its last section's growth. Nothing on the remote would report it as such; what it
-  breaks is the trailer checksum, so the file simply gets refused. It is also why the container's
-  base is anchored on the clock record here rather than computed from the marker.
+* **`end_addr` is restamped when anything changes length**, and it is the only header field that
+  moves with a section's growth, which is also why the container's base is anchored on the clock
+  record here rather than computed from the marker. **This used to add "and a real generator got that<!--superseded-->
+  wrong", and no generator did**, section 122: the Harmony 890 config that declared an end 864 bytes
+  before its own end marker was a **read** with 16 duplicated 54 byte chunks in it, and a second read
+  of the same remote duplicated 2. So no config in the corpus shows a generator getting this wrong,
+  and what the case actually demonstrates is the next rail down.
+* **A read can insert bytes without losing any, so a config that parses is not a config that
+  arrived**, section 122. Every read of an arch 10 remote here came back with 2 to 28 surplus chunks,
+  and the two that were usable were the two where the duplicates happened to land in the zero fill
+  past the container. The two independent checks are the trailer checksum, which the boot validator
+  computes, and the end marker's position against the declared `end_addr`. Neither is sufficient: a
+  duplicated run of zeroes leaves the checksum untouched, and the checksum is blind to two transposed
+  words. `packages/corpus/src/read.ts` performs both after every read, and the checksum half was
+  added because of this, not before it.
 * **Parsing is not validating, and somebody else's experiment is the proof**, section 117:
   harmony-decompiler's author cloned a device into an arch 9 config, and the result passed both
   checksums, rendered every screen pixel identical, closed its counts and **was accepted by this

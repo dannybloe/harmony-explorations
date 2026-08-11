@@ -11,7 +11,13 @@
  * The length also checks itself. If the marker is not sitting at `end_addr` when the read finishes,
  * either the read is wrong or the config is damaged, and either way nothing should be filed.
  */
-import { bytes as byteUtil, FAMILIES, type Family } from '@harmony/codec';
+import {
+  bytes as byteUtil,
+  FAMILIES,
+  TRAILER_CHECKSUM_OFFSET,
+  trailerChecksum,
+  type Family,
+} from '@harmony/codec';
 
 /**
  * What a config read needs from a remote, and deliberately nothing more.
@@ -232,6 +238,23 @@ export async function readConfig(
     throw new ReadError(
       `no ${header.family.endMarker} at end_addr 0x${header.endAddr.toString(16)}, found ${seen}. ` +
         'The read is not trustworthy and has not been filed.',
+    );
+  }
+
+  // And the second closure, which is the boot validator's own test rather than ours. A transfer can
+  // insert bytes without losing any: two reads of one Harmony 890 came back with whole 54 byte
+  // chunks duplicated, 16 in one and 2 in the other, and both files parsed, resolved every pointer
+  // and were wrong. `docs/findings.md` section 122. The marker check above catches a net shift; this
+  // catches damage that leaves the length alone. Both are weak on their own and neither is free to
+  // skip: the checksum is blind to two transposed words, section 41.
+  const stored = byteUtil.u16(bytes, bytes.length - TRAILER_CHECKSUM_OFFSET);
+  const computed = trailerChecksum(bytes);
+  if (stored !== computed) {
+    throw new ReadError(
+      `trailer checksum 0x${stored.toString(16).padStart(4, '0')} does not recompute, got ` +
+        `0x${computed.toString(16).padStart(4, '0')}. The read is not trustworthy and has not ` +
+        'been filed. Reading the remote again is worth trying: this is what a transfer that ' +
+        'duplicated a chunk looks like, and it does not reproduce.',
     );
   }
 

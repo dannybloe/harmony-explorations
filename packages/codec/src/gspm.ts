@@ -686,7 +686,9 @@ export const FLASH_BASE_ALIGNMENT = 0x1000;
  * asked whether `endAddr` lands on the marker, which it then always did. A check that cannot fail
  * is not a check, and this one hid a real error for as long as it existed: `H890-Bedroom-2` has
  * 864 bytes between the end its header declares and its end marker, so the subtraction returned a
- * base 864 too low and every pointer resolved 864 bytes late. A wrong base does not fail, it
+ * base 864 too low and every pointer resolved 864 bytes late. That file is a damaged read rather than
+ * a generator error, section 122, and `0x030000` is the base its repaired container verifies under.
+ * A wrong base does not fail, it
  * reads the neighbouring bytes.
  *
  * So the base comes from the data. Each non-NULL pointer is absolute and exactly one targets the

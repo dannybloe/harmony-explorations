@@ -109,10 +109,15 @@ base       = the single candidate that is a multiple of 0x1000 and leaves every
              non-NULL pointer inside the blob
 ```
 
-Exactly one candidate survives on all 24 containers, spanning five architectures and six distinct
-bases from `0x002000` to `0x040000`. The anchor is a closure rather than a cookie match: a clock
-record is only accepted when its stored day of week agrees with its stored date, and there is
-exactly one accepted record per container.
+Exactly one candidate survives on 26 of the 27 containers in the corpus, spanning five architectures
+and six distinct bases from `0x002000` to `0x040000`. The anchor is a closure rather than a cookie
+match: a clock record is only accepted when its stored day of week agrees with its stored date, and
+there is exactly one accepted record per container.
+
+On the 27th, `H890-Bedroom-2-New`, the clock record sits 54 bytes off the pointer that names it and no
+candidate is aligned, so the recovery **returns nothing** and the caller falls back. That is correct
+behaviour on a container that arrived damaged, section 122, and the fallback's answer on it is
+unaligned. **A refusal is a result and must not be repaired by relaxing the filter.**
 
 Worth noting against concordance's table, which lists arch 9's `config_base` as `0x820000` where
 the derived value is `0x020000`.
@@ -124,8 +129,14 @@ the derived value is `0x020000`.
 > **circular**: the check `end_addr_points_at_end_marker` tested the assumption the base had just
 > been computed from, so no input could fail it. With the base anchored on content instead, that
 > check is real and it fails on exactly that sample. The marker subtraction remains in both
-> implementations as the fallback for a container with no clock record; nothing in the corpus
-> reaches it.
+> implementations as the fallback for a container with no clock record, and one container reaches
+> it: the second read of that same 890, where it returns an unaligned base and the circular check
+> then pronounces the file consistent. Section 122.
+>
+> **Amended on 11 August 2026, section 122.** Why `H890-Bedroom-2` declares an end before its own
+> marker is not a generator error, which is what section 117 concluded: the read duplicated 16 whole
+> 54 byte chunks. So the corrected base derivation stands and the reason given for one of its inputs
+> does not.
 
 > **Corrected on 8 August 2026, section 76.** This used to end "bit 23 looks like a flag<!--superseded-->
 > rather than an address bit". Both numbers are right and they are different address spaces: a
@@ -242,6 +253,24 @@ remote will not refuse the file, not that the file is correct.
 
 Read with `gspm.trailer_checksum` or `trailerChecksum`, and the parse reports
 `trailer_checksum_recomputes` as a container check. [findings.md](findings.md) section 41.
+
+### Telling a config that arrived from a config that parses
+
+Two independent checks, and a reader that keeps a file should run both. Section 122, where a transfer
+was caught inserting bytes into a config without losing any:
+
+| check | catches | blind to |
+|---|---|---|
+| the end marker sits at `end_addr` | anything that changes the length, insertion included | damage that preserves the length |
+| the trailer checksum recomputes | a single changed byte, most insertions | two transposed words, and an insertion whose words XOR to zero, which a run of zeroes is |
+
+An insertion of duplicated content passes neither in general and **can pass both** in one case: a
+duplicated run of zeroes inside a zero filled stretch leaves the checksum alone, and if the run is
+also outside the container it does not move the marker either. That case is harmless, because those
+bytes are not the config.
+
+Neither check is a validity test. A file can pass both and be wrong in ways nothing here detects; see
+the arch 9 device clone under [findings.md](findings.md) section 117.
 
 ## Sections
 

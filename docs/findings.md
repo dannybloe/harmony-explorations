@@ -49,7 +49,17 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty six have been found and corrected so far. **The two newest are in sections 120 and 121, and both
+Forty seven have been found and corrected so far. **The newest is in section 122, and it is a
+correction to a correction.** Section 117 caught the container's base being derived circularly, on a
+Harmony 890 config whose header disagrees with its own end marker, and then explained that
+disagreement as a generator failing to restamp a field. A second read of that remote, contributed the
+next day, disagrees with the first: the reads duplicate whole 54 byte chunks, 16 and 2 of them, and
+the config the remote holds is consistent. The argument that had ruled transport damage out was that
+the file's payload is as long as its own header says, and that header is written by the same tool
+after the same transfer, so it counts the duplicated bytes. **Two circular checks in one section, and
+the second one survived the commit that removed the first.**
+
+**The two before that are in sections 120 and 121, and both
 are cases where a document said something in as many words and nobody checked it.** Section 86 said
 value 0 of the activity variable means "no activity running"; the count it drew from that was right and
 the reason was wrong, and the field that does say it had been sitting in base slot 13 marked unconfirmed
@@ -14947,7 +14957,10 @@ candidate base for each pointer, and two conditions cut the candidates down:
   and
 * every other non-NULL pointer resolves inside the blob under it.
 
-**One candidate survives in all 24 containers.** The anchor is a closure and not a cookie match:
+**One candidate survives in all 24 containers then in the corpus.** Of the 27 there are now it
+recovers 26 and refuses one, which is the second read of `H890-Bedroom-2`, section 122: refusing is
+the only honest answer available from that file, and the fallback's answer is why the refusal matters.
+The anchor is a closure and not a cookie match:
 `clock_record` refuses a record whose stored day of week disagrees with its stored date, and the
 `0xADDF` byte pair turns up by chance roughly once per 32 KiB without a single chance hit validating.
 
@@ -14956,7 +14969,9 @@ by the old reading, spanning five architectures and six distinct bases, `0x00200
 `0x01E000`, `0x020000`, `0x030000` and `0x040000`, and the anchor recovers every one of them. The
 24th is `H890-Bedroom-2`, where the two readings disagree by 864 bytes and the anchor is the one that
 agrees with an independent fact: that config's trailer checksum fails, which is how it was known to
-be inconsistent before any of this.
+be inconsistent before any of this. Section 122 established why that file is inconsistent, and it
+does not move this: the anchor's answer for it, `0x030000`, is the base the repaired container
+verifies under.
 
 `end_addr_points_at_end_marker` is a real check as a result, and it fails on exactly one sample.
 
@@ -14967,7 +14982,8 @@ rather than one clean looking number:
 
 | | `H890-Bedroom-1` | `H890-Bedroom-2` |
 |---|---|---|
-| payload | 396927 | 397737 |
+| bytes written after the XML header | 396927 | 397737 |
+| container | 396225 | 397089 |
 | end marker at | 396221 | 397085 |
 | `end_addr` | `0x090BBD` | `0x090BBD`, identical |
 | marker subtraction | `0x030000` | `0x02FCA0` |
@@ -14976,18 +14992,24 @@ rather than one clean looking number:
 | clock record says | 14 May 2025, 21:40:26 | 14 May 2025, 21:37:44 |
 
 Three minutes apart, and they agree on all 23 pointer addresses, on `end_addr`, on slot 1's version
-word once the base is right, and on the length of every section but the last. Their first 4875 bytes
-are identical and after that their blobs share nothing but the four byte marker, which is the same
-picture as the three arch 8 configs generated ten minutes apart: **a small logical change reshuffles
-almost every byte.**
+word once the base is right, and on the length of every section. Their first 4875 bytes are identical
+and after that their blobs share nothing but the four byte marker, which is the same picture as the
+three arch 8 configs generated ten minutes apart: **a small logical change reshuffles almost every
+byte.**
 
-The 864 bytes are all in the final section, the picture bank. So the only header field that had to
-move with the growth was `end_addr`, and in the second file it did not. One cause, two symptoms, and
-the file is not damaged in transport: its payload is exactly as long as its own `<BINARYDATASIZE>`
-element says.
+**The rest of this subsection said the 864 bytes were the picture bank growing and a generator failing<!--superseded-->
+to restamp `end_addr` for it, and that is refuted in section 122.** They are duplicated transfer
+chunks. The remote holds the same 396225 bytes its sibling does, every section in the pair is the same
+length including the last, and a second read of the same remote puts the marker 108 bytes late instead
+of 864. Two things here are worth keeping as recorded errors rather than deleted ones.
 
-**What is not established is why a generator emitted it.** It is most likely a file the remote would
-refuse, since the trailer checksum is the one check the boot validator performs.
+The first is that the argument for it not being transport damage was **its payload is exactly as long
+as its own `<BINARYDATASIZE>` element says**, and that element is written by concordance after the
+transfer from what it received. It counts the duplicated bytes. A check whose two sides come from the
+same process is the same mistake as the circular base derivation this section removes, one page apart.
+
+The second is that "what is not established is why a generator emitted it" was the right instinct
+pointed the wrong way. Nothing had established that a generator emitted it at all.
 
 ### Arch 10's slot mapping is not a relabelling of the base table, and that is a negative result
 
@@ -16071,6 +16093,133 @@ guesses between them.
 codes, the modes it enters and, where it resolves, the label and where on the screen it is drawn.
 `packages/codec/src/text.ts` gained `referencedStringAddress` and `glyphRunAt`, and `screenStrings`
 marks a referenced draw with `referencedFrom` so a writer can tell a shared string from an owned one.
+
+## 122. An arch 10 read duplicates whole 54 byte chunks, and that is what section 117 measured
+
+Section 117 found a Harmony 890 config that declares an end 864 bytes before its own end marker, and
+wrote it up as a **generator** that failed to restamp `end_addr` when a section grew. That became a
+rail for a writer in `CLAUDE.md`. It is wrong, and what is behind it is worth more than the rail was:
+**a config read off an arch 10 remote can come back with chunks of it duplicated, and the file then
+parses, resolves every pointer and is not the config.**
+
+The contributor read both of his 890s a second time and published the files, at his own initiative,
+which is the only reason any of this is knowable.
+
+### Four reads of two remotes
+
+| | container | end marker vs declared end | trailer checksum |
+|---|---|---|---|
+| `H890-Bedroom-1` | 396225 | lands on it | `0x5AC7`, recomputes |
+| `H890-Bedroom-1-New` | 396225, byte identical to the above | lands on it | `0x5AC7`, recomputes |
+| `H890-Bedroom-2` | 397089 | 864 bytes late | `0x5DE1`, computes `0xBA51` |
+| `H890-Bedroom-2-New` | 396333 | 108 bytes late | `0x5DE1`, computes `0xCEC9` |
+
+The first remote is the control, and it is what makes the rest readable: read twice, ten hours apart,
+its container came back **byte identical** and verifying both times. So a stable arch 10 read exists,
+and the second remote's trouble is not a property of the architecture, the tool or the reader here.
+
+The second remote's two reads carry the **same config**. Their clock records are identical byte for
+byte, 14 May 2025 21:37:44, and that record is the config's own build timestamp, section 21, which a
+generator stamps per config. A re-sync between the reads would have moved it. They also agree on all
+23 pointer addresses, on `end_addr` and on the declared checksum. Two reads, one config, different
+bytes, and **neither one verifies**.
+
+### What separates them is a duplicated chunk, and nothing else
+
+Aligning the two by 48 byte anchors that occur exactly once in each gives a staircase of sixteen
+plateaus whose every step is 54 bytes. That is the whole shape of the difference: no substitutions, no
+losses, just displacement in units of 54.
+
+The rescan is the tractable one. It carries three immediately repeated 54 byte runs with more than two
+distinct bytes in them, where the verifying sibling carries exactly one, and one of the three is that
+same content displaced by 54 because a duplicate sits below it. Delete one copy of the other two and:
+
+* the container is **396225** bytes, which is what the sibling verifies at,
+* the end marker lands **exactly** on the declared `end_addr`, and
+* the trailer checksum recomputes to `0x5DE1`, **the value the file declares**.
+
+The repair uses the length and the repetition. It never touches the checksum, and the checksum it
+lands on is a sixteen bit value hit by construction. That is the closure.
+
+The first read then aligns against that repaired content to the last byte of both files: **864 surplus
+bytes in ten runs** of 54, 108 and 270, with nothing missing in either direction. Counted a second way,
+by how many immediately repeated chunks each file holds against the repaired content's 946: the first
+read has 962 and the rescan 948, which is 16 chunks and 2. Two methods, one answer.
+
+### The unit is 54 bytes, and every read overshoots by whole ones
+
+The strongest evidence that 54 is real rather than fitted to one file is that it accounts for all four,
+including the two that verify. What concordance wrote after the XML header, in each:
+
+| | bytes written | over the config | chunks |
+|---|---|---|---|
+| `H890-Bedroom-1` | 396927 | 702 | 13 |
+| `H890-Bedroom-1-New` | 396333 | 108 | 2 |
+| `H890-Bedroom-2` | 397737 | 1512 | 28 |
+| `H890-Bedroom-2-New` | 396549 | 324 | 6 |
+
+Every one is `396225 + 54n`. Both remotes hold a 396225 byte config, and every read of either came
+back with between 2 and 28 chunks too many. The bytes past the container are zero, so a duplicate that
+lands there is harmless and a duplicate that lands inside is fatal, and which happens is luck. The
+first remote got lucky twice and the second got unlucky twice.
+
+**What the unit is a chunk of is not established.** It is not the 62 data bytes an arch 12 or arch 14
+report carries, so it is not that transport parameter. No arch 10 firmware exists anywhere, section 115,
+so whether the duplication is the remote's or the tool's cannot be read out of code from here. One
+number is worth recording for whoever gets there: every one of the four streams is 27 bytes past a
+multiple of 54, so a 27 byte half unit exists at the end of a transfer.
+
+### The check that was supposed to catch this could not
+
+Section 117 argued the file was undamaged in transport because **its payload is exactly as long as its
+own `<BINARYDATASIZE>` element says**. That element is written by concordance after the transfer, from
+what it received. It counts the duplicated bytes too. So the check was the same process reporting on
+itself, which is exactly the circularity the same section removed from the base derivation: the base
+came out of the end marker and the check asked whether the end marker matched the base.
+
+Two of those in one section is worth a rule. **A self consistency check is only worth the independence
+of its two sides.** Here the two sides that are genuinely independent are the trailer checksum, which
+the remote's boot validator computes and the generator stored, and the end marker's position against
+the declared `end_addr`. Both were failing on this file and section 117 read them as one fault with one
+cause, when they were two symptoms of an insertion.
+
+### What this kills, and what it strengthens
+
+**The writer rail comes off.** "`end_addr` is restamped when anything changes length, and a real<!--superseded-->
+generator got that wrong" rested entirely on this file. Nothing in the corpus shows a generator
+emitting an inconsistent `end_addr`, and every container has the marker on the declared end once the
+transfer is accounted for. `reference/superseded.md` carries the wording. The first half of the rail
+survives, because `end_addr` does have to be restamped; what is gone is the evidence that anyone ever
+failed to.
+
+**Section 117's correction to the base derivation stands, and it was right for a better reason than it
+gave.** The circular reading returned a base 864 bytes low on the first read, and on the rescan it
+returns an **unaligned** `0x02FF94` while reporting that the declared end lands on the end marker, for
+a file whose checksum recomputes to nothing. The anchored derivation returns `0x030000` on the first
+read and **refuses** on the rescan, which is the only honest answer available from that file. So the
+lesson is not "a generator can get `end_addr` wrong" but "a read can insert bytes, and a base computed
+from the file's own marker follows the corruption in silence".
+
+**Arch 10's sample count does not change.** One verifying config from one remote, plus a second
+remote's config that is only usable repaired, which is not the same thing as a sample. The container
+framing claims in sections 115 and 117 were checked against both, and they hold on the repaired one
+too, so nothing else in either section moves.
+
+### Two consequences for anything that reads a remote
+
+**A contributed 890 config has to be checksum verified before it is believed**, and if it fails, the
+right response is to ask for another read rather than to reason about the file. The odds here were four
+reads and two usable.
+
+**The checksum does not catch every duplication.** It is a sixteen bit XOR of little endian words,
+section 41, so inserting 54 bytes whose 27 words XOR to zero leaves it unchanged, and a run of zeroes
+is exactly that. A duplicated chunk inside a zero filled stretch of a config is invisible to it. What
+catches that one is the end marker's position, which any insertion moves. Neither check is redundant
+and neither is sufficient.
+
+`packages/corpus/src/read.ts` now performs both after every read of a real remote. It had the marker
+check from the start; the checksum was assumed rather than tested, on architectures where no transfer
+had ever been caught inserting anything.
 
 ## References
 

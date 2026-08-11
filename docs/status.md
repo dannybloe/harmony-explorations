@@ -132,7 +132,7 @@ classes, and which physical button each scan code is. See
 ## What the corpus holds
 
 9<!--fact:corpus_dumps--> dumps from 5<!--fact:corpus_contributors--> contributors, carrying
-21<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus seven
+23<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus seven
 firmware images and two bootloaders. `make corpus` inventories it and, importantly, reports which
 dumps nobody has described: a dump whose contributor has moved on is far harder to label later than one
 described on arrival.
@@ -144,17 +144,26 @@ described on arrival.
 | 7 | 610, 620, 628, 659, 670, 676, 680, 688 | 0 | 0 | none | anything at all: eight models and no sample |
 | 8 | 880, 885, 880 Pro, 720, 785 | 3<!--fact:corpus_arch8_dumps--> | 13<!--fact:corpus_arch8_configs--> | 880 and 885, application and bootloader | a 720 or a 785, which no sample here covers |
 | 9 | 510, 515, 520, 525, 550, 555 | 1<!--fact:corpus_arch9_dumps--> | 1<!--fact:corpus_arch9_configs--> | 525, application and safe mode | a 55x, and any config off a 51x |
-| 10 | 890, 895, 890 Pro | 1<!--fact:corpus_arch10_dumps--> | 2<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
+| 10 | 890, 895, 890 Pro | 1<!--fact:corpus_arch10_dumps--> | 4<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
 | 12 | One | 2<!--fact:corpus_arch12_dumps--> | 2<!--fact:corpus_arch12_configs--> | One 3.4, plus safe mode and both internal pages | nothing: this one is covered |
 | 14 | 600, 650, 665, 700 | 2<!--fact:corpus_arch14_dumps--> | 3<!--fact:corpus_arch14_configs--> | 600, 650 and 700 | a 665 config |
 | 15 | 900, 1000, 1000i, 1100, 1100i | 0 | 0 | none | out of reach by construction: a network class device, not HID, so this library cannot address one |
 
-**Arch 10 is the interesting gap and it is not for want of configs.** Two Harmony 890 configs are in the
-corpus, their container framing verifies, and the twenty three pointer slots are **not** a relabelling of
-the twenty: all 1330 placements of three insertions were scored against seventeen readers and the best
-reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely. So every arch 10 reader is gated, and
-guessing a mapping would turn twenty refusals into twenty plausible wrong answers. Firmware is what
-settles it, the way arch 9's own firmware settled its infrared classes. Sections 115 and 117.
+**Arch 10 is the interesting gap and it is not for want of configs.** The corpus holds four reads of two
+Harmony 890s, their container framing verifies, and the twenty three pointer slots are **not** a
+relabelling of the twenty: all 1330 placements of three insertions were scored against seventeen readers
+and the best reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely. So every arch 10 reader is
+gated, and guessing a mapping would turn twenty refusals into twenty plausible wrong answers. Firmware is
+what settles it, the way arch 9's own firmware settled its infrared classes. Sections 115 and 117.
+
+**Four reads are not four configs, and on this architecture that had to be measured**, section 122. One
+remote was read twice and gave the same container twice. The other was read twice and gave two files that
+disagree with each other, neither of which recomputes its own checksum, because **an arch 10 read
+duplicates whole 54 byte chunks**: 16 in one read and 2 in the other, with nothing ever lost. Removing
+the duplicates from the second read lands on the length its sibling verifies at, puts the end marker
+exactly where the header says, and reproduces the checksum the file declares, which is the closure. So a
+contributed 890 config has to be checksum verified before it is believed, and a failure is a reason to
+read the remote again rather than to reason about the file.
 
 **Arch 8 is a control rather than a target.** Eleven configs and two application images arrived on 10
 August 2026 and what they bought was a counterexample supply: they broke the skin rule, they gave

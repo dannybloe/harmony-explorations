@@ -182,6 +182,35 @@ test('a config whose end marker is missing is not filed', skipUnless('h600_confi
   });
 });
 
+test('a config whose trailer checksum does not recompute is not filed', skipUnless('h600_config'), async () => {
+  const config = Uint8Array.from(configOf('h600_config'));
+  const profile = profileFor(H600);
+  // Two transposed words would be invisible, so damage one word instead. The point of this check is
+  // the Harmony 890 case, section 122: a transfer duplicated whole 54 byte chunks and every other
+  // check the read makes passed. That damage cannot be staged here, because a duplicate moves the
+  // end marker and the check above would fire first, so this stages the narrower case.
+  config[128] = config[128]! ^ 0x40;
+
+  const { reader } = fakeRemote(config, profile);
+  await assert.rejects(readConfig(reader, profile), (err: Error) => {
+    assert.ok(err instanceof ReadError);
+    assert.match(err.message, /trailer checksum 0x[0-9a-f]{4} does not recompute/);
+    assert.match(err.message, /has not been filed/);
+    return true;
+  });
+});
+
+test('an undamaged read passes both closures', skipUnless('one_config', 'h600_config'), async () => {
+  // The negative of the two tests above: a check that cannot pass is as useless as one that cannot
+  // fail, and this one runs on every read of a real config on both bench architectures.
+  for (const [sample, product] of [['one_config', ONE], ['h600_config', H600]] as const) {
+    const profile = profileFor(product);
+    const { reader } = fakeRemote(configOf(sample), profile);
+    const read = await readConfig(reader, profile);
+    assert.equal(read.bytes.length, configOf(sample).length);
+  }
+});
+
 test('an implausible end_addr is refused before any bulk read happens', () => {
   const profile = profileFor(ONE);
   const head = new Uint8Array(HEADER_PROBE);

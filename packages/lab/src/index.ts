@@ -108,11 +108,21 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // 890 is arch 10, a fourth format version and 23 pointer slots.
   arch8_config_885: 'H885-LivingRoom.EZHex',
   h890_config: 'H890-Bedroom-1.EZHex',
-  // The second 890, here for being **inconsistent with itself**: its header declares an end 864
-  // bytes before its own end marker, so the old marker based base recovery returned 0x02FCA0 for a
-  // container linked at 0x030000, and its trailer checksum does not recompute under any extent
-  // tried. It is what turned the circular base check into one that can fail. Section 117.
+  // A second read of the same remote, ten hours later. Its container is byte identical and the file is
+  // 594 bytes shorter, all of it trailing slack past the trailer, so this is what a **stable** arch 10
+  // read looks like and it is the control for the pair below. Section 122.
+  h890_config_rescan: 'H890-Bedroom-1-New.EZHex',
+  // The second 890, here for being **inconsistent with itself**: its header declares an end 864 bytes
+  // before its own end marker, and its trailer checksum does not recompute under any extent tried. It
+  // is what turned the circular base check into one that can fail. Section 117.
   h890_config_2: 'H890-Bedroom-2.EZHex',
+  // A second read of **that** remote, and the pair is the finding: this one puts the end marker 108
+  // bytes past the declared end where the first put it 864, and recomputes a different checksum, while
+  // both declare the same header, the same 23 pointers and the same clock record byte for byte. So it
+  // is one config read twice, and what separates the reads is **whole 54 byte chunks duplicated**, 16
+  // in the first and 2 in this one, with nothing lost. Remove them and this file verifies. Section 122,
+  // which is where section 117's writer rail came off.
+  h890_config_2_rescan: 'H890-Bedroom-2-New.EZHex',
   one_config: 'harmony-one-programmed-config.EZHex',
   one_config_unprogrammed: 'harmony-one-config.EZHex',
   h600_config: 'harmony-600-programmed-config.EZHex',

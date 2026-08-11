@@ -2677,6 +2677,10 @@ def recover_flash_base(blob: bytes, addresses: List[int], end_addr: int) -> Opti
     pointer in the container then resolved 864 bytes late, which is the quiet kind of wrong,
     because a wrong base does not fail, it just reads the neighbouring bytes.
 
+    Why that file carries those bytes is section 122 and it is not a generator error: the read
+    duplicated 16 whole 54 byte chunks. So the anchor's answer for it, `0x030000`, is the base the
+    repaired container verifies under, which is a stronger calibration than the one below.
+
     So the base comes from the data instead. Each non-NULL pointer is an absolute address, and
     exactly one of them targets the clock record, so `address - offset_of_clock_record` is a
     candidate base for each pointer. The candidates are filtered by two conditions:
@@ -2693,8 +2697,13 @@ def recover_flash_base(blob: bytes, addresses: List[int], end_addr: int) -> Opti
     inconsistent before this function existed. `docs/findings.md` section 117.
 
     Returns None when the anchor is unavailable or ambiguous, which leaves the caller to fall
-    back rather than having this guess. Nothing in the corpus reaches that path; it exists
-    because a container with no clock record is permitted by everything else in the format.
+    back rather than having this guess. **One container reaches that path**, and this used to say
+    nothing did: `H890-Bedroom-2-New`, a second read of the remote behind `h890_config_2`, has its
+    clock record 54 bytes further into the blob than the pointer that names it, so every candidate
+    fails the alignment filter and there is nothing to choose. Refusing is right there, and the
+    fallback's answer shows why: it returns an unaligned `0x02FF94` and the circular check then
+    reports that the declared end lands on the end marker, for a file whose checksum does not
+    recompute under any extent. Section 122.
     """
     clocks = find_clock_records(blob)
     if len(clocks) != 1:

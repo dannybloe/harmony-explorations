@@ -1968,8 +1968,9 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
     def test_a_container_with_no_clock_record_falls_back_rather_than_guessing(self):
         """
         The anchor refuses when it has nothing to anchor on, which is why `parse` keeps the marker
-        subtraction as a fallback. Nothing in the corpus reaches this path, so it is exercised by
-        damaging a copy rather than by a sample.
+        subtraction as a fallback. A damaged copy is still the clearest way to exercise it, and this
+        used to add that nothing in the corpus reaches the path. `h890_config_2_rescan` does, for a
+        different reason, and the test below covers that.
         """
         lab.require('h600_config')
         c = gspm.parse(lab.load('h600_config'))
@@ -1980,6 +1981,89 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
         self.assertIsNone(gspm.recover_flash_base(
             bytes(damaged), [s.address for s in c.sections], c.end_addr))
         self.assertEqual(gspm.parse(bytes(damaged)).flash_base, c.flash_base)
+
+
+    def test_a_second_read_of_the_same_arch_10_remote_disagrees_with_the_first(self):
+        """
+        Section 122, and it is what took section 117's writer rail off the board.
+
+        `H890-Bedroom-2` was read as declaring an end 864 bytes before its own end marker, and that
+        was written up as a generator that failed to restamp `end_addr` when a section grew. The
+        remote was read again ten hours later at the contributor's own initiative. The second file
+        puts the marker **108** bytes past the declared end and recomputes a different checksum,
+        while declaring the same end address and the same checksum as the first.
+
+        Two reads cannot both be the config. So the 864 was a property of that read, not of the
+        file, and no rail can rest on it.
+        """
+        lab.require('h890_config_2', 'h890_config_2_rescan')
+        first = gspm.parse(lab.load('h890_config_2'))
+        again = gspm.parse(lab.load('h890_config_2_rescan'))
+        # Identical headers: the same declared end and the same declared checksum.
+        self.assertEqual(first.end_addr, again.end_addr)
+        self.assertEqual(first.trailer_checksum, again.trailer_checksum)
+        # Different bytes, and neither verifies.
+        self.assertNotEqual(bytes(first.blob), bytes(again.blob))
+        self.assertFalse(first.checks['trailer_checksum_recomputes'])
+        self.assertFalse(again.checks['trailer_checksum_recomputes'])
+        # And the gap between the declared end and the marker is not the same number twice, which is
+        # the whole point: a property of the config would reproduce.
+        base = 0x030000
+        for container, expected in ((first, 864), (again, 108)):
+            marker = bytes(container.blob).rindex(container.family.end_marker)
+            self.assertEqual(marker - (container.end_addr - base), expected)
+
+    def test_the_other_arch_10_remote_reads_the_same_way_twice(self):
+        """
+        The control, without which the test above says nothing. If every arch 10 read disagreed with
+        every other, the pair would be evidence about the transport and not about that one remote.
+
+        `H890-Bedroom-1` was also read twice. Its container is byte identical across the two reads,
+        its checksum verifies in both, and the second file is 594 bytes shorter, all of it trailing
+        slack past the trailer. So a stable arch 10 read exists and this is one.
+        """
+        lab.require('h890_config', 'h890_config_rescan')
+        first = gspm.parse(lab.load('h890_config'))
+        again = gspm.parse(lab.load('h890_config_rescan'))
+        self.assertTrue(first.checks['trailer_checksum_recomputes'])
+        self.assertTrue(again.checks['trailer_checksum_recomputes'])
+        self.assertEqual(first.trailer_checksum, again.trailer_checksum)
+        self.assertEqual(first.flash_base, again.flash_base)
+        self.assertEqual(first.end_addr, again.end_addr)
+        # The containers are byte identical, which is the claim. `blob` is the container rather than
+        # the file, so the 594 bytes are measured on disk: they are trailing slack past the trailer
+        # and no reader ever looks at them.
+        self.assertEqual(bytes(first.blob), bytes(again.blob))
+        sizes = [os.path.getsize(lab.path(n)) for n in ('h890_config', 'h890_config_rescan')]
+        self.assertEqual(sizes[0] - sizes[1], 594)
+
+    def test_the_bad_rescan_defeats_the_anchor_and_the_fallback_lies_about_it(self):
+        """
+        Why the anchor refusing is the right behaviour, demonstrated on a real file rather than a
+        damaged copy.
+
+        In `H890-Bedroom-2-New` the clock record sits 54 bytes further into the blob than the
+        pointer naming it, so every candidate base fails the alignment filter and none survives.
+        The fallback then returns an **unaligned** base, and under it the circular check reports
+        that the declared end lands on the end marker, for a file whose checksum does not recompute.
+        That is the failure mode section 117 removed, caught in the act on a new input.
+        """
+        lab.require('h890_config_2_rescan')
+        c = gspm.parse(lab.load('h890_config_2_rescan'))
+        blob = bytes(c.blob)
+        self.assertIsNone(gspm.recover_flash_base(
+            blob, [s.address for s in c.sections], c.end_addr))
+        self.assertNotEqual(c.flash_base % gspm.FLASH_BASE_ALIGNMENT, 0)
+        # The circular check passes on a file that does not verify, which is the point.
+        self.assertTrue(c.checks['end_addr_points_at_end_marker'])
+        self.assertFalse(c.checks['trailer_checksum_recomputes'])
+        # The clock record moved relative to the sibling reads, all three of which agree.
+        moved = gspm.find_clock_records(blob)[0]
+        for name in ('h890_config', 'h890_config_rescan', 'h890_config_2'):
+            if lab.path(lab.IMAGES and name) is None:
+                continue
+            other = gspm.parse(lab.load(name))
+            self.assertEqual(gspm.find_clock_records(bytes(other.blob))[0], moved - 54)
 
     def test_a_wrong_base_is_silent_which_is_why_the_anchor_exists(self):
         """
@@ -2071,19 +2155,233 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
         self.assertEqual(len({s.date() for s in stamps}), 1)
         self.assertLess(abs((stamps[0] - stamps[1]).total_seconds()), 600)
 
-    def test_only_the_last_section_differs_in_length(self):
+    def test_the_two_remotes_carry_configs_of_the_same_length_and_shape(self):
         """
-        Which is why one file can be 864 bytes longer while every pointer stays put: the growth is
-        all in the final section, the picture bank, and `end_addr` is the only header field that
-        should have moved with it. In the inconsistent file it did not.
+        Every section is the same length in both, the last one included, and so is the container.
+
+        **This used to assert that the second file was 864 bytes longer and that the growth was all
+        in the final section**, which was section 117's evidence that a generator had failed to
+        restamp `end_addr`. The 864 bytes are not in the config at all, section 122: they are
+        duplicated transfer chunks, and the file the remote holds is the same 396225 bytes as its
+        sibling's. So the pair is a pair of equals and the interesting difference was never there.
         """
-        lab.require('h890_config', 'h890_config_2')
+        lab.require('h890_config', 'h890_config_2', 'h890_config_2_rescan')
         a = gspm.parse(lab.load('h890_config'))
         b = gspm.parse(lab.load('h890_config_2'))
-        self.assertEqual(len(b.blob) - len(a.blob), 864)
-        for slot in range(a.pointer_count - 1):
+        self.assertEqual(len(a.blob), ARCH10_CONFIG_LENGTH)
+        # Through the rescan, which is the read of this remote that can be repaired: the first read
+        # duplicated a chunk inside a filler run as well, where the content cannot say which copy
+        # is surplus. It does not have to, because either choice gives the same bytes.
+        self.assertEqual(len(repair_duplicated_chunks(gspm.parse(lab.load('h890_config_2_rescan')))),
+                         ARCH10_CONFIG_LENGTH)
+        for slot in range(a.pointer_count):
             with self.subTest(slot=slot):
                 self.assertEqual(a.section_length(slot), b.section_length(slot))
+
+
+#: What an arch 10 read chunk is, section 122. Measured, not derived from a protocol document.
+ARCH10_CHUNK = 54
+#: The length both 890 containers verify at, which is what the repair has to land on.
+ARCH10_CONFIG_LENGTH = 396225
+#: The two chunks `H890-Bedroom-2-New` duplicated, derived below rather than asserted here.
+RESCAN_DUPLICATES = (0x18E0A, 0x2D60A)
+#: The one repeat that is content, because the verifying sibling read carries it at the same place.
+GENUINE_REPEAT = 0x1F13A
+
+
+def surplus_duplicate_chunks(blob, unit=ARCH10_CHUNK):
+    """Positions where the `unit` bytes at p recur immediately, with how many extra copies follow.
+
+    Filler regions produce hundreds of these legitimately, so a caller that wants the anomalies
+    filters on content as well.
+    """
+    out = []
+    p = 0
+    while p + 2 * unit <= len(blob):
+        if blob[p:p + unit] == blob[p + unit:p + 2 * unit]:
+            extra = 1
+            while blob[p:p + unit] == blob[p + (extra + 1) * unit:p + (extra + 2) * unit]:
+                extra += 1
+            out.append((p, extra))
+            p += (extra + 1) * unit
+        else:
+            p += 1
+    return out
+
+
+def interesting_duplicates(blob, unit=ARCH10_CHUNK):
+    """The repeats worth looking at: more than two distinct byte values in the repeated run."""
+    return [p for p, _ in surplus_duplicate_chunks(blob, unit) if len(set(blob[p:p + unit])) > 2]
+
+
+def repair_duplicated_chunks(container, positions=RESCAN_DUPLICATES, unit=ARCH10_CHUNK):
+    """Drop one copy of the chunk at each named position, highest offset first.
+
+    Takes the positions rather than finding them, because finding them needs a control from outside
+    the file: a config legitimately repeats a chunk here and there, and telling those from a
+    duplicating read means comparing against a read that verified. The test below does that.
+    """
+    out = bytearray(container.blob)
+    for offset in sorted(positions, reverse=True):
+        del out[offset:offset + unit]
+    return bytes(out)
+
+
+class TestTheArch10ReadDuplicatesChunks(unittest.TestCase):
+    """
+    Section 122. Two reads of one Harmony 890 disagree, and what separates them is whole 54 byte
+    chunks appearing twice. Nothing is ever missing, which is why the damage is invisible: the file
+    parses, every pointer resolves and only the checksum says otherwise.
+    """
+
+    def test_both_reads_of_the_second_remote_carry_the_same_config(self):
+        """
+        The premise the rest depends on. If the remote had been re-synced between the two reads its
+        clock record would say so, because that record is the config's build timestamp and a
+        generator stamps it per config. It is identical byte for byte, so one config, two reads.
+        """
+        lab.require('h890_config_2', 'h890_config_2_rescan')
+        first = gspm.parse(lab.load('h890_config_2'))
+        again = gspm.parse(lab.load('h890_config_2_rescan'))
+        records = [gspm.find_clock_records(bytes(c.blob))[0] for c in (first, again)]
+        self.assertEqual(bytes(first.blob)[records[0]:records[0] + gspm.CLOCK_RECORD_LENGTH],
+                         bytes(again.blob)[records[1]:records[1] + gspm.CLOCK_RECORD_LENGTH])
+        self.assertEqual([s.address for s in first.sections], [s.address for s in again.sections])
+        self.assertEqual(first.end_addr, again.end_addr)
+        self.assertEqual(first.trailer_checksum, again.trailer_checksum)
+        # And the record moved anyway, by one chunk, because bytes were inserted ahead of it.
+        self.assertEqual(records[1] - records[0], ARCH10_CHUNK)
+
+    def test_which_repeats_are_the_duplication_is_decided_by_the_verifying_read(self):
+        """
+        How the two positions were found, so the repair below is a derivation and not a fit.
+
+        A config does repeat a 54 byte run now and then, so a repeat is not by itself a duplicated
+        chunk. The verifying sibling read supplies the control: it carries exactly one repeat with
+        more than two distinct bytes in it, and the rescan carries three. One of the three is that
+        same content, displaced by the one chunk duplicated ahead of it, and the other two are the
+        duplication.
+        """
+        lab.require('h890_config', 'h890_config_2_rescan')
+        sibling = bytes(gspm.parse(lab.load('h890_config')).blob)
+        self.assertEqual(interesting_duplicates(sibling), [GENUINE_REPEAT])
+        rescan = bytes(gspm.parse(lab.load('h890_config_2_rescan')).blob)
+        found = interesting_duplicates(rescan)
+        self.assertEqual(len(found), 3)
+        displaced = GENUINE_REPEAT + ARCH10_CHUNK
+        self.assertIn(displaced, found)
+        self.assertEqual(sorted(p for p in found if p != displaced), sorted(RESCAN_DUPLICATES))
+        # The displacement is one chunk because exactly one of the two sits below it.
+        self.assertEqual(len([p for p in RESCAN_DUPLICATES if p < displaced]), 1)
+
+    def test_dropping_the_duplicated_chunks_makes_the_rescan_verify(self):
+        """
+        The closure, and it is the whole finding: the repair uses the length and the duplication and
+        never touches the checksum, and the checksum it lands on is the one the file declares. A
+        sixteen bit value hit by construction rather than by search.
+        """
+        lab.require('h890_config_2_rescan')
+        c = gspm.parse(lab.load('h890_config_2_rescan'))
+        self.assertFalse(c.checks['trailer_checksum_recomputes'])
+        fixed = repair_duplicated_chunks(c)
+        self.assertEqual(len(fixed), ARCH10_CONFIG_LENGTH)
+        self.assertEqual(len(c.blob) - len(fixed), 2 * ARCH10_CHUNK)
+        self.assertEqual(gspm.trailer_checksum(fixed), c.trailer_checksum)
+        # The end marker lands where the header says, under the base the sibling read establishes.
+        self.assertEqual(fixed.rindex(c.family.end_marker), c.end_addr - 0x030000)
+        # And the anchor, which refuses on the file as read, recovers the base once it is repaired.
+        self.assertEqual(
+            gspm.recover_flash_base(fixed, [s.address for s in c.sections], c.end_addr), 0x030000)
+
+    def test_the_first_read_is_the_same_config_with_more_duplicates(self):
+        """
+        Sixteen chunks against the rescan's two, at ten places, and the alignment consumes both
+        files to the last byte with nothing missing in either direction. Measured against the
+        repaired rescan rather than against the sibling remote, so the comparison is one config.
+        """
+        lab.require('h890_config_2', 'h890_config_2_rescan')
+        truth = repair_duplicated_chunks(gspm.parse(lab.load('h890_config_2_rescan')))
+        read = bytes(gspm.parse(lab.load('h890_config_2')).blob)
+        i = j = 0
+        surplus, missing = 0, 0
+        while i < len(read) and j < len(truth):
+            if read[i] == truth[j]:
+                i += 1
+                j += 1
+                continue
+            for k in range(1, 9):
+                if read[i + k * ARCH10_CHUNK:i + k * ARCH10_CHUNK + 96] == truth[j:j + 96]:
+                    surplus += k
+                    i += k * ARCH10_CHUNK
+                    break
+            else:
+                for k in range(1, 9):
+                    if read[i:i + 96] == truth[j + k * ARCH10_CHUNK:j + k * ARCH10_CHUNK + 96]:
+                        missing += k
+                        j += k * ARCH10_CHUNK
+                        break
+                else:
+                    self.fail(f'the reads do not align at {i:#x} against {j:#x}')
+        self.assertEqual((i, j), (len(read), len(truth)))
+        self.assertEqual(missing, 0)
+        self.assertEqual(surplus, 16)
+        self.assertEqual(surplus * ARCH10_CHUNK, len(read) - len(truth))
+
+    def test_the_surplus_is_counted_the_same_by_a_second_route(self):
+        """
+        Independent of the alignment above: count how many immediately repeated chunks each file
+        holds. The repaired content has 946, the read that duplicated sixteen has 962 and the one
+        that duplicated two has 948. Two methods, one answer.
+        """
+        lab.require('h890_config_2', 'h890_config_2_rescan')
+        truth = repair_duplicated_chunks(gspm.parse(lab.load('h890_config_2_rescan')))
+        base = sum(extra for _, extra in surplus_duplicate_chunks(truth))
+        for name, expected in (('h890_config_2', 16), ('h890_config_2_rescan', 2)):
+            with self.subTest(sample=name):
+                blob = bytes(gspm.parse(lab.load(name)).blob)
+                self.assertEqual(sum(extra for _, extra in surplus_duplicate_chunks(blob)) - base,
+                                 expected)
+
+    def test_every_read_is_the_config_plus_whole_chunks(self):
+        """
+        Across all four files, including the two that verify: the bytes concordance wrote after the
+        XML header are always the config's own 396225 plus a whole number of 54 byte chunks, 13, 2,
+        28 and 6 of them. That is what makes 54 the unit rather than a number fitted to one file.
+
+        The trailing bytes past the container are zero, so a duplicate that lands there is harmless
+        and a duplicate inside is not. Which of the two happens is luck, and the two remotes here
+        got one each.
+        """
+        lab.require('h890_config', 'h890_config_rescan', 'h890_config_2', 'h890_config_2_rescan')
+        expected = {'h890_config': 13, 'h890_config_rescan': 2,
+                    'h890_config_2': 28, 'h890_config_2_rescan': 6}
+        for name, chunks in sorted(expected.items()):
+            with self.subTest(sample=name):
+                data = lab.load(name)
+                c = gspm.parse(data)
+                stream = data[c.blob_offset:]
+                self.assertEqual(len(stream), ARCH10_CONFIG_LENGTH + chunks * ARCH10_CHUNK)
+                # The EZHex header counts what was written, so it cannot report the duplication: it
+                # is the same process reporting on itself, which is the trap section 117 fell into.
+                self.assertIn(b'<BINARYDATASIZE>%d<' % len(stream), data[:c.blob_offset])
+                self.assertEqual(set(stream[len(c.blob):]), {0} if chunks else set())
+
+    def test_a_duplicated_chunk_of_zeroes_would_pass_the_checksum(self):
+        """
+        The limit of the check, stated because a contributor's file will be judged by it. The
+        trailer checksum is a word XOR, so inserting 54 bytes whose 27 words XOR to zero leaves it
+        unchanged, and a run of zeroes is exactly that. The two chunks the rescan duplicated are not
+        zero runs, which is why it was caught at all.
+        """
+        lab.require('h890_config')
+        c = gspm.parse(lab.load('h890_config'))
+        blob = bytes(c.blob)
+        zeroes = blob.index(bytes(2 * ARCH10_CHUNK))
+        damaged = blob[:zeroes] + bytes(ARCH10_CHUNK) + blob[zeroes:]
+        self.assertEqual(gspm.trailer_checksum(damaged), gspm.trailer_checksum(blob))
+        self.assertEqual(gspm.trailer_checksum(damaged), c.trailer_checksum)
+        # What still catches it is the end marker's position, which the insertion moves.
+        self.assertNotEqual(damaged.rindex(c.family.end_marker), c.end_addr - c.flash_base)
 
 
 class TestArch12SafeModeConfig(unittest.TestCase):
