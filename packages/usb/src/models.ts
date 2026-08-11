@@ -29,11 +29,19 @@ export interface Model {
   /** The name Logitech marketed it under, in the region the skin belongs to. */
   readonly name: string;
   /**
-   * The same remote's name in the other region, where there is one.
+   * The same product's name in the other region, where there is one, from the comparison table's own
+   * "Eur#" column.
    *
-   * **Not a variant: the comparison table's own "Eur#" column.** The 525 on this bench is the
-   * European 520, which is why one model owns two skins and why the 520's row is the 525's row. The
-   * two agree on the one field we can check independently, the firmware version, 3.0 on both.
+   * **An alias is not the same hardware, and this comment said it was for an hour.** The two remotes
+   * share a specification row and differ in their keypad: the European 525 carries four colour keys
+   * where the 520 has none, and the European 885 carries them where the 880 has a pair of chevrons
+   * instead. Two independent pairs differing the same way, with a mechanism, since colour keys are
+   * teletext and teletext is European.
+   *
+   * So the fields in this record are shared and the **button count is not**, which is the better
+   * reading of why two skins exist at all: a skin names a keypad, and the keypads happen to split by
+   * region. That is also why the firmware needs it. A silhouette therefore belongs to a skin rather
+   * than to a model.
    */
   readonly alias?: string;
   /** Which config format and USB rules apply. `reference/models.md`, from Logitech's own client. */

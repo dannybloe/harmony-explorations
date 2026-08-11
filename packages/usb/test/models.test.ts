@@ -54,10 +54,16 @@ test('one architecture spans both panels, which is why a config cannot state one
   assert.equal(modelForSkin(72)?.panel, 'colour');
 });
 
-test('an alias pair is one remote, so both skins carry the same capabilities', () => {
+test('an alias pair shares a specification row and is not the same hardware', () => {
   // The comparison table's own Eur# column: the 525 is the European 520, and five more pairs like it.
-  // Every field but the name and the alias has to match, or a remote's capabilities would depend on
-  // which region it was sold in.
+  // Every field in this record has to match, or a remote's stated capabilities would depend on which
+  // region it was sold in.
+  //
+  // **What must not be read into that is identical hardware**, which is how this test was first
+  // named. The keypads differ: the 525 carries four colour keys where the 520 has none, and the 885
+  // carries them where the 880 has a pair of chevrons. Two pairs, same difference, and colour keys
+  // are teletext. Nothing in this record states a button count, which is why the assertion below is
+  // still right and its old name was not.
   const pairs: [number, number][] = [[22, 18], [68, 67], [15, 17], [19, 23]];
   for (const [a, b] of pairs) {
     const first = modelForSkin(a);
