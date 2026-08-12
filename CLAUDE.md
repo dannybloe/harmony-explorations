@@ -207,8 +207,11 @@ a sample should still fail loudly. That
 directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
 `tools/corpus.py` inventories the dumps and, importantly, reports which ones have no
-description recorded. Phase 1 needs labelled samples, and a dump whose contributor has moved
-on is far harder to label later than one described on arrival.
+description recorded. A dump whose contributor has moved on is far harder to label later than one
+described on arrival, and section 124 is what that is worth: the one config with a written description
+beside it is the only place two readers here have ever been checked against something outside the code.
+**No new dumps are being solicited**, decision 10 in `docs/roadmap.md`, so the column matters for the
+files already here rather than for incoming ones.
 
 ## Never write to a remote
 
@@ -395,8 +398,11 @@ All current documents report zero.
 ## Where things go
 
 ```
-README.md                       front page: what this is, where to read, how to contribute a dump.
-                                Kept short on purpose; the status content moved to docs/status.md
+README.md                       front page, written for somebody looking for a replacement for
+                                Logitech's software rather than for a contributor: what the problem
+                                is, what FreeHarmony will be, where the work stands in plain words,
+                                and links out for the detail. No architecture numbers, no licence
+                                argument, no call for dumps, per decision 10 in docs/roadmap.md
 docs/status.md                  where the work stands: what reads, what the corpus holds per
                                 architecture, the headline findings. A snapshot, not the plan
 docs/roadmap.md                 THE plan of record: decisions, milestones, sequence

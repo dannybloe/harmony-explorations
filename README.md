@@ -1,137 +1,92 @@
 # harmony-explorations
 
-Collecting everything needed to program a Logitech Harmony remote again, without Logitech.
+**Logitech switched off the software that programmed these remotes. This project is working out how to
+program them without it.**
 
-## The problem
+## If you came here looking for a replacement
 
-On 28 May 2025 Logitech discontinued the Harmony Remote Software, the desktop program that 40 of
-these remotes were set up with. `members.harmonyremote.com` now serves a discontinuation notice and
-nothing else. `reference/models.md` lists the models it covered.
+On 28 May 2025 Logitech discontinued the Harmony Remote Software, the desktop program that 40 of these
+remotes were set up with. A remote that already works keeps working, because everything it needs is
+stored inside it. What you can no longer do is **change** it: add a device, rename an activity, teach it
+a button off an old remote. There is nothing left to do that with.
 
-The newer service, MyHarmony, does still answer, and in August 2026 it still compiled a config and
-synced it to a remote on this bench. That is worth being accurate about, because this project has
-twice written it off on paper and been wrong. But it is a hosted service nobody here controls, it can
-be switched off without notice, and it does not cover the older models at all.
+The newer service, MyHarmony, is still running as of August 2026 and still programmes the remotes it
+supports. It does not cover the older models at all, and it is somebody else's server, so how long it
+stays up is not up to you.
 
-So the position today is simple. A config already on a remote can be read off it. **Nobody outside
-Logitech can generate a new one.** That is the thing to fix.
+So the position is simple. The configuration sitting on your remote can be read off it. Nobody outside
+Logitech can make a new one.
 
-## Where this is going
+## What we are trying to build
 
-[FreeHarmony](https://github.com/dannybloe/FreeHarmony): a local, cross platform application that
-reads the config off your remote, lets you edit its devices and activities, learns infrared codes
-from your old remotes, and writes it back. Nothing hosted, nothing to switch off. Version 1 will be
-read only, because the first write to an irreplaceable device should not be a guess.
+[FreeHarmony](https://github.com/dannybloe/FreeHarmony): a program on your own computer that reads the
+configuration off your remote, lets you change your devices and activities, learns codes from your old
+remotes, and writes it back. Nothing hosted, nothing that can be switched off later.
 
-That application does not exist yet, and it cannot be built until the config format is understood.
+It does not exist yet, and it cannot be written until the file a remote stores is properly understood.
+Working that out is what this repository is for: the understanding, and the code that does the reading.
 
-## What this repository is for
+**The first version will only read, never write.** These remotes cannot be bought new and a bad write
+can turn one into a brick, so the first thing this project ever writes to a remote will not be a guess.
 
-**Collecting the knowledge and the code that FreeHarmony will be built on.** Two kinds of thing, kept
-together on purpose:
+## Where we stand
 
-* the **documents**, which work out what every byte of a config means and why anyone should believe it
-* the **libraries** that read a remote and parse a config, which are those documents in executable
-  form, so a finding cannot land in a document and quietly never reach the code
-
-The route is generating config files, never modifying firmware. A config is a program in a data
-format and the firmware is its interpreter, so the firmware is the authoritative specification for
-every config field. Nothing has ever been written to a remote here.
-
-This repository is MIT. FreeHarmony is AGPL-3.0 and consumes these libraries.
-
-## Progress and findings
+Four remotes are on the bench, a Harmony One, a second One kept as a spare, a Harmony 600 and a Harmony
+525, plus configuration files that other owners have sent in.
 
 | | |
 |---|---|
-| [docs/status.md](docs/status.md) | **where the work stands**: what reads today, and what the corpus of dumps holds |
-| [docs/findings.md](docs/findings.md) | every finding, numbered, with its evidence and its corrections |
-| [docs/config-format.md](docs/config-format.md) | the format as a specification, with anything unconfirmed marked as such |
-| [docs/roadmap.md](docs/roadmap.md) | the plan: what gets answered next, and why that one |
+| Read the whole configuration off a remote | **Works.** What comes off matches a backup of that unit byte for byte |
+| Work out what is in it | **Done** for every configuration file in the collection, to the last byte |
+| List your devices and activities, with their names | **Works.** The names are recovered from the pictures the remote draws on its own screen, because that is the only place it keeps them |
+| Take a configuration apart and rebuild it identically | **Works.** This is the test that has to pass before it is safe to change anything |
+| Change something and write it back | **Not yet.** The next big step, and deliberately switched off |
+| Learn a code from an old remote | Understood in principle, not built |
 
-Five architectures are covered and six are not. The analysis was produced by an AI and is published as
-such, so every claim is written to be checkable: a confirmed fact lands as a structured spec entry, a
-written argument, and a regression test, and mistakes are corrected in place rather than quietly, so
-the rest can be calibrated against them.
+**Nothing has ever been written to any remote here.** Reading is all that has happened, and the code
+refuses to write unless somebody deliberately turns that on.
 
-## Contribute: send a dump of your remote
+## The details, for anyone who wants them
 
-**This is the bottleneck.** Almost every open question here is open because nobody involved owns the
-remote that would answer it. One config off a model nobody has seen is worth more than another week of
-reading the firmware we already have.
+| | |
+|---|---|
+| [docs/status.md](docs/status.md) | where the work stands today |
+| [docs/findings.md](docs/findings.md) | every finding, numbered, with the evidence for it |
+| [docs/config-format.md](docs/config-format.md) | the file format written up as a specification |
+| [docs/roadmap.md](docs/roadmap.md) | the plan, and the decisions behind it |
 
-Most wanted right now:
+The analysis was produced by an AI and is published as such, so all of it is written to be checked
+rather than trusted: every conclusion carries a test that fails if it stops being true, and the mistakes
+are corrected in the open, where they happened, so the rest can be judged against them.
 
-* **a Harmony 890 or 895 firmware dump.** Two 890 configs are here and cannot be read, and no firmware
-  exists to settle them. This is the hardest blocker in the project.
-* **anything at all from a 610, 620, 628, 659, 670, 676, 680 or 688.** Eight models, no sample.
-* also unseen: the 745, the 748, the 768, the 720, the 785, and any 55x.
+## Contributing
 
-[docs/status.md](docs/status.md#what-the-corpus-holds) has the full table of what is covered.
+**Configuration files are not being collected at the moment.** More files would answer questions about
+models nobody here owns, and the thing that matters next is getting FreeHarmony working on the remotes
+that are already here. When there is an application for the files to be useful to, that changes.
 
-### How
+Issues and discussions are very welcome for anything else, especially a reading here that disagrees with
+what your own remote does. Please do not attach a configuration or a firmware file to an issue: this
+repository is public and neither can be published in it.
 
-[concordance](https://github.com/jaymzh/concordance) is the tool. Install it, plug the remote in with
-its USB cable, and run these where you want the files:
-
-```sh
-concordance -c                              # the config. Writes config.EZHex
-concordance -i > harmony-600-info.txt       # what the remote says it is. Prints to the screen, so
-                                            # redirect it, and end the name in -info.txt
-concordance -b -f                           # the firmware. Writes firmware.bin. Only worth it on the
-                                            # models listed below
-```
-
-**Then email the files to freeharmony@bloemeland.nl, and say which model they came off.** Anything you
-remember about what was set up on it is worth having too: a description is what lets a structure in the
-file be matched to something in the world, and it is much harder to reconstruct later.
-
-Please do not attach a dump to an issue or a discussion. This repository is public, and a config is
-Logitech generated data including an infrared database compiled from Logitech's own, so it cannot be
-published here. That is also why no firmware or config is in this repository. Issues and discussions
-are very welcome for everything else.
-
-**Lower case flags only.** `-c` reads the config off the remote and `-C` writes one to it; `-f` reads
-the firmware and `-F` overwrites it. The flag you want and the flag that reflashes your remote differ
-by one shift key. `-r` reboots it. And never pass a bare filename: `concordance somefile` works out
-for itself what the file is for, and for a config that means writing it to the remote.
-
-**The firmware dump only works on some models.** On the 51x, 52x, 55x, 720, 785, 880, 882 and 885 it
-returns the complete firmware. On the One, 600, 650 and 700 it returns something that is not usable
-firmware, which is a defect in concordance's architecture table rather than a problem with your remote.
-Nobody knows which it does on an 890 or an 895, so if you have one, running it is itself useful. It is
-a read command either way.
-
-**What is in the files, so you can decide.** A config holds an equipment inventory and the device and
-activity names you chose, and no account data; that was checked rather than assumed. The `-i` output
-holds your remote's serial number and unique identifiers. Firmware is Logitech's own code and holds
-nothing of yours. Nothing you send is published or committed anywhere, and if you would rather not
-send the serial number, leave the `-i` output out and just say the model.
+If you do read your own remote with [concordance](https://github.com/jaymzh/concordance), one warning is
+worth more than the rest: **use lower case flags only.** `-c` reads the configuration off the remote and
+`-C` writes one to it, `-f` reads the firmware and `-F` overwrites it, so the flag you want and the flag
+that reflashes your remote differ by one shift key.
 
 ## Working on the code
 
-Python 3 for the analysis, Node 24 for the TypeScript packages. Neither needs anything else installed:
-every dependency is pinned to an exact version and the test runner is Node's own.
+Python 3 for the analysis, Node 24 for the rest. Nothing else has to be installed.
 
 ```sh
-make all        # the suites, the document checks and the TypeScript packages
-make corpus     # what the local collection of dumps holds
-make coverage   # the byte accounting: how much of each config is understood
+make all        # the test suites and the document checks
+make coverage   # how much of each configuration file is understood
 ```
 
-Firmware images and configs are not in this repository, so the tests that need them skip cleanly
-without them. [reference/checksums.md](reference/checksums.md) says how to obtain and verify the files
-yourself. `CLAUDE.md` is the working brief and documents the layout and the conventions in full.
-
-## Safety
-
-These remotes are irreplaceable and this project treats them that way. Read paths only: writing is
-behind a flag that is off, the rails are enforced in the library rather than in a user interface, and
-no write has ever been performed. If you are experimenting with your own remote, take a full dump
-first and keep it.
+Configuration and firmware files are not in this repository, so the tests that need them skip without
+them. `CLAUDE.md` is the working brief and describes the layout and the conventions in full.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Logitech, Harmony and the model names are trademarks of Logitech
-International S.A., used here only to identify the hardware. This project is not affiliated with
-Logitech.
+MIT, see [LICENSE](LICENSE). Logitech and Harmony are trademarks of Logitech International S.A., used
+here only to say which hardware this is about. This project is not affiliated with Logitech.

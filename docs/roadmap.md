@@ -84,7 +84,9 @@ names forty models whose accounts it closed, and **not one of them is arch 12 or
 are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
 remotes from the platform that came after. `reference/models.md` has the list and the mapping.
 
-That gap is what step 8 exists for.
+That gap is what step 8 exists for, and **as of 12 August 2026 it is not what the project spends its
+time on**: decision 10 below puts the application first and stops soliciting dumps. The gap is real, the
+table above stays honest about it, and closing it is not the next job.
 
 ## Context
 
@@ -168,6 +170,19 @@ image is a second sample rather than a stand in. Other models are iterated on la
    MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
    argument and the ledger of everything currently believed on the client's word alone are in
    `docs/host-client.md`.
+
+10. **The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
+   posture the front page had carried.* No general call for dumps goes out, and the eight unseen models
+   and the arch 10 firmware stop being wanted things. The reasoning is the shape of the cost rather than
+   the value: broadening the corpus answers questions about hardware nobody here owns, each answer costs
+   a firmware read or a bench session, and none of it is on the path to an application that works on the
+   four remotes already here. The realistic alternative was several more months of analysis and still no
+   FreeHarmony. **What replaces it**: the two people already contributing, who have both offered, are
+   asked for a specific measurement when a specific question needs one, which is how sections 90, 101,
+   122 and 123 were settled anyway. The contribution probe of step 8 stays built and stays unadvertised.
+   **What this does not license** is loosening any rail, since the write target is still one spare
+   Harmony One, or quietly narrowing a claim to the bench: a reading that only holds on arch 12 and arch
+   14 still says so.
 
 ## Facts established during planning
 
@@ -984,7 +999,13 @@ Ongoing rather than a step, and it applies to every step above: a confirmed fact
 or in the TypeScript package's own suite. `CLAUDE.md` and `README.md` state the product goal and
 these decisions so a future session does not relitigate them.
 
-### Step 8: the contribution probe, so other people's remotes count. Tier 1 done
+### Step 8: the contribution probe, so other people's remotes count. Tier 1 done, and parked
+
+**Parked on 12 August 2026 by decision 10**, which puts the application ahead of a wider corpus. The
+probe is built and it stays built; what stops is asking anybody to run it. Nothing below is retracted,
+because the argument for the probe was never that a wider corpus is worthless: it is that broadening it
+costs bench time this project has now decided to spend on FreeHarmony instead. What replaces the general
+call is a specific request to a specific person when a specific question needs one.
 
 The coverage section above is the argument: two architectures of at least eleven, and no way to
 learn anything about the other nine without hardware nobody here owns. The probe is how somebody
