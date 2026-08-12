@@ -35,8 +35,16 @@
  * Nothing here goes near a remote. It produces bytes; writing them is gated by
  * `packages/usb/src/rails.ts` and version 1 of the application is read only.
  */
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, pageListCopies, taggedList } from './sections.ts';
-import type { TaggedEntry } from './sections.ts';
+import {
+  ACTION_LIST_INDEX_OPCODE,
+  CLOCK_STATE_MAXIMA,
+  modeRecords,
+  pageListCopies,
+  stateRecords,
+  taggedList,
+} from './sections.ts';
+import type { StateRecord, TaggedEntry } from './sections.ts';
+import { FIRMWARE_STATE_VARIABLES } from './inventory.ts';
 import {
   CLOCK_FIELDS_OFFSET,
   CLOCK_FIELD_COUNT,
@@ -104,6 +112,22 @@ export const FIELD_RULES: readonly FieldRule[] = [
     section: 21,
     why: 'derived from the date as days since 1 January 2000 modulo 7, and both parsers refuse a '
       + 'record where it disagrees, so a stamped date has to bring its own weekday',
+  },
+  {
+    field: 'base slot 13 records 0 to 6, the firmware clock',
+    policy: 'recompute-on-save',
+    section: 130,
+    why: 'the same moment as base slot 3, stored a second time as seven state variables, so a '
+      + 'carried over config carries a stale clock in two places and stamping one of them is a '
+      + 'config that disagrees with itself about when it was built',
+  },
+  {
+    field: "base slot 13 record 6's maximum",
+    policy: 'recompute-on-save',
+    section: 130,
+    why: 'the year\'s maximum is that year plus one where the other six maxima are fixed, so it is '
+      + 'the one `second` a save writes: stamping the year alone would put the variable past its own '
+      + 'declared range on any config saved more than a year after it was built',
   },
   {
     field: 'base slot 1 version word',
@@ -258,17 +282,87 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
 }
 
 /**
- * Apply the edits **as a save**: everything `applyEdits` does, plus base slot 3's timestamp.
+ * The edits that stamp base slot 13's clock, which is the **second** place the build time is stored.
  *
- * The difference from `applyEdits` is one field and it is not cosmetic. See `FIELD_RULES`, and see
- * `docs/findings.md` section 111 for the measurement that put the timestamp in it: a power cycled
- * Harmony One reads its config's build timestamp as the time of day.
+ * Section 130: base slot 13's first seven records are the firmware's own clock, and each one's
+ * `first` is the corresponding field of base slot 3's timestamp in every container of the corpus.
+ * So a config carried over with its old records carries a stale clock in two places, not one, and
+ * `timestampEdit` on its own leaves the remote's seconds, minute and hour set to whenever the input
+ * was generated.
+ *
+ * **Seven values are stamped and an eighth is derived**, which is the part that is easy to miss. The
+ * year's maximum is that year plus one, in all nineteen containers measured, where the other six
+ * maxima are fixed. Stamp the year without it and a config saved more than a year after it was built
+ * declares a value outside the variable's own declared range: built in 2023 the year record is 23 with
+ * a maximum of 24, and saving it in 2026 would write 26 into a range that stops at 24. Nothing here
+ * has watched a remote mishandle that, so it is a rail taken from the format's own rule rather than
+ * from a measured failure, which is the weaker of the two kinds and is marked as such.
+ *
+ * The seven values come from `clockRecordFields`, the same encoder base slot 3 uses, rather than from
+ * a second decomposition of the same string: that is the rule this project bans two copies of.
+ *
+ * The transitions those records carry are **not** touched. They are structural, not date derived: the
+ * seven records carry the same skeleton in every container, a minute, hour, day and month each with
+ * one transition in the register machine band and the other three with none, and the only part that
+ * varies is which action list a `0x7F` names.
+ */
+export function clockStateEdits(c: Container, builtAt: string): Edit[] {
+  const fields = clockRecordFields(builtAt);
+  if (fields === undefined) {
+    throw new EditError(
+      `${builtAt} is not a timestamp this record can hold: YYYY-MM-DDTHH:MM:SS, `
+      + `year ${CLOCK_FIRST_YEAR} to ${CLOCK_LAST_YEAR}, and a date that exists`,
+    );
+  }
+  const records = stateRecords(c);
+  if (records === undefined) {
+    throw new EditError('this container has no base slot 13, so a save cannot stamp its clock');
+  }
+  if (records.length < CLOCK_FIELD_COUNT) {
+    throw new EditError(
+      `base slot 13 holds ${records.length} records and the clock is the first ${CLOCK_FIELD_COUNT}`,
+    );
+  }
+  const out: Edit[] = [];
+  for (let index = 0; index < CLOCK_FIELD_COUNT; index += 1) {
+    const record = records[index] as StateRecord;
+    const name = `slot-13 ${FIRMWARE_STATE_VARIABLES[index] ?? index}`;
+    const most = CLOCK_STATE_MAXIMA[index];
+    // Whatever declares a different range is not the clock, so it is refused rather than stamped:
+    // the same reasoning as refusing a base slot 3 that does not hold a readable clock record. The
+    // year is deliberately not checked, because its maximum is what this repairs.
+    if (most !== undefined && record.second !== most) {
+      throw new EditError(
+        `${name} declares a maximum of ${record.second} where the clock's is ${most}, `
+        + 'so this is not the record we think it is',
+      );
+    }
+    const off = c.blobOffsetOf(record.address);
+    if (off === undefined) throw new EditError(`${name} is outside the container`);
+    const value = fields[index] as number;
+    // `first` at +0x00 and `second` at +0x02, so the year's two fields are one adjacent four byte
+    // edit rather than two, which also keeps them from being reported as separate changed runs.
+    const bytes = most === undefined
+      ? [value & 0xff, value >>> 8, (value + 1) & 0xff, (value + 1) >>> 8]
+      : [value & 0xff, value >>> 8];
+    out.push({ start: off, bytes: Uint8Array.from(bytes), owner: name });
+  }
+  return out;
+}
+
+/**
+ * Apply the edits **as a save**: everything `applyEdits` does, plus every field the build time owns.
+ *
+ * The difference from `applyEdits` is eight values in two structures and it is not cosmetic. See
+ * `FIELD_RULES`, and see `docs/findings.md` section 111 for the measurement that started it, a power
+ * cycled Harmony One reading its config's build timestamp as the time of day, and section 130 for the
+ * seven state records that hold the same moment a second time.
  *
  * An empty edit list is meaningful here where it is the identity in `applyEdits`: it means "write
- * this config back unchanged", and the timestamp still moves, because the file is being saved now.
+ * this config back unchanged", and the clock still moves, because the file is being saved now.
  */
 export function saveEdits(c: Container, edits: Edit[], builtAt: string): EditReport {
-  return applyEdits(c, [...edits, ...timestampEdit(c, builtAt)]);
+  return applyEdits(c, [...edits, ...timestampEdit(c, builtAt), ...clockStateEdits(c, builtAt)]);
 }
 
 /**

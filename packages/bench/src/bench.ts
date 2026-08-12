@@ -275,6 +275,22 @@ export class Bench {
     const c = parse(blob);
     const groups = irGroups(c) ?? [];
     const labels = keyLabels(c);
+    // **Once, and indexed by the page it starts from.** `activities` is a four hop chain, section 121,
+    // and calling it inside the per page loop below made this whole view take up to sixteen seconds on
+    // a Harmony 700 config: 289 pages times the whole chain. A click that takes that long looks like a
+    // click that did nothing, which is how it was found. The map is the fix and the hoist is the point.
+    const starting = new Map<number, ActivityView[]>();
+    for (const one of activities(c)) {
+      const list = starting.get(one.page) ?? [];
+      list.push({
+        activity: one.activity,
+        name: one.name,
+        page: one.page,
+        scans: one.scans,
+        devices: one.devices,
+      });
+      starting.set(one.page, list);
+    }
     const periodOf = (group: number, code: number): number | undefined => {
       const address = groups[group]?.addresses[code];
       if (address === undefined) return undefined;
@@ -307,16 +323,10 @@ export class Bench {
       builtAt: c.builtAt,
       idle: idleActivityValue(c),
       devices: deviceViews,
-      activities: activities(c).map((one) => ({
-        activity: one.activity,
-        name: one.name,
-        page: one.page,
-        scans: one.scans,
-        devices: one.devices,
-      })),
+      activities: [...starting.values()].flat(),
       pages: pageScans(c).flatMap((scans, index) => {
         if (scans.length === 0) return [];
-        const starts = activities(c).filter((one) => one.page === index);
+        const starts = starting.get(index) ?? [];
         return [{
           index,
           keys: scans.map((scan) => {

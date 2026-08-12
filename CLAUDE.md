@@ -886,6 +886,15 @@ over the runner-up before trusting its answer.
   wide tagged list has no entry to carry a flags byte, so inferring the form from the entries makes
   it look narrow and the length comes out a byte short. Same family as the two entries above about
   field splits: when the data could tell you and a header does tell you, believe the header.
+* **A reader called inside a per page loop is a quadratic, and every test still passes.** The bench's
+  inventory view called `activities`, which is a four hop chain, once per mode page, so inspecting a
+  Harmony 700 config took 15.6 seconds against 0.4 after hoisting it. Nothing failed: the view was
+  correct, and a click that takes fifteen seconds with no indication reads as a click that did nothing,
+  which is how the owner found it while using the bench. Second one of these here, after an O(n squared)
+  `indexOf` in a test. So hoist a whole corpus reader out of any loop over pages or keys, and where the
+  cost is user facing put a coarse wall clock ceiling on it: `packages/bench/test/bench.test.ts` has one
+  at seven times the measured figure, which catches an accidental quadratic and says nothing about a
+  slow machine.
 * **"Prefer arch 14, then port" is a rule about reading code, not about finding data.** Base slots
   17 and 2 both stayed unnamed for a while because arch 14 never seeks them: the touch hit map is
   arch 12 only and so is the log area's writer. If a slot looks empty on the architecture you are
@@ -974,7 +983,11 @@ produce a config the remote accepts and mishandles.
   value a variable holds when the config is generated, and records 0 to 6 are second, minute, hour, day,
   weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21
   containers. So a carried over config carries a stale clock in two places, not one, and the seven must
-  never be reused for anything else, which section 74 had already said of 3, 5 and 6.
+  never be reused for anything else, which section 74 had already said of 3, 5 and 6. **It is eight
+  values and not seven**, which building the rail found rather than reading it: six maxima are constants
+  and the year's is that year plus one, so stamping the year without its maximum leaves a config
+  declaring a value outside a variable's own range. `clockStateEdits` in `packages/codec/src/edit.ts`,
+  and it refuses a base slot 13 whose other six maxima are not the clock's.
 * **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote sets
   its clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. The
   rail holds on the other architectures too without needing their measurement, because stamping the

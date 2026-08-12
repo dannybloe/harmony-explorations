@@ -22,6 +22,9 @@ import {
   applyEdits,
   archSlot,
   clockRecordFields,
+  clockStateEdits,
+  stateRecords,
+  CLOCK_FIELD_COUNT,
   localTimestamp,
   saveEdits,
   timestampEdit,
@@ -243,23 +246,107 @@ function clockFieldsAt(c: ReturnType<typeof parse>): number | undefined {
   return off === undefined ? undefined : off + 2;
 }
 
-test('a save changes the timestamp and the trailer, and nothing else', skipUnless(...SAVE_SAMPLES),
+test('a save changes the two clocks and the trailer, and nothing else', skipUnless(...SAVE_SAMPLES),
   () => {
     for (const name of SAVE_SAMPLES) {
       const c = parse(load(name) as Uint8Array);
       const { bytes, changed } = saveEdits(c, [], WHEN);
       const fields = clockFieldsAt(c);
       assert.ok(fields !== undefined, `${name} has a base slot 3`);
-      // Exactly two runs: the seven timestamp bytes and the two checksum bytes. Stated as the whole
-      // list, so anything else a save decided to touch fails here.
-      assert.deepEqual(changed, [
+      const records = stateRecords(c);
+      assert.ok(records !== undefined, `${name} has a base slot 13`);
+      // The whole list, stated: base slot 3's seven bytes, one run per clock state record, and the
+      // checksum. Anything else a save decided to touch fails here, which is what this test is for.
+      //
+      // A field already holding the value being stamped is not in the list, because `changed` reports
+      // runs that **differ**, so each expected run is intersected with what actually moved. That is
+      // not a weakening: the runs are still exact, and the alternative, asserting a count, is what
+      // let a save touch a neighbouring byte in the first place.
+      const expected = [
         { start: fields, length: 7 },
+        ...records.slice(0, CLOCK_FIELD_COUNT).map((record, index) => ({
+          start: c.blobOffsetOf(record.address) as number,
+          // The year's `first` and `second` are adjacent, so it is four bytes where the rest are two.
+          length: index === CLOCK_FIELD_COUNT - 1 ? 4 : 2,
+        })),
         { start: bytes.length - TRAILER_CHECKSUM_OFFSET, length: 2 },
-      ], name);
+      ].sort((a, b) => a.start - b.start);
+      for (const run of changed) {
+        const inside = expected.some(
+          (one) => run.start >= one.start && run.start + run.length <= one.start + one.length,
+        );
+        assert.ok(inside, `${name}: a save changed 0x${run.start.toString(16)}, which no rule claims`);
+      }
+      // And the positive: every expected field really did move, unless it already held that value.
+      for (const one of expected) {
+        const same = c.blob.slice(one.start, one.start + one.length)
+          .every((byte, at) => byte === bytes[one.start + at]);
+        const touched = changed.some((run) => run.start < one.start + one.length
+          && one.start < run.start + run.length);
+        assert.ok(touched || same, `${name}: 0x${one.start.toString(16)} was not stamped`);
+      }
       // And it reads back as the moment asked for, through the reader rather than the writer.
       assert.equal(parse(bytes).builtAt, WHEN, name);
     }
   });
+
+test('a save stamps base slot 13 with the same moment as base slot 3', skipUnless(...SAVE_SAMPLES),
+  () => {
+    // Section 130's rail. The seven records hold the build time a second time, so a save that moved
+    // only base slot 3 would leave a config that disagrees with itself about when it was generated,
+    // and an arch 12 remote sets its clock from one of the two.
+    for (const name of SAVE_SAMPLES) {
+      const c = parse(load(name) as Uint8Array);
+      const saved = parse(saveEdits(c, [], WHEN).bytes);
+      const records = stateRecords(saved);
+      assert.ok(records !== undefined, `${name} has a base slot 13`);
+      const encoded = clockRecordFields(WHEN);
+      assert.ok(encoded !== undefined);
+      // Read back through `stateRecords` and compared against the same encoder base slot 3 uses,
+      // which is the point: one derivation of the seven values, checked from the other side.
+      for (let index = 0; index < CLOCK_FIELD_COUNT; index += 1) {
+        assert.equal(records[index]?.first, encoded[index],
+          `${name}: state record ${index} after a save`);
+      }
+      // The eighth value, and the only `second` a save writes: the year's maximum is that year plus
+      // one, so a config saved years after it was built would otherwise declare a value out of range.
+      const year = records[CLOCK_FIELD_COUNT - 1];
+      assert.equal(year?.second, (encoded[CLOCK_FIELD_COUNT - 1] as number) + 1,
+        `${name}: the year's maximum did not move with it`);
+      assert.ok((year?.first as number) <= (year?.second as number), `${name}: year past its maximum`);
+    }
+  });
+
+test('a stale year is repaired rather than left out of range', skipUnless(SAMPLE), () => {
+  // The case the rail exists for, made concrete. `one_config` was built in 2023, so its year record
+  // is 23 with a maximum of 24; saving it in 2026 writes 26, and a maximum of 24 would then be a
+  // value outside the variable's own declared range. Nothing has watched a remote mishandle that, so
+  // the claim is only that the file obeys the format's own rule, section 130's table.
+  const c = parse(load(SAMPLE) as Uint8Array);
+  const before = stateRecords(c)?.[CLOCK_FIELD_COUNT - 1];
+  assert.ok(before !== undefined);
+  assert.equal(before.second, before.first + 1, 'the input already obeys the rule');
+  const saved = stateRecords(parse(saveEdits(c, [], '2030-01-02T03:04:05').bytes) as never);
+  const after = saved?.[CLOCK_FIELD_COUNT - 1];
+  assert.equal(after?.first, 30);
+  assert.equal(after?.second, 31);
+});
+
+test('a base slot 13 that is not the clock is refused rather than stamped', skipUnless(SAMPLE), () => {
+  // The same reasoning as refusing a base slot 3 that holds no readable record: if the first six
+  // maxima are not a second, a minute, an hour, a day, a weekday and a month, then whatever this is,
+  // it is not ours to overwrite. Provoked by moving one maximum, which is the cheapest lie to tell.
+  const c = parse(load(SAMPLE) as Uint8Array);
+  const record = stateRecords(c)?.[2];
+  assert.ok(record !== undefined);
+  const at = (c.blobOffsetOf(record.address) as number) + 2;
+  assert.equal(c.blob[at], 23, 'the hour record declares 23');
+  const damaged = Uint8Array.from(c.blob);
+  damaged[at] = 22;
+  assert.throws(() => clockStateEdits(parse(damaged), WHEN), EditError);
+  // And the untouched container still works, so the refusal is about the byte and not the sample.
+  assert.equal(clockStateEdits(c, WHEN).length, CLOCK_FIELD_COUNT);
+});
 
 test('a round trip carries the timestamp and a save does not', skipUnless(SAMPLE), () => {
   // The distinction in one test. Same input, same empty edit list, two operations, and the
@@ -337,8 +424,11 @@ test('every field rule is covered by a test in this file', () => {
   // names are repeated deliberately rather than derived, so a rename has to be made on purpose.
   const covered = new Map<string, string>([
     ['trailer checksum', 'the trailer is recomputed, not carried'],
-    ['base slot 3 build timestamp', 'a save changes the timestamp and the trailer, and nothing else'],
+    ['base slot 3 build timestamp', 'a save changes the two clocks and the trailer, and nothing else'],
     ['base slot 3 day of week byte', 'the stamped weekday is derived, so the readers accept it'],
+    ['base slot 13 records 0 to 6, the firmware clock',
+      'a save stamps base slot 13 with the same moment as base slot 3'],
+    ["base slot 13 record 6's maximum", 'a stale year is repaired rather than left out of range'],
     ['base slot 1 version word', 'a save leaves the carried fields byte identical'],
     ['base slot 2 log area', 'a save leaves the carried fields byte identical'],
     ['a mode page tagged list copy', 'a page list edit writes the copy nothing reads'],

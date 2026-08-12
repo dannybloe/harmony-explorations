@@ -1321,6 +1321,16 @@ which was a Saturday. Base slot 0 names none of the seven in any container.
 **For a writer:** stamp all seven at the moment of writing, the same rail as base slot 3's timestamp.
 A carried over config sets the remote's clock to when the old config was made.
 
+**And record 6's `max` moves with it**, which is eight values written and not seven. Six of the maxima
+are fixed and the year's is that year plus one, so stamping the year alone leaves a config declaring a
+value outside the variable's own range: built in 2023 the record is 23 with a max of 24, and saved in
+2026 it would be 26 in a range that stops at 24. No remote has been watched mishandling that, so this
+is a rail taken from the format's own rule rather than from an observed failure. The transitions those
+records carry are **not** touched: they are the same skeleton in every container, one each on the
+minute, hour, day and month records and none on the other three, and the only part that varies between
+configs is which base slot 10 list a `0x7F` names. `clockStateEdits` in `packages/codec/src/edit.ts`,
+and `CLOCK_STATE_MAXIMA` in `src/sections.ts` is the table it both writes and checks against.
+
 `max` is what **base slot 0's name for the variable ends in, plus one**, in all 250 named variables
 of the corpus, which is what settles it. Every non negative `from` and `to` is inside `0` to `max`,
 every instruction has a reading, and every one of the 439 that name a base slot 10 list by index

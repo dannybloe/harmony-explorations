@@ -220,6 +220,32 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
   }
 });
 
+test('the biggest config in the lab is inspected in well under a second',
+  skipUnless('h700_config'), () => {
+    // **A timing test, deliberately, and the reason is that nothing else here can see this defect.**
+    // The `pages` view called `activities` inside its per page loop, so a Harmony 700 config with 289
+    // pages ran the four hop activity chain 289 times and took 15.6 seconds to inspect. Every
+    // assertion in this file still passed: the view was correct, it was just useless, because a click
+    // that takes fifteen seconds with no indication reads as a click that did nothing. That is how it
+    // was found, by the owner trying to use the bench.
+    //
+    // The ceiling is coarse on purpose. It is roughly seven times the measured 0.4 seconds, so it says
+    // nothing about a slow machine or a cold cache and everything about an accidental quadratic, which
+    // is the only failure mode worth a wall clock assertion.
+    const bench = new Bench(deps({
+      configNames: () => ['h700_config'],
+      loadConfig: (name: string) => (name === 'h700_config' ? load('h700_config') : undefined),
+    }));
+    const started = performance.now();
+    const view = bench.inventory('h700_config');
+    const took = performance.now() - started;
+    // The work is real, so this is not passing by returning nothing: the sample has 289 mode pages and
+    // the view has to reach every one of them.
+    assert.ok(view.pages.length > 200, `${view.pages.length} pages, so this measured the wrong thing`);
+    assert.ok(view.activities.length >= 5, `${view.activities.length} activities`);
+    assert.ok(took < 3000, `inspecting one config took ${Math.round(took)}ms`);
+  });
+
 test('a screen key on a 525 is labelled by its row, and the page can say so',
   skipUnless('h525_config'), () => {
     // The other route, and the reason the view carries the source rather than only the text: on

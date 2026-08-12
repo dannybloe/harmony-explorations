@@ -349,12 +349,32 @@ export interface StateRecord {
    * `to` in the record's own values is inside `0` to here, which is the second closure.
    */
   second: number;
-  /** The `u16` at +0x00. At most `second` in all 735 records, and zero in most, so it reads as an
-   * initial value. **Unconfirmed**: nothing has been traced to it. */
+  /**
+   * The `u16` at +0x00: the value the variable holds **when the config is generated**, section 130.
+   *
+   * At most `second` in all 735 records and zero in most, which is what it looked like before it had
+   * a reading, and section 60 marked it unconfirmed on exactly that basis. Two findings closed it
+   * from different directions: for `CurrentActivityState` it is the idle value, the one no binding
+   * writes, section 120, and for the first seven records it is the corresponding field of base slot
+   * 3's build timestamp in every container, section 130. The generated value and the idle value
+   * coincide for the activity variable because nothing is running when a config is compiled.
+   */
   first: number;
   /** The transitions, decoded. Empty when the record enumerates none. */
   values: StateValue[];
 }
+
+/**
+ * The maxima of base slot 13's first six records, which are the firmware's clock, section 130.
+ *
+ * Fixed, and the same in every container: they describe a second, a minute, an hour, a day of the
+ * month, a day of the week and a zero based month. The **seventh** is not here because it is not
+ * fixed: the year's maximum is that year plus one, so it moves when the year is stamped, which is
+ * the one place a save has to write a `second` and not only a `first`. `edit.ts` reads this table
+ * both to write the year's maximum and to refuse a base slot 13 whose first six disagree, since
+ * whatever that is, it is not the clock.
+ */
+export const CLOCK_STATE_MAXIMA = [59, 59, 23, 30, 6, 11] as const;
 
 /**
  * The record each base slot 13 pointer lands on, in table order.

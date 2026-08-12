@@ -17277,3 +17277,34 @@ in exactly one label, the footer that says either "Activities" or "Current Activ
 
 `FIRMWARE_STATE_VARIABLES` in `packages/codec/src/inventory.ts` is the table, `describeChoices` uses it
 to name a screen's condition, and the test walks the corpus asserting all seven against the timestamp.
+
+### Writing them is eight values, not seven, and the eighth was found by implementing the rail
+
+The stamping exists now, `clockStateEdits` in `packages/codec/src/edit.ts`, and building it turned up
+one thing reading could not: **the year's maximum has to move with the year.** Six of the seven maxima
+are constants, 59, 59, 23, 30, 6 and 11 in all nineteen containers of the accounting corpus, and the
+year's is that year plus one, which is in the table above. So a save that stamped only the seven
+`first` fields would leave a config declaring a value outside a variable's own range as soon as it is
+saved more than a year after it was built: `one_config` is a year record of 23 with a maximum of 24, and
+saving it today writes 26 into a range that stops at 24.
+
+That is a rail from the format's own rule and not from an observed failure, which is the weaker kind
+and is marked as such here: nothing has watched a remote mishandle a state variable that sits past its
+declared maximum. What makes it worth doing anyway is that the alternative is a file that contradicts
+a table this project published, and the cost is two bytes.
+
+Two things the same work settled, both negatives. The seven records' **transitions are structural**,
+not date derived: every container in the corpus carries the same skeleton, one transition each on the
+minute, hour, day and month records and none on the second, weekday and year, with the register machine
+operands `0xF202`, `0xF205` and `0xF206` identical everywhere and only the `0x7F` operands, which name
+a base slot 10 list, differing per config. So a save leaves them alone. And a base slot 13 whose first
+six maxima are **not** those constants is refused rather than stamped, on the same reasoning as
+refusing a base slot 3 that holds no readable clock record: whatever it is, it is not the clock, and
+overwriting it would be writing into a structure we have misidentified. The year's maximum is
+deliberately exempt from that check, because repairing it is the point.
+
+`CLOCK_STATE_MAXIMA` in `packages/codec/src/sections.ts` is the table, the rules are two entries in
+`FIELD_RULES`, and `packages/codec/test/edit.test.ts` asserts a save moves both clocks and nothing
+else, that the stamped records read back through `stateRecords` as the moment asked for, that a 2030
+save of a 2023 config comes out as 30 with a maximum of 31, and that one moved maximum makes the whole
+stamp refuse.
