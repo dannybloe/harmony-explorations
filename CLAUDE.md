@@ -675,7 +675,7 @@ about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
-Three project skills carry the rituals that are easy to half-perform:
+Four project skills carry the rituals that are easy to half-perform:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
@@ -683,6 +683,9 @@ Three project skills carry the rituals that are easy to half-perform:
   convention for correcting an earlier claim in place.
 * **`probe-remote`**, how to measure a connected remote read only: the rails, which enumeration
   commands actually work on this machine, and where a hardware number has to land.
+* **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
+  pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
+  answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
 
 ```
 make test          run the suite; image-backed tests need a lab directory
