@@ -130,17 +130,33 @@ image is a second sample rather than a stand in. Other models are iterated on la
    TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
    away from `docs/config-format.md`, and the rule that a confirmed fact must land as a regression
    test only bites while the code sits next to the documents. The **application** is a separate
-   repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), AGPL-3.0, consuming these
-   libraries as a pinned git dependency until they are stable enough to publish. The line runs
-   between library and product, not between documents and code. See "The two repositories" in
-   `CLAUDE.md`.
+   repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), GPLv3, consuming these
+   libraries. The line runs between library and product, not between documents and code. See "The two
+   repositories" in `CLAUDE.md`.
 
-   **The consuming half of that is not yet possible and was measured rather than assumed**, on
-   12 August 2026: a git install of this repository resolves no `@harmony/*` package, and Node
-   refuses to strip types for a file inside `node_modules`, so `exports` pointing at `src/index.ts`
-   cannot work for any consumer on any version. The decision stands; what it needs is a root
-   `exports` map naming built files and a `prepare` script that builds them. It is the one structural
-   item before FreeHarmony can start, and `CLAUDE.md` carries the detail.
+   **Its licence is GPLv3 and that is a reversal**, decided on 12 August 2026 while FreeHarmony was
+   still a placeholder with no author but its owner. The Affero variant was chosen here for its network
+   clause and dropped for two better reasons: the application promises no network at all, so the clause
+   guards a case it has excluded, and Affero is a one way door with concordance and harmony-decompiler,
+   whose GPLv3 code can come here while nothing of ours could ever go back. If a shared server is ever
+   built, the clause belongs to that server. `CLAUDE.md` carries the argument.
+
+   **How it consumes them was decided on 12 August 2026 and it is not a git dependency.** *This
+   decision said "as a pinned git dependency" until that was tried and failed twice: a git install of
+   this repository resolves no `@harmony/*` package, and Node refuses to strip types for any file
+   inside `node_modules`, so `exports` pointing at `src/index.ts` cannot work for a consumer on any
+   version.* The endpoint is **published packages**, on the owner's answer to the only question that
+   changes anything: somebody who does not have this repository has to be able to build the
+   application. Until the API stops moving, FreeHarmony declares a **path dependency on the sibling
+   checkout**, which is measured working today where the git route cannot work at all. What publishing
+   needs, an `exports` map and possibly a build, waits on a FreeHarmony decision: a bundler compiles
+   these sources itself and wants no `dist`, an unbundled Electron main process wants one.
+
+   **A hand maintained copy of the codec in FreeHarmony is refused**, by the rule this repository is
+   built on rather than by preference: two copies of a derivation stay two copies until one moves, it
+   has happened here twice, and both times a test could see both copies. Across a repository boundary
+   nothing can. A **generated** vendor copy with a check against a commit is acceptable if
+   distribution ever demands it.
 5. **Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and

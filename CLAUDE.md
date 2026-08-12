@@ -126,7 +126,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 |---|---|---|
 | holds | the API, the evidence, and a bench instrument | the product |
 | that is | `packages/usb` and `packages/codec`, plus `docs/`, `src/harmony/`, `tools/`, `tests/` | Electron shell, interface, packaging |
-| licence | MIT | AGPL-3.0 |
+| licence | MIT | GPLv3 |
 | moves at | the pace of what can be proven | its own pace |
 
 **There is a user interface here too, and it is not the product.** A rough bench instrument, Node
@@ -141,27 +141,61 @@ lands as a structured fact, a written argument and a regression test only works 
 implementing it sits next to the documents. Move the codec out and a finding can land in `docs/`
 and never reach the code.
 
-FreeHarmony is meant to consume `packages/codec` and `packages/usb` as a git dependency pinned to a
-commit, until they are stable enough to publish. MIT flows into AGPL without trouble; nothing flows
+**FreeHarmony gets these as published packages, eventually, and as the folder next door until then.**
+Decided by the owner on 12 August 2026 on one question: somebody who does not have this repository has
+to be able to build the application. That makes publishing the endpoint. It does not make it work
+today, so until the API stops moving FreeHarmony declares a path dependency on the sibling checkout,
+which is what the lab layout already puts there. MIT flows into GPLv3 without trouble; nothing flows
 back.
 
-**That sentence said "consumes" for weeks and it has never worked**, measured on 12 August 2026 by
-installing this repository into an empty project the way FreeHarmony would. Two failures, and the
-second is structural. `@harmony/codec` does not resolve at all: a git install lands the whole tree
-under one `node_modules/harmony-explorations`, and a workspace package name is not an installable
-package. And importing the source by path fails with
-`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`, because **Node refuses to strip types for any file
-inside `node_modules`**, whatever the flag, so `exports` pointing at `./src/index.ts` cannot work for
-a consumer on any version. What is needed is an `exports` map on the **root** package naming built
-`dist` files, a `prepare` script so a git install builds them, since `dist` is gitignored, and the
-two consumed packages no longer `private`. None of that is hard and none of it is done, which makes
-it the one structural item between here and FreeHarmony starting. It is also the reason the boundary
-should be exercised by a probe that installs and imports rather than by this paragraph.
+**There is deliberately no git dependency, and that is a correction.** This paragraph said FreeHarmony
+"consumes `packages/codec` and `packages/usb` as a git dependency pinned to a commit" for weeks as a<!--superseded-->
+statement of fact. It was a plan, and when it was finally tried, by installing this repository into an
+empty project, it failed twice. `@harmony/codec` does not resolve: a git install lands the whole tree
+under one `node_modules/harmony-explorations` and a workspace package name is not an installable
+package. And importing the source by path fails with `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`,
+because **Node refuses to strip types for any file inside `node_modules`**, whatever the flag. That
+second one is structural rather than a slip, so the route is abandoned rather than fixed.
 
-**AGPL for the product is deliberate.** concordance and harmony-decompiler are both GPLv3, so a
-copyleft licence keeps their work available rather than off limits, and GPLv3 permits combining
-with AGPL. The network clause is inert for an application with no network, but anything shared
-between users later would plausibly grow a server, and that is where it does work GPL would not.
+**A path dependency does work, measured the same day**: an empty project declaring
+`"@harmony/codec": "file:../harmony-explorations/packages/codec"` imports 335 exports and parses a
+real arch 14 container, with nothing built and nothing published. It works precisely where the git
+install cannot, because the install is a symlink and Node resolves the real path, which is outside
+`node_modules`.
+
+**What publishing will need is deliberately not built yet**, because one of its inputs is a
+FreeHarmony decision nobody has made: a bundler compiles TypeScript sources itself, in which case
+source only packages are right and a `dist` is dead weight, and an unbundled Electron main process
+needs the opposite. So `exports`, `dist` and dropping `private` wait for that, and the item to carry
+is the boundary itself: whatever it becomes, it should be exercised by a probe that installs and
+imports rather than by a paragraph like this one.
+
+**A hand maintained copy in FreeHarmony is the one route that is refused**, and not on taste: it is
+this repository's oldest rule, that two copies of a derivation are two copies until one of them moves.
+It has already happened twice here, once in the opcode tables that the rule is named after and once in
+base slot 3's day of week, and both were caught because a test could see both copies. Across a repo
+boundary nothing can. If FreeHarmony ever has to vendor the code, it vendors a **generated** copy with
+a check that it matches a commit, which is a dependency wearing a hat rather than a second source.
+
+**GPLv3 for the product is deliberate, and it is a reversal.** This file argued for the Affero
+variant<!--superseded--> until 12 August 2026 on the strength of one clause: a hosted, modified copy
+would have to publish its changes. The reversal rests on two things that outweigh it. FreeHarmony's own
+README promises **no network access at all**, so the clause protects against a case the product has
+already excluded. And the Affero variant is a **one way door with the neighbours**: concordance and
+harmony-decompiler are GPLv3, their code can come here, and nothing of ours could ever go back to
+them, because a GPLv3 project cannot absorb Affero code without relicensing. Given how much this
+project leans on those two, giving something back has to stay possible. The third reason is smaller
+and real: many organisations refuse the Affero variant by policy, including for desktop software, so
+it costs contributors and buys nothing here.
+
+**Where the clause does belong is a server, if one is ever built.** A shared device database would be
+exactly the case for it, and then it is that server's licence, decided when it exists, rather than a
+network clause on an offline application. See the next paragraph for why that is not a plan.
+
+**The choice is cheap now and expensive later**, which is why it was settled at the placeholder stage:
+the owner is the only author, so a change needs nobody's consent. Once anyone else has contributed it
+needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT, and MIT into GPLv3 is
+untroubled in the one direction it has to be.
 
 **A community device database is an idea, not a plan.** It gets worked out when FreeHarmony starts,
 not here and not now. Nothing about its shape, its licence or how contributions would work is
@@ -196,6 +230,9 @@ Binaries live outside this repository, in a `lab` directory alongside it:
 ```
 harmony/
   harmony-explorations/     this repo: code and documents, publishable
+  FreeHarmony/              the application, checked out beside this one on 12 August 2026. Its path
+                            dependency is `../harmony-explorations/packages/codec`, so the sibling
+                            layout is load bearing rather than a convention
   lab/                      private, never in git
     dumps/<person>/<remote>/  concordance dumps, with a META.md each
     firmware/packages/        original Logitech .hfw files
