@@ -16980,3 +16980,147 @@ all 205 pairs of one config. `docs/config-format.md` has the structured form.
 * firmware and legacy software archive: https://www.harmonyremoterepair.com/software-firmware.html
 * safe mode entry procedure, third party and unconfirmed here, section 118:
   https://www.harmonyremoterepair.com/files/theme/Documents/Safe_Mode_Instructions.pdf
+
+## 128. A screen key's label is the text in its place on the screen, and the places are measured
+
+Section 126 named every device and section 120 named every activity, which left the bench
+instrument's button table reading `group 3 #29`: the right answer to a question nobody asks. What a
+person wants there is the word the remote itself draws beside the key. This is that reading, and it
+is the last place in the format where this project could see a name and not say whose it was.
+
+Nothing in the container states it. An infrared record has no name, section 126, and a key binding
+carries a scan code and an action list index and nothing else. So a key's name is the text drawn
+next to it or nothing, and the whole question is what "next to" means.
+
+### A screen key and a keypad key are two populations, and they do not overlap
+
+The first thing to establish is which keys a screen even labels. The container answers it, because
+the two kinds of binding live in different places, section 120: a mode page's tagged list belongs to
+a screen, and a base slot 9 handler set belongs to a running activity. So a scan bound by a page is a
+key the screen speaks for, and a scan bound by a set is a key on the keypad.
+
+The closure is that the two are disjoint. Across the corpus arch 9 (Harmony 525), arch 12 (Harmony
+One) and arch 14 (Harmony 600 and 700) share not one scan code between the two populations, and arch
+8 (Harmony 880) shares exactly one. The census, which is per architecture and not per config:
+
+| | screen keys | keypad keys | configs agreeing |
+|---|---|---|---|
+| arch 8 (Harmony 880) | 5, 6, 7, 8, 44, 45, 46, 48 | 42 others | 6 of 6 |
+| arch 9 (Harmony 525) | 30, 31, 38, 39, and 22 in one config | 39 others | 2, differing by that one |
+| arch 12 (Harmony One) | 43, 44, 48 to 53 | 37 others | 4 of 4 |
+| arch 14 (Harmony 600, 700) | 2, 8, 9, 34 | 41 others | 3 of 3 |
+
+Two of those rows agree with something derived elsewhere. Arch 12's eight are section 125's touch
+codes bar the two side keys: the blocks 48 to 53 and the two touch points 43 and 44 below the
+display. And arch 9's four are exactly the set `reference/silhouettes/h525.svg` narrows the 525's
+soft keys to, which was derived from the firmware's matrix and the config's bound codes without
+looking at a single drawn string.
+
+`softKeyScans` in `packages/codec/src/inventory.ts` derives this per config rather than tabulating
+it, since the container states it.
+
+### On a Harmony One the answer is stated, and the firmware's own rule is the wrong one to use
+
+Arch 12 needs no inference: section 125 read base slot 17, so a key's rectangle is in the file and
+the label is the text inside it. Two corrections were needed to make that work.
+
+**Attribute a label to the nearest region, not to the first one that contains it.** `touchOwner`
+implements the firmware's rule, which returns the first rectangle containing the point, and that is
+right for a touch and wrong for a label: a label's `x` is where its first glyph starts, so a long
+string in the right hand column starts inside the left hand rectangle where the two overlap. Seven
+labels in `one_config` start inside two rectangles, and first match put all seven on the wrong key.
+
+**Several strings in one rectangle are one label.** A label the generator wrapped is two draws, so
+the strings of a region are joined in reading order, which is section 124's second pass by a
+different route.
+
+### Everywhere else the label is in a place the hardware fixes, and the places are measurable
+
+The other three architectures put their soft keys in two columns down the sides of the screen, and
+which row a key belongs to is a property of the remote rather than of the config. That mapping can
+still be measured, because section 121 names an activity **without using geometry at all**: the
+chain from a key through base slot 10 and base slot 9 to `CurrentActivityState` says which activity a
+key starts, and the modes it enters say what that activity is called. So for every key that starts an
+activity we know the label independently, and can then ask where that label is drawn.
+
+The answer is a small table, `SCREEN_ROWS`:
+
+| | rows, at pixel | keys, left then right | line pitch |
+|---|---|---|---|
+| arch 8 (Harmony 880) | 42, 74, 106, 138 | 5/45, 6/46, 7/48, 8/44 | 14 |
+| arch 9 (Harmony 525) | 13, 35 | 39/38, 31/30 | 11 |
+| arch 14 (Harmony 600, 700) | 35, 79 | 2/8, 9/34 | 14 |
+
+An item may wrap onto a second line, so a row is read as a band about a line and a half deep rather
+than as a single line of text.
+
+**Which key of a pair is the left one is settled per architecture and not assumed.** On arch 8 the
+activity route names all eight keys of one page in one sample, four of them drawn at x 3 and four at
+x 70 to 97, so the left column is 5, 6, 7, 8 and the right is 45, 46, 48, 44. On arch 9 the same
+route names three keys and puts the **larger** scan of each pair on the left, so the 525's left
+column is the odd numbered one; that also answers what the silhouette deliberately left open, which
+of matrix columns 6 and 7 is the left. On arch 14 the route only ever names centred labels, so the
+side comes from behaviour instead: the help screens draw "No" at x 5 and "Yes" at x 97, and scan 9's
+action list is the one that differs from screen to screen while scan 34's is byte for byte identical
+on all of them, which is what a retry and a finish look like.
+
+### The rule that suggested itself fits the counts and is wrong
+
+Before this, the obvious rule was that the k-th soft key in ascending scan order takes the k-th row
+of text from the top, on any page where the two counts agree. It was implemented, it looked like it
+worked, and it was refuted by the one page whose answer is known independently.
+
+The Harmony 600's activity menu binds four screen keys and draws four rows of text, so the counts
+agree perfectly. Two of the four assignments are wrong: scans 2 and 8 both belong to the first row
+and 9 and 34 both to the second, while the outer two rows are a title and a footer. A key belongs to
+a **place**, two keys can share one, and a row can belong to no key at all.
+
+That is worth recording for the same reason as the misread field splits in sections 17 and 20: the
+wrong rule produced two right answers out of four and no error anywhere.
+
+### Two closures, one of which uses no text
+
+**A row that draws two items has two keys that do different things.** If a row really is a place with
+a key at each end, then a row showing one item per column must have its two keys bound to different
+action lists, and a row showing one item across must be able to have them bound to the same one. Over
+the corpus, every two item row has keys that differ, with no exception on any architecture, and 50 or
+more one item rows have both keys on the same list. This says nothing about any label text, so it
+tests the row table and the pairing rather than the reading.
+
+**The labels agree with the activity chain on 62 of 63 keys.** That is the calibration for both
+routes at once, and it covers the hit map as well as the row table. The single exception is stated
+rather than worked around: one arch 8 config draws a "1 OF 2" page indicator in the bottom row's
+continuation slot, so that row's label carries it. Nothing in the config says which lines are chrome,
+and a rule that guessed would be worse than a recorded exception.
+
+Two constants make the reading work, and both were found by that calibration failing:
+
+* **A continuation line sits one text line below its own first line**, 11 pixels on arch 9 and 14 on
+  arch 8 and arch 14, where the menu footers that share these bands sit 19 or more below. Four of the
+  five labels that originally disagreed with the activity route were a footer's first line joined
+  onto an item's name, and a 16 pixel limit removes all four.
+* **A column split is the widest gap between adjacent x positions, taken only above 24 pixels.** A
+  wrapped second line is indented by a few pixels and a second column is 50 to 90 away, in every
+  sample here.
+
+### Coverage, and what stays unnamed
+
+Of 6989 screen key bindings in the corpus, 2001 are labelled from the hit map and 4914 from the
+screen rows, which is 98.9%. Of the 3106 that actually send an infrared code, which is what a button
+table shows, 3100 are named. Per architecture the share is above 98% everywhere bar arch 12, at
+96.6%.
+
+The 74 that stay unnamed are not a family:
+
+* 71 are on a Harmony One, where a page binds a code its hit page has a rectangle for and draws no
+  text inside it.
+* One is the 525's fifth screen key, scan 22, bound by a welcome page that labels nothing.
+* Two are arch 8 pages with no text in the row's band.
+
+**A label is a shared string**, section 121, so this is also a writer rail: a screen program draws a
+glyph string at an address that in 12052 of 12052 cases belongs to another program, so renaming one
+key rewrites every draw that names the same string.
+
+`keyLabels` and `SCREEN_ROWS` are in `packages/codec/src/inventory.ts`, the tests are in
+`packages/codec/test/inventory.test.ts`, and the bench instrument's button table shows the label with
+its source, so a row placement is visibly weaker than a stated rectangle.

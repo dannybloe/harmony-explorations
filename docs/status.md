@@ -235,8 +235,20 @@ one group and none reaches two. The independent check is that the label is also 
 53 of 55 exactly, which is base slot 0's ASCII and base slot 7's glyph pixels agreeing through readers
 that share no code. `make devices`.
 
+**And every key a screen labels carries that label**, section 128, which is the last place this project
+could see a name and not say whose it was. Which keys a screen speaks for is stated: a scan bound by a
+mode page is one of them, a scan bound by a base slot 9 set is a key on the keypad, and the two
+populations are disjoint. Where the label is depends on the remote. A Harmony One states it in the hit
+map. Everything else puts its screen keys in two columns beside the display, and those rows are measured
+from where the activities of section 121, named without any geometry, are actually drawn: four rows on a
+Harmony 880, two on a 525, two on a 600 or 700. 98.9% of 6989 screen key bindings get a label, and 3100 of
+the 3106 that send an infrared code do. The rule that suggested itself, the k-th key taking the k-th row
+of text, fits the counts and gets two of four wrong on the 600's own activity menu, so it is recorded as
+refuted rather than quietly dropped.
+
 **So a config now reads as what it is for**: which devices, what each is called, which activities, what
-each is called, which key starts it, which devices it drives and what each button sends.
+each is called, which key starts it, which devices it drives, what each button sends and what the screen
+calls it.
 `packages/codec/src/inventory.ts`, one call, which is the shape FreeHarmony consumes rather than seven
 readers it would have to order itself.
 

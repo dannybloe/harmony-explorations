@@ -207,7 +207,38 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
   // present for some keys and absent for others, in the same table.
   assert.ok(view.keys.some((key) => key.repeatMs !== undefined), 'some keys repeat');
   assert.ok(view.keys.some((key) => key.repeatMs === undefined), 'and some do not');
+  // And the labels, section 128, which is what makes the table read as a remote rather than as a list
+  // of indices. On a Harmony One every one of them is stated by the hit map, so a `row` here would mean
+  // the touch route had stopped answering.
+  // Over the screen keys, since a hard key sits on the keypad and no screen names it.
+  const soft = view.keys.filter((key) => key.where === 'page');
+  const labelled = soft.filter((key) => key.label !== undefined);
+  assert.ok(labelled.length / soft.length > 0.95, `${labelled.length} of ${soft.length}`);
+  for (const key of labelled) {
+    assert.equal(key.labelSource, 'touch');
+    assert.ok((key.label as string).trim().length > 0);
+  }
 });
+
+test('a screen key on a 525 is labelled by its row, and the page can say so',
+  skipUnless('h525_config'), () => {
+    // The other route, and the reason the view carries the source rather than only the text: on
+    // everything but a Harmony One the label comes from the measured screen rows, section 128, which is
+    // a reading of where the keys are rather than something the config states. The page dims it for
+    // exactly that reason, so a caller that dropped the field would silently present the two as equal.
+    const bench = new Bench(deps({
+      configNames: () => ['h525_config'],
+      loadConfig: (name: string) => (name === 'h525_config' ? load('h525_config') : undefined),
+    }));
+    const view = bench.inventory('h525_config');
+    const labelled = view.keys.filter((key) => key.label !== undefined);
+    assert.ok(labelled.length > 50, `only ${labelled.length} keys are labelled`);
+    for (const key of labelled) assert.equal(key.labelSource, 'row');
+    // A hard key is not labelled at all, since no screen names the keys around it.
+    for (const key of view.keys) {
+      if (key.where === 'set') assert.equal(key.label, undefined, `scan ${key.scan}`);
+    }
+  });
 
 test('a config whose skin the table knows names its model', skipUnless('h525_config'), () => {
   // The contrast with the assertion above, and the reason the view carries both fields: a Harmony

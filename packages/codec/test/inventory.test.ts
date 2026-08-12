@@ -30,6 +30,11 @@ import {
   characterMap,
   idleActivityValue,
   KEY_EVENT_PRESS,
+  keyLabels,
+  softKeyScans,
+  SCREEN_ROWS,
+  touchOwner,
+  touchPageOf,
   modePages,
   screenStrings,
   taggedList,
@@ -783,4 +788,205 @@ test('the composed inventory says the same as the readers it composes', skipWith
     if (whole.devices.length > 0) checked += 1;
   }
   assert.ok(checked >= 13, `enough containers to mean something, got ${checked}`);
+});
+
+test('a screen key and a keypad key never share a scan code', skipWithoutLab(), () => {
+  // Section 128's founding measurement, and the reason `softKeyScans` is derived rather than tabulated:
+  // a mode page's tagged list belongs to a screen and a base slot 9 set belongs to a running activity,
+  // so the two populations should not overlap, and they do not. One scan on arch 8 is the only
+  // exception in the corpus. The census itself is asserted because a wrong entry would silently stop a
+  // key being labelled, and the arch 9 set is the one narrowed independently in the silhouette.
+  const census = new Map<number, { soft: Set<number>; hard: Set<number>; shared: Set<number> }>();
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    if (c.architecture === undefined) continue;
+    const seen = census.get(c.architecture)
+      ?? { soft: new Set<number>(), hard: new Set<number>(), shared: new Set<number>() };
+    for (const scan of softKeyScans(c)) seen.soft.add(scan);
+    for (const key of keyCodes(c)) if (key.where === 'set') seen.hard.add(key.scan);
+    census.set(c.architecture, seen);
+  }
+  let shared = 0;
+  for (const [architecture, seen] of census) {
+    for (const scan of seen.soft) if (seen.hard.has(scan)) shared += 1;
+    assert.ok(seen.hard.size > 20, `arch ${architecture} should bind many keypad keys`);
+  }
+  assert.equal(shared, 1, 'exactly one scan is bound both ways anywhere in the corpus');
+  const soft = (architecture: number): number[] => [...(census.get(architecture)?.soft ?? [])]
+    .sort((a, b) => a - b);
+  assert.deepEqual(soft(8), [5, 6, 7, 8, 44, 45, 46, 48]);
+  assert.deepEqual(soft(9), [22, 30, 31, 38, 39], 'the four the 525 silhouette narrows to, plus one');
+  assert.deepEqual(soft(12), [43, 44, 48, 49, 50, 51, 52, 53], 'the touch codes of section 125');
+  assert.deepEqual(soft(14), [2, 8, 9, 34]);
+  // The set is per architecture and not per config, which is what makes it a property of the hardware
+  // rather than of a generator's mood: six arch 8 configs agree exactly, four arch 12 ones do, three
+  // arch 14 ones do. **Arch 9 is the exception and it is an addition, not a disagreement**: one 525
+  // config binds a fifth, scan 22, which is column 6 of the group above scan 30, so it is a key in the
+  // same column as two of the four rather than somewhere else entirely.
+  const perConfig = new Map<number, Set<string>>();
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    if (c.architecture === undefined) continue;
+    const seen = perConfig.get(c.architecture) ?? new Set<string>();
+    seen.add(softKeyScans(c).join(','));
+    perConfig.set(c.architecture, seen);
+  }
+  assert.equal(perConfig.get(8)?.size, 1, 'every arch 8 config labels the same keys');
+  assert.equal(perConfig.get(12)?.size, 1, 'and every arch 12 one');
+  assert.equal(perConfig.get(14)?.size, 1, 'and every arch 14 one');
+  assert.equal(perConfig.get(9)?.size, 2, 'while the two 525 configs differ by that one scan');
+});
+
+test('a Harmony One labels its soft keys from the hit map, and by the nearest region not the first',
+  skipUnless('one_config'), () => {
+    // The stated route, and the control that matters: `touchOwner` is the firmware's rule, the first
+    // rectangle containing the point, which is right for a touch and wrong for a label. A label's x is
+    // where its first glyph starts, so a long string in the right hand column starts inside the left
+    // hand rectangle where the two overlap. If this test stops finding those cases, the labels have
+    // silently moved to the wrong keys.
+    const c = parse(load('one_config') as Uint8Array);
+    const labels = keyLabels(c);
+    const bindings = keyCodes(c).filter((key) => key.where === 'page');
+    const named = bindings.filter((key) => labels.get(`${key.index}:${key.scan}`) !== undefined);
+    assert.ok(named.length / bindings.length > 0.95,
+      `${named.length} of ${bindings.length} soft keys are labelled`);
+
+    // The cases the two rules disagree about: a label whose start point is inside two rectangles.
+    const pages = modePages(c);
+    const drawn = screenStrings(c, characterMap(c));
+    let overlapping = 0;
+    for (const page of pages) {
+      const areas = touchPageOf(c, page)?.areas ?? [];
+      for (const one of drawn) {
+        if (one.program !== page.program || one.text.trim().length === 0) continue;
+        const containing = areas.filter((area) => touchOwner([area], one.x, one.y) !== undefined);
+        if (containing.length > 1) overlapping += 1;
+      }
+    }
+    assert.ok(overlapping >= 7, `only ${overlapping} labels start inside two rectangles`);
+  });
+
+test('the labels agree with the activity names derived a different way', skipWithoutLab(), () => {
+  // The calibration for both routes, and the only one there is: section 121's chain names an activity
+  // from the modes it enters, which uses no geometry at all, so wherever it and a drawn label both have
+  // an opinion about the same key they must agree. 62 of 63 do, on all four architectures.
+  //
+  // **The exception is recorded rather than worked around**: `arch8_config_885` draws a "1 OF 2" page
+  // indicator in the bottom row's continuation slot, so that row's label carries it. Nothing in the
+  // config says which lines are chrome, and a rule that guessed would be worse than a stated exception.
+  let agree = 0;
+  const disagreed: string[] = [];
+  const perSource = new Map<string, number>();
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const labels = keyLabels(c);
+    for (const activity of activityNames(c)) {
+      if (activity.name === undefined) continue;
+      for (const scan of activity.scans) {
+        const label = labels.get(`${activity.page}:${scan}`);
+        if (label === undefined) continue;
+        if (label.text === activity.name) {
+          agree += 1;
+          perSource.set(label.source, (perSource.get(label.source) ?? 0) + 1);
+        } else {
+          disagreed.push(`${name} page ${activity.page} scan ${scan} by ${label.source}`);
+        }
+      }
+    }
+  }
+  assert.ok(agree >= 62, `only ${agree} keys agree`);
+  assert.deepEqual(disagreed, ['arch8_config_885 page 40 scan 44 by row'], 'the known exception, alone');
+  // And both routes are calibrated, not just the stated one.
+  assert.ok((perSource.get('touch') ?? 0) >= 8, 'the hit map is checked');
+  assert.ok((perSource.get('row') ?? 0) >= 45, 'and so are the screen rows');
+});
+
+test('a row with two items has two keys that do different things', skipWithoutLab(), () => {
+  // The structural closure behind `SCREEN_ROWS`, and it is independent of every label text: if a row
+  // really is a place on the screen with a key at each end, then a row drawing two items must have its
+  // two keys bound to different action lists, and a row drawing one must be able to have them bound to
+  // the same one. Every two item row in the corpus has keys that differ, with no exception anywhere.
+  let twoItems = 0;
+  let twoItemsSame = 0;
+  let oneItemSame = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const rows = SCREEN_ROWS[c.architecture ?? -1];
+    if (rows === undefined) continue;
+    const lists = c.actionLists() ?? [];
+    const labels = keyLabels(c);
+    modePages(c).forEach((page, index) => {
+      const bound = new Map<number, number>();
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode === ACTION_LIST_INDEX_OPCODE) bound.set(entry.tag & 0x3f, entry.operand);
+      }
+      for (const row of rows) {
+        const left = bound.get(row.left);
+        const right = bound.get(row.right);
+        if (left === undefined || right === undefined) continue;
+        const first = labels.get(`${index}:${row.left}`);
+        const second = labels.get(`${index}:${row.right}`);
+        if (first === undefined || second === undefined) continue;
+        const sameList = JSON.stringify(lists[left]) === JSON.stringify(lists[right]);
+        if (first.text === second.text) {
+          if (sameList) oneItemSame += 1;
+        } else {
+          twoItems += 1;
+          if (sameList) twoItemsSame += 1;
+        }
+      }
+    });
+  }
+  assert.ok(twoItems >= 1000, `only ${twoItems} rows draw two items`);
+  assert.equal(twoItemsSame, 0, 'two items always mean two different actions');
+  assert.ok(oneItemSame >= 50, `and one item can mean one action, seen ${oneItemSame} times`);
+});
+
+test('every key a screen labels gets a label, on every architecture', skipWithoutLab(), () => {
+  // The coverage claim of section 128, as a floor per architecture rather than a corpus total, since a
+  // total hides an architecture that stopped working. The unlabelled remainder is 74 keys of 6989, and
+  // all but three of them are on a Harmony One, whose pages can bind a code their hit page has a
+  // rectangle for and no text in.
+  const per = new Map<number, { named: number; total: number }>();
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    if (c.architecture === undefined) continue;
+    const labels = keyLabels(c);
+    const seen = per.get(c.architecture) ?? { named: 0, total: 0 };
+    modePages(c).forEach((page, index) => {
+      const bound = new Set((taggedList(c, page.list)?.entries ?? [])
+        .filter((entry) => entry.opcode === ACTION_LIST_INDEX_OPCODE)
+        .map((entry) => entry.tag & 0x3f));
+      for (const scan of bound) {
+        seen.total += 1;
+        if (labels.has(`${index}:${scan}`)) seen.named += 1;
+      }
+    });
+    per.set(c.architecture, seen);
+  }
+  for (const [architecture, seen] of per) {
+    const share = seen.named / seen.total;
+    assert.ok(share > (architecture === 12 ? 0.94 : 0.98),
+      `arch ${architecture} labels ${seen.named} of ${seen.total}`);
+  }
+  assert.deepEqual([...per.keys()].sort((a, b) => a - b), [8, 9, 12, 14], 'all four architectures');
+});
+
+test('a label wrapped onto a second line is one label', skipUnless('one_config'), () => {
+  // Two draws inside one rectangle are one key's label over two lines, so they are joined in reading
+  // order. Without this a wrapped label reads as whichever line happened to come first.
+  const c = parse(load('one_config') as Uint8Array);
+  const joined = [...keyLabels(c).values()].filter((label) => label.text.includes(' '));
+  assert.ok(joined.length >= 7, `only ${joined.length} labels span more than one draw`);
+  for (const label of joined) assert.ok(label.text.trim() === label.text, 'and they are trimmed');
 });

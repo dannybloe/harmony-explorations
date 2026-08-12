@@ -828,7 +828,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 127 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 128 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1145,6 +1145,26 @@ pixel rows 33, 87 and 141, one or two across and never three, plus a bar from 19
 screen and a key at each side, so 48 to 53 are the blocks, 43 and 44 the points and 46 and 47 the keys.
 **Which code lands where is per page**, in the order the rectangles are stored, so section 121's proof
 holds for the codes too.
+
+**Every key a screen labels now carries that label**, section 128, which is what turns the button table
+from `group 3 #29` into a word. Two populations first: a scan bound by a **mode page** is a key the screen
+speaks for and a scan bound by a **base slot 9 set** is a key on the keypad, and the two are **disjoint**,
+sharing no code at all on arch 9 (Harmony 525), arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
+and exactly one on arch 8 (Harmony 880). Then the place: on a One base slot 17 states the rectangle, so the
+label is the text inside it, attributed to the **nearest** region rather than the firmware's own first
+match, which is right for a touch and wrong for a label since a long right hand string starts inside the
+left hand rectangle. Elsewhere the keys are two columns beside the screen and the rows are **measured**
+from where the activities section 121 names without geometry are drawn: four rows on arch 8, two on arch 9
+and two on arch 14, with the left of each pair settled per architecture and not assumed. 98.9% of 6989
+screen key bindings, and 3100 of the 3106 that send a code.
+
+**The rule that suggested itself fits the counts and is wrong**, and it is the lesson of the section: the
+k-th key in ascending scan order taking the k-th row of text pairs four keys with four rows on the 600's
+own activity menu and gets two of them wrong, because two keys share a row and the outer rows are chrome.
+A key belongs to a **place**. Two closures hold the reading up, one of which reads no text at all: every
+two item row in the corpus has its two keys on **different** action lists, with no exception, and the
+labels agree with the activity chain on 62 of 63 keys, the exception being a "1 OF 2" page indicator drawn
+in the bottom row's continuation slot and left in rather than special cased.
 
 **Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
 way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is

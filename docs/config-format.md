@@ -1496,6 +1496,31 @@ every tag in every sample is a press, `0x80`, and the scan codes are model speci
 on architecture 14; 43, 44 and 48 to 53 on architecture 12; 30, 31, 38 and 39 on architecture 9;
 5 to 8, 44 to 46 and 48 on architecture 8.
 
+**Those are the keys the screen labels, and the two populations are disjoint**, section 128. A scan
+bound here is a key the screen speaks for; a scan bound by a base slot 9 handler set is a key on the
+keypad, and across the corpus the two share no code at all on architectures 9, 12 and 14 and exactly
+one on architecture 8. One arch 9 config binds a fifth screen key, scan 22, on a page that labels
+nothing.
+
+**A screen key's label is the text drawn in its place**, section 128, and the place comes from two
+sources. On architecture 12 base slot 17 states it: the key's rectangle, with the label attributed to
+the **nearest** region rather than the first one containing its start point, and several strings in one
+region joined in reading order. Elsewhere the keys sit in two columns beside the screen and the rows
+are measured, from where activities whose names section 121 derives without geometry are drawn:
+
+| architecture | rows, at pixel row | keys, left then right | line pitch |
+|---|---|---|---|
+| 8 | 42, 74, 106, 138 | 5/45, 6/46, 7/48, 8/44 | 14 |
+| 9 | 13, 35 | 39/38, 31/30 | 11 |
+| 14 | 35, 79 | 2/8, 9/34 | 14 |
+
+A row's band is about a line and a half deep, since an item may wrap; a continuation line is at most
+16 pixels below the line it continues, which is what keeps a menu footer out of a label. A row holds
+one item across, belonging to both its keys, or one per column, split at the widest gap between
+adjacent x positions when that gap is at least 24 pixels. 2001 labels come from the hit map and 4914
+from this table, 98.9% of every screen key binding in the corpus, and they agree with the activity
+chain on 62 of the 63 keys where both have an opinion.
+
 **The controlled pair closes it.** The owner's account of the one change includes two new additional
 buttons. Slot 8 grew by 8 bytes, an entry is 4, the record count is unchanged, and exactly one
 record went from two entries to four. [findings.md](findings.md) section 27.

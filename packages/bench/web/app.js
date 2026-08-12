@@ -253,7 +253,7 @@ async function showInventory(name) {
   }
 
   const keys = clear($('keys'));
-  row(keys, [el('th', 'in'), el('th', 'key'), el('th', 'sends'), el('th', 'repeat, ms')]);
+  row(keys, [el('th', 'in'), el('th', 'key'), el('th', 'label'), el('th', 'sends'), el('th', 'repeat, ms')]);
   for (const key of inv.keys) {
     const device = inv.devices[key.group]?.name ?? `group ${key.group}`;
     row(keys, [
@@ -261,6 +261,11 @@ async function showInventory(name) {
       // which is where the volume keys are.
       el('td', `${key.where} ${key.index}`, 'mono dim'),
       el('td', key.event === 2 ? `scan ${key.scan}` : `handler ${key.tag ?? key.scan}`, 'mono'),
+      // The label a screen draws beside the key, and how it was attributed, since a Harmony One states
+      // the answer in its hit map and everything else is placed by the measured screen rows.
+      key.label === undefined
+        ? el('td', 'no label', 'dim')
+        : el('td', key.label, key.labelSource === 'touch' ? '' : 'dim'),
       el('td', `${device} #${key.code}${key.sends > 1 ? ` and ${key.sends - 1} more` : ''}`, 'mono'),
       key.repeatMs === undefined
         ? el('td', 'does not repeat', 'dim')

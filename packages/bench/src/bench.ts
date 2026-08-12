@@ -15,6 +15,7 @@ import {
   irGroups,
   irRepeatPeriod,
   keyCodes,
+  keyLabels,
   idleActivityValue,
   parse,
   summary,
@@ -105,6 +106,16 @@ export interface KeyView {
   readonly sends: number;
   /** The repeat period of the first code, milliseconds, or undefined where it does not repeat. */
   readonly repeatMs: number | undefined;
+  /**
+   * The label the screen draws for this key, where it has one. Section 128.
+   *
+   * Only a page binding can have one, since a set binding is a key on the keypad and the screen does not
+   * label it. `labelSource` says how it was attributed, and the page shows it, because a label read off
+   * a Harmony One's own hit map is stated and one placed by the screen row table is a reading of the
+   * hardware's layout.
+   */
+  readonly label: string | undefined;
+  readonly labelSource: string | undefined;
 }
 
 export interface InventoryView {
@@ -230,6 +241,7 @@ export class Bench {
     if (blob === undefined) throw new Error(`no config called ${name} in the lab`);
     const c = parse(blob);
     const groups = irGroups(c) ?? [];
+    const labels = keyLabels(c);
     const periodOf = (group: number, code: number): number | undefined => {
       const address = groups[group]?.addresses[code];
       if (address === undefined) return undefined;
@@ -271,6 +283,7 @@ export class Bench {
       })),
       keys: keyCodes(c).map((key) => {
         const first = key.codes[0] as { group: number; code: number };
+        const label = key.where === 'page' ? labels.get(`${key.index}:${key.scan}`) : undefined;
         return {
           where: key.where,
           index: key.index,
@@ -280,6 +293,8 @@ export class Bench {
           code: first.code,
           sends: key.codes.length,
           repeatMs: periodOf(first.group, first.code),
+          label: label?.text,
+          labelSource: label?.source,
         };
       }),
     };

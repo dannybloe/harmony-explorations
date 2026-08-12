@@ -22,8 +22,9 @@ import {
   taggedList,
 } from './sections.ts';
 import { characterMap, screenStrings } from './text.ts';
-import { touchOwner, touchPageOf } from './touch.ts';
+import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
+import type { TouchArea } from './tables.ts';
 import type { StateRecord } from './sections.ts';
 
 /**
@@ -1044,4 +1045,286 @@ export function inventory(c: Container): Inventory {
   const idle = idleActivityValue(c);
   if (idle !== undefined) out.idle = idle;
   return out;
+}
+
+/**
+ * The scan codes this config's screens label, meaning its soft keys.
+ *
+ * **Derived rather than tabulated**, section 128, because the container states it: a mode page's tagged
+ * list belongs to a screen, so a scan bound there is a key that screen labels, and a base slot 9 set
+ * belongs to a running activity, so a scan bound there is a key on the keypad. The closure is that the
+ * two are **disjoint**: across the corpus arch 9 (Harmony 525), arch 12 (Harmony One) and arch 14
+ * (Harmony 600 and 700) share not one scan between the two, and arch 8 (Harmony 880) shares exactly
+ * one. The census is 8 scans on arch 8, 5 on arch 9, 8 on arch 12 and 4 on arch 14, and it is per
+ * architecture rather than per config: six arch 8 configs agree exactly, as do four arch 12 ones and
+ * three arch 14 ones. Two independent agreements, both partial and both worth having: arch 12's eight
+ * are section 125's touch codes bar the two side keys, and arch 9's include the four that
+ * `reference/silhouettes/h525.svg` narrows its soft keys to by a route through the firmware.
+ */
+export function softKeyScans(c: Container): number[] {
+  const found = new Set<number>();
+  for (const page of modePages(c)) {
+    for (const entry of taggedList(c, page.list)?.entries ?? []) {
+      if (entry.opcode === ACTION_LIST_INDEX) found.add(entry.tag & SCAN_CODE_MASK);
+    }
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
+/**
+ * A screen row: the two keys beside it, and the band of pixel rows its label is drawn in.
+ *
+ * **Measured, not laid out by eye**, section 128. Every architecture but arch 12 (Harmony One) puts its
+ * soft keys in two columns down the side of the screen, and the row a key belongs to is fixed by the
+ * hardware rather than stated by the config. The bands come from where the labels of activities are
+ * actually drawn, which section 121 attributes without using geometry at all: on arch 8 (Harmony 880)
+ * four rows at pixel 42, 74, 106 and 138, on arch 14 (Harmony 600 and 700) two at 35 and 79, and on
+ * arch 9 (Harmony 525) two at 13 and 35. An item may wrap onto a second line, so a band is roughly a
+ * row and a half rather than a line.
+ *
+ * **Which key is the left one is settled per architecture and not assumed.** On arch 8 the activity
+ * route names all eight keys of one page, four at x 3 and four at x 70 to 97, so the left column is
+ * `5, 6, 7, 8`. On arch 9 the same route names three keys, and it puts the **larger** scan of each pair
+ * on the left, so the 525's left column is the odd one; that also answers what
+ * `reference/silhouettes/h525.svg` deliberately left open, which of matrix columns 6 and 7 is the left.
+ * On arch 14 the route only ever names centred labels, so the side comes from behaviour instead: the
+ * help screens draw "No" at x 5 and "Yes" at x 97, and scan 9's action list is the one that differs per
+ * screen while scan 34's is identical on all of them, which is what a retry and a finish look like.
+ */
+export interface ScreenRow {
+  left: number;
+  right: number;
+  /** Pixel rows `[from, to)`, which is where this row's label and its wrapped continuation are drawn. */
+  from: number;
+  to: number;
+}
+
+export const SCREEN_ROWS: Readonly<Record<number, readonly ScreenRow[]>> = {
+  8: [
+    { left: 5, right: 45, from: 36, to: 62 },
+    { left: 6, right: 46, from: 68, to: 94 },
+    { left: 7, right: 48, from: 100, to: 126 },
+    { left: 8, right: 44, from: 132, to: 158 },
+  ],
+  9: [
+    { left: 39, right: 38, from: 8, to: 30 },
+    { left: 31, right: 30, from: 30, to: 52 },
+  ],
+  14: [
+    { left: 2, right: 8, from: 29, to: 55 },
+    { left: 9, right: 34, from: 73, to: 99 },
+  ],
+};
+
+/**
+ * The gap in pixels that separates the two columns of a row from one wrapped label's own indentation.
+ *
+ * A row holds either one item across the screen or one per column, and the two cases have to be told
+ * apart from the drawing: 24 pixels is comfortably above the few pixels a second line is indented by
+ * and comfortably below the 50 to 90 that separate two columns in every sample here.
+ */
+const COLUMN_GAP = 24;
+
+/**
+ * How far below a label's line its wrapped continuation can start, in pixels.
+ *
+ * A band is wide enough to hold a two line label and that means it is also wide enough to catch a line
+ * of something else. The two are told apart by the line pitch: a continuation sits one text line below
+ * its own first line, 11 pixels on arch 9 (Harmony 525) and 14 on arch 8 (Harmony 880) and arch 14
+ * (Harmony 600 and 700), where the menu footers that share these bands sit 19 or more below. Four of
+ * the five labels that disagreed with the activity route before this test were a footer's first line
+ * joined onto an item's name.
+ */
+const LINE_GAP = 16;
+
+/** A drawn label attributed to a button. */
+export interface KeyLabel {
+  /** Index into `modePages`. Only a page binding can have a label; a set binding is a hard key. */
+  index: number;
+  scan: number;
+  /** The text, with a wrapped label's rows joined by a space. */
+  text: string;
+  /**
+   * How it was attributed, and the two are not equally strong.
+   *
+   * `touch` is stated: base slot 17 gives the key's rectangle and the label is the text inside it, so
+   * it exists on arch 12 (Harmony One) alone. `row` is `SCREEN_ROWS`, whose band is measured and whose
+   * side is established per architecture, so it is a reading of the hardware's layout rather than of
+   * the config. Neither is the chain of section 121, which names an activity's key without geometry of
+   * any kind: that is `activityNames`, and it is what these two are calibrated against rather than a
+   * third route here, since it agrees with them on 62 of the 63 keys where both have an opinion.
+   */
+  source: 'touch' | 'row';
+}
+
+/** Reading order: down the screen, then across it. */
+function inReadingOrder(a: ScreenString, b: ScreenString): number {
+  return a.y === b.y ? a.x - b.x : a.y - b.y;
+}
+
+/**
+ * The label drawn for each button that a screen labels, keyed by `<page>:<scan>`.
+ *
+ * This is what turns "device 0, code 29" into a word on a page, and there is no other source for it:
+ * an infrared record has no name, section 126, so a button's name is the text beside it or nothing.
+ *
+ * **A label is attributed to the nearest region, not to the first one that contains it.**
+ * `touchOwner` implements the firmware's rule, which is the first rectangle containing the point, and
+ * that is right for a touch and wrong for a label: a label's `x` is where its first glyph starts, so a
+ * long string in the right hand column starts inside the left hand rectangle where the two overlap.
+ * Nearest centre fixes seven labels in `one_config` that first match put on the wrong key, and it is
+ * the same seven either way, since a region a label is wholly inside is also the nearest.
+ *
+ * **Off arch 12 the route is `SCREEN_ROWS`**, and the rule it replaced is worth stating because it fits
+ * the counts and is wrong: the k-th soft key in ascending scan order taking the k-th row of text from
+ * the top. On the 600's own activity menu that pairs four keys with four rows perfectly and gets two of
+ * them wrong, because scans 2 and 8 both belong to the first row and 9 and 34 both to the second, while
+ * the outer two rows of text are a title and a footer. A key belongs to a **place** on the screen, and
+ * the places are two columns of rows, so that is what is measured.
+ */
+export function keyLabels(c: Container): Map<string, KeyLabel> {
+  const out = new Map<string, KeyLabel>();
+  const pages = modePages(c);
+  const map = characterMap(c);
+  const drawn = screenStrings(c, map);
+  pages.forEach((page, index) => {
+    const texts = drawn
+      .filter((one) => one.program === page.program && one.text.trim().length > 0)
+      .sort(inReadingOrder);
+    if (texts.length === 0) return;
+    const areas = touchPageOf(c, page)?.areas;
+    if (areas === undefined || areas.length === 0) return;
+    // The stated route. Group the page's strings by the region each belongs to, then join the strings
+    // of one region in reading order, which is what a label wrapped onto a second line is.
+    const perArea = new Map<number, ScreenString[]>();
+    for (const one of texts) {
+      const inside = areas.filter((area) => panelInside(area, one));
+      const nearest = nearestArea(inside, one);
+      if (nearest === undefined) continue;
+      const acc = perArea.get(nearest.code) ?? [];
+      acc.push(one);
+      perArea.set(nearest.code, acc);
+    }
+    for (const [scan, found] of perArea) {
+      out.set(`${index}:${scan}`, {
+        index,
+        scan,
+        text: found.map((one) => one.text.trim()).join(' '),
+        source: 'touch',
+      });
+    }
+  });
+  // The row route, for every architecture whose keys sit beside the screen rather than on it. A row's
+  // band is read for the text it holds, which is split into columns only where there is a real gap,
+  // since a label wrapped onto a second line is indented by a few pixels and a second column is not.
+  const rows = SCREEN_ROWS[c.architecture ?? -1] ?? [];
+  if (rows.length > 0) {
+    pages.forEach((page, index) => {
+      const bound = new Set(
+        (taggedList(c, page.list)?.entries ?? [])
+          .filter((entry) => entry.opcode === ACTION_LIST_INDEX)
+          .map((entry) => entry.tag & SCAN_CODE_MASK),
+      );
+      if (bound.size === 0) return;
+      const texts = distinct(drawn.filter((one) => one.program === page.program
+        && one.text.trim().length > 0));
+      for (const row of rows) {
+        if (!bound.has(row.left) && !bound.has(row.right)) continue;
+        const on = texts.filter((one) => one.y >= row.from && one.y < row.to).sort(inReadingOrder);
+        if (on.length === 0) continue;
+        const columns = byColumn(on);
+        // One item across the row belongs to both its keys, since either of them chooses it. Two items
+        // belong to one key each, and that is the only place the side of the row matters.
+        const [first, second] = columns.map(contiguous);
+        for (const [scan, found] of [[row.left, first], [row.right, second ?? first]] as const) {
+          if (!bound.has(scan) || found === undefined || found.length === 0) continue;
+          const key = `${index}:${scan}`;
+          if (out.has(key)) continue;
+          out.set(key, {
+            index,
+            scan,
+            text: found.map((one) => one.text.trim()).join(' '),
+            source: 'row',
+          });
+        }
+      }
+    });
+  }
+  return out;
+}
+
+/**
+ * A column's lines from its first one down, stopping at the first line that is too far below the last.
+ *
+ * This is what keeps a menu's footer out of the bottom row's label: a wrapped second line is one text
+ * line below, a footer is a line and a half or more.
+ */
+function contiguous(on: readonly ScreenString[]): ScreenString[] {
+  const out: ScreenString[] = [];
+  for (const one of on) {
+    const last = out[out.length - 1];
+    if (last !== undefined && one.y - last.y > LINE_GAP) break;
+    out.push(one);
+  }
+  return out;
+}
+
+/** The same string drawn twice at the same place is one label, which is what a page's copies are. */
+function distinct(texts: readonly ScreenString[]): ScreenString[] {
+  const seen = new Set<string>();
+  return texts.filter((one) => {
+    const key = `${one.x}:${one.y}:${one.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * A row's strings split into its columns, in reading order, one entry per column.
+ *
+ * The split is the widest gap between adjacent x positions, taken only if it is at least `COLUMN_GAP`,
+ * so a two line label whose second line starts a few pixels in stays one item and a left and a right
+ * item do not. A row never holds three, which is why this returns one entry or two.
+ */
+function byColumn(on: readonly ScreenString[]): ScreenString[][] {
+  const xs = [...new Set(on.map((one) => one.x))].sort((a, b) => a - b);
+  let at = -1;
+  let widest = 0;
+  for (let i = 1; i < xs.length; i += 1) {
+    const gap = (xs[i] as number) - (xs[i - 1] as number);
+    if (gap <= widest) continue;
+    widest = gap;
+    at = i;
+  }
+  if (widest < COLUMN_GAP || at < 0) return [[...on]];
+  const split = xs[at] as number;
+  return [on.filter((one) => one.x < split), on.filter((one) => one.x >= split)];
+}
+
+/** Whether a drawn string's own start point is inside a rectangle, in panel coordinates. */
+function panelInside(area: TouchArea, one: ScreenString): boolean {
+  const point = panelPoint(one.x, one.y);
+  return (
+    point.x >= area.x &&
+    point.x < area.x + area.width &&
+    point.y >= area.y &&
+    point.y < area.y + area.height
+  );
+}
+
+/** Of the rectangles a point is inside, the one whose centre is closest to it. */
+function nearestArea(areas: readonly TouchArea[], one: ScreenString): TouchArea | undefined {
+  const point = panelPoint(one.x, one.y);
+  let best: TouchArea | undefined;
+  let bestDistance = Infinity;
+  for (const area of areas) {
+    const dx = area.x + area.width / 2 - point.x;
+    const dy = area.y + area.height / 2 - point.y;
+    const distance = dx * dx + dy * dy;
+    if (distance >= bestDistance) continue;
+    bestDistance = distance;
+    best = area;
+  }
+  return best;
 }
