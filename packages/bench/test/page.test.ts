@@ -83,6 +83,61 @@ function deps(): BenchDeps {
   };
 }
 
+test('a click that is working says so, and a click that fails says that', skip, async () => {
+  // **The complaint this is the guard on.** Inspecting a Harmony 700 config took 15.6 seconds, because
+  // the view called a four hop reader once per mode page, and the page showed nothing while it did, so
+  // the report was "no button click does anything". The quadratic has its own test in
+  // `bench.test.ts`; this one is about the other half, that a click is visible even when it is slow.
+  //
+  // The delay is injected here rather than waited for, since the real call is now fast enough that the
+  // busy state would be a race: the route is held open, the state is asserted while the request is in
+  // flight, and then it is let through. That is also why this test can assert the failure path, which
+  // no amount of clicking a working server would reach.
+  const server = createServer(new Bench(deps()), WEB_ROOT);
+  await new Promise<void>((done) => server.listen(0, HOST, done));
+  const { port } = server.address() as AddressInfo;
+  let browser: Browser | undefined;
+  try {
+    browser = await chromium.launch({ executablePath: chrome as string });
+    const page = await browser.newPage();
+    let release: (() => void) | undefined;
+    await page.route('**/api/inventory', async (route) => {
+      await new Promise<void>((go) => { release = go; });
+      await route.continue();
+    });
+    await page.goto(`http://127.0.0.1:${port}/`);
+    const status = page.locator('#config-status');
+
+    await page.getByRole('button', { name: 'inspect' }).first().click();
+    // While it is in flight: the body says it is busy, the line names the config, and the panel that
+    // holds the previous config is down rather than showing one config's devices under another's name.
+    await until(async () => (await page.locator('body').getAttribute('data-busy')) === 'inventory',
+      'the page never said it was busy');
+    assert.match(await status.textContent() ?? '', new RegExp(sample), 'the line does not name it');
+    assert.equal(await page.locator('#inventory').isVisible(), false, 'the old panel stayed up');
+    // And a second click cannot queue behind the first.
+    assert.equal(await page.getByRole('button', { name: 'inspect' }).first().isDisabled(), true);
+
+    release?.();
+    await until(async () => (await page.locator('body').getAttribute('data-busy')) === null,
+      'the busy state never cleared');
+    assert.equal(await status.isVisible(), false, 'the line stayed up after it finished');
+    assert.equal(await page.locator('#inventory').isVisible(), true, 'the panel never came back');
+
+    // The failure path: a refused read has to end up on the page rather than in an empty panel.
+    await page.unroute('**/api/inventory');
+    await page.route('**/api/inventory', (route) =>
+      route.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"gone"}' }));
+    await page.getByRole('button', { name: 'inspect' }).first().click();
+    await until(async () => (await status.textContent() ?? '').includes('gone'),
+      'a refused read said nothing');
+    assert.equal(await page.locator('body').getAttribute('data-busy'), null, 'still busy after a failure');
+  } finally {
+    await browser?.close();
+    await new Promise<void>((done) => server.close(() => done()));
+  }
+});
+
 test('the page draws a screen, and the browser is what says so', skip, async () => {
   const server = createServer(new Bench(deps()), WEB_ROOT);
   await new Promise<void>((done) => server.listen(0, HOST, done));

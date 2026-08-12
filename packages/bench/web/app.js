@@ -196,8 +196,52 @@ async function refreshConfigs() {
   }
 }
 
+/**
+ * Say that something is happening, because a button that says nothing reads as a button that is broken.
+ *
+ * This exists because of a real afternoon: inspecting a Harmony 700 config took 15.6 seconds, since the
+ * view called a four hop reader once per mode page, and the page showed nothing at all while it did.
+ * The owner's report was "no button click does anything", which is exactly right from where he sat. The
+ * quadratic is fixed and inspecting is now under half a second, and this is here anyway: the next slow
+ * thing should look slow rather than look dead.
+ *
+ * `document.body.dataset.busy` carries it as well as the text, because a class on a paragraph is awkward
+ * to assert from a browser test and an attribute on the body is not.
+ */
+function busy(what) {
+  const status = $('config-status');
+  if (what === undefined) {
+    status.hidden = true;
+    status.textContent = '';
+    delete document.body.dataset.busy;
+  } else {
+    status.hidden = false;
+    status.textContent = what;
+    document.body.dataset.busy = 'inventory';
+  }
+  // Every inspect button, so a second click cannot queue a second read behind the first. Disabled
+  // rather than ignored, since a button that looks pressable and is not is the same complaint again.
+  for (const button of $('configs').querySelectorAll('button')) button.disabled = what !== undefined;
+}
+
 async function showInventory(name) {
-  const inv = await api('/api/inventory', { name });
+  // Hidden first, and this is not cosmetic: the panel below holds the **previous** config until the
+  // new one arrives, so leaving it up during a read shows one config's devices under another's name.
+  $('inventory').hidden = true;
+  busy(`reading ${name} and working out what it is for ...`);
+  let inv;
+  try {
+    inv = await api('/api/inventory', { name });
+  } catch (error) {
+    // The failure path is the one that must not be silent. A config the lab has lost, or an
+    // architecture whose readers are gated, ends up here rather than in an empty panel.
+    busy(undefined);
+    const status = $('config-status');
+    status.hidden = false;
+    status.textContent = `${name} could not be read: ${error instanceof Error ? error.message : String(error)}`;
+    return;
+  }
+  busy(undefined);
 
   const head = clear($('inventory-head'));
   for (const [label, value] of [
