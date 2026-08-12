@@ -102,3 +102,8 @@ ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; }
 }
 #screen-view table { flex: 1; }
 #screen-picker select { padding: 0.2rem; background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px; }
+
+/* The conditions under which a screen looks the way it does. A selected one is outlined rather than
+   filled, the same way a selected remote is, so the two panels read alike. */
+#screen-variants { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; margin-top: 0.4rem; }
+#screen-variants button[aria-selected='true'] { outline: 2px solid var(--accent); outline-offset: 2px; }

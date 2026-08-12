@@ -253,6 +253,13 @@ no picture and no glyph unresolved, on all four architectures. It also corrected
 stored high byte first, the only field in the format that is not little endian, and reading it the usual
 way turned a Harmony One's buttons into rainbow stripes.
 
+**And the remote's clock is in the config twice**, section 130, which fell out of drawing the screens: a
+screen switches on the state of the remote, asking which variable that is led to base slot 13's first
+field, and it turns out to be the value a variable holds when the config is generated. Records 0 to 6
+are second, minute, hour, day, weekday, month and year, every one of them equal to the build timestamp
+in all 21 containers. A writer has to stamp them, or the remote's clock comes up set to whenever the old
+config was made.
+
 **So a config now reads as what it is for**: which devices, what each is called, which activities, what
 each is called, which key starts it, which devices it drives, what each button sends and what the screen
 calls it.

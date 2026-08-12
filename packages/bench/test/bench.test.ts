@@ -273,6 +273,33 @@ test('a screen is drawn on the way out, with no file anywhere', skipUnless('one_
   assert.throws(() => bench.screen('one_config', 99999), /no page/);
 });
 
+test('a page that switches on the state of the remote offers every appearance it has',
+  skipUnless('one_config'), () => {
+    // Section 129's variant walk through the bench, and what the interface must not do is show one of
+    // several and stay quiet about it. A Harmony One page that branches has more than one entry, each
+    // with its condition in words, and a page that does not has exactly one with no condition at all.
+    const bench = new Bench(deps({
+      configNames: () => ['one_config'],
+      loadConfig: (name: string) => (name === 'one_config' ? load('one_config') : undefined),
+    }));
+    const branching = bench.variants('one_config', 55);
+    assert.equal(branching.truncated, false);
+    assert.ok(branching.variants.length > 1, 'this page branches');
+    for (const variant of branching.variants) {
+      assert.ok(variant.conditions.length >= 1, `variant ${variant.index} states no condition`);
+      // A condition names a variable and a value, and the variable is named where the config names it.
+      for (const condition of variant.conditions) assert.match(condition, /(=|to) \d+$/);
+    }
+    // The images differ, which is the whole reason for offering the choice.
+    const first = bench.screen('one_config', 55, 0);
+    const second = bench.screen('one_config', 55, 1);
+    assert.notDeepEqual([...first.png], [...second.png], 'two variants that draw the same thing');
+
+    const plain = bench.variants('one_config', 0);
+    assert.deepEqual(plain.variants, [{ index: 0, conditions: [] }]);
+    assert.throws(() => bench.screen('one_config', 55, 99), /no variant/);
+  });
+
 test('a config the lab does not have is refused rather than answered emptily', () => {
   const bench = new Bench(deps());
   assert.throws(() => bench.inventory('nothing_like_this'), /no config called/);

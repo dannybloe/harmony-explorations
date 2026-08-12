@@ -15,8 +15,12 @@ import {
   irGroups,
   irRepeatPeriod,
   keyCodes,
+  describeChoices,
   keyLabels,
   modePages,
+  renderVariants,
+  type Container,
+  type ModePage,
   rasterPng,
   renderPage,
   idleActivityValue,
@@ -313,16 +317,19 @@ export class Bench {
    * `branches` is what the caller must not hide: a page whose program switches on a state variable has
    * more than one appearance and this is the first, section 129.
    */
-  screen(name: string, page: number): { png: Uint8Array; width: number; height: number;
+  screen(name: string, page: number, variant = 0): { png: Uint8Array; width: number; height: number;
     pictures: number; strings: number; branches: number } {
-    const blob = this.deps.loadConfig(name);
-    if (blob === undefined) throw new Error(`no config called ${name} in the lab`);
-    const c = parse(blob);
-    const pages = modePages(c);
-    const chosen = pages[page];
-    if (chosen === undefined) throw new Error(`no page ${page}, the config has ${pages.length}`);
-    const rendered = renderPage(c, chosen);
-    if (rendered === undefined) throw new Error('this architecture has no known display size');
+    const { c, chosen, pages } = this.pageOf(name, page);
+    // Variant 0 is the all first arms path, which is what `renderPage` draws, so the common case does
+    // not pay for the walk.
+    const rendered = variant === 0
+      ? renderPage(c, chosen)
+      : renderVariants(c, chosen.program, variant + 1).variants[variant]?.page;
+    if (rendered === undefined) {
+      throw new Error(variant === 0
+        ? 'this architecture has no known display size'
+        : `page ${page} of ${pages.length} has no variant ${variant}`);
+    }
     return {
       png: rasterPng(rendered.raster),
       width: rendered.raster.width,
@@ -331,6 +338,42 @@ export class Bench {
       strings: rendered.strings,
       branches: rendered.branches,
     };
+  }
+
+  /**
+   * The appearances a page has, with the condition of each in words.
+   *
+   * A page whose program switches on the state of the remote looks different depending on that state,
+   * section 129, and an interface that shows one of them without saying so is lying by omission. So the
+   * conditions are named from base slot 0 where the variable has a name, and by index where it does
+   * not. `truncated` means the list is capped rather than complete.
+   */
+  variants(name: string, page: number): {
+    truncated: boolean;
+    variants: Array<{ index: number; conditions: string[] }>;
+  } {
+    const { c, chosen } = this.pageOf(name, page);
+    const walked = renderVariants(c, chosen.program);
+    return {
+      truncated: walked.truncated,
+      variants: walked.variants.map((one, index) => ({
+        index,
+        conditions: describeChoices(c, one.choices),
+      })),
+    };
+  }
+
+  /** The config and the page both screen calls need, refused rather than defaulted. */
+  private pageOf(name: string, page: number): {
+    c: Container; chosen: ModePage; pages: ModePage[];
+  } {
+    const blob = this.deps.loadConfig(name);
+    if (blob === undefined) throw new Error(`no config called ${name} in the lab`);
+    const c = parse(blob);
+    const pages = modePages(c);
+    const chosen = pages[page];
+    if (chosen === undefined) throw new Error(`no page ${page}, the config has ${pages.length}`);
+    return { c, chosen, pages };
   }
 
   /** Open, ask for the version block, close. The cheapest thing that says which unit this is. */

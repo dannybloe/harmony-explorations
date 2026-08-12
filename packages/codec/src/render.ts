@@ -38,8 +38,10 @@ import {
   bitmapAt,
   bitmapReference,
   screenProgram,
+  screenSwitch,
   transfers,
   type Bitmap,
+  type ScreenCase,
   type ScreenInstruction,
 } from './screen.ts';
 import { IMAGE_PACKED_INK, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
@@ -242,6 +244,89 @@ function drawString(
  * visited is not entered twice, which is what stops a menu that loops back on itself.
  */
 export function renderProgram(c: Container, address: number): RenderedPage | undefined {
+  return run(c, address).page;
+}
+
+/** A branch a screen took, which is what says under what conditions the screen looks like this. */
+export interface ScreenChoice extends ScreenCase {
+  /** The base slot 13 state variable the switch reads. `inventory.ts` turns it into a name. */
+  variable: number;
+  /** How many arms the switch had, so a caller can say one of how many. */
+  arms: number;
+}
+
+export interface ScreenVariant {
+  page: RenderedPage;
+  /** The arms taken, in the order the program met them. Empty for a page that cannot vary. */
+  choices: ScreenChoice[];
+}
+
+/**
+ * Every appearance a page can have, or as many as `limit` allows.
+ *
+ * A screen program switches on the state of the remote, so "the screen of page 45" is not one image:
+ * section 129 counted the branches and drew the first arm of each. This walks the arms instead, and
+ * each variant carries the choices that produced it, so an interface can say **when** a screen looks
+ * like that rather than numbering the pictures.
+ *
+ * Breadth first over the decision prefixes, so variant 0 is always the all first arms one that
+ * `renderProgram` draws, and the ones that differ in a single late decision come next. `truncated`
+ * says the limit cut the list, because a program with several switches has a product of arms and a
+ * caller must not present a capped list as the whole set.
+ */
+export function renderVariants(
+  c: Container,
+  address: number,
+  limit = 12,
+): { variants: ScreenVariant[]; truncated: boolean } {
+  const variants: ScreenVariant[] = [];
+  const queue: number[][] = [[]];
+  let truncated = false;
+  const seen = new Set<string>();
+  while (queue.length > 0) {
+    if (variants.length >= limit) {
+      truncated = true;
+      break;
+    }
+    const prefix = queue.shift() as number[];
+    const { page, choices, forks } = run(c, address, prefix);
+    if (page === undefined) continue;
+    // Two prefixes can reach the same set of choices when a switch is never met, so the taken arms
+    // rather than the prefix are what makes a variant distinct.
+    const key = choices.map((choice) => `${choice.variable}:${choice.target}`).join('/');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    variants.push({ page, choices });
+    for (const fork of forks) queue.push(fork);
+  }
+  return { variants, truncated };
+}
+
+/**
+ * Draw one path through a program.
+ *
+ * `decisions` is the arm to take at the switches met so far, one entry each in encounter order; a
+ * switch past the end of it takes arm 0. `forks` comes back as the prefixes that would take a
+ * different arm at each switch this path met, which is what `renderVariants` explores.
+ */
+function run(
+  c: Container,
+  address: number,
+  decisions: readonly number[] = [],
+): { page: RenderedPage | undefined; choices: ScreenChoice[]; forks: number[][] } {
+  const choices: ScreenChoice[] = [];
+  const forks: number[][] = [];
+  const page = draw(c, address, decisions, choices, forks);
+  return { page, choices, forks };
+}
+
+function draw(
+  c: Container,
+  address: number,
+  decisions: readonly number[],
+  choices: ScreenChoice[],
+  forks: number[][],
+): RenderedPage | undefined {
   const raster = blankScreen(c);
   if (raster === undefined) return undefined;
   const out: RenderedPage = {
@@ -283,7 +368,26 @@ export function renderProgram(c: Container, address: number): RenderedPage | und
         }
       }
       if (!transfers(instruction)) continue;
-      if (instruction.targets.length > 1) out.branches += 1;
+      if (instruction.targets.length > 1) {
+        out.branches += 1;
+        const decided = decisions[choices.length] ?? 0;
+        const switched = screenSwitch(instruction);
+        // Every other arm is a variant somebody may want to see, so it is offered as a prefix.
+        const taken = [...decisions.slice(0, choices.length), decided];
+        for (let arm = 0; arm < instruction.targets.length; arm += 1) {
+          if (arm !== decided) forks.push([...taken.slice(0, -1), arm]);
+        }
+        const one = switched?.cases[decided];
+        choices.push({
+          variable: switched?.variable ?? -1,
+          arms: instruction.targets.length,
+          target: instruction.targets[decided] as number,
+          ...(one?.value === undefined ? {} : { value: one.value }),
+          ...(one?.from === undefined ? {} : { from: one.from, to: one.to as number }),
+        });
+        next = instruction.targets[decided];
+        break;
+      }
       next = instruction.targets[0];
       break;
     }

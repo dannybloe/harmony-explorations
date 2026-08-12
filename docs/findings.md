@@ -17219,3 +17219,61 @@ both right until one is edited.
 That is the shape FreeHarmony needs. An editor that renames an activity has to show what the screen
 will look like afterwards, and the answer has to come from the same reading of the format that wrote
 the bytes, not from a second implementation in the interface.
+
+## 130. Base slot 13 starts with the firmware's own clock, and the build timestamp proves it
+
+This one fell out of drawing screens. Section 129's variant walk asks which state variable a screen
+program switches on, so that a person can be told **when** a screen looks the way it does, and the
+answer on a Harmony One was mostly "variable 35", with nine variables switched on in total and none of
+them named by base slot 0. Looking at what base slot 13 says about those nine is what opened this.
+
+Section 60 read a base slot 13 record as a range and two of its fields as `first` and `second` without
+being able to say what either meant. Section 120 then found that `first` of `CurrentActivityState` is
+the idle value, the one no binding writes. This is the general reading: **`first` is the value the
+variable holds when the config is generated, and `second` is its maximum.** For the activity variable
+those coincide, because nothing is running when a config is compiled, which is why the narrower
+reading worked.
+
+### The first seven records are the clock, and they are stamped rather than computed
+
+| index | what it holds | maximum |
+|---|---|---|
+| 0 | second | 59 |
+| 1 | minute | 59 |
+| 2 | hour | 23 |
+| 3 | day of the month | 30 |
+| 4 | day of the week, where 0 is a Saturday | 6 |
+| 5 | month, zero based | 11 |
+| 6 | year since 2000 | that year plus one |
+
+**Every field of every one of them equals the corresponding field of the config's own build
+timestamp**, base slot 3's eleven byte record from section 21, in all 21 containers of the corpus:
+four Harmony One configs, three arch 14, two arch 9 user configs, six arch 8, and the safe mode and
+firmware embedded containers as well. Seven fields and seven maxima each, no exceptions, and there is
+no freedom left in the assignment: a wrong one shows up immediately as a second that is not the second.
+
+Two independent things hold it up. Section 74 had already read three of these out of a different
+language: action list opcode `0x07` band `0xF8` steps a date held in state variables 3, 5 and 6, which
+is exactly the day, month and year above, established from the firmware without looking at a config.
+And the weekday's zero being a Saturday is not a convention chosen to make the numbers fit: base slot
+3's own day of week byte is days since 1 January 2000 modulo 7, section 21, and 1 January 2000 was a
+Saturday. Two records, two encodings, one epoch.
+
+### What that changes
+
+**A writer stamps these, it does not copy them.** This is the same rail as base slot 3's timestamp,
+section 111, and it now covers seven more fields: an arch 12 remote sets its clock from base slot 3 at
+every boot, and a config carried over with its old state records also carries a stale seconds, minute
+and hour into the running remote. Reproducing them byte for byte is right for a round trip test and
+wrong for a save, which is the second place in this format where those two come apart.
+
+**They must not be reused for anything else**, which section 74 said of 3, 5 and 6 and which now
+applies to 0, 1, 2 and 4 as well. Base slot 0 names none of the seven in any container, which is the
+structural sign that they belong to the firmware rather than to the generator, and the same is true of
+`state variable 35` on a Harmony One: 36 of its 46 switch uses read that variable, its range is 0 to 1,
+and it has no transitions at all, so nothing in the config ever writes it. What it means is visible
+rather than derived, and the variant view is what made it visible: the two arms of those pages differ
+in exactly one label, the footer that says either "Activities" or "Current Activity".
+
+`FIRMWARE_STATE_VARIABLES` in `packages/codec/src/inventory.ts` is the table, `describeChoices` uses it
+to name a screen's condition, and the test walks the corpus asserting all seven against the timestamp.

@@ -245,6 +245,54 @@ export function screenProgram(c: Container, address: number): ScreenInstruction[
   }
 }
 
+/** One arm of a screen switch: the value or the range that takes it, and where it goes. */
+export interface ScreenCase {
+  /** The value that selects this arm, for an exact case. */
+  value?: number;
+  /** The inclusive bounds that select it, for a range case. */
+  from?: number;
+  to?: number;
+  target: number;
+}
+
+/**
+ * A switch decoded into its condition and its arms, which is what a caller needs to say **why** a
+ * screen looks the way it does.
+ *
+ * The layout is the one the walk above consumes, and this is the same bytes read for their meaning
+ * rather than for their length: the state variable index, then the exact cases, then the inclusive
+ * ranges, one byte a field in opcode 18 and two in opcode 19, with a three byte target throughout.
+ * The firmware takes the first arm that matches, so the order is data and the exact cases are tested
+ * before the ranges.
+ *
+ * **This is where `targets` comes from**, in that order, so the two cannot disagree about which arm is
+ * which. Returns nothing for an instruction that is not a switch.
+ */
+export function screenSwitch(
+  instruction: ScreenInstruction,
+): { variable: number; cases: ScreenCase[] } | undefined {
+  const wide = instruction.opcode === SCREEN_SWITCH_WIDE;
+  if (!wide && instruction.opcode !== SCREEN_SWITCH_NARROW) return undefined;
+  const width = wide ? 2 : 1;
+  const bytes = instruction.operands;
+  const number = (at: number): number => (width === 1 ? u8(bytes, at) : u16(bytes, at));
+  const cases: ScreenCase[] = [];
+  let at = 1;
+  const variable = u8(bytes, 0);
+  for (const fields of [1, 2]) {
+    const count = number(at);
+    at += width;
+    const entry = fields * width + 3;
+    for (let k = 0; k < count; k += 1) {
+      const target = u24(bytes, at + entry * k + entry - 3);
+      if (fields === 1) cases.push({ value: number(at + entry * k), target });
+      else cases.push({ from: number(at + entry * k), to: number(at + entry * k + width), target });
+    }
+    at += entry * count;
+  }
+  return { variable, cases };
+}
+
 /**
  * The `SCREEN_END` byte a program's own walk never reaches, as a blob offset, if it has one.
  *

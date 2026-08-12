@@ -26,6 +26,7 @@ import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
 import type { StateRecord } from './sections.ts';
+import type { ScreenChoice } from './render.ts';
 
 /**
  * The level base slot 0 names state variables at. Level 0 names the containers, `Root` and `State`
@@ -1028,6 +1029,57 @@ export interface Inventory {
   activities: Activity[];
   /** The value `CurrentActivityState` holds when no activity is running. */
   idle?: number;
+}
+
+/**
+ * The state variables the firmware owns, by index, section 130.
+ *
+ * **Not a guess from their ranges**: every one of them is `first` equal to the corresponding field of
+ * the config's own build timestamp, in all 21 containers of the corpus, with `second` equal to the
+ * field's maximum. Section 74 had already read three of them out of the action list language, where
+ * opcode `0x07` band `0xF8` steps a date held in variables 3, 5 and 6, and this says which is which
+ * and adds the other four.
+ *
+ * The weekday's zero is a Saturday, which is not a convention picked to make the numbers fit: base slot
+ * 3's own day of week byte is days since 1 January 2000 modulo 7, section 21, and that day was a
+ * Saturday. Two records, two encodings, one epoch.
+ *
+ * **A writer must stamp these, not copy them**, the same rail as base slot 3's timestamp, section 111.
+ * A config carried over with its old values sets the remote's clock to the moment the old config was
+ * generated.
+ */
+export const FIRMWARE_STATE_VARIABLES: Readonly<Record<number, string>> = {
+  0: 'second',
+  1: 'minute',
+  2: 'hour',
+  3: 'day of the month',
+  4: 'day of the week, where 0 is a Saturday',
+  5: 'month, zero based',
+  6: 'year since 2000',
+};
+
+/**
+ * A screen variant's conditions in words, one per branch the program took.
+ *
+ * **The name is the point.** A variant is a list of switch arms, and "arm 1 of 2 at state 35" tells a
+ * person nothing, while `PS3_Power = 1` tells them exactly when the screen looks like that. Base slot 0
+ * names the state variables, section 77, so the two readings meet here.
+ *
+ * Only some variables are named: `one_config` has 46 base slot 13 records and 12 names, so an unnamed
+ * one is shown by its index rather than invented. That is the same rule `VERSION_FIELDS` follows in the
+ * bench instrument, and for the same reason.
+ */
+export function describeChoices(c: Container, choices: readonly ScreenChoice[]): string[] {
+  const names = new Map(stateVariables(c).map((one) => [one.index, one.label]));
+  return choices.map((choice) => {
+    const name = names.get(choice.variable)
+      ?? FIRMWARE_STATE_VARIABLES[choice.variable]
+      ?? `state variable ${choice.variable}`;
+    const when = choice.value !== undefined
+      ? `= ${choice.value}`
+      : `in ${choice.from} to ${choice.to}`;
+    return `${name} ${when}`;
+  });
 }
 
 /**

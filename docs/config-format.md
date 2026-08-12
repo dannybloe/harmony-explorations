@@ -1275,7 +1275,7 @@ every config is below that config's own `count`, and the halves are respected ex
 the rule is the reader:
 
 ```
-+0x00  u16  an initial value, at most `max` in all 735 records and zero in most. *Unconfirmed*
++0x00  u16  the value the variable holds when the config is generated, section 130
 +0x02  u16  max             the highest value this variable takes
 +0x04  u16  count           how many transitions follow, not how many values there are
 +0x06  u8   unestablished
@@ -1295,6 +1295,31 @@ and a transition
 So a record is `7 + 8 * count` bytes. Across 14 containers and four architectures, 610 of 627
 consecutive records end exactly where the next begins and **none overruns**, and claiming them in
 the byte accounting produces no overlap with any other structure.
+
+**The first field is the generated value**, section 130, which settles what section 60 marked
+unconfirmed and generalises section 120's reading of it as the idle activity value: for
+`CurrentActivityState` the two coincide, because no activity is running while a config is compiled.
+
+**Records 0 to 6 are the firmware's clock**, and they are the proof of that field: each one's first
+value equals the corresponding field of base slot 3's build timestamp, in all 21 containers of the
+corpus, with `max` equal to the field's own maximum.
+
+| index | holds | max |
+|---|---|---|
+| 0 | second | 59 |
+| 1 | minute | 59 |
+| 2 | hour | 23 |
+| 3 | day of the month | 30 |
+| 4 | day of the week, 0 is a Saturday | 6 |
+| 5 | month, zero based | 11 |
+| 6 | year since 2000 | that year plus one |
+
+Section 74 read 3, 5 and 6 as a date from the action list language alone, which is an independent
+route to three of the seven, and the weekday epoch is base slot 3's own: days since 1 January 2000,
+which was a Saturday. Base slot 0 names none of the seven in any container.
+
+**For a writer:** stamp all seven at the moment of writing, the same rail as base slot 3's timestamp.
+A carried over config sets the remote's clock to when the old config was made.
 
 `max` is what **base slot 0's name for the variable ends in, plus one**, in all 250 named variables
 of the corpus, which is what settles it. Every non negative `from` and `to` is inside `0` to `max`,

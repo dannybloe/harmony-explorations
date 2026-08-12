@@ -31,7 +31,10 @@ import {
   reachablePrograms,
   renderPage,
   renderPages,
+  renderVariants,
   screenStrings,
+  screenSwitch,
+  describeChoices,
 } from '../src/index.ts';
 /**
  * The whole corpus, safe mode containers included, since those are the counterexamples that have
@@ -241,4 +244,62 @@ test('a page that draws a background leaves no pixel undrawn', skipUnless('h600_
     covered += 1;
   }
   assert.ok(covered > 100, `only ${covered} pages draw a background`);
+});
+
+test('a page with a branch has one variant per arm, and variant 0 is what renderPage draws',
+  skipUnless('one_config'), () => {
+    // Section 129's variant walk. Two claims, and the second is the one that keeps the two entry
+    // points honest: the number of appearances follows the arms of the switches met, and the first
+    // variant is byte for byte the raster `renderPage` produces, since it takes the first arm of each.
+    const c = parse(load('one_config') as Uint8Array);
+    let branching = 0;
+    for (const [index, page] of modePages(c).entries()) {
+      const rendered = renderPage(c, page);
+      if (rendered === undefined) continue;
+      const { variants, truncated } = renderVariants(c, page.program);
+      assert.ok(variants.length >= 1, `page ${index} has no variant at all`);
+      assert.deepEqual([...(variants[0]?.page.raster.pixels ?? [])], [...rendered.raster.pixels],
+        `page ${index}: variant 0 is not the page as drawn`);
+      if (rendered.branches === 0) {
+        assert.equal(variants.length, 1, `page ${index} does not branch, so it has one appearance`);
+        assert.deepEqual(variants[0]?.choices, []);
+        continue;
+      }
+      branching += 1;
+      assert.ok(variants.length > 1, `page ${index} branches but has one variant`);
+      assert.equal(truncated, false, `page ${index} should not need the cap`);
+      // Every variant of a one switch page states the condition that selects it, and no two agree.
+      const conditions = variants.map((one) => describeChoices(c, one.choices).join('; '));
+      assert.equal(new Set(conditions).size, conditions.length, `page ${index} repeats a condition`);
+      for (const one of variants) {
+        assert.equal(one.choices.length, rendered.branches);
+        for (const choice of one.choices) assert.ok(choice.arms > 1);
+      }
+    }
+    assert.ok(branching >= 30, `only ${branching} pages branch, so this proved little`);
+  });
+
+test('the arms of a switch are the values that select them', skipWithoutLab(), () => {
+  // `screenSwitch` reads the same bytes the program walk measures, so the two must agree about how
+  // many arms there are and where each goes. That is what stops a condition being attached to the
+  // wrong screen: the label comes from one reading and the target from the other.
+  let switches = 0;
+  for (const name of SAMPLES) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    for (const [, instructions] of reachablePrograms(c)) {
+      for (const instruction of instructions) {
+        const decoded = screenSwitch(instruction);
+        if (decoded === undefined) continue;
+        switches += 1;
+        assert.deepEqual(decoded.cases.map((one) => one.target), instruction.targets);
+        for (const one of decoded.cases) {
+          if (one.value !== undefined) continue;
+          assert.ok((one.from as number) <= (one.to as number), 'a range runs upwards');
+        }
+      }
+    }
+  }
+  assert.ok(switches > 100, `only ${switches} switches in the corpus`);
 });

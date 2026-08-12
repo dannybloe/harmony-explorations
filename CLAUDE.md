@@ -834,7 +834,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 129 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 130 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -893,6 +893,11 @@ corpus decode with nothing left over.
 Collected here because they are scattered across a dozen findings and every one of them is a way to
 produce a config the remote accepts and mishandles.
 
+* **Base slot 13's first seven records are the clock and are stamped too**, section 130: `first` is the
+  value a variable holds when the config is generated, and records 0 to 6 are second, minute, hour, day,
+  weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21
+  containers. So a carried over config carries a stale clock in two places, not one, and the seven must
+  never be reused for anything else, which section 74 had already said of 3, 5 and 6.
 * **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote sets
   its clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. The
   rail holds on the other architectures too without needing their measurement, because stamping the
@@ -1189,6 +1194,17 @@ wrong. **A pixel is big endian RGB565**, the only field here that is not little 
 stored the way a display controller is fed rather than the way the container is written. Little endian
 drew a Harmony One's buttons as rainbow stripes, and the test that pins it says out loud that **most
 pictures cannot tell the two apart**, since a black and white picture reads the same either way.
+
+**A page is a set of screens, not one**, and `renderVariants` walks the arms: a screen program switches
+on a state variable, so each appearance carries the condition that selects it, named through base slot 0
+where the variable has a name. The bench offers them as buttons. **What that immediately produced is
+section 130**, because it made the question "which variable is this" unavoidable: **base slot 13's first
+seven records are the firmware's clock**, `first` being the value a variable holds when the config is
+generated, and all seven equal the corresponding field of base slot 3's build timestamp in all 21
+containers. Section 74 had read three of them as a date from the action list language alone, and the
+weekday's zero is base slot 3's own epoch, a Saturday. That also generalises section 120's idle value:
+it is the generated value, and for `CurrentActivityState` the two coincide because nothing is running
+when a config is compiled.
 
 **Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
 way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is

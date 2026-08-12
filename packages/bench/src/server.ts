@@ -106,7 +106,7 @@ export function createServer(bench: Bench, webRoot: string): Server {
           const name = (url.searchParams.get('config') ?? '').trim();
           if (name === '') return json(res, 400, { message: 'a config name is required' });
           const page = Number(url.searchParams.get('page') ?? 0);
-          const drawn = bench.screen(name, page);
+          const drawn = bench.screen(name, page, Number(url.searchParams.get('variant') ?? 0));
           res.writeHead(200, {
             'content-type': 'image/png',
             'content-length': String(drawn.png.length),
@@ -116,6 +116,13 @@ export function createServer(bench: Bench, webRoot: string): Server {
             'x-harmony-branches': String(drawn.branches),
           });
           return res.end(drawn.png);
+        }
+        // What the state of the remote does to a screen: one entry per appearance, with the condition
+        // in words. A page with no switch in its program has exactly one.
+        if (req.method === 'GET' && url.pathname === '/api/variants') {
+          const name = (url.searchParams.get('config') ?? '').trim();
+          if (name === '') return json(res, 400, { message: 'a config name is required' });
+          return json(res, 200, bench.variants(name, Number(url.searchParams.get('page') ?? 0)));
         }
         if (req.method === 'POST' && url.pathname === '/api/identify') {
           const body = await readBody(req);
@@ -137,6 +144,7 @@ export function createServer(bench: Bench, webRoot: string): Server {
             'GET /api/remotes',
             'GET /api/configs',
             'GET /api/screen',
+            'GET /api/variants',
             'GET /api/log',
             'POST /api/identify',
             'POST /api/inventory',

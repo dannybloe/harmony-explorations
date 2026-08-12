@@ -310,11 +310,13 @@ function showScreens(inv) {
   }
   picker.append(choose);
 
-  const show = () => {
+  const show = (variant = 0) => {
     const page = Number(choose.value);
     // Cache busting is deliberate: the lab file can change under us when a remote is read again.
-    image.src = `/api/screen?config=${encodeURIComponent(inv.name)}&page=${page}&t=${Date.now()}`;
+    image.src = `/api/screen?config=${encodeURIComponent(inv.name)}&page=${page}`
+      + `&variant=${variant}&t=${Date.now()}`;
     image.hidden = false;
+    void showVariants(inv.name, page, variant, show);
     const rows = clear(table);
     row(rows, [el('th', 'key'), el('th', 'label'), el('th', 'sends')]);
     for (const key of inv.keys) {
@@ -329,8 +331,37 @@ function showScreens(inv) {
       ]);
     }
   };
-  choose.addEventListener('change', show);
-  show();
+  choose.addEventListener('change', () => show(0));
+  show(0);
+}
+
+/**
+ * What the state of the remote does to this screen.
+ *
+ * A page whose program switches shows a different screen depending on a state variable, so the choices
+ * are offered by name: `PS3_Power = 1` rather than "variant 2". A page with one appearance says so in a
+ * line, because silence there would read as "this is the screen" when the question had not been asked.
+ */
+async function showVariants(config, page, current, show) {
+  const panel = clear($('screen-variants'));
+  const answer = await fetch(`/api/variants?config=${encodeURIComponent(config)}&page=${page}`);
+  if (!answer.ok) return;
+  const { variants, truncated } = await answer.json();
+  if (variants.length <= 1) {
+    panel.append(el('p', 'This page has one appearance.', 'hint'));
+    return;
+  }
+  panel.append(el('span', 'Appears as: ', 'hint'));
+  variants.forEach((variant) => {
+    const label = variant.conditions.length === 0
+      ? 'the first arm of each branch'
+      : variant.conditions.join(', ');
+    const button = el('button', label);
+    if (variant.index === current) button.setAttribute('aria-selected', 'true');
+    button.addEventListener('click', () => show(variant.index));
+    panel.append(button);
+  });
+  if (truncated) panel.append(el('span', ' and more, this list is capped', 'hint'));
 }
 
 async function refreshLog() {

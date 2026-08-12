@@ -121,6 +121,9 @@ test('the route table is six reads and nothing that writes', async () => {
     assert.equal(noConfig.status, 500);
     assert.notEqual(noConfig.headers.get('content-type'), 'image/png');
 
+    const noVariants = await fetch(`${base}/api/variants`);
+    assert.equal(noVariants.status, 400);
+
     // There is no generic command endpoint, which is the rail: a page that is broken, or a script
     // somebody points at this port, cannot express a write because no route accepts one.
     for (const path of ['/api/write', '/api/erase', '/api/command', '/api/writeFlash']) {

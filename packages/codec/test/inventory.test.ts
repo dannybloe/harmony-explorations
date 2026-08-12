@@ -32,6 +32,7 @@ import {
   KEY_EVENT_PRESS,
   keyLabels,
   softKeyScans,
+  FIRMWARE_STATE_VARIABLES,
   SCREEN_ROWS,
   touchOwner,
   touchPageOf,
@@ -990,3 +991,51 @@ test('a label wrapped onto a second line is one label', skipUnless('one_config')
   assert.ok(joined.length >= 7, `only ${joined.length} labels span more than one draw`);
   for (const label of joined) assert.ok(label.text.trim() === label.text, 'and they are trimmed');
 });
+
+test('base slot 13 starts with the firmware\'s own clock, seeded from the build timestamp',
+  skipWithoutLab(), () => {
+    // Section 130, and it is the strongest kind of closure this project gets: a field nobody had read
+    // turns out to equal a value that is already known from somewhere else, in every sample, with no
+    // freedom left over. `first` is the value the variable holds when the config is generated and
+    // `second` is its maximum, so the first seven records are second, minute, hour, day, weekday,
+    // month and year, and all seven agree with base slot 3's timestamp.
+    //
+    // The weekday's zero being a Saturday is not fitted either: base slot 3's own day of week byte is
+    // days since 1 January 2000 modulo 7, section 21, and that day was a Saturday.
+    let agreeing = 0;
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      if (c.builtAt === undefined) continue;
+      const records = stateRecords(c);
+      if (records === undefined) continue;
+      const [date, time] = c.builtAt.split('T') as [string, string];
+      const [year, month, day] = date.split('-').map(Number) as [number, number, number];
+      const [hour, minute, second] = time.split(':').map(Number) as [number, number, number];
+      const days = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(2000, 0, 1)) / 86400000);
+      const expected: Array<[number, number, number]> = [
+        [0, second, 59],
+        [1, minute, 59],
+        [2, hour, 23],
+        [3, day, 30],
+        [4, days % 7, 6],
+        [5, month - 1, 11],
+        [6, year - 2000, year - 2000 + 1],
+      ];
+      for (const [index, value, most] of expected) {
+        const record: { first: number; second: number } | undefined = records[index];
+        assert.ok(record !== undefined, `${name} has no record ${index}`);
+        assert.equal(record.first, value,
+          `${name}: record ${index} is ${record.first} where the timestamp says ${value}`);
+        assert.equal(record.second, most, `${name}: record ${index} maximum`);
+      }
+      // And they are firmware owned rather than config owned: base slot 0 names none of them.
+      const named = new Set(stateVariables(c).map((one) => one.index));
+      for (const [index] of expected) assert.ok(!named.has(index), `${name} names record ${index}`);
+      agreeing += 1;
+    }
+    assert.ok(agreeing >= 15, `only ${agreeing} containers could be checked`);
+    // The table is what a caller reads, so it must cover exactly what is proven and no more.
+    assert.deepEqual(Object.keys(FIRMWARE_STATE_VARIABLES), ['0', '1', '2', '3', '4', '5', '6']);
+  });
