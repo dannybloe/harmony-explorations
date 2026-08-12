@@ -467,13 +467,17 @@ packages/probe/                 TS: the contribution probe, a report with shape 
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
 
-**Both halves have a language server, and the repository configures them rather than installing
-them.** `.claude/settings.json` enables the `pyright-lsp` and `typescript-lsp` plugins; the servers
-themselves are `pyright-langserver` and `typescript-language-server` on `PATH`, which is a per machine
-step like `make hooks` and not a dependency of anything here. Two things make an editor and a script
-agree, which is the only reason either is worth configuring. `typescript-language-server` uses the
-workspace's own pinned TypeScript, so it and `make ts` are the same compiler; and **`make pyright`
-runs exactly what `pyrightconfig.json` says**, so a Python check does not exist only in an editor.
+**Both halves have a language server, and `.claude/settings.json` enables the `pyright-lsp` and
+`typescript-lsp` plugins that reach them.** The TypeScript one is **a devDependency of the workspace**,
+`typescript-language-server` pinned at 5.3.0 like everything else here, because the plugin's bare
+command resolves through the project's own `node_modules/.bin`: observed launching from exactly there
+in another repository on this machine, which is what settled it. So its version is in the lock file
+rather than in whatever a machine happens to have installed globally, and it pulls in four Microsoft
+LSP protocol packages and no native code. Pyright's server is still `pyright-langserver` on `PATH`,
+which is a per machine step like `make hooks`. Two things make an editor and a script agree, which is
+the only reason either is worth configuring. The language server uses the workspace's own pinned
+TypeScript, so it and `make ts` are the same compiler; and **`make pyright` runs exactly what
+`pyrightconfig.json` says**, so a Python check does not exist only in an editor.
 
 **Pyright's level is an argument, and it is written out in `pyrightconfig.json` rather than here.** The
 short version: type checking is off and about a dozen rules that catch what a compiler catches are on

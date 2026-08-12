@@ -1,0 +1,5 @@
+{
+	"name": "ts-lsp",
+	"description": "TypeScript language server, driven from this repo's own typescript install",
+	"version": "0.1.0"
+}
