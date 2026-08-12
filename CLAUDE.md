@@ -1286,6 +1286,13 @@ list inherit a truncated answer. Arch 8, 9 and 12 carry `0x7D` directly and pass
 `{0x7F, 0x7D, 0x7C}` with the send one list down, and every arch 14 device lost its name at once, 63 to
 47.
 
+**And `0x7D` answers two more questions the application asks**, section 126: **what a button sends**,
+3106 bindings across the corpus and **every one of them a press**, 85 of those macros of several codes in
+an order that matters; and **which devices an activity drives**, the groups its base slot 9 set
+addresses, one to three per activity. `inventory` composes devices, activities, the build timestamp and
+the idle value into one object, which exists so that FreeHarmony does not assemble it and become the
+second copy.
+
 **A config states its devices and its activities, section 86, which is what the application needs
 before it can show anything.** A level 1 name is `<label>_<qualifier>_<values>` and `values` is its
 variable's highest value plus one, 250 of 250, which settles the field section 60 could not explain.

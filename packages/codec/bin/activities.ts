@@ -20,7 +20,7 @@
  * them recomputed rather than remembered.
  */
 import { LAB, load } from '@harmony/lab';
-import { parse, activityNames } from '../src/index.ts';
+import { parse, activities } from '../src/index.ts';
 import { CONTAINERS } from './corpus.ts';
 
 // The two arch 8 configs of 12 August 2026 are in, for the reason `bin/text.ts` states: the 880 is
@@ -42,7 +42,7 @@ for (const name of SAMPLES) {
   const blob = load(name);
   if (blob === undefined) continue;
   const c = parse(blob);
-  const rows = activityNames(c);
+  const rows = activities(c);
   if (rows.length === 0) continue;
   const here = rows.filter((one) => one.name !== undefined).length;
   named += here;
@@ -63,6 +63,7 @@ for (const name of SAMPLES) {
       console.log(
         `        activity ${String(one.activity).padStart(2)} ` +
           `scans ${one.scans.join('/')} modes ${one.modes.join('/')} ` +
+          `devices {${one.devices.join(',')}} ` +
           (one.name === undefined
             ? 'no label resolves'
             : `label of ${one.name.length} characters at (${one.at?.x}, ${one.at?.y})`),

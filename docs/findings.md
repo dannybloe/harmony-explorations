@@ -16808,19 +16808,48 @@ and what was wrong was an optimisation whose correctness depended on the caller.
 property rather than the fix, that a list reaching a group only through `0x7F` is in the map with
 something in it.
 
+### The last hop: what a button sends, and which devices an activity drives
+
+`0x7D` names the device, so the same walk answers two more questions the application asks, and both
+were one query away once it existed:
+
+* **What a button sends.** A page's tagged list binds a key to a base slot 10 list, and the list's
+  codes are what the key sends. 3106 bindings across the corpus send at least one code, 85 of them
+  send several, which is a macro, and **every one of the 3106 is event type `0x80`, a press**. Nothing
+  here sends a code on a release or on a repeat. Most bindings send nothing at all, 3883 of them,
+  because navigation and screen switching are bindings too.
+* **Which devices an activity drives.** The starting chain selects a base slot 9 set, section 120, and
+  that set is the key map the activity installs, so the devices its bindings address are the devices the
+  activity uses. Every activity in the corpus drives one to three, and every group it names is a group
+  the config has.
+
+The union is taken over the whole set rather than over the start sequence alone, deliberately: an
+activity that sends the volume to a receiver is using that receiver whether or not it switched it on.
+
+**`inventory` composes all of it into one object**, and that exists so that the application does not.
+Naming a device needs the infrared groups, the state variables, the action lists and, three times in the
+corpus, the screen text; naming an activity needs the touch hit map on arch 12 and the modes elsewhere.
+An application assembling that itself would be a second copy of the composition, and by the rule this
+project keeps about second copies, the first thing to drift.
+
 ### What it does not settle
 
 * **A command has no name.** An infrared record carries a code and nothing else, so "the volume up
   command of device 3" is a group and an index. Where a command is drawn on a screen it has a label,
   and that is a soft key on a page rather than a property of the record.
+* **An activity's name is the label as drawn, which a menu may have cut short.** One Harmony 525
+  activity reads as its row's own text where the mode it enters says a longer string with that text as
+  a prefix. Which of the two an interface should show is a product question, and nothing here decides
+  it.
 * **The arch 14 device identifiers are not tied to groups.** The delay variables carry a Logitech
   identifier per device, four distinct ones on the 600 for four groups, and their records have no
   transitions, so nothing here pairs an identifier with a group.
 
 ### Where it landed
 
-`packages/codec/src/inventory.ts`: `devices`, `deviceVariables`, `deviceModeTitles` and
-`infraredGroupsPerList`, which is the shared walk. `make devices` prints the figures with the source
+`packages/codec/src/inventory.ts`: `devices`, `deviceVariables`, `deviceModeTitles`,
+`infraredCodesPerList` and its reduction `infraredGroupsPerList`, which is the shared walk, plus
+`keyCodes`, `activities` and `inventory`. `make devices` prints the figures with the source
 column, `packages/codec/test/inventory.test.ts` carries the closures and the controls, and
 `docs/config-format.md` has the structured form.
 

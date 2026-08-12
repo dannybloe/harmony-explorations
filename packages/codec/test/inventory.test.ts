@@ -15,10 +15,14 @@ import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   ACTIVITY_STATE_NAME,
+  activities,
   deviceModeTitles,
   deviceVariables,
   devices,
+  infraredCodesPerList,
   infraredGroupsPerList,
+  inventory,
+  keyCodes,
   activityBindings,
   activityCount,
   activityNames,
@@ -657,4 +661,107 @@ test('an action list that sends a code is walked into, not only looked at', skip
     });
   }
   assert.ok(delegating >= 100, `enough delegating lists to mean something, got ${delegating}`);
+});
+
+test('an activity drives one to three of the config\'s own devices', skipWithoutLab(), () => {
+  // Section 126's last hop, and what an interface shows next to an activity's name. The devices are
+  // the ones the base slot 9 set it installs sends to, so the closure is that they are devices: an
+  // infrared group outside the table would mean the set was read wrong, and a set that sends to none
+  // would mean the activity does nothing.
+  let checked = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const known = devices(c).length;
+    if (known === 0) continue;
+    for (const one of activities(c)) {
+      assert.ok(one.devices.length >= 1, `${name}: activity ${one.activity} drives nothing`);
+      assert.ok(one.devices.length <= 3, `${name}: activity ${one.activity} drives too many`);
+      for (const group of one.devices) {
+        assert.ok(group < known, `${name}: activity ${one.activity} names group ${group}`);
+      }
+      assert.ok(one.set >= 0, `${name}: activity ${one.activity} installs no key map`);
+      checked += 1;
+    }
+  }
+  assert.ok(checked >= 50, `enough activities to mean something, got ${checked}`);
+});
+
+test('every button that sends a code sends it on the press, and every code exists',
+  skipWithoutLab(), () => {
+    // Two properties of the button map, both corpus wide. Every code sending binding is event type
+    // 0x80: nothing here sends a code on release or on repeat, which an interface would otherwise have
+    // to allow for. And every operand names a record its group actually has, which is the bounds check
+    // that says the group and the index have not been read the wrong way round.
+    let bindings = 0;
+    let macros = 0;
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const sizes = devices(c).map((one) => one.codes);
+      if (sizes.length === 0) continue;
+      for (const key of keyCodes(c)) {
+        assert.equal(key.tag & 0xc0, 0x80, `${name}: page ${key.page} sends on a non press`);
+        assert.ok(key.codes.length >= 1);
+        if (key.codes.length > 1) macros += 1;
+        for (const code of key.codes) {
+          const size = sizes[code.group];
+          assert.ok(size !== undefined, `${name}: code names group ${code.group}`);
+          assert.ok(code.code < (size as number),
+            `${name}: group ${code.group} has ${size} codes, not ${code.code + 1}`);
+        }
+        bindings += 1;
+      }
+    }
+    assert.ok(bindings >= 3000, `enough bindings to mean something, got ${bindings}`);
+    assert.ok(macros >= 50, `and enough of them are macros, got ${macros}`);
+  });
+
+test('the codes of a list are kept in the order it sends them', skipWithoutLab(), () => {
+  // A macro is an ordered thing: a start sequence that powers a device on and then switches its input
+  // is not the same as the reverse. So the reader hands back an array and not a set, and this is the
+  // test that fails if somebody makes it a set again, which would pass every count above.
+  let ordered = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    for (const [, codes] of infraredCodesPerList(c)) {
+      if (codes.length < 2) continue;
+      const keys = codes.map((one) => `${one.group}:${one.code}`);
+      // A repeated code, or two codes in an order that sorting would change, is only representable
+      // in a list. One of the two holds for most macros in the corpus.
+      const sorted = [...keys].sort();
+      if (new Set(keys).size !== keys.length || keys.join() !== sorted.join()) ordered += 1;
+    }
+    // The reduction to groups is the same walk, so it cannot disagree about which devices are reached.
+    const groups = infraredGroupsPerList(c);
+    for (const [index, codes] of infraredCodesPerList(c)) {
+      assert.deepEqual([...(groups.get(index) ?? [])].sort(),
+        [...new Set(codes.map((one) => one.group))].sort(), `${name}: list ${index}`);
+    }
+  }
+  assert.ok(ordered >= 20, `enough macros where order is visible, got ${ordered}`);
+});
+
+test('the composed inventory says the same as the readers it composes', skipWithoutLab(), () => {
+  // `inventory` exists so that an application does not assemble this itself, section 126, so the one
+  // thing it must not do is answer differently.
+  let checked = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const whole = inventory(c);
+    assert.equal(whole.architecture, c.architecture, name);
+    assert.equal(whole.builtAt, c.builtAt, name);
+    assert.equal(whole.idle, idleActivityValue(c), name);
+    assert.deepEqual(whole.devices.map((one) => one.name), devices(c).map((one) => one.name), name);
+    assert.deepEqual(whole.activities.map((one) => one.activity),
+      activityNames(c).map((one) => one.activity), name);
+    if (whole.devices.length > 0) checked += 1;
+  }
+  assert.ok(checked >= 13, `enough containers to mean something, got ${checked}`);
 });

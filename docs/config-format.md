@@ -1671,6 +1671,18 @@ to watch rather than the total.
 **A command has no name.** An infrared record is a code and an index in its group, so an editor names a
 command only where a screen draws a label for the key that sends it.
 
+**What a button sends** is the codes of the base slot 10 list its page's tagged list binds it to. 3106
+bindings in the corpus send at least one code and 85 send several, which is a macro, so the order is
+part of what the binding does. **Every one of the 3106 is event type `0x80`, a press**: nothing sends a
+code on a release or a repeat. The other 3883 bindings send nothing, being navigation and screen
+switching. `keyCodes`.
+
+**Which devices an activity drives** is the groups its base slot 9 set addresses, that set being the key
+map the activity installs, section 120. One to three per activity across the corpus, and every group is
+one the config has. Taken over the whole set rather than the start sequence alone, since an activity that
+sends the volume to a receiver is using it either way. `activities`, and `inventory` composes the lot
+into one object so that an application does not have to know the order these readers run in.
+
 ### Slot 1: the config states its own architecture
 
 A fixed seven byte record:

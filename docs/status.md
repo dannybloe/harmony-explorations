@@ -235,6 +235,11 @@ one group and none reaches two. The independent check is that the label is also 
 53 of 55 exactly, which is base slot 0's ASCII and base slot 7's glyph pixels agreeing through readers
 that share no code. `make devices`.
 
+**So a config now reads as what it is for**: which devices, what each is called, which activities, what
+each is called, which key starts it, which devices it drives and what each button sends.
+`packages/codec/src/inventory.ts`, one call, which is the shape FreeHarmony consumes rather than seven
+readers it would have to order itself.
+
 **One config's device and activity counts are checked against its owner's own written description**,
 section 124, which is the first ground truth this project has had for either: four devices and four
 activities, on a menu of five entries whose fifth is the remote's own settings page.

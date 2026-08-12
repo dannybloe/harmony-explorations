@@ -151,6 +151,8 @@ const ACTION_LIST_INDEX = 0x7f;
  */
 const SELECT_BINDING_SET = 0x1f;
 const SELECT_BINDING_SET_MASK = 0xff00;
+/** A key code's scan code, the rest of it being the event type. Section 17. */
+const SCAN_CODE_MASK = 0x3f;
 
 /** One way a button reaches one activity. */
 export interface ActivityBinding {
@@ -238,7 +240,7 @@ export function activityBindings(c: Container): ActivityBinding[] {
         activity: hit.activity,
         page: index,
         tag: entry.tag,
-        scan: entry.tag & 0x3f,
+        scan: entry.tag & SCAN_CODE_MASK,
         list: entry.operand,
         set: hit.set,
       });
@@ -316,12 +318,12 @@ export interface ActivityName {
  * **A label the menu wrapped onto a second row** is looked for last, and only for an activity nothing
  * else resolved, which is a Harmony 525 and nothing else here.
  *
- * Where this leaves a gap is stated rather than guessed: on **arch 12** a page with more than one
- * activity resolves nothing, because a One's activity mode does not repeat the name its menu draws, and
- * its scan codes cannot stand in for position either. Three pages of `one_config` bind activities on
- * scans {50,51,52}, {50,48,49} and {48,49} while each draws its labels at the same rows, so no fixed
- * code to row map exists on a touch panel and base slot 17's hit map is what would be needed. The two
- * arch 12 activities that do resolve are single activity configs. Sections 121 and 124.
+ * **Arch 12 does not use any of that, and it runs first**, section 125. No string rule can work on a
+ * touch panel: three pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49}
+ * while each draws its labels at the same rows, so no fixed code to row map exists. A Harmony One takes
+ * the label from base slot 17's hit map instead, through the index in the mode page's own `lead` byte,
+ * so the rectangle is stated and the label is the text the firmware's hit test puts inside it. Sections
+ * 121, 124 and 125.
  */
 export function activityNames(c: Container): ActivityName[] {
   const bindings = activityBindings(c);
@@ -843,40 +845,172 @@ export function deviceModeTitles(c: Container): Map<number, Set<string>> {
   return out;
 }
 
+/** One infrared code: which device it goes to, and which of that device's codes it is. */
+export interface InfraredCode {
+  /** Index into base slot 5's group array, so the device. */
+  group: number;
+  /** Index into that group's own record array. */
+  code: number;
+}
+
 /**
- * Which devices each base slot 10 action list talks to, by infrared group.
+ * Which codes each base slot 10 action list sends, in the order it sends them.
  *
- * `0x7D` is the only instruction that names a device, so this is the whole of it, plus `0x7F` because
- * a list may hand the work to another. Shared rather than derived twice: `devices` uses it to tie a
- * state variable to a group and `deviceModeTitles` uses it to tie a screen to one, and two copies of
- * one walk is the state that precedes two diverging ones.
+ * `0x7D` is the only instruction that names a device, section 33, so this is the whole of it, plus
+ * `0x7F` because a list may hand the work to another. **Order is kept** because a list is a macro: an
+ * activity's start sends several codes and which comes first is part of what it does.
  *
- * A list that reaches nothing is absent rather than empty, so a caller can tell "sends no codes" from
+ * Shared rather than derived twice. `devices` uses it to tie a state variable to a group,
+ * `deviceModeTitles` to tie a screen to one, `activities` to say which devices an activity drives and
+ * `keyCodes` to say what a button sends. Two copies of one walk is the state that precedes two
+ * diverging ones.
+ *
+ * A list that sends nothing is absent rather than empty, so a caller can tell "sends no codes" from
  * "no such list".
  */
-export function infraredGroupsPerList(c: Container): Map<number, Set<number>> {
+export function infraredCodesPerList(c: Container): Map<number, InfraredCode[]> {
   const lists = c.actionLists();
-  const out = new Map<number, Set<number>>();
+  const out = new Map<number, InfraredCode[]>();
   if (lists === undefined) return out;
   // Each list gets its own walk with its own visited set. **Not a shared cache**: a nested walk stops
   // at whatever the outer one had already visited, so its answer is only correct in that context, and
-  // memoising it would let a list inherit a truncated result from whoever reached it first.
-  const walk = (index: number, seen: Set<number>): Set<number> => {
-    const found = new Set<number>();
+  // memoising it would let a list inherit a truncated result from whoever reached it first. That is
+  // the bug of section 126, which only arch 14 could show, because its send sits one list down.
+  const walk = (index: number, seen: Set<number>): InfraredCode[] => {
+    const found: InfraredCode[] = [];
     if (seen.has(index) || lists[index] === undefined) return found;
     seen.add(index);
     for (const instruction of lists[index] as { opcode: number; operand: number }[]) {
       if (instruction.opcode === SEND_INFRARED) {
-        found.add(instruction.operand >> INFRARED_GROUP_SHIFT);
+        found.push({
+          group: instruction.operand >> INFRARED_GROUP_SHIFT,
+          code: instruction.operand & 0xff,
+        });
       } else if (instruction.opcode === ACTION_LIST_INDEX) {
-        for (const group of walk(instruction.operand, seen)) found.add(group);
+        found.push(...walk(instruction.operand, seen));
       }
     }
     return found;
   };
   lists.forEach((_, index) => {
     const found = walk(index, new Set());
-    if (found.size > 0) out.set(index, found);
+    if (found.length > 0) out.set(index, found);
   });
+  return out;
+}
+
+/** The same, reduced to the set of devices each list talks to. */
+export function infraredGroupsPerList(c: Container): Map<number, Set<number>> {
+  const out = new Map<number, Set<number>>();
+  for (const [index, codes] of infraredCodesPerList(c)) {
+    out.set(index, new Set(codes.map((one) => one.group)));
+  }
+  return out;
+}
+
+/** What a button does: the codes it sends, in order, and where it is. */
+export interface KeyCode {
+  /** Index into `modePages`, so the screen this binding belongs to. */
+  page: number;
+  /** The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`. Section 17. */
+  tag: number;
+  /** The scan code alone. */
+  scan: number;
+  /** The codes the binding sends, in the order the action list sends them. */
+  codes: InfraredCode[];
+}
+
+/**
+ * Every button binding in the config that sends infrared, and what it sends.
+ *
+ * This is the button map an interface shows for a device or for a running activity, and it is the last
+ * hop of section 126: a page's tagged list binds a key to a base slot 10 list and the list's `0x7D`
+ * instructions name the device and the code. **A binding may send several**, 85 of 3106 across the
+ * corpus, which is a macro and why the order is kept.
+ *
+ * Two properties hold on every container here and both are worth knowing before building on this.
+ * Every code sending binding is event type `0x80`, a **press**, 3106 of 3106, so nothing sends a code
+ * on release or on repeat. And most bindings send nothing at all: 3883 against 3106, because navigation
+ * and screen switching are bindings too.
+ *
+ * **A code has no name.** An infrared record is a code and its index in its group, so a label for a
+ * button comes from the screen where the screen draws one, and from nowhere for a hard key.
+ */
+export function keyCodes(c: Container): KeyCode[] {
+  const codes = infraredCodesPerList(c);
+  const out: KeyCode[] = [];
+  modePages(c).forEach((page, index) => {
+    for (const entry of taggedList(c, page.list)?.entries ?? []) {
+      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      const sent = codes.get(entry.operand);
+      if (sent === undefined) continue;
+      out.push({ page: index, tag: entry.tag, scan: entry.tag & SCAN_CODE_MASK, codes: sent });
+    }
+  });
+  return out;
+}
+
+/** An activity, with the devices it drives and the key map it installs. */
+export interface Activity extends ActivityName {
+  /** The base slot 9 set the chain selects: the activity's own key map while it runs. Section 39. */
+  set: number;
+  /** The devices it addresses, by infrared group, ascending. */
+  devices: number[];
+}
+
+/**
+ * The activities, with what each one actually does.
+ *
+ * `activityNames` says which key starts an activity and what it is called; this adds which **devices**
+ * it drives, which is the other half of what an interface shows. The route is the base slot 9 set the
+ * starting chain selects, section 120: that set is the key map the activity installs, so the devices
+ * its bindings send to are the devices the activity uses. An activity in the corpus drives one to three
+ * of them.
+ *
+ * The union is over the whole set rather than over the start sequence alone, deliberately: an activity
+ * that sends the volume to a receiver is using that receiver whether or not it switched it on.
+ */
+export function activities(c: Container): Activity[] {
+  const codes = infraredCodesPerList(c);
+  const sets = handlerSets(c);
+  const bindings = new Map(activityBindings(c).map((one) => [one.activity, one.set]));
+  return activityNames(c).map((one) => {
+    const set = bindings.get(one.activity);
+    const groups = new Set<number>();
+    if (set !== undefined) {
+      for (const entry of taggedList(c, sets?.addresses[set] as number)?.entries ?? []) {
+        for (const sent of codes.get(entry.operand) ?? []) groups.add(sent.group);
+      }
+    }
+    return { ...one, set: set ?? -1, devices: [...groups].sort((a, b) => a - b) };
+  });
+}
+
+/** Everything an interface needs to show a config, in one object. */
+export interface Inventory {
+  /** The architecture the config states, section 20, which is the only place it says so. */
+  architecture?: number;
+  /** When the config was built, from base slot 3. On arch 12 this is also what the clock is set to. */
+  builtAt?: string;
+  devices: Device[];
+  activities: Activity[];
+  /** The value `CurrentActivityState` holds when no activity is running. */
+  idle?: number;
+}
+
+/**
+ * The whole inventory of a config, composed.
+ *
+ * **Here so that a caller does not have to know the order.** Naming a device needs the infrared groups,
+ * the state variables, the action lists and, for three devices in the corpus, the screen text; naming an
+ * activity needs the touch hit map on arch 12 and the modes elsewhere. An application that assembled
+ * that itself would be a second copy of the composition, and the first thing to drift.
+ */
+export function inventory(c: Container): Inventory {
+  const out: Inventory = { devices: devices(c), activities: activities(c) };
+  if (c.architecture !== undefined) out.architecture = c.architecture;
+  if (c.builtAt !== undefined) out.builtAt = c.builtAt;
+  const idle = idleActivityValue(c);
+  if (idle !== undefined) out.idle = idle;
   return out;
 }
