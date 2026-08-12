@@ -207,9 +207,25 @@ the owner is the only author, so a change needs nobody's consent. Once anyone el
 needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT, and MIT into GPLv3 is
 untroubled in the one direction it has to be.
 
-**A community device database is an idea, not a plan.** It gets worked out when FreeHarmony starts,
-not here and not now. Nothing about its shape, its licence or how contributions would work is
-decided, and this file should not pretend otherwise.
+**A community device database is a direction now, decision 11 in `docs/roadmap.md`, and almost all of
+it is still undecided**: its shape, its licence, where it lives, how an upload is reviewed. That is
+deliberate and it gets worked out when FreeHarmony needs it.
+
+**One part of it cannot wait, and it is one field.** A device definition carries its **provenance**,
+and only a definition **learned from hardware** may ever be shared. Anything derived from Logitech's
+own data stays on the machine that fetched it, which is the same copyright reasoning that keeps configs
+out of this repository. The reason to decide it before the format exists is that provenance is not
+enforceable in hindsight: add the field later and there is a database whose origins nobody kept, where
+the only safe action is to discard it.
+
+**Logitech's live service is an optional import and never a dependency.** Section 56 measured it
+answering and section 58 watched it compile a config for a device chosen that day, so its device data
+is reachable now and will not be one day. The user decides, supplies their own credentials, and sees
+what is fetched; the application works identically for somebody who never touches it. The cheap route
+needs no new protocol work at all, since base slot 5 is fully read: a config Logitech compiled can be
+read off the remote and converted with today's code. A direct client against `svcs.myharmony.com` is
+the expensive route and **nobody here has looked at it**: what is recorded is that it authenticates and
+recognises a remote, not that it serves a device database in any shape we know.
 
 ## This repository is public
 

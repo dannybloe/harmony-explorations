@@ -209,6 +209,38 @@ image is a second sample rather than a stand in. Other models are iterated on la
    Harmony One, or quietly narrowing a claim to the bench: a reading that only holds on arch 12 and arch
    14 still says so.
 
+11. **Offline is the floor, Logitech's live service is an optional import, and provenance decides what
+   may be shared.** *Taken 12 August 2026 by the owner, and it is the first decision here about the
+   product rather than about the format.* Three parts, in the order they constrain each other.
+
+   **FreeHarmony works with no server and, ideally, with no network at all.** Not a preference: it is
+   the entire reason the project exists, since Logitech's software needed a server for everything and
+   then the server went. So nothing may become a runtime dependency on anything remote. No account is
+   ever required, and a build with the network unplugged reads a remote, shows a config and edits it.
+
+   **While Logitech's service is alive, taking its device data is worth doing, optionally and by the
+   user's own hand.** Section 56 measured it answering and section 58 watched it compile a config for a
+   device chosen that day, so the data is reachable **now** and will not be one day. The user decides,
+   supplies their own credentials if it needs them, and sees what is fetched; the application must work
+   identically for somebody who never touches it. What arrives is converted into **our** device
+   definition format and stored locally, which is what makes it survive the service.
+
+   **There are two routes to that data and the cheap one already exists.** Reading it out of a config
+   Logitech compiled needs no new protocol work at all: base slot 5 is fully read on four
+   architectures, so a synced remote can be read and its infrared records converted with today's code.
+   The expensive route is a direct client against `svcs.myharmony.com`, which nobody here has looked
+   at: the recorded facts are that it authenticates and that it recognises a remote, **not** that it
+   serves a device database in any shape we know. So the first step is reconnaissance, read only,
+   written up in `docs/host-client.md` where a client sourced fact belongs, and it is the one item in
+   this plan whose value **decays**, because the service can be withdrawn without notice.
+
+   **A community database is a direction now rather than an idea, and it has one hard rule**: a
+   definition carries its **provenance**, and only a definition learned from hardware may be shared.
+   Anything derived from Logitech's data stays on the machine that fetched it. That is the same
+   copyright reasoning that keeps configs out of this repository, and the reason to record it before a
+   line of the format is written: provenance has to be a field in the definition from the first
+   version, because retrofitting it means auditing a database whose origins nobody kept.
+
 ## Facts established during planning
 
 * Arch 12 and arch 14 both use the plain non-z-wave HID class in libconcord, 64-byte reports in
