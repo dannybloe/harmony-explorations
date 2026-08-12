@@ -669,6 +669,10 @@ make coverage      byte accounting per sample, the M2 progress number; COVERAGE_
 make emit          how much of each sample the emitter puts back, and whether it round trips
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make render        draw a config's screens as PNG files, into the lab and never into the repository.
+                   RENDER_ARGS=--config one_config --page 45, or --sheet for every page, or
+                   --undrawn to paint the pixels nothing reached. The check that fails differently
+                   from every other one here, since a reader test cannot see a label half a row out
 make activities    which activity each key starts and which drawn label is its name, per model
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
@@ -828,7 +832,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 128 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 129 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1165,6 +1169,20 @@ A key belongs to a **place**. Two closures hold the reading up, one of which rea
 two item row in the corpus has its two keys on **different** action lists, with no exception, and the
 labels agree with the activity chain on 62 of 63 keys, the exception being a "1 OF 2" page indicator drawn
 in the bottom row's continuation slot and left in rather than special cased.
+
+**A config's screens can be drawn now**, section 129, `packages/codec/src/render.ts` and `make render`.
+It is here rather than in FreeHarmony because it is the check that fails differently from every other
+test in this repository: a reader test says a number came back and cannot see a label half a row out, an
+icon over its own caption or a colour channel one bit wrong. **Every mode page of every container
+renders with nothing unresolved**, over 1500 pages on four architectures, which needs a picture's
+extent, a glyph's encoding, a font set's first code, a referenced string's address and a page's program
+pointer all to be right at once. Three things it needed that no reader did: the display size, which the
+configs state through their own full screen pictures; the pen advance, which is **nothing** because the
+gap between letters is a column the glyph carries; and the pixel byte order, where the first reading was
+wrong. **A pixel is big endian RGB565**, the only field here that is not little endian, because it is
+stored the way a display controller is fed rather than the way the container is written. Little endian
+drew a Harmony One's buttons as rainbow stripes, and the test that pins it says out loud that **most
+pictures cannot tell the two apart**, since a black and white picture reads the same either way.
 
 **Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
 way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is

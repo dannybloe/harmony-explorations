@@ -796,6 +796,23 @@ landing and the presence of every addressed picture; exactly one candidate satis
 one moves every later address.
 Read with `gspm.bitmaps` and `gspm.bitmap_at`. [findings.md](findings.md) section 50.
 
+**A pixel is RGB565 stored high byte first**, section 129, which is the one field in this format that is
+not little endian: it is the order a display controller takes over a serial bus, so a picture is stored
+the way it is sent. Reading it the other way shifts the green field across the red and the blue and
+draws a rainbow. Arch 9 (Harmony 525) is the exception, one bit a pixel with the row padded to a whole
+byte, and its glyphs are two bit grey where 1 is ink and 2 is paper.
+
+**A skipped pixel in an encoded picture is transparent, not background**, which is what lets an icon be
+drawn over a screen already painted.
+
+**The display is what the config's own full screen pictures say**, section 129: 128 by 160 on arch 8
+(Harmony 880), 96 by 64 on arch 9 (Harmony 525), 176 by 220 on arch 12 (Harmony One) and 128 by 128 on
+arch 14 (Harmony 600 and 700). Every architecture's drawn text stops just inside its own figure.
+
+**The pen advance past a glyph's stated width is nothing**, section 129: the gap between letters is a
+background column the glyph itself carries. `packages/codec/src/render.ts` draws a page from these, and
+every mode page of every container in the corpus renders with no picture and no glyph unresolved.
+
 Opcode 3 draws the same object with a six byte position record instead of two. On arch 8, 12 and 14
 it is used by one instruction in the whole corpus, so its operand layout there is read from the
 firmware and exercised by almost nothing. **On arch 9 it is the ordinary way to draw**, 1856 times

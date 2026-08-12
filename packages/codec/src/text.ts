@@ -160,7 +160,7 @@ export function drawnCodes(c: Container): Set<number> {
 }
 
 /** The glyph run a `SCREEN_TEXT_AT` draws, or undefined for any other instruction. */
-function glyphsReferencedBy(c: Container, instruction: ScreenInstruction): Uint8Array | undefined {
+export function glyphsReferencedBy(c: Container, instruction: ScreenInstruction): Uint8Array | undefined {
   const address = referencedStringAddress(instruction);
   return address === undefined ? undefined : glyphRunAt(c, address);
 }

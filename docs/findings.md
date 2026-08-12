@@ -17124,3 +17124,83 @@ key rewrites every draw that names the same string.
 `keyLabels` and `SCREEN_ROWS` are in `packages/codec/src/inventory.ts`, the tests are in
 `packages/codec/test/inventory.test.ts`, and the bench instrument's button table shows the label with
 its source, so a row placement is visibly weaker than a stated rectangle.
+
+## 129. Drawing the screen, which is the check a reader test cannot perform
+
+Every finding here lands with a regression test, and the tests have a shape: a number came back, a
+walk consumed a section exactly, a count closed. That catches a reader which stops working. It cannot
+catch a reader which works and means something slightly different from what the document says, and
+there is one place in this format where the difference is visible to a person and to nothing else: the
+screen. A label half a row too high, an icon drawn over its own caption, a colour channel one bit out.
+All of those pass every test in the package.
+
+So this is a renderer: run a mode page's screen program into a raster and produce the picture the
+remote would show. It is in `packages/codec/src/render.ts` rather than in the application, because it
+is a reading of the format and because the application must not be the first place a reading is
+executed.
+
+### What it needed that no reader did
+
+Three things had to be established that were never needed while the readers only produced numbers.
+
+**The display size, which the configs state.** A config draws its own backgrounds, so the widest
+picture any program draws is the display. Arch 8 (Harmony 880) 128 by 160, arch 9 (Harmony 525) 96 by
+64, arch 12 (Harmony One) 176 by 220, arch 14 (Harmony 600 and 700) 128 by 128. The closure is that
+the drawn text of each architecture stops just inside its own number, and that hundreds of pictures
+per container are exactly that size.
+
+**The pixel byte order, and the first reading was wrong.** Every length, count and pointer in this
+container is little endian, so a pixel was read that way too, and a Harmony One's buttons came out as
+horizontal rainbow stripes. Taking the high byte first turns the same bytes into a smooth blue button
+with a dark border and a white highlight. A pixel is **big endian** RGB565, which is the order a
+display controller wants over a serial bus, so the pixels are stored the way they are sent rather than
+the way the rest of the file is written.
+
+That is asserted mechanically rather than by looking, and the assertion is the interesting part.
+Neighbouring pixels of an icon are close in colour, and swapping the bytes moves the green field
+across the red and blue ones, so the wrong order is measurably rougher. **Most pictures cannot tell
+the two apart**, which the test says out loud: a picture drawn only in `0x0000` and `0xffff` reads
+the same either way, and a Harmony 600's do. Among the pictures that decide, the stored order is
+smoother in every case bar two, both on the 600, whose whole picture set uses 30 distinct colours.
+
+**The pen advance, which is nothing.** A glyph states its width, and whether the pen then moves an
+extra column is not stated anywhere. A rendered page looks plausible at nought and at one, so it was
+measured twice. A glyph's last column is entirely background in 142 of 160 arch 9 glyphs, 258 of 283
+arch 8 ones and 258 of 463 arch 14 ones, drawn as paper rather than skipped, so the gap between
+letters is a column the font carries. And a remote does not draw text off its own display: with no
+extra advance not one of the 1904 strings a Harmony One draws passes its 176 pixel edge, where one
+extra column pushes 38 of them off and three pushes 235.
+
+### What it says about the readers
+
+**Every mode page of every container in the corpus renders with nothing unresolved**: over 1500 pages
+across four architectures, no picture a program names fails to decode and no glyph code is missing
+from the font that program selected. That is a stronger statement than the byte accounting's, because
+it is not a share. A picture's extent, a glyph's encoding, a font set's first glyph code, a referenced
+string's address, a mode page's program pointer: all of them have to be right at once for a page to
+come out, and all of them are.
+
+Two smaller closures fell out. A page that draws a full screen background leaves **no** pixel
+undrawn, on every such page of a Harmony 600, which is what says the origin and the row order are
+right rather than plausible. And a transparent pixel is transparent rather than black: an encoded
+picture's skips have to leave what is under them alone, which is what makes an icon over a background
+look like an icon and not like a hole.
+
+### What it does not do
+
+**It does not decide what a screen shows.** A screen program branches on state variables, so a page is
+a set of appearances rather than one, and `renderProgram` follows the first target of every switch and
+reports how many it passed. A caller can then say "one of six" instead of pretending. One Harmony One
+config has 37 such choices across its 330 pages, and the other three architectures have none at all in
+the samples here, which is itself worth knowing: an arch 12 page can change with the state of the
+remote and the others draw one thing.
+
+The renderer also has its own copy of the encoded picture walk, which `font.ts` already has for
+glyphs and `screen.ts` has for extents. Three copies of one encoding is exactly what `CLAUDE.md`
+forbids for the opcode table, and the reason it is tolerable here for now is that the three ask
+different questions of the same bytes. It is the first thing to fix if any of them ever disagrees.
+
+`make render` writes the PNG files, into the private lab and never into this repository, because a
+rendered screen is a picture of somebody's own equipment. `--undrawn` paints the pixels nothing
+reached in magenta, which is the only way to tell a screen a config deliberately leaves dark from a
+region no instruction touched.

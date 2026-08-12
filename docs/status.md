@@ -246,6 +246,13 @@ the 3106 that send an infrared code do. The rule that suggested itself, the k-th
 of text, fits the counts and gets two of four wrong on the 600's own activity menu, so it is recorded as
 refuted rather than quietly dropped.
 
+**And a config's screens can be drawn**, section 129: `make render` writes the picture a page would put
+on the display, which is the check no other test here can perform, since a reader that returns a number
+cannot see a label half a row out of place. Every mode page of every config in the collection draws with
+no picture and no glyph unresolved, on all four architectures. It also corrected something: a pixel is
+stored high byte first, the only field in the format that is not little endian, and reading it the usual
+way turned a Harmony One's buttons into rainbow stripes.
+
 **So a config now reads as what it is for**: which devices, what each is called, which activities, what
 each is called, which key starts it, which devices it drives, what each button sends and what the screen
 calls it.

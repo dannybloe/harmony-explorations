@@ -21,5 +21,6 @@ export * from './inventory.ts';
 export * from './font.ts';
 export * from './alphabets.ts';
 export * from './text.ts';
+export * from './render.ts';
 export * from './coverage.ts';
 export * from './edit.ts';
