@@ -4,6 +4,12 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
+  // `bin` was missing here until 12 August 2026, alone among the packages that have one, so its nine
+  // scripts, which are what `make coverage`, `make reading`, `make text` and the rest run, were
+  // typechecked by nothing. That is also why importing `bin/corpus.ts` from a test once failed with
+  // "not under rootDir": the file was outside the project. A language server treats a file no project
+  // claims as its own inferred project with default options, so this is what makes an editor agree
+  // with `make ts` about them.
+  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
   "references": [{ "path": "../lab" }]
 }

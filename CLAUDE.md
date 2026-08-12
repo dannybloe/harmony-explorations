@@ -442,6 +442,7 @@ reference/silhouettes/          which buttons a model has, as a drawing, one SVG
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
+pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 samples/                        empty by policy
 ```
 
@@ -465,6 +466,30 @@ packages/probe/                 TS: the contribution probe, a report with shape 
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
+
+**Both halves have a language server, and the repository configures them rather than installing
+them.** `.claude/settings.json` enables the `pyright-lsp` and `typescript-lsp` plugins; the servers
+themselves are `pyright-langserver` and `typescript-language-server` on `PATH`, which is a per machine
+step like `make hooks` and not a dependency of anything here. Two things make an editor and a script
+agree, which is the only reason either is worth configuring. `typescript-language-server` uses the
+workspace's own pinned TypeScript, so it and `make ts` are the same compiler; and **`make pyright`
+runs exactly what `pyrightconfig.json` says**, so a Python check does not exist only in an editor.
+
+**Pyright's level is an argument, and it is written out in `pyrightconfig.json` rather than here.** The
+short version: type checking is off and about a dozen rules that catch what a compiler catches are on
+individually, because at pyright's own `basic` mode this code reports 512 errors of which some 500 are
+one shape, an inferred `X | None` subscripted by a caller a test has already guarded. Each rule turned
+off carries the count it costs and why, so nobody has to re-measure to decide whether to turn it back
+on. Two things were genuinely wrong when it first ran and both are fixed: a vestigial `__all__` in
+`src/harmony/__init__.py` and a module level loop in `readloop.py` that left its variable bound and
+`del`ed it. **Raising it is a project, not a commit.**
+
+**A file no tsconfig claims is not typechecked, and it does not announce that.** `packages/codec`
+included `src` and `test` and not `bin`, alone among the packages with a `bin`, so the nine scripts
+behind `make coverage`, `make reading`, `make text` and the rest were checked by nothing and a
+language server gave them default options. Fixed on 12 August 2026, and it typechecks clean, so
+nothing was hiding in there. When adding a directory of TypeScript, add it to the project in the same
+commit.
 
 **The codec port is complete.** Every reader `src/harmony/gspm.py` has now exists in
 `packages/codec` too, bar base slot 16, the number sender, whose count is zero in every config so a
@@ -664,6 +689,8 @@ make test          run the suite; image-backed tests need a lab directory
 make test-nolab    the suite against a nonexistent lab: it must skip, never assert
 make test-verbose  one line per test
 make lint          byte-compile everything
+make pyright       the Python type checks, at the level pyrightconfig.json argues for. Skips with a
+                   note where pyright is absent, since a Python 3 install is still the floor here
 make prose         check documents for em-dashes and en-dashes
 make facts         check the documents against the code; facts-write fixes the numbers
 make corpus        inventory the dumps, and flag the undescribed ones

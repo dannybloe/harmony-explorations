@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
+.PHONY: help test test-nolab test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
 
 BENCH_PORT ?= 8731
 
@@ -25,6 +25,7 @@ help:
 	@echo "test         run the Python test suite (needs a lab directory for image-backed tests)"
 	@echo "test-verbose same, one line per test"
 	@echo "lint         byte-compile everything, catching syntax errors"
+	@echo "pyright      the Python type checks, at the level pyrightconfig.json argues for"
 	@echo "prose        check documents for em-dashes and en-dashes"
 	@echo "corpus      inventory the dumps in the lab directory"
 	@echo "ghidra       build or refresh the Ghidra project (needs a lab directory)"
@@ -76,6 +77,20 @@ test-nolab:
 
 lint:
 	@$(PYTHON) -m compileall -q $(SRC) $(TESTS) tools && echo "compiles clean"
+
+# The Python half of what `ts-typecheck` does for the TypeScript half, at the level
+# `pyrightconfig.json` argues for: type checking off, and the rules that catch what a compiler
+# catches on individually. It is the same tool the editor's language server runs, so a finding in one
+# is a finding in the other, and it exists as a target because a check only an editor performs is a
+# check a script never fails. Skips with a note where pyright is absent, since it is an npm install
+# and this repository's floor is a Python 3 install and nothing else.
+pyright:
+	@command -v pyright > /dev/null 2>&1 \
+	  && pyright --outputjson | $(PYTHON) -c "import json,sys; s=json.load(sys.stdin)['summary']; \
+	     print('pyright:', s['errorCount'], 'error(s) in', s['filesAnalyzed'], 'files'); \
+	     sys.exit(1 if s['errorCount'] else 0)" \
+	  || { command -v pyright > /dev/null 2>&1 && exit 1 || \
+	       echo "no pyright installed, so the Python type checks were skipped"; }
 
 # Published documents must not contain em-dashes or en-dashes. The check is written with
 # escapes so this Makefile does not itself contain the characters it looks for.
@@ -196,7 +211,7 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint prose facts test test-nolab ts audit
+all: lint pyright prose facts test test-nolab ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

@@ -41,16 +41,21 @@ DECIDING_DISTANCE = COUNTER - (BUFFER_BASE + PREAMBLE)
 #: the two byte preamble, and a loop counter that sits below its own address bytes so the counter is
 #: always the first thing the runaway pointer reaches. What differs is only how far it has to go.
 #:
-#: `(sender, loop head, exit test, buffer base, counter)`, and `distance` derived from the last two.
-PROFILES = {
+#: `(sender, loop head, exit test, buffer base, counter)`. `distance` is not listed because it is a
+#: difference of two of the others and a number written twice is a number that can disagree.
+_MEASURED = {
     12: {'sender': 0x20394, 'loop': 0x26BC8, 'exit': 0x26C16, 'buffer': 0x0468, 'counter': 0xD31},
     14: {'sender': 0x172DA, 'loop': 0x0CA8A, 'exit': 0x0CAD6, 'buffer': 0x0468, 'counter': 0xD5D},
     9: {'sender': 0x0173C, 'loop': 0x03372, 'exit': 0x033A4, 'buffer': 0x0468, 'counter': 0x70B},
 }
 
-for _profile in PROFILES.values():
-    _profile['distance'] = _profile['counter'] - (_profile['buffer'] + PREAMBLE)
-del _profile
+#: The same table with `distance` filled in. Derived in a comprehension rather than by a loop that
+#: mutates the table afterwards, because that loop left its variable bound at module level and had
+#: to `del` it, which is a shape a checker cannot tell from a variable used before it is set.
+PROFILES = {
+    architecture: dict(fields, distance=fields['counter'] - (fields['buffer'] + PREAMBLE))
+    for architecture, fields in _MEASURED.items()
+}
 
 #: FSR0 is twelve bits, so the pointer wraps here rather than running off the end of the file
 #: registers. It matters only for reads that keep going long enough to come back round.

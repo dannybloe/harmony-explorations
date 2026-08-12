@@ -1,0 +1,68 @@
+// Pyright over the Python half of this repository, which is the research library, the tools and
+// their tests. The TypeScript half has its own project files and pyright must not look at it.
+//
+// **The level is a decision and not a default.** At pyright's own `basic` mode this code reports
+// 512 errors and about 500 of them are one shape: a reader returns `X | None` because a container
+// may not have that section, and its caller subscripts the result because a test has just asserted
+// the section is there. Annotating that away would be a large change to code whose job is to be
+// read once and thrown at a corpus, and a checker whose output is 500 lines is a checker nobody
+// reads. So type checking is off and the rules that find real mistakes are on one at a time.
+//
+// What is on is roughly what a compiler catches: a name that does not exist, an import that
+// resolves on one machine, a variable used on a path where it was never bound, an `__all__` naming
+// something absent, a method whose first parameter is not `self`. Two of those were true here when
+// pyright first ran, and fixing them is what made this file worth committing.
+//
+// Tightening it is a deliberate project rather than a drift: raise `typeCheckingMode` to `basic`
+// and then annotate one module at a time. Do not leave it half raised with a wall of suppressions.
+//
+// pyrightconfig.json is JSON5, so these comments are real comments. A `"//"` key is not: pyright
+// rejects unrecognised settings, one line of stderr each, which is how this file was written twice.
+{
+  "include": ["src", "tools", "tests", "bin"],
+  "exclude": ["**/node_modules", "packages", "samples", ".scratch", "**/.scratch"],
+
+  // The tools and the tests import each other's modules after putting their own directory on
+  // `sys.path`, which pyright cannot see. `src` is here because the library is imported as
+  // `harmony.*` from the directory above it.
+  "extraPaths": ["src", "tools", "tests"],
+
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "off",
+
+  "reportMissingImports": "error",
+  "reportUndefinedVariable": "error",
+  "reportUnboundVariable": "error",
+  "reportPossiblyUnboundVariable": "error",
+  "reportUnsupportedDunderAll": "error",
+  "reportRedeclaration": "error",
+  "reportSelfClsParameterName": "error",
+  "reportNoOverloadImplementation": "error",
+  "reportUnusedCoroutine": "error",
+  "reportUnusedExcept": "error",
+  "reportUnhashable": "error",
+  "reportAssertAlwaysTrue": "error",
+  "reportInvalidStringEscapeSequence": "error",
+
+  // Off, with the count each one costs, because a rule turned off without a measurement is a rule
+  // somebody will turn back on and then ignore:
+  //
+  // `reportCallIssue` is 26 errors and every one of them is the Optional shape above wearing a
+  // different rule name, `zipfile.ZipFile(lab.path(name))` and `max(scores, key=scores.get)`. It
+  // would also catch a call with the wrong number of arguments, which is a real bug class, and that
+  // one is caught here by 778 tests that run every module in this tree.
+  "reportCallIssue": "none",
+  // `reportUnusedImport` is 16, and 11 of them are `import _bootstrap`, which every tool imports
+  // for the side effect of finding `src`. A rule whose majority is a deliberate idiom is noise.
+  "reportUnusedImport": "none",
+  // `reportUnusedVariable` is 11, all of them a tuple unpacked to name its parts where only some
+  // are read, which is how a test says what the other fields are.
+  "reportUnusedVariable": "none",
+  // `reportUnusedCallResult` is 33 and is a style rule, not a bug class.
+  "reportUnusedCallResult": "none",
+
+  // pyusb is only in the private lab's virtual environment, since nothing in this repository
+  // depends on it: `tools/usbprobe.py` is run with that interpreter, per the probe-remote skill.
+  // So the missing import is the expected state on this machine rather than a broken one.
+  "ignore": ["tools/usbprobe.py"]
+}
