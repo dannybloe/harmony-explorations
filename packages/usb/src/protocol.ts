@@ -471,7 +471,21 @@ export function softwareTypeFromVersion(fields: Uint8Array): number | undefined 
 
 export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
-  | { kind: 'misc'; selector: number; value: number }
+  | {
+      kind: 'misc';
+      selector: number;
+      /**
+       * The byte directly after the selector, which is the value on arch 12 and arch 14.
+       *
+       * **It is the wrong byte on arch 9**, section 90: that firmware emits its result as two bytes,
+       * high first, so this is the high half of a sixteen bit word. Read `word` or `low` there.
+       */
+      value: number;
+      /** The two bytes after the selector, whatever they mean on the architecture that sent them. */
+      bytes: Uint8Array;
+      /** Those two bytes read big endian, which is arch 9's own order. */
+      word: number;
+    }
   | { kind: 'version'; fields: Uint8Array }
   | { kind: 'flash-data'; sequence: number; data: Uint8Array }
   | { kind: 'data'; code: number; payload: Uint8Array };
@@ -509,7 +523,20 @@ export function decodeReply(report: Uint8Array): Reply {
     if (selector === undefined || value === undefined) {
       throw new ProtocolError('READ_MISC reply is short');
     }
-    return { kind: 'misc', selector, value };
+    // Read one byte past the declared payload, the way the acknowledgement above does. The header
+    // nibble claims two bytes on every architecture, and arch 9 sends **three**: the selector it
+    // echoes and then a sixteen bit result, high byte first. libconcord has carried a comment about
+    // exactly this since 2007; the firmware reading is section 90. A remote that sent only two
+    // leaves this byte at whatever the report was zero filled with, which is why `value` stays the
+    // arch 12 and arch 14 answer and nothing here guesses between them.
+    const low = report[3] ?? 0;
+    return {
+      kind: 'misc',
+      selector,
+      value,
+      bytes: Uint8Array.of(value, low),
+      word: (value << 8) | low,
+    };
   }
   if (code === VERSION_REPLY_CODE) {
     // The nibble is the field count, except where it is a floor. `0x28` means twelve, which the

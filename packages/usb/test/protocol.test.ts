@@ -239,7 +239,34 @@ test('an acknowledgement names the command it acknowledges', () => {
 
 test('a READ_MISC reply echoes the selector alongside its byte', () => {
   const reply = decodeReply(new Uint8Array([0xc2, MISC_RAM, 0x5a]));
-  assert.deepEqual(reply, { kind: 'misc', selector: 0x07, value: 0x5a });
+  assert.deepEqual(reply, {
+    kind: 'misc',
+    selector: 0x07,
+    value: 0x5a,
+    bytes: Uint8Array.of(0x5a, 0),
+    word: 0x5a00,
+  });
+});
+
+test('a READ_MISC reply keeps the byte after the value, because arch 9 puts the answer there', () => {
+  // Section 90. The header nibble claims two payload bytes on every architecture and the arch 9
+  // firmware sends three: the echoed selector and then a sixteen bit result, **high byte first**.
+  // `value` is the byte a Harmony One or a 600 answers with and the high half of what a 525 answers
+  // with, so a caller that wants the 525's number reads `word` or the second of `bytes`.
+  const reply = decodeReply(new Uint8Array([0xc2, 0x01, 0x00, 0x0d]));
+  assert.equal(reply.kind, 'misc');
+  if (reply.kind !== 'misc') return;
+  assert.equal(reply.value, 0x00, 'the old reading, which is the high byte on arch 9');
+  assert.equal(reply.word, 0x000d);
+  assert.deepEqual(reply.bytes, Uint8Array.of(0x00, 0x0d));
+});
+
+test('a two byte misc reply reads its missing low byte as zero rather than as undefined', () => {
+  // A remote that answers in two bytes leaves the third at whatever the report was filled with, and
+  // the transport zero fills. So `word` is defined on every architecture and means something on
+  // exactly one, which is why nothing here picks between them.
+  const reply = decodeReply(new Uint8Array([0xc2, MISC_RAM, 0xff]));
+  assert.equal(reply.kind === 'misc' && reply.word, 0xff00);
 });
 
 test('a version reply is cut to twelve fields by the count the firmware copies', () => {

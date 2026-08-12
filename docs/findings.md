@@ -10804,7 +10804,9 @@ names selector 6 as the memory one and 7 as something else, where this project d
 firmware and found 6 to be a different accessor. On an architecture where 7 answers nothing, 6 is
 the obvious candidate. It is not: over a window that returns 77 live bytes of 160 on a Harmony 600
 through selector 7, the 525 returns zero through **all nine** selectors tried, 0, 1, 2, 4, 5, 6, 7,
-8 and 12. Arch 9 serves no misc read at all.
+8 and 12. Arch 9 serves no misc read at all.<!--superseded--> **The last sentence is wrong and the
+correction is at the end of this section: selector 1 does serve, and the sweep agreed with itself
+because the decoder was reading the wrong byte of its reply.**
 
 That check needed one correction on the way, and it is the same shape as the rest of this section.
 The first sweep used `0x300` to `0x35F` and reported zero on the 525 and zero on the 600, which
@@ -10847,6 +10849,56 @@ anybody is home.
   the read seeding its resting value is not the command that gets lost.
 * `tests/test_usb_firmware.py`, which pins the arch 14 primitive's shape and its absence from the
   arch 9 image, so that finding the arch 9 handler later has something to contradict.
+
+### Corrected on 12 August 2026: the handler is read, and one selector does answer
+
+trelowney found the arch 9 handler and pointed out that this project's own decoder would have hidden
+its answer anyway. Both halves check out against `h525_code` here, and the reading below is ours from
+his addresses.
+
+`READ_MISC` is command `0xB0`, which sets state 10 at `0x03090` and puts the selector in `0x27E`. The
+executor is `0x03412` and it is nine instructions of preamble before any selector is examined:
+
+```
+03414: MOVLW 0xC2 ; RCALL 0x03558      emit the reply code
+03418: MOVFF 0x27E,0x2AC ; RCALL       echo the selector back
+03420: CLRF 0x710 ; CLRF 0x711         clear the two result bytes
+03426: MOVF 0x27E,W ; XORLW 0x01
+0342A: BNZ 0x03458                     everything but selector 1 skips the body
+...
+03458: MOVFF 0x711,0x2AC ; RCALL       emit the high byte
+0345E: MOVFF 0x710,0x2AC ; RCALL       then the low byte
+```
+
+**So the zeros this section measured are the firmware clearing two bytes**, which is a stronger
+negative than the one recorded above and a narrower one. Selector `0x07` is not "serviced by
+something that is not an indirect load": it is not serviced at all, and neither is any other selector
+except `0x01`. Every sentence above about the ceiling on arch 9 stands, and the reason changes from
+unexplained to read.
+
+**"Arch 9 serves no misc read at all" is wrong**, and this project could not have seen otherwise<!--superseded-->
+without reading the handler, because the reply is `C2 <selector> <high> <low>` and `decodeReply` took
+the byte after the selector as the value. That byte is the **high** half. Selector 1's answer came
+back as zero for the same reason every unimplemented selector did, so the sweep of nine selectors
+agreed with itself and was measuring the decoder for one of them.
+
+What selector 1 returns is a parameter by index, and the fetch at `0x04B72` has two arms:
+
+| the index is | what it reads | the high byte |
+|---|---|---|
+| below `0x1A0` | one byte through `INDF0` | `CLRF` then copied, so **always zero** |
+| `0x1A0` or above | two bytes into `0x72A` and `0x72B` | a real high half |
+
+So "the high byte is always zero" is true of the byte sized parameters and not of the word sized
+ones, which is why `decodeReply` now exposes `bytes` and `word` and picks between them for nobody.
+libconcord has carried `*rd++ = (rsp[2] << 8) | rsp[3]` with a comment about the `C2` reply since
+2007 and names selector 1 `COMMAND_MISC_STATE`, so the protocol half is theirs and the firmware half
+is what is new here.
+
+**Unmeasured on our bench**, and deliberately marked as such: trelowney reports his 525's selector 1
+parameter 0 as `C2 01 00 0D`, moving with the clock, with the first seven words decoding to a date
+and time that tracked Concordance's own reading half a minute apart. Nothing here has sent selector 1
+to a remote. The decode is fixed and tested; the capability is his measurement, not ours.
 
 
 ## 91. Infrared learning is a command family the firmware brackets and a stream nobody has found
@@ -16220,6 +16272,65 @@ and neither is sufficient.
 `packages/corpus/src/read.ts` now performs both after every read of a real remote. It had the marker
 check from the start; the checksum was assumed rather than tested, on architectures where no transfer
 had ever been caught inserting anything.
+
+### Confirmed independently, on 12 August 2026
+
+trelowney reached the same reading from the same four files without seeing this section: the same 54
+byte unit, the same sixteen and two, each surplus block an exact copy of the one in front of it, and
+the same closure that removing them lands on a blob whose end marker sits at the stated address and
+whose trailer checksum is the value stored in the file. Two derivations agreeing on a number nobody
+guessed is worth more here than either alone, and it is recorded because the alternative, a single
+reading nothing can contradict, is this project's own stated failure mode.
+
+## 123. The Harmony 525 implements infrared learning, and that is the route to its button map
+
+Section 98 read where a learn session's samples leave a remote on the Harmony One and the 600: not
+sent by any routine, but stored into a buffer the endpoint 1 IN descriptor is pointed straight at, so
+the reports are unsolicited and a host has to keep reading. What was open is whether the 525 does it
+at all, since nothing here had looked and its firmware is a different generation.
+
+It does. trelowney went looking after his capture hardware fell through and gave the addresses; what
+follows is our own reading of them in `h525_code`, which is the whole internal flash of the bench
+remote.
+
+**Command `0x70` starts a capture**, at `0x02F56`:
+
+```
+02F58: MOVLW 0x05 ; MOVWF 0x278      state 5
+02F5E: CLRF 0x500 ; CLRF 0x501       clear the first buffer's header
+02F64: CLRF 0x542 ; CLRF 0x543       and the second's
+02F6A: MOVLW 0x01 ; MOVWF 0x584      set the toggle
+```
+
+**Command `0x80` stops it**, at `0x030F8`, by putting 6 in the same state variable. And the producer
+at `0x060BE` gates on state 5 and then reads the toggle at `0x0584` to choose which of `0x0500` and
+`0x0542` it is filling, loading the pair into `0x700` and `0x702` one way round or the other.
+
+That is section 98's arrangement, feature for feature, on a third architecture: two buffers, a
+toggle, a state the command sets, and a producer that runs on its own rather than answering a
+request. The buffer addresses differ, `0x0500` and `0x0542` where arch 12 has `0x0600` and `0x0642`,
+and the 66 byte spacing is the same.
+
+**The protocol is libconcord's and has been since 2007**: `COMMAND_START_IRCAP 0x70`,
+`COMMAND_STOP_IRCAP 0x80`, `RESPONSE_IRCAP_DATA 0x90`, the sequence stepping by `0x10`, and the
+timings recovered in their `LearnIRInnerLoop`. Nothing about the command numbers is new here and this
+document should not imply otherwise. What is new is that a 525 implements them, and where.
+
+**Not verified here**: the `0x90` header byte and the `0x10` sequence step inside the arch 9
+producer. Both are in trelowney's reading and neither was located in this pass, which stopped once
+the state gating and the double buffer were confirmed. A host that assumes them and finds otherwise
+should believe the remote.
+
+**Why it matters more than a feature does.** Section 48 established that the physical button map
+cannot be measured over USB: a remote on the bus does not run its keypad handler, and finishing it
+would need a RAM write, which the rails forbid. Learning is a way round that needs no write at all.
+Point the original equipment's own remote at a 525, capture, and match the captured frame against the
+expanded class 5 records section 82 read; the record's index names the command, and the config
+already binds a scan code to it. The map falls out of two things the remote will tell you.
+
+**Nothing here sends `0x70`.** It is not a flash write and it cannot brick anything, but it is a
+command that changes a remote's state rather than reading it, so it sits behind the same flag every
+other write does. This section is static reading.
 
 ## References
 

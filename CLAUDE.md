@@ -46,7 +46,11 @@ propose firmware modification as a route to anything.
 5. **Hardware in the loop first, emulator deferred.** Round trip equality, read back and diff,
    IR cross learning between the two remotes, and live RAM polling over USB do most of what the
    emulator was wanted for, at a fraction of the build. **The RAM polling leg is per architecture**:
-   it works on arch 12 and arch 14 and the 525 answers zero for every address, section 90.
+   it works on arch 12 and arch 14 and the 525 answers zero for every address, section 90, whose
+   reason is read now: only selector 1 has a body in arch 9's `READ_MISC` executor, and every other
+   selector emits two bytes the firmware has just cleared. Selector 1 **does** answer, and this
+   project read it as zero for a year because the reply carries its value in the byte after the one
+   the decoder took.
    **Whether it can watch a config being interpreted is also per architecture, and the answer is not
    the one this file carried for a day.** On arch 14 it cannot, section 110: the journal's five
    variables are zero on a connected 600, so nothing loaded the config. On **arch 12 it can**, section
@@ -1025,7 +1029,11 @@ produce a config the remote accepts and mishandles.
   Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
   region of the One share one sense line. Finishing it needs a RAM write to drive the rows, which
-  the rails forbid, and **that is not proposed here.** Neither of Logitech's own applications has
+  the rails forbid, and **that is not proposed here.** **There is a route that needs no write**,
+  section 123: the 525 implements infrared learning, so pointing the original equipment's own remote
+  at it and matching the capture against the class 5 records section 82 read names the command, and
+  the config already binds a scan code to it. `0x70` is still a command that changes a remote's
+  state rather than reading it, so it sits behind the write flag, and nothing here has sent one. Neither of Logitech's own applications has
   it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
   hardware, so no host ever held the map. `docs/host-client.md`.
   **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
