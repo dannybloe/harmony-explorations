@@ -51,11 +51,14 @@ const EXPECTED: Readonly<Record<string, string>> = {
   h700_config: 'h600',
   h700_config_2: 'h600',
   h525_config: 'h525',
+  h525_config_2: 'h525',
   h525_safemode_ahcm: 'ascii',
   arch8_config_a: 'arch8',
   arch8_config_b: 'arch8',
   arch8_config_c: 'arch8',
   arch8_config_d: 'arch8',
+  arch8_config_880: 'arch8',
+  arch8_config_885: 'arch8',
 };
 
 const SAMPLES = Object.keys(EXPECTED);
@@ -119,7 +122,7 @@ test('a string drawn on screen turns up verbatim inside a base slot 0 name, whic
       }
       checked += 1;
     }
-    assert.equal(checked, 13);
+    assert.equal(checked, 16);
   });
 
 test('the alphabets span four architectures and seven typefaces', skipWithoutLab(), () => {
@@ -170,21 +173,62 @@ test('a shape is keyed by its font height, because I and l are one shape at some
 });
 
 test('a shape that draws two characters keeps both, so the ambiguity is reported not resolved',
-  skipUnless('one_spare_after_sync', 'h525_safemode_ahcm'), () => {
-    // `I` and `l` are the same pixels in these typefaces at several sizes. That is a property of
-    // the typeface, so the honest outcome is a code with two candidates and a stated fallback.
-    for (const name of ['one_spare_after_sync', 'h525_safemode_ahcm']) {
-      const c = parse(load(name) as Uint8Array);
-      const map = characterMap(c) as CharacterMap;
-      assert.ok(map.ambiguous.size > 0, name);
-      for (const [, candidates] of map.ambiguous) {
-        assert.deepEqual([...candidates].sort(), ['I', 'l'], name);
+  skipUnless(...SAMPLES), () => {
+    // `I` and `l` are the same pixels in these typefaces at several sizes. That is a property of the
+    // typeface, so no shape may claim one of them: the table keeps both and the code is settled, or
+    // not, by something other than the pixels.
+    //
+    // Two pairs turn up, and both are pairs whose members are drawn the same on purpose: `I` against
+    // `l`, and `O` against a zero with no slash through it.
+    let both = 0;
+    for (const alphabet of ALPHABETS) {
+      for (const characters of Object.values(alphabet.shapes)) {
+        if (characters.length === 1) continue;
+        assert.ok(
+          characters === 'Il' || characters === '0O',
+          `${alphabet.name}: a shape draws ${characters}`,
+        );
+        both += 1;
       }
     }
-    // And every ambiguous code still decodes, because the seed's own assignment breaks the tie.
-    const c = parse(load('one_spare_after_sync') as Uint8Array);
+    assert.ok(both >= 10, `the corpus has shapes that draw two characters, got ${both}`);
+    // Wherever a container is left holding one, the pair is that same one and nothing else, and the
+    // container still decodes: the fallbacks name a character rather than dropping the code.
+    let ambiguous = 0;
+    for (const name of SAMPLES) {
+      const map = characterMap(parse(load(name) as Uint8Array)) as CharacterMap;
+      for (const [code, candidates] of map.ambiguous) {
+        assert.deepEqual([...candidates].sort(), ['I', 'l'], name);
+        assert.ok(map.codes.has(code), `${name} code ${code} still decodes`);
+        ambiguous += 1;
+      }
+    }
+    assert.ok(ambiguous > 0, 'and at least one container is left with the pair');
+  });
+
+test('a container gives one code to one character, which is what settles I against l',
+  skipUnless(...SAMPLES), () => {
+    // The generator's own rule: a code is a position in the string list it walks, so no character is
+    // on two codes. Asserted over the corpus because it is used as a resolver, and using a rule to
+    // decide something without checking it holds is how three hand read seed labels survived. Each of
+    // those three showed up here as a character on two codes at once, section 112.
+    for (const name of SAMPLES) {
+      const map = characterMap(parse(load(name) as Uint8Array)) as CharacterMap;
+      const per = new Map<string, number[]>();
+      for (const [code, character] of map.codes) {
+        // A blank code is a space whatever the generator meant by it, so many codes share that one.
+        if (character === ' ') continue;
+        per.set(character, [...(per.get(character) ?? []), code]);
+      }
+      const twice = [...per].filter(([, codes]) => codes.length > 1);
+      assert.deepEqual(twice, [], `${name} puts a character on two codes`);
+    }
+    // And the rule does work rather than merely holding: one_config draws `I` and `l` with identical
+    // pixels at every size but one, so its `I` is settled only because its `l` is settled first.
+    const c = parse(load('one_config') as Uint8Array);
     const map = characterMap(c) as CharacterMap;
-    for (const [code] of map.ambiguous) assert.ok(map.codes.has(code));
+    assert.equal(map.codes.get(32), 'l');
+    assert.equal(map.codes.get(50), 'I');
   });
 
 test('a blank glyph is a space and is no evidence about anything else',

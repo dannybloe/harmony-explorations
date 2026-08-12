@@ -68,8 +68,15 @@ const SEEDS: Seed[] = [
         container: 'one_spare_after_sync',
       codes: 'HySunMoTeWdhFriat12:34567890/ blvsw!OKUBCcpfgL.mGIzkREDPAq\\NV?Yx,"\'-j JQX',
       },
-      // For the plus sign, which only the other Harmony One config draws, once.
-      { container: 'one_config', codes: { 72: '+' } },
+      // For the plus sign, which only the other Harmony One config draws, once, and for the pair
+      // `l` and `I`, which this container draws at seven sizes with identical pixels at every one of
+      // them. The seed container has the taller `l` and no `I` at those sizes, so four of the shapes
+      // came out labelled `l` alone and `If not,` decoded with a lowercase L in front. **Both codes
+      // have to be named here, not just the wrong one**: naming `I` alone would claim the shared
+      // shapes for `I` and take `l` off the container that draws it 148 times. Labelling both leaves
+      // the shared sizes honestly ambiguous, and the one size where they differ then settles `l`,
+      // after which the rule that one code is one character settles `I`.
+      { container: 'one_config', codes: { 32: 'l', 50: 'I', 72: '+' } },
     ],
     proof: 'The battery level is low!',
   },
@@ -80,7 +87,11 @@ const SEEDS: Seed[] = [
     sources: [
       {
         container: 'h600_config',
-        codes: "Hy/( 0sec).123456789aUthrmonupfwdAivbExSBCLIlgRTGWZkDPFMq\\NOV?Y,-+!KXj'",
+        // **Code 51 is a lowercase `z` and this string said `Z` until 12 August 2026.** It draws
+        // one word in the whole container, `Initialization`, so nothing here could catch it; what
+        // did is the rule that a container gives one code to one character, which had the 700
+        // carrying `Z` on two codes at once. The other is its `Zoom`, below.
+        codes: "Hy/( 0sec).123456789aUthrmonupfwdAivbExSBCLIlgRTGWzkDPFMq\\NOV?Y,-+!KXj'",
       },
       // The 700 pair, for five characters the 600's config never draws. Each was read from its
       // glyph and then confirmed by the word it sits in: `HDMI`, `Zoom`, an underscore inside a
@@ -101,6 +112,11 @@ const SEEDS: Seed[] = [
       // One config of the four names a device with brackets in it, which is the only place the
       // corpus draws either.
       { container: 'arch8_config_c', codes: { 67: '(', 68: ')' } },
+      // The two configs of 12 August 2026, which draw a left angle bracket the other five never do:
+      // a chapter and a tuning button labelled with a pair of them. Each was read from its glyph and
+      // confirmed by the word: the 885's code 52 sits in `Initialization`, `HDMI` and `I'm Done`.
+      { container: 'arch8_config_880', codes: { 66: '<' } },
+      { container: 'arch8_config_885', codes: { 52: 'I', 71: '<' } },
     ],
     proof: 'Everything is OK >',
   },
@@ -111,8 +127,23 @@ const SEEDS: Seed[] = [
     name: 'h525',
     sources: [{
       container: 'h525_config',
-      codes: 'HyOFaTermint EUSBCNDpgducs0:o2flL.wGWbIzkRPhAMq\\vV-X361?Y8x+/4#5Z~',
-    }],
+      // **Code 58 is `9` and this string said `8` until 12 August 2026.** It is drawn once in the
+      // whole container, in a device name, so no word here could catch it, and the second arch 9
+      // config did: it numbers sixteen mode pages "N OF 16" in one program per page, the programs
+      // ascend with the number, and the shape lands at position nine. The name reads as a real
+      // product either way, which is why a second container rather than a rereading settled it.
+      codes: 'HyOFaTermint EUSBCNDpgducs0:o2flL.wGWbIzkRPhAMq\\vV-X361?Y9x+/4#5Z~',
+    },
+    // The Dutch config, which draws eleven shapes the first never does. Seven come out of a word the
+    // generator emits, so none of them is a guess: `batterijen`, `beeindigd` with the diaeresis over
+    // the second letter, `Ja`, `Infrarood`, `zijn, drukt` for the comma and `Infrarood-LED's` for the
+    // apostrophe. The capital `K` comes out of the rule that one code is one character, since the
+    // lowercase one is code 40. The three digits come out of the same sixteen page run as the 9 above:
+    // `0` closes it, drawn as `1` and then `0`, and `7` and `8` are the two numbers it is missing.
+    { container: 'h525_config_2', codes: {
+      28: '0', 41: 'I', 43: "'", 47: 'j', 51: 'ë', 52: 'K', 54: 'J', 56: ',', 66: '7', 67: '8',
+      70: 'Z',
+    } }],
     proof: 'On / Off',
   },
   {

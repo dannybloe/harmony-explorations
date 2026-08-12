@@ -190,6 +190,28 @@ def text_facts():
     return found
 
 
+def activity_facts():
+    """How many of the corpus's activities have a drawn name attributed to them.
+
+    Shelled out for the same reason as the four above, and it is a number two documents quote: the
+    naming rule in `packages/codec/src/inventory.ts` is the only thing that decides it, so a copy in
+    Python would be free to disagree with the reader the application uses.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/activities.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] in ('activities_named', 'activities_total'):
+            found[parts[0]] = parts[1]
+    return found
+
+
 def contribution_facts():
     """What the corpus holds, per architecture, for the table in `README.md`.
 
@@ -403,6 +425,7 @@ def main():
     facts.update(emit_facts())
     facts.update(reading_facts())
     facts.update(text_facts())
+    facts.update(activity_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

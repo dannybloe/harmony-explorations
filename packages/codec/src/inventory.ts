@@ -305,18 +305,22 @@ export interface ActivityName {
  *    remote entering an activity puts its name on the screen
  * 3. so the page's string that relates to one of those is this activity's label
  *
- * "Relates to" is containment either way rather than equality, which is what the Harmony 700 needs:
- * its menu label is the name plus a qualifier and its splash screen is a verb plus the name, so the
- * two share the name and neither equals it.
+ * "Relates to" is a string the modes say **exactly**, and containment either way only where nothing is
+ * said exactly, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and
+ * its splash screen is a verb plus the name, so the two share the name and neither equals it.
  *
  * **A string several activities of one page claim is chrome**, a title or a footer, and is dropped.
  * That is what separates the label from the "Starting" splash text every row shares.
  *
- * Where this leaves a gap is stated rather than guessed: on **arch 12** no string resolves, because a
- * One's activity mode does not repeat the name its menu draws, and its scan codes cannot stand in for
- * position either. Three pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and
- * {48,49} while each draws its labels at the same rows, so no fixed code to row map exists on a touch
- * panel and base slot 17's hit map is what would be needed. Section 121.
+ * **A label the menu wrapped onto a second row** is looked for last, and only for an activity nothing
+ * else resolved, which is a Harmony 525 and nothing else here.
+ *
+ * Where this leaves a gap is stated rather than guessed: on **arch 12** a page with more than one
+ * activity resolves nothing, because a One's activity mode does not repeat the name its menu draws, and
+ * its scan codes cannot stand in for position either. Three pages of `one_config` bind activities on
+ * scans {50,51,52}, {50,48,49} and {48,49} while each draws its labels at the same rows, so no fixed
+ * code to row map exists on a touch panel and base slot 17's hit map is what would be needed. The two
+ * arch 12 activities that do resolve are single activity configs. Sections 121 and 124.
  */
 export function activityNames(c: Container): ActivityName[] {
   const bindings = activityBindings(c);
@@ -338,7 +342,15 @@ export function activityNames(c: Container): ActivityName[] {
     candidates: Map<string, ScreenString>;
   }
 
-  const drafts: Draft[] = [];
+  interface Spec {
+    binding: ActivityBinding;
+    scans: number[];
+    modes: number[];
+    /** Every string the modes this activity enters put on a screen. */
+    spoken: string[];
+  }
+
+  const specs: Spec[] = [];
   for (const activity of [...new Set(bindings.map((b) => b.activity))].sort((a, b) => a - b)) {
     const mine = bindings.filter((b) => b.activity === activity);
     const binding = mine[0] as ActivityBinding;
@@ -370,19 +382,49 @@ export function activityNames(c: Container): ActivityName[] {
       }
     }
 
-    // Hop three: the page's strings that relate to one of those. Containment either way rather than
-    // equality, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and
-    // its splash screen is a verb plus the name, so the two share the name and neither equals it.
-    const target = pages[binding.page];
-    const candidates = new Map<string, ScreenString>();
-    for (const one of target === undefined ? [] : textOf(target.program)) {
-      if (!useful(one)) continue;
-      if (!spoken.some((said) => one.text.includes(said) || said.includes(one.text))) continue;
-      const key = labelKey(binding.page, one);
-      if (!candidates.has(key)) candidates.set(key, one);
-    }
-    drafts.push({ binding, scans: mine.map((b) => b.scan), modes: [...modes], candidates });
+    specs.push({ binding, scans: mine.map((b) => b.scan), modes: [...modes], spoken });
   }
+
+  // Hop three: the page's strings that relate to one of those. Containment either way rather than
+  // equality, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and its
+  // splash screen is a verb plus the name, so the two share the name and neither equals it.
+  //
+  // **A string the modes say exactly beats one they only contain**, and that is not a tie break, it is
+  // what stops containment crossing a word boundary. An activity's chain also enters the mode that
+  // lists its devices, and that list is the same for every activity, so on a Harmony 880 whose owner
+  // described his own config every activity said every device's name. One of the four menu labels is
+  // the first word of a device's name, so containment made it a candidate for all four activities, the
+  // chrome rule below then read a label four activities claim as a footer, and the activity it belonged
+  // to lost its only candidate. Two other arch 8 configs and the 885 gained a name from the same rule.
+  //
+  // The alternative was dropping a string every activity says, on the ground that it distinguishes none
+  // of them. It fixes exactly the same eight names and costs a pass, because the chrome rule one hop
+  // later then has less to work with rather than more. Section 124.
+  const candidatesFor = (spec: Spec, wrapped: boolean): Map<string, ScreenString> => {
+    const { binding, spoken } = spec;
+    const target = pages[binding.page];
+    const rows = (target === undefined ? [] : textOf(target.program)).filter(useful);
+    const exact = new Map<string, ScreenString>();
+    const loose = new Map<string, ScreenString>();
+    for (const one of rows) {
+      for (const phrase of wrapped ? continuations(one, rows) : [one.text]) {
+        const equal = spoken.some((said) => said === phrase);
+        // **A wrapped label has to be a prefix of what the mode says**, not merely related to it, and
+        // that is the menu's own behaviour: it truncates a long name to the rows it has. Containment
+        // both ways is what the unwrapped case needs and it is far too loose here, because a joined
+        // phrase ends up containing a device's name and every activity says all of those. It also
+        // rejects a join that crosses from one menu item into the next, which containment accepted.
+        const related = wrapped
+          ? spoken.some((said) => said.startsWith(phrase))
+          : spoken.some((said) => phrase.includes(said) || said.includes(phrase));
+        if (!equal && !related) continue;
+        const into = equal ? exact : loose;
+        const key = labelKey(binding.page, { ...one, text: phrase });
+        if (!into.has(key)) into.set(key, { ...one, text: phrase });
+      }
+    }
+    return exact.size > 0 ? exact : loose;
+  };
 
   // Hop four: drop the page's chrome, then propagate.
   //
@@ -393,58 +435,92 @@ export function activityNames(c: Container): ActivityName[] {
   // activity page of the same mode draws identically is chrome too, which is what catches it on a page
   // with only one. Testing only the first left the Harmony 600's single activity page holding its
   // footer as a rival candidate.
-  const perPage = new Map<number, Draft[]>();
-  for (const draft of drafts) {
-    const on = perPage.get(draft.binding.page) ?? [];
-    on.push(draft);
-    perPage.set(draft.binding.page, on);
-  }
-  const activityPages = new Set(drafts.map((draft) => draft.binding.page));
-  const elsewhere = new Map<number, Set<string>>();
-  for (const page of activityPages) {
-    const mode = modeOfPage(records, page);
-    const others = new Set<string>();
-    for (const sibling of activityPages) {
-      if (sibling === page || modeOfPage(records, sibling) !== mode) continue;
-      const program = pages[sibling]?.program;
-      if (program === undefined) continue;
-      for (const one of textOf(program)) {
-        if (useful(one)) others.add(sameRowElsewhere(labelKey(sibling, one)));
-      }
-    }
-    elsewhere.set(page, others);
-  }
-  for (const [page, on] of perPage) {
-    const claims = new Map<string, number>();
-    for (const draft of on) for (const key of draft.candidates.keys()) {
-      claims.set(key, (claims.get(key) ?? 0) + 1);
-    }
-    const sharedElsewhere = elsewhere.get(page) ?? new Set<string>();
-    for (const draft of on) {
-      for (const key of [...draft.candidates.keys()]) {
-        const everyone = on.length > 1 && claims.get(key) === on.length;
-        if (everyone || sharedElsewhere.has(sameRowElsewhere(key))) draft.candidates.delete(key);
-      }
-    }
-  }
-
-  // **One label belongs to one activity**, so a candidate another activity has been assigned is no
-  // longer a candidate here. That is a constraint rather than a preference, and propagating it is what
-  // finishes the arch 8 pages: two of three activities resolve on their own and the third is then the
-  // only claimant left on the label the other two gave up.
   const assigned = new Map<number, ScreenString>();
-  for (let progress = true; progress; ) {
-    progress = false;
+  const taken = new Set<string>();
+  const resolve = (drafts: Draft[]): void => {
+    const perPage = new Map<number, Draft[]>();
     for (const draft of drafts) {
-      if (assigned.has(draft.binding.activity) || draft.candidates.size !== 1) continue;
-      const [key, label] = [...draft.candidates][0] as [string, ScreenString];
-      assigned.set(draft.binding.activity, label);
-      for (const other of drafts) {
-        if (other === draft) continue;
-        other.candidates.delete(key);
-      }
-      progress = true;
+      const on = perPage.get(draft.binding.page) ?? [];
+      on.push(draft);
+      perPage.set(draft.binding.page, on);
     }
+    const activityPages = new Set(drafts.map((draft) => draft.binding.page));
+    const elsewhere = new Map<number, Set<string>>();
+    for (const page of activityPages) {
+      const mode = modeOfPage(records, page);
+      const others = new Set<string>();
+      for (const sibling of activityPages) {
+        if (sibling === page || modeOfPage(records, sibling) !== mode) continue;
+        const program = pages[sibling]?.program;
+        if (program === undefined) continue;
+        for (const one of textOf(program)) {
+          if (useful(one)) others.add(sameRowElsewhere(labelKey(sibling, one)));
+        }
+      }
+      elsewhere.set(page, others);
+    }
+    for (const [page, on] of perPage) {
+      const claims = new Map<string, number>();
+      for (const draft of on) for (const key of draft.candidates.keys()) {
+        claims.set(key, (claims.get(key) ?? 0) + 1);
+      }
+      const sharedElsewhere = elsewhere.get(page) ?? new Set<string>();
+      for (const draft of on) {
+        for (const key of [...draft.candidates.keys()]) {
+          const everyone = on.length > 1 && claims.get(key) === on.length;
+          const already = taken.has(key);
+          if (everyone || already || sharedElsewhere.has(sameRowElsewhere(key))) {
+            draft.candidates.delete(key);
+          }
+        }
+      }
+    }
+
+    // **One label belongs to one activity**, so a candidate another activity has been assigned is no
+    // longer a candidate here. That is a constraint rather than a preference, and propagating it is
+    // what finishes the arch 8 pages: two of three activities resolve on their own and the third is
+    // then the only claimant left on the label the other two gave up.
+    for (let progress = true; progress; ) {
+      progress = false;
+      for (const draft of drafts) {
+        if (assigned.has(draft.binding.activity) || draft.candidates.size !== 1) continue;
+        const [key, label] = [...draft.candidates][0] as [string, ScreenString];
+        assigned.set(draft.binding.activity, label);
+        taken.add(key);
+        for (const other of drafts) {
+          if (other === draft) continue;
+          other.candidates.delete(key);
+        }
+        progress = true;
+      }
+    }
+  };
+
+  const drafts: Draft[] = specs.map((spec) => ({
+    binding: spec.binding,
+    scans: spec.scans,
+    modes: spec.modes,
+    candidates: candidatesFor(spec, false),
+  }));
+  resolve(drafts);
+
+  // Hop five, and only for what is left: **a label the menu wraps onto a second row**, which is the
+  // Harmony 525 and nothing else here. Its menu is two columns of two lines each, so an activity's own
+  // label is drawn as two strings on consecutive rows, and matching one row at a time returns a
+  // fragment. `docs/findings.md` section 121 has the layout.
+  //
+  // A fallback rather than a rule, and deliberately: a wrapped candidate is only looked for once an
+  // activity has failed to resolve on single rows, so this pass can add a name and cannot change one.
+  // It also gives up the whole single row candidate set, because keeping both leaves every fragment as
+  // a rival of the label it is a fragment of.
+  const stuck = specs.filter((spec) => !assigned.has(spec.binding.activity));
+  if (stuck.length > 0) {
+    resolve(stuck.map((spec) => ({
+      binding: spec.binding,
+      scans: spec.scans,
+      modes: spec.modes,
+      candidates: candidatesFor(spec, true),
+    })));
   }
 
   return drafts.map((draft): ActivityName => {
@@ -489,6 +565,22 @@ function sameRowElsewhere(key: string): string {
  */
 function labelKey(page: number, one: ScreenString): string {
   return `${page},${one.y},${one.text}`;
+}
+
+/**
+ * A draw's text joined with each draw on the next row down, which is what a wrapped label looks like.
+ *
+ * **Not the same column, because the second line is not aligned with the first.** The 525 draws
+ * "Watch" at x 63 and its continuation at x 72, so a column test would miss it; what selects the right
+ * continuation is the caller's own filter, that the joined text is something the activity's modes say.
+ * Only one row down: no label in the corpus wraps three ways, and allowing two would let a fragment of
+ * one item join a fragment of the next.
+ */
+function continuations(one: ScreenString, rows: readonly ScreenString[]): string[] {
+  const below = rows.filter((other) => other.y > one.y).map((other) => other.y);
+  if (below.length === 0) return [];
+  const next = Math.min(...below);
+  return rows.filter((other) => other.y === next).map((other) => `${one.text} ${other.text}`);
 }
 
 /** Opcode `0x7E`: enter the base slot 6 mode the operand indexes. Section 36. */

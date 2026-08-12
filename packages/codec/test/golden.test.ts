@@ -64,6 +64,7 @@ const CONTAINERS = [
   'arch8_code_885',
   // An 885 user config, and the first arch 10 container, whose four failing checks the vector
   // records rather than hides. Sections 113 and 115.
+  'arch8_config_880',
   'arch8_config_885',
   'h890_config',
   'h890_config_2',

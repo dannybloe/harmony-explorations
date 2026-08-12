@@ -49,8 +49,14 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Forty seven have been found and corrected so far. **The newest is in section 122, and it is a
-correction to a correction.** Section 117 caught the container's base being derived circularly, on a
+Fifty one have been found and corrected so far. **The four newest are in section 124, and three of
+them are the same shape: a hand read glyph label that only one word in one container could have caught,
+and no word did.** What caught them is the generator's own rule that a character sits on one code, used
+as a check rather than assumed: a character on two codes at once is a contradiction, and three were.
+The fourth is three activity labels on a Harmony 525, which were fragments of a wrapped menu label and
+two of them belonged to a different activity than the one they were reported for.
+
+**The one before those is in section 122, and it is a correction to a correction.** Section 117 caught the container's base being derived circularly, on a
 Harmony 890 config whose header disagrees with its own end marker, and then explained that
 disagreement as a generator failing to restamp a field. A second read of that remote, contributed the
 next day, disagrees with the first: the reads duplicate whole 54 byte chunks, 16 and 2 of them, and
@@ -14380,8 +14386,8 @@ The application needs to show a config's activities and devices by name. Section
 devices, in base slot 0's name tree, and found that nothing there names an activity. What does name
 one is the screen: a mode page's program draws the activity's own label, and section 46 left that
 unreadable, with **what the glyph codes mean** standing as its last open item. This section reads
-them, on all four architectures, and the corpus comes to 146844<!--fact:text_read--> of
-146846<!--fact:text_glyphs--> drawn glyphs.
+them, on all four architectures, and the corpus comes to 170920<!--fact:text_read--> of
+170922<!--fact:text_glyphs--> drawn glyphs.
 
 ### The codes are per config, and the order they are assigned in says why
 
@@ -14494,10 +14500,27 @@ problem. That happened, and `Volume` came out as `V2 cme`.
 
 ### What is left, and it is two glyphs
 
-`make text` reports it per container. Seventeen of the eighteen containers read every glyph they
-draw. The exception is the Harmony 700 pair, where one code is drawn once in each, in a string that
-reads `Options` followed by it, and its shape is a small mark this section does not identify. Two
-glyphs in 65456.
+`make text` reports it per container. Every container but one reads every glyph it draws. The
+exception is the Harmony 700 pair, where one code is drawn once in each, in a string that reads
+`Options` followed by it, and its shape is a small mark this section does not identify. Two glyphs,
+and the corpus wide figure is 170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> since the
+population grew, section 124.
+
+### Corrected on 12 August 2026: three of the hand read labels were wrong, and one rule found all three
+
+Two containers arrived on 10 August 2026 whose text this section could not fully read, and filling
+their gaps produced something better than eleven more characters. **A container gives one code to one
+character**, because a code is the position of a character in the string list the generator walks, so
+a character on two codes at once is a contradiction. Checking that over the corpus found three:
+
+* the `h525` seed's code 58 is `9` and was read as `8`
+* the `h600` seed's code 51 is a lowercase `z` and was read as `Z`
+* the `one` seed named code 50 `l`, and it is `I`
+
+Each was drawn in one word or one name in its own container, which is why the proof string this
+section relies on could not catch any of them, and each was caught by a **second** container of the
+same skin. The rule is also a resolver now, and it is what settles `I` against `l` in place of the
+fallback this section describes. Section 124 has the evidence and the three readings.
 
 ### What this does not settle
 
@@ -16068,9 +16091,9 @@ comment in `packages/codec/src/screen.ts` said in as many words that opcode 2 "i
 instruction naming a place outside its own program", which is exactly the sentence that would have
 prompted somebody to check. It is corrected in place.
 
-The consequences for the numbers are large. `make text` now reads 146846<!--fact:text_glyphs--> drawn
-glyphs where it read 65456 before, and 19523<!--fact:text_draws--> draws of which
-12738<!--fact:text_referenced--> are references. Every sample still reads at 100.0%, which is the check
+The consequences for the numbers are large. `make text` now reads 170922<!--fact:text_glyphs--> drawn
+glyphs where it read 65456 before, and 23419<!--fact:text_draws--> draws of which
+15742<!--fact:text_referenced--> are references. Every sample still reads at 100.0%, which is the check
 that the reference reading is right rather than merely bigger: 12052 addresses that all resolved to
 readable text in the container's own alphabet would be an unlikely accident. Two glyphs in the whole
 corpus remain unread, as before.
@@ -16117,11 +16140,19 @@ the 525's selected and unselected copies of one label, drawn twice on a row at t
 that works is page, row and text: same row and same text is one label however often it is drawn, and
 two columns differ because their words do.
 
-That names **23 of the corpus's 35 activities, and arch 14 completely**, 13 of 13.
+That named **23 of the corpus's 35 activities, and arch 14 completely**, 13 of 13. **Corrected on 12
+August 2026**, section 124: containment either way is too loose where an activity's chain enters the
+mode that lists the devices, so a string the modes say exactly beats one they only contain, and a
+label the menu wraps onto a second row is looked for once nothing on one row resolves. The figure is
+41<!--fact:activities_named--> of 50<!--fact:activities_total--> and three architectures of four are
+complete: arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of 11.
 
-### Arch 12 names none, and that is a proof
+### Arch 12 names almost none, and that is a proof
 
-A Harmony One resolves nothing, and the reason is structural rather than a shortfall in the method.
+A Harmony One resolves nothing where it has more than one activity to tell apart, and the reason is
+structural rather than a shortfall in the method. The heading here read "Arch 12 names none" until<!--superseded-->
+section 124 counted the two single activity configs that do resolve, where there is nothing to tell
+apart and the filters have no work to do.
 
 Its activity mode does not repeat the name its menu draws. And its scan codes cannot stand in for
 position, which is demonstrable from one container: the three activity pages of `one_config` bind
@@ -16135,9 +16166,11 @@ touch model here, `packages/usb/src/models.ts`, and it is the only architecture 
 not a physical key. `CLAUDE.md`'s proposed route was therefore right for arch 12 and wrong as a general
 route, and the owner's correction was right that it is no route at all for a 525.
 
-The remaining five, four on arch 8 and one on arch 9, fail for a duller reason: a short generic word
-inside a longer label satisfies containment, leaving two candidates where one is wanted. Nothing here
-guesses between them.
+The remaining five, four on arch 8 and one on arch 9, failed for a duller reason: a short generic<!--superseded-->
+word inside a longer label satisfies containment, leaving two candidates where one is wanted. **That
+diagnosis was right and section 124 acted on it**: the longer label is a device's name, every
+activity's chain reaches the mode that lists the devices, so every activity said it. All five resolve
+now, and the arch 9 one turned out to be a different problem again, a label wrapped onto a second row.
 
 ### Where it landed
 
@@ -16358,6 +16391,181 @@ already binds a scan code to it. The map falls out of two things the remote will
 **Nothing here sends `0x70`.** It is not a flash write and it cannot brick anything, but it is a
 command that changes a remote's state rather than reading it, so it sits behind the same flag every
 other write does. This section is static reading.
+
+## 124. A contributor's description of his own remote is ground truth, and checking against it moved four readers
+
+The corpus has had labelled samples before, in the sense that a contributor said which remote a config
+came off. It has never had one where somebody wrote down **what is in it**. On 12 August 2026 the owner
+of the Harmony 880 whose config arrived on 10 August sent a description sheet: which devices the remote
+drives, which activities its menu offers, and what each activity's screens are for.
+
+That is the first thing in this project that can contradict `packages/codec/src/inventory.ts` from
+outside the code, and the reason it is worth a section is that it did.
+
+### What agreed
+
+| | the sheet | `inventory.ts` |
+|---|---|---|
+| devices | 4 | 4 |
+| activities | 4 | 4 |
+
+Both are the readings sections 86 and 120 argue for, and neither had ever been checked against anything
+but another reader here. The activity count is the more interesting of the two, because the menu the
+remote draws has **five** entries: the fifth is the remote's own settings page, which is not an
+activity, and the count comes from a state variable rather than from the menu, so it is right for a
+reason the menu cannot supply.
+
+**And the idle value is 3**, strictly inside the values the bindings write, which are 0, 1, 2 and 4.
+Section 120 established that the idle value is base slot 13's `first` and not the highest value, on the
+strength of one container where the two differ. This is the second, and it is stronger: 3 is neither the
+top nor the bottom, so no rule of the form "the first" or "the last" produces it, and the four values a
+key writes are exactly the four activities the sheet lists.
+
+### What did not, and why containment was the reason
+
+The naming chain of section 121 resolved **one** of the four labels on that page. The other three lost
+their only candidate to the chrome rule, and the mechanism is worth stating because it is a filter doing
+exactly what it was written to do, on input that broke its premise.
+
+An activity's chain enters the modes it needs, and one of those is the **device list**, which is the
+same list for every activity. So every activity of that remote "says" every device's name. One of the
+four activity labels is a word that is also the first word of a device name, and containment either way
+was the test, so that label became a candidate for all four activities. A candidate every activity of a
+page claims is chrome, by section 121's first filter, so the label was dropped from all four, including
+from the one activity it belonged to.
+
+The correction is one clause: **a string the activity's modes say exactly beats one they only contain.**
+
+* it is not a tie break, it is what stops containment crossing a word boundary
+* containment stays for the case that needs it, the Harmony 700, whose menu label is the name plus a
+  qualifier and whose splash screen is a verb plus the name
+* it fixed the 880 completely and gained a name on three other arch 8 configs, eight in all
+
+The alternative was dropping any string every activity says, on the ground that it distinguishes none of
+them. It fixes exactly the same eight names, costs a pass, and leaves the chrome rule one hop later with
+less to work with, so it was measured and not adopted.
+
+### And it cost three names on the Harmony 525, which were wrong
+
+The exact match rule left the arch 9 configs resolving nothing where they had resolved three. Those
+three were **fragments**, and each was the first line of a different activity's label, so the retraction
+is the honest half of the change.
+
+A 525 lays its activity menu out as two columns of two lines. `h525_config`'s page 47 draws:
+
+```
+(  0, 13) "Watch"        ( 63, 13) "Watch"
+(  0, 24) "DVD -"        ( 72, 24) "TV +"
+(  0, 35) "Play on"
+(  0, 46) <the owner's own name for a device>
+```
+
+Three activities, each label wrapped across two rows and truncated to what fits. The words above are the
+generator's own role words, which is why they can be quoted; the fourth row is the contributor's
+equipment and is not. The old rule matched a single row and returned `Watch` for the first, `DVD -` for
+the second and `Play on` for the third: two of those are not even that activity's own row.
+
+So a second pass looks for a label the menu wrapped, and two decisions make it safe:
+
+* **it runs only on what is left**, after the single row pass and its filters. A wrapped candidate can
+  therefore add a name and cannot change one, which is why the other 37 are untouched.
+* **a joined phrase has to be a prefix of what the mode says**, not merely related to it. Containment
+  both ways is far too loose here, because a joined phrase contains a device's name and every activity
+  says all of those; the prefix rule also rejects a join that runs from one menu item into the next,
+  which containment accepted. The menu truncates, so a prefix is exactly the relation a wrap produces.
+
+What selects the continuation is **not** the column, which is the part that would have been guessed: the
+second line sits at x 63 and its continuation at x 72, so a same column test misses it. The filter is
+the prefix test alone.
+
+### The number, and it moved twice
+
+| | activities named |
+|---|---|
+| before | 32 of 50 |
+| exact match beats containment | 37 of 50 |
+| plus the wrapped label pass | 41<!--fact:activities_named--> of 50<!--fact:activities_total--> |
+
+Per architecture: **arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of 11.** So three of the
+four architectures are complete, and the fourth is section 121's proof rather than a shortfall: a Harmony
+One's activity mode does not repeat the name its menu draws, and no fixed scan code to row map can exist
+on a touch panel. `make activities` prints it, and the population is stated in
+`packages/codec/bin/activities.ts` for the reason `bin/reading.ts` learned the hard way.
+
+Section 121 said 23 of 35 and named five stragglers with a diagnosis: "a short generic word inside a<!--superseded-->
+longer label satisfies containment". That diagnosis was right and it named the defect corrected here.
+
+### The glyphs the two new configs needed, and three that were wrong all along
+
+The 880's four labels only read as words once the font gaps were filled, and the way in was one visible
+symptom: a button label came back with two replacement markers where the sheet says two angle brackets.
+
+Filling them is the method section 112 describes, one gap filling source per container:
+
+| container | codes | how each was settled |
+|---|---|---|
+| `arch8_config_880` | 66 | the glyph is a left angle bracket, and the sheet says so |
+| `arch8_config_885` | 52, 71 | `Initialization`, `HDMI` and `I'm Done` for the letter; the bracket by shape |
+| `h525_config_2` | eleven | seven from a word the generator emits, three digits from a page number run, one from the rule below |
+
+The digits are the pretty one. That container numbers sixteen mode pages, one program per page, drawing
+`N OF 16`; the programs ascend with the number; and the numbers the corpus could already read are 1 to 6,
+8, and 10 to 16. Two codes were unread and they sit at positions 7 and 8 of that run, which names them
+without reading a pixel.
+
+**Except that it named the second one 8 where a shape already claimed 8**, and that is what turned up
+three hand reading errors in the seeds:
+
+* **`h525` code 58 is `9`, not `8`.** It is drawn once in the whole seed container, inside a device name,
+  so no English or Dutch word could catch it. The page run puts the shape at position nine, and the
+  device name reads as a real product either way.
+* **`h600` code 51 is a lowercase `z`, not `Z`.** Also drawn once, in `Initialization`. The Harmony 700
+  pair then carried `Z` on two codes at once, which is what showed it.
+* **`one` code 50 is `I`, not `l`.** The Harmony One draws `I` and `l` with identical pixels at every
+  size but one, and the seed container has the taller `l` and no `I` at those sizes, so four shapes came
+  out labelled `l` alone and `If not,` decoded with a lowercase L in front.
+
+### The rule that found all three, and now resolves the pair
+
+**A container gives one code to one character.** That is the generator's own rule rather than an
+assumption about typography: a glyph code is the position of a character in the string list the generator
+walks, section 112, and no character is in that list twice.
+
+Used as a check it is what found the three above, each showing up as a character sitting on two codes.
+Used as a resolver it settles `I` against `l`, which is the one pair no shape here distinguishes: if the
+other member is already settled on another code, this code is not it. That is better than the fallback it
+replaces, which was the seed container's own code numbering, because a second config of the same skin
+does not have to number its codes the same way, and on `one_config` it did not.
+
+Asserted over the corpus, not assumed: no container puts a character on two codes, and the pairs a single
+shape is allowed to draw are exactly `I` against `l` and `O` against a zero with no slash through it.
+
+### What this leaves
+
+`make text` reads 170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs, over a
+population of 21 containers: the nineteen the byte accounting states plus the two arch 8 configs of 12
+August 2026. The two that do not read are one code, drawn once in each Harmony 700 config, in a string
+that reads `Options` followed by it. Its glyph is six pixels wide, ink on two rows only, and nothing here
+will name it from that.
+
+**Admitting the two arch 8 configs to the byte accounting is still its own piece of work**, as
+`packages/codec/bin/corpus.ts` says: the text and activity populations include them because reading their
+text is what this section did, and every coverage share in the project would move on the day they are
+added.
+
+### What would falsify it
+
+The exact match rule and the wrapped label pass are both filters, so the way to break them is a config
+whose menu label is neither said exactly by its modes nor a prefix of something they say. A third arch 9
+config would test the wrap on a layout nobody chose it for. And the one code one character rule is a
+corpus wide assertion now, so any container that puts a character on two codes falsifies it outright.
+
+### Where it landed
+
+`packages/codec/src/inventory.ts` for both naming rules, `packages/codec/src/text.ts` for the resolver,
+`packages/codec/bin/alphabets.ts` for the four seed corrections, and `packages/codec/bin/activities.ts`
+plus `make activities` for the number. The lab's description sheet is in the 880's `META.md`, which is
+where a labelled sample's labels belong.
 
 ## References
 

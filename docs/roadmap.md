@@ -517,11 +517,13 @@ instruction each. `packages/codec/src/inventory.ts` is that view.
 
 **Activity names are readable now**, section 112: a mode page's screen program draws them, and a
 glyph code turns back into a character by matching the glyph's pixels against a hand read alphabet
-per typeface. `packages/codec/src/text.ts`, `make text`, and 146844<!--fact:text_read--> of
-146846<!--fact:text_glyphs--> drawn glyphs across the corpus. **And which activity a name belongs to is
-read now on three architectures of four**, sections 120 and 121: a key press reaches an activity in four
-hops, all of an activity's keys are on one page, and the modes that activity enters draw its own name, so
-the page's string that relates to one of theirs is its label. 23 of 35 activities and all 13 on arch 14.
+per typeface. `packages/codec/src/text.ts`, `make text`, and 170920<!--fact:text_read--> of
+170922<!--fact:text_glyphs--> drawn glyphs across the corpus. **And which activity a name belongs to is
+read now on three architectures of four**, sections 120, 121 and 124: a key press reaches an activity in
+four hops, all of an activity's keys are on one page, and the modes that activity enters draw its own
+name, so the page's string that relates to one of theirs is its label.
+41<!--fact:activities_named--> of 50<!--fact:activities_total--> activities, and arch 8, arch 9 and arch
+14 completely: 22 of 22, 4 of 4 and 13 of 13. `make activities`.
 
 Arch 12 is the exception and it is a proof rather than a gap: no fixed scan code to row map can exist on
 a touch panel, so a Harmony One needs base slot 17's hit map, which is the route this document named and
@@ -1114,7 +1116,7 @@ Not optional, and they belong in the code rather than in a document:
   classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
   declared region written, so the appender disarms itself at the first attempt, section 111.
 * **Which activity a drawn name belongs to.** The codes are read, section 112: a glyph's pixels name
-  its character, seven typefaces cover the corpus, and all but two of 146846<!--fact:text_glyphs-->
+  its character, seven typefaces cover the corpus, and all but two of 170922<!--fact:text_glyphs-->
   drawn glyphs come back. So the names an interface needs are readable. The tie from a name to an
   activity number is not: no screen switch reads `CurrentActivityState` and base slot 14's value maps
   point at no text, which leaves the touch map. A **writer** still has to build a font set and number

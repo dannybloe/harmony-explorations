@@ -646,11 +646,11 @@ display. Programs are reached from base slot 11, from a base slot 14 lookup, and
 | 23 | none | **per architecture**: *arch 12* the return matching opcode 22; *arch 9* the page transfer |
 
 **Opcode 4 is the commoner of the two text opcodes and its target is never a place of its own.**
-Confirmed on all eighteen containers of the corpus, four architectures: in 12052 of 12052 instances the
+Confirmed on every container of the corpus, four architectures: in 12052 of 12052 instances the
 `u24` lands on the glyph payload of some opcode 5 instruction in another reachable program, three bytes
 past that instruction's start. So a string is stored once, inline, by whichever program draws it that
-way, and every other program that wants it names those bytes. 12738<!--fact:text_referenced--> of the
-corpus's 19523<!--fact:text_draws--> drawn strings are references, so two draws in three.
+way, and every other program that wants it names those bytes. 15742<!--fact:text_referenced--> of the
+corpus's 23419<!--fact:text_draws--> drawn strings are references, so two draws in three.
 
 Three consequences, all of them load bearing:
 
@@ -957,11 +957,19 @@ and not per architecture or per remote.
 both how the field at `+0x01` was read, section 78, and how the 525's user config was decoded without
 reading its glyphs: the two share a typeface.
 
-146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs across the corpus come back as
+170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs across the corpus come back as
 characters. The two that do not are one code drawn once in each Harmony 700 config. The closure is
 that a decoded string turns up verbatim inside a base slot 0 name, which is ASCII and which this
-decoder never reads: twelve of the thirteen containers with a name tree do it, between three and
-eleven distinct strings each.
+decoder never reads: fifteen of the sixteen containers with a name tree do it, between three and
+eleven distinct strings each. The exception is the arch 9 safe mode container, which names one variable
+and draws none of it because it holds no devices.
+
+**A glyph code is one character and a character is one code**, which is the generator's own rule: the
+code is that character's position in the string list it walks. Two uses, section 124. As a check it
+found three hand read labels that were wrong, each showing up as a character sitting on two codes at
+once. As a resolver it settles the one pair no shape distinguishes, `I` against `l`, and the other,
+`O` against a zero drawn without a slash: whichever member another code has already settled is not
+available to this one.
 
 A **writer** gets no shortcut from any of this: to add text it has to build a font set and number it,
 because the codes are the generator's own and nothing looks a character up.
@@ -1539,26 +1547,42 @@ the remote to idle rather than starting anything.
 **A drawn name is attributed to an activity through the modes the chain enters**, not through geometry.
 An activity's action lists also carry opcode `0x7E`, entering base slot 6 modes, and those modes' pages
 draw the activity's own name, because a remote entering an activity says which one. So the page's string
-that relates to one of those strings is that activity's label. Containment either way rather than
-equality, which is what the Harmony 700 needs: its menu label is the name plus a qualifier and its
-splash screen is a verb plus the name. Two filters make it a function rather than a guess: a string
-several activities of a page claim is chrome, a title or a footer, and so is one another activity page of
-the same mode draws identically; and one label belongs to one activity, which is a constraint to
-propagate rather than a preference.
+that relates to one of those strings is that activity's label. Four rules make it a function rather
+than a guess, in this order:
 
-That names 23 of the corpus's 35 activities, and **arch 14 completely**, 13 of 13. What is left is
-stated rather than rounded up:
+1. **A string the modes say exactly beats one they only contain.** Containment either way is what the
+   Harmony 700 needs, since its menu label is the name plus a qualifier and its splash screen is a verb
+   plus the name, and it is too loose on its own: an activity's chain also enters the mode that lists
+   the devices, so every activity of a config says every device's name, and a label that is the first
+   word of one becomes a candidate for all of them.
+2. **Chrome is dropped**: a string several activities of a page claim is a title or a footer, and so is
+   one that another activity page of the same mode draws identically.
+3. **One label belongs to one activity**, a constraint to propagate rather than a preference.
+4. **A label the menu wraps onto a second row** is looked for only where nothing on one row resolved.
+   The candidate is the row's text joined to a text on the next row down, and it is accepted when it is
+   a **prefix** of something the modes say, since a menu truncates a long name to the rows it has. Not
+   the same column: on the Harmony 525 the second line is not aligned with the first.
 
-* **arch 12 names none, and that is a proof rather than a shortfall.** A Harmony One's activity mode
-  does not repeat the name its menu draws, and its scan codes cannot stand in for position: the three
-  activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49} while all
-  three draw their labels on the same rows, so no fixed code to row map exists. Base slot 17's hit map
-  is what a One needs, and it gives nine page shapes for exactly that reason.
-* four arch 8 activities and one arch 9 one are unresolved because a short generic word inside a longer
-  label satisfies containment, leaving two candidates where one is wanted.
+That names 41<!--fact:activities_named--> of the corpus's 50<!--fact:activities_total--> activities and
+three architectures of four completely: **arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of
+11.** What is left is stated rather than rounded up:
+
+* **arch 12 names almost none, and that is a proof rather than a shortfall.** A Harmony One's activity
+  mode does not repeat the name its menu draws, and its scan codes cannot stand in for position: the
+  three activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49} while
+  all three draw their labels on the same rows, so no fixed code to row map exists. Base slot 17's hit
+  map is what a One needs, and it gives nine page shapes for exactly that reason. The two it does name
+  are single activity configs, where there is nothing to tell apart.
 
 `packages/codec/src/inventory.ts` is the reader: `activityBindings`, `activityNames`,
-`idleActivityValue`, `activityWriterCount`.
+`idleActivityValue`, `activityWriterCount`. `make activities` prints the figures per container.
+
+**The device and activity counts are checked against a contributor's own description**, section 124: the
+owner of one arch 8 remote wrote down what is in his config, and it says four devices and four
+activities where the reader says four and four. Its menu has five entries, the fifth being the remote's
+own settings, which is why a count taken from the menu would be wrong. Its idle value is 3, strictly
+inside the values its keys write, which is the second container to show that the idle value is `first`
+and not the highest.
 
 ### Slot 1: the config states its own architecture
 

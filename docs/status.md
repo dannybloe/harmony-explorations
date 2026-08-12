@@ -201,7 +201,7 @@ independently, once from branch target analysis and once from finding the SPI co
 into the config's own font table, assigned per config in the order characters first appear in the
 generator's string list, so two configs of the same remote disagree about it. What is stable is the
 typeface, so a code is resolved by matching its glyph's pixels: seven hand read alphabets cover the
-corpus and 146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs come back as
+corpus and 170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs come back as
 characters. The closure is that a decoded string turns up verbatim inside a base slot 0 name, which is
 ASCII and which the decoder never reads. `make text`, and section 112.
 
@@ -214,8 +214,14 @@ program holding them. Section 121.
 **A config says which key starts which activity**, sections 120 and 121, in four hops through a page's
 key bindings, an action list, a base slot 9 set and a write to `CurrentActivityState`. The value that
 means "no activity" is a field base slot 13 had carried unconfirmed since section 60, and one config
-separates it from every rule that would have guessed it. Naming the activities works on arch 8, 9 and 14;
-on the touch driven Harmony One it provably cannot work this way, and needs the hit map instead.
+separates it from every rule that would have guessed it. Naming the activities is **complete** on arch 8,
+9 and 14, 22 of 22, 4 of 4 and 13 of 13, or 41<!--fact:activities_named--> of
+50<!--fact:activities_total--> across the corpus; on the touch driven Harmony One it provably cannot work
+this way, and needs the hit map instead. `make activities`.
+
+**One config's device and activity counts are checked against its owner's own written description**,
+section 124, which is the first ground truth this project has had for either: four devices and four
+activities, on a menu of five entries whose fifth is the remote's own settings page.
 
 **The infrared carrier is generated in software**, not by a hardware PWM, with cycle-counted
 delays and a per-half-cycle enable mask. The config supplies a 16-bit carrier period and an

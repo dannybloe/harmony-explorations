@@ -107,6 +107,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the case that breaks the tie, since 0x0F reads as 15 under either rule and 0x11 does not. The
   // 890 is arch 10, a fourth format version and 23 pointer slots.
   arch8_config_885: 'H885-LivingRoom.EZHex',
+  // The 880 config with a written description behind it, issue 18: four devices, four activities and
+  // the custom buttons of each. The first labelled arch 8 sample, so it is the one the inventory
+  // reader is checked against.
+  arch8_config_880: 'H880-Bedroom.EZHex',
   h890_config: 'H890-Bedroom-1.EZHex',
   // A second read of the same remote, ten hours later. Its container is byte identical and the file is
   // 594 bytes shorter, all of it trailing slack past the trailer, so this is what a **stable** arch 10

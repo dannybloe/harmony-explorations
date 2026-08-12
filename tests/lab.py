@@ -116,6 +116,11 @@ IMAGES = {
     # The 885 is the case that breaks the tie, since 0x0F reads as 15 under either rule and 0x11
     # does not. The 890 is arch 10, a fourth format version and 23 pointer slots.
     'arch8_config_885': 'H885-LivingRoom.EZHex',
+    # The 880 config the contributor wrote a full description sheet for, harmony-decompiler issue 18
+    # and this dump's own META.md: four devices, four activities, and the custom buttons of each with
+    # their page breaks. It is the **first labelled sample on arch 8**, so it is what the inventory
+    # reader is checked against rather than another unlabelled file.
+    'arch8_config_880': 'H880-Bedroom.EZHex',
     'h890_config': 'H890-Bedroom-1.EZHex',
     # A second read of the same remote, ten hours later. Its container is byte identical and the file
     # is 594 bytes shorter, all of it trailing slack past the trailer, so this is what a **stable**

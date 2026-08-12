@@ -199,6 +199,31 @@ function resolveWith(c: Container, alphabet: Alphabet): CharacterMap {
     }
   }
 
+  // **A container gives one code to one character**, so a character some other code has settled is
+  // not available to an ambiguous one. That is the generator's own rule, not an assumption about
+  // typography: a code is the position of a character in the string list the generator walks, and no
+  // character is in it twice. Section 112. Measured over the corpus: no container assigns two codes
+  // to one character once this has run, and three that did were hand reading errors in the seeds.
+  //
+  // It settles `I` against `l`, which is the one pair no shape here distinguishes, and it does it
+  // without the seed fallback below, whose weakness is that a second config of the same skin does not
+  // have to number its codes the same way. That fallback read `one_config`'s code 50 as `l` where the
+  // container already had one, and a lowercase word therefore came out with a capital in it.
+  for (let progress = true; progress; ) {
+    progress = false;
+    const settled = new Set<string>();
+    for (const found of candidates.values()) if (found.size === 1) settled.add([...found][0] as string);
+    for (const [code, found] of candidates) {
+      if (found.size < 2) continue;
+      const left = new Set([...found].filter((one) => !settled.has(one)));
+      // An empty result would be a contradiction manufactured by this rule rather than found by it,
+      // so the code keeps its candidates and stays ambiguous.
+      if (left.size === 0 || left.size === found.size) continue;
+      candidates.set(code, left);
+      progress = true;
+    }
+  }
+
   const codes = new Map<number, string>();
   const ambiguous = new Map<number, string[]>();
   for (const [code, found] of candidates) {

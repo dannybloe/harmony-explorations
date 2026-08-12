@@ -663,6 +663,7 @@ make coverage      byte accounting per sample, the M2 progress number; COVERAGE_
 make emit          how much of each sample the emitter puts back, and whether it round trips
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make activities    which activity each key starts and which drawn label is its name, per model
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
@@ -818,7 +819,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 121 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 124 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1069,8 +1070,19 @@ names them. A glyph code is **not** a character and not an encoding: it indexes 
 table and is assigned per config, in the order characters first appear in the generator's string list,
 so two configs of one remote disagree about code 20. What is stable is the typeface, so a code is
 resolved from its glyph's **pixels** against a hand read alphabet, seven of which cover the corpus.
-146844<!--fact:text_read--> of 146846<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
+170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
 seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets.ts`.
+
+**A code is one character and a character is one code**, section 124, and that rule is the check to
+reach for before trusting a seed: it is the generator's own, since a code is a character's position in
+the string list it walks. Three hand read labels were wrong and each showed up as a character sitting on
+two codes at once, `9` read as `8` on arch 9, a lowercase `z` read as `Z` on arch 14, and an `I` read as
+`l` on arch 12. Every one of them was drawn in a single word in its own container, which is why the
+proof string each seed carries could not catch any of them, and every one was caught by a **second**
+container of the same skin. The rule also resolves what no shape can, `I` against `l`, in place of a
+fallback that assumed two configs of one skin number their codes alike. **Adding a gap filling source
+labels a shape and not just a code**, so when two characters share a shape both codes have to be named
+or the shape is claimed for one of them.
 
 **Which key starts which activity is read**, section 120, and **which drawn name it carries is read on
 three architectures of four**, section 121. The chain is four hops, because nothing in the format names
@@ -1089,21 +1101,29 @@ was the wrong reason for a right count, corrected in section 120.
 
 **The name comes from the modes the chain enters**, not from geometry: an activity's lists also carry
 `0x7E`, and the mode they enter draws the activity's own name, so the page's string that relates to one
-of those is its label. 23 of 35 activities and **all 13 on arch 14**. Two filters make it a function, a
-per mode chrome test and the constraint that one label belongs to one activity, and each was found by
-having it fail.
+of those is its label. **41<!--fact:activities_named--> of 50<!--fact:activities_total--> activities and
+three architectures of four complete**, arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, `make
+activities`. Four rules make it a function and each was found by having it fail: an exact match beats a
+contained one, a per mode chrome test, one label to one activity, and a second pass for a label the menu
+wrapped onto another row. **The exact match rule is the one to remember**, section 124: an activity's
+chain enters the mode that lists the devices, so every activity says every device's name, and reading
+containment as sufficient let one label be claimed by all four activities of a Harmony 880 and then
+dropped from all four as chrome. The number was 23 of 35 for a day, and three of those 23 were fragments
+of a wrapped label, two of them belonging to a different activity than the one they were reported for.
 
-**Arch 12 names none and that is a proof, not a gap**: `one_config`'s three activity pages bind scans
+**Arch 12 is the fourth and its 2 of 11 is a proof, not a gap**: `one_config`'s three activity pages bind scans
 {50,51,52}, {50,48,49} and {48,49} while all three draw labels on the same rows, so no fixed code to row
 map can exist on a touch panel. Base slot 17's hit map is what a One needs, and section 45's nine page
 shapes are why. So this file's old proposal was right for arch 12 and wrong as a general route, and the
-owner's correction on 11 August 2026 was right that a 525 has no touch panel at all.
+owner's correction on 11 August 2026 was right that a 525 has no touch panel at all. The two it does
+name are single activity configs, where there is nothing to tell apart.
 
 **Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
 way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is
 the payload of an opcode 5 instruction in **another** program, so a string is stored once inline and
-referenced everywhere else. `make text` went from 65456 glyphs to 146846<!--fact:text_glyphs--> and every
-sample still reads at 100.0%. Nobody had followed the pointer because the byte accounting never
+referenced everywhere else. `make text` went from 65456 glyphs to 146846 on the day, and stands at
+170922<!--fact:text_glyphs--> now that two more configs are in its population, with every sample still
+reading at 100.0%. Nobody had followed the pointer because the byte accounting never
 complained: the bytes were already claimed by the program holding them, and a comment in `screen.ts`
 said opcode 2 was the only instruction naming a place outside its own program. **A shared string is a
 writer rail**: editing one in place changes every draw that names it.

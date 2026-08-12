@@ -16,13 +16,14 @@
  */
 import { LAB, load } from '@harmony/lab';
 import { parse, characterMap, drawnCodes, screenStrings, textCoverage, stateVariables } from '../src/index.ts';
+import { CONTAINERS } from './corpus.ts';
 
-const SAMPLES = [
-  'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm', 'h650_safemode_gspm',
-  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
-  'h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
-  'h525_safemode_ahcm', 'one_spare_before_sync', 'one_spare_after_sync',
-];
+// The byte accounting's stated population, plus the two arch 8 configs of 12 August 2026. They are
+// here and not there on purpose: their text is what section 124 read, and admitting them to the byte
+// accounting moves every corpus wide share in it, which `bin/corpus.ts` says is its own piece of work
+// with its own document sweep. **Stated rather than assembled twice**: the nineteen come from the one
+// list that defines them, so this cannot quietly drift away from `CONTAINERS`.
+const SAMPLES = [...CONTAINERS, 'arch8_config_880', 'arch8_config_885'];
 
 const detail = process.argv.includes('--detail');
 const names = process.argv.includes('--names');

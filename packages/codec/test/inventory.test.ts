@@ -51,6 +51,12 @@ const INVENTORY: readonly [string, number, number, number, number][] = [
   ['arch8_config_d', 13, 3, 7, 0],
   ['h525_config', 8, 3, 4, 0],
   ['h525_config_2', 4, 1, 1, 0],
+  // The two of 12 August 2026, and the 880 is the corpus's **only sample with a written description
+  // of what is in it**: its contributor sent a sheet naming four devices and four activities, plus a
+  // fifth menu entry for the remote's own settings which is deliberately not one. Both numbers agree
+  // with it, which is the first time either has been checked against anything but another reader.
+  ['arch8_config_880', 11, 4, 4, 0],
+  ['arch8_config_885', 16, 9, 7, 0],
 ];
 
 for (const [name, variables, activities, devices, ids] of INVENTORY) {
@@ -129,16 +135,15 @@ test('a level 1 name ends in the number of values its variable takes', skipWitho
 
 test('a record that enumerates anything enumerates every value the same number of times',
   skipWithoutLab(), () => {
-    // The closure that ties the values to the header. A record either carries none, 164 of them,
-    // or covers `0` to `second` with a constant number of entries per value: 1 in 83 records, 2 in
-    // two of them and 4 in one. So the eight byte entries belong to the variable's range rather
+    // The closure that ties the values to the header. A record either carries none, 164 of them, or
+    // covers `0` to `second` with a constant number of entries per value: 1 in 100 records, 2 in
+    // three, 3 in one and 4 in two. So the eight byte entries belong to the variable's range rather
     // than being a list that happens to sit after the header, and the count is the number of
     // transitions rather than the number of values.
     //
-    // The distribution is over `INVENTORY`, which is the fifteen container corpus and deliberately
-    // not the two samples added on 10 August 2026. The test below checks the rule itself against one
-    // of those, because the rule holding on a config outside the population is worth more than the
-    // tally growing.
+    // **The tally moved on 12 August 2026 and the rule did not**, which is what it is for: the two
+    // arch 8 configs of that day added 17 records, every one of them even. The 3 and the second 4 are
+    // theirs, so they widened the distribution rather than only lengthening it.
     const perValue = new Map<number, number>();
     let empty = 0;
     for (const [name] of INVENTORY) {
@@ -161,7 +166,10 @@ test('a record that enumerates anything enumerates every value the same number o
       }
     }
     assert.ok(empty > 0);
-    assert.deepEqual([...perValue.entries()].sort((a, b) => a[0] - b[0]), [[1, 83], [2, 2], [4, 1]]);
+    assert.deepEqual(
+      [...perValue.entries()].sort((a, b) => a[0] - b[0]),
+      [[1, 100], [2, 3], [3, 1], [4, 2]],
+    );
   });
 
 test('a state value is a transition carrying one action list instruction', skipWithoutLab(), () => {
@@ -391,6 +399,58 @@ test('arch 14 names every activity and the corpus names most of them', skipWitho
   assert.equal(arch14.named, arch14.total, 'arch 14 names every activity it binds');
   assert.ok(arch14.total >= 13, `and there are enough of them, got ${arch14.total}`);
   assert.ok(named / total > 0.6, `the corpus names most activities: ${named} of ${total}`);
+  // Three of the four architectures resolve completely since 12 August 2026, and the fourth is arch
+  // 12, whose zero is the proof below. Asserted per architecture rather than as a share, because a
+  // share hides which of them stopped working.
+  for (const architecture of [8, 9, 14]) {
+    const here = perArchitecture.get(architecture) as { named: number; total: number };
+    assert.equal(here.named, here.total, `arch ${architecture} names every activity it binds`);
+  }
+  const arch12 = perArchitecture.get(12) as { named: number; total: number };
+  assert.ok(arch12.named < arch12.total, 'and arch 12 does not, which is the test below');
+});
+
+test('an activity page names as many activities as it binds, and each label once',
+  skipUnless('arch8_config_880', 'arch8_config_885', 'h600_config', 'h700_config'), () => {
+    // What "it resolves" has to mean for the application: a page that starts four activities hands
+    // back four distinct labels, each with a place on the screen, and no two activities holding the
+    // same one. The label text is never asserted here, because it is the contributor's own equipment.
+    for (const name of ['arch8_config_880', 'arch8_config_885', 'h600_config', 'h700_config']) {
+      const c = parse(load(name) as Uint8Array);
+      const rows = activityNames(c);
+      const labels = rows.map((one) => one.name);
+      assert.ok(labels.every((one) => one !== undefined), `${name} names all of them`);
+      assert.equal(new Set(labels).size, labels.length, `${name} gives each label to one activity`);
+      for (const one of rows) {
+        assert.ok((one.name as string).trim().length >= 2, `${name}: a label is a word`);
+        assert.ok(one.at !== undefined && one.at.y >= 0, `${name}: and it has a place`);
+      }
+    }
+    // The 880 is the calibration: its contributor described the remote in writing, four activities on
+    // a menu of five entries. Four labels out of four is therefore checked against something outside
+    // this codebase for the first time.
+    const c = parse(load('arch8_config_880') as Uint8Array);
+    assert.equal(activityNames(c).length, 4);
+  });
+
+test('a label the menu wraps onto a second row is read as one label', skipUnless('h525_config'), () => {
+  // The Harmony 525 lays its activity menu out as two columns of two lines, so an activity's label is
+  // drawn as two strings on consecutive rows and matching one row at a time returns a fragment. Three
+  // of these read as `Watch`, `DVD -` and `Play on` until 12 August 2026, which is worse than reading
+  // nothing: each is the first line of a different activity's label.
+  //
+  // What settles a continuation is not the column, since the second line is not aligned with the
+  // first, but that the joined text is the **start** of something the activity's own modes say.
+  const c = parse(load('h525_config') as Uint8Array);
+  const rows = activityNames(c);
+  assert.equal(rows.length, 3);
+  for (const one of rows) {
+    assert.ok(one.name !== undefined, 'every activity resolves');
+    // A joined label, which is what makes this test different from the one above: two words, so the
+    // fragment that used to be returned would fail it.
+    assert.ok((one.name as string).includes(' '), `${one.name} spans the wrap`);
+  }
+  assert.equal(new Set(rows.map((one) => one.name)).size, 3);
 });
 
 test('no fixed key to row map can exist on a touch panel', skipUnless('one_config'), () => {
