@@ -16,6 +16,9 @@ import {
   irRepeatPeriod,
   keyCodes,
   keyLabels,
+  modePages,
+  rasterPng,
+  renderPage,
   idleActivityValue,
   parse,
   summary,
@@ -297,6 +300,36 @@ export class Bench {
           labelSource: label?.source,
         };
       }),
+    };
+  }
+
+  /**
+   * One of a config's screens, drawn, as a PNG.
+   *
+   * **The same call an editor makes.** A config read off a remote is bytes, `parse` takes bytes and
+   * `renderPage` returns a raster, so nothing here touches a file: the picture is made on the way out.
+   * That is the point of it living in the codec rather than in a script that writes PNG files.
+   *
+   * `branches` is what the caller must not hide: a page whose program switches on a state variable has
+   * more than one appearance and this is the first, section 129.
+   */
+  screen(name: string, page: number): { png: Uint8Array; width: number; height: number;
+    pictures: number; strings: number; branches: number } {
+    const blob = this.deps.loadConfig(name);
+    if (blob === undefined) throw new Error(`no config called ${name} in the lab`);
+    const c = parse(blob);
+    const pages = modePages(c);
+    const chosen = pages[page];
+    if (chosen === undefined) throw new Error(`no page ${page}, the config has ${pages.length}`);
+    const rendered = renderPage(c, chosen);
+    if (rendered === undefined) throw new Error('this architecture has no known display size');
+    return {
+      png: rasterPng(rendered.raster),
+      width: rendered.raster.width,
+      height: rendered.raster.height,
+      pictures: rendered.pictures,
+      strings: rendered.strings,
+      branches: rendered.branches,
     };
   }
 

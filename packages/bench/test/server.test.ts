@@ -112,6 +112,15 @@ test('the route table is six reads and nothing that writes', async () => {
     });
     assert.equal(absent.status, 500, 'a config the lab does not have is an error, not an empty view');
 
+    // The screen route is a GET because a browser has to name it in an `img` tag, so it is the one
+    // route whose refusals are worth checking here: no name is a 400 and an absent config is a 500,
+    // and neither returns an image.
+    const noName = await fetch(`${base}/api/screen`);
+    assert.equal(noName.status, 400);
+    const noConfig = await fetch(`${base}/api/screen?config=one_config&page=0`);
+    assert.equal(noConfig.status, 500);
+    assert.notEqual(noConfig.headers.get('content-type'), 'image/png');
+
     // There is no generic command endpoint, which is the rail: a page that is broken, or a script
     // somebody points at this port, cannot express a write because no route accepts one.
     for (const path of ['/api/write', '/api/erase', '/api/command', '/api/writeFlash']) {

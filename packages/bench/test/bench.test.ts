@@ -251,6 +251,28 @@ test('a config whose skin the table knows names its model', skipUnless('h525_con
   assert.equal(view.architecture, 9);
 });
 
+test('a screen is drawn on the way out, with no file anywhere', skipUnless('one_config'), () => {
+  // What the renderer buys the product, section 129: a config is bytes, and a picture of one of its
+  // screens is a function of those bytes. So this asserts the image is a PNG of the display's own size
+  // and that the bench never writes one, which is what makes it usable on a config just read off a
+  // remote.
+  const bench = new Bench(deps({
+    configNames: () => ['one_config'],
+    loadConfig: (name: string) => (name === 'one_config' ? load('one_config') : undefined),
+  }));
+  const drawn = bench.screen('one_config', 45);
+  assert.equal(drawn.width, 176, 'a Harmony One display');
+  assert.equal(drawn.height, 220);
+  assert.deepEqual([...drawn.png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  // The IHDR body starts at byte 16 and states the size, which is the cheapest check that the encoder
+  // and the raster agree.
+  const view = new DataView(drawn.png.buffer, drawn.png.byteOffset);
+  assert.equal(view.getUint32(16), 176);
+  assert.equal(view.getUint32(20), 220);
+  assert.ok(drawn.pictures > 0 && drawn.strings > 0, 'and the page has something on it');
+  assert.throws(() => bench.screen('one_config', 99999), /no page/);
+});
+
 test('a config the lab does not have is refused rather than answered emptily', () => {
   const bench = new Bench(deps());
   assert.throws(() => bench.inventory('nothing_like_this'), /no config called/);

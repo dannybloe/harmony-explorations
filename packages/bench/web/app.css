@@ -88,3 +88,17 @@ th { color: var(--dim); font-weight: 500; }
 #bar-fill { height: 100%; width: 0; background: var(--accent); transition: width 120ms linear; }
 
 ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; }
+
+/* The drawn screen beside the keys that belong to it. The image is scaled up by a whole number so a
+   pixel of the remote stays a square block: a screen is 96 to 176 pixels across and smoothing it would
+   hide exactly the kind of one pixel error the renderer exists to catch. */
+#screen-view { display: flex; gap: 1rem; align-items: flex-start; margin-top: 0.5rem; }
+#screen {
+  width: calc(176px * 2);
+  image-rendering: pixelated;
+  border: 1px solid var(--line);
+  background: #000;
+  flex: none;
+}
+#screen-view table { flex: 1; }
+#screen-picker select { padding: 0.2rem; background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px; }

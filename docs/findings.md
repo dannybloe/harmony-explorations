@@ -17203,4 +17203,19 @@ different questions of the same bytes. It is the first thing to fix if any of th
 `make render` writes the PNG files, into the private lab and never into this repository, because a
 rendered screen is a picture of somebody's own equipment. `--undrawn` paints the pixels nothing
 reached in magenta, which is the only way to tell a screen a config deliberately leaves dark from a
-region no instruction touched.
+region no instruction touched. `--sheet` tiles them, which is what actually finds a broken decode: a
+score per page ranks white text on black at the top and anything wrong nowhere near it, which was
+tried first.
+
+### It is a function of the bytes, so it needs no file
+
+A config is bytes, `parse` takes bytes and `renderPage` returns a raster, so a screen is made on the
+way out rather than stored. The bench instrument serves one per request, `GET /api/screen`, and shows
+it beside the keys that page binds: the picture, the label of each key from section 128 and what each
+sends from section 126, for a config that may have been read off a remote a minute earlier. The PNG
+encoding is `packages/codec/src/png.ts`, in one place because the alternative is two encoders that are
+both right until one is edited.
+
+That is the shape FreeHarmony needs. An editor that renames an activity has to show what the screen
+will look like afterwards, and the answer has to come from the same reading of the format that wrote
+the bytes, not from a second implementation in the interface.

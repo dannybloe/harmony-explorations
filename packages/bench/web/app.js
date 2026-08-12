@@ -252,6 +252,8 @@ async function showInventory(name) {
     ]);
   }
 
+  showScreens(inv);
+
   const keys = clear($('keys'));
   row(keys, [el('th', 'in'), el('th', 'key'), el('th', 'label'), el('th', 'sends'), el('th', 'repeat, ms')]);
   for (const key of inv.keys) {
@@ -274,6 +276,61 @@ async function showInventory(name) {
   }
 
   $('inventory').hidden = false;
+}
+
+/**
+ * The screen picker and the drawn screen.
+ *
+ * The pages offered are the ones that bind a key, because a page nobody can press is not a page
+ * anybody looks for, and an activity page is marked with the activity it starts. The image itself is
+ * one GET per page: the server draws it out of the config's bytes on the way out, so nothing is stored
+ * and a config just read off a remote shows its own screens.
+ */
+function showScreens(inv) {
+  const picker = clear($('screen-picker'));
+  const pages = [...new Set(inv.keys.filter((key) => key.where === 'page').map((key) => key.index))]
+    .sort((a, b) => a - b);
+  const image = $('screen');
+  const table = $('screen-keys');
+  if (pages.length === 0) {
+    picker.append(el('p', 'No page of this config binds a key.', 'hint'));
+    image.hidden = true;
+    clear(table);
+    return;
+  }
+  const named = new Map(inv.activities
+    .filter((activity) => activity.name !== undefined)
+    .map((activity) => [activity.page, activity.name]));
+  const choose = el('select');
+  choose.id = 'screen-page';
+  for (const page of pages) {
+    const option = el('option', named.has(page) ? `page ${page}, starts ${named.get(page)}` : `page ${page}`);
+    option.value = String(page);
+    choose.append(option);
+  }
+  picker.append(choose);
+
+  const show = () => {
+    const page = Number(choose.value);
+    // Cache busting is deliberate: the lab file can change under us when a remote is read again.
+    image.src = `/api/screen?config=${encodeURIComponent(inv.name)}&page=${page}&t=${Date.now()}`;
+    image.hidden = false;
+    const rows = clear(table);
+    row(rows, [el('th', 'key'), el('th', 'label'), el('th', 'sends')]);
+    for (const key of inv.keys) {
+      if (key.where !== 'page' || key.index !== page) continue;
+      const device = inv.devices[key.group]?.name ?? `group ${key.group}`;
+      row(rows, [
+        el('td', `scan ${key.scan}`, 'mono'),
+        key.label === undefined
+          ? el('td', 'no label', 'dim')
+          : el('td', key.label, key.labelSource === 'touch' ? '' : 'dim'),
+        el('td', `${device} #${key.code}${key.sends > 1 ? ` and ${key.sends - 1} more` : ''}`, 'mono'),
+      ]);
+    }
+  };
+  choose.addEventListener('change', show);
+  show();
 }
 
 async function refreshLog() {

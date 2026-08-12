@@ -679,7 +679,9 @@ make alphabets     regenerate the glyph shape table from the hand read seeds; AL
 make remotes       list attached remotes, enumeration only, opens nothing
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop. It also inspects a
                    config the lab already holds, with no remote attached: devices, activities, and
-                   what each button sends including the repeat interval of a held key
+                   what each button sends including the repeat interval of a held key, plus the
+                   **drawn screen** of any page beside the keys that page binds, `GET /api/screen`,
+                   made out of the bytes per request rather than read off disk
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
 make all           everything except ghidra and bench
 ```
@@ -1170,8 +1172,12 @@ two item row in the corpus has its two keys on **different** action lists, with 
 labels agree with the activity chain on 62 of 63 keys, the exception being a "1 OF 2" page indicator drawn
 in the bottom row's continuation slot and left in rather than special cased.
 
-**A config's screens can be drawn now**, section 129, `packages/codec/src/render.ts` and `make render`.
-It is here rather than in FreeHarmony because it is the check that fails differently from every other
+**A config's screens can be drawn now**, section 129, and the bench shows one beside the keys it
+binds, made out of the bytes per request. That is the shape FreeHarmony needs, since an editor has to
+show what a screen will look like after a change and must not carry a second implementation to do it.
+It is `packages/codec/src/render.ts` and `make render`, with the PNG encoding in `src/png.ts` because
+the bench serves the same rasters over HTTP and two encoders would be two things to keep right.
+It is here rather than in FreeHarmony because it is also the check that fails differently from every other
 test in this repository: a reader test says a number came back and cannot see a label half a row out, an
 icon over its own caption or a colour channel one bit wrong. **Every mode page of every container
 renders with nothing unresolved**, over 1500 pages on four architectures, which needs a picture's

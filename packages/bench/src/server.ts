@@ -99,6 +99,24 @@ export function createServer(bench: Bench, webRoot: string): Server {
           if (name === '') return json(res, 400, { message: 'a config name is required' });
           return json(res, 200, bench.inventory(name));
         }
+        // A screen, as an image, so the page can put it next to the buttons that belong to it. A GET
+        // with the name and the page in the query, because a browser has to be able to name it in an
+        // `img` tag.
+        if (req.method === 'GET' && url.pathname === '/api/screen') {
+          const name = (url.searchParams.get('config') ?? '').trim();
+          if (name === '') return json(res, 400, { message: 'a config name is required' });
+          const page = Number(url.searchParams.get('page') ?? 0);
+          const drawn = bench.screen(name, page);
+          res.writeHead(200, {
+            'content-type': 'image/png',
+            'content-length': String(drawn.png.length),
+            // The bench reads a config off disk on every request, so a cache would show a stale screen
+            // after a fresh read of the remote. It is a local instrument; correctness beats a redraw.
+            'cache-control': 'no-store',
+            'x-harmony-branches': String(drawn.branches),
+          });
+          return res.end(drawn.png);
+        }
         if (req.method === 'POST' && url.pathname === '/api/identify') {
           const body = await readBody(req);
           return json(res, 200, await bench.identify(Number(body['productId'])));
@@ -118,6 +136,7 @@ export function createServer(bench: Bench, webRoot: string): Server {
           served: [
             'GET /api/remotes',
             'GET /api/configs',
+            'GET /api/screen',
             'GET /api/log',
             'POST /api/identify',
             'POST /api/inventory',

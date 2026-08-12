@@ -20,18 +20,19 @@
  * would guess. `--out` chooses the directory, and it defaults to the lab's `work/render`, because a
  * rendered screen is a picture of somebody's own equipment and this repository is public.
  *
- * The PNG writer is here rather than in `src/` on purpose: the raster is a reading of the format and
- * belongs to the codec, and the file format is presentation.
+ * The PNG encoding is `src/png.ts`, shared with the bench instrument, which serves the same rasters
+ * over HTTP. Two encoders would be two things to keep right.
  */
-import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { LAB, load } from '@harmony/lab';
 import {
   UNDRAWN,
+  contactSheetPng,
   modePages,
   parse,
+  rasterPng,
   renderPage,
   type RenderedPage,
 } from '../src/index.ts';
@@ -61,79 +62,6 @@ if (blob === undefined) {
 const c = parse(blob);
 const pages = modePages(c);
 
-/** CRC32, the PNG variant, computed rather than tabulated since it is used a handful of times. */
-function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff;
-  for (const byte of bytes) {
-    crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function chunk(kind: string, body: Uint8Array): Uint8Array {
-  const name = new TextEncoder().encode(kind);
-  const framed = new Uint8Array(name.length + body.length);
-  framed.set(name);
-  framed.set(body, name.length);
-  const out = new Uint8Array(8 + body.length + 4);
-  const view = new DataView(out.buffer);
-  view.setUint32(0, body.length);
-  out.set(framed, 4);
-  view.setUint32(out.length - 4, crc32(framed));
-  return out;
-}
-
-/** A truecolour PNG from RGB rows, which is all this needs: no palette, no interlacing, no alpha. */
-function png(width: number, height: number, rgb: Uint8Array): Uint8Array {
-  const raw = new Uint8Array(height * (1 + width * 3));
-  for (let row = 0; row < height; row += 1) {
-    raw[row * (1 + width * 3)] = 0;
-    raw.set(rgb.subarray(row * width * 3, (row + 1) * width * 3), row * (1 + width * 3) + 1);
-  }
-  const header = new Uint8Array(13);
-  const view = new DataView(header.buffer);
-  view.setUint32(0, width);
-  view.setUint32(4, height);
-  header[8] = 8;
-  header[9] = 2;
-  const parts = [
-    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', header),
-    chunk('IDAT', new Uint8Array(deflateSync(raw))),
-    chunk('IEND', new Uint8Array()),
-  ];
-  const size = parts.reduce((total, part) => total + part.length, 0);
-  const file = new Uint8Array(size);
-  let at = 0;
-  for (const part of parts) {
-    file.set(part, at);
-    at += part.length;
-  }
-  return file;
-}
-
-/** RGB565 to eight bits a channel, with the low bits replicated so white stays white. */
-function rgb(value: number): [number, number, number] {
-  if (value === UNDRAWN) return undrawnVisible ? [255, 0, 255] : [0, 0, 0];
-  const red = (value >> 11) & 0x1f;
-  const green = (value >> 5) & 0x3f;
-  const blue = value & 0x1f;
-  return [(red << 3) | (red >> 2), (green << 2) | (green >> 4), (blue << 3) | (blue >> 2)];
-}
-
-function write(name: string, rendered: RenderedPage): void {
-  const { raster } = rendered;
-  const bytes = new Uint8Array(raster.width * raster.height * 3);
-  raster.pixels.forEach((value, at) => {
-    const [red, green, blue] = rgb(value);
-    bytes[at * 3] = red;
-    bytes[at * 3 + 1] = green;
-    bytes[at * 3 + 2] = blue;
-  });
-  writeFileSync(join(out, name), png(raster.width, raster.height, bytes));
-}
-
 const every = Number(argument('every') ?? 1);
 const columns = Number(argument('columns') ?? 6);
 
@@ -144,30 +72,25 @@ const chosen = ((): number[] => {
   return [Number(argument('page') ?? 0)];
 })();
 
+/**
+ * Magenta where nothing drew, when asked for, and otherwise the black a dark screen really is.
+ *
+ * The sheet always shows it, since a tile whose edge cannot be seen is a tile whose edge cannot be
+ * checked.
+ */
+const undrawn: [number, number, number] = undrawnVisible ? [255, 0, 255] : [0, 0, 0];
+
+function write(name: string, rendered: RenderedPage): void {
+  writeFileSync(join(out, name), rasterPng(rendered.raster, undrawn));
+}
+
 /** Every rendered page in one image, in a grid, with a border between them so edges are visible. */
 function contactSheet(rendered: RenderedPage[]): void {
-  const first = rendered[0];
-  if (first === undefined) return;
-  const { width, height } = first.raster;
-  const gap = 4;
-  const rows = Math.ceil(rendered.length / columns);
-  const total = { width: columns * (width + gap) + gap, height: rows * (height + gap) + gap };
-  const bytes = new Uint8Array(total.width * total.height * 3);
-  bytes.fill(0x5a);
-  rendered.forEach((page, at) => {
-    const left = gap + (at % columns) * (width + gap);
-    const top = gap + Math.floor(at / columns) * (height + gap);
-    page.raster.pixels.forEach((value, index) => {
-      const [red, green, blue] = rgb(value);
-      const into = ((top + Math.floor(index / width)) * total.width + left + (index % width)) * 3;
-      bytes[into] = red;
-      bytes[into + 1] = green;
-      bytes[into + 2] = blue;
-    });
-  });
+  const file = contactSheetPng(rendered.map((page) => page.raster), columns, [40, 0, 40]);
+  if (file === undefined) return;
   const name = `${config}-sheet.png`;
-  writeFileSync(join(out, name), png(total.width, total.height, bytes));
-  console.log(`${name}  ${total.width}x${total.height}  ${rendered.length} pages`);
+  writeFileSync(join(out, name), file);
+  console.log(`${name}  ${rendered.length} pages, ${columns} across`);
 }
 
 const sheeted: RenderedPage[] = [];
