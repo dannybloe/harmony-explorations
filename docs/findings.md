@@ -16702,6 +16702,128 @@ title would do that.
 matching, because a stated answer beats an inferred one. `packages/codec/test/touch.test.ts` carries the
 controls, `make activities` prints the figures, and `docs/config-format.md` has the structured form.
 
+## 126. A device's name is in the config as ASCII, and a state variable's transitions say which device it is
+
+The application needs a list of devices with their names before it can show anything, and section 86
+had given it the list: a device is an infrared group. The names looked like the harder half. Base slot
+0 names **no devices**: its level 1 nodes are state variables, `Root` and `State` above them, and on
+some generators a `HarmonyAssistant` menu, and that is the whole tree in all fifteen containers that
+carry one.
+
+The label is in there anyway, as a **prefix**.
+
+### A level 1 name is the device's label plus what the variable tracks about it
+
+```
+<label>_<property>_<values>
+```
+
+`<values>` is the count section 86 read. `<property>` is one word: `Power`, `Input`, `InputType`,
+`TVInput`, `CompAVInput`, `Screen`. What is left is the user's own words for the device, underscores
+included, and it runs to four tokens in two containers here.
+
+**A name that belongs to the config rather than to a device has a number where the property is.**
+`CurrentActivityState_0_4` and `CurrentLocation_1`, and on arch 14 the whole delay family,
+`DefaultPowerOnDelay_<id>_255`, whose qualifier is a Logitech device identifier. So the discriminator
+is that no property is spelled as a number, which is section 86's own observation that the qualifier is
+"a device identifier on the arch 14 configs, and a small number elsewhere" turned into a test. It
+matters more as a negative than a positive: reading a global as a device invents a device with no
+infrared group, and the elimination rule below would then pair that invention with a real group.
+
+### The link is base slot 13, and section 86 had already read it
+
+A variable's record carries its transitions, eight bytes each, holding one action list instruction. For
+a device's `Power` or `Input` variable that instruction is `0x7F`, naming the base slot 10 list that
+**performs** the transition, and performing it means sending the device's own code. Opcode `0x7D` is
+`{ u8 group; u8 index }`, section 33, so the group is right there:
+
+```
+TV_Power_2  ->  record 30's transitions  ->  0x7F list  ->  0x7D operand 0x020C  ->  group 2
+```
+
+Across fifteen containers and four architectures:
+
+| | |
+|---|---|
+| device variables whose transitions reach exactly one group | 102 |
+| reach more than one | **0** |
+| reach none, so the variable has nothing to switch between | 13 |
+| two variables of one device disagreeing about the group | **0** |
+| two devices claiming one group | **0** |
+
+The reader refuses both of the last two cases rather than picking a winner, and nothing in the corpus
+makes it do so.
+
+### Two routes fill in behind it, and they are ranked
+
+1. **Elimination**, when exactly one label and one group are left unpaired. Five devices, and every one
+   of them is the case where a device's only variable has no transitions.
+2. **The screen**, for a group base slot 0 does not name at all: the title of the device's own mode,
+   meaning a mode whose keys send that group's codes and nobody else's. Three devices. A candidate that
+   already names an activity is dropped, which is what separates a device from the activity that uses
+   it: one config has both, and the activity's name is the device's with a verb in front.
+
+Taken only when one candidate survives, because the calibration says this route is weak. Run against
+the devices route one already names, the mode title is the label on **arch 9, 4 of 4, and arch 14, 13
+of 13**, and it is a command name on **arch 8, 1 of 31, and arch 12, 0 of 7**, which draw no title at
+all. So the ordering is not a preference: on two architectures the third route would be wrong most of
+the time.
+
+### Two independent closures
+
+**The label is drawn.** Every one of the 55 labels route one pairs also appears in the config's screen
+text, 53 exactly and 2 as a truncated prefix where a menu cut a long name to the width it had. Those
+are two encodings of one string decoded by unrelated code: base slot 0's bytes are ASCII, and the
+screen's are glyph codes resolved through the per config font table of section 112. Neither reader
+knows the other exists.
+
+**The pairing is what agrees, not the label.** On arch 9 and arch 14 the device's own mode draws its
+label as a title, 17 of 17. Shifting the pairing to the next group breaks **16 of 16** cases that can
+be shifted, the seventeenth being a config with one device, which can only shift onto itself. So the
+agreement is about which group a label belongs to and not about the label existing somewhere.
+
+### The result
+
+63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices named, in fifteen containers on four
+architectures: arch 8 34, arch 9 5, arch 12 8, arch 14 16. `make devices`, and 55 of those come from
+the names, 5 from elimination and 3 from the screen.
+
+**Two of the three screen cases and four of the five eliminations are the same shape**, a device the
+user added and never gave a state to: no power toggle, no input list, so no variable and nothing to
+switch. That is worth knowing for the application, because such a device still has its codes and still
+appears in the menu.
+
+### The bug, which only one architecture could show
+
+The walk from a list to the groups it sends to is shared by both consumers, and the first version
+**memoised it**. A nested walk stops at whatever the outer walk had already visited, so its result is
+only correct in that context, and caching it lets a list inherit a truncated answer from whoever
+reached it first.
+
+Nothing failed on arch 8, arch 9 or arch 12, whose lists carry `0x7D` directly. Arch 14 emits
+`{0x7F, 0x7D, 0x7C}`, section 33, where the send sits in the list the **first** instruction names, so
+every arch 14 device lost its name at once and the total went from 63 to 47. The lesson is the one
+`CLAUDE.md` states about opcode tables, in its other direction: the shared walk was right to be shared,
+and what was wrong was an optimisation whose correctness depended on the caller. A test asserts the
+property rather than the fix, that a list reaching a group only through `0x7F` is in the map with
+something in it.
+
+### What it does not settle
+
+* **A command has no name.** An infrared record carries a code and nothing else, so "the volume up
+  command of device 3" is a group and an index. Where a command is drawn on a screen it has a label,
+  and that is a soft key on a page rather than a property of the record.
+* **The arch 14 device identifiers are not tied to groups.** The delay variables carry a Logitech
+  identifier per device, four distinct ones on the 600 for four groups, and their records have no
+  transitions, so nothing here pairs an identifier with a group.
+
+### Where it landed
+
+`packages/codec/src/inventory.ts`: `devices`, `deviceVariables`, `deviceModeTitles` and
+`infraredGroupsPerList`, which is the shared walk. `make devices` prints the figures with the source
+column, `packages/codec/test/inventory.test.ts` carries the closures and the controls, and
+`docs/config-format.md` has the structured form.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

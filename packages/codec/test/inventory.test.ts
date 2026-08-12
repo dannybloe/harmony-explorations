@@ -15,10 +15,15 @@ import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   ACTIVITY_STATE_NAME,
+  deviceModeTitles,
+  deviceVariables,
+  devices,
+  infraredGroupsPerList,
   activityBindings,
   activityCount,
   activityNames,
   activityWriterCount,
+  characterMap,
   idleActivityValue,
   modePages,
   screenStrings,
@@ -485,4 +490,171 @@ test('no fixed key to row map can exist on a touch panel', skipUnless('one_confi
     }
   }
   assert.ok(rows.size > 0, 'the pages do draw text');
+});
+
+/** Letters and digits only, since one encoding writes a space where the other writes an underscore. */
+function plain(text: string): string {
+  return text.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+}
+
+test('every device in the corpus has a name, and most of them are stated rather than read off a screen',
+  skipWithoutLab(), () => {
+    // Section 126. The count is not the interesting column: the **source** is, because the three
+    // routes are not equally strong and a regression can hold the total while moving work from base
+    // slot 0's ASCII to a title decoded out of glyph pixels.
+    let named = 0;
+    let total = 0;
+    const perSource = new Map<string, number>();
+    const perArchitecture = new Map<number, { named: number; total: number }>();
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const rows = devices(c);
+      if (rows.length === 0) continue;
+      named += rows.filter((one) => one.name !== undefined).length;
+      total += rows.length;
+      for (const one of rows) {
+        if (one.source === undefined) continue;
+        perSource.set(one.source, (perSource.get(one.source) ?? 0) + 1);
+      }
+      // A device is an infrared group, so the groups are exactly `0` to `count - 1` and each is one
+      // device. A reader that dropped an empty group would still pass every count above.
+      assert.deepEqual(rows.map((one) => one.group), [...rows.keys()], `${name}: one device per group`);
+      const distinct = new Set(rows.map((one) => one.name));
+      assert.equal(distinct.size, rows.length, `${name}: no two devices share a name`);
+      const seen = perArchitecture.get(c.architecture as number) ?? { named: 0, total: 0 };
+      seen.named += rows.filter((one) => one.name !== undefined).length;
+      seen.total += rows.length;
+      perArchitecture.set(c.architecture as number, seen);
+    }
+    assert.ok(total >= 60, `enough devices to mean something, got ${total}`);
+    assert.equal(named, total, `every device is named: ${named} of ${total}`);
+    for (const architecture of [8, 9, 12, 14]) {
+      const here = perArchitecture.get(architecture) as { named: number; total: number };
+      assert.equal(here.named, here.total, `arch ${architecture} names every device`);
+    }
+    // The ranking, asserted rather than described: the screen is the exception and stays one.
+    const stated = perSource.get('names') ?? 0;
+    assert.ok(stated / total > 0.8, `most names are stated: ${stated} of ${total}`);
+    assert.ok((perSource.get('screen') ?? 0) <= 3, 'and the screen route stays a last resort');
+  });
+
+test('a device label is drawn on the screen as well, which is two encodings of one string',
+  skipWithoutLab(), () => {
+    // The independent closure for section 126's first route. A device's label comes out of base slot
+    // 0 as ASCII and the config also **draws** it, out of base slot 7's glyph pixels through a
+    // per config code table, and the two paths share no code at all. Every label the reader ties to
+    // an infrared group turns up in the screen text, 53 of 55 exactly and 2 as a prefix, because a
+    // menu truncates a long name to the width it has.
+    let exact = 0;
+    let truncated = 0;
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const drawn = new Set<string>();
+      for (const one of screenStrings(c, characterMap(c))) {
+        if (one.text.trim().length > 1) drawn.add(plain(one.text));
+      }
+      const joined = [...drawn].join('|');
+      for (const device of devices(c)) {
+        if (device.source !== 'names' || device.name === undefined) continue;
+        const label = plain(device.name);
+        if (joined.includes(label)) exact += 1;
+        else if ([...drawn].some((one) => one.length >= 6 && label.startsWith(one))) truncated += 1;
+        else assert.fail(`${name}: a device label nothing draws`);
+      }
+    }
+    assert.ok(exact >= 50, `enough labels to mean something, got ${exact}`);
+    assert.ok(truncated <= 2, `and the screen truncates few of them, got ${truncated}`);
+  });
+
+test('on arch 9 and arch 14 the device names its own mode, and the pairing is what agrees',
+  skipWithoutLab(), () => {
+    // The second closure, and the control that makes the first one worth having. Route one pairs an
+    // ASCII label with an infrared group through the variable's transitions; on arch 9 and arch 14 the
+    // device's own mode draws that label as its title, and the two agree 17 times out of 17. Shifting
+    // the pairing to the next group breaks every one of them, so the agreement is about **which**
+    // group and not about the label existing.
+    //
+    // Arch 8 and arch 12 are the reason this route is not the reader's first: they draw a command
+    // name at the top of a device mode and no title at all, 1 of 31 and 0 of 7.
+    let agree = 0;
+    let shifted = 0;
+    let shiftable = 0;
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      if (c.architecture !== 9 && c.architecture !== 14) continue;
+      const titles = deviceModeTitles(c);
+      const rows = devices(c);
+      const says = (group: number, label: string): boolean =>
+        [...(titles.get(group) ?? [])].some((one) => plain(one) === plain(label));
+      for (const device of rows) {
+        if (device.source !== 'names' || device.name === undefined) continue;
+        if (says(device.group, device.name)) agree += 1;
+        else assert.fail(`${name}: group ${device.group} does not say its own name`);
+        // A config with one device cannot be shifted onto anything but itself.
+        if (rows.length < 2) continue;
+        shiftable += 1;
+        if (!says((device.group + 1) % rows.length, device.name)) shifted += 1;
+      }
+    }
+    assert.ok(agree >= 17, `enough devices to mean something, got ${agree}`);
+    assert.equal(shifted, shiftable, 'and every shifted pairing breaks');
+  });
+
+test('a device variable ends in a word and a config variable ends in a number', skipWithoutLab(), () => {
+  // The discriminator section 126 rests on, asserted both ways. `TV_Power_2` belongs to a device and
+  // `CurrentActivityState_0_4` belongs to the config, and what separates them is that no property is
+  // spelled as a number. The negative matters more than the positive here: reading a global as a
+  // device would invent a device with no infrared group and then let elimination pair it with a real
+  // one.
+  let checked = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const belong = new Set(deviceVariables(c).map((one) => one.index));
+    for (const variable of stateVariables(c)) {
+      if (variable.name.startsWith(ACTIVITY_STATE_NAME) || variable.label === 'CurrentLocation') {
+        assert.ok(!belong.has(variable.index), `${name}: ${variable.label} is not a device's`);
+        checked += 1;
+      }
+    }
+    for (const one of deviceVariables(c)) {
+      assert.ok(one.device.length > 0, `${name}: a device label of nothing`);
+      assert.ok(!/^[0-9]+$/.test(one.property), `${name}: ${one.property} reads as a qualifier`);
+    }
+  }
+  assert.ok(checked >= 20, `enough globals to mean something, got ${checked}`);
+});
+
+test('an action list that sends a code is walked into, not only looked at', skipWithoutLab(), () => {
+  // A bug this test exists because of. `infraredGroupsPerList` first memoised a nested walk, and a
+  // nested walk stops at whatever the outer one had visited, so its answer is only right in that
+  // context. Nothing failed on arch 8, 9 or 12, whose lists carry `0x7D` directly. Arch 14 emits
+  // `{0x7F, 0x7D, 0x7C}`, where the send sits in the list the first instruction names, so every arch
+  // 14 device lost its name at once. The property that catches it: a list reaching a group through
+  // `0x7F` exists in the map, in every container that has one.
+  let delegating = 0;
+  for (const [name] of INVENTORY) {
+    const data = load(name);
+    if (data === undefined) continue;
+    const c = parse(data);
+    const sent = infraredGroupsPerList(c);
+    const lists = c.actionLists() ?? [];
+    lists.forEach((list, index) => {
+      const direct = list.some((one) => one.opcode === 0x7d);
+      const names = list.some((one) => one.opcode === ACTION_LIST_INDEX_OPCODE);
+      if (direct || !names) return;
+      const reached = sent.get(index);
+      if (reached === undefined) return;
+      delegating += 1;
+      assert.ok(reached.size > 0, `${name}: list ${index} is in the map with nothing in it`);
+    });
+  }
+  assert.ok(delegating >= 100, `enough delegating lists to mean something, got ${delegating}`);
 });

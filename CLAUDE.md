@@ -825,7 +825,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 125 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 126 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -848,12 +848,12 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 
 | slot | what it is | sections |
 |---|---|---|
-| 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for | 20, 77, 86 |
+| 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for and which device it belongs to | 20, 77, 86, 126 |
 | 1 | seven bytes stating the architecture, the only place the config says it | 20 |
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
 | 3 | the clock. Starts Timer 1; on arch 12 its build timestamp is what the clock is set to | 21, 38, 111 |
 | 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86 |
+| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86, 126 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
@@ -1266,6 +1266,25 @@ len(name); u16 level; u16 index; char name[]`, and **level 1 names base slot 13'
 entry by entry**. What opened it was the arch 9 safe mode container, whose first node is not called
 `Root`: `FRAME_PROLOGUE` was never a prologue, it was the first node, and two of its nine bytes were
 that node's own length.
+
+**Every device in the corpus has its name, section 126**, 63<!--fact:devices_named--> of
+63<!--fact:devices_total--> in fifteen containers, and the route is ASCII rather than pixels. Base slot 0
+names no devices: a device's label is a **prefix** of a state variable's name, `<label>_<property>_<values>`,
+where a name belonging to the config has a **number** in the property's place instead, which is the
+discriminator. What ties a label to an infrared group is base slot 13: the variable's transitions carry
+one action list instruction, and for a `Power` or `Input` variable that list is the one that sends the
+code, so `0x7D`'s own operand names the device. 102 variables reach exactly one group and **none reaches
+two**. Behind that, elimination for 5 and a mode's drawn title for 3, in that order because the title is
+the label on arch 9 and arch 14 and a command name on arch 8 and arch 12. Two closures: the ASCII label
+is also **drawn**, 53 of 55 exactly, which is two readers with no shared code agreeing; and on arch 9 and
+14 shifting the pairing to the next group breaks 16 of 16. `make devices`, and the column to watch is the
+source rather than the total.
+
+**The shared walk from a list to the groups it sends to must not be memoised**, section 126, and only
+arch 14 could show it: a nested walk stops at whatever the outer one had visited, so caching it lets a
+list inherit a truncated answer. Arch 8, 9 and 12 carry `0x7D` directly and passed; arch 14 emits
+`{0x7F, 0x7D, 0x7C}` with the send one list down, and every arch 14 device lost its name at once, 63 to
+47.
 
 **A config states its devices and its activities, section 86, which is what the application needs
 before it can show anything.** A level 1 name is `<label>_<qualifier>_<values>` and `values` is its

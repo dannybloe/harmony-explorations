@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text activities alphabets all clean
+.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text activities devices alphabets all clean
 
 BENCH_PORT ?= 8731
 
@@ -42,6 +42,7 @@ help:
 	@echo "reading      the step 6 depth number; READING_ARGS=--detail for one line a sample"
 	@echo "text         how much on screen text reads back as characters; TEXT_ARGS=--detail"
 	@echo "activities   which activity each key starts, and which label is its name"
+	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
@@ -148,6 +149,9 @@ text:
 # Which activity a key starts and which drawn label is its name, per container and per architecture.
 activities:
 	@node packages/codec/bin/activities.ts $(ACTIVITIES_ARGS)
+
+devices:
+	@node packages/codec/bin/devices.ts $(DEVICES_ARGS)
 
 # The glyph shape table behind `text`, regenerated from the hand read seeds in the same script.
 # Not part of `all`: it needs a lab, and the check it would run there is a test already.

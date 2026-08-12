@@ -530,6 +530,12 @@ states the **number of activities**. Base slot 0's name for a variable says what
 many values it takes, and the eight byte records under it are transitions carrying one action list
 instruction each. `packages/codec/src/inventory.ts` is that view.
 
+**Device names are readable too**, section 126, and they need no screen at all: a device's label is a
+prefix of its state variables' names, in ASCII, and the variable's transitions name the action list that
+sends that device's codes, which is what pairs a label with an infrared group.
+63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices, `make devices`. So the interface can
+list a config's devices and its activities, both by name, on every architecture the corpus covers.
+
 **Activity names are readable now**, section 112: a mode page's screen program draws them, and a
 glyph code turns back into a character by matching the glyph's pixels against a hand read alphabet
 per typeface. `packages/codec/src/text.ts`, `make text`, and 170920<!--fact:text_read--> of

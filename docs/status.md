@@ -226,6 +226,15 @@ the label is the text the firmware's own hit test puts inside it. That also read
 which turns out to be three blocks down the screen, at most two side by side, plus a bar of two touch
 points below the display and a key at each side of it. Nothing was fitted to get there bar one offset.
 
+**Every device in the corpus has its name too**, section 126, 63<!--fact:devices_named--> of
+63<!--fact:devices_total--> across fifteen containers, and this one is ASCII rather than pixels. A
+device's label is a prefix of one of its state variables' names, and what says which infrared group the
+label belongs to is the variable's own transitions: they carry the action list that performs the change,
+and for a power or input variable that list is the one that sends the code. 102 variables reach exactly
+one group and none reaches two. The independent check is that the label is also **drawn** on the screen,
+53 of 55 exactly, which is base slot 0's ASCII and base slot 7's glyph pixels agreeing through readers
+that share no code. `make devices`.
+
 **One config's device and activity counts are checked against its owner's own written description**,
 section 124, which is the first ground truth this project has had for either: four devices and four
 activities, on a menu of five entries whose fifth is the remote's own settings page.

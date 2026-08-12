@@ -647,3 +647,236 @@ function resolveLabel(
   const label = hits[0] as ScreenString;
   return { name: label.text, at: { x: label.x, y: label.y } };
 }
+
+/**
+ * Opcode `0x7D`: send an infrared code, `{ u8 group; u8 index }`. Section 33.
+ *
+ * The group is the device, section 86, so this instruction is the only place in the format where an
+ * action says **which device** it is talking to.
+ */
+const SEND_INFRARED = 0x7d;
+/** The high byte of `0x7D`'s operand: the base slot 5 group. */
+const INFRARED_GROUP_SHIFT = 8;
+
+/** One device: an infrared group, and the name the config gives it. */
+export interface Device {
+  /** Index into base slot 5's group array, which is the device's identity. Section 86. */
+  group: number;
+  /** How many infrared codes it has. A group may be empty. */
+  codes: number;
+  /** The name, where the config states one. */
+  name?: string;
+  /**
+   * Where that name came from, because the three routes are not equally strong:
+   *
+   * * `names` is base slot 0's own ASCII, tied to this group by the variable's transitions. Stated.
+   * * `elimination` is the one label left over for the one group left over. Forced, not read.
+   * * `screen` is the title the device's own mode draws, decoded from glyph pixels. Last resort.
+   */
+  source?: 'names' | 'elimination' | 'screen';
+  /** The base slot 13 variables whose name carries this device's label. */
+  variables: number[];
+}
+
+/**
+ * A level 1 name that belongs to a device, split into the device's label and the property.
+ *
+ * A device variable is named `<label>_<property>_<values>` and a global is named
+ * `<name>_<values>` or `<name>_<qualifier>_<values>` with a **numeric** qualifier, which is what
+ * separates the two: `TV_Power_2` is a device's, `CurrentActivityState_0_4` and
+ * `DefaultPowerOnDelay_92595307_255` are not. Section 86 read the shape and called the qualifier "a
+ * device identifier on the arch 14 configs, and a small number elsewhere"; that number is exactly the
+ * discriminator, since no property word is a number.
+ *
+ * The label keeps its underscores, because a device label is the user's own words and often several
+ * of them: two containers here have a label of four tokens.
+ */
+export interface DeviceVariable {
+  index: number;
+  /** The device's label as base slot 0 spells it, underscores included. */
+  device: string;
+  /** The last token, which is what the variable tracks about that device. */
+  property: string;
+}
+
+/** The level 1 names that belong to a device rather than to the config as a whole. */
+export function deviceVariables(c: Container): DeviceVariable[] {
+  const out: DeviceVariable[] = [];
+  for (const variable of stateVariables(c)) {
+    const cut = variable.label.lastIndexOf('_');
+    if (cut <= 0) continue;
+    const property = variable.label.slice(cut + 1);
+    // A numeric qualifier means the name belongs to the config, not to a device.
+    if (property.length === 0 || /^[0-9]+$/.test(property)) continue;
+    out.push({ index: variable.index, device: variable.label.slice(0, cut), property });
+  }
+  return out;
+}
+
+/**
+ * Every device the config drives, with its name.
+ *
+ * **The name is stated, and it took a detour to see where.** Base slot 0 names no devices: its level
+ * 1 nodes are state variables, and a device's label is only ever a **prefix** of one, `TV_Power_2`.
+ * So the label is in the file in ASCII and nothing says which infrared group it belongs to. The link
+ * is base slot 13: a variable's record carries its transitions, each holding one action list
+ * instruction, section 86, and for a device's `Power` or `Input` variable that list is the one that
+ * **sends the code**. So the group is `0x7D`'s own operand, reached from the variable that names it.
+ *
+ * That is route one and it is exact: 37 of 37 labels across eleven containers reach exactly one
+ * group, and no two labels reach the same one. Two routes fill in behind it, in this order:
+ *
+ * 1. **Elimination**, when exactly one label and one group are left unpaired. Forced rather than
+ *    read, and it is what names the device whose only variable has no transitions, which happens when
+ *    the remote knows one value for it and therefore has nothing to switch between.
+ * 2. **The screen**, for a group with no label at all: the title of the device's own mode, taken only
+ *    when one candidate survives. A string that already names an activity is not a candidate, which
+ *    is what separates a device called `Roku` from an activity called `Watch Roku`.
+ *
+ * The independent closure is that the ASCII label is **drawn**: for every device route one names, the
+ * label turns up in the screen text as well, and those are two encodings of one string decoded by
+ * unrelated code, base slot 0's bytes against base slot 7's glyph pixels.
+ */
+export function devices(c: Container): Device[] {
+  const groups = irGroups(c) ?? [];
+  const records = stateRecords(c);
+  const out: Device[] = groups.map((group, index) => ({
+    group: index,
+    codes: group.addresses.length,
+    variables: [],
+  }));
+  const sent = infraredGroupsPerList(c);
+  if (sent.size === 0 && groups.length === 0) return out;
+  const groupsOf = (index: number): Set<number> => sent.get(index) ?? new Set<number>();
+
+  // Route one: a device variable's transitions send that device's codes and nobody else's.
+  const labels: string[] = [];
+  const named = new Map<string, number>();
+  for (const variable of deviceVariables(c)) {
+    if (!labels.includes(variable.device)) labels.push(variable.device);
+    const reached = new Set<number>();
+    for (const value of records?.[variable.index]?.values ?? []) {
+      if (value.opcode !== ACTION_LIST_INDEX) continue;
+      for (const group of groupsOf(value.operand)) reached.add(group);
+    }
+    if (reached.size !== 1) continue;
+    const group = [...reached][0] as number;
+    const already = named.get(variable.device);
+    // Two variables of one device must agree, and two devices must not claim one group.
+    if (already !== undefined && already !== group) continue;
+    if (already === undefined && [...named.values()].includes(group)) continue;
+    named.set(variable.device, group);
+  }
+  for (const [label, group] of named) {
+    const device = out[group];
+    if (device === undefined) continue;
+    device.name = label;
+    device.source = 'names';
+  }
+  for (const variable of deviceVariables(c)) {
+    const group = named.get(variable.device);
+    if (group !== undefined) out[group]?.variables.push(variable.index);
+  }
+
+  // Route two: one label and one group left over pair by force.
+  const freeGroups = out.filter((device) => device.name === undefined);
+  const freeLabels = labels.filter((label) => !named.has(label));
+  if (freeGroups.length === 1 && freeLabels.length === 1) {
+    const device = freeGroups[0] as Device;
+    device.name = freeLabels[0] as string;
+    device.source = 'elimination';
+    for (const variable of deviceVariables(c)) {
+      if (variable.device === device.name) device.variables.push(variable.index);
+    }
+  }
+
+  // Route three: the title of the device's own mode, for a group base slot 0 does not name at all.
+  const stillFree = out.filter((device) => device.name === undefined && device.codes > 0);
+  if (stillFree.length > 0) {
+    const spokenFor = new Set(activityNames(c).map((one) => one.name));
+    const titles = deviceModeTitles(c);
+    for (const device of stillFree) {
+      const candidates = [...(titles.get(device.group) ?? [])].filter((one) => !spokenFor.has(one));
+      if (candidates.length !== 1) continue;
+      device.name = candidates[0] as string;
+      device.source = 'screen';
+    }
+  }
+  return out;
+}
+
+/**
+ * The top row a mode draws, for every mode whose own keys address exactly one device.
+ *
+ * A device's mode is where its buttons live, so the modes worth looking at are the ones whose pages
+ * bind keys that send one group's codes and nothing else. **This is a weak route and the calibration
+ * says why**: run against the devices route one already names, the top row is the label on arch 9 and
+ * arch 14 and is a command name on arch 8 and arch 12, which draw no title. So it is used only where
+ * nothing else reaches, and only when it leaves one candidate.
+ */
+export function deviceModeTitles(c: Container): Map<number, Set<string>> {
+  const out = new Map<number, Set<string>>();
+  const sent = infraredGroupsPerList(c);
+  const drawn = screenStrings(c, characterMap(c));
+  for (const mode of modeRecords(c) ?? []) {
+    const reached = new Set<number>();
+    for (const page of mode.pages) {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode !== ACTION_LIST_INDEX) continue;
+        for (const group of sent.get(entry.operand) ?? []) reached.add(group);
+      }
+    }
+    if (reached.size !== 1) continue;
+    const texts = mode.pages.flatMap((page) =>
+      drawn.filter(
+        (one) =>
+          one.program === page.program && one.text.trim().length >= SHORTEST_USEFUL_LABEL,
+      ),
+    );
+    if (texts.length === 0) continue;
+    const top = Math.min(...texts.map((one) => one.y));
+    const group = [...reached][0] as number;
+    const acc = out.get(group) ?? new Set<string>();
+    for (const one of texts) if (one.y === top) acc.add(one.text.trim());
+    out.set(group, acc);
+  }
+  return out;
+}
+
+/**
+ * Which devices each base slot 10 action list talks to, by infrared group.
+ *
+ * `0x7D` is the only instruction that names a device, so this is the whole of it, plus `0x7F` because
+ * a list may hand the work to another. Shared rather than derived twice: `devices` uses it to tie a
+ * state variable to a group and `deviceModeTitles` uses it to tie a screen to one, and two copies of
+ * one walk is the state that precedes two diverging ones.
+ *
+ * A list that reaches nothing is absent rather than empty, so a caller can tell "sends no codes" from
+ * "no such list".
+ */
+export function infraredGroupsPerList(c: Container): Map<number, Set<number>> {
+  const lists = c.actionLists();
+  const out = new Map<number, Set<number>>();
+  if (lists === undefined) return out;
+  // Each list gets its own walk with its own visited set. **Not a shared cache**: a nested walk stops
+  // at whatever the outer one had already visited, so its answer is only correct in that context, and
+  // memoising it would let a list inherit a truncated result from whoever reached it first.
+  const walk = (index: number, seen: Set<number>): Set<number> => {
+    const found = new Set<number>();
+    if (seen.has(index) || lists[index] === undefined) return found;
+    seen.add(index);
+    for (const instruction of lists[index] as { opcode: number; operand: number }[]) {
+      if (instruction.opcode === SEND_INFRARED) {
+        found.add(instruction.operand >> INFRARED_GROUP_SHIFT);
+      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+        for (const group of walk(instruction.operand, seen)) found.add(group);
+      }
+    }
+    return found;
+  };
+  lists.forEach((_, index) => {
+    const found = walk(index, new Set());
+    if (found.size > 0) out.set(index, found);
+  });
+  return out;
+}

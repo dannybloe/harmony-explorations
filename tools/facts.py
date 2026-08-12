@@ -212,6 +212,28 @@ def activity_facts():
     return found
 
 
+def device_facts():
+    """How many of the corpus's devices have a name, and where the name came from.
+
+    Shelled out like the rest, and the reason it is a fact rather than a sentence is that the routes
+    are ranked: a run that names the same number of devices with more of them coming off the screen and
+    fewer out of base slot 0 is a regression `make devices` shows and prose would hide.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/devices.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found = {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] in ('devices_named', 'devices_total'):
+            found[parts[0]] = parts[1]
+    return found
+
+
 def contribution_facts():
     """What the corpus holds, per architecture, for the table in `README.md`.
 
@@ -426,6 +448,7 @@ def main():
     facts.update(reading_facts())
     facts.update(text_facts())
     facts.update(activity_facts())
+    facts.update(device_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

@@ -6,11 +6,11 @@
  * node packages/codec/bin/activities.ts --detail   plus one line per activity
  * ```
  *
- * The number to watch is the last column, and it has a per architecture form because the shortfall is
- * not spread evenly: arch 8, 9 and 14 resolve every activity they bind, and arch 12 resolves almost
- * none, which is a proof rather than a gap. A Harmony One's activity mode does not repeat the name its
- * menu draws and its scan codes cannot stand in for position, so base slot 17's hit map is what it
- * would take. Section 121.
+ * The number to watch is the last column, and it is complete on all four architectures since section
+ * 125. It has a per architecture form because the routes differ: arch 8, 9 and 14 resolve an activity's
+ * name from what the modes it enters say, and arch 12 cannot, because a Harmony One's activity mode does
+ * not repeat the name its menu draws and no fixed scan code to row map can exist on a touch panel. A One
+ * uses base slot 17's hit map instead, through the index in the mode page's spare byte.
  *
  * **No label is printed here.** An activity's name is the config owner's own words, and this
  * repository is public; `--detail` prints its length and where it is drawn, never the text. That is

@@ -1622,6 +1622,55 @@ own settings, which is why a count taken from the menu would be wrong. Its idle 
 inside the values its keys write, which is the second container to show that the idle value is `first`
 and not the highest.
 
+#### Which devices a config drives, and what each one is called
+
+**Confirmed on fifteen containers across four architectures**, section 126, which names
+63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device is an infrared group,
+section 86, so the list is base slot 5's group array and the question is only the name.
+
+A level 1 name that belongs to a device is spelled
+
+```
+<label>_<property>_<values>
+```
+
+where `<label>` is the user's own words for the device, underscores included and up to four tokens, and
+`<property>` is one word: `Power`, `Input`, `InputType`, `TVInput`, `CompAVInput`, `Screen`. **A name
+belonging to the config has a number in the property's place instead**, `CurrentActivityState_0_4`,
+`CurrentLocation_1`, and on arch 14 the delay family whose qualifier is a Logitech device identifier. No
+property is spelled as a number, and that is the discriminator.
+
+Which infrared group a label belongs to comes from base slot 13. The variable's record carries its
+transitions, each holding one action list instruction; for a device's `Power` or `Input` variable that
+instruction is `0x7F`, and the list it names carries the `0x7D` that sends the code, whose operand's
+high byte is the group. Three routes, in this order:
+
+| route | devices | how |
+|---|---|---|
+| the names | 55 | the variable's transitions reach exactly one group |
+| elimination | 5 | one label and one group left unpaired |
+| the screen | 3 | the title of the device's own mode, when one candidate survives |
+
+The counts behind route one: 102 device variables reach exactly one group, 13 reach none because the
+variable has nothing to switch between, and **none reaches two**. No two variables of one device
+disagree and no two devices claim one group; the reader refuses both rather than choosing, and neither
+happens in the corpus.
+
+Two independent checks, both in `packages/codec/test/inventory.test.ts`:
+
+* **the label is drawn**, 53 of 55 exactly and 2 as a prefix a menu truncated, which is base slot 0's
+  ASCII and base slot 7's glyph pixels agreeing through two readers that share no code;
+* **on arch 9 and arch 14 the device's own mode draws its label as a title**, 17 of 17, where shifting
+  the pairing to the next group breaks 16 of 16 shiftable cases. Arch 8 and arch 12 draw no title, 1 of
+  31 and 0 of 7, which is why that is the last route and not the first.
+
+`packages/codec/src/inventory.ts` is the reader: `devices`, `deviceVariables`, `deviceModeTitles` and
+`infraredGroupsPerList`. `make devices` prints the figures with the source column, which is the number
+to watch rather than the total.
+
+**A command has no name.** An infrared record is a code and an index in its group, so an editor names a
+command only where a screen draws a label for the key that sends it.
+
 ### Slot 1: the config states its own architecture
 
 A fixed seven byte record:
