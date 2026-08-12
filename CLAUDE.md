@@ -467,22 +467,30 @@ packages/probe/                 TS: the contribution probe, a report with shape 
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
 
-**Both halves have a language server, and the two are wired up differently on purpose.** TypeScript is
-`.claude/skills/ts-lsp/`, a plugin shaped directory whose `.lsp.json` names
-`${CLAUDE_PROJECT_DIR}/node_modules/.bin/typescript-language-server` outright, so nothing depends on
-what a machine has on `PATH`. That is what makes `typescript-language-server` **a devDependency of the
-workspace**, pinned at 5.3.0 like everything else here: the path points into `node_modules`, so the
-version is decided by the lock file. Five packages, four of them Microsoft's LSP protocol libraries, no
-native code. Python goes the other way, through the `pyright-lsp` plugin enabled in
-`.claude/settings.json`, whose command is bare, so `pyright-langserver` on `PATH` is a per machine step
-like `make hooks`.
+**Both halves have a language server, and neither is installed on the machine.**
+`.claude/skills/ts-lsp/` and `.claude/skills/py-lsp/` are plugin shaped directories whose `.lsp.json`
+names `${CLAUDE_PROJECT_DIR}/node_modules/.bin/typescript-language-server` and the same for
+`pyright-langserver` outright, so nothing depends on `PATH`. That is why both servers are **exact
+devDependencies of the workspace**, `typescript-language-server` at 5.3.0 and `pyright` at 1.1.411:
+the path points into `node_modules`, so the lock file decides the version. Seven packages between
+them, four of which are Microsoft's LSP protocol libraries, one an optional macOS file watcher, and
+no install script to approve. `tests/test_toolchain.py` is what keeps the two halves together, since
+a plugin pointing at a dependency somebody removed fails silently.
+
+**Pinning pyright matters more than pinning the other one**, and that is the reason to spend a
+dependency on it: pyright's version decides which diagnostics exist, so an upgrade can turn
+`make pyright` from zero errors into a dozen with no line of code changed. `make pyright` therefore
+prefers the workspace copy, falls back to `PATH`, and skips with a note when there is neither, because
+a Python 3 install is still this repository's floor.
 
 **The explicit path was read off a running process rather than reasoned about**, and the first version
-of this paragraph had it wrong: it said the plugin's bare command resolves through the project's own
+of this paragraph had it wrong: it said a plugin's bare command resolves through the project's own
 `node_modules/.bin`, which the evidence does not show. What the evidence shows is a server for another
 repository on this machine running from that repository's own `node_modules/.bin`, which is exactly
 where its `.lsp.json` points. Two mechanisms that produce the same process listing, and only one of
-them is what is configured here.
+them is what is configured here. `enabledPlugins` in `.claude/settings.json` is empty as a result: an
+official `typescript-lsp` or `pyright-lsp` alongside these would start a second server from `PATH`, at
+whatever version the machine holds.
 
 Two things make an editor and a script agree, which is the only reason either is worth configuring. The
 language server uses the workspace's own pinned TypeScript, so it and `make ts` are the same compiler;

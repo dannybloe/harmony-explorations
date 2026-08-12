@@ -63,9 +63,11 @@ invisible. Do not read its absence as "nothing re-exports this".
 
 ## What the index cannot answer here, so do not try
 
-* **Python.** Until `pyright-lsp` is actually installed, `src/harmony`, `tools` and `tests` are grep
-  and `make pyright`. `make pyright` is the check; it is not a navigator. The TypeScript server needs
-  no such caveat: `.claude/skills/ts-lsp/.lsp.json` points at the workspace's own pinned copy.
+* **Python, through these tools.** There is a pyright server for the repository now,
+  `.claude/skills/py-lsp/`, so an editor understands `src/harmony`, `tools` and `tests`. The index
+  tools above are the IDE's and it does not index Python, per the pitfall, so for a Python symbol the
+  answer here is still grep, and `make pyright` for whether it is correct. `make pyright` is a check
+  and not a navigator.
 * **The firmware.** A reference in PIC18 code is not a reference in a language any server knows.
   `tools/pic18_trace.py` is this project's reference finder for firmware, and the `trace-section`
   skill is the method around it, including the dead end that matters: it cannot see indirect access

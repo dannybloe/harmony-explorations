@@ -82,15 +82,23 @@ lint:
 # `pyrightconfig.json` argues for: type checking off, and the rules that catch what a compiler
 # catches on individually. It is the same tool the editor's language server runs, so a finding in one
 # is a finding in the other, and it exists as a target because a check only an editor performs is a
-# check a script never fails. Skips with a note where pyright is absent, since it is an npm install
-# and this repository's floor is a Python 3 install and nothing else.
+# check a script never fails.
+#
+# The workspace's own copy first, because pyright's version decides which diagnostics exist: an
+# upgrade can turn this from zero errors to a dozen with no line of code changed, so the number is
+# only meaningful against a pinned one. `PATH` second, for anyone who has it globally and no
+# `pnpm install`. Neither is a skip and not a failure, since this repository's floor is a Python 3
+# install and nothing else.
+PYRIGHT ?= $(if $(wildcard node_modules/.bin/pyright),node_modules/.bin/pyright,$(shell command -v pyright 2>/dev/null))
+
 pyright:
-	@command -v pyright > /dev/null 2>&1 \
-	  && pyright --outputjson | $(PYTHON) -c "import json,sys; s=json.load(sys.stdin)['summary']; \
-	     print('pyright:', s['errorCount'], 'error(s) in', s['filesAnalyzed'], 'files'); \
-	     sys.exit(1 if s['errorCount'] else 0)" \
-	  || { command -v pyright > /dev/null 2>&1 && exit 1 || \
-	       echo "no pyright installed, so the Python type checks were skipped"; }
+	@if [ -z "$(PYRIGHT)" ]; then \
+	  echo "no pyright installed, so the Python type checks were skipped"; \
+	else \
+	  $(PYRIGHT) --outputjson | $(PYTHON) -c "import json,sys; s=json.load(sys.stdin)['summary']; \
+	    print('pyright:', s['errorCount'], 'error(s) in', s['filesAnalyzed'], 'files'); \
+	    sys.exit(1 if s['errorCount'] else 0)"; \
+	fi
 
 # Published documents must not contain em-dashes or en-dashes. The check is written with
 # escapes so this Makefile does not itself contain the characters it looks for.

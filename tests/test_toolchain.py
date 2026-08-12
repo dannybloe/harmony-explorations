@@ -105,6 +105,56 @@ class PyrightConfiguration(unittest.TestCase):
                 self.assertRegex(above, r'//.*\d', 'no comment above it naming what it costs')
 
 
+#: Which package provides each language server binary a `.lsp.json` may name. Written out rather than
+#: read off `node_modules`, so this test says something in a fresh clone that has never installed.
+SERVER_PACKAGES = {
+    'typescript-language-server': 'typescript-language-server',
+    'pyright-langserver': 'pyright',
+}
+
+
+class LanguageServers(unittest.TestCase):
+    """Both servers must be the workspace's own pinned copies rather than the machine's.
+
+    A server on `PATH` is whatever version that machine happens to hold, and for pyright that
+    decides which diagnostics exist at all: an upgrade can turn `make pyright` from zero errors into
+    a dozen with no line of code changed. So each `.lsp.json` names a path inside `node_modules` and
+    the package behind it is pinned exactly, and this is what stops the two halves of that drifting
+    apart, a plugin left pointing at a dependency somebody removed.
+    """
+
+    def configurations(self):
+        base = os.path.join(ROOT, '.claude', 'skills')
+        for name in sorted(os.listdir(base)):
+            path = os.path.join(base, name, '.lsp.json')
+            if os.path.isfile(path):
+                with open(path, encoding='utf-8') as fh:
+                    yield name, json.load(fh)
+
+    def test_each_server_runs_the_workspace_copy_and_not_the_machine_one(self):
+        found = 0
+        for plugin, servers in self.configurations():
+            for server, spec in servers.items():
+                found += 1
+                with self.subTest(plugin=plugin, server=server):
+                    command = spec['command']
+                    prefix = '${CLAUDE_PROJECT_DIR}/node_modules/.bin/'
+                    self.assertTrue(command.startswith(prefix), f'{command} is not the pinned copy')
+                    self.assertIn(command[len(prefix):], SERVER_PACKAGES)
+                    self.assertEqual(spec['workspaceFolder'], '${CLAUDE_PROJECT_DIR}')
+        self.assertEqual(found, 2, 'expected the TypeScript and the pyright server, and no others')
+
+    def test_the_package_behind_each_server_is_pinned_exactly(self):
+        with open(os.path.join(ROOT, 'package.json'), encoding='utf-8') as fh:
+            pinned = json.load(fh)['devDependencies']
+        for _, servers in self.configurations():
+            for spec in servers.values():
+                package = SERVER_PACKAGES[spec['command'].rsplit('/', 1)[1]]
+                with self.subTest(package=package):
+                    self.assertIn(package, pinned, 'a server points at a dependency nobody installs')
+                    self.assertRegex(pinned[package], r'^\d+\.\d+\.\d+$', 'not an exact version')
+
+
 class TheLibraryImports(unittest.TestCase):
     def test_every_module_under_harmony_imports(self):
         """What the removed `__all__` was pretending to state, made true and checked.
