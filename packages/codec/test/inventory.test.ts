@@ -32,6 +32,7 @@ import {
   KEY_EVENT_PRESS,
   keyLabels,
   softKeyScans,
+  pageScans,
   FIRMWARE_STATE_VARIABLES,
   SCREEN_ROWS,
   touchOwner,
@@ -1038,4 +1039,45 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
     assert.ok(agreeing >= 15, `only ${agreeing} containers could be checked`);
     // The table is what a caller reads, so it must cover exactly what is proven and no more.
     assert.deepEqual(Object.keys(FIRMWARE_STATE_VARIABLES), ['0', '1', '2', '3', '4', '5', '6']);
+  });
+
+test('a page binds more keys than it sends codes with, which is why pageScans exists',
+  skipWithoutLab(), () => {
+    // The guard on a bug that has now been made twice: `keyCodes` reports a binding that ends in an
+    // infrared code, so anything asking "what does this page bind" through it silently drops the keys
+    // that start an activity or open a menu. Every activity page in the corpus is such a page, so the
+    // difference is not a detail: it is exactly the pages a person looks for.
+    let pages = 0;
+    let extra = 0;
+    for (const [name] of INVENTORY) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      const scans = pageScans(c);
+      const sending = new Map<number, Set<number>>();
+      for (const key of keyCodes(c)) {
+        if (key.where !== 'page') continue;
+        const seen = sending.get(key.index) ?? new Set<number>();
+        seen.add(key.scan);
+        sending.set(key.index, seen);
+      }
+      scans.forEach((bound, index) => {
+        const sends = sending.get(index) ?? new Set<number>();
+        for (const scan of sends) {
+          assert.ok(bound.includes(scan), `${name} page ${index} sends with scan ${scan} unbound`);
+        }
+        if (bound.length === 0) return;
+        pages += 1;
+        extra += bound.length - sends.size;
+      });
+      // And the activity pages are in the second population and not the first.
+      for (const activity of activityNames(c)) {
+        const bound = scans[activity.page] ?? [];
+        for (const scan of activity.scans) {
+          assert.ok(bound.includes(scan), `${name}: activity scan ${scan} is not bound by its page`);
+        }
+      }
+    }
+    assert.ok(pages > 500, `only ${pages} pages bind anything`);
+    assert.ok(extra > 500, `only ${extra} bindings send no code, so the two populations barely differ`);
   });

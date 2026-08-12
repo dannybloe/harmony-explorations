@@ -14,6 +14,8 @@ import { createReadStream, existsSync } from 'node:fs';
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 
+import { encodePng } from '@harmony/codec';
+
 import type { Bench } from './bench.ts';
 
 /** Loopback only. Not `0.0.0.0`, not the machine's address, not configurable. */
@@ -78,6 +80,22 @@ async function streamRead(res: ServerResponse, bench: Bench, productId: number, 
   res.end();
 }
 
+/** Sixteen pixels square: the accent colour, with a darker border so it reads at that size. */
+function favicon(): Uint8Array {
+  const side = 16;
+  const bytes = new Uint8Array(side * side * 3);
+  for (let y = 0; y < side; y += 1) {
+    for (let x = 0; x < side; x += 1) {
+      const edge = x === 0 || y === 0 || x === side - 1 || y === side - 1;
+      const at = (y * side + x) * 3;
+      bytes[at] = edge ? 0x1a : 0x3d;
+      bytes[at + 1] = edge ? 0x1a : 0x9b;
+      bytes[at + 2] = edge ? 0x1a : 0xd6;
+    }
+  }
+  return encodePng(side, side, bytes);
+}
+
 export function createServer(bench: Bench, webRoot: string): Server {
   const root = normalize(webRoot);
   return createHttpServer((req, res) => {
@@ -89,6 +107,19 @@ export function createServer(bench: Bench, webRoot: string): Server {
         }
         if (req.method === 'GET' && url.pathname === '/api/log') {
           return json(res, 200, bench.log);
+        }
+        // The tab icon, drawn rather than stored: sixteen pixels of the page's own accent colour with a
+        // dark edge. It exists so that the browser does not ask for `/favicon.ico` and log a 404 that
+        // looks like a real failure, and it is a route rather than a `data:` URI so that the page's
+        // content security policy can stay at `img-src 'self'`.
+        if (req.method === 'GET' && url.pathname === '/favicon.png') {
+          const icon = favicon();
+          res.writeHead(200, {
+            'content-type': 'image/png',
+            'content-length': String(icon.length),
+            'cache-control': 'no-store',
+          });
+          return res.end(icon);
         }
         if (req.method === 'GET' && url.pathname === '/api/configs') {
           return json(res, 200, bench.configs());

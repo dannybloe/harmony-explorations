@@ -94,7 +94,8 @@ ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; }
    hide exactly the kind of one pixel error the renderer exists to catch. */
 #screen-view { display: flex; gap: 1rem; align-items: flex-start; margin-top: 0.5rem; }
 #screen {
-  width: calc(176px * 2);
+  /* The width is set from the image's own pixels once it loads, twice its size, because the four
+     architectures have four display sizes and a fixed width stretches three of them. */
   image-rendering: pixelated;
   border: 1px solid var(--line);
   background: #000;

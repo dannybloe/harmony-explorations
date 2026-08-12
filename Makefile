@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render activities devices alphabets all clean
+.PHONY: help test test-nolab test-verbose lint prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
 
 BENCH_PORT ?= 8731
 
@@ -42,6 +42,7 @@ help:
 	@echo "reading      the step 6 depth number; READING_ARGS=--detail for one line a sample"
 	@echo "text         how much on screen text reads back as characters; TEXT_ARGS=--detail"
 	@echo "render       draw a config's screens as PNG; RENDER_ARGS=--config X --page N"
+	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
@@ -78,8 +79,10 @@ lint:
 
 # Published documents must not contain em-dashes or en-dashes. The check is written with
 # escapes so this Makefile does not itself contain the characters it looks for.
+# House convention: no em-dashes and no en-dashes in anything published here. `node_modules` is excluded
+# because it holds other people's documents, and until playwright arrived nothing in there had one.
 prose:
-	@fail=0; for f in $$(find . -name '*.md' -not -path './.git/*'); do \
+	@fail=0; for f in $$(find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*'); do \
 	  n=$$($(PYTHON) -c "import sys;d=open(sys.argv[1]).read();print(sum(d.count(c) for c in '—–'))" $$f); \
 	  if [ "$$n" != "0" ]; then echo "$$f: $$n"; fail=1; fi; done; \
 	  if [ $$fail = 0 ]; then echo "prose clean"; else exit 1; fi
@@ -146,6 +149,12 @@ reading:
 
 text:
 	@node packages/codec/bin/text.ts $(TEXT_ARGS)
+
+# Drive the bench page in a real browser. Not part of `all`, and not part of `ts`, for the same reason
+# the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips
+# cleanly where there is no Chrome, since no browser is downloaded on purpose.
+page:
+	@HARMONY_PAGE_TESTS=1 node --test --experimental-strip-types packages/bench/test/page.test.ts
 
 # Draw a config's screens as PNG files, into the private lab rather than into the repository, because a
 # rendered screen is a picture of somebody's own equipment. Not part of `all`: it writes files.

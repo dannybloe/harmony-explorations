@@ -17,6 +17,7 @@ import {
   keyCodes,
   describeChoices,
   keyLabels,
+  pageScans,
   modePages,
   renderVariants,
   type Container,
@@ -125,6 +126,30 @@ export interface KeyView {
   readonly labelSource: string | undefined;
 }
 
+/**
+ * A page of the config that has a screen, for the picker.
+ *
+ * **Every page that binds a key, not every page that sends a code.** The first version of this list
+ * came from the key table, which only holds bindings that end in an infrared code, so the activity
+ * pages were missing from it: an activity key selects a handler set and sends nothing itself. The
+ * pages the interface most wants were the ones it could not offer.
+ */
+export interface PageKeyView {
+  readonly scan: number;
+  /** What the screen draws beside it, section 128, and how that was attributed. */
+  readonly label: string | undefined;
+  readonly labelSource: string | undefined;
+  /** The activity this key starts, where it starts one. */
+  readonly activity: string | undefined;
+}
+
+export interface PageView {
+  readonly index: number;
+  readonly keys: PageKeyView[];
+  /** The activities this page starts, by name where they have one, so the picker can say so. */
+  readonly activities: string[];
+}
+
 export interface InventoryView {
   readonly name: string;
   readonly architecture: number | undefined;
@@ -144,6 +169,7 @@ export interface InventoryView {
   readonly devices: DeviceView[];
   readonly activities: ActivityView[];
   readonly keys: KeyView[];
+  readonly pages: PageView[];
 }
 
 /**
@@ -288,6 +314,24 @@ export class Bench {
         scans: one.scans,
         devices: one.devices,
       })),
+      pages: pageScans(c).flatMap((scans, index) => {
+        if (scans.length === 0) return [];
+        const starts = activities(c).filter((one) => one.page === index);
+        return [{
+          index,
+          keys: scans.map((scan) => {
+            const label = labels.get(`${index}:${scan}`);
+            const activity = starts.find((one) => one.scans.includes(scan));
+            return {
+              scan,
+              label: label?.text,
+              labelSource: label?.source,
+              activity: activity?.name,
+            };
+          }),
+          activities: starts.flatMap((one) => (one.name === undefined ? [] : [one.name])),
+        }];
+      }),
       keys: keyCodes(c).map((key) => {
         const first = key.codes[0] as { group: number; code: number };
         const label = key.where === 'page' ? labels.get(`${key.index}:${key.scan}`) : undefined;

@@ -518,6 +518,13 @@ Never add a dependency without checking what it pulls in: `make audit` is the fl
 check. `vitest` was rejected on exactly this basis, and `node-hid` was accepted after looking
 (two dependencies, `node-addon-api` and `pkg-prebuilds`).
 
+**`playwright` is a dev dependency of `packages/bench` and its browser download is not approved**,
+which is the arrangement to keep: the npm side is two packages, `playwright` and `playwright-core`, and
+`pnpm-workspace.yaml` deliberately does not allow its install script, so nothing is fetched at install
+time. `packages/bench/test/page.test.ts` drives the Chrome that is already on the machine and skips
+where there is none. Approving the download would be a separate decision, and the test does not need
+it.
+
 The library:
 
 ```
@@ -677,6 +684,9 @@ make activities    which activity each key starts and which drawn label is its n
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
 make remotes       list attached remotes, enumeration only, opens nothing
+make page          drive the bench page in the Chrome already installed, which is what checks the
+                   page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
+                   Chrome, because playwright's browser download is deliberately not approved
 make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop. It also inspects a
                    config the lab already holds, with no remote attached: devices, activities, and
                    what each button sends including the repeat interval of a held key, plus the
@@ -785,6 +795,21 @@ over the runner-up before trusting its answer.
   the only warning you get. Decode with `harmony/pic18/chains.py`, never by hand. That module
   cannot tell where a chain ends either, so check the case values are plausible for the
   variable being switched on before believing the table.
+* **Testing a route is not testing the page, and a content security policy is where that bites.**
+  Every drawn screen in the bench was a broken image while `curl` fetched the same URL happily and
+  every server test passed: the policy listed `script-src`, `style-src` and `connect-src` and no
+  `img-src`, so `default-src 'none'` blocked them. A policy is enforced by the browser and by nothing
+  else. There are two checks now, and both were needed: `make page` drives the page in Chrome and
+  asserts the console stays clean and that the image actually decoded, and a test in
+  `packages/bench/test/server.test.ts` reads the page and demands a directive for every kind of
+  resource it references, which runs without a browser. **The browser test's own control matters**: with
+  `img-src` removed it has to fail, and the first version failed for the wrong reason, because
+  `waitForFunction` evaluates a string and the page's own policy forbids `unsafe-eval`. It polls with a
+  passed function now.
+* **A population that only holds what sends a code loses the pages that matter.** The screen picker was
+  built from the key table, which only reports bindings that end in an infrared code, so every activity
+  page was missing from it: an activity key selects a handler set and sends nothing itself. Same trap as
+  `keyCodes` versus `pageScans`, twice in two days. When listing pages, use `pageScans`.
 * **`system_profiler SPUSBDataType` returns nothing at all on this machine**, not even for
   unrelated devices, and it exits 0 while doing it. So any script that greps it for a remote
   concludes "not connected" and is believed. That already produced one false negative here: a

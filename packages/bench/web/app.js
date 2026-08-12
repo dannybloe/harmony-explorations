@@ -288,26 +288,28 @@ async function showInventory(name) {
  */
 function showScreens(inv) {
   const picker = clear($('screen-picker'));
-  const pages = [...new Set(inv.keys.filter((key) => key.where === 'page').map((key) => key.index))]
-    .sort((a, b) => a - b);
   const image = $('screen');
   const table = $('screen-keys');
-  if (pages.length === 0) {
+  // Every page that binds a key, which the server supplies: taking them from the key table instead
+  // dropped the activity pages, since an activity key sends no infrared code of its own.
+  if (inv.pages.length === 0) {
     picker.append(el('p', 'No page of this config binds a key.', 'hint'));
     image.hidden = true;
     clear(table);
     return;
   }
-  const named = new Map(inv.activities
-    .filter((activity) => activity.name !== undefined)
-    .map((activity) => [activity.page, activity.name]));
   const choose = el('select');
   choose.id = 'screen-page';
-  for (const page of pages) {
-    const option = el('option', named.has(page) ? `page ${page}, starts ${named.get(page)}` : `page ${page}`);
-    option.value = String(page);
+  for (const page of inv.pages) {
+    const option = el('option', page.activities.length > 0
+      ? `page ${page.index}, starts ${page.activities.join(' / ')}`
+      : `page ${page.index}, ${page.keys.length} key${page.keys.length === 1 ? '' : 's'}`);
+    option.value = String(page.index);
     choose.append(option);
   }
+  // The activity pages are what somebody opening this panel is looking for, so start on the first one.
+  const firstActivity = inv.pages.find((page) => page.activities.length > 0);
+  if (firstActivity !== undefined) choose.value = String(firstActivity.index);
   picker.append(choose);
 
   const show = (variant = 0) => {
@@ -316,18 +318,30 @@ function showScreens(inv) {
     image.src = `/api/screen?config=${encodeURIComponent(inv.name)}&page=${page}`
       + `&variant=${variant}&t=${Date.now()}`;
     image.hidden = false;
+    // Twice the remote's own pixels, from the image rather than from a constant: a Harmony One is 176
+    // across, a 600 is 128 and a 525 is 96, and one fixed width stretches three of the four.
+    image.onload = () => { image.style.width = `${image.naturalWidth * 2}px`; };
     void showVariants(inv.name, page, variant, show);
+    // Every key the page binds, not only the ones that send a code: a key that starts an activity or
+    // opens another menu belongs in the table beside the screen that labels it.
     const rows = clear(table);
-    row(rows, [el('th', 'key'), el('th', 'label'), el('th', 'sends')]);
-    for (const key of inv.keys) {
-      if (key.where !== 'page' || key.index !== page) continue;
-      const device = inv.devices[key.group]?.name ?? `group ${key.group}`;
+    row(rows, [el('th', 'key'), el('th', 'label'), el('th', 'does')]);
+    const here = inv.pages.find((one) => one.index === page);
+    for (const key of here?.keys ?? []) {
+      const sends = inv.keys.find((one) => one.where === 'page' && one.index === page
+        && one.scan === key.scan);
+      const device = sends === undefined ? undefined : inv.devices[sends.group]?.name ?? `group ${sends.group}`;
+      const what = key.activity !== undefined
+        ? `starts ${key.activity}`
+        : sends !== undefined
+          ? `${device} #${sends.code}${sends.sends > 1 ? ` and ${sends.sends - 1} more` : ''}`
+          : 'no code of its own';
       row(rows, [
         el('td', `scan ${key.scan}`, 'mono'),
         key.label === undefined
           ? el('td', 'no label', 'dim')
           : el('td', key.label, key.labelSource === 'touch' ? '' : 'dim'),
-        el('td', `${device} #${key.code}${key.sends > 1 ? ` and ${key.sends - 1} more` : ''}`, 'mono'),
+        el('td', what, sends === undefined && key.activity === undefined ? 'dim' : 'mono'),
       ]);
     }
   };

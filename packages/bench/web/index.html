@@ -8,11 +8,23 @@
       No remote anything. The page is three local files and the server is bound to loopback, so a
       content security policy is belt and braces rather than the mechanism, but it makes an
       accidental CDN import fail loudly instead of working.
+
+      `img-src` is here because leaving it out broke every drawn screen and nothing said so: with
+      `default-src 'none'` a browser blocks the image and shows the broken icon, while `curl` fetches
+      the same URL happily. So the route was tested and the page was not, which is the failure this
+      list is otherwise meant to prevent.
     -->
     <meta
       http-equiv="content-security-policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'"
     />
+    <!--
+      The icon is drawn by the server, by the same PNG writer that draws the screens, because the
+      alternatives were worse: with no icon at all a browser asks for `/favicon.ico` by itself and the
+      404 lands in the console where it is indistinguishable from a real failure, and an empty `data:`
+      icon needs `img-src data:` in the policy above. A named route keeps the policy at `'self'`.
+    -->
+    <link rel="icon" href="/favicon.png" />
     <link rel="stylesheet" href="/app.css" />
   </head>
   <body>

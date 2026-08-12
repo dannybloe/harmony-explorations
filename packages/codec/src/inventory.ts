@@ -1115,12 +1115,26 @@ export function inventory(c: Container): Inventory {
  */
 export function softKeyScans(c: Container): number[] {
   const found = new Set<number>();
-  for (const page of modePages(c)) {
+  for (const scans of pageScans(c)) for (const scan of scans) found.add(scan);
+  return [...found].sort((a, b) => a - b);
+}
+
+/**
+ * The scan codes each mode page binds, in page order, whatever the binding does.
+ *
+ * **Not the same population as `keyCodes`**, and the difference has bitten twice: `keyCodes` only
+ * reports a binding that ends in an infrared code, so a key that starts an activity or opens another
+ * menu is absent from it. Anything asking "which pages are there and what do they bind" wants this,
+ * or it silently loses every activity page. Section 129.
+ */
+export function pageScans(c: Container): number[][] {
+  return modePages(c).map((page) => {
+    const found = new Set<number>();
     for (const entry of taggedList(c, page.list)?.entries ?? []) {
       if (entry.opcode === ACTION_LIST_INDEX) found.add(entry.tag & SCAN_CODE_MASK);
     }
-  }
-  return [...found].sort((a, b) => a - b);
+    return [...found].sort((a, b) => a - b);
+  });
 }
 
 /**

@@ -10,6 +10,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AddressInfo } from 'node:net';
 
@@ -158,5 +160,55 @@ test('a failing read ends the stream with an error line rather than hanging', as
     const lines = (await response.text()).trim().split('\n').map((l) => JSON.parse(l));
     assert.equal(lines.at(-1).type, 'error');
     assert.match(lines.at(-1).message, /no lab directory/);
+  });
+});
+
+test('the page\'s content security policy covers every kind of thing the page loads', async () => {
+  // The cheap half of the lesson behind `page.test.ts`, and the half that runs without a browser. A
+  // policy is enforced by the browser alone, so a missing directive is invisible to every fetch: with
+  // `default-src 'none'` and no `img-src`, every drawn screen was blocked and every test still passed.
+  //
+  // So this reads the page and demands a directive for each kind of resource it actually references.
+  // Add an `audio` tag to the page and this fails until the policy mentions it.
+  const html = readFileSync(join(WEB_ROOT, 'index.html'), 'utf8');
+  const policy = /content="([^"]*default-src[^"]*)"/.exec(html)?.[1];
+  assert.ok(policy !== undefined, 'the page has no policy at all');
+  const directives = new Map(policy.split(';').map((one) => {
+    const [name, ...sources] = one.trim().split(/\s+/);
+    return [name as string, sources];
+  }));
+  assert.deepEqual(directives.get('default-src'), ["'none'"], 'the default has to be nothing');
+  const needed: Array<[RegExp, string]> = [
+    [/<img\b/, 'img-src'],
+    [/<script\b/, 'script-src'],
+    [/<link[^>]+stylesheet/, 'style-src'],
+    [/<audio\b/, 'media-src'],
+    [/<video\b/, 'media-src'],
+    [/<iframe\b/, 'frame-src'],
+  ];
+  for (const [pattern, directive] of needed) {
+    if (!pattern.test(html)) continue;
+    assert.ok(directives.has(directive),
+      `the page uses ${pattern.source} and the policy has no ${directive}`);
+    assert.deepEqual(directives.get(directive), ["'self'"], `${directive} should be 'self' alone`);
+  }
+  // And the two escapes that would make the policy decorative. The page test polls with a passed
+  // function rather than an evaluated string precisely so that `unsafe-eval` is not needed.
+  assert.ok(!policy.includes('unsafe-'), 'no unsafe source is allowed');
+  // The icon is a route rather than a data URI, which is what lets img-src stay at 'self'.
+  assert.match(html, /<link rel="icon" href="\/favicon\.png"/);
+});
+
+test('the icon is drawn by the server, so nothing asks for a file that is not there', async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/favicon.png`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/png');
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    assert.deepEqual([...bytes.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+    // Sixteen square, which is what the IHDR states.
+    const view = new DataView(bytes.buffer);
+    assert.equal(view.getUint32(16), 16);
+    assert.equal(view.getUint32(20), 16);
   });
 });

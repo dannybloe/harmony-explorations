@@ -16,5 +16,8 @@
     "@harmony/corpus": "workspace:*",
     "@harmony/lab": "workspace:*",
     "@harmony/usb": "workspace:*"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
   }
 }
