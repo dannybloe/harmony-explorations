@@ -132,6 +132,15 @@ IMAGES = {
     # duplicated**, 16 in the first and 2 in this one, with nothing lost. Remove them and this file
     # verifies. Section 122, which is where section 117's writer rail came off.
     'h890_config_2_rescan': 'H890-Bedroom-2-New.EZHex',
+    # Three more reads of the same remote, contributed on 12 August 2026 after section 122 was
+    # written, which is what makes them the out of sample test of it: 11, 13 and 17 chunks over the
+    # config where the prediction was a whole number and nothing else. All three are damaged, none
+    # verifies, and all three repair to the same 396225 bytes the other two do. The file extension is
+    # the contributor's own typo and is left as sent, because a name that has to be corrected to be
+    # found is a name that does not match the issue it came from.
+    'h890_config_2_redump_1': 'H890-Bedroom-2-Redump-1.EZHez',
+    'h890_config_2_redump_2': 'H890-Bedroom-2-Redump-2.EZHez',
+    'h890_config_2_redump_3': 'H890-Bedroom-2-Redump-3.EZHez',
     'one_config': 'harmony-one-programmed-config.EZHex',
     'one_config_unprogrammed': 'harmony-one-config.EZHex',
     'h600_config': 'harmony-600-programmed-config.EZHex',

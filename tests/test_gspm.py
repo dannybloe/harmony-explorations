@@ -2366,6 +2366,66 @@ class TestTheArch10ReadDuplicatesChunks(unittest.TestCase):
                 self.assertIn(b'<BINARYDATASIZE>%d<' % len(stream), data[:c.blob_offset])
                 self.assertEqual(set(stream[len(c.blob):]), {0} if chunks else set())
 
+    def test_the_prediction_holds_on_three_reads_it_was_not_written_from(self):
+        """
+        The out of sample test, and the reason those three files are in the corpus.
+
+        Section 122 was written from four files and says an arch 10 read is the config plus a whole
+        number of 54 byte chunks. Three more reads of the same remote arrived the next day, before
+        anybody here had asked for them, and they carry 11, 13 and 17. Nothing about a whole number
+        is implied by a file being damaged: 594, 702 and 918 bytes over could as easily have been
+        anything else.
+        """
+        names = ('h890_config_2_redump_1', 'h890_config_2_redump_2', 'h890_config_2_redump_3')
+        lab.require(*names)
+        expected = dict(zip(names, (11, 13, 17)))
+        for name, chunks in sorted(expected.items()):
+            with self.subTest(sample=name):
+                data = lab.load(name)
+                c = gspm.parse(data)
+                stream = len(data) - c.blob_offset
+                self.assertEqual(stream, ARCH10_CONFIG_LENGTH + chunks * ARCH10_CHUNK)
+                # And every one of them is still damaged, which is the other half of the point: five
+                # reads of this remote and not one of them verifies as it arrived.
+                self.assertFalse(c.checks['trailer_checksum_recomputes'])
+
+    def test_all_five_reads_of_that_remote_are_the_same_config(self):
+        """
+        Each read aligns against the repaired content to the last byte of both, with surplus chunks
+        and **nothing missing**, so what the remote holds is not in doubt even though no read of it
+        has ever verified.
+
+        The anchor is worth watching here too: it recovers `0x030000` on the reads where no duplicate
+        landed below the clock record and refuses on the rest, which is the behaviour section 122
+        wanted from it rather than a coincidence.
+        """
+        names = ('h890_config_2', 'h890_config_2_rescan', 'h890_config_2_redump_1',
+                 'h890_config_2_redump_2', 'h890_config_2_redump_3')
+        lab.require(*names)
+        truth = repair_duplicated_chunks(gspm.parse(lab.load('h890_config_2_rescan')))
+        self.assertEqual(gspm.trailer_checksum(truth), 0x5DE1)
+        expected = dict(zip(names, (16, 2, 6, 5, 12)))
+        for name, surplus in sorted(expected.items()):
+            with self.subTest(sample=name):
+                read = bytes(gspm.parse(lab.load(name)).blob)
+                i = j = 0
+                found = 0
+                while i < len(read) and j < len(truth):
+                    if read[i] == truth[j]:
+                        i += 1
+                        j += 1
+                        continue
+                    for k in range(1, 13):
+                        step = k * ARCH10_CHUNK
+                        if read[i + step:i + step + 96] == truth[j:j + 96]:
+                            found += k
+                            i += step
+                            break
+                    else:
+                        self.fail(f'{name} does not align at {i:#x} against {j:#x}')
+                self.assertEqual((i, j), (len(read), len(truth)), 'both consumed to the last byte')
+                self.assertEqual(found, surplus)
+
     def test_a_duplicated_chunk_of_zeroes_would_pass_the_checksum(self):
         """
         The limit of the check, stated because a contributor's file will be judged by it. The

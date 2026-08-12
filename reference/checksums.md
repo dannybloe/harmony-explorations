@@ -191,20 +191,28 @@ The configs. Their names are the owner's room names and **the skin is the author
 | `H890-Bedroom-2.EZHex` | 10 | 19 | 400894 |
 | `H890-Bedroom-1-New.EZHex` | 10 | 19 | 399489 |
 | `H890-Bedroom-2-New.EZHex` | 10 | 19 | 399706 |
+| `H890-Bedroom-2-Redump-1.EZHez` | 10 | 19 | 399975 |
+| `H890-Bedroom-2-Redump-2.EZHez` | 10 | 19 | 400084 |
+| `H890-Bedroom-2-Redump-3.EZHez` | 10 | 19 | 400300 |
 
-All thirteen are distinct files, `UserId` 0, no session data, and each was published by its owner who
-recorded having reviewed the contents first. Full digests are in the lab's own `META.md`; the five
+All sixteen are distinct files, `UserId` 0, no session data, and each was published by its owner who
+recorded having reviewed the contents first. Full digests are in the lab's own `META.md`; the eight
 that the test suite reaches are `H885-LivingRoom.EZHex` `69c61fb2...6f5a4f05`,
 `H890-Bedroom-1.EZHex` `93c9733e...8a4236d8`, `H890-Bedroom-2.EZHex` `4394835d...76b713c8`,
-`H890-Bedroom-1-New.EZHex` `eacbea28...bf2b0776` and `H890-Bedroom-2-New.EZHex`
-`6b4ec0f6...60b32b03`.
+`H890-Bedroom-1-New.EZHex` `eacbea28...bf2b0776`, `H890-Bedroom-2-New.EZHex` `6b4ec0f6...60b32b03`,
+`H890-Bedroom-2-Redump-1.EZHez` `e8900c20...0d5d2241`, `H890-Bedroom-2-Redump-2.EZHez`
+`322e5791...b7fcf040` and `H890-Bedroom-2-Redump-3.EZHez` `343bc4e2...89fa5344`.
 
-**The two `-New` files are second reads of the same two remotes**, contributed on 11 August 2026, and
-they are what turned a claim about a generator into a claim about a transfer. Section 122: **an arch 10
-read duplicates whole 54 byte chunks.** Every one of these four files is the same 396225 byte container
-plus a whole number of surplus chunks, 13, 28, 2 and 6 of them in the order listed, and the file size
-column above is the only place that shows: two of the four are the same config and neither of those two
-verifies.
+**The three `Redump` files carry the contributor's own extension typo**, `.EZHez`, and it is left as
+sent: a corpus name that has to be corrected before the file can be found in the issue it came from
+is worse than an ugly one.
+
+**The `-New` and `Redump` files are further reads of the same two remotes**, contributed on 11 and 12
+August 2026, and they are what turned a claim about a generator into a claim about a transfer. Section
+122: **an arch 10 read duplicates whole 54 byte chunks.** Every one of these seven files is the same
+396225 byte container plus a whole number of surplus chunks, and the file size column above is the only
+place that shows. **Five of the seven are one remote and not one of them verifies**, while the two
+reads of the other verify both times.
 
 **So `H890-Bedroom-2.EZHex` is in the suite for being a damaged read**, and it earns its place twice
 over. Its header declares an end 864 bytes before its own end marker and its trailer checksum does not

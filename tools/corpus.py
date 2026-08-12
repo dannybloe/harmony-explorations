@@ -144,7 +144,11 @@ def scan(lab):
     for root, dirs, files in os.walk(root_to_walk):
         dirs[:] = [d for d in dirs if not d.startswith('.')]
         info = [f for f in files if f.endswith('-info.txt')]
-        cfg = sorted(f for f in files if f.lower().endswith('.ezhex'))
+        # `.ezhez` is a contributor's typo on three arch 10 files of 12 August 2026 and the files
+        # are kept under the name they were published as, so the inventory has to know it. The
+        # alternative, taking anything that parses as a container, is a mistake this project has
+        # already made and recorded: a firmware image parses too, section 114.
+        cfg = sorted(f for f in files if f.lower().endswith(('.ezhex', '.ezhez')))
         # A directory of configs is a dump whether or not anybody has written it up. The filter
         # here used to require a META.md alongside them, which **skipped exactly the case this
         # tool exists to report**: the kkong42 drop of 10 August 2026, eleven configs and no

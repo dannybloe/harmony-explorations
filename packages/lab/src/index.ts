@@ -123,6 +123,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // in the first and 2 in this one, with nothing lost. Remove them and this file verifies. Section 122,
   // which is where section 117's writer rail came off.
   h890_config_2_rescan: 'H890-Bedroom-2-New.EZHex',
+  // Three more reads of the same remote, contributed on 12 August 2026 after section 122 was written,
+  // which is what makes them its out of sample test: 11, 13 and 17 chunks over the config where the
+  // prediction was a whole number and nothing else. All three are damaged and all three repair to the
+  // same 396225 bytes. The extension is the contributor's own typo, left as sent.
+  h890_config_2_redump_1: 'H890-Bedroom-2-Redump-1.EZHez',
+  h890_config_2_redump_2: 'H890-Bedroom-2-Redump-2.EZHez',
+  h890_config_2_redump_3: 'H890-Bedroom-2-Redump-3.EZHez',
   one_config: 'harmony-one-programmed-config.EZHex',
   one_config_unprogrammed: 'harmony-one-config.EZHex',
   h600_config: 'harmony-600-programmed-config.EZHex',

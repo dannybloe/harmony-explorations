@@ -71,6 +71,9 @@ CONTAINERS = (
     # fallback then returns, and a divergence there would be invisible in every other test.
     'h890_config_rescan',
     'h890_config_2_rescan',
+    'h890_config_2_redump_1',
+    'h890_config_2_redump_2',
+    'h890_config_2_redump_3',
 )
 
 

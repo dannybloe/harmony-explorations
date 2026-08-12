@@ -16273,6 +16273,33 @@ and neither is sufficient.
 check from the start; the checksum was assumed rather than tested, on architectures where no transfer
 had ever been caught inserting anything.
 
+### Tested out of sample, on 12 August 2026, and it held
+
+The finding above was written from four files. The contributor then read that remote **three more
+times** and published the results, without being asked and without seeing any of this. Those three
+are the test the original four could not be: nothing about a damaged file implies its surplus is a
+whole number of anything, and 594, 702 and 918 bytes over could have been any numbers at all.
+
+| read | bytes written | over the config | chunks |
+|---|---|---|---|
+| `H890-Bedroom-2-Redump-1` | 396819 | 594 | 11 |
+| `H890-Bedroom-2-Redump-2` | 396927 | 702 | 13 |
+| `H890-Bedroom-2-Redump-3` | 397143 | 918 | 17 |
+
+**Five reads of one remote, and not one of them verifies as it arrived.** Aligned against the
+repaired content, each is that same 396225 bytes with 16, 2, 6, 5 and 12 duplicated chunks in it, all
+of them consumed to the last byte with **nothing missing** in any read. So what this remote holds is
+not in doubt, and no read of it has ever been usable directly.
+
+The anchor behaves as section 117 wanted it to across the five, rather than uniformly: it recovers
+`0x030000` on the reads where no duplicate landed below the clock record and refuses on the rest.
+A base derivation that answered confidently on all five would be the broken one.
+
+Two operational notes from the contributor, worth having before anybody asks for an 890 dump:
+concordance sometimes reports "Success!" and writes a **zero byte file**, and after a dump the remote
+stops answering other commands until the cable is pulled. So a read that produced a file is not a
+read that worked, and this is the architecture where that has to be checked.
+
 ### Confirmed independently, on 12 August 2026
 
 trelowney reached the same reading from the same four files without seeing this section: the same 54
