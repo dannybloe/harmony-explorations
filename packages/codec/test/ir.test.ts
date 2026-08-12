@@ -16,6 +16,9 @@ import {
   IR_CARRIER_MAX_NS,
   IR_CLASS_STREAM,
   IrEncodeError,
+  IR_BLOCK_HELD,
+  IR_PULSE_MAX,
+  irBlockDuration,
   irBlockWords,
   irBuildBlock,
   irBuildRecord,
@@ -27,6 +30,8 @@ import {
   irPeriodFor,
   irRecordBlocks,
   irRecordStart,
+  irRepeatBlock,
+  irRepeatPeriod,
   parse,
   payloadOf,
 } from '../src/index.ts';
@@ -267,3 +272,98 @@ function recordOffset(c: Container, address: number): number | undefined {
     ((c.blob[at + 3] as number) << 16);
   return c.blobOffsetOf(start);
 }
+
+test('a pointer group takes one of four shapes, and slot 1 is the one that repeats',
+  skipWithoutLab(), () => {
+    // Section 127. The firmware walks a record's three pointers and samples the keypad at the end of
+    // every block: slot 0 is what a tap sends, slot 1 plays only while the key is held and then
+    // repeats, slot 2 is a tail. So the shape census is what says how many codes can repeat at all,
+    // and it has to be stable: a reader that lost a pointer would move these four numbers.
+    const shapes = new Map<string, number>();
+    for (const name of WITH_INFRARED) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      for (const group of irGroups(c) ?? []) {
+        for (const address of group.addresses) {
+          const pointers = irHeaderPointers(c, address);
+          for (let at = 0; at + 2 < pointers.length; at += 3) {
+            const shape = [0, 1, 2]
+              .map((slot) => ((pointers[at + slot] ?? 0) === 0 ? '0' : 'B'))
+              .join('');
+            shapes.set(shape, (shapes.get(shape) ?? 0) + 1);
+          }
+        }
+      }
+    }
+    // Only these four occur, and in particular a group is never empty and never `0B*`: the first
+    // pointer is always a real block, which is what makes slot 0 "what a tap sends".
+    assert.deepEqual([...shapes.keys()].sort(), ['B00', 'B0B', 'BB0', 'BBB']);
+    const total = [...shapes.values()].reduce((sum, n) => sum + n, 0);
+    assert.ok(total > 3500, `enough groups to mean something, got ${total}`);
+    assert.ok((shapes.get('BB0') ?? 0) > 1500, 'most repeating codes are the plain once plus held');
+    assert.equal(shapes.get('BBB'), 95, 'and the three block form is rare and only on arch 8');
+  });
+
+test('a held key repeats at the length of its second block, which is tens of milliseconds',
+  skipWithoutLab(), () => {
+    // The number a user feels, and the reason it is worth a reader: the firmware replays the whole
+    // block and only then looks at the keypad, so the interval between two sends **is** the block's
+    // duration. A misread of the block, its terminator or the mark bit would put this outside any
+    // plausible band at once, and the band is wide on purpose: 30.8 ms to 752 ms across these
+    // thirteen containers, and nothing here says which of those a device wants.
+    let repeating = 0;
+    let quiet = 0;
+    let fastest = Infinity;
+    let slowest = 0;
+    for (const name of WITH_INFRARED) {
+      const data = load(name);
+      if (data === undefined) continue;
+      const c = parse(data);
+      for (const group of irGroups(c) ?? []) {
+        for (const address of group.addresses) {
+          const period = irRepeatPeriod(c, address);
+          if (period === undefined) {
+            quiet += 1;
+            // The negative: no second pointer means no repeat block, and the two readers agree.
+            assert.equal(irRepeatBlock(c, address), undefined, `${name}: 0x${address.toString(16)}`);
+            continue;
+          }
+          repeating += 1;
+          fastest = Math.min(fastest, period);
+          slowest = Math.max(slowest, period);
+          // The period is the block's own words summed, terminator included, and nothing else.
+          const block = irRepeatBlock(c, address) as number;
+          const words = irBlockWords(c, block) ?? [];
+          assert.equal(period, words.reduce((sum, word) => sum + (word & IR_PULSE_MAX), 0));
+          assert.equal(irBlockDuration(c, block), period);
+        }
+      }
+    }
+    assert.ok(repeating > 1400, `enough repeating codes, got ${repeating}`);
+    assert.ok(quiet > 1800, `and enough that do not repeat, got ${quiet}`);
+    assert.ok(fastest > 20_000, `nothing repeats faster than 20 ms, got ${fastest}`);
+    assert.ok(slowest < 2_000_000, `and nothing slower than two seconds, got ${slowest}`);
+  });
+
+test('the block a key repeats is not the block a tap sends', skipUnless('one_config'), () => {
+  // What the finding turns on, stated as the property that would break if slots 0 and 1 were read
+  // the other way round: the held block is shorter than the tap block, because a tap sends the
+  // opening burst and a hold sends one frame at a time. 205 of the receiver's codes on this remote
+  // carry both, and the held one is shorter in every one of them.
+  const c = parse(load('one_config') as Uint8Array);
+  let pairs = 0;
+  for (const group of irGroups(c) ?? []) {
+    for (const address of group.addresses) {
+      const pointers = irHeaderPointers(c, address);
+      const once = pointers[0];
+      const held = pointers[IR_BLOCK_HELD];
+      if (once === undefined || once === 0 || held === undefined || held === 0) continue;
+      const first = irBlockDuration(c, once) as number;
+      const repeat = irBlockDuration(c, held) as number;
+      assert.ok(repeat < first, `0x${address.toString(16)}: ${repeat} is not under ${first}`);
+      pairs += 1;
+    }
+  }
+  assert.ok(pairs >= 200, `enough pairs to mean something, got ${pairs}`);
+});

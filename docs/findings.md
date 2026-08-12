@@ -16853,6 +16853,119 @@ project keeps about second copies, the first thing to drift.
 column, `packages/codec/test/inventory.test.ts` carries the closures and the controls, and
 `docs/config-format.md` has the structured form.
 
+## 127. A record's three block pointers are once, held and tail, and the second one is the repeat rate
+
+The question came from the owner of the bench Harmony One, about his own remote: holding volume up
+repeats too fast to land on a level, and the discontinued software never let him change it. It is a
+good question for the format because it has a yes or no answer in the firmware, and the answer turns
+out to be a number sitting in every config.
+
+Section 61 read a record's header and found a pointer group of three `u24` addresses, "durations, or
+NULL", with no reading of what distinguishes them. This is that reading.
+
+### The sender walks the group, and samples the keypad at every block boundary
+
+On the Harmony 700 image the record streamer is at `0x181A0` and its state variable is `0x08C`. Its
+caller at `0x13AEA` does one thing before calling it:
+
+```
+13aea:  BCF   LATF,7
+        MOVF  0x3a2,W  ; BZ 0x13b0e        a gate: skip the test when this is zero
+        MOVF  PORTB,W  ; ANDLW 0x10 ; BZ 0x13b0a
+        MOVF  PORTB,W  ; ANDLW 0x20 ; BZ 0x13b0a
+        MOVF  PORTB,W  ; ANDLW 0x40 ; BZ 0x13b0a
+        MOVF  PORTB,W  ; ANDLW 0x80 ; BNZ 0x13b0e
+13b0a:  BSF   0x08a,3                      a key is still down
+13b0e:  CALL  0x181a0                      the streamer
+```
+
+Those four bits are the keypad's sense lines, active low, so the flag means **a key is down right
+now**. The streamer plays one duration word per call and, on the block's terminating zero, decides how
+many pointers to step over. The decision is a switch on the state at `0x182A0` and a loop at
+`0x18342` that advances the pointer by three bytes per step:
+
+| at the end of | key up | key down |
+|---|---|---|
+| slot 0 | advance **two**, so slot 1 is skipped | advance one, to slot 1 |
+| slot 1 | advance one, to slot 2 | advance **zero**, so slot 1 plays again |
+| slot 2 | stop | stop |
+
+So the three slots have names:
+
+* **slot 0, once**: what a tap sends. Always a real block, in all 3703 groups of the corpus.
+* **slot 1, held**: sent **only** while the key is still down, and then repeated for as long as it
+  stays down.
+* **slot 2, tail**: played at the end either way.
+
+A NULL pointer reads as a zero duration, which is the same thing as a finished block, so a group with
+no held block simply falls through to the tail and stops.
+
+### Two architectures, three images
+
+The Harmony One's streamer is at `0x29A1A` with the state at `0x6AD`, the same switch at `0x29B9C`,
+the same advance loop at `0x29C6E` and the same three skip counts. Its hold flag is `0x6AB` bit 2 and
+its caller tests **one** PORTB bit rather than four, at `0x2763C`, which is the wiring section 48
+measured from the other side: arch 14 has four sense lines and can tell you which column a key is in,
+and arch 12 has one, so a One knows only that some key is down. The 600 mirrors the 700 exactly,
+`BSF 0x3DC,3` at `0x1268E` after the same four tests.
+
+That is the answer to the question section 70 left open, and it is not the answer that section
+guessed at. **The quantity `0x7C` is not what repeats a held key.** The repeat is the streamer
+replaying slot 1, and the quantity is consulted by the queue's priority logic.
+
+### The four shapes, and what the corpus holds
+
+| shape | groups | what it means |
+|---|---|---|
+| `B00` | 1699 | one block: a tap sends it and holding the key adds nothing |
+| `BB0` | 1541 | once plus held, the repeating case |
+| `B0B` | 368 | once plus tail, no repeat |
+| `BBB` | 95 | all three, and only in the four arch 8 configs of one contributor |
+
+The first slot is never NULL and no other shape occurs. **The interval between two sends of a held key
+is exactly slot 1's own duration**, because the firmware replays the whole block before looking at the
+keypad again: 30.8 ms to 752 ms across these containers, with most between 60 and 120 ms.
+
+### What that means for the remote on the bench
+
+The receiver's volume codes in the owner's own config are the `BB0` shape:
+
+| | words | content | duration |
+|---|---|---|---|
+| slot 0 | 310 | 50 ms of silence, then the frame three times, 73.6 ms apart | 448 ms |
+| slot 1 | 104 | the frame once, then 73.6 ms of silence | 133 ms |
+
+So a held key steps 7.5 times a second, and at half a decibel a step that is the 3.8 dB per second he
+described. 40 of that device's 53 repeating codes carry the same 73611 us trailing gap, so it is the
+generator's per device choice rather than anything about that key.
+
+**It is editable in principle and the ceiling is arithmetic.** A duration word carries at most 32767
+us, section 61, so the 73611 us gap is already three words. Rewriting those three to their maximum
+gives 98301 us without changing the block's length, which is 6.3 repeats a second instead of 7.5.
+Anything slower needs a fourth word, which lengthens the block and relocates everything above it, so
+it belongs to the milestone that can resize a section rather than to the same length editor of
+`edit.ts`. Both volume records' blocks are named by no other record in that config, where 20 of its
+446 blocks are shared, so the check section 61 demands has to be made and passes here.
+
+### What is not established
+
+* **The gates.** Arch 14's `0x3A2` and arch 12's `0x2FB` and `0x202` decide whether the keypad is
+  consulted at all, and none of the three is traced. A send that no key started plainly must not
+  repeat, and one of these is presumably how that is arranged.
+* **What the quantity measures** is still section 70's open question. This rules out one candidate
+  reading and offers no other.
+* **State 4.** The streamer writes 4 into its own state on one path and its entry refuses to run above
+  2, so something outside it resets that. It does not affect the walk above, whose three states are the
+  ones the switch tests.
+
+### Where it landed
+
+`packages/codec/src/ir.ts`: `IR_BLOCK_ONCE`, `IR_BLOCK_HELD`, `IR_BLOCK_TAIL`, `irBlockDuration`,
+`irRepeatBlock` and `irRepeatPeriod`, which is the number a user feels.
+`packages/codec/test/ir.test.ts` carries the shape census, the period band, the agreement between the
+period and the block's own words, and the property that the held block is shorter than the tap block in
+all 205 pairs of one config. `docs/config-format.md` has the structured form.
+
 ## References
 
 * concordance: https://github.com/jaymzh/concordance

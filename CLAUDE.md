@@ -825,7 +825,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 126 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 127 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -853,7 +853,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
 | 3 | the clock. Starts Timer 1; on arch 12 its build timestamp is what the clock is set to | 21, 38, 111 |
 | 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary | 32, 42, 61, 65, 82, 86, 126 |
+| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary; a record's three block pointers are once, held and tail | 32, 42, 61, 65, 82, 86, 126, 127 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
@@ -925,6 +925,12 @@ produce a config the remote accepts and mishandles.
   error, section 43.
 * **Infrared duration blocks are shared** between records, section 61, so a writer cannot edit one
   in place without checking who else names it.
+* **A record's three block pointers are once, held and tail**, section 127: the firmware samples the
+  keypad at every block boundary, so slot 1 is sent only while the key is down and then **repeats for as
+  long as it is**, and the interval a user feels is that block's own duration. Editing its trailing gap
+  is how a repeat rate changes, per code, and a duration word caps at 32767 us so a same length edit can
+  only reach the ceiling of the words already there. `0x7C` is **not** what repeats a held key, which is
+  the reading section 70 guessed at and this refutes.
 * **A record's carrier period is truncated, not rounded**, section 92: it is `floor(1e9 / f)` in
   nanoseconds, so 36 kHz is stored as 27777 and a writer that rounds emits 27778 and differs from
   Logitech's generator by one byte per device. The carrier is per record, not per device.

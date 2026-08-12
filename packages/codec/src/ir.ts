@@ -159,6 +159,64 @@ export function irBlockWords(c: Container, address: number): number[] | undefine
   return words;
 }
 
+/** The slots of a record's pointer group, by what the firmware does with each. Section 127. */
+export const IR_BLOCK_ONCE = 0;
+export const IR_BLOCK_HELD = 1;
+export const IR_BLOCK_TAIL = 2;
+
+/**
+ * How long a block takes to send, in microseconds: its durations summed.
+ *
+ * Marks and spaces both count, since bit 15 says which a word is and not how long. The terminating
+ * zero adds nothing, so it is left in.
+ */
+export function irBlockDuration(c: Container, address: number): number | undefined {
+  const words = irBlockWords(c, address);
+  if (words === undefined) return undefined;
+  return words.reduce((sum, word) => sum + (word & IR_PULSE_MAX), 0);
+}
+
+/**
+ * The block a record repeats while the key stays down, or undefined where it has none.
+ *
+ * **Read from the firmware**, section 127. A pointer group holds three addresses and the sender
+ * walks them, sampling the keypad's sense lines at the end of every block:
+ *
+ * | at the end of | key up | key down |
+ * |---|---|---|
+ * | slot 0 | skip to slot 2 | go to slot 1 |
+ * | slot 1 | go to slot 2 | **replay slot 1** |
+ * | slot 2 | stop | stop |
+ *
+ * So slot 0 is what a tap sends, slot 1 is sent **only** while the key is held and then repeats for
+ * as long as it is, and slot 2 is a tail that plays either way. The same three states and the same
+ * skip counts are in the Harmony One image at `0x29B9C` and the Harmony 700's at `0x182A0`, with the
+ * hold flag `0x6AB` bit 2 and `0x08A` bit 3 respectively.
+ */
+export function irRepeatBlock(c: Container, record: number): number | undefined {
+  const pointers = irHeaderPointers(c, record);
+  const held = pointers[IR_BLOCK_HELD];
+  return held === undefined || held === 0 ? undefined : held;
+}
+
+/**
+ * How often a held key repeats, as the period in microseconds, or undefined for a code that does not
+ * repeat.
+ *
+ * **This is the number a user feels.** The firmware replays the whole block and samples the keypad
+ * only at its end, so the interval between two sends is exactly the block's own duration, frame plus
+ * whatever gap the block ends with. Across the corpus it runs from 30.8 ms to 1150.7 ms with 1373 of
+ * 1913 repeating codes between 60 and 120 ms.
+ *
+ * So slowing a key down means lengthening this block's trailing gap, and it is per code. A gap word
+ * carries at most 32767 us, section 61, which is why a long gap is already several words in the
+ * corpus: a same length edit can only reach the ceiling of the words that are there.
+ */
+export function irRepeatPeriod(c: Container, record: number): number | undefined {
+  const block = irRepeatBlock(c, record);
+  return block === undefined ? undefined : irBlockDuration(c, block);
+}
+
 /**
  * Class 5's record body, which the header's pointers name where class 1's name a duration stream.
  *

@@ -1405,6 +1405,36 @@ pair in it. Nothing here can be edited in place.
 also names, so one duration stream can serve several codes. A writer cannot edit a block in place
 without checking who else points at it.
 
+**The three pointers of a group are once, held and tail**, section 127, read from the record streamer
+on three images. At the end of every block the firmware samples the keypad's sense lines and steps the
+pointer accordingly:
+
+| at the end of | key up | key down |
+|---|---|---|
+| slot 0 | advance two, so slot 1 is skipped | advance one |
+| slot 1 | advance one | advance **zero**, so slot 1 plays again |
+| slot 2 | stop | stop |
+
+So slot 0 is what a tap sends, slot 1 plays **only** while the key is held and then repeats for as long
+as it is, and slot 2 is a tail that plays either way. A NULL pointer reads as a finished block, so a
+group without a held block falls through. Four shapes occur over 3703 groups and slot 0 is never NULL:
+
+| shape | groups |
+|---|---|
+| `B00`, no repeat | 1699 |
+| `BB0`, once plus held | 1541 |
+| `B0B`, once plus tail | 368 |
+| `BBB` | 95, and only in four arch 8 configs |
+
+**The interval between two sends of a held key is slot 1's own duration**, since the firmware replays
+the whole block before looking at the keypad again. 30.8 ms to 752 ms across the corpus, most between
+60 and 120 ms. `irRepeatPeriod` returns it, and it is the number a user experiences as the repeat rate.
+
+*A writer rail follows.* Slowing a key down means lengthening slot 1's trailing gap, and a duration
+word carries at most 32767 us: a gap already spelled over three words can be raised to 98301 us
+without changing the block's length, and anything beyond that lengthens the block and relocates
+everything above it. The sharing rule applies first.
+
 49 groups and 3058 record pointers checked: the lead byte is zero every time, each group is exactly
 `3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the
 container, and none of them is an action list address.
