@@ -179,9 +179,11 @@ a check that it matches a commit, which is a dependency wearing a hat rather tha
 
 **GPLv3 for the product is deliberate, and it is a reversal.** This file argued for the Affero
 variant<!--superseded--> until 12 August 2026 on the strength of one clause: a hosted, modified copy
-would have to publish its changes. The reversal rests on two things that outweigh it. FreeHarmony's own
-README promises **no network access at all**, so the clause protects against a case the product has
-already excluded. And the Affero variant is a **one way door with the neighbours**: concordance and
+would have to publish its changes. The reversal rests on two things that outweigh it. That clause
+fires when a program is **offered to users over a network**, which a desktop application is not, and a
+client making outbound requests never becomes: so it guards a case that does not arise here, and it
+would still not arise if FreeHarmony grew a device database fetch or an import from Logitech's
+surviving service. And the Affero variant is a **one way door with the neighbours**: concordance and
 harmony-decompiler are GPLv3, their code can come here, and nothing of ours could ever go back to
 them, because a GPLv3 project cannot absorb Affero code without relicensing. Given how much this
 project leans on those two, giving something back has to stay possible. The third reason is smaller
@@ -190,7 +192,15 @@ it costs contributors and buys nothing here.
 
 **Where the clause does belong is a server, if one is ever built.** A shared device database would be
 exactly the case for it, and then it is that server's licence, decided when it exists, rather than a
-network clause on an offline application. See the next paragraph for why that is not a plan.
+network clause on a desktop application. See the next paragraph for why that is not a plan.
+
+**The first version of this paragraph gave "the README promises no network access at all" as the
+reason, and that was the wrong reason for a right answer.** What Affero's clause turns on is whether
+the program is offered to users over a network, not whether the program opens a socket. So the licence
+argument does not depend on FreeHarmony staying offline, which matters because that promise is under
+discussion on its own merits: a device database has to come from somewhere, Logitech's **current**
+service is alive and answering, section 56, so importing an existing configuration is a real feature
+with a short shelf life, and neither of those would touch the licence.
 
 **The choice is cheap now and expensive later**, which is why it was settled at the placeholder stage:
 the owner is the only author, so a change needs nobody's consent. Once anyone else has contributed it

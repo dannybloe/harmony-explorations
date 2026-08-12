@@ -136,10 +136,12 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **Its licence is GPLv3 and that is a reversal**, decided on 12 August 2026 while FreeHarmony was
    still a placeholder with no author but its owner. The Affero variant was chosen here for its network
-   clause and dropped for two better reasons: the application promises no network at all, so the clause
-   guards a case it has excluded, and Affero is a one way door with concordance and harmony-decompiler,
-   whose GPLv3 code can come here while nothing of ours could ever go back. If a shared server is ever
-   built, the clause belongs to that server. `CLAUDE.md` carries the argument.
+   clause and dropped for two better reasons: that clause fires when a program is **offered to users
+   over a network**, which a desktop application is not and a network client never becomes, and Affero
+   is a one way door with concordance and harmony-decompiler, whose GPLv3 code can come here while
+   nothing of ours could ever go back. If a shared server is ever built, the clause belongs to that
+   server. Note what the argument deliberately does **not** rest on: whether the application itself
+   ever uses the network, which is a product question and is open. `CLAUDE.md` carries both.
 
    **How it consumes them was decided on 12 August 2026 and it is not a git dependency.** *This
    decision said "as a pinned git dependency" until that was tried and failed twice: a git install of
