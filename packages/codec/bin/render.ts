@@ -4,13 +4,20 @@
  * ```
  * node packages/codec/bin/render.ts --config one_config --page 45        one page
  * node packages/codec/bin/render.ts --config one_config --pages 45,46    several
- * node packages/codec/bin/render.ts --config one_config --sheet          every page, one strip each
+ * node packages/codec/bin/render.ts --config one_config --sheet          all of them, tiled
+ * node packages/codec/bin/render.ts --config one_config --sheet --every 13 --columns 6
  * node packages/codec/bin/render.ts --config one_config --page 45 --undrawn
  * ```
  *
+ * **`--sheet` is the one to reach for.** A config has 135 to 340 pages, and a corrupt decode is
+ * something the eye finds in a grid of them in a second and a metric does not find at all: page
+ * roughness ranks white text on black above anything actually broken, which was tried first. One image
+ * of 24 pages is what says a whole config draws.
+ *
  * `--undrawn` paints the pixels nothing drew in magenta instead of black, which is the only way to
  * see the difference between a screen the config deliberately leaves dark and a region no instruction
- * reached. `--out` chooses the directory, and it defaults to the lab's `work/render`, because a
+ * reached. Most pages of a Harmony One draw no background at all, so this is more of them than one
+ * would guess. `--out` chooses the directory, and it defaults to the lab's `work/render`, because a
  * rendered screen is a picture of somebody's own equipment and this repository is public.
  *
  * The PNG writer is here rather than in `src/` on purpose: the raster is a reading of the format and
@@ -127,13 +134,43 @@ function write(name: string, rendered: RenderedPage): void {
   writeFileSync(join(out, name), png(raster.width, raster.height, bytes));
 }
 
+const every = Number(argument('every') ?? 1);
+const columns = Number(argument('columns') ?? 6);
+
 const chosen = ((): number[] => {
-  if (sheet) return pages.map((_, index) => index);
+  if (sheet) return pages.map((_, index) => index).filter((index) => index % every === 0);
   const list = argument('pages');
   if (list !== undefined) return list.split(',').map(Number);
   return [Number(argument('page') ?? 0)];
 })();
 
+/** Every rendered page in one image, in a grid, with a border between them so edges are visible. */
+function contactSheet(rendered: RenderedPage[]): void {
+  const first = rendered[0];
+  if (first === undefined) return;
+  const { width, height } = first.raster;
+  const gap = 4;
+  const rows = Math.ceil(rendered.length / columns);
+  const total = { width: columns * (width + gap) + gap, height: rows * (height + gap) + gap };
+  const bytes = new Uint8Array(total.width * total.height * 3);
+  bytes.fill(0x5a);
+  rendered.forEach((page, at) => {
+    const left = gap + (at % columns) * (width + gap);
+    const top = gap + Math.floor(at / columns) * (height + gap);
+    page.raster.pixels.forEach((value, index) => {
+      const [red, green, blue] = rgb(value);
+      const into = ((top + Math.floor(index / width)) * total.width + left + (index % width)) * 3;
+      bytes[into] = red;
+      bytes[into + 1] = green;
+      bytes[into + 2] = blue;
+    });
+  });
+  const name = `${config}-sheet.png`;
+  writeFileSync(join(out, name), png(total.width, total.height, bytes));
+  console.log(`${name}  ${total.width}x${total.height}  ${rendered.length} pages`);
+}
+
+const sheeted: RenderedPage[] = [];
 let drawn = 0;
 for (const index of chosen) {
   const page = pages[index];
@@ -146,9 +183,13 @@ for (const index of chosen) {
     console.error(`page ${index} did not render, which means the architecture has no known display`);
     continue;
   }
+  drawn += 1;
+  if (sheet) {
+    sheeted.push(rendered);
+    continue;
+  }
   const name = `${config}-page${String(index).padStart(3, '0')}.png`;
   write(name, rendered);
-  drawn += 1;
   const dark = rendered.raster.pixels.reduce((n, value) => n + (value === UNDRAWN ? 1 : 0), 0);
   console.log(
     `${name}  ${rendered.raster.width}x${rendered.raster.height}  ` +
@@ -157,6 +198,17 @@ for (const index of chosen) {
       (rendered.picturesMissing + rendered.glyphsMissing > 0
         ? `, MISSING ${rendered.picturesMissing} picture(s) and ${rendered.glyphsMissing} glyph(s)`
         : ''),
+  );
+}
+if (sheet) {
+  contactSheet(sheeted);
+  // The totals a per page line would have carried. `missing` is the number to watch: it is zero for
+  // every container in the corpus, so anything else is a reader that stopped resolving something.
+  const sum = (of: (page: RenderedPage) => number): number => sheeted.reduce((n, p) => n + of(p), 0);
+  const missing = sum((p) => p.picturesMissing) + sum((p) => p.glyphsMissing);
+  console.log(
+    `${sum((p) => p.pictures)} pictures, ${sum((p) => p.strings)} strings, ` +
+      `${sum((p) => p.branches)} branch(es), ${missing} missing`,
   );
 }
 console.log(`\n${drawn} page(s) in ${out}`);
