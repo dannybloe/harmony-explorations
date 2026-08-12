@@ -16813,11 +16813,18 @@ something in it.
 `0x7D` names the device, so the same walk answers two more questions the application asks, and both
 were one query away once it existed:
 
-* **What a button sends.** A page's tagged list binds a key to a base slot 10 list, and the list's
-  codes are what the key sends. 3106 bindings across the corpus send at least one code, 85 of them
-  send several, which is a macro, and **every one of the 3106 is event type `0x80`, a press**. Nothing
-  here sends a code on a release or on a repeat. Most bindings send nothing at all, 3883 of them,
-  because navigation and screen switching are bindings too.
+* **What a button sends.** A tagged list binds a key to a base slot 10 list, and the list's codes are
+  what the key sends. 4448 bindings across the corpus send at least one, and **4431 of them are event
+  type `0x80`, a press**; the seventeen that are not are event type 0 in a base slot 9 set, tags 1, 2
+  and 5, which are that set's enter and leave handlers rather than keys. Nothing sends a code on a
+  release or on a repeat, anywhere. Most bindings send nothing at all, because navigation and screen
+  switching are bindings too.
+
+  **Both kinds of tagged list carry them, and reading only the pages was a real gap for a while**: a
+  mode page's list holds the soft keys, and a base slot 9 set holds the hard keys while an activity
+  runs. The volume keys of the bench Harmony One are in its activities' sets and in **no** mode page,
+  so a view built on pages alone showed every soft key on the screen and not one volume key. 3106 page
+  bindings against 1342 set ones.
 * **Which devices an activity drives.** The starting chain selects a base slot 9 set, section 120, and
   that set is the key map the activity installs, so the devices its bindings address are the devices the
   activity uses. Every activity in the corpus drives one to three, and every group it names is a group

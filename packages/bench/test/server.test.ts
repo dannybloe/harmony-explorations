@@ -33,6 +33,8 @@ function deps(): BenchDeps {
         async close() {},
       };
     },
+    configNames: () => [],
+    loadConfig: () => undefined,
     labRoot: () => undefined,
     now: () => new Date('2026-08-06T12:00:00.000Z'),
   };
@@ -79,7 +81,7 @@ test('the page and its two assets are served, and nothing above them is', async 
   });
 });
 
-test('the route table is four reads and nothing that writes', async () => {
+test('the route table is six reads and nothing that writes', async () => {
   await withServer(async (base) => {
     const remotes = await getJson(`${base}/api/remotes`);
     assert.equal(remotes[0].architecture, 14);
@@ -93,6 +95,22 @@ test('the route table is four reads and nothing that writes', async () => {
 
     const log = await getJson(`${base}/api/log`);
     assert.equal(log[0].what, 'GET_VERSION');
+
+    // The two config routes need no hardware, and the fixture's lab is empty, so the honest answer
+    // is an empty list and a refusal rather than an error.
+    assert.deepEqual(await getJson(`${base}/api/configs`), []);
+    const missing = await fetch(`${base}/api/inventory`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: '' }),
+    });
+    assert.equal(missing.status, 400);
+    const absent = await fetch(`${base}/api/inventory`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'one_config' }),
+    });
+    assert.equal(absent.status, 500, 'a config the lab does not have is an error, not an empty view');
 
     // There is no generic command endpoint, which is the rail: a page that is broken, or a script
     // somebody points at this port, cannot express a write because no route accepts one.

@@ -179,6 +179,98 @@ function showContainer(container) {
   }
 }
 
+async function refreshConfigs() {
+  const names = await api('/api/configs');
+  const list = clear($('configs'));
+  if (names.length === 0) {
+    list.append(el('p', 'No configs in the lab. Read one from a remote, or set HARMONY_LAB.', 'hint'));
+    return;
+  }
+  for (const name of names) {
+    const line = el('div', undefined, 'remote');
+    line.append(el('span', name, 'name mono'));
+    const choose = el('button', 'inspect');
+    choose.addEventListener('click', () => void showInventory(name));
+    line.append(choose);
+    list.append(line);
+  }
+}
+
+async function showInventory(name) {
+  const inv = await api('/api/inventory', { name });
+
+  const head = clear($('inventory-head'));
+  for (const [label, value] of [
+    ['config', inv.name],
+    // The skin comes from the config's own slot 1, which is per config and not per model: section 81
+    // found one Harmony One carrying two different words either side of a sync, and the number a
+    // config states is often not the one the remote reports.
+    [
+      'skin in slot 1',
+      inv.skin === undefined
+        ? 'not stated'
+        : `${inv.skin}${inv.model === undefined ? ', no model known for that number' : `, a Harmony ${inv.model}`}`,
+    ],
+    ['architecture', inv.architecture ?? 'not stated'],
+    ['built', inv.builtAt ?? 'no timestamp'],
+    ['devices', inv.devices.length],
+    ['activities', inv.activities.length],
+    ['idle value', inv.idle ?? 'not stated'],
+  ]) {
+    row(head, [el('td', label, 'dim'), el('td', value, 'mono')]);
+  }
+
+  const devices = clear($('devices'));
+  row(devices, [
+    el('th', 'group'),
+    el('th', 'name'),
+    el('th', 'from'),
+    el('th', 'codes'),
+    el('th', 'can repeat'),
+    el('th', 'repeat, ms'),
+  ]);
+  for (const device of inv.devices) {
+    row(devices, [
+      el('td', device.group, 'num mono'),
+      device.name === undefined ? el('td', 'unnamed', 'dim') : el('td', device.name),
+      el('td', device.source ?? '', 'dim'),
+      el('td', device.codes, 'num mono'),
+      el('td', device.repeating, 'num mono'),
+      el('td', device.repeatMs.join(', ') || '', 'mono'),
+    ]);
+  }
+
+  const activities = clear($('activities'));
+  row(activities, [el('th', 'value'), el('th', 'name'), el('th', 'page'), el('th', 'keys'), el('th', 'devices')]);
+  for (const activity of inv.activities) {
+    row(activities, [
+      el('td', activity.activity, 'num mono'),
+      activity.name === undefined ? el('td', 'unnamed', 'dim') : el('td', activity.name),
+      el('td', activity.page, 'num mono'),
+      el('td', activity.scans.join('/'), 'mono'),
+      el('td', activity.devices.map((group) => inv.devices[group]?.name ?? `group ${group}`).join(', ')),
+    ]);
+  }
+
+  const keys = clear($('keys'));
+  row(keys, [el('th', 'in'), el('th', 'key'), el('th', 'sends'), el('th', 'repeat, ms')]);
+  for (const key of inv.keys) {
+    const device = inv.devices[key.group]?.name ?? `group ${key.group}`;
+    row(keys, [
+      // A page binding is a soft key on a screen; a set binding is a hard key while an activity runs,
+      // which is where the volume keys are.
+      el('td', `${key.where} ${key.index}`, 'mono dim'),
+      el('td', key.event === 2 ? `scan ${key.scan}` : `handler ${key.tag ?? key.scan}`, 'mono'),
+      el('td', `${device} #${key.code}${key.sends > 1 ? ` and ${key.sends - 1} more` : ''}`, 'mono'),
+      key.repeatMs === undefined
+        ? el('td', 'does not repeat', 'dim')
+        : el('td', key.repeatMs, 'num mono'),
+    ]);
+  }
+
+  $('inventory').hidden = false;
+}
+
 async function refreshLog() {
   const entries = await api('/api/log');
   const table = clear($('log'));
@@ -194,6 +286,8 @@ async function refreshLog() {
 }
 
 $('refresh').addEventListener('click', () => void refreshRemotes());
+$('refresh-configs').addEventListener('click', () => void refreshConfigs());
 $('read').addEventListener('click', () => void read());
 void refreshRemotes();
+void refreshConfigs();
 void refreshLog();

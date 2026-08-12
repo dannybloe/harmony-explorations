@@ -153,6 +153,10 @@ const SELECT_BINDING_SET = 0x1f;
 const SELECT_BINDING_SET_MASK = 0xff00;
 /** A key code's scan code, the rest of it being the event type. Section 17. */
 const SCAN_CODE_MASK = 0x3f;
+/** How far to shift a key code to leave the event type: 0 none, 1 release, 2 press, 3 repeat. */
+const KEY_EVENT_SHIFT = 6;
+/** The event type of a press. */
+export const KEY_EVENT_PRESS = 2;
 
 /** One way a button reaches one activity. */
 export interface ActivityBinding {
@@ -910,11 +914,28 @@ export function infraredGroupsPerList(c: Container): Map<number, Set<number>> {
 
 /** What a button does: the codes it sends, in order, and where it is. */
 export interface KeyCode {
-  /** Index into `modePages`, so the screen this binding belongs to. */
-  page: number;
+  /**
+   * Which kind of tagged list the binding is in.
+   *
+   * **Both matter and for a while this only had the first.** A `page` binding belongs to a screen,
+   * which is where a soft key lives. A `set` binding belongs to a base slot 9 handler set, which is
+   * the key map an activity installs, and that is where the hard keys are: the volume keys of the
+   * bench Harmony One are in its activities' sets and in no mode page at all.
+   */
+  where: 'page' | 'set';
+  /** Index into `modePages` or into base slot 9's addresses, according to `where`. */
+  index: number;
   /** The tagged list's key code: an event type in `0xC0` and a scan code in `0x3F`. Section 17. */
   tag: number;
-  /** The scan code alone. */
+  /**
+   * The event type: 0 none, 1 release, 2 press, 3 repeat.
+   *
+   * **A code sending binding is a press, with seventeen exceptions in the corpus and they are all
+   * type 0**, tags 1, 2 and 5 in a base slot 9 set, which are that set's enter and leave handlers
+   * rather than keys at all. Nothing sends a code on a release or on a repeat, anywhere.
+   */
+  event: number;
+  /** The scan code alone. Only a key when `event` is not 0. */
   scan: number;
   /** The codes the binding sends, in the order the action list sends them. */
   codes: InfraredCode[];
@@ -929,9 +950,10 @@ export interface KeyCode {
  * corpus, which is a macro and why the order is kept.
  *
  * Two properties hold on every container here and both are worth knowing before building on this.
- * Every code sending binding is event type `0x80`, a **press**, 3106 of 3106, so nothing sends a code
- * on release or on repeat. And most bindings send nothing at all: 3883 against 3106, because navigation
- * and screen switching are bindings too.
+ * **A code is sent on the press**, 4431 of 4448 bindings, and the seventeen that are not are event type
+ * 0 in a base slot 9 set, tags 1, 2 and 5, which are its enter and leave handlers rather than keys.
+ * Nothing sends a code on a release or on a repeat. And most bindings send nothing at all, because
+ * navigation and screen switching are bindings too.
  *
  * **A code has no name.** An infrared record is a code and its index in its group, so a label for a
  * button comes from the screen where the screen draws one, and from nowhere for a hard key.
@@ -939,14 +961,23 @@ export interface KeyCode {
 export function keyCodes(c: Container): KeyCode[] {
   const codes = infraredCodesPerList(c);
   const out: KeyCode[] = [];
-  modePages(c).forEach((page, index) => {
-    for (const entry of taggedList(c, page.list)?.entries ?? []) {
+  const collect = (where: 'page' | 'set', index: number, list: number): void => {
+    for (const entry of taggedList(c, list)?.entries ?? []) {
       if (entry.opcode !== ACTION_LIST_INDEX) continue;
       const sent = codes.get(entry.operand);
       if (sent === undefined) continue;
-      out.push({ page: index, tag: entry.tag, scan: entry.tag & SCAN_CODE_MASK, codes: sent });
+      out.push({
+        where,
+        index,
+        tag: entry.tag,
+        event: entry.tag >> KEY_EVENT_SHIFT,
+        scan: entry.tag & SCAN_CODE_MASK,
+        codes: sent,
+      });
     }
-  });
+  };
+  modePages(c).forEach((page, index) => collect('page', index, page.list));
+  (handlerSets(c)?.addresses ?? []).forEach((address, index) => collect('set', index, address));
   return out;
 }
 

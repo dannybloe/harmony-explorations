@@ -58,10 +58,39 @@
           <ul id="checks"></ul>
           <h3>Sections</h3>
           <p class="hint">
-            The label column is empty because almost no section has been identified yet. Filling it
-            in is the next block of reverse engineering work.
+            All twenty base slots are labelled now, and the byte accounting reaches every byte of a
+            user config. What a section is for is in docs/config-format.md rather than in this table.
           </p>
           <table id="sections"></table>
+        </div>
+      </section>
+
+      <section id="config-panel">
+        <h2>What a config is for <button id="refresh-configs" type="button">refresh</button></h2>
+        <p class="hint">
+          Reads a config the lab already holds, so this needs no remote on the desk. Devices,
+          activities, and what each button sends: the same call FreeHarmony will make.
+        </p>
+        <div id="configs"></div>
+        <div id="inventory" hidden>
+          <table id="inventory-head"></table>
+          <h3>Devices</h3>
+          <p class="hint">
+            The repeat column is how often a held key sends again, in milliseconds. Holding a key
+            replays the code's second duration block for as long as it is down, so that block's own
+            length is the interval. Findings section 127.
+          </p>
+          <table id="devices"></table>
+          <h3>Activities</h3>
+          <table id="activities"></table>
+          <h3>Buttons that send a code</h3>
+          <p class="hint">
+            A code has no name: it is a device and an index. A page binding is a soft key on a screen
+            and a set binding is a hard key while an activity runs, which is where the volume keys
+            are. Every one is a press bar a handful of enter and leave handlers, and a binding that
+            sends more than one code is a macro.
+          </p>
+          <table id="keys"></table>
         </div>
       </section>
 

@@ -1,5 +1,5 @@
 /**
- * The bench instrument's server: a page, and four things the page may ask for.
+ * The bench instrument's server: a page, and six things the page may ask for.
  *
  * **Bound to the loopback address, deliberately and not by default.** A listening port is a
  * concession this project makes for a bench tool and refuses for the product; FreeHarmony gets a
@@ -90,6 +90,15 @@ export function createServer(bench: Bench, webRoot: string): Server {
         if (req.method === 'GET' && url.pathname === '/api/log') {
           return json(res, 200, bench.log);
         }
+        if (req.method === 'GET' && url.pathname === '/api/configs') {
+          return json(res, 200, bench.configs());
+        }
+        if (req.method === 'POST' && url.pathname === '/api/inventory') {
+          const body = await readBody(req);
+          const name = String(body['name'] ?? '').trim();
+          if (name === '') return json(res, 400, { message: 'a config name is required' });
+          return json(res, 200, bench.inventory(name));
+        }
         if (req.method === 'POST' && url.pathname === '/api/identify') {
           const body = await readBody(req);
           return json(res, 200, await bench.identify(Number(body['productId'])));
@@ -106,7 +115,14 @@ export function createServer(bench: Bench, webRoot: string): Server {
         // precisely the wrong impression to leave.
         json(res, 404, {
           message: 'not found',
-          served: ['GET /api/remotes', 'GET /api/log', 'POST /api/identify', 'POST /api/read'],
+          served: [
+            'GET /api/remotes',
+            'GET /api/configs',
+            'GET /api/log',
+            'POST /api/identify',
+            'POST /api/inventory',
+            'POST /api/read',
+          ],
         });
       } catch (err) {
         json(res, 500, { message: err instanceof Error ? err.message : String(err) });

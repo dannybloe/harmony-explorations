@@ -29,6 +29,7 @@ import {
   activityWriterCount,
   characterMap,
   idleActivityValue,
+  KEY_EVENT_PRESS,
   modePages,
   screenStrings,
   taggedList,
@@ -696,6 +697,9 @@ test('every button that sends a code sends it on the press, and every code exist
     // that says the group and the index have not been read the wrong way round.
     let bindings = 0;
     let macros = 0;
+    let fromPages = 0;
+    let fromSets = 0;
+    let handlers = 0;
     for (const [name] of INVENTORY) {
       const data = load(name);
       if (data === undefined) continue;
@@ -703,9 +707,18 @@ test('every button that sends a code sends it on the press, and every code exist
       const sizes = devices(c).map((one) => one.codes);
       if (sizes.length === 0) continue;
       for (const key of keyCodes(c)) {
-        assert.equal(key.tag & 0xc0, 0x80, `${name}: page ${key.page} sends on a non press`);
+        // A press, or one of the handler entries a base slot 9 set carries instead of keys. Never a
+        // release and never a repeat, which is the half of this that would change what an interface
+        // has to allow for.
+        if (key.event !== KEY_EVENT_PRESS) {
+          assert.equal(key.event, 0, `${name}: ${key.where} ${key.index} sends on a release or repeat`);
+          assert.equal(key.where, 'set', `${name}: a page binding with no event type sends a code`);
+          assert.ok([1, 2, 5].includes(key.tag), `${name}: unexpected handler tag ${key.tag}`);
+          handlers += 1;
+        }
         assert.ok(key.codes.length >= 1);
         if (key.codes.length > 1) macros += 1;
+        if (key.where === 'page') fromPages += 1; else fromSets += 1;
         for (const code of key.codes) {
           const size = sizes[code.group];
           assert.ok(size !== undefined, `${name}: code names group ${code.group}`);
@@ -717,6 +730,12 @@ test('every button that sends a code sends it on the press, and every code exist
     }
     assert.ok(bindings >= 3000, `enough bindings to mean something, got ${bindings}`);
     assert.ok(macros >= 50, `and enough of them are macros, got ${macros}`);
+    // **Both kinds of list are covered**, which they were not at first: the hard keys of an activity
+    // are in its base slot 9 set and in no mode page, so a view built on pages alone showed every
+    // soft key and no volume key. Asserted as a count of each rather than a total.
+    assert.ok(fromPages >= 1000, `enough page bindings, got ${fromPages}`);
+    assert.ok(fromSets >= 1000, `enough set bindings, got ${fromSets}`);
+    assert.equal(handlers, 17, 'and the handler entries that send are a known, small set');
   });
 
 test('the codes of a list are kept in the order it sends them', skipWithoutLab(), () => {

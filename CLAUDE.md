@@ -670,9 +670,12 @@ make emit          how much of each sample the emitter puts back, and whether it
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
 make activities    which activity each key starts and which drawn label is its name, per model
+make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
 make remotes       list attached remotes, enumeration only, opens nothing
-make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop
+make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop. It also inspects a
+                   config the lab already holds, with no remote attached: devices, activities, and
+                   what each button sends including the repeat interval of a held key
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
 make all           everything except ghidra and bench
 ```

@@ -32,6 +32,8 @@ function deps(overrides: Partial<BenchDeps> = {}): BenchDeps {
     },
     labRoot: () => undefined,
     now: () => WHEN,
+    configNames: () => [],
+    loadConfig: () => undefined,
     ...overrides,
   };
 }
@@ -164,4 +166,61 @@ test('a read with nowhere to file it refuses before opening the device', async (
   );
   await assert.rejects(bench.read(H600, 'x'), /no lab directory/);
   assert.equal(opened, 0, 'an irreplaceable device is not claimed to then fail on a directory');
+});
+
+test('the inventory view says what a config is for, and needs no remote', skipUnless('one_config'), () => {
+  // The composed view sections 120 to 127 add up to, and the reason it lives in the codec with only
+  // a projection here: an interface that ordered those readers itself would be a second copy of the
+  // order. **No name is asserted.** They are the config owner's own equipment, and this repository is
+  // public, so the assertions are about shape: how many devices, that every one is named, that a key
+  // sends a code its device has.
+  const bench = new Bench(deps({
+    configNames: () => ['one_config'],
+    loadConfig: (name: string) => (name === 'one_config' ? load('one_config') : undefined),
+  }));
+  assert.deepEqual(bench.configs(), ['one_config']);
+  const view = bench.inventory('one_config');
+  assert.equal(view.architecture, 12);
+  // The skin a config states is not always one this project can name, and that is section 81's point
+  // rather than a gap: this file says 59 where the remote reports 54.
+  assert.equal(view.skin, 59);
+  assert.equal(view.model, undefined);
+  assert.equal(view.devices.length, 5);
+  assert.equal(view.activities.length, 8);
+  for (const device of view.devices) {
+    assert.ok(device.name !== undefined, `group ${device.group} is unnamed`);
+    assert.ok(device.repeating <= device.codes);
+    // A period is milliseconds to one decimal, and a code that repeats does so in tens of them.
+    for (const period of device.repeatMs) assert.ok(period > 20 && period < 2000, String(period));
+  }
+  for (const activity of view.activities) {
+    assert.ok(activity.devices.length >= 1, `activity ${activity.activity} drives nothing`);
+    for (const group of activity.devices) assert.ok(group < view.devices.length);
+  }
+  assert.ok(view.keys.length > 200, `${view.keys.length} keys send a code`);
+  for (const key of view.keys) {
+    const device = view.devices[key.group];
+    assert.ok(device !== undefined && key.code < device.codes, `key ${key.scan} names a missing code`);
+    assert.ok(key.sends >= 1);
+  }
+  // The one thing this view exists to show that no other reader does: a held key's repeat interval,
+  // present for some keys and absent for others, in the same table.
+  assert.ok(view.keys.some((key) => key.repeatMs !== undefined), 'some keys repeat');
+  assert.ok(view.keys.some((key) => key.repeatMs === undefined), 'and some do not');
+});
+
+test('a config whose skin the table knows names its model', skipUnless('h525_config'), () => {
+  // The contrast with the assertion above, and the reason the view carries both fields: a Harmony
+  // 525's config states the skin its remote reports, so the lookup succeeds there and fails on the
+  // One. Showing the number either way is what keeps the page honest about which happened.
+  const bench = new Bench(deps({ loadConfig: () => load('h525_config') }));
+  const view = bench.inventory('h525_config');
+  assert.equal(view.skin, 22);
+  assert.equal(view.model, '525');
+  assert.equal(view.architecture, 9);
+});
+
+test('a config the lab does not have is refused rather than answered emptily', () => {
+  const bench = new Bench(deps());
+  assert.throws(() => bench.inventory('nothing_like_this'), /no config called/);
 });

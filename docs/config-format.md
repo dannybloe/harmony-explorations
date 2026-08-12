@@ -1701,11 +1701,13 @@ to watch rather than the total.
 **A command has no name.** An infrared record is a code and an index in its group, so an editor names a
 command only where a screen draws a label for the key that sends it.
 
-**What a button sends** is the codes of the base slot 10 list its page's tagged list binds it to. 3106
-bindings in the corpus send at least one code and 85 send several, which is a macro, so the order is
-part of what the binding does. **Every one of the 3106 is event type `0x80`, a press**: nothing sends a
-code on a release or a repeat. The other 3883 bindings send nothing, being navigation and screen
-switching. `keyCodes`.
+**What a button sends** is the codes of the base slot 10 list a tagged list binds it to, and **both
+kinds of tagged list carry such bindings**: a mode page's list holds the soft keys, 3106 of them, and a
+base slot 9 set holds the hard keys while an activity runs, 1342. A Harmony One's volume keys are in
+its activities' sets and in no mode page at all. 85 bindings send several codes, which is a macro, so
+the order is part of what the binding does. **4431 of the 4448 are event type `0x80`, a press**, and the
+seventeen that are not are event type 0 in a set, tags 1, 2 and 5, which are its enter and leave
+handlers rather than keys: nothing sends a code on a release or a repeat. `keyCodes`.
 
 **Which devices an activity drives** is the groups its base slot 9 set addresses, that set being the key
 map the activity installs, section 120. One to three per activity across the corpus, and every group is
