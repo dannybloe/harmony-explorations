@@ -134,6 +134,13 @@ image is a second sample rather than a stand in. Other models are iterated on la
    libraries as a pinned git dependency until they are stable enough to publish. The line runs
    between library and product, not between documents and code. See "The two repositories" in
    `CLAUDE.md`.
+
+   **The consuming half of that is not yet possible and was measured rather than assumed**, on
+   12 August 2026: a git install of this repository resolves no `@harmony/*` package, and Node
+   refuses to strip types for a file inside `node_modules`, so `exports` pointing at `src/index.ts`
+   cannot work for any consumer on any version. The decision stands; what it needs is a root
+   `exports` map naming built files and a `prepare` script that builds them. It is the one structural
+   item before FreeHarmony can start, and `CLAUDE.md` carries the detail.
 5. **Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
    activity semantics, but it is the largest single build in the plan and the app would sit
    behind it for months. The cheap substitutes are a byte-identical round trip, a read back and

@@ -141,8 +141,22 @@ lands as a structured fact, a written argument and a regression test only works 
 implementing it sits next to the documents. Move the codec out and a finding can land in `docs/`
 and never reach the code.
 
-FreeHarmony consumes `packages/codec` and `packages/usb` as a git dependency pinned to a commit,
-until they are stable enough to publish. MIT flows into AGPL without trouble; nothing flows back.
+FreeHarmony is meant to consume `packages/codec` and `packages/usb` as a git dependency pinned to a
+commit, until they are stable enough to publish. MIT flows into AGPL without trouble; nothing flows
+back.
+
+**That sentence said "consumes" for weeks and it has never worked**, measured on 12 August 2026 by
+installing this repository into an empty project the way FreeHarmony would. Two failures, and the
+second is structural. `@harmony/codec` does not resolve at all: a git install lands the whole tree
+under one `node_modules/harmony-explorations`, and a workspace package name is not an installable
+package. And importing the source by path fails with
+`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`, because **Node refuses to strip types for any file
+inside `node_modules`**, whatever the flag, so `exports` pointing at `./src/index.ts` cannot work for
+a consumer on any version. What is needed is an `exports` map on the **root** package naming built
+`dist` files, a `prepare` script so a git install builds them, since `dist` is gitignored, and the
+two consumed packages no longer `private`. None of that is hard and none of it is done, which makes
+it the one structural item between here and FreeHarmony starting. It is also the reason the boundary
+should be exercised by a probe that installs and imports rather than by this paragraph.
 
 **AGPL for the product is deliberate.** concordance and harmony-decompiler are both GPLv3, so a
 copyleft licence keeps their work available rather than off limits, and GPLv3 permits combining
