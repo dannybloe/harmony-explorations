@@ -228,11 +228,26 @@ image is a second sample rather than a stand in. Other models are iterated on la
    **There are two routes to that data and the cheap one already exists.** Reading it out of a config
    Logitech compiled needs no new protocol work at all: base slot 5 is fully read on four
    architectures, so a synced remote can be read and its infrared records converted with today's code.
-   The expensive route is a direct client against `svcs.myharmony.com`, which nobody here has looked
-   at: the recorded facts are that it authenticates and that it recognises a remote, **not** that it
-   serves a device database in any shape we know. So the first step is reconnaissance, read only,
-   written up in `docs/host-client.md` where a client sourced fact belongs, and it is the one item in
-   this plan whose value **decays**, because the service can be withdrawn without notice.
+   The expensive route is a direct client against `svcs.myharmony.com`.
+
+   **The reconnaissance on that second route is done, the same day, and it changes the picture.** This
+   decision said nobody here had looked at what the service serves, which was true for an hour. It is
+   mapped now, offline, out of the client already mirrored in the lab and with no request made to
+   Logitech: fourteen services, 78 operations, JSON over HTTP rather than SOAP, and **the device
+   database is its own call**, `deviceManager.SearchGlobalDevices` with `GetCommands` beside it and a
+   REST form of the search on another service. So the expensive route is real rather than hypothetical.
+   `docs/host-client.md` has the map and `tests/test_host_client.py` recomputes it.
+
+   **One operation on that list is worth more to this repository than to the application**:
+   `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who
+   wrote the format, for a remote whose bytes we already read to the last one. A vendor authored second
+   view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
+   is a stronger check than anything available here.
+
+   What is still unknown is everything a request would answer: whether these operations still exist,
+   their parameters, their responses, and which of them need an account. That step is a **separate
+   decision**, because it touches a live service with the owner's own credentials, and it is the one
+   item in this plan whose value **decays**.
 
    **A community database is a direction now rather than an idea, and it has one hard rule**: a
    definition carries its **provenance**, and only a definition learned from hardware may be shared.

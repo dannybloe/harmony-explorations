@@ -133,6 +133,72 @@ for believing one.
 manifest lists is in the lab now, with provenance and a hash. The service could be withdrawn at any
 time, which is the same argument the write rails rest on.
 
+## The service API, which is a different surface and answers a product question
+
+Added 12 August 2026. Everything above mines this client for the **USB** layer: what a packet looks
+like, what an operation sends to a remote. This section is the other half, the **service** the client
+talks to, and it was never looked at until a product decision needed it. Decision 11 in
+`docs/roadmap.md` says FreeHarmony works offline and may optionally take Logitech's device data while
+that service is alive. The question that decision left open was whether the device database is its own
+call or only a side effect of compiling a config. **It is its own call.**
+
+Extracted from the mirrored client, offline, with no request made to Logitech and no account involved.
+`tests/test_host_client.py` recomputes every figure below, so this is a list nobody has to trust.
+
+**Fourteen services and 78 operations.** 75 are declared through the client's own service SDK, and
+three more are built by hand, which is why the surface is "at least this" rather than "exactly this".
+
+| service | operations | what it is for, from the names alone |
+|---|---|---|
+| `userAccountDirector` | 18 | the account's products, activity roles and recommendations, plus a REST device search |
+| `userButtonMappingManager` | 13 | button to command mappings, per device mode, with save and reset |
+| `accountManager` | 10 | household, password, ratings |
+| `deviceManager` | 10 | **the device database**, see below |
+| `security` | 8 | login, tokens, impersonation |
+| `remoteManager` | 6 | a remote's properties, pairings, sync status |
+| `userFeatureManager` | 3 | user features, and copying them from a global device |
+| `deletionManager` | 2 | delete devices, delete activities |
+| `productsManager` | 2 | a product and its button list |
+| `compileManager` | 1 | whether a remote needs syncing |
+| `downloadManager` | 1 | **the configuration, in JSON** |
+| `infraredAnalysisManager` | 1 | analyse infrared, which is the learning service |
+| `easyZapperManager` | 0 | bound but declares nothing: its calls are the hand built ones |
+| `softwareUpdateService` | 0 | the same |
+
+**The device database is `deviceManager`**, and four of its operations are the ones that matter:
+`SearchGlobalDevices`, `GetCommands`, `GetGlobalLanguageCommands` and
+`GetAllTeachingCommandsForGivenPowerAndInputTypes`. `userAccountDirector` carries
+`SimpleRestSearchGlobalDevices` as well, whose name says it is the plain REST form of the search, and
+`userFeatureManager` has `CopyFeaturesFromGlobalDevice`. So a device can be searched for and its
+commands fetched without going anywhere near a config, a remote or a compile.
+
+**The transport is JSON over HTTP, not SOAP.** The endpoints are `.svc`, which means WCF and implies an
+envelope to anyone who has met it, and the client uses `json/` and `json2/` path variants and contains
+the string `soap` exactly zero times. That halves what a client would cost: a body and a URL, no WSDL
+and no generator.
+
+**`downloadManager.RemoteConfigurationInJson` is the prize for this repository rather than for the
+application.** A configuration, described in JSON, by the people who wrote the format, for a remote
+whose bytes this project already reads to the last one. That is a vendor authored second view of the
+same object, which is the strongest kind of cross check there is, and it would either confirm the
+readings in `docs/config-format.md` or name the field that is wrong. It needs an account and a
+registered remote, so it is not free, and it is the single most valuable call on this list.
+
+**What this does not establish, which is most of it.** No call here has been made by this project.
+Section 56 measured the discovery endpoint answering and an account authenticating; section 58 watched
+the service compile a config. Nothing says these operations still exist, what their parameters are,
+what comes back, or which of them need an account: the search may well be public and the account
+scoped ones certainly are not. The client also names development and integration hosts and carries
+several API keys in plain text, which stay in the lab and are deliberately not extracted.
+
+**And a name is not a finding, which is the trap this section could have walked into.**
+`GetRootButtonMap` and `GetDeviceModeButtonMaps` read exactly like the physical button map that
+`CLAUDE.md` lists as open. They are not it. They sit in the user's button **mapping** service beside
+`SaveButtonMaps` and `RestoreToDefaultButtonMaps`, so they map a named button to a command, which is
+what section 48 derived from the firmware and what this document already says: a host names buttons and
+the firmware resolves the name. No operation anywhere in the surface mentions a scan code, a matrix or a
+keypad, and the test asserts that too.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in

@@ -223,9 +223,19 @@ answering and section 58 watched it compile a config for a device chosen that da
 is reachable now and will not be one day. The user decides, supplies their own credentials, and sees
 what is fetched; the application works identically for somebody who never touches it. The cheap route
 needs no new protocol work at all, since base slot 5 is fully read: a config Logitech compiled can be
-read off the remote and converted with today's code. A direct client against `svcs.myharmony.com` is
-the expensive route and **nobody here has looked at it**: what is recorded is that it authenticates and
-recognises a remote, not that it serves a device database in any shape we know.
+read off the remote and converted with today's code.
+
+**The other route is mapped now and it is real**, `docs/host-client.md`: fourteen services, 78
+operations, JSON over HTTP rather than SOAP, extracted offline from the client already in the lab with
+no request made to Logitech, and **the device database is its own call** rather than a side effect of
+compiling a config. Two things on that list matter beyond the import.
+`downloadManager.RemoteConfigurationInJson` is **a configuration described in JSON by the people who
+wrote the format**, which would be a vendor authored second view of an object this project already reads
+to the byte, so it belongs to the format work rather than to the product. And
+`infraredAnalysisManager.AnalyzeInfrared` is the learning service the user manuals describe, which is
+the piece M5 has to replace locally. What no request has established is whether any of it still answers,
+what the parameters are, or which calls need an account: making one is a separate decision, since it
+touches a live service with the owner's credentials.
 
 ## This repository is public
 

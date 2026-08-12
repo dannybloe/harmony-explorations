@@ -142,6 +142,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
+  // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
+  // The service API surface in `docs/host-client.md` is extracted from it by
+  // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two
+  // tables are asserted equal: a fixture on one side only is the drift this parity test exists for,
+  // and it caught exactly that on the day this entry was added.
+  desktop_webapp_main: 'en.desktop-app-main.js',
 };
 
 const cache = new Map<string, string | undefined>();
