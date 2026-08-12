@@ -399,15 +399,15 @@ test('arch 14 names every activity and the corpus names most of them', skipWitho
   assert.equal(arch14.named, arch14.total, 'arch 14 names every activity it binds');
   assert.ok(arch14.total >= 13, `and there are enough of them, got ${arch14.total}`);
   assert.ok(named / total > 0.6, `the corpus names most activities: ${named} of ${total}`);
-  // Three of the four architectures resolve completely since 12 August 2026, and the fourth is arch
-  // 12, whose zero is the proof below. Asserted per architecture rather than as a share, because a
-  // share hides which of them stopped working.
-  for (const architecture of [8, 9, 14]) {
+  // **Every architecture resolves completely since 12 August 2026**, arch 12 last, through the touch
+  // hit map rather than through string matching. Asserted per architecture rather than as a share,
+  // because a share hides which of them stopped working.
+  for (const architecture of [8, 9, 12, 14]) {
     const here = perArchitecture.get(architecture) as { named: number; total: number };
     assert.equal(here.named, here.total, `arch ${architecture} names every activity it binds`);
   }
-  const arch12 = perArchitecture.get(12) as { named: number; total: number };
-  assert.ok(arch12.named < arch12.total, 'and arch 12 does not, which is the test below');
+  assert.equal(named, total, `the corpus names every activity: ${named} of ${total}`);
+  assert.ok(total >= 50, `and there are enough of them, got ${total}`);
 });
 
 test('an activity page names as many activities as it binds, and each label once',
@@ -454,7 +454,10 @@ test('a label the menu wraps onto a second row is read as one label', skipUnless
 });
 
 test('no fixed key to row map can exist on a touch panel', skipUnless('one_config'), () => {
-  // Why arch 12 resolves nothing, proved from the container rather than asserted as a limitation.
+  // Why no **string** rule can resolve arch 12, proved from the container rather than asserted as a
+  // limitation. It is also why the hit map is the answer rather than one more filter: a scan code on a
+  // touch panel names a rectangle the config chose, and the rectangle is what holds the label. Section
+  // 125 reads that rectangle; this test is why it had to.
   //
   // The Harmony One is the only touch model here, and base slot 17 gives it nine page shapes, so the
   // rectangle a scan code stands for is per screen. `one_config` shows the consequence: its three

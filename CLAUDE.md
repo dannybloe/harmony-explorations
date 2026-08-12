@@ -825,7 +825,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 124 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 125 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -865,7 +865,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
 | 16 | the number sender. Used by no config in the corpus | 39 |
-| 17 | the touch screen hit map on arch 12; elsewhere it names the picture bank | 45, 62 |
+| 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
 **Most of a config is pictures**, sections 49 to 55, 62 and 66: one contiguous array from the end of
 the named content to the trailer, no table and no count, addressed only by screen opcode 2 inside
@@ -1026,7 +1026,10 @@ produce a config the remote accepts and mishandles.
   clients in the classic one's favour.
   **Do not argue this from a literal scan**: a data response code carries a computed length nibble
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
-* **The physical button map.** Measured as far as USB allows and no further, section 48: a remote on
+* **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
+  section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
+  byte saying which page is in force, and a transform onto the display. That leaves the 44 keys around
+  the panel, and every other model. Measured as far as USB allows and no further, section 48: a remote on
   USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
   run the rest of its application, section 111, and "never runs its application" was the wording here
   until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
@@ -1091,7 +1094,7 @@ labels a shape and not just a code**, so when two characters share a shape both 
 or the shape is claimed for one of them.
 
 **Which key starts which activity is read**, section 120, and **which drawn name it carries is read on
-three architectures of four**, section 121. The chain is four hops, because nothing in the format names
+all four architectures**, sections 121 and 125. The chain is four hops, because nothing in the format names
 an activity: a mode page's tagged list binds a key to `0x7F`, that base slot 10 list carries `0x1F` with
 operand `0xFF | set` selecting a base slot 9 entry, that entry's list writes `CurrentActivityState` with
 `0x80 | n`. Eleven of eleven containers, four architectures. Every binding is a press, every activity is
@@ -1107,9 +1110,9 @@ was the wrong reason for a right count, corrected in section 120.
 
 **The name comes from the modes the chain enters**, not from geometry: an activity's lists also carry
 `0x7E`, and the mode they enter draws the activity's own name, so the page's string that relates to one
-of those is its label. **41<!--fact:activities_named--> of 50<!--fact:activities_total--> activities and
-three architectures of four complete**, arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, `make
-activities`. Four rules make it a function and each was found by having it fail: an exact match beats a
+of those is its label. That is how three architectures do it: arch 8 22 of 22, arch 9 4 of 4, arch 14 13
+of 13, and with arch 12's own route below, **50<!--fact:activities_named--> of
+50<!--fact:activities_total--> activities**, `make activities`. Four rules make it a function and each was found by having it fail: an exact match beats a
 contained one, a per mode chrome test, one label to one activity, and a second pass for a label the menu
 wrapped onto another row. **The exact match rule is the one to remember**, section 124: an activity's
 chain enters the mode that lists the devices, so every activity says every device's name, and reading
@@ -1117,12 +1120,22 @@ containment as sufficient let one label be claimed by all four activities of a H
 dropped from all four as chrome. The number was 23 of 35 for a day, and three of those 23 were fragments
 of a wrapped label, two of them belonging to a different activity than the one they were reported for.
 
-**Arch 12 is the fourth and its 2 of 11 is a proof, not a gap**: `one_config`'s three activity pages bind scans
-{50,51,52}, {50,48,49} and {48,49} while all three draw labels on the same rows, so no fixed code to row
-map can exist on a touch panel. Base slot 17's hit map is what a One needs, and section 45's nine page
-shapes are why. So this file's old proposal was right for arch 12 and wrong as a general route, and the
-owner's correction on 11 August 2026 was right that a 525 has no touch panel at all. The two it does
-name are single activity configs, where there is nothing to tell apart.
+**Arch 12 does not use any of that, and it is the better route**, section 125. No string rule can work on
+a touch panel: `one_config`'s three activity pages bind scans {50,51,52}, {50,48,49} and {48,49} while all
+three draw labels on the same rows, so no fixed code to row map can exist. What a One needs is base slot
+17's hit map, and the missing link was **`ModePage.lead`**, the arch 12 only byte section 66 read and
+nobody explained: it is a zero based index into that map, so the rectangle a key covers is **stated** and
+the label is the text the firmware's own hit test puts inside it. 11 of 11, and it runs before the string
+matching, because a stated answer beats an inferred one. The closure is a demand the container makes on
+itself, that a page only binds codes its own hit page offers, 268 of 268 and 104 of 104 where every shift
+breaks 54 to 227. `packages/codec/src/touch.ts` also carries the **panel to pixel transform**, whose y
+half is arithmetic (872 panel units and 54 pixels are one row measured twice) and whose **x half rests on
+one reading** and is marked as such, though no name depends on it. Under it the panel is three blocks at
+pixel rows 33, 87 and 141, one or two across and never three, plus a bar from 191 to 253 that runs off a
+220 pixel display: which is exactly what the owner described unprompted, two touch points below the
+screen and a key at each side, so 48 to 53 are the blocks, 43 and 44 the points and 46 and 47 the keys.
+**Which code lands where is per page**, in the order the rectangles are stored, so section 121's proof
+holds for the codes too.
 
 **Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
 way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is

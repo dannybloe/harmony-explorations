@@ -22,6 +22,7 @@ import {
   taggedList,
 } from './sections.ts';
 import { characterMap, screenStrings } from './text.ts';
+import { touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
 import type { StateRecord } from './sections.ts';
 
@@ -495,6 +496,35 @@ export function activityNames(c: Container): ActivityName[] {
       }
     }
   };
+
+  // **On a Harmony One the label is stated rather than matched**, so that route runs first and the
+  // string matching above only sees what it leaves. Section 125: the mode page's `lead` byte indexes
+  // base slot 17's hit map, so the key that starts an activity has a rectangle, and the label is the
+  // text the firmware's own hit test puts inside it. No containment, no chrome rule and no propagation,
+  // which is why the eight activities of `one_config` resolve where every string based rule failed:
+  // its three activity pages draw their labels on the same rows and bind different scan codes to them,
+  // and that is the contradiction section 121 proved rather than a shortfall in the matching.
+  for (const spec of specs) {
+    const page = pages[spec.binding.page];
+    if (page === undefined) continue;
+    const areas = touchPageOf(c, page)?.areas;
+    if (areas === undefined || areas.length === 0) continue;
+    for (const scan of spec.scans) {
+      const area = areas.find((one) => one.code === scan);
+      if (area === undefined) continue;
+      const inside = textOf(page.program)
+        .filter(useful)
+        .filter((one) => touchOwner(areas, one.x, one.y) === area);
+      // One label to a region. Several means the region holds a wrapped label or a second line, and
+      // this route does not guess which part is the name.
+      const distinct = [...new Map(inside.map((one) => [one.text, one])).values()];
+      if (distinct.length !== 1) continue;
+      const label = distinct[0] as ScreenString;
+      assigned.set(spec.binding.activity, label);
+      taken.add(labelKey(spec.binding.page, label));
+      break;
+    }
+  }
 
   const drafts: Draft[] = specs.map((spec) => ({
     binding: spec.binding,

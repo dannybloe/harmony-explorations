@@ -534,17 +534,17 @@ instruction each. `packages/codec/src/inventory.ts` is that view.
 glyph code turns back into a character by matching the glyph's pixels against a hand read alphabet
 per typeface. `packages/codec/src/text.ts`, `make text`, and 170920<!--fact:text_read--> of
 170922<!--fact:text_glyphs--> drawn glyphs across the corpus. **And which activity a name belongs to is
-read now on three architectures of four**, sections 120, 121 and 124: a key press reaches an activity in
+read now, on every architecture**, sections 120, 121, 124 and 125: a key press reaches an activity in
 four hops, all of an activity's keys are on one page, and the modes that activity enters draw its own
 name, so the page's string that relates to one of theirs is its label.
-41<!--fact:activities_named--> of 50<!--fact:activities_total--> activities, and arch 8, arch 9 and arch
-14 completely: 22 of 22, 4 of 4 and 13 of 13. `make activities`.
+50<!--fact:activities_named--> of 50<!--fact:activities_total--> activities: 22 of 22, 4 of 4, 11 of 11
+and 13 of 13. `make activities`.
 
-Arch 12 is the exception and it is a proof rather than a gap: no fixed scan code to row map can exist on
-a touch panel, so a Harmony One needs base slot 17's hit map, which is the route this document named and
-which turns out to be arch 12's alone rather than everyone's. So the interface can start an activity by
-name on a 525, a 600, a 700 and an 880, and on a One it can list the names and the keys without pairing
-them.
+Arch 12 does it by another route, because on a touch panel no fixed scan code to row map can exist. A
+Harmony One needs base slot 17's hit map, which is what this document had said, and the missing link was
+the spare byte in front of a mode page's pointers: it is the index into that map, so the rectangle a key
+covers is stated and the label is the text inside it. So the interface can start an activity by name on
+every remote the corpus covers, and on a One it can also draw where the key is.
 
 **Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
 same length and there is deliberately no way to insert, delete or resize anything, because a

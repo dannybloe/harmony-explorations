@@ -16143,13 +16143,15 @@ two columns differ because their words do.
 That named **23 of the corpus's 35 activities, and arch 14 completely**, 13 of 13. **Corrected on 12
 August 2026**, section 124: containment either way is too loose where an activity's chain enters the
 mode that lists the devices, so a string the modes say exactly beats one they only contain, and a
-label the menu wraps onto a second row is looked for once nothing on one row resolves. The figure is
-41<!--fact:activities_named--> of 50<!--fact:activities_total--> and three architectures of four are
-complete: arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of 11.
+label the menu wraps onto a second row is looked for once nothing on one row resolves. That took the
+figure to 41 of 50 with arch 8, arch 9 and arch 14 complete, and **section 125 finished it**: the corpus
+is 50<!--fact:activities_named--> of 50<!--fact:activities_total--> and arch 12 is named from the touch
+hit map rather than from a string rule at all.
 
-### Arch 12 names almost none, and that is a proof
+### Arch 12 names almost none, and that is a proof<!--superseded-->
 
-A Harmony One resolves nothing where it has more than one activity to tell apart, and the reason is
+*This heading is superseded by section 125 and the argument under it is not.* A Harmony One resolves
+nothing **from a string rule** where it has more than one activity to tell apart, and the reason is
 structural rather than a shortfall in the method. The heading here read "Arch 12 names none" until<!--superseded-->
 section 124 counted the two single activity configs that do resolve, where there is nothing to tell
 apart and the filters have no work to do.
@@ -16165,6 +16167,11 @@ for it: nine page shapes, a rectangle per page carrying the key code a hit repor
 touch model here, `packages/usb/src/models.ts`, and it is the only architecture where the scan code is
 not a physical key. `CLAUDE.md`'s proposed route was therefore right for arch 12 and wrong as a general
 route, and the owner's correction was right that it is no route at all for a 525.
+
+**Section 125 took that route and the One is complete**, 11 of 11: the mode page's spare `lead` byte is
+the index into base slot 17, so the map is stated by the container and nothing has to be inferred from
+what the modes say. This subsection stands as the argument for why a string rule cannot do it, which is
+still true.
 
 The remaining five, four on arch 8 and one on arch 9, failed for a duller reason: a short generic<!--superseded-->
 word inside a longer label satisfies containment, leaving two candidates where one is wanted. **That
@@ -16484,12 +16491,15 @@ the prefix test alone.
 |---|---|
 | before | 32 of 50 |
 | exact match beats containment | 37 of 50 |
-| plus the wrapped label pass | 41<!--fact:activities_named--> of 50<!--fact:activities_total--> |
+| plus the wrapped label pass | 41 of 50 |
+| the touch hit map, section 125 | 50<!--fact:activities_named--> of 50<!--fact:activities_total--> |
 
-Per architecture: **arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of 11.** So three of the
-four architectures are complete, and the fourth is section 121's proof rather than a shortfall: a Harmony
-One's activity mode does not repeat the name its menu draws, and no fixed scan code to row map can exist
-on a touch panel. `make activities` prints it, and the population is stated in
+> Per architecture at the time of this section: arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of 11
+
+So three of the four were complete, and the fourth was section 121's proof rather than a
+shortfall: a Harmony One's activity mode does not repeat the name its menu draws, and no fixed scan code
+to row map can exist on a touch panel. **Section 125 closed it the same day**, from the hit map rather
+than from the strings. `make activities` prints the figures, and the population is stated in
 `packages/codec/bin/activities.ts` for the reason `bin/reading.ts` learned the hard way.
 
 Section 121 said 23 of 35 and named five stragglers with a diagnosis: "a short generic word inside a<!--superseded-->
@@ -16566,6 +16576,131 @@ corpus wide assertion now, so any container that puts a character on two codes f
 `packages/codec/bin/alphabets.ts` for the four seed corrections, and `packages/codec/bin/activities.ts`
 plus `make activities` for the number. The lab's description sheet is in the 880's `META.md`, which is
 where a labelled sample's labels belong.
+
+## 125. The mode page's spare byte indexes the touch hit map, and that finishes the activity names
+
+Section 45 read base slot 17 completely: a page of rectangles per screen, each rectangle carrying the
+key code a hit reports, and the firmware's own loop returning the first rectangle that contains the
+point. What it could not say is **which** page belongs to which screen, and section 121 then proved that
+no string rule can name a Harmony One's activities:
+
+> the three activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49}
+> while all three draw their labels on the same rows
+
+So the hit map was the route and the missing link was one byte.
+
+### It is the byte that was already there
+
+`ModePage.lead`, the arch 12 only byte in front of a page's two pointers, read by section 66 and
+unexplained since. It is a plain zero based index into base slot 17's page array:
+
+| | `one_config` | `one_config_unprogrammed` |
+|---|---|---|
+| mode pages | 330 | 152 |
+| hit map pages | 42 | 32 |
+| distinct `lead` values | 42 | 32 |
+| range | 0 to 41 | 0 to 31 |
+
+Every value in range, no gaps, and every hit page named by at least one mode page. **The closure is a
+demand the container makes on itself**: a page's tagged list binds key codes, and those codes have to be
+codes its own hit page offers. That holds on 268 of 268 pages in one config and 104 of 104 in the other.
+
+**The control is what makes that worth having**, because two thirds of the hit pages would satisfy an
+arbitrary page's demands: a page's codes are consecutive from 48, so a hit page with six blocks fits any
+page that binds fewer. Shifting the index breaks it at once:
+
+| offset | pages that no longer fit, of 268 |
+|---|---|
+| 0 | **0** |
+| +1 | 91 |
+| +2 | 81 |
+| +3 | 69 |
+| -1 | 214 |
+
+The other config behaves the same way, 0 against 54 to 71.
+
+### The panel and the display, and one half of it is a reading rather than a measurement
+
+A rectangle is in the panel's own thirteen bit coordinates and a label is at a pixel, so the two need
+relating. The y axis is inverted and its scale is **arithmetic rather than fitted**: a list page's
+rectangles are 872 panel units apart and the text rows a screen program draws are 54 pixels apart, and
+those are the same distance measured twice. Only the offset is free, and pairing rows to rectangles on
+the pages where the counts agree puts it at 4356 with 233 of 235 pairs inside 81 panel units, which is
+five pixels. The two that do not are one page.
+
+```
+panel_y = 4356 - (872 / 54) * pixel_y
+```
+
+**The x axis rests on one reading and is marked as such.** Codes 46 and 47 are a tall strip on every
+page, one at each side, and the display is taken to span the gap between their inner edges. Containment
+hardly constrains it, since almost every rectangle is full width: the number of labels landing outside
+every rectangle is 2 whether the scale is 10.5 or 15.7 panel units per pixel. What saves this from
+mattering is that **no activity label depends on it**, because every one of them sits on a full width
+row, and a test asserts that ignoring x entirely resolves the same eight names.
+
+### What the geometry turns out to be, which the owner of the remote confirmed independently
+
+Under that transform the rectangles are a grid, and it is a grid nobody fitted:
+
+| row | pixels |
+|---|---|
+| first block | 33 to 83 |
+| second block | 87 to 137 |
+| third block | 141 to 191 |
+| the bar below | 191 to 253 |
+
+Three blocks, 50 pixels tall, one every 54, which is the same 54 the text rows use. A row holds **one
+block or two side by side, never three**, over all 42 pages. The bar starts exactly where the third
+block ends and runs to 253, past the bottom of a 220 pixel display.
+
+The owner of the remote, asked nothing and told nothing, described the hardware as: one column of at
+most three blocks on the screen, a touch key at each side of it marked with an arrow, and two touch
+points directly below the screen. That is this table, feature for feature, including why the bar is
+partly off the display: it is not on it. So the code ranges have a hardware meaning after all, which
+section 45 could see the shape of and not the reason for: 48 to 53 are the up to six blocks on the
+screen, 43 and 44 the two points below it, and 46 and 47 the two keys beside it.
+
+**What is not fixed is which code lands where.** On one activity page the bar is 48 and 49 and the three
+blocks are 50, 51 and 52; on the next page in the same config the blocks are 48, 49 and 50 and the bar is
+51 and 52. The codes are assigned in the order the container stores the rectangles, and that order is per
+page. So any rule of the form "code 50 is the first row" is wrong, which is exactly what section 121
+proved from the other direction and why reading `lead` was not optional.
+
+### The result: every activity in the corpus has its name
+
+The label of a key that starts an activity is the text the firmware's own hit test puts inside that key's
+rectangle. No containment, no chrome rule, no propagation, and nothing about what the modes say.
+
+| | activities named |
+|---|---|
+| arch 8 | 22 of 22 |
+| arch 9 | 4 of 4 |
+| arch 12 | 11 of 11 |
+| arch 14 | 13 of 13 |
+| corpus | 50<!--fact:activities_named--> of 50<!--fact:activities_total--> |
+
+`one_config` is the case that had resolved nothing and now resolves eight, each on a distinct key and a
+distinct label, three of them on one page and three and two on the others. `make activities`.
+
+### What it does not settle
+
+**The matrix keypad is untouched by this.** The One has 44 keys besides the panel and section 48 is still
+why they cannot be mapped over USB: a remote on the bus does not run its keypad handler, and sixteen of
+its buttons share one sense line. What is mapped now is the panel, and the map came out of the config
+rather than out of the hardware.
+
+**Two labels in the corpus land in no rectangle at all**, both on one page of
+`one_config_unprogrammed`, and they are the same two the transform's fit calls outliers. Nothing here
+explains them, and a page whose text sits outside every touchable region is not obviously wrong: a
+title would do that.
+
+### Where it landed
+
+`packages/codec/src/touch.ts` is new and holds the transform, the first match rule and `touchPageOf`;
+`packages/codec/src/inventory.ts` uses it as the first route in `activityNames`, before the string
+matching, because a stated answer beats an inferred one. `packages/codec/test/touch.test.ts` carries the
+controls, `make activities` prints the figures, and `docs/config-format.md` has the structured form.
 
 ## References
 

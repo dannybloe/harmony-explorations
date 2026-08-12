@@ -1031,7 +1031,43 @@ which are a tall strip at each edge of the panel. Nine page shapes exist and no 
 **The geometry is not user data.** Two Harmony Ones with entirely different configurations carry
 the same 35 rectangle sizes and share 70 of 70 distinct records; only the number of pages differs.
 
-Read with `gspm.touch_pages` and `gspm.Container.touch_hit`. [findings.md](findings.md) section 45.
+**Which page belongs to which screen is stated by the mode page**, in the arch 12 only `lead` byte in
+front of a mode page record's two pointers. It is a zero based index into `page[]` above:
+
+| | `one_config` | `one_config_unprogrammed` |
+|---|---|---|
+| mode pages | 330 | 152 |
+| hit map pages | 42 | 32 |
+| distinct `lead` values | 42 | 32 |
+
+Every value in range with no gaps, every hit page named by at least one mode page, and **no mode page
+binds a key code its indexed hit page does not offer**, on 268 and 104 pages. Shifting the index breaks
+54 to 227 of them. `docs/findings.md` section 125.
+
+**The panel to pixel transform**, needed because a rectangle is in panel coordinates and a drawn label
+is at a pixel:
+
+```
+panel_y = 4356 - (872 / 54) * pixel_y
+panel_x = 1257 + ((3556 - 1257) / 176) * pixel_x
+```
+
+The y half is **measured**: 872 panel units is one list row and 54 pixels is one text row, so the scale
+is their ratio exactly and only the offset is fitted, at 233 of 235 paired rows within five pixels. The
+x half is **unconfirmed**, in that word: it takes the display to span the gap between the inner edges of
+the two edge strips, codes 46 and 47, and containment barely constrains it because almost every
+rectangle is full width. No activity name depends on it.
+
+Under that transform the rectangles are a grid, and it is the hardware the owner of the remote
+describes: blocks at pixel rows 33 to 83, 87 to 137 and 141 to 191, **one block or two side by side and
+never three**, plus a bar from 191 to 253 which runs past the bottom of a 220 pixel display. So codes 48
+to 53 are the up to six blocks on the screen, 43 and 44 the two touch points below it, and 46 and 47 the
+two keys at its sides. **Which code lands where is per page**, in the order the container stores the
+rectangles: one activity page has the bar on 48 and 49 with the blocks on 50 to 52, and the next has the
+blocks on 48 to 50 with the bar on 51 and 52.
+
+Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript with `touchPages`,
+`touchPageOf` and `touchOwner`. [findings.md](findings.md) sections 45 and 125.
 
 ### Base slot 15: the parameter block
 
@@ -1563,16 +1599,18 @@ than a guess, in this order:
    a **prefix** of something the modes say, since a menu truncates a long name to the rows it has. Not
    the same column: on the Harmony 525 the second line is not aligned with the first.
 
-That names 41<!--fact:activities_named--> of the corpus's 50<!--fact:activities_total--> activities and
-three architectures of four completely: **arch 8 22 of 22, arch 9 4 of 4, arch 14 13 of 13, arch 12 2 of
-11.** What is left is stated rather than rounded up:
+**On arch 12 none of those four rules is used, because the container states the answer.** A One's
+activity mode does not repeat the name its menu draws, and its scan codes cannot stand in for position:
+the three activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49}
+while all three draw their labels on the same rows, so no fixed code to row map can exist. Instead the
+key's own rectangle is looked up in base slot 17 through the mode page's `lead` index, and the label is
+the text the firmware's own hit test puts inside it. One distinct label per rectangle, and the eight
+activities of `one_config` resolve on eight distinct keys. This route runs **first**, before the string
+matching, because a stated answer beats an inferred one.
 
-* **arch 12 names almost none, and that is a proof rather than a shortfall.** A Harmony One's activity
-  mode does not repeat the name its menu draws, and its scan codes cannot stand in for position: the
-  three activity pages of `one_config` bind activities on scans {50,51,52}, {50,48,49} and {48,49} while
-  all three draw their labels on the same rows, so no fixed code to row map exists. Base slot 17's hit
-  map is what a One needs, and it gives nine page shapes for exactly that reason. The two it does name
-  are single activity configs, where there is nothing to tell apart.
+Together that names 50<!--fact:activities_named--> of the corpus's 50<!--fact:activities_total-->
+activities, on all four architectures: **arch 8 22 of 22, arch 9 4 of 4, arch 12 11 of 11, arch 14 13 of
+13.**
 
 `packages/codec/src/inventory.ts` is the reader: `activityBindings`, `activityNames`,
 `idleActivityValue`, `activityWriterCount`. `make activities` prints the figures per container.

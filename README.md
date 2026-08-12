@@ -69,10 +69,21 @@ Issues and discussions are very welcome for anything else, especially a reading 
 what your own remote does. Please do not attach a configuration or a firmware file to an issue: this
 repository is public and neither can be published in it.
 
-If you do read your own remote with [concordance](https://github.com/jaymzh/concordance), one warning is
-worth more than the rest: **use lower case flags only.** `-c` reads the configuration off the remote and
-`-C` writes one to it, `-f` reads the firmware and `-F` overwrites it, so the flag you want and the flag
-that reflashes your remote differ by one shift key.
+## Backing up your own remote
+
+Worth doing now, whatever happens to this project, because a remote that loses its configuration cannot
+be given a new one. [concordance](https://github.com/jaymzh/concordance) is an existing command line
+tool that reads one off:
+
+```sh
+concordance -c my-remote-config.EZHex     # the configuration
+concordance -f my-remote-firmware.bin     # the firmware
+```
+
+One warning is worth more than all the rest: **use lower case flags only.** `-c` reads the configuration
+off the remote and `-C` writes one to it, `-f` reads the firmware and `-F` overwrites it. The flag you
+want and the flag that reflashes your remote differ by one shift key, and a bare filename with no flag at
+all makes concordance decide for itself, which for a configuration means writing it.
 
 ## Working on the code
 

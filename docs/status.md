@@ -214,10 +214,17 @@ program holding them. Section 121.
 **A config says which key starts which activity**, sections 120 and 121, in four hops through a page's
 key bindings, an action list, a base slot 9 set and a write to `CurrentActivityState`. The value that
 means "no activity" is a field base slot 13 had carried unconfirmed since section 60, and one config
-separates it from every rule that would have guessed it. Naming the activities is **complete** on arch 8,
-9 and 14, 22 of 22, 4 of 4 and 13 of 13, or 41<!--fact:activities_named--> of
-50<!--fact:activities_total--> across the corpus; on the touch driven Harmony One it provably cannot work
-this way, and needs the hit map instead. `make activities`.
+separates it from every rule that would have guessed it. **Every activity in the corpus has its name**,
+50<!--fact:activities_named--> of 50<!--fact:activities_total--> on all four architectures, 22 of 22, 4
+of 4, 11 of 11 and 13 of 13. `make activities`.
+
+**The Harmony One got there by a different route, and a better one**, section 125. On a touch panel no
+fixed scan code to row map can exist, which section 121 proved, so a One's names cannot come from what
+its modes say. They come from the hit map instead: the arch 12 only spare byte in front of a mode page's
+pointers is the index into base slot 17, so the rectangle a key covers is stated by the container, and
+the label is the text the firmware's own hit test puts inside it. That also read the panel's geometry,
+which turns out to be three blocks down the screen, at most two side by side, plus a bar of two touch
+points below the display and a key at each side of it. Nothing was fitted to get there bar one offset.
 
 **One config's device and activity counts are checked against its owner's own written description**,
 section 124, which is the first ground truth this project has had for either: four devices and four

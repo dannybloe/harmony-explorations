@@ -16,6 +16,7 @@ export * from './ir.ts';
 export * from './actions.ts';
 export * from './emit.ts';
 export * from './tables.ts';
+export * from './touch.ts';
 export * from './inventory.ts';
 export * from './font.ts';
 export * from './alphabets.ts';
