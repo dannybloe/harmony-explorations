@@ -33,6 +33,8 @@ import {
   findMarker,
   parse,
   recoverFlashBase,
+  containerExtent,
+  END_MARKER_LENGTH,
   trailerChecksum,
 } from '@harmony/codec';
 
@@ -70,8 +72,22 @@ export interface ContainerReport {
   readonly marker: string;
   readonly pointerCount: number;
   readonly pointerCountKnown: boolean;
-  readonly trailerChecksum: number;
-  readonly trailerChecksumRecomputes: boolean;
+  /** Null when the file's magic has no end marker after it, so the container has no extent. */
+  readonly trailerChecksum: number | null;
+  readonly trailerChecksumRecomputes: boolean | null;
+  /** Whether the container's own extent could be found, which is what the two above depend on. */
+  readonly extentKnown: boolean;
+  /**
+   * Whether `flashBase` came from the clock record anchor or from the marker subtraction fallback.
+   *
+   * False means the anchor **refused**, which section 122 says is the finding rather than a nuisance:
+   * every arch 10 (Harmony 890) read here came back with duplicated 54 byte chunks, and on the one
+   * where they landed inside the container no candidate base is `0x1000` aligned. A base from the
+   * fallback is not wrong by a little, it reads the neighbouring bytes.
+   */
+  readonly flashBaseAnchored: boolean;
+  /** Whether `flashBase` is `0x1000` aligned, which every real one here is. */
+  readonly flashBaseAligned: boolean;
   readonly architecture: number | null;
   readonly sections: readonly SectionReport[];
   /** Populated only when the codec could parse it, which needs a known magic. */
@@ -110,7 +126,23 @@ function formatVersionOf(format: number): string {
  * the state `CLAUDE.md` warns about for the opcode table, and nothing in either suite could see it,
  * because both copies were right on everything the tests loaded.
  */
-export function containerReport(blob: Uint8Array): ContainerReport {
+export function containerReport(data: Uint8Array): ContainerReport {
+  // **The container's own extent, not the file's**, since section 139: this worked on whatever bytes it
+  // was handed, so on a raw flash read with fill past the end marker it took the stored trailer `u16`
+  // out of the fill and reported a checksum failure for a container that is fine. Two of the four
+  // Harmony 890 reads here. `containerExtent` is the codec's own slicing, the same call `parse` makes,
+  // rather than a second copy of it.
+  //
+  // A file whose magic has no end marker after it has no extent, so there is nothing to checksum and
+  // the report says so with a null rather than computing something. That is the one case where the
+  // report is thinner than before, and a null a reader can see beats a boolean nobody can trust.
+  let blob = data;
+  let extentKnown = true;
+  try {
+    blob = containerExtent(data).blob;
+  } catch {
+    extentKnown = false;
+  }
   if (blob.length < 0x68) {
     throw new Error(`container is ${blob.length} bytes, too short to hold a header`);
   }
@@ -133,8 +165,14 @@ export function containerReport(blob: Uint8Array): ContainerReport {
   // One derivation, the codec's, with the same fallback it uses. A probe of an unknown model is
   // exactly where a wrong base would go unnoticed, since there is nothing to compare its numbers
   // against.
-  const flashBase =
-    recoverFlashBase(blob, raw.map((s) => s.address)) ?? endAddr - (blob.length - 4);
+  // **And whether the anchor produced it, which the report did not say**, section 139. On a damaged
+  // read the anchor refuses and the fallback returns an unaligned base: `h890_config_2_rescan` reports
+  // 0x2FEBC where every other container here is 0x1000 aligned. That number was published looking
+  // exactly like a derived one, which is section 122's warning arriving in the one package meant to be
+  // read by somebody who has none of this. `flashBaseAnchored` is the flag; a consumer that ignores it
+  // is at least ignoring something.
+  const anchored = recoverFlashBase(blob, raw.map((s) => s.address));
+  const flashBase = anchored ?? endAddr - (blob.length - END_MARKER_LENGTH);
   const sections: SectionReport[] = raw.map((s, i) => {
     if (s.address === 0) return { ...s, lengthUpperBound: undefined };
     const next = raw.slice(i + 1).find((o) => o.address !== 0);
@@ -165,8 +203,11 @@ export function containerReport(blob: Uint8Array): ContainerReport {
     marker: byteUtil.ascii(blob, markerOffset, 4),
     pointerCount,
     pointerCountKnown: KNOWN_POINTER_COUNTS.includes(pointerCount),
-    trailerChecksum: stored,
-    trailerChecksumRecomputes: trailerChecksum(blob) === stored,
+    trailerChecksum: extentKnown ? stored : null,
+    trailerChecksumRecomputes: extentKnown ? trailerChecksum(blob) === stored : null,
+    extentKnown,
+    flashBaseAnchored: anchored !== undefined,
+    flashBaseAligned: (flashBase & 0xfff) === 0,
     architecture,
     sections,
     checks,

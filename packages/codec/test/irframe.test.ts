@@ -153,6 +153,50 @@ test(
   },
 );
 
+test('a pulse width frame keeps its last bit, which is what the removed decoder dropped',
+  skipUnless('calibration_one', 'calibration_h600'), () => {
+  // **The measurement that settles section 139 entry 8**, and it needed the two configs Logitech
+  // compiled to our own specification, because they are the only samples whose answer is known from
+  // outside the bytes.
+  //
+  // `src/harmony/gspm.py` had a second frame decoder for a day. It assumed pulse distance and measured
+  // the space, so on a pulse **width** code, where the bit is the mark and the final space is the gap,
+  // it tested the gap before pushing and dropped the last bit. Measured over the same block words, with
+  // the header reading held constant so only the decoder varies: the two agree on every pulse distance
+  // record and differ on 100 of the 241 both accept, by exactly one bit, all of them `carries: 'mark'`.
+  //
+  // Which one is right is not a matter of taste. This decoder reads 12 and 15 bits with a 600 and 1200
+  // microsecond split, which is Sony SIRC: a 600 unit, a long mark for a one, and 12 and 15 bit
+  // variants. The other read 11 and 14, which are not a width any protocol has. So the removal is
+  // demonstrated rather than argued, and section 133's button names were produced by the decoder that
+  // was right.
+  //
+  // The mechanism was already written down in `irframe.ts`, in the docstring on `decode`: the trailing
+  // gap arrives **with** the last bit, not instead of it. The decoder that kept the lesson is the one
+  // that had been checked against a catalogue of named commands.
+  for (const name of ['calibration_one', 'calibration_h600']) {
+    const c = mustLoad(name);
+    const widths = new Map<string, number>();
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        const frame = irFrame(c, record);
+        if (frame === undefined || frame.carries !== 'mark') continue;
+        widths.set(`${frame.bits}:${frame.short}:${frame.long}`, (widths.get(`${frame.bits}:${frame.short}:${frame.long}`) ?? 0) + 1);
+      }
+    }
+    // Both counts, so the claim cannot be satisfied by finding none of one kind. The two models carry
+    // the same three devices, which is why the split is identical.
+    assert.deepEqual(
+      [...widths].sort(),
+      [
+        ['12:600:1200', 56],
+        ['15:600:1200', 44],
+      ],
+      name,
+    );
+  }
+});
+
 test('a record reads under exactly one convention, or under none', skipWithoutLab(), () => {
   // The closure the whole decoder rests on: under the wrong convention every measured duration is the
   // constant half of the pair, so there is nothing to split and the reading is refused. If that failed

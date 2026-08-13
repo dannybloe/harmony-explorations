@@ -125,6 +125,8 @@ export const FRAME_COOKIE = new Uint8Array([0xed, 0xfe]);
 export const FRAME_END = new Uint8Array([0xef, 0xbe]);
 /** The terminator sits outside the frame's stated length, so a frame occupies `length + 2`. */
 export const FRAME_END_LENGTH = 2;
+/** Both cookies are four ASCII bytes, magic and end marker alike. */
+export const END_MARKER_LENGTH = 4;
 /** An empty frame: cookie, a three byte zero length, then the terminator five bytes in. */
 export const EMPTY_FRAME_LENGTH = 5;
 
@@ -761,14 +763,30 @@ export function clockRecordFields(builtAt: string): Uint8Array | undefined {
   ]);
 }
 
-export function parse(data: Uint8Array): Container {
+/**
+ * Where the container is inside a file: from its magic to four bytes past its end marker.
+ *
+ * Exported because it is the extent the **trailer checksum** is computed over, and two callers need
+ * it. `packages/probe` had its own idea of that extent, which was "the whole file", so on a raw flash
+ * read with fill past the end marker it read the stored `u16` out of the fill and reported a checksum
+ * failure for a container that is fine: two of the four Harmony 890 reads here, section 139. A
+ * contribution probe saying a good config is damaged is the worst direction for that error, since
+ * nobody chases a file the tool has already condemned.
+ *
+ * Throws for a file whose magic has no end marker after it, which is the case a caller has to handle
+ * rather than paper over: without the marker there is no extent, so there is nothing to checksum.
+ */
+export function containerExtent(data: Uint8Array): { family: Family; start: number; blob: Uint8Array } {
   const { family, offset: start } = findMagic(data);
   const endMarker = indexOf(data, bytesOf(family.endMarker), start);
   if (endMarker < 0) {
     throw new GspmError(`no ${family.endMarker} end marker found after ${family.magic}`);
   }
+  return { family, start, blob: data.subarray(start, endMarker + 4) };
+}
 
-  const blob = data.subarray(start, endMarker + 4);
+export function parse(data: Uint8Array): Container {
+  const { family, start, blob } = containerExtent(data);
   if (blob.length < 0x68) {
     throw new GspmError(`blob too short to hold a header: ${blob.length} bytes`);
   }
@@ -795,7 +813,9 @@ export function parse(data: Uint8Array): Container {
   // can only test once it is no longer the reading that produced the base. See
   // `recoverFlashBase`, and `docs/findings.md` section 117.
   const flashBase =
-    recoverFlashBase(blob, sections.map((s) => s.address)) ?? endAddr - (endMarker - start);
+    recoverFlashBase(blob, sections.map((s) => s.address)) ??
+    // `blob` ends four bytes past the end marker, so the marker's own offset is that less four.
+    endAddr - (blob.length - END_MARKER_LENGTH);
 
   const container = new Container({
     blobOffset: start,

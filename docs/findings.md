@@ -18389,12 +18389,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Eleven shipped readers answered plausibly where they should have refused, and three were rails
+## 139. Twelve shipped readers answered plausibly where they should have refused, and three were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Eleven defects came out of it that a sample could not have found, and they share one shape, which is
+Twelve defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18586,12 +18586,26 @@ database at all, so the first thing it did once it carried the header reading wa
 disagreeing: the header, the pointer count, the distinct blocks and the block bytes matched to the byte
 on every container, and `framed` did not, by 37 records on `arch8_config_a` and by one on `h600_config`.
 
-The two are not equally good, and only one of them had been checked against anything outside the code.
-Python's assumed **pulse distance** and counted pairs; `irframe.ts` tries both conventions and refuses a
-record that reads as neither, which is what let section 133 match frames against a catalogue of named
-commands and name 68 buttons. So the Python decoder is gone, `tools/ir_extract.py` prints durations
-rather than a bit count, and the vector carries the header reading and deliberately not the frame,
-because there is now one decoder and nothing to compare it against.
+**Which of the two was wrong is measured, not argued, and that is the part worth keeping.** Held over the
+same block words, so the header reading is constant and only the decoder varies, they agree on every
+pulse **distance** record and differ on **100 of the 241** both accept in each calibration config, by
+exactly one bit, every one of them a pulse **width** code.
+
+The tie is broken from outside the bytes, which is what the calibration pair is for. This decoder reads
+those records as **12 and 15 bits with a 600 and 1200 microsecond split**, 56 and 44 of each, which is
+textbook Sony SIRC: a 600 unit, a long mark for a one, and 12 and 15 bit variants. The removed one read
+11 and 14, which is not a width any protocol has. Python's assumed pulse distance and measured the
+**space**, so where the bit is the mark and the final space is the gap it tested the gap before pushing
+and dropped the last bit of every code.
+
+The mechanism was already written down, in `irframe.ts`'s own docstring on `decode`: the trailing gap
+arrives **with** the last bit, not instead of it, and testing the other half first made every 12 bit
+frame read as 11. The decoder that kept that lesson is the one that had been checked against a catalogue
+of named commands, so section 133's button names were produced by the right one.
+
+So the Python decoder is gone, `tools/ir_extract.py` prints durations rather than a bit count, and the
+vector carries the header reading and deliberately not the frame, because there is now one decoder and
+nothing to compare it against.
 
 **The control matters more than the finding here.** Reverting the Python side to one pointer group makes
 six vectors differ and the TypeScript test fails; that check did not exist this morning, and it is the
@@ -18690,6 +18704,35 @@ subprocess where the flag is on: with the flag off every one of these refuses at
 test asserting a throw would say nothing about the address. Two rows are allowed there and they are the
 two that should be.
 
+### 12. The contribution probe measured the file and reported it as the container
+
+`packages/probe` is the one package here meant to be run by somebody who has none of this: it produces
+a few kilobytes of JSON describing a config's shape and none of its contents, for publishing. Two of
+its numbers were not what they said.
+
+**The trailer checksum was computed over the whole file.** `parse` slices the container out, from its
+magic to four bytes past its end marker, and computes the checksum over that; `containerReport` worked
+on whatever bytes it was handed and read the stored `u16` at `length - 6`. So on a raw flash read with
+fill past the end marker it took the stored value **out of the fill**: `h890_config` and
+`h890_config_rescan` were reported as failing their checksum while the codec says both pass. A
+contribution probe condemning a good config is the worst direction for that error, because nobody
+chases a file the tool has already ruled out.
+
+Every test in that file passed an **already sliced** container, which is why none of them could catch
+it. The new one passes the file.
+
+**And the base did not say whether the anchor produced it.** Section 117 anchors the container's base on
+the clock record and keeps the marker subtraction as a fallback, and section 122 is the case where the
+anchor **refuses**: an arch 10 (Harmony 890) read duplicates whole 54 byte chunks, and on
+`h890_config_2_rescan` they land inside the container, so no candidate is `0x1000` aligned. The fallback
+then returns a number and the report published it looking exactly like a derived one. A wrong base does
+not error, it reads the neighbouring bytes, so `flashBaseAnchored` and `flashBaseAligned` are in the
+report now: a consumer that ignores them is at least ignoring something.
+
+`containerExtent` is exported from the codec and used by both, rather than the probe getting a second
+copy of the slicing. That is the same correction the base derivation itself needed in section 117, where
+`packages/probe` had kept the reading the codec had abandoned.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -18711,7 +18754,9 @@ two that should be.
 * **`make golden` compares the infrared reading**, which it did not, and that is what caught entry 8 on
   the day it was added. Reverting one line of the Python reader makes six vectors differ.
 * **There is one frame decoder**, `packages/codec/src/irframe.ts`. `src/harmony/gspm.py` reads durations
-  and does not decode them, and `tools/ir_extract.py` prints durations rather than a bit count.
+  and does not decode them, and `tools/ir_extract.py` prints durations rather than a bit count. The one
+  that was removed dropped the last bit of every pulse width code, 100 records per calibration config,
+  which the Sony widths settle.
 * **An action list holds 86947<!--fact:action_instructions--> instructions, not 87005**, because 58 of
   them were the argument of the instruction before them.
 * `make coverage` exits nonzero on an overlap, so the zero is enforced rather than reported.
@@ -18721,6 +18766,9 @@ two that should be.
   of what the rail allows rather than an assumption about what the firmware does.
 * **`readRam` refuses on arch 9 (Harmony 525)** instead of answering a cleared zero, and
   `bin/read-ram.ts` adopts the architecture the remote states so that the refusal can fire.
+* **The contribution probe's checksum is computed over the container**, not the file, so it agrees with
+  the codec on all nine samples checked including the four Harmony 890 reads. And its base says whether
+  the anchor produced it.
 
 ### What would falsify it
 

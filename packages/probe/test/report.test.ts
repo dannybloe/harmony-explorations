@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, require_, skipUnless } from '@harmony/lab';
 import { parse } from '@harmony/codec';
 
 import { buildReport, containerReport, probeBase, probeRemote, usbReport } from '../src/index.ts';
@@ -49,6 +49,46 @@ test('the report describes every sample, and derives what it needs', skipUnless(
     assert.equal(report.formatVersion, c.formatVersion, name);
     assert.equal(report.architecture, c.architecture ?? null, name);
   }
+});
+
+test('the report is about the container and not about the file it sits in',
+  skipUnless('one_config', 'h890_config', 'h890_config_rescan'), () => {
+  // **Every test above passes an already sliced container, which is why none of them could catch
+  // this**, section 139. `containerReport` worked on whatever bytes it was handed and read the stored
+  // trailer `u16` at `length - 6`, so on a raw flash read with fill past the end marker it took the
+  // value out of the fill: `h890_config` and `h890_config_rescan` were reported as failing their
+  // checksum while the codec, which slices, says both pass. A contribution probe condemning a good
+  // config is the worst direction for the error, because nobody chases a file the tool has ruled out.
+  for (const name of ['one_config', 'h890_config', 'h890_config_rescan']) {
+    // `require_` and not `load` plus a skip: the test names its samples up front, so a missing one is
+    // a failure rather than a claim quietly shrinking. `tests/test_toolchain.py` enforces this and it
+    // caught the first version of this very test.
+    const data = require_(name);
+    const whole = containerReport(data);
+    const sliced = containerReport(container(name) as Uint8Array);
+    // The file is longer than the container in each of these, which is what makes them the population.
+    assert.ok(data.length > (container(name) as Uint8Array).length, `${name} has fill past its marker`);
+    assert.equal(whole.trailerChecksumRecomputes, true, name);
+    assert.equal(whole.trailerChecksum, sliced.trailerChecksum, name);
+    assert.equal(whole.flashBase, sliced.flashBase, name);
+    // And the codec, independently, which is the point of agreeing rather than of being self consistent.
+    assert.equal(parse(data).checks['trailer_checksum_recomputes'], true, name);
+  }
+});
+
+test('a base the anchor refused is reported as refused, not as a base',
+  skipUnless('h890_config_2_rescan', 'one_config'), () => {
+  // Section 122: an arch 10 (Harmony 890) read duplicates whole 54 byte chunks, and on this one they
+  // land inside the container, so no candidate base is `0x1000` aligned and the anchor refuses. The
+  // fallback then returns something, and the report published it looking exactly like a derived
+  // number. A wrong base does not error, it reads the neighbouring bytes.
+  const damaged = containerReport(require_('h890_config_2_rescan'));
+  assert.equal(damaged.flashBaseAnchored, false, 'the anchor refuses on this read');
+  assert.equal(damaged.flashBaseAligned, false, 'and the fallback is not even aligned');
+  // The control, so the two flags are not simply always false.
+  const good = containerReport(require_('one_config'));
+  assert.equal(good.flashBaseAnchored, true);
+  assert.equal(good.flashBaseAligned, true);
 });
 
 test('an unknown magic still yields the shape', skipUnless('h700_config'), () => {
