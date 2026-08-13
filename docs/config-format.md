@@ -1445,7 +1445,7 @@ timings, the header and the repeat are protocol facts the bits do not carry.
 
 What that buys is comparison against a number stated outside the config. Matching a frame against the
 command catalogue of the account that generated a config, and that account's button maps, names the
-**button** a scan code belongs to: `reference/button-maps.md` has 28 buttons of a Harmony One and 32 of
+**button** a scan code belongs to: `reference/button-maps.md` has 31 buttons of a Harmony One and 35 of
 a Harmony 600. That needs the generating account, so it is a per model calibration and not a reader,
 and a scan code's **position** does not follow from it at all, section 133.
 

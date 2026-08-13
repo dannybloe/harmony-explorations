@@ -241,8 +241,8 @@ test('the reference tables describe both models and nothing else', () => {
   // Runs without a lab, because a fresh clone should still be told if the document loses a table.
   const tables = tablesFromReference();
   assert.deepEqual(Object.keys(tables).sort(), MODELS.map(([m]) => m).sort());
-  assert.equal(tables[MODELS[0]![0]]!.size, 28);
-  assert.equal(tables[MODELS[1]![0]]!.size, 32);
+  assert.equal(tables[MODELS[0]![0]]!.size, 31);
+  assert.equal(tables[MODELS[1]![0]]!.size, 35);
 });
 
 test(
@@ -292,7 +292,7 @@ test('the two models agree about every button they share', skipUnless('calibrati
   const a = byButton(one);
   const b = byButton(h600);
   const shared = [...a.keys()].filter((k) => b.has(k));
-  assert.equal(shared.length, 28, 'both tables name the same 28 buttons');
+  assert.equal(shared.length, 31, 'the One\'s buttons are all named on the 600 too');
   for (const button of shared) assert.equal(a.get(button), b.get(button), button);
   // And the difference is hardware: the 600 has the four teletext colour keys and the One does not.
   assert.deepEqual([...b.keys()].filter((k) => !a.has(k)).sort(), ['Blue', 'Green', 'Red', 'Yellow']);

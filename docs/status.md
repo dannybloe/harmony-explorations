@@ -264,8 +264,8 @@ config was made.
 the screen. The durations a record stores decode back into the **bit frame** the device sees, and a frame
 is a number that can be matched against a catalogue of named commands, where a duration stream could only
 ever be compared to another duration stream. Matching against the catalogue and button maps of the
-account that generated a config names the button a scan code belongs to: 28 buttons of a Harmony One and
-32 of a Harmony 600, in [reference/button-maps.md](../reference/button-maps.md), read only and with
+account that generated a config names the button a scan code belongs to: 31 buttons of a Harmony One and
+35 of a Harmony 600, in [reference/button-maps.md](../reference/button-maps.md), read only and with
 nothing written to either remote, which is what section 48 said needed a write into a running remote's
 memory. It is a calibration instrument rather than a reader, since it needs the generating account. And
 the **position** of a key still does not follow: under the electrical column formula the digits 1, 2 and 3
