@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, require_ } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
   Container,
@@ -960,8 +960,7 @@ test('the second operand space is a sub opcode field, and nothing lands outside 
   let noop = 0;
   let noopArgument = 0;
   for (const name of SECOND_SPACE_SAMPLES) {
-    const blob = load(name);
-    if (blob === undefined) continue;
+    const blob = require_(name);
     const c = parse(blob);
     const table = c.pointerArray(archSlot(c.architecture as number, 10));
     if (table === undefined) continue;
@@ -1172,14 +1171,13 @@ for (const name of UNFRAMED) {
   });
 }
 
-test('the framed containers span four architectures', () => {
+test('the framed containers span four architectures', skipUnless(...FRAMED.map(([name]) => name)), () => {
   // The house habit: a reading confirmed on one value of a variable is not confirmed. Sixteen of
   // the eighteen containers are framed and they cover arch 8, 9, 12 and 14, so the node layout is
   // not an arch 12 accident.
   const architectures = new Set<number>();
   for (const [name] of FRAMED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const arch = parse(data).architecture;
     if (arch !== undefined) architectures.add(arch);
   }

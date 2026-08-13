@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   ACTIVITY_STATE_NAME,
@@ -138,8 +138,7 @@ test('a level 1 name ends in the number of values its variable takes', skipWitho
   // value: the name says how many there are, and the two differ by one every time.
   let total = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     for (const variable of stateVariables(c)) {
       if (variable.stated === undefined) continue;
@@ -166,8 +165,7 @@ test('a record that enumerates anything enumerates every value the same number o
     const perValue = new Map<number, number>();
     let empty = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       for (const variable of stateVariables(c)) {
         const record = variable.record;
@@ -200,8 +198,7 @@ test('a state value is a transition carrying one action list instruction', skipW
   let indexed = 0;
   let sentinels = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const lists = c.pointerArray(archSlot(c.architecture as number, 10)) ?? [];
     for (const record of stateRecords(c) ?? []) {
@@ -233,8 +230,7 @@ test('the sentinels are negative and there are two of them', skipWithoutLab(), (
   // up is a change in the format and should fail here rather than be absorbed.
   const seen = new Set<number>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     for (const record of stateRecords(parse(data)) ?? []) {
       for (const value of record.values) {
         for (const field of [value.from, value.to]) if (field < 0) seen.add(field);
@@ -246,8 +242,7 @@ test('the sentinels are negative and there are two of them', skipWithoutLab(), (
 
 test('every container with a name tree names exactly one activity state', skipWithoutLab(), () => {
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const found = stateVariables(c)
       .filter((variable) => variable.name.split('_')[0] === ACTIVITY_STATE_NAME);
@@ -269,8 +264,7 @@ test('the activity variable is written as many times as it has values', skipWith
   // initial value and could not confirm, and `one_config` is the sample that separates it from
   // everything else because its `first` is 7 where its highest is 8. Section 121.
   for (const [name, , activities] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const variable = stateVariables(c)
       .find((v) => v.name.split('_')[0] === ACTIVITY_STATE_NAME) as { index: number };
@@ -327,8 +321,7 @@ test('every activity is started by a key, and all its keys are on one page', ski
   // properties of the result are asserted here because both would break an interface: every activity
   // is reachable, and an activity belongs to one screen rather than being scattered over several.
   for (const [name, , activities] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const bindings = activityBindings(c);
     const pages = new Map<number, Set<number>>();
@@ -359,8 +352,7 @@ test('an activity page hands its keys a fresh run of action lists', skipWithoutL
   let elsewhereContiguous = 0;
   let elsewhere = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const activityPages = new Set(activityBindings(c).map((one) => one.page));
     for (const [index, page] of modePages(c).entries()) {
@@ -396,8 +388,7 @@ test('arch 14 names every activity and the corpus names most of them', skipWitho
   let total = 0;
   const perArchitecture = new Map<number, { named: number; total: number }>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const rows = activityNames(c);
     const here = rows.filter((one) => one.name !== undefined).length;
@@ -521,8 +512,7 @@ test('every device in the corpus has a name, and most of them are stated rather 
     const perSource = new Map<string, number>();
     const perArchitecture = new Map<number, { named: number; total: number }>();
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const rows = devices(c);
       if (rows.length === 0) continue;
@@ -564,8 +554,7 @@ test('a device label is drawn on the screen as well, which is two encodings of o
     let exact = 0;
     let truncated = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const drawn = new Set<string>();
       for (const one of screenStrings(c, characterMap(c))) {
@@ -598,8 +587,7 @@ test('on arch 9 and arch 14 the device names its own mode, and the pairing is wh
     let shifted = 0;
     let shiftable = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       if (c.architecture !== 9 && c.architecture !== 14) continue;
       const titles = deviceModeTitles(c);
@@ -628,8 +616,7 @@ test('a device variable ends in a word and a config variable ends in a number', 
   // one.
   let checked = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const belong = new Set(deviceVariables(c).map((one) => one.index));
     for (const variable of stateVariables(c)) {
@@ -655,8 +642,7 @@ test('an action list that sends a code is walked into, not only looked at', skip
   // `0x7F` exists in the map, in every container that has one.
   let delegating = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const sent = infraredGroupsPerList(c);
     const lists = c.actionLists() ?? [];
@@ -680,8 +666,7 @@ test('an activity drives one to three of the config\'s own devices', skipWithout
   // would mean the activity does nothing.
   let checked = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const known = devices(c).length;
     if (known === 0) continue;
@@ -710,8 +695,7 @@ test('every button that sends a code sends it on the press, and every code exist
     let fromSets = 0;
     let handlers = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const sizes = devices(c).map((one) => one.codes);
       if (sizes.length === 0) continue;
@@ -753,8 +737,7 @@ test('the codes of a list are kept in the order it sends them', skipWithoutLab()
   // test that fails if somebody makes it a set again, which would pass every count above.
   let ordered = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     for (const [, codes] of infraredCodesPerList(c)) {
       if (codes.length < 2) continue;
@@ -779,8 +762,7 @@ test('the composed inventory says the same as the readers it composes', skipWith
   // thing it must not do is answer differently.
   let checked = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const whole = inventory(c);
     assert.equal(whole.architecture, c.architecture, name);
@@ -802,8 +784,7 @@ test('a screen key and a keypad key never share a scan code', skipWithoutLab(), 
   // key being labelled, and the arch 9 set is the one narrowed independently in the silhouette.
   const census = new Map<number, { soft: Set<number>; hard: Set<number>; shared: Set<number> }>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (c.architecture === undefined) continue;
     const seen = census.get(c.architecture)
@@ -831,8 +812,7 @@ test('a screen key and a keypad key never share a scan code', skipWithoutLab(), 
   // same column as two of the four rather than somewhere else entirely.
   const perConfig = new Map<number, Set<string>>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (c.architecture === undefined) continue;
     const seen = perConfig.get(c.architecture) ?? new Set<string>();
@@ -886,8 +866,7 @@ test('the labels agree with the activity names derived a different way', skipWit
   const disagreed: string[] = [];
   const perSource = new Map<string, number>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const labels = keyLabels(c);
     for (const activity of activityNames(c)) {
@@ -920,8 +899,7 @@ test('a row with two items has two keys that do different things', skipWithoutLa
   let twoItemsSame = 0;
   let oneItemSame = 0;
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const rows = SCREEN_ROWS[c.architecture ?? -1];
     if (rows === undefined) continue;
@@ -961,8 +939,7 @@ test('every key a screen labels gets a label, on every architecture', skipWithou
   // rectangle for and no text in.
   const per = new Map<number, { named: number; total: number }>();
   for (const [name] of INVENTORY) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (c.architecture === undefined) continue;
     const labels = keyLabels(c);
@@ -1007,8 +984,7 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
     // days since 1 January 2000 modulo 7, section 21, and that day was a Saturday.
     let agreeing = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       if (c.builtAt === undefined) continue;
       const records = stateRecords(c);
@@ -1131,8 +1107,7 @@ test('a page binds more keys than it sends codes with, which is why pageScans ex
     let pages = 0;
     let extra = 0;
     for (const [name] of INVENTORY) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const scans = pageScans(c);
       const sending = new Map<number, Set<number>>();

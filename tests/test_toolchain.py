@@ -322,5 +322,71 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
                         for name, found in sorted(counted.items())))
 
 
+#: TypeScript tests allowed to skip a missing sample inside a loop, with the reason. Both ask which
+#: **unit** is attached by matching a live read against whatever dumps are present, so a dump that is
+#: absent genuinely means "not identifiable by this one" rather than a claim quietly shrinking, and
+#: both callers handle the undefined they end up with.
+TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
+    'packages/corpus/test/derived-state.test.ts': 1,
+    'packages/usb/test/hardware.test.ts': 1,
+}
+
+
+class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
+    """The TypeScript half of `ASampleLoopStatesItsPopulation`, and it had the sharper version of it.
+
+    `const data = load(name); if (data === undefined) continue;` inside a loop is the same defect:
+    a lab missing one sample checks the rest and reports a pass. What made it worse here is that 52
+    of the 57 sites sat in tests already guarded with `skipWithoutLab()`, which exists precisely so
+    that a **present but incomplete** lab fails loudly rather than skipping, per its own docstring in
+    `packages/lab`. So the guard said "fail if a sample is missing" and the body said "carry on", and
+    the body won every time.
+
+    `require_` is the fix and it already existed, unused, documented for exactly this. Measured on
+    13 August 2026 with one config removed from the lab: `packages/codec`'s tests went from 17
+    failures to 53, so 36 tests had been passing on evidence they did not have.
+
+    A test with no guard at all is an ordinary claim about named samples and gets `skipUnless`
+    instead, which skips. Both are correct; which one applies is decided by whether the claim is
+    about the corpus.
+
+    This is a text rule rather than an AST one because the two lines are adjacent by construction,
+    and because a Python test can read TypeScript without adding a parser dependency to this side.
+    It cannot see a loop that loads through a helper, which is how `gspm.test.ts`'s `available()` hid
+    seven callers behind one function; that one was found by removing a sample and looking.
+    """
+
+    PATTERN = re.compile(r'^\s*const (\w+) = load\(')
+
+    def _offenders(self):
+        counted, scanned = {}, 0
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '*.ts'))):
+            relative = os.path.relpath(path, ROOT)
+            with open(path, encoding='utf-8') as handle:
+                lines = handle.read().splitlines()
+            scanned += 1
+            for at, line in enumerate(lines[:-1]):
+                match = self.PATTERN.match(line)
+                if not match:
+                    continue
+                guard = r'if \(%s === undefined\) (continue|return);' % match.group(1)
+                if re.match(guard, lines[at + 1].strip()):
+                    counted.setdefault(relative, []).append(at + 1)
+        return counted, scanned
+
+    def test_no_test_skips_a_missing_sample_inside_a_loop(self):
+        counted, scanned = self._offenders()
+        self.assertGreater(scanned, 20, 'only %d TypeScript test files found' % scanned)
+        self.assertEqual(
+            {name: len(lines) for name, lines in counted.items()},
+            TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
+            'these load a sample and skip the iteration when it is absent, so an incomplete lab '
+            'shrinks the claim and still reports a pass: %s. Use require_(name) and let the test '
+            'fail, or skipUnless(...) on the test if the claim is about named samples rather than '
+            'the corpus; a deliberate exception goes in the dict above with its reason.'
+            % '; '.join('%s:%s' % (name, ','.join(str(n) for n in lines))
+                        for name, lines in sorted(counted.items())))
+
+
 if __name__ == '__main__':
     unittest.main()

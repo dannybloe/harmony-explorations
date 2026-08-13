@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   BITMAP_HEADER,
   BITMAP_NOTHING,
@@ -146,8 +146,7 @@ test('the set header byte below the height is the first glyph code', skipWithout
   // rather than excluded from it, and asserted to be the exception: a corpus that agrees with
   // itself is what hid this field.
   for (const [name] of DECODED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     for (const font of fontSets(parse(data)) ?? []) {
       if (name === 'h525_safemode_ahcm') {
         assert.ok(font.first === 32 || font.first === 72, `${name} at ${font.address}`);
@@ -166,8 +165,7 @@ test('the count offset is not an architecture property', skipUnless('one_safemod
   const font = (fontSets(safe) ?? [])[0];
   assert.equal(safe.architecture, 12);
   assert.deepEqual([font?.countAt, font?.count], [2, 46]);
-  const user = load('one_config');
-  if (user === undefined) return;
+  const user = require_('one_config');
   const other = (fontSets(parse(user)) ?? [])[0];
   assert.equal(other?.countAt, 1, 'the same architecture, the other shape');
 });
@@ -217,8 +215,7 @@ test(`the corpus decodes ${CORPUS_PROGRAMS} programs, as Python reports`, skipWi
   let total = 0;
   let counted = 0;
   for (const [name] of DECODED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     counted += 1;
     total += reachablePrograms(parse(data)).size;
   }
@@ -230,8 +227,7 @@ test(`the corpus decodes ${CORPUS_GLYPHS} glyphs, as Python reports`, skipWithou
   let total = 0;
   let counted = 0;
   for (const [name] of DECODED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     counted += 1;
     total += (glyphs(parse(data)) ?? []).reduce((n, set) => n + set.length, 0);
   }
@@ -248,8 +244,7 @@ test(`the corpus resolves ${CORPUS_STRING_CODES} inline string codes, as Python 
     // comparable.
     let codes = 0;
     for (const [name] of DECODED) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       if (c.architecture === undefined || !IMAGE_ARCHITECTURES.has(c.architecture)) continue;
       const sets = fontSets(c);
@@ -585,8 +580,7 @@ test('an arch 9 row draw is opcode 22 then opcode 3, and the row index is the op
     // which is why 1856 instances could not tell them apart.
     for (const [name, expected, pictures] of
       [['h525_config', 1080, 4], ['h525_config_2', 776, 5]] as const) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const bank = pictureBank(c, namedContentEnd(c)) ?? [];
       const start = (c.sections[17]?.address ?? 0) + PICTURE_BANK_BIAS;

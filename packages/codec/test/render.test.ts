@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   GLYPH_ADVANCE,
   SCREEN_DRAW_IMAGE,
@@ -58,8 +58,7 @@ test('every page of every config draws with nothing left unresolved', skipWithou
   let missing = 0;
   const architectures = new Set<number>();
   for (const name of SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (SCREEN_SIZES[c.architecture ?? -1] === undefined) continue;
     architectures.add(c.architecture as number);
@@ -109,8 +108,7 @@ test('a pixel is big endian, and the little endian reading draws a rainbow', ski
   let swappedWins = 0;
   const architectures = new Set<number>();
   for (const name of SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     // Arch 9 stores one bit a pixel, so it has no byte order to get wrong.
     if (c.architecture === 9 || SCREEN_SIZES[c.architecture ?? -1] === undefined) continue;
@@ -146,8 +144,7 @@ test('the display size is the size of the config\'s own full screen pictures', s
   // program draws at the origin is the display, and the same number turns up in hundreds of pictures
   // per container. This is the test that would fail first if a new architecture were added by guess.
   for (const name of SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const size = SCREEN_SIZES[c.architecture ?? -1];
     if (size === undefined) continue;
@@ -285,8 +282,7 @@ test('the arms of a switch are the values that select them', skipWithoutLab(), (
   // wrong screen: the label comes from one reading and the target from the other.
   let switches = 0;
   for (const name of SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     for (const [, instructions] of reachablePrograms(c)) {
       for (const instruction of instructions) {

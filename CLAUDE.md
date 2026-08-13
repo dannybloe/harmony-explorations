@@ -306,9 +306,20 @@ about everywhere else**, so the check exists now. The cause is the same
 on both sides. A skip raised inside `subTest`, or a per sample `skipUnless`, skips that sample and
 lets the loop finish, so a corpus wide total afterwards is asserted against zero. Guard such a test
 up front with `lab.require(...)` in Python or `skipUnless(...)` in TypeScript, listing the samples once
-so the guard and the loop cannot drift apart. The TypeScript one
+so the guard and the loop cannot drift apart. The TypeScript `skipWithoutLab()`
 deliberately skips only when there is **no lab at all**, because a lab that is present and missing
 a sample should still fail loudly.
+
+**That intent was defeated in every test that carried it, and finding out cost nothing but removing one
+sample.** 52 of the 57 TypeScript sites sat inside `skipWithoutLab()` tests and then wrote
+`const data = load(name); if (data === undefined) continue;`, so the guard said "fail on an incomplete
+lab" and the body carried on. `require_` in `packages/lab` is the fix and it **already existed, unused,
+with a docstring saying exactly this**. Measured with one config removed: `packages/codec` went from 17
+failures to 53, so 36 tests had been passing on evidence they did not have. So the rule is per claim,
+not per file: a claim about the corpus takes `skipWithoutLab()` **and** `require_`, and a claim about
+named samples takes `skipUnless(...)`, which skips. Two tests are allowed the old shape and named in
+`TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE`, because they ask which **unit** is attached by matching
+against whatever dumps are present.
 
 **`make test-nolab` cannot catch the case in between, by construction, and `make test-partial` is
 that half**, added on 13 August 2026 in `make all`: it runs the suite against a lab holding **one**

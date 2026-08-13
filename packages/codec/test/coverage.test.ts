@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   BINDING_SLOT,
   CLOCK_RECORD_LENGTH,
@@ -176,8 +176,7 @@ test('the gaps and the accounted bytes partition the container', skipWithoutLab(
   // report, so this checks the untruncated arithmetic by asking that no gap and no claim
   // disagree about the total.
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const report = coverage(parse(data));
     const gapped = report.gaps.reduce((n, g) => n + g.length, 0);
     assert.ok(
@@ -239,8 +238,7 @@ test('base slot 8 is its leading action list and every mode page list', skipWith
   // leading list is a structure rather than a convenient four bytes: section 27 derived its length
   // from `1 + 3 * count` and the mode pages, which know nothing about it, land exactly on its end.
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (c.architecture === undefined) continue;
     const slot = archSlot(c.architecture, BINDING_SLOT);
@@ -277,8 +275,7 @@ test('base slot 0 is claimed with the terminator that sits outside its length',
     // The two bytes every container was short. `frameLength` stops at the last node by design,
     // because that is what the field states; the frame is two bytes longer than the field.
     for (const [name] of ACCOUNTED) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const claim = claims(c).find((x) => x.owner === 'slot-0-tree');
       if (c.frameLength === undefined) {
@@ -300,8 +297,7 @@ test('an empty counted array is claimed, and only when it is nothing but zeros',
     // least once per container. The guard is what keeps it from becoming a way to claim any short
     // section: a single non zero byte and the section stays in the gaps where it belongs.
     for (const [name] of ACCOUNTED) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       let empties = 0;
       for (const claim of claims(c)) {
@@ -323,8 +319,7 @@ test('every user config is accounted for to the byte', skipWithoutLab(), () => {
   const open = 'h525_safemode_ahcm';
   let checked = 0;
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const report = coverage(parse(data));
     if (name === open) {
       assert.ok(report.accounted < report.total, `${open}: this one is the work that is left`);
@@ -366,8 +361,7 @@ test('a screen program that ends by transferring still carries its terminator',
       h525_config_2: 0,
     };
     for (const [name, count] of Object.entries(expected)) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       let dead = 0;
       for (const [, program] of reachablePrograms(c)) {
@@ -385,8 +379,7 @@ test('a page record is preceded by a program terminator, reached or not', skipWi
   // in front of a mode page record is zero in every container, and where it is not, the program
   // before it ends with a jump that abuts the record. 36 arch 12 pages do that.
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const dead = new Set<number>();
     for (const [, program] of reachablePrograms(c)) {
@@ -428,8 +421,7 @@ test('base slot 3 is fourteen bytes, three of them zero past the record', skipWi
   // zeros rather than carrying them: a tail that is not zero should fail rather than pass quietly.
   let seen = 0;
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const claim = claims(c).find((x) => x.owner === 'slot-3-clock');
     if (claim === undefined) continue;
@@ -448,8 +440,7 @@ test('base slot 17 is two zero bytes where it names the picture bank', skipWitho
   // empty count accounts for, and both are zero in all thirteen containers that do this.
   let seen = 0;
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     if (c.architecture === 12) continue;
     const claim = claims(c).find((x) => x.owner === 'slot-17-table');
@@ -479,8 +470,7 @@ test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWit
   const known = [0xff, 0x00, 0xff, 0x00, 0, 0, 0, 0, 0x55, 0x55, 0x55, 0x55];
   let arch12 = 0;
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const spare = claims(c).filter((x) => x.owner === 'slot-15-spare');
     if (c.architecture !== 12) {
@@ -538,8 +528,7 @@ test('the key table claims the mode record it is, in whichever form', skipWithou
   // bytes each came from. Arch 9 has no key table at all, so there the record is claimed as an
   // ordinary mode record and skipping it left 189 bytes of the safe mode container unaccounted.
   for (const [name] of ACCOUNTED) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const first = (modeRecords(c) ?? [])
       .find((record) => c.blobOffsetOf(record.start) === c.markerOffset + 4);

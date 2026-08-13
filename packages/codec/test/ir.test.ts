@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 
 import {
   IR_CARRIER_AT,
@@ -104,8 +104,7 @@ for (const name of WITH_INFRARED) {
 test('the corpus spans architectures, so the carrier is not one model', skipWithoutLab(), () => {
   const seen = new Set<number>();
   for (const name of WITH_INFRARED) {
-    const bytes = load(name);
-    if (bytes === undefined) continue;
+    const bytes = require_(name);
     const c = parse(payloadOf(bytes));
     if (carriers(c).length > 0 && c.architecture !== undefined) seen.add(c.architecture);
   }
@@ -140,8 +139,7 @@ test('a stored period is the truncated nanosecond period of a round frequency', 
 test('the periods the arithmetic predicts are the ones the corpus carries', skipWithoutLab(), () => {
   const found = new Set<number>();
   for (const name of WITH_INFRARED) {
-    const bytes = load(name);
-    if (bytes === undefined) continue;
+    const bytes = require_(name);
     for (const { periodNs } of carriers(parse(payloadOf(bytes)))) found.add(periodNs);
   }
   assert.ok(found.size > 0, 'no sample available');
@@ -281,8 +279,7 @@ test('a pointer group takes one of four shapes, and slot 1 is the one that repea
     // and it has to be stable: a reader that lost a pointer would move these four numbers.
     const shapes = new Map<string, number>();
     for (const name of WITH_INFRARED) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       for (const group of irGroups(c) ?? []) {
         for (const address of group.addresses) {
@@ -317,8 +314,7 @@ test('a held key repeats at the length of its second block, which is tens of mil
     let fastest = Infinity;
     let slowest = 0;
     for (const name of WITH_INFRARED) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       for (const group of irGroups(c) ?? []) {
         for (const address of group.addresses) {

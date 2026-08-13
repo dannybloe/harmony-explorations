@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_TABLE_SLOT,
   ARCH_RECORD_SLOT,
@@ -24,7 +24,6 @@ import {
   FLASH_BASE_ALIGNMENT,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
-  TRAILER_CHECKSUM_SEED,
   archSlot,
   baseSlot,
   findClockRecords,
@@ -76,16 +75,23 @@ const USER_CONFIGS = NAMES.filter(
 );
 
 function userConfigs(): Array<{ name: string; container: Container; expected: Expectation }> {
-  return available().filter((s) => USER_CONFIGS.includes(s.name));
+  return everySample().filter((s) => USER_CONFIGS.includes(s.name));
 }
 
-/** Every sample that is actually on this machine, parsed. */
-function available(): Array<{ name: string; container: Container; expected: Expectation }> {
+/**
+ * Every sample, parsed, or a throw naming the one that is missing.
+ *
+ * **It used to skip whatever was absent and was called `available`**, which is the shape no static
+ * rule can see: the loading happens in a helper, so a test looked guarded while quietly asserting
+ * over a subset. Every caller is a `skipWithoutLab()` test, and that guard means the claim is about
+ * the corpus, so an incomplete lab has to fail rather than shrink the claim. `require_` is what makes
+ * that real. Measured on 13 August 2026: with one sample removed from the lab, the codec's tests went
+ * from 17 failures to 53.
+ */
+function everySample(): Array<{ name: string; container: Container; expected: Expectation }> {
   const out: Array<{ name: string; container: Container; expected: Expectation }> = [];
   for (const name of NAMES) {
-    const data = load(name);
-    if (data === undefined) continue;
-    out.push({ name, container: parse(data), expected: EXPECTED[name] as Expectation });
+    out.push({ name, container: parse(require_(name)), expected: EXPECTED[name] as Expectation });
   }
   return out;
 }
@@ -141,8 +147,7 @@ for (const name of NAMES) {
 }
 
 test('end_addr locates the end marker', skipWithoutLab(), () => {
-  const samples = available();
-  assert.ok(samples.length > 0, 'no samples available at all');
+  const samples = everySample();
   for (const { name, container: c } of samples) {
     const off = c.endAddr - c.flashBase;
     assert.equal(
@@ -154,12 +159,11 @@ test('end_addr locates the end marker', skipWithoutLab(), () => {
 });
 
 test('the corpus spans more than one of everything', skipWithoutLab(), () => {
-  const samples = available();
-  if (samples.length < NAMES.length) {
-    // Deliberately not a skip: the claim is about the corpus, and a partial corpus cannot make
-    // it. Reporting how many were found is more useful than a silent pass.
-    assert.fail(`only ${samples.length} of ${NAMES.length} samples present, cannot judge spread`);
-  }
+  // The count check that used to be here is `everySample`'s job now: it throws with the missing
+  // sample's name, which is a better message than a count and covers all seven of its callers
+  // rather than this one.
+  const samples = everySample();
+  assert.equal(samples.length, NAMES.length);
   const distinct = <T>(pick: (s: (typeof samples)[number]) => T) =>
     new Set(samples.map(pick)).size;
   assert.ok(distinct((s) => s.container.family.magic) >= 3, 'container cookies');
@@ -173,7 +177,7 @@ test('the architecture is not derivable from the cookie', skipWithoutLab(), () =
   // The reason slot 1 is read at all: GSPM covers both arch 12 and arch 14, so a per cookie
   // table would be wrong for one of them.
   const byCookie = new Map<string, Set<number | undefined>>();
-  for (const { container: c } of available()) {
+  for (const { container: c } of everySample()) {
     const set = byCookie.get(c.family.magic) ?? new Set<number | undefined>();
     set.add(c.architecture);
     byCookie.set(c.family.magic, set);
@@ -184,7 +188,7 @@ test('the architecture is not derivable from the cookie', skipWithoutLab(), () =
 });
 
 test('arch 14 records 54 scan codes times three event types', skipWithoutLab(), () => {
-  const samples = available().filter((s) => s.expected.architecture === 14 && s.container.keys.length > 0);
+  const samples = everySample().filter((s) => s.expected.architecture === 14 && s.container.keys.length > 0);
   assert.ok(samples.length > 0, 'no arch 14 config present');
   for (const { name, container: c } of samples) {
     const byEvent = new Map<number, number[]>();
@@ -205,7 +209,7 @@ test('arch 14 records 54 scan codes times three event types', skipWithoutLab(), 
 });
 
 test('arch 12 and arch 8 record presses only', skipWithoutLab(), () => {
-  const samples = available().filter(
+  const samples = everySample().filter(
     (s) => [8, 12].includes(s.expected.architecture) && s.container.keys.length > 10,
   );
   assert.ok(samples.length > 0, 'no arch 8 or arch 12 config present');
@@ -292,11 +296,10 @@ test('the opcode inventory differs between architectures', skipWithoutLab(), () 
   assert.ok([...h700].filter((o) => h525.has(o)).length > 8, 'and yet they share a core');
 });
 
-test('a disagreeing pair of architecture bytes is not reported as an architecture', () => {
+test('a disagreeing pair of architecture bytes is not reported as an architecture', skipUnless('h700_config'), () => {
   // Slot 1 states the architecture twice. Corrupting one copy has to produce "unstated" rather
   // than a plausible number, because a coincidence reported as a fact is the failure mode here.
-  const original = load('h700_config');
-  if (original === undefined) return;
+  const original = require_('h700_config');
   const good = parse(original);
   const off = (good.fileOffset(good.sections[1]?.address as number) as number) + 1;
   const broken = new Uint8Array(original);
@@ -310,7 +313,7 @@ test('every sample carries a slot 3 timestamp, and the cookie pair is unique in 
   // Unlike slot 0's 0xFEED, which turns up by chance about once per 64 KiB, this pair nine bytes
   // apart occurs exactly once in every blob including the One's 1.6 MB one. That is why the
   // record needs no length field to be recognised.
-  const samples = available();
+  const samples = everySample();
   assert.ok(samples.length >= 9, 'not enough samples for this to mean anything');
   for (const { name, container } of samples) {
     assert.notEqual(container.builtAt, undefined, `${name} has no timestamp`);
@@ -338,11 +341,10 @@ test('the two One factory configs agree on their timestamp to the second', () =>
   assert.equal(parse(a).builtAt, '2007-10-24T02:22:08');
 });
 
-test('a day of week that disagrees with the date is refused', () => {
+test('a day of week that disagrees with the date is refused', skipUnless('one_config'), () => {
   // The check lives in the parser, so a record that fails it reads as absent rather than as a
   // date nobody verified. Mirrors the same test in tests/test_gspm.py.
-  const original = load('one_config');
-  if (original === undefined) return;
+  const original = require_('one_config');
   const good = parse(original);
   const off = good.fileOffset(good.sections[CLOCK_RECORD_SLOT]?.address as number) as number;
   const broken = new Uint8Array(original);
@@ -352,13 +354,12 @@ test('a day of week that disagrees with the date is refused', () => {
   assert.equal(c.checks['slot3_is_a_timestamp'], false);
 });
 
-test('the timestamp is a bare local time, with no timezone attached', () => {
+test('the timestamp is a bare local time, with no timezone attached', skipUnless('one_config'), () => {
   // Formatted by hand rather than through Date.prototype.toISOString, because the value carries
   // no zone: it is whatever clock wrote it. Going through Date would attach one and the golden
   // vectors would then depend on where the tests run, which is the sort of failure that only
   // shows up on somebody else's machine.
-  const data = load('one_config');
-  if (data === undefined) return;
+  const data = require_('one_config');
   const at = parse(data).builtAt as string;
   assert.match(at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
   assert.ok(!at.endsWith('Z'), 'no zone designator');
@@ -381,29 +382,29 @@ const TRAILER_SAMPLES = [
   'one_safemode',
 ];
 
+// This is the whole data side claim, and deliberately the only one here. A test called `without the
+// seed nothing matches, which is what pins 0x4321` used to sit below it and was **algebra rather than
+// a measurement**: `trailerChecksum(blob) ^ SEED` is the unseeded body XOR, so requiring it to differ
+// from the stored value reduces to `SEED != 0` and held for any nonzero seed whatever the bytes were.
+// The checksum is XOR linear in the seed, so one container determines it exactly and this test over
+// fourteen already carries that; the golden vectors carry `trailer_checksum` in both directions, so
+// the two implementations cannot drift apart on it either.
+//
+// Where the value comes from is a firmware question and cannot be asked from here, since this package
+// has no disassembler and must not grow a second one. `tests/test_gspm.py` decodes the boot validator's
+// two literals on three images. Section 41.
 test('the trailer checksum recomputes on every container in the corpus', skipWithoutLab(), () => {
   for (const name of TRAILER_SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     assert.equal(trailerChecksum(c.blob), c.trailerChecksum, name);
     assert.equal(c.checks['trailer_checksum_recomputes'], true, name);
   }
 });
 
-test('without the seed nothing matches, which is what pins 0x4321', skipWithoutLab(), () => {
-  for (const name of TRAILER_SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
-    const c = parse(data);
-    assert.notEqual(trailerChecksum(c.blob) ^ TRAILER_CHECKSUM_SEED, c.trailerChecksum, name);
-  }
-});
-
-test('a flipped byte is caught', () => {
+test('a flipped byte is caught', skipUnless('h600_safemode_gspm'), () => {
   // A word XOR misses a byte swap but not a changed byte, which is the case that matters.
-  const data = load('h600_safemode_gspm');
-  if (data === undefined) return;
+  const data = require_('h600_safemode_gspm');
   const c = parse(data);
   const damaged = Uint8Array.from(c.blob);
   damaged[0x40] = damaged[0x40]! ^ 0x01;
@@ -419,8 +420,7 @@ test('a three byte architecture record carries no version word',
     assert.equal(c.sectionLength(ARCH_RECORD_SLOT), 3);
     assert.equal(c.architecture, 9);
     assert.equal(c.versionWord, undefined);
-    const full = load('h525_config');
-    if (full === undefined) return;
+    const full = require_('h525_config');
     // The negative: the same architecture with room for the word does carry one.
     assert.notEqual(parse(full).versionWord, undefined);
   });
@@ -433,8 +433,7 @@ test('a three byte architecture record carries no version word',
 test('every container holds exactly one validating clock record', skipWithoutLab(), () => {
   // The premise. One record is what makes it an anchor rather than a search.
   for (const name of NAMES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     assert.equal(findClockRecords(parse(data).blob).length, 1, name);
   }
 });
@@ -444,8 +443,7 @@ test('the clock anchor recovers every base the marker subtraction got right',
     // The calibration, and it is the argument: every container whose base was already established
     // is recovered, across five architectures and six distinct bases.
     for (const name of NAMES) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const anchored = recoverFlashBase(c.blob, c.sections.map((s) => s.address));
       assert.equal(anchored, EXPECTED[name]?.base, name);

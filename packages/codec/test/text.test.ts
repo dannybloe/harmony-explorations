@@ -12,7 +12,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { load, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ALPHABETS,
   ASCII_FIRST_CODE,
@@ -129,8 +129,7 @@ test('the alphabets span four architectures and seven typefaces', skipWithoutLab
   assert.equal(ALPHABETS.length, 7);
   const architectures = new Set<number | undefined>();
   for (const name of SAMPLES) {
-    const blob = load(name);
-    if (blob === undefined) continue;
+    const blob = require_(name);
     architectures.add(parse(blob).architecture);
   }
   assert.deepEqual([...architectures].sort((a, b) => (a ?? 0) - (b ?? 0)), [8, 9, 12, 14]);
@@ -325,8 +324,7 @@ test('the commoner text opcode names a string another program carries', skipUnle
   let onAPayload = 0;
   let distinct = 0;
   for (const name of SAMPLES) {
-    const data = load(name);
-    if (data === undefined) continue;
+    const data = require_(name);
     const c = parse(data);
     const programs = reachablePrograms(c);
     // Every place an inline string's glyphs begin: the instruction, plus its two position bytes.
@@ -373,8 +371,7 @@ test('a referenced draw is counted and marked, and there are more of them than i
     let inline = 0;
     let referenced = 0;
     for (const name of SAMPLES) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const coverage = textCoverage(c);
       inline += coverage.strings - coverage.referenced;
@@ -410,8 +407,7 @@ test('a code that only ever appears in a referenced string is still a drawn code
     // assertion is the containment: every code an inline string draws is in the set, and so is every
     // code a referenced one draws.
     for (const name of SAMPLES) {
-      const data = load(name);
-      if (data === undefined) continue;
+      const data = require_(name);
       const c = parse(data);
       const codes = drawnCodes(c);
       for (const [, instructions] of reachablePrograms(c)) {
