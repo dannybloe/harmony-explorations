@@ -21,6 +21,7 @@ import {
   architectureFromVersion,
   decodeReply,
   isHarmony,
+  nibbleForPayloadLength,
   skinId,
   softwareTypeFromVersion,
   transportOver,
@@ -64,19 +65,19 @@ test('a reply that arrives after a silent poll is still received', () => {
   // The firmware parses a command, sets a state, and returns; the main loop acts on it later. So
   // the first read after a write is expected to come back empty.
   const { transport } = scriptedRemote([report(0xc2, MISC_RAM, 0x2a)], 2);
-  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 4 });
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 4, architecture: 12 });
   return remote.readRam(0x0ec9).then((value) => assert.equal(value, 0x2a));
 });
 
 test('a remote that never answers produces an error naming the command', async () => {
   const { transport } = scriptedRemote([], 99);
-  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2 });
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 2, architecture: 12 });
   await assert.rejects(() => remote.readRam(0x0ec9), /no reply to command 0xb3/);
 });
 
 test('a RAM read sends selector 0x07 and checks the echo', async () => {
   const { transport, written } = scriptedRemote([report(0xc2, MISC_RAM, 0x5a)], 0);
-  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 12 });
   assert.equal(await remote.readRam(0x0ec9), 0x5a);
   assert.deepEqual([...(written[0] as Uint8Array).subarray(0, 4)], [0xb3, 0x07, 0x0e, 0xc9]);
 });
@@ -85,7 +86,7 @@ test('a RAM read that echoes a different selector is an error, not a value', asy
   // The echo is the only thing distinguishing the byte asked for from a byte the firmware felt
   // like sending, and accepting the wrong one would look exactly like a successful read.
   const { transport } = scriptedRemote([report(0xc2, 0x06, 0x5a)], 0);
-  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 12 });
   await assert.rejects(() => remote.readRam(0x0ec9), /echoed selector 0x6/);
 });
 
@@ -115,10 +116,39 @@ test('a RAM read still works where the selector has a body', async () => {
     const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture });
     assert.equal(await remote.readRam(0x0ec9), 0x5a, `architecture ${architecture}`);
   }
-  // And with no architecture stated it answers too, because a caller who has not read a version block
-  // yet is the ordinary case and the refusal is about arch 9 specifically.
+  // **And with no architecture stated it now refuses**, which is the reverse of what this asserted
+  // until section 139. The old claim was that an unpinned caller is the ordinary case and the
+  // refusal is about arch 9 (Harmony 525) specifically, and that reasoning has a hole in it: with
+  // nothing pinned the arch 9 branch cannot fire at all, so a Harmony 525 read through an unpinned
+  // handle got the byte the refusal exists to prevent. Which byte carries the value depends on the
+  // architecture, so answering without knowing it is answering from arch 12 (Harmony One)'s rule
+  // by default.
   const { transport } = scriptedRemote([report(0xc2, MISC_RAM, 0x5a)], 0);
-  assert.equal(await new HarmonyRemote(transport, { timeoutMs: 1 }).readRam(0x0ec9), 0x5a);
+  const unpinned = new HarmonyRemote(transport, { timeoutMs: 1 });
+  await assert.rejects(() => unpinned.readRam(0x0ec9), /architecture is unknown/);
+});
+
+test('reading a version block tells the handle which architecture it is talking to', async () => {
+  // `useArchitecture` was opt-in and three of the four callers that read a version block did not
+  // call it, so `regionOf` kept falling back to arch 12 (Harmony One) while the reply in hand said
+  // 9. `getVersion` narrows it now. Section 139.
+  const fields = [1, 2, 3, 4, 0x90, 6, 7, 8, 9, 10, 11, 12];
+  const { transport } = scriptedRemote([report(0x28, ...fields)], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  await remote.getVersion();
+  // Field 4's high nibble is 9, so the arch 9 (Harmony 525) RAM refusal fires where before the
+  // handle had no idea and answered from the default.
+  await assert.rejects(() => remote.readRam(0x0ec9), /no READ_MISC body for selector 0x7/);
+});
+
+test('a pinned architecture survives the remote disagreeing with it', async () => {
+  // Narrowing, never overriding: a caller who pinned one keeps it, so a script pinned to the wrong
+  // architecture still gets the refusal it asked for rather than a silent correction.
+  const fields = [1, 2, 3, 4, 0x90, 6, 7, 8, 9, 10, 11, 12];
+  const { transport } = scriptedRemote([report(0x28, ...fields), report(0xc2, MISC_RAM, 0x5a)], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 12 });
+  await remote.getVersion();
+  assert.equal(await remote.readRam(0x0ec9), 0x5a);
 });
 
 test('a version block is twelve bytes', async () => {
@@ -138,26 +168,47 @@ test('a version block is twelve bytes', async () => {
  * asserting the author's expectation, and the only way out of that is to ask the device.
  */
 function flashChunk(sequence: number, data: number[]): Uint8Array {
-  const nibble = data.length + 1 === 63 ? 0xa : data.length + 1;
+  const nibble = nibbleForPayloadLength(data.length + 1);
   return report(FLASH_DATA | nibble, sequence, ...data);
 }
 
 /** The end of a flash read: nibble 0, and the command byte follows it regardless. */
 const FLASH_DONE = report(0xf0, READ_FLASH);
 
-test('a flash read assembles its chunks and stops at the count asked for', async () => {
-  // The remote sends 63 byte chunks. The last one overshoots the request, and the extra bytes are
-  // dropped rather than returned: a caller asking for 100 bytes and getting 126 would write 26
-  // bytes of somebody else's data into whatever it was filling.
+test('a flash read assembles its chunks and encodes its request', async () => {
+  // **This used to script a full final chunk and assert the surplus was dropped**, on the comment
+  // "the remote sends 63 byte chunks, the last one overshoots the request". The device does not:
+  // `docs/usb-protocol.md` records 256 requested and 256 delivered as 62+62+62+62+6+2, measured on
+  // hardware, so the final chunk is short and its length nibble says so. The fixture was an
+  // assumption written as evidence, contradicted by a measurement already in the repository, and it
+  // is what let `Math.min` discard a surplus in silence. Section 139.
+  // 62 + 30 + 6 + 2, which is how the device splits 100: the length nibble encodes 0 to 7, 15, 31
+  // and 63 payload bytes and nothing else, so a remainder comes off in those steps. The same shape
+  // as the 256 the protocol document records as 62+62+62+62+6+2.
   const first = flashChunk(0x01, new Array(62).fill(0xaa));
-  const second = flashChunk(0x12, new Array(62).fill(0xbb));
-  const { transport, written } = scriptedRemote([first, second, FLASH_DONE], 0);
+  const second = flashChunk(0x12, new Array(30).fill(0xbb));
+  const third = flashChunk(0x23, new Array(6).fill(0xcc));
+  const fourth = flashChunk(0x34, new Array(2).fill(0xdd));
+  const { transport, written } = scriptedRemote([first, second, third, fourth, FLASH_DONE], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
   const data = await remote.readFlash(0x030000, 100);
   assert.equal(data.length, 100);
   assert.equal(data[61], 0xaa);
   assert.equal(data[62], 0xbb, 'the second chunk continues where the first stopped');
+  assert.equal(data[92], 0xcc);
+  assert.equal(data[99], 0xdd, 'and the last chunk lands on the final byte');
   assert.deepEqual([...(written[0] as Uint8Array).subarray(0, 6)], [0x55, 0x03, 0x00, 0x00, 0x00, 0x64]);
+});
+
+test('a chunk carrying more than was asked for is an error, not a truncation', async () => {
+  // The other direction of the pipe hygiene the completion check guards: surplus bytes are evidence
+  // that the request and the reply disagree about the length, and `Math.min` threw that evidence
+  // away while reporting a clean transfer. Section 139.
+  const first = flashChunk(0x01, new Array(62).fill(0xaa));
+  const second = flashChunk(0x12, new Array(62).fill(0xbb));
+  const { transport } = scriptedRemote([first, second, FLASH_DONE], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  await assert.rejects(() => remote.readFlash(0x030000, 100), /disagree about the length/);
 });
 
 test('a flash read that comes up short says so instead of returning zeros', async () => {
@@ -504,4 +555,36 @@ test('useArchitecture narrows and never overrides what a caller pinned', async (
   const learned = new HarmonyRemote(scriptedRemote([], 0).transport, { timeoutMs: 1, idlePolls: 1 });
   learned.useArchitecture(9);
   await assert.rejects(() => learned.readFlash(0x820000, 16), /returned 0 of 16 bytes/);
+});
+
+test('an internal read may not run off the end of its own page', async () => {
+  // The `0xFFC0` offset bound was justified in comment by "an offset plus one report cannot leave
+  // the window", which held only while this method was capped at one chunk, and that cap does not
+  // exist: section 139 entry 17 found the comment describing it and no code enforcing it. So
+  // `readInternalMemory(0xff, 0xffc0, 512)` walked past the end of the 64 KiB page with the
+  // library's blessing, and what the device serves there is unread. Section 139.
+  const { transport, written } = scriptedRemote([], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 1, architecture: 12 });
+  await assert.rejects(() => remote.readInternalMemory(0xff, 0xffc0, 512), /runs past the end/);
+  // 0xFFF0 is above the offset bound itself, so that refusal fires first and names the window.
+  // Stated rather than folded in, because the two bounds are different rules and a test that
+  // matched either would not say which one it exercised.
+  await assert.rejects(() => remote.readInternalMemory(0xff, 0xfff0, 32), /outside the 0x0000..0xFFC0 window/);
+  // The refusal is on the sum, so the last legal read is the one that lands exactly on the end.
+  // It is refused before touching the device, which is what makes it a rail and not a filter.
+  assert.deepEqual(written, [], 'nothing reached the wire');
+  await assert.rejects(() => remote.readInternalMemory(0xff, 0xffc0, 66), /runs past the end/);
+});
+
+test('an internal read that ends exactly on the page boundary is allowed', async () => {
+  // The positive control for the bound above: 0xFFC0 plus 62 is 0xFFFE, two bytes short, and the
+  // protocol document records that the last two bytes of each page are unreachable for exactly
+  // this reason. So the boundary case has to be the one that passes, or the bound is off by a
+  // report rather than on the sum.
+  const chunk = flashChunk(0x01, new Array(62).fill(0x11));
+  const { transport, written } = scriptedRemote([chunk, FLASH_DONE], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 12 });
+  const data = await remote.readInternalMemory(0xff, 0xffc0, 62);
+  assert.equal(data.length, 62);
+  assert.equal(written.length, 1);
 });

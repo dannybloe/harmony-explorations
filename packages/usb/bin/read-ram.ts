@@ -83,6 +83,9 @@ try {
       // 525: the tool would print zeros with nothing to say they are the window's rather than the
       // memory's. Same shape as the bug section 118 records in `read-window.ts`, where the answer was
       // already sitting in a reply the tool had received.
+      // `getVersion` narrows the handle itself now, so this pair is belt and braces rather than the
+      // mechanism: the fix moved into the library once it turned out the bench and the probe had the
+      // same omission and no reason to know about it.
       const stated = architectureFromVersion(await remote.getVersion());
       if (stated !== undefined) remote.useArchitecture(stated);
       awake = true;

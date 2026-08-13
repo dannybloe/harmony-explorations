@@ -145,7 +145,19 @@ export function writableRange(p: WritePermission): { start: number; end: number 
   }
   const end = start + p.configLength;
   const ceiling = WRITABLE_CEILING[p.architecture];
-  if (ceiling !== undefined && end > ceiling) {
+  // **A hole in the table is a refusal, not "no ceiling".** This read `ceiling !== undefined &&`,
+  // so an architecture with a config region and no recorded ceiling got an unbounded write, while
+  // `assertEraseAllowed` reads the identical hole as a refusal. Two rails, one table, opposite
+  // readings, and section 88's stated rule is that a table with a hole refuses. It is unreachable
+  // today because `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]` and arch 12 (Harmony One) has both
+  // entries; adding arch 14 (Harmony 600) when a second unit arrives would have silently given its
+  // writes no upper bound while its erases still refused. Section 139.
+  if (ceiling === undefined) {
+    throw new RailError(
+      `no writable ceiling recorded for architecture ${p.architecture}: refusing to write`,
+    );
+  }
+  if (end > ceiling) {
     throw new RailError(
       `a config of ${p.configLength} bytes at 0x${start.toString(16)} ends at ` +
         `0x${end.toString(16)}, past the writable ceiling 0x${ceiling.toString(16)}`,
@@ -175,6 +187,28 @@ export function assertFlashWriteAllowed(
 }
 
 /**
+ * The erase block size and the ceiling for an architecture, or a refusal naming which is missing.
+ *
+ * **Exported so the refusal can be tested at all.** Inside `assertEraseAllowed` it sat after
+ * `assertPermissionIsUsable`, which already refuses every architecture outside
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET`, and that list is `[12]`, which has both entries. So the
+ * branch was unreachable through any caller, and the rail nobody can trigger is the rail nobody has
+ * tested: `rails.test.ts` checked the table's shape instead, which is the same defect one level up.
+ * The lookup is the thing with a rule in it, so it is a function with a test rather than four lines
+ * behind a gate. Section 139.
+ */
+export function eraseBoundsFor(architecture: number): { block: number; ceiling: number } {
+  const block = ERASE_BLOCK_SIZE[architecture];
+  const ceiling = WRITABLE_CEILING[architecture];
+  if (block === undefined || ceiling === undefined) {
+    throw new RailError(
+      `no erase block size recorded for architecture ${architecture}: refusing to erase`,
+    );
+  }
+  return { block, ceiling };
+}
+
+/**
  * Throws unless the flash may be erased at `address`.
  *
  * `ERASE_FLASH` takes an address and **no count**, so the erase granularity is the hardware's
@@ -200,13 +234,7 @@ export function assertFlashWriteAllowed(
 export function assertEraseAllowed(p: WritePermission, address: number): void {
   assertPermissionIsUsable(p);
   const { start } = writableRange(p);
-  const block = ERASE_BLOCK_SIZE[p.architecture];
-  const ceiling = WRITABLE_CEILING[p.architecture];
-  if (block === undefined || ceiling === undefined) {
-    throw new RailError(
-      `no erase block size recorded for architecture ${p.architecture}: refusing to erase`,
-    );
-  }
+  const { block, ceiling } = eraseBoundsFor(p.architecture);
   if (address % block !== 0) {
     throw new RailError(
       `erase at 0x${address.toString(16)} is not on a 0x${block.toString(16)} block boundary`,

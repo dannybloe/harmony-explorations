@@ -1351,6 +1351,13 @@ spare, `docs/findings.md` section 93, and then **explained** the same day: the f
 only read a word, the loop subtracts two and exits on zero, so an odd count never terminates,
 section 94. The refusal is an odd count.
 
+**It bounds the offset and the count now**, and until 14 August 2026 it bounded only the offset. The
+`0xFFC0` bound is the firmware's own, `0x10000` less a full report, and it was justified in this
+library's comment by "an offset plus one report cannot leave the window", which is a sentence about
+the cap struck out above. Once that cap turned out never to have existed, a 512 byte read from
+`0xFFC0` walked past the end of the 64 KiB page with nothing to say so, and what the device serves
+there has never been read. `docs/findings.md` section 139 entry 24.
+
 ### Live RAM, and upstream's selector confirmed wrong for this architecture
 
 `READ_MISC` selector `0x07` at data address `0x1C1`, the 600's command state variable, returns

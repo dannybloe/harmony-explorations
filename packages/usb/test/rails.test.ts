@@ -29,6 +29,7 @@ import {
   assertDeliberateHangAllowed,
   assertRamWriteAllowed,
   assertSessionEndAllowed,
+  eraseBoundsFor,
   writableRange,
 } from '../src/index.ts';
 
@@ -114,16 +115,58 @@ test('arch 14 has no write target on the bench', () => {
   assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(14));
 });
 
-test('the writable range is the config region of the connected architecture', () => {
+test('the writable range needs both a region and a ceiling, and a hole in either refuses', () => {
+  // Arch 12 (Harmony One) is the only architecture with both, and it is also the only one in
+  // `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is not a coincidence: the tables are what a write
+  // target means.
   assert.deepEqual(writableRange({ ...IDEAL, architecture: 12 }), {
     start: 0x040000,
     end: 0x041000,
   });
-  assert.deepEqual(writableRange({ ...IDEAL, architecture: 14 }), {
-    start: 0x030000,
-    end: 0x031000,
-  });
+  // **This asserted a range for arch 14 (Harmony 600 and 700) until section 139**, because
+  // `writableRange` read a missing `WRITABLE_CEILING` entry as "no ceiling" while
+  // `assertEraseAllowed` read the identical hole as a refusal. Section 88's rule is that a table
+  // with a hole refuses, and arch 14 (Harmony 600 and 700) has a config region and no ceiling, so
+  // the old answer was an unbounded write range for an architecture nothing has measured a ceiling
+  // for. It has no write target either, so nothing could reach it; adding one would have.
+  assert.throws(() => writableRange({ ...IDEAL, architecture: 14 }), RailError);
+  // And arch 9 (Harmony 525) has neither, so it refuses on the first of the two.
   assert.throws(() => writableRange({ ...IDEAL, architecture: 9 }), RailError);
+});
+
+test('the two rails read the same table hole the same way', () => {
+  // The defect was not either reading on its own, it was that they disagreed. So the claim to pin
+  // is the agreement, over every architecture either table mentions plus the ones neither does.
+  for (const architecture of [8, 9, 10, 12, 14]) {
+    const write = (() => {
+      try {
+        writableRange({ ...IDEAL, architecture });
+        return 'allowed';
+      } catch {
+        return 'refused';
+      }
+    })();
+    const erase = (() => {
+      try {
+        eraseBoundsFor(architecture);
+        return 'allowed';
+      } catch {
+        return 'refused';
+      }
+    })();
+    assert.equal(write, erase, `architecture ${architecture}`);
+  }
+});
+
+test('an erase refuses an architecture with no recorded block size', () => {
+  // Unreachable through `assertEraseAllowed`, because `assertPermissionIsUsable` refuses everything
+  // outside `ARCHITECTURES_WITH_A_WRITE_TARGET` first and that list is `[12]`, which has both
+  // entries. The rail nobody can trigger is the rail nobody has tested, and `rails.test.ts` was
+  // checking the table's shape in its place. The lookup is exported now so the refusal has a caller.
+  assert.deepEqual(eraseBoundsFor(12), { block: 0x10000, ceiling: 0x3d0000 });
+  for (const architecture of [8, 9, 10, 14]) {
+    assert.throws(() => eraseBoundsFor(architecture), RailError, `architecture ${architecture}`);
+  }
 });
 
 test('a config length that is missing or absurd does not produce a range', () => {

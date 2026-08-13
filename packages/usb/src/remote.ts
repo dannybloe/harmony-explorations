@@ -37,6 +37,7 @@ import {
   readFlashRequest,
   readRamRequest,
   ARCH_WITHOUT_A_RAM_READ,
+  architectureFromVersion,
   regionOf,
   type Reply,
 } from './protocol.ts';
@@ -86,6 +87,16 @@ export interface RemoteOptions {
    */
   readonly architecture?: number;
 }
+
+/**
+ * The internal program memory window: two pages of 64 KiB, selected by the top address byte.
+ *
+ * `INTERNAL_OFFSET_MAX` is the firmware's own bound on the sixteen bit offset, `0x10000` minus one
+ * full report. It is not a bound on where a **read** ends, which is what the count check beside it
+ * is for.
+ */
+const INTERNAL_PAGE_SIZE = 0x10000;
+const INTERNAL_OFFSET_MAX = 0xffc0;
 
 const DEFAULT_TIMEOUT_MS = 2000;
 const DEFAULT_IDLE_POLLS = 3;
@@ -161,6 +172,16 @@ export class HarmonyRemote {
         `version block is ${reply.fields.length} bytes, fewer than ${VERSION_FIELD_COUNT_MIN}`,
       );
     }
+    // **The remote has just said which architecture it is, so stop throwing that away.**
+    // `useArchitecture` was opt-in, and three of the four callers that read a version block did not
+    // call it: the bench, the probe and a test. Without it `this.architecture` stays undefined and
+    // `regionOf` falls back to arch 12 (Harmony One)'s rule, under which a Harmony 525's internal
+    // program flash at top byte `0x00` is ordinary config flash, so the odd count refusal does not
+    // apply and a 63 byte read reaches the wire. Narrowing here rather than at every call site means
+    // the default cannot outlive the answer. Section 139, and section 118 is where the same defect
+    // was found once already in `read-window.ts`.
+    const stated = architectureFromVersion(reply.fields);
+    if (stated !== undefined) this.useArchitecture(stated);
     return reply.fields;
   }
 
@@ -183,6 +204,18 @@ export class HarmonyRemote {
    * `0x40` answers zero for the bank 2 bytes holding the offset of the read that is answering.
    */
   async readRam(dataAddress: number): Promise<number> {
+    if (this.architecture === undefined) {
+      // **Which byte carries the value is architecture dependent**, so answering without knowing the
+      // architecture is answering from a guess. `decodeReply` gives `value` as the byte after the
+      // selector, correct on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) and the wrong
+      // half on arch 9 (Harmony 525), section 90. The refusal below could not fire on an unpinned
+      // remote at all, which is exactly the case a Harmony 525 arrives as. `getVersion` narrows this
+      // now, so the fix for a caller is to call it first. Section 139.
+      throw new RemoteError(
+        'the architecture is unknown, and which byte of a misc reply carries the value depends on '
+          + 'it; call getVersion() first, or pass architecture to the constructor',
+      );
+    }
     if (this.architecture === ARCH_WITHOUT_A_RAM_READ) {
       throw new RemoteError(
         `a Harmony 525 has no READ_MISC body for selector 0x${MISC_RAM.toString(16)}, so this would ` +
@@ -282,9 +315,19 @@ export class HarmonyRemote {
         );
       }
       sequence = reply.sequence;
-      const take = Math.min(reply.data.length, count - filled);
-      out.set(reply.data.subarray(0, take), filled);
-      filled += take;
+      // **A chunk carrying more than was asked for is an error.** `Math.min` discarded the surplus
+      // in silence, so a device or a transport sending more than the request encoded still satisfied
+      // `filled === count` and the read reported clean. That is the same pipe hygiene failure this
+      // method's own completion check exists for, in the other direction: the bytes nobody wanted
+      // are evidence the request was encoded wrongly, and throwing them away hides it. Section 139.
+      if (reply.data.length > count - filled) {
+        throw new RemoteError(
+          `flash chunk carries ${reply.data.length} bytes with ${count - filled} still wanted, `
+            + 'so the request and the reply disagree about the length',
+        );
+      }
+      out.set(reply.data, filled);
+      filled += reply.data.length;
     }
     if (filled !== count) {
       throw new RemoteError(`flash read returned ${filled} of ${count} bytes`);
@@ -350,11 +393,22 @@ export class HarmonyRemote {
           `decrements by two and exits on zero, so an odd count never terminates; ask for an even one`,
       );
     }
-    if (offset < 0 || offset > 0xffc0) {
-      // The firmware bounds the 16-bit offset to 0xFFC0, which is 0x10000 minus a full report, so
-      // an offset plus one report cannot leave the window. Refusing here reports the rule; sending
-      // it anyway would have the device silently clamp.
+    if (offset < 0 || offset > INTERNAL_OFFSET_MAX) {
+      // The firmware bounds the 16-bit offset to 0xFFC0, which is 0x10000 minus a full report.
+      // Refusing here reports the rule; sending it anyway would have the device silently clamp.
       throw new RemoteError(`offset 0x${offset.toString(16)} is outside the 0x0000..0xFFC0 window`);
+    }
+    // **And the count, which the bound above used to be justified by rather than joined to.** The
+    // comment read "an offset plus one report cannot leave the window", and that held only while
+    // this method was capped at one chunk, a cap that section 139 entry 17 found does not exist. So
+    // `readInternalMemory(0xff, 0xffc0, 512)` walked off the end of the 64 KiB page with the
+    // library's blessing, and what the device serves past it is unread: a plausible wrong answer
+    // about which page was read. Section 139.
+    if (count < 0 || offset + count > INTERNAL_PAGE_SIZE) {
+      throw new RemoteError(
+        `${count} bytes from offset 0x${offset.toString(16)} runs past the end of the `
+          + `0x${INTERNAL_PAGE_SIZE.toString(16)} byte internal page`,
+      );
     }
     return this.readFlash((subSelector << 16) | offset, count);
   }

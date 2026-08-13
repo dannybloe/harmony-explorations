@@ -18389,12 +18389,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Fifty five shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Sixty two shipped readers answered plausibly where they should have refused, and nine were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Fifty five defects came out of it that a sample could not have found, and they share one shape, which
+Sixty two defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18408,6 +18408,9 @@ fail by any test, and it says which and why rather than leaving that to be disco
 one where the **review was wrong**: the performance defect it reported is real and free, the cost is
 somewhere else entirely, and the hoist it asked for makes the function slower. It also holds the
 fourth architecture ladder read for another remote, one partition after entry 19 found the third.
+Entry 24 is the USB one and holds the only defect in this section with a **live** consequence on the
+bench: a Harmony 525 on an unpinned handle was read under arch 12 (Harmony One)'s address rule, so the
+refusal that stops a remote hanging did not apply to it.
 Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
 is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
 thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
@@ -19446,6 +19449,76 @@ leaves `end` at the length; silently truncated text is the worst answer availabl
 buffer. Both are unreachable from the corpus today, both are constructed in tests, and both have a
 control that bites.
 
+### 24. The address rule fell back to a default while the remote's own answer sat in the reply
+
+The `packages/usb` partition, seven changes, and the first is the one with a live consequence on the
+bench rather than a latent one.
+
+**`getVersion` read the architecture and threw it away.** `HarmonyRemote.architecture` is undefined
+unless a caller passes one, `regionOf` falls back to `DEFAULT_REGION_ARCHITECTURE = 12`, and
+`useArchitecture` was **opt-in**: of the four call sites that read a version block, only
+`read-window.ts` and `read-ram.ts` called it, and the bench, the probe and a test did not. So a
+Harmony 525 on an unpinned handle is read under arch 12 (Harmony One)'s rule, under which that
+remote's internal program flash at top byte `0x00` is ordinary config flash. The odd count refusal
+is keyed on the region, so it does not apply, and `readFlash(0x001000, 63)` reaches the wire.
+Section 96 is what that costs on arch 12 (Harmony One): the fetch loop never terminates, and the
+sender scribbles 2247 bytes over data memory before an even byte lets it return. Nothing establishes
+that arch 9 (Harmony 525) is exempt, and section 118 records this exact defect being found once
+already in `read-window.ts`, where the tool refused a legitimate read while printing a reply that
+said 9. `getVersion` narrows the handle now, so the default cannot outlive the answer, and it still
+never overrides a caller's own.
+
+**`readRam` refuses an unknown architecture**, which is the same defect one method along. Its arch 9
+(Harmony 525) refusal, added in entry 17 after section 137, keys on `this.architecture ===
+ARCH_WITHOUT_A_RAM_READ`, and with nothing pinned that comparison is false, so the refusal could not
+fire on the one remote it was written for. Which byte of a misc reply carries the value is
+architecture dependent, section 90, so answering without knowing the architecture is answering from
+a default. A test asserted the old behaviour outright, on the reasoning that an unpinned caller is
+the ordinary case and the refusal is about arch 9 (Harmony 525) specifically, which is true and is
+the hole rather than the answer.
+
+**An internal read could walk off the end of its own page.** The offset bound of `0xFFC0` was
+justified in comment by "an offset plus one report cannot leave the window", and that held only
+while this method was capped at one chunk, a cap entry 17 found described in two comments and
+enforced by no code. So `readInternalMemory(0xff, 0xffc0, 512)` was permitted, and what the device
+serves past the page is unread: a plausible wrong answer about which page was read. The bound is on
+the sum now, and the positive control is the read that ends exactly on the boundary, since the last
+two bytes of each page are unreachable for that reason and a bound off by a report would refuse it.
+
+**A surplus chunk was discarded in silence, and the test that said so was a fixture pretending to be
+evidence.** `take = Math.min(reply.data.length, count - filled)` meant a device or transport sending
+more than the request encoded still satisfied `filled === count` and reported a clean transfer. The
+test scripted two full 62 byte chunks for a 100 byte request and commented "the remote sends 63 byte
+chunks, the last one overshoots the request". The device does not: `docs/usb-protocol.md` records 256
+requested and 256 delivered as 62+62+62+62+6+2, measured on hardware, and the length nibble encodes
+0 to 7, 15, 31 and 63 payload bytes, so a remainder comes off in exactly those steps and an exact
+total is always reachable. **A measurement already in this repository contradicted the fixture**,
+and nothing compared them because each was self consistent. The fixture is 62+30+6+2 now and a
+surplus is an error.
+
+**Two rails read one table hole in opposite directions.** `writableRange` treated a missing
+`WRITABLE_CEILING` entry as "no ceiling" and `assertEraseAllowed` treated the identical hole as a
+refusal, where section 88's stated rule is that a table with a hole refuses. Unreachable today,
+because `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]` and arch 12 (Harmony One) has both entries;
+adding arch 14 (Harmony 600) when a second unit arrives would have silently given its writes no
+upper bound while its erases still refused. The claim pinned now is the **agreement**, over every
+architecture either table mentions, because the defect was the disagreement rather than either
+reading.
+
+**And the erase refusal had no caller that could reach it.** It sits after `assertPermissionIsUsable`,
+which already refuses everything outside the write target list, so no test could trigger it and
+`rails.test.ts` checked the table's shape in its place. The lookup is `eraseBoundsFor` now, exported,
+with a test that names each architecture it refuses. The rail nobody can trigger is the rail nobody
+has tested, which is the same shape as a test that cannot fail.
+
+**"Only architectures `packages/usb` can address are here" was false of its own table.**
+`MODELS_BY_SKIN` carries architectures 2, 3, 7, 8 and 10, and `FLASH_TOP_BYTE_BOUND` has an entry for
+none of them, so `modelForSkin(19).architecture` is 10 and handing that to `RemoteOptions` refuses
+every address. The direction is safe and the sentence is what a caller trusts when deciding whether
+the field is usable. It says "enumerate" now, and `ADDRESSABLE_ARCHITECTURES` is the executable half,
+with the unaddressable set asserted exactly and its consequence, that each refuses every top byte
+rather than borrowing a neighbour's rule.
+
 ### What would falsify it
 
 For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
@@ -19471,3 +19544,8 @@ move that ladder from latent to live; a container whose font set header and glyp
 which the corpus does not have and which the new refusal would surface rather than resolve wrongly; or
 an arch 9 (Harmony 525) program that names a picture with screen opcode 2, which would make the bank
 search's second constraint non empty there and its uniqueness claim true after all.
+
+For entry 24: a remote whose version block states an architecture its own flash rule contradicts,
+which would say the narrowing is not safe; or a measured read where the device sends a chunk carrying
+more than the request encoded, which would say the length nibble reading is incomplete and would turn
+the new refusal into a false one.

@@ -9,6 +9,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  validateRegionByte,
+  ADDRESSABLE_ARCHITECTURES,
   MODELS_BY_SKIN,
   MODELS_WITHOUT_A_SKIN,
   SKINS_WITHOUT_A_MODEL_RECORD,
@@ -151,5 +153,25 @@ test('the two incompleteness lists are disjoint, and one of them is empty', () =
   // And the two lists cannot overlap, which is what stops a skin being described and undescribed.
   for (const skin of Object.keys(SKINS_WITHOUT_A_MODEL_RECORD).map(Number)) {
     assert.ok(!(skin in MODELS_BY_SKIN), `skin ${skin} is in one list or the other`);
+  }
+});
+
+test('a model states an architecture this library may not be able to address', () => {
+  // The docstring said "only architectures `packages/usb` can address are here", and the table
+  // carries 2, 3, 7, 8 and 10, none of which has an entry in `FLASH_TOP_BYTE_BOUND` or a window
+  // table. The direction is safe, since `regionOf` then refuses every address, and the sentence is
+  // what a caller trusts when deciding whether the field is usable. Corrected to say enumerate
+  // rather than address, and pinned here. Section 139.
+  const stated = new Set(Object.values(MODELS_BY_SKIN).map((m) => m.architecture));
+  const addressable = new Set(ADDRESSABLE_ARCHITECTURES);
+  const unaddressable = [...stated].filter((a) => !addressable.has(a)).sort((a, b) => a - b);
+  // The exact set, not "some": it moves when a model is added or an address rule is read, and then
+  // it moves in the diff.
+  assert.deepEqual(unaddressable, [2, 3, 7, 8, 10]);
+  assert.deepEqual([...addressable].sort((a, b) => a - b), [9, 12, 14]);
+  // And the consequence, so the claim is about behaviour rather than about two lists: an
+  // unaddressable architecture refuses every top byte rather than borrowing a neighbour's rule.
+  for (const architecture of unaddressable) {
+    assert.throws(() => validateRegionByte(0x04, architecture));
   }
 });

@@ -14,9 +14,16 @@
  * `architecture`: those come from `reference/models.md`, out of Logitech's own client, with five
  * skins confirmed against firmware literals and live remotes.
  *
- * Only architectures `packages/usb` can address are here. Arch 15, the 900, 1000, 1000i, 1100 and
- * 1100i, enumerates as a network class rather than HID, so the transport cannot reach it and a
+ * Only architectures `packages/usb` can **enumerate** are here. Arch 15, the 900, 1000, 1000i, 1100
+ * and 1100i, enumerates as a network class rather than HID, so the transport cannot reach it and a
  * capability record for it would be a promise this library cannot keep.
+ *
+ * **That is not the same as an architecture whose flash this library can address**, which is what
+ * this said until section 139: the table carries 2, 3, 7, 8 and 10 as well, and `FLASH_TOP_BYTE_BOUND`
+ * has an entry for none of them. So `modelForSkin(19).architecture` is 10, and handing that to
+ * `RemoteOptions.architecture` refuses every address. The direction is safe, and the sentence is
+ * what a caller trusts when deciding whether the field is usable, which is why it is corrected
+ * rather than left to be discovered. `ADDRESSABLE_ARCHITECTURES` is the executable half.
  */
 
 /** What kind of panel a model has, which is the field a renderer needs and a config cannot state. */

@@ -295,6 +295,19 @@ export const ARCH9_WINDOWS: Readonly<Record<number, { region: Region; bound: num
   0x40: { region: 'data-memory', bound: 0x0800 },
 };
 
+/**
+ * The architectures whose address rule has been read, so whose flash this library can address.
+ *
+ * `models.ts` carries 2, 3, 7, 8 and 10 as well, and none of them is here, so a skin's architecture
+ * is not necessarily one a caller can pass to `RemoteOptions`. Stated as a list rather than left as
+ * "the keys of two tables" because a docstring in `models.ts` claimed the opposite and nothing could
+ * contradict it. Section 139.
+ */
+export const ADDRESSABLE_ARCHITECTURES: readonly number[] = [
+  ARCH_WITHOUT_A_RAM_READ,
+  ...Object.keys(FLASH_TOP_BYTE_BOUND).map(Number),
+];
+
 export function validateRegionByte(
   topByte: number,
   architecture: number = DEFAULT_REGION_ARCHITECTURE,
