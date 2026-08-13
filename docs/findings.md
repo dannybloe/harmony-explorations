@@ -18389,17 +18389,18 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Twelve shipped readers answered plausibly where they should have refused, and three were rails
+## 139. Thirteen shipped readers answered plausibly where they should have refused, and three were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Twelve defects came out of it that a sample could not have found, and they share one shape, which is
+Thirteen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first. Entry 6 needed firmware and is the only new firmware reading here;
+They are listed newest reading first, except entry 13, which was read a day later and is appended rather
+than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
 Entries 5 and 11 are the rails, and 11 is where "it cannot brick anything" turned out to be a claim
@@ -18742,6 +18743,63 @@ report now: a consumer that ignores them is at least ignoring something.
 copy of the slicing. That is the same correction the base derivation itself needed in section 117, where
 `packages/probe` had kept the reading the codec had abandoned.
 
+### 13. The byte accounting attributed twelve bytes for sitting between two things
+
+Entry 2 fixed how the accounting **compares** claims. This is one of the claims, and it is the one that
+could not be wrong.
+
+`coverage.ts` carried a `slot-15-spare` owner that filled every unclaimed byte between base slot 15's
+lowest group and its own pointer array. It came from section 84, which named those twelve arch 12
+(Harmony One) bytes by position because at the time nothing had read them, and it survived section 103,
+which read both halves out of the firmware. So the accounting attributed them for a reason no byte can
+contradict: they were left over.
+
+That is not a cosmetic complaint, because the run had no cap and no content test, so it absorbed
+whatever a broken reader stopped claiming. Zeroing the `u8` entry count of base slot 15's largest group
+makes the group claim one byte instead of its whole body, and the catch-all took the difference every
+time:
+
+| container | architecture | bytes absorbed | what `coverage` reported |
+|---|---|---|---|
+| `one_config` | 12 (Harmony One) | 32 | 100.00%, 0 gaps, 0 overlaps |
+| `h600_config` | 14 (Harmony 600) | 28 | 100.00%, 0 gaps, 0 overlaps |
+| `arch8_config_a` | 8 (Harmony 880) | 28 | 100.00%, 0 gaps, 0 overlaps |
+| `h525_config` | 9 (Harmony 525) | 8 | 100.00%, 0 gaps, 0 overlaps |
+
+The four architectures matter because the owner claimed **nothing** off arch 12 in an undamaged
+container, so nothing in the corpus said it was reachable there. It was reachable on all four, and only
+by damage.
+
+Section 103's reading is what replaces it, stated rather than found. Both readers start from group 9's
+first entry: `0x249A0` adds `4 * band` to that cursor, so band 3 takes bytes 12 to 15 of a body whose
+header declares six `u16` entries, and `0x2492E` reads one byte at `0x10 + 4 * flag + (selector >> 2)`
+and extracts the two bit field `selector & 3`, which is bytes 16 to 23. `lightBandExtras` in `tables.ts`
+returns both, at those offsets, and returns undefined where there is no group 9 to continue, which is
+every other architecture: nine groups on arch 8 (Harmony 880) and arch 14 (Harmony 600 and 700), five on
+arch 9 (Harmony 525).
+
+It deliberately does not check that the twelve bytes are unclaimed. A reader that consults what is
+already taken is the shape being removed, and a collision with a group is exactly what entry 2's
+detector now reports.
+
+**The number did not move and the emitter's did.** All nineteen containers report the same coverage to
+the byte, which is what says the two stated claims cover the same twelve the catch-all did. The
+emitter's framed count rose by 12 on each of the six arch 12 (Harmony One) containers, because the run
+used to be written back raw with a framed count of zero on the grounds that what the bytes said was
+unsettled, and section 103 settled it.
+
+**The control is the perturbation itself**, and it is a test now rather than a measurement: zeroing that
+count byte has to produce exactly one gap of the group's own length less one, on all four architectures.
+That number is derivable rather than recorded, since a group with a zero count claims its count byte and
+nothing else. Two things it says out loud. Restoring the catch-all fails it, which is how the control was
+checked. And the **percentage cannot see any of this**: 32 bytes of a 1672832 byte Harmony One container
+still round to 100.00%, so `gapCount` is the signal and a report quoting only the fraction is blind to a
+32 byte loss.
+
+The reason this one is worth a whole entry, when it moved no number: **a claim that cannot fail is the
+same defect as a test that cannot fail**, and this repository has spent a day on the second kind. It sat
+inside the figure that measures milestone M2.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -18778,6 +18836,9 @@ copy of the slicing. That is the same correction the base derivation itself need
 * **The contribution probe's checksum is computed over the container**, not the file, so it agrees with
   the codec on all nine samples checked including the four Harmony 890 reads. And its base says whether
   the anchor produced it.
+* **No byte in the accounting is claimed for being left over.** The one owner that did is replaced by the
+  reading section 103 had already published, and the perturbation that used to be absorbed in silence is
+  a test on four architectures.
 
 ### What would falsify it
 
@@ -18787,5 +18848,7 @@ this one. For the header: a record whose declared group count is above 2, or a b
 exactly at the next boundary, either of which would say the `12 + 9 * count` tiling is not the whole
 story. For the closure: a record whose header timings name NEC or Kaseikyo and whose bit count is not 32
 or 48, which is now checkable because the two numbers come from the same record's own bytes. For the overlap detector: a container where the new rule reports an overlap, which would mean
-two readers claim one byte and one of them is wrong. For the day maximum: a Logitech generated config
+two readers claim one byte and one of them is wrong. For base slot 15's continuation: an arch 12 container
+whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body
+runs into them, either of which would say the offsets are not the structure. For the day maximum: a Logitech generated config
 built on a 31st, which would settle by measurement what is currently our choice.

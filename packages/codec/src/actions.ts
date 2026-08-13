@@ -342,7 +342,7 @@ export const BAND_3F_C0_SELECTOR = (operand: number): number => (operand >>> 4) 
 export const BAND_3F_C0_LIGHT = 17;
 /** Selector 16, which drives `LATC` bit 5 and nothing this project can name. */
 export const BAND_3F_C0_PIN = 16;
-/** Selectors 0 to this, the bit table in base slot 15's spare run. */
+/** Selectors 0 to this, the bit table past base slot 15 group 9's declared entries. */
 export const BAND_3F_C0_PROPERTY_LIMIT = 12;
 
 /**

@@ -41,8 +41,8 @@ import {
  * the same amount is a reader getting deeper; both rising is a new structure.
  */
 const REBUILT: readonly [string, number, number][] = [
-  ['one34_region2', 2438, 6464],
-  ['one_safemode', 2438, 6464],
+  ['one34_region2', 2450, 6452],
+  ['one_safemode', 2450, 6452],
   ['h700_gspm', 2041, 5074],
   ['h600_safemode_gspm', 2041, 5074],
   ['h650_safemode_gspm', 2041, 5074],
@@ -53,13 +53,13 @@ const REBUILT: readonly [string, number, number][] = [
   ['arch8_config_b', 179540, 291079],
   ['arch8_config_c', 192184, 298520],
   ['arch8_config_d', 193622, 298528],
-  ['one_config', 228043, 1444789],
-  ['one_config_unprogrammed', 69414, 1162823],
+  ['one_config', 228055, 1444777],
+  ['one_config_unprogrammed', 69426, 1162811],
   ['h600_config', 211236, 526913],
   ['h700_config', 259697, 719487],
   ['h700_config_2', 259725, 719517],
-  ['one_spare_before_sync', 69414, 1162823],
-  ['one_spare_after_sync', 143186, 1183378],
+  ['one_spare_before_sync', 69426, 1162811],
+  ['one_spare_after_sync', 143198, 1183366],
 ];
 
 for (const [name, framed, carried] of REBUILT) {

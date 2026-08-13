@@ -105,6 +105,70 @@ export function parameterGroups(c: Container): ParameterGroup[] | undefined {
   return out;
 }
 
+/** Which group carries the display light band's continuation, and where in it the two readers look. */
+export const LIGHT_BAND_GROUP = 9;
+/** Band 3's pair of device levels, at `4 * band` past the cursor, which is past the declared entries. */
+export const LIGHT_BAND_PAIR_AT = 12;
+export const LIGHT_BAND_PAIR_LENGTH = 4;
+/** The two bit field table, addressed as `0x10 + 4 * flag + (selector >> 2)`. */
+export const LIGHT_BAND_FIELDS_AT = 16;
+export const LIGHT_BAND_FIELDS_LENGTH = 8;
+
+export interface LightBandExtras {
+  /** Band 3's two `u16` device levels, which the group's own entry count does not cover. */
+  pair: { address: number; length: number; values: number[] };
+  /** Sixteen two bit fields per value of the flag, eight bytes, all of which the band indexes. */
+  fields: { address: number; length: number; bytes: number[] };
+}
+
+/**
+ * What the `0x3F` band `0xC0` state machine reads past base slot 15 group 9's declared entries.
+ *
+ * The group's header declares six entries and two sites read further: `0x249A0` adds `4 * band` to
+ * the cursor, so band 3 reads bytes 12 to 15 of a twelve byte body, and `0x2492E` reads a single
+ * byte at `0x10 + 4 * flag + (selector >> 2)` and extracts the two bit field `selector & 3`.
+ * Twelve bytes, both readers, nothing left over. Section 103.
+ *
+ * **This exists because the byte accounting used to attribute those twelve by position.** A
+ * `slot-15-spare` owner filled every unclaimed byte between the lowest group and the pointer array,
+ * with no cap and no content test, so zeroing any group's entry count made the catch-all swallow the
+ * bytes the group stopped claiming and the accounting still reported 100.00%: 32 bytes absorbed on a
+ * Harmony One, 28 on a Harmony 600 and a Harmony 880, 8 on a Harmony 525. Section 84 claimed them by
+ * position when nothing had read them and section 103 read them; the offsets here are the firmware's
+ * own, so what used to be inferred from what was left over is now stated and can be wrong.
+ *
+ * Returns undefined where the group is absent, which is every architecture but arch 12 (Harmony One):
+ * arch 8 (Harmony 880) and arch 14 (Harmony 600 and 700) carry nine groups and arch 9 (Harmony 525)
+ * five, so there is no group 9 to continue. It does **not** check the twelve bytes are unclaimed,
+ * deliberately: a collision with another group is what the accounting's overlap detector is for, and
+ * a reader that consults what is already taken is the shape this replaces.
+ */
+export function lightBandExtras(c: Container): LightBandExtras | undefined {
+  const groups = parameterGroups(c);
+  const group = groups?.[LIGHT_BAND_GROUP];
+  if (group === undefined) return undefined;
+  const body = c.blobOffsetOf(group.address);
+  if (body === undefined) return undefined;
+  // Past the count byte, so an offset the firmware computes from its cursor is an offset from here.
+  const cursor = body + 1;
+  const end = cursor + LIGHT_BAND_FIELDS_AT + LIGHT_BAND_FIELDS_LENGTH;
+  if (end > c.blob.length) return undefined;
+  const pairAt = cursor + LIGHT_BAND_PAIR_AT;
+  const fieldsAt = cursor + LIGHT_BAND_FIELDS_AT;
+  return {
+    pair: {
+      address: group.address + 1 + LIGHT_BAND_PAIR_AT,
+      length: LIGHT_BAND_PAIR_LENGTH,
+      values: [u16(c.blob, pairAt), u16(c.blob, pairAt + 2)],
+    },
+    fields: {
+      address: group.address + 1 + LIGHT_BAND_FIELDS_AT,
+      length: LIGHT_BAND_FIELDS_LENGTH,
+      bytes: [...c.blob.slice(fieldsAt, fieldsAt + LIGHT_BAND_FIELDS_LENGTH)],
+    },
+  };
+}
+
 export interface TouchArea {
   x: number;
   width: number;

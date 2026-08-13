@@ -1104,11 +1104,10 @@ and at each address a group
 ```
 
 The groups are laid out in one run immediately before the pointer array. On arch 8, arch 9 and
-arch 14 the run is exactly the sum of the groups; arch 12 has twelve spare bytes in it.
+arch 14 the run is exactly the sum of the groups; arch 12 has twelve more bytes in it, past group 9.
 
-Those twelve sit **between the tenth and eleventh group**, they are `ff 00 ff 00 00 00 00 00 55 55
-55 55` in all six arch 12 containers, and no `u24` in any container names their address. They belong
-to this section by position, and **the firmware reaches them by overrunning group 9 on purpose**:
+Those twelve are `ff 00 ff 00 00 00 00 00 55 55 55 55` in all six arch 12 containers, no `u24` in any
+container names their address, and **the firmware reaches them by overrunning group 9 on purpose**:
 
 | bytes above group 9's first entry | read by | as |
 |---|---|---|
@@ -1118,6 +1117,13 @@ to this section by position, and **the firmware reaches them by overrunning grou
 So group 9 is in effect a 24 byte structure whose header declares only its first six `u16` values. A
 writer reproduces all twelve bytes; an editor that changed the declared length would move both
 readers' targets without any check refusing it. `docs/findings.md` sections 84, 103 and 106.
+
+**Their extent is these offsets and not the distance to the pointer array**, which is a correction to
+how a tool should claim them rather than to the reading. The byte accounting attributed them by
+position, as the run between the lowest group and the array, from before section 103 read them: that
+made the attribution unfalsifiable and it absorbed 8 to 32 bytes of any group whose declared entry
+count was damaged, on all four architectures, while still reporting every byte accounted for. Section
+139 entry 13.
 
 **The firmware demands the section's count and every group's length.** The count is 9 on arch 14
 and 11 on arch 12. Each group is read only when its length matches the number that build expects,
@@ -1153,7 +1159,7 @@ the firmware, used when the length does not match:
 | 4 | three threshold pairs, two apart, turning the four sample sum of analogue channel 1 into a band 0 to 3 with hysteresis | 96, 98, 308, 310, 768, 770 | none |
 | 5, 6 | two measurement to level curves over analogue channel 0, eight levels, chosen by the charger input on `PORTB` bit 1: group 6 when it is clear | 3000 to 4051, and 3000 to 4170 | none |
 | 7 | a timeout in seconds, handed to the one second scheduler | 0 | 10 |
-| 9 | four pairs at four bytes a band, both halves sent to the I2C device at address 0x60 as its registers 2/3 and 4/5; band 3's pair is in the spare run | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
+| 9 | four pairs at four bytes a band, both halves sent to the I2C device at address 0x60 as its registers 2/3 and 4/5; band 3's pair is past the declared entries | 16, 16, 64, 64, 128, 128, then 255, 255 | 64 |
 
 A level above 27 is *silently refused* by the setter, which is a rail: 27 is the number of distinct
 `CVREF` voltages the part can produce, and the ladder that maps a level to one is in the firmware.
@@ -2310,7 +2316,7 @@ drops the other seventeen, and the corpus uses exactly the fifteen:
 | selector | what it does | uses per config |
 |---|---|---|
 | 17 | sets the **display's light level**: bits 1 to 3 choose one of eight states, bit 0 fades rather than snapping. States 2 to 5 take a level from base slot 15 group 1 and a pair of device levels from group 9, state 6 chooses the state from the measured band, states 0 and 1 turn it off | 68 |
-| 0 to 12 | sets channel `selector` of the I2C device at address 0x60 to the two bit value base slot 15's spare run states for bits 1 to 3 being nonzero. Which device it is is *not established* | 36 |
+| 0 to 12 | sets channel `selector` of the I2C device at address 0x60 to the two bit value the byte table past base slot 15 group 9 states for bits 1 to 3 being nonzero. Which device it is is *not established* | 36 |
 | 16 | enables that device, `LATC` bit 5, set when bits 1 to 3 are nonzero | 2 |
 | 13 to 15, 18 to 31 | nothing: the handler falls to its exit | 0 |
 

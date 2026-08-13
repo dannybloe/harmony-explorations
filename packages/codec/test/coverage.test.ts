@@ -28,7 +28,9 @@ import {
   claims,
   coverage,
   deadTerminator,
+  containerExtent,
   gapFamilies,
+  lightBandExtras,
   modeRecords,
   parameterGroups,
   parse,
@@ -522,38 +524,88 @@ test('base slot 17 is two zero bytes where it names the picture bank', skipWitho
   assert.ok(seen >= 13, `only ${seen} banks, expected thirteen`);
 });
 
-test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWithoutLab(), () => {
-  // Section 44 saw these and called them the only untidy number in the section. They sit between
-  // the tenth and eleventh group of arch 12's eleven, they are byte identical in all six arch 12
-  // containers, and no `u24` anywhere in any container names their address. So whose they are is
-  // settled by position, which is what this test asserts.
+test('base slot 15s twelve arch 12 bytes are claimed by two readers, not by position',
+  skipWithoutLab(), () => {
+  // Section 44 saw these and called them the only untidy number in the section, and section 84
+  // claimed them by position because nothing had read them: a `slot-15-spare` owner that filled every
+  // unclaimed byte between the lowest group and the pointer array. **This test asserted that hole and
+  // now asserts its absence**, because section 103 read both halves out of the firmware and the
+  // catch-all outlived its reason. It was also the thing standing between a broken group and the
+  // headline number: zeroing any group's entry count let the spare swallow what the group stopped
+  // claiming, and `coverage` still reported 100.00%, zero gaps and zero overlaps, on 32 bytes for a
+  // Harmony One and 28 for a Harmony 600 and a Harmony 880.
   //
-  // **What they say is settled too**, section 103, and the test below this one asserts that: the
-  // firmware reaches them by overrunning group 9 deliberately, four bytes as one more pair of device
-  // levels and eight as a table of two bit fields. They stay carried rather than framed all the same,
-  // because their reader indexes them as bytes and the emitter has nothing to gain from splitting
-  // a run it would only put back the same way.
+  // So the assertion is that no claim is made by position any more, anywhere, and that the two stated
+  // claims cover exactly the twelve bytes the catch-all used to.
   const known = [0xff, 0x00, 0xff, 0x00, 0, 0, 0, 0, 0x55, 0x55, 0x55, 0x55];
   let arch12 = 0;
   for (const [name] of ACCOUNTED) {
     const data = require_(name);
     const c = parse(data);
-    const spare = claims(c).filter((x) => x.owner === 'slot-15-spare');
+    // The guard against the catch-all coming back under any name: nothing here claims a run because
+    // it happened to be unclaimed.
+    assert.deepEqual(claims(c).filter((x) => x.owner === 'slot-15-spare'), [],
+      `${name}: base slot 15 claims nothing by position`);
+    const extras = claims(c)
+      .filter((x) => x.owner === 'slot-15-band-pair' || x.owner === 'slot-15-band-fields')
+      .sort((a, b) => a.start - b.start);
     if (c.architecture !== 12) {
-      assert.deepEqual(spare, [], `${name}: base slot 15 has no hole off arch 12`);
+      // No group 9 to overrun: nine groups on arch 8 (Harmony 880) and arch 14 (Harmony 600 and
+      // 700), five on arch 9 (Harmony 525).
+      assert.deepEqual(extras, [], `${name}: no band continuation off arch 12`);
+      assert.ok((parameterGroups(c) ?? []).length <= 9, `${name}: fewer than ten groups`);
       continue;
     }
     arch12 += 1;
-    assert.equal(spare.length, 1, `${name}: one hole`);
-    const { start, length } = spare[0] as { start: number; length: number };
-    assert.equal(length, known.length, `${name}: twelve bytes`);
-    assert.deepEqual([...c.blob.subarray(start, start + length)], known, `${name}: the same twelve`);
-    // Between two groups rather than past the last one, which is what makes it a hole.
-    const groups = (parameterGroups(c) ?? []).map((g) => c.blobOffsetOf(g.address) as number);
-    assert.ok(Math.min(...groups) < start && Math.max(...groups) > start, `${name}: not a tail`);
+    assert.equal(extras.length, 2, `${name}: the pair and the field table`);
+    const [pair, fields] = extras as [{ start: number; length: number; owner: string },
+      { start: number; length: number; owner: string }];
+    assert.equal(pair.owner, 'slot-15-band-pair', `${name}: the pair comes first`);
+    assert.equal(pair.length, 4, `${name}: band 3s two u16 levels`);
+    assert.equal(fields.length, 8, `${name}: eight bytes of two bit fields`);
+    // Adjacent and contiguous, so together they are the twelve and there is no seam in between.
+    assert.equal(fields.start, pair.start + pair.length, `${name}: adjacent`);
+    assert.deepEqual([...c.blob.subarray(pair.start, fields.start + fields.length)], known,
+      `${name}: the same twelve`);
+    // And they start exactly where group 9's declared entries end, which is the reading rather than
+    // the position: the group states six entries and the firmware reads a seventh pair.
+    const groups = parameterGroups(c) ?? [];
+    const group = groups[9] as { address: number; length: number };
+    assert.equal(pair.start, (c.blobOffsetOf(group.address) as number) + group.length,
+      `${name}: the continuation starts at group 9s declared end`);
   }
   // Exact. `>= 6` was the population itself, so it read as slack and had none: it fails on the first
   // Harmony One container added and passes on any removed.
+  assert.equal(arch12, 6, `${arch12} arch 12 containers`);
+});
+
+test('the readers land where the firmware arithmetic says, on every Harmony One container',
+  skipWithoutLab(), () => {
+  // **This test used to be the arithmetic below and nothing else**, which made it algebra on its own
+  // literals: `bandThree === declared` is `4 * 3 === 6 * 2`, true whatever any container holds and
+  // whatever `tables.ts` does. `CLAUDE.md`'s standard is that a closure whose two ends come from the
+  // same place is not a closure, so one end comes from the containers now: the offsets the firmware
+  // computes have to be the offsets `lightBandExtras` returns, in all six.
+  let arch12 = 0;
+  for (const [name] of ACCOUNTED) {
+    const c = parse(require_(name));
+    const extras = lightBandExtras(c);
+    if (c.architecture !== 12) {
+      assert.equal(extras, undefined, `${name}: no group 9 off arch 12`);
+      continue;
+    }
+    arch12 += 1;
+    assert.notEqual(extras, undefined, `${name}: the continuation reads`);
+    const group = (parameterGroups(c) ?? [])[9] as { address: number };
+    // `0x249A0` adds `4 * band` to the cursor, which is the group's first entry, and band 3 is 12.
+    assert.equal(extras?.pair.address, group.address + 1 + 4 * 3, `${name}: band 3 at 4 * band`);
+    // `0x2492E` reads `0x10 + 4 * flag + (selector >> 2)`, whose lowest byte is `0x10`.
+    assert.equal(extras?.fields.address, group.address + 1 + 0x10, `${name}: the table at 0x10`);
+    // Section 103's values, which is the second end: the pair ratchets 16, 64, 128 up to 255.
+    assert.deepEqual(extras?.pair.values, [255, 255], `${name}: band 3 reads 255 and 255`);
+    assert.deepEqual(extras?.fields.bytes, [0, 0, 0, 0, 0x55, 0x55, 0x55, 0x55],
+      `${name}: every field zero for the flag clear and one for it set`);
+  }
   assert.equal(arch12, 6, `${arch12} arch 12 containers`);
 });
 
@@ -609,5 +661,53 @@ test('the key table claims the mode record it is, in whichever form', skipWithou
     const both = claims(c).filter((x) => x.start === c.markerOffset + 4
       && (x.owner === 'key-table' || x.owner === 'slot-6-mode'));
     assert.equal(both.length, 1, `${name}: claimed twice`);
+  }
+});
+
+test('a group that loses its own entry count shows as a gap, which it did not before',
+  skipUnless('one_config', 'h600_config', 'h525_config', 'arch8_config_a'), () => {
+  // **The control for the whole accounting, and the one thing none of the tests above can be.** Every
+  // other test here asks whether the readers agree with this corpus; this one damages a container and
+  // demands the report notice. It is the shape the review of 13 August 2026 found missing: the number
+  // reported 100.00% with zero gaps and zero overlaps on bytes no reader could explain, because
+  // `slot-15-spare` filled whatever was unclaimed between the lowest base slot 15 group and the
+  // pointer array. Zeroing one group's `u8` entry count made the group claim one byte instead of
+  // thirteen and the catch-all absorbed the difference: 32 bytes on a Harmony One, 28 on a Harmony 600
+  // and a Harmony 880, 8 on a Harmony 525, in silence, every time.
+  //
+  // Four architectures, because the catch-all was not arch 12's: it claimed nothing in the unperturbed
+  // containers off arch 12 and absorbed bytes in all four once one was damaged.
+  for (const name of ['one_config', 'h600_config', 'h525_config', 'arch8_config_a']) {
+    const raw = require_(name);
+    const c = parse(raw);
+    const before = coverage(c);
+    assert.equal(before.gapCount, 0, `${name}: nothing unclaimed to start with`);
+
+    // The largest group, so the loss is worth more than a rounding error, and its count byte is the
+    // first byte of its own body.
+    const groups = parameterGroups(c) ?? [];
+    const biggest = [...groups].sort((a, b) => b.length - a.length)[0] as
+      { address: number; length: number };
+    const at = c.blobOffsetOf(biggest.address) as number;
+    const { start } = containerExtent(raw);
+    const damaged = raw.slice();
+    damaged[start + at] = 0;
+
+    const after = coverage(parse(damaged));
+    // **Exact, and derivable rather than recorded.** A group with a zero count claims its count byte
+    // and nothing else, so the loss is its own length less one: 32 bytes on the Harmony One, 28 on the
+    // Harmony 600 and the Harmony 880, 8 on the Harmony 525. A floor would have absorbed the catch-all
+    // coming back for part of it.
+    const lost = biggest.length - 1;
+    assert.equal(after.gapCount, 1, `${name}: one gap, where the group's body was`);
+    assert.equal(after.gapBytes, lost, `${name}: ${lost} bytes of body unclaimed`);
+    assert.deepEqual(after.gapFamilies, [{ length: lost, count: 1, bytes: lost }],
+      `${name}: one family of one`);
+    // **Not the percentage**, which is the honest limit of that number: 32 bytes of a 1672832 byte
+    // Harmony One container still rounds to 100.00%, so a report quoting only the fraction cannot see
+    // this at all and `gapCount` is the signal.
+    // And no owner picked the bytes up under another name, which is what would hide it again.
+    assert.equal(claims(parse(damaged)).filter((x) => x.owner === 'slot-15-spare').length, 0,
+      `${name}: nothing claims a run for being unclaimed`);
   }
 });

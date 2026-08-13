@@ -99,6 +99,7 @@ import { valueMaps } from './valuemap.ts';
 import {
   TIMER_RECORD_LENGTH,
   TOUCH_AREA_LENGTH,
+  lightBandExtras,
   parameterGroups,
   timers,
   touchPages,
@@ -523,14 +524,20 @@ export function rebuilds(c: Container): Rebuild[] {
     framed(claim.start, claim.owner, w);
   }
 
-  // Base slot 15's spare run, the twelve arch 12 bytes no group covers. **Carried, not framed**,
-  // and that is the point of the two numbers: whose the bytes are is settled, section 84, what they
-  // say is not, so writing them as the constant they happen to be in all six arch 12 containers
-  // would be a claim nothing here can support.
-  for (const claim of claims(c)) {
-    if (claim.owner !== 'slot-15-spare') continue;
-    const w = new Writer(claim.length).raw(c.blob.subarray(claim.start, claim.start + claim.length));
-    partly(claim.start, claim.owner, w, 0);
+  // The twelve bytes past base slot 15 group 9, which only arch 12 (Harmony One) carries. **Framed
+  // now, where the spare run they used to be was carried**: that run was written back raw with a
+  // framed count of zero, on the reasoning that whose the bytes were was settled by position and
+  // what they said was not. Section 103 read both halves out of the firmware, so the pair goes back
+  // through `u16` fields and the field table through its own bytes, and a byte either reader has
+  // wrong now fails the round trip instead of being copied past.
+  const extras = lightBandExtras(c);
+  if (extras !== undefined) {
+    const pair = new Writer(extras.pair.length);
+    for (const value of extras.pair.values) pair.u16(value);
+    at(extras.pair.address, 'slot-15-band-pair', pair);
+    const fields = new Writer(extras.fields.length);
+    for (const byte of extras.fields.bytes) fields.u8(byte);
+    at(extras.fields.address, 'slot-15-band-fields', fields);
   }
 
   // A tagged list, in either of its two forms.

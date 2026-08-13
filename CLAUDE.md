@@ -1692,7 +1692,13 @@ longer than the clock record and base slot 17's is two where it names the pictur
 table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
 bytes belong to base slot 15 and to no group, by position rather than by reading. **Those twelve are
 read now**, section 103: group 9 continuing past the six entries its header declares, four bytes as
-one more pair of device levels and eight as a table of two bit fields, with no remainder.
+one more pair of device levels and eight as a table of two bit fields, with no remainder. **And they
+are claimed by reading now too**, which took a year longer than reading them: the accounting kept a
+`slot-15-spare` owner filling whatever was unclaimed between the lowest group and the pointer array,
+so zeroing any group's entry count let the catch-all absorb what the group stopped claiming and the
+report still said 100.00% with no gap and no overlap, over 32 bytes on a Harmony One and 28 on a
+Harmony 600 and a Harmony 880. A claim made because a run was left over cannot fail, which is the
+same defect as an unfalsifiable test and it sat inside the number that measures M2.
 
 **Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
 overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:

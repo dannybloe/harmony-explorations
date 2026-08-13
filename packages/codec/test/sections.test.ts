@@ -1368,9 +1368,9 @@ test('base slot 15s display light groups obey the bounds the firmware imposes',
     assert.deepEqual(group4, [...group4].sort((a, b) => a - b), `${name}: ascending bands`);
 
     // Group 9: four pairs of device levels at four bytes each, so the declared six entries hold three
-    // and the fourth is in the spare run. The three declared ones ascend, and the spare pair
-    // continues. Section 103 read these as timeouts and section 106 corrected it: both halves go
-    // straight out to an I2C device's registers and nothing counts them down.
+    // and the fourth is past them, which `lightBandExtras` reads. The three declared ones ascend and
+    // the fourth pair continues. Section 103 read these as timeouts and section 106 corrected it: both
+    // halves go straight out to an I2C device's registers and nothing counts them down.
     const group9 = values(9);
     assert.equal(group9.length, 6, name);
     assert.deepEqual(group9, [...group9].sort((a, b) => a - b), `${name}: longer with the band`);

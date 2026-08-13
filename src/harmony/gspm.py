@@ -565,9 +565,10 @@ PARAMETER_FADE_DELAY_GROUP = 0      # one value: the display light fade's per st
 PARAMETER_LIGHT_LEVEL_GROUP = 1     # entries 2 to 5 are the four light levels, 0 to 27
 PARAMETER_BAND_GROUP = 4            # three threshold pairs on analogue channel 1, with hysteresis
 PARAMETER_BATTERY_GROUPS = (5, 6)   # the two millivolt curves, chosen by the charger input
-# Four pairs at 4 * band, the fourth in the spare run. Both halves of a pair are sent to the I2C
-# device at address 0x60, as its registers 2/3 and 4/5. Section 103 read them as timeouts, which they
-# are not: nothing counts them down, section 106.
+# Four pairs at 4 * band, the fourth past the six entries the group's own header declares, which
+# `lightBandExtras` in packages/codec reads. Both halves of a pair are sent to the I2C device at
+# address 0x60, as its registers 2/3 and 4/5. Section 103 read them as timeouts, which they are not:
+# nothing counts them down, section 106.
 PARAMETER_DEVICE_LEVEL_GROUP = 9
 
 # The ceiling the display light setter enforces, and therefore the highest value a level may carry.

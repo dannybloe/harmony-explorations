@@ -33,8 +33,8 @@ import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Bod
   irHeaderLength, irRecordBlocks, irRecordStart, irSymbolBlock, irSymbolTable } from './ir.ts';
 import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable,
   taggedList, taggedListPools } from './sections.ts';
-import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, parameterGroups, timers, touchPages }
-  from './tables.ts';
+import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, lightBandExtras, parameterGroups, timers,
+  touchPages } from './tables.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
 export interface Claim {
@@ -403,30 +403,21 @@ export function claims(c: Container, withPictures = true): Claim[] {
   for (const group of groups) {
     at(group.address, group.length, 'slot-15-group');
   }
-  // Base slot 15's run is contiguous from its lowest group to its own pointer array, and on arch 8,
-  // 9 and 14 the groups fill it exactly. **On arch 12 twelve bytes do not belong to any group**,
-  // section 44 noticed them and called them the only untidy number here. They are byte identical in
-  // all six arch 12 containers, `ff 00 ff 00 00 00 00 00 55 55 55 55`, and no `u24` anywhere in any
-  // of them names that address, so what they are is unread; whose they are is not. Section 84.
-  const parameterSlot = slot(15);
-  if (parameterSlot !== undefined && groups.length > 0) {
-    const table = c.blobOffsetOf((c.sections[parameterSlot] as { address: number }).address);
-    const starts = groups.map((g) => [c.blobOffsetOf(g.address), g.length] as const);
-    const first = Math.min(...starts.map(([o]) => o ?? Infinity));
-    if (table !== undefined && Number.isFinite(first) && table > first) {
-      const filled = new Uint8Array(table - first);
-      for (const [o, length] of starts) {
-        if (o === undefined) continue;
-        for (let i = 0; i < length; i += 1) filled[o - first + i] = 1;
-      }
-      for (let i = 0; i < filled.length; i += 1) {
-        if (filled[i] === 1) continue;
-        let j = i;
-        while (j < filled.length && filled[j] !== 1) j += 1;
-        add(first + i, j - i, 'slot-15-spare');
-        i = j;
-      }
-    }
+  // The twelve bytes past base slot 15 group 9, which only arch 12 (Harmony One) carries: band 3's
+  // pair of device levels and the two bit field table, at the offsets the firmware computes.
+  //
+  // **This used to be a `slot-15-spare` owner filling every unclaimed byte** between the lowest group
+  // and the pointer array, from section 84, which claimed them by position because nothing had read
+  // them. Section 103 read them, and the catch-all outlived the reason for it. It was also unbounded
+  // and content blind, so it absorbed whatever a broken group stopped claiming: zeroing one group's
+  // entry count still reported 100.00%, zero gaps and zero overlaps, with 32 bytes absorbed on a
+  // Harmony One, 28 on a Harmony 600 and a Harmony 880 and 8 on a Harmony 525. Measured over all
+  // nineteen containers, the owner claimed exactly these twelve and nothing else anywhere, so the two
+  // stated claims replace it byte for byte and an unread run in base slot 15 is a gap again.
+  const extras = lightBandExtras(c);
+  if (extras !== undefined) {
+    at(extras.pair.address, extras.pair.length, 'slot-15-band-pair');
+    at(extras.fields.address, extras.fields.length, 'slot-15-band-fields');
   }
   const touch = touchPages(c);
   if (touch !== undefined) {
