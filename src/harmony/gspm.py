@@ -2990,6 +2990,7 @@ def _ir_summary(c: Container) -> Optional[Dict[str, object]]:
             length = c.ir_block_length(block)
             if length is not None:
                 blocks[block] = length
+    region = c.ir_region()
     return {
         'groups': len(groups),
         'records': len(records),
@@ -2998,6 +2999,11 @@ def _ir_summary(c: Container) -> Optional[Dict[str, object]]:
         'distinct_blocks': len(blocks),
         'block_bytes': sum(blocks.values()),
         'header_bytes': header_bytes,
+        # Both ends of the record area, which the two implementations derived differently for a
+        # while and nothing compared: this reader has used `ir_header_length` since the flat 21
+        # was corrected and the TypeScript one still added the constant, so its top was nine
+        # bytes short wherever the highest header declared two groups. Section 139 entry 15.
+        'region': None if region is None else list(region),
     }
 
 

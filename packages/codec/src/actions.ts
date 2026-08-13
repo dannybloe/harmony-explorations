@@ -17,7 +17,7 @@
  * `docs/findings.md` sections 33, 34, 37, 39, 42, 43, 69, 70, 71, 72, 73 and 74.
  */
 
-import { SECOND_SPACE_LIMIT, ACTION_NOOP_LIMIT } from './ir.ts';
+import { SECOND_SPACE_LIMIT, ACTION_NOOP_LIMIT, subOpcode } from './ir.ts';
 import type { Instruction } from './gspm.ts';
 
 /** The opcode above which bit 7 is stripped and one routine handles everything. */
@@ -441,7 +441,13 @@ export function reading(instruction: Instruction, architecture: number): Reading
 
   // Opcodes from `0x1F` up dispatch on the operand's high byte, those below it on the low byte. The
   // boundary is the band floor, not the canonical opcode, for the same reason as `BAND_FLOORS`.
-  const sub = opcode >= 0x1f ? operand >>> 8 : operand & 0xff;
+  //
+  // **Through `subOpcode`, because this was a second copy of it.** The expression here read
+  // `opcode >= 0x1f ? operand >>> 8 : operand & 0xff`, byte for byte what `ir.ts` already computes,
+  // with the boundary as a bare literal in both. The two guards above narrow the opcode to exactly
+  // `subOpcode`'s domain, so it cannot answer undefined here, and the fallback is the safe half of
+  // the split rather than a non null assertion.
+  const sub = subOpcode(instruction)?.value ?? (operand & 0xff);
   for (const [floor, what] of bands) {
     if (sub >= floor) return typeof what === 'function' ? what(operand) : what;
   }

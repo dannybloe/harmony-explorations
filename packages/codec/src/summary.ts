@@ -12,6 +12,7 @@ import {
   irGroups,
   irHeaderLength,
   irRecordBlocks,
+  irRegion,
 } from './ir.ts';
 import type { Container } from './gspm.ts';
 
@@ -100,6 +101,11 @@ function irSummary(c: Container): Record<string, unknown> | null {
     distinct_blocks: blocks.size,
     block_bytes: blockBytes,
     header_bytes: headerBytes,
+    // Both ends of the record area. **Added because the two implementations had diverged here and
+    // nothing compared them**: `ir_region` in Python has used `ir_header_length` since the flat 21 was
+    // corrected, and this one still added the constant, so its top was nine bytes short wherever the
+    // highest header declared two groups. Section 139 entry 15.
+    region: irRegion(c) ?? null,
     // **No frame count here, and that is the finding rather than an omission.** The frame was in this
     // object for an hour and the vector immediately caught the two implementations disagreeing about
     // 37 records of one arch 8 (Harmony 880) config, because Python had grown a second decoder that

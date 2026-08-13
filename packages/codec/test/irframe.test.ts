@@ -520,3 +520,80 @@ test(
     }
   },
 );
+
+test('the two gap thresholds are tuned, and these are the margins they are tuned to',
+  skipWithoutLab(), () => {
+  // The docstring on `GAP_US` and `TRAILING_GAP_US` said the corpus leaves "three orders of magnitude
+  // of room" and that the thresholds "are not tuned". It compared a bit against the 32767 terminator,
+  // which is not what either constant separates a bit from. These are the numbers that matter, and
+  // pinning them is what turns a habit into a decision: widening either constant now has to explain
+  // itself against a measurement.
+  let largestBit = 0;
+  let largestBitRecords = 0;
+  let smallestGap = Infinity;
+  let framed = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        if (irClass(c, address) !== IR_CLASS_STREAM) continue;
+        const readings = irFrames(c, address, 1);
+        if (readings.length !== 1) continue;
+        framed += 1;
+        const frame = readings[0] as { long: number };
+        if (frame.long > largestBit) { largestBit = frame.long; largestBitRecords = 0; }
+        if (frame.long === largestBit) largestBitRecords += 1;
+        const first = irHeaderPointers(c, address)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        for (const word of words) {
+          const us = word & IR_PULSE_MAX;
+          if (us >= 2000 && us < smallestGap) smallestGap = us;
+        }
+      }
+    }
+  }
+  // The same 3547 the closure test above counts, which says every class 5 record already reads as
+  // none: the class gate changes the population by zero, and that is worth knowing rather than
+  // assuming, since `irRepeatPeriod` needed exactly this gate and did not have it.
+  assert.equal(framed, 3547, `${framed} records read as a frame under exactly one convention`);
+  // 1850 against a threshold of 2000 is 7.5% of room, not three orders of magnitude, and the gap
+  // above it starts at 2230, so the constant sits inside a 380 us window with traffic on both sides.
+  assert.equal(largestBit, 1850, 'the largest duration a frame consumes as a bit');
+  assert.equal(largestBitRecords, 22, 'how many records reach it');
+  assert.equal(smallestGap, 2230, 'the smallest duration at or above the trailing threshold');
+  assert.ok(largestBit < 2000 && smallestGap > 2000, 'the threshold separates the two populations');
+});
+
+test('how many pointer groups a record declares, per architecture', skipWithoutLab(), () => {
+  // Four comments in `ir.ts` said this is 1 on arch 9 (Harmony 525) as well as on arch 12 (Harmony
+  // One) and arch 14 (Harmony 600 and 700), and one of them was on the constant a caller reaches for
+  // when sizing a header. `docs/config-format.md` had said the opposite for weeks and the code was
+  // right the whole time, which is the worst combination: nothing failed, and the comment is what a
+  // reader trusts.
+  //
+  // Asserted as the whole distribution rather than as a count of the exceptions, because "2 in 37
+  // records" is a claim about one contributor's four configs and the two arch 8 (Harmony 880) configs
+  // contributed later have none, section 134.
+  const byArch = new Map<number, Map<number, number>>();
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    const counts = byArch.get(c.architecture as number) ?? new Map<number, number>();
+    for (const group of irGroups(c) ?? []) {
+      for (const address of group.addresses) {
+        const declared = irGroupCount(c, address) ?? -1;
+        counts.set(declared, (counts.get(declared) ?? 0) + 1);
+      }
+    }
+    byArch.set(c.architecture as number, counts);
+  }
+  const shape = [...byArch]
+    .sort((a, b) => a[0] - b[0])
+    .map(([arch, counts]) => [arch, [...counts].sort((a, b) => a[0] - b[0])] as const);
+  assert.deepEqual(shape, [
+    [8, [[1, 2159], [2, 148]]],
+    [9, [[1, 139], [2, 168]]],
+    [12, [[1, 888]]],
+    [14, [[1, 1128]]],
+  ]);
+});

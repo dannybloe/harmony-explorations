@@ -31,7 +31,12 @@ export const IR_CLASS_STREAM = 1;
 /**
  * The class the arch 9 sample reads in all 200 of its records, and the only class in the corpus
  * that is not 1. It shares the header, section 65: the class byte at +7, the record's own start at
- * +8, two backward pointers at +12 and +15 and a NULL at +18, all 200 of 200.
+ * +8, and a group of three pointers from +12, two of them backward and the third NULL, in all 200.
+ *
+ * **The group is the first of one or two**, and this said "two backward pointers at +12 and +15 and a
+ * NULL at +18" as though a header held one group: 61 of that sample's 200 records declare two, and
+ * 107 of 107 in the second arch 9 (Harmony 525) config do. The layout above is the first group's.
+ * `IR_GROUP_COUNT_AT` has the distribution.
  *
  * **What its pointers name is a body, not a duration stream**, section 82. The body indexes a
  * shared table of small pulse blocks, so the durations are one level further down and reused
@@ -45,7 +50,8 @@ export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, 
  * The fixed part of a record header, before the pointer groups.
  *
  * Section 61 read the header as a flat 21 bytes with two block pointers and a NULL. That is the
- * `count == 1` case and it is every record on arch 12, arch 14 and arch 9, which is why it held.
+ * `count == 1` case and it is every record on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700),
+ * which is why it held on the architectures this project reads code on.
  */
 export const IR_HEADER_BASE = 12;
 /** One group: three `u24` block pointers, any of which may be NULL. */
@@ -54,13 +60,25 @@ export const IR_POINTERS_PER_GROUP = 3;
 /**
  * Header byte `+11`: how many nine byte pointer groups follow, so the header is `12 + 9 * count`.
  *
- * It is 1 in every record on arch 12, arch 14 and arch 9. On arch 8 it is 2 in 37 records of every
- * config, and that one number explains three separate holes in the accounting at once: 37 headers
- * were claimed nine bytes short, 37 blocks went unclaimed, and the 37 gaps in between were the
- * second group. `docs/findings.md` section 75.
+ * It is 1 in every record on arch 12 (Harmony One), 888 of 888, and on arch 14 (Harmony 600 and 700),
+ * 1128 of 1128. On arch 8 (Harmony 880) it is 2 in 37 records of each of one contributor's four
+ * configs and in none of the two contributed later, section 134, and that one number explains three
+ * separate holes in the accounting at once: 37 headers were claimed nine bytes short, 37 blocks went
+ * unclaimed, and the 37 gaps in between were the second group. `docs/findings.md` section 75.
+ *
+ * **And it is 2 in more than half of arch 9 (Harmony 525)**, 168 records against 139, which four
+ * comments in this file said was impossible while `docs/config-format.md` had said the opposite for
+ * weeks. The code was right throughout; what a reader sizing a header would have trusted was not.
+ * The distribution is asserted per architecture in `test/irframe.test.ts`.
  */
 export const IR_GROUP_COUNT_AT = 11;
-/** The `count == 1` header, which is every record outside arch 8. Kept for callers that assume it. */
+/**
+   * The `count == 1` header, 21 bytes.
+   *
+   * **Not "every record outside arch 8"**, which is what this said: arch 9 (Harmony 525) carries two
+   * groups in 168 of its 307 records. Kept for the one caller that has no record to ask, as the
+   * fallback when `irHeaderLength` cannot answer, and every other caller reads the count.
+   */
 export const IR_HEADER_LENGTH = IR_HEADER_BASE + IR_HEADER_GROUP;
 export const IR_BLOCK_POINTERS = [12, 15];
 export const IR_BLOCK_TERMINATOR = 0;
@@ -440,6 +458,22 @@ export interface IrRecordFields {
   encoding?: number;
 }
 
+/** A built header and the address that must go in the group array, which is not where it starts. */
+export interface IrBuiltRecord {
+  bytes: Uint8Array;
+  /**
+   * `start + IR_RECORD_POINTER_BIAS`, the value base slot 5's group array holds.
+   *
+   * **Returned because a caller cannot be expected to know it.** This function used to hand back the
+   * bytes alone, having written `start` into the header at `+8`, and a caller that filed that same
+   * `start` in the group array would produce a config whose two checksums pass, whose counts close and
+   * whose every infrared code addresses seven bytes into the wrong place. That is section 117's
+   * failure mode exactly, demonstrated there by somebody else's cloned device: parsing is not
+   * validating, and nothing here checks a pointer inside a carried run.
+   */
+  pointer: number;
+}
+
 /**
  * Build a class 1 record header from fields.
  *
@@ -447,8 +481,15 @@ export interface IrRecordFields {
  * learned; `start` and `pointers` are addresses, which depend on where everything else in the
  * config ended up, and section 55's rule that a picture's position is implied by everything before
  * it applies here too. So this refuses to invent them.
+ *
+ * **The carrier is bounded above and not below**, and the asymmetry is a real gap rather than an
+ * oversight to paper over: `IR_CARRIER_MAX_NS` has a firmware reading and no floor does, so nothing
+ * stops this emitting a one nanosecond period, which is a 1 GHz carrier the Timer 2 arithmetic cannot
+ * produce. The corpus carries 12 distinct periods across 3387 records, 17761 to 27777 ns, which is
+ * 36.0 to 56.3 kHz. A floor invented from that range would refuse a device nobody here owns, so it is
+ * left open and written down instead. Section 139.
  */
-export function irBuildRecord(fields: IrRecordFields): Uint8Array {
+export function irBuildRecord(fields: IrRecordFields): IrBuiltRecord {
   const { periodNs, start, pointers } = fields;
   if (pointers.length === 0 || pointers.length % IR_POINTERS_PER_GROUP !== 0) {
     throw new IrEncodeError(`${pointers.length} pointers is not a whole number of groups`);
@@ -471,7 +512,7 @@ export function irBuildRecord(fields: IrRecordFields): Uint8Array {
   put24(8, start);
   bytes[IR_GROUP_COUNT_AT] = groups;
   pointers.forEach((pointer, i) => put24(IR_HEADER_BASE + 3 * i, pointer));
-  return bytes;
+  return { bytes, pointer: start + IR_RECORD_POINTER_BIAS };
 }
 
 export interface IrGroup {
@@ -546,6 +587,16 @@ export function irRecordStart(c: Container, address: number): number | undefined
  * On the arch 9 sample the two ends land exactly on the boundaries of the one big region the byte
  * accounting could not attribute, which is what says the area is this and not something that
  * merely overlaps it. Section 65.
+ *
+ * **The top is `irHeaderLength`, per record, and this used the flat `IR_HEADER_LENGTH`.** That
+ * constant is `12 + 9 * 1`, the length of a header declaring one group, and section 75 read the rule
+ * as `12 + 9 * count`. A record with two groups is nine bytes longer, so where the highest header was
+ * one of those the area's top came out nine bytes short: `h525_config_2` (arch 9, Harmony 525) and
+ * `arch8_config_a` (arch 8, Harmony 880), two of the thirteen containers with an infrared table.
+ *
+ * It is also a divergence from `src/harmony/gspm.py`, whose `ir_region` calls `ir_header_length` and
+ * has since that reader was corrected. Two implementations of one derivation with only one of them
+ * fixed is what the golden vectors exist to catch and this was not in them; it is now.
  */
 export function irRegion(c: Container): [number, number] | undefined {
   const groups = irGroups(c);
@@ -556,7 +607,7 @@ export function irRegion(c: Container): [number, number] | undefined {
     for (const address of group.addresses) {
       const start = irRecordStart(c, address);
       if (start === undefined) return undefined;
-      const top = start + IR_HEADER_LENGTH;
+      const top = start + (irHeaderLength(c, address) ?? IR_HEADER_LENGTH);
       high = high === undefined ? top : Math.max(high, top);
       const blocks = irRecordBlocks(c, address);
       for (const block of blocks.length === 0 ? [start] : blocks) {

@@ -18389,17 +18389,17 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Fourteen shipped readers answered plausibly where they should have refused, and three were rails
+## 139. Fifteen shipped readers answered plausibly where they should have refused, and three were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Fourteen defects came out of it that a sample could not have found, and they share one shape, which is
+Fifteen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 and 14, which were read a day later and are
+They are listed newest reading first, except entries 13 to 15, which were read a day later and are
 appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
@@ -18855,6 +18855,69 @@ the mode program docstring corrected alongside them, `MODE_PROGRAM_ARCHITECTURES
 "arch 9 still manages only 43 of 114 ... and is not established" over a set of four, which is section 54's
 own before column left standing beside the set that section changed. It is 2515 of 2515 across the corpus,
 asserted per architecture.
+
+### 15. The infrared reader's comments described a corpus it does not have, and one of its two implementations had been left behind
+
+Six items in `ir.ts` and `irframe.ts`, found by reading the file rather than by any sample failing. The
+code was right in four of them and the prose was not, which is the combination worth a section: a
+comment is what the next person edits against, and none of these could fail.
+
+**A divergence the golden vectors were built to catch and did not carry.** `irRegion` computed the top
+of base slot 5's record area as `start + IR_HEADER_LENGTH`, the flat 21 of a header declaring one
+group, where section 75 read the rule as `12 + 9 * count`. `src/harmony/gspm.py`'s `ir_region` calls
+`ir_header_length` and has since that reader was corrected, so the two implementations of one
+derivation disagreed with only one of them fixed. It bites where the highest header declares two
+groups, nine bytes short in `h525_config_2` (arch 9, Harmony 525) and `arch8_config_a` (arch 8, Harmony
+880), two of thirteen. The region is in the vector now, and with the fix reverted the vector fails on
+exactly those two containers and no others, which is the mechanism working rather than an argument
+that it would.
+
+**Four comments said a record declares one pointer group outside arch 8, and arch 9 declares two in
+more than half.** Measured over every record: 888 of 888 on arch 12 (Harmony One) and 1128 of 1128 on
+arch 14 (Harmony 600 and 700) carry one, arch 8 (Harmony 880) carries 2159 and 148, and **arch 9
+(Harmony 525) carries 139 and 168**. One of the four was on `IR_HEADER_LENGTH` itself, which is what a
+caller reaches for when sizing a header, and another described the class 5 layout as "two backward
+pointers at +12 and +15 and a NULL at +18" as though a header held one group. `docs/config-format.md`
+has said the opposite for weeks and the code read the count correctly throughout, which is the worst
+arrangement available: nothing fails, and the wrong half is the half a reader trusts.
+
+**Two thresholds were called untuned and both are tuned.** `GAP_US` and `TRAILING_GAP_US` carried
+"every bit duration in the corpus is under 1800 us and every terminator is 32767, so the threshold has
+three orders of magnitude of room and is not tuned", which compares a bit against the terminator and
+not against what either constant separates it from. The largest duration a frame actually consumes as
+a bit is **1850**, in 22 records, and the smallest duration at or above 2000 anywhere in a framed
+record's block is **2230**. So `TRAILING_GAP_US` sits 7.5% above the one and 10% below the other, a 380
+us window with traffic on both sides, and a device whose long bit runs 8% high truncates its own frame.
+`GAP_US` keeps a 53.8% margin, and the corpus does hold durations of exactly 4000, which the strict
+comparison admits as a bit.
+
+**A summary contradicted the test proving it, in the direction of over-claiming.** `irFrames` was
+described as returning "one or none here" while `irframe.test.ts` asserts 3547 one, 148 both and 935
+none. The 148 are the whole reason the function returns a list.
+
+**The record builder knew the address a caller needs and did not hand it over.** `irBuildRecord` wrote
+`start` into the header at `+8` and returned the bytes alone, while base slot 5's group array holds
+`start + IR_RECORD_POINTER_BIAS`. A caller filing the first would produce a config whose two checksums
+pass, whose counts close and whose every code addresses seven bytes into the wrong place, which is
+section 117's failure mode as demonstrated there by somebody else's cloned device. It returns
+`{ bytes, pointer }` now.
+
+**And one that is left open rather than closed.** The carrier is bounded above by `IR_CARRIER_MAX_NS`,
+which has a firmware reading, and below by nothing, so the builder will emit a one nanosecond period.
+The corpus carries 12 distinct periods across 3387 records, 17761 to 27777 ns or 36.0 to 56.3 kHz; a
+floor invented from that range would refuse a device nobody here owns, so it is written down instead of
+guessed.
+
+**One finding did not reproduce, and the attempt to test it independently was wrong in its own
+premise.** The review reported 20 headerless Sharp-family records whose first pair is `270/790`, which
+`headerPairs = 1` would eat as a header; there are **none**, in either config named, because that
+measurement predates entry 1's correction and its "first block" was a neighbour's. A structural test of
+the underlying question, whether one header pair is right for every record, was then built on the
+assumption that a block's marks and spaces alternate by position. They do not: the flag is in the word,
+and a Harmony One record's first block can open with fourteen **spaces** of 32767, a leading gap that is
+neither header nor bit. So the docstring's "one in every record here" is unproven rather than refuted,
+and it says so now. What would settle it is a frame named outside this codec, which the calibration pair
+gives for two configs and nothing gives for the rest.
 
 ### What it changes
 

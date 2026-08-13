@@ -14,6 +14,13 @@ import { u16, u24, u8, uint } from './bytes.ts';
 export const VALUE_MAP_SLOT = 14;
 /** The record's count field. Two bytes on arch 14, one on the rest. */
 export const VALUE_MAP_COUNT_WIDTH: Readonly<Record<number, number>> = { 8: 1, 9: 1, 12: 1, 14: 2 };
+/**
+ * The width of base slot 14's **section** count, which is one byte everywhere.
+ *
+ * Named because it is not the table above. That one is the count inside each record, and the two sit
+ * ten lines apart in `valueMaps` with different widths on arch 14 (Harmony 600 and 700).
+ */
+export const VALUE_MAP_SECTION_COUNT_WIDTH = 1;
 export const VALUE_MAP_KEY_WIDTH = 2;
 export const VALUE_MAP_RANGE_BYTES = 7;
 
@@ -77,7 +84,14 @@ export function valueMaps(c: Container): ValueMap[] | undefined {
     throw error;
   }
   if (slot >= c.sections.length) return undefined;
-  const header = countedPointers(c, slot, 1);
+  // **The section's count, not a record's, and the literal 1 is its width.** Two count fields of
+  // different widths sit within ten lines of each other here: the section header's is one byte on
+  // every architecture, and each record's is `VALUE_MAP_COUNT_WIDTH`, two bytes on arch 14 (Harmony
+  // 600 and 700). Writing the first as a bare literal beside a table named for the second is how the
+  // next reader gets them backwards, and the reading is right on all fifteen containers, so the
+  // correction is to say which count this is rather than to change it: a `u16` section count would
+  // give values between 28197 and 62480 where the real counts are single digits.
+  const header = countedPointers(c, slot, VALUE_MAP_SECTION_COUNT_WIDTH);
   if (header === undefined) return undefined;
 
   const stride = VALUE_MAP_KEY_WIDTH + 3;

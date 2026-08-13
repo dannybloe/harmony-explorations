@@ -63,8 +63,19 @@ function pulses(words: readonly number[]): Pulse[] {
 /**
  * A duration above this is a gap rather than a bit, so it ends the frame.
  *
- * Every bit duration in the corpus is under 1800 us and every terminator is 32767, so the threshold
- * has three orders of magnitude of room and is not tuned.
+ * **Both thresholds are tuned, and this said they are not.** The claim was "every bit duration in the
+ * corpus is under 1800 us and every terminator is 32767, so the threshold has three orders of
+ * magnitude of room", and the terminator is not what either constant separates a bit from. Measured
+ * over every record the reader frames: the largest duration actually consumed as a bit is **1850**, in
+ * 20 records, and the smallest duration at or above 2000 anywhere in a framed record's block is
+ * **2230**. So `TRAILING_GAP_US` sits 7.5% above the largest bit and 10% below the smallest gap, which
+ * is a real margin and a narrow one: a device whose long bit runs 8% above this population truncates
+ * its own frame.
+ *
+ * `GAP_US` keeps its 53.8% margin against the same 1850, and the corpus does hold durations of exactly
+ * 4000, which the strict `>` admits as a bit. None of them is in a framed record today. The numbers
+ * are asserted in `test/irframe.test.ts` so widening either constant has to be a decision rather than
+ * a habit.
  */
 const GAP_US = 4000;
 /** The other half of a pair being this long also ends the frame, which is how a pulse width protocol
@@ -128,9 +139,17 @@ function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number)
  * know the protocol family, and a record that decodes under both conventions is a warning rather
  * than a result. `irFrames` returns every reading so that a caller can see such a case.
  *
- * The header is skipped as `headerPairs` whole pairs, which is one in every record here: Sony leads
- * with 2400 and 600, and the two 48 bit families with about 3400 and 1700. A protocol with no header
- * would need zero, so the parameter exists rather than the constant being wired in.
+ * The header is skipped as `headerPairs` whole pairs, one by default: Sony leads with 2400 and 600,
+ * and the two 48 bit families with about 3400 and 1700. A protocol with no header would need zero, so
+ * the parameter exists rather than the constant being wired in.
+ *
+ * **Whether one is right for every record here is open**, and the wording was "which is one in every
+ * record here", which is a claim nothing checks. A structural test of it was tried on 13 August 2026
+ * and was wrong in its own premise, taking a block's marks and spaces to alternate by position when
+ * the flag is in the word: the first block of a Harmony One record can open with fourteen spaces of
+ * 32767, which is a leading gap and neither a header nor a bit. So the question stands, and what would
+ * settle it is a record whose frame is named outside this codec, which the calibration pair provides
+ * for two configs and nothing provides for the rest.
  */
 export function irFrame(
   c: Container,
@@ -141,7 +160,15 @@ export function irFrame(
   return readings.length === 1 ? readings[0] : undefined;
 }
 
-/** Every convention under which a record's first block reads as a frame, which is one or none here. */
+/**
+ * Every convention under which a record's first block reads as a frame.
+ *
+ * **Usually one, sometimes both, often none**, and this said "which is one or none here" while the
+ * test two files over asserted 3547 one, 148 both and 935 none. The 148 are the point of returning a
+ * list rather than a value: a record that decodes under both conventions is a warning, and `irFrame`
+ * refuses it for exactly that reason. A summary of a closure that contradicts the test proving it, in
+ * the direction of over-claiming, is the shape this repository keeps finding in its own prose.
+ */
 export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame[] {
   const first = irHeaderPointers(c, record)[0];
   if (!first) return [];

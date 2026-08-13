@@ -1436,7 +1436,9 @@ The count is **1 in every record on arch 12, arch 14 and most of arch 9**, and t
 the 21 byte header with two pointers and a trailing NULL that section 61 described. ~~On arch 8 it is
 2 in exactly 37 records of every config~~<!--superseded--> **it is 2 in 37 records of four arch 8
 configs and in none of two others**, and the count follows the **devices** rather than the
-architecture, section 134. On arch 9 it is 2 in 61 records. A two group header is 30 bytes and names
+architecture, section 134. On arch 9 it is 2 in 61 of `h525_config`'s 200 records and in **all 107** of
+the second 525 config, so 168 against 139 corpus wide: more than half, which four comments in
+`packages/codec/src/ir.ts` denied outright while this page said it. A two group header is 30 bytes and names
 up to six blocks. `620 + 208 + 21` is the whole of a typical Harmony One record, since arch 12 has one
 group everywhere.
 
@@ -1495,8 +1497,8 @@ Arch 9's 200 records all read class 5, and every structural property of the head
 every one of them: the class byte at +7, the record's own start at +8 seven bytes back, both `u24`
 pointing backwards and staying inside the area, the third `u24` NULL, and no two headers
 overlapping. So **the header is one structure across both classes** and a reader can claim it,
-though arch 9 carries 61 records with two pointer groups, so its length is read rather than
-assumed, section 75. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
+though 61 of those 200 carry two pointer groups, and 107 of 107 in the second 525 config do, so its
+length is read rather than assumed, section 75. `gspm.ir_region` gives the whole area, from the lowest backward pointer to the end of the
 highest header, and on the 525 those two ends land exactly on the boundaries of the largest region
 the byte accounting could not attribute.
 

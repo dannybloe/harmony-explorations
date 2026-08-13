@@ -213,7 +213,11 @@ for (const name of WITH_INFRARED) {
           spare: c.blob[off] ?? 0,
         });
         const original = c.blob.subarray(off, off + irHeaderLength(c, address));
-        assert.deepEqual([...built], [...original], `header of the record at ${start}`);
+        assert.deepEqual([...built.bytes], [...original], `header of the record at ${start}`);
+        // And the address the group array actually holds, which the builder now states rather than
+        // leaving a caller to add seven: filing `start` instead produces a config that passes both
+        // checksums with every code addressing the wrong place, section 117.
+        assert.equal(built.pointer, address, `the group array's own pointer for ${start}`);
         records += 1;
 
         // And each duration block, from its pulses read back as a learn session would deliver
