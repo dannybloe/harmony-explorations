@@ -388,5 +388,46 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
                         for name, lines in sorted(counted.items())))
 
 
+class TheCorpusWidePopulationsAgree(unittest.TestCase):
+    """Three lists in `packages/codec/test` name the containers a corpus wide claim is made over.
+
+    Nothing compared them, and on 13 August 2026 they disagreed: `edit.test.ts` held eighteen names
+    where the other two held nineteen, missing `h525_config_2` alone, so "every container in the
+    corpus" meant two different things in two files for as long as that sample had existed. Each
+    file's own totals stayed self consistent, which is why no test could see it.
+
+    Static on purpose. It runs in a fresh clone with nothing installed, and the same shape of check
+    is why `ASampleLoopStatesItsPopulation` exists in this file rather than in the suite it guards.
+    """
+
+    # file -> the declaration whose quoted names are that file's population.
+    POPULATIONS = {
+        'packages/codec/test/coverage.test.ts': 'const ACCOUNTED',
+        'packages/codec/test/emit.test.ts': 'const REBUILT',
+        'packages/codec/test/edit.test.ts': 'const ALL_CONTAINERS',
+    }
+
+    def _names(self, relative, declaration):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', relative)
+        with open(path, encoding='utf-8') as fh:
+            source = fh.read()
+        self.assertIn(declaration, source, '%s no longer declares %s' % (relative, declaration))
+        body = source[source.index(declaration):]
+        body = body[:body.index('];')]
+        return sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
+
+    def test_the_three_lists_name_the_same_containers(self):
+        found = {relative: self._names(relative, declaration)
+                 for relative, declaration in self.POPULATIONS.items()}
+        for names in found.values():
+            self.assertEqual(len(names), 19, 'the corpus is nineteen containers')
+        first = next(iter(found.values()))
+        for relative, names in found.items():
+            self.assertEqual(names, first,
+                             '%s names a different population: missing %s, extra %s'
+                             % (relative, sorted(set(first) - set(names)),
+                                sorted(set(names) - set(first))))
+
+
 if __name__ == '__main__':
     unittest.main()

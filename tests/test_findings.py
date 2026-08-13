@@ -5,6 +5,8 @@ The analysis in docs/ was produced by an AI and is published as such, so the cla
 to be executable rather than merely written down. Each test here pins one statement from
 docs/findings.md. If a refactor breaks a conclusion, this is where it shows up.
 """
+import os
+import re
 import unittest
 
 import lab
@@ -134,17 +136,35 @@ class TestFirmwareHeader(unittest.TestCase):
         self.assertEqual(size, 24320)
         self.assertTrue(firmware.verify_checksum(page[0x1000:0x1000 + size]))
 
+    # What each remote reports in version block fields 8 and 9, measured over USB and published in
+    # docs/usb-protocol.md. They are here because the refutation below needs both ends and only one
+    # of them is in a sample: no `h600_internal_ff` was ever taken, so "nothing at 0xFF +0x0000 and
+    # nothing at 0xFF +0xE000" is a hardware reading and not something this test can recompute.
+    REPORTED_IMAGE_FIELDS = {'h600': (0x00, 0x00), 'one': (0x34, 0x16)}
+
     def test_version_block_field_8_names_an_image_the_600_does_not_have(self):
         """Fields 8 and 9 were the last unidentified bytes of the version block.
 
         Both name images in internal memory by version, and both read zero when the image is
-        absent. The 600 is the negative case for each: nothing at 0xFF+0x0000 and nothing at
-        0xFF+0xE000, and zero in both fields.
+        absent. The 600 is the negative case for each, and this test carries the refutation of the
+        one competing reading: that field 8 names the safe mode image.
+
+        It used to assert only that the safe mode image is at version 0x02, which is byte for byte
+        what its neighbour above already asserts, so it restated its premise and tested nothing.
         """
+        lab.require('h600_internal_fe')
         page = lab.load('h600_internal_fe')
-        # The alternative reading, that field 8 names the safe mode image, is what this refutes:
-        # the 600 has that image at version 0x02 and reports 0x00 in field 8.
-        self.assertEqual(firmware.parse_header(page[0x1000:]).version_bcd, 0x02)
+        safe_mode_version = firmware.parse_header(page[0x1000:]).version_bcd
+        field_8, field_9 = self.REPORTED_IMAGE_FIELDS['h600']
+        # The refutation: the 600 does have a safe mode image, at a version that is not zero, and
+        # still reports zero in field 8. So field 8 cannot be naming it.
+        self.assertEqual(safe_mode_version, 0x02)
+        self.assertNotEqual(safe_mode_version, field_8,
+                            'field 8 would have to equal the safe mode version to name it')
+        self.assertEqual((field_8, field_9), (0x00, 0x00), 'the 600 is the negative case for both')
+        # And the positive case exists, so zero is a reading of an absent image rather than a field
+        # nothing ever fills.
+        self.assertNotEqual(self.REPORTED_IMAGE_FIELDS['one'], (0x00, 0x00))
 
     def test_recover_size_checks_rather_than_guesses_when_it_can(self):
         """It used to take the smallest candidate at least as long as the buffer.
@@ -885,21 +905,36 @@ class TestAConfigCannotChooseWhereItWrites(unittest.TestCase):
     def test_the_append_routine_refuses_before_it_writes(self):
         """
         Five zero tests and two range tests, every one of them ending in a RETURN rather than in a
-        send. Asserted by counting the refusals, because the claim is that the routine cannot be
-        entered with a bad region and proceed anyway.
+        send. Both kinds are counted by shape, so the seven are seven and not "at least five".
+
+        It used to count RETURN instructions in a window and demand five or more, which is a floor
+        under the number it was measuring and counts the wrong thing besides: a RETURN is also how
+        the routine ends normally, so the count did not separate a refusal from a completion. Each
+        zero test is now identified as a `BNZ` over a RETURN it skips, and each range test as the
+        branch to the out of range arm, which is a different shape entirely.
         """
         lab.require(self.ARCH14)
         code = lab.load(self.ARCH14)
-        returns = 0
-        for addr in range(self.APPEND, self.APPEND + 0x90, 2):
+        zero_tests, range_tests = [], []
+        for addr in range(self.APPEND, self.OUT_OF_RANGE, 2):
             ins = isa.decode(code, addr - self.ARCH14_BASE, self.ARCH14_BASE)
-            if ins is not None and ins.mnemonic == 'RETURN':
-                returns += 1
-        self.assertGreaterEqual(returns, 5)
-        # And the out of range arm returns too, rather than clamping and carrying on.
+            if ins is None:
+                continue
+            after = isa.decode(code, addr + 2 - self.ARCH14_BASE, self.ARCH14_BASE)
+            if (ins.mnemonic == 'BNZ' and ins.fields['target'] == addr + 4
+                    and after is not None and after.mnemonic == 'RETURN'):
+                zero_tests.append(addr)
+            if ins.mnemonic in ('BRA', 'GOTO') and ins.fields.get('target') == self.OUT_OF_RANGE:
+                range_tests.append(addr)
+        self.assertEqual(len(zero_tests), 5, 'the five zero tests')
+        self.assertEqual(len(range_tests), 2, 'the two range tests')
+        # And the out of range arm returns rather than clamping and carrying on: nothing between it
+        # and its RETURN is a call, so no send is reached from there.
         tail = [isa.decode(code, a - self.ARCH14_BASE, self.ARCH14_BASE)
                 for a in range(self.OUT_OF_RANGE, self.OUT_OF_RANGE + 0x1A, 2)]
-        self.assertTrue(any(i is not None and i.mnemonic == 'RETURN' for i in tail))
+        reached = tail[:1 + next(n for n, i in enumerate(tail)
+                                if i is not None and i.mnemonic == 'RETURN')]
+        self.assertEqual([i.mnemonic for i in reached if i is not None and 'CALL' in i.mnemonic], [])
 
     def test_arch_12_implements_none_of_the_flash_writing_opcodes(self):
         """
@@ -1073,11 +1108,28 @@ class TestArch9AddressesFourWindowsBelowItsFlash(unittest.TestCase):
         lab.require(name)
         return chains.chain_table(lab.load(name), base, start + 4)
 
+    def _windows(self, name, base, start):
+        """Decode each arm's own bound, so `WINDOWS` is a reading rather than four restated numbers.
+
+        An arm is a sixteen bit compare, `MOVLW lo; SUBWF; MOVLW hi; SUBWFB; BC out`, so the bound is
+        `lo | hi << 8`. Until 13 August 2026 both tests here compared `sorted(table)` against this
+        dict, which takes its **keys**: the four top bytes were checked twice and the four bounds by
+        nothing at all, in the one table whose values are what a read is refused against.
+        """
+        data = lab.load(name)
+        found = {}
+        for top, target in self._chain(name, base, start).items():
+            low = isa.decode(data, target - base, base)
+            high = isa.decode(data, target + 4 - base, base)
+            self.assertEqual([low.mnemonic, high.mnemonic], ['MOVLW', 'MOVLW'],
+                             'the arm at %s is not the compare this reads' % hex(target))
+            found[top] = low.fields['k'] | (high.fields['k'] << 8)
+        return found
+
     def test_both_images_test_the_same_four_top_bytes(self):
         for name, base, start in (self.APPLICATION, self.SAFE_MODE):
             with self.subTest(image=name):
-                table = self._chain(name, base, start)
-                self.assertEqual(sorted(table), sorted(self.WINDOWS))
+                self.assertEqual(self._windows(name, base, start), self.WINDOWS)
 
     def test_the_flash_range_test_is_the_default_arm_and_not_the_whole_rule(self):
         """
@@ -1126,10 +1178,25 @@ class TestArch9AddressesFourWindowsBelowItsFlash(unittest.TestCase):
         The executable half of the correction, on the Python side of the mirror. The TypeScript
         assertion is in `packages/usb/test/protocol.test.ts`; this one exists so the bound table and
         the chain cannot drift apart without a Python test failing too.
+
+        It used to repeat the line above it verbatim, which compares the chain's case values against
+        this dict's keys and reaches `packages/usb` not at all, so nothing here had ever checked the
+        claim in its own title. Section 88 is why that matters: reading this validator from its
+        default arm made the library refuse three regions the device serves. The library's copy is
+        read out of the TypeScript source rather than restated, because two copies of a derivation is
+        this repository's oldest rule and a third would be worse than the second.
         """
         name, base, start = self.APPLICATION
-        table = self._chain(name, base, start)
-        self.assertEqual(sorted(table), sorted(self.WINDOWS))
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            '..', 'packages', 'usb', 'src', 'protocol.ts')
+        with open(path, encoding='utf-8') as fh:
+            source = fh.read()
+        body = source[source.index('ARCH9_WINDOWS'):]
+        body = body[:body.index('};')]
+        library = {int(top, 16): int(bound, 16) for top, bound in
+                   re.findall(r'(0x[0-9a-fA-F]+):\s*\{[^}]*bound:\s*(0x[0-9a-fA-F]+)', body)}
+        self.assertEqual(library, self._windows(name, base, start),
+                         'the arch 9 windows disagree between the firmware and the library')
 
 
 class TestTheArch9BootStateMachine(unittest.TestCase):

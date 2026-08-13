@@ -33,7 +33,7 @@ import type { Instruction } from '../src/index.ts';
  * and a wrong one would answer confidently instead of failing.
  */
 function lists(name: string): { lists: Instruction[][]; architecture: number } {
-  const c = parse(load(name)!);
+  const c = parse(require_(name));
   const architecture = c.architecture;
   assert.equal(typeof architecture, 'number', `${name} states no architecture`);
   const table = c.pointerArray(archSlot(architecture as number, 10)) ?? [];
@@ -287,7 +287,11 @@ test('no opcode in the whole corpus is left without a reading', skipUnless('one_
   // An empty `unread` map is the claim, and an empty map is also what a loop that read nothing
   // produces. So the instructions examined are counted: `if (!load(name)) continue` used to stand
   // above, and with a partial lab this reported the whole corpus read.
-  assert.ok(instructions > 10_000, `only ${instructions} instructions were examined`);
+  //
+  // The count is exact rather than a floor. `> 10_000` guarded 47839, which is a fifth of the
+  // figure, so the four larger samples could have dropped out together and left it passing. The
+  // five names are a literal above, so nothing moves this but a reader change.
+  assert.equal(instructions, 47_839, `${instructions} instructions were examined`);
   assert.deepEqual([...left.keys()], []);
 });
 
@@ -338,17 +342,24 @@ test('nothing in the corpus uses the three flash journal opcodes', skipUnless('o
     'arch8_config_b',
   ];
   let seen = 0;
-  let checked = 0;
+  const examined = new Map<string, number>();
   for (const name of names) {
-    if (!load(name)) continue;
-    checked += 1;
+    let instructions = 0;
     for (const list of lists(name).lists) {
       for (const instruction of list) {
+        instructions += 1;
         if ([0x65, 0x66, 0x76].includes(instruction.opcode)) seen += 1;
       }
     }
+    examined.set(name, instructions);
   }
-  assert.ok(checked >= 5, `only ${checked} samples, which proves little`);
+  // An absence is the claim, so the population has to be shown non-empty sample by sample. It was
+  // `checked >= 5` over eight names, with an `if (!load(name)) continue` above it: a floor under the
+  // population, counting samples rather than the instructions the absence is asserted over.
+  assert.equal(examined.size, names.length);
+  for (const [name, instructions] of examined) {
+    assert.ok(instructions > 0, `${name} contributed no instructions`);
+  }
   assert.equal(seen, 0);
 });
 
@@ -436,7 +447,6 @@ test('every corpus multiply follows a divide by the same operand', skipUnless('o
   let paired = 0;
   const modulo = new Map<number, number[]>();
   for (const name of names) {
-    if (!load(name)) continue;
     const { lists: all, architecture } = lists(name);
     for (const list of all) {
       list.forEach((instruction, at) => {
@@ -452,7 +462,10 @@ test('every corpus multiply follows a divide by the same operand', skipUnless('o
       });
     }
   }
-  assert.ok(multiplies > 0, 'no multiplies found, so this proves nothing');
+  // Eight, and all eight paired, which is the number the comment above has stated all along. The
+  // assertion was `> 0`, satisfied by one, so the figure the reading rests on was written down and
+  // checked by nothing.
+  assert.equal(multiplies, 8, 'the corpus multiplies eight times');
   assert.equal(paired, multiplies, 'every multiply is the second half of a remainder');
   // And the moduli are the step sizes, 5 and 10, one of each per arch 14 config.
   for (const [, operands] of modulo) {
@@ -472,7 +485,6 @@ test('the arch 14 modulo idiom rounds a value down to a multiple', skipUnless('h
   // lists add and subtract is the same n, which is the closure: a rounding to a grid the plus and
   // minus buttons move on.
   for (const name of ['h700_config', 'h700_config_2', 'h600_config']) {
-    if (!load(name)) continue;
     const { lists: all, architecture } = lists(name);
     assert.equal(architecture, 14);
     const found: number[] = [];
@@ -533,7 +545,6 @@ test('every 0x75 operand in the corpus is one of four audible tones', skipUnless
   const names = ['one_config', 'h525_config', 'arch8_config_a', 'one_spare_after_sync'];
   const seen = new Map<number, number>();
   for (const name of names) {
-    if (!load(name)) continue;
     for (const list of lists(name).lists) {
       for (const i of list) if (i.opcode === 0x75) seen.set(i.operand, (seen.get(i.operand) ?? 0) + 1);
     }
@@ -557,7 +568,6 @@ test('arch 12 and arch 14 never use each others 0x3F 0xF0 nibbles', skipUnless('
   const only14 = new Set([6, 7]);
   const used = new Map<number, Set<number>>();
   for (const name of ['one_config', 'h700_config', 'h600_config', 'arch8_config_a', 'h525_config']) {
-    if (!load(name)) continue;
     const { lists: all, architecture } = lists(name);
     if (!used.has(architecture)) used.set(architecture, new Set());
     for (const list of all) {

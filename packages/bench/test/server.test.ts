@@ -83,7 +83,32 @@ test('the page and its two assets are served, and nothing above them is', async 
   });
 });
 
-test('the route table is six reads and nothing that writes', async () => {
+test('the route table is nine routes, every one of them a read', async () => {
+  // **The count is enumerated now, and it was never six.** This was called `six reads and nothing
+  // that writes`, asserted neither the count nor the table, and checked "nothing that writes" by
+  // 404ing four guessed names, which cannot see a write route somebody adds under a fifth name. The
+  // table is read out of the source, so a new route has to be added here on purpose.
+  const source = readFileSync(new URL('../src/server.ts', import.meta.url), 'utf8');
+  const declared = [...source.matchAll(/req\.method === '(\w+)' && url\.pathname === '([^']+)'/g)]
+    .map(([, method, path]) => `${method} ${path}`)
+    .sort();
+  assert.deepEqual(declared, [
+    'GET /api/configs',
+    'GET /api/log',
+    'GET /api/remotes',
+    'GET /api/screen',
+    'GET /api/variants',
+    'GET /favicon.png',
+    'POST /api/identify',
+    'POST /api/inventory',
+    'POST /api/read',
+  ]);
+  // A POST here is a browser handing over arguments, not a write: `/api/read` reads flash,
+  // `/api/identify` reads the version block and `/api/inventory` parses a file the lab already
+  // holds. Nothing in `packages/bench` reaches a write path, and `packages/usb`'s rails are what
+  // would refuse it if it did.
+  assert.equal(declared.filter((one) => /write|erase|command/i.test(one)).length, 0);
+
   await withServer(async (base) => {
     const remotes = await getJson(`${base}/api/remotes`);
     assert.equal(remotes[0].architecture, 14);

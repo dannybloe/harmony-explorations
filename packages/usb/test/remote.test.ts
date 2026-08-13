@@ -15,6 +15,7 @@ import {
   HarmonyRemote,
   MISC_RAM,
   READ_FLASH,
+  RailError,
   RemoteError,
   SOFTWARE_TYPE_SAFE_MODE,
   architectureFromVersion,
@@ -200,20 +201,31 @@ test('every write method refuses before it touches the transport', async () => {
   assert.equal(written.length, 0, 'a read only build wrote something to the device');
 });
 
-test('an erase request is never built for an address outside the region', async () => {
+test('an erase request reaches the device on no path at all with writes disabled', async () => {
+  // **Renamed on 13 August 2026, and the old title named a rule this test cannot reach.** It was
+  // called `an erase request is never built for an address outside the region` and passed an address
+  // outside it, but with `WRITES_ENABLED` false the flag is what refuses and the address is never
+  // examined, so it would have passed just as well with an address inside the region. The address
+  // rule is `rails.test.ts`, which runs each remaining condition in a subprocess with the flag on.
+  //
+  // What this does carry is worth keeping and is the stronger claim for a read only build: the call
+  // is refused, the refusal is a `RailError` rather than something incidental, and nothing was
+  // written to the transport.
   const { transport, written } = scriptedRemote([report(0xf0, ERASE_FLASH)], 0);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
-  await assert.rejects(() =>
-    remote.eraseFlash(
-      {
-        architecture: 12,
-        configLength: 0x1000,
-        originalDumpVerified: true,
-        intendedVersionMatches: true,
-        targetIsTheSpareRemote: true,
-      },
-      0x020000,
-    ),
+  await assert.rejects(
+    () =>
+      remote.eraseFlash(
+        {
+          architecture: 12,
+          configLength: 0x1000,
+          originalDumpVerified: true,
+          intendedVersionMatches: true,
+          targetIsTheSpareRemote: true,
+        },
+        0x020000,
+      ),
+    (error: unknown) => error instanceof RailError,
   );
   assert.equal(written.length, 0);
 });

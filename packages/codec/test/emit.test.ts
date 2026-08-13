@@ -13,6 +13,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { load, skipUnless } from '@harmony/lab';
 import {
@@ -105,7 +106,7 @@ for (const [name, framed, carried] of REBUILT) {
   });
 }
 
-test('a rebuilder that writes half its structure is an error, not a short write', () => {
+test('a Writer reports a short write and an overrun, and the rebuild guard refuses on it', () => {
   // The guard that matters once the residue copy covers everything a rebuilder does not claim.
   // Poison can no longer survive, so the thing that has to fail loudly is a rebuilder whose bytes
   // do not fill the extent it declared: it would round trip, because the copy would cover the
@@ -114,6 +115,19 @@ test('a rebuilder that writes half its structure is an error, not a short write'
   assert.equal(short.remaining, 2);
   const over = new Writer(2).u8(1).u8(2).u8(3);
   assert.equal(over.remaining, -1, 'writing past the end has to be visible, not silently dropped');
+
+  // **The second half, which the title used to claim and the body did not carry.** It was called
+  // `a rebuilder that writes half its structure is an error` and asserted only what `remaining`
+  // returns, so deleting `rebuilds`'s throw would have left it green.
+  //
+  // Read out of the source, and that is a deliberate second best: every writer in `rebuilds` is
+  // sized from the same value it then fills, so a short write cannot be provoked through the public
+  // API at all. It arises from a coding error inside a rebuilder, which is what the guard is for and
+  // what no test can construct from outside.
+  const source = readFileSync(new URL('../src/emit.ts', import.meta.url), 'utf8')
+    .replace(/\s+/g, ' ');
+  assert.match(source, /if \(w\.remaining !== 0\) \{ throw new GspmError/,
+    'rebuilds no longer refuses a writer that did not fill its extent');
 });
 
 test('a section address changed in the parse reaches the output', skipUnless('h600_config'), () => {
@@ -122,13 +136,19 @@ test('a section address changed in the parse reaches the output', skipUnless('h6
   const c = parse(load('h600_config') as Uint8Array);
   const first = c.sections[0];
   assert.ok(first !== undefined);
+  // The spare byte is changed too, and to something nonzero. `assert.equal(bytes[item], first.spare)`
+  // stood here and could not fail: `spare` is 0 in every section of every sample, which
+  // `gspm.test.ts` asserts outright, so "written back" and "zeroed" produce the same byte. A test
+  // whose two outcomes agree on the corpus needs a value the corpus does not carry.
+  const SPARE = 0x5a;
+  assert.equal(first.spare, 0, 'the sample carries a zero spare, which is why one is invented here');
   const sections = c.sections.map((s, i) =>
-    i === 0 ? new Section(s.slot, s.address + 1, s.spare) : s,
+    i === 0 ? new Section(s.slot, s.address + 1, SPARE) : s,
   );
   const { bytes } = emit(new Container({ ...c, sections }));
   const item = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * first.slot;
   assert.notEqual(bytes[item + 1], c.blob[item + 1], 'the low byte of the address');
-  assert.equal(bytes[item], first.spare, 'the spare byte is written back, not zeroed');
+  assert.equal(bytes[item], SPARE, 'the spare byte is written back, not zeroed');
 });
 
 test('a key record changed in the parse reaches the output', skipUnless('h600_config'), () => {

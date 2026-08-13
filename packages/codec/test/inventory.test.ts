@@ -7,6 +7,14 @@
  * are the generator's own words and are quoted freely.
  *
  * `docs/findings.md` section 86.
+ *
+ * **The population figures here are exact, not floors.** Fourteen of them read `>= n` until 13 August
+ * 2026, and the review that changed them found the two shapes that makes: a floor well under the
+ * figure, `delegating >= 100` against 3021, which absorbs a whole sample dropping out; and a floor
+ * that equals it, `agree >= 62` against 62, which reads as slack and has none, so it fails on the
+ * first sample that adds a key and passes on any that removes one. Every list these loops walk is a
+ * literal in this file, so an exact count moves only when a reader changes or a sample is added on
+ * purpose, and then it moves in the diff where somebody sees it.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -148,7 +156,7 @@ test('a level 1 name ends in the number of values its variable takes', skipWitho
       total += 1;
     }
   }
-  assert.ok(total >= 240, `only ${total} named variables checked`);
+  assert.equal(total, 276, `${total} named variables checked`);
 });
 
 test('a record that enumerates anything enumerates every value the same number of times',
@@ -221,7 +229,7 @@ test('a state value is a transition carrying one action list instruction', skipW
       }
     }
   }
-  assert.ok(values >= 520, `only ${values} values`);
+  assert.equal(values, 657, `${values} values`);
   assert.ok(indexed > 0 && sentinels > 0);
 });
 
@@ -371,7 +379,7 @@ test('an activity page hands its keys a fresh run of action lists', skipWithoutL
     }
   }
   assert.equal(contiguous, total, 'every activity page carries one contiguous run');
-  assert.ok(total >= 12, `enough activity pages to mean something, got ${total}`);
+  assert.equal(total, 20, `activity pages, got ${total}`);
   // The control. Without it "every activity page is contiguous" would be satisfied by a corpus where
   // every page is, which would make the property no evidence at all.
   assert.ok(
@@ -407,7 +415,7 @@ test('arch 14 names every activity and the corpus names most of them', skipWitho
   }
   const arch14 = perArchitecture.get(14) as { named: number; total: number };
   assert.equal(arch14.named, arch14.total, 'arch 14 names every activity it binds');
-  assert.ok(arch14.total >= 13, `and there are enough of them, got ${arch14.total}`);
+  assert.equal(arch14.total, 13, `arch 14 activities, got ${arch14.total}`);
   assert.ok(named / total > 0.6, `the corpus names most activities: ${named} of ${total}`);
   // **Every architecture resolves completely since 12 August 2026**, arch 12 last, through the touch
   // hit map rather than through string matching. Asserted per architecture rather than as a share,
@@ -417,7 +425,7 @@ test('arch 14 names every activity and the corpus names most of them', skipWitho
     assert.equal(here.named, here.total, `arch ${architecture} names every activity it binds`);
   }
   assert.equal(named, total, `the corpus names every activity: ${named} of ${total}`);
-  assert.ok(total >= 50, `and there are enough of them, got ${total}`);
+  assert.equal(total, 50, `activities in the corpus, got ${total}`);
 });
 
 test('an activity page names as many activities as it binds, and each label once',
@@ -485,16 +493,23 @@ test('no fixed key to row map can exist on a touch panel', skipUnless('one_confi
   assert.equal(perPage.size, 3, 'three activity pages');
   const sets = [...perPage.values()].map((one) => [...one].sort((a, b) => a - b).join(','));
   assert.deepEqual(sets.sort(), ['48,49', '48,49,50', '50,51,52']);
-  // The pages differ in which codes they use and not in how many rows they draw, which is the
-  // contradiction. Two codes appear on pages whose activity counts differ, so no single assignment of
-  // code to row satisfies both.
-  const rows = new Set<number>();
-  for (const page of perPage.keys()) {
-    for (const one of screenStrings(c)) {
-      if (one.program === modePages(c)[page]?.program) rows.add(one.y);
-    }
-  }
-  assert.ok(rows.size > 0, 'the pages do draw text');
+  // The contradiction itself, which used to be a `rows.size > 0` over every page's rows collapsed into
+  // one set: that says the pages draw text and nothing about the map the test is named for.
+  //
+  // Two of the three pages draw text on **exactly the same rows** and bind **different** scan sets, so
+  // the rows cannot say which codes are bound. And scan 50 is bound on both of those, first in
+  // ascending order on one and last on the other, which is what kills the rule that reads a page's
+  // k-th key onto its k-th row: same rows, same code, different position.
+  const rowsOf = (page: number): number[] => [...new Set(screenStrings(c)
+    .filter((one) => one.program === modePages(c)[page]?.program && one.text.trim().length > 0)
+    .map((one) => one.y))].sort((a, b) => a - b);
+  const same = [...perPage.keys()].filter((page) => rowsOf(page).join(',') === rowsOf(45).join(','));
+  assert.deepEqual(same.sort((a, b) => a - b), [45, 46], 'two pages draw identical rows');
+  assert.deepEqual(rowsOf(45), [18, 57, 111, 165, 202], 'and this is where they draw them');
+  const ascending = (page: number): number[] => [...(perPage.get(page) ?? [])].sort((a, b) => a - b);
+  assert.notDeepEqual(ascending(45), ascending(46), 'while binding different codes');
+  assert.equal(ascending(45).indexOf(50), 0, 'scan 50 is first on one of them');
+  assert.equal(ascending(46).indexOf(50), 2, 'and last on the other');
 });
 
 /** Letters and digits only, since one encoding writes a space where the other writes an underscore. */
@@ -604,7 +619,7 @@ test('on arch 9 and arch 14 the device names its own mode, and the pairing is wh
         if (!says((device.group + 1) % rows.length, device.name)) shifted += 1;
       }
     }
-    assert.ok(agree >= 17, `enough devices to mean something, got ${agree}`);
+    assert.equal(agree, 17, `devices where the two routes agree, got ${agree}`);
     assert.equal(shifted, shiftable, 'and every shifted pairing breaks');
   });
 
@@ -630,7 +645,7 @@ test('a device variable ends in a word and a config variable ends in a number', 
       assert.ok(!/^[0-9]+$/.test(one.property), `${name}: ${one.property} reads as a qualifier`);
     }
   }
-  assert.ok(checked >= 20, `enough globals to mean something, got ${checked}`);
+  assert.equal(checked, 30, `global variables, got ${checked}`);
 });
 
 test('an action list that sends a code is walked into, not only looked at', skipWithoutLab(), () => {
@@ -656,7 +671,7 @@ test('an action list that sends a code is walked into, not only looked at', skip
       assert.ok(reached.size > 0, `${name}: list ${index} is in the map with nothing in it`);
     });
   }
-  assert.ok(delegating >= 100, `enough delegating lists to mean something, got ${delegating}`);
+  assert.equal(delegating, 3021, `delegating lists, got ${delegating}`);
 });
 
 test('an activity drives one to three of the config\'s own devices', skipWithoutLab(), () => {
@@ -680,7 +695,7 @@ test('an activity drives one to three of the config\'s own devices', skipWithout
       checked += 1;
     }
   }
-  assert.ok(checked >= 50, `enough activities to mean something, got ${checked}`);
+  assert.equal(checked, 50, `activities, got ${checked}`);
 });
 
 test('every button that sends a code sends it on the press, and every code exists',
@@ -754,7 +769,7 @@ test('the codes of a list are kept in the order it sends them', skipWithoutLab()
         [...new Set(codes.map((one) => one.group))].sort(), `${name}: list ${index}`);
     }
   }
-  assert.ok(ordered >= 20, `enough macros where order is visible, got ${ordered}`);
+  assert.equal(ordered, 169, `macros where order is visible, got ${ordered}`);
 });
 
 test('the composed inventory says the same as the readers it composes', skipWithoutLab(), () => {
@@ -773,7 +788,7 @@ test('the composed inventory says the same as the readers it composes', skipWith
       activityNames(c).map((one) => one.activity), name);
     if (whole.devices.length > 0) checked += 1;
   }
-  assert.ok(checked >= 13, `enough containers to mean something, got ${checked}`);
+  assert.equal(checked, 15, `containers, got ${checked}`);
 });
 
 test('a screen key and a keypad key never share a scan code', skipWithoutLab(), () => {
@@ -883,7 +898,7 @@ test('the labels agree with the activity names derived a different way', skipWit
       }
     }
   }
-  assert.ok(agree >= 62, `only ${agree} keys agree`);
+  assert.equal(agree, 62, `${agree} keys agree`);
   assert.deepEqual(disagreed, ['arch8_config_885 page 40 scan 44 by row'], 'the known exception, alone');
   // And both routes are calibrated, not just the stated one.
   assert.ok((perSource.get('touch') ?? 0) >= 8, 'the hit map is checked');
@@ -927,12 +942,25 @@ test('a row with two items has two keys that do different things', skipWithoutLa
       }
     });
   }
-  assert.ok(twoItems >= 1000, `only ${twoItems} rows draw two items`);
+  assert.equal(twoItems, 1989, `${twoItems} rows draw two items`);
   assert.equal(twoItemsSame, 0, 'two items always mean two different actions');
   assert.ok(oneItemSame >= 50, `and one item can mean one action, seen ${oneItemSame} times`);
 });
 
-test('every key a screen labels gets a label, on every architecture', skipWithoutLab(), () => {
+// Named keys against bound keys, per architecture. Stated here so the numbers are visible without
+// reading the loop, and exact because the unlabelled remainder is the interesting half: 74 of the
+// 6988 bindings this population walks, 71 of them on a Harmony One, whose pages can bind a code its
+// hit page has a rectangle for and no text in. Section 128 quotes 6989 over its own population,
+// which is not this one: the loop below skips a container that states no architecture.
+const EXPECTED_LABELLED_KEYS: Record<number, string> = {
+  8: '3152/3154',
+  9: '231/232',
+  12: '2001/2072',
+  14: '1530/1530',
+};
+
+test('nearly every key a screen labels gets a label, and the misses are a Harmony One\'s',
+  skipWithoutLab(), () => {
   // The coverage claim of section 128, as a floor per architecture rather than a corpus total, since a
   // total hides an architecture that stopped working. The unlabelled remainder is 74 keys of 6989, and
   // all but three of them are on a Harmony One, whose pages can bind a code their hit page has a
@@ -955,11 +983,12 @@ test('every key a screen labels gets a label, on every architecture', skipWithou
     });
     per.set(c.architecture, seen);
   }
-  for (const [architecture, seen] of per) {
-    const share = seen.named / seen.total;
-    assert.ok(share > (architecture === 12 ? 0.94 : 0.98),
-      `arch ${architecture} labels ${seen.named} of ${seen.total}`);
-  }
+  // The counts, per architecture, rather than a share above a bound. A share hides which keys are
+  // missing and it hid the title too: this test was called `every key a screen labels gets a label`
+  // and 74 keys of 6989 have none, so the title was false by construction the day it was written.
+  const counted = Object.fromEntries([...per].sort(([a], [b]) => a - b)
+    .map(([architecture, seen]) => [architecture, `${seen.named}/${seen.total}`]));
+  assert.deepEqual(counted, EXPECTED_LABELLED_KEYS);
   assert.deepEqual([...per.keys()].sort((a, b) => a - b), [8, 9, 12, 14], 'all four architectures');
 });
 
@@ -1134,6 +1163,6 @@ test('a page binds more keys than it sends codes with, which is why pageScans ex
         }
       }
     }
-    assert.ok(pages > 500, `only ${pages} pages bind anything`);
+    assert.equal(pages, 2184, `${pages} pages bind anything`);
     assert.ok(extra > 500, `only ${extra} bindings send no code, so the two populations barely differ`);
   });

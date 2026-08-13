@@ -11,6 +11,8 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { load, skipUnless } from '@harmony/lab';
 import {
@@ -387,9 +389,10 @@ test('a save leaves the carried fields byte identical', skipUnless(...SAVE_SAMPL
       compared += 1;
     }
   }
-  // Two `continue`s stand above the comparison, one per slot, so nothing said how many ran. Eight
-  // today, measured: the samples that carry both slots.
-  assert.ok(compared >= 8, `only ${compared} slot comparisons ran`);
+  // Two `continue`s stand above the comparison, one per slot, so nothing said how many ran. Eight,
+  // exactly, being the samples that carry both slots: a floor of eight over a measured eight is the
+  // shape that reads as slack and has none, so it can only fail upward.
+  assert.equal(compared, 8, `${compared} slot comparisons ran`);
 });
 
 test('the stamped weekday is derived, so the readers accept it', skipUnless(SAMPLE), () => {
@@ -430,6 +433,9 @@ test('a save and a caller both writing the timestamp is refused', skipUnless(SAM
 test('every field rule is covered by a test in this file', () => {
   // What stops the table drifting away from the code: adding a rule without a test fails here. The
   // names are repeated deliberately rather than derived, so a rename has to be made on purpose.
+  //
+  // **And the names are checked against this file**, which they were not: the map below related the
+  // rule names to strings, so a test that was renamed or deleted left its rule looking covered.
   const covered = new Map<string, string>([
     ['trailer checksum', 'the trailer is recomputed, not carried'],
     ['base slot 3 build timestamp', 'a save changes the two clocks and the trailer, and nothing else'],
@@ -447,6 +453,17 @@ test('every field rule is covered by a test in this file', () => {
     assert.ok(rule.why.length > 40, `${rule.field}'s reason is too short to be a reason`);
   }
   assert.equal(covered.size, FIELD_RULES.length, 'a covered name has no rule');
+  // The half that was missing: each of those test names is a test in this file. Read from source
+  // rather than from the runner, because `node:test` offers no way to ask what the file declared, and
+  // a rule pointing at a test nobody wrote is exactly the drift this is guarding against.
+  //
+  // Whitespace is collapsed first, because a title long enough to wrap sits on its own line and a
+  // literal search for `test('<title>'` would miss it and then need alternatives, which is fitting a
+  // check to its input rather than checking.
+  const source = readFileSync(fileURLToPath(import.meta.url), 'utf8').replace(/\s+/g, ' ');
+  for (const title of new Set(covered.values())) {
+    assert.ok(source.includes(`test('${title}'`), `no test in this file is called ${title}`);
+  }
   // And every policy the type allows is actually used, so the vocabulary matches the format.
   const policies = new Set(FIELD_RULES.map((r) => r.policy));
   assert.deepEqual([...policies].sort(),
@@ -470,11 +487,16 @@ test('localTimestamp is the wall clock, and it round trips through the record', 
  * for the opcode table, and nothing failed while it existed. So the guard is not "the two agree", it
  * is that there is one implementation and it inverts the reader on eighteen real records.
  */
+// The nineteen the rest of the workspace counts: `emit.test.ts`'s `REBUILT` and
+// `coverage.test.ts`'s `ACCOUNTED`. This list held eighteen until 13 August 2026, missing
+// `h525_config_2` alone, which is the failure mode a corpus wide claim has: nothing compared two
+// population lists, so a sample can be absent from one of them for months and every total that list
+// computes stays self consistent. `tests/test_toolchain.py` compares the three now.
 const ALL_CONTAINERS = [
   'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm', 'h650_safemode_gspm',
   'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
-  'h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
-  'h525_safemode_ahcm', 'one_spare_before_sync', 'one_spare_after_sync',
+  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+  'arch8_config_d', 'h525_safemode_ahcm', 'one_spare_before_sync', 'one_spare_after_sync',
 ];
 
 test('the clock encoder reproduces every stored record byte for byte',

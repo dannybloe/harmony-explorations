@@ -215,7 +215,11 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
   // Over the screen keys, since a hard key sits on the keypad and no screen names it.
   const soft = view.keys.filter((key) => key.where === 'page');
   const labelled = soft.filter((key) => key.label !== undefined);
-  assert.ok(labelled.length / soft.length > 0.95, `${labelled.length} of ${soft.length}`);
+  // The counts, because the comment above says "every one of them" and a share above 0.95 does not:
+  // six of the 241 screen keys of this config carry no label, and those six are the interesting half.
+  // A share also hides which side moved, so a route that stopped answering for six more keys and one
+  // that gained six pages read the same.
+  assert.deepEqual([labelled.length, soft.length], [235, 241], `${labelled.length} of ${soft.length}`);
   for (const key of labelled) {
     assert.equal(key.labelSource, 'touch');
     assert.ok((key.label as string).trim().length > 0);
@@ -260,7 +264,12 @@ test('a screen key on a 525 is labelled by its row, and the page can say so',
     }));
     const view = bench.inventory('h525_config');
     const labelled = view.keys.filter((key) => key.label !== undefined);
-    assert.ok(labelled.length > 50, `only ${labelled.length} keys are labelled`);
+    // Every screen key, which is what `> 50` was standing in front of: 130 of this config's keys are
+    // bound by a mode page and all 130 are labelled, so the floor was under a fifth of the figure and
+    // a route that lost half of them would have passed. The other 92 are keypad keys, and the loop
+    // below is what says they carry no label.
+    const soft = view.keys.filter((key) => key.where === 'page');
+    assert.deepEqual([labelled.length, soft.length, view.keys.length], [130, 130, 222]);
     for (const key of labelled) assert.equal(key.labelSource, 'row');
     // A hard key is not labelled at all, since no screen names the keys around it.
     for (const key of view.keys) {

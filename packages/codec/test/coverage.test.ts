@@ -178,16 +178,20 @@ test('a gap family counts equal lengths and nothing else', () => {
 
 
 test('the gaps and the accounted bytes partition the container', skipWithoutLab(), () => {
-  // Not a restatement of the accounted count: `gaps` is truncated to the largest few for the
-  // report, so this checks the untruncated arithmetic by asking that no gap and no claim
-  // disagree about the total.
+  // A partition, asserted as one. This read `accounted + gapped <= total` on the grounds that
+  // `report.gaps` is truncated to the largest few, which is true of what `make coverage --detail`
+  // prints and not of the field: `gaps.length` equals `gapCount` in all nineteen containers, so the
+  // sum is exact and an inequality was strictly weaker than the truth. A test named for a partition
+  // that permits a shortfall would pass with a whole section unclaimed and unlisted.
   for (const [name] of ACCOUNTED) {
     const data = require_(name);
     const report = coverage(parse(data));
     const gapped = report.gaps.reduce((n, g) => n + g.length, 0);
-    assert.ok(
-      report.accounted + gapped <= report.total,
-      `${name}: ${report.accounted} accounted plus ${gapped} in gaps exceeds ${report.total}`,
+    assert.equal(report.gaps.length, report.gapCount, `${name}: the gap list is the whole list`);
+    assert.equal(
+      report.accounted + gapped,
+      report.total,
+      `${name}: ${report.accounted} accounted plus ${gapped} in gaps is not ${report.total}`,
     );
     const owned = report.byOwner.reduce((n, [, bytes]) => n + bytes, 0);
     assert.equal(owned, report.accounted, `${name}: per owner total`);
@@ -497,7 +501,9 @@ test('base slot 15 has twelve bytes on arch 12 that belong to no group', skipWit
     const groups = (parameterGroups(c) ?? []).map((g) => c.blobOffsetOf(g.address) as number);
     assert.ok(Math.min(...groups) < start && Math.max(...groups) > start, `${name}: not a tail`);
   }
-  assert.ok(arch12 >= 6, `only ${arch12} arch 12 containers, expected six`);
+  // Exact. `>= 6` was the population itself, so it read as slack and had none: it fails on the first
+  // Harmony One container added and passes on any removed.
+  assert.equal(arch12, 6, `${arch12} arch 12 containers`);
 });
 
 test('the twelve spare bytes are group 9 overrun by two readers, with nothing left', () => {

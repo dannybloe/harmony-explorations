@@ -172,7 +172,7 @@ class TestSfrMapIsTheJ50FamilyNotTheGenericOne(unittest.TestCase):
 
 class TestTheFourFiveFiveZeroMapIsADifferentPart(unittest.TestCase):
     """
-    The Harmony 525 is a PIC18F4550 and 72 of its 139 register addresses disagree with the map
+    The Harmony 525 is a PIC18F4550 and 65 of its 139 register addresses disagree with the map
     above. That is the hazard the class above was written to describe, arriving for real: an
     arch 9 firmware exists now, and the default map names its infrared carrier setup wrongly in
     a way that reads perfectly. `docs/findings.md` section 80.
@@ -275,6 +275,70 @@ class TestBankFifteenIsHalfRamOnThisFamily(unittest.TestCase):
                                           adshr=False), (0xFC1, 'ADCON1'))
         self.assertEqual(isa.resolve_file(instr.fields['f'], instr.fields['a'],
                                           adshr=True), (0xFC1, 'ANCON0'))
+
+
+class TestTheCitedWordsAreTheWordsInTheImages(unittest.TestCase):
+    """
+    Every test above decodes a hand written word and cites a firmware address for it. That citation
+    was checked by nothing: `dec(0xA4F2)` asserts what the decoder does with a number this file
+    contains, and the docstring saying the number came from `0x195F2` is prose beside it. So a
+    transcription slip would leave the decoder tests passing while the reason to believe the
+    encodings is wrong.
+
+    This is the citation check, and it is the only place in the file that needs a lab. It also makes
+    the two two word citations traceable, which they were not: the GOTO and CALL pairs carried no
+    address at all, and both turned out to be in the Harmony One's own vector area.
+    """
+
+    # image -> base, then address -> the word this file decodes as coming from there.
+    CITED = {
+        'h700_code': (0x9000, {
+            0x195F2: 0xA4F2,   # BTFSS INTCON,2, the timer wait whose polarity is the semantic check
+            0x195F4: 0xD7FE,   # BRA back to itself, the other half of that loop
+            0x19476: 0x558D,   # SUBFWB, the infrared scaling block's index inversion
+        }),
+        'one34_code': (0x20000, {
+            0x2000A: 0xEF1C,   # GOTO 0x2EA38, the entry point, and its second word below
+            0x2000C: 0xF175,
+            0x20036: 0xEC37,   # CALL 0x2D86E
+            0x20038: 0xF16C,
+        }),
+    }
+
+    def test_each_cited_word_is_at_the_address_it_is_cited_from(self):
+        lab.require(*self.CITED)
+        for image, (base, words) in self.CITED.items():
+            data = lab.load(image)
+            for address, expected in words.items():
+                with self.subTest(image=image, at=hex(address)):
+                    found = int.from_bytes(data[address - base:address - base + 2], 'little')
+                    self.assertEqual(found, expected)
+
+    def test_the_adshr_site_writes_the_same_address_on_both_sides_of_the_bit(self):
+        """
+        The ADSHR class's docstring cites `0x1B8BC` for its whole reason to exist. Asserted here
+        rather than there, because the claim is about the image and everything in that class is
+        about the table.
+        """
+        lab.require('h700_code')
+        data = lab.load('h700_code')
+        writes, seen_bsf = {False: set(), True: set()}, False
+        for address in range(0x1B8BC, 0x1B8CC, 2):
+            instr = isa.decode(data, address - 0x9000, 0x9000)
+            if instr is None or 'f' not in instr.fields:
+                continue    # the MOVLWs that load the values, which name no register
+            resolved, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'])
+            if instr.mnemonic == 'BSF' and resolved == isa.ADSHR_REGISTER:
+                seen_bsf = instr.fields['b'] == isa.ADSHR_BIT
+                continue
+            if instr.mnemonic in ('MOVWF', 'CLRF', 'SETF'):
+                writes[seen_bsf].add(resolved)
+        # 0xFC1 and 0xFC2 are each written on both sides, which is what makes the listing read as a
+        # contradiction until the shadow bit is tracked.
+        self.assertIn(0xFC1, writes[False])
+        self.assertIn(0xFC1, writes[True])
+        self.assertIn(0xFC2, writes[False])
+        self.assertIn(0xFC2, writes[True])
 
 
 if __name__ == '__main__':

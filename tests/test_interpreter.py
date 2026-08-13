@@ -697,17 +697,36 @@ class TestTheBindingTable(unittest.TestCase):
                 self.assertIn(gspm.HANDLER_TAG_ENTER, tags)
                 self.assertIn(gspm.HANDLER_TAG_LEAVE, tags)
 
+    # Distinct scan codes bound by a base slot 9 set, per architecture, and the highest of them.
+    # Measured, not predicted: only arch 14 binds a whole key table, 1 to 54 with no gap, which is
+    # the closure the comment below used to claim and nothing asserted. The others are sparse, and
+    # arch 9's highest is 57 because its codes are `group * 8 + column` with no multiple of eight
+    # bound, so a bound of 50 there would be wrong rather than conservative.
+    SCANS_PER_ARCHITECTURE = {8: (53, 63), 9: (50, 57), 12: (52, 55), 14: (54, 54)}
+
     def test_the_other_tags_are_key_events_by_the_slot_8_split(self):
         """Tags at 0x80 and above decode as press, release or repeat with a scan code."""
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             c = self._sets(name)
             high = {e.tag for a in c.handler_sets() for e in c.tagged_list(a) if e.tag >= 0x80}
             with self.subTest(config=name):
-                self.assertTrue(high)
-                # Every one is a real event type, never the 0x40 release-only bit on its own,
-                # and every scan code is inside the 54 the arch 14 key table can express.
+                if not high:
+                    # The safe mode containers bind no key through a set at all.
+                    self.assertIn(name, ('h700_gspm', 'one_safemode'))
+                    continue
+                # Every one is a real event type, never the 0x40 release-only bit on its own.
                 self.assertTrue(all(t & gspm.EVENT_MASK in (0x80, 0xC0) for t in high))
+                scans = {t & gspm.SCAN_MASK for t in high}
+                count, highest = self.SCANS_PER_ARCHITECTURE[c.architecture]
+                self.assertEqual((len(scans), max(scans)), (count, highest))
+                self.assertEqual(min(scans), 1, 'a scan code is one based on every architecture')
+                if c.architecture == 14:
+                    # The whole key table, which is what makes this a closure rather than a count:
+                    # section 17 derives 54 scan codes from the event mask and the corpus binds
+                    # every one of them, on the Harmony 600 and on both Harmony 700 configs.
+                    self.assertEqual(scans, set(range(1, 55)))
 
     def test_the_seven_hundred_pair_differs_by_one_binding_in_one_entry(self):
         """The controlled pair. One described button, one added binding, nothing else moves."""
@@ -1012,16 +1031,23 @@ class TestTheParameterBlock(unittest.TestCase):
     def test_every_group_is_the_length_its_firmware_demands(self):
         """The closure: fourteen literals off two images, against thirteen containers."""
         from harmony import gspm
-        checked = 0
+        lab.require(*self.CONTAINERS)
+        checked = {}
         for name in self.CONTAINERS:
             c = gspm.parse(lab.load(name))
             match = c.parameter_group_lengths_match()
             if match is None:                      # arch 8 and arch 9, no firmware read
                 continue
-            checked += 1
+            checked[c.architecture] = checked.get(c.architecture, 0) + 1
             with self.subTest(container=name):
                 self.assertTrue(match, [len(g) for g in c.parameter_groups()])
-        self.assertGreaterEqual(checked, 8)
+        # A floor of eight stood here, which is what the two architectures happen to sum to, so it
+        # was tight by coincidence and would have absorbed a container quietly dropping out on either
+        # side. Stated per architecture instead, because the point of the closure is that two
+        # different demanded lengths each fit their own containers.
+        self.assertEqual(checked, {12: 2, 14: 6})
+        self.assertEqual(len(lab.CONTAINERS) - sum(checked.values()), 7,
+                         'arch 8 and arch 9 have no firmware read of this guard')
 
     def test_the_two_architectures_demand_different_lengths(self):
         """Otherwise the fit above would be one constant matching everywhere."""

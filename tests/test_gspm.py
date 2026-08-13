@@ -1603,7 +1603,11 @@ class TestTheHighOperandBand(unittest.TestCase):
                 self.assertEqual(low, [], '%s: %d below the band' % (name, len(low)))
                 total += sum(1 for i in self._instructions(name)
                              if i.opcode in gspm.HIGH_BAND_OPCODES)
-        self.assertGreater(total, 10000, 'the claim rests on the count, so pin the count')
+        # The claim rests on the count, so the count is the count. `assertGreater(total, 10000)`
+        # stood here against a measured 10381, which is a floor 3.8% under the figure it was
+        # guarding: the four samples that carry over 900 each could have dropped out together and
+        # left it passing. The population is a literal tuple above, so an exact total is stable.
+        self.assertEqual(total, 10381)
 
     def test_the_floor_is_exactly_the_band_boundary(self):
         """Not merely at or above 0xC000: the lowest value observed IS 0xC000.
@@ -1639,15 +1643,26 @@ class TestTheHighOperandBand(unittest.TestCase):
                     others.add(i.opcode)
         self.assertEqual(others, {0x79, 0x7A})
 
+    # The one pair and opcode where a member uses the opcode not at all, so there is nothing to
+    # compare. Named rather than skipped by a bare `continue`: five of the six comparisons run, and
+    # a silent sixth is how a test ends up asserting less than its title says.
+    NO_SECOND_MEMBER = (('arch8_config_a', 'arch8_config_b'), 0x0F)
+
     def test_0x07_and_0x0f_are_a_vocabulary_fixed_per_architecture(self):
+        lab.require(*sorted({n for pair in self.PAIRS for n in pair}))
+        compared = 0
         for a, b in self.PAIRS:
             for op in (0x07, 0x0F):
                 sa = {i.operand for i in self._instructions(a) if i.opcode == op}
                 sb = {i.operand for i in self._instructions(b) if i.opcode == op}
                 if not sa or not sb:
-                    continue  # arch8_config_b does not use 0x0F at all
+                    self.assertEqual(((a, b), op), self.NO_SECOND_MEMBER,
+                                     'a new pair stopped comparing, which is not a pass')
+                    continue
+                compared += 1
                 with self.subTest(pair='%s/%s' % (a, b), opcode='%02X' % op):
                     self.assertEqual(sa, sb)
+        self.assertEqual(compared, 5, 'five of the six comparisons have both members')
 
     def test_one_list_shape_carries_the_same_seven_values_on_two_different_models(self):
         """[0x1F, 0x7F] over 1068 lists on two remotes that share no equipment.

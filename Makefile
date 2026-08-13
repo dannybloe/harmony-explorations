@@ -66,12 +66,17 @@ test-verbose:
 # slipped through and trelowney found it on 10 August 2026 by doing exactly this. The shape it
 # catches is a corpus wide assertion after a `subTest` loop, because a skip inside `subTest` skips
 # that sample and lets the loop finish, so the aggregate then runs against zero.
+#
+# `NO_COLOR=1` on the diagnostic line is load bearing, not cosmetic. Python 3.14's unittest colours
+# its summary even through a pipe and puts the reset sequence between `FAIL` and `: test`, so a grep
+# for `FAIL: test` matches nothing and the failure list comes back empty while the target correctly
+# exits 1. That has now cost time twice in one day, once here and once at a shell prompt.
 test-nolab:
 	@HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover -s $(TESTS) \
 	  > /dev/null 2>&1 && echo "skips cleanly with no lab" || \
 	  { echo "FAILED with no lab: something asserts rather than skipping"; \
-	    HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover -s $(TESTS) 2>&1 \
-	      | grep -E '(FAIL|ERROR): test' ; exit 1; }
+	    NO_COLOR=1 HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover \
+	      -s $(TESTS) 2>&1 | grep -E '^(FAIL|ERROR): test' ; exit 1; }
 	@HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PNPM) test \
 	  > /dev/null 2>&1 && echo "TypeScript skips cleanly with no lab" || \
 	  { echo "FAILED with no lab on the TypeScript side: run it yourself to see which"; exit 1; }

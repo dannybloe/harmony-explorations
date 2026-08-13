@@ -74,8 +74,7 @@ test('a record reads under exactly one convention, or under none', skipWithoutLa
   let none = 0;
   let both = 0;
   for (const name of CONTAINERS) {
-    const c = load(name);
-    if (!c) continue;
+    const c = mustLoad(name);
     for (const group of irGroups(c) ?? []) {
       for (const record of group.addresses) {
         const readings = irFrames(c, record).length;
@@ -85,10 +84,12 @@ test('a record reads under exactly one convention, or under none', skipWithoutLa
       }
     }
   }
-  assert.ok(one > 3000, `only ${one} records read as a frame`);
+  // All three outcomes stated, not floored. `one > 3000` and `both > 0 && none > 0` stood here, and
+  // the second is satisfied by a single record of each kind: the claim is a partition of the whole
+  // infrared corpus, so the partition is what gets asserted.
+  assert.deepEqual({ one, both, none }, { one: 3547, both: 148, none: 935 });
   // Every ambiguous record is a two group record, which is what the next test is about. There is no
   // record anywhere that is ambiguous for any other reason.
-  assert.ok(both > 0 && none > 0, 'the corpus should exercise all three outcomes');
 });
 
 test('reading under both conventions means a two group record, and the reverse', skipWithoutLab(), () => {
@@ -120,15 +121,17 @@ test('reading under both conventions means a two group record, and the reverse',
     }
   }
   assert.equal(containers, CONTAINERS.length, 'a container went unread');
-  assert.ok(records > 500, `only ${records} class 5 records were compared`);
+  // Exact, and the comment it replaces was wrong about what it counted: these are class 1 records,
+  // the ones with a duration stream at the record, which is the population the biconditional is over.
+  assert.equal(records, 4323, `${records} class 1 records were compared`);
 });
 
 test('arch 9 stores no duration stream to decode', skipUnless('h525_config'), () => {
   // Class 5 keeps its durations one level down, in a shared symbol table, section 82. So the decoder
   // reads nothing at all, and that is right rather than a gap: there is no pulse train at the record.
+  const ARCH9_RECORDS: Record<string, number> = { h525_config: 200, h525_config_2: 107 };
   for (const name of ['h525_config', 'h525_config_2']) {
-    const c = load(name);
-    if (!c) continue;
+    const c = mustLoad(name);
     let records = 0;
     for (const group of irGroups(c) ?? []) {
       for (const record of group.addresses) {
@@ -136,7 +139,8 @@ test('arch 9 stores no duration stream to decode', skipUnless('h525_config'), ()
         assert.equal(irFrames(c, record).length, 0, `${name} 0x${record.toString(16)}`);
       }
     }
-    assert.ok(records > 100, name);
+    // Each sample's own count, because `> 100` is a floor the smaller of the two clears by seven.
+    assert.equal(records, ARCH9_RECORDS[name], name);
   }
 });
 
@@ -145,8 +149,7 @@ test('arch 9 stores no duration stream to decode', skipUnless('h525_config'), ()
  */
 test('a second pointer group is the same code with one cell swapped', skipUnless('arch8_config_a'), () => {
   for (const name of ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d']) {
-    const c = load(name);
-    if (!c) continue;
+    const c = mustLoad(name);
     let records = 0;
     let pairs = 0;
     const offsets = new Set<number>();
@@ -184,7 +187,9 @@ test('a second pointer group is the same code with one cell swapped', skipUnless
       }
     }
     assert.equal(records, 37, `${name} two group records`);
-    assert.ok(pairs >= 37, `${name} had only ${pairs} comparable block pairs`);
+    // 61, not "at least 37". The floor was the record count reused as a bound on a different
+    // quantity, so 24 pairs could have gone uncompared without it noticing.
+    assert.equal(pairs, 61, `${name} comparable block pairs`);
     // One offset, in every record of every config: a fixed position in the frame, which is what a
     // toggle bit is and what an arbitrary difference between two codes would not be.
     assert.deepEqual([...offsets], [41], `${name} swap offsets`);

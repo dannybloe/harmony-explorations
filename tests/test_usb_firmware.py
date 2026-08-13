@@ -497,18 +497,32 @@ class TestEachValidatorBoundsAtItsOwnFlashSize(unittest.TestCase):
                     self.assertEqual(instr.mnemonic, 'MOVLW')
                     self.assertEqual(instr.fields['k'], expected)
 
+    def window(self, image):
+        """
+        The span of permitted top address bytes, decoded out of the image rather than restated.
+
+        One literal is a ceiling with an implicit floor of zero; two are a floor and a ceiling,
+        which is the arch 9 (Harmony 525) case, since its serial flash is addressed a megabyte up.
+        """
+        base, literals, _ = self.VALIDATORS[image]
+        found = sorted(isa.decode(lab.load(image), address - base, base).fields['k']
+                       for address in literals)
+        return (found[0], found[1]) if len(found) == 2 else (0x00, found[0])
+
     def test_the_window_is_the_capacity_of_that_models_flash_part(self):
         """
         The closure. Each span times 64 KiB is the size of the chip the model carries, and the
-        three chips are a 4 MiB parallel NOR, a 2 MiB SPI and a 512 KiB SPI.
+        three chips are a 4 MiB parallel NOR (Atmel AT49BV322A), a 2 MiB SPI (EON F16) and a
+        512 KiB SPI (25F040).
+
+        The capacities are the only literals here, and they are datasheet figures rather than
+        anything this project derived. The spans come out of the firmware, so the assertion relates
+        two independent sources; it used to restate both sides and compare them to each other.
         """
-        spans = {
-            'one34_code': (0x00, 0x40),   # Atmel AT49BV322A
-            'h700_code': (0x00, 0x20),    # EON F16
-            'h525_code': (0x80, 0x88),    # 25F040
-        }
-        for image, (low, high) in spans.items():
+        lab.require(*self.VALIDATORS)
+        for image in self.VALIDATORS:
             with self.subTest(image):
+                low, high = self.window(image)
                 _, _, capacity = self.VALIDATORS[image]
                 self.assertEqual((high - low) << 16, capacity)
 
@@ -518,9 +532,10 @@ class TestEachValidatorBoundsAtItsOwnFlashSize(unittest.TestCase):
         every address arch 9 permits is refused by both others, and half of what arch 12 permits is
         refused by arch 14. That mistake was live in `packages/usb` until section 88.
         """
-        arch12 = set(range(0x00, 0x40))
-        arch14 = set(range(0x00, 0x20))
-        arch9 = set(range(0x80, 0x88))
+        lab.require(*self.VALIDATORS)
+        arch12 = set(range(*self.window('one34_code')))
+        arch14 = set(range(*self.window('h700_code')))
+        arch9 = set(range(*self.window('h525_code')))
         self.assertEqual(arch9 & arch12, set())
         self.assertEqual(arch9 & arch14, set())
         self.assertTrue(arch14 < arch12, 'arch 14 permits strictly less than arch 12')
