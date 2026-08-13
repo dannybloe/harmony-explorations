@@ -17646,7 +17646,7 @@ memory to drive the matrix rows. That write is forbidden here and this section d
 `keyCodes` has therefore always returned a number for a hard key, and its own docstring said so: a code
 has no name, and a label comes from the screen where a screen draws one and from nowhere otherwise.
 
-Thirty one buttons of a Harmony One and thirty five of a Harmony 600 now have their names, and nothing
+Thirty two buttons of a Harmony One and thirty six of a Harmony 600 now have their names, and nothing
 was written to either remote or asked of either remote. The tables are in `reference/button-maps.md`.
 
 ### The chain, and why it is content rather than order
@@ -17703,38 +17703,44 @@ base slot 13 on six of six groups across the two architectures. That is a third 
 which device, and the first that reads no name at all.
 
 For the button names the join has to be made **inside the map of the activity the binding belongs to**,
-and getting that scope wrong is what the instructive part of this section is about. Every named scan now
-resolves to exactly one button, thirty one of forty four on the Harmony One and thirty five of fifty four
-on the Harmony 600, with no button claimed by two scans and no activity contradicting another.
+and getting that scope wrong is what the instructive part of this section is about. Thirty two of the
+Harmony One's forty four buttons and thirty six of the Harmony 600's fifty four are named, with no button
+claimed by two scans and no activity contradicting another.
 
-**The first version had four ambiguous scans per remote and it argued they were inherent**, on the
-grounds that two buttons sending the same infrared code cannot be told apart by a route that reads the
-code. That argument is sound and it did not apply, because the premise was wrong: the two buttons were
-not sending the same code, the same **key** was sending two codes. Scan 19 of a Harmony One sends the
+**The first version had eight ambiguous scans per remote and it argued the ambiguity was inherent**, on
+the grounds that two buttons sending the same infrared code cannot be told apart by a route that reads the
+code. That argument is sound and it mostly did not apply, because the premise was wrong: the two buttons
+were not sending the same code, the same **key** was sending two codes. Scan 19 of a Harmony One sends the
 television's `ChannelUp` in one activity and the Blu-ray player's `SkipForward` in the other, both names
-exist as buttons, and a vote over every map at once therefore saw one key as two. The frame column
-records the evidence, since that scan carries both codes.
+exist as buttons, and a vote over every map at once therefore saw one key as two. The frame column records
+the evidence, since that scan lists both codes.
 
-Two rules fix it and neither is visible in the data:
+Three rules take it from eight to four, and none of them is visible in the data:
 
-* **A scan's command is per activity and its button is not**, so a vote must be scoped to the map of the
+* **A scan's command is per activity and its button is not**, so a vote is scoped to the map of the
   activity whose set holds the binding.
 * **Only an `ActivityButtonMap` may name an activity's set.** A `DeviceButtonMap` is the layout for
-  driving one device directly. Choosing the map by how well it overlaps picked device maps for the
-  Harmony One, which is what left two of its scans disagreeing with themselves; the kind is stated in the
-  map and is read rather than inferred.
+  driving one device directly and a `RootButtonMap` is neither. Choosing the map by how well it overlaps
+  picked device maps for the Harmony One, which is what left two of its scans disagreeing with themselves;
+  the kind is stated in the map and is read rather than inferred.
+* **The assignment is globally injective**, because a `ButtonKey` names one physical key and a physical key
+  has one scan code, so a button another scan has taken in **any** activity is unavailable. A per activity
+  constraint pass cannot see that, and this is what names `NumberPlus`: its pair's other scan resolves to
+  `PrevChannel` in the other activity, and the two send the same code from the second device.
 
-A constraint pass then finishes it: a button another scan in the same activity has already taken alone
-cannot also be this one. That is what resolves a genuine pair, and it took the Harmony One's two
-`DirectionUp` and `DirectionDown` collisions apart.
-
-**What remains unnamed is unbound rather than undecided.** These two configs drive three devices in two
-activities, so a key neither activity binds to a decodable code is never reached at all. Naming more of
-them needs a config with more devices on it, not a better method.
+**Four scans per remote remain genuinely undecided, and the honest statement of what is left took two
+attempts.** The revision that added the three rules above claimed "what remains unnamed is unbound rather
+than undecided", which is true of every key except these four: a remote's two up keys send one command and
+so do its two down keys, in both activities of both configs, so four scans face four buttons in two
+symmetric pairs. Elimination cannot break a symmetry and neither can any amount of decoding. Splitting
+them needs a config where the two members of a pair carry **different** commands, which means a device with
+its own page or channel pair beside a directional pad. Everything else unnamed is unbound: these configs
+drive three devices in two activities, so a key neither activity binds to a decodable code is never
+reached.
 
 ### Two closures, one of which reads nothing
 
-**The two models agree.** Every one of the thirty one button names in both tables carries an identical
+**The two models agree.** Every one of the thirty two button names in both tables carries an identical
 frame, and the four the Harmony 600 has on top are exactly the teletext colour keys a Harmony One does not
 have. Two containers, two architectures, two separate runs of Logitech's generator, and the same command
 decodes to the same bits.
@@ -17765,9 +17771,9 @@ config, because that config's own catalogue and button maps are not ours to have
 per model table, once, which afterwards is a fact about the model.
 
 It is also not in `packages/usb/src/models.ts` beside the other per model hardware facts, deliberately,
-and the reason changed with the ambiguity: it is no longer that four scans are undecided, it is that the
-tables cover thirty one of forty four and thirty five of fifty four buttons. A library answering for a
-scan these configs never bound would be answering from nothing.
+and for two reasons now: four scans per remote are still undecided, and the tables cover thirty two of
+forty four and thirty six of fifty four buttons, so a library answering for a scan these configs never
+bound would be answering from nothing.
 
 ### What would falsify it
 

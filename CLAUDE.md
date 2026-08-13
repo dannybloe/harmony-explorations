@@ -1293,17 +1293,17 @@ produce a config the remote accepts and mishandles.
   **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
   sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
   matched against the command catalogue and button maps of the account that generated a config names the
-  button. 31 buttons of a Harmony One and 35 of a Harmony 600, `reference/button-maps.md`, with nothing
+  button. 32 buttons of a Harmony One and 36 of a Harmony 600, `reference/button-maps.md`, with nothing
   written to anything. **It is a calibration instrument and not a reader**: it needs the generating
   account, so it works on the two configs Logitech compiled to our specification and cannot name a key in
-  a contributed config. Three things to carry. **Every named scan resolves to exactly one button**, and
-  the first version of the tables had four ambiguous ones per remote and argued they were inherent: the
-  premise was wrong, since it was one key sending two codes rather than two keys sending one, and the fix
-  is to scope the vote to the map of the activity holding the binding and to let only an
-  `ActivityButtonMap` name an activity's set. What is left unnamed is **unbound** rather than undecided,
-  so the tables are still not in `packages/usb/src/models.ts` and the silhouettes still get no
-  `data-scan`: these two configs drive three devices, and a library answering for a scan they never bound
-  would be answering from nothing. And **the geometry does not
+  a contributed config. Three things to carry. The ambiguity was mostly a **scope** error, eight scans a
+  remote down to four: a scan's command is per activity and its button is not, only an `ActivityButtonMap`
+  may name an activity's set, and the assignment is globally injective because a button is one physical
+  key. The four that remain are real, two up keys and two down keys sending one command each, and no
+  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts` and the silhouettes
+  still get no `data-scan`, since the rest is **unbound**: these configs drive three devices in two
+  activities and a library answering for a scan they never bound would answer from nothing. And **the
+  geometry does not
   follow**: under section 48's own column formula the digits 1, 2 and 3 of a Harmony 600 sit in columns 3,
   2 and 2, and no divisor to 19 in either direction puts a digit row on one line, so a matrix position is
   a wiring decision and a test asserts it cannot be recovered.

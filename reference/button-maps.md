@@ -18,29 +18,55 @@ config somebody contributed, because the catalogue and the button maps for that 
 not ours to have. What it produces is a per model table, once, which is then a fact about the model
 rather than about the config.
 
-## Every named scan resolves to exactly one button
+## How a scan is decided, and the three rules that made it decidable
 
-There is no ambiguity column, and the first version of these tables had one. Four scans per remote sat
-between two buttons, and two pairs on the Harmony One claimed one button between them, which looked
-inherent: two buttons that send the same infrared code cannot be told apart by a route that reads the
-code. It was not inherent. It was a scope error, and both halves of the fix are worth stating because
-neither is obvious from the data:
+The first version of these tables left four scans per remote between two buttons and two pairs of the
+Harmony One claiming one button between them, and it argued the ambiguity was inherent: two buttons that
+send the same infrared code cannot be told apart by a route that reads the code. The argument is sound
+and its premise was wrong, which took three rules to see. None of them is visible in the data.
 
 **A scan's command is per activity and its button is not.** Scan 19 of a Harmony One sends the
 television's `ChannelUp` in one activity and the Blu-ray player's `SkipForward` in the other, and both
-names exist as buttons, so a vote over every map at once made one physical key look like two. Inside one
-activity's own map there is no conflict, and the frame column shows why the answer is `ChannelUp`: that
-key sends both codes, and the movie activity puts the player's skip command on the channel key.
+names exist as buttons, so a vote over every map at once saw one key as two. It was one key sending two
+codes, not two keys sending one. So a vote is scoped to the map of the activity holding the binding, and
+the frame column carries the evidence: that scan lists both codes.
 
-**Only an activity's map may name an activity's set.** A `DeviceButtonMap` is the layout for driving one
-device directly and a `RootButtonMap` is neither, so the kind is read off the map rather than the map
-being chosen by how well it happens to fit. Scoring every map by overlap picked device maps for the
-Harmony One and left two scans contradicting themselves across activities.
+**Only an `ActivityButtonMap` may name an activity's set.** A `DeviceButtonMap` is the layout for driving
+one device directly and a `RootButtonMap` is neither. The kind is stated in the map and is read rather
+than inferred from how well a map happens to overlap, which is what had picked device maps for the
+Harmony One and left two of its scans contradicting themselves between activities.
 
-After that a constraint pass finishes the job: a button that another scan in the same activity has
-already taken alone cannot also be this one. What remains unnamed is not undecided, it is **unbound**:
-these two configs drive three devices in two activities, so a key neither activity binds to a decodable
-code is never reached at all.
+**The assignment is globally injective**, because a `ButtonKey` names one physical key and a physical key
+has one scan code. So a button another scan has taken in **any** activity is unavailable to a scan still
+holding candidates. A per activity constraint pass cannot see that: it resolved `PrevChannel` in one
+activity and left the second scan of that pair open in the other, where elimination names it
+`NumberPlus`.
+
+## What is still not decided, and it is four scans per remote
+
+Not zero. This section said so for one revision and the claim was wrong: it read "what remains unnamed is
+unbound rather than undecided", which is true of every key except these.
+
+The remote's two up keys send one command and so do its two down keys, in both activities of both
+configs, so four scans face four buttons in two symmetric pairs. Elimination cannot break a symmetry, and
+neither can any amount of decoding. Splitting them needs a config in which the two members of a pair
+carry **different** commands, which is a device with its own page or channel pair beside a directional
+pad. Everything else unnamed is genuinely unbound: these configs drive three devices in two activities,
+so a key neither activity binds to a decodable code is never reached.
+
+### Harmony One
+
+| scans | buttons | why |
+|---|---|---|
+| 26, 29 | `DirectionDown` and `DownArrow` | two scans against two buttons, and every activity gives both the same command |
+| 27, 36 | `DirectionUp` and `UpArrow` | two scans against two buttons, and every activity gives both the same command |
+
+### Harmony 600
+
+| scans | buttons | why |
+|---|---|---|
+| 26, 50 | `DirectionUp` and `UpArrow` | two scans against two buttons, and every activity gives both the same command |
+| 27, 42 | `DirectionDown` and `DownArrow` | two scans against two buttons, and every activity gives both the same command |
 
 ## What is deliberately not here
 
@@ -51,12 +77,17 @@ digits into one line, which was checked over every divisor up to 19 in both dire
 position is a wiring decision and the tables below are the only route to a name.
 
 That is also why `reference/silhouettes/` still carries no `data-scan` attribute. A name could be placed
-on a drawing by hand, since a drawing's `Number4` is not in doubt, but the two remotes here have 31 and
-35 of their 44 and 54 buttons named, so filling in a drawing would mean guessing the rest.
+on a drawing by hand, since a drawing's `Number4` is not in doubt, but the two remotes here have 32 and
+36 of their 44 and 54 buttons named, so filling in a drawing would mean guessing the rest.
+
+**A key that sends no code.** The Harmony 600's two activity keys are hard buttons in its maps and never
+appear below, because an activity key selects a handler set and sends nothing itself. They are named by a
+different route entirely, section 120's four hop chain, which is the same split between the two
+populations that section 128 found.
 
 ## Harmony One, skin 54, architecture 12
 
-31 of its 44 buttons. The `frame` column is what `packages/codec/src/irframe.ts` recovers from the
+32 of its 44 buttons. The `frame` column is what `packages/codec/src/irframe.ts` recovers from the
 record, as `bits:value` in hexadecimal, and a scan that sends a code for more than one device carries one
 frame per device.
 
@@ -73,6 +104,7 @@ frame per device.
 | 9 | `VolumeMute` | `48:2a4c0284e86e` |
 | 10 | `Info` | `12:5d0 48:40040d004944` |
 | 11 | `DirectionLeft` | `12:2d0 48:40040d00e1ec` |
+| 12 | `NumberPlus` | `48:40040d00c1cc` |
 | 14 | `Number0` | `12:910 48:40040d009895` |
 | 15 | `Number9` | `12:110 48:40040d001815` |
 | 16 | `Number8` | `12:e10 48:40040d00e8e5` |
@@ -96,7 +128,7 @@ frame per device.
 
 ## Harmony 600, skin 71, architecture 14
 
-35 of its 54 buttons.
+36 of its 54 buttons.
 
 | scan | button | frame |
 |---|---|---|
@@ -108,6 +140,7 @@ frame per device.
 | 16 | `VolumeMute` | `48:2a4c0284e86e` |
 | 17 | `Number4` | `12:c10 48:40040d00c8c5` |
 | 18 | `Number7` | `12:610 48:40040d006865` |
+| 19 | `NumberPlus` | `48:40040d00c1cc` |
 | 20 | `Number0` | `12:910 48:40040d009895` |
 | 21 | `SkipBack` | `15:1ee9 48:40040d00929f` |
 | 22 | `Rewind` | `15:6ce9 48:40040d00202d` |
@@ -136,7 +169,7 @@ frame per device.
 | 52 | `DirectionLeft` | `12:2d0 48:40040d00e1ec` |
 | 53 | `Number8` | `12:e10 48:40040d00e8e5` |
 
-The two remotes agree: every one of the 31 names in both tables carries an identical frame, and the four
+The two remotes agree: every one of the 32 names in both tables carries an identical frame, and the four
 the 600 has on top are exactly the teletext colour keys a Harmony One does not have.
 
 ## Provenance

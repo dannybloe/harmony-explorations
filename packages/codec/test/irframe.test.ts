@@ -241,8 +241,8 @@ test('the reference tables describe both models and nothing else', () => {
   // Runs without a lab, because a fresh clone should still be told if the document loses a table.
   const tables = tablesFromReference();
   assert.deepEqual(Object.keys(tables).sort(), MODELS.map(([m]) => m).sort());
-  assert.equal(tables[MODELS[0]![0]]!.size, 31);
-  assert.equal(tables[MODELS[1]![0]]!.size, 35);
+  assert.equal(tables[MODELS[0]![0]]!.size, 32);
+  assert.equal(tables[MODELS[1]![0]]!.size, 36);
 });
 
 test(
@@ -292,7 +292,7 @@ test('the two models agree about every button they share', skipUnless('calibrati
   const a = byButton(one);
   const b = byButton(h600);
   const shared = [...a.keys()].filter((k) => b.has(k));
-  assert.equal(shared.length, 31, 'the One\'s buttons are all named on the 600 too');
+  assert.equal(shared.length, 32, 'the One\'s buttons are all named on the 600 too');
   for (const button of shared) assert.equal(a.get(button), b.get(button), button);
   // And the difference is hardware: the 600 has the four teletext colour keys and the One does not.
   assert.deepEqual([...b.keys()].filter((k) => !a.has(k)).sort(), ['Blue', 'Green', 'Red', 'Yellow']);
@@ -328,3 +328,41 @@ test('no arithmetic on a scan code gives the keypad geometry', skipUnless('calib
     }
   }
 });
+
+test(
+  'the four undecided scans per remote are bound, not merely unnamed',
+  skipUnless('calibration_one', 'calibration_h600'),
+  () => {
+    // `reference/button-maps.md` distinguishes two kinds of unnamed key and the distinction is the whole
+    // honesty of that document: a key the configs never bind is unreachable, and these four are bound and
+    // still not assignable, because two scans face two buttons carrying one command. An earlier revision
+    // said everything unnamed was unbound, which was false for exactly these.
+    const text = readFileSync(join(REPO, 'reference', 'button-maps.md'), 'utf8');
+    const listed = new Map<string, number[]>();
+    for (const section of text.split(/^### /m).slice(1)) {
+      const model = section.split('\n')[0]!.trim();
+      const scans: number[] = [];
+      for (const m of section.matchAll(/^\| ([\d, ]+) \| `\w+` and `\w+` \|/gm)) {
+        scans.push(...m[1]!.split(',').map((s) => Number(s.trim())));
+      }
+      if (scans.length) listed.set(model, scans);
+    }
+    assert.deepEqual([...listed.keys()].sort(), ['Harmony 600', 'Harmony One']);
+    const tables = tablesFromReference();
+    for (const [model, container] of [['Harmony One', 'calibration_one'], ['Harmony 600', 'calibration_h600']] as const) {
+      const scans = listed.get(model)!;
+      assert.equal(scans.length, 4, `${model} lists four undecided scans`);
+      const c = load(container)!;
+      const named = tables[MODELS.find(([m]) => m.startsWith(model))![0]]!;
+      const bound = new Set(
+        keyCodes(c)
+          .filter((b) => b.where === 'set' && b.event === 2 && b.codes.length)
+          .map((b) => b.scan),
+      );
+      for (const scan of scans) {
+        assert.ok(bound.has(scan), `${model} scan ${scan} is listed as undecided but sends nothing`);
+        assert.ok(!named.has(scan), `${model} scan ${scan} is both named and undecided`);
+      }
+    }
+  },
+);
