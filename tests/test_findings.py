@@ -1087,9 +1087,14 @@ class TestArch9AddressesFourWindowsBelowItsFlash(unittest.TestCase):
         """
         name, base, start = self.APPLICATION
         table = self._chain(name, base, start)
-        self.assertTrue(all(target < 0x02E30 or target > 0x02E30 for target in table.values()))
-        # Concretely: every case branches forward past the range test, so none of them reaches it.
+        # An `all(target < X or target > X)` line used to stand here, which is `target != X` written
+        # so that it reads as two bounds, and the line below already implies it. Removed rather than
+        # corrected: two assertions where the weaker one is a rearrangement of the stronger make a
+        # test look like it checks more than it does.
+        #
+        # Every case branches forward past the range test, so none of them reaches it.
         self.assertTrue(all(target > 0x02E30 for target in table.values()))
+        self.assertTrue(table, 'the chain decoded to nothing, so nothing was checked')
 
     def test_the_eeprom_arm_reaches_EEADR_and_EEDATA_in_both_images(self):
         """

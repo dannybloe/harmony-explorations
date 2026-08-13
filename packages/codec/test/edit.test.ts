@@ -277,14 +277,17 @@ test('a save changes the two clocks and the trailer, and nothing else', skipUnle
         );
         assert.ok(inside, `${name}: a save changed 0x${run.start.toString(16)}, which no rule claims`);
       }
-      // And the positive: every expected field really did move, unless it already held that value.
-      for (const one of expected) {
-        const same = c.blob.slice(one.start, one.start + one.length)
-          .every((byte, at) => byte === bytes[one.start + at]);
-        const touched = changed.some((run) => run.start < one.start + one.length
-          && one.start < run.start + run.length);
-        assert.ok(touched || same, `${name}: 0x${one.start.toString(16)} was not stamped`);
-      }
+      // **The positive direction used to be asserted here and could not fail.** It was
+      // `assert.ok(touched || same)` per expected field, where `same` meant the bytes had not moved
+      // and `touched` meant a reported run overlapped them: `changed` is derived by comparing the two
+      // buffers, so exactly one of the two holds for every field and the disjunction is a tautology.
+      // Removed rather than replaced, because the positive direction is genuinely carried by two
+      // assertions that can fail: the read back below, and the base slot 13 test next door. Inventing
+      // a third would be a third copy of one claim.
+      //
+      // A save that stamped nothing at all would leave `changed` empty, every field `same`, and this
+      // read back wrong, which is what makes it the positive test rather than a formality.
+      assert.ok(changed.length > 0, `${name}: a save changed nothing`);
       // And it reads back as the moment asked for, through the reader rather than the writer.
       assert.equal(parse(bytes).builtAt, WHEN, name);
     }

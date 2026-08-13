@@ -9,6 +9,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import * as everything from '../src/index.ts';
+
 import {
   COMMAND_NAMES,
   COMMAND_STATES,
@@ -26,6 +28,8 @@ import {
   WRITE_FLASH,
   WRITE_MISC,
   WRITE_MISC_SELECTORS,
+  architectureFromVersion,
+  softwareTypeFromVersion,
   decodeReply,
   encodeRequest,
   eraseFlashRequest,
@@ -358,9 +362,16 @@ test('the version fields we derived are the ones the client reads, in order', ()
   // Its identify operation names six fields at six positions. Ours are the same six in the same
   // order, so the reading derived from disassembly and a written prediction is corroborated by a
   // source that never saw either. Field 4's nibbles are the part worth pinning.
-  const one = [0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c];
-  assert.equal((one[4] as number) >> 4, 12, 'architecture in the high nibble');
-  assert.equal((one[4] as number) & 0x0f, 0, 'software type in the low nibble, application');
+  //
+  // **Through the library, which it was not until 13 August 2026**: the assertions were `one[4] >> 4`
+  // and `one[4] & 0x0f`, so the test restated the nibble split in its own arithmetic and would have
+  // passed with the decoders broken or absent. The literal stays, because it is the corroborating
+  // datum, and what reads it is now the code under test.
+  const one = Uint8Array.from([0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c]);
+  assert.equal(architectureFromVersion(one), 12, 'architecture in the high nibble');
+  assert.equal(softwareTypeFromVersion(one), 0, 'software type in the low nibble, application');
+  // Field 5 is the skin, and there is no accessor for it in the library because nothing needed one
+  // yet; `modelForSkin` takes the number rather than the reply.
   assert.equal(one[5], 0x36, 'skin 54, which the client calls SKIN54');
 });
 
@@ -374,4 +385,13 @@ test('a flash id comes from the remote, because the client table disagrees with 
 
   const one = [0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c];
   assert.notDeepEqual([one[2], one[3]], [0xf9, 0x01], 'arch 12 does not, and that is the point');
+
+  // **And the regression this test says it exists for, which it did not check until 13 August 2026.**
+  // Both halves above are literals declared here, so they record the disagreement and cannot notice
+  // anybody hard coding the client's figures. What can: the library exporting no flash id at all, so a
+  // table smuggled in has a name to find. The reading has to come off the remote, per skin, and this
+  // is what says so in a way that fails.
+  const exported = Object.keys(everything);
+  assert.deepEqual(exported.filter((n) => /flash.*id/i.test(n)), [],
+    'the library grew a flash id table, and a flash id is a property of the unit');
 });

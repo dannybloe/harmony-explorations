@@ -108,6 +108,8 @@ TIMER_HIGH = 0x0FCF             # TMR1H, and the tick does a read, modify, write
 T1CON = 0x0FCD
 RD16_BIT = 7                    # clear in the measured 0x1F, so every access is eight bits
 MEASURED_T1CON = 0x1F
+T1CKPS_SHIFT = 4                # T1CKPS1:T1CKPS0, Timer 1's prescale select
+CRYSTAL_HZ = 32768              # the secondary oscillator, per the configuration words
 PHASE_MASK = 0x3F               # what it ANDs into the timer: bits 15 and 14 are one second each
 PHASE_BITS = 2
 
@@ -258,7 +260,17 @@ class TheTickTest(unittest.TestCase):
     def test_the_loss_is_one_directional(self):
         # A discarded carry removes 256 counts and can never add any, which is why this explains a
         # clock that runs slow rather than one that wanders. Stated as arithmetic, not as a listing.
-        prescaled_hz = 16384
+        #
+        # **`prescaled_hz` used to be typed as 16384 here**, which made the whole test arithmetic over
+        # its own literals while `MEASURED_T1CON`, read off the remote two lines above, was never
+        # consulted. It comes from the register now: bits 5 and 4 are Timer 1's prescale select, and
+        # `0x1F` selects 1:2 on the 32.768 kHz crystal the oscillator bits name. So the bound below
+        # rests on a measurement, which matters because `CLAUDE.md` says this figure must never be
+        # quoted as one.
+        prescale = 1 << ((MEASURED_T1CON >> T1CKPS_SHIFT) & 0b11)
+        self.assertEqual(prescale, 2, 'the measured register selects 1:2')
+        prescaled_hz = CRYSTAL_HZ // prescale
+        self.assertEqual(prescaled_hz, 16384)
         lost = 256 / prescaled_hz
         self.assertAlmostEqual(lost, 0.015625)
         per_day = lost * (24 * 60 * 60 / SECONDS_STEP)

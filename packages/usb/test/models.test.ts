@@ -131,7 +131,12 @@ test('a regional pair is two skins of one model, and both resolve', () => {
   }
 });
 
-test('every model without a skin really has no skin', () => {
+test('the two incompleteness lists are disjoint, and one of them is empty', () => {
+  // **Renamed on 13 August 2026.** It was called `every model without a skin really has no skin`,
+  // and the loop that would check that runs zero times because `MODELS_WITHOUT_A_SKIN` is `[]`, so
+  // the title named the one thing the test could not be checking. The emptiness is now stated rather
+  // than implied by a loop nobody notices is empty, and the loop is kept for the day it is not.
+  assert.equal(MODELS_WITHOUT_A_SKIN.length, 0, 'empty since section 131; state it if it changes');
   const named = new Set(Object.values(MODELS_BY_SKIN).map((m) => m.name));
   for (const m of MODELS_WITHOUT_A_SKIN) {
     assert.ok(!named.has(m.name), `${m.name} is not also in the skin table`);

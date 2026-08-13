@@ -61,7 +61,18 @@ def literals(name, start, count, mnemonic):
 class TestTheQueue(unittest.TestCase):
     """A circular buffer of 120 bytes, which is exactly 40 three byte instructions."""
 
-    def test_the_buffer_is_forty_instructions_on_both_images(self):
+    def test_the_recorded_addresses_span_forty_instructions_on_both_images(self):
+        """The arithmetic over the addresses this file records, which is all it can be.
+
+        **Renamed on 13 August 2026.** It was called `the buffer is forty instructions on both
+        images`, and it opens no image: `buffer_wrap` and `buffer_start` are entries in `IMAGES` at the
+        top of this file, so the test relates two recorded numbers and would pass with both wrong in
+        the same direction. That is worth having, because a transcription slip in the table breaks the
+        arithmetic, but the title claimed the images said it.
+
+        The firmware side is the test directly below, which decodes the comparison and finds the length
+        stated there. Keep them adjacent.
+        """
         for name, at in IMAGES.items():
             with self.subTest(image=name):
                 span = at['buffer_wrap'] - at['buffer_start']
