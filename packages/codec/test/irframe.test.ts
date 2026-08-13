@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { imagePath, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { imagePath, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import {
   IR_CLASS_STREAM,
@@ -33,6 +33,11 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 function load(name: string) {
   const p = imagePath(name);
   return p ? parse(new Uint8Array(readFileSync(p))) : undefined;
+}
+
+/** The same, but a missing sample throws with its name instead of shrinking a corpus wide claim. */
+function mustLoad(name: string) {
+  return parse(require_(name));
 }
 
 /**
@@ -90,9 +95,14 @@ test('reading under both conventions means a two group record, and the reverse',
   // A biconditional over the whole corpus, which is stronger than either half. It says the decoder's
   // refusal to choose is not noise: it lands on exactly the population that carries a second pointer
   // group, in every container, and never anywhere else.
+  //
+  // The counter below exists because a biconditional over an empty population is vacuously true, and
+  // `if (!c) continue` used to stand here, so a partial lab reported the property held everywhere.
+  let containers = 0;
+  let records = 0;
   for (const name of CONTAINERS) {
-    const c = load(name);
-    if (!c) continue;
+    const c = mustLoad(name);
+    containers += 1;
     for (const group of irGroups(c) ?? []) {
       for (const record of group.addresses) {
         // Class 1 only, and the reason is on the decoder's side rather than the header's. Byte `+11`
@@ -105,9 +115,12 @@ test('reading under both conventions means a two group record, and the reverse',
         const ambiguous: boolean = irFrames(c, record).length === 2;
         const twoGroup: boolean = irGroupCount(c, record) === 2;
         assert.equal(ambiguous, twoGroup, `${name} 0x${record.toString(16)}`);
+        records += 1;
       }
     }
   }
+  assert.equal(containers, CONTAINERS.length, 'a container went unread');
+  assert.ok(records > 500, `only ${records} class 5 records were compared`);
 });
 
 test('arch 9 stores no duration stream to decode', skipUnless('h525_config'), () => {
@@ -151,7 +164,11 @@ test('a second pointer group is the same code with one cell swapped', skipUnless
         for (let i = 0; i < half; i += 1) {
           const a: number[] = trains[i]!;
           const b: number[] = trains[i + half]!;
-          if (a.length !== b.length) continue;
+          // **Asserted rather than skipped.** A `continue` used to stand here, which passed over
+          // precisely the disconfirming case: two blocks of different lengths are not one code with a
+          // cell inverted, and the claim is that every pair is. Section 134.
+          assert.equal(a.length, b.length,
+            `${name} 0x${record.toString(16)} block ${i}: the pair differs in length`);
           pairs += 1;
           const differing: number[] = a.map((w, j) => (w === b[j] ? -1 : j)).filter((j) => j >= 0);
           assert.equal(differing.length, 2, `${name} 0x${record.toString(16)} block ${i}`);

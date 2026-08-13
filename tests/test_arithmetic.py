@@ -273,9 +273,23 @@ class ArmTest(unittest.TestCase):
                 # tabulated because it is what says the three opcodes share one frame.
                 dividend, _, remainder = division_registers(name, where)
                 sources = [src for src, _ in moves(pairs)]
-                product = min(s for s in sources if remainder < s < dividend)
-                self.assertLess(remainder, product)
-                self.assertLess(product, dividend)
+                # **The claim is that exactly one source sits in that window**, which is what says the
+                # three opcodes share one frame. It used to be `product = min(s for s in sources if
+                # remainder < s < dividend)` followed by asserting `remainder < product < dividend`,
+                # a value compared to itself through the predicate that selected it: only `min()` on an
+                # empty sequence could fail it.
+                between = sorted({s for s in sources if remainder < s < dividend})
+                # Two addresses, the product's low and high byte, adjacent and directly above the
+                # remainder. Measured rather than assumed: the first version of this assertion demanded
+                # one and found [30, 31] on arch 12 and [4, 5] on arch 9, which is a sixteen bit value
+                # moved a byte at a time.
+                self.assertEqual(len(between), 2,
+                                 'the product is one sixteen bit slot between the remainder and the '
+                                 'dividend, got %r' % (between,))
+                # Directly above the remainder's own two bytes, which is what makes the three opcodes
+                # one frame rather than three that happen to be near each other.
+                self.assertEqual(between, [remainder + 2, remainder + 3],
+                                 'and it sits above the remainder, which is sixteen bit too')
 
     def test_only_arch_14_has_a_modulo_arm_and_it_takes_the_remainder(self):
         lab.require(*BUILDS)
@@ -296,10 +310,21 @@ class ArmTest(unittest.TestCase):
                 quotient, _ = self.slots(name, where)
                 self.assertNotIn(quotient, sources)
 
-    def test_the_block_reaches_the_exit_on_the_architectures_without_it(self):
+    def test_the_block_reaches_the_exit_on_the_architecture_that_tests_it(self):
+        """Arch 12 tests the ten opcodes and branches to the exit; arch 9 does not test them at all.
+
+        **Renamed and given the count on 13 August 2026.** The title said "architectures" and the
+        Harmony 525's ladder is `{}` by construction, so its inner loop ran zero times and the plural
+        described one architecture. The emptiness is a finding, section 107, so it is asserted rather
+        than left as a comment on a dict entry nobody reads.
+        """
         lab.require(*BLOCK_LADDER)
+        self.assertEqual(BLOCK_LADDER['h525_code'], {},
+                         "arch 9's ladder stops at 0x6F, so it tests none of these")
+        checked = 0
         for name, ladder in BLOCK_LADDER.items():
             for opcode, start in ladder.items():
+                checked += 1
                 with self.subTest(name=name, opcode=hex(opcode)):
                     base = BUILDS[name]['base']
                     pairs = instructions(name, base, start, 4)
@@ -310,6 +335,8 @@ class ArmTest(unittest.TestCase):
                     # ladder no `BNC` at all, because everything below it lands there too.
                     branch = next(i for _, i in pairs if i.mnemonic == 'BRA')
                     self.assertEqual(branch.fields['target'], BUILDS[name]['exit'])
+        self.assertEqual(checked, len(BLOCK_LADDER['one34_code']),
+                         'the arch 12 ladder is the whole population and all of it has to run')
 
     def test_the_dead_opcode_tests_the_accumulator_and_returns_either_way(self):
         lab.require(*BUILDS)

@@ -49,6 +49,18 @@ const SAMPLES = [
   'arch8_config_880', 'arch8_config_885',
 ];
 
+/** The arch 9 members, which draw no picture from a program at all, so some claims skip them. */
+const ARCH9_SAMPLES = ['h525_config', 'h525_config_2', 'h525_safemode_ahcm'];
+
+/**
+ * The containers that are nobody's configuration: a factory config packed inside a firmware image and
+ * four safe mode containers. None draws a full screen background, so none states a display size, which
+ * is why the display size claim is about user configs and not about the corpus.
+ */
+const NO_FULL_SCREEN_PICTURE = [
+  'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm', 'h650_safemode_gspm',
+];
+
 test('every page of every config draws with nothing left unresolved', skipWithoutLab(), () => {
   // The coverage claim, and it is a strong one because it is not a share: over every mode page of every
   // container in the corpus, no picture the program names fails to decode and no glyph code is missing
@@ -143,11 +155,13 @@ test('the display size is the size of the config\'s own full screen pictures', s
   // Where `SCREEN_SIZES` comes from. A config draws its own backgrounds, so the widest picture any
   // program draws at the origin is the display, and the same number turns up in hundreds of pictures
   // per container. This is the test that would fail first if a new architecture were added by guess.
+  let checked = 0;
+  const skipped: string[] = [];
   for (const name of SAMPLES) {
     const data = require_(name);
     const c = parse(data);
     const size = SCREEN_SIZES[c.architecture ?? -1];
-    if (size === undefined) continue;
+    if (size === undefined) { skipped.push(name); continue; }
     let widest = 0;
     let tallest = 0;
     for (const [, instructions] of reachablePrograms(c)) {
@@ -161,10 +175,21 @@ test('the display size is the size of the config\'s own full screen pictures', s
       }
     }
     // Arch 9 draws no picture from a program at all, so it has nothing to say here.
-    if (widest === 0) continue;
+    if (widest === 0) { skipped.push(name); continue; }
     assert.equal(widest, size.width, `${name} draws ${widest} pixels across`);
     assert.equal(tallest, size.height, `${name} draws ${tallest} pixels down`);
+    checked += 1;
   }
+  // How many actually reached the assertions, which nothing stated: two `continue`s stand above them,
+  // one for an architecture with no recorded screen size and one for a container that draws no picture
+  // from a program, so the whole test could have run past every sample.
+  // **Which samples reach the assertions, named rather than counted**, because two `continue`s stand
+  // above them and nothing said so: the test could have run past every sample and still reported a
+  // pass. Measured on 13 August 2026, 13 of 21 reach it, and the eight that do not split into two
+  // groups with different reasons, which is why the set is asserted and not the number.
+  assert.deepEqual(skipped.sort(), [...NO_FULL_SCREEN_PICTURE, ...ARCH9_SAMPLES].sort(),
+    'a different set of samples skipped the display size check than the two reasons account for');
+  assert.equal(checked, SAMPLES.length - skipped.length);
 });
 
 test('the space between letters belongs to the glyph, not to the pen', skipWithoutLab(), () => {

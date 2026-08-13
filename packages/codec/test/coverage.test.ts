@@ -158,6 +158,12 @@ test('a gap family counts equal lengths and nothing else', () => {
     marker: 'CMAH', family: FAMILIES[0] as (typeof FAMILIES)[number], trailerChecksum: 0, blob,
     sections: [],
   }));
+  // **The layout, pinned.** This is the off by one the test exists for and it was not asserted: the
+  // body only related the families to each other, so a report with no families at all satisfied both
+  // the loop and the inequality below. 64 bytes, a two slot table ending at the marker, an end address
+  // four short of the length: one gap of 35.
+  assert.deepEqual(report.gapFamilies, [{ length: 35, count: 1, bytes: 35 }]);
+
   // Whatever this container claims, every family's bytes are its length times its count and the
   // families partition the gaps.
   for (const family of report.gapFamilies) {

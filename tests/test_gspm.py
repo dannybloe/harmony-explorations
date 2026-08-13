@@ -97,6 +97,12 @@ class TestContainerAcrossSamples(unittest.TestCase):
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
+                # The names, not only their values. A loop over an empty `checks` dict passes every
+                # assertion inside it, so a parser that stopped reporting checks would have satisfied
+                # this test rather than failed it.
+                self.assertGreaterEqual(len(c.checks), 4,
+                                        '%s reported %d checks' % (name, len(c.checks)))
+                self.assertIn('trailer_checksum_recomputes', c.checks, name)
                 for check, ok in c.checks.items():
                     self.assertTrue(ok, '%s failed check %s' % (name, check))
 

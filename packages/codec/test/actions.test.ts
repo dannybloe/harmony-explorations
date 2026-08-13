@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless, require_ } from '@harmony/lab';
 import {
   archSlot,
   parse,
@@ -275,13 +275,19 @@ test('no opcode in the whole corpus is left without a reading', skipUnless('one_
   // 107 read it, which is why the assertion is the whole list and not its length.
   const names = ['one_config', 'h700_config', 'h600_config', 'h525_config', 'arch8_config_a'];
   const left = new Map<string, number>();
+  let instructions = 0;
   for (const name of names) {
-    if (!load(name)) continue;
     const { lists: all, architecture } = lists(name);
-    for (const [k, n] of readingCoverage(all, architecture).unread) {
+    const report = readingCoverage(all, architecture);
+    instructions += report.total;
+    for (const [k, n] of report.unread) {
       left.set(k, (left.get(k) ?? 0) + n);
     }
   }
+  // An empty `unread` map is the claim, and an empty map is also what a loop that read nothing
+  // produces. So the instructions examined are counted: `if (!load(name)) continue` used to stand
+  // above, and with a partial lab this reported the whole corpus read.
+  assert.ok(instructions > 10_000, `only ${instructions} instructions were examined`);
   assert.deepEqual([...left.keys()], []);
 });
 
@@ -576,12 +582,13 @@ test('the low state variable records are identical across architectures', skipUn
   // Which is what "state variables 3, 5 and 6 are firmware defined" predicts from the config side.
   const shapes = new Map<number, string>();
   for (const name of ['one_config', 'h700_config', 'h600_config', 'arch8_config_a', 'h525_config']) {
-    if (!load(name)) continue;
-    const c = parse(load(name)!);
+    const c = parse(require_(name));
     const records = stateRecords(c) ?? [];
-    if (records.length < 12) continue;
+    assert.ok(records.length >= 12, `${name} has fewer than twelve state records`);
     shapes.set(c.architecture as number, records.slice(2, 12).map((r) => r.count).join(','));
   }
-  assert.ok(shapes.size >= 3, 'needs several architectures to say anything');
+  // Four architectures are named in the loop and four have to answer. It was `>= 3`, which let one
+  // sit out, and a `records.length < 12` continue above was how it could.
+  assert.equal(shapes.size, 4, 'every architecture named above has to state its shape');
   assert.equal(new Set(shapes.values()).size, 1, [...shapes].map(([a, s]) => `${a}: ${s}`).join(' | '));
 });

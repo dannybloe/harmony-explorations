@@ -1181,7 +1181,10 @@ test('the framed containers span four architectures', skipUnless(...FRAMED.map((
     const arch = parse(data).architecture;
     if (arch !== undefined) architectures.add(arch);
   }
-  if (architectures.size === 0) return; // no lab
+  // `if (architectures.size === 0) return; // no lab` used to stand here and was already dead once the
+  // loop above began using `require_`: a lab missing a sample throws rather than yielding nothing. It
+  // also meant a lab holding only firmware passed a four architecture span test with nothing parsed.
+  assert.equal(architectures.size, 4, 'nothing was parsed, so the span was not judged');
   assert.deepEqual([...architectures].sort((a, b) => a - b), [8, 9, 12, 14]);
 });
 
