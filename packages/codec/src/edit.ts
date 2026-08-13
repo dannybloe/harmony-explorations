@@ -188,20 +188,64 @@ export function diffRanges(a: Uint8Array, b: Uint8Array): { start: number; lengt
 }
 
 /**
+ * The claims that are the container's frame rather than its content.
+ *
+ * **An edit may not touch any of them**, and nothing stopped it: they are claims like any other, so
+ * the containment rail below happily accepted a four byte write at offset 0 that replaced the `GSPM`
+ * cookie with `AAAA`, on every container tried. The header holds the flash base and `end_addr`, the
+ * section table holds every pointer, and the trailer holds the checksum this function stamps itself.
+ * A same length edit has no business in any of them, and an editor that reaches one has computed an
+ * offset wrong rather than found a field.
+ */
+export const FRAME_OWNERS: ReadonlySet<string> = new Set([
+  'header',
+  'section-table',
+  'marker',
+  'trailer',
+]);
+
+/**
  * Apply the edits to a copy of the container's bytes and recompute the trailer.
  *
- * Refuses, in this order: an edit outside the blob, an edit no reader's claim covers, and two edits
- * on one byte. An empty list is the identity and gives the input back, which is the check that this
- * writes nothing of its own.
+ * Refuses, in this order: a container whose own trailer checksum disagrees with its bytes, an edit
+ * outside the blob, an edit touching the container frame, an edit no reader's claim covers, and two
+ * edits on one byte. An empty list is the identity and gives the input back, which is the check that
+ * this writes nothing of its own.
+ *
+ * **The first of those is new and it is section 122's hazard.** This stamps a fresh checksum, so a
+ * container that arrived damaged went in inconsistent and came out passing the only check the remote
+ * makes: measured by flipping one pixel byte of `one_config`, whose stored `0xC9CE` then disagreed
+ * with its own `0x36CE`, editing an unrelated field, and reading `0x36E1` back out of the result.
+ * `packages/corpus/src/read.ts` performs this check after every read, because an arch 10 (Harmony 890)
+ * read inserts duplicate chunks; nothing performed it before an edit, which is the end where the
+ * damage becomes permanent.
  */
 export function applyEdits(c: Container, edits: Edit[]): EditReport {
   const bytes = Uint8Array.from(c.blob);
+  const stored = c.trailerChecksum;
+  const actual = trailerChecksum(c.blob);
+  if (stored !== actual) {
+    throw new EditError(
+      `the container's own trailer checksum is 0x${stored.toString(16)} and its bytes give `
+        + `0x${actual.toString(16)}: it is damaged, and editing it would stamp the damage as valid`,
+    );
+  }
   const owned = claims(c);
   const touched = new Map<number, string>();
   for (const edit of edits) {
     if (edit.bytes.length === 0) throw new EditError(`${edit.owner}: an empty edit`);
     if (edit.start < 0 || edit.start + edit.bytes.length > bytes.length) {
       throw new EditError(`${edit.owner}: outside the container`);
+    }
+    const frame = owned.find(
+      (claim) => FRAME_OWNERS.has(claim.owner)
+        && edit.start < claim.start + claim.length
+        && claim.start < edit.start + edit.bytes.length,
+    );
+    if (frame !== undefined) {
+      throw new EditError(
+        `${edit.owner}: 0x${edit.start.toString(16)} is inside the container frame (${frame.owner})`,
+      );
     }
     // Inside one claim, not merely covered by several: a run that spans two structures is two
     // edits, and asking for it as one is a sign the caller has the wrong extent.

@@ -18389,21 +18389,23 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Fifteen shipped readers answered plausibly where they should have refused, and three were rails
+## 139. Sixteen shipped readers answered plausibly where they should have refused, and five were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Fifteen defects came out of it that a sample could not have found, and they share one shape, which is
+Sixteen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 15, which were read a day later and are
+They are listed newest reading first, except entries 13 to 16, which were read a day later and are
 appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
-Entries 5 and 11 are the rails, and 11 is where "it cannot brick anything" turned out to be a claim
+Entries 5, 11 and 16 are the rails, and 16 is two of them: an editor that would rewrite a container's
+own cookie and one that would stamp a damaged config as valid. 11 is where "it cannot brick anything"
+turned out to be a claim
 about an address. The rest are corrections to code this document already relies on.
 
 ### 1. The infrared duration locator read a neighbouring record, on every record
@@ -18918,6 +18920,50 @@ and a Harmony One record's first block can open with fourteen **spaces** of 3276
 neither header nor bit. So the docstring's "one in every record here" is unproven rather than refuted,
 and it says so now. What would settle it is a frame named outside this codec, which the calibration pair
 gives for two configs and nothing gives for the rest.
+
+### 16. The editor would rewrite a container's cookie, and would stamp a damaged config as valid
+
+Two missing rails and a dedup, in the two files that will one day produce bytes for a remote.
+
+**An edit could overwrite the container frame.** `applyEdits` refuses an edit no reader's claim covers,
+and the frame is claimed like anything else, so a four byte write at offset 0 replacing `GSPM` with
+`AAAA` satisfied the rail and was accepted, on every container tried. The header carries the flash base
+and `end_addr`, the section table carries every pointer, and the trailer carries the checksum the
+function stamps itself. `FRAME_OWNERS` refuses all four now, at any byte of them, and the negative is
+part of the test: an ordinary field still edits.
+
+The review reported this alongside a claim that the containment rail "cannot refuse on 18 of 19
+containers", which is too strong and is worth correcting rather than repeating. It does refuse: an edit
+spanning two adjacent claims is inside neither, so it is refused on every container including the
+eighteen with no unclaimed bytes at all, and on `h525_safemode_ahcm` an unclaimed offset is refused as
+well. What it did not refuse was the frame.
+
+**And an edit would launder a damaged input.** `applyEdits` recomputes and stamps the trailer checksum,
+and never looked at the one the container arrived with, so a config that was damaged in transit went in
+inconsistent and came out passing the only check the remote makes. Measured: flipping one pixel byte of
+`one_config` leaves a stored `0xC9CE` against its own `0x36CE`, the container still parses, an unrelated
+field edits cleanly, and `0x36E1` is filed in the result. That is section 122's hazard at the end where
+it becomes permanent: `packages/corpus/src/read.ts` performs this check after every read, because an
+arch 10 (Harmony 890) read inserts duplicate chunks, and nothing performed it before an edit.
+
+**The emitter's dedup compared nothing, and it was load bearing.** `rebuilds` kept a set of offsets and
+returned on a repeat, so two rebuilders at one offset writing different bytes would have had the first
+silently win, with the round trip then failing somewhere else and nothing to say which was wrong. It is
+the same blind spot the byte accounting had until entry 2, in the mirror file.
+
+What that immediately surfaced is the interesting half. Base slot 6's first mode record **is** the key
+table, section 52, and `coverage.ts` claims it once by skipping the record while `emit.ts` rebuilt it
+twice and said in a comment that the dedup is what stops the second write. So the dedup was carrying a
+correctness argument. A test in that file changes `c.keys[0]` in the parse and watches it reach the
+output, which passed only because the key table's rebuilder ran first; with a dedup that compares, it
+threw. The emitter skips the record now, on the same test `claims` uses, and both are true at once.
+
+**Two smaller ones in the same pass.** `VALUE_MAP_COUNT_WIDTH` had a third copy, written out as
+`c.architecture === 14 ? 2 : 1` in the file whose job is to mirror the readers. And base slot 14's
+shared tail arm, which declines to rebuild a record whose end another record starts inside, has fired
+**0 times in 239 records**, the same zero its counterpart in `coverage.ts` reports; both are asserted
+now, so the day one fires somebody reads it instead of a record quietly declining and the residue copy
+covering for it.
 
 ### What it changes
 

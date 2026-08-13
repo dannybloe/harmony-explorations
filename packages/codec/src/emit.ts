@@ -95,7 +95,7 @@ import {
   irSymbolBlock,
   irSymbolTable,
 } from './ir.ts';
-import { valueMaps } from './valuemap.ts';
+import { VALUE_MAP_COUNT_WIDTH, valueMaps } from './valuemap.ts';
 import {
   TIMER_RECORD_LENGTH,
   TOUCH_AREA_LENGTH,
@@ -211,16 +211,36 @@ export function rebuilds(c: Container): Rebuild[] {
   // the array accounts for the whole section and the general loop picks them up as well as their
   // own reader does. Both write the same bytes, so the round trip never noticed and the byte count
   // came out four too high. First come rather than last, since the general loop runs first.
-  const seen = new Set<number>();
+  //
+  // **And the second one is now compared rather than dropped.** This kept a set of offsets and
+  // returned on a repeat, so two rebuilders at one offset writing **different** bytes would have had
+  // the first silently win, and the round trip would then fail somewhere with no indication which
+  // rebuilder was wrong. That is the same blind spot the byte accounting's overlap detector had until
+  // it compared claims instead of owner names, in the mirror of this file. Agreeing is legitimate;
+  // disagreeing is a defect in one of the two and now says so.
+  const seen = new Map<number, Rebuild>();
 
   /** A rebuild where some of the bytes came through as an opaque run rather than as fields. */
   const partly = (start: number | undefined, owner: string, w: Writer, fields: number): void => {
-    if (start === undefined || seen.has(start)) return;
+    if (start === undefined) return;
     if (w.remaining !== 0) {
       throw new GspmError(`${owner} wrote ${w.bytes.length - w.remaining} of ${w.bytes.length}`);
     }
-    seen.add(start);
-    out.push({ start, bytes: w.bytes, owner, framed: fields });
+    const already = seen.get(start);
+    if (already !== undefined) {
+      const same = already.bytes.length === w.bytes.length
+        && already.bytes.every((byte, i) => byte === w.bytes[i]);
+      if (!same) {
+        throw new GspmError(
+          `${owner} and ${already.owner} both rebuild 0x${start.toString(16)} and disagree: `
+            + `${w.bytes.length} bytes against ${already.bytes.length}`,
+        );
+      }
+      return;
+    }
+    const rebuild = { start, bytes: w.bytes, owner, framed: fields };
+    seen.set(start, rebuild);
+    out.push(rebuild);
   };
   /** A rebuild whose bytes are all computed from fields. */
   const framed = (start: number | undefined, owner: string, w: Writer): void =>
@@ -569,9 +589,20 @@ export function rebuilds(c: Container): Rebuild[] {
   // a record is not decoded; the entry is the six byte header and its page array; a page is a
   // lead byte on arch 12 and two pointers everywhere.
   for (const record of modeRecords(c) ?? []) {
-    // The record that is the key table is rebuilt above under the name it had first, and `seen`
-    // is what keeps this from writing it twice.
-    taggedAt(record.start, 'slot-6-mode');
+    // The record that is the key table is rebuilt above under the name it had first, so this skips
+    // it, on the same test `coverage.ts` uses. Only where there is a key table: arch 9 (Harmony 525)
+    // has none, and there it is an ordinary mode record. Sections 52 and 84.
+    //
+    // **This used to lean on the dedup instead**, saying so in as many words, and that made the dedup
+    // load bearing: two rebuilders wrote the same offset and whichever ran first won. It is not
+    // hypothetical that they can differ, because they read through different readers, and a test in
+    // this file demonstrates it by changing `c.keys[0]` in the parse and watching the output. Under
+    // first come that test passed because the key table happened to run first; under a dedup that
+    // compares it threw. Skipping here is what makes both true at once, and it is what `claims`
+    // already did, which is the mirror this file is supposed to hold.
+    if (!c.hasKeyTable || c.blobOffsetOf(record.start) !== c.markerOffset + 4) {
+      taggedAt(record.start, 'slot-6-mode');
+    }
     const entry = new Writer(record.entryLength)
       .u8(record.kind)
       .u24(record.start)
@@ -758,7 +789,9 @@ export function rebuilds(c: Container): Rebuild[] {
   // bounds it and a shortened record falls back to carrying what is left.
   const maps = valueMaps(c);
   if (maps !== undefined && c.architecture !== undefined) {
-    const counter = c.architecture === 14 ? 2 : 1;
+    // **The width table, not a third copy of it.** This was `c.architecture === 14 ? 2 : 1`, which is
+    // `VALUE_MAP_COUNT_WIDTH` written out again, in the file whose job is to mirror the readers.
+    const counter = VALUE_MAP_COUNT_WIDTH[c.architecture] ?? 1;
     const starts = maps.map((m) => c.blobOffsetOf(m.address)).filter((o) => o !== undefined);
     for (const record of maps) {
       const off = c.blobOffsetOf(record.address);
@@ -767,6 +800,11 @@ export function rebuilds(c: Container): Rebuild[] {
       const bound = inside.length === 0 ? record.length : Math.min(...inside) - off;
       if (bound < record.length) {
         // A shared tail: the record does not own its own end, so nothing here can write it.
+        //
+        // **It has never happened**, 0 of 239 records across the corpus, the same zero its counterpart
+        // in `coverage.ts` reports. Kept because a defence measured at zero is a prediction rather
+        // than dead code, and asserted in the tests so the day it fires somebody reads it instead of
+        // a record quietly declining to rebuild and the residue copy covering for it.
         continue;
       }
       const w = new Writer(bound).raw(c.blob.subarray(off, off + 1));

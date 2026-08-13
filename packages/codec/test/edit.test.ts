@@ -20,6 +20,8 @@ import {
   CLOCK_RECORD_SLOT,
   EditError,
   FIELD_RULES,
+  FRAME_OWNERS,
+  containerExtent,
   TRAILER_CHECKSUM_OFFSET,
   applyEdits,
   archSlot,
@@ -574,4 +576,79 @@ test('the encoder refuses what the decoder would refuse', () => {
     assert.equal(clockRecordFields(bad), undefined, bad);
   }
   assert.equal(clockRecordFields('2255-12-31T23:59:59')?.[6], 0xff, 'and the last year it can hold');
+});
+
+test('an edit may not touch the container frame, and one could rewrite the cookie',
+  skipUnless('one_config', 'h525_safemode_ahcm'), () => {
+  // **Measured before the rail existed: a four byte write at offset 0 replaced `GSPM` with `AAAA` and
+  // was accepted**, on both containers. The containment rail passed it because the frame is claimed
+  // like anything else, by `header`, `section-table`, `marker` and `trailer`, so "inside a structure
+  // some reader claims" was satisfied by the very bytes that say where the structures are.
+  //
+  // A same length edit has no business in any of them: the header carries the flash base and
+  // `end_addr`, the table carries every pointer, and the trailer carries the checksum `applyEdits`
+  // stamps itself. An editor that lands there has computed an offset wrong rather than found a field.
+  for (const name of ['one_config', 'h525_safemode_ahcm']) {
+    const c = parse(load(name) as Uint8Array);
+    const frame = claims(c).filter((x) => FRAME_OWNERS.has(x.owner));
+    assert.equal(frame.length, 4, `${name}: the four frame claims`);
+    for (const claim of frame) {
+      assert.throws(
+        () => applyEdits(c, [{ start: claim.start, bytes: new Uint8Array([0]), owner: 'probe' }]),
+        EditError,
+        `${name}: a write into ${claim.owner} was accepted`,
+      );
+      // And the last byte of it too, so the rail is the whole run rather than its first byte.
+      assert.throws(
+        () => applyEdits(c, [{
+          start: claim.start + claim.length - 1,
+          bytes: new Uint8Array([0]),
+          owner: 'probe',
+        }]),
+        EditError,
+        `${name}: a write into the end of ${claim.owner} was accepted`,
+      );
+    }
+    // The negative that makes it a rail rather than a blanket refusal: an ordinary field still edits.
+    const clock = claims(c).find((x) => x.owner === 'slot-3-clock');
+    if (clock !== undefined) {
+      const out = applyEdits(c, [{
+        start: clock.start + 2,
+        bytes: new Uint8Array([c.blob[clock.start + 2] as number]),
+        owner: 'probe',
+      }]);
+      assert.equal(out.bytes.length, c.blob.length, `${name}: an ordinary edit still applies`);
+    }
+  }
+});
+
+test('a container whose own checksum disagrees with its bytes is refused, not stamped',
+  skipUnless('one_config'), () => {
+  // Section 122: a read can insert bytes without losing any, so a config that parses is not a config
+  // that arrived, and `packages/corpus/src/read.ts` checks the trailer after every read for exactly
+  // that reason. Nothing checked it before an **edit**, which is the end where the damage becomes
+  // permanent: `applyEdits` recomputes and stamps the checksum, so a damaged input came out passing
+  // the only check the remote makes.
+  const raw = load('one_config') as Uint8Array;
+  const clean = parse(raw);
+  assert.equal(clean.trailerChecksum, trailerChecksum(clean.blob), 'the sample is undamaged');
+
+  // Damage one pixel, which no reader's extent depends on, so the container still parses identically.
+  const glyph = claims(clean).filter((x) => x.owner === 'slot-7-glyph').sort((a, b) => b.length - a.length)[0];
+  assert.notEqual(glyph, undefined, 'a glyph to damage');
+  const { start } = containerExtent(raw);
+  const damaged = raw.slice();
+  const at = start + (glyph as { start: number }).start + 4;
+  damaged[at] = (damaged[at] as number) ^ 0xff;
+
+  const c = parse(damaged);
+  assert.equal(c.trailerChecksum, clean.trailerChecksum, 'the stored word is untouched');
+  assert.notEqual(trailerChecksum(c.blob), c.trailerChecksum, 'and its bytes no longer agree');
+
+  const clock = claims(c).find((x) => x.owner === 'slot-3-clock') as { start: number };
+  assert.throws(
+    () => applyEdits(c, [{ start: clock.start + 2, bytes: new Uint8Array([0]), owner: 'probe' }]),
+    EditError,
+    'a damaged container was edited and its damage stamped as valid',
+  );
 });

@@ -30,6 +30,7 @@ import {
   rebuilds,
   roundTrip,
   saveEdits,
+  valueMaps,
 } from '../src/index.ts';
 
 /**
@@ -207,3 +208,44 @@ test('the emitter reproduces the timestamp, which is why it is not a save path',
     const saved = parse(saveEdits(c, [], '2026-08-10T16:45:09').bytes);
     assert.notEqual(saved.builtAt, c.builtAt, 'and a save does not');
   });
+
+test('two rebuilders at one offset must agree, and the shared tail arm has never fired',
+  skipUnless('one_config', 'h600_config', 'h525_config', 'arch8_config_a', 'h525_safemode_ahcm'), () => {
+  // The dedup used to be a set of offsets, so a second rebuilder reaching one structure was dropped
+  // without its bytes being looked at. Two rebuilders writing **different** bytes at one offset would
+  // have had the first silently win and the round trip would fail somewhere else entirely, with
+  // nothing to say which of the two was wrong. It compares now, which is the same correction the byte
+  // accounting's overlap detector needed in the mirror of this file.
+  //
+  // The corpus does exercise the agreeing case: on the safe mode containers base slots 9 and 12 have
+  // no records after their pointer arrays, so the general loop and the section's own reader both
+  // rebuild them.
+  let shared = 0;
+  let records = 0;
+  for (const name of ['one_config', 'h600_config', 'h525_config', 'arch8_config_a',
+    'h525_safemode_ahcm']) {
+    const c = parse(load(name) as Uint8Array);
+    // Any disagreement throws inside `rebuilds`, so reaching here at all is the assertion. What is
+    // checkable on top is that no two rebuilds share a start, which is what the dedup guarantees.
+    const list = rebuilds(c);
+    const starts = new Set(list.map((r) => r.start));
+    assert.equal(starts.size, list.length, `${name}: two rebuilds at one offset survived`);
+
+    // And the arm that declines a base slot 14 record whose tail another record starts inside.
+    const maps = valueMaps(c);
+    if (maps === undefined) continue;
+    const offsets = maps
+      .map((m) => c.blobOffsetOf(m.address))
+      .filter((o): o is number => o !== undefined);
+    for (const record of maps) {
+      const off = c.blobOffsetOf(record.address);
+      if (off === undefined) continue;
+      records += 1;
+      if (offsets.some((o) => o > off && o < off + record.length)) shared += 1;
+    }
+  }
+  // Exact, and the zero is the point: the arm is a prediction, not a case the corpus covers, so it
+  // must not silently start absorbing records.
+  assert.equal(records, 70, `${records} base slot 14 records over these five`);
+  assert.equal(shared, 0, `${shared} records whose tail another record starts inside`);
+});
