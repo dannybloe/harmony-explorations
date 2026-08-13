@@ -554,7 +554,9 @@ export function setPageListEntry(
         );
       }
     }
-    const wide = existing.flags !== undefined;
+    // The list's own answer rather than a third derivation: this took the form from whether the
+    // parsed entry carries a flags byte, which is true today and is not what decides it.
+    const wide = list.wide;
     const stride = wide ? 5 : 4;
     const at = list.start + (wide ? 2 : 1) + stride * index;
     const bytes = wide

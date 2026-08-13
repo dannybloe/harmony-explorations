@@ -615,9 +615,9 @@ export function taggedListPools(c: Container): TaggedListPool[] {
     const starts = new Set<number>();
     let at = start;
     while (at < end) {
-      const wide = u8(c.blob, at) === 0;
-      const count = wide ? u8(c.blob, at + 1) : u8(c.blob, at);
-      const length = wide ? 2 + 5 * count : 1 + 4 * count;
+      const extent = taggedListExtent(c.blob, at);
+      if (extent === undefined) break;
+      const { length } = extent;
       if (length <= 0 || at + length > end) break;
       lists.push({ start: at, length });
       starts.add(at);
@@ -698,6 +698,37 @@ export interface TaggedList {
   entries: TaggedEntry[];
   start: number;
   length: number;
+  /**
+   * Which of the two forms it is, decided once by the reader and read by everyone else.
+   *
+   * **This existed as three separate derivations.** `taggedListPools` took it from the first byte,
+   * `emit.ts`'s writer took it from the length arithmetic, `1 + 4 * count` against `2 + 5 * count`,
+   * and `edit.ts` took it from whether the parsed entry carries a flags byte. All three agree on the
+   * corpus, which is the state this repository's oldest rule is about rather than an argument that it
+   * is fine. The firmware decides it from the first byte, so that is the one derivation and this
+   * carries the answer.
+   */
+  wide: boolean;
+}
+
+/**
+ * The form, entry count and extent of the tagged list at a blob offset, without decoding its entries.
+ *
+ * Split out of `taggedList` so the pool scan can use it: that walk has no `Container` addresses to
+ * work from, only a run of bytes, and it spelled the same three lines out again. Exported because a
+ * test asserts the two agree on every pool list in the corpus.
+ */
+export function taggedListExtent(
+  blob: Uint8Array,
+  at: number,
+): { wide: boolean; count: number; length: number } | undefined {
+  if (at < 0 || at >= blob.length) return undefined;
+  const first = u8(blob, at);
+  const wide = first === 0;
+  if (wide && at + 2 > blob.length) return undefined;
+  const count = wide ? u8(blob, at + 1) : first;
+  const length = (wide ? 2 : 1) + (wide ? 5 : 4) * count;
+  return { wide, count, length };
 }
 
 /**
@@ -721,14 +752,12 @@ export interface TaggedList {
  */
 export function taggedList(c: Container, address: number): TaggedList | undefined {
   const off = c.blobOffsetOf(address);
-  if (off === undefined || off >= c.blob.length) return undefined;
-  const first = u8(c.blob, off);
-  const wide = first === 0;
-  if (wide && off + 2 > c.blob.length) return undefined;
-  const count = wide ? u8(c.blob, off + 1) : first;
+  if (off === undefined) return undefined;
+  const extent = taggedListExtent(c.blob, off);
+  if (extent === undefined) return undefined;
+  const { wide, count, length } = extent;
   const base = wide ? off + 2 : off + 1;
   const stride = wide ? 5 : 4;
-  const length = base - off + stride * count;
   if (off + length > c.blob.length) return undefined;
   const entries: TaggedEntry[] = [];
   for (let k = 0; k < count; k += 1) {
@@ -743,5 +772,5 @@ export function taggedList(c: Container, address: number): TaggedList | undefine
       opcode: u8(c.blob, at + 2),
     });
   }
-  return { entries, start: off, length };
+  return { entries, start: off, length, wide };
 }

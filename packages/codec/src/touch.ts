@@ -11,6 +11,10 @@ import { Container } from './gspm.ts';
 import { touchPages } from './tables.ts';
 import type { TouchArea, TouchPage } from './tables.ts';
 import type { ModePage } from './sections.ts';
+import { SCREEN_SIZES } from './render.ts';
+
+/** The one architecture with a touch panel, so the one size this module needs. */
+const ARCH12_SCREEN = SCREEN_SIZES[12] as { width: number; height: number };
 
 /**
  * The panel reports thirteen bit coordinates and the display is 176 by 220 pixels, so the two spaces
@@ -30,8 +34,16 @@ import type { ModePage } from './sections.ts';
  * depends on it: every one of them sits on a full width row, and `packages/codec/test/touch.test.ts`
  * asserts that ignoring x entirely names the same activities.
  */
-export const SCREEN_WIDTH = 176;
-export const SCREEN_HEIGHT = 220;
+/**
+ * The Harmony One's display, taken from the table `render.ts` draws with rather than restated.
+ *
+ * **These were a second copy of `SCREEN_SIZES[12]`**, the same 176 by 220 written out again in the one
+ * module whose whole job is to map panel coordinates onto that display. Two copies of a derivation are
+ * two copies until one of them moves, and the drawing side is the one that would notice a wrong size
+ * immediately while this side would quietly place every label a fraction out.
+ */
+export const SCREEN_WIDTH = ARCH12_SCREEN.width;
+export const SCREEN_HEIGHT = ARCH12_SCREEN.height;
 /** The panel y of pixel row 0, so `panel = PANEL_TOP - pitch * pixel`. */
 export const PANEL_TOP = 4356;
 /** One list row, in panel units and in pixels. Their ratio is the y scale. */

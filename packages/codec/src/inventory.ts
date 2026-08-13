@@ -633,28 +633,24 @@ const CHAIN_DEPTH_LIMIT = 3;
 /** A string this short says nothing about which activity it belongs to. */
 const SHORTEST_USEFUL_LABEL = 2;
 
-/** The one string on `page` that relates to something the activity's own modes say. */
-function resolveLabel(
-  c: Container,
-  page: number,
-  spoken: readonly string[],
-  pages: readonly { program: number }[],
-  textOf: (program: number) => ScreenString[],
-): { name?: string; at?: { x: number; y: number } } {
-  const target = pages[page];
-  if (target === undefined) return {};
-  const useful = spoken.filter((one) => one.trim().length >= SHORTEST_USEFUL_LABEL);
-  const hits = textOf(target.program).filter(
-    (one) =>
-      one.text.trim().length >= SHORTEST_USEFUL_LABEL &&
-      useful.some((said) => one.text.includes(said) || said.includes(one.text)),
-  );
-  // Several draws of one string at one row are one label; several rows are an unresolved case.
-  const rows = new Set(hits.map((one) => one.y));
-  if (rows.size !== 1) return {};
-  const label = hits[0] as ScreenString;
-  return { name: label.text, at: { x: label.x, y: label.y } };
-}
+/**
+ * `resolveLabel` was here and is gone, which is a removal this file records rather than performs
+ * quietly.
+ *
+ * It had **zero callers** and it implemented the rule section 124 refuted: it accepted a page string
+ * that merely **contained** one of the activity's spoken strings, or was contained by it, where the
+ * live route in `activities` requires an exact match first and falls back to containment only after.
+ * That is not a style difference. An activity's chain enters the mode that lists the devices, so every
+ * activity says every device's name, and reading containment as sufficient let one label be claimed by
+ * all four activities of an arch 8 (Harmony 880) config and then dropped from all four as chrome. The
+ * corpus wide figure sat at 23 of 35 for a day because of it, and three of those 23 were fragments of a
+ * wrapped label belonging to a different activity than the one they were reported for.
+ *
+ * So the measurement that decides between the two copies already existed, in section 124, and the copy
+ * that lost is the one that was removed. That order matters here: the rule is to reproduce the
+ * disagreement and find an external answer **before** deleting either half, and the answer in this case
+ * is the calibration pair, whose three devices and two activities were chosen before the bytes existed.
+ */
 
 /**
  * Opcode `0x7D`: send an infrared code, `{ u8 group; u8 index }`. Section 33.

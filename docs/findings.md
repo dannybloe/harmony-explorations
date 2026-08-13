@@ -18389,17 +18389,17 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Seventeen shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Eighteen shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Seventeen defects came out of it that a sample could not have found, and they share one shape, which is
+Eighteen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 17, which were read a day later and are
+They are listed newest reading first, except entries 13 to 18, which were read a day later and are
 appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
@@ -18997,6 +18997,40 @@ short report instead was written, and it failed two tests that state the opposit
 that a remote answering in two bytes leaves `word` defined on every architecture and meaningful on one.
 So the expression stands with the reasoning beside it, rather than a documented decision being
 overturned for a case that does not arise.
+
+### 18. One derivation, three spellings: the tagged list form, the display size, and a dead copy of a refuted rule
+
+This repository's oldest rule is that two copies of a derivation are two copies until one of them
+moves, and it is named after an opcode table that once had two. Three more instances, all agreeing,
+which is the state the rule is about rather than evidence against it.
+
+**The tagged list's form was decided three ways.** `sections.ts` reads it from the first byte, the way
+the firmware does; `emit.ts`'s writer computed it from the length, `count === 0 ? length === 2 :
+length - 2 === 5 * count`; and `edit.ts` took it from whether the parsed entry carries a flags byte.
+Three answers to "is this the wide form", on a structure whose two forms differ by a byte of header and
+a byte per entry, so a divergence would produce a list one byte short or long with no error anywhere.
+`TaggedList` carries `wide` now, and `taggedListExtent` is the one place the arithmetic lives, used by
+the reader and by the pool scan that had spelled it out again. **All three agree on 5701 lists across
+the corpus**, and the test asserts the two that were removed still give the same answer, so the
+agreement is measured now rather than after it stops holding.
+
+**The Harmony One's display size was written out twice.** `touch.ts` carried `SCREEN_WIDTH = 176` and
+`SCREEN_HEIGHT = 220`, which is `SCREEN_SIZES[12]` in `render.ts`, in the one module whose whole job is
+to map panel coordinates onto that display. The drawing side would notice a wrong size at once; the
+touch side would place every label a fraction out and say nothing.
+
+**And a dead copy of a rule this project has already refuted.** `resolveLabel` in `inventory.ts` had
+zero callers and accepted a page string that merely **contained** one of an activity's spoken strings,
+where the live route requires an exact match first. Section 124 is the measurement: an activity's chain
+enters the mode that lists the devices, so every activity says every device's name, and containment let
+one label be claimed by all four activities of an arch 8 (Harmony 880) config and then dropped from all
+four as chrome. The corpus wide figure sat at 23 of 35 for a day, three of those 23 being fragments of a
+wrapped label reported for the wrong activity.
+
+The order is what makes that deletion legitimate rather than a repeat of the mistake this section's
+entry 8 records. The disagreement between the two copies had already been reproduced, the external
+answer already existed, and the copy that lost is the one removed. What is left in its place is a
+comment saying which code went and why, because the reason is what stops it being written again.
 
 ### What it changes
 

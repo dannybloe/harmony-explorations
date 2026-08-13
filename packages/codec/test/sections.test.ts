@@ -61,6 +61,7 @@ import {
   parameterGroups,
   parse,
   modeProgramRoots,
+  taggedListExtent,
   screenProgram,
   SECOND_SPACE_LIMIT,
   SECOND_SPACE_RANGES,
@@ -1442,4 +1443,46 @@ test('every mode record on every architecture carries a screen program that deco
     [12, [656, 656]],
     [14, [1090, 1090]],
   ]);
+});
+
+test('the tagged list form has one derivation, and the three it replaced still agree with it',
+  skipWithoutLab(), () => {
+  // The form was computed three ways: from the first byte in `sections.ts`, from the length in
+  // `emit.ts`'s writer, and from whether a parsed entry carries a flags byte in `edit.ts`. All three
+  // agreed on every list in the corpus, which is exactly the state this repository's oldest rule is
+  // about rather than evidence that three copies are safe.
+  //
+  // `taggedList` decides it once, from the first byte, the way the firmware does. This asserts the two
+  // it replaced still give the same answer, on every list, so the agreement is measured before it
+  // stops being maintained rather than after.
+  let lists = 0;
+  for (const name of MODE_PROGRAM_CONTAINERS) {
+    const c = parse(require_(name));
+    const addresses: number[] = [];
+    for (const record of modeRecords(c) ?? []) {
+      addresses.push(record.start);
+      for (const page of record.pages) addresses.push(page.list);
+    }
+    for (const address of handlerSets(c)?.addresses ?? []) addresses.push(address);
+    for (const address of addresses) {
+      const list = taggedList(c, address);
+      if (list === undefined) continue;
+      lists += 1;
+      const count = list.entries.length;
+      // The length derivation the emitter used.
+      const byLength = count === 0 ? list.length === 2 : list.length - 2 === 5 * count;
+      assert.equal(byLength, list.wide, `${name}: the length says ${byLength} at ${address}`);
+      // The flags derivation the editor used, where there is an entry to ask.
+      const first = list.entries[0];
+      if (first !== undefined) {
+        assert.equal(first.flags !== undefined, list.wide,
+          `${name}: the flags byte says otherwise at ${address}`);
+      }
+      // And the extent helper the pool scan uses, on the same bytes.
+      const extent = taggedListExtent(c.blob, list.start);
+      assert.deepEqual(extent, { wide: list.wide, count, length: list.length },
+        `${name}: the pool scan disagrees at ${address}`);
+    }
+  }
+  assert.equal(lists, 5701, `${lists} tagged lists compared three ways`);
 });

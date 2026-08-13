@@ -570,7 +570,12 @@ export function rebuilds(c: Container): Rebuild[] {
   // when the data could tell you and something else does tell you, believe the something else.
   const taggedBytes = (list: TaggedList): Writer => {
     const count = list.entries.length;
-    const wide = count === 0 ? list.length === 2 : list.length - 2 === 5 * count;
+    // **The reader's answer, not a second derivation of it.** This computed the form from the length,
+    // `count === 0 ? list.length === 2 : list.length - 2 === 5 * count`, where `sections.ts` reads it
+    // from the first byte the way the firmware does and `edit.ts` took it from whether an entry
+    // carries flags. Three spellings of one property, all agreeing, which is the state before two
+    // diverge. `taggedList` carries it now.
+    const wide = list.wide;
     const w = new Writer(list.length);
     if (wide) w.u8(0).u8(count);
     else w.u8(count);
