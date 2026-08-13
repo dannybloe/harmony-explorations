@@ -128,15 +128,23 @@ for (const [name, programs, glyphCount] of DECODED) {
     const c = parse(load(name) as Uint8Array);
     const sets = fontSets(c);
     const pictures = glyphs(c);
-    if (sets === undefined || pictures === undefined) return;
+    // Asserted rather than returned. `if (sets === undefined || pictures === undefined) return;` used
+    // to stand here, so a container the readers could not open at all passed the height closure, and
+    // every sample in this loop is one that has fonts: a container without them belongs out of the
+    // list rather than silently past the assertions.
+    assert.ok(sets !== undefined && pictures !== undefined, `${name} has font sets to check`);
+    assert.ok(sets.length > 0, `${name} declares at least one font set`);
+    let checked = 0;
     for (let i = 0; i < sets.length; i += 1) {
       const font = sets[i] as (typeof sets)[number];
       const decoded: Glyph[] = pictures[i] ?? [];
       for (const picture of decoded) {
         assert.equal(picture.rows.length, font.height, `glyph at ${picture.address}`);
         for (const row of picture.rows) assert.equal(row.length, picture.width);
+        checked += 1;
       }
     }
+    assert.ok(checked > 0, `${name} decoded no glyph, so the height closure checked nothing`);
   });
 }
 

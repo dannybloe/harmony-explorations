@@ -406,6 +406,7 @@ test('a code that only ever appears in a referenced string is still a drawn code
     // two thirds of the draws out of it was scoring the choice on a third of the evidence. The
     // assertion is the containment: every code an inline string draws is in the set, and so is every
     // code a referenced one draws.
+    let seen = 0;
     for (const name of SAMPLES) {
       const data = require_(name);
       const c = parse(data);
@@ -416,7 +417,12 @@ test('a code that only ever appears in a referenced string is still a drawn code
           const glyphs = address === undefined ? one.glyphs : glyphRunAt(c, address);
           if (glyphs === undefined || one.opcode === SCREEN_TEXT_AT === (address === undefined)) continue;
           for (const code of glyphs) assert.ok(codes.has(code), `${name}: code ${code} is drawn`);
+          seen += glyphs.length;
         }
       }
     }
+    // Every assertion above sits behind two `continue`s and there was no counter, so the containment
+    // could have been checked on nothing at all. This is the number `make text` reports for the same
+    // population, which is what the claim is about.
+    assert.ok(seen > 100_000, `only ${seen} drawn codes were checked for containment`);
   });

@@ -308,11 +308,18 @@ test('on arch 12 the stated program is never the computed root', skipUnless('one
   // instruction is a call back to it. So the computed root is a callee rather than a mistake, and
   // this is the statement that keeps both readings honest.
   const c = parse(load('one_config') as Uint8Array);
+  let checked = 0;
   for (const record of modeRecords(c) ?? []) {
     const page = record.pages[0];
     if (page === undefined) continue;
     assert.ok(page.program > record.start + record.length);
+    checked += 1;
   }
+  // The only assertion sits behind a `continue`, so the whole claim rested on records having pages.
+  // Every mode record of `one_config` has at least one, which is what makes the claim about the
+  // architecture rather than about whichever records happened to qualify.
+  assert.equal(checked, (modeRecords(c) ?? []).length, 'a mode record has no page at all');
+  assert.ok(checked > 0, 'no mode record was checked');
 });
 
 test('the key table is base slot 6 first mode record, byte for byte', skipUnless('h600_config'),
@@ -1027,19 +1034,27 @@ for (const [name, architecture, expected] of GROUPS) {
   });
 }
 
-test('only arch 8 and arch 9 carry a second pointer group', skipUnless('one_config'), () => {
+// The arch 12 and arch 14 configs the negative is about, named once so the guard and the loop cannot
+// drift apart. It was guarded on `one_config` alone with a silent continue over the three, so the
+// arch 14 half of the negative was optional.
+const WITHOUT_A_SECOND_GROUP = ['one_config', 'h700_config', 'h600_config'];
+
+test('only arch 8 and arch 9 carry a second pointer group',
+  skipUnless(...WITHOUT_A_SECOND_GROUP), () => {
   // The reason section 61 read the header as a flat 21 bytes and it held for three architectures:
   // a count of one is exactly that header. Assert the negative, or the reading is untested.
-  for (const name of ['one_config', 'h700_config', 'h600_config']) {
-    if (!load(name)) continue;
-    const c = parse(load(name)!);
+  let records = 0;
+  for (const name of WITHOUT_A_SECOND_GROUP) {
+    const c = parse(require_(name));
     for (const group of irGroups(c) ?? []) {
       for (const address of group.addresses) {
         assert.equal(irGroupCount(c, address), 1, `${name} at 0x${address.toString(16)}`);
         assert.equal(irHeaderLength(c, address), IR_HEADER_LENGTH);
+        records += 1;
       }
     }
   }
+  assert.ok(records > 300, `only ${records} records carried the negative`);
 });
 
 // The two populations this claim is about, named once so the guard and the loop cannot drift apart.

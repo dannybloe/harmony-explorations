@@ -243,13 +243,17 @@ test('base slot 8 is its leading action list and every mode page list', skipWith
   // The section's whole extent, accounted by two owners and nothing else. That is what says the
   // leading list is a structure rather than a convenient four bytes: section 27 derived its length
   // from `1 + 3 * count` and the mode pages, which know nothing about it, land exactly on its end.
+  // Three `continue`s stand between the loop and the assertions, so nothing said how many containers
+  // reached them and base slot 8's whole claim could have gone unexercised.
+  let checked = 0;
   for (const [name] of ACCOUNTED) {
     const data = require_(name);
     const c = parse(data);
-    if (c.architecture === undefined) continue;
+    assert.ok(c.architecture !== undefined, `${name} states its architecture`);
     const slot = archSlot(c.architecture, BINDING_SLOT);
     const section = c.sections[slot];
     if (section === undefined || section.isNull) continue;
+    checked += 1;
     const start = c.blobOffsetOf(section.address) as number;
     const length = c.sectionLength(slot) as number;
     // Deduplicated by offset, because a claim is made per page and the arch 9 safe mode container
@@ -274,6 +278,7 @@ test('base slot 8 is its leading action list and every mode page list', skipWith
       assert.ok(at >= start && at < start + length, `${name}: a page list outside base slot 8`);
     }
   }
+  assert.equal(checked, ACCOUNTED.length, 'a container skipped base slot 8 rather than checking it');
 });
 
 test('base slot 0 is claimed with the terminator that sits outside its length',

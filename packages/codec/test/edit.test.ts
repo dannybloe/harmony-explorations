@@ -365,6 +365,7 @@ test('a save leaves the carried fields byte identical', skipUnless(...SAVE_SAMPL
   // The two `carry` rules, asserted rather than described. Base slot 1 states the architecture and
   // carries a version word that is per config and not computable, section 81; base slot 2's three
   // numbers are the generator's reservation and no config in the corpus appends to it, section 47.
+  let compared = 0;
   for (const name of SAVE_SAMPLES) {
     const c = parse(load(name) as Uint8Array);
     const { bytes } = saveEdits(c, [], WHEN);
@@ -383,8 +384,12 @@ test('a save leaves the carried fields byte identical', skipUnless(...SAVE_SAMPL
       const end = off + length;
       assert.deepEqual([...bytes.slice(off, end)], [...c.blob.slice(off, end)],
         `${name} base slot ${slot} was rewritten by a save`);
+      compared += 1;
     }
   }
+  // Two `continue`s stand above the comparison, one per slot, so nothing said how many ran. Eight
+  // today, measured: the samples that carry both slots.
+  assert.ok(compared >= 8, `only ${compared} slot comparisons ran`);
 });
 
 test('the stamped weekday is derived, so the readers accept it', skipUnless(SAMPLE), () => {

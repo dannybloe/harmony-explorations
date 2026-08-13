@@ -190,6 +190,11 @@ test('read the other way round the fields are not a carrier', skipWithoutLab(), 
 for (const name of WITH_INFRARED) {
   test(`${name} rebuilds every class 1 record from timings alone`, skipUnless(name), () => {
     const c = container(name);
+    // The population, counted before the loop and without any of its three `continue`s, because the
+    // title says **every** class 1 record and the floors below used to be `records > 0`.
+    const classOne = (irGroups(c) ?? [])
+      .flatMap((group) => group.addresses)
+      .filter((address) => irClass(c, address) === IR_CLASS_STREAM);
     let records = 0;
     let blocks = 0;
     for (const group of irGroups(c) ?? []) {
@@ -234,8 +239,11 @@ for (const name of WITH_INFRARED) {
       assert.equal(records, 0, 'arch 9 carries no class 1 record');
       return;
     }
+    // Every one of them, not more than none of them. Three `continue`s sit above the assertions, so
+    // this is what says the sample's whole class 1 population was rebuilt rather than some of it.
+    assert.equal(records, classOne.length, 'a class 1 record was skipped rather than rebuilt');
     assert.ok(records > 0, 'the sample has class 1 records');
-    assert.ok(blocks > 0, 'and they name duration blocks');
+    assert.ok(blocks >= records, `${blocks} blocks for ${records} records`);
   });
 }
 
