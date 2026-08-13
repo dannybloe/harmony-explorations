@@ -337,6 +337,36 @@ test('a stale year is repaired rather than left out of range', skipUnless(SAMPLE
   assert.equal(after?.second, 31);
 });
 
+test('saving on the 31st raises the day maximum, so no value sits outside its own range',
+  skipUnless(SAMPLE), () => {
+    // **The second field whose maximum moves, and the corpus could not have shown it.** `first` is the
+    // one based day of the month and every container declares a maximum of 30, so a save on a 31st
+    // wrote `first=31, second=30`: a variable holding a value its own record forbids, which is exactly
+    // what the year's repair exists to prevent one field along. No config in the corpus was built on a
+    // 31st, so no sample and no test could fire; it was found by asking for the date.
+    //
+    // What Logitech's generator does on such a day is unknown and stays unknown. Raising the maximum
+    // is our choice, taken because it keeps every value in range and matches the year's treatment.
+    const c = parse(load(SAMPLE) as Uint8Array);
+    const inRange = (when: string): { day: number; most: number; bad: number } => {
+      const saved = stateRecords(parse(saveEdits(c, [], when).bytes) as never) ?? [];
+      const seven = saved.slice(0, CLOCK_FIELD_COUNT);
+      const day = seven[3] as { first: number; second: number };
+      return {
+        day: day.first,
+        most: day.second,
+        bad: seven.filter((r) => r.first > r.second).length,
+      };
+    };
+    assert.deepEqual(inRange('2026-08-31T12:00:00'), { day: 31, most: 31, bad: 0 });
+    // And the ordinary case does not move: a save on the 30th leaves the maximum where the corpus has
+    // it, so the raise is the exception and not a new default.
+    assert.deepEqual(inRange('2026-08-30T12:00:00'), { day: 30, most: 30, bad: 0 });
+    // A config saved on a 31st has to be savable again, which is why the refusal below accepts 31.
+    const once = parse(saveEdits(c, [], '2026-08-31T12:00:00').bytes);
+    assert.equal(clockStateEdits(once, '2026-09-01T00:00:00').length, CLOCK_FIELD_COUNT);
+  });
+
 test('a base slot 13 that is not the clock is refused rather than stamped', skipUnless(SAMPLE), () => {
   // The same reasoning as refusing a base slot 3 that holds no readable record: if the first six
   // maxima are not a second, a minute, an hour, a day, a weekday and a month, then whatever this is,

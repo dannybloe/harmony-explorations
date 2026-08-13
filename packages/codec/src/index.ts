@@ -13,6 +13,12 @@ export * from './valuemap.ts';
 export * from './screen.ts';
 export * from './sections.ts';
 export * from './ir.ts';
+// **Exported since 13 August 2026, and its absence was a defect rather than an omission.** `ir.ts`
+// held a second function called `irFrame`, and a barrel that exports one of two same named readers
+// exports whichever file it lists: `import { irFrame } from '@harmony/codec'` got the heuristic one,
+// which read a neighbouring record's durations, while the tested decoder here was reachable only by
+// file path. The wrong one is gone and this is the only `irFrame` now.
+export * from './irframe.ts';
 export * from './actions.ts';
 export * from './emit.ts';
 export * from './tables.ts';

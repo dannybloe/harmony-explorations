@@ -29,7 +29,6 @@ import {
   nextFlashSequence,
   VERSION_FIELD_COUNT_MIN,
   decodeReply,
-  escapeRequest,
   getVersionRequest,
   readFlashRequest,
   readRamRequest,
@@ -44,7 +43,14 @@ import {
   assertSessionEndAllowed,
   type WritePermission,
 } from './rails.ts';
-import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from './protocol.ts';
+// The four write encoders live in their own module, which `index.ts` does not re-export: see
+// `writes.ts` for why the barrel is the rail here rather than a docstring.
+import {
+  eraseFlashRequest,
+  escapeRequest,
+  writeFlashRequest,
+  writeMiscRequest,
+} from './writes.ts';
 import type { Transport } from './transport.ts';
 
 export class RemoteError extends Error {}

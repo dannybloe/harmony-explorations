@@ -121,14 +121,14 @@ export function encodeRequest(command: number, payload: readonly number[] = []):
 }
 
 /** A 24-bit address, most significant byte first, which is the order every command uses. */
-function address24(address: number): number[] {
+export function address24(address: number): number[] {
   if (!Number.isInteger(address) || address < 0 || address > 0xffffff) {
     throw new ProtocolError(`address 0x${address.toString(16)} does not fit in 24 bits`);
   }
   return [(address >>> 16) & 0xff, (address >>> 8) & 0xff, address & 0xff];
 }
 
-function count16(count: number): number[] {
+export function count16(count: number): number[] {
   if (!Number.isInteger(count) || count < 0 || count > 0xffff) {
     throw new ProtocolError(`count ${count} does not fit in 16 bits`);
   }
@@ -149,26 +149,7 @@ export function readFlashRequest(address: number, count: number): Uint8Array {
   return encodeRequest(READ_FLASH, [...address24(address), ...count16(count)]);
 }
 
-/**
- * `WRITE_FLASH`: **the same five bytes as `READ_FLASH`**, into the same firmware variables.
- *
- * Encoding it is not permission to send it. The rails in `rails.ts` decide that, and they are
- * where the region restriction lives, because the firmware's own validator accepts any config
- * flash address and both commands call it.
- */
-export function writeFlashRequest(address: number, count: number): Uint8Array {
-  return encodeRequest(WRITE_FLASH, [...address24(address), ...count16(count)]);
-}
 
-/**
- * `ERASE_FLASH`: a 24-bit address and **no count**.
- *
- * So the granularity is whatever the hardware sector size is, not something the host chooses.
- * An erase cannot be scoped by the caller, only refused, which is why `rails.ts` refuses.
- */
-export function eraseFlashRequest(address: number): Uint8Array {
-  return encodeRequest(ERASE_FLASH, address24(address));
-}
 
 /** `READ_MISC`: a selector and a 16-bit parameter, high byte first. */
 export function readMiscRequest(selector: number, parameter: number): Uint8Array {
@@ -178,10 +159,6 @@ export function readMiscRequest(selector: number, parameter: number): Uint8Array
   return encodeRequest(READ_MISC, [selector, ...count16(parameter)]);
 }
 
-/** `WRITE_MISC`: a selector, a 16-bit address and a 16-bit value. */
-export function writeMiscRequest(selector: number, address: number, value: number): Uint8Array {
-  return encodeRequest(WRITE_MISC, [selector, ...count16(address), ...count16(value)]);
-}
 
 /**
  * The `READ_MISC` and `WRITE_MISC` selectors the arch 14 firmware actually services.
@@ -222,13 +199,6 @@ export const ESCAPE_SUB_COMMANDS: Readonly<Record<number, readonly number[]>> = 
   14: [ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_RESET_ALT, 0x05],
 };
 
-/** `0xE0` with one payload byte, which is the byte the protocol is known by as `0xE1`. */
-export function escapeRequest(subCommand: number): Uint8Array {
-  if (!Number.isInteger(subCommand) || subCommand < 0 || subCommand > 0xff) {
-    throw new ProtocolError(`escape sub-command ${subCommand} is not a byte`);
-  }
-  return encodeRequest(ESCAPE, [subCommand]);
-}
 
 export function readRamRequest(dataAddress: number): Uint8Array {
   return readMiscRequest(MISC_RAM, dataAddress);

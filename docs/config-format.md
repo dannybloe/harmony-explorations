@@ -2257,17 +2257,22 @@ codec needs from them is this:
 |---|---|---|
 | `0x1F` | operand high byte | a register machine: a byte register, a sixteen bit accumulator, load and arithmetic on each, and load and store against the base slot 13 state variable table |
 | `0x07` | operand low byte | thirteen operations with no argument: a push and pop stack, timer cancellation, clock and state variable reads |
-| `0x0F` | operand low byte | peripherals and the **flash journal**, plus register moves. Little to do with the config: its `0xE0` band appends bytes to a region of the external flash, section 108 |
+| `0x0F` | operand low byte | peripherals and the **flash journal**, plus register moves. Little to do with the config: its `0xE0` band appends bytes to a region of the external flash, section 108. **Not one table across architectures**: arch 9's ladder is its own, section 139 |
 | `0x3F` | operand high byte | four bands, one of which is the six byte instruction above |
 
 **`0x3F`'s lowest band is `0xB0` on arch 14 and `0xC0` on arch 12, and the routines differ.** This
 is the only structure in the format so far that is not one table across architectures,<!--superseded--> so a `0x3F`
 band **must not** be ported between them. The failed prediction that found it is in section 73.
 
-**It is one of two**, section 107: the opcode block `0x65` to `0x6E` is arch 14 only, below.
+**It is one of three.** The opcode block `0x65` to `0x6E` is arch 14 only, section 107, below. And
+`0x0F`'s bands differ on arch 9, section 139: the band at `0x60` is a real arm there and inside the
+no-op range on arch 12 and arch 14, the band at `0x40` is the reverse, `0xD0` is tested and ignored on
+arch 9 alone, and `0x90` is gated on a port bit that no other ladder tests.
 
 Bands the firmware tests and then ignores are part of the specification, not gaps: `0x1F` below
-`0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F`, and `0x3F`'s `0xF0` nibbles 3 and 5. The corpus
+`0xE0`, `0x0F` bands `0xF0` and `0x50` to `0x7F` **on arch 12 and arch 14**, where on arch 9 that
+range holds a real arm at `0x60` and the ignored ones are `0xF0`, `0xD0`, `0x70` and everything below
+`0x60`, section 139, and `0x3F`'s `0xF0` nibbles 3 and 5. The corpus
 uses several of them, 84 times for the last alone.
 
 **The four opcodes above are floors, not values**, section 108: the dispatcher compares the opcode

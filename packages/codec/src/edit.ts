@@ -37,6 +37,7 @@
  */
 import {
   ACTION_LIST_INDEX_OPCODE,
+  CLOCK_DAY_INDEX,
   CLOCK_STATE_MAXIMA,
   modeRecords,
   pageListCopies,
@@ -328,10 +329,19 @@ export function clockStateEdits(c: Container, builtAt: string): Edit[] {
     const record = records[index] as StateRecord;
     const name = `slot-13 ${FIRMWARE_STATE_VARIABLES[index] ?? index}`;
     const most = CLOCK_STATE_MAXIMA[index];
+    const value = fields[index] as number;
+    // The maximum this record should declare once the field is stamped. Two of the seven move: the
+    // year's is that year plus one, and the day's is 30 until a save happens on a 31st, when the one
+    // based day would otherwise sit outside its own variable's range. Section 130 and the note on
+    // `CLOCK_STATE_MAXIMA`; the day half was found by asking for 2026-08-31 and reading back
+    // `first=31, second=30`, which is the exact failure the year's repair exists to prevent.
+    const stamped = most === undefined ? value + 1 : Math.max(most, value);
     // Whatever declares a different range is not the clock, so it is refused rather than stamped:
     // the same reasoning as refusing a base slot 3 that does not hold a readable clock record. The
-    // year is deliberately not checked, because its maximum is what this repairs.
-    if (most !== undefined && record.second !== most) {
+    // year is deliberately not checked, because its maximum is what this repairs, and the day accepts
+    // its own raised maximum too or a config saved on a 31st could never be saved again.
+    if (most !== undefined && record.second !== most
+        && !(index === CLOCK_DAY_INDEX && record.second === most + 1)) {
       throw new EditError(
         `${name} declares a maximum of ${record.second} where the clock's is ${most}, `
         + 'so this is not the record we think it is',
@@ -339,11 +349,11 @@ export function clockStateEdits(c: Container, builtAt: string): Edit[] {
     }
     const off = c.blobOffsetOf(record.address);
     if (off === undefined) throw new EditError(`${name} is outside the container`);
-    const value = fields[index] as number;
-    // `first` at +0x00 and `second` at +0x02, so the year's two fields are one adjacent four byte
-    // edit rather than two, which also keeps them from being reported as separate changed runs.
-    const bytes = most === undefined
-      ? [value & 0xff, value >>> 8, (value + 1) & 0xff, (value + 1) >>> 8]
+    // `first` at +0x00 and `second` at +0x02, so a field whose maximum moves is one adjacent four byte
+    // edit rather than two, which also keeps them from being reported as separate changed runs. For
+    // the day that edit usually writes the 30 that is already there, which changes no byte.
+    const bytes = most === undefined || index === CLOCK_DAY_INDEX
+      ? [value & 0xff, value >>> 8, stamped & 0xff, stamped >>> 8]
       : [value & 0xff, value >>> 8];
     out.push({ start: off, bytes: Uint8Array.from(bytes), owner: name });
   }
@@ -437,11 +447,38 @@ export function setPageListEntry(
   const pages = (modeRecords(c) ?? []).flatMap((record) => record.pages);
   const target = pages[page];
   if (target === undefined) throw new EditError(`no mode page ${page}`);
+  // The copy is paired by position, and that pairing is checked rather than assumed. It holds on
+  // every full config, 426 pages of `h700_config` down to 135 of `h525_config`, and it does not hold
+  // at all on `h525_safemode_ahcm`, which has 44 pages and 2 copies because 43 of them share one list
+  // address. So the message below used to state a falsehood, "every page in the corpus has one", and
+  // the page that did get a copy there was paired with a list holding a different number of entries.
   const copies = pageListCopies(c);
   const copy = copies[page];
   if (copy === undefined) {
-    throw new EditError(`page ${page} has no list copy, and every page in the corpus has one`);
+    throw new EditError(
+      `page ${page} has no list copy of its own: this container has ${pages.length} pages and ` +
+        `${copies.length} copies, so pages share lists and an edit cannot say which copy is whose`,
+    );
   }
+  // **The range checks come before the 0x7F test, and their absence made that test bypassable.**
+  // The bytes are assembled with `Uint8Array.from`, which truncates to eight bits, so `opcode: 0x17F`
+  // passed the comparison below and wrote `0x7F` into the page's list **and** its copy, giving both
+  // the same base slot 10 index: exactly the invariant this function exists to protect, in a file that
+  // then recomputes the trailer checksum, so the product passes every check the remote makes. Measured
+  // on `h600_config` on 13 August 2026, with plain `0x7F` correctly refused beside it.
+  //
+  // The same truncation turned `tag: 511` into 255, `operand: 0x1FFFF` into 0xFFFF and `tag: 1.7`
+  // into 1, where `setParameter` and `setTimerDuration` both refuse such inputs. So this is one rule
+  // for all three fields rather than a guard bolted onto the opcode.
+  const field = (name: string, value: number, max: number): number => {
+    if (!Number.isInteger(value) || value < 0 || value > max) {
+      throw new EditError(`${name} ${value} is not in 0 to ${max}, and a write here truncates`);
+    }
+    return value;
+  };
+  field('tag', entry.tag, 0xff);
+  field('operand', entry.operand, 0xffff);
+  field('opcode', entry.opcode, 0xff);
   if (entry.opcode === ACTION_LIST_INDEX_OPCODE) {
     throw new EditError('opcode 0x7F names a base slot 10 entry, which the two copies disagree on');
   }
@@ -455,6 +492,23 @@ export function setPageListEntry(
     }
     if (existing.opcode === ACTION_LIST_INDEX_OPCODE) {
       throw new EditError(`page ${page} entry ${index} is a 0x7F, which the copies disagree on`);
+    }
+    // **And the copy has to be this page's copy.** Nothing compared the two, so a mispaired copy took
+    // a write into an unrelated list and the trailer checksum was recomputed over it. The two agree
+    // except in a 0x7F's operand, section 69, and a 0x7F is refused above, so tag, flags and opcode
+    // must match entry for entry.
+    if (where === 'copy') {
+      const own = taggedList(c, (c.blobOffsetOf(target.list) as number) + c.flashBase);
+      const mine = own?.entries[index];
+      if (mine === undefined
+          || mine.tag !== existing.tag
+          || mine.opcode !== existing.opcode
+          || mine.flags !== existing.flags) {
+        throw new EditError(
+          `page ${page}'s copy does not hold this page's list: entry ${index} differs, so the ` +
+            'pairing by position is wrong for this container and a write would land elsewhere',
+        );
+      }
     }
     const wide = existing.flags !== undefined;
     const stride = wide ? 5 : 4;

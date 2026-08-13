@@ -40,6 +40,39 @@ const IDEAL = {
   targetIsTheSpareRemote: true,
 } as const;
 
+test('the package offers no way to build a request that changes a remote', async () => {
+  // **The bypass this closes, measured on 13 August 2026.** `rails.ts` opens by saying a rail here is
+  // enforced for every caller. It was enforced for every caller of `HarmonyRemote`: the barrel
+  // star-exported `protocol.ts`, so `eraseFlashRequest` came with it, and `openHarmony` returns a
+  // `Transport` whose `write` is public. Two lines reached `ERASE_FLASH` on a live remote with no
+  // permission object, no `WRITES_ENABLED` and no architecture check, and an erase takes an address
+  // and no count: 64 KiB of a Harmony One (arch 12) at whichever address it lands on.
+  //
+  // The four encoders are in `writes.ts` now, which the barrel does not re-export. This asserts the
+  // barrel rather than the file, because a list of names in a docstring is what drifted in the first
+  // place, and because the next write encoder somebody adds will be caught by it.
+  const barrel = (await import('../src/index.ts')) as Record<string, unknown>;
+  // Functions only. The command numbers and selector lists stay exported and have to: `rails.ts`
+  // refuses `ESCAPE_RESET` **by number**, and `decodeReply` names what came back. A constant cannot be
+  // sent; a request builder can.
+  // A request builder is named `<command>Request` throughout this package, so the rule is that shape
+  // and not "a name containing write": the command numbers stay exported and have to, since `rails.ts`
+  // refuses `ESCAPE_RESET` by number, and so do the rails themselves, whose names begin with `assert`.
+  // A constant cannot be sent and a refusal is what does the refusing; a builder is the sendable thing.
+  const offered = Object.keys(barrel).filter(
+    (name) => name.endsWith('Request') && /write|erase|escape/i.test(name),
+  );
+  assert.deepEqual(offered, [], 'the barrel offers a request builder for a command that writes');
+
+  // The control: the encoders do exist, and importing them by path still works, so this is a boundary
+  // rather than a deletion. `remote.ts` reaches them that way and the rails still gate every send.
+  const writes = (await import('../src/writes.ts')) as Record<string, unknown>;
+  for (const name of ['writeFlashRequest', 'eraseFlashRequest', 'writeMiscRequest', 'escapeRequest']) {
+    assert.equal(typeof writes[name], 'function', name);
+    assert.equal(barrel[name], undefined, `${name} is not in the barrel`);
+  }
+});
+
 test('the shipped build has writing disabled', () => {
   // Version 1 of the application is read only. If this ever fails in CI, the default changed.
   assert.equal(WRITES_ENABLED, false);

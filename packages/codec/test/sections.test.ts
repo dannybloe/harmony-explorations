@@ -44,8 +44,9 @@ import {
   irHeaderLength,
   irQuantity,
   irGroups,
-  irPulses,
   irRecordBlocks,
+  irBlockLength,
+  irBlockWords,
   irRecordStart,
   irRegion,
   irSymbolBlock,
@@ -80,15 +81,29 @@ const SECTIONS: readonly [string, number, number[], number, number, number[]][] 
   ['h525_config', 11, [24, 23, 1, 23], 114, 8, [8, 67, 61, 64]],
 ];
 
-/** Total mark and space durations decoded, per sample. `docs/findings.md` section 32. */
-const PULSES: readonly [string, number][] = [
-  ['h700_config', 26388],
-  ['h600_config', 11963],
-  ['one_config', 21659],
-  ['arch8_config_a', 10310],
-  // Arch 9 decodes very few, which is the negative case: its records are one of the other three
-  // infrared encoding classes and this reader only knows the streamed one.
-  ['h525_config', 2769],
+/**
+ * `[sample, class 1 records, distinct blocks they name, duration words in those blocks]`.
+ *
+ * **Every number here changed on 13 August 2026 and the old ones were fiction.** This table pinned a
+ * single total per sample, produced by `irPulses`, which located durations as the longest alternating
+ * run from a fixed offset past the header. Blocks sit **below** their header, so that run was the
+ * neighbouring record's: none of 748 records measured had its run inside a block it names. The reader
+ * is gone, sections 61, 75 and 127 state the extent, and a record's durations are the words of the
+ * blocks it names.
+ *
+ * Blocks are deduplicated because they are shared between records, section 61, so a per record sum
+ * would count some twice and is not a property of the config.
+ */
+const PULSES: readonly [string, number, number, number][] = [
+  ['h700_config', 350, 301, 26061],
+  ['h600_config', 186, 257, 39546],
+  ['one_config', 328, 446, 62619],
+  ['arch8_config_a', 234, 341, 29543],
+  // Arch 9 (Harmony 525) is the negative case and it is now a clean zero rather than "very few":
+  // every one of its 200 records is class 5, which stores no duration stream at the record at all,
+  // section 82. The old reader answered 2769 durations for those records, all of them bytes it had no
+  // business reading.
+  ['h525_config', 0, 0, 0],
 ];
 
 for (const [name, fallback, header, modes, bindings, groups] of SECTIONS) {
@@ -116,15 +131,26 @@ for (const [name, fallback, header, modes, bindings, groups] of SECTIONS) {
   });
 }
 
-for (const [name, pulses] of PULSES) {
-  test(`${name}: the infrared records decode ${pulses} durations`, skipUnless(name), () => {
-    const c = parse(load(name) as Uint8Array);
-    let total = 0;
-    for (const group of irGroups(c) ?? []) {
-      for (const address of group.addresses) total += irPulses(c, address)?.pulses.length ?? 0;
-    }
-    assert.equal(total, pulses);
-  });
+for (const [name, records, blocks, words] of PULSES) {
+  test(`${name}: ${records} class 1 records name ${blocks} blocks holding ${words} durations`,
+    skipUnless(name), () => {
+      const c = parse(load(name) as Uint8Array);
+      const seen = new Set<number>();
+      let classOne = 0;
+      let total = 0;
+      for (const group of irGroups(c) ?? []) {
+        for (const address of group.addresses) {
+          if (irClass(c, address) !== IR_CLASS_STREAM) continue;
+          classOne += 1;
+          for (const block of irRecordBlocks(c, address)) {
+            if (seen.has(block)) continue;
+            seen.add(block);
+            total += (irBlockWords(c, block) ?? []).length;
+          }
+        }
+      }
+      assert.deepEqual([classOne, seen.size, total], [records, blocks, words]);
+    });
 }
 
 test('a mode entry reads as a tagged list, and its extent is not trusted', skipUnless('h600_config'),
@@ -370,10 +396,17 @@ test('arch 9 class 5 records carry the shared header', skipUnless('h525_config')
   // firmware dispatches over.
   assert.ok(IR_HEADER_CLASSES.has(IR_CLASS_ARCH9));
   assert.notEqual(IR_CLASS_ARCH9, IR_CLASS_STREAM);
-  // And the trap that makes the gate necessary: `irPulses` happily returns a duration list here.
-  // It is not one. A zero word turns up in arbitrary data, so nothing below the header can be
-  // claimed on the strength of finding a terminator.
-  assert.notEqual(irPulses(c, records[0] as number), undefined);
+  // And the trap that makes the gate necessary: a block walk answers here too. The first record's
+  // only pointer names a class 5 **body**, and `irBlockLength` reports 6 bytes for it, because a zero
+  // word turns up in arbitrary data. So nothing below the header can be claimed on the strength of
+  // finding a terminator, and a caller has to read the class byte.
+  //
+  // This used to name `irPulses`, which was removed on 13 August 2026 for reading a neighbouring
+  // record's durations on every architecture. The trap it demonstrated is real and belongs to the
+  // block walk, so the assertion moved rather than going with it.
+  const pointer = irRecordBlocks(c, records[0] as number)[0] as number;
+  assert.notEqual(irBlockLength(c, pointer), undefined);
+  assert.equal(irClass(c, records[0] as number), IR_CLASS_ARCH9, 'and the class says not to');
 });
 
 /**

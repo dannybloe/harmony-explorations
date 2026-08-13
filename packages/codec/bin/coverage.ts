@@ -27,7 +27,17 @@ function argument(name: string): string | undefined {
 
 const detail = process.argv.includes('--detail');
 
+/**
+ * Whether any sample reported an overlap, so the process can exit nonzero.
+ *
+ * It used to print `OVERLAPS n` as a suffix and exit 0, which is how a defect in a claim reads as a
+ * successful run: the number this script exists to report is a union, so an over-claiming reader
+ * cannot lower it and the overlap count is the only thing that can say anything is wrong.
+ */
+let overlapped = 0;
+
 function show(label: string, report: CoverageReport, architecture: number | undefined): void {
+  overlapped += report.overlaps.length;
   const percent = (100 * report.fraction).toFixed(1);
   process.stdout.write(
     `${label.padEnd(26)} arch ${String(architecture ?? '?').padStart(2)}  ` +
@@ -94,4 +104,12 @@ if (file !== undefined) {
     process.stderr.write('no containers found; set HARMONY_LAB or pass --file\n');
     process.exit(1);
   }
+}
+
+if (overlapped > 0) {
+  process.stderr.write(
+    `${overlapped} overlapping byte run(s): two claims disagree about who owns a byte, which is a\n` +
+      'defect in one of the two readers rather than something to interpret. Run with --detail.\n',
+  );
+  process.exit(1);
 }

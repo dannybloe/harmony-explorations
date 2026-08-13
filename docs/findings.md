@@ -49,7 +49,13 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fifty one have been found and corrected so far. **The four newest are in section 124, and three of
+Fifty seven have been found and corrected so far. **The six newest are in section 139, and every one
+of them is a reader in shipped code that answered plausibly where it should have refused**, found by
+reviewing the source against the question "what can this test fail on" rather than by a new sample.
+One of them is a rail: the barrel of `packages/usb` exported the four request builders that change a
+remote, so a caller could reach `ERASE_FLASH` without passing a single refusal.
+
+**The four before those are in section 124, and three of
 them are the same shape: a hand read glyph label that only one word in one container could have caught,
 and no word did.** What caught them is the generator's own rule that a character sits on one code, used
 as a check rather than assumed: a character on two codes at once is a contradiction, and three were.
@@ -164,7 +170,8 @@ as the correction below it: a claim no sample could contradict.
 
 Before it, section 107, and it is a claim two
 documents made in the same words: that arch 12's `0x3F` bands are **the only** structure in the format
-that is not one table across architectures. They are one of two. The opcode block `0x65` to `0x6E` is
+that is not one table across architectures. They are one of three, section 139 being the third. The
+opcode block `0x65` to `0x6E` is
 arch 14 only, and the reason it went unnoticed is that no arch 8, 9 or 12 config emits an instruction
 from it, so nothing in the corpus contradicted the claim; only the other architectures' dispatchers
 do. A rule that says "port this by index" is worth checking against the firmware of the architecture
@@ -13458,7 +13465,9 @@ everything below falls to `0x023E4`.
 So the shift, the boolean operations, the device record writer and the modulo are all arch 14's, and
 the reading table has to answer per architecture. **That is the second structure in this format that
 is not one table across architectures**, after arch 12's `0x3F` band `0xC0`, section 102, and the two
-are unrelated: one is a band inside an opcode, this is ten whole opcodes.
+are unrelated: one is a band inside an opcode, this is ten whole opcodes. **There is a third**,
+section 139: `0x0F`'s bands, where the same mistake had been made in the other direction, a table read
+from arch 12 and arch 14 answering for arch 9 as well.
 
 **The corpus agrees without being asked.** Of the eleven opcodes `0x65` to `0x6F`, exactly two are
 used anywhere: `0x6C` 7552 times and `0x6E` six times, both on arch 14 only, and no arch 8, 9 or 12
@@ -13558,7 +13567,7 @@ and `make reading` prints zero:
 Per architecture the divide and multiply move arch 8 the furthest, from 97.6% to
 98.1%<!--fact:reading_arch8-->, because 76 of its 116 corpus divides are its own. Arch 12 goes to
 98.5%<!--fact:reading_arch12-->, arch 14 stays at 98.5%<!--fact:reading_arch14--> and arch 9 stays at
-96.0%<!--fact:reading_arch9--> since it uses none of these opcodes at all.
+95.2%<!--fact:reading_arch9--> since it uses none of these opcodes at all.
 
 ### What is not established
 
@@ -18365,3 +18374,176 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 13, which would put one of them in the wide block and break `0x108 + index` for it. An arch 12 write to
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
+
+## 139. Six shipped readers answered plausibly where they should have refused, and one of them was a rail
+
+Every finding in this document rests on code, and this section is about the code rather than about a
+remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by eight
+independent readers, each given one partition and told to look for a claim the tests cannot fail on.
+Six defects came out of it that a sample could not have found, and they share one shape, which is this
+project's own recurring one: **each produced a plausible answer where it should have produced an
+error.** Not one of them failed a test, and three of them had a test asserting the wrong thing was
+right.
+
+They are listed newest reading first. The last of them needed firmware and is the only new reading
+here; the other five are corrections to code this document already relies on.
+
+### 1. The infrared duration locator read a neighbouring record, on every record
+
+`ir.ts` had a function that located a record's mark and space durations as the longest strictly
+alternating run from a fixed offset, with a comment saying a record's extent is not established. It was
+established, twice: section 61 read the header, section 75 corrected it to `12 + 9 * count`, and section
+127 read the three block pointers as once, held and tail. The heuristic outlived both.
+
+Measured against the pointers it should have used: of **748 records** across arch 8 (Harmony 880), arch
+12 (Harmony One) and arch 14 (Harmony 600), **none** had its located run inside a block the record
+itself names, and **713** landed inside a neighbouring record's block. The other 35 landed outside any
+block.
+
+It stayed invisible for the reason a wrong reader usually does here. Records in one device group
+usually share an infrared protocol, so the pulse pair taken from a neighbour is usually the pulse pair
+the record would have given, and `irFrame` on top of it produced a bit count that matched. **That was
+also the second same-named reader in the package**: `irframe.ts` has the frame decoder section 133
+uses, and `index.ts` exported this one, because a barrel re-exporting two files that both define
+`irFrame` hands out whichever it lists second. So the reader nobody wanted was the reader every
+consumer of `@harmony/codec` got.
+
+`irPulses`, this module's `irFrame` and `IrRun` are gone. What is left of the question the heuristic
+was answering is `irRepeatBlock`, gated on class 1, whose measured range over the corpus is 76.6 ms to
+752.4 ms with 1077 of 1315 repeating codes between 60 and 120 ms.
+
+### 2. The byte accounting could not see two claims of one reader
+
+`coverage.ts` walks every claim, writes an owner name per byte, and reports a byte held twice as an
+overlap. It compared **owner names**, so two claims of the same reader could not collide: the second
+found its own name already there and moved on. Every corpus wide "zero overlaps" in this document was
+computed by that rule.
+
+The blind spot is not a corner. Over the 19 containers, **98.08% of the 10242905 claimed bytes belong
+to an owner name that makes more than one claim**, 25 of 48 names, which is what a reader that walks an
+array looks like. And `accounted` is the union of the claims, so over-claiming can only raise the
+percentage: a reader that reads one record twice pushes the coverage figure **up** and reports no
+overlap.
+
+The detector is claim-aware now, with two claims of one owner treated as an overlap unless they are the
+identical run, which is legitimate and happens: a shared infrared duration block is claimed once per
+record that names it, section 61. The control is a copy of `one_config` with one byte perturbed so a
+base slot 10 list is claimed twice; the old rule reports zero overlaps and the new one reports the three
+bytes. `make coverage` also exits nonzero on any overlap now, which it did not, so the number was only
+checked by somebody reading it.
+
+The figures did not move. Nothing in the corpus double claims, which is the outcome to state plainly:
+the claim was true and the check was not checking it.
+
+### 3. A rail refused an operand by value and the value was truncated first
+
+`edit.ts` refuses to write action list opcode `0x7F`, because that operand names a base slot 10 entry
+and section 120's activity chain runs through it. The refusal was `entry.opcode === 0x7F`, and the write
+was `Uint8Array.from([...])`, which truncates to eight bits. So `opcode: 0x17F` passes the refusal and
+writes `0x7f`, and the same holds for `tag` and `operand`.
+
+This is the field split pitfall from `CLAUDE.md` in a new place: a necessary test used as a sufficient
+one. The fix is a range check per field before the value test, phrased as "is not in 0 to 255, and a
+write here truncates", so the message says why the bound exists.
+
+### 4. A config saved on the 31st declared a value outside its own range
+
+Section 138 established that base slot 13's variables 0 to 6 are the firmware's clock and that six of
+their maxima are constants. `clockStateEdits` stamps the record's `first` with the moment of writing and
+raises the **year's** maximum to that year plus one, because the year's maximum is not a constant.
+
+The day's maximum is not a constant either. It is 30 in every container here, and a config saved on a
+31st gets `first = 31` with a maximum of 30, which is a value outside the variable's own declared range,
+written by our own editor and passing every check the remote makes.
+
+The day is stamped with its maximum now, the same way the year is, and `CLOCK_DAY_INDEX` names the one
+index this applies to. **What Logitech's own generator does on a 31st is unknown and marked
+unconfirmed**: no config in the corpus was built on a 31st, so there is no sample either way. The
+choice is the conservative one, since a variable whose value exceeds its maximum is the state the
+firmware's own range test exists to prevent.
+
+### 5. `packages/usb` published the four request builders that change a remote
+
+`rails.ts` opens by saying that a rail enforced there is enforced for every caller. It was enforced for
+every caller **of `HarmonyRemote`**. The barrel star-exported `protocol.ts`, which holds
+`writeFlashRequest`, `eraseFlashRequest`, `writeMiscRequest` and `escapeRequest`, and `openHarmony`
+hands back a `Transport` whose `write` is public. Two lines reach `ERASE_FLASH` with no permission
+object, no `WRITES_ENABLED`, no architecture check and no address bound, and an erase takes an address
+and **no count**: it destroys 64 KiB of a Harmony One (arch 12).
+
+No gate can live in the encoders, because `rails.ts` imports from `protocol.ts` and not the other way
+round, and because a byte builder has to stay testable with the flag off. So the boundary is a module:
+`packages/usb/src/writes.ts` holds the four, `index.ts` does not re-export it, and `remote.ts` and the
+tests import it by path. A module rather than an explicit export list, because a list of fifty names
+drifts and a new write encoder would be exported by default; here the default is the safe one. The
+test is the rule in its own terms, that the barrel offers no export named `<something>Request` matching
+write, erase or escape, and its control is re-exporting the file.
+
+None of this stops anybody assembling five bytes by hand. It stops the accident, which is the same
+reasoning as the named door `HARMONY_ODD_READ_EXPERIMENT` in the same file.
+
+### 6. Arch 9's `0x0F` ladder is its own, and the shared table called a call a no-op
+
+The one that needed firmware. `BANDS_0F` in `actions.ts` answered for four architectures and was read
+from two: section 73 followed the arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) dispatchers,
+and arch 9 (Harmony 525) was never one of them. Its ladder is at `0x02246` to `0x02344` in the 525's own
+internal program flash, `--part 4550`, and it differs in four ways.
+
+```
+02332: 60 0e       MOVLW 0x60
+02334: d7 5d       SUBWF 0xd7,B,W        the operand's low byte
+02336: 56 e3       BNC 0x023e4           below 0x60: the dispatcher's exit
+02338: 01 0e       MOVLW 0x01
+0233a: d7 15       ANDWF 0xd7,B,W        bit 0 of the low byte
+0233c: 00 01       MOVLB 0x0
+0233e: c3 6f       MOVWF 0x0c3
+02340: 01 ec 1b f0 CALL 0x03602
+```
+
+That arm is the defect rather than the omission. The two Harmony 525 configs emit `0x0F` with low byte
+`0x60` or `0x61` **twelve times**, the shared table sent them to its `[0x50, noop]` entry, and the
+reading came back "nothing: the dispatcher returns without acting" at depth `meaning`. **A no-op is the
+strongest claim a reading table can make**, and it was being made about a call, from another remote's
+dispatcher. It also inflated the depth figure, because a no-op counts as meaning: arch 9's reading
+coverage was 96.0%<!--superseded--> and is 95.2% with the twelve instructions honestly at placement.
+
+The four differences, with the arms stated conservatively, meaning where the mechanism is visible and
+placement where the arm only reaches a routine nobody has followed:
+
+| band | arch 12 and arch 14 | arch 9 (Harmony 525) |
+|---|---|---|
+| `0xE0` | append one to three bytes to the flash journal, section 108 | one to three bytes handed to `0x0108C`, selected by the low nibble |
+| `0xD0` | not tested | tested and branched to the exit: a real no-op |
+| `0x90` | not tested | gated on `PORTB` bit 5, then the low nibble into `0x102` and `0x07944` |
+| `0x60` | inside the `0x50` no-op range | bit 0 of the low byte into `0x0C3`, then `0x03602` |
+| `0x40` | a lookup whose sixteen bit result goes to scratch | nothing: the chain falls off its end below `0x60` |
+
+The arm at `0x90` is worth naming for its shape rather than its function: no other architecture's ladder
+gates an action list instruction on a **port bit**, so on a Harmony 525 the same instruction does
+something or nothing depending on hardware state the config cannot see.
+
+`BANDS_0F_ARCH9` carries them, `bandsFor` selects it, and the test asserts the two architectures
+disagree at `0x60` and at `0x40`, which is what a per architecture table is for.
+
+### What it changes
+
+* **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
+  two. Section 107 corrected "the only" to "one of two" and this makes it three: `0x3F`'s bands, the
+  opcode block `0x65` to `0x6E`, and `0x0F`'s bands. The pattern across all three is the same, that the
+  reading was confirmed against configs and the configs of the architecture it was wrong about never
+  contradicted it, because a dispatcher's arms are firmware and a corpus only shows what a generator
+  emits.
+* **A reading table's no-op needs the architecture's own firmware behind it.** Where it does not have
+  one, the honest depth is placement or nothing, and the table now says which architecture each entry
+  was read from.
+* `make coverage` exits nonzero on an overlap, so the zero is enforced rather than reported.
+* `@harmony/usb` offers no way to build a request that changes a remote, which is what `rails.ts` has
+  claimed since it was written.
+
+### What would falsify it
+
+For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
+`0x7F`, which the reading says the firmware ignores, or a second arch 9 image whose ladder differs from
+this one. For the overlap detector: a container where the new rule reports an overlap, which would mean
+two readers claim one byte and one of them is wrong. For the day maximum: a Logitech generated config
+built on a 31st, which would settle by measurement what is currently our choice.

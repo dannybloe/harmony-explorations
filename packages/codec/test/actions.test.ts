@@ -251,11 +251,17 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 // uses of band 0xC0. Section 107 moved the rest: the two modulos in each arch 14 config out of
 // unread, and every divide and multiply out of placement, which is why the last column is zero
 // everywhere and no sample has an unread instruction left.
+//
+// **The Harmony 525's numbers went the other way on 13 August 2026, from 1013 and 30 to 1007 and 36**,
+// and that direction is the honest one: twelve of its `0x0F` instructions were being read through arch
+// 14's ladder, which called them no-ops, where its own firmware calls a routine. A no-op counts as
+// meaning, so borrowing another remote's dispatcher had inflated the column that says we understand
+// the instruction. Section 139.
 const COVERAGE: [string, number, number, number][] = [
   ['h700_config', 19372, 279, 0],
   ['h600_config', 11998, 196, 0],
   ['one_config', 11509, 131, 0],
-  ['h525_config', 1013, 30, 0],
+  ['h525_config', 1007, 36, 0],
   ['arch8_config_a', 3233, 78, 0],
 ];
 
@@ -560,6 +566,45 @@ test('every 0x75 operand in the corpus is one of four audible tones', skipUnless
     assert.ok(frequency > 200 && frequency < 8000, `${hz} Hz is outside the audible band`);
   }
 });
+
+test('the Harmony 525 reads its own 0x0F ladder, not another remote\'s',
+  skipUnless('h525_config', 'h525_config_2'), () => {
+    // **`BANDS_0F` was one table for four architectures and nothing established that.** The shared
+    // entries are section 73's, read from the arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
+    // dispatchers. Arch 9's own ladder, at `0x02246` in `h525_code`, has a real arm at floor `0x60`
+    // that masks bit 0 of the low byte into `0x0C3` and calls `0x03602`, an arm at `0x90` gated on a
+    // port bit that the others have no equivalent of, an explicit do-nothing at `0xD0`, and nothing
+    // at all below `0x60` where the shared table has a real arm at `0x40`.
+    //
+    // What made it a defect rather than an omission: the two Harmony 525 configs emit low byte `0x60`
+    // or `0x61` twelve times, and the shared table answered "nothing: the dispatcher returns without
+    // acting" at depth `meaning`. A no-op is the strongest claim this table can make.
+    const at9 = reading({ opcode: 0x0f, operand: 0xff60 }, 9);
+    assert.ok(at9 !== undefined, 'arch 9 resolves the band');
+    assert.notEqual(at9.noop, true, 'and it is not a no-op: the firmware calls 0x03602');
+    assert.equal(at9.depth, 'placement', 'the routine is reached and not followed');
+    // The two architectures must not agree here, which is the whole point of a per architecture table.
+    assert.notDeepEqual(at9, reading({ opcode: 0x0f, operand: 0xff60 }, 14));
+    // And the arm the shared table has and this one does not.
+    assert.equal(reading({ opcode: 0x0f, operand: 0xff40 }, 9)?.noop, true);
+    assert.notEqual(reading({ opcode: 0x0f, operand: 0xff40 }, 14)?.noop, true);
+
+    // Every `0x0F` these configs emit, so the count is the corpus's and not a chosen example.
+    let bands = new Map<number, number>();
+    for (const name of ['h525_config', 'h525_config_2']) {
+      const { lists: all, architecture } = lists(name);
+      assert.equal(architecture, 9);
+      for (const list of all) {
+        for (const i of list) {
+          if (i.opcode !== 0x0f) continue;
+          const low = i.operand & 0xff;
+          bands.set(low & 0xf0, (bands.get(low & 0xf0) ?? 0) + 1);
+          assert.ok(reading(i, 9) !== undefined, `${name}: 0x${i.operand.toString(16)}`);
+        }
+      }
+    }
+    assert.deepEqual([...bands].sort((a, b) => a[0] - b[0]), [[0x60, 12], [0xe0, 5]]);
+  });
 
 test('arch 12 and arch 14 never use each others 0x3F 0xF0 nibbles', skipUnless('one_config'), () => {
   // The band's XORLW chain has cases 0 to 5 on arch 12 and 0, 1, 2, 6, 7 on arch 14, so the two

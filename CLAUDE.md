@@ -1135,7 +1135,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 138 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 139 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1561,7 +1561,7 @@ the table, `reading` gives one instruction's, `readingCoverage` gives a config's
 
 Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5%<!--fact:reading_arch14-->
 on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12, 98.1%<!--fact:reading_arch8--> on arch 8 and
-96.0%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
+95.2%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
 that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
 section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
 all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
@@ -1599,12 +1599,14 @@ each; `0x80 | n` is one instruction with a five bit field, a write into state va
 `0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
 thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->
-one table across architectures**, so they must not be ported.
+one table across architectures**, so they must not be ported. Nor may `0x0F`'s, section 139.
 
 **Below `0x65` the dispatcher tests ranges rather than those four values**, section 108, so `0x20`
 behaves exactly like `0x1F`; the corpus only ever emits the canonical four, which is why reading it as
-four exact cases never showed up in a number. **Two structures are not one table, not one**, section
-107: `0x3F`'s bands, and the whole opcode block `0x65` to `0x6E`, which only arch 14 implements. Arch 9 and arch 12 test each of those ten opcodes in
+four exact cases never showed up in a number. **Three structures are not one table**, sections 107 and
+139: `0x3F`'s bands, the whole opcode block `0x65` to `0x6E`, which only arch 14 implements, and
+`0x0F`'s bands, whose table was read from arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) and
+answered for arch 9 (Harmony 525) too, calling a call a no-op twelve times per config. Arch 9 and arch 12 test each of those ten opcodes in
 the same ladder and branch to the dispatcher's exit, and their configs never emit one. So the shift,
 the boolean operations, the device record writer and the **modulo** are arch 14's alone, while the
 multiply and divide just above them, `0x78` and `0x77`, are everyone's. `0x6F` belongs to nobody: it

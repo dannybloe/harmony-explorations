@@ -252,6 +252,46 @@ const BANDS_0F: readonly Band[] = [
   [0x40, placed('a lookup whose sixteen bit result goes to scratch', 73)],
 ];
 
+/**
+ * The Harmony 525's own `0x0F` ladder, read out of `h525_code` at `0x02246` to `0x02344`.
+ *
+ * **`BANDS_0F` was one table for four architectures and that was not established anywhere.** The
+ * shared entries come from section 73, which read the arch 12 (Harmony One) and arch 14 (Harmony 600
+ * and 700) dispatchers; arch 9 was never one of them. Its ladder differs in four ways, and one of them
+ * was answering for real instructions: the two Harmony 525 configs emit `0x0F` with low byte `0x60` or
+ * `0x61` twelve times, the shared table sent those to its `[0x50, noop]` entry, and the reading came
+ * back "nothing: the dispatcher returns without acting" at depth `meaning`. The firmware masks bit 0
+ * of the low byte into `0x0C3` and calls `0x03602`. A no-op is the strongest claim this table can make
+ * and it was being made, for another remote's dispatcher, about a call.
+ *
+ * `docs/findings.md` section 73 is the shared reading and section 139 is this one. Disassembled with
+ * `--part 4550`: on this part the default register map names the wrong registers, section 80.
+ *
+ * Read conservatively. Where the arm's mechanism is visible the meaning is stated; where it only
+ * reaches a routine nobody has followed, the depth is placement, which is what the arch 14 table would
+ * have claimed and could not support.
+ */
+const BANDS_0F_ARCH9: readonly Band[] = [
+  [0xf0, noop(139)],
+  // A three case switch on the low nibble that feeds one or two bytes to `0x0108C`, or calls
+  // `0x010A4` for case 0. Not arch 14's flash journal append, which is what the shared table said.
+  [0xe0, placed('one to three bytes handed to `0x0108C`, selected by the low nibble', 139)],
+  // Tested and skipped: the arm branches to the dispatcher's exit before doing anything.
+  [0xd0, noop(139)],
+  [0xc0, placed('two fields, bits 0 to 1 and bits 2 to 3, into `0x1EA` and `0x1E9`, `0x04212`', 139)],
+  [0xb0, placed('the low nibble into `0x1E0`, then `0x03DE8`', 139)],
+  [0xa0, placed('the low nibble as a boolean into `0x3EA`, then `0x05C88`', 139)],
+  // Gated on PORTB bit 5, which the other architectures' ladders have no equivalent of at all.
+  [0x90, placed('gated on a port bit: the low nibble into `0x102`, then `0x07944`', 139)],
+  [0x80, means('move between the byte register and the accumulator', 139)],
+  [0x70, noop(139)],
+  // The arm the shared table called a no-op.
+  [0x60, placed('bit 0 of the low byte into `0x0C3`, then `0x03602`', 139)],
+  // Below `0x60` the chain falls off its end, so nothing. Stated rather than left implicit, because
+  // the shared table has a **real** arm at `0x40` and this architecture does not.
+  [0x00, noop(139)],
+];
+
 const BANDS_07: readonly Band[] = [
   [0xff, means('make the next state variable write silent', 74)],
   [0xfe, means("run the current binding set's list with tag 5", 39)],
@@ -365,6 +405,9 @@ const BAND_FLOORS: readonly (readonly [number, readonly Band[]])[] = [
 function bandsFor(opcode: number, architecture: number): readonly Band[] | undefined {
   for (const [floor, bands] of BAND_FLOORS) {
     if (opcode < floor) continue;
+    // Arch 9 (Harmony 525) has its own `0x0F` ladder, read from its own firmware. Until 13 August
+    // 2026 it borrowed arch 14's, which is how twelve of its instructions were reported as no-ops.
+    if (bands === BANDS_0F && architecture === 9) return BANDS_0F_ARCH9;
     if (bands !== BANDS_3F || architecture !== 12) return bands;
     return BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b));
   }

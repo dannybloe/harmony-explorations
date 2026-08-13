@@ -116,7 +116,8 @@ and leave this table alone.
 | `program the band's timeout` | section 106 | it sends the band's pair of eight bit levels to a device at I2C address 0x60 |
 | `the operand's bit 0 chooses which of the two` | section 106 | selectors 0 to 12 read bits 1 to 3 normalised to a boolean at `0x24F6C`, not bit 0; bit 0 is the display light's fade against snap and belongs to selector 17 alone |
 | `That is the shape of a bit banged output` | section 106 | it is an enable: set at the end of a power up sequence and cleared at the start of a power down, with the data going over the hardware I2C master; the loop that gave it that shape has no callers |
-| `the only structure in the format so far that is not one table across architectures` | section 107 | one of two: the opcode block `0x65` to `0x6E` is arch 14 only, and arch 9 and arch 12 branch every one of those ten opcodes to the dispatcher's exit |
+| `the only structure in the format so far that is not one table across architectures` | section 107 | one of three: the opcode block `0x65` to `0x6E` is arch 14 only, and arch 9 and arch 12 branch every one of those ten opcodes to the dispatcher's exit, and section 139 adds `0x0F`'s bands |
+| `Two structures are not one table` | section 139 | three, since `0x0F`'s bands were read from arch 12 and arch 14 and answered for arch 9 as well. Count them where a document states the number, or say "not one table" without one |
 | `0x3F`'s bands are the only structure in the format that is not | section 107 | the same, from the other document; two structures diverge and the second is ten whole opcodes |
 | `two more accumulator operations, through helper routines` | section 107 | a 16 by 16 multiply and a restoring division: `0x78` takes the product's low word and `0x77` the quotient |
 | `exactly one opcode in the whole corpus has no reading` | section 107 | none: `0x6E` was the last and it is the accumulator modulo the operand |

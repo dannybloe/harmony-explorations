@@ -963,7 +963,7 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   has a placement only, and 0<!--fact:reading_unread--> instructions of
   87005<!--fact:action_instructions--> have neither. Per architecture:
   98.5%<!--fact:reading_arch14--> on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12,
-  98.1%<!--fact:reading_arch8--> on arch 8, 96.0%<!--fact:reading_arch9--> on arch 9. `make reading`
+  98.1%<!--fact:reading_arch8--> on arch 8, 95.2%<!--fact:reading_arch9--> on arch 9. `make reading`
   prints it, and it did not until section 103: the figures were quoted here and in two other
   documents with nothing recomputing them, and the population they were quoted against does not
   reproduce.
@@ -973,7 +973,9 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   division helper `0x77` calls, taking the remainder where that one takes the quotient. The same read
   moved `0x77` and `0x78` from placement to meaning, which is what carried arch 8 from 97.6% to
   98.1%, and it found the second structure in the format that is not one table across architectures:
-  the block `0x65` to `0x6E` exists on arch 14 alone.
+  the block `0x65` to `0x6E` exists on arch 14 alone. **The third is `0x0F`'s bands**, section 139,
+  which is also where arch 9's figure went down: its table had been read from the other two
+  architectures and answered `noop` for twelve real instructions per Harmony 525 config.
 
   **What is left is not a codec problem.** The largest remaining family is `0x3F` band `0xC0` on
   arch 12. Section 103 read the majority of it, selector 17, which sets the display's light level

@@ -370,11 +370,21 @@ export interface StateRecord {
  * Fixed, and the same in every container: they describe a second, a minute, an hour, a day of the
  * month, a day of the week and a zero based month. The **seventh** is not here because it is not
  * fixed: the year's maximum is that year plus one, so it moves when the year is stamped, which is
- * the one place a save has to write a `second` and not only a `first`. `edit.ts` reads this table
- * both to write the year's maximum and to refuse a base slot 13 whose first six disagree, since
- * whatever that is, it is not the clock.
+ * one of two places a save has to write a `second` and not only a `first`. `edit.ts` reads this table
+ * both to write those maxima and to refuse a base slot 13 whose others disagree, since whatever that
+ * is, it is not the clock.
+ *
+ * **The day is the second such place, and finding out cost nothing but asking for the 31st.** `first`
+ * is the one based day of the month and this maximum is 30 in all nineteen containers, so a config
+ * built on a 31st declares a value outside its own variable's range. No container in the corpus was
+ * built on a 31st, which is why no test could fire, and **what Logitech's generator does on such a day
+ * is therefore unknown**: the corpus bounds the maximum below and says nothing about the ceiling. A
+ * save stamps `max(30, day)` here, which is the same treatment the year already gets and keeps every
+ * value inside its stated range; that choice is ours and is marked as unconfirmed rather than derived.
  */
 export const CLOCK_STATE_MAXIMA = [59, 59, 23, 30, 6, 11] as const;
+/** The clock field whose maximum a save may have to raise, the day of the month. See above. */
+export const CLOCK_DAY_INDEX = 3;
 
 /**
  * The record each base slot 13 pointer lands on, in table order.

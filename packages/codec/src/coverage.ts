@@ -511,19 +511,43 @@ export function coverage(c: Container): CoverageReport {
   const overlapping = new Map<number, string[]>();
   const byOwner = new Map<string, number>();
 
-  for (const claim of claims(c)) {
+  // **Which claim holds a byte, not just which owner.** The test used to be `held !== claim.owner`,
+  // so two claims of the same reader could not collide, and that is where nearly all the bytes are:
+  // 1657850 of `one_config`'s 1672926 claimed bytes belong to owner names with more than one claim.
+  // Measured on 13 August 2026: growing one base slot 13 record's count so its `7 + 8 * count`
+  // swallows the next record's header still reported 100.00%, zero overlaps and zero gaps, and a
+  // single flipped byte made two `slot-10-list` claims overlap by three with nothing to see it. Since
+  // `accounted` is a union, over-claiming cannot lower the percentage either, so the overlap list is
+  // the only thing standing behind the headline number and it had a blind spot over 99% of it.
+  //
+  // The identical run is the legitimate case and stays legitimate: two records naming one shared
+  // infrared block, section 61, or two readers reaching one structure, which `emit.ts` deduplicates
+  // the same way. Anything else is an overlap now, owner name or not. It costs nothing: over all
+  // nineteen containers the stricter rule finds zero bytes.
+  const list = claims(c);
+  const which = new Int32Array(total).fill(-1);
+
+  list.forEach((claim, index) => {
     for (let i = claim.start; i < claim.start + claim.length; i += 1) {
-      const held = owner[i];
-      if (held === undefined) {
+      const held = which[i] as number;
+      if (held < 0) {
+        which[i] = index;
         owner[i] = claim.owner;
         byOwner.set(claim.owner, (byOwner.get(claim.owner) ?? 0) + 1);
-      } else if (held !== claim.owner) {
-        const seen = overlapping.get(i) ?? [held];
-        if (!seen.includes(claim.owner)) seen.push(claim.owner);
-        overlapping.set(i, seen);
+        continue;
       }
+      const other = list[held] as Claim;
+      if (other.start === claim.start && other.length === claim.length) continue;
+      const seen = overlapping.get(i) ?? [other.owner];
+      if (other.owner === claim.owner) {
+        // One reader twice, which the owner name cannot distinguish, so the name is repeated.
+        if (seen.length < 2) seen.push(claim.owner);
+      } else if (!seen.includes(claim.owner)) {
+        seen.push(claim.owner);
+      }
+      overlapping.set(i, seen);
     }
-  }
+  });
 
   const accounted = owner.reduce<number>((n, o) => (o === undefined ? n : n + 1), 0);
   const gaps = runs(total, (i) => owner[i] === undefined);

@@ -4,11 +4,20 @@
  * Two levels of count prefixed pointer array over records of mark and space durations in
  * microseconds. `docs/findings.md` sections 32 and 42.
  *
- * **A record's extent is not established and this module does not invent one.** The pointer lands
- * seven bytes into the record, on a class byte the firmware branches on, and the durations are
- * located as the longest strictly alternating run rather than assumed to begin at a fixed offset,
- * because some records carry a prefix of `0x7FFF` words whose count varies. So the accounting
- * claims the arrays and the located run, which are the two things a reader here actually reads.
+ * **A record's extent is stated, and this module used to say the opposite.** The paragraph here read
+ * "a record's extent is not established and this module does not invent one", and justified locating
+ * the durations as the longest strictly alternating run from a fixed offset. Sections 61, 75 and 127
+ * settled it: the pointer lands seven bytes into the record, the header is `12 + 9 * count`, and each
+ * group's three pointers name blocks that sit **below** the header. So a record's durations are
+ * `irBlockWords` of the blocks it names, and nothing here has to search for them.
+ *
+ * The heuristic was not merely superseded, it was wrong, and it was wrong on every record: measured
+ * on 13 August 2026, none of 748 records across arch 8 (Harmony 880), arch 12 (Harmony One) and arch
+ * 14 (Harmony 600) had its located run inside a block the record itself names, and 713 of them landed
+ * inside a **neighbouring** record's block. It stayed invisible because records in one device group
+ * usually share a protocol, so a bit count taken from the neighbour is usually the right bit count.
+ * `irPulses` and this module's `irFrame` are gone; `irframe.ts` is the frame decoder and `index.ts`
+ * exports it now, which it did not while a wrong function of the same name was exported from here.
  */
 import { Container, GspmError, archSlot } from './gspm.ts';
 import type { Instruction } from './gspm.ts';
@@ -16,12 +25,8 @@ import { u16, u24, u8 } from './bytes.ts';
 
 export const IR_TABLE_SLOT = 5;
 export const IR_POINTER_LENGTH = 3;
-/** Bytes from a record's start to its first duration word. */
-export const IR_RECORD_HEADER = 14;
 /** Bytes from a record's start to the byte its pointer lands on, seven in all 2858 records. */
 export const IR_RECORD_POINTER_BIAS = 7;
-/** Shorter than this and the record is not this encoding: the whole arch 9 sample is like that. */
-export const IR_MIN_PULSES = 8;
 export const IR_CLASS_STREAM = 1;
 /**
  * The class the arch 9 sample reads in all 200 of its records, and the only class in the corpus
@@ -36,11 +41,6 @@ export const IR_CLASS_STREAM = 1;
  */
 export const IR_CLASS_ARCH9 = 5;
 export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, IR_CLASS_ARCH9]);
-/**
- * The header is 21 bytes and two of its pointers name data blocks that sit **below** it. A block
- * is a run of `u16` durations closed by a zero word; either pointer may be NULL and two records
- * may name the same block. `docs/findings.md` section 61.
- */
 /**
  * The fixed part of a record header, before the pointer groups.
  *
@@ -205,14 +205,29 @@ export function irRepeatBlock(c: Container, record: number): number | undefined 
  *
  * **This is the number a user feels.** The firmware replays the whole block and samples the keypad
  * only at its end, so the interval between two sends is exactly the block's own duration, frame plus
- * whatever gap the block ends with. Across the corpus it runs from 30.8 ms to 1150.7 ms with 1373 of
- * 1913 repeating codes between 60 and 120 ms.
+ * whatever gap the block ends with. Over the thirteen containers with an infrared table it runs from
+ * 76.6 ms to 752.4 ms, with 1077 of 1315 repeating codes between 60 and 120 ms.
+ *
+ * Those figures replace "30.8 ms to 1150.7 ms with 1373 of 1913 repeating codes", which were measured
+ * with the class 5 records in, before the gate below existed: 307 arch 9 (Harmony 525) records were
+ * answering with the duration of bytes that are not a duration stream at all, and the 30.8 ms was one
+ * of them. So the range was contaminated by exactly the records the gate now excludes.
  *
  * So slowing a key down means lengthening this block's trailing gap, and it is per code. A gap word
  * carries at most 32767 us, section 61, which is why a long gap is already several words in the
  * corpus: a same length edit can only reach the ceiling of the words that are there.
  */
 export function irRepeatPeriod(c: Container, record: number): number | undefined {
+  // **Class 1 only, and this gate was missing.** On arch 9 (Harmony 525) a header pointer names a
+  // class 5 body rather than a duration stream, section 82, so walking it as durations answered with
+  // a number for 109 of 200 records of `h525_config` and 36 of 107 of `h525_config_2`, one of them
+  // 30.8 ms. `packages/bench` prints this to the operator as a held key's repeat rate, so the wrong
+  // answer was on a screen. `irBlockLength`'s own docstring already said arch 9 blocks find a
+  // spurious zero and that callers gate on the class instead; no caller did.
+  //
+  // The docstring above was contaminated by the same records, and its figures are remeasured with
+  // this gate in place rather than adjusted.
+  if (irClass(c, record) !== IR_CLASS_STREAM) return undefined;
   const block = irRepeatBlock(c, record);
   return block === undefined ? undefined : irBlockDuration(c, block);
 }
@@ -370,6 +385,18 @@ export const IR_PULSE_MARK = 0x8000;
 export const IR_PULSE_MAX = 0x7fff;
 
 export class IrEncodeError extends Error {}
+
+/**
+ * One mark or space, as the builder takes it and as a block's words spell it.
+ *
+ * It outlived `IrRun`, which was the located run the removed heuristic returned. A block's durations
+ * come back as raw words from `irBlockWords`; this shape exists for the writer, where a caller has
+ * timings and no container yet.
+ */
+export interface IrPulse {
+  mark: boolean;
+  microseconds: number;
+}
 
 export function irBuildBlock(pulses: readonly IrPulse[]): Uint8Array {
   const bytes = new Uint8Array(2 * (pulses.length + 1));
@@ -538,75 +565,6 @@ export function irRegion(c: Container): [number, number] | undefined {
     }
   }
   return low === undefined || high === undefined ? undefined : [low, high];
-}
-
-export interface IrPulse {
-  mark: boolean;
-  microseconds: number;
-}
-
-export interface IrRun {
-  pulses: IrPulse[];
-  /** Blob offset and byte length of the located run, for the accounting. */
-  start: number;
-  length: number;
-}
-
-/**
- * The mark and space run inside one record, as durations in microseconds with bit 15 set on a
- * mark, returned as the longest strictly alternating run found from the record's header offset.
- */
-export function irPulses(c: Container, address: number, limit = 1024): IrRun | undefined {
-  const at = c.blobOffsetOf(address);
-  if (at === undefined) return undefined;
-  const from = at + IR_RECORD_HEADER;
-  const words: number[] = [];
-  for (let o = from; o + 1 < Math.min(from + 2 * limit, c.blob.length); o += 2) {
-    words.push(u16(c.blob, o));
-  }
-  let bestFrom = 0;
-  let bestTo = 0;
-  let i = 0;
-  while (i < words.length) {
-    let j = i + 1;
-    while (j < words.length && (words[j] as number) >> 15 !== (words[j - 1] as number) >> 15) {
-      j += 1;
-    }
-    if (j - i > bestTo - bestFrom) {
-      bestFrom = i;
-      bestTo = j;
-    }
-    i = j;
-  }
-  const pulses = words.slice(bestFrom, bestTo).map((w) => ({
-    mark: w >> 15 === 1,
-    microseconds: w & 0x7fff,
-  }));
-  return { pulses, start: from + 2 * bestFrom, length: 2 * pulses.length };
-}
-
-/**
- * One record read as a framed code: header mark, header space, then the bit count.
- *
- * The framing is `header mark, header space, bits * (mark, space), trailing mark, trailing gap`,
- * so a run of `2 * bits + 4` from the first mark. Undefined when the record is not that shape,
- * which includes every record of the arch 9 sample.
- */
-export function irFrame(
-  c: Container,
-  address: number,
-): { headerMark: number; headerSpace: number; bits: number } | undefined {
-  const run = irPulses(c, address);
-  if (run === undefined || run.pulses.length < IR_MIN_PULSES) return undefined;
-  const first = run.pulses.findIndex((p) => p.mark);
-  if (first < 0) return undefined;
-  const rest = run.pulses.length - first - 2;
-  if (rest < 4 || rest % 2 !== 0) return undefined;
-  return {
-    headerMark: (run.pulses[first] as IrPulse).microseconds,
-    headerSpace: (run.pulses[first + 1] as IrPulse).microseconds,
-    bits: (rest - 2) / 2,
-  };
 }
 
 /**

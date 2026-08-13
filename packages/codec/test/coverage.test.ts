@@ -177,6 +177,57 @@ test('a gap family counts equal lengths and nothing else', () => {
 });
 
 
+test('two claims of one reader are an overlap, not a byte counted once',
+  skipUnless('one_config'), () => {
+    // **The detector's blind spot, and the reason it mattered.** It compared owner **names**, so a
+    // reader whose size rule overran its neighbour was invisible whenever both bytes belonged to the
+    // same owner, and that is where nearly all the bytes are: over 99% of `one_config`'s claimed bytes
+    // sit in owner names carrying more than one claim. Since `accounted` is a union, an over-claiming
+    // reader cannot lower the percentage either, so the overlap list was the only falsifier the
+    // headline 100.0% had and it could not see the commonest way to break it.
+    //
+    // The perturbation is one byte, in a copy, and it is the smallest one that produces the shape:
+    // base slot 10's list at this offset grows by one instruction and swallows three bytes of the
+    // next. Before this fix the report was 100.00%, zero overlaps, zero gaps.
+    const original = require_('one_config');
+    const perturbed = Uint8Array.from(original);
+    const at = 9579 + 5;
+    perturbed[at] = (perturbed[at] as number) + 1;
+
+    const clean = coverage(parse(original));
+    assert.deepEqual([clean.overlaps.length, clean.gapCount], [0, 0], 'the sample itself is clean');
+
+    const report = coverage(parse(perturbed));
+    assert.equal(report.overlaps.length, 1, 'one overrun, one overlap');
+    assert.deepEqual((report.overlaps[0] as { owners: string[] }).owners,
+      ['slot-10-list', 'slot-10-list'],
+      'and the owner is named twice, because one name cannot say which of its claims collided');
+  });
+
+test('the identical run stays legitimate, since a shared block is claimed by two records',
+  skipWithoutLab(), () => {
+    // The other half of the rule, and the reason it is stated as "the identical run" rather than "one
+    // claim per byte": an infrared duration block may be named by several records, section 61, and
+    // both claims are correct and describe the same bytes. If the stricter test had refused those, the
+    // corpus would have lit up; it does not, in any container.
+    for (const [name] of ACCOUNTED) {
+      const c = parse(require_(name));
+      const seen = new Map<number, { start: number; length: number }>();
+      let identical = 0;
+      for (const claim of claims(c)) {
+        for (let i = claim.start; i < claim.start + claim.length; i += 1) {
+          const held = seen.get(i);
+          if (held === undefined) seen.set(i, claim);
+          else if (held.start === claim.start && held.length === claim.length) identical += 1;
+        }
+      }
+      assert.equal(coverage(c).overlaps.length, 0, `${name}: no overlaps`);
+      if (name === 'one_config') {
+        assert.ok(identical > 0, 'and the shared case does occur, so the exemption is exercised');
+      }
+    }
+  });
+
 test('the gaps and the accounted bytes partition the container', skipWithoutLab(), () => {
   // A partition, asserted as one. This read `accounted + gapped <= total` on the grounds that
   // `report.gaps` is truncated to the largest few, which is true of what `make coverage --detail`

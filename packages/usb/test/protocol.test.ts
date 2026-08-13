@@ -32,8 +32,6 @@ import {
   softwareTypeFromVersion,
   decodeReply,
   encodeRequest,
-  eraseFlashRequest,
-  writeMiscRequest,
   getVersionRequest,
   nibbleForPayloadLength,
   payloadLengthForNibble,
@@ -45,8 +43,9 @@ import {
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   FLASH_TOP_BYTE_BOUND,
   validateRegionByte,
-  writeFlashRequest,
 } from '../src/index.ts';
+// By path, because the barrel deliberately does not carry these: `writes.ts` is the rail.
+import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from '../src/writes.ts';
 
 test('the length nibble mapping is the one the firmware implements', () => {
   for (let n = 0; n <= 7; n += 1) assert.equal(payloadLengthForNibble(n), n);

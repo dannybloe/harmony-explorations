@@ -319,6 +319,7 @@ test('a held key repeats at the length of its second block, which is tens of mil
     // thirteen containers, and nothing here says which of those a device wants.
     let repeating = 0;
     let quiet = 0;
+    let notClassOne = 0;
     let fastest = Infinity;
     let slowest = 0;
     for (const name of WITH_INFRARED) {
@@ -328,11 +329,20 @@ test('a held key repeats at the length of its second block, which is tens of mil
         for (const address of group.addresses) {
           const period = irRepeatPeriod(c, address);
           if (period === undefined) {
+            // **Two reasons to answer nothing, and they are not the same.** A class 5 record keeps no
+            // duration stream at the record, section 82, so the reader refuses on the class byte; it
+            // used to walk the body as durations and hand a period to the bench, which showed it to
+            // the operator as a repeat rate. A class 1 record with no held pointer simply does not
+            // repeat, and there the two readers agree.
+            if (irClass(c, address) !== IR_CLASS_STREAM) {
+              notClassOne += 1;
+              continue;
+            }
             quiet += 1;
-            // The negative: no second pointer means no repeat block, and the two readers agree.
             assert.equal(irRepeatBlock(c, address), undefined, `${name}: 0x${address.toString(16)}`);
             continue;
           }
+          assert.equal(irClass(c, address), IR_CLASS_STREAM, `${name}: a period off class 1`);
           repeating += 1;
           fastest = Math.min(fastest, period);
           slowest = Math.max(slowest, period);
@@ -344,10 +354,13 @@ test('a held key repeats at the length of its second block, which is tens of mil
         }
       }
     }
-    assert.ok(repeating > 1400, `enough repeating codes, got ${repeating}`);
-    assert.ok(quiet > 1800, `and enough that do not repeat, got ${quiet}`);
-    assert.ok(fastest > 20_000, `nothing repeats faster than 20 ms, got ${fastest}`);
-    assert.ok(slowest < 2_000_000, `and nothing slower than two seconds, got ${slowest}`);
+    // Exact, because these were floors and the gate moved every one of them: 1315 repeating against
+    // a floor of 1400 that the ungated count of 1913 cleared, and a fastest of 76.6 ms against a
+    // floor of 20 ms that the contaminated 30.8 ms also cleared. A floor that a wrong answer
+    // satisfies is a floor that cannot see the wrong answer.
+    assert.deepEqual([repeating, quiet, notClassOne], [1315, 1765, 307]);
+    assert.equal(fastest, 76_581, 'the fastest repeat in the corpus');
+    assert.equal(slowest, 752_414, 'and the slowest');
   });
 
 test('the block a key repeats is not the block a tap sends', skipUnless('one_config'), () => {
