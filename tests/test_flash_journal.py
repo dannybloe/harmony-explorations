@@ -136,8 +136,7 @@ class CommandSetTest(unittest.TestCase):
     """The five commands, which is the whole SPI vocabulary this firmware has."""
 
     def setUp(self):
-        if lab.load('h700_code') is None:
-            self.skipTest('no h700_code in the lab')
+        lab.require('h700_code')
 
     def test_the_chip_select_is_latf_bit_7_deasserted_then_asserted(self):
         pairs = instructions('h700_code', ARCH14_BASE, CHIP_SELECT, 2)
@@ -219,8 +218,6 @@ class SizeTableTest(unittest.TestCase):
 
     def test_the_700_stores_the_size_as_a_high_byte(self):
         code = lab.load('h700_code')
-        if code is None:
-            self.skipTest('no h700_code in the lab')
         # The three arms each clear the low two bytes and load one literal for the high byte.
         highs = set()
         for start in (0x10956, 0x1095E, 0x10966):
@@ -248,8 +245,7 @@ class JournalTest(unittest.TestCase):
     """The region, and the two action list opcodes that write into it."""
 
     def setUp(self):
-        if lab.load('h700_code') is None:
-            self.skipTest('no h700_code in the lab')
+        lab.require('h700_code')
 
     def test_the_region_is_the_largest_run_of_blocks_that_fits(self):
         pairs = instructions('h700_code', ARCH14_BASE, JOURNAL_ALLOCATE, 40)

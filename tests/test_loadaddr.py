@@ -19,6 +19,9 @@ KNOWN = {
 
 class TestBoundaryScoring(unittest.TestCase):
     def test_correct_base_scores_far_above_wrong_ones(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*KNOWN)
         for name, (base, _) in KNOWN.items():
             with self.subTest(image=name):
                 code = lab.load(name)
@@ -33,6 +36,7 @@ class TestBoundaryScoring(unittest.TestCase):
                                     'base 0x%X scored too well' % wrong)
 
     def test_search_finds_the_known_base(self):
+        lab.require(*KNOWN)
         for name, (base, _) in KNOWN.items():
             with self.subTest(image=name):
                 best, ranked = loadaddr.find_base(lab.load(name))
@@ -42,6 +46,7 @@ class TestBoundaryScoring(unittest.TestCase):
                                    'margin over the runner-up should be decisive')
 
     def test_entry_point_from_header(self):
+        lab.require(*KNOWN)
         for name, (base, entry) in KNOWN.items():
             with self.subTest(image=name):
                 self.assertEqual(loadaddr.entry_point(lab.load(name), base), entry)

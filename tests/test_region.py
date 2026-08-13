@@ -37,8 +37,6 @@ class TestTheRegionIsImageData(unittest.TestCase):
     def test_the_row_width_is_176_on_both_harmony_ones(self):
         for name, start in REGION_START.items():
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 at = region.busiest_window(c.blob, start, c.length, WINDOW)
@@ -69,8 +67,6 @@ class TestTheRegionIsImageData(unittest.TestCase):
         self.assertEqual(size, 77440)
         for name, expected in BLANK_SCREENS.items():
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 runs = region.blank_screen_runs(c.blob, REGION_START[name], c.length, size)

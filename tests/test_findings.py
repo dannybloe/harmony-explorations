@@ -21,6 +21,9 @@ class TestFirmwareHeader(unittest.TestCase):
     }
 
     def test_header_fields(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.EXPECTED)
         for name, (version, family, size_field, _) in self.EXPECTED.items():
             with self.subTest(image=name):
                 h = firmware.parse_header(lab.load(name))
@@ -30,6 +33,7 @@ class TestFirmwareHeader(unittest.TestCase):
                 self.assertTrue(h.has_magic, '0x48 0x47 magic at offset 8')
 
     def test_size_field_encodes_length_minus_eight(self):
+        lab.require('one34_code', 'h700_code')
         for name in ('one34_code', 'h700_code'):
             with self.subTest(image=name):
                 code = lab.load(name)
@@ -47,6 +51,7 @@ class TestFirmwareHeader(unittest.TestCase):
         self.assertEqual(0x112C0 - len(code), 4800, 'bytes missing from the dump')
 
     def test_checksum_over_complete_images(self):
+        lab.require('one34_code', 'h700_code')
         for name in ('one34_code', 'h700_code'):
             with self.subTest(image=name):
                 self.assertTrue(firmware.verify_checksum(lab.load(name)))
@@ -63,8 +68,6 @@ class TestFirmwareHeader(unittest.TestCase):
         accident, and the wrong lengths show what disagreement looks like.
         """
         code = lab.load('h600_code_complete')
-        if code is None:
-            self.skipTest('the complete 600 image is not in this lab')
         self.assertEqual(len(code), 0x112C0, '70336 bytes')
         self.assertTrue(firmware.verify_checksum(code))
         h = firmware.parse_header(code, base=0x9000)
@@ -86,8 +89,6 @@ class TestFirmwareHeader(unittest.TestCase):
         """
         old = lab.load('h600_code')
         new = lab.load('h600_code_complete')
-        if old is None or new is None:
-            self.skipTest('need both 600 images')
         self.assertEqual(old, new[:len(old)], 'the complete image contains the truncated one')
 
     def test_the_ones_internal_page_holds_an_image_that_verifies(self):
@@ -99,8 +100,6 @@ class TestFirmwareHeader(unittest.TestCase):
         both agree.
         """
         page = lab.load('one_internal_fe')
-        if page is None:
-            self.skipTest("the One's internal page is not in this lab")
         self.assertEqual(len(page), 0xFFFE, 'two bytes short of a page, per the offset clamp')
         h = firmware.parse_header(page[0x1000:])
         self.assertTrue(h.has_magic)
@@ -122,8 +121,6 @@ class TestFirmwareHeader(unittest.TestCase):
         """
         page = lab.load('h600_internal_fe')
         stored = lab.load('h600_code')
-        if page is None or stored is None:
-            self.skipTest("need the 600's internal page and its safe dump")
         # What the safe dump actually is: the page from program 0x9000, not from zero. The dump
         # runs past the end of this page, into the 0xFF one, so only the overlap is comparable.
         overlap = len(page) - 0x9000
@@ -145,8 +142,6 @@ class TestFirmwareHeader(unittest.TestCase):
         0xFF+0xE000, and zero in both fields.
         """
         page = lab.load('h600_internal_fe')
-        if page is None:
-            self.skipTest("need the 600's internal page")
         # The alternative reading, that field 8 names the safe mode image, is what this refutes:
         # the 600 has that image at version 0x02 and reports 0x00 in field 8.
         self.assertEqual(firmware.parse_header(page[0x1000:]).version_bcd, 0x02)
@@ -159,8 +154,6 @@ class TestFirmwareHeader(unittest.TestCase):
         inside the buffer can have its checksum verified instead.
         """
         code = lab.load('h600_code_complete')
-        if code is None:
-            self.skipTest('the complete 600 image is not in this lab')
         self.assertEqual(firmware.recover_size(code), 0x112C0)
         self.assertEqual(firmware.recover_size(code + b'\xff' * 4096), 0x112C0,
                          'trailing bytes must not push the answer to the next 64 KiB')

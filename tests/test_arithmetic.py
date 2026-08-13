@@ -208,10 +208,11 @@ class HelperTest(unittest.TestCase):
     """The two helpers, in every image that has them."""
 
     def test_every_build_carries_the_same_restoring_division(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 pairs = instructions(name, where['base'], where['divide'], 13)
                 mnemonics = [i.mnemonic for _, i in pairs]
                 # The count, so a build with a different width would fail here.
@@ -227,10 +228,9 @@ class HelperTest(unittest.TestCase):
                 self.assertLess(dividend, divisor)
 
     def test_every_build_carries_the_same_sixteen_by_sixteen_multiply(self):
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 pairs = instructions(name, where['base'], where['multiply'], 14)
                 mnemonics = [i.mnemonic for _, i in pairs]
                 # Four partial products and the additions that combine them.
@@ -247,10 +247,9 @@ class ArmTest(unittest.TestCase):
         return dividend, remainder
 
     def test_the_divide_arm_takes_the_quotient(self):
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 quotient, _ = self.slots(name, where)
                 pairs = instructions(name, where['base'], where['div'], 12)
                 called = [i.fields['target'] for _, i in pairs
@@ -261,10 +260,9 @@ class ArmTest(unittest.TestCase):
                 self.assertTrue(after, 'the quotient is what it takes')
 
     def test_the_multiply_arm_takes_the_products_low_word(self):
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 pairs = instructions(name, where['base'], where['mul'], 12)
                 called = [i.fields['target'] for _, i in pairs
                           if i.mnemonic in ('CALL', 'RCALL', 'GOTO')]
@@ -280,10 +278,9 @@ class ArmTest(unittest.TestCase):
                 self.assertLess(product, dividend)
 
     def test_only_arch_14_has_a_modulo_arm_and_it_takes_the_remainder(self):
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 if where['mod'] is None:
                     self.assertNotEqual(where['architecture'], 14)
                     continue
@@ -300,11 +297,10 @@ class ArmTest(unittest.TestCase):
                 self.assertNotIn(quotient, sources)
 
     def test_the_block_reaches_the_exit_on_the_architectures_without_it(self):
+        lab.require(*BLOCK_LADDER)
         for name, ladder in BLOCK_LADDER.items():
             for opcode, start in ladder.items():
                 with self.subTest(name=name, opcode=hex(opcode)):
-                    if lab.load(name) is None:
-                        self.skipTest('no %s in the lab' % name)
                     base = BUILDS[name]['base']
                     pairs = instructions(name, base, start, 4)
                     self.assertEqual(pairs[0][1].fields['k'], opcode, 'the test is for this opcode')
@@ -316,12 +312,11 @@ class ArmTest(unittest.TestCase):
                     self.assertEqual(branch.fields['target'], BUILDS[name]['exit'])
 
     def test_the_dead_opcode_tests_the_accumulator_and_returns_either_way(self):
+        lab.require(*BUILDS)
         for name, where in BUILDS.items():
             if where['dead'] is None:
                 continue
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 pairs = instructions(name, where['base'], where['dead'], 12)
                 self.assertEqual(pairs[0][1].fields['k'], DEAD_OPCODE)
                 # It reads the accumulator and ORs the two bytes, so the zero test is real.
@@ -338,11 +333,10 @@ class StateOperationTest(unittest.TestCase):
     """`0x70` and `0x71`: eight operations out of the operand's high nibble, one table everywhere."""
 
     def test_the_chain_selects_eight_operations_on_both_architectures(self):
+        lab.require('h700_code', 'one34_code')
         for name in ('h700_code', 'one34_code'):
             where = BUILDS[name]
             with self.subTest(name):
-                if lab.load(name) is None:
-                    self.skipTest('no %s in the lab' % name)
                 code = lab.load(name)
                 cases = chains.xor_chain(code, where['base'], where['chain'])
                 values = [c.value for c in cases]
@@ -361,8 +355,7 @@ class StateOperationTest(unittest.TestCase):
         """
         name = 'h700_code'
         where = BUILDS[name]
-        if lab.load(name) is None:
-            self.skipTest('no %s in the lab' % name)
+        lab.require(name)
         pairs = instructions(name, where['base'], where['negate'], 8)
         # Both bytes of the multiplicand set, which is 0xFFFF and not a coincidence of one byte.
         setf = [i.fields['f'] for _, i in pairs if i.mnemonic == 'SETF']
@@ -374,8 +367,7 @@ class StateOperationTest(unittest.TestCase):
     def test_the_writer_adds_to_the_variable_and_clamps(self):
         name = 'h700_code'
         where = BUILDS[name]
-        if lab.load(name) is None:
-            self.skipTest('no %s in the lab' % name)
+        lab.require(name)
         pairs = instructions(name, where['base'], where['writer'], 40)
         mnemonics = [i.mnemonic for _, i in pairs]
         # It reads the variable's current value, adds with carry, and then compares against a bound

@@ -182,6 +182,9 @@ class TestEzHexHeader(unittest.TestCase):
                'h700_config', 'h700_config_2')
 
     def test_every_config_verifies_its_own_split(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 ez = ezfile.parse_ezhex(lab.load(name), name)
@@ -190,6 +193,7 @@ class TestEzHexHeader(unittest.TestCase):
 
     def test_checksum_is_an_xor_seeded_0x69(self):
         """Independent of the header: recompute and compare against the declared value."""
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 ez = ezfile.parse_ezhex(lab.load(name), name)
@@ -219,6 +223,7 @@ class TestEzHexHeader(unittest.TestCase):
         appears in no user config, so it matches by being absent. A reader that knows only
         four fields cannot tell those two cases apart.
         """
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 ez = ezfile.parse_ezhex(lab.load(name), name)
@@ -226,6 +231,7 @@ class TestEzHexHeader(unittest.TestCase):
                 self.assertNotIn('ARCHITECTURE', ez.intended_version)
 
     def test_payload_is_the_container_the_parser_then_reads(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 ez = ezfile.parse_ezhex(lab.load(name), name)
@@ -245,6 +251,7 @@ class TestTheSplitIsStructural(unittest.TestCase):
     CONFIGS = TestEzHexHeader.CONFIGS
 
     def test_the_structural_and_declared_splits_agree_on_every_config(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 ez = ezfile.parse_ezhex(lab.load(name), name)
@@ -254,6 +261,7 @@ class TestTheSplitIsStructural(unittest.TestCase):
 
     def test_the_header_terminator_is_followed_by_crlf_in_every_config(self):
         """True of the corpus, and not required by the format: see the EZUp test below."""
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(config=name):
                 self.assertEqual(ezfile.parse_ezhex(lab.load(name), name).line_ending, 'crlf')

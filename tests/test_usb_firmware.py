@@ -1035,6 +1035,9 @@ class TestInfraredLearningIsABracket(unittest.TestCase):
         worthless, and a future reader who finds only the second would draw the same wrong
         conclusion.
         """
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.RESPONSE_BYTE)
         for name, (base, slot) in self.RESPONSE_BYTE.items():
             with self.subTest(image=name):
                 image = lab.load(name)

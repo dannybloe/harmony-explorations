@@ -308,8 +308,25 @@ lets the loop finish, so a corpus wide total afterwards is asserted against zero
 up front with `lab.require(...)` in Python or `skipUnless(...)` in TypeScript, listing the samples once
 so the guard and the loop cannot drift apart. The TypeScript one
 deliberately skips only when there is **no lab at all**, because a lab that is present and missing
-a sample should still fail loudly. That
-directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
+a sample should still fail loudly.
+
+**`make test-nolab` cannot catch the case in between, by construction, and `make test-partial` is
+that half**, added on 13 August 2026 in `make all`: it runs the suite against a lab holding **one**
+sample and fails on any test that reports successful with one of its own subtests skipped. `test-nolab`
+looks for a **failure**, and here passing is the bug, so no amount of running it would have found this.
+The number it found was **43 tests**, which is the measurement to quote rather than the shape: a test
+whose samples are half present asserts over half of them, keeps the claim in its own title, and
+reports a pass. All 43 now call `lab.require` and the count is zero.
+`ASampleLoopStatesItsPopulation` in `tests/test_toolchain.py` is the static half and is the cheaper
+one, since it names an offender in a fresh clone with nothing installed and nothing run. **Keep both**:
+a static rule cannot see a loop that loads through a helper, which is how one test checked one
+container of fifteen and passed the static guard, and the runtime one needs a real lab.
+**34 dead `if <sample> is None` arms went with it**, because `lab.load` raises `SkipTest` and never
+returns `None`, so every one of them was unreachable; an unreachable guard is worse than none, since it
+reads as protection. Four looked identical and were **not** dead, the ones testing `lab.load(...)`
+inline, where the call in the condition is what raises.
+
+That directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
 `tools/corpus.py` inventories the dumps and, importantly, reports which ones have no
 description recorded. A dump whose contributor has moved on is far harder to label later than one
@@ -862,6 +879,9 @@ Four project skills carry the rituals that are easy to half-perform:
 ```
 make test          run the suite; image-backed tests need a lab directory
 make test-nolab    the suite against a nonexistent lab: it must skip, never assert
+make test-partial  the suite against a lab holding one sample: no test may report a pass having
+                   skipped some of its own samples. The half test-nolab cannot see, since there it
+                   is passing that is the bug
 make test-verbose  one line per test
 make lint          byte-compile everything
 make pyright       the Python type checks, at the level pyrightconfig.json argues for. Skips with a

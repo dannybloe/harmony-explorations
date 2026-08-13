@@ -69,6 +69,9 @@ class TestArch12Map(unittest.TestCase):
         self.assertEqual(0x040000 + 3840 * 1024, 0x400000)
 
     def test_the_two_config_samples_sit_at_the_documented_base(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require('one_config', 'one_config_unprogrammed')
         for name, length in (('one_config', 1672832), ('one_config_unprogrammed', 1232237)):
             with self.subTest(config=name):
                 c = gspm.parse(ezfile.decode_payload(lab.load(name)).payload)
@@ -197,6 +200,7 @@ class TestArch14MapFor700(unittest.TestCase):
         self.assertEqual(0x020000 + 7115, 0x021BCB, 'the address both arch 14 maps give')
 
     def test_both_700_configs_sit_at_the_documented_base(self):
+        lab.require('h700_config', 'h700_config_2')
         for name in ('h700_config', 'h700_config_2'):
             with self.subTest(config=name):
                 c = gspm.parse(ezfile.decode_payload(lab.load(name)).payload)
@@ -398,6 +402,7 @@ class TestTheBootloaderChoosesWhatToRun(unittest.TestCase):
         compares `0x48` then `0x47`, which is the `48 47` magic at offset 8 of an image header,
         section 4. So the bootloader validates that an image is present, not that it is intact.
         """
+        lab.require('h600_internal_fe', 'one_internal_fe')
         for image, validator in (('h600_internal_fe', 0x00782), ('one_internal_fe', 0x001FE)):
             with self.subTest(image):
                 page = lab.load(image)

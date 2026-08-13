@@ -222,20 +222,13 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
 
 
 #: Test functions whose whole body is a loop that loads its samples inside a `subTest`, with no
-#: `lab.require` up front, counted per file. Frozen deliberately rather than asserted to be empty:
-#: 55 is what the tree holds, converting them is a decision about the whole suite rather than a
-#: commit, and a frozen count is still a ratchet. Either direction fails, so fixing one means
-#: decrementing its file here and adding one anywhere fails outright.
-SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION = {
-    'test_arithmetic.py': 8,
-    'test_ezfile.py': 6,
-    'test_findings.py': 3,
-    'test_gspm.py': 30,
-    'test_interpreter.py': 1,
-    'test_loadaddr.py': 3,
-    'test_memory_map.py': 3,
-    'test_usb_firmware.py': 1,
-}
+#: `lab.require` up front, counted per file. **Empty, and it should stay that way.** It was frozen at
+#: 55 across eight files for the length of one commit, on the reasoning that converting them all was
+#: a decision about the whole suite; measuring the conversion is what changed that, since every one
+#: of the 55 turned out to be the same edit, `lab.require` with the names the loop already iterates
+#: over. The dict survives as the place to record a deliberate exception with its reason, rather than
+#: as a backlog. Either direction fails, so an exception has to be written down here to pass.
+SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION = {}
 
 
 def _lab_calls(node, attributes):
@@ -267,9 +260,22 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
     reported OK having asserted nothing at all about the Harmony One (arch 12) or the Harmony 525
     (arch 9), which is the negative the whole arch 14 scoping rests on.
 
-    The cure is `lab.require(*NAMES)` at the top of the function, which skips the whole test. This
-    does not demand it everywhere, because 55 tests have the shape and converting them is the
-    owner's decision; it freezes the count so the population cannot grow.
+    The cure is `lab.require(*NAMES)` at the top of the function, which skips the whole test. All 55
+    that had the shape carry it now, in eight files, and the conversion is why the frozen dict above
+    is empty: each one wanted the names its own loop already iterates over, so what looked like a
+    suite wide judgement call was 55 copies of one edit.
+
+    Removing 34 dead `if <sample> is None` arms came with it. `lab.load` raises `SkipTest` and never
+    returns `None`, so those were unreachable, and an unreachable guard is worse than none: it reads
+    as protection. Four of them were not dead, because the `lab.load` call inside the condition was
+    itself what raised, and those became `lab.require` rather than being deleted.
+
+    **This is the cheap half and not the whole check.** A static rule cannot see a loop whose loading
+    happens inside a helper, which is how `TestTheLogArea.test_every_container_declares_one` passed
+    both this and its own review. `make test-partial` is the other half: it runs the suite against a
+    lab holding one sample and fails on any test that reports successful with a subtest skipped, no
+    matter what shape it has. Keep both, because the runtime one needs a real lab and this one does
+    not.
     """
 
     def _offenders(self):
@@ -286,28 +292,34 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
                     continue                      # the population is stated, which is the cure
                 body = [s for s in function.body
                         if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))]
-                if len(body) != 1 or not isinstance(body[0], ast.For):
-                    continue                      # only the shape where the loop is the whole test
-                subtests = [n for n in ast.walk(body[0]) if _is_subtest(n)]
+                # The loop has to be the last statement, with nothing above it that asserts or
+                # loads, so a local import or a literal of expected values may sit there. Demanding
+                # the loop be the *only* statement missed seven tests of exactly this shape, which
+                # `make test-partial` then found at runtime.
+                if not body or not isinstance(body[-1], ast.For):
+                    continue
+                if not all(isinstance(s, (ast.Import, ast.ImportFrom, ast.Assign, ast.AnnAssign))
+                           for s in body[:-1]):
+                    continue
+                subtests = [n for n in ast.walk(body[-1]) if _is_subtest(n)]
                 if subtests and any(_lab_calls(n, ('load', 'path')) for n in subtests):
                     counted.setdefault(os.path.basename(path), []).append(function.name)
         return counted, scanned
 
-    def test_no_test_loads_a_sample_inside_a_subtest_beyond_the_frozen_count(self):
+    def test_every_sample_loop_states_its_population_up_front(self):
         counted, scanned = self._offenders()
         # A guard on the guard: if the glob or the AST walk stops matching, fail here rather than
-        # reporting a clean tree.
+        # reporting a clean tree, which is the failure mode this whole class is about.
         self.assertGreater(scanned, 600, 'only %d test functions scanned' % scanned)
-        for name in sorted(set(counted) | set(SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION)):
-            found = counted.get(name, [])
-            expected = SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION.get(name, 0)
-            with self.subTest(name):
-                self.assertEqual(
-                    len(found), expected,
-                    '%s has %d test(s) loading a sample inside a subTest where %d were frozen: %s. '
-                    'A new one shrinks its own claim on a partial lab, so guard it up front with '
-                    'lab.require(*NAMES); a fixed one means decrementing the count here.'
-                    % (name, len(found), expected, ', '.join(sorted(found)) or 'none'))
+        self.assertEqual(
+            {name: len(found) for name, found in counted.items()},
+            SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION,
+            'these tests load a sample inside a subTest with no lab.require up front, so on a '
+            'partial lab each shrinks its own claim to whatever is present and still reports a '
+            'pass: %s. Guard each one with lab.require(*NAMES), naming what its loop iterates '
+            'over, or record a deliberate exception in the dict above with its reason.'
+            % '; '.join('%s: %s' % (name, ', '.join(sorted(found)))
+                        for name, found in sorted(counted.items())))
 
 
 if __name__ == '__main__':

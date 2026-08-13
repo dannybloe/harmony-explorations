@@ -323,6 +323,7 @@ class TestTheStateVariableTable(unittest.TestCase):
 
     def test_every_index_is_inside_its_own_config_s_table(self):
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -390,6 +391,7 @@ class TestTheEventMap(unittest.TestCase):
         assumed: every group array falls inside the gap.
         """
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -460,6 +462,7 @@ class TestTheModeTable(unittest.TestCase):
 
     def test_the_event_map_indexes_the_same_table(self):
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -470,6 +473,7 @@ class TestTheModeTable(unittest.TestCase):
 
     def test_every_mode_address_is_inside_the_container(self):
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -484,6 +488,7 @@ class TestTheModeTable(unittest.TestCase):
         """
         from harmony import gspm
         registers = {'h700_code': 0x3C5, 'h600_code_complete': 0x763}
+        lab.require(*registers)
         for name, register in registers.items():
             with self.subTest(image=name):
                 code = lab.load(name)
@@ -573,6 +578,9 @@ class TestSlotThreeIsTheClock(unittest.TestCase):
                  'one34_code': (0x20000, 0x278E8)}
 
     def test_the_consumer_starts_timer_one(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*self.CONSUMERS)
         for name, (base, addr) in self.CONSUMERS.items():
             with self.subTest(image=name):
                 code = lab.load(name)
@@ -1813,6 +1821,9 @@ class TestTheLogArea(unittest.TestCase):
 
     def test_every_container_declares_one(self):
         """Fifteen containers, four architectures, three format versions. None is NULL."""
+        # `_area` is what loads, so no static rule can see this one; the runtime check behind
+        # `make test-partial` is what found it. Fifteen is the claim, so fifteen have to be here.
+        lab.require(*self.CONTAINERS)
         for name in self.CONTAINERS:
             with self.subTest(container=name):
                 self.assertIsNotNone(self._area(name))
@@ -2119,8 +2130,6 @@ class TestTheBitmap(unittest.TestCase):
         from harmony import gspm
         for name, count, kinds, strides, rows in self.SHAPES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 found = c.bitmaps()
@@ -2161,8 +2170,6 @@ class TestTheBitmap(unittest.TestCase):
         total = 0
         for name, _, _, _, _ in self.SHAPES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 for bitmap in c.bitmaps():
@@ -2226,8 +2233,6 @@ class TestTheModeRecord(unittest.TestCase):
         total = 0
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 records = c.mode_records()
@@ -2250,8 +2255,6 @@ class TestTheModeRecord(unittest.TestCase):
         from harmony import gspm
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 for record in c.mode_records():
@@ -2311,8 +2314,6 @@ class TestTheModePages(unittest.TestCase):
         pages = 0
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 for record in c.mode_records():
@@ -2335,8 +2336,6 @@ class TestTheModePages(unittest.TestCase):
         from harmony import gspm
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 expected = 7 if c.architecture in gspm.MODE_PAGE_LEAD_ARCHITECTURES else 6
@@ -2357,8 +2356,6 @@ class TestTheModePages(unittest.TestCase):
         from harmony import gspm
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 for page in c.mode_pages():
@@ -2377,8 +2374,6 @@ class TestTheModePages(unittest.TestCase):
         agreed = disagreed = 0
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 arch12 = c.architecture == 12
@@ -2433,8 +2428,6 @@ class TestThePictureBank(unittest.TestCase):
         from harmony import gspm
         for name, count, size, named in self.BANKS:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 bank = c.picture_bank()
@@ -2457,8 +2450,6 @@ class TestThePictureBank(unittest.TestCase):
         from harmony import gspm
         for name, count, _, _ in self.BANKS:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 c = gspm.parse(data)
                 top = c.named_content_end()
@@ -2474,8 +2465,6 @@ class TestThePictureBank(unittest.TestCase):
         from harmony import gspm
         for name in self.WITHOUT:
             data = lab.load(name)
-            if data is None:
-                continue
             with self.subTest(name):
                 self.assertIsNone(gspm.parse(data).picture_bank())
 

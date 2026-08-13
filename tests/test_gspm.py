@@ -79,6 +79,9 @@ KNOWN_ARCHITECTURE = {
 
 class TestContainerAcrossSamples(unittest.TestCase):
     def test_each_sample_parses_with_expected_shape(self):
+        # The population up front, so a partial lab skips this whole test rather than shrinking its
+        # own claim to whatever is present. ASampleLoopStatesItsPopulation in test_toolchain.py.
+        lab.require(*EXPECTED)
         for name, (magic, base, version, slots, marker, keys) in EXPECTED.items():
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -90,6 +93,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
                 self.assertEqual(len(c.keys), keys)
 
     def test_all_consistency_checks_pass(self):
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -97,6 +101,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
                     self.assertTrue(ok, '%s failed check %s' % (name, check))
 
     def test_end_addr_locates_the_end_marker(self):
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 data = lab.load(name)
@@ -113,6 +118,7 @@ class TestContainerAcrossSamples(unittest.TestCase):
         here had a `+ 3` in it, which is what an off by one looks like before it is understood:
         those three bytes are the final item's pointer, not padding.
         """
+        lab.require(*EXPECTED)
         for name, (_, _, _, slots, _, _) in EXPECTED.items():
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -182,6 +188,7 @@ class TestPointerTableLength(unittest.TestCase):
     """
 
     def test_the_table_ends_exactly_at_the_marker(self):
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -219,6 +226,7 @@ class TestPointerTableLength(unittest.TestCase):
 
     def test_the_base_layout_ends_in_two_null_sections(self):
         """Base slots 18 and 19 are NULL on all four architectures, wherever they land."""
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -238,6 +246,7 @@ class TestPointerTableLength(unittest.TestCase):
         read of the final item runs into the marker, which is why a parser built on four byte
         pointers could not have had that slot in the first place.
         """
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -262,8 +271,6 @@ class TestSlot3Timestamp(unittest.TestCase):
     def records(self):
         for name in EXPECTED:
             data = lab.load(name)
-            if data is None:
-                continue
             c = gspm.parse(data)
             o = c.sections[gspm.CLOCK_RECORD_SLOT].address - c.flash_base
             yield name, c, o, bytes(c.blob[o + 2:o + 9])
@@ -359,8 +366,6 @@ class TestSlot3Timestamp(unittest.TestCase):
         got = {}
         for name in ('arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d'):
             data = lab.load(name)
-            if data is None:
-                self.skipTest('need the arch 8 set')
             got[name] = gspm.parse(data).built_at
         cluster = [got['arch8_config_b'], got['arch8_config_c'], got['arch8_config_d']]
         self.assertEqual(len({t.date() for t in cluster}), 1, 'b, c and d share a date')
@@ -371,8 +376,6 @@ class TestSlot3Timestamp(unittest.TestCase):
     def test_a_day_of_week_that_disagrees_is_refused(self):
         """The check is in the parser, not only in this file, so a bad record reads as absent."""
         data = lab.load('one_config')
-        if data is None:
-            self.skipTest('need a config')
         c = gspm.parse(data)
         o = c.blob_offset + c.sections[gspm.CLOCK_RECORD_SLOT].address - c.flash_base
         broken = bytearray(data)
@@ -441,6 +444,7 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
     """
 
     def test_slot1_agrees_with_the_independently_known_architecture(self):
+        lab.require(*KNOWN_ARCHITECTURE)
         for name, arch in KNOWN_ARCHITECTURE.items():
             with self.subTest(image=name):
                 self.assertEqual(gspm.parse(lab.load(name)).architecture, arch)
@@ -620,6 +624,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
     """
 
     def test_slot0_is_a_frame_in_every_sample(self):
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 self.assertIsNotNone(gspm.parse(lab.load(name)).frame_length)
@@ -664,6 +669,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         independent confirmation of the length rule, since the two come from different
         places in the file.
         """
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -679,6 +685,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         1.6 MB config, and none of them validates. Without this the correction is only an
         assertion that the other sections were not checked.
         """
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 data = lab.load(name)
@@ -703,6 +710,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         and the arch 9 safe mode container in the 525's firmware region puts `Root` third. So the
         assertion is containment, and the position is deliberately not asserted. Section 77.
         """
+        lab.require(*EXPECTED)
         for name in EXPECTED:
             with self.subTest(image=name):
                 data = lab.load(name)
@@ -738,6 +746,7 @@ class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
         table looked like 108 matrix codes against 54 non matrix ones, which described no
         possible keypad.
         """
+        lab.require('h600_config', 'h700_config')
         for name, virtual in (('h600_config', []), ('h700_config', [0x06])):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -768,6 +777,7 @@ class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
         Third agreement. If bit 7 addressed the keypad, a code and that code with bit 7 set
         would be different keys and there would be no reason for the sets to coincide.
         """
+        lab.require('h700_config', 'h600_config')
         for name in ('h700_config', 'h600_config'):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -780,6 +790,7 @@ class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
 
     def test_arch12_and_arch8_record_presses_only(self):
         """A real difference between architectures rather than an artefact of the reading."""
+        lab.require('one_config', 'arch8_config_a')
         for name, presses in (('one_config', 52), ('arch8_config_a', 53)):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -809,6 +820,7 @@ class TestActionLists(unittest.TestCase):
         come from the lists, and all but four consecutive pairs sit exactly `1 + 3 * count`
         apart. Two unrelated parts of the file telling the same story.
         """
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -854,6 +866,7 @@ class TestActionLists(unittest.TestCase):
         same index in two configs of different sizes is what makes this a reading rather than a
         range that happens to fit.
         """
+        lab.require('h700_config', 'h600_config')
         for name, expected_max in (('h700_config', 7655), ('h600_config', 4755)):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -881,6 +894,7 @@ class TestActionLists(unittest.TestCase):
         the 700, so a section of that size holds about twenty by accident; it holds 384, they are
         381 distinct, and those are exactly the run.
         """
+        lab.require('h700_config', 'h600_config')
         for name in ('h700_config', 'h600_config'):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -918,6 +932,7 @@ class TestActionLists(unittest.TestCase):
             'h600_config': (191, 403), 'one_config': (268, 883),
             'h525_config': (82, 216), 'arch8_config_a': (100, 466),
         }
+        lab.require(*expected)
         for name, (records, entries) in expected.items():
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -967,6 +982,7 @@ class TestActionLists(unittest.TestCase):
 
     def test_slot_8_calls_every_list_in_the_final_run_exactly_once(self):
         """The same cover as section 26, now from the record parse rather than a byte sweep."""
+        lab.require('h700_config', 'h600_config')
         for name in ('h700_config', 'h600_config'):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1028,6 +1044,7 @@ class TestActionLists(unittest.TestCase):
         vocabulary is 0 to 450, which is a count of list lengths times a field maximum agreeing
         with a set of operand values. Nothing connects the two but the format.
         """
+        lab.require('h700_config', 'h600_config')
         for name, groups in (('h700_config', 6), ('h600_config', 4)):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1065,6 +1082,7 @@ class TestActionLists(unittest.TestCase):
         unsigned are numbers with no referent anywhere in the file and read as signed are small
         negative ones. Not a meaning, a constraint on what the meaning can be.
         """
+        lab.require('h700_config', 'h600_config')
         for name in ('h700_config', 'h600_config'):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1086,6 +1104,7 @@ class TestActionLists(unittest.TestCase):
         self.assertEqual(c.action_list_packing(), (482, 486))
 
     def test_every_list_parses_and_the_instruction_count_is_plausible(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1339,6 +1358,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
         Includes the arch 9 sample, whose records use a different encoding: the two level pointer
         structure is shared even where the leaf format is not.
         """
+        lab.require(*self.CONFIGS, 'h525_config')
         for name in self.CONFIGS + ('h525_config',):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1380,6 +1400,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
 
     def test_no_record_pointer_is_an_action_list(self):
         """Which is what makes this a different table rather than another view of slot 10."""
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1389,6 +1410,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
                 self.assertEqual(lists & reached, set())
 
     def test_the_record_header_pointer_is_the_record_minus_seven(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1505,6 +1527,7 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
     def test_it_appears_in_exactly_one_list_shape(self):
         expected = {14: (0x7F, 0x7D, 0x7C), 12: (0x7D, 0x7C),
                     9: (0x7D, 0x7C), 8: (0x7D, 0x7C)}
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1681,6 +1704,7 @@ class TestPointerArraySections(unittest.TestCase):
                'arch8_config_c', 'arch8_config_d')
 
     def test_the_same_six_sections_are_arrays_in_every_config(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1689,6 +1713,7 @@ class TestPointerArraySections(unittest.TestCase):
 
     def test_every_entry_is_an_address_inside_the_config(self):
         """A three byte value that lands outside the config would mean the reading is wrong."""
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1699,6 +1724,7 @@ class TestPointerArraySections(unittest.TestCase):
                                         % (slot, addr, c.flash_base, c.end_addr))
 
     def test_entries_ascend(self):
+        lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -1862,6 +1888,7 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
         section, both land on the same base slots for all four architectures. Two anchors that
         agree is what makes this an alignment rather than an arithmetic coincidence.
         """
+        lab.require('h700_config', 'h600_config', 'h525_config', 'one_config', 'one_config_unprogrammed', 'arch8_config_a')
         for name in ('h700_config', 'h600_config', 'h525_config', 'one_config',
                      'one_config_unprogrammed', 'arch8_config_a'):
             with self.subTest(image=name):
@@ -1874,6 +1901,7 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
 
     def test_the_base_layouts_trailing_slot_is_null_on_every_architecture(self):
         """A third anchor, and it is free: base slot 18 is NULL in all four."""
+        lab.require('h700_config', 'h525_config', 'one_config', 'arch8_config_a')
         for name in ('h700_config', 'h525_config', 'one_config', 'arch8_config_a'):
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
@@ -2541,8 +2569,6 @@ class TestTheTrailerChecksum(unittest.TestCase):
     def test_it_recomputes_on_every_container_in_the_corpus(self):
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             c = gspm.parse(data)
             with self.subTest(sample=name):
                 self.assertEqual(gspm.trailer_checksum(c.blob), c.trailer_checksum)
@@ -2553,8 +2579,6 @@ class TestTheTrailerChecksum(unittest.TestCase):
         wrong = 0
         for name in self.SAMPLES:
             data = lab.load(name)
-            if data is None:
-                continue
             c = gspm.parse(data)
             bare = gspm.trailer_checksum(c.blob) ^ gspm.TRAILER_CHECKSUM_SEED
             wrong += bare == c.trailer_checksum
@@ -2563,8 +2587,6 @@ class TestTheTrailerChecksum(unittest.TestCase):
     def test_a_flipped_byte_is_caught(self):
         """A word XOR misses a byte swap but not a changed byte, which is the case that matters."""
         data = lab.load('h600_safemode_gspm')
-        if data is None:
-            self.skipTest('no lab')
         c = gspm.parse(data)
         damaged = bytearray(c.blob)
         damaged[0x40] ^= 0x01

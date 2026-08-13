@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
 
 BENCH_PORT ?= 8731
 
@@ -49,6 +49,7 @@ help:
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
 	@echo "test-nolab   the suite against a nonexistent lab: it must skip, not assert"
+	@echo "test-partial the suite against a lab holding one sample: no test may pass partially"
 	@echo "all          everything above except ghidra, bench and probe"
 
 test:
@@ -75,8 +76,19 @@ test-nolab:
 	  > /dev/null 2>&1 && echo "TypeScript skips cleanly with no lab" || \
 	  { echo "FAILED with no lab on the TypeScript side: run it yourself to see which"; exit 1; }
 
+# The case between a full lab and no lab, which neither `test` nor `test-nolab` can see. A skip
+# inside `subTest` skips that sample and lets the loop finish, so a test with half its samples
+# present asserts over half of them and still reports a pass, with its title unchanged. There is no
+# failure for `test-nolab` to find, because passing is the bug. Measured on 13 August 2026: 43 tests
+# behaved this way against a lab holding one sample.
+test-partial:
+	@$(PYTHON) bin/check-partial-lab.py
+
+# `bin` is here because it was not, until 13 August 2026: `check-publishable.py` runs in the
+# pre-commit hook and was byte compiled by nothing, which is the same shape as the tsconfig bug
+# `tests/test_toolchain.py` exists for, one language across. `pyrightconfig.json` already included it.
 lint:
-	@$(PYTHON) -m compileall -q $(SRC) $(TESTS) tools && echo "compiles clean"
+	@$(PYTHON) -m compileall -q $(SRC) $(TESTS) tools bin && echo "compiles clean"
 
 # The Python half of what `ts-typecheck` does for the TypeScript half, at the level
 # `pyrightconfig.json` argues for: type checking off, and the rules that catch what a compiler
@@ -219,7 +231,7 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint pyright prose facts test test-nolab ts audit
+all: lint pyright prose facts test test-nolab test-partial ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true
