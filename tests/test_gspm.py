@@ -2112,9 +2112,12 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
         self.assertFalse(c.checks['trailer_checksum_recomputes'])
         # The clock record moved relative to the sibling reads, all three of which agree.
         moved = gspm.find_clock_records(blob)[0]
-        for name in ('h890_config', 'h890_config_rescan', 'h890_config_2'):
-            if lab.path(lab.IMAGES and name) is None:
-                continue
+        # `lab.IMAGES and name` used to stand where `name` does, which evaluates to `name` and did
+        # nothing, and the `continue` under it skipped a sibling with no counter, in a test whose
+        # docstring says all three agree. All three are in the lab, so all three are required.
+        siblings = ('h890_config', 'h890_config_rescan', 'h890_config_2')
+        lab.require(*siblings)
+        for name in siblings:
             other = gspm.parse(lab.load(name))
             self.assertEqual(gspm.find_clock_records(bytes(other.blob))[0], moved - 54)
 

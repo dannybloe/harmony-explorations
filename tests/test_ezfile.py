@@ -356,9 +356,15 @@ class TestPhases(unittest.TestCase):
         lab.require('one_hfw')
         with zipfile.ZipFile(lab.path('one_hfw')) as zf:
             blob = zf.read('Region_2.EZUpgrade')
-        for body in re.findall(rb'<PHASE>(.*?)</PHASE>', blob, re.S):
+        # The population, because every assertion below sits inside this loop: no `<PHASE>` match was a
+        # pass, and `all(w == 32 for w in widths[:-1])` is additionally vacuous for a phase with one
+        # chunk. The arch 12 package has two phases, which the test above this one names.
+        bodies = re.findall(rb'<PHASE>(.*?)</PHASE>', blob, re.S)
+        self.assertEqual(len(bodies), 2, 'the arch 12 package states two phases')
+        for body in bodies:
             chunks = re.findall(rb'<DATA>([0-9A-Fa-f]*)</DATA>', body)
             widths = [len(c) // 2 for c in chunks]
+            self.assertGreater(len(widths), 1, 'a single chunk phase would say nothing about 32')
             self.assertTrue(all(w == 32 for w in widths[:-1]), sorted(set(widths[:-1])))
             self.assertLessEqual(widths[-1], 32)
             self.assertGreater(widths[-1], 0)

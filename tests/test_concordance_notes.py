@@ -289,9 +289,20 @@ class TestNoCommandLineDoesTheFinishStepAlone(unittest.TestCase):
         body = remote[remote.index('int CRemote::FinishFirmware('):]
         body = body[:body.index('\n}\n')]
         self.assertGreater(body.count('cb('), 1)
-        # Every call is preceded by the guard, so the count of guards is the count of calls less the
-        # one in the signature's own parameter list.
-        self.assertEqual(body.count('if (cb)'), body.count('cb(cb_stage'))
+        # **Adjacency, which a count cannot state.** This asserted `body.count('if (cb)') ==
+        # body.count('cb(cb_stage')`, and equal counts say nothing about where they are: a refactor
+        # that guards four of five calls and adds an `if (cb)` somewhere else keeps them equal, and the
+        # unguarded call is exactly the segfault this test exists for. So each call is required to have
+        # nothing but whitespace between it and its own guard.
+        calls = [m.start() for m in re.finditer(r'cb\(cb_stage', body)]
+        self.assertEqual(len(calls), 5, 'the call sites moved, so check this still fits')
+        for at in calls:
+            before = body[:at]
+            guard = before.rfind('if (cb)')
+            self.assertNotEqual(guard, -1, 'a cb(cb_stage call with no guard anywhere above it')
+            between = before[guard + len('if (cb)'):]
+            self.assertEqual(between.strip(), '',
+                             'a cb(cb_stage call whose nearest guard is not its own: %r' % between)
 
     def test_the_arch_9_finish_step_writes_one_byte_of_0x02(self):
         """
