@@ -29,6 +29,18 @@ _MAPS = ('memory-map.md',) + tuple(
     sorted(os.path.basename(p) for p in glob.glob(os.path.join(_DOCS, 'memory-map-*.md'))))
 
 
+# concordance's own architecture table, read out of the sibling checkout. Imported rather than
+# reparsed, since `test_concordance_notes.py` already has the reader and two copies of a derivation
+# is this repository's oldest rule.
+def _concordance_config_base(architecture):
+    """`config_base` for an architecture, or None when the checkout is not beside this one."""
+    try:
+        import test_concordance_notes
+        return test_concordance_notes._arch_table()[architecture]['config_base']
+    except (ImportError, OSError, KeyError):
+        return None
+
+
 def _doc(name):
     with open(os.path.join(_DOCS, name), encoding='utf-8') as fh:
         return fh.read()
@@ -72,8 +84,22 @@ class TestArch12Map(unittest.TestCase):
         self.assertEqual(set(page[0xC12C:]), {0xFF}, 'erased to the end of the page')
 
     def test_the_config_region_reaches_exactly_four_megabytes(self):
-        """concordance reports 3840 KiB from 0x040000, and that lands on 0x400000."""
-        self.assertEqual(0x040000 + 3840 * 1024, 0x400000)
+        """The 3840 KiB the map quotes is derived, not a figure concordance reports.
+
+        It is 4 MiB above concordance's own `config_base`.
+
+        **The whole body used to be `assertEqual(0x040000 + 3840 * 1024, 0x400000)`**, arithmetic over
+        its own literals, with a docstring crediting concordance for the 3840. Measured on 13 August:
+        concordance's table carries `flash_size 0` for this architecture, so the figure is not in the
+        source the docstring names and cannot be. What is there is `config_base`, and the KiB number is
+        derived from it, which is what this asserts.
+        """
+        base = _concordance_config_base(12)
+        if base is None:
+            self.skipTest('no concordance checkout beside this one')
+        self.assertEqual(base, 0x040000, "concordance's own config_base")
+        self.assertEqual((0x400000 - base) // 1024, 3840, 'which is the KiB figure the map quotes')
+        self.assertIn('3840 KiB', _doc('memory-map-one.md'))
 
     def test_the_two_config_samples_sit_at_the_documented_base(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its
@@ -128,8 +154,22 @@ class TestArch14Map(unittest.TestCase):
         self.assertEqual(app.version, '0.2')
 
     def test_the_config_region_reaches_exactly_four_megabytes(self):
-        """concordance reports 3904 KiB from 0x030000, and that lands on 0x400000."""
-        self.assertEqual(0x030000 + 3904 * 1024, 0x400000)
+        """The 3904 KiB the map quotes is derived, not a figure concordance reports.
+
+        It is 4 MiB above concordance's own `config_base`.
+
+        **The whole body used to be `assertEqual(0x030000 + 3904 * 1024, 0x400000)`**, arithmetic over
+        its own literals, with a docstring crediting concordance for the 3904. Measured on 13 August:
+        concordance's table carries `flash_size 0` for this architecture, so the figure is not in the
+        source the docstring names and cannot be. What is there is `config_base`, and the KiB number is
+        derived from it, which is what this asserts.
+        """
+        base = _concordance_config_base(14)
+        if base is None:
+            self.skipTest('no concordance checkout beside this one')
+        self.assertEqual(base, 0x030000, "concordance's own config_base")
+        self.assertEqual((0x400000 - base) // 1024, 3904, 'which is the KiB figure the map quotes')
+        self.assertIn('3904 KiB', _doc('memory-map-600.md'))
 
     def test_the_config_sample_sits_at_the_documented_base(self):
         c = gspm.parse(ezfile.decode_payload(lab.load('h600_config')).payload)

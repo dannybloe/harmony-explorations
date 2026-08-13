@@ -296,7 +296,13 @@ class ArmTest(unittest.TestCase):
         for name, where in BUILDS.items():
             with self.subTest(name):
                 if where['mod'] is None:
-                    self.assertNotEqual(where['architecture'], 14)
+                    # **The negative used to be asserted here and was circular**: it read
+                    # `assertNotEqual(where['architecture'], 14)`, one hand typed field of `BUILDS`
+                    # against another, with the image untouched and the title claiming a fact about
+                    # firmware. The negative lives in
+                    # `test_the_block_reaches_the_exit_on_the_architecture_that_tests_it`, which
+                    # decodes arch 12's own arm for this opcode and finds it branching to the
+                    # dispatcher's exit, and in the assertion there that arch 9's ladder is empty.
                     continue
                 self.assertEqual(where['architecture'], 14)
                 _, remainder = self.slots(name, where)
