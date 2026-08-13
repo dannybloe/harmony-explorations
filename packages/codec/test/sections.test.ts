@@ -1043,22 +1043,26 @@ test('only arch 8 and arch 9 carry a second pointer group', skipUnless('one_conf
   }
 });
 
-test('a two group record belongs to a device, not to an architecture', skipUnless('arch8_config_a'), () => {
+// The two populations this claim is about, named once so the guard and the loop cannot drift apart.
+// `WITH_THE_DEVICE` is one contributor's four configs and `WITHOUT_IT` the two contributed on
+// 10 August 2026.
+const ARCH8_WITH_THE_DEVICE = ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d'];
+const ARCH8_WITHOUT_IT = ['arch8_config_880', 'arch8_config_885'];
+const ARCH8_ALL = [...ARCH8_WITH_THE_DEVICE, ...ARCH8_WITHOUT_IT];
+
+test('a two group record belongs to a device, not to an architecture', skipUnless(...ARCH8_ALL), () => {
   // **This test used to be called `every arch 8 config has exactly 37 two group records` and its title
   // was false while it passed**, because its body only ever looked at one contributor's four configs.
   // The two arch 8 configs contributed on 10 August 2026 have none at all, which is exactly the
   // falsifier section 75 offered for its own claim. Section 134 has the mechanism: the thirty seven are
   // a single biphase device's records, so the count follows the equipment and not the architecture.
+  //
+  // The rename fixed the title and left the hole one layer down, found by a review sweep on
+  // 13 August 2026: it was guarded on `arch8_config_a` alone and skipped any name the lab did not
+  // hold, so a lab with only that one config asserted 37 and never reached the two that must be zero,
+  // which is the claim it was renamed away from. Both halves are required now.
   const counts: Record<string, number> = {};
-  for (const name of [
-    'arch8_config_a',
-    'arch8_config_b',
-    'arch8_config_c',
-    'arch8_config_d',
-    'arch8_config_880',
-    'arch8_config_885',
-  ]) {
-    if (!load(name)) continue;
+  for (const name of ARCH8_ALL) {
     const c = parse(load(name)!);
     let two = 0;
     const groupsWithTwo = new Set<number>();
@@ -1073,14 +1077,12 @@ test('a two group record belongs to a device, not to an architecture', skipUnles
     // Whatever the count is, the records are never spread over the devices: it is one group or none.
     assert.ok(groupsWithTwo.size <= 1, `${name} spreads two group records over ${groupsWithTwo.size}`);
   }
+  // Both halves, unconditionally: 37 is only interesting beside a 0 from the same architecture.
+  assert.equal(Object.keys(counts).length, ARCH8_ALL.length, 'a config went unread');
   // The four configs carry 234, 397, 454 and 462 records between them and the count does not move,
   // because they drive the same device. The two later ones drive no such device.
-  for (const name of ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d']) {
-    if (name in counts) assert.equal(counts[name], 37, name);
-  }
-  for (const name of ['arch8_config_880', 'arch8_config_885']) {
-    if (name in counts) assert.equal(counts[name], 0, name);
-  }
+  for (const name of ARCH8_WITH_THE_DEVICE) assert.equal(counts[name], 37, name);
+  for (const name of ARCH8_WITHOUT_IT) assert.equal(counts[name], 0, name);
 });
 
 test('a second group names blocks the first does not', skipUnless('arch8_config_a'), () => {

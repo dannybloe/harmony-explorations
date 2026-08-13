@@ -991,6 +991,20 @@ at 4 MIPS is 26.25 µs. That closes, and it confirms both the 0.1 µs storage un
 16 MHz clock. The 19-cycle subtraction is the measured overhead of the unrolled
 modulator block.
 
+**The test behind this paragraph was arithmetic on its own literals until 13 August 2026**, and the
+correction is recorded because this closure is the one `CLAUDE.md` cites as the project's model of an
+independent numeric check. It asserted `263 * 4 // 10 == 105` and `105 / 4.0 == 26.25`, which needs no
+firmware, no config and no library: it passed with no lab and would have passed whatever the image
+said. All three constants are decoded out of it now, and none of them is a plain literal 4: the
+multiplier is a shift count in `WREG`, `MOVLW 0x02` at `0x193E0`, consumed by the `RLCF` pair at
+`0x193E4`; the divisor is the `0x0A` at `0x193EE` staged into the divide helper; and the overhead is
+the `SUBLW 0x13` at `0x1940C`, with the `CLRF` after it as the clamp.
+
+The slack is worth stating too, since the paragraph above says "exactly". 26.25 µs is **38095 Hz**, not
+38000, because a 26.3 µs period cannot be represented in whole units of 0.1 µs and the field carries
+263 rather than 263.15. The error is **0.2506%**. So the closure is tight to a quarter of a percent
+rather than exact, and the quantisation is itself part of the evidence for the 0.1 µs unit.
+
 **Step 4, the transmit loop at `0x195C6`.**
 
 ```

@@ -426,12 +426,57 @@ class TestInfraredChain(unittest.TestCase):
         """
         The firmware computes cycles as value * 4 / 10 and then subtracts 19 cycles of loop
         overhead. At 4 MIPS a 38 kHz carrier is a 26.3 us period, so the config stores 263.
+
+        **Every constant here is decoded out of the image, and until 13 August 2026 none of them
+        was.** This test used to be four lines of arithmetic on its own literals, `263 * 4 // 10 ==
+        105` and `105 / 4.0 == 26.25`, with no firmware, no config and no library in it: it passed
+        with no lab at all, and it would have passed if the firmware used any other numbers.
+        `CLAUDE.md` cites this closure under "Verification standard" as the project's model of an
+        independent numeric check, which is what made it worth repairing rather than deleting.
+
+        The closure only means something when the two ends are independent. One end is the datasheet
+        figure, a 38 kHz carrier, and the other is these three constants, so they have to come from
+        the code.
         """
-        stored = 263
-        cycles = stored * 4 // 10
+        code = lab.load('h700_code')
+
+        # The multiplier is a shift count in WREG, consumed by the RLCF pair at 0x193E4, not a
+        # literal 4 anywhere: `MOVLW 0x02` then a two step 16 bit shift left.
+        shift = isa.decode(code, 0x193E0 - self.BASE, self.BASE)
+        self.assertEqual(shift.mnemonic, 'MOVLW')
+        loop = [isa.decode(code, a - self.BASE, self.BASE)
+                for a in (0x193E4, 0x193E6, 0x193E8, 0x193EA, 0x193EC)]
+        self.assertEqual([i.mnemonic for i in loop],
+                         ['BCF', 'RLCF', 'RLCF', 'DECF', 'BNZ'])
+        self.assertEqual(loop[4].fields['target'], 0x193E4, 'the shift really is a loop')
+        multiplier = 1 << shift.fields['k']
+
+        # The divisor, staged into the divide helper's argument pair before the call.
+        divisor = isa.decode(code, 0x193EE - self.BASE, self.BASE)
+        self.assertEqual(divisor.mnemonic, 'MOVLW')
+        self.assertEqual(isa.decode(code, 0x193FC - self.BASE, self.BASE).mnemonic, 'CALL')
+
+        # The loop overhead, subtracted and clamped at zero rather than allowed to wrap.
+        overhead = isa.decode(code, 0x1940C - self.BASE, self.BASE)
+        self.assertEqual(overhead.mnemonic, 'SUBLW')
+        clamp = isa.decode(code, 0x19410 - self.BASE, self.BASE)
+        self.assertEqual(clamp.mnemonic, 'CLRF', 'below the overhead it clamps at zero')
+
+        # Now the closure, with nothing of our own in it but the carrier frequency.
+        self.assertEqual((multiplier, divisor.fields['k'], overhead.fields['k']), (4, 10, 19))
+        stored = 263                         # what a config carries for 38 kHz, in units of 0.1 us
+        cycles = stored * multiplier // divisor.fields['k']
         self.assertEqual(cycles, 105)
-        microseconds = cycles / 4.0          # 4 instruction cycles per microsecond
+        microseconds = cycles / 4.0          # 4 instruction cycles per microsecond, so 16 MHz
         self.assertAlmostEqual(microseconds, 26.25, places=2)
+        # And back to a frequency, which is where the closure is either loose or it is not. 26.25 us
+        # is 38095 Hz rather than 38000, because a period of 26.3 us cannot be represented in whole
+        # units of 0.1 us: the field quantises 263.15 down to 263. The error is 0.2506%, measured
+        # rather than asserted at a round number, and it is stated here instead of being hidden
+        # behind a rounding, because a closure whose slack nobody wrote down is one nobody can check.
+        hertz = 1e6 / microseconds
+        self.assertAlmostEqual(hertz, 38095.24, places=1)
+        self.assertLess(abs(hertz - 38000) / 38000, 0.003)
 
 
 class TestKeypadScanner(unittest.TestCase):

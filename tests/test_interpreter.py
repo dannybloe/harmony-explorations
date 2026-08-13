@@ -188,19 +188,35 @@ class TestTheComparisonSelector(unittest.TestCase):
         self.assertEqual(selectors[0x70], {0, 1, 2, 3, 7})
         self.assertNotIn(6, selectors[0x70] | selectors[0x71], 'selector 6 is never used')
 
-    def test_the_index_byte_stays_under_the_lookup_bound(self):
-        """Every 0x70, 0x71 and 0x72 operand's low byte is under 64, in every config."""
+    def test_the_index_byte_under_64_belongs_to_0x71_alone(self):
+        """Section 33's "low byte always under 64" is `0x71`'s, and it is not a bound on the field.
+
+        **The docstring here used to say "every 0x70, 0x71 and 0x72 operand's low byte is under 64,
+        in every config", and that is measurably false**: over these seven configs `0x70` reaches 81
+        and `0x72` reaches 83. The body only ever filtered `0x71`, so nothing failed. Found by a
+        review sweep on 13 August 2026 asking which tests state more than they check.
+
+        64 is not a firmware constant either. It is one config's own boundary showing through: the
+        real rule is base slot 13's `narrow` count, per config, which `docs/config-format.md` states
+        and `test_0x71_reads_the_narrow_half_and_0x70_the_wide_half` asserts. This test is therefore
+        about the number rather than the rule, and its job is to keep the contrast that explains why
+        the old wording looked right for so long: the opcode that compares a **byte** cannot leave the
+        narrow half, and the two that reach the wide half go straight past 64.
+        """
         from harmony import gspm
-        worst = 0
+        worst = {0x70: 0, 0x71: 0, 0x72: 0}
         for config in ('h700_config', 'h600_config', 'h525_config', 'one_config',
                        'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_c'):
             c = gspm.parse(lab.load(config))
             for lst in (c.action_lists() or []):
                 for i in lst:
-                    if i.opcode == 0x71:
-                        worst = max(worst, i.operand & 0xFF)
-        self.assertLess(worst, 64)
-        self.assertEqual(worst, 63, 'and it reaches the bound, so 64 is the size not a ceiling')
+                    if i.opcode in worst:
+                        worst[i.opcode] = max(worst[i.opcode], i.operand & 0xFF)
+        # The claim the old docstring made, held only by the opcode that reads a byte variable.
+        self.assertLess(worst[0x71], 64)
+        self.assertEqual(worst[0x71], 63, 'and it reaches 63, so the number is not arbitrary')
+        # And the falsifier, which is what makes 64 an observation rather than a bound.
+        self.assertEqual((worst[0x70], worst[0x72]), (81, 83))
 
 
 class TestTheStateVariableRecord(unittest.TestCase):

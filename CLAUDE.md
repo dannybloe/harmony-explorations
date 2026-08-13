@@ -1079,7 +1079,12 @@ Established norms:
   architectures, four base addresses, three format versions and three pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
-  a stored 263, which the code's arithmetic turns into exactly 26.25 us.
+  a stored 263, which the code's arithmetic turns into exactly 26.25 us. **And a closure is only
+  independent if its test reads both ends**, which this one did not until 13 August 2026: it was four
+  lines of arithmetic on its own literals, so it passed with no lab and would have passed whatever the
+  firmware did. The multiplier, the divisor and the 19 cycle overhead are decoded out of the image now,
+  and the slack is stated, 0.2506%, because 26.3 us is not representable in whole units of 0.1 us.
+  A closure whose slack nobody wrote down is one nobody can check.
 * When deriving something like a load address, include a calibration case where the answer is
   already known, and report the score for wrong answers too. The base-address test scores 98.9%
   for the correct base against 11 to 30% for wrong ones.

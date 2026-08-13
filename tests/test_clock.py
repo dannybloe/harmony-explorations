@@ -395,9 +395,7 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
         self.assertEqual(date.strftime('%A'), 'Thursday')
 
     def test_the_measured_date_is_the_units_own_config_build_date(self):
-        skip = lab.require(MEASURED_UNIT)
-        if skip:
-            raise unittest.SkipTest(skip)
+        lab.require(MEASURED_UNIT)
         container = gspm.parse(lab.load(MEASURED_UNIT))
         slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
         offset = container.blob_offset_of(container.sections[slot].address)
@@ -412,9 +410,7 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
 
     def test_the_clock_after_a_power_cycle_is_the_build_timestamp_plus_the_uptime(self):
         """The round that settles it: six fields predicted exactly, the seventh is the uptime."""
-        skip = lab.require(MEASURED_UNIT)
-        if skip:
-            raise unittest.SkipTest(skip)
+        lab.require(MEASURED_UNIT)
         container = gspm.parse(lab.load(MEASURED_UNIT))
         slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
         offset = container.blob_offset_of(container.sections[slot].address)
@@ -434,9 +430,7 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
     def test_the_measured_month_field_is_zero_based_like_the_record(self):
         # August is 8 and the field is 7, on both sides. Asserted because a one based reading of
         # either would have made this section's first pass right about the date.
-        skip = lab.require(MEASURED_UNIT)
-        if skip:
-            raise unittest.SkipTest(skip)
+        lab.require(MEASURED_UNIT)
         container = gspm.parse(lab.load(MEASURED_UNIT))
         slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
         offset = container.blob_offset_of(container.sections[slot].address)

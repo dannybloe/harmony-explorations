@@ -2574,15 +2574,51 @@ class TestTheTrailerChecksum(unittest.TestCase):
                 self.assertEqual(gspm.trailer_checksum(c.blob), c.trailer_checksum)
                 self.assertTrue(c.checks['trailer_checksum_recomputes'])
 
-    def test_the_seed_is_what_makes_it_fit(self):
-        """Without the seed nothing matches, which is what pins 0x4321 from the data side."""
-        wrong = 0
-        for name in self.SAMPLES:
-            data = lab.load(name)
-            c = gspm.parse(data)
-            bare = gspm.trailer_checksum(c.blob) ^ gspm.TRAILER_CHECKSUM_SEED
-            wrong += bare == c.trailer_checksum
-        self.assertEqual(wrong, 0)
+    def test_the_firmware_loads_the_seed_as_two_literals(self):
+        """Where `0x4321` comes from, which the data cannot say.
+
+        This replaces a test called `test_the_seed_is_what_makes_it_fit`, whose docstring claimed to
+        pin the value from the data side and which was **algebra rather than a measurement**. It
+        computed `trailer_checksum(blob) ^ SEED` and required that not to equal the stored value.
+        Since the checksum is `SEED ^ body`, that expression is `body`, and `body == SEED ^ body`
+        reduces to `SEED == 0`. So it held for any nonzero seed whatever the bytes were, and setting
+        the constant to `0x1234` left it green.
+
+        There is no data side test to write in its place, and that is worth saying rather than
+        working around. The checksum is XOR linear in the seed, so one container determines it
+        exactly and any other value fails every container; `test_it_recomputes_on_every_container`
+        already carries that, over fourteen containers of four architectures. A second test asserting
+        the same algebra from another angle would be a second copy of one derivation.
+
+        What the data genuinely cannot say is where the number came from, so the closure is the other
+        side: the boot validator loads it as two literals into an adjacent register pair, low byte
+        first, on three images spanning both bench architectures. Section 41.
+        """
+        from harmony.pic18 import isa
+        # image -> (base, the address of the MOVLW that loads the low byte). Each sits inside that
+        # unit's own validator; the second site on each image is the write path and is not read here.
+        SITES = {
+            'h700_code': (0x9000, 0x16562),
+            'h600_code_complete': (0x9000, 0x15292),
+            'one34_code': (0x20000, 0x28E36),
+        }
+        lab.require(*SITES)
+        for name, (base, at) in SITES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                pairs = []
+                offset = at - base
+                for _ in range(4):
+                    instr = isa.decode(code, offset, base)
+                    pairs.append(instr)
+                    offset += 2 * instr.words
+                self.assertEqual([i.mnemonic for i in pairs],
+                                 ['MOVLW', 'MOVWF', 'MOVLW', 'MOVWF'])
+                low, high = pairs[0].fields['k'], pairs[2].fields['k']
+                self.assertEqual(low | (high << 8), gspm.TRAILER_CHECKSUM_SEED)
+                # An adjacent pair, which is what makes the two bytes one sixteen bit accumulator
+                # rather than two unrelated constants that happen to sit together.
+                self.assertEqual(pairs[3].fields['f'], pairs[1].fields['f'] + 1)
 
     def test_a_flipped_byte_is_caught(self):
         """A word XOR misses a byte swap but not a changed byte, which is the case that matters."""

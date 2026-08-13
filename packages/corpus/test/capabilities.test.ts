@@ -49,29 +49,43 @@ test('no config holds more devices than its model is stated to take', skipUnless
   }
 });
 
-test('no sample reaches a stated maximum, so the column is bounded below only', () => {
+test('no sample reaches a stated maximum, so the column is bounded below only',
+  skipUnless(...NAMES), () => {
   // **This test used to be called `the 700 sits exactly at its stated maximum` and it was circular**,
   // section 136. `maxDevices` for the 700 had been set to 6 because both its configs hold six devices,
   // and then this asserted the configs sit at the maximum, which is the assumption restated. A config
   // holding six devices bounds the maximum **below**: nothing about it forbids a seventh.
   //
-  // So the honest claim is the negative one, and it runs without a lab because it is about the table:
-  // every model here states a maximum above every count any sample of it reaches, which means no
-  // number in this column has been confirmed from a config and the whole column rests on two vendor
-  // tables that happen to agree.
-  const model = modelForSkin(66);
-  assert.equal(model?.maxDevices, 8, 'the vendor figure, adopted in section 136');
-});
-
-test('a config never exceeds its model\'s stated maximum', skipUnless('h700_config', 'h700_config_2'), () => {
-  // What the samples do say. Kept separate from the claim above so that a future config with seven
-  // devices on a 700 fails here, which is the one thing this column can still be wrong about in a way
-  // that matters.
-  for (const name of ['h700_config', 'h700_config_2']) {
+  // **And the rewrite carried a second fault, found by a review sweep the same day**: it was named for
+  // a claim about every sample and its body read no sample at all, asserting one entry of the table.
+  // A title that overstates its body is the same defect as a circular assertion, one layer up, so the
+  // body is the corpus now.
+  //
+  // The claim is strict inequality, per sample: every count any config reaches is **below** the
+  // maximum stated for its model, which is what "no number in this column is confirmed from a config"
+  // means concretely. The whole column rests on two vendor tables that happen to agree.
+  let checked = 0;
+  for (const [name, skin] of SAMPLES) {
+    const model = modelForSkin(skin)!;
     const c = parse(new Uint8Array(readFileSync(imagePath(name)!)));
     const devices = deviceCount(c)!;
-    assert.equal(devices, 6, `${name} holds six devices`);
-    assert.ok(devices <= modelForSkin(66)!.maxDevices);
+    assert.ok(
+      devices < model.maxDevices,
+      `${name} reaches ${devices} of a stated ${model.maxDevices} on a ${model.name}, so that ` +
+        'maximum would now be confirmed from a config and this comment is wrong',
+    );
+    checked += 1;
+  }
+  assert.equal(checked, SAMPLES.length, 'a sample went unread');
+  assert.equal(modelForSkin(66)?.maxDevices, 8, 'the vendor figure, adopted in section 136');
+});
+
+test('both Harmony 700 configs hold six devices', skipUnless('h700_config', 'h700_config_2'), () => {
+  // The concrete figure behind the claim above, kept separate so that a future 700 config with seven
+  // devices fails here rather than quietly widening the gap the other test measures.
+  for (const name of ['h700_config', 'h700_config_2']) {
+    const c = parse(new Uint8Array(readFileSync(imagePath(name)!)));
+    assert.equal(deviceCount(c)!, 6, `${name} holds six devices`);
   }
 });
 

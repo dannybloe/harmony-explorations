@@ -71,7 +71,7 @@ test-nolab:
 	  > /dev/null 2>&1 && echo "skips cleanly with no lab" || \
 	  { echo "FAILED with no lab: something asserts rather than skipping"; \
 	    HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PYTHON) -m unittest discover -s $(TESTS) 2>&1 \
-	      | grep -E '^(FAIL|ERROR):' ; exit 1; }
+	      | grep -E '(FAIL|ERROR): test' ; exit 1; }
 	@HARMONY_LAB=$(CURDIR)/.nolab-does-not-exist $(PNPM) test \
 	  > /dev/null 2>&1 && echo "TypeScript skips cleanly with no lab" || \
 	  { echo "FAILED with no lab on the TypeScript side: run it yourself to see which"; exit 1; }

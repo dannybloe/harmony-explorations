@@ -113,9 +113,12 @@ test('the usb half never carries a serial number', () => {
   assert.equal(report.skinId, 71, 'which names the Harmony 600 in Logitech own model list');
 });
 
-test('the probe finds a base by reading sixteen bytes at each candidate', async () => {
-  const blob = container('h600_config');
-  if (blob === undefined) return;
+// `skipUnless` rather than an early return, which is what these two carried until 13 August 2026.
+// A test that returns before its first assertion reports a pass, so with no lab the five tests
+// around them skipped with a reason and these two claimed to have checked something.
+test('the probe finds a base by reading sixteen bytes at each candidate',
+  skipUnless('h600_config'), async () => {
+  const blob = container('h600_config') as Uint8Array;
   const base = 0x030000;
   const reads: number[] = [];
   const reader = {
@@ -134,9 +137,9 @@ test('the probe finds a base by reading sixteen bytes at each candidate', async 
   assert.equal(await probeBase(reader, 0x040000, 'arch 12 user config'), undefined);
 });
 
-test('a whole probe over a served config produces a clean report', async () => {
-  const blob = container('h600_config');
-  if (blob === undefined) return;
+test('a whole probe over a served config produces a clean report',
+  skipUnless('h600_config'), async () => {
+  const blob = container('h600_config') as Uint8Array;
   const base = 0x030000;
   const reader = {
     getVersion: async () => Uint8Array.from({ length: 12 }, (_, i) => i),
