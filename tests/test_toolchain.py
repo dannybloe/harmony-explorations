@@ -12,6 +12,7 @@ have a `bin`, so the nine scripts behind `make coverage`, `make reading` and the
 typechecked by nothing at all and an editor gave them default compiler options. Nothing failed. A
 file no project claims does not announce itself, which is exactly the shape a test is for.
 """
+import ast
 import glob
 import json
 import os
@@ -218,6 +219,95 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         self.assertGreaterEqual(with_block, 20,
                                 'only %d files carry a __main__ block, so this test is checking '
                                 'almost nothing' % with_block)
+
+
+#: Test functions whose whole body is a loop that loads its samples inside a `subTest`, with no
+#: `lab.require` up front, counted per file. Frozen deliberately rather than asserted to be empty:
+#: 55 is what the tree holds, converting them is a decision about the whole suite rather than a
+#: commit, and a frozen count is still a ratchet. Either direction fails, so fixing one means
+#: decrementing its file here and adding one anywhere fails outright.
+SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION = {
+    'test_arithmetic.py': 8,
+    'test_ezfile.py': 6,
+    'test_findings.py': 3,
+    'test_gspm.py': 30,
+    'test_interpreter.py': 1,
+    'test_loadaddr.py': 3,
+    'test_memory_map.py': 3,
+    'test_usb_firmware.py': 1,
+}
+
+
+def _lab_calls(node, attributes):
+    """Every `lab.<attribute>(...)` call anywhere inside `node`."""
+    return [n for n in ast.walk(node)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+            and n.func.attr in attributes
+            and isinstance(n.func.value, ast.Name) and n.func.value.id == 'lab']
+
+
+def _is_subtest(node):
+    return isinstance(node, ast.With) and any(
+        isinstance(item.context_expr, ast.Call)
+        and isinstance(item.context_expr.func, ast.Attribute)
+        and item.context_expr.func.attr == 'subTest' for item in node.items)
+
+
+class ASampleLoopStatesItsPopulation(unittest.TestCase):
+    """A test whose samples are loaded inside a `subTest` shrinks silently on a partial lab.
+
+    `subTest` catches a `SkipTest` and lets the loop finish, so a missing sample skips that one
+    iteration and the test as a whole reports as a pass. The claim in its title then covers whatever
+    happened to be present. `make test-nolab` cannot see this by construction: it looks for
+    failures, and a test that skips every iteration and asserts nothing passes.
+
+    Found on 13 August 2026 in `test_flash_journal.py`, and measured rather than argued: with a lab
+    holding only the Harmony 700 image, `test_three_images_carry_an_identification_table` reported
+    OK having read one image of three, and `test_the_architectures_without_serial_flash_have_no_table`
+    reported OK having asserted nothing at all about the Harmony One (arch 12) or the Harmony 525
+    (arch 9), which is the negative the whole arch 14 scoping rests on.
+
+    The cure is `lab.require(*NAMES)` at the top of the function, which skips the whole test. This
+    does not demand it everywhere, because 55 tests have the shape and converting them is the
+    owner's decision; it freezes the count so the population cannot grow.
+    """
+
+    def _offenders(self):
+        counted = {}
+        scanned = 0
+        for path in sorted(glob.glob(os.path.join(ROOT, 'tests', 'test_*.py'))):
+            with open(path, encoding='utf-8') as handle:
+                tree = ast.parse(handle.read())
+            for function in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+                if not function.name.startswith('test'):
+                    continue
+                scanned += 1
+                if _lab_calls(function, ('require',)):
+                    continue                      # the population is stated, which is the cure
+                body = [s for s in function.body
+                        if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))]
+                if len(body) != 1 or not isinstance(body[0], ast.For):
+                    continue                      # only the shape where the loop is the whole test
+                subtests = [n for n in ast.walk(body[0]) if _is_subtest(n)]
+                if subtests and any(_lab_calls(n, ('load', 'path')) for n in subtests):
+                    counted.setdefault(os.path.basename(path), []).append(function.name)
+        return counted, scanned
+
+    def test_no_test_loads_a_sample_inside_a_subtest_beyond_the_frozen_count(self):
+        counted, scanned = self._offenders()
+        # A guard on the guard: if the glob or the AST walk stops matching, fail here rather than
+        # reporting a clean tree.
+        self.assertGreater(scanned, 600, 'only %d test functions scanned' % scanned)
+        for name in sorted(set(counted) | set(SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION)):
+            found = counted.get(name, [])
+            expected = SAMPLE_LOOPS_WITHOUT_A_STATED_POPULATION.get(name, 0)
+            with self.subTest(name):
+                self.assertEqual(
+                    len(found), expected,
+                    '%s has %d test(s) loading a sample inside a subTest where %d were frozen: %s. '
+                    'A new one shrinks its own claim on a partial lab, so guard it up front with '
+                    'lab.require(*NAMES); a fixed one means decrementing the count here.'
+                    % (name, len(found), expected, ', '.join(sorted(found)) or 'none'))
 
 
 if __name__ == '__main__':

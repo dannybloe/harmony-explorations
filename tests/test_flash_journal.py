@@ -180,11 +180,13 @@ class SizeTableTest(unittest.TestCase):
     """What sizes the firmware knows, which is what bounds the arch 14 flash question."""
 
     def test_three_images_carry_an_identification_table(self):
+        # Up front, so a lab holding one of the three skips the whole test rather than passing
+        # having checked one image while its title says three. Measured on 13 August 2026: with
+        # only the Harmony 700 image present this reported OK with two subtests skipped.
+        lab.require(*TABLES)
         for name, where in TABLES.items():
             with self.subTest(name):
                 code = lab.load(name)
-                if code is None:
-                    self.skipTest('no %s in the lab' % name)
                 entries = ENTRY.findall(code)
                 capacities = {e[0][0] for e in entries}
                 manufacturers = {e[1][0] for e in entries}
@@ -234,12 +236,12 @@ class SizeTableTest(unittest.TestCase):
         over the whole image rather than at an address, because the claim is that nothing anywhere
         identifies a chip.
         """
+        # The negative is the whole point, so a missing image must skip rather than assert nothing:
+        # without this, a lab holding neither reported OK having tested no architecture at all.
+        lab.require(*NO_TABLE)
         for name in NO_TABLE:
             with self.subTest(name):
-                code = lab.load(name)
-                if code is None:
-                    self.skipTest('no %s in the lab' % name)
-                self.assertEqual(ENTRY.findall(code), [])
+                self.assertEqual(ENTRY.findall(lab.load(name)), [])
 
 
 class JournalTest(unittest.TestCase):
