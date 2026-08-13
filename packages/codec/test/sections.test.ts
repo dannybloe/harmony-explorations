@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, require_ } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
   Container,
@@ -60,6 +60,7 @@ import {
   pageListCopies,
   parameterGroups,
   parse,
+  modeProgramRoots,
   screenProgram,
   SECOND_SPACE_LIMIT,
   SECOND_SPACE_RANGES,
@@ -1380,4 +1381,65 @@ test('base slot 15s display light groups obey the bounds the firmware imposes',
     assert.equal(group0.length, 1, name);
     assert.ok((group0[0] as number) <= 0xff, `${name}: the delay is copied into a byte`);
   }
+});
+
+/**
+ * The nineteen containers, for the two claims below that are about the whole corpus.
+ *
+ * A separate list because `MODES` above pins per sample numbers over five, and a claim about every
+ * architecture cannot be made over five. Compared against the other three populations statically by
+ * `TheCorpusWidePopulationsAgree` in `tests/test_toolchain.py`, which exists because two of them
+ * silently held different numbers of names for as long as one sample had existed.
+ */
+const MODE_PROGRAM_CONTAINERS = [
+  'h700_config',
+  'h700_config_2',
+  'h600_config',
+  'h525_config',
+  'h525_config_2',
+  'h525_safemode_ahcm',
+  'one_config',
+  'one_config_unprogrammed',
+  'arch8_config_a',
+  'arch8_config_b',
+  'arch8_config_c',
+  'arch8_config_d',
+  'h600_safemode_gspm',
+  'h700_gspm',
+  'one_safemode',
+  'one34_region2',
+  'h650_safemode_gspm',
+  'one_spare_before_sync',
+  'one_spare_after_sync',
+];
+
+test('every mode record on every architecture carries a screen program that decodes',
+  skipWithoutLab(), () => {
+  // What `MODE_PROGRAM_ARCHITECTURES` claims, measured rather than described. Its docstring said "all
+  // three" and "arch 9 still manages only 43 of 114 ... and is not established" while the set held
+  // four, which is section 54's own before column left standing beside the set that section changed:
+  // it moved arch 9 (Harmony 525) from 0 of 114 to 114 of 114 and said so in the same paragraph.
+  //
+  // A docstring calling a reading unestablished, over code that relies on it in every container of
+  // that architecture, is a claim a reader cannot check without doing this. So this does it.
+  const tally = new Map<number, [number, number]>();
+  for (const name of MODE_PROGRAM_CONTAINERS) {
+    const c = parse(require_(name));
+    const roots = modeProgramRoots(c);
+    const records = (modeRecords(c) ?? []).length;
+    // Every record yields a root, which is what "immediately after its tagged list" means.
+    assert.equal(roots.length, records, `${name}: ${roots.length} roots for ${records} records`);
+    let decoded = 0;
+    for (const root of roots) if (screenProgram(c, root) !== undefined) decoded += 1;
+    const cur = tally.get(c.architecture as number) ?? [0, 0];
+    tally.set(c.architecture as number, [cur[0] + decoded, cur[1] + records]);
+  }
+  // Exact per architecture, so a reader that stops decoding one container's records fails here rather
+  // than moving a share nobody reads. Arch 9 (Harmony 525) is the entry the docstring was wrong about.
+  assert.deepEqual([...tally].sort((a, b) => a[0] - b[0]), [
+    [8, [536, 536]],
+    [9, [233, 233]],
+    [12, [656, 656]],
+    [14, [1090, 1090]],
+  ]);
 });

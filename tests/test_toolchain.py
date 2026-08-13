@@ -405,6 +405,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         'packages/codec/test/coverage.test.ts': 'const ACCOUNTED',
         'packages/codec/test/emit.test.ts': 'const REBUILT',
         'packages/codec/test/edit.test.ts': 'const ALL_CONTAINERS',
+        'packages/codec/test/sections.test.ts': 'const MODE_PROGRAM_CONTAINERS',
     }
 
     def _names(self, relative, declaration):

@@ -23,11 +23,17 @@ export const MODE_TAG_ENTER = 6;
 /**
  * Architectures where a mode record carries a screen program immediately after its tagged list.
  *
- * Every record does on all three: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
- * on arch 8 and 268 of 268 on the Harmony One. Arch 12 looked like the exception until section 54
- * found that the only thing stopping it was opcode 23's missing operand count. Arch 9 still manages
- * only 43 of 114, so there the record's tail is a different thing and is not established.
- * `docs/findings.md` sections 53 and 54.
+ * Every record does on all four, 2515 of 2515 across the corpus: 536 of 536 on arch 8 (Harmony 880),
+ * 233 of 233 on arch 9 (Harmony 525), 656 of 656 on arch 12 (Harmony One) and 1090 of 1090 on arch 14
+ * (Harmony 600 and 700). Arch 12 looked like the exception until section 54 found that the only thing
+ * stopping it was opcode 23's missing operand count. `docs/findings.md` sections 53 and 54.
+ *
+ * **This said "all three" and "arch 9 still manages only 43 of 114 ... and is not established" while
+ * the set below held four**, which is section 54's own before column left standing next to the set it
+ * changed: that section moved arch 9 from 0 of 114 to 114 of 114 and wrote "`MODE_PROGRAM_ARCHITECTURES`
+ * is now all four" in the same breath. A docstring stating a reading is unestablished, over code that
+ * relies on it in every container of that architecture, is the shape a reader has no way to doubt. The
+ * counts here are asserted in `test/sections.test.ts` so the next corpus change moves them in a diff.
  */
 export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;

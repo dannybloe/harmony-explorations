@@ -11,17 +11,27 @@
  * shows up in a reader's own tests, because a reader that returns plausible values from slightly
  * the wrong number of bytes looks correct until something else needs the boundary.
  *
- * **A claim is made by the reader that already knows the size.** Nothing here re-derives a length
- * from a structure's contents; where a length was only computed inside a reader, that reader grew
- * a variant which returns it. A second copy of a size rule is free to drift from the first, which
- * is the mistake `src/harmony/pic18/isa.py` exists to prevent on the disassembly side.
+ * **A claim is made by the reader that already knows the size**, and where a length was only computed
+ * inside a reader, that reader grew a variant which returns it. A second copy of a size rule is free
+ * to drift from the first, which is the mistake `src/harmony/pic18/isa.py` exists to prevent on the
+ * disassembly side, and the pointer array loop below is what happens when it is not prevented: it
+ * claimed base slot 12's table in all nineteen containers alongside the section's own reader.
+ *
+ * **This used to add "nothing here re-derives a length from a structure's contents", and three claims
+ * did.** The clock's zero tail test, base slot 3's, is still one and is deliberate. What is gone is the
+ * base slot 15 scan, which claimed whatever was left over between two structures, and the base slot 17
+ * header, which subtracted two offsets that differ by a constant and presented the constant as derived.
+ * A sentence stating a property the file does not have is worse than no sentence, because the next
+ * reader has no reason to check.
  */
-import { ARCH_RECORD_LENGTH, BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
+import { BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
   EMPTY_FRAME_LENGTH, FRAME_END_LENGTH, INSTRUCTION_LENGTH, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET,
-  archSlot }
+  archRecordExtent, archSlot }
   from './gspm.ts';
 import { fontSets, glyphs } from './font.ts';
 import {
+  PICTURE_BANK_BIAS,
+  TRAILER_LENGTH,
   bitmaps,
   deadTerminator,
   pictureBank,
@@ -31,7 +41,7 @@ import {
 import { countedPointers, valueMaps } from './valuemap.ts';
 import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Body, irGroups,
   irHeaderLength, irRecordBlocks, irRecordStart, irSymbolBlock, irSymbolTable } from './ir.ts';
-import { eventMap, handlerSets, modeRecords, modeTable, stateRecords, stateTable,
+import { eventMap, handlerSets, logArea, modeRecords, modeTable, stateRecords, stateTable,
   taggedList, taggedListPools } from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, lightBandExtras, parameterGroups, timers,
   touchPages } from './tables.ts';
@@ -98,6 +108,9 @@ export const EMPTY_ARRAY_LIMIT = 3;
 export function claims(c: Container, withPictures = true): Claim[] {
   const out: Claim[] = [];
   let bankClaims: () => void = () => {};
+  // The pointer array claims, deferred so they can compare against a section reader's own claim
+  // rather than duplicating it. See the comment beside their loop below.
+  let tableClaims: () => void = () => {};
   const add = (start: number | undefined, length: number | undefined, owner: string): void => {
     if (start === undefined || length === undefined || length <= 0) return;
     if (start < 0 || start + length > c.blob.length) return;
@@ -111,7 +124,7 @@ export function claims(c: Container, withPictures = true): Claim[] {
   add(0, SECTION_TABLE_OFFSET, 'header');
   add(SECTION_TABLE_OFFSET, SECTION_ITEM_SIZE * c.pointerCount, 'section-table');
   add(c.markerOffset, 4, 'marker');
-  add(c.blob.length - 6, 6, 'trailer');
+  add(c.blob.length - TRAILER_LENGTH, TRAILER_LENGTH, 'trailer');
 
   // The key table follows the marker on the families that carry one: a u8 count and four byte
   // records. `parse` reads it there, so this is the same layout and not a second opinion.
@@ -172,10 +185,8 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // section 76 says so rather than this pretending to have settled it.
   const arch = slot(1);
   if (arch !== undefined) {
-    const length = c.sectionLength(arch);
     at((c.sections[arch] as { address: number }).address,
-       length === undefined ? ARCH_RECORD_LENGTH : Math.min(ARCH_RECORD_LENGTH, length),
-       'slot-1-arch');
+       archRecordExtent(c.sectionLength(arch)), 'slot-1-arch');
   }
 
   // Base slot 3, the whole section rather than the record. The record is eleven bytes and closes
@@ -192,10 +203,21 @@ export function claims(c: Container, withPictures = true): Claim[] {
     at(address, padded ? CLOCK_SECTION_LENGTH : CLOCK_RECORD_LENGTH, 'slot-3-clock');
   }
 
-  const log = slot(2);
-  if (log !== undefined) {
-    add(c.blobOffsetOf((c.sections[log] as { address: number }).address), c.sectionLength(log),
-        'slot-2-log');
+  // Base slot 2's three numbers, claimed with the length its own reader computes from the consumer,
+  // `width + 6`, and not with the gap to the next pointer.
+  //
+  // **They are the same in all nineteen containers and only one of them is a reading.** Section 36 is
+  // explicit that a gap is an upper bound rather than a section's size, and base slot 4 is the
+  // standing counterexample at 125 bytes against a gap of up to 1532. This claimed the gap, which is
+  // right here only because the layout happens to abut: a container that padded after the log area
+  // would claim unread bytes and still report every byte accounted for. The test asserts the two agree
+  // rather than this assuming it, which is the difference between a coincidence and a check.
+  const area = logArea(c);
+  if (area !== undefined) {
+    const log = slot(2);
+    if (log !== undefined) {
+      add(c.blobOffsetOf((c.sections[log] as { address: number }).address), area.length, 'slot-2-log');
+    }
   }
 
   // The six counted pointer arrays, each claiming exactly the bytes its own width rule settled on.
@@ -206,22 +228,38 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // and only when the section is at most `EMPTY_ARRAY_LIMIT` bytes and every one of them is zero.
   // That is the whole of base slot 16 in every container, since no config in the corpus uses the
   // number sender, and of base slots 5 and 11 in the safe mode containers. Section 83.
-  for (let i = 0; i < c.sections.length; i += 1) {
-    const base = c.architecture === undefined ? undefined : baseOf(c, i);
-    const array = c.pointerArrayAt(i);
-    if (array !== undefined) {
-      add(array.start, array.length, `slot-${base ?? i}-table`);
-      continue;
+  //
+  // **Deferred, because several sections read their own table and this used to claim it again.**
+  // The comment beside base slot 12 said its array is not one `pointerArrayAt` recognises, and it is:
+  // `slot-12-table` was claimed twice in all nineteen containers and `slot-9-table` in six, once here
+  // from `width + 3 * count === length` and once from the section reader's own `countedPointers`. The
+  // two agreed on every extent, which is worse than disagreeing, because two right copies are the
+  // state that precedes two diverging ones and no test could see these: the overlap detector treats an
+  // identical run as legitimate, since a shared infrared block genuinely is one. So the loop runs last
+  // now and **compares** where a reader has already claimed, pushing its own claim only when the
+  // extents differ, which makes a divergence an overlap instead of a silent second opinion.
+  tableClaims = () => {
+    for (let i = 0; i < c.sections.length; i += 1) {
+      const base = c.architecture === undefined ? undefined : baseOf(c, i);
+      const owner = base === undefined ? `${RAW_SLOT_PREFIX}-${i}-table` : `slot-${base}-table`;
+      const already = out.find((claim) => claim.owner === owner);
+      const array = c.pointerArrayAt(i);
+      if (array !== undefined) {
+        if (already?.start === array.start && already.length === array.length) continue;
+        add(array.start, array.length, owner);
+        continue;
+      }
+      const section = c.sections[i];
+      const length = c.sectionLength(i);
+      if (section === undefined || section.isNull || length === undefined) continue;
+      if (length < 1 || length > EMPTY_ARRAY_LIMIT) continue;
+      const off = c.blobOffsetOf(section.address);
+      if (off === undefined || off + length > c.blob.length) continue;
+      if (c.blob.subarray(off, off + length).some((b) => b !== 0)) continue;
+      if (already?.start === off && already.length === length) continue;
+      add(off, length, owner);
     }
-    const section = c.sections[i];
-    const length = c.sectionLength(i);
-    if (section === undefined || section.isNull || length === undefined) continue;
-    if (length < 1 || length > EMPTY_ARRAY_LIMIT) continue;
-    const off = c.blobOffsetOf(section.address);
-    if (off === undefined || off + length > c.blob.length) continue;
-    if (c.blob.subarray(off, off + length).some((b) => b !== 0)) continue;
-    add(off, length, `slot-${base ?? i}-table`);
-  }
+  };
 
   // What the action list table addresses. The extent is `1 + 3 * count` and the count is the list
   // itself, so this needs no size rule of its own.
@@ -391,9 +429,12 @@ export function claims(c: Container, withPictures = true): Claim[] {
     if (block !== undefined) add(block.start, block.length, 'slot-5-symbol-block');
   }
 
-  // Three more count prefixed arrays whose records state their own size. Base slot 12's pointer
-  // array is not one of the six `pointerArrayAt` recognises, so it is claimed here; base slot 15's
-  // is, so only its groups are.
+  // Three more count prefixed arrays whose records state their own size.
+  //
+  // **Base slot 12's pointer array is one of the six `pointerArrayAt` recognises**, which this said
+  // it is not, so the table below and the deferred loop both claimed it in all nineteen containers.
+  // Base slot 9's is recognised in six. Both claims are made here, by the reader, and the loop
+  // compares rather than repeating. Base slot 15's groups are claimed here and its array by the loop.
   const timerTable = timers(c);
   if (timerTable !== undefined) {
     add(timerTable.start, timerTable.length, 'slot-12-table');
@@ -422,11 +463,16 @@ export function claims(c: Container, withPictures = true): Claim[] {
   const touch = touchPages(c);
   if (touch !== undefined) {
     // Where base slot 17 names the picture bank rather than a touch map, its own part is the two
-    // bytes in front of the bank, not the one byte an empty count accounts for. `PICTURE_BANK_BIAS`
-    // is the same constant the bank walk starts from, so the two cannot drift apart. Section 84.
-    const bank = pictureBankStart(c);
-    const header = bank !== undefined && touch.records.length === 0
-      ? bank - touch.start
+    // bytes in front of the bank, not the one byte an empty count accounts for. Section 84.
+    //
+    // **The constant, not a subtraction that can only produce it.** This read `pictureBankStart(c) -
+    // touch.start`, presented as derived from where the bank sits, and `pictureBankStart` is
+    // `blobOffsetOf(slot 17) + PICTURE_BANK_BIAS` while `touch.start` is `blobOffsetOf(slot 17)`, so
+    // the difference was `PICTURE_BANK_BIAS` by construction and could never be anything else. Naming
+    // the constant says what the claim is; the identity it rested on is asserted in the test rather
+    // than performed here, where it looked like a measurement.
+    const header = pictureBankStart(c) !== undefined && touch.records.length === 0
+      ? PICTURE_BANK_BIAS
       : touch.length;
     add(touch.start, header, 'slot-17-table');
     for (const page of touch.records) {
@@ -446,6 +492,13 @@ export function claims(c: Container, withPictures = true): Claim[] {
     // Records overlap by design where the generator shared a tail, so each is claimed only up to
     // the next one that starts inside it. An overlap here would be the file's, not a defect, and
     // the report must not turn a known sharing into a false alarm.
+    //
+    // **The sharing it defends against has never happened**, 0 of 239 records across the corpus, so
+    // this bound has no case behind it and a record whose `length` is wrong gets clipped into a
+    // plausible extent with no sample to show it. It stays, because a defence measured at zero is a
+    // prediction rather than dead code, and the test asserts the zero: the day it fires, either the
+    // sharing is real or `valueMaps` has started returning a length that runs into its neighbour, and
+    // both are worth reading rather than absorbing.
     const starts = [...maps].map((m) => c.blobOffsetOf(m.address)).filter((o) => o !== undefined);
     for (const record of maps) {
       const start = c.blobOffsetOf(record.address);
@@ -465,6 +518,9 @@ export function claims(c: Container, withPictures = true): Claim[] {
     for (const picture of set) at(picture.address, picture.length, 'slot-7-glyph');
   }
 
+  // The tables come before the bank, since the bank starts where every other claim stops and a
+  // table is one of those claims.
+  tableClaims();
   // Deferred until every other claim exists, because the bank starts where they stop.
   if (withPictures) bankClaims();
   return out;
@@ -484,6 +540,18 @@ export function namedContentEnd(c: Container): number {
   }
   return top;
 }
+
+/**
+ * What to call a slot whose base number is not established.
+ *
+ * **Not the raw index.** `baseOf` returns undefined for an architecture with no slot mapping, and the
+ * owner name used to fall back to the index, so `h890_config` reported `slot-2-table`, `slot-13-table`
+ * and `slot-18-table` for an arch 10 (Harmony 890) container whose slot mapping section 117 measured
+ * and refused to guess: the best of 1330 candidate insertions reaches 34 of 47 where arch 8 (Harmony
+ * 880), arch 9 (Harmony 525) and arch 14 (Harmony 600 and 700) each score 47 uniquely. A raw slot
+ * printed as a base slot is the one relabelling that section forbids, and it was in a report.
+ */
+export const RAW_SLOT_PREFIX = 'raw';
 
 /** The base slot number an architecture slot corresponds to, or undefined when it is inserted. */
 function baseOf(c: Container, slot: number): number | undefined {

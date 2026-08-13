@@ -31,11 +31,14 @@ import {
   containerExtent,
   gapFamilies,
   lightBandExtras,
+  logArea,
   modeRecords,
   parameterGroups,
   parse,
   pictureBankStart,
   reachablePrograms,
+  touchPages,
+  valueMaps,
 } from '../src/index.ts';
 
 /** `[sample, accounted, total]`, every container in the corpus. */
@@ -710,4 +713,114 @@ test('a group that loses its own entry count shows as a gap, which it did not be
     assert.equal(claims(parse(damaged)).filter((x) => x.owner === 'slot-15-spare').length, 0,
       `${name}: nothing claims a run for being unclaimed`);
   }
+});
+
+test('every section table is claimed once, and the two derivations of one agree',
+  skipWithoutLab(), () => {
+  // **Two right copies, which is the state before two diverging ones.** `slot-12-table` was claimed
+  // twice in all nineteen containers and `slot-9-table` in six: once by the section's own reader from
+  // its `countedPointers` width, once by the pointer array loop from `width + 3 * count === length`.
+  // A comment beside base slot 12 said its array is not one the loop recognises, and it is.
+  //
+  // No test could see it and none was missing. The overlap detector treats an identical run as
+  // legitimate, and it has to, because a shared infrared duration block genuinely is claimed once per
+  // record that names it, section 61. So a duplicate that agrees is indistinguishable from a structure
+  // two readers legitimately share, which is why this checks the thing the detector cannot: that a
+  // table has exactly one claim, and that where both derivations exist they produce the same extent.
+  let compared = 0;
+  for (const [name] of ACCOUNTED) {
+    const c = parse(require_(name));
+    const tables = new Map<string, { start: number; length: number }[]>();
+    for (const claim of claims(c)) {
+      if (!/^slot-\d+-table$/.test(claim.owner)) continue;
+      const list = tables.get(claim.owner) ?? [];
+      list.push({ start: claim.start, length: claim.length });
+      tables.set(claim.owner, list);
+    }
+    for (const [owner, list] of tables) {
+      assert.equal(list.length, 1, `${name}: ${owner} claimed ${list.length} times`);
+    }
+    // And the comparison itself, which is what the loop does instead of claiming again: wherever
+    // `pointerArrayAt` recognises a section whose table a reader has claimed, the extents must match.
+    for (let i = 0; i < c.sections.length; i += 1) {
+      const array = c.pointerArrayAt(i);
+      if (array === undefined) continue;
+      let base: number | undefined;
+      for (let b = 0; b < 20; b += 1) {
+        try {
+          if (archSlot(c.architecture as number, b) === i) { base = b; break; }
+        } catch { break; }
+      }
+      const claimed = tables.get(`slot-${base ?? i}-table`)?.[0];
+      if (claimed === undefined) continue;
+      compared += 1;
+      assert.deepEqual({ start: claimed.start, length: claimed.length },
+        { start: array.start, length: array.length },
+        `${name}: slot ${i} table, the reader and the array rule disagree`);
+    }
+  }
+  // Exact, so a container leaving the corpus fails rather than quietly comparing less. 104 slot and
+  // container pairs where both derivations exist, of which 20 are the two that used to duplicate:
+  // `slot-12-table` in nineteen containers and `slot-9-table` in six, less the five and thirteen where
+  // the array rule refuses and only the reader answers.
+  assert.equal(compared, 104, `${compared} table extents compared`);
+});
+
+test('four claims that used to rest on a coincidence now rest on a comparison',
+  skipWithoutLab(), () => {
+  // Each of these was right in all nineteen containers for a reason that was not the reason given.
+  // The claims now state what they mean and this asserts the agreement that used to be assumed.
+  let logs = 0;
+  let banks = 0;
+  let shared = 0;
+  let records = 0;
+  for (const [name] of ACCOUNTED) {
+    const c = parse(require_(name));
+
+    // Base slot 2: the claim is `logArea(c).length`, `width + 6` from the consumer. It used to be the
+    // gap to the next pointer, which section 36 says is an upper bound and not a size, with base slot
+    // 4 the standing counterexample at 125 bytes against a gap of up to 1532.
+    const area = logArea(c);
+    const logClaim = claims(c).find((x) => x.owner === 'slot-2-log');
+    if (area !== undefined && logClaim !== undefined) {
+      logs += 1;
+      assert.equal(logClaim.length, area.length, `${name}: the log claim is the reader's length`);
+      const gap = c.sectionLength(archSlot(c.architecture as number, 2));
+      assert.equal(area.length, gap, `${name}: log area ${area.length} against a gap of ${gap}`);
+    }
+
+    // Base slot 17 where it names the picture bank: the header is `PICTURE_BANK_BIAS`, and the
+    // subtraction it used to be could only ever produce that, since `pictureBankStart` is the section
+    // start plus the bias. The identity belongs here, where it can be seen for what it is.
+    const touch = touchPages(c);
+    const bank = pictureBankStart(c);
+    if (touch !== undefined && bank !== undefined && touch.records.length === 0) {
+      banks += 1;
+      assert.equal(bank - touch.start, PICTURE_BANK_BIAS,
+        `${name}: the bank sits one bias past the section, by construction`);
+      const header = claims(c).find((x) => x.owner === 'slot-17-table');
+      assert.equal(header?.length, PICTURE_BANK_BIAS, `${name}: claimed as the constant`);
+    }
+
+    // Base slot 14: the truncation guarding against a shared tail. It has never fired, so the zero is
+    // the claim. The day it does, either the sharing is real or `valueMaps` returns a length that runs
+    // into its neighbour, and both are worth reading rather than being clipped into plausibility.
+    const maps = valueMaps(c);
+    if (maps !== undefined) {
+      const starts = [...maps]
+        .map((m) => c.blobOffsetOf(m.address))
+        .filter((o): o is number => o !== undefined);
+      for (const record of maps) {
+        const start = c.blobOffsetOf(record.address);
+        if (start === undefined) continue;
+        records += 1;
+        if (starts.some((o) => o > start && o < start + record.length)) shared += 1;
+      }
+    }
+  }
+  // Exact counts, so a sample leaving the corpus fails rather than checking less.
+  assert.equal(logs, 19, `${logs} containers with a log area`);
+  assert.equal(banks, 13, `${banks} containers whose base slot 17 names the picture bank`);
+  assert.equal(records, 239, `${records} base slot 14 records`);
+  assert.equal(shared, 0, `${shared} base slot 14 records overlap a neighbour`);
 });

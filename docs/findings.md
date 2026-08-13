@@ -18389,18 +18389,18 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Thirteen shipped readers answered plausibly where they should have refused, and three were rails
+## 139. Fourteen shipped readers answered plausibly where they should have refused, and three were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Thirteen defects came out of it that a sample could not have found, and they share one shape, which is
+Fourteen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entry 13, which was read a day later and is appended rather
-than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
+They are listed newest reading first, except entries 13 and 14, which were read a day later and are
+appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
 Entries 5 and 11 are the rails, and 11 is where "it cannot brick anything" turned out to be a claim
@@ -18799,6 +18799,62 @@ still round to 100.00%, so `gapCount` is the signal and a report quoting only th
 The reason this one is worth a whole entry, when it moved no number: **a claim that cannot fail is the
 same defect as a test that cannot fail**, and this repository has spent a day on the second kind. It sat
 inside the figure that measures milestone M2.
+
+### 14. Six claims in the byte accounting were right for reasons that were not the reasons given
+
+Entry 13 was one claim that could not fail. These are its neighbours, found by reading the rest of the
+same file, and they share a shape with it: each was correct in all nineteen containers, and in each the
+comment above it named a derivation the code was not performing.
+
+**One derivation existed three times and two of its copies were invisible.** Base slot 12's pointer
+array is one of the six `pointerArrayAt` recognises, and a comment beside its reader said it is not, so
+`slot-12-table` was claimed twice in **all nineteen containers** and `slot-9-table` in six: once by the
+section reader from its own `countedPointers` width, once by the array loop from
+`width + 3 * count === length`. The extents agreed on every one of the 104 slot and container pairs
+where both derivations exist, which is worse than disagreeing. Two right copies are the state that
+precedes two diverging ones, and this is the case that **no** check could have caught: entry 2's
+detector treats an identical run as legitimate, and it has to, because a shared infrared duration block
+genuinely is claimed once per record that names it, section 61. The array loop runs last now and
+**compares**, pushing its own claim only when the extents differ, so a divergence becomes an overlap.
+
+**A raw slot was printed as a base slot, in a report.** `baseOf` returns undefined for an architecture
+with no slot mapping and the owner name fell back to the index, so `h890_config` reported
+`slot-2-table`, `slot-13-table` and `slot-18-table` for an arch 10 (Harmony 890) container. Section 117
+measured that mapping and refused to guess it, the best of 1330 candidate insertions reaching 34 of 47
+where arch 8 (Harmony 880), arch 9 (Harmony 525) and arch 14 (Harmony 600 and 700) each score 47
+uniquely, so this is the one relabelling that section forbids. Unmapped slots are `raw-<i>-` now, in the
+accounting and in the emitter, which have to agree owner for owner.
+
+**The base slot 1 extent rule existed three times**, `Math.min(ARCH_RECORD_LENGTH, room)`, in `parse`,
+in the claim and in the rebuilder, with the undefined case spelled differently in each. `archRecordExtent`
+is the one copy. That is this repository's oldest rule, and the count is the part worth recording: it was
+not two.
+
+**A subtraction that could only produce a constant was presented as derived.** Base slot 17's header
+where it names the picture bank read `pictureBankStart(c) - touch.start`, and `pictureBankStart` is the
+section start plus `PICTURE_BANK_BIAS` while `touch.start` is the section start. It claims the constant
+now and the identity is asserted in the test, where it can be seen for what it is.
+
+**A section's size was the gap to the next pointer**, for base slot 2, while `logArea` computes
+`width + 6` from the consumer in the same package. They agree in all nineteen, and section 36 exists to
+say that a gap is an upper bound: base slot 4 holds 125 bytes where the gap is up to 1532. A container
+that padded after the log area would have claimed unread bytes and still reported every byte accounted
+for.
+
+**A defence has never had a case.** Base slot 14's records are truncated to the next record that starts
+inside them, against a shared tail, and that sharing has happened **0 times in 239 records**. It stays,
+because a defence measured at zero is a prediction rather than dead code, and the zero is asserted: the
+day it fires, either the sharing is real or `valueMaps` returns a length running into its neighbour.
+
+**And the file's own docstring claimed a property it did not have**: "nothing here re-derives a length
+from a structure's contents", while three claims did. Two are gone with entry 13 and this one; the
+third, the clock's zero tail test, is deliberate and now says so.
+
+Nothing moved. All nineteen containers report the same coverage to the byte and the same round trip, and
+the mode program docstring corrected alongside them, `MODE_PROGRAM_ARCHITECTURES`, said "all three" and
+"arch 9 still manages only 43 of 114 ... and is not established" over a set of four, which is section 54's
+own before column left standing beside the set that section changed. It is 2515 of 2515 across the corpus,
+asserted per architecture.
 
 ### What it changes
 

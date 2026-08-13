@@ -35,7 +35,6 @@
  */
 
 import {
-  ARCH_RECORD_LENGTH,
   BINDING_SLOT,
   EMPTY_FRAME_LENGTH,
   CLOCK_COOKIE,
@@ -49,6 +48,7 @@ import {
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   TRAILER_CHECKSUM_OFFSET,
+  archRecordExtent,
   clockRecordFields,
   trailerChecksum,
 } from './gspm.ts';
@@ -76,7 +76,7 @@ import type { TaggedList } from './sections.ts';
 import { fontSets, glyphs } from './font.ts';
 import { SCREEN_END, bitmaps, deadTerminator, pictureBank, pictureBankStart, reachablePrograms }
   from './screen.ts';
-import { EMPTY_ARRAY_LIMIT, claims, namedContentEnd } from './coverage.ts';
+import { EMPTY_ARRAY_LIMIT, RAW_SLOT_PREFIX, claims, namedContentEnd } from './coverage.ts';
 import {
   IR_CARRIER_AT,
   IR_CLASS_STREAM,
@@ -283,7 +283,7 @@ export function rebuilds(c: Container): Rebuild[] {
     // config puts base slot 2 three bytes in. Below four bytes even the version word does not fit,
     // so the record is carried whole and only the architecture byte is framed.
     const room = c.sectionLength(archSlotIndex);
-    const length = room === undefined ? ARCH_RECORD_LENGTH : Math.min(ARCH_RECORD_LENGTH, room);
+    const length = archRecordExtent(room);
     const w = new Writer(length);
     if (length >= 4 && c.versionWord !== undefined) {
       w.u8(c.architecture).u8(c.architecture).u16(c.versionWord)
@@ -374,7 +374,9 @@ export function rebuilds(c: Container): Rebuild[] {
     if (array.width === 1) w.u8(array.values.length);
     else w.u16(array.values.length);
     for (const value of array.values) w.u24(value);
-    framed(array.start, `slot-${base ?? i}-table`, w);
+    // The same naming rule as `coverage.ts`, so `rebuilds` can be compared to `claims` owner for
+    // owner: a slot with no established base number is `raw-<i>-`, never `slot-<i>-`.
+    framed(array.start, base === undefined ? `${RAW_SLOT_PREFIX}-${i}-table` : `slot-${base}-table`, w);
   }
 
   // Base slot 4: a fallback and a key to value map, all of it typed.

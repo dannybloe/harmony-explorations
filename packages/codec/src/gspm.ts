@@ -137,6 +137,22 @@ export const ARCH_RECORD_LENGTH = 7;
 export const ARCH_VERSION_WORD_END = 4;
 
 /**
+ * How many bytes of base slot 1 belong to it, given the room before the next section.
+ *
+ * Seven in every generated config and three in the arch 9 (Harmony 525) safe mode container, where
+ * reading a fixed seven takes the version word out of base slot 2. Sections 36, 76 and 79.
+ *
+ * **A function because this rule existed three times**: here in `parse`, in `coverage.ts`'s claim and
+ * in `emit.ts`'s rebuilder, spelled `Math.min(ARCH_RECORD_LENGTH, room)` in all three with the
+ * undefined case handled differently in each. They agreed, which is the state this repository's oldest
+ * rule is about: two copies of a derivation are two copies until one of them moves, and here there
+ * were three. `undefined` room means nothing bounds it, so the record is its full length.
+ */
+export function archRecordExtent(room: number | undefined): number {
+  return room === undefined ? ARCH_RECORD_LENGTH : Math.min(ARCH_RECORD_LENGTH, room);
+}
+
+/**
  * Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator are
  * their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly once in
  * every one of the thirteen samples, so it identifies the record without needing a length to
@@ -848,7 +864,7 @@ export function parse(data: Uint8Array): Container {
     // container, so its extent is the distance to the next pointer, like every other section's.
     // Reading a fixed seven takes the version word out of slot 2 there. Sections 36 and 79.
     const room = container.sectionLength(ARCH_RECORD_SLOT) ?? 0;
-    if (o >= 0 && o + Math.min(ARCH_RECORD_LENGTH, room) <= blob.length) {
+    if (o >= 0 && o + archRecordExtent(room) <= blob.length) {
       // The architecture is stored twice. Reading it only when the two copies agree keeps a
       // coincidence from being reported as a fact.
       if (room >= 2 && u8(blob, o) === u8(blob, o + 1)) container.architecture = u8(blob, o);
