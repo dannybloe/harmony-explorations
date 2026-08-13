@@ -244,10 +244,40 @@ image is a second sample rather than a stand in. Other models are iterated on la
    view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
    is a stronger check than anything available here.
 
-   What is still unknown is everything a request would answer: whether these operations still exist,
-   their parameters, their responses, and which of them need an account. That step is a **separate
-   decision**, because it touches a live service with the owner's own credentials, and it is the one
-   item in this plan whose value **decays**.
+   **The requests were made on 13 August 2026, with the owner's authorisation and a throwaway account,
+   and the route works end to end.** Section 132. What the paragraph above listed as unknown is
+   measured now, and four things follow for this decision.
+
+   The database needs **a plain Logitech login and nothing else**: no registered remote, no Harmony
+   account record. That is what makes the import worth building, because the user it is for is the
+   second hand buyer, and Harmony Desktop refuses to register a Harmony 525 at all. The chain is
+   `SearchGlobalDevices` then `GetGlobalLanguageCommands`; `GetCommands` is a dead end that reads the
+   caller's own devices.
+
+   **The expensive route acquired a cost nobody had priced: an infrared encoder.** Logitech stores a
+   protocol name and a frame value, not pulses, so converting a catalogue device into our format means
+   implementing the protocol families. Six devices gave nine of them. This is the real work item in the
+   import and it belongs in the milestone that takes it on, not in a footnote. **It does not touch the
+   cheap route**, which reads base slot 5 out of a compiled config and needs no encoder at all, and that
+   asymmetry is now the strongest argument for keeping the cheap route as the first version.
+
+   `downloadManager.RemoteConfigurationInJson` **was called, and it is less than this decision hoped.**
+   Discovery does not advertise the service; the URL comes back from a compile. What it returns is a ZIP
+   holding a bare `GSPM` container and a manifest, so the vendor authored second view is the manifest
+   rather than a described configuration. The manifest does corroborate the trailer checksum, seed and
+   algorithm, from its author.
+
+   **And the compile itself is the useful surprise.** It runs server side with the remote unplugged and
+   hands back a file, so this project can have Logitech compile a configuration **to its own
+   specification** and never write to hardware. Two of those exist, one per bench architecture, and they
+   are the corpus's first known answer samples: three devices and two activities chosen in advance,
+   read back correctly by four readers that had only ever been checked against configs found in the
+   wild. `packages/codec/test/calibration.test.ts`.
+
+   What is still unknown, and smaller than what was: which member of a regional skin pair a compile
+   produces, section 131, and whether the protocol timings are reachable, since the endpoint that would
+   plausibly carry them returns 502 on an account with content. The **value still decays**, so a
+   measurement that is worth having is worth making now.
 
    **A community database is a direction now rather than an idea, and it has one hard rule**: a
    definition carries its **provenance**, and only a definition learned from hardware may be shared.

@@ -52,6 +52,13 @@ CONTAINERS = (
     # is a duplicate on purpose: the alternative is a special case in the test that asserts every
     # container sample has one, and a special case there is worth less than a duplicate file.
     'one_spare_before_sync', 'one_spare_after_sync',
+    # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
+    # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
+    # mode container does: a golden vector is a cheap check between two implementations and costs the
+    # published totals nothing. These two also happen to be the only samples whose devices and
+    # activities were chosen before the bytes existed, so a disagreement between Python and TypeScript
+    # about them would be a disagreement about a known answer.
+    'calibration_one', 'calibration_h600',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

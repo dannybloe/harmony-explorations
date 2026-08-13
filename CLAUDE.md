@@ -225,17 +225,26 @@ what is fetched; the application works identically for somebody who never touche
 needs no new protocol work at all, since base slot 5 is fully read: a config Logitech compiled can be
 read off the remote and converted with today's code.
 
-**The other route is mapped now and it is real**, `docs/host-client.md`: fourteen services, 78
-operations, JSON over HTTP rather than SOAP, extracted offline from the client already in the lab with
-no request made to Logitech, and **the device database is its own call** rather than a side effect of
-compiling a config. Two things on that list matter beyond the import.
-`downloadManager.RemoteConfigurationInJson` is **a configuration described in JSON by the people who
-wrote the format**, which would be a vendor authored second view of an object this project already reads
-to the byte, so it belongs to the format work rather than to the product. And
-`infraredAnalysisManager.AnalyzeInfrared` is the learning service the user manuals describe, which is
-the piece M5 has to replace locally. What no request has established is whether any of it still answers,
-what the parameters are, or which calls need an account: making one is a separate decision, since it
-touches a live service with the owner's credentials.
+**The other route is measured now, not just mapped**, `docs/host-client.md` and section 132: the live
+service advertises **308 operations over 50 services**, the device database opens for **a plain Logitech
+login with no account record and no registered remote**, and the chain is `SearchGlobalDevices` then
+`GetGlobalLanguageCommands`. **What it serves is symbolic, not pulses**: a protocol name and a frame
+value, `Raw` null on all 419 commands fetched, so an importer needs an **infrared encoder per protocol
+family** and that is a work item nobody had priced. The cheap route, reading base slot 5 out of a
+compiled config, needs none of it. Two things on that list matter beyond the import.
+`downloadManager.RemoteConfigurationInJson` **was called and it is less than its name promised**: the
+URL is not advertised, it comes back from a compile, and it returns a ZIP holding a bare `GSPM` container
+plus a manifest. The manifest corroborates section 41's trailer checksum, seed and algorithm, from its
+author. And `infraredAnalysisManager.AnalyzeInfrared` is the learning service the user manuals describe,
+which is the piece M5 has to replace locally.
+
+**The compile is the surprise worth carrying**: it runs server side with the remote unplugged, so
+Logitech will compile a config **to our own specification** and hand it over as a file. Two of those
+exist, one per bench architecture, and they are the corpus's first **known answer** samples. Three
+devices and two activities chosen in advance come back named correctly on both, through routes with no
+shared code, section 125 on arch 12 and section 121 on arch 14. `packages/codec/test/calibration.test.ts`
+is the test; the containers are lab fixtures and deliberately outside `CONTAINERS`, since that population
+is what every corpus wide total is computed from.
 
 ## This repository is public
 
@@ -1017,7 +1026,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 131 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 132 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

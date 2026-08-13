@@ -58,6 +58,11 @@ const CONTAINERS = [
   'h525_external_firmware',
   'one_spare_before_sync',
   'one_spare_after_sync',
+  // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
+  // whose devices and activities were chosen before the bytes existed, so a disagreement between the
+  // two implementations about them would be a disagreement about a known answer.
+  'calibration_one',
+  'calibration_h600',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',

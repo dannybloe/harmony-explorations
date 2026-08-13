@@ -142,6 +142,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
+  // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
+  // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
+  calibration_one: 'calibration-one-spare.bin',
+  calibration_h600: 'calibration-h600.bin',
   // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
   // The service API surface in `docs/host-client.md` is extracted from it by
   // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two

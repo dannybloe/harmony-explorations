@@ -17440,3 +17440,198 @@ Favourite channel counts are not taken from the service at all: it reports 0 for
 model including the 880, where our table says 16 and the configs draw them. So that field describes
 what MyHarmony manages rather than what the hardware has, and a source has to be read for what it is
 about before its numbers are copied.
+
+## 132. Logitech's service still answers, a plain login opens the device database, and it compiled two configs to our specification
+
+Section 56 measured `svcs.myharmony.com` alive and section 58 watched it compile a config for a
+device chosen that day. Neither established what is reachable, on what terms, or in what form, and
+`docs/roadmap.md` decision 11 rests on all three. This is that measurement, made on 12 and 13 August
+2026 from the bench machine.
+
+**The brands named below are ours.** Three devices were picked out of Logitech's public catalogue to
+make this measurement, so quoting them breaks nothing: the rule that no brand out of a contributor's
+config is quoted is about somebody's own equipment inventory, and none of this is anybody's.
+
+### What answers with no login at all
+
+| call | outcome |
+|---|---|
+| `Discovery/GetJsonOperations` | 200, **308 operations over 50 services**, each with its address |
+| `DeviceManager/Ping`, `Security/Ping` | 200 |
+| `DeviceManager/SearchDevice/manf/{m}/model/{n}/iface/{i}` | 200, a real catalogue query |
+| `ProductsManager/GetHarmonyProducts` | 200, 27 products with skin numbers |
+
+Everything else refuses with `400`, `ErrorCode: 5`, `Access is denied.`, `Source: Invoke`, which is an
+authorisation step before the operation rather than inside it. `GetCommands`,
+`SearchGlobalDevices`, `GetGlobalDevices`, `GetManufacturers`, `GetAllTeachingCommands`,
+`GetDeviceTypeProperties`, `GetInputInfo`, `GetAllProducts` and `GetBrandNamesByDeviceCategory` all do.
+
+The one open route is real rather than a stub: an existing manufacturer and model return an alias and a
+model that cannot exist returns `{"devices":[]}`. What it will not return is a `spec`, which is null on
+every call. So without a login you can ask whether Logitech knows a device and not what it sends.
+
+Discovery is worth noticing on its own. It advertises 308 operations where the mirrored client declares
+78, and the extra 230 are not a bigger version of the same surface: `LIPService`, `CloudApi`,
+`AWSServices`, `ContentService` and a `TimeServer` are services the client this project read never
+mentions.
+
+### The gate is a session and nothing more
+
+**Not a remote, and not even a Harmony account.** A Logitech identity created for this measurement,
+whose `LoginUser` reply carries `AccountId: 0` and `HouseholdId: null`, and for which `GetMyAccount`
+answers "Account does not exist for provided user", gets the whole catalogue: 8530 manufacturers,
+120 products. Measured twice on that account, before and after the confirmation mail was acted on,
+with no difference.
+
+That matters for the product question rather than for the format. Harmony Desktop makes a user attach
+a remote before it will show them anything, and **it refuses a Harmony 525**, which the owner found by
+trying: `GetHarmonyProducts`, the list the setup flow uses, holds 27 products and contains no 525, no
+880 and no 890. So the second hand owner of an arch 9 remote cannot register it and would have been
+locked out if the catalogue needed a household. It does not.
+
+`GlobalFeatureManager/GetGlobalFeatures` still refuses after a login, on an account with a registered
+remote as well as on the empty one, so there is a second gate above this one and nothing here maps it.
+
+### The route to infrared data, and the shape it arrives in
+
+```
+LoginUser
+  SearchGlobalDevices { manufacturer, modelNumber, deviceType, searchType, maxResults }
+    GetGlobalLanguageCommands { globalLanguageVersionId }
+```
+
+Two dead ends worth recording because each cost a round. `GetCommands` authorises on
+`AuthorizeActionOnData`, so it reads the caller's **own** devices and not the catalogue. And the search
+parameter is `manufacturer`, not `manufacturerName`: WCF ignores a field it does not know, so a wrong
+spelling returns `200` with `Status: 1` and no matches, which reads exactly like a device that is not
+in the database. Six searches were spent on that before
+`SearchGlobalDevicesByClassification` happened to answer "Manufacturer can not be null." and named the
+field. `searchType` is one based, `ExactMatch` being 1.
+
+**What comes back is symbolic, and this is the finding that costs the product real work.** A command
+is a name, a function group, and a `KeyCode` of the form `G:<protocol>:()(<value>)():3`:
+
+```
+G:Sony 12 Bit:()(0x910)():3        the digit 0
+G:Sharp 48 Bit 2:()(0x2A4C028E008C)():3
+G:PanasonicV2 48 Bit:()(0x40040D00808D)():3
+```
+
+`Raw` is null on all 419 commands fetched across six devices and `IsLearned` is false on all of them.
+So Logitech stores a protocol plus a frame value and the pulse and space blocks that base slot 5 holds
+are the **compiled** form of that. The values are bit reversed frames, visible in the Sony digits: 1 is
+`0x010`, 2 is `0x810`, 3 is `0x410`.
+
+That agrees with section 42 from the other direction. Three of the four infrared encoding classes are
+used by no config here, and the reason recorded there is that the storage form was a server decision;
+this is the server, and it decides from a protocol table rather than from samples.
+
+Six devices gave nine distinct protocol names, and the names are **families rather than brands**: a
+Samsung television's commands are `GoVideoO1 32 Bit` and a Yamaha amplifier's are `Toshiba 32 Bit`,
+which is the same naming habit as DecodeIR. So converting a catalogue device into this project's format
+needs an encoder per protocol family, and the size of that job is bounded but not small.
+
+### The compile, and the artefact it produces
+
+`CompileManager/StartCompileWithLocaleAndSettings`, taking `{ remoteId, localeId, remoteSettings }`,
+answers with an `ApproximateSize` and a `DownloadUrl` carrying a `CompilationId`. The client replaces
+`/RemoteConfiguration` in that URL with `/json2/RemoteConfigurationInJson` and polls every three
+seconds. Eleven seconds later:
+
+```
+<RemoteConfiguration status='Successful' length='288562' />   followed by a ZIP
+```
+
+The ZIP holds `Description.xml` and `Result.EzHex`, and **`Result.EzHex` is a bare `GSPM` container**,
+not the XML wrapper the name suggests. `Description.xml` is a manifest, and two things in it are
+corroboration rather than news:
+
+* `CHECKSUM SEED="0x4321" OFFSET="0x0" TYPE="XOR"` with the expected value, which is section 41's
+  trailer checksum stated by its author, seed included. Our own recomputation matches the declared
+  value on both containers.
+* `<INTENDED><SKIN>` naming the skin, and a per architecture difference that the memory maps predict:
+  `REGIONID="4"` for the Harmony One, whose config lives in memory mapped NOR, against
+  `PATH="/cfg/usercfg"` for the Harmony 600, whose config lives on serial SPI flash.
+
+**No byte reached a remote.** The compile is server side and both remotes were unplugged, which also
+settles a question the previous section left open: the service does not need a connected unit. The
+desktop application's sync step is what writes, it is a separate action, and nothing here implements
+it.
+
+### The calibration, which is what the two configs are for
+
+A throwaway account was given three devices and two activities and the service compiled a
+configuration for a Harmony One and for a Harmony 600. So for the first time in this project there was
+an expected value that did not come from the file:
+
+| chosen | the One reads back | the 600 reads back |
+|---|---|---|
+| three devices | `Denon_AV_Receiver`, `Sony_TV`, `Panasonic_Blu-ray_Player` | the same three |
+| `Watch TV` | scan 51, drives the amplifier and the television | scans 8 and 2, the same two |
+| `Watch a Movie` | scan 50, drives the amplifier and the player | scans 9 and 34, the same two |
+| counts | 3 devices, 2 activities | 3 devices, 2 activities |
+
+All eleven container checks pass on both. The activity names come out of the **pixels a screen program
+draws**, and the two architectures reach them by routes with no shared code: a stated rectangle in base
+slot 17 on the One, section 125, and string matching against the modes the activity's chain enters on
+the 600, section 121, under four rules each of which was found by having it fail. Identical input
+through both and the same two names out.
+
+The names are assertable because they are deterministic. Harmony Desktop **will not let a user name an
+activity**: the name follows the activity type, and a device's name is composed from its manufacturer
+and its device type. That is a limitation of Logitech's own application rather than of the format, and
+it is the kind of gap FreeHarmony exists to fill.
+
+`packages/codec/test/calibration.test.ts` is the test. The two containers are lab fixtures and are
+**deliberately outside** `CONTAINERS`, the population every corpus wide total is computed from, because
+growing that population moves a dozen published numbers at once and is its own decision. They are also
+synthetic, and two states of one specification rather than two independent remotes.
+
+### Four things the pair says that one config could not
+
+**The infrared group order is not stable.** The One puts Denon first and the 600 puts Sony first, from
+identical input. So a group index is not portable between compiles, let alone between architectures,
+which joins base slot 15's group index in section 44 as a thing a writer must not carry across.
+
+**A code count is nearly but not exactly architecture independent.** Denon 92 and Panasonic 49 on
+both, Sony 100 on the One against 101 on the 600.
+
+**The stored count is larger than the catalogue's, not smaller.** The service offers 73, 73 and 48
+commands for the three devices and the containers hold 100, 92 and 49. The prediction written down
+before the measurement was a subset, and it was wrong in the other direction; where the extra codes come
+from is not established.
+
+**Two compiles of identical input differ in 67% of their bytes.** Eight minutes apart, nothing changed
+on the account, same length both times, 997855 of 1489789 bytes different, first at `0x147`. `CLAUDE.md`
+already says a small logical change reshuffles the whole image; this is the stronger statement, that
+**no** change does too. So reproducing what Logitech's generator would have emitted is not merely hard,
+and the minimal diff approach the roadmap already chose is the only one available.
+
+### What is broken at their end, and one thing not looked at
+
+`UserAccountDirector/DeviceList`, `ProtocolList`, `CapabilityList` and `SimpleRestGetDeviceList` return
+`502` from the gateway, three attempts each, on an account with three devices. All four returned `200`
+with empty bodies when the account was empty, so they fail on real content. `DeviceManager/GetMyDevices`
+is the working substitute for the first. **`ProtocolList` mattering is the disappointment here**: the
+protocol timings a compiler must hold are the one thing that would shrink the encoder job, and that is
+the endpoint that would plausibly carry them.
+
+`UserButtonMappingManager/GetRemoteCanvas` answered 10590 bytes of button records for skin 54 and has
+not been examined. The account's own button maps did answer, five of them, three per device and two per
+activity, and they split `HardRemoteButton` from `SoftRemoteButton` with a name on each, `VolumeUp`,
+`DirectionLeft`, `Select`. That is the same two disjoint populations section 128 derived from the
+container. A compiled config binds a scan code to a list that sends a named command, and the button map
+says which name a key carries, so **there is a read only route from a scan code to a button name**,
+which section 48 says needs a RAM write this project forbids. Not followed here, and the largest thing
+this measurement leaves on the table.
+
+### The timestamp, which is worth one paragraph and no more
+
+Base slot 3 is the compile moment and Logitech's compiler stamps it from a clock that was 22 hours and
+53 minutes behind UTC on 13 August 2026. The mechanism is measured: two compiles eight minutes and
+forty seconds apart carry stamps eight minutes and forty three seconds apart, so the field ticks
+correctly and its absolute value is whatever that server believes. Section 58's confirmation stands, because
+that compile in August 2026 stamped the right date; the drift appeared afterwards. Nothing here depends
+on it, since `edit.ts` already stamps at write time, and it changes no rail. It is recorded so that
+nobody reads the field as provenance, and because on arch 12 a remote sets its clock from it at boot,
+section 111, which means a config Logitech compiles today gives a Harmony One a clock almost a day slow.

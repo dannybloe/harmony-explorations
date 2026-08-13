@@ -184,12 +184,51 @@ same object, which is the strongest kind of cross check there is, and it would e
 readings in `docs/config-format.md` or name the field that is wrong. It needs an account and a
 registered remote, so it is not free, and it is the single most valuable call on this list.
 
-**What this does not establish, which is most of it.** No call here has been made by this project.
-Section 56 measured the discovery endpoint answering and an account authenticating; section 58 watched
-the service compile a config. Nothing says these operations still exist, what their parameters are,
-what comes back, or which of them need an account: the search may well be public and the account
-scoped ones certainly are not. The client also names development and integration hosts and carries
-several API keys in plain text, which stay in the lab and are deliberately not extracted.
+**What this does not establish, which was most of it.** No call in the list above had been made by
+this project when the list was written, and everything below the next heading is measured now.
+The client also names development and integration hosts and carries several API keys in plain text,
+which stay in the lab and are deliberately not extracted; nothing measured here needed one.
+
+### The same surface, measured, 13 August 2026
+
+Section 132, and it moves most of this section from a reading of a client to a measurement of a live
+service. Three corrections and one addition, all of which the paragraphs above got wrong or could not
+know.
+
+**The surface is four times bigger than this client's.** `Discovery/GetJsonOperations` answers without
+a login and advertises **308 operations over 50 services** where the client declares 78 over 14. Five
+of the extra services, `LIPService`, `CloudApi`, `AWSServices`, `ContentService` and a `TimeServer`,
+this client never mentions. So the extraction above is a lower bound on Logitech's platform and an
+accurate description of one client.
+
+**`downloadManager` is not in Discovery at all**, which is why the paragraph above calling
+`RemoteConfigurationInJson` the prize needed a correction rather than a confirmation. Its URL is not
+published: `CompileManager/StartCompileWithLocaleAndSettings` returns a `DownloadUrl` per compilation
+and the client rewrites that URL into the JSON variant. **The call exists and it was made.** What comes
+back is a ZIP holding a manifest and a bare `GSPM` container, so the JSON name describes the transport
+rather than the payload, and the vendor authored second view this section hoped for is the manifest:
+`Description.xml`, which states the trailer checksum with its seed and its algorithm and names the
+intended skin. That is corroboration of section 41 by its author, and it is less than a JSON
+description of every field would have been.
+
+**It needs no registered remote to reach the database, and no account record either.** The paragraph
+above guessed that the search might be public and the account scoped calls certainly not. Both halves
+are wrong in the interesting direction: the search is **not** public, and the gate is a plain Logitech
+login with `AccountId: 0` and no household. A compile does need a remote on the account, and it does
+**not** need one plugged in.
+
+**The device data is symbolic**, which no reading of the client would have shown, and it is the one
+measured fact here with a cost attached. `GetGlobalLanguageCommands` returns a protocol name and a frame
+value per command, `Raw` null on all 419 fetched, so the infrared blocks in base slot 5 are the compiled
+form and an importer needs an encoder per protocol family. Section 132 has the numbers.
+
+**And the button mapping service says more than its name suggested.** The paragraph below is still
+right that no operation promises a scan code. But an account's own button maps split
+`HardRemoteButton` from `SoftRemoteButton` and carry a **name** on each, which is the same two disjoint
+populations section 128 derived from the container, and a compiled config binds a scan code to a list
+that sends a named command. So the pair gives a read only route from a scan code to a button name, which
+this document had ruled out on the strength of the operation names alone. Unexplored, and section 132
+records it as the largest thing left on the table.
 
 **And a name is not a finding, which is the trap this section could have walked into.**
 `GetRootButtonMap` and `GetDeviceModeButtonMaps` read exactly like the physical button map that

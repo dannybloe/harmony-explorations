@@ -158,6 +158,14 @@ IMAGES = {
     # compiled by the live service rather than found. findings.md section 58.
     'one_spare_before_sync': 'one-spare-before-sync-config.bin',
     'one_spare_after_sync': 'one-spare-after-sync-config.bin',
+    # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
+    # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
+    # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
+    # Deliberately not in CONTAINERS: that population is what every corpus wide total is computed from,
+    # so growing it is its own step, and these two are synthetic and are two states of one
+    # specification. The lab directory's META.md has the full argument.
+    'calibration_one': 'calibration-one-spare.bin',
+    'calibration_h600': 'calibration-h600.bin',
     # Not an image and not a config: Harmony Desktop's whole hosted client, mirrored from Logitech's
     # content network on 9 August 2026 and unauthenticated. It is here because the service API surface
     # documented in `docs/host-client.md` is extracted from it, and a claim about that surface has to
