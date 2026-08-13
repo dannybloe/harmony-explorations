@@ -39,9 +39,9 @@ measurement.
 | 2 | 745 | 1 | nothing |
 | 3 | 748, 768 | 2 | nothing |
 | 7 | 610, 620, 628, 655, 659, 660, 670, 675, 676, 680, 688 | 11 | nothing |
-| 8 | 720, 785, 880, 882, 885 | 5 | four config samples, no hardware |
-| 9 | 510, 515, 520, 522, 525, 550, 555 | 7 | one config sample (525), no hardware |
-| 10 | 890, 895, and presumed 890 Pro, 892, 897 | 5 | nothing |
+| 8 | 720, 785, 880, 882, 885 | 5 | six config samples from two contributors, two application firmware images and two bootloaders, no hardware |
+| 9 | 510, 515, 520, 522, 525, 550, 555 | 7 | **hardware on the bench**, a Harmony 525: two configs, a safe mode container, and its whole internal flash |
+| 10 | 890, 895, and presumed 890 Pro, 892, 897 | 5 | two Harmony 890 configs and five further reads of them, no firmware, no hardware. Every reader but the container framing is gated, section 117 |
 | 15 | 900, 1000, 1000i, 1100, and presumed 1100i, Xbox 360 | 6 | nothing, and see below |
 | unknown | 810, 820, 850 | 3 | nothing, and concordance does not name them either |
 
