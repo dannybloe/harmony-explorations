@@ -1662,7 +1662,7 @@ which firmware to open**. The second rule is new and it cost three misreadings i
 which image to open.
 
 Above `0x65` the opcode is the instruction and the binary search at `0x0EC8E` names a handler for
-each; `0x80 | n` is one instruction with a five bit field, a write into state variable `n`. **Below
+each; `0x80 | n` is one instruction with a seven bit field, a write into state variable `n`. **Below
 `0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
 thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
 which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->

@@ -39,6 +39,7 @@ import {
   idleActivityValue,
   KEY_EVENT_PRESS,
   keyLabels,
+  pairLabelsToGroups,
   softKeyScans,
   pageScans,
   FIRMWARE_STATE_VARIABLES,
@@ -1166,3 +1167,98 @@ test('a page binds more keys than it sends codes with, which is why pageScans ex
     assert.equal(pages, 2184, `${pages} pages bind anything`);
     assert.ok(extra > 500, `only ${extra} bindings send no code, so the two populations barely differ`);
   });
+
+test('a key label names a scan its own page binds, on every architecture', skipWithoutLab(), () => {
+  // **The touch route emitted a label for every region holding text and ignored what the page
+  // binds**, where the row route has always required it. 292 of `one_config`'s 1103 entries named a
+  // scan its page does not bind, 98 in each unprogrammed Harmony One and 97 in the synced one. Inert
+  // for the bench, which looks up by bound scan; live for anything that **iterates** the map, which
+  // is what a `Map` invites. Section 139.
+  //
+  // The claim is over every container that states an architecture, not just the Harmony Ones, since
+  // the row route satisfying it already is half of what makes this a rule rather than a patch.
+  let labels = 0;
+  let pages = 0;
+  for (const [name] of INVENTORY) {
+    const c = parse(require_(name));
+    if (c.architecture === undefined) continue;
+    const found = keyLabels(c);
+    const bound = new Map<number, Set<number>>();
+    modePages(c).forEach((page, index) => {
+      bound.set(index, new Set(
+        (taggedList(c, page.list)?.entries ?? [])
+          .filter((entry) => entry.opcode === 0x7f)
+          .map((entry) => entry.tag & 0x3f),
+      ));
+      pages += 1;
+    });
+    for (const [key] of found) {
+      const [index, scan] = key.split(':').map(Number) as [number, number];
+      assert.ok(bound.get(index)?.has(scan), `${name} page ${index} labels unbound scan ${scan}`);
+      labels += 1;
+    }
+  }
+  // Exact, so the population moves in a diff rather than silently. 585 fewer than before the filter,
+  // all of them on the four Harmony Ones: 292, 98, 98 and 97.
+  assert.equal(labels, 6914);
+  assert.equal(pages, 3321);
+});
+
+test('two device labels reaching one infrared group name nobody', skipWithoutLab(), () => {
+  // Route one kept the first label and left the second **free**, so route two could then pair it
+  // with an unrelated leftover group and hand the result back as `source: 'elimination'`, which
+  // reads as a weaker but real answer where the evidence in fact contradicts itself. This is where a
+  // wrong device name would reach FreeHarmony. No container in the corpus contests a group, so the
+  // case is constructed by aliasing one label onto another's group. Section 139.
+  // The uncontested case first, so the refusal is not simply "names nobody, ever".
+  assert.deepEqual(
+    [...pairLabelsToGroups([{ label: 'a', group: 0 }, { label: 'b', group: 1 }]).named],
+    [['a', 0], ['b', 1]],
+  );
+  // Two variables of one label agreeing is not a contest.
+  const agreeing = pairLabelsToGroups([{ label: 'a', group: 0 }, { label: 'a', group: 0 }]);
+  assert.deepEqual([...agreeing.named], [['a', 0]]);
+  assert.equal(agreeing.contested.size, 0);
+  // The contest: both labels lose the group, and the group is marked so the forced pairing in
+  // `devices` cannot treat it as merely free. Keeping the first label was the old behaviour.
+  const contested = pairLabelsToGroups([{ label: 'a', group: 3 }, { label: 'b', group: 3 }]);
+  assert.deepEqual([...contested.named], []);
+  assert.deepEqual([...contested.contested], [3]);
+  // A third label on an uncontested group still gets it, so one contest does not poison the rest.
+  const mixed = pairLabelsToGroups(
+    [{ label: 'a', group: 3 }, { label: 'b', group: 3 }, { label: 'c', group: 4 }],
+  );
+  assert.deepEqual([...mixed.named], [['c', 4]]);
+
+  // And the corpus really does not contain the case, so the fix cannot be hiding behind a container
+  // that already had it.
+  for (const [name] of INVENTORY) {
+    const other = parse(require_(name));
+    const groups = devices(other).filter((d) => d.source === 'names').map((d) => d.group);
+    assert.equal(new Set(groups).size, groups.length, `${name} already contests a group`);
+  }
+});
+
+test('an activity whose keys are on two pages is refused, not labelled from one of them',
+  skipWithoutLab(), () => {
+  // `activityNames` takes the page from the first binding and the scans from all of them, which is
+  // sound only because all of an activity's keys are on one page, section 120. That closure was
+  // measured and then depended on with nothing stating it: were it to fail, the label would be
+  // looked up on one page using scans from another and come back plausible. 0 counterexamples in
+  // the corpus, so this states a rule rather than guarding a case that exists. Section 139.
+  let activities = 0;
+  for (const [name] of INVENTORY) {
+    const c = parse(require_(name));
+    const perActivity = new Map<number, Set<number>>();
+    for (const binding of activityBindings(c)) {
+      const pages = perActivity.get(binding.activity) ?? new Set<number>();
+      pages.add(binding.page);
+      perActivity.set(binding.activity, pages);
+    }
+    for (const [activity, pages] of perActivity) {
+      assert.equal(pages.size, 1, `${name} activity ${activity} spans ${pages.size} pages`);
+      activities += 1;
+    }
+  }
+  assert.equal(activities, 50);
+});

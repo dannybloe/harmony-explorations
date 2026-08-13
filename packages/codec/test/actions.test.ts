@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, require_ } from '@harmony/lab';
+import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   archSlot,
   parse,
@@ -775,4 +775,36 @@ test('the 0xF0 band says which architecture nibble 3 is the sound enable on', ()
   const what = reading({ operand: 0xf300, opcode: 0x3f }, 14)?.what ?? '';
   assert.match(what, /arch 12/);
   assert.match(what, /arch 14/);
+});
+
+test('the state variable write carries seven bits, not five', skipWithoutLab(), () => {
+  // `actions.ts` and section 73 both said "one instruction with a five bit field"<!--superseded-->,
+  // and the code has
+  // always added rather than ORed, which is the same byte for every index below 128 and is why the
+  // wrong width sat next to right code. The corpus emits up to opcode 0xC5, index 69, and base slot
+  // 13's tables reach index 93, so a future editor narrowing the field to match the comment would
+  // break `calibration_h600`, whose activity variable is index 34 and whose chain section 121
+  // measures working. Section 139.
+  let top = -1;
+  let writes = 0;
+  // The same population the closures above use, plus the two remaining architectures, named here
+  // rather than derived so a shrinking corpus shows up as a changed literal.
+  const CORPUS = [...CLOSURES.map(([n]) => n), 'h525_config_2', 'arch8_config_880', 'h700_config_2'];
+  for (const name of CORPUS) {
+    const c = parse(require_(name));
+    for (const list of c.actionLists() ?? []) {
+      for (const instruction of list) {
+        if (instruction.opcode < 0x80) continue;
+        writes += 1;
+        top = Math.max(top, instruction.opcode - STATE_WRITE_BASE);
+      }
+    }
+  }
+  assert.equal(writes, 1897);
+  assert.equal(top, 69, 'the highest index any corpus config writes');
+  assert.ok(top > 31, 'which is above what a five bit field can hold');
+  // And the reading names the right variable at that index, so the width claim is about behaviour
+  // rather than about arithmetic on a literal.
+  assert.equal(reading({ opcode: 0x80 + 69, operand: 0 }, 12)?.what, 'state variable 69 = the operand');
+  assert.equal(reading({ opcode: 0xff, operand: 0 }, 12)?.what, 'state variable 127 = the operand');
 });

@@ -25,7 +25,7 @@ import { characterMap, screenStrings } from './text.ts';
 import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
-import type { StateRecord } from './sections.ts';
+import type { ModePage, StateRecord } from './sections.ts';
 import type { ScreenChoice } from './render.ts';
 
 /**
@@ -141,10 +141,19 @@ export function deviceIds(c: Container): number[] {
 }
 
 /**
- * The instruction that writes a state variable: `0x80 | index`, one instruction with a five bit
- * field. Section 73.
+ * The instruction that writes a state variable, `STATE_WRITE_BASE + index`, taken from `actions.ts`
+ * rather than declared again here.
+ *
+ * **It said `0x80 | index`, "one instruction with a five bit field"<!--superseded-->, and the code
+ * adds.** For every
+ * index below 128 the two spellings produce the same byte, so nothing could go wrong; the five is
+ * what is wrong, and it under-claims what this reader depends on. The corpus reaches index **93**,
+ * seven bits, and `calibration_h600`'s own activity variable is 34, whose chain is measured working
+ * in section 121. So a reader "correcting" the code to match the comment's arithmetic would be
+ * harmless and one narrowing the field to five bits would break the Harmony 600 calibration sample.
+ * Section 139.
  */
-const STATE_WRITE_BASE = 0x80;
+import { STATE_WRITE_BASE } from './actions.ts';
 /** Opcode `0x7F`, whose operand indexes base slot 10. Section 34. */
 const ACTION_LIST_INDEX = 0x7f;
 /**
@@ -363,6 +372,12 @@ export function activityNames(c: Container): ActivityName[] {
   for (const activity of [...new Set(bindings.map((b) => b.activity))].sort((a, b) => a - b)) {
     const mine = bindings.filter((b) => b.activity === activity);
     const binding = mine[0] as ActivityBinding;
+    // **The page comes from the first binding and the scans from all of them**, which is only sound
+    // because all of an activity's keys are on one page, section 120. That closure was measured and
+    // then depended on with nothing stating it: were it ever to fail, the label would be looked up
+    // on one page using scans from another and come back plausible. 0 counterexamples in the corpus,
+    // so this refuses a container rather than guarding against one that exists. Section 139.
+    if (mine.some((b) => b.page !== binding.page)) continue;
 
     // Hop one: every mode the chain enters. The bound list may enter one itself, and the base slot 9
     // set it selects has its own tagged list whose entries enter more.
@@ -755,7 +770,7 @@ export function devices(c: Container): Device[] {
 
   // Route one: a device variable's transitions send that device's codes and nobody else's.
   const labels: string[] = [];
-  const named = new Map<string, number>();
+  const reaches: { label: string; group: number }[] = [];
   for (const variable of deviceVariables(c)) {
     if (!labels.includes(variable.device)) labels.push(variable.device);
     const reached = new Set<number>();
@@ -764,13 +779,9 @@ export function devices(c: Container): Device[] {
       for (const group of groupsOf(value.operand)) reached.add(group);
     }
     if (reached.size !== 1) continue;
-    const group = [...reached][0] as number;
-    const already = named.get(variable.device);
-    // Two variables of one device must agree, and two devices must not claim one group.
-    if (already !== undefined && already !== group) continue;
-    if (already === undefined && [...named.values()].includes(group)) continue;
-    named.set(variable.device, group);
+    reaches.push({ label: variable.device, group: [...reached][0] as number });
   }
+  const { named, contested } = pairLabelsToGroups(reaches);
   for (const [label, group] of named) {
     const device = out[group];
     if (device === undefined) continue;
@@ -783,7 +794,12 @@ export function devices(c: Container): Device[] {
   }
 
   // Route two: one label and one group left over pair by force.
-  const freeGroups = out.filter((device) => device.name === undefined);
+  //
+  // **A contested group is not "left over"**, it is a group whose evidence contradicts itself, so it
+  // is excluded here as well as above. Dropping its label without this would put both back in the
+  // free pools and let the forced pairing produce exactly the wrong name the exclusion exists to
+  // prevent.
+  const freeGroups = out.filter((device) => device.name === undefined && !contested.has(device.group));
   const freeLabels = labels.filter((label) => !named.has(label));
   if (freeGroups.length === 1 && freeLabels.length === 1) {
     const device = freeGroups[0] as Device;
@@ -1281,6 +1297,56 @@ function inReadingOrder(a: ScreenString, b: ScreenString): number {
  * the outer two rows of text are a title and a footer. A key belongs to a **place** on the screen, and
  * the places are two columns of rows, so that is what is measured.
  */
+/**
+ * Which label owns which infrared group, given what each device variable reaches.
+ *
+ * Extracted from `devices` so the refusal below has a caller that can reach it: no container in the
+ * corpus contests a group, 0 in nineteen, so the branch is unreachable through `devices` and a rail
+ * nobody can trigger is a rail nobody has tested. Same move as `eraseBoundsFor` in `packages/usb`.
+ *
+ * **A contested group names nobody, and it is not "left over" either.** The rule used to be a bare
+ * `continue`, which kept the group for the first label and left the second **free**, so the forced
+ * pairing in `devices` could hand that label an unrelated leftover group and return it as
+ * `source: 'elimination'`. That reads as a weaker but real answer where the evidence in fact
+ * contradicts itself, and it is where a wrong device name would reach FreeHarmony. So both the
+ * label and the group are withdrawn, and `contested` is what keeps the group out of the free pool.
+ * Section 139.
+ */
+export function pairLabelsToGroups(
+  reaches: readonly { label: string; group: number }[],
+): { named: Map<string, number>; contested: Set<number> } {
+  const named = new Map<string, number>();
+  const contested = new Set<number>();
+  for (const { label, group } of reaches) {
+    const already = named.get(label);
+    // Two variables of one device must agree, and two devices must not claim one group.
+    if (already !== undefined && already !== group) continue;
+    if (already === undefined && [...named.values()].includes(group)) {
+      contested.add(group);
+      continue;
+    }
+    named.set(label, group);
+  }
+  for (const group of contested) {
+    for (const [label, mine] of [...named]) if (mine === group) named.delete(label);
+  }
+  return { named, contested };
+}
+
+/**
+ * The scan codes one mode page binds, which is the population both label routes answer for.
+ *
+ * One derivation rather than two: the row route computed it and the touch route did not, which is
+ * how the touch route came to label keys a page has not got. Section 139.
+ */
+function boundScans(c: Container, page: ModePage): Set<number> {
+  return new Set(
+    (taggedList(c, page.list)?.entries ?? [])
+      .filter((entry) => entry.opcode === ACTION_LIST_INDEX)
+      .map((entry) => entry.tag & SCAN_CODE_MASK),
+  );
+}
+
 export function keyLabels(c: Container): Map<string, KeyLabel> {
   const out = new Map<string, KeyLabel>();
   const pages = modePages(c);
@@ -1293,6 +1359,13 @@ export function keyLabels(c: Container): Map<string, KeyLabel> {
     if (texts.length === 0) return;
     const areas = touchPageOf(c, page)?.areas;
     if (areas === undefined || areas.length === 0) return;
+    // **Only scans this page actually binds**, which the row route below has always required and
+    // this one did not: a region holding text got a label whether or not the page has a key there.
+    // 292 of `one_config`'s 1103 entries named a scan its page does not bind. Inert for the bench,
+    // which looks up by bound scan, and not inert for a consumer that **iterates** the map, which
+    // is what a `Map` invites: it would get labels for keys that page has not got. Section 139.
+    const bound = boundScans(c, page);
+    if (bound.size === 0) return;
     // The stated route. Group the page's strings by the region each belongs to, then join the strings
     // of one region in reading order, which is what a label wrapped onto a second line is.
     const perArea = new Map<number, ScreenString[]>();
@@ -1305,6 +1378,7 @@ export function keyLabels(c: Container): Map<string, KeyLabel> {
       perArea.set(nearest.code, acc);
     }
     for (const [scan, found] of perArea) {
+      if (!bound.has(scan)) continue;
       out.set(`${index}:${scan}`, {
         index,
         scan,
@@ -1319,11 +1393,7 @@ export function keyLabels(c: Container): Map<string, KeyLabel> {
   const rows = SCREEN_ROWS[c.architecture ?? -1] ?? [];
   if (rows.length > 0) {
     pages.forEach((page, index) => {
-      const bound = new Set(
-        (taggedList(c, page.list)?.entries ?? [])
-          .filter((entry) => entry.opcode === ACTION_LIST_INDEX)
-          .map((entry) => entry.tag & SCAN_CODE_MASK),
-      );
+      const bound = boundScans(c, page);
       if (bound.size === 0) return;
       const texts = distinct(drawn.filter((one) => one.program === page.program
         && one.text.trim().length > 0));

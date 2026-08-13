@@ -11,7 +11,7 @@
  * same thing about it. A name that exists on one side only cannot be cross-checked at all.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, normalize } from 'node:path';
+import { join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -154,15 +154,39 @@ export const IMAGES: Readonly<Record<string, string>> = {
   desktop_webapp_main: 'en.desktop-app-main.js',
 };
 
-const cache = new Map<string, string | undefined>();
+const cache = new Map<string, string[]>();
 
-/** First match for `filename` anywhere under LAB, or undefined. */
-function find(filename: string): string | undefined {
-  if (cache.has(filename)) return cache.get(filename);
-  let found: string | undefined;
+/**
+ * The scratch directory `CLAUDE.md` documents, which is where a working copy of a curated file ends
+ * up. A path under it loses to any other match for the same name.
+ */
+const SCRATCH = 'work';
+
+/**
+ * How a match ranks when a name resolves to more than one file: scratch last, then shallowest, then
+ * alphabetically so the answer does not depend on the order the filesystem hands entries back.
+ *
+ * **`find` used to take the first match in traversal order and say nothing.** Two names in the lab
+ * resolve twice today, `h600_code_complete` to `firmware/derived/` and to `work/`, and
+ * `desktop_webapp_main` to its own directory and to a mirror seven levels down, and in both cases the
+ * traversal order handed back the copy. The bytes are identical in both pairs, measured, so nothing
+ * was wrong and nothing would have said so if a `work/` copy were edited: `reference/checksums.md`
+ * claims provenance for a file that was not the one read. Section 139.
+ */
+function rank(path: string): [number, number, string] {
+  const relative = LAB === undefined ? path : path.slice(LAB.length + 1);
+  const scratch = relative.split(sep)[0] === SCRATCH ? 1 : 0;
+  return [scratch, relative.split(sep).length, relative];
+}
+
+/** Every match for `filename` anywhere under LAB, best first. */
+function findAll(filename: string): string[] {
+  const cached = cache.get(filename);
+  if (cached !== undefined) return cached;
+  const found: string[] = [];
   if (LAB && existsSync(LAB)) {
     const queue: string[] = [LAB];
-    while (queue.length && !found) {
+    while (queue.length) {
       const dir = queue.shift() as string;
       let entries: string[];
       try {
@@ -173,20 +197,34 @@ function find(filename: string): string | undefined {
       for (const entry of entries) {
         if (entry.startsWith('.')) continue;
         const full = join(dir, entry);
-        if (entry === filename && statSync(full).isFile()) {
-          found = full;
-          break;
-        }
+        // **One guarded stat, not two.** The name match called `statSync` outside the `try`, so a
+        // dangling symlink carrying a lab image's name threw `ENOENT` out of `imagePath`, which made
+        // `skipUnless` throw instead of returning a skip and took the whole test file with it. The
+        // comment on the catch below already said a dangling symlink is not worth failing a run
+        // over, three lines under the call that did. Section 139.
+        let entryStat;
         try {
-          if (statSync(full).isDirectory()) queue.push(full);
+          entryStat = statSync(full);
         } catch {
-          // A dangling symlink is not worth failing a test run over.
+          continue;
         }
+        if (entry === filename && entryStat.isFile()) found.push(full);
+        else if (entryStat.isDirectory()) queue.push(full);
       }
     }
   }
+  found.sort((a, b) => {
+    const [as, ad, ap] = rank(a);
+    const [bs, bd, bp] = rank(b);
+    return as - bs || ad - bd || ap.localeCompare(bp);
+  });
   cache.set(filename, found);
   return found;
+}
+
+/** Best match for `filename` anywhere under LAB, or undefined. */
+function find(filename: string): string | undefined {
+  return findAll(filename)[0];
 }
 
 /** Absolute path to a named image, or undefined when it is not available. */
@@ -194,6 +232,16 @@ export function imagePath(name: keyof typeof IMAGES | string): string | undefine
   const filename = IMAGES[name];
   if (filename === undefined) throw new Error(`no image named ${name}`);
   return find(filename);
+}
+
+/**
+ * Every path a named image resolves to, best first, so a test can see an ambiguity `imagePath`
+ * resolves silently. Exported for that reason and for no other.
+ */
+export function imagePaths(name: keyof typeof IMAGES | string): string[] {
+  const filename = IMAGES[name];
+  if (filename === undefined) throw new Error(`no image named ${name}`);
+  return findAll(filename);
 }
 
 /** Bytes of a named image, or undefined when it is not available. */
@@ -220,8 +268,15 @@ export function require_(name: keyof typeof IMAGES | string): Uint8Array {
  *
  * Generated by `tools/golden.py --write` and kept in the lab directory rather than in the
  * repository, because a vector states section addresses and sizes for somebody's actual
- * configuration. Publishing a checksum is fine; publishing a structural map of a stranger's
- * remote is not.
+ * configuration and **this project would be the one publishing it**, on behalf of a contributor who
+ * sent a dump and was not asked. Publishing a checksum is fine; publishing that map for them is not.
+ *
+ * **The line is consent, not the data**, and saying it the other way put this in contradiction with
+ * `packages/probe`, whose `SectionReport` publishes per slot addresses and lengths deliberately.
+ * That is the same shape of information and the opposite situation: the probe runs on the owner's
+ * own machine, on their own remote, and produces a file they decide whether to send. Two stated
+ * policies in one repository with no way for a reader to tell which was meant, found by review on
+ * 13 August 2026 and reconciled here and in `report.ts` in one commit. Section 139.
  */
 export function goldenVector(name: string): Record<string, unknown> | undefined {
   if (!LAB) return undefined;

@@ -70,7 +70,14 @@ export const VERSION_FIELDS: readonly (string | undefined)[] = [
   'flash manufacturer id',
   'protocol, high nibble',
   'skin',
-  'constant 0x0C on every remote seen',
+  // **Not "constant 0x0C on every remote seen"**, which this said until section 139 and which had
+  // been false since 8 August 2026: the bench Harmony 525 reports 0x09, section 76, and the field
+  // names a **platform** rather than an architecture, section 116. 0x0C on arch 12 (Harmony One) and
+  // arch 14 (Harmony 600 and 700), which are one platform under it, 0x09 on arch 9 (Harmony 525),
+  // 0x08 on arch 8 (Harmony 880 and 885), and 0x00 for a bootloader or a remote in safe mode. The
+  // Harmony 525 enumerates on this machine, so the page was printing 9 beside a label saying it is
+  // always 0x0C, and `make facts` cannot see prose inside code.
+  'platform',
   undefined,
   'version of the image at 0xFF +0xE000',
   'version of the image at 0xFF +0x0000',

@@ -20,7 +20,15 @@
 import { SECOND_SPACE_LIMIT, ACTION_NOOP_LIMIT, subOpcode } from './ir.ts';
 import type { Instruction } from './gspm.ts';
 
-/** The opcode above which bit 7 is stripped and one routine handles everything. */
+/**
+ * The opcode above which bit 7 is stripped and one routine handles everything.
+ *
+ * The index is `opcode - STATE_WRITE_BASE`, so it is **seven** bits wide, 0 to 127, and not the five
+ * this and section 73 both said<!--superseded-->: the corpus emits up to opcode `0xC5`, index 69,
+ * over 4138 state writes, and base slot 13's own tables reach index 93. Every index below 128 makes
+ * `0x80 | index` and `0x80 + index` the same byte, which is why the wrong width could sit next to
+ * right code for a month. Section 139.
+ */
 export const STATE_WRITE_BASE = 0x80;
 
 /**

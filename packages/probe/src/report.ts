@@ -18,6 +18,16 @@
  * twelve bytes measured to be identical on two different Harmony Ones, so it describes the model
  * and its images rather than the unit. `docs/usb-protocol.md` section 4.
  *
+ * **That argument is per architecture and the probe exists for the ones it does not cover**, which
+ * this said as if it were general. The measurement is two Harmony Ones, arch 12; fields 7, 10 and
+ * 11 have no reading at all on any architecture, section 87, and a byte with no reading on a model
+ * nobody here owns is a byte nobody can say is not per unit. It stays in, because it is the field
+ * that identifies which firmware a contributed report describes and a report of unknown provenance
+ * is worth much less, and because every field has been the same on every unit of one model this
+ * project has ever read. But the safety of this one field is an **argument** where everything else
+ * in the report is a structure, and it is the field to drop first if a contributor asks. Stated
+ * rather than left implicit, section 139.
+ *
  * The report is built by two layers. `containerReport` works on bytes and works on architectures
  * the codec has never seen, which is the point: an unknown magic still yields the header shape, the
  * slot count and the section table, and that is exactly the evidence needed to say whether the
@@ -51,6 +61,19 @@ export interface UsbReport {
   readonly product: string | undefined;
 }
 
+/**
+ * One pointer slot as the report publishes it: where it points and how far it can run.
+ *
+ * **This is a structural map of a remote's configuration, and publishing it is deliberate**, which
+ * is worth stating because `packages/lab` says the opposite about a golden vector, in the same
+ * words, about the same kind of information. The line between them is **consent**: a probe report is
+ * produced by the config's owner, on their own machine, from their own remote, and they decide
+ * whether to send it, where a golden vector would be this project publishing a contributor's
+ * structural map on their behalf without asking. Reconciled with that docstring in one commit,
+ * section 139, because two stated policies and no way to tell which was meant is worse than either.
+ *
+ * What is still never here is **contents**: no name, no infrared code, no byte of a section.
+ */
 export interface SectionReport {
   readonly slot: number;
   readonly spare: number;
@@ -61,8 +84,16 @@ export interface SectionReport {
 
 export interface ContainerReport {
   readonly magic: string;
-  /** The family this magic belongs to, or null when no known family claims it. */
-  readonly family: string | null;
+  /**
+   * The architectures the family carrying this magic covers, or null when no known family claims it.
+   *
+   * **It was called `family` and its value is `FAMILIES[n].architectures`**, so a published report
+   * carried a field named family holding `"12 (One), 14 (600, 700)"`. Harmless to read and wrong in
+   * the schema a contributor's report is read against, which is the one document a contributor has.
+   * Renamed rather than re-derived: the family itself has no name in `FAMILIES`, only a magic, and
+   * inventing one here would be a second naming of something the codec does not name. Section 139.
+   */
+  readonly familyArchitectures: string | null;
   readonly endAddr: number;
   readonly format: number;
   readonly formatVersion: string;
@@ -193,7 +224,7 @@ export function containerReport(data: Uint8Array): ContainerReport {
   const stored = byteUtil.u16(blob, blob.length - 6);
   return {
     magic,
-    family: family?.architectures ?? null,
+    familyArchitectures: family?.architectures ?? null,
     endAddr,
     format,
     formatVersion: formatVersionOf(format),

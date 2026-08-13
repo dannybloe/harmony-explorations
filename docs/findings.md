@@ -8321,8 +8321,17 @@ is explicit:
 which decides the width from the table's own `narrow` count: below it, one byte at RAM
 `0x900 + index`; at or above it, `index -= narrow; index *= 2; index += narrow` and two bytes. So
 **`0x80 | n` means "state variable `n` = the operand"**, and the 55 opcodes at the top of the
-inventory are one instruction with a five bit field, exactly as the shape of the dispatcher
-suggested and nobody had confirmed.
+inventory are one instruction with a parameter, exactly as the shape of the dispatcher suggested and
+nobody had confirmed.
+
+**That parameter is seven bits, not the five this section said<!--superseded--> until 14 August
+2026.** The index is `opcode - 0x80` and the opcode space runs to `0xFF`, so it is 0 to 127; the 55
+is how many distinct ones this container's inventory carries, which is not the field's width. The
+corpus emits up to opcode `0xC5`, index 69, over 4138 state writes, and base slot 13's own tables
+reach index 93. Nothing was ever wrong in the code, because `0x80 | index` and `0x80 + index` are
+the same byte for every index below 128, and both spellings appear here. What the five bit reading
+would have cost is a future editor narrowing the field to match it, which breaks `calibration_h600`,
+whose activity variable is index 34 and whose chain section 121 measures working. Section 139.
 
 Two closures, over 12 containers and 3011 uses:
 
@@ -18389,12 +18398,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Sixty two shipped readers answered plausibly where they should have refused, and nine were rails
+## 139. Seventy six shipped readers answered plausibly where they should have refused, and nine were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Sixty two defects came out of it that a sample could not have found, and they share one shape, which
+Seventy six defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18410,7 +18419,9 @@ somewhere else entirely, and the hoist it asked for makes the function slower. I
 fourth architecture ladder read for another remote, one partition after entry 19 found the third.
 Entry 24 is the USB one and holds the only defect in this section with a **live** consequence on the
 bench: a Harmony 525 on an unpinned handle was read under arch 12 (Harmony One)'s address rule, so the
-refusal that stops a remote hanging did not apply to it.
+refusal that stops a remote hanging did not apply to it. Entry 25 is the last partition and closes
+the review: its own instructive one is that the contribution probe, built for models nobody here
+owns, could not report the one unusual remote that is here.
 Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
 is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
 thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
@@ -19519,6 +19530,93 @@ the field is usable. It says "enumerate" now, and `ADDRESSABLE_ARCHITECTURES` is
 with the unaddressable set asserted exactly and its consequence, that each refuses every top byte
 rather than borrowing a neighbour's rule.
 
+### 25. The probe could not report the one unusual remote on the bench, and two policies contradicted each other
+
+The last partition, `packages/probe`, `packages/lab`, `packages/bench` and `inventory.ts`. Fourteen
+readings, and the one to keep is that an instrument built for models nobody here owns was silently
+blind to the model that is here.
+
+**The probe cannot find an arch 9 (Harmony 525) config, twice over.** `CANDIDATE_BASES` had no
+`0x820000`, and arch 9 (Harmony 525) is the one architecture whose read base and container base are
+not the same number: `READ_FLASH` will not answer below `0x800000` and the container's own pointers
+are `0x02xxxx`, so `end_addr` is stated against the second while the bytes come from the first.
+`packages/corpus/src/read.ts` has carried that since a Harmony 525 was connected on 8 August 2026.
+Adding the base alone would not have helped: `probeBase` computes `endAddr - base`, which comes out
+about a megabyte **negative** and is rejected as implausible. So the entry carries a `containerBase`
+now, absent on every other architecture because there the two are one number and stating it twice
+would be two places to keep right. The test serves `h525_config` at `0x820000` to a fake reader and
+requires the **default** candidate list to find it, since a contributor runs the probe with no
+arguments.
+
+**Two stated policies in one repository, in the same words, about the same information.**
+`packages/lab`'s golden vector docstring says publishing "a structural map of a stranger's remote" is
+not acceptable; `packages/probe`'s `SectionReport` publishes per slot addresses and lengths, by
+design. A reader cannot tell which was meant. The line is **consent**, not the data: a probe report
+is produced by the config's owner, on their own machine, from their own remote, and they decide
+whether to send it, where a golden vector would be this project publishing a contributor's map on
+their behalf without asking. Both docstrings say that now, in one commit. Related and left standing
+with its scope stated: the probe publishes the version block on the argument that it is
+identical on two Harmony Ones, which is a measurement on arch 12 (Harmony One) offered as a general
+claim by an instrument that exists for the architectures it does not cover, and fields 7, 10 and 11
+have no reading on any of them.
+
+**The touch label route ignored what a page binds.** On arch 12 (Harmony One) `keyLabels` emitted an
+entry for every hit region holding text, where the row route used elsewhere has always required the
+scan to be in the page's own tagged list. 292 of `one_config`'s 1103 entries, and 98, 98 and 97 in
+the other three Harmony Ones, named a scan the page does not bind. Inert for the bench, which looks
+up by bound scan, and live for anything that **iterates** the map, which is what handing back a `Map`
+invites. One `boundScans` for both routes now; `make activities` and `make devices` are unmoved.
+
+**A group two device labels both reach used to name one of them.** The rule was a bare `continue`,
+which kept the group for the first label and left the second **free**, so the forced pairing below
+could hand that label an unrelated leftover group and return it as `source: 'elimination'`. A
+weaker but real answer, where the truth is that the evidence contradicts itself, and that is the path
+by which a wrong device name would reach FreeHarmony. Both the label and the group are withdrawn now.
+No container in the corpus contests a group, 0 in nineteen, so the branch is unreachable through
+`devices`; `pairLabelsToGroups` is extracted and exported for exactly that reason, the same move as
+`eraseBoundsFor` in entry 24, and its test constructs the case.
+
+**A closure that was measured and then depended upon in silence.** `activityNames` takes the page
+from an activity's first binding and the scans from all of them, which is sound only because all of
+an activity's keys are on one page, section 120. Nothing stated it, and had it failed the label would
+have been looked up on one page using scans from another and come back plausible. The reader refuses
+such an activity now and a corpus test asserts the closure over all 50.
+
+**The state variable write is a seven bit field, not five.** Section 73 said five and so did
+`actions.ts`<!--superseded-->, while the code has always added rather than ORed, and for every index
+below 128 the two spellings are the same byte, which is why the wrong width sat beside right code.
+The corpus emits up to opcode `0xC5`, index 69, over 1897 writes in the tested population, and base
+slot 13's tables reach index 93. Nothing was ever wrong; what the five would have cost is an editor
+narrowing the field to match it, which breaks `calibration_h600`, whose activity variable is index 34
+and whose chain section 121 measures working. `inventory.ts` had declared `STATE_WRITE_BASE` a second
+time and now imports it.
+
+**Two smaller ones in the lab helper.** `find` called `statSync` outside the `try` that exists for
+the case that call throws on, so a dangling symlink carrying a lab image's name threw `ENOENT` out of
+`imagePath`, which makes `skipUnless` throw rather than skip and takes the whole test file with it;
+the comment on the catch three lines below already said a dangling symlink is not worth failing a run
+over. And `find` took the first match in traversal order with no uniqueness check: two names resolve
+twice in the lab today, `h600_code_complete` to `firmware/derived/` and to `work/`, and
+`desktop_webapp_main` to its own directory and to a mirror seven levels down. Both pairs are byte
+identical, measured, so nothing was wrong and nothing would have said so if a `work/` copy were
+edited, while `reference/checksums.md` claims provenance for the curated file. The choice is a stated
+ranking now, scratch last then shallowest then alphabetical, and **the rule earns nothing on the real
+lab**, since both pairs also sort correctly by path alone: the test that gives it something to do is
+constructed, which is worth saying rather than leaving a rule that looks tested.
+
+**And a label on the bench screen that stated a value.** Version field 6 read "constant `0x0C` on
+every remote seen", false since 8 August 2026: the bench Harmony 525 reports `0x09`, section 76, and
+the field names a **platform**, section 116, with arch 12 (Harmony One) and arch 14 (Harmony 600 and
+700) sharing one. The Harmony 525 enumerates on this machine, so the page was printing 9 beside a
+label saying it is always `0x0C`, and `make facts` cannot see prose living inside code. The general
+form is what is pinned: a label is a name and not a measurement, so none may quote a byte value or
+say "always", with fields 8 and 9 the named exception because an address is a place. Two more
+alignments in the probe: its `family` field held `FAMILIES[n].architectures`, so a published report
+carried a field called family whose value is `"12 (One), 14 (600, 700)"`, renamed rather than
+re-derived since the codec gives a family no name; and the magic it publishes, read at `blob[0..4]`,
+is now asserted equal to the one `parse` found by searching, which could describe different bytes of
+one blob.
+
 ### What would falsify it
 
 For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
@@ -19549,3 +19647,8 @@ For entry 24: a remote whose version block states an architecture its own flash 
 which would say the narrowing is not safe; or a measured read where the device sends a chunk carrying
 more than the request encoded, which would say the length nibble reading is incomplete and would turn
 the new refusal into a false one.
+
+For entry 25: an arch 9 (Harmony 525) remote whose config does not sit at `0x820000`, which would say
+the candidate is a property of the two units here; a container that contests an infrared group,
+which would turn a constructed test into a corpus one; or an activity whose keys are on two pages,
+which would make the refusal a live one and would need a rule for which page names it.

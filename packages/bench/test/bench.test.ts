@@ -341,3 +341,29 @@ test('a config the lab does not have is refused rather than answered emptily', (
   const bench = new Bench(deps());
   assert.throws(() => bench.inventory('nothing_like_this'), /no config called/);
 });
+
+test('no field label states a value that a remote on this bench contradicts', () => {
+  // Field 6 read "constant 0x0C on every remote seen", and it had been false since 8 August 2026:
+  // the bench Harmony 525 reports 0x09, section 76. Field 6 names a **platform**, section 116, with
+  // arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) sharing one, so no single value is
+  // right for it. The Harmony 525 enumerates on this machine, so the page was printing 9 beside a
+  // label saying it is always 0x0C, and `make facts` cannot see prose living inside code.
+  // Section 139.
+  assert.equal(VERSION_FIELDS[6], 'platform');
+  // The general form, which is what stops the next one: a label is a name, not a measurement. No
+  // label may quote a byte value, since a value that holds on the remotes seen so far is exactly
+  // the claim a new remote refutes, and the label is then wrong on the screen with nothing to say
+  // so.
+  // Fields 8 and 9 carry an **address**, which is a place and not a measurement of what the byte
+  // holds, so they are the named exception rather than a gap in the rule.
+  const NAMES_A_PLACE = new Set([8, 9]);
+  for (const [index, label] of VERSION_FIELDS.entries()) {
+    if (label === undefined) continue;
+    if (!NAMES_A_PLACE.has(index)) {
+      assert.doesNotMatch(label, /0x[0-9a-f]+/i, `field ${index} states a value: ${label}`);
+    }
+    assert.doesNotMatch(label, /\bevery remote\b|\balways\b|\bconstant\b/i, `field ${index}: ${label}`);
+  }
+  assert.equal(VERSION_FIELDS[8], 'version of the image at 0xFF +0xE000');
+  assert.equal(VERSION_FIELDS[9], 'version of the image at 0xFF +0x0000');
+});

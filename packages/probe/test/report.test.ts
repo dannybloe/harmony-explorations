@@ -45,6 +45,19 @@ test('the report describes every sample, and derives what it needs', skipUnless(
     assert.equal(report.markerOffset, c.markerOffset, name);
     assert.equal(report.sections.length, c.sections.length, name);
     assert.equal(report.trailerChecksumRecomputes, true, name);
+    // **The report's own two answers about the same question have to agree**, which nothing
+    // asserted: `trailerChecksumRecomputes` is computed here and `checks.trailer_checksum_recomputes`
+    // comes from the codec, and while this file worked on unsliced bytes the two disagreed on a
+    // published report. Section 139. The claim is the agreement, so it keeps biting after both are
+    // right, which is what the disagreement itself could not.
+    assert.equal(report.trailerChecksumRecomputes, report.checks?.['trailer_checksum_recomputes'], name);
+    // **And the magic the report names is the magic the codec parsed.** They come from different
+    // places: this reads `blob[0..4]` and `parse` searches for a magic anywhere in what it is given,
+    // so before `containerExtent` was applied here they could describe different bytes of one blob.
+    // Latent rather than live, since both embedded container cases in the lab refuse outright, and
+    // pinned because latent is what this whole section is about. Section 139.
+    assert.equal(report.magic, c.family.magic, name);
+    assert.equal(report.marker, c.family.headerMarker, name);
     assert.equal(report.parseError, null, name);
     assert.equal(report.formatVersion, c.formatVersion, name);
     assert.equal(report.architecture, c.architecture ?? null, name);
@@ -100,7 +113,7 @@ test('an unknown magic still yields the shape', skipUnless('h700_config'), () =>
   altered.set([0x51, 0x51, 0x51, 0x51], 0); // 'QQQQ'
   const report = containerReport(altered);
   assert.equal(report.magic, 'QQQQ');
-  assert.equal(report.family, null);
+  assert.equal(report.familyArchitectures, null);
   assert.ok(report.parseError !== null, 'the codec should refuse it');
   assert.equal(report.pointerCount, parse(blob).pointerCount);
   assert.equal(report.flashBase, parse(blob).flashBase);
@@ -236,3 +249,48 @@ test('the base is the codec derivation and not a second copy of it',
     const ok = containerReport(fine);
     assert.equal(ok.flashBase, ok.endAddr - (fine.length - 4));
   });
+
+test('a published field name says what the field holds', skipUnless('h700_config'), () => {
+  // `family` held `FAMILIES[n].architectures`, so the report a contributor publishes carried a field
+  // called family whose value is "12 (One), 14 (600, 700)". Harmless to read and wrong in the schema
+  // their report is read against, which is the only description of it they have. Section 139.
+  const report = containerReport(container('h700_config') as Uint8Array);
+  assert.equal(report.familyArchitectures, '12 (One), 14 (600, 700)');
+  // And the name is gone rather than aliased, since two names for one field is how a schema drifts.
+  assert.equal((report as unknown as Record<string, unknown>)['family'], undefined);
+});
+
+test('the probe finds a Harmony 525, whose read base and container base differ by a megabyte',
+  skipUnless('h525_config'), async () => {
+  // Arch 9 (Harmony 525) is the one architecture where the two are not the same number: `READ_FLASH`
+  // will not answer below `0x800000` and the container's own pointers are `0x02xxxx`, so `end_addr`
+  // is stated against the second while the bytes come from the first. `packages/corpus/src/read.ts`
+  // has known that since a Harmony 525 was connected on 8 August 2026 and the probe did not: the
+  // base was absent from `CANDIDATE_BASES`, and adding it alone would not have helped, because the
+  // length came out negative and was rejected as implausible. Section 139.
+  const blob = container('h525_config') as Uint8Array;
+  const READ_BASE = 0x820000;
+  const CONTAINER_BASE = 0x020000;
+  const reader = {
+    getVersion: async () => Uint8Array.from({ length: 12 }, (_, i) => i),
+    readFlash: async (address: number, count: number) => {
+      if (address < READ_BASE || address + count > READ_BASE + blob.length) return new Uint8Array(0);
+      return blob.subarray(address - READ_BASE, address - READ_BASE + count);
+    },
+  };
+  // The default candidate list has to find it, which is the whole point: a contributor runs the
+  // probe with no arguments.
+  const report = await probeRemote(reader, null);
+  assert.equal(report.error, null);
+  assert.equal(report.container?.parseError, null);
+  assert.equal(report.container?.magic, 'AHCM');
+  assert.equal(report.container?.architecture, 9);
+  assert.equal(report.container?.trailerChecksumRecomputes, true);
+  // And the length is right, which is the half the container base fixes: subtracting the read base
+  // would give a number about a megabyte negative.
+  assert.equal(report.container?.length, blob.length);
+  // The control: without the container base the same header is rejected outright, so the candidate
+  // entry is load bearing rather than decorative.
+  assert.equal(await probeBase(reader, READ_BASE, 'no container base'), undefined);
+  assert.notEqual(await probeBase(reader, READ_BASE, 'with it', CONTAINER_BASE), undefined);
+});

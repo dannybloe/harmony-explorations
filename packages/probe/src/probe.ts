@@ -29,12 +29,34 @@ export interface ProbeReader {
  * Ordered by how likely they are to be right on an unknown model, which is a guess, so the order
  * only decides how many sixteen byte reads happen before the answer.
  */
-export const CANDIDATE_BASES: readonly { address: number; note: string }[] = [
+export const CANDIDATE_BASES: readonly CandidateBase[] = [
   { address: 0x030000, note: 'arch 14 user config' },
   { address: 0x040000, note: 'arch 12 user config' },
+  // **Arch 9 (Harmony 525) is the one architecture whose read base and container base differ**, by a
+  // megabyte: `READ_FLASH` will not answer below `0x800000`, while the container's own pointers are
+  // `0x02xxxx`, so `end_addr` is stated in the second and the read happens at the first.
+  // `packages/corpus/src/read.ts` has known this since a Harmony 525 was connected on 8 August 2026
+  // and the probe did not, so the base was missing from this list and, had it been added, the length
+  // would have come out **negative** and been rejected. The instrument built for models nobody here
+  // owns silently could not report the one unusual remote that is on the bench. Section 139.
+  { address: 0x820000, note: 'arch 9 user config', containerBase: 0x020000 },
   { address: 0x020000, note: 'safe mode config on arch 12 and arch 14' },
+  { address: 0x818000, note: 'arch 9 safe mode config', containerBase: 0x018000 },
   { address: 0x002000, note: 'arch 12 internal safe mode container' },
 ];
+
+export interface CandidateBase {
+  /** Where `READ_FLASH` is asked for the bytes. */
+  readonly address: number;
+  readonly note: string;
+  /**
+   * The base the container's own `end_addr` is stated against, when it is not the read address.
+   *
+   * Arch 9 (Harmony 525) only. Absent everywhere else, where the two are the same number and saying
+   * so twice would be two places to keep right.
+   */
+  readonly containerBase?: number;
+}
 
 export const HEADER_PROBE = 16;
 /** A container larger than this is not one; the biggest in the corpus is 1672832 bytes. */
@@ -51,6 +73,7 @@ export async function probeBase(
   reader: ProbeReader,
   base: number,
   note: string,
+  containerBase?: number,
 ): Promise<FoundContainer | undefined> {
   const head = await reader.readFlash(base, HEADER_PROBE);
   if (head.length < HEADER_PROBE) return undefined;
@@ -63,7 +86,10 @@ export async function probeBase(
   if (!looksLikeMagic) return undefined;
   const endAddr = byteUtil.u32(head, 4);
   const markerBytes = family?.endMarker.length ?? 4;
-  const length = endAddr - base + markerBytes;
+  // The length is a difference of two numbers in the **container's** address space, which is the
+  // read base everywhere except arch 9 (Harmony 525). Subtracting the read base there gives a
+  // negative length, so even adding `0x820000` to the candidate list would not have found it.
+  const length = endAddr - (containerBase ?? base) + markerBytes;
   if (length <= HEADER_PROBE || length > MAX_PLAUSIBLE_LENGTH) return undefined;
   return { base, note, length };
 }
@@ -72,7 +98,7 @@ export interface ProbeOptions {
   readonly chunkBytes?: number;
   readonly onProgress?: (done: number, total: number) => void;
   /** Restrict the search, when the base is already known. */
-  readonly bases?: readonly { address: number; note: string }[];
+  readonly bases?: readonly CandidateBase[];
 }
 
 export const DEFAULT_CHUNK_BYTES = 16384;
@@ -106,7 +132,7 @@ export async function probeRemote(
   for (const candidate of bases) {
     tried.push(`0x${candidate.address.toString(16)} (${candidate.note})`);
     try {
-      found = await probeBase(reader, candidate.address, candidate.note);
+      found = await probeBase(reader, candidate.address, candidate.note, candidate.containerBase);
     } catch (err) {
       tried[tried.length - 1] += `: ${err instanceof Error ? err.message : String(err)}`;
       continue;
