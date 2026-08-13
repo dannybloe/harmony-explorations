@@ -1048,6 +1048,17 @@ over the runner-up before trusting its answer.
   concludes "not connected" and is believed. That already produced one false negative here: a
   six minute watcher reported no remote while the remote was plugged in. Use `ioreg`, and see
   the `probe-remote` skill.
+* **A grep for `FAIL: test` finds nothing on a real failure.** Python 3.14's unittest colours its
+  summary even through a pipe and puts the reset sequence **between** `FAIL` and `: test`, so the
+  obvious pattern matches nothing while the run has genuinely failed. It cost a wrong "the control did
+  not bite" here, and the same defect was live in the `Makefile`'s `test-nolab` diagnostic, which
+  would have printed an empty failure list at the one moment anybody reads it. Prefix the command with
+  `NO_COLOR=1`. Related, and cheaper to hit than it sounds: a source edit and a byte compile inside
+  the same second leave a `.pyc` Python considers fresh, so a reverted edit keeps failing until
+  `__pycache__` is removed, and `make lint` byte compiles everything.
+* **Never `git checkout -- <path>` to undo a control.** It discards uncommitted work in that file,
+  which it did on 13 August 2026 to four finished edits. Copy the file first, or make the control a
+  string replacement and reverse it the same way.
 * **Ghidra 12 API.** `Memory.getNumInitializedAddresses()` does not exist, use `getSize()`,
   and remember it includes the auto-created 4096-byte `GPR` DATA block, so subtract that before
   quoting code coverage.
@@ -1101,6 +1112,24 @@ Established norms:
   for the correct base against 11 to 30% for wrong ones.
 * Record corrections in place rather than quietly fixing them, so readers can calibrate.
 * Mark anything unconfirmed as unconfirmed. `docs/config-format.md` does this explicitly.
+* **Assert the count, not a bound under it.** A review sweep on 13 August 2026 found this shape
+  thirty times across both languages, and it has two variants. A floor well under the figure absorbs
+  a whole sample dropping out, `instructions > 10_000` against 47839. And a floor that **equals** the
+  population is worse, because it reads as tolerance and has none: `agree >= 62` against 62 fails on
+  the first sample that adds a key and passes on any that removes one. Every corpus loop here walks a
+  list that is a literal in its own file, so an exact count moves only when somebody changes a reader
+  or adds a sample, and then it moves in the diff. Same rule for a share: state both counts, since
+  `0.95` hides which side moved.
+* **A test's title is a claim and gets checked like one.** Four titles in that sweep named more than
+  their bodies carried, and the failure is invisible because the test passes: `every key a screen
+  labels gets a label` where 74 of 6988 have none, `six reads and nothing that writes` over a table
+  of nine routes that nothing counted. When a body cannot reach the claim, rename the body's claim
+  and say where the real one is tested.
+* **Two population lists that nobody compares will differ.** `packages/codec/test`'s `ACCOUNTED`,
+  `REBUILT` and `ALL_CONTAINERS` are the same nineteen containers and one of them held eighteen for
+  as long as that sample had existed, because each file's own totals stayed self consistent.
+  `TheCorpusWidePopulationsAgree` in `tests/test_toolchain.py` compares them statically, in a fresh
+  clone with no lab.
 
 ## Where the work stands
 
