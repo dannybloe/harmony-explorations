@@ -451,8 +451,13 @@ document:
   architectures and to the action list language, and no config in the corpus emits either opcode.
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes an arbitrary byte
   into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
-  emulator. Volatile, so it cannot brick anything, but it is still a write to a live device and
-  it sits behind the same flag. `ERASE_FLASH` takes an address and **no** count, so an erase
+  emulator. **This said "volatile, so it cannot brick anything" and that was a claim about the
+  address**, section 139: the request carries a sixteen bit data address, and on this MCU family bank
+  15 from `0xF40` up is the special function registers, with `EECON1` at `0xFA6`, `EECON2` at `0xFA7`,
+  `TABLAT` at `0xFF5` and `TBLPTR` at `0xFF6` to `0xFF8`, which are a PIC18's self programming path.
+  Whether the firmware bounds the address is unread, so `assertRamWriteAllowed` bounds it below the SFR
+  page and checks the architecture, which it did not. Below that bound it is volatile and it still sits
+  behind the same flag. `ERASE_FLASH` takes an address and **no** count, so an erase
   cannot be scoped by the caller, only refused. **How much it destroys is known now**: 64 KiB on
   arch 12, so the rail requires a block aligned address and a whole block inside the region, and
   the ceiling is `0x3D0000` rather than `0x400000` because the **stored application firmware**

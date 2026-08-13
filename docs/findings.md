@@ -18389,20 +18389,21 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Ten shipped readers answered plausibly where they should have refused, and one of them was a rail
+## 139. Eleven shipped readers answered plausibly where they should have refused, and three were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Ten defects came out of it that a sample could not have found, and they share one shape, which is
+Eleven defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
 They are listed newest reading first. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
-that moved a published number, and 9 is the one this document had already written down and not acted
-on. The rest are corrections to code this document already relies on.
+that moved a published number, and 9 is the one this document had already written down and not acted on.
+Entries 5 and 11 are the rails, and 11 is where "it cannot brick anything" turned out to be a claim
+about an address. The rest are corrections to code this document already relies on.
 
 ### 1. The infrared duration locator read a neighbouring record, on every record
 
@@ -18648,6 +18649,47 @@ block begins with `*`, which the checker reads as a markdown bullet, so honourin
 a `.ts` file makes the check pass on any comment in `packages/`. It did exactly that: the dead screen
 program count sat behind it and was invisible until the rule was narrowed to the explicit token.
 
+### 11. Three in `packages/usb`, and one of them makes a write not volatile
+
+The write rails were the subject of entry 5 and the read path had its own three.
+
+**`readRam` returned a plausible zero on arch 9 (Harmony 525).** `decodeReply` carries the warning in
+as many words, that on arch 9 the byte after the selector is the **high half** of a sixteen bit word and
+a caller should read `word` or `low`; `readRam` returned `value` whatever the architecture. Underneath
+that, only selector `0x01` has a body in that firmware's `READ_MISC` executor at all, section 90, so
+every other selector emits two bytes the firmware has just cleared: the call would have answered zero
+for every address on the device, and a zero is exactly what a variable holding zero looks like. It
+refuses now, naming the reason. Section 137 is what the same shape already cost: selector 1 was read as
+answering zero **for a year** because the decoder took the byte before the one carrying the value.
+
+**And `packages/usb/bin/read-ram.ts` could not have shown that refusal**, because it called
+`getVersion` to find out whether the remote was awake and threw the block away, so the object never
+learned which architecture it was talking to. It adopts it now, which is the same correction section 118
+records in `read-window.ts`: the answer was sitting in a reply the tool had already received.
+
+**`writeRam` called itself volatile, and that is a claim about the address rather than the command.**
+The request carries a **sixteen bit** data address and `assertRamWriteAllowed` bounded nothing: it
+checked the flag and the spare remote, and had no architecture check either, so a caller with
+`targetIsTheSpareRemote` reached `WRITE_MISC` on a Harmony 600 or a Harmony 525 whose selector 7
+executors nobody has read.
+
+On the PIC18F87J50, bank 15 from `0xF40` up is the special function registers, and Microchip's own
+`p18f87j50.inc` puts **`EECON1` at `0xFA6`, `EECON2` at `0xFA7`, `TABLAT` at `0xFF5` and `TBLPTR` at
+`0xFF6` to `0xFF8`**. Those are a PIC18's self programming path, and a flash write on this part is made
+of exactly a sequence of single byte writes to them. Whether the firmware's own handler bounds the
+address is **unread**, and that is the point: the rail must not depend on the answer, because "volatile,
+so it cannot brick anything" is the sentence a rail exists to stop anybody relying on. `SFR_PAGE_START`
+is the bound, the same constant and the same provenance as `src/harmony/pic18/isa.py`'s.
+
+**`eraseFlash` and `writeRam` checked that something was acknowledged and not what.** An
+acknowledgement carries the command byte it acknowledges, so a reply to another command satisfied a
+`kind === 'ack'` test. Cheap, and these are the two methods that change a device.
+
+The rails' tests run with writing **off**, which is the shipped state, so the bound is asserted in the
+subprocess where the flag is on: with the flag off every one of these refuses at the first line and a
+test asserting a throw would say nothing about the address. Two rows are allowed there and they are the
+two that should be.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -18675,6 +18717,10 @@ program count sat behind it and was invisible until the rule was narrowed to the
 * `make coverage` exits nonzero on an overlap, so the zero is enforced rather than reported.
 * `@harmony/usb` offers no way to build a request that changes a remote, which is what `rails.ts` has
   claimed since it was written.
+* **A RAM write is bounded below the SFR page and checks the architecture**, so "volatile" is a property
+  of what the rail allows rather than an assumption about what the firmware does.
+* **`readRam` refuses on arch 9 (Harmony 525)** instead of answering a cleared zero, and
+  `bin/read-ram.ts` adopts the architecture the remote states so that the refusal can fire.
 
 ### What would falsify it
 

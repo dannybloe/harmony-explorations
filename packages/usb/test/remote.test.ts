@@ -89,6 +89,38 @@ test('a RAM read that echoes a different selector is an error, not a value', asy
   await assert.rejects(() => remote.readRam(0x0ec9), /echoed selector 0x6/);
 });
 
+test('a Harmony 525 refuses a RAM read rather than returning a cleared zero', async () => {
+  // Only selector `0x01` has a body in arch 9's `READ_MISC` executor, section 90, so every other
+  // selector emits two bytes the firmware has just cleared: this call would answer **zero** for every
+  // address on the device, and a zero is what a real variable holding zero looks like.
+  //
+  // Section 137 is what that costs. Selector 1 was read as answering zero for a **year**, because the
+  // decoder took the byte before the one carrying the value: `decodeReply` says as much on `value`,
+  // that on arch 9 the byte after the selector is the high half of a sixteen bit word. `readRam`
+  // returned that byte regardless of architecture. Section 139.
+  //
+  // The transport is scripted with a plausible answer on purpose, so the refusal cannot be mistaken
+  // for the device failing to reply.
+  const { transport, written } = scriptedRemote([report(0xc2, MISC_RAM, 0x00, 0x5a)], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 9 });
+  await assert.rejects(() => remote.readRam(0x0ec9), /no READ_MISC body for selector 0x7/);
+  // And it refuses before touching the device, which is what makes it a refusal rather than a filter.
+  assert.deepEqual(written, []);
+});
+
+test('a RAM read still works where the selector has a body', async () => {
+  // The control for the refusal above: the same call on the two architectures that answer.
+  for (const architecture of [12, 14]) {
+    const { transport } = scriptedRemote([report(0xc2, MISC_RAM, 0x5a)], 0);
+    const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture });
+    assert.equal(await remote.readRam(0x0ec9), 0x5a, `architecture ${architecture}`);
+  }
+  // And with no architecture stated it answers too, because a caller who has not read a version block
+  // yet is the ordinary case and the refusal is about arch 9 specifically.
+  const { transport } = scriptedRemote([report(0xc2, MISC_RAM, 0x5a)], 0);
+  assert.equal(await new HarmonyRemote(transport, { timeoutMs: 1 }).readRam(0x0ec9), 0x5a);
+});
+
 test('a version block is twelve bytes', async () => {
   const fields = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const { transport } = scriptedRemote([report(0x28, ...fields)], 0);

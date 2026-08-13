@@ -22,16 +22,19 @@
  */
 import {
   ESCAPE_END_SESSION,
+  ERASE_FLASH,
   FLASH_CHUNK_DATA,
   GET_VERSION,
   MISC_RAM,
   READ_FLASH,
+  WRITE_MISC,
   nextFlashSequence,
   VERSION_FIELD_COUNT_MIN,
   decodeReply,
   getVersionRequest,
   readFlashRequest,
   readRamRequest,
+  ARCH_WITHOUT_A_RAM_READ,
   regionOf,
   type Reply,
 } from './protocol.ts';
@@ -151,8 +154,25 @@ export class HarmonyRemote {
    * This is the capability that stands in for the deferred emulator: poll a variable while
    * operating the remote by hand, and watch what the firmware does. The button mapping experiment
    * is the first use, by watching the keypad scanner's index while every key is pressed.
+   *
+   * **It refuses on arch 9 (Harmony 525), and that refusal is a finding rather than caution.** Only
+   * selector `0x01` has a body in that firmware's `READ_MISC` executor, section 90, so every other
+   * selector emits two bytes it has just cleared: this call would return a plausible **zero** for
+   * every address on the device. `decodeReply` says as much in the comment on `value`, that on arch 9
+   * the byte after the selector is the high half of a sixteen bit word, and section 137 is what that
+   * cost: selector 1 was read as answering zero **for a year** because the decoder took the byte
+   * before the one carrying the value. Returning a zero nobody can distinguish from a real zero is
+   * the failure this whole section is about, so the honest answer is an error naming the reason.
+   * Arch 9 has no route to its data memory at all, section 137: `READ_FLASH`'s window at top byte
+   * `0x40` answers zero for the bank 2 bytes holding the offset of the read that is answering.
    */
   async readRam(dataAddress: number): Promise<number> {
+    if (this.architecture === ARCH_WITHOUT_A_RAM_READ) {
+      throw new RemoteError(
+        `a Harmony 525 has no READ_MISC body for selector 0x${MISC_RAM.toString(16)}, so this would ` +
+          `return a cleared zero for every address; docs/findings.md sections 90 and 137`,
+      );
+    }
     const reply = await this.exchange(readRamRequest(dataAddress));
     if (reply.kind !== 'misc') {
       throw new RemoteError(`a RAM read answered with a ${reply.kind} reply`);
@@ -334,13 +354,40 @@ export class HarmonyRemote {
     assertEraseAllowed(p, address);
     const reply = await this.exchange(eraseFlashRequest(address));
     if (reply.kind !== 'ack') throw new RemoteError('erase was not acknowledged');
+    // Which command was acknowledged, not merely that something was. Section 139.
+    if (reply.command !== ERASE_FLASH) {
+      throw new RemoteError(
+        `the remote acknowledged command 0x${reply.command.toString(16)}, not ERASE_FLASH`,
+      );
+    }
   }
 
-  /** Write one byte into the data memory of a running remote. Volatile, and still gated. */
-  async writeRam(p: Pick<WritePermission, 'targetIsTheSpareRemote'>, dataAddress: number, value: number): Promise<void> {
-    assertRamWriteAllowed(p);
+  /**
+   * Write one byte into the data memory of a running remote.
+   *
+   * **This said "volatile, and still gated" and the first half was an assumption**, section 139: the
+   * request carries a sixteen bit data address and bank 15 from `0xF40` up is the special function
+   * registers, `EECON1`, `EECON2`, `TABLAT` and `TBLPTR` among them, which are what a PIC18 self
+   * programming sequence is made of. Whether the firmware bounds the address is unread, so
+   * `assertRamWriteAllowed` bounds it here and the refusal says why. Below the SFR page the write is
+   * volatile and a hang resets the device, section 100.
+   */
+  async writeRam(
+    p: { readonly architecture?: number | undefined; readonly targetIsTheSpareRemote: boolean },
+    dataAddress: number,
+    value: number,
+  ): Promise<void> {
+    assertRamWriteAllowed(p, dataAddress);
     const reply = await this.exchange(writeMiscRequest(MISC_RAM, dataAddress, value));
     if (reply.kind !== 'ack') throw new RemoteError('the RAM write was not acknowledged');
+    // The command byte, which `eraseFlash` and this method both omitted: an acknowledgement carries
+    // one, and without checking it a reply to some other command satisfies the `kind` test. Cheap
+    // where it matters most, since these are the two methods that change a device.
+    if (reply.command !== WRITE_MISC) {
+      throw new RemoteError(
+        `the remote acknowledged command 0x${reply.command.toString(16)}, not WRITE_MISC`,
+      );
+    }
   }
 
   /**

@@ -19,7 +19,7 @@
  * `packages/usb/src/rails.ts`.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
-import { MISC_RAM, readMiscRequest } from '../src/protocol.ts';
+import { MISC_RAM, architectureFromVersion, readMiscRequest } from '../src/protocol.ts';
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -77,7 +77,14 @@ try {
   let awake = false;
   for (let attempt = 1; attempt <= 4 && !awake; attempt += 1) {
     try {
-      await remote.getVersion();
+      // **Adopted rather than discarded, since section 139.** This called `getVersion` only to learn
+      // whether the remote was answering and threw the block away, so `readRam` never learned which
+      // architecture it was talking to and its arch 9 refusal could not fire on a connected Harmony
+      // 525: the tool would print zeros with nothing to say they are the window's rather than the
+      // memory's. Same shape as the bug section 118 records in `read-window.ts`, where the answer was
+      // already sitting in a reply the tool had received.
+      const stated = architectureFromVersion(await remote.getVersion());
+      if (stated !== undefined) remote.useArchitecture(stated);
       awake = true;
     } catch {
       // Deliberately swallowed: retrying is the handling, and failure is reported below.

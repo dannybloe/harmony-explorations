@@ -262,6 +262,14 @@ export const FLASH_TOP_BYTE_BOUND: Readonly<Record<number, number>> = {
  * its own firmware since**: the validator refuses below `0x80` and at or above `0x88`, which is
  * eight 64 KiB blocks and exactly the 512 KiB the part holds. Section 88.
  */
+/**
+ * The architecture whose `READ_MISC` executor has a body for selector `0x01` and for nothing else.
+ *
+ * Sections 90 and 137. Every other selector emits two bytes the firmware has just cleared, so a RAM
+ * read there returns a zero indistinguishable from a real one. Named rather than written inline
+ * because it is a property of the firmware and the refusal that uses it should say which.
+ */
+export const ARCH_WITHOUT_A_RAM_READ = 9;
 export const ARCH9_FLASH_TOP_MIN = 0x80;
 export const ARCH9_FLASH_TOP_MAX = 0x87;
 

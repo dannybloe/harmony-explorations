@@ -20,6 +20,7 @@ import {
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
   RailError,
+  SFR_PAGE_START,
   WRITABLE_CEILING,
   WRITES_ENABLED,
   assertEraseAllowed,
@@ -82,7 +83,22 @@ test('with writing disabled, every write path refuses even with everything else 
   const base = CONFIG_REGION_BASE[12] as number;
   assert.throws(() => assertFlashWriteAllowed(IDEAL, base, 16), RailError);
   assert.throws(() => assertEraseAllowed(IDEAL, base), RailError);
-  assert.throws(() => assertRamWriteAllowed(IDEAL), RailError);
+  assert.throws(() => assertRamWriteAllowed(IDEAL, 0x100), RailError);
+});
+
+test('the SFR page is where the RAM write bound comes from, and it is the documented one', () => {
+  // The number, on its own, in the shipped state. Everything about *whether* the bound fires needs the
+  // flag on and is the subprocess test at the bottom: with writes disabled every call here refuses at
+  // the first line, so asserting a throw would say nothing about the bound.
+  //
+  // `0xF40` is `SFR_PAGE_START` in `src/harmony/pic18/isa.py` and Microchip's own `p18f87j50.inc` is
+  // the provenance for both. It is 0xF60 on the PIC18F4550 that arch 9 is, and the lower of the two is
+  // what to bound against.
+  assert.equal(SFR_PAGE_START, 0xf40);
+  // The registers the bound exists for, so the reason survives a refactor of the message.
+  for (const register of [0xfa6, 0xfa7, 0xff5, 0xff6, 0xff8]) {
+    assert.ok(register >= SFR_PAGE_START, `0x${register.toString(16)} is inside the SFR page`);
+  }
 });
 
 test('firmware is never written, and there is no argument that changes that', () => {
@@ -172,6 +188,58 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     'one byte below the region: refused by RailError',
     'running one byte past the end: refused by RailError',
     'the whole region exactly: ALLOWED',
+  ]);
+});
+
+test('with writing enabled, a RAM write still refuses an SFR address and a wrong architecture', () => {
+  // **`writeRam` called itself volatile and that was an assumption about the address**, section 139.
+  // The request carries a sixteen bit data address, and on the PIC18F87J50 bank 15 from `0xF40` up is
+  // the special function registers: `EECON1` at `0xFA6`, `EECON2` at `0xFA7`, `TABLAT` at `0xFF5` and
+  // `TBLPTR` at `0xFF6` to `0xFF8`, which together are a PIC18's self programming path. Whether the
+  // firmware bounds the address is **unread**, which is why the rail does not depend on the answer.
+  //
+  // The rail also had no architecture check at all, so `targetIsTheSpareRemote` alone reached
+  // `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7 executors nobody has read.
+  const output = withWritesEnabled(`
+    const IDEAL = ${JSON.stringify(IDEAL)};
+    const out = [];
+    const check = (name, permission, address) => {
+      try {
+        rails.assertRamWriteAllowed(permission, address);
+        out.push(name + ': ALLOWED');
+      } catch (error) {
+        out.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    check('an ordinary variable', IDEAL, 0x100);
+    check('the last byte below the SFR page', IDEAL, 0xf3f);
+    check('the first byte of the SFR page', IDEAL, 0xf40);
+    check('EECON1', IDEAL, 0xfa6);
+    check('EECON2', IDEAL, 0xfa7);
+    check('TBLPTRU', IDEAL, 0xff8);
+    check('a negative address', IDEAL, -1);
+    check('not an integer', IDEAL, 1.5);
+    check('a Harmony 600', {...IDEAL, architecture: 14}, 0x100);
+    check('a Harmony 525', {...IDEAL, architecture: 9}, 0x100);
+    check('no architecture at all', {...IDEAL, architecture: undefined}, 0x100);
+    check('not the spare remote', {...IDEAL, targetIsTheSpareRemote: false}, 0x100);
+    console.log(JSON.stringify(out));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Exactly two rows are allowed, and they are the two that should be: the flag being on is
+    // necessary and every other condition still refuses on its own.
+    'an ordinary variable: ALLOWED',
+    'the last byte below the SFR page: ALLOWED',
+    'the first byte of the SFR page: refused by RailError',
+    'EECON1: refused by RailError',
+    'EECON2: refused by RailError',
+    'TBLPTRU: refused by RailError',
+    'a negative address: refused by RailError',
+    'not an integer: refused by RailError',
+    'a Harmony 600: refused by RailError',
+    'a Harmony 525: refused by RailError',
+    'no architecture at all: refused by RailError',
+    'not the spare remote: refused by RailError',
   ]);
 });
 

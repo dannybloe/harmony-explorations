@@ -229,14 +229,59 @@ export function assertEraseAllowed(p: WritePermission, address: number): void {
  * of which means anything for RAM. It does still need the flag and the spare remote, because the
  * point of a read only build is that it does not write.
  */
-export function assertRamWriteAllowed(p: Pick<WritePermission, 'targetIsTheSpareRemote'>): void {
+export function assertRamWriteAllowed(
+  // `architecture` is optional here where `WritePermission` makes it required, and deliberately: a
+  // rail is a runtime boundary and JavaScript crosses it, so a guard the type says is unreachable is
+  // the shape `CLAUDE.md` warns about, an unreachable guard reading as protection. Widening the
+  // parameter is what makes the check reachable and the test able to state it.
+  p: { readonly architecture?: number | undefined; readonly targetIsTheSpareRemote: boolean },
+  dataAddress: number,
+): void {
   if (!WRITES_ENABLED) {
     throw new RailError('writing is disabled: this build is read only');
   }
   if (!p.targetIsTheSpareRemote) {
     throw new RailError('the spare unprogrammed remote is the only write target, RAM included');
   }
+  // An architecture check, like every other write rail here. It had none, so a caller passing
+  // `targetIsTheSpareRemote` reached `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7
+  // executors nobody has read. `ARCHITECTURES_WITH_A_WRITE_TARGET` is the same list flash uses and the
+  // reason is the same: a read profile is not a write profile. Section 139.
+  if (p.architecture === undefined || !ARCHITECTURES_WITH_A_WRITE_TARGET.includes(p.architecture)) {
+    throw new RailError(
+      `architecture ${p.architecture ?? 'unknown'} has no write target, so no RAM write either; ` +
+        `only ${ARCHITECTURES_WITH_A_WRITE_TARGET.join(', ')} has one`,
+    );
+  }
+  if (!Number.isInteger(dataAddress) || dataAddress < 0 || dataAddress >= SFR_PAGE_START) {
+    // **The reason this bound exists is that "volatile" is an assumption about the address, not about
+    // the command.** `writeRam`'s own comment called the write volatile and therefore harmless, and
+    // the request carries a sixteen bit data address: on this MCU family bank 15 from `0xF40` up is
+    // the special function registers, and Microchip's own `p18f87j50.inc` puts `EECON1` at `0xFA6`,
+    // `EECON2` at `0xFA7`, `TABLAT` at `0xFF5` and `TBLPTR` at `0xFF6` to `0xFF8`. Those are the self
+    // programming path: a sequence of single byte writes is what a flash write on a PIC18 is made of.
+    //
+    // Whether the firmware's own handler bounds the address is **unread**, and that is exactly why the
+    // rail does not depend on the answer. Below the SFR page a write can only disturb a variable, and
+    // a hang resets the device, section 100. Above it, nobody here can say what it can do.
+    throw new RailError(
+      `data address 0x${Number(dataAddress).toString(16)} is not below the SFR page at ` +
+        `0x${SFR_PAGE_START.toString(16)}: bank 15 holds EECON1, EECON2, TABLAT and TBLPTR, which ` +
+        `are the self programming path, so a write there is not volatile`,
+    );
+  }
 }
+
+/**
+ * Where the special function registers start on the PIC18F67J50 and 87J50, the parts arch 12 and
+ * arch 14 are.
+ *
+ * The same constant as `SFR_PAGE_START` in `src/harmony/pic18/isa.py`, and the same provenance,
+ * Microchip's own `p18f87j50.inc`. It is 0xF60 on the PIC18F4550 that arch 9 is, which does not matter
+ * here because arch 9 has no write target: the lower of the two is the safe one to bound against
+ * either way, and a test says so rather than leaving it to be re-derived.
+ */
+export const SFR_PAGE_START = 0xf40;
 
 /**
  * Throws unless the session-end escape may be sent to this remote.
