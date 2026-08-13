@@ -264,7 +264,13 @@ def decode(code: bytes, offset: int, base: int = 0) -> Instr:
         return one(BIT_OPS[nib], BIT, f=lo, b=(hi >> 1) & 7, a=hi & 1)
 
     if 0xC0 <= hi <= 0xCF:
-        if nxt is None:
+        # The second word is `1111 dddd dddd dddd`, so a trailing word outside that is not a
+        # MOVFF and claiming two words for it desynchronises everything after it by one word.
+        # `CALL`, `GOTO` and `LFSR` below have always tested this and MOVFF did not, which is 14
+        # decodes in the Harmony 700 image, 26 in the Harmony One 3.4 image, 4 in the Harmony 525
+        # image and 20 in the Harmony 880 image. Same reasoning as `SECOND_WORD` below: reaching
+        # this during a linear scan means the scan is misaligned or is walking data.
+        if nxt is None or (nxt >> 12) != 0xF:
             return one('MOVFF', UNKNOWN, f=lo)
         return two('MOVFF', MOVFF, src=((hi & 0x0F) << 8) | lo, dst=nxt & 0x0FFF)
 
@@ -307,8 +313,12 @@ def decode(code: bytes, offset: int, base: int = 0) -> Instr:
                 return one('ADDULNK' if hi == 0xE8 else 'SUBULNK', EXTENDED, k=lo & 0x3F)
             return one(mnemonic, EXTENDED, fsr=fsr, k=lo & 0x3F)
         mnemonic = 'MOVSS' if lo & 0x80 else 'MOVSF'
-        return two(mnemonic, EXTENDED, src=lo & 0x7F,
-                   dst=(nxt & 0x0FFF) if nxt is not None else 0)
+        # Same test as MOVFF, and for the same reason. It used to return a two word instruction
+        # with `dst=0` where there is no trailing word at all, which claims a length past the end
+        # of the buffer, and to accept any trailing word as the destination.
+        if nxt is None or (nxt >> 12) != 0xF:
+            return one(mnemonic, UNKNOWN, f=lo)
+        return two(mnemonic, EXTENDED, src=lo & 0x7F, dst=nxt & 0x0FFF)
 
     if hi >= 0xF0:
         # Trailing word of a two-word instruction. Reaching this during a linear scan
@@ -565,6 +575,15 @@ def resolve_file(f: int, a: int, bsr: Optional[int] = None,
 
     `adshr` names the shadow register at the ten shared addresses. The address returned is
     the same either way, since the two views share it.
+
+    **A banked access to the SFR page is named too**, and it was not. With a known BSR this
+    returned a bare `0x%03x`, so the one part of the register map a listing cannot reach any other
+    way was the one part it never named: on the 67J50 family the USB block at `0xF40` to `0xF5F`
+    sits **below** the access bank, so banked or `MOVFF` is the only route to it, and section 18's
+    headline correction is exactly that those registers are there. 27 accesses in the Harmony 700
+    image and 25 in the Harmony One 3.4 image printed as `0xf5e` where `sfr_name` already knew
+    `UADDR`. Zero in the Harmony 525 image, whose PIC18F4550 page starts at `0xF60` and is
+    therefore wholly inside the access bank, which is also why nothing noticed.
     """
     if a == 0:
         if f >= ACCESS_BANK_SFR_START:
@@ -574,4 +593,6 @@ def resolve_file(f: int, a: int, bsr: Optional[int] = None,
     if bsr is None:
         return None, '0x%02x,B' % f
     addr = (bsr << 8) | f
+    if addr >= PARTS[part][1]:
+        return addr, sfr_name(addr, adshr, part)
     return addr, '0x%03x' % addr

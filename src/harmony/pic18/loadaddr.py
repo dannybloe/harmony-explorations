@@ -31,8 +31,14 @@ from typing import List, Optional, Tuple
 from . import isa
 
 # Instructions after which a new function may plausibly begin.
+#
+# `GOTO` was in here and could never fire, because a `GOTO` is two words and an absolute target
+# lands on the word after its **trailing** word, which decodes as `SECOND_WORD`. So the arm below
+# is what catches a block end after a `GOTO`, and this member read as protection while doing
+# nothing. Measured on four images before removing it: `GOTO`, `RESET` and `RETURN FAST` fire zero
+# times on all four, and taking `GOTO` out moves no score.
 _BLOCK_ENDERS = frozenset({'RETURN', 'RETURN FAST', 'RETFIE', 'RETFIE FAST',
-                           'RESET', 'RETLW', 'BRA', 'GOTO'})
+                           'RESET', 'RETLW', 'BRA'})
 
 DEFAULT_CANDIDATE_STEP = 0x1000
 DEFAULT_MAX_BASE = 0x40000
@@ -79,8 +85,12 @@ def score_base(code: bytes, base: int, targets: Optional[List[int]] = None) -> S
         if offset < 2:
             continue
         prev = isa.decode(code, offset - 2, base)
-        # The trailing word of a two-word instruction decodes as SECOND_WORD here, which
-        # means the previous instruction was a CALL or GOTO: also a block end.
+        # A word decoding as SECOND_WORD is usually the tail of a CALL or GOTO, and this said it
+        # **means** that, which is a stated fact and is false. Measured: 172 of 209 on the Harmony
+        # One 3.4 image and 242 of 271 on the Harmony 525 image, the rest being bare `0xFxxx` data
+        # words and MOVFF tails. It is counted anyway because the score is a heuristic and a data
+        # word before a target is as good a boundary signal as a real tail; what is not acceptable
+        # is the comment claiming to know which it was.
         if prev.mnemonic in _BLOCK_ENDERS or prev.category == isa.SECOND_WORD:
             hits += 1
     return Score(base, len(targets), len(in_range), hits)

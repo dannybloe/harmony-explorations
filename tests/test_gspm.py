@@ -2267,6 +2267,26 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
                 # layout is not, so the check reports that rather than blessing it.
                 self.assertFalse(c.checks['pointer_count_known'])
 
+    def test_the_reporter_names_no_base_slot_where_there_is_no_architecture(self):
+        """It printed `base slot False`, from a boolean `and` then tested with `is None`.
+
+        Arch 10 (Harmony 890) is the container that exposes it, because it is the only one here
+        whose architecture the format does not state, so `c.architecture` is None and the `and`
+        answers with the operand rather than with a slot. Every other container took the other
+        arm and the line was right, which is why fifteen samples agreed with a broken expression.
+        """
+        lab.require('h890_config', 'one_config')
+        text = '\n'.join(gspm.report(gspm.parse(lab.load('h890_config'))))
+        nulls = [line for line in text.splitlines() if 'NULL' in line]
+        self.assertEqual(len(nulls), 2)
+        for line in nulls:
+            self.assertNotIn('base slot', line)
+        # The control: a container that does state its architecture still names its base slots.
+        text = '\n'.join(gspm.report(gspm.parse(lab.load('one_config'))))
+        named = [line for line in text.splitlines() if 'NULL' in line and 'base slot' in line]
+        self.assertEqual(len(named), 2)
+        self.assertNotIn('False', text)
+
     def test_the_clock_record_sits_one_slot_later_than_everywhere_else(self):
         """
         The one thing the mapping does say. On arch 8, 9, 12 and 14 the clock is base slot 3 at raw

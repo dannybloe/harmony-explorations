@@ -341,5 +341,63 @@ class TestTheCitedWordsAreTheWordsInTheImages(unittest.TestCase):
         self.assertIn(0xFC2, writes[True])
 
 
+class TestABankedAccessToTheSfrPageIsNamed(unittest.TestCase):
+    """The one part of the register map a listing cannot reach any other way went unnamed.
+
+    On the 67J50 family the USB block at `0xF40` to `0xF5F` sits **below** the access bank, so a
+    banked access or a `MOVFF` is the only route to it. That is section 18's headline correction,
+    and `resolve_file` returned a bare `0x%03x` for exactly those accesses because its `a=1` arm
+    never called `sfr_name`. Nothing noticed because on the PIC18F4550 the page starts at `0xF60`
+    and is therefore wholly inside the access bank, so the arch 9 (Harmony 525) listings this
+    would have shown it on have no such access at all.
+    """
+
+    def test_a_banked_usb_register_is_named(self):
+        self.assertEqual(isa.resolve_file(0x5E, 1, 0xF), (0xF5E, 'UADDR'))
+        self.assertEqual(isa.resolve_file(0x65, 1, 0xF), (0xF65, 'UCON'))
+
+    def test_a_banked_general_purpose_register_is_still_an_address(self):
+        """Below the part's page start there is no register to name, and the two parts differ."""
+        self.assertEqual(isa.resolve_file(0x5E, 1, 0x0), (0x05E, '0x05e'))
+        self.assertEqual(isa.resolve_file(0x5E, 1, 0xF, part='4550'), (0xF5E, '0xf5e'))
+        self.assertEqual(isa.resolve_file(0x6D, 1, 0xF, part='4550'), (0xF6D, 'UCON'))
+
+    def test_an_unknown_bank_still_refuses_to_name_anything(self):
+        self.assertEqual(isa.resolve_file(0x5E, 1, None), (None, '0x5e,B'))
+
+
+class TestATwoWordInstructionChecksItsTrailingWord(unittest.TestCase):
+    """`MOVFF`, `MOVSF` and `MOVSS` claimed two words without checking the second one.
+
+    The hardware encodes the second word of all three as `1111 dddd dddd dddd`, which `CALL`,
+    `GOTO` and `LFSR` have always tested here and these three did not. A word claimed as two when
+    it is one desynchronises every instruction after it by one word, which is the failure this
+    module's own `SECOND_WORD` comment describes. Measured during a real linear scan before the
+    check: 14 such decodes in the Harmony 700 image, 26 in the Harmony One 3.4 image, 4 in the
+    Harmony 525 image and 20 in the Harmony 880 image.
+    """
+
+    def test_a_movff_with_a_wrong_trailing_word_is_not_two_words(self):
+        good = dec(0xC012, 0xF234)
+        self.assertEqual(good.mnemonic, 'MOVFF')
+        self.assertEqual(good.words, 2)
+        self.assertEqual(good.category, isa.MOVFF)
+        bad = dec(0xC012, 0x1234)
+        self.assertEqual(bad.words, 1)
+        self.assertEqual(bad.category, isa.UNKNOWN)
+
+    def test_a_movff_at_the_very_end_of_the_buffer_is_one_word(self):
+        self.assertEqual(dec(0xC012).words, 1)
+
+    def test_the_extended_moves_check_the_same_thing(self):
+        # Bit 7 of the low byte picks MOVSS over MOVSF, so both forms are exercised.
+        good = dec(0xEB92, 0xF234)
+        self.assertEqual(good.mnemonic, 'MOVSS')
+        self.assertEqual(good.words, 2)
+        self.assertEqual(dec(0xEB12, 0xF234).mnemonic, 'MOVSF')
+        self.assertEqual(dec(0xEB92, 0x1234).words, 1)
+        self.assertEqual(dec(0xEB92).words, 1)
+
+
 if __name__ == '__main__':
     unittest.main()

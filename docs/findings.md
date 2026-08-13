@@ -18389,20 +18389,20 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Twenty three shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Twenty seven shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Twenty three defects came out of it that a sample could not have found, and they share one shape, which
+Twenty seven defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 19, which were read a day later and are
-appended rather than reordered so the numbering stays citable. Entry 19 is the whole Python side and is
-five readings in one, because none of them is reachable by any sample the corpus holds: they are latent
-rather than live, which is stated per reading and is why they are one entry.
+They are listed newest reading first, except entries 13 to 20, which were read a day later and are
+appended rather than reordered so the numbering stays citable. Entries 19 and 20 are the Python side, nine
+readings in two entries: 19 holds the five that no sample in the corpus reaches, and 20 the four found by
+reading the same partition list properly afterwards, two of which are producing a wrong answer today.
 Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
@@ -19101,6 +19101,56 @@ region shorter than one window, which handed the caller a window that runs off t
 and the width recovery still answers 176 on both Harmony Ones, which is the control that says the
 `busiest_window` change did not move the measurement.
 
+### 20. Four more in the same partition, and two of them were live
+
+Entry 19 said the Python side was five, which was a count of what one pass through the partition
+found rather than of what is in it. Four more came out of reading the same list properly, and **two
+of these are live rather than latent**, which is the difference from the entry above: they are
+producing a wrong answer today, on images and containers the lab holds.
+
+**A listing never named the one part of the register map it alone can reach.** `resolve_file`'s
+`a=1` arm returned a bare `0x%03x` and never called `sfr_name`, so a banked access to the special
+function registers printed as an address. That would be cosmetic on most parts and is not on this
+one: section 18's headline correction is that the 67J50 family puts the USB block at `0xF40` to
+`0xF5F`, which is **below** the access bank, so a banked operand or a `MOVFF` is the only way to
+reach it at all. **27 accesses in the Harmony 700 image and 25 in the Harmony One 3.4 image**, all
+of them `UIE`, `UCFG`, `UEP0`, `UEP1`, `UEP2`, `UEIE` and `UADDR`, printed as `0xf5e` and the like
+while `sfr_name` already knew every one. Zero in the Harmony 525 image, whose PIC18F4550 puts its
+page at `0xF60` and therefore wholly inside the access bank, and that is why nothing noticed: the
+architecture whose listings this project reads most carefully is the one architecture where the
+defect cannot occur.
+
+**The container reporter printed `base slot False`.** `base = c.architecture is not None and
+base_slot(...)`, a boolean `and`, then tested with `is None`, so the false arm answers `False`
+rather than `None` and the line prints it. Arch 10 (Harmony 890) is the only container here whose
+format does not state its architecture, so it is the only one that takes that arm, and fifteen
+samples agreed with a broken expression by never reaching it. The `except GspmError` its sibling
+branch carries was missing too, so an architecture outside `INSERTED_SLOTS` would raise out of a
+reporter, which is the one caller that must not raise.
+
+**Two latent ones with them.** `MOVFF`, `MOVSF` and `MOVSS` claimed two words without checking the
+trailing word, where `CALL`, `GOTO` and `LFSR` have always tested that it is `1111 dddd dddd dddd`.
+A one word instruction claimed as two desynchronises everything after it, which is exactly what the
+decoder's own `SECOND_WORD` comment is about. Measured during a real linear scan: 14 such decodes
+in the Harmony 700 image, 26 in the Harmony One 3.4 image, 4 in the Harmony 525 image and 20 in the
+Harmony 880 image, plus a `MOVSF` at the very end of a buffer claiming a length past it. And
+`loadaddr`'s `_BLOCK_ENDERS` held `'GOTO'`, which can never fire, because an absolute target lands
+on the word after a two word instruction's **trailing** word and a trailing word decodes as
+`SECOND_WORD`. `GOTO`, `RESET` and `RETURN FAST` fire zero times on all four images. The comment
+beside the arm that does catch those said reaching it **means** the previous instruction was a
+`CALL` or `GOTO`, and that is false for 37 of 209 hits on the Harmony One 3.4 image and 29 of 271
+on the Harmony 525 image, the rest being bare `0xFxxx` data words and `MOVFF` tails. Counting them
+is right, since the score is a heuristic and a data word before a target is as good a boundary
+signal; stating which they were is not.
+
+**One claim in the same partition was measured and refused.** The review held that `trace()` and
+`xrefs()` need a `part` and take none, on section 80's hazard that the wrong register map produces
+a readable wrong listing. They do not: both return **addresses**, `trace` discards the name
+`resolve_file` gives it, and `report` prints `0x%03X` throughout, so no output of either depends on
+the map. What survives is that nothing binds a part to an image, which is caller discipline and a
+design question rather than a defect, and `sfr_name`'s own tests already pin the two maps apart.
+Recorded because a finding that was checked and did not hold is worth as much here as one that did.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -19145,6 +19195,13 @@ and the width recovery still answers 176 on both Harmony Ones, which is the cont
 * **The flash base anchor takes the same two arguments in both languages**, and a static test says so.
 * **Three Python readers refuse a negative or past the end offset** rather than reading the tail of their
   own input: slot 0's frame, the descriptor walk, and the pixel measurement.
+* **A listing names a banked special function register**, which is the only way this family's USB block
+  can be reached at all: 27 accesses in the Harmony 700 image and 25 in the Harmony One 3.4 image that
+  printed as addresses.
+* **A two word instruction checks its trailing word**, `MOVFF`, `MOVSF` and `MOVSS` as `CALL`, `GOTO` and
+  `LFSR` already did, so a data word is no longer claimed as two and the scan after it stays aligned.
+* **The container reporter prints no base slot where the format states no architecture**, instead of
+  `base slot False`, and it no longer raises out of an unknown one.
 
 ### What would falsify it
 
@@ -19156,7 +19213,9 @@ story. For the closure: a record whose header timings name NEC or Kaseikyo and w
 or 48, which is now checkable because the two numbers come from the same record's own bytes. For the overlap detector: a container where the new rule reports an overlap, which would mean
 two readers claim one byte and one of them is wrong. For entry 19: any image or container that reaches
 one of the five, which would move it from latent to live and is the one thing that would make it worth
-more than it currently claims. For base slot 15's continuation: an arch 12 container
+more than it currently claims. For entry 20: a banked access to the USB block that this still does not
+name, or a two word instruction whose real trailing word is not `0xFxxx`, which would say the encoding
+read here is not the encoding. For base slot 15's continuation: an arch 12 container
 whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body
 runs into them, either of which would say the offsets are not the structure. For the day maximum: a Logitech generated config
 built on a 31st, which would settle by measurement what is currently our choice.

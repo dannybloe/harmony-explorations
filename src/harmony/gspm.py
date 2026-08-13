@@ -3047,7 +3047,17 @@ def report(c: Container):
     yield 'sections:'
     for s in c.sections:
         if s.is_null:
-            base = c.architecture is not None and base_slot(c.architecture, s.slot)
+            # A boolean `and` here, then tested with `is None`, printed `base slot False` for
+            # every NULL slot of an arch 10 (Harmony 890) config, whose architecture the container
+            # does not state. The `except` mirrors the branch below: an architecture outside
+            # `INSERTED_SLOTS` raises rather than answering, and a reporter is the one caller that
+            # must not.
+            base = None
+            if c.architecture is not None:
+                try:
+                    base = base_slot(c.architecture, s.slot)
+                except GspmError:
+                    base = None
             yield '   [%2d] NULL%s' % (s.slot, '' if base is None else '   base slot %s' % base)
             continue
         # The base slot is what a section is called in `docs/config-format.md`, and the pointer
