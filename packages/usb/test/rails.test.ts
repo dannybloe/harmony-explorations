@@ -112,7 +112,10 @@ test('with writing enabled, the remaining conditions still each refuse on their 
         rails.assertFlashWriteAllowed(permission, address, count);
         refusals.push(name + ': ALLOWED');
       } catch (error) {
-        refusals.push(name + ': refused');
+        // The error's own name, not a bare 'refused'. A bare catch cannot tell a RailError from a
+        // TypeError out of a rail somebody broke, so every one of these rows read 'refused' either
+        // way and the test passed while the rail did not work.
+        refusals.push(name + ': refused by ' + error.constructor.name);
       }
     };
     check('flag on and everything in order', IDEAL, base, 16);
@@ -129,12 +132,12 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     // The flag being on is necessary and not sufficient, which is the shape that matters: every
     // other condition still refuses by itself.
     'flag on and everything in order: ALLOWED',
-    'not the spare remote: refused',
-    'no verified dump: refused',
-    'intended version mismatch: refused',
-    'architecture 14: refused',
-    'one byte below the region: refused',
-    'running one byte past the end: refused',
+    'not the spare remote: refused by RailError',
+    'no verified dump: refused by RailError',
+    'intended version mismatch: refused by RailError',
+    'architecture 14: refused by RailError',
+    'one byte below the region: refused by RailError',
+    'running one byte past the end: refused by RailError',
     'the whole region exactly: ALLOWED',
   ]);
 });
@@ -159,20 +162,20 @@ test('with writing enabled, an erase must name a whole block inside the writable
     ];
     for (const [name, address] of cases) {
       try { rails.assertEraseAllowed(IDEAL, address); results.push(name + ': ALLOWED'); }
-      catch { results.push(name + ': refused'); }
+      catch (error) { results.push(name + ': refused by ' + error.constructor.name); }
     }
     console.log(JSON.stringify(results));
   `);
   assert.deepEqual(JSON.parse(output), [
     'the first block of the region: ALLOWED',
-    'unaligned inside the region: refused',
-    'aligned, one block below the region: refused',
+    'unaligned inside the region: refused by RailError',
+    'aligned, one block below the region: refused by RailError',
     'the last block below the ceiling: ALLOWED',
     // The two that the old rail would have allowed and that cost a remote: the stored application
     // firmware sits at 0x3D0000, inside the nominally writable region.
-    'the block the stored firmware starts in: refused',
-    'the nominal region top: refused',
-    'the reset vector: refused',
+    'the block the stored firmware starts in: refused by RailError',
+    'the nominal region top: refused by RailError',
+    'the reset vector: refused by RailError',
   ]);
 });
 
@@ -203,7 +206,10 @@ test('with writing enabled, the session end escape refuses everything but itself
         rails.assertSessionEndAllowed(permission, sub);
         refusals.push(name + ': ALLOWED');
       } catch (error) {
-        refusals.push(name + ': refused');
+        // The error's own name, not a bare 'refused'. A bare catch cannot tell a RailError from a
+        // TypeError out of a rail somebody broke, so every one of these rows read 'refused' either
+        // way and the test passed while the rail did not work.
+        refusals.push(name + ': refused by ' + error.constructor.name);
       }
     };
     check('arch 12 spare, sub-command 0x01', spare12, 0x01);
@@ -222,13 +228,13 @@ test('with writing enabled, the session end escape refuses everything but itself
     'arch 14 spare, sub-command 0x01: ALLOWED',
     // The reboots are refused by number, not merely unimplemented. An unimplemented thing gets
     // implemented by whoever needs it next; a refused one has to be argued for.
-    'the reset, 0x02: refused',
-    'the other reset, 0x03: refused',
-    'arch 14 only sub-command 0x05: refused',
+    'the reset, 0x02: refused by RailError',
+    'the other reset, 0x03: refused by RailError',
+    'arch 14 only sub-command 0x05: refused by RailError',
     // A read profile is not a write profile, which is the same rule the flash rails state.
-    'arch 9, whose escape nobody has read: refused',
+    'arch 9, whose escape nobody has read: refused by RailError',
     // And the conservative condition that keeps this an experiment rather than a product decision.
-    'not the spare remote: refused',
+    'not the spare remote: refused by RailError',
   ]);
 });
 
@@ -248,7 +254,7 @@ test('with the hang door open, it still refuses an even count', () => {
        const out = [];
        for (const count of [63, 65, 1, 62, 64, 0]) {
          try { rails.assertDeliberateHangAllowed(count); out.push(count + ': allowed'); }
-         catch { out.push(count + ': refused'); }
+         catch (error) { out.push(count + ': refused by ' + error.constructor.name); }
        }
        console.log(JSON.stringify(out));`,
     ],
@@ -260,8 +266,8 @@ test('with the hang door open, it still refuses an even count', () => {
     '63: allowed',
     '65: allowed',
     '1: allowed',
-    '62: refused',
-    '64: refused',
-    '0: refused',
+    '62: refused by RailError',
+    '64: refused by RailError',
+    '0: refused by RailError',
   ]);
 });

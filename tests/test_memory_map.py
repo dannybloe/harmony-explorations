@@ -11,6 +11,7 @@ Only the `0xFE` internal pages appear here. The `0xFF` pages hold each unit's id
 they are deliberately absent from `tests/lab.py` and their rows in the maps are not executable.
 """
 import os
+import glob
 import re
 import unittest
 
@@ -19,7 +20,13 @@ from harmony import ezfile, firmware, gspm
 from harmony.pic18 import isa, loadaddr
 
 _DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
-_MAPS = ('memory-map.md', 'memory-map-one.md', 'memory-map-600.md', 'memory-map-700.md')
+
+#: The shared document first, then every per device map. **Globbed rather than listed**, because it
+#: was listed and `docs/memory-map-525.md` was never added: the arch 9 map had not been seen by the
+#: identity byte guard below at all, from the day it was written. A publication check that has to be
+#: extended by hand is a publication check that covers whatever somebody remembered.
+_MAPS = ('memory-map.md',) + tuple(
+    sorted(os.path.basename(p) for p in glob.glob(os.path.join(_DOCS, 'memory-map-*.md'))))
 
 
 def _doc(name):
@@ -432,9 +439,9 @@ class TestTheBootloaderChoosesWhatToRun(unittest.TestCase):
 
 
 class TestTheSharedMap(unittest.TestCase):
-    """docs/memory-map.md, which carries what the three device maps have in common."""
+    """docs/memory-map.md, which carries what the per device maps have in common."""
 
-    def test_it_links_to_all_three_device_maps(self):
+    def test_it_links_to_every_device_map(self):
         text = _doc('memory-map.md')
         for name in _MAPS[1:]:
             self.assertIn(name, text, 'the index does not mention %s' % name)
@@ -453,16 +460,61 @@ class TestTheSharedMap(unittest.TestCase):
                 self.assertNotIn('0xFFC0', _doc(name), 'repeated instead of referenced')
 
 
+#: The byte runs any memory map may carry, each compared **whole**: a substring test would let any
+#: window of one pass, and would let an unrelated run through for sitting inside one of these.
+#:
+#: Both are properties of a model rather than of a unit, and both are published in
+#: `docs/usb-protocol.md` already. The second was found by widening this check: it is the Harmony
+#: 525's `GET_VERSION` reply, seven fields naming its protocol, skin, board and flash id, with no
+#: serial in it. A unit's serial GUIDs are what this test exists to keep out, and they appear in
+#: `concordance -i` output rather than in a version reply.
+_PUBLISHABLE_BYTE_RUNS = {
+    '09 00 20 11 02 18 e0 3c 00 67 01',      # the Harmony 600's descriptor bytes
+    '27 30 25 12 ff 90 16 09',               # the Harmony 525's GET_VERSION reply
+    # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2013-10-01, the
+    # owner's own remote, and the document spells out what each byte means two lines above it.
+    '2c 28 12 01 03 09 0d',
+}
+
+#: What an account id looks like, the same shape `.githooks/pre-commit` refuses in staged content.
+_GUID = re.compile(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}')
+
+#: Six or more hex byte pairs in a row, separated by spaces or commas, in either case. Six rather
+#: than eight because a serial GUID is sixteen bytes and half of one is still identifying.
+_BYTE_RUN = re.compile(r'(?:\b[0-9a-fA-F]{2}\b[ ,]+){5,}\b[0-9a-fA-F]{2}\b')
+
+
 class TestEveryMap(unittest.TestCase):
     def test_none_of_them_publishes_identity_bytes(self):
-        """A remote's GUIDs are personal data. The maps give the offset and the length only."""
+        """A remote's GUIDs are personal data. The maps give the offset and the length only.
+
+        **Three things were wrong with this check and all three were measured**, in a review sweep on
+        13 August 2026. Its regex was `(?:\\b[0-9a-f]{2}\\b[ ]){7,}`, lower case and space separated
+        and seven long, which matched in **one** of the four documents, so for three of them the loop
+        body never ran. Its assertion was `assertIn(run, whitelist)`, a **substring** test, so any
+        window of the permitted run passed and so did any run that happened to sit inside it. And
+        `_MAPS` was a hand written tuple that never gained `docs/memory-map-525.md`, so the arch 9 map
+        had never been examined at all.
+
+        A publication guard is the one kind of test where a vacuous pass is not merely useless. This
+        one now globs the documents, matches either case and both separators, compares a run whole
+        against a named set, and looks for the GUID shape directly rather than inferring it from a
+        byte run's length. It also asserts that it examined every document, because the failure it is
+        replacing was silence.
+        """
+        self.assertGreaterEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
+        examined = 0
         for name in _MAPS:
             with self.subTest(document=name):
                 text = _doc(name)
-                runs = re.findall(r'(?:\b[0-9a-f]{2}\b[ ]){7,}', text)
-                for run in runs:
-                    self.assertIn(run.strip(), '09 00 20 11 02 18 e0 3c 00 67 01',
+                examined += 1
+                for run in _BYTE_RUN.findall(text):
+                    self.assertIn(' '.join(run.replace(',', ' ').split()),
+                                  _PUBLISHABLE_BYTE_RUNS,
                                   'an unexplained byte run in %s' % name)
+                self.assertEqual(_GUID.findall(text), [],
+                                 'something shaped like an account GUID in %s' % name)
+        self.assertEqual(examined, len(_MAPS), 'a document went unread')
 
 
 if __name__ == '__main__':

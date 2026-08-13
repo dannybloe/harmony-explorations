@@ -1,15 +1,16 @@
 # Memory maps: what is shared
 
 One document per remote, plus this one for everything they have in common, so that the addressing
-rules and the architecture comparison are written once rather than three times.
+rules and the architecture comparison are written once rather than once per remote.
 
 | Document | Remote | Architecture | Read off a device |
 |---|---|---|---|
 | [memory-map-one.md](memory-map-one.md) | Harmony One | 12 | yes, three units |
 | [memory-map-600.md](memory-map-600.md) | Harmony 600 | 14 | yes, one unit |
 | [memory-map-700.md](memory-map-700.md) | Harmony 700 | 14 | **no**, package only |
+| [memory-map-525.md](memory-map-525.md) | Harmony 525 | 9 | yes, one unit |
 
-These four documents derive nothing. Every figure in them is measured elsewhere and each row names
+These five documents derive nothing. Every figure in them is measured elsewhere and each row names
 its source, so where one disagrees with `docs/findings.md` or `docs/usb-protocol.md`, those two are
 right and the map is stale. `tests/test_memory_map.py` pins the figures a lab image can check.
 
