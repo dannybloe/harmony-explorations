@@ -2708,7 +2708,7 @@ def find_clock_records(blob: bytes) -> List[int]:
     return out
 
 
-def recover_flash_base(blob: bytes, addresses: List[int], end_addr: int) -> Optional[int]:
+def recover_flash_base(blob: bytes, addresses: List[int]) -> Optional[int]:
     """The flash address the container was linked for, anchored on the clock record.
 
     **This used to be `end_addr - (offset_of_end_marker - offset_of_magic)`, and that reading is
@@ -2748,6 +2748,12 @@ def recover_flash_base(blob: bytes, addresses: List[int], end_addr: int) -> Opti
     fallback's answer shows why: it returns an unaligned `0x02FF94` and the circular check then
     reports that the declared end lands on the end marker, for a file whose checksum does not
     recompute under any extent. Section 122.
+
+    **It took `end_addr` and never read it**, for as long as the anchor has existed, which is a
+    vestige of the reading above rather than a defect: the signature said the declared end is an
+    input to the base, which is exactly the circularity the docstring spends four paragraphs
+    refuting. The TypeScript twin takes two arguments and always did, so this was also the two
+    copies of one derivation that had drifted in their interface if not in their answer.
     """
     clocks = find_clock_records(blob)
     if len(clocks) != 1:
@@ -2820,7 +2826,7 @@ def parse(data: bytes) -> Container:
     # as the fallback for a container with no usable clock record, and it is the reading that
     # `end_addr_points_at_end_marker` can only test once it is no longer the reading that
     # produced the base. See `recover_flash_base`.
-    flash_base = recover_flash_base(blob, [s.address for s in sections], end_addr)
+    flash_base = recover_flash_base(blob, [s.address for s in sections])
     if flash_base is None:
         flash_base = end_addr - (end_marker - start)
 
@@ -2844,7 +2850,16 @@ def parse(data: bytes) -> Container:
     # two slots, or with either slot NULL, simply leaves these as None.
     slot0 = container.sections[0].address if container.sections else 0
     if slot0:
-        container.frame_length = frame_length(blob, slot0 - flash_base)
+        # The offset is bounds checked because a negative one does not fail in Python, it slices
+        # from the end: a container whose base came from the fallback can put slot 0 below it, and
+        # then this would report the frame length of whatever the blob's tail happens to look
+        # like. The TypeScript twin has guarded here since it was written, and so do the
+        # architecture and clock reads directly below, which is what makes this one an omission
+        # rather than a convention. No sample in the corpus reaches it, so this refuses nothing
+        # that was being read.
+        off = slot0 - flash_base
+        if 0 <= off < len(blob):
+            container.frame_length = frame_length(blob, off)
 
     if len(container.sections) > ARCH_RECORD_SLOT:
         arch_addr = container.sections[ARCH_RECORD_SLOT].address

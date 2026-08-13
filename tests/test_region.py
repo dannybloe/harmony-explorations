@@ -35,6 +35,7 @@ BLANK_SCREENS = {'one_config': 4, 'one_config_unprogrammed': 3}
 class TestTheRegionIsImageData(unittest.TestCase):
 
     def test_the_row_width_is_176_on_both_harmony_ones(self):
+        lab.require(*REGION_START)
         for name, start in REGION_START.items():
             data = lab.load(name)
             with self.subTest(name):
@@ -95,6 +96,55 @@ class TestTheRegionIsImageData(unittest.TestCase):
         little = [int.from_bytes(c.blob[at + 2 * i:at + 2 * i + 2], 'little') for i in range(count)]
         self.assertLess(region.row_score(big, ARCH12_WIDTH),
                         region.row_score(little, ARCH12_WIDTH))
+
+
+class TestTheMeasurementRefusesWhereItHasNoData(unittest.TestCase):
+    """A minimiser reads a short read as a perfect answer, so the bounds are the measurement.
+
+    `pixels` sliced past the end of its input and Python answered zero, and zero pixels have no
+    vertical difference at all. So a window running off the end scored a flawless 0.0 at every
+    candidate width and `best_row_width` would have returned the smallest width in the range with
+    a perfect score and no margin. Nothing in the corpus reaches it, which is why it survived: the
+    two callers here pass a window the region can hold.
+    """
+
+    def test_a_pixel_read_past_the_end_refuses_instead_of_reading_zeroes(self):
+        data = bytes(range(64))
+        self.assertEqual(len(region.pixels(data, 0, 32)), 32)
+        with self.assertRaises(ValueError):
+            region.pixels(data, 0, 33)
+        with self.assertRaises(ValueError):
+            region.pixels(data, -2, 1)
+
+    def test_a_window_past_the_end_would_have_scored_a_flawless_zero(self):
+        """The demonstration, on the reading that was there before the bounds check.
+
+        Scored the old way, over a slice that answers zero past the end, every width in the range
+        ties on 0.0 and the winner is whichever sorts first. That is not a near miss, it is the
+        best score the measure can produce, arrived at where there is no data at all.
+        """
+        data = bytes(64)
+        px = [int.from_bytes(data[2 * i:2 * i + 2], 'big') for i in range(WINDOW // 2)]
+        self.assertEqual(len(px), WINDOW // 2)
+        self.assertEqual(region.row_score(px, ARCH12_WIDTH), 0.0)
+        self.assertEqual(region.row_score(px, region.WIDTH_RANGE[0]), 0.0)
+
+    def test_a_region_too_short_for_two_widths_refuses(self):
+        """`scored[1]` had no length check, so the alternative was an IndexError naming nothing."""
+        floor = 2 * region.WIDTH_RANGE[0] * 12
+        data = bytes(range(256)) * 64
+        with self.assertRaises(ValueError):
+            region.best_row_width(data, 0, floor)
+        # And the control, one width above the floor, where two candidates do score.
+        width, best, runner_up = region.best_row_width(data, 0, 2 * (region.WIDTH_RANGE[0] + 1) * 12)
+        self.assertIn(width, (region.WIDTH_RANGE[0], region.WIDTH_RANGE[0] + 1))
+        self.assertGreaterEqual(runner_up, best)
+
+    def test_a_region_shorter_than_one_window_refuses_rather_than_returning_its_start(self):
+        data = bytes(range(256)) * 64
+        self.assertEqual(region.busiest_window(data, 0, len(data), 0x1000) % 0x1000, 0)
+        with self.assertRaises(ValueError):
+            region.busiest_window(data, 0, 0x800, 0x1000)
 
 
 if __name__ == '__main__':

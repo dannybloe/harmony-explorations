@@ -337,5 +337,34 @@ class TestTheTruncated600ImageHasNoBlock(unittest.TestCase):
         self.assertIsNone(usbdesc.find_block(code, 0x9000))
 
 
+class TestAStartBelowTheBaseIsRefused(unittest.TestCase):
+    """A negative index reads from the end in Python, so a wrong base walked the image's tail.
+
+    `walk` takes `base` from its caller and `tools/usbdesc.py` takes it from the command line, so
+    the wrong one is a typo away. Three of its four stopping conditions are tested above; the
+    fourth is that the walk cannot start below the image at all, because `start - base` negative
+    made every bound comparison pass and every read land in the tail. Same class as a wrong load
+    address producing a listing rather than an error, `CLAUDE.md`.
+    """
+
+    def test_a_negative_offset_walks_nothing(self):
+        image = lab.load('h700_code')
+        at = usbdesc.find_block(image, 0x9000)
+        self.assertIsNotNone(at)
+        # The control first: the real chain still walks under the right base.
+        self.assertEqual(len(usbdesc.walk(image, 0x9000, at)), 9)
+        # And a base above the start, which is the shape a mistyped one takes.
+        self.assertEqual(usbdesc.walk(image, at + 2, at), [])
+
+    def test_a_tail_that_reads_as_a_descriptor_is_not_reported(self):
+        """The demonstration, on bytes chosen to be a valid descriptor at the end of an image."""
+        tail = bytes([4, usbdesc.STRING, 0x41, 0x00])
+        image = bytes(16) + tail
+        # Read from the end, those four bytes are a well formed string descriptor, so the old walk
+        # had something to report for a start four bytes below its base.
+        self.assertEqual(usbdesc.Descriptor(0, usbdesc.STRING, tail).text(), 'A')
+        self.assertEqual(usbdesc.walk(image, 4, 0), [])
+
+
 if __name__ == '__main__':
     unittest.main()

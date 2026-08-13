@@ -98,9 +98,17 @@ def walk(image: bytes, base: int, start: int, limit: int = 64) -> List[Descripto
     cannot be a descriptor. And an unrecognised type ends it too, which is what actually
     happens in both images: the byte after the last string descriptor starts the HID report
     descriptor, which is not a standard descriptor and has no length prefix at all.
+
+    A fourth thing ends it before it begins, and it is the one that mattered: `start` below `base`
+    makes `offset` negative, and a negative index does not fail in Python, it reads from the end.
+    Since `base` is supplied by the caller, `tools/usbdesc.py` taking it from the command line, a
+    mistyped base would have walked the image's tail and reported descriptors at addresses that do
+    not exist. That is the same class as a wrong load address producing a readable listing.
     """
     out: List[Descriptor] = []
     offset = start - base
+    if offset < 0:
+        return out
     while len(out) < limit:
         if offset + 2 > len(image):
             break

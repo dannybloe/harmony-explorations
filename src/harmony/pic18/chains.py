@@ -24,11 +24,16 @@ follows the last case is not included: ask for it separately.
 
 Two traps, both hit here already.
 
-**The default `limit` will truncate a long switch, silently.** The state dispatch in the 700
+**The default `limit` used to truncate a long switch, silently.** The state dispatch in the 700
 image is one chain of **70** cases running from `0x0C720` to `0x0C8FE`. Asked for it with the
 default it returned 32, which looked like the tool over-running into unrelated code and was
-written up that way. It was the limit. Pass a generous `limit` and check whether the walk
-stopped because the pattern ended or because it ran out.
+written up that way. It was the limit. The advice here was to pass a generous `limit` and check
+whether the walk stopped because the pattern ended or because it ran out, and **nothing checked**:
+`chain_table` did not even take a `limit` to pass, so the one convenience wrapper in the module
+was the one route that could not follow its own instruction. Truncation now raises
+`ChainTruncated` instead, which is the same move as everywhere else here, turning a plausible
+short answer into a failure. Measured before it changed: no chain in the whole test suite reaches
+its limit, so this refuses nothing that was being read.
 
 **Nothing here tells you where a chain really ends**, since code after one may have the same
 shape. A repeated case value ends the walk, because a switch cannot test the same value twice,
@@ -52,6 +57,15 @@ _SKIP_IF_NOT_EQUAL = 'BNZ'
 _TAKE_IF_EQUAL = 'BZ'
 
 
+class ChainTruncated(Exception):
+    """The walk hit `limit` with the pattern still going, so the answer would be a prefix.
+
+    Raised rather than returned because a prefix of a switch is indistinguishable from the whole
+    of a shorter one, and the module's own history is what that costs: 32 of 70 cases was written
+    up as the tool over-running into unrelated code.
+    """
+
+
 @dataclasses.dataclass(frozen=True)
 class Case:
     """One case of a switch: `value` reaches `target`, tested at `at`."""
@@ -66,13 +80,18 @@ def xor_chain(code: bytes, base: int, start: int, limit: int = 32) -> List[Case]
 
     `start` must be the address of the first `XORLW`. The accumulated value starts at zero,
     so the first case value is the first literal.
+
+    Raises `ChainTruncated` when the pattern is still going at `limit`. The walk goes one case
+    past `limit` to decide that, so a chain that happens to hold exactly `limit` cases and then
+    ends is returned rather than refused: the question is whether the pattern ran out or the
+    counter did, and only trying one more can tell those apart.
     """
     cases: List[Case] = []
     seen = set()
     accumulated = 0
     addr = start
 
-    while len(cases) < limit:
+    while len(cases) <= limit:
         instr = _at(code, base, addr)
         if instr is None or instr.mnemonic != 'XORLW':
             break
@@ -101,12 +120,19 @@ def xor_chain(code: bytes, base: int, start: int, limit: int = 32) -> List[Case]
         seen.add(accumulated)
         addr += 2 * body.words
 
+    if len(cases) > limit:
+        raise ChainTruncated(
+            'the chain at 0x%05X is still going at %d cases: pass a larger limit' % (start, limit))
     return cases
 
 
-def chain_table(code: bytes, base: int, start: int) -> Dict[int, int]:
-    """The same chain as a plain {case value: target} mapping."""
-    return {case.value: case.target for case in xor_chain(code, base, start)}
+def chain_table(code: bytes, base: int, start: int, limit: int = 32) -> Dict[int, int]:
+    """The same chain as a plain {case value: target} mapping.
+
+    Takes `limit` for the same reason `xor_chain` does. It did not, which made the module's own
+    warning about the default unactionable from the only wrapper that hides the walk.
+    """
+    return {case.value: case.target for case in xor_chain(code, base, start, limit=limit)}
 
 
 def _at(code: bytes, base: int, addr: int) -> Optional[isa.Instr]:

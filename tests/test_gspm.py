@@ -737,6 +737,78 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
             bytes(data[c.blob_offset:c.blob_offset + c.length]),
             c.blob_offset_of(c.sections[0].address)))
 
+    def test_a_negative_offset_reads_the_blob_tail_and_parse_never_passes_one(self):
+        """A negative index does not fail in Python, it slices from the end.
+
+        `parse` computed slot 0's offset as `address - flash_base` and handed it straight over,
+        where the architecture and clock reads a few lines below both bounds theirs. When the
+        anchor refuses, the base comes from the marker fallback and can land above slot 0, and
+        then this would have reported the frame length of whatever the blob's tail holds. No
+        sample in the corpus reaches it, so the demonstration is built rather than loaded, and
+        the guard costs no reading. `packages/codec/src/gspm.ts` has bounded it since it was
+        written.
+        """
+        # A blob whose tail is a well formed frame of four body bytes, with three bytes after it so
+        # that both ends of the terminator check land on negative indices as well.
+        length = gspm.EMPTY_FRAME_LENGTH + 4
+        tail = (gspm.FRAME_COOKIE + length.to_bytes(3, 'little') + bytes(4)
+                + gspm.FRAME_END + bytes(3))
+        blob = bytes(64) + tail
+        self.assertEqual(gspm.frame_length(blob, len(blob) - len(tail)), length)
+        # Read from the end, the same bytes answer for an offset that is not in the blob at all.
+        self.assertEqual(gspm.frame_length(blob, -len(tail)), length)
+
+    def test_a_container_whose_slot_0_sits_below_its_base_reports_no_frame(self):
+        """The guard as `parse` reaches it, on a container edited to take the path.
+
+        Slot 0's pointer is moved below the flash base, which is the shape the marker fallback can
+        produce on its own: a pointer outside the blob costs the anchor its only candidate, so the
+        base then comes from the subtraction and slot 0 resolves negative. Before the bounds check
+        `frame_length` answered from the blob's tail; the honest answer is that there is no frame
+        at an offset outside the container.
+        """
+        lab.require('h700_config')
+        data = bytearray(lab.load('h700_config'))
+        c = gspm.parse(bytes(data))
+        self.assertIsNotNone(c.frame_length)
+
+        # A frame written into the blob's own tail, which is what a negative offset reaches. Its
+        # distance from the end is the distance slot 0 will be moved below the base, so the two
+        # meet exactly where an unbounded read would look.
+        length = gspm.EMPTY_FRAME_LENGTH + 4
+        below = 32
+        tail = c.blob_offset + c.length - below
+        data[tail:tail + 2] = gspm.FRAME_COOKIE
+        data[tail + 2:tail + 5] = length.to_bytes(3, 'little')
+        data[tail + length:tail + length + 2] = gspm.FRAME_END
+
+        # The pointer table starts at 0x0B and an item is `{u8 spare; u24 address}`, section 20.
+        item = c.blob_offset + gspm.SECTION_TABLE_OFFSET
+        moved = c.flash_base - below
+        data[item + 1:item + 1 + gspm.POINTER_SIZE] = moved.to_bytes(gspm.POINTER_SIZE, 'little')
+
+        edited = gspm.parse(bytes(data))
+        # The moved pointer resolves outside the blob, so the anchor has no candidate and the base
+        # comes from the marker fallback, which is the path that makes this reachable at all.
+        self.assertEqual(edited.flash_base, c.flash_base)
+        self.assertLess(edited.sections[0].address, edited.flash_base)
+        # Unbounded, `frame_length(blob, -32)` reads the frame just written and answers with its
+        # length. There is no frame at an offset outside the container, so the answer is None.
+        self.assertEqual(gspm.frame_length(edited.blob, -below), length)
+        self.assertIsNone(edited.frame_length)
+
+    def test_every_container_reads_its_frame_at_a_slot_0_offset_inside_the_blob(self):
+        """The guard is stated as the property it protects, over the whole corpus."""
+        lab.require(*EXPECTED)
+        for name in EXPECTED:
+            with self.subTest(image=name):
+                c = gspm.parse(lab.load(name))
+                slot0 = c.sections[0].address
+                self.assertNotEqual(slot0, 0)
+                off = slot0 - c.flash_base
+                self.assertGreaterEqual(off, 0)
+                self.assertLess(off, len(c.blob))
+
 
 class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
     """
@@ -2022,7 +2094,7 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
             with self.subTest(sample=name):
                 c = gspm.parse(lab.load(name))
                 anchored = gspm.recover_flash_base(
-                    c.blob, [s.address for s in c.sections], c.end_addr)
+                    c.blob, [s.address for s in c.sections])
                 self.assertEqual(anchored, base)
                 self.assertEqual(c.flash_base, base)
 
@@ -2070,7 +2142,7 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
         damaged[off:off + 2] = b'\x00\x00'
         self.assertEqual(gspm.find_clock_records(bytes(damaged)), [])
         self.assertIsNone(gspm.recover_flash_base(
-            bytes(damaged), [s.address for s in c.sections], c.end_addr))
+            bytes(damaged), [s.address for s in c.sections]))
         self.assertEqual(gspm.parse(bytes(damaged)).flash_base, c.flash_base)
 
 
@@ -2143,7 +2215,7 @@ class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
         c = gspm.parse(lab.load('h890_config_2_rescan'))
         blob = bytes(c.blob)
         self.assertIsNone(gspm.recover_flash_base(
-            blob, [s.address for s in c.sections], c.end_addr))
+            blob, [s.address for s in c.sections]))
         self.assertNotEqual(c.flash_base % gspm.FLASH_BASE_ALIGNMENT, 0)
         # The circular check passes on a file that does not verify, which is the point.
         self.assertTrue(c.checks['end_addr_points_at_end_marker'])
@@ -2385,7 +2457,7 @@ class TestTheArch10ReadDuplicatesChunks(unittest.TestCase):
         self.assertEqual(fixed.rindex(c.family.end_marker), c.end_addr - 0x030000)
         # And the anchor, which refuses on the file as read, recovers the base once it is repaired.
         self.assertEqual(
-            gspm.recover_flash_base(fixed, [s.address for s in c.sections], c.end_addr), 0x030000)
+            gspm.recover_flash_base(fixed, [s.address for s in c.sections]), 0x030000)
 
     def test_the_first_read_is_the_same_config_with_more_duplicates(self):
         """

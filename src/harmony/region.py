@@ -26,7 +26,16 @@ def pixels(data: bytes, offset: int, count: int) -> List[int]:
     Big endian is not a convention chosen here. Read that way the Harmony 600's region resolves to
     RGB565 greys far above chance and its long runs read as monotone gradients; read little endian
     neither holds. `docs/findings.md` section 51.
+
+    Refuses a read that runs past the end, because a short slice does not fail in Python: it comes
+    back as zero, and zero pixels are perfectly similar to their neighbours. So a window running
+    off the end of the blob would have scored zero at every candidate width and `best_row_width`
+    would have returned the smallest one with a perfect score. A measurement that is best where
+    there is no data is the failure this module exists to avoid.
     """
+    if offset < 0 or offset + PIXEL_BYTES * count > len(data):
+        raise ValueError('pixel read 0x%X for %d runs past the end of %d bytes'
+                         % (offset, count, len(data)))
     return [int.from_bytes(data[offset + 2 * i:offset + 2 * i + 2], 'big') for i in range(count)]
 
 
@@ -52,6 +61,11 @@ def best_row_width(data: bytes, offset: int, length: int) -> Tuple[int, float, f
     The runner up is returned rather than discarded because a width recovery with no margin is not
     a result. On both Harmony Ones the answer is 176 and the margin over the next best is about a
     fifth, against a worst case twice as large again.
+
+    Refuses a region too short to score two widths, rather than reaching for `scored[1]` and
+    raising an `IndexError` that names nothing. `row_score` wants twelve rows, so this needs
+    `24 * WIDTH_RANGE[0] + 2` bytes at the very least, and a region that short cannot support the
+    claim the return value makes anyway.
     """
     px = pixels(data, offset, length // PIXEL_BYTES)
     scored = []
@@ -59,6 +73,9 @@ def best_row_width(data: bytes, offset: int, length: int) -> Tuple[int, float, f
         score = row_score(px, width)
         if score is not None:
             scored.append((score, width))
+    if len(scored) < 2:
+        raise ValueError('%d bytes at 0x%X score %d candidate widths, and a width with no runner '
+                         'up is not a result' % (length, offset, len(scored)))
     scored.sort()
     return scored[0][1], scored[0][0], scored[1][0]
 
@@ -68,9 +85,17 @@ def busiest_window(data: bytes, start: int, end: int, window: int) -> int:
 
     A smooth gradient scores well at every width, so measuring on one says nothing. This picks the
     part of the region that has the most to say.
+
+    Refuses a region shorter than one window. It used to fall back to `max(start + 1, ...)`, which
+    returned `start` for such a region and left the caller measuring a window that runs off the
+    end; `pixels` refuses that read now, so the fallback could only turn a silent wrong answer
+    into an error raised somewhere else.
     """
+    if end - start < window:
+        raise ValueError('0x%X to 0x%X is shorter than one %d byte window'
+                         % (start, end, window))
     best, best_count = start, -1
-    for offset in range(start, max(start + 1, end - window), window):
+    for offset in range(start, end - window, window):
         distinct = len(set(pixels(data, offset, window // PIXEL_BYTES)))
         if distinct > best_count:
             best, best_count = offset, distinct

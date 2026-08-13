@@ -18389,18 +18389,21 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Eighteen shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Twenty three shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Eighteen defects came out of it that a sample could not have found, and they share one shape, which is
-this project's own recurring one: **each produced a plausible answer where it should have produced an
+Twenty three defects came out of it that a sample could not have found, and they share one shape, which
+is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 18, which were read a day later and are
-appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
+They are listed newest reading first, except entries 13 to 19, which were read a day later and are
+appended rather than reordered so the numbering stays citable. Entry 19 is the whole Python side and is
+five readings in one, because none of them is reachable by any sample the corpus holds: they are latent
+rather than live, which is stated per reading and is why they are one entry.
+Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
 Entries 5, 11, 16 and 17 are the rails, and 16 is two of them: an editor that would rewrite a container's
@@ -19032,6 +19035,72 @@ entry 8 records. The disagreement between the two copies had already been reprod
 answer already existed, and the copy that lost is the one removed. What is left in its place is a
 comment saying which code went and why, because the reason is what stops it being written again.
 
+### 19. Five in the Python research library, none of them reachable by a sample, and one was documented
+
+The Python half is reverse engineering only and owns no reader the application depends on, so this entry
+is deliberately the weakest of the nineteen and is written up together rather than split. **Every one of
+the five is latent**: no image and no container in the lab reaches any of them, which was measured
+before anything changed rather than asserted afterwards, and that measurement is the entry's own
+calibration. What makes them worth the commit is that four are the exact shape of this section, a
+plausible answer where an error belongs, and the fifth is that shape with a paragraph in the module
+warning about it.
+
+**The one that was documented is the XOR chain decoder.** `src/harmony/pic18/chains.py` opens with a
+bold warning that the default `limit` truncates a long switch silently, and names what it cost: the
+Harmony 700 image's state dispatch is one chain of 70 cases, came back as 32, and was written up as the
+tool over-running into unrelated code. The advice it gives is to pass a generous limit and check whether
+the walk ran out. **Nothing checked, and `chain_table` could not**: the module's one convenience
+wrapper, used at eleven call sites in the suite, took no `limit` to pass on. So the route that hides the
+walk was the route that could not follow the module's own instruction, which is the same shape as a rail
+enforced by a user interface rather than by the library.
+
+Measured before it changed, by making `xor_chain` report every walk that reached its limit and running
+the whole suite: **no chain anywhere reaches one**, including the eleven that ask through the wrapper.
+So the refusal costs no reading that was being done. `xor_chain` raises `ChainTruncated` now, and it
+walks one case past `limit` to decide, because a prefix of a long chain and the whole of a chain exactly
+`limit` long are otherwise indistinguishable and refusing the second would be the mirror of the defect.
+The 70 case chain is the regression test, since it is the case the warning was written about.
+
+**The flash base anchor took an argument it never read.** `recover_flash_base` has an `end_addr`
+parameter and has never used it, which is a vestige of the reading section 117 replaced,
+`base = end_addr - offset_of_end_marker`. Worse than dead code: the signature states that the declared
+end is an input to the base, which is exactly the circularity that function's docstring spends four
+paragraphs refuting. The TypeScript twin takes two arguments and always did, so this is also two copies
+of one derivation whose **interfaces** had drifted while their answers agreed, and that is the state
+this repository's oldest rule is about. A static test in `tests/test_toolchain.py` reads both signatures
+out of the source, so the next drift is visible in a fresh clone with nothing installed.
+
+**Three bounds checks that Python does not perform for you.** All three turn on the same language
+property, that a negative index reads from the end rather than failing, and each was reachable only
+through a path no sample takes.
+
+`parse` computed slot 0's offset as `address - flash_base` and handed it to `frame_length` unbounded,
+where the architecture and clock records read a few lines below both bound theirs, which is what makes
+this an omission rather than a convention. The reachable path is the marker fallback: when the anchor
+refuses, as it does on the second Harmony 890 read, the base comes from the subtraction and can land
+above slot 0. Demonstrated on a container edited to take it, with a frame written into the blob's own
+tail 32 bytes from the end and slot 0 moved 32 bytes below the base: unbounded, the reader answers 9,
+which is the length of a frame that is not in the container. The TypeScript side has bounded it since it
+was written.
+
+`usbdesc.walk` took `base` from its caller, and `tools/usbdesc.py` takes it from the command line, so a
+mistyped base is a keystroke away. A `start` below it made `offset` negative, at which point all three
+of the walk's stopping conditions pass and every read lands in the image's tail. Four bytes chosen to be
+a well formed string descriptor at the end of an image are enough to make it report one, at an address
+that does not exist. Same class as a wrong load address producing a readable listing rather than an
+error, which `CLAUDE.md` lists as a pitfall already hit.
+
+`region.pixels` sliced past the end of its input and Python answered zero, and **zero pixels have no
+vertical difference at all**. So a window running off the end scored a flawless 0.0 at every candidate
+width and `best_row_width` returned the smallest width in the range with a perfect score. A minimiser
+that is best where there is no data is the failure that module exists to avoid, since its whole claim is
+that the row width is recovered by minimisation with the margin reported. Two smaller ones with it:
+`best_row_width` reached for `scored[1]` with no length check, so a region too short to score two widths
+raised an `IndexError` naming nothing, and `busiest_window` fell back to returning its own `start` for a
+region shorter than one window, which handed the caller a window that runs off the end. Both refuse now,
+and the width recovery still answers 176 on both Harmony Ones, which is the control that says the
+`busiest_window` change did not move the measurement.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -19071,6 +19140,11 @@ comment saying which code went and why, because the reason is what stops it bein
 * **No byte in the accounting is claimed for being left over.** The one owner that did is replaced by the
   reading section 103 had already published, and the perturbation that used to be absorbed in silence is
   a test on four architectures.
+* **A truncated XOR chain raises instead of returning a prefix**, and `chain_table` takes the limit it
+  needs in order to be asked generously. No chain in the suite reaches one, measured.
+* **The flash base anchor takes the same two arguments in both languages**, and a static test says so.
+* **Three Python readers refuse a negative or past the end offset** rather than reading the tail of their
+  own input: slot 0's frame, the descriptor walk, and the pixel measurement.
 
 ### What would falsify it
 
@@ -19080,7 +19154,9 @@ this one. For the header: a record whose declared group count is above 2, or a b
 exactly at the next boundary, either of which would say the `12 + 9 * count` tiling is not the whole
 story. For the closure: a record whose header timings name NEC or Kaseikyo and whose bit count is not 32
 or 48, which is now checkable because the two numbers come from the same record's own bytes. For the overlap detector: a container where the new rule reports an overlap, which would mean
-two readers claim one byte and one of them is wrong. For base slot 15's continuation: an arch 12 container
+two readers claim one byte and one of them is wrong. For entry 19: any image or container that reaches
+one of the five, which would move it from latent to live and is the one thing that would make it worth
+more than it currently claims. For base slot 15's continuation: an arch 12 container
 whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body
 runs into them, either of which would say the offsets are not the structure. For the day maximum: a Logitech generated config
 built on a 31st, which would settle by measurement what is currently our choice.

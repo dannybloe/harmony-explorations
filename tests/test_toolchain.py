@@ -388,8 +388,41 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
                         for name, lines in sorted(counted.items())))
 
 
+class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
+    """`recover_flash_base` and `recoverFlashBase` are one derivation in two languages.
+
+    They agreed on every container and disagreed about their own inputs: the Python side took an
+    `end_addr` it never read, for as long as the anchor has existed. That is a vestige of the
+    reading the anchor replaced, `base = end_addr - offset_of_end_marker`, and it is worse than
+    dead code because the signature said the declared end is an input to the base, which is
+    exactly the circularity the docstring spends four paragraphs refuting.
+
+    Static, so it runs in a fresh clone. It cannot see the two answering differently, which is what
+    `packages/codec/test/gspm.test.ts` and `test_gspm.py` do against the corpus; what it can see is
+    the interface drifting, which is the state that precedes them answering differently.
+    """
+
+    def _source(self, relative):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', relative)
+        with open(path, encoding='utf-8') as fh:
+            return fh.read()
+
+    def test_neither_side_takes_the_declared_end(self):
+        python = self._source('src/harmony/gspm.py')
+        found = re.search(r'def recover_flash_base\(([^)]*)\)', python)
+        self.assertIsNotNone(found, 'the Python anchor is no longer called recover_flash_base')
+        arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
+        self.assertEqual(arguments, ['blob', 'addresses'])
+
+        typescript = self._source('packages/codec/src/gspm.ts')
+        found = re.search(r'export function recoverFlashBase\(([^)]*)\)', typescript)
+        self.assertIsNotNone(found, 'the TypeScript anchor is no longer called recoverFlashBase')
+        arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
+        self.assertEqual(arguments, ['blob', 'addresses'])
+
+
 class TheCorpusWidePopulationsAgree(unittest.TestCase):
-    """Three lists in `packages/codec/test` name the containers a corpus wide claim is made over.
+    """Four lists in `packages/codec/test` name the containers a corpus wide claim is made over.
 
     Nothing compared them, and on 13 August 2026 they disagreed: `edit.test.ts` held eighteen names
     where the other two held nineteen, missing `h525_config_2` alone, so "every container in the
@@ -417,7 +450,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         body = body[:body.index('];')]
         return sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
 
-    def test_the_three_lists_name_the_same_containers(self):
+    def test_every_list_names_the_same_containers(self):
         found = {relative: self._names(relative, declaration)
                  for relative, declaration in self.POPULATIONS.items()}
         for names in found.values():
