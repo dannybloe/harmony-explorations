@@ -23,6 +23,7 @@ import {
   irClass,
   irGroupCount,
   irGroups,
+  irHeaderPointers,
   irRecordBlocks,
 } from '../src/ir.ts';
 import { frameKey, irFrame, irFrames } from '../src/irframe.ts';
@@ -64,6 +65,93 @@ const CONTAINERS = [
   'calibration_one',
   'calibration_h600',
 ];
+
+/**
+ * The samples `tests/test_gspm.py` asserted the protocol closure over, carried across with it.
+ *
+ * A narrower list than `CONTAINERS` on purpose: it is the population section 32 quoted, so the counts
+ * below are comparable to the ones that document states.
+ */
+const SECTION_32_CONFIGS = [
+  'h700_config',
+  'h700_config_2',
+  'h600_config',
+  'one_config',
+  'one_config_unprogrammed',
+  'arch8_config_a',
+  'arch8_config_b',
+  'arch8_config_c',
+  'arch8_config_d',
+];
+
+/**
+ * Header timings as a tolerance band, against the bit count the protocol specifies.
+ *
+ * The bands are wide because the corpus holds several calibrations of each: NEC turns up as 8990/4490
+ * and as 9000/4500, Kaseikyo as 3364/1682, 3460/1730 and 3480/1730.
+ */
+const PROTOCOLS: readonly [string, number, number, number, number, number][] = [
+  ['NEC 9000/4500', 8900, 9100, 4400, 4600, 32],
+  ['Kaseikyo 3456/1728', 3350, 3520, 1650, 1760, 48],
+];
+
+test(
+  'the header timings and the bit count name the same protocol',
+  skipUnless(...SECTION_32_CONFIGS),
+  () => {
+    // Section 32's closure. Two numbers from opposite ends of the record, computed independently: the
+    // header timings are the first mark and space of the block, and the bit count comes from splitting
+    // the pairs after it. Neither is derived from the other.
+    //
+    // **It lived in `tests/test_gspm.py` until section 139 and it is a real closure again.** Two
+    // things were wrong with it there. The run it measured belonged to a **neighbouring** record,
+    // because the locator searched from a fixed offset instead of following the header's pointers, and
+    // it passed because records in one device group usually share a protocol. And Python had grown a
+    // second frame decoder to do the splitting, which disagreed with this one about 37 records of
+    // `arch8_config_a`: it assumed pulse distance where this one tries both conventions and refuses a
+    // record reading as neither. The Python decoder is gone.
+    const seen = new Map<string, number>();
+    let framed = 0;
+    let records = 0;
+    for (const name of SECTION_32_CONFIGS) {
+      const c = mustLoad(name);
+      for (const group of irGroups(c) ?? []) {
+        for (const record of group.addresses) {
+          records += 1;
+          const frame = irFrame(c, record);
+          if (frame === undefined) continue;
+          framed += 1;
+          const first = irHeaderPointers(c, record)[0];
+          const words = first === undefined ? undefined : irBlockWords(c, first);
+          if (words === undefined) continue;
+          const lead = words.findIndex((w) => w & IR_PULSE_MARK);
+          const space = words[lead + 1];
+          if (lead < 0 || space === undefined) continue;
+          const mark = (words[lead] as number) & IR_PULSE_MAX;
+          for (const [label, m0, m1, s0, s1, want] of PROTOCOLS) {
+            if (mark < m0 || mark > m1) continue;
+            if ((space & IR_PULSE_MAX) < s0 || (space & IR_PULSE_MAX) > s1) continue;
+            seen.set(label, (seen.get(label) ?? 0) + 1);
+            assert.equal(
+              frame.bits,
+              want,
+              `${name}: ${label} at 0x${record.toString(16)} carries ${frame.bits} bits`,
+            );
+          }
+        }
+      }
+    }
+    assert.deepEqual({ records, framed }, { records: 2858, framed: 2085 });
+    // Both populations, so the closure cannot be satisfied by finding nothing.
+    assert.deepEqual(
+      [...seen].sort(),
+      [
+        ['Kaseikyo 3456/1728', 257],
+        ['NEC 9000/4500', 1106],
+      ],
+    );
+  },
+);
 
 test('a record reads under exactly one convention, or under none', skipWithoutLab(), () => {
   // The closure the whole decoder rests on: under the wrong convention every measured duration is the

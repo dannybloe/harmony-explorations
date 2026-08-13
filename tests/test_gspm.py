@@ -1167,19 +1167,27 @@ class TestTheArch9InfraredHeader(unittest.TestCase):
                 # Both data pointers point backwards and stay inside the area.
                 for block in c.ir_record_blocks(address):
                     self.assertTrue(low <= block < start, hex(block))
-                # The third `u24` is NULL in every record, which is the field class 1 does not have
-                # a use for either.
+                # Group 1's third `u24` is NULL in every record, which is the tail block section
+                # 127 names and the field class 1 does not have a use for either. Scoped to group 1
+                # since section 139: 61 of these records declare a second group, whose pointers
+                # start at +21 and are not NULL.
                 off = c.blob_offset_of(start)
                 self.assertEqual(int.from_bytes(c.blob[off + 18:off + 21], 'little'), 0)
 
     def test_the_headers_never_overlap(self):
-        """Twenty one bytes each, which is only claimable if they fit side by side."""
-        from harmony import gspm
+        """Each header's own stated length, which is only claimable if they fit side by side.
+
+        **This asserted a flat twenty one bytes until section 139**, which is `12 + 9 * 1` and is
+        therefore the weakest bound this sample allows: 61 of its 200 records declare two groups and
+        so occupy 30 bytes. A gap of 21 satisfied the old assertion while two headers overlapped by
+        nine, and the test would have said so had it read the count the record states.
+        """
         c, records = self._records()
-        starts = sorted(c.ir_record_start(a) for a in records)
-        for i in range(1, len(starts)):
-            with self.subTest(header=hex(starts[i])):
-                self.assertGreaterEqual(starts[i], starts[i - 1] + gspm.IR_HEADER_LENGTH)
+        pairs = sorted((c.ir_record_start(a), a) for a in records)
+        for i in range(1, len(pairs)):
+            with self.subTest(header=hex(pairs[i][0])):
+                self.assertGreaterEqual(
+                    pairs[i][0], pairs[i - 1][0] + c.ir_header_length(pairs[i - 1][1]))
 
     def test_the_area_lands_exactly_on_what_the_accounting_could_not_attribute(self):
         """The closure. Both ends, and neither was chosen to make them agree.
@@ -1202,7 +1210,9 @@ class TestTheArch9InfraredHeader(unittest.TestCase):
         c, records = self._records()
         self.assertNotIn(gspm.IR_CLASS_ARCH9, gspm.IR_CLASSES)
         self.assertIn(gspm.IR_CLASS_ARCH9, gspm.IR_HEADER_CLASSES)
-        self.assertEqual(c.ir_frame(records[0]), None)
+        # `ir_frame` used to be asserted None here. It is gone, section 139, so what stands in its
+        # place is the gate that made it None: the durations reader refuses a class it does not read.
+        self.assertEqual(c.ir_pulses(records[0]), [])
 
     def test_the_other_architectures_are_unaffected(self):
         """The calibration: opening the header claim to class 5 must not touch class 1."""
@@ -1233,16 +1243,20 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
               'arch8_config_c', 'arch8_config_d', 'one_spare_before_sync',
               'one_spare_after_sync')
 
-    HEADER = 21
-
     def blocks_and_headers(self, c):
-        """Every distinct block address, and every record header start."""
-        starts = sorted({c.ir_record_start(a) for g in c.ir_groups() for a in g})
+        """Every distinct block address, every record header start, and the top of the area.
+
+        The top used to be `max(start) + 21`, a flat header. It is the highest header's **own**
+        length now, since a two group header is 30 bytes, section 139.
+        """
+        starts = {}
         blocks = set()
         for group in c.ir_groups():
             for address in group:
+                starts[c.ir_record_start(address)] = address
                 blocks.update(c.ir_record_blocks(address))
-        return starts, blocks
+        highest = max(starts)
+        return sorted(starts), blocks, highest + c.ir_header_length(starts[highest])
 
     def test_a_block_ends_exactly_where_the_layout_says_it_does(self):
         """
@@ -1259,9 +1273,8 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
         exact = short = over = 0
         for name in self.STREAM:
             c = gspm.parse(lab.load(name))
-            starts, blocks = self.blocks_and_headers(c)
+            starts, blocks, top = self.blocks_and_headers(c)
             bounds = sorted(blocks | set(starts))
-            top = max(starts) + self.HEADER
             for index, boundary in enumerate(bounds):
                 if boundary not in blocks:
                     continue
@@ -1277,8 +1290,13 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
                 else:
                     over += 1
         self.assertEqual(over, 0)
-        self.assertEqual(exact, 3357)
-        self.assertEqual(short, 133)
+        # **3357 exact and 133 short until section 139**, and the 133 were reported as padding on
+        # arch 8 (Harmony 880). They were not padding: they stopped short of a boundary this reader
+        # could not see, because the header's second pointer group was missing from the boundary list.
+        # With all three pointers of every declared group the tiling is exact on every block, which
+        # makes it a real closure rather than one with an unexplained remainder.
+        self.assertEqual(short, 0)
+        self.assertEqual(exact, 3715)
 
     def test_arch_9_finds_a_terminator_and_it_is_the_wrong_one(self):
         """
@@ -1294,9 +1312,8 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
         from harmony import gspm
         lab.require('h525_config')
         c = gspm.parse(lab.load('h525_config'))
-        starts, blocks = self.blocks_and_headers(c)
+        starts, blocks, top = self.blocks_and_headers(c)
         bounds = sorted(blocks | set(starts))
-        top = max(starts) + self.HEADER
         closing = agreeing = 0
         for index, boundary in enumerate(bounds):
             if boundary not in blocks:
@@ -1305,7 +1322,9 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
             measured = c.ir_block_length(boundary)
             closing += measured is not None
             agreeing += measured == expected
-        self.assertEqual(closing, 277)
+        # 277 until section 139: 61 of these 200 records declare a second pointer group, so this
+        # config names 380 distinct blocks and the reader had been seeing two thirds of them.
+        self.assertEqual(closing, 380)
         self.assertEqual(agreeing, 0)
         self.assertEqual({c.ir_class(a) for g in c.ir_groups() for a in g}, {5})
 
@@ -1319,7 +1338,7 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
         lab.require('one_spare_after_sync')
         c = gspm.parse(lab.load('one_spare_after_sync'))
         pointers = sum(len(c.ir_record_blocks(a)) for g in c.ir_groups() for a in g)
-        _, blocks = self.blocks_and_headers(c)
+        _, blocks, _ = self.blocks_and_headers(c)
         self.assertGreater(pointers, len(blocks))
 
     def test_the_pointers_point_backwards(self):
@@ -1426,46 +1445,40 @@ class TestTheInfraredDatabase(unittest.TestCase):
                         first = int.from_bytes(c.blob[off + 1:off + 4], 'little')
                         self.assertEqual(first, address - 7)
 
-    def test_the_framing_identity_holds_for_every_framed_record(self):
-        """Run length from the first mark is `2 * bits + 4`. No exception in the corpus."""
-        framed = 0
-        for name in self.CONFIGS:
-            c = gspm.parse(lab.load(name))
-            for group in c.ir_groups():
-                for address in group:
-                    frame = c.ir_frame(address)
-                    if frame is None:
-                        continue
-                    pulses = c.ir_pulses(address)
-                    lead = next(i for i, (mark, _) in enumerate(pulses) if mark)
-                    self.assertEqual(len(pulses) - lead, 2 * frame[2] + 4,
-                                     '%s at 0x%06X' % (name, address))
-                    framed += 1
-        self.assertEqual(framed, 2137, 'pin the count the claim quotes')
+    def test_a_once_block_holds_more_than_one_code(self):
+        """The block a record sends once carries the code and then keeps going.
 
-    def test_the_header_timings_and_the_length_agree_on_the_bit_count(self):
-        """The closure. Two numbers from opposite ends of the record, computed independently.
+        **This asserted `2 * bits + 4` until section 139**, meaning the block holds exactly the frame
+        and a terminating pair. It does not: a once block commonly carries the code, a gap, the
+        protocol's **repeat header** and a long silence. The old identity held because the run being
+        measured came from a neighbouring record, where the arithmetic happened to land, and it is
+        that identity which made the wrong locator look confirmed.
 
-        The header timings are the first two durations. The bit count comes from how long the
-        record is. Neither is derived from the other, and for 1365 records they name the same
-        protocol.
+        Stated without decoding anything, since the frame decoder is `packages/codec`'s: a once block
+        contains a duration long enough to be a gap, somewhere other than at its end, which is what
+        says a single block is more than one transmission.
         """
-        seen = collections.Counter()
+        lab.require(*self.CONFIGS)
+        with_interior_gap = 0
         for name in self.CONFIGS:
             c = gspm.parse(lab.load(name))
             for group in c.ir_groups():
                 for address in group:
-                    frame = c.ir_frame(address)
-                    if frame is None:
+                    pulses = c.ir_pulses(address)
+                    if not pulses:
                         continue
-                    mark, space, bits = frame
-                    for label, (m0, m1), (s0, s1), want in self.PROTOCOLS:
-                        if m0 <= mark <= m1 and s0 <= space <= s1:
-                            seen[label] += 1
-                            self.assertEqual(bits, want, '%s: %s at 0x%06X carries %d bits'
-                                             % (name, label, address, bits))
-        self.assertEqual(seen['NEC 9000/4500'], 1052)
-        self.assertEqual(seen['Kaseikyo 3456/1728'], 313)
+                    interior = [us for _, us in pulses[:-1] if us > 4000]
+                    if interior:
+                        with_interior_gap += 1
+        # Every class 1 record in the corpus, which is why the old identity could not hold on any of
+        # them once the right bytes were being read.
+        self.assertEqual(with_interior_gap, 2858)
+
+    # `test_the_header_timings_and_the_length_agree_on_the_bit_count` lived here and is now
+    # `the header timings and the bit count name the same protocol` in
+    # `packages/codec/test/irframe.test.ts`. It moved with the frame decoder, section 139: two
+    # decoders disagreed about 37 records of one arch 8 (Harmony 880) config, and the one that had
+    # been checked against a catalogue of named commands is the one that was kept.
 
     def test_arch_9_does_not_use_this_encoding(self):
         """Stated as a fact rather than left as a silent gap in the coverage.
@@ -1474,14 +1487,16 @@ class TestTheInfraredDatabase(unittest.TestCase):
         produces header pairs that name no protocol, so the decoder must not claim them.
         """
         c = gspm.parse(lab.load('h525_config'))
-        total = sum(len(g) for g in c.ir_groups())
-        framed = [c.ir_frame(a) for g in c.ir_groups() for a in g]
-        framed = [f for f in framed if f is not None]
-        self.assertEqual(total, 200)
-        self.assertLess(len(framed), total // 4, 'most records do not frame at all')
-        for mark, space, _ in framed:
-            self.assertFalse(8900 <= mark <= 9100 and 4400 <= space <= 4600,
-                             'and none of the few that do lands on a real protocol')
+        records = [a for g in c.ir_groups() for a in g]
+        self.assertEqual(len(records), 200)
+        # **Not one of them yields a duration**, where this said "fewer than a quarter frame" until
+        # section 139. The reader gates on the class byte now instead of reading whatever bytes it
+        # finds, so the statement is the one the firmware makes rather than an observation about how
+        # few succeed. What class 5 does store is a dictionary body, section 82, read by
+        # `packages/codec`.
+        self.assertEqual([a for a in records if c.ir_pulses(a)], [])
+        # And the gate is the class, not the shape: every record here reads 5.
+        self.assertEqual({c.ir_class(a) for a in records}, {gspm.IR_CLASS_ARCH9})
 
 
 class TestOpcode7DSendsInfrared(unittest.TestCase):
@@ -2570,15 +2585,20 @@ class TestTheInfraredClassByte(unittest.TestCase):
         # firmware exists to say whether that is a fifth class or a different field entirely.
         self.assertEqual(seen[9], {5})
 
-    def test_the_records_section_32_cannot_frame_are_the_same_class(self):
-        """So they need a better class 1 reader, not one of the other three classes."""
+    def test_the_records_that_store_no_durations_are_the_same_class(self):
+        """So they need a better class 1 reader, not one of the other three classes.
+
+        Phrased on the durations rather than on a frame since section 139, when the frame decoder
+        moved to `packages/codec`. The claim is the same one and it is now closer to the bytes: a
+        record with no duration words is not a record of a class this reader does not cover.
+        """
         for name in self.CONFIGS:
             c, records = self._records(name)
-            unframed = [a for a in records if c.ir_frame(a) is None]
-            if not unframed:
+            empty = [a for a in records if not c.ir_pulses(a)]
+            if not empty:
                 continue
             with self.subTest(config=name):
-                self.assertEqual({c.ir_class(a) for a in unframed},
+                self.assertEqual({c.ir_class(a) for a in empty},
                                  {c.ir_class(a) for a in records})
 
 

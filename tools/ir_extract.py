@@ -5,10 +5,15 @@ Extract the infrared database out of a config: base slot 5, grouped, as pulse tr
 These are the codes for whatever equipment the config was built for, in microseconds, and they
 are what nobody can regenerate now the servers are gone. `docs/findings.md` section 32.
 
-Not every record decodes. The firmware routes four infrared encoding classes and this reads one
-of them, so arch 9 configs yield nothing and arch 8 configs yield part of their database. Records
-that do not frame are reported rather than dropped, because a silent count is how a partial
-extraction gets mistaken for a complete one.
+The firmware routes four infrared encoding classes and durations are stored directly by one of
+them, class 1, so a class 5 record on arch 9 (Harmony 525) yields nothing here and its dictionary
+form is read by `packages/codec` instead. Records with no durations are reported rather than
+dropped, because a silent count is how a partial extraction gets mistaken for a complete one.
+
+**This used to print a bit count per record and no longer does**, section 139: turning durations
+into a frame is `packages/codec/src/irframe.ts` and having a second decoder here made the two
+disagree about 37 records of one arch 8 (Harmony 880) config. What it prints is the durations,
+which is what the firmware sends.
 
 Usage:  ir_extract.py <file> [--json] [--pulses]
 """
@@ -27,18 +32,21 @@ def extract(container):
     for index, addresses in enumerate(groups):
         codes = []
         for address in addresses:
-            frame = container.ir_frame(address)
             pulses = container.ir_pulses(address)
+            blocks = container.ir_record_blocks(address)
             codes.append({
                 'address': address,
-                'framed': frame is not None,
-                'header_mark_us': frame[0] if frame else None,
-                'header_space_us': frame[1] if frame else None,
-                'bits': frame[2] if frame else None,
+                'class': container.ir_class(address),
+                'blocks': blocks,
                 'pulses': [{'mark': mark, 'us': us} for mark, us in pulses],
             })
         out.append({'group': index, 'codes': codes})
     return out
+
+
+def _blocks(code):
+    n = len(code['blocks'])
+    return '1 block' if n == 1 else '%d blocks' % n
 
 
 def main():
@@ -64,23 +72,22 @@ def main():
         return
 
     total = sum(len(g['codes']) for g in groups)
-    framed = sum(1 for g in groups for c in g['codes'] if c['framed'])
-    print('architecture %s, %d groups, %d records, %d decoded'
-          % (container.architecture, len(groups), total, framed))
-    if framed < total:
-        print('%d records use one of the other encoding classes and are not decoded here'
-              % (total - framed))
+    with_durations = sum(1 for g in groups for c in g['codes'] if c['pulses'])
+    print('architecture %s, %d groups, %d records, %d with durations'
+          % (container.architecture, len(groups), total, with_durations))
+    if with_durations < total:
+        print('%d records use one of the other encoding classes and store no durations here'
+              % (total - with_durations))
     for group in groups:
         codes = group['codes']
         print('\ngroup %d: %d records' % (group['group'], len(codes)))
         for code in codes:
-            if not code['framed']:
-                print('  0x%06X  not this encoding, %d pulses'
-                      % (code['address'], len(code['pulses'])))
+            if not code['pulses']:
+                print('  0x%06X  class %s, no durations, %s'
+                      % (code['address'], code['class'], _blocks(code)))
                 continue
-            print('  0x%06X  header %d/%d us, %d bits, %d pulses'
-                  % (code['address'], code['header_mark_us'], code['header_space_us'],
-                     code['bits'], len(code['pulses'])))
+            print('  0x%06X  class %s, %s, %d pulses in the first'
+                  % (code['address'], code['class'], _blocks(code), len(code['pulses'])))
             if show_pulses:
                 print('      ' + ' '.join(
                     '%s%d' % ('+' if p['mark'] else '-', p['us']) for p in code['pulses']))

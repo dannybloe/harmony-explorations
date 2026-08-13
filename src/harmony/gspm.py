@@ -255,10 +255,6 @@ HIGH_BAND_OPCODES = frozenset({0x07, 0x0F, 0x1F, 0x3F})
 # space durations. `docs/findings.md` section 32.
 IR_TABLE_SLOT = 5
 IR_POINTER_LENGTH = 3
-# Every record in the corpus opens with the same 14 bytes, `{u8; u24; u8; u24; u24; u24}`, whose
-# first pointer is always the record's own address minus seven. What the four pointers are for is
-# not established, so the header is skipped by length rather than parsed.
-IR_RECORD_HEADER = 14
 # The pointer array does not point at a record's first byte. It points seven bytes in, at the
 # record's **encoding class**, and the three bytes after that point back to the start. Every
 # record in the corpus has that same distance of seven. `docs/findings.md` section 42.
@@ -276,12 +272,26 @@ IR_CLASS_STREAM = 1
 # 200. So the header is claimable and the blocks are not.
 IR_CLASS_ARCH9 = 5
 IR_HEADER_CLASSES = frozenset({IR_CLASS_STREAM, IR_CLASS_ARCH9})
-# The header is 21 bytes, not 14, and two of its pointers name **data blocks that sit below it**.
-# `docs/findings.md` section 61: a block is a run of `u16` durations closed by a zero word, either
-# pointer may be NULL, and two records can name the same block, which is how a config stores one
-# duration stream for several codes.
-IR_HEADER_LENGTH = 21
-IR_BLOCK_POINTERS = (12, 15)
+# **The header states its own length**: byte `+0x0B` counts nine byte pointer groups and the header
+# is `12 + 9 * count`, section 75. Each group is three `u24` pointers naming **data blocks that sit
+# below the header**, section 61, and section 127 names them: once, held and tail. Any of the three
+# may be NULL, and two records can name the same block, which is how a config stores one duration
+# stream for several codes.
+#
+# **This file read a flat 21 bytes with two pointers until 13 August 2026**, which is the `count == 1`
+# case with its third pointer dropped, so it missed 328 of the 3390 distinct block pointers in eight
+# configs: every second group on arch 8 (Harmony 880 and 885), all 61 two group records of the arch 9
+# (Harmony 525) config, and the tail pointer of every record everywhere. `packages/codec` had been
+# corrected in section 75 and this side had not, which is the two-copies rule this repository is named
+# after failing across a language boundary. `summary` carries the pointers now, so `make golden`
+# compares the two implementations rather than two suites of tests agreeing.
+IR_HEADER_BASE = 12
+IR_HEADER_GROUP = 9
+IR_POINTERS_PER_GROUP = 3
+IR_GROUP_COUNT_AT = 0x0B
+# A bound rather than a reading, so that a record of an unknown shape falls back to one group instead
+# of walking a nonsense count off the end. The highest in the corpus is 2.
+IR_MAX_GROUPS = 16
 IR_BLOCK_TERMINATOR = 0
 # No block in the corpus reaches a third of this. It exists so that a record of another encoding
 # class, whose bytes are not a duration stream at all, walks off the end rather than to the end of
@@ -290,6 +300,15 @@ IR_BLOCK_LIMIT = 8192
 # Below this a record is not carrying a duration stream. The shortest real code in the corpus is
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
+# **There is no frame decoder here, deliberately, since section 139.** Turning a duration stream into
+# a bit frame is `packages/codec/src/irframe.ts`, and it is one derivation rather than two on the
+# rule this repository is named after. There were two for a day, and the golden vector caught them
+# disagreeing about 37 records of one arch 8 (Harmony 880) config: this side assumed pulse distance
+# and counted pairs, where `irframe.ts` tries both conventions and refuses a record that reads as
+# neither, which is the decoder section 133 matched against a catalogue of named commands. Two
+# plausible answers, and only one of them had ever been checked against anything outside the code.
+# `ir_pulses` stays because it is a read rather than a decode: the once block's words, bit 15 split
+# out.
 # Opcode 0x7D references an infrared record: high byte the group, low byte the index within it.
 # The reference is onto, and one to one: every record in every config is named exactly once.
 # `docs/findings.md` section 33.
@@ -1197,61 +1216,52 @@ class Container:
             ])
         return groups
 
-    def ir_pulses(self, address: int, limit: int = 1024) -> List[Tuple[bool, int]]:
-        """The mark and space run inside one infrared record, as `(is_mark, microseconds)`.
+    def ir_pulses(self, address: int) -> List[Tuple[bool, int]]:
+        """The mark and space run of one infrared record, as `(is_mark, microseconds)`.
 
-        A record is a `IR_RECORD_HEADER` byte header followed by `u16` durations in microseconds
-        with **bit 15 set on a mark**. The run is located rather than assumed to start at a fixed
-        offset: some records carry a prefix of `0x7FFF` words before the first mark, and how many
-        varies. So this returns the longest strictly alternating run in the record, which is what
-        a decoder has to do anyway.
+        The record's own first block, which is the one the firmware sends once, section 127. A block
+        is `u16` durations in microseconds with **bit 15 set on a mark**, closed by a zero word.
 
-        Records whose longest run is shorter than `IR_MIN_PULSES` are not this encoding. The whole
-        arch 9 sample is like that, which is consistent with the four infrared encoding classes
-        the firmware's dispatcher routes between: this decodes one of them.
+        **This used to search for the run rather than read it, and it was wrong on every record.**
+        It took the longest strictly alternating run from `pointer + 14`, on the reasoning that a
+        record's extent was not established. It was established twice over, by section 75 for the
+        header and section 127 for the three pointers, and blocks sit **below** the header, so the
+        located run was the *next* record's durations. Measured on 13 August 2026 across arch 8
+        (Harmony 880), arch 12 (Harmony One) and arch 14 (Harmony 600): not one of 748 records found
+        its run inside a block it names, and 713 landed inside a neighbour's. It stayed invisible
+        because records in one device group usually share a protocol, so a bit count taken from the
+        neighbour is usually the right bit count. The same defect was in `packages/codec` and both
+        are corrected in section 139.
+
+        Empty for a record whose class is not 1, since the other classes do not store durations
+        directly: on arch 9 (Harmony 525) class 5's pointers name a body of dictionary indices,
+        section 82.
         """
-        start = self.blob_offset_of(address)
-        if start is None:
+        if self.ir_class(address) != IR_CLASS_STREAM:
             return []
-        start += IR_RECORD_HEADER
-        words = [
-            int.from_bytes(self.blob[o:o + 2], 'little')
-            for o in range(start, min(start + 2 * limit, len(self.blob) - 1), 2)
-        ]
-        best = (0, 0)
-        i = 0
-        while i < len(words):
-            j = i + 1
-            while j < len(words) and (words[j] >> 15) != (words[j - 1] >> 15):
-                j += 1
-            if j - i > best[1] - best[0]:
-                best = (i, j)
-            i = j
-        return [(bool(w >> 15), w & 0x7FFF) for w in words[best[0]:best[1]]]
+        pointers = self.ir_record_blocks(address)
+        if not pointers:
+            return []
+        words = self.ir_block_words(pointers[0])
+        if words is None:
+            return []
+        return [(bool(w >> 15), w & 0x7FFF) for w in words]
 
-    def ir_frame(self, address: int) -> Optional[Tuple[int, int, int]]:
-        """One record read as a framed code: `(header_mark, header_space, bit_count)`.
+    def ir_block_words(self, address: int) -> Optional[List[int]]:
+        """One block's duration words, terminator excluded, or None when it does not close.
 
-        The framing is `header mark, header space, bits * (mark, space), trailing mark, trailing
-        gap`, so a run of `2 * bits + 4` from the first mark. Returns None when the record does
-        not have that shape, which includes every record of the arch 9 sample.
-
-        The closure that carries this reading is in `docs/findings.md` section 32: the bit count
-        derived from the length agrees with the bit count of the protocol the header timings name,
-        for every well formed record in the corpus.
+        The mirror of `ir_block_length`, which gives the same run as a byte count. Separate because
+        the accounting wants the length and a decoder wants the words, and deriving one from the
+        other in the caller is how the two come apart.
         """
-        pulses = self.ir_pulses(address)
-        if len(pulses) < IR_MIN_PULSES:
+        length = self.ir_block_length(address)
+        off = self.blob_offset_of(address)
+        if length is None or off is None:
             return None
-        for start, (is_mark, _) in enumerate(pulses):
-            if is_mark:
-                break
-        else:
-            return None
-        rest = len(pulses) - start - 2
-        if rest < 4 or rest % 2:
-            return None
-        return pulses[start][1], pulses[start + 1][1], (rest - 2) // 2
+        return [
+            int.from_bytes(self.blob[o:o + 2], 'little')
+            for o in range(off, off + length - 2, 2)
+        ]
 
     def ir_class(self, address: int) -> Optional[int]:
         """The encoding class byte of an infrared record, which selects the send routine.
@@ -1265,23 +1275,50 @@ class Container:
             return None
         return self.blob[offset]
 
-    def ir_record_blocks(self, address: int) -> List[int]:
-        """The data blocks one infrared record names, as addresses, NULLs dropped.
+    def ir_group_count(self, address: int) -> int:
+        """How many nine byte pointer groups the header declares, byte `+0x0B`, clamped.
 
-        Two `u24` pointers inside the header, and they point **backwards**: a record's durations
-        sit below its header rather than after it. Two records naming the same block is normal and
-        is how one duration stream serves several codes, so a caller accumulating bytes must
-        deduplicate. `docs/findings.md` section 61.
+        1 in every record of arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), 2 in 37
+        records of four arch 8 (Harmony 880) configs and none of two others, and 2 in 61 of the 200
+        records of the arch 9 (Harmony 525) config. The count follows the **equipment** rather than
+        the architecture, section 134.
+
+        Clamped rather than trusted, so that a record of a shape nobody has read falls back to one
+        group instead of walking a nonsense count through the container.
         """
         start = self.ir_record_start(address)
         off = None if start is None else self.blob_offset_of(start)
-        if off is None or off + IR_HEADER_LENGTH > len(self.blob):
+        if off is None or off + IR_HEADER_BASE >= len(self.blob):
+            return 1
+        stated = self.blob[off + IR_GROUP_COUNT_AT]
+        return stated if 1 <= stated <= IR_MAX_GROUPS else 1
+
+    def ir_header_length(self, address: int) -> int:
+        """The header's own length, `12 + 9 * count`. Section 75."""
+        return IR_HEADER_BASE + IR_HEADER_GROUP * self.ir_group_count(address)
+
+    def ir_record_blocks(self, address: int) -> List[int]:
+        """The data blocks one infrared record names, as addresses, NULLs dropped.
+
+        Three `u24` pointers per declared group, and they point **backwards**: a record's durations
+        sit below its header rather than after it. Section 127 names the three, once, held and tail.
+        Two records naming the same block is normal and is how one duration stream serves several
+        codes, so a caller accumulating bytes must deduplicate. `docs/findings.md` sections 61, 75
+        and 127.
+        """
+        start = self.ir_record_start(address)
+        off = None if start is None else self.blob_offset_of(start)
+        groups = self.ir_group_count(address)
+        if off is None or off + IR_HEADER_BASE + IR_HEADER_GROUP * groups > len(self.blob):
             return []
         found = []
-        for at in IR_BLOCK_POINTERS:
-            value = int.from_bytes(self.blob[off + at:off + at + 3], 'little')
-            if value:
-                found.append(value)
+        for group in range(groups):
+            base = off + IR_HEADER_BASE + IR_HEADER_GROUP * group
+            for slot in range(IR_POINTERS_PER_GROUP):
+                at = base + IR_POINTER_LENGTH * slot
+                value = int.from_bytes(self.blob[at:at + IR_POINTER_LENGTH], 'little')
+                if value:
+                    found.append(value)
         return found
 
     def ir_block_length(self, address: int) -> Optional[int]:
@@ -1336,8 +1373,8 @@ class Container:
                 start = self.ir_record_start(address)
                 if start is None:
                     return None
-                high = start + IR_HEADER_LENGTH if high is None else max(
-                    high, start + IR_HEADER_LENGTH)
+                top = start + self.ir_header_length(address)
+                high = top if high is None else max(high, top)
                 for block in self.ir_record_blocks(address) or [start]:
                     low = block if low is None else min(low, block)
         return None if low is None or high is None else (low, high)
@@ -2908,6 +2945,52 @@ def summary(c: Container) -> Dict[str, object]:
             {'i': k.index_in_table, 'code': k.event_code, 'index': k.index,
              'flags': k.flags, 'event': k.event_name, 'scan': k.scan_code}
             for k in c.keys],
+        # The infrared header, summarised rather than listed: 462 records times up to six pointers
+        # would bury the rest, and what has to match is the reading and not the addresses.
+        #
+        # **Added in section 139, and the reason is that its absence hid a divergence for weeks.**
+        # This file read a flat 21 byte header with two pointers where `packages/codec` read
+        # `12 + 9 * count` with three per group, so the two implementations disagreed about 328 of
+        # 3390 block pointers and every test on both sides passed. A golden vector is the only check
+        # here that can see a difference nobody wrote a test about, and it was not looking at the
+        # infrared database at all.
+        'ir': _ir_summary(c),
+    }
+
+
+def _ir_summary(c: Container) -> Optional[Dict[str, object]]:
+    """The infrared reading as a handful of totals, or None where there is no database.
+
+    Deliberately including the two sums: a count of groups and blocks would agree between two
+    implementations that both read the wrong pointer, whereas the sum of the block lengths and the
+    sum of the framed bit counts cannot.
+    """
+    groups = c.ir_groups()
+    if not groups:
+        return None
+    records = [a for group in groups for a in group]
+    blocks: Dict[int, int] = {}
+    pointers = 0
+    header_bytes = 0
+    group_counts: Dict[str, int] = {}
+    for address in records:
+        found = c.ir_record_blocks(address)
+        pointers += len(found)
+        header_bytes += c.ir_header_length(address)
+        key = str(c.ir_group_count(address))
+        group_counts[key] = group_counts.get(key, 0) + 1
+        for block in found:
+            length = c.ir_block_length(block)
+            if length is not None:
+                blocks[block] = length
+    return {
+        'groups': len(groups),
+        'records': len(records),
+        'group_counts': group_counts,
+        'pointers': pointers,
+        'distinct_blocks': len(blocks),
+        'block_bytes': sum(blocks.values()),
+        'header_bytes': header_bytes,
     }
 
 

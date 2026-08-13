@@ -617,7 +617,9 @@ packages/codec/                 TS: the one config codec, container through comp
                                 src/alphabets.ts generated from the seeds in bin/alphabets.ts.
                                 src/irframe.ts turns a record's durations back into the bit frame a
                                 device sees, which is what lets a code be compared to a number stated
-                                outside the config
+                                outside the config, and it is **the only** frame decoder here since
+                                section 139. src/summary.ts is the golden vector shape, above gspm.ts
+                                and ir.ts because it composes both
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
@@ -677,7 +679,11 @@ commit.
 
 **The codec port is complete.** Every reader `src/harmony/gspm.py` has now exists in
 `packages/codec` too, bar base slot 16, the number sender, whose count is zero in every config so a
-port would be exercised by nothing. `packages/codec/src/coverage.ts` is the M2 progress number and
+port would be exercised by nothing. **The reverse is deliberately not true**, section 139: the Python
+side reads infrared durations and does not decode them into a bit frame, because for a day it did and
+the two decoders disagreed about 37 records of one arch 8 (Harmony 880) config. A reader that exists
+twice is the state this file's oldest rule forbids, so the direction to add one is towards
+`packages/codec` and the direction to remove one is away from Python. `packages/codec/src/coverage.ts` is the M2 progress number and
 `make coverage` prints it; the current figures are in "Where the work stands" below.
 
 **This paragraph used to end "it stops there and another reader will not move it", and that was<!--superseded-->
@@ -904,7 +910,9 @@ make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
 make hooks         install .githooks/pre-commit, once per clone
-make golden        compare the golden vectors; golden-write regenerates them
+make golden        compare the golden vectors; golden-write regenerates them. Since section 139
+                   they carry the infrared header reading, which is what caught the two codecs
+                   disagreeing about 328 block pointers with every test on both sides passing
 make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
 make emit          how much of each sample the emitter puts back, and whether it round trips
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
@@ -1087,6 +1095,19 @@ over the runner-up before trusting its answer.
   cost is user facing put a coarse wall clock ceiling on it: `packages/bench/test/bench.test.ts` has one
   at seven times the measured figure, which catches an accidental quadratic and says nothing about a
   slow machine.
+* **A remainder with an explanation attached is a remainder nobody counts again.** Section 61 reported
+  that 133 of 3490 infrared blocks stopped short of the next boundary, explained as padding on arch 8,
+  and said short is the safe direction because it can only under claim. They were not padding: they
+  ended exactly where the next block began, and that block was invisible because a two group header's
+  second set of pointers was not being read. On all three pointers of every group the tiling closes on
+  3715 of 3715. So when a reader is suspect, the remainder it already has a story for is where to look,
+  and the story is what stopped anybody looking. Section 139.
+* **A closure whose two ends come from the same bytes is not a closure**, and it will hold anyway.
+  Section 32 held a bit count derived from a block's length against the header timings of that block,
+  over 2137 records with no exception, and both numbers came from a **neighbouring** record because the
+  locator searched from a fixed offset. Two numbers are independent when they come from different
+  fields, not when they are computed by different arithmetic. Same family as the carrier closure whose
+  test read neither end, `CLAUDE.md` verification standard.
 * **"Prefer arch 14, then port" is a rule about reading code, not about finding data.** Base slots
   17 and 2 both stayed unnamed for a while because arch 14 never seeks them: the touch hit map is
   arch 12 only and so is the log area's writer. If a slot looks empty on the architecture you are

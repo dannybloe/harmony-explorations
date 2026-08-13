@@ -1444,11 +1444,17 @@ the protocol requires the sender to alternate between presses, and a config stor
 action list language has no arithmetic that could compute one. Which group a given press uses is
 **unconfirmed**: the firmware side has not been traced.
 
-**A block ends at a zero word, and that is not a validity check.** Over 3490 blocks in eleven
-configs the terminator agrees exactly with the region's tiling 3357 times, stops short 133 times,
-all on arch 8 and all padding, and overruns never. But arch 9's 277 blocks all find a zero word too
-and **not one is in the right place**, so what separates a block this reading covers from one it
-does not is the **class byte**, which is 1 here and 5 there.
+**A block ends at a zero word, and that is not a validity check.** Over **3715 blocks in eleven
+configs the terminator agrees exactly with the region's tiling on every one of them**, and none stops
+short or overruns. But arch 9's **380** blocks all find a zero word too and **not one is in the right
+place**, so what separates a block this reading covers from one it does not is the **class byte**,
+which is 1 here and 5 there.
+
+Both figures moved in section 139 and for one reason: a two group header's second set of pointers was
+missing from the boundary list, so 133 blocks looked as though they stopped short of the next boundary
+and 103 of arch 9's blocks were not seen at all. The old reading was 3490 blocks with 3357 exact and
+133 short<!--superseded-->, and the 133 had an explanation, that they were padding on arch 8. A
+remainder with an explanation attached is a remainder nobody counts again.
 
 #### A class 1 record's bit frame is recoverable from its durations
 

@@ -6922,8 +6922,17 @@ included.
 
 **The terminator agrees with the layout.** The headers and the blocks tile a contiguous region, so
 the distance from a block to the next boundary is an independent second opinion on its length. Over
-3490 blocks in eleven configs, **3357 agree exactly, 133 stop short, and none overruns.** The short
-ones are all arch 8 and are padding; short can only under claim, so it is the safe direction.
+**3715 blocks in eleven configs, every one agrees exactly**, and none stops short or overruns.
+
+This paragraph read **3490 blocks, 3357 exact and 133 short**<!--superseded--> until section 139, and
+explained the 133 as padding on arch 8, which was the safe direction because short can only under
+claim. They were not padding. They stopped short of a boundary the reader **could not see**: a two
+group header's second set of three pointers was missing from the boundary list, so a block that ended
+exactly where the next one began looked like it ended early. Reading all three pointers of every
+declared group closes it on every block, which turns a closure with an unexplained remainder into one
+without. The lesson is the same one section 139 draws throughout: an explanation offered for a
+remainder is where to look when the reader is suspect, because a remainder with a story attached stops
+being counted.
 
 **Byte accounting agrees, and it is the harder test.** Claiming the headers and the deduplicated
 blocks produces **zero overlaps** in any container, against every other structure the codec knows.
@@ -6948,14 +6957,19 @@ edited in place without checking who else names it.
 
 The first version of the reader argued that the terminator was also a validity check: a record of an
 encoding class we do not decode would find no zero word, so nothing would claim it. The test written
-to pin that **failed**, and the failure is the interesting result. All 277 blocks of the arch 9
+to pin that **failed**, and the failure is the interesting result. All **380** blocks of the arch 9
 sample do find a zero word, and **not one of them lands where the block ends**. A zero word is
 common enough in arbitrary data to be found by accident, at a plausible looking distance.
 
 So the terminator says how long a block is once you already know it is a block, and nothing more.
 What keeps arch 9 out of the accounting is the **class byte**: every record there reads 5 and only
 class 1 is claimed. Had the test been written to agree with the docstring rather than to check it,
-the codec would have quietly claimed 277 wrong extents in a sample nobody looks at closely.
+the codec would have quietly claimed 380 wrong extents in a sample nobody looks at closely.
+
+The count was **277**<!--superseded--> here until section 139, and the correction is worth noting
+because it makes the negative case stronger rather than weaker: 61 of the 200 records declare a second
+pointer group, so this config names 380 distinct blocks and the reader had been seeing two thirds of
+them. Every one of the 103 that were invisible also finds a zero word in the wrong place.
 
 ### Where it lands
 
@@ -18375,18 +18389,19 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Six shipped readers answered plausibly where they should have refused, and one of them was a rail
+## 139. Eight shipped readers answered plausibly where they should have refused, and one of them was a rail
 
 Every finding in this document rests on code, and this section is about the code rather than about a
-remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by eight
+remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Six defects came out of it that a sample could not have found, and they share one shape, which is this
-project's own recurring one: **each produced a plausible answer where it should have produced an
-error.** Not one of them failed a test, and three of them had a test asserting the wrong thing was
+Eight defects came out of it that a sample could not have found, and they share one shape, which is
+this project's own recurring one: **each produced a plausible answer where it should have produced an
+error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first. The last of them needed firmware and is the only new reading
-here; the other five are corrections to code this document already relies on.
+They are listed newest reading first. Entry 6 needed firmware and is the only new firmware reading here;
+entries 7 and 8 came out of correcting entry 1 in the other language, and are the two that moved a
+published number. The rest are corrections to code this document already relies on.
 
 ### 1. The infrared duration locator read a neighbouring record, on every record
 
@@ -18525,6 +18540,61 @@ something or nothing depending on hardware state the config cannot see.
 `BANDS_0F_ARCH9` carries them, `bandsFor` selects it, and the test asserts the two architectures
 disagree at `0x60` and at `0x40`, which is what a per architecture table is for.
 
+### 7. The Python reader had the same defect, and two more, and nothing compared the two
+
+`src/harmony/gspm.py` is reverse engineering tooling rather than the codec, decision 3, and the
+two-copies rule applies to it anyway: it read the **flat 21 byte header with two pointers** that
+section 75 corrected a week earlier, so the two implementations disagreed and every test on both sides
+passed.
+
+Measured across eight configs: Python found **3062 of 3390** distinct block pointers, missing 328. All
+of them on the two architectures where a header declares more than one group, plus the third pointer of
+every group everywhere: every second group of the 37 two group records in each of four arch 8 (Harmony
+880) configs, and all 61 two group records of the arch 9 (Harmony 525) config. It also carried the same
+located-run heuristic that entry 1 removed from `packages/codec`, in the language the port was made
+from.
+
+Two things fell out of correcting it, and neither was the thing being looked for.
+
+**The tiling closure had a remainder and the remainder was the reader.** Section 61 reported that 3357
+of 3490 blocks end exactly at the next boundary and 133 stop short, explained as padding on arch 8. With
+all three pointers of every declared group the count is **3715 blocks and every one exact**, none short
+and none over. The 133 were not padding: they ended exactly where the **next** block began, and that
+block was invisible because it was named by a pointer group the reader did not read. An explanation
+offered for a remainder is where to look when a reader is suspect, because a remainder with a story
+attached stops being counted.
+
+**And section 32's closure was not a closure.** It held the header timings against a bit count derived
+from the block's **length**, `2 * bits + 4` from the first mark, over 2137 records with no exception.
+Both numbers came from the same wrong run, so it compared a neighbouring record with itself. On the
+right bytes the identity is simply false: `0x035571` of `h700_config` carries a 32 bit NEC code, a gap,
+the protocol's **repeat header** and a long silence, so its length gives 36 bits where its timings say
+32. Every class 1 record in the corpus, 2858 of 2858, holds a gap somewhere other than at the end of its
+once block, which is what says a block is more than one transmission.
+
+The closure is real again and it lives in TypeScript now: **1106 records with NEC timings all carry 32
+bits and 257 with Kaseikyo timings all carry 48**, zero exceptions,
+`packages/codec/test/irframe.test.ts`.
+
+### 8. Two frame decoders, caught by the check added to catch them
+
+Correcting the Python reader meant Python had a frame decoder and so did `irframe.ts`, which is the
+banned state rather than a tidiness problem. The golden vector had never looked at the infrared
+database at all, so the first thing it did once it carried the header reading was report the two
+disagreeing: the header, the pointer count, the distinct blocks and the block bytes matched to the byte
+on every container, and `framed` did not, by 37 records on `arch8_config_a` and by one on `h600_config`.
+
+The two are not equally good, and only one of them had been checked against anything outside the code.
+Python's assumed **pulse distance** and counted pairs; `irframe.ts` tries both conventions and refuses a
+record that reads as neither, which is what let section 133 match frames against a catalogue of named
+commands and name 68 buttons. So the Python decoder is gone, `tools/ir_extract.py` prints durations
+rather than a bit count, and the vector carries the header reading and deliberately not the frame,
+because there is now one decoder and nothing to compare it against.
+
+**The control matters more than the finding here.** Reverting the Python side to one pointer group makes
+six vectors differ and the TypeScript test fails; that check did not exist this morning, and it is the
+only one in this repository that can see a difference nobody thought to write a test about.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -18536,6 +18606,17 @@ disagree at `0x60` and at `0x40`, which is what a per architecture table is for.
 * **A reading table's no-op needs the architecture's own firmware behind it.** Where it does not have
   one, the honest depth is placement or nothing, and the table now says which architecture each entry
   was read from.
+* **The infrared block tiling closes on every block**, 3715 of 3715 in eleven configs, where section 61
+  reported 3357 of 3490 with 133 explained as padding. And arch 9 (Harmony 525) names 380 blocks rather
+  than 277.
+* **Section 32's closure is a closure again**, and it moved to `packages/codec`: 1106 records with NEC
+  timings carry 32 bits and 257 with Kaseikyo timings carry 48, with no exception. Its old form held a
+  bit count derived from a block's length against timings taken from the same block, and both came from
+  a neighbouring record.
+* **`make golden` compares the infrared reading**, which it did not, and that is what caught entry 8 on
+  the day it was added. Reverting one line of the Python reader makes six vectors differ.
+* **There is one frame decoder**, `packages/codec/src/irframe.ts`. `src/harmony/gspm.py` reads durations
+  and does not decode them, and `tools/ir_extract.py` prints durations rather than a bit count.
 * `make coverage` exits nonzero on an overlap, so the zero is enforced rather than reported.
 * `@harmony/usb` offers no way to build a request that changes a remote, which is what `rails.ts` has
   claimed since it was written.
@@ -18544,6 +18625,9 @@ disagree at `0x60` and at `0x40`, which is what a per architecture table is for.
 
 For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
 `0x7F`, which the reading says the firmware ignores, or a second arch 9 image whose ladder differs from
-this one. For the overlap detector: a container where the new rule reports an overlap, which would mean
+this one. For the header: a record whose declared group count is above 2, or a block that does not end
+exactly at the next boundary, either of which would say the `12 + 9 * count` tiling is not the whole
+story. For the closure: a record whose header timings name NEC or Kaseikyo and whose bit count is not 32
+or 48, which is now checkable because the two numbers come from the same record's own bytes. For the overlap detector: a container where the new rule reports an overlap, which would mean
 two readers claim one byte and one of them is wrong. For the day maximum: a Logitech generated config
 built on a 31st, which would settle by measurement what is currently our choice.
