@@ -17970,3 +17970,96 @@ strengthen it without proving it, since the failure would still carry no reason.
   `packages/usb/test/models.test.ts` asserts it.
 * `lab/work/myharmony/PREDICTIONS.md` holds the seven predictions and their outcomes, including the two
   that were wrong.
+
+
+## 136. A product is enabled or not, the service validates a serial, and a device maximum was circular
+
+Three things came out of one read of `ProductsManager/GetAllProducts`, which section 131 had used only
+for its skin names. Two of them correct claims this project made the same day, section 135 and
+`reference/capabilities.md`.
+
+### The client's supported list is a service flag
+
+Each of the 97 products carries `IsEnabled`, and it is true for exactly eighteen skins: 54, 66, 69, 71,
+72, 73, 74, 75, 78, 79, 80, 81, 97, 99, 102, 104, 106 and 112. Harmony Desktop's
+`DesktopAppSupportedProducts` is that set **minus 97 and 106**, which are the two hubs and are handled
+by another path. Nothing is in the client's list that the service does not enable.
+
+**So section 135's reading needs correcting rather than the finding.** It said the compile failure for a
+Harmony 525 left the architecture as the only explanation. Skin 22 has `IsEnabled: false`, which is a
+better candidate and a simpler one: the product is switched off service side, and the client's list is
+its mirror rather than its own policy. The add still succeeds, which is what section 135 measured and
+what stands; it is the compile that meets the flag. Not proven either, since the compiler's error still
+names nothing, but a stated per product flag beats an inferred missing backend.
+
+`CompilerArchitecture` is also a field on every product and is **null on all 97**, which is worth
+recording so nobody goes looking for the vendor's architecture map there twice.
+
+### A serial is validated, so a remote you do not own cannot be registered
+
+Two registrations were attempted for models nobody here has, a Harmony 880 and a Harmony 300, with a
+deliberately synthetic serial. Both are refused at a named stage:
+
+```
+ErrorCode 5, "Remote is invalid bearing serial Number: {...}{...}{...}", Source: ValidateRemote
+```
+
+The 525's real serial passed the same check, including a first GUID of sixteen `0xee` bytes, so the test
+is not a plausibility rule about the shape. **That closes the route**: the compile takes a remote id, a
+remote id needs a record, and a record needs a serial the service accepts.
+
+Two things it does not close. Using a **contributor's** serial from a dump is not an option and would not
+be one even if it worked, because their remote's identity is theirs and registering it here associates
+their hardware with this account. It is also moot: the contributed arch 8 and arch 10 dumps carry no
+serial at all, their own provenance notes say so, because the contributors scrubbed them. And owning the
+remote is the route that does work, which is what the Harmony 525 demonstrated.
+
+Both attempts left an empty account record behind, and both were removed with
+`AccountManager/RemoveAccountFromHousehold`, which is the one write here with an undo. The rail worth
+copying is in `cleanup.py`: it refuses any record holding a remote, a device or an activity, because the
+same call would just as happily remove the record the arch 12 calibration sample came from.
+
+### The device maximum column was bounded below and read as a ceiling
+
+`MaxDevicesPerAccount` is stated per product, and it agrees with `packages/usb/src/models.ts` on 28 of
+the 35 skins that appear in both. That is a real corroboration of a table this project holds on a third
+party's word. The seven disagreements are the interesting part, and in every one of them **our figure
+was the weaker**:
+
+| skins | ours | the service | where ours came from |
+|---|---|---|---|
+| 66, 69 (Harmony 700) | 6 | 8 | the count in two configs |
+| 72, 74 (Harmony 650) | 5 | 8 | a copy of the Harmony 600's, which shares the architecture |
+| 18, 22 (Harmony 520 and 525) | 15 | 12 | the community table |
+| 36 (Harmony for Xbox 360) | 11 | 12 | the community table |
+
+The 700 is the one that matters, because a test asserted it. `maxDevices` was set to 6 **because** both
+700 configs hold six devices, and then the test named for that claim<!--superseded--> asserted
+that the configs sit at the maximum. That is the assumption restated: a config holding six devices bounds
+the maximum **below**, and nothing about it forbids a seventh. `reference/capabilities.md` built its
+verification on the same circle, in the words this correction retires.<!--superseded-->
+
+So the service's figures are adopted, marked as vendor sourced with no measurement behind them, and the
+honest claim is the negative one: **no sample in this corpus reaches any stated maximum**, so nothing in
+that column is confirmed from a config and it rests on two vendor tables that agree. The test says that
+now, and a separate one keeps the useful half, that no config exceeds its model's figure.
+
+This is the third circular check found here, after `end_addr_points_at_end_marker` in section 117 and
+the arch 8 two group count in section 134. All three had the same shape: the
+value under test was derived from the thing the test compared it against.
+
+### What would falsify it
+
+A config with seven devices on a Harmony 700, which the surviving test would catch. A compile that
+succeeds for a product with `IsEnabled: false`, or one that fails for a product with it true. A serial
+that `ValidateRemote` accepts for a remote nobody owns, which would mean the check is structural rather
+than a lookup.
+
+### Where it lands
+
+* `packages/usb/src/models.ts`: seven `maxDevices` figures, each with the reason in place.
+* `packages/corpus/test/capabilities.test.ts`: the circular test replaced by the negative claim plus the
+  bound that still holds.
+* `reference/capabilities.md`: the max devices verification row.
+* `docs/host-client.md`: `IsEnabled`, the serial validation, and the null `CompilerArchitecture`.
+* `reference/superseded.md`: the circular test's own title.

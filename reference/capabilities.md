@@ -72,10 +72,10 @@ unknown. `reference/models.md` has the architecture map and the full skin table.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 54 | One | | 12 | 15 | 24 | colour | **yes** | | yes | yes | no | 3.4.0 | skin, arch, touch, fw; devices consistent |
 | 71 | 600 | | 14 | 5 | 23 | **monochrome** | no | | yes | yes | no | 0.2 | skin, arch, panel, touch, fw; devices consistent |
-| 72 | 650 | | 14 | 5 | 23 | colour | no | | yes | yes | no | 0.2 | skin, arch; fw is a lower bound, the lab holds 0.4 |
-| 66 | 700 | | 14 | 6 | 23 | colour | no | | yes | yes | no | 2.5.0 | skin, arch, touch; devices at the stated limit; fw is a lower bound, the lab holds 2.8 |
-| 22 | 525 | 520 | 9 | 15 | | monochrome | no | | yes | no | no | 3.0 | skin, arch, fw; page button consistent; devices consistent |
-| 18 | 520 | 525 | 9 | 15 | | monochrome | no | | yes | no | no | 3.0 | arch; the 525's row, same remote |
+| 72 | 650 | | 14 | 8 | 23 | colour | no | | yes | yes | no | 0.2 | skin, arch; devices were a copy of the 600's, section 136; fw is a lower bound, the lab holds 0.4 |
+| 66 | 700 | | 14 | 8 | 23 | colour | no | | yes | yes | no | 2.5.0 | skin, arch, touch; devices **not** confirmed, section 136; fw is a lower bound, the lab holds 2.8 |
+| 22 | 525 | 520 | 9 | 12 | | monochrome | no | | yes | no | no | 3.0 | skin, arch, fw; page button consistent; devices 12 per the live service, 4 held |
+| 18 | 520 | 525 | 9 | 12 | | monochrome | no | | yes | no | no | 3.0 | arch; the 525's row, same remote |
 | 68 | 510 | 515 | 9 | 5 | | monochrome | no | | yes | no | no | 3.4.0 | arch only |
 | 67 | 515 | 510 | 9 | 5 | | monochrome | no | | yes | no | no | 3.4.0 | arch only |
 | 36 | Xbox 360 | | 9 | 11 | | monochrome | no | | yes | no | no | 3.0.0 | arch only |
@@ -108,7 +108,7 @@ cut, because a field is either checkable here or it is not.
 | touch screen | **confirmed, including its negative** | base slot 17 is a touch hit map on arch 12 and names the picture bank everywhere else, sections 45 and 62. The One is the only arch 12 model and the only one this table calls touch, so the two agree without either being derived from the other |
 | panel | **confirmed for the 600 only, and confirmed not derivable from a config** | the owner has the remote and its screen is monochrome. Its config still carries two byte pixels, 43 distinct low bytes and 96 distinct high bytes over 15 raw pictures, and only 3.3% of its values are grey read as RGB565. So the format is the architecture's and the panel is the model's, and a renderer cannot infer one from the other |
 | page button | **consistent, and it explains a measurement** | the 5xx has none, and the four soft keys on a 525 carry opcode `0x7E`, "enter the base slot 6 mode the operand indexes", 57 and 18 times across its two configs. So paging is a soft key binding there rather than a missing feature |
-| max devices | **consistent, once at the limit** | a device is an infrared group, section 86. The 700's config holds exactly 6 against a stated maximum of 6; the 600 holds 4 of 5, the One 5 of 15, the 525 4 of 15, the arch 8 sample 3 of 15. Nothing exceeds its stated maximum |
+| max devices | **bounded below only, and the earlier claim was circular** | a device is an infrared group, section 86. This row claimed consistency at a limit<!--superseded--> on the strength of the 700's config holding exactly 6 against a stated 6, and the stated 6 had been set from that same count, section 136. A config holding six devices forbids no seventh. **No sample reaches any stated maximum**: the 600 holds 4 of 5, the One 5 of 15, the 525 4 of 12, the arch 8 sample 3 of 15, the 700 6 of 8. What is confirmed is that nothing exceeds its figure, and the figures themselves rest on two vendor tables that agree on 28 of 35 skins |
 | macros | **consistent** | every architecture read here runs action lists of many instructions, section 34. The 748's lone "no" is unchecked, since nothing here has an arch 3 sample |
 | firmware seen | **contradicted as a ceiling, correct as a floor** | the table says 2.5.0 for the 700 where the lab holds 2.8, and 0.2 for the 650 where it holds 0.4. It is right about the three bench remotes: 3.4.0 on the One, 0.2 on the 600, 3.0 on the 525 |
 | favourites, battery, RF channels, sound and picture buttons | **unchecked** | nothing measured here bears on any of them |

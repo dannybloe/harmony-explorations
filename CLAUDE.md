@@ -81,10 +81,12 @@ Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on
 the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
 August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what
 was predicted before it was connected against what it measured. **It will not get a known answer sample**,
-section 135: the live service accepts a skin 22 remote record and names it a Harmony 525, so Harmony
-Desktop's refusal is two hardcoded skin lists in the client and not a service capability, but the compile
-is accepted and then ends in a bare `status='Error'`. Every explanation a read can reach is eliminated and
-the architecture is what is left, which is a reading rather than a fact because the error names nothing. Other models are iterated on later.
+sections 135 and 136: the live service accepts a skin 22 remote record and names it a Harmony 525, so
+Harmony Desktop's refusal to see one is the client's, but the compile is accepted and then ends in a bare
+`status='Error'`. The likeliest reason is a stated per product `IsEnabled` flag, false for skin 22, whose
+true set is exactly the client's own supported list minus the two hubs. **And no other model can be
+tried**, because `ValidateRemote` refuses a synthetic serial, so registering a remote nobody here owns is
+not possible: an 880 or an 890 needs the hardware, and the contributed dumps carry no serial. Other models are iterated on later.
 
 **Arch 8 has firmware now and is still not a target**, sections 113, 114 and 116: two application
 images of one build, an 880 and an 885, contributed on 10 August 2026, plus **two bootloaders**, plus
@@ -771,9 +773,12 @@ remotes' own configs name their region correctly and the run arithmetic that fit
 reading Logitech's allocation order out of the gaps it left. The source is
 `ProductsManager/GetAllProducts` on the live service, which lists 80 skins below 100 against the classic
 client table's 46 and pairs 14 models with a regional variant. **What selects one of a pair is still
-open.** `packages/usb/src/models.ts` carries 35 skins now, and its one refusal of a vendor number is the
-part worth remembering: Logitech says a Harmony 700 takes eight devices, both 700 configs hold exactly
-six, and six is kept because it is the only figure in that column with a corroboration.
+open.** `packages/usb/src/models.ts` carries 35 skins now, and **the refusal of the vendor's device
+count was withdrawn on 13 August 2026**, section 136: it kept 6 for a Harmony 700 because both its configs
+hold six devices, which bounds the maximum **below** and forbids no seventh, and a test then asserted the
+configs sit at the maximum. The live service's `MaxDevicesPerAccount` agrees with this table on 28 of 35
+skins and all seven disagreements were inferences of ours, so the vendor figures are adopted and the honest
+claim is that **no sample reaches any stated maximum**.
 
 **Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
 `0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
@@ -1036,7 +1041,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 135 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 136 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

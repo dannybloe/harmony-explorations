@@ -726,10 +726,25 @@ Two hardcoded lists of skin numbers decide what Harmony Desktop will touch:
 | `CompilerProducts` | the same without 99, 102 and 112 | compiler path or hub path, `isCompilerBasedRemote` |
 
 A Harmony 525's skin 22 is in neither, which is why that remote gets nowhere in that application. The
-service disagrees: `ProductsManager/GetAllProducts` carries it as `ProductId 35, SkinId 22`, a remote
-record for it is **accepted**, and `Account/{a}/Remote/{r}/Settings` answers and calls it
-`Harmony 525`. So these two lists are the client's policy and not the service's capability, and the
-project had been reading the client's silence as the service's answer.
+service still carries it as `ProductId 35, SkinId 22`, a remote record for it is **accepted**, and
+`Account/{a}/Remote/{r}/Settings` answers and calls it `Harmony 525`.
+
+~~So these two lists are the client's policy and not the service's capability~~<!--superseded--> and that
+was wrong within the hour, section 136: **the lists mirror a service flag.** Every product carries
+`IsEnabled`, it is true for eighteen skins, and `DesktopAppSupportedProducts` is that set minus the two
+hubs. Skin 22 is false. So the client is what refuses to **add** the remote, which stands, and the
+compile most likely meets the flag rather than a missing architecture backend. `CompilerArchitecture` is
+a field on every product too and is null on all 97, so the vendor's architecture map is not there.
+
+**A serial is validated.** Two registrations with a synthetic serial, for a Harmony 880 and a Harmony
+300, are refused with `ErrorCode 5, "Remote is invalid bearing serial Number: ...", Source:
+ValidateRemote`, where the 525's real one passed. So a remote nobody owns cannot be registered, and the
+compile route is closed for every model not on the bench.
+
+**`MaxDevicesPerAccount` is stated per product** and agrees with `packages/usb/src/models.ts` on 28 of
+35 shared skins, which is the strongest corroboration that table has had. The seven disagreements went
+the vendor's way in section 136, because in each one our figure was an inference or a count mistaken for
+a ceiling.
 
 ### Adding a remote, which is three facts and one trap
 

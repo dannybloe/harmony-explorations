@@ -103,12 +103,12 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
   // Confirmed from four configs, and the arch 8 control for container claims.
   15: { name: '880', alias: '885', architecture: 8, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.4.2' },
   17: { name: '885', alias: '880', architecture: 8, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.4.2' },
-  18: { name: '520', alias: '525', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0' },
+  18: { name: '520', alias: '525', architecture: 9, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0' },
   19: { name: '890', alias: '895', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.9.0' },
   // The bench remote, confirmed. Its capabilities are the 520's row, because it is the 520.
-  22: { name: '525', alias: '520', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0' },
+  22: { name: '525', alias: '520', architecture: 9, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0' },
   23: { name: '895', alias: '890', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.9.0' },
-  36: { name: 'Xbox 360', architecture: 9, maxDevices: 11, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0.0' },
+  36: { name: 'Xbox 360', architecture: 9, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0.0' },
   39: { name: '880 Pro', architecture: 8, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.4.2' },
   40: { name: '890 Pro', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.9.0' },
   41: { name: '550', alias: '555', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '3.0' },
@@ -123,23 +123,24 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
   // it was read as an unallocated artefact for as long as the only skin table here predated MyHarmony.
   59: { name: 'One EMEA', alias: 'One', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   65: { name: '610', architecture: 7, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.5.0' },
-  // Confirmed from two configs. **`maxDevices` stays at the community table's 6 although Logitech's
-  // own service says 8**, section 131, and that is a deliberate refusal to prefer the vendor: both 700
-  // configs hold exactly six devices, so 6 is the one figure in this column with a corroboration and
-  // 8 would make that agreement a coincidence. The disagreement is recorded rather than resolved.
-  66: { name: '700', alias: '700 EMEA', architecture: 14, maxDevices: 6, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
+  // Confirmed from two configs. **`maxDevices` was 6 here for a day and the reasoning was circular**,
+  // section 136: it was set to 6 because both 700 configs hold six devices, and then a test asserted the
+  // configs sit at the maximum. A config holding six devices bounds the maximum **below**, not above, so
+  // the observation was never evidence for a ceiling. Two vendor sources say 8, the classic client's
+  // table and the live service's `MaxDevicesPerAccount`, and nothing here contradicts either.
+  66: { name: '700', alias: '700 EMEA', architecture: 14, maxDevices: 8, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
   67: { name: '515', alias: '510', architecture: 9, maxDevices: 5, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   68: { name: '510', alias: '515', architecture: 9, maxDevices: 5, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.4.0' },
-  69: { name: '700 EMEA', alias: '700', architecture: 14, maxDevices: 6, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
+  69: { name: '700 EMEA', alias: '700', architecture: 14, maxDevices: 8, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
   // The bench remote, confirmed. Monochrome, and its config carries two byte pixels anyway.
   71: { name: '600', alias: '600 EMEA', architecture: 14, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
-  // Confirmed from its safe mode container. Logitech's own service says 8 devices where this says 5,
-  // the second of the two disagreements section 131 found, and it is left alone for the same reason as
-  // the 700's: no config here reaches either number, so nothing chooses between them.
-  72: { name: '650', alias: '650 EMEA', architecture: 14, maxDevices: 5, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  // Confirmed from its safe mode container. **The 5 here was a copy of the 600's**, which shares this
+  // architecture, and two vendor sources say 8: section 136 adopted them, since no config reaches either
+  // number and an inference from a sibling model is weaker than a table.
+  72: { name: '650', alias: '650 EMEA', architecture: 14, maxDevices: 8, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
   // The European 600, which is the second of section 131's two rediscovered numbers.
   73: { name: '600 EMEA', alias: '600', architecture: 14, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
-  74: { name: '650 EMEA', alias: '650', architecture: 14, maxDevices: 5, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  74: { name: '650 EMEA', alias: '650', architecture: 14, maxDevices: 8, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
   // Its skin was the one entry `MODELS_WITHOUT_A_SKIN` lost on 13 August 2026 without changing model.
   75: { name: '665', architecture: 14, maxDevices: 10, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
 };
