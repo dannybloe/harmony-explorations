@@ -2248,7 +2248,15 @@ zero bytes an emitter must keep. And ~~**one instruction can span four**: opcode
 with an operand high byte in `0xD0` to `0xDF` consume the next three off the queue.~~<!--superseded--> **it is two,
 not four**, section 73: `0x0E82C` pops **one byte** off the queue, not one instruction, so three
 calls take three bytes. `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte instruction**
-whose second half is an ordinary instruction read as data, `0x7F` in 40 of its 60 uses.
+whose second half is an ordinary instruction read as data, `0x7F` in 55 of its **75** uses, `0x7E` in 19
+and `0x72` once.
+
+**A reader has to skip that second half and this project's did not, for a month**, section 139: the
+argument resolves as a real instruction at depth `meaning` every time, so the reading table was
+reporting the meaning of bytes that are not one and `action_instructions` counted 58 of them. Every one
+of the 75 heads a **two slot list**, so the whole list is the one instruction. `takesFollowingSlot` in
+`packages/codec/src/actions.ts` is the predicate; a byte level reader still returns both slots, because
+an emitter reproduces the argument.
 
 **Only five opcodes occur below `0x65` in the whole corpus**, `0x00`, `0x07`, `0x0F`, `0x1F` and
 `0x3F`, one per range and each the top of its own, which is `2^n - 1`. What the low bits would mean

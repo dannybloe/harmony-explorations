@@ -456,16 +456,67 @@ export interface ReadingCoverage {
   total: number;
   /** What has no reading at all, keyed `0x3f/0xd0` for a band or `0x6e` for a plain opcode. */
   unread: Map<string, number>;
+  /**
+   * Three byte slots that are the **argument** of the six byte instruction before them, not
+   * instructions.
+   *
+   * Counted separately and excluded from `total` since section 139. `0x3F` with a high byte in
+   * `0xD0` to `0xDF` consumes the following three bytes, section 73, and this table had been
+   * resolving those bytes as though they were an instruction of their own: they decode as `0x7F` 55
+   * times, `0x7E` 19 and `0x72` once, all at depth `meaning`, so 75 arguments across the corpus were
+   * counted as instructions whose meaning is known. Section 73 recorded that consequence and nothing
+   * acted on it, because a decoder that misreads a boundary and then realigns produces no error.
+   */
+  arguments: number;
 }
+
+/**
+ * Whether an instruction consumes the following three byte slot as its argument.
+ *
+ * `0x3F` with an operand high byte in `0xD0` to `0xDF`, section 73, which pops three bytes off the
+ * interpreter's own queue rather than fetching an instruction. Every one of the 75 in the corpus sits
+ * at index 0 of a two slot list, so the whole list is one instruction.
+ *
+ * **A caller that walks a list for meaning has to skip the slot after this returns true.** A caller
+ * that walks it for bytes must not, which is why `Container.actionList` still returns both and this is
+ * a predicate rather than a filter: the emitter reproduces the slot and the reader must not read it.
+ */
+export function takesFollowingSlot(instruction: Instruction, architecture: number): boolean {
+  if (instruction.opcode !== SIX_BYTE_OPCODE) return false;
+  if (bandsFor(instruction.opcode, architecture) === undefined) return false;
+  const sub = instruction.operand >>> 8;
+  return sub >= SIX_BYTE_BAND_FLOOR && sub < SIX_BYTE_BAND_CEILING;
+}
+
+/** `0x3F`, the opcode whose `0xD0` band is six bytes long. */
+export const SIX_BYTE_OPCODE = 0x3f;
+export const SIX_BYTE_BAND_FLOOR = 0xd0;
+/** `0xE0` is the next band up and is four operations on a pair of RAM words, three bytes like the rest. */
+export const SIX_BYTE_BAND_CEILING = 0xe0;
 
 /** How much of a config's action lists anyone can say the meaning of. */
 export function readingCoverage(
   lists: Iterable<readonly Instruction[]>,
   architecture: number,
 ): ReadingCoverage {
-  const out: ReadingCoverage = { meaning: 0, placement: 0, total: 0, unread: new Map() };
+  const out: ReadingCoverage = {
+    meaning: 0,
+    placement: 0,
+    total: 0,
+    unread: new Map(),
+    arguments: 0,
+  };
   for (const list of lists) {
+    let skip = false;
     for (const instruction of list) {
+      if (skip) {
+        // The argument of the six byte instruction before it. Not resolved, because resolving it is
+        // what produced 75 instructions of false `meaning`.
+        out.arguments += 1;
+        skip = false;
+        continue;
+      }
+      skip = takesFollowingSlot(instruction, architecture);
       out.total += 1;
       const r = reading(instruction, architecture);
       if (r?.depth === 'meaning') {

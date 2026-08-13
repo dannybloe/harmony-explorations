@@ -15,6 +15,7 @@ import {
   parse,
   reading,
   readingCoverage,
+  takesFollowingSlot,
   stateRecords,
   stateTable,
   BAND_3F_C0_LIGHT,
@@ -257,12 +258,16 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 // 14's ladder, which called them no-ops, where its own firmware calls a routine. A no-op counts as
 // meaning, so borrowing another remote's dispatcher had inflated the column that says we understand
 // the instruction. Section 139.
+//
+// **And every meaning figure dropped by the config's own count of six byte instructions**, 12, 8, 9, 4
+// and 1, also section 139: the slot after a `0x3F` `0xD0` is that instruction's argument and was being
+// resolved as an instruction of its own, at depth `meaning` every time.
 const COVERAGE: [string, number, number, number][] = [
-  ['h700_config', 19372, 279, 0],
-  ['h600_config', 11998, 196, 0],
-  ['one_config', 11509, 131, 0],
-  ['h525_config', 1007, 36, 0],
-  ['arch8_config_a', 3233, 78, 0],
+  ['h700_config', 19360, 279, 0],
+  ['h600_config', 11990, 196, 0],
+  ['one_config', 11500, 131, 0],
+  ['h525_config', 1003, 36, 0],
+  ['arch8_config_a', 3232, 78, 0],
 ];
 
 for (const [name, meaning, placement, unread] of COVERAGE) {
@@ -297,7 +302,7 @@ test('no opcode in the whole corpus is left without a reading', skipUnless('one_
   // The count is exact rather than a floor. `> 10_000` guarded 47839, which is a fifth of the
   // figure, so the four larger samples could have dropped out together and left it passing. The
   // five names are a literal above, so nothing moves this but a reader change.
-  assert.equal(instructions, 47_839, `${instructions} instructions were examined`);
+  assert.equal(instructions, 47_805, `${instructions} instructions were examined`);
   assert.deepEqual([...left.keys()], []);
 });
 
@@ -565,6 +570,85 @@ test('every 0x75 operand in the corpus is one of four audible tones', skipUnless
     assert.equal(Math.round(frequency), hz);
     assert.ok(frequency > 200 && frequency < 8000, `${hz} Hz is outside the audible band`);
   }
+});
+
+/**
+ * Every container in the corpus, for the two claims below that are about the whole of it.
+ *
+ * Written out rather than derived, and the safe mode containers are in: the six byte instruction is a
+ * claim about the language, so a container that carries none of them is a real data point.
+ */
+const EVERY_CONTAINER = [
+  'one_config',
+  'one_config_unprogrammed',
+  'h600_config',
+  'h700_config',
+  'h700_config_2',
+  'h525_config',
+  'h525_config_2',
+  'arch8_config_a',
+  'arch8_config_b',
+  'arch8_config_c',
+  'arch8_config_d',
+  'arch8_config_880',
+  'arch8_config_885',
+  'one_spare_before_sync',
+  'one_spare_after_sync',
+];
+
+test('the six byte instruction eats the slot after it, so nothing reads it twice',
+  skipUnless(...EVERY_CONTAINER), () => {
+  // `0x3F` with an operand high byte in `0xD0` to `0xDF` consumes the following three bytes as its
+  // argument, section 73, which recorded that a reader walking three bytes at a time is "right about
+  // the bytes and wrong about the boundaries wherever it appears" and then left it there.
+  //
+  // Nothing acted on that, and the cost is measurable: the argument slots decode as ordinary
+  // instructions, `0x7F` 55 times, `0x7E` 19 and `0x72` once across the corpus, every one at depth
+  // `meaning`. So the reading table reported the meaning of bytes that are not an instruction, and no
+  // test could fail, because a decoder that misreads one boundary and then realigns produces no error
+  // anywhere downstream. Section 139.
+  let sixByte = 0;
+  let argumentSlots = 0;
+  const decodedAs = new Map<number, number>();
+  for (const name of EVERY_CONTAINER) {
+    const { lists: all, architecture } = lists(name);
+    for (const list of all) {
+      list.forEach((instruction, index) => {
+        if (!takesFollowingSlot(instruction, architecture)) return;
+        sixByte += 1;
+        const payload = list[index + 1];
+        // Every one of them heads a two slot list, so the whole list is the one instruction.
+        assert.equal(index, 0, `${name}: a six byte instruction not at the head of its list`);
+        assert.equal(list.length, 2, `${name}: its list holds more than the one instruction`);
+        assert.ok(payload !== undefined);
+        decodedAs.set(payload.opcode, (decodedAs.get(payload.opcode) ?? 0) + 1);
+        // The point of the test: the argument resolves as an instruction, and convincingly, so
+        // excluding it has to be done by position and cannot be done by inspection.
+        assert.equal(reading(payload, architecture)?.depth, 'meaning');
+      });
+      argumentSlots += readingCoverage([list], architecture).arguments;
+    }
+  }
+  assert.equal(sixByte, 75, 'pin the corpus count');
+  assert.equal(argumentSlots, sixByte, 'each one costs exactly one slot');
+  assert.deepEqual(
+    [...decodedAs].sort((a, b) => b[1] - a[1]),
+    [
+      [0x7f, 55],
+      [0x7e, 19],
+      [0x72, 1],
+    ],
+  );
+  // And they come out of the total rather than being silently dropped, which is what stops a smaller
+  // `action_instructions` reading as a lost sample.
+  const { lists: all, architecture } = lists('one_config');
+  const cov = readingCoverage(all, architecture);
+  assert.equal(cov.arguments, 9);
+  assert.equal(
+    cov.total,
+    all.reduce((n, l) => n + l.length, 0) - 9,
+    'the arguments come out of the total',
+  );
 });
 
 test('the Harmony 525 reads its own 0x0F ladder, not another remote\'s',

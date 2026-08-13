@@ -18389,19 +18389,20 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Eight shipped readers answered plausibly where they should have refused, and one of them was a rail
+## 139. Nine shipped readers answered plausibly where they should have refused, and one of them was a rail
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Eight defects came out of it that a sample could not have found, and they share one shape, which is
+Nine defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
 They are listed newest reading first. Entry 6 needed firmware and is the only new firmware reading here;
-entries 7 and 8 came out of correcting entry 1 in the other language, and are the two that moved a
-published number. The rest are corrections to code this document already relies on.
+entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
+that moved a published number, and 9 is the one this document had already written down and not acted
+on. The rest are corrections to code this document already relies on.
 
 ### 1. The infrared duration locator read a neighbouring record, on every record
 
@@ -18595,6 +18596,34 @@ because there is now one decoder and nothing to compare it against.
 six vectors differ and the TypeScript test fails; that check did not exist this morning, and it is the
 only one in this repository that can see a difference nobody thought to write a test about.
 
+### 9. The six byte instruction's argument was being read as an instruction
+
+Section 73 read `0x3F` with an operand high byte in `0xD0` to `0xDF` as a **six byte instruction**: the
+handler pops three bytes off the interpreter's own queue as its argument. It said so, and then said, in
+the same paragraph, that "a reader that walks an action list three bytes at a time is right about the
+bytes and wrong about the boundaries wherever it appears". Nothing acted on that for a month.
+
+What it cost is exactly measurable. There are **75** of these in the corpus, each at the head of a two
+slot list, so each list is one instruction. The argument slots resolve as ordinary instructions, `0x7F`
+55 times, `0x7E` 19 and `0x72` once, and **every one of them at depth `meaning`**, because an action
+list reference is a thing this project understands. So the reading table was reporting the meaning of
+bytes that are not an instruction, and `action_instructions` counted 58 of them in its own population.
+
+The figures: `action_instructions` is 86947<!--fact:action_instructions--> where it was 87005, and the
+per config meaning counts drop by that config's own number of six byte instructions, 12 on a Harmony
+700, 9 on a Harmony One, 8 on a Harmony 600, 4 on a Harmony 525 and 1 on a Harmony 880. The percentages
+do not move at one decimal, which is why nothing noticed.
+
+**No name was ever wrong because of it**, and that was checked rather than assumed: the activity chain
+follows `0x7F` with a low byte of `0xFF` and the device readers follow `0x7D`, and not one of the 75
+payloads is either. So the defect is confined to a published count, which is the mildest form this
+failure takes and the reason it survived.
+
+`takesFollowingSlot` in `actions.ts` is the predicate and `ReadingCoverage.arguments` is the count.
+`Container.actionList` still returns both slots, deliberately: the emitter reproduces the argument byte
+for byte and the reader must not read it, so the boundary is a caller's business rather than the byte
+reader's.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -18617,6 +18646,8 @@ only one in this repository that can see a difference nobody thought to write a 
   the day it was added. Reverting one line of the Python reader makes six vectors differ.
 * **There is one frame decoder**, `packages/codec/src/irframe.ts`. `src/harmony/gspm.py` reads durations
   and does not decode them, and `tools/ir_extract.py` prints durations rather than a bit count.
+* **An action list holds 86947<!--fact:action_instructions--> instructions, not 87005**, because 58 of
+  them were the argument of the instruction before them.
 * `make coverage` exits nonzero on an overlap, so the zero is enforced rather than reported.
 * `@harmony/usb` offers no way to build a request that changes a remote, which is what `rails.ts` has
   claimed since it was written.

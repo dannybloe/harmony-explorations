@@ -50,7 +50,13 @@ function share(part: number, whole: number): string {
   return whole === 0 ? '0.0%' : `${((100 * part) / whole).toFixed(1)}%`;
 }
 
-const corpus: ReadingCoverage = { meaning: 0, placement: 0, total: 0, unread: new Map() };
+const corpus: ReadingCoverage = {
+  meaning: 0,
+  placement: 0,
+  total: 0,
+  unread: new Map(),
+  arguments: 0,
+};
 const perArchitecture = new Map<number, { meaning: number; total: number }>();
 let missing = 0;
 
@@ -72,6 +78,7 @@ for (const name of CONTAINERS) {
   corpus.meaning += r.meaning;
   corpus.placement += r.placement;
   corpus.total += r.total;
+  corpus.arguments += r.arguments;
   for (const [key, n] of r.unread) corpus.unread.set(key, (corpus.unread.get(key) ?? 0) + n);
   const a = perArchitecture.get(architecture) ?? { meaning: 0, total: 0 };
   a.meaning += r.meaning;
@@ -100,6 +107,9 @@ process.stdout.write(`action_instructions ${corpus.total}\n`);
 process.stdout.write(`reading_meaning ${share(corpus.meaning, corpus.total)}\n`);
 process.stdout.write(`reading_placement ${share(corpus.placement, corpus.total)}\n`);
 process.stdout.write(`reading_unread ${unread}\n`);
+// The argument slots of the six byte instruction, printed so the drop in `action_instructions` has a
+// number beside it rather than looking like a lost sample. Section 139.
+process.stdout.write(`reading_arguments ${corpus.arguments}\n`);
 for (const [architecture, a] of [...perArchitecture].sort((x, y) => x[0] - y[0])) {
   process.stdout.write(`reading_arch${architecture} ${share(a.meaning, a.total)}\n`);
 }

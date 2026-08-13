@@ -1574,11 +1574,17 @@ opcode reaches is not knowing what it means for a config, and counting the first
 reported 100% for a language a tenth of which nobody can name. `packages/codec/src/actions.ts` is
 the table, `reading` gives one instruction's, `readingCoverage` gives a config's:
 
-| | share of 87005<!--fact:action_instructions--> instructions |
+| | share of 86947<!--fact:action_instructions--> instructions |
 |---|---|
 | meaning | 98.4%<!--fact:reading_meaning--> |
 | placement only | 1.6%<!--fact:reading_placement--> |
 | no reading at all | 0<!--fact:reading_unread--> instructions, nothing left anywhere in the corpus |
+
+**The population is 58<!--fact:reading_arguments--> smaller than it was, and that is a correction**,
+section 139: `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte** instruction and the slot after
+it is its argument, which the table had been resolving as an instruction of its own at depth `meaning`
+every time. Section 73 wrote that consequence down and nothing acted on it for a month. `takesFollowingSlot`
+is the predicate; `Container.actionList` still returns the slot, because the emitter reproduces it.
 
 Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5%<!--fact:reading_arch14-->
 on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12, 98.1%<!--fact:reading_arch8--> on arch 8 and
