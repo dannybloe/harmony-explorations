@@ -1318,8 +1318,36 @@ Section 74 read 3, 5 and 6 as a date from the action list language alone, which 
 route to three of the seven, and the weekday epoch is base slot 3's own: days since 1 January 2000,
 which was a Saturday. Base slot 0 names none of the seven in any container.
 
-**For a writer:** stamp all seven at the moment of writing, the same rail as base slot 3's timestamp.
-A carried over config sets the remote's clock to when the old config was made.
+**These records are the clock itself, not a copy of it**, section 138. On arch 12 state variable `n`
+lives at data memory `0x108 + n`, so records 0 to 6 are the seven bytes section 111 measured on a
+running Harmony One, and the firmware seeds variable `n` from record `n`'s first field at `0x2A266`,
+skipping a record whose value is `0xFEFE`. The seeding is guarded by a checksum of the RAM the array
+sits in, so a power cycle takes the config's values and a warm start keeps the running ones. Base slot
+3 is **not** read for the clock: `0x27F20` subtracts it from these variables to work out how long ago
+the config was built.
+
+**Variables 7 to 12 are firmware owned too**, by a different argument, section 138: within one
+architecture every container states the identical first value and `max`, and base slot 0 names none of
+them anywhere. Index 13 is where both of those stop holding, which is what puts the boundary at 12.
+
+| index | arch 8 | arch 9 | arch 12 | arch 14 | what it is |
+|---|---|---|---|---|---|
+| 7 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | unread, and the one index that is identical on all four |
+| 8 | 0 / 3 | 1 / 2 | 0 / 3 | 0 / 3 | the display light band on arch 12, whose four levels section 103 read |
+| 9 | 5 / 7 | 0 / 1 | 5 / 7 | 5 / 7 | the battery gauge on arch 12, eight levels |
+| 10 | 0 / 7 | 0 / 1 | 0 / 7 | 0 / 7 | the saved display light state on arch 12 |
+| 11 | 0 / 32 | 0 / 1 | 0 / 32 | 0 / 32 | the cached display light level on arch 12 |
+| 12 | 0 / 1 | 0 / 3 | 0 / 1 | 0 / 1 | unread |
+
+The meanings are arch 12 readings and are marked so: arch 9 states different maxima for the same
+indices, which is consistent with a Harmony 525 having no dimmable display of that kind, and nothing
+establishes that it puts the same things there. The four measured on a connected Harmony One all sit
+inside the maxima stated here, with the battery exactly at its own, which is a closure between a
+hardware reading and a config field with no shared code behind them.
+
+**For a writer:** stamp all seven clock records at the moment of writing, the same rail as base slot 3's
+timestamp, and **reuse none of 0 to 12 for anything**. A carried over config sets the remote's clock to
+when the old config was made.
 
 **And record 6's `max` moves with it**, which is eight values written and not seven. Six of the maxima
 are fixed and the year's is that year plus one, so stamping the year alone leaves a config declaring a

@@ -34,6 +34,8 @@ import {
   softKeyScans,
   pageScans,
   FIRMWARE_STATE_VARIABLES,
+  FIRMWARE_STATE_VARIABLE_MAX,
+  stateTable,
   SCREEN_ROWS,
   touchOwner,
   touchPageOf,
@@ -1044,7 +1046,80 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
     assert.equal(agreeing, INVENTORY.length,
       `${agreeing} of ${INVENTORY.length} containers were checked, so one skipped silently`);
     // The table is what a caller reads, so it must cover exactly what is proven and no more.
-    assert.deepEqual(Object.keys(FIRMWARE_STATE_VARIABLES), ['0', '1', '2', '3', '4', '5', '6']);
+    // The table is what a caller reads, so it must cover exactly what is proven and no more. Thirteen
+    // entries since section 138, where the six above the clock are proven by a different argument: they
+    // are fixed per architecture and named by nothing. The boundary is asserted in its own test below.
+    assert.deepEqual(Object.keys(FIRMWARE_STATE_VARIABLES),
+      ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']);
+    assert.equal(FIRMWARE_STATE_VARIABLE_MAX, 12);
+  });
+
+test('the firmware owns thirteen state variables, and the six above the clock are per architecture',
+  skipUnless(...INVENTORY.map(([name]) => name)), () => {
+    // Section 138. The clock's own seven are proven by equalling base slot 3's timestamp, which says
+    // nothing about 7 to 12. Those rest on two things instead: within one architecture every container
+    // states the identical `first` and `second`, and no container names any of them through base slot 0.
+    // A config author has no freedom there, which is what "the firmware owns it" means operationally.
+    const perArch = new Map<string, Set<string>>();
+    let checked = 0;
+    for (const [name] of INVENTORY) {
+      const c = parse(load(name) as Uint8Array);
+      const records = stateRecords(c);
+      assert.ok(records !== undefined, `${name} has no base slot 13`);
+      const table = stateTable(c);
+      assert.ok(table !== undefined, `${name} has no base slot 13 table`);
+      // Every index this claim covers has to be in the narrow block, or `0x108 + index` is not its
+      // address and the firmware reads two bytes where the table states one.
+      assert.ok(table.narrow > FIRMWARE_STATE_VARIABLE_MAX,
+        `${name} declares ${table.narrow} narrow variables, so index ` +
+        `${FIRMWARE_STATE_VARIABLE_MAX} is wide and the address arithmetic differs`);
+      const named = new Set(stateVariables(c).map((one) => one.index));
+      for (let index = 0; index <= FIRMWARE_STATE_VARIABLE_MAX; index += 1) {
+        const record = records[index];
+        assert.ok(record !== undefined, `${name} has no record ${index}`);
+        assert.ok(!named.has(index), `${name} names firmware variable ${index}`);
+      }
+      // Only 7 to 12: the clock's values move with the build timestamp by design, so they are
+      // deliberately outside this comparison.
+      for (let index = 7; index <= FIRMWARE_STATE_VARIABLE_MAX; index += 1) {
+        const record = records[index] as { first: number; second: number };
+        const key = `${c.architecture}/${index}`;
+        if (!perArch.has(key)) perArch.set(key, new Set());
+        perArch.get(key)?.add(`${record.first}/${record.second}`);
+      }
+      checked += 1;
+    }
+    assert.equal(checked, INVENTORY.length);
+    for (const [key, values] of perArch) {
+      assert.equal(values.size, 1,
+        `${key} takes ${values.size} values across its architecture (${[...values].join(', ')}), so it ` +
+        'is not a firmware constant');
+    }
+    // And the boundary is measured rather than chosen: index 13 is where a config starts naming one.
+    const namesThirteen = [...INVENTORY].filter(([name]) => {
+      const c = parse(load(name) as Uint8Array);
+      return new Set(stateVariables(c).map((one) => one.index)).has(FIRMWARE_STATE_VARIABLE_MAX + 1);
+    });
+    assert.ok(namesThirteen.length > 0,
+      'no container names variable 13, so the block may reach further than 12 and this test would not ' +
+      'notice: section 138 rests on that boundary being visible');
+
+    // The closure, and the reason to believe the meanings rather than only the fixedness: section 111
+    // measured these four bytes on a connected Harmony One and section 103 read their level counts out
+    // of the firmware, neither of them looking at base slot 13. Four levels wants a maximum of 3 and
+    // eight levels wants 7.
+    const one = parse(load('one_config') as Uint8Array);
+    const records = stateRecords(one) as Array<{ first: number; second: number }>;
+    assert.equal(records[8]?.second, 3, 'the display light band has four levels, section 103');
+    assert.equal(records[9]?.second, 7, 'the battery gauge has eight levels, section 111');
+    // The values section 111 read off the remote have to fit inside the maxima the config states, and
+    // the battery sat exactly at its own, which is what a charging remote reads.
+    for (const [index, measured] of [[8, 1], [9, 7], [10, 3], [11, 20]] as const) {
+      const record = records[index] as { second: number };
+      assert.ok(measured <= record.second,
+        `section 111 measured ${measured} at 0x${(0x108 + index).toString(16)} where the config's ` +
+        `maximum is ${record.second}`);
+    }
   });
 
 test('a page binds more keys than it sends codes with, which is why pageScans exists',

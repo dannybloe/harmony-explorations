@@ -18153,10 +18153,11 @@ records that **no direct write to the minute at `0x109` exists in the image and 
 range**, so the write is indirect, which is what a bulk initialiser looks like and is not what a seven
 field copy out of a record looks like.
 
-**The corpus cannot separate them either**, checked rather than assumed: all 19 containers carry at least
+**The corpus cannot separate them either**, checked rather than assumed: all 21 containers carry at least
 16 raw base slot 13 records, so every one of them has the seven the clock needs, and there is no sample
 where base slot 3 exists and the records do not. A config where the two disagree would separate them and
-writing one is what this project does not do.
+writing one is what this project does not do. **The firmware does separate them**, the same day, and it
+answers base slot 13: section 138.
 
 The consequence for the open item is the useful part. **Measuring a Harmony 600's clock would not have
 settled the mechanism either**, so the item as posed was never one round of hardware away from an answer
@@ -18199,3 +18200,154 @@ from the corpus.
 * `packages/codec/test/inventory.test.ts`: the clock test guarded up front and its total asserted exactly
   rather than at `>= 15`, which was equal to the population by coincidence and would not have stayed so.
 * `reference/superseded.md`: the two dead phrasings.
+
+## 138. The clock is state variables 0 to 6, and the firmware owns thirteen of them
+
+Section 137 posed the question this answers: whether a remote's clock is read from base slot 3's record
+or from base slot 13's `first`, which no measurement of a clock can separate because section 130
+established that the two carry identical values in every container. It is a firmware question, and the
+firmware answers it. **The clock is base slot 13's array in RAM, seeded from `first`. Base slot 3 is not
+read for it.**
+
+The instructive part is that nothing new had to be found to see it. Three sections already held the
+pieces and none of them looked at the other two.
+
+* Section 73 read `0x80 | n` and recorded that a narrow state variable lives at RAM `0x108 + index` on
+  arch 12 and `0x900 + index` on arch 14, with the width taken from base slot 13's own `narrow` count.
+* Section 111 measured the clock at `0x108` to `0x10E` on a Harmony One (arch 12) and never noticed that
+  `0x108` had already been named as state variable 0.
+* Section 130 read base slot 13's records 0 to 6 as the firmware's clock.
+
+Put together they say the clock **is** state variables 0 to 6. What today adds is the seeder, which is
+what makes it a mechanism rather than a coincidence of addresses.
+
+### The array is addressed arithmetically, which is why nothing found a writer
+
+Both halves compute the same address, the store at `0x2A6A2` and the load at `0x2A6F2`, on the Harmony
+One (arch 12) image:
+
+```
+2a6a4: MOVF  0x187,W        the table's own narrow count
+2a6a6: SUBWF 0x197,W        index - narrow
+2a6a8: BC    0x2a6bc        at or above it: the wide branch
+2a6aa: MOVF  0x197,W        the index
+2a6ac: CLRF  FSR0H
+2a6ae: ADDLW 0x08
+2a6b0: MOVWF FSR0L
+2a6b2: MOVLW 0x01
+2a6b4: ADDWFC FSR0H,F       so FSR0 = 0x108 + index
+2a6b6: MOVFF 0x198,INDF0
+```
+
+The wide branch is `index -= narrow; index &= 0x7F; index *= 2; index += narrow`, so wide variables sit
+above the narrow block at two bytes each, exactly as section 73 read on arch 14. **`narrow` is at least
+15 in all 21 containers**, so variables 0 to 12 are one byte each everywhere and `0x108 + index` holds
+for every index this section names.
+
+That also dissolves section 111's open item about the minute. It says no direct write to `0x109` exists
+in the image and no `LFSR` reaches the range, and concludes the pointer comes from a variable, which the
+`trace-section` skill names as its first dead end. There is no pointer variable: `FSR0` is **computed**,
+from a literal 8 and an index, so a scan for either could not have found it. The dead end was real and
+its stated reason was wrong.
+
+### The seeder, and why a power cycle is what section 111 measured
+
+`0x2A266` parses base slot 13's header and it parses it exactly as `stateTable` does, which is a closure
+worth having on its own: three `u16` reads giving the record count, `narrow` and `wide`, then three byte
+pointers from `+8`, and at `0x2A330` the array's size as `narrow + 2 * wide`. Then the loop:
+
+```
+2a2de: loop      index in 0xD04, count in 0xD05
+2a2f0: MOVLW 0x08           the table's header length
+2a2f4: CALL  0x2bad2        seek to base + 3 * index + 8
+2a2f8: CALL  0x2b8ac        read the three byte pointer and follow it
+2a306: CALL  0x2b90a        read two bytes: the record's `first`
+2a30a: MOVLW 0xfe           and 0xFEFE means "no initial value"
+2a316: BZ    0x2a32a        so skip the store
+2a31c: MOVFF 0xd06,0x198    the value
+2a324: MOVFF 0xd04,0x197    the index
+2a328: RCALL 0x2a6a2        the state variable store, above
+```
+
+So **state variable `n` is initialised to base slot 13 record `n`'s `first`**, and records 0 to 6 carry
+base slot 3's timestamp field for field. The clock therefore reads the build timestamp after a cold
+boot, by way of base slot 13, which is why section 111's measurement was right about the value and
+under-determined about the route.
+
+The seeding is **guarded**, and the guard is what makes the behaviour a clock rather than a reset every
+boot. `0x2A234` XORs 109 bytes of data memory from `0x11A` with a seed of `0xA5` and the result is
+compared against `0x189`; equal means the loop stores nothing and the variables keep what they hold. So
+a warm start preserves a running clock and a power cycle seeds it from the config. Two earlier
+measurements fall into place: section 111 pulled the batteries and read the build timestamp, and section
+100 found that a hang **resets the clock**, which it does because a genuine device reset clears the RAM
+the checksum covers.
+
+### What base slot 3 is actually for on arch 12
+
+Section 111 read this and it is worth restating now that the clock has a different source: `0x27F20`
+seeks slot 3, steps two bytes past the `0xADDF` cookie, and subtracts the record from the clock field by
+field, accumulating seconds and days into `0xF2D` to `0xF2F`. It computes **how long ago the config was
+built**. So base slot 3 is an epoch and a provenance record, and section 21's "what the firmware does
+with it is not established" was answered there rather than here.
+
+The field naming in section 111 is unaffected and stays the strongest evidence for the record's layout,
+because it pairs each RAM byte with a record field by watching the subtraction, including the skip over
+the derived weekday at `0x10C`.
+
+### The firmware owns thirteen state variables, not seven
+
+Measured over 21 containers, the 19 of the corpus population plus the two arch 8 header samples. For each
+index from 7 to 12 there is **exactly one `first`/`second` pair per architecture**, with no variation
+inside an architecture, and **base slot 0 names none of them in any container**:
+
+| index | address on arch 12 | arch 8 | arch 9 | arch 12 | arch 14 |
+|---|---|---|---|---|---|
+| 7 | `0x10F` | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 |
+| 8 | `0x110` | 0 / 3 | 1 / 2 | 0 / 3 | 0 / 3 |
+| 9 | `0x111` | 5 / 7 | 0 / 1 | 5 / 7 | 5 / 7 |
+| 10 | `0x112` | 0 / 7 | 0 / 1 | 0 / 7 | 0 / 7 |
+| 11 | `0x113` | 0 / 32 | 0 / 1 | 0 / 32 | 0 / 32 |
+| 12 | `0x114` | 0 / 1 | 0 / 3 | 0 / 1 | 0 / 1 |
+| 13 | `0x115` | 1 / 1 | 0 / 0 and 0 / 2 | 1 / 1 | 0 / 32 |
+
+Index 7 is the same on all four architectures. The block ends at 12: index 13 varies inside arch 9 and
+**two configs name it through base slot 0**, so that is where config territory starts.
+
+**The closure is that four of those maxima were already measured, by a route with nothing in common with
+this one.** Section 111 read `0x110` to `0x113` on a connected Harmony One (arch 12) as the display light
+band, the battery gauge, the saved light state and the cached light level, and section 103 read the level
+counts out of the firmware's own state machine:
+
+| index | measured on the remote | the config's stated maximum | what section 103 read |
+|---|---|---|---|
+| 8 | 1 | 3, so four values | the light band has **four** levels |
+| 9 | 7 | 7, so eight values | the battery gauge has **eight** levels |
+| 10 | 3 | 7 | band 0 to 3 maps onto states 2 to 5 |
+| 11 | 20 | 32, so 33 values | the level indexes 27 distinct `CVREF` voltages |
+
+Four levels against a maximum of 3 and eight levels against a maximum of 7 are the two that carry it,
+and the battery reading sitting **at** its stated maximum is what a charging remote should read. So
+sections 103, 111 and 130 are one reading: the low state variables are firmware owned, and what section
+111 called a hardware block beside the clock is the same array continuing.
+
+Arch 9 (Harmony 525) is the counterexample that keeps this from being a coincidence of one architecture:
+the same six indices are present and their maxima are 2, 1, 1, 1 and 3, which is a three value band and
+booleans where the others have four levels and eight. A Harmony 525 has no dimmable display of the kind
+section 103 read, so the slots exist and hold less.
+
+### What it changes
+
+* **A writer must not reuse variables 0 to 12**, where section 130 said 0 to 6. The rail is the same and
+  its scope is nearly twice as wide, and on arch 9 (Harmony 525) the values differ, so a carried over
+  config must keep each architecture's own.
+* `FIRMWARE_STATE_VARIABLES` carries thirteen entries, with 7 to 12 named only where a reading exists
+  and marked per architecture rather than given one meaning.
+* Section 137's open item is closed, and the way it closed is worth keeping: it was reframed from a
+  hardware question to a firmware question on 13 August 2026, and the firmware answered the same day.
+
+### What would falsify it
+
+A container where base slot 0 names any of variables 0 to 12. A container whose `narrow` count is below
+13, which would put one of them in the wide block and break `0x108 + index` for it. An arch 12 write to
+`0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
+where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.

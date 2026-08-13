@@ -1055,6 +1055,18 @@ export interface Inventory {
  * **A writer must stamp these, not copy them**, the same rail as base slot 3's timestamp, section 111.
  * A config carried over with its old values sets the remote's clock to the moment the old config was
  * generated.
+ *
+ * **The clock is not read out of base slot 3 at all**, section 138: the firmware seeds state variable `n`
+ * from record `n`'s `first`, and on arch 12 variable `n` lives at RAM `0x108 + n`, so the clock at
+ * `0x108` to `0x10E` **is** records 0 to 6. Base slot 3 is the epoch it subtracts against to work out how
+ * long ago the config was built. The rail does not move, because both records get stamped by a save.
+ *
+ * **The block runs to 12 and not to 6.** Indices 7 to 12 carry exactly one `first`/`second` pair per
+ * architecture across all 21 containers and base slot 0 names none of them, and four of their maxima
+ * agree with bytes measured on a connected Harmony One by a route with no shared code. They are listed
+ * here so that a writer refuses to reuse them; the ones with a meaning say which architecture it was read
+ * on, because arch 9 states different maxima for the same indices and nothing establishes that it puts
+ * the same things there.
  */
 export const FIRMWARE_STATE_VARIABLES: Readonly<Record<number, string>> = {
   0: 'second',
@@ -1064,7 +1076,24 @@ export const FIRMWARE_STATE_VARIABLES: Readonly<Record<number, string>> = {
   4: 'day of the week, where 0 is a Saturday',
   5: 'month, zero based',
   6: 'year since 2000',
+  // Firmware owned by the same evidence as the clock, fixed per architecture and named by no config.
+  // Sections 111 and 103 measured 8, 9, 10 and 11 on a Harmony One and read their level counts out of
+  // the firmware, which is where the meanings come from and why they carry that scope.
+  7: 'firmware reserved, meaning unread',
+  8: 'display light band on arch 12, four levels',
+  9: 'battery gauge on arch 12, eight levels',
+  10: 'saved display light state on arch 12',
+  11: 'cached display light level on arch 12',
+  12: 'firmware reserved, meaning unread',
 };
+
+/**
+ * The highest index the firmware owns, so a writer can refuse the whole block in one test.
+ *
+ * Section 138. Thirteen, not seven: index 13 is where variation inside an architecture starts and where
+ * two configs name a variable through base slot 0, which is the boundary rather than a chosen cut.
+ */
+export const FIRMWARE_STATE_VARIABLE_MAX = 12;
 
 /**
  * A screen variant's conditions in words, one per branch the program took.
