@@ -80,7 +80,11 @@ propose firmware modification as a route to anything.
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
 August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what
-was predicted before it was connected against what it measured. Other models are iterated on later.
+was predicted before it was connected against what it measured. **It will not get a known answer sample**,
+section 135: the live service accepts a skin 22 remote record and names it a Harmony 525, so Harmony
+Desktop's refusal is two hardcoded skin lists in the client and not a service capability, but the compile
+is accepted and then ends in a bare `status='Error'`. Every explanation a read can reach is eliminated and
+the architecture is what is left, which is a reading rather than a fact because the error names nothing. Other models are iterated on later.
 
 **Arch 8 has firmware now and is still not a target**, sections 113, 114 and 116: two application
 images of one build, an 880 and an 885, contributed on 10 August 2026, plus **two bootloaders**, plus
@@ -1032,7 +1036,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 134 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 135 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

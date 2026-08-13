@@ -712,6 +712,49 @@ stays open, and the route to it stays a RAM write the rails forbid.
 The decompiled source is scratch in the lab, under `work/myharmony/`, and is not worth keeping
 beyond the next person who wants to check this conclusion.
 
+## The client's own product lists, and what the service does without them
+
+Read on 13 August 2026 out of the desktop web app, and then measured against the service. Section 135.
+This is the one place in this document where a client sourced fact was **checked** rather than filed as
+unconfirmed, because the client's refusal turned out to be the client's alone.
+
+Two hardcoded lists of skin numbers decide what Harmony Desktop will touch:
+
+| list | members | what it gates |
+|---|---|---|
+| `DesktopAppSupportedProducts` | 54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 99, 102, 104, 112 | whether the application handles a detected remote at all, `isSupportedProducts` |
+| `CompilerProducts` | the same without 99, 102 and 112 | compiler path or hub path, `isCompilerBasedRemote` |
+
+A Harmony 525's skin 22 is in neither, which is why that remote gets nowhere in that application. The
+service disagrees: `ProductsManager/GetAllProducts` carries it as `ProductId 35, SkinId 22`, a remote
+record for it is **accepted**, and `Account/{a}/Remote/{r}/Settings` answers and calls it
+`Harmony 525`. So these two lists are the client's policy and not the service's capability, and the
+project had been reading the client's silence as the service's answer.
+
+### Adding a remote, which is three facts and one trap
+
+`UserAccountDirector/AddRemoteToAccount` takes `remoteInfo: { AccountId, KeyPadLayout, SerialNumber,
+SkinId, UsbPid, UsbVid }`, where the serial is three brace wrapped GUIDs, concordance's 48 bytes
+rendered three times. **Devices and activities hang off the account record, not the household**, and a
+household holds one record per remote, so a remote needs its own record from
+`AccountManager/AddEntertainmentSystemToMyHousehold` first. Attaching to a record that already has a
+remote is refused with `ErrorCode 5, Message "1175"`, and the trap is that an opaque number arriving
+right after an unsupported skin reads as being about the skin: it is not, a supported skin is refused
+identically.
+
+**`Discovery/GetJsonOperations` is not exhaustive.** That account operation is absent from the 308 it
+lists and answers anyway, and its reply is wrapped in `CreateNewAccountInHouseholdResult` rather than in
+its own name. So the operation census is a floor, and the names the client uses are not always the
+service's.
+
+### The compile refuses architecture 9, without saying so
+
+With devices and activities in place the compile is accepted, reports `Compiling`, and ends
+`<RemoteConfiguration status='Error' length='0'/>`, twice, with no reason. The same session compiled a
+Harmony One to `Successful, length 288096` minutes later, so the compiler works; and the 525's settings,
+device command counts and activity count are indistinguishable from the remotes that succeed. The
+architecture is what is left, and it stays a reading rather than a fact because the error names nothing.
+
 ## Where the extraction lives
 
 The verbatim extraction, with Logitech's identifiers, is `software/classic/PROTOCOL-CONSTANTS.md`

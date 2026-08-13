@@ -17880,3 +17880,93 @@ reading of the record player showing it uses both groups in some way other than 
   and the RC6 mode 6 reading.
 * `packages/codec/test/sections.test.ts`: the renamed count test, now asserting the narrower claim.
 * `reference/superseded.md`: the wording that made the count a property of the architecture.
+
+
+## 135. Logitech's service accepts a Harmony 525 and will not compile for it
+
+Section 132 established that the live service compiles a configuration to our own specification with
+the remote unplugged, and produced the corpus's first known answer samples on the two bench
+architectures. Architecture 9 was not one of them, because Harmony Desktop does not recognise a
+Harmony 525 at all. This section is what happened when that was pushed to its end. **The client is the
+only thing refusing the remote, and the service compiles for it and fails.**
+
+### The refusal is a hardcoded list in the client, read before anything was sent
+
+Harmony Desktop carries **two** lists of skin numbers and a Harmony 525's skin 22 is in neither:
+
+| list | members | what it gates |
+|---|---|---|
+| `DesktopAppSupportedProducts` | 54, 66, 69, 71, 72, 73, 74, 75, 78, 79, 80, 81, 99, 102, 104, 112 | whether the application handles a detected remote at all |
+| `CompilerProducts` | the same without 99, 102 and 112 | which provisioning path it takes, compiler or hub |
+
+So a 525 fails `isSupportedProducts` at detection and never reaches the rest. The service's own product
+table does carry it, `ProductId 35, SkinId 22`, in `ProductsManager/GetAllProducts`, which is the same
+table section 131 read the European skins out of. Two lists in a client and one in a service, and the
+project had been treating the client's silence as the service's answer.
+
+### What it takes to add one, and the control that saved the conclusion
+
+`UserAccountDirector/AddRemoteToAccount` takes six fields, read off the client's own call site:
+`remoteInfo: { AccountId, KeyPadLayout, SerialNumber, SkinId, UsbPid, UsbVid }`. The serial is three
+brace wrapped GUIDs, which is concordance's 48 bytes rendered three times, read here read only off the
+bench 525's flash window `0x200010`. Its **first** GUID is unwritten on that unit, sixteen `0xee` bytes.
+
+The first attempt attached it to the account record the Harmony One already sits on, and was refused
+with `ErrorCode 5, Message "1175", Source: HandleReturnMessage`. **An opaque number arriving right
+after an unsupported skin reads as being about the skin, and it is not**: the same call with skin 71,
+which the client's own list does contain, is refused identically. So 1175 is about the record, not the
+product, and one write of a control turned a plausible wrong conclusion into the right one. This is the
+same shape as section 134's arch 8 count and section 79's first glyph code: a population that agrees
+with itself is not evidence.
+
+The reason is that **devices and activities hang off the account record, not the household**, and a
+household holds one record per remote. Adding a remote needs a fresh record first, from
+`AccountManager/AddEntertainmentSystemToMyHousehold`, and with that the 525 was accepted:
+`AddRemoteToAccountResult` returns a remote id, and `Account/{a}/Remote/{r}/Settings` answers for it and
+calls it `Harmony 525`.
+
+Two incidental facts worth keeping. **`Discovery/GetJsonOperations` is not exhaustive**: that account
+operation is not among the 308 it lists and it answers anyway, so the operation census is a floor.
+And its reply is wrapped in `CreateNewAccountInHouseholdResult`, named after the operation the service
+runs rather than the one the client calls, which is a hint that the 308 are a facade over fewer.
+
+### The compile is accepted, runs, and ends in a bare error
+
+With three devices and two activities on the record, the same code path that produced both calibration
+samples answers `200`, `ApproximateSize 200000` and a `DownloadUrl`, reports `Compiling`, and finishes:
+
+```
+<RemoteConfiguration status='Error' length='0'/>
+```
+
+No reason, twice. **The control is what makes that mean anything**: the same session, minutes later,
+compiled the Harmony One on the same code with the same script to `status='Successful'
+length='288096'`, ZIP and all. So neither the service nor the compiler is broken and the failure
+belongs to this remote.
+
+Every explanation a read can reach is eliminated. The 525's remote settings differ from the Harmony
+One's in exactly one field, `RemoteName`. Its account's three devices carry 73, 73 and 48 commands, the
+same counts as the accounts that compile. It has two activities. The skin is plainly accepted, since the
+record exists and the service names the product.
+
+What is left is the architecture. **That is the reading and not a proof**, and the distinction matters
+because the error carries no reason: nothing here separates "the compiler has no architecture 9 backend"
+from some other property of that product it will not build. It does mean architecture 9 has no known
+answer sample and is not going to get one this way.
+
+### What would falsify it
+
+A compile for skin 22 that succeeds, on another account or another locale. An error reason from any
+operation that reports one. A skin outside `DesktopAppSupportedProducts` that **does** compile, which
+would show the boundary is not where this puts it. And a second old skin that fails identically would
+strengthen it without proving it, since the failure would still carry no reason.
+
+### Where it lands
+
+* `docs/host-client.md`: the two client lists, the add sequence, and the compile outcome.
+* No regression test, and the reason is the same one section 132 gives: the subject is a remote service
+  that can be withdrawn without notice, so there is nothing here to pin. What is executable is already
+  covered, `packages/usb/src/models.ts` holds skin 22 as a Harmony 525 on architecture 9 and
+  `packages/usb/test/models.test.ts` asserts it.
+* `lab/work/myharmony/PREDICTIONS.md` holds the seven predictions and their outcomes, including the two
+  that were wrong.
