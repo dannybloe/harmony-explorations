@@ -92,6 +92,7 @@ export interface Model {
  * 72. The rest are the client's table, which those five calibrate.
  */
 export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
+  2: { name: '745', architecture: 2, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false },
   3: { name: '768', architecture: 3, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false },
   7: { name: '748', architecture: 3, maxDevices: 15, panel: 'monochrome', touch: false, macros: false, pageButton: false, soundPictureButtons: false },
   9: { name: '659', architecture: 7, maxDevices: 15, favourites: 18, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.1.0' },
@@ -108,36 +109,118 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
   22: { name: '525', alias: '520', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0' },
   23: { name: '895', alias: '890', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.9.0' },
   36: { name: 'Xbox 360', architecture: 9, maxDevices: 11, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.0.0' },
+  39: { name: '880 Pro', architecture: 8, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.4.2' },
+  40: { name: '890 Pro', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.9.0' },
+  41: { name: '550', alias: '555', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '3.0' },
+  44: { name: '720', alias: '785', architecture: 8, maxDevices: 12, favourites: 24, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.4.2' },
+  45: { name: '785', alias: '720', architecture: 8, maxDevices: 12, favourites: 24, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.4.2' },
+  48: { name: '555', alias: '550', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '3.0' },
+  50: { name: '670', architecture: 7, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.1.0' },
   // Gin, confirmed: the Harmony One. The only touch panel this library can address.
-  54: { name: 'One', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
+  54: { name: 'One', alias: 'One EMEA', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
+  58: { name: '620', architecture: 7, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: true, firmwareSeen: '4.1.0' },
+  // The European One. Section 131: this is the number the owner's own Harmony One configs carry, and
+  // it was read as an unallocated artefact for as long as the only skin table here predated MyHarmony.
+  59: { name: 'One EMEA', alias: 'One', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   65: { name: '610', architecture: 7, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.5.0' },
-  // Confirmed from two configs.
-  66: { name: '700', architecture: 14, maxDevices: 6, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
+  // Confirmed from two configs. **`maxDevices` stays at the community table's 6 although Logitech's
+  // own service says 8**, section 131, and that is a deliberate refusal to prefer the vendor: both 700
+  // configs hold exactly six devices, so 6 is the one figure in this column with a corroboration and
+  // 8 would make that agreement a coincidence. The disagreement is recorded rather than resolved.
+  66: { name: '700', alias: '700 EMEA', architecture: 14, maxDevices: 6, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
   67: { name: '515', alias: '510', architecture: 9, maxDevices: 5, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   68: { name: '510', alias: '515', architecture: 9, maxDevices: 5, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.4.0' },
+  69: { name: '700 EMEA', alias: '700', architecture: 14, maxDevices: 6, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '2.5.0' },
   // The bench remote, confirmed. Monochrome, and its config carries two byte pixels anyway.
-  71: { name: '600', architecture: 14, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
-  // Confirmed from its safe mode container.
-  72: { name: '650', architecture: 14, maxDevices: 5, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  71: { name: '600', alias: '600 EMEA', architecture: 14, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  // Confirmed from its safe mode container. Logitech's own service says 8 devices where this says 5,
+  // the second of the two disagreements section 131 found, and it is left alone for the same reason as
+  // the 700's: no config here reaches either number, so nothing chooses between them.
+  72: { name: '650', alias: '650 EMEA', architecture: 14, maxDevices: 5, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  // The European 600, which is the second of section 131's two rediscovered numbers.
+  73: { name: '600 EMEA', alias: '600', architecture: 14, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  74: { name: '650 EMEA', alias: '650', architecture: 14, maxDevices: 5, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
+  // Its skin was the one entry `MODELS_WITHOUT_A_SKIN` lost on 13 August 2026 without changing model.
+  75: { name: '665', architecture: 14, maxDevices: 10, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
 };
 
 /**
- * Models with no skin number recorded anywhere, so a connected one cannot be recognised.
+ * Models this project can describe whose skin number is recorded nowhere, so a connected one cannot
+ * be recognised.
  *
- * Kept because the capability data is worth having when a contributor names their remote, and because
- * an empty list here would suggest the skin table is complete. It is 46 entries against Logitech's
- * own 40 model retirement list plus the four MyHarmony era remotes, and these fall outside it.
+ * **It is empty, as of 13 August 2026, and that is not a claim that the table is complete.** All
+ * eight entries it held got their number from Logitech's live catalogue, section 131: the 550, 620,
+ * 665, 670, 720, 745, 880 Pro and 890 Pro. The statement of incompleteness moved to
+ * `SKINS_WITHOUT_A_MODEL_RECORD`, which is the better place for it, because that list is measured
+ * against a vendor source rather than being the residue of what nobody had looked up.
+ *
+ * The export stays because the gap it names can reopen: a model turning up in `reference/models.md`
+ * that the catalogue does not list would belong here, and deleting the export would make that a new
+ * design decision instead of an addition.
  */
-export const MODELS_WITHOUT_A_SKIN: readonly Model[] = [
-  { name: '550', alias: '555', architecture: 9, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '3.0' },
-  { name: '620', architecture: 7, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: true, firmwareSeen: '4.1.0' },
-  { name: '665', architecture: 14, maxDevices: 10, favourites: 23, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '0.2' },
-  { name: '670', architecture: 7, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.1.0' },
-  { name: '720', alias: '785', architecture: 8, maxDevices: 12, favourites: 24, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '4.4.2' },
-  { name: '745', architecture: 2, maxDevices: 15, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false },
-  { name: '880 Pro', architecture: 8, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.4.2' },
-  { name: '890 Pro', architecture: 10, maxDevices: 15, favourites: 16, panel: 'colour', touch: false, rfChannels: 6, macros: true, pageButton: true, soundPictureButtons: true, firmwareSeen: '4.9.0' },
-];
+export const MODELS_WITHOUT_A_SKIN: readonly Model[] = [];
+
+/**
+ * Skins Logitech's own catalogue names and this library will not describe, with the vendor's name.
+ *
+ * Section 131. `ProductsManager/GetAllProducts` lists 80 skins below 100. Every one whose model this
+ * project can place on an architecture is in `MODELS_BY_SKIN` above; these are the rest, and they are
+ * listed rather than added because a `Model` record needs an architecture and a panel, and inventing
+ * either would turn a gap into a plausible wrong answer for a remote somebody actually owns.
+ *
+ * Three groups. The rebadges, where Logitech built the remote and another brand sold it. The later
+ * cheap models, the Harmony 200, 300 and 350, whose architecture nothing here has read. And the arch
+ * 15 family, which is a different case again and belongs to `OUT_OF_TRANSPORT_REACH`: the numbers are
+ * known and the transport cannot reach the hardware, so a record would be a promise this library
+ * cannot keep.
+ *
+ * A name here is Logitech's own product name and nothing else, which is why the value is a string and
+ * not a record: it is enough to tell a contributor that their remote is recognised as a product and
+ * not yet as a model.
+ */
+export const SKINS_WITHOUT_A_MODEL_RECORD: Readonly<Record<number, string>> = {
+  11: '655',
+  16: '675',
+  20: 'RF Wireless Extender',
+  21: '892',
+  24: 'RF Wireless Extender, EU',
+  25: '897',
+  26: 'Monster AVL 300',
+  27: 'Monster AVL 300S',
+  28: 'Monster AVL 300W',
+  29: 'Monster AVL 305',
+  30: 'Monster AVL 305S',
+  31: 'Monster AVL 305W',
+  32: 'Monster AVL 200',
+  33: 'Monster AVL 205',
+  34: 'Harman Kardon TC 30, bundled',
+  35: 'Harman Kardon TC 30 EU, bundled',
+  37: 'Monster AVL 100',
+  38: 'Monster AVL 100 EU',
+  42: 'Harman Kardon TC 30, retail',
+  43: 'Harman Kardon TC 30 EU, retail',
+  46: '522',
+  47: '882',
+  49: '1000',
+  51: 'Telus Advanced Remote',
+  52: '1000i',
+  53: '1000EU',
+  55: '2000 Pro',
+  60: '900 EMEA',
+  61: '900',
+  62: '1100',
+  63: '1100eu',
+  64: '1100i',
+  78: '300',
+  79: '300 EMEA',
+  80: '200',
+  81: '200 EMEA',
+  82: 'Olive',
+  83: 'Olive EMEA',
+  84: 'Logitech Revue',
+  86: '800',
+  87: '800 EMEA',
+};
 
 /**
  * The models this library deliberately cannot describe, and why, so the gap is a statement.

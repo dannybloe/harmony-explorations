@@ -181,10 +181,12 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
   assert.deepEqual(bench.configs(), ['one_config']);
   const view = bench.inventory('one_config');
   assert.equal(view.architecture, 12);
-  // The skin a config states is not always one this project can name, and that is section 81's point
-  // rather than a gap: this file says 59 where the remote reports 54.
+  // The skin a config states is not always the one its remote reports: this file says 59 where the
+  // unit reports 54. **It is nameable now**, section 131, because 59 is the European Harmony One, and
+  // until 13 August 2026 this assertion read `undefined` and cited section 81's numbering artefact.
+  // The bench could not name the model of the owner's own config, which is what that cost.
   assert.equal(view.skin, 59);
-  assert.equal(view.model, undefined);
+  assert.equal(view.model, 'One EMEA');
   assert.equal(view.devices.length, 5);
   assert.equal(view.activities.length, 8);
   for (const device of view.devices) {

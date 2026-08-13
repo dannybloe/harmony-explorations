@@ -138,21 +138,60 @@ was not consulted to produce any of them.
 | 41 | Mocha Grande | | |
 | 44 | Corona, AMR | | |
 
-This sharpens section 81, which found that two containers carry a skin number the remote does not
-have, 59 on a Harmony One and 73 on a Harmony 600, and explained both as "the next free number<!--superseded-->
-inside its own family's block" from a partial view of this table. **That wording is wrong**: Gin's
-block is 54 alone and 55 is allocated to Cognac Pro.
+**This table is incomplete, and the two numbers it lacks are the two that cost the most time.**
+Section 81 found that two containers carry a skin the remote does not report, 59 on a Harmony One and
+73 on a Harmony 600, and both are absent here. Two rules were derived from that absence and both are
+dead, `reference/superseded.md`: the second and better one said each was "the first free number above<!--superseded-->
+the run containing that remote's own skin", which is exact on both cases and predicts nothing.
 
-The full table is a set of contiguous runs, `9-25`, `39-41`, `44-45`, `48-50`, `52-58`, `60-68`,
-`71-72` and three singletons. Each orphan is **the first free number above the run containing that
-remote's own skin**: 54 sits in `52-58` and the orphan is 59, 71 sits in `71-72` and the orphan is
-73. Two cases, both exact, and computed rather than eyeballed in
-`tests/test_gspm.py`. So the conclusion section 81 reached survives, that both are later members
-of the same numbering rather than a different kind of value, and it now rests on a rule that can
-fail. What selects 54 over 59 for one remote is still not established.
+**59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA.** Section 131, from
+`ProductsManager/GetAllProducts` on the live service, which lists 80 skins below 100 against the 46
+here and pairs 14 base model names with a regional variant each. The arithmetic worked because
+Logitech allocated each European variant immediately above the run its American sibling sat in.
 
-**The table predates MyHarmony**, which is why models that came later are missing from it and why
-it cannot be treated as the complete numbering.
+So **the table predates MyHarmony**, which is why the later models and every European variant are
+missing from it, and why it must not be treated as the complete numbering. What it is still good for
+is the codenames, which the live catalogue does not carry, and as the corroboration for the numbers
+both sources hold.
+
+### The live catalogue, which resolves seventeen codenames
+
+*Source: `ProductsManager/GetAllProducts`, read 13 August 2026 from a plain logged in session with no
+Harmony account record and no remote. Vendor stated and current, so it is the stronger of the two,
+and it agrees with the classic table on every skin both name.*
+
+| skin | this table called it | the service calls it |
+|---|---|---|
+| 20 | 891 | RF Wireless Extender |
+| 24 | 896 | RF Wireless Extender, EU |
+| 39 | Espresso Pro | Harmony 880 Pro |
+| 40 | Cappuccino Pro | Harmony 890 Pro |
+| 41 | Mocha Grande | Harmony 550 |
+| 44 | Corona, AMR | Harmony 720 |
+| 45 | Corona, EMEA | Harmony 785 |
+| 48 | Mocha Grande, EMEA | Harmony 555 |
+| 49 | Cognac | Harmony 1000 |
+| 50 | Khalua | Harmony 670 |
+| 52 | Cognac, Australia | Harmony 1000i |
+| 53 | Cognac, EMEA | Harmony 1000EU |
+| 55 | Cognac Pro | Harmony 2000 Pro |
+| 58 | Baileys | Harmony 620 |
+| 60 | Vodka S | Harmony 900 EMEA |
+| 61 | Vodka | Harmony 900 |
+| 62 | Hennessy, AMR | Harmony 1100 |
+| 63 | Hennessy, EMEA | Harmony 1100eu |
+| 64 | Hennessy, AUS | Harmony 1100i |
+
+Nineteen rows, of which the two extender entries are the only disagreement rather than a translation:
+this table names them 891 and 896, the service calls both an RF Wireless Extender. Everything else is
+the same product under two naming schemes.
+
+And the skins neither table had, all regional variants of models already listed: 59 Harmony One EMEA,
+69 Harmony 700 EMEA, 73 Harmony 600 EMEA, 74 Harmony 650 EMEA, 75 Harmony 665, plus the Harmony 200,
+300, 350 and 800, the Olive, the Telus Advanced Remote, nine Monster AVL models and four Harman Kardon
+TC 30 variants. `packages/usb/src/models.ts` takes only those whose architecture is known from the
+table above; the rest are a recorded gap, because a capability record with an invented architecture is
+worse than no record.
 
 ## Three protocol families, and only one of them is addressable
 

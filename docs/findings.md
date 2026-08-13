@@ -9490,22 +9490,29 @@ table of platform families against skin numbers, and it agrees with all seven ex
 it calls Gin is the arch 12 platform this project already names that way. In that table 59 and 73
 are unallocated.
 
-**Corrected on 9 August 2026, when the whole table was read rather than the part that prompted
-this.** This paragraph said each orphan "is the next free number inside its own family's block:<!--superseded-->
-Gin holds 54, and the family holding 66, 71 and 72 stops there". Gin's block **is** 54 alone, but
-55 is allocated to another family, so that rule does not produce 59 and the sentence was doing work
-it could not do. The table is a set of contiguous runs, `9-25`, `39-41`, `44-45`, `48-50`, `52-58`,
-`60-68`, `71-72` and three singletons, and the rule that does hold is: each orphan is **the first
-free number above the run containing that remote's own skin.** 54 sits in `52-58`, whose first free
-number above is 59; 71 sits in `71-72`, whose first free number above is 73. Two cases, both exact,
-and computed from the table rather than read off it.
+**Answered on 13 August 2026 by section 131, and the two corrections this paragraph went through
+first are worth keeping, because both were arithmetic standing in for a fact.** It first said each
+number "is the next free number inside its own family's block: Gin holds 54, and the family<!--superseded-->
+holding 66, 71 and 72 stops there". Gin's block **is** 54 alone, but 55 is allocated to another
+family, so that rule did not produce 59. It was then replaced by a tighter one computed from the
+whole table: each orphan is **the first free number above the run containing that remote's own<!--superseded-->
+skin**, 54 sitting in `52-58` and 71 in `71-72`. Two cases, both exact, and asserted in a test.
 
-So the conclusion survives, that both read as later members of the same numbering rather than as a
-different kind of value, and it now rests on something that can fail. The full table is in
-`reference/models.md` with its provenance, per `docs/host-client.md`. It dates from before the
-MyHarmony era, which is why a later skin would be missing from it, and that is also why this stays
-a **lead confirmed in kind and not in detail**: what selects 54 over 59 for one remote is not
-established.
+That rule is also dead. **59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA**, both real
+products in Logitech's live catalogue, which `ProductsManager/GetAllProducts` lists along with 78
+other skins where the classic client table this section was reading holds 46. The run rule held
+because Logitech allocated each European variant immediately above the run its American sibling sat
+in, so the arithmetic was reading the allocation order back out of the gaps it had left. It fitted
+both cases and predicted nothing, which is why it could never answer the question this paragraph
+ended on.
+
+So the conclusion of this section survives entirely, that both numbers name a model the way a skin
+does rather than being a different kind of value. What was missing was not a rule but a bigger table.
+The classic one is still in `reference/models.md` with its provenance, per `docs/host-client.md`, and
+it dates from before the MyHarmony era, which is exactly why the European numbers are absent from it.
+**What selects one of a regional pair for a given config is still not established**, section 131: the
+locale passed to the compiler and the product record the account holds are both candidates and
+nothing separates them.
 
 ### What it is not
 
@@ -17308,3 +17315,128 @@ deliberately exempt from that check, because repairing it is the point.
 else, that the stamped records read back through `stateRecords` as the moment asked for, that a 2030
 save of a 2023 config comes out as 30 with a maximum of 31, and that one moved maximum makes the whole
 stamp refuse.
+
+## 131. Skin 59 and skin 73 are the European models, not orphan numbers
+
+The version word in base slot 1 carries a skin number in its low byte, section 81, and seven of the
+nine containers whose remote was known independently carried the skin that remote reports. Two did
+not: a Harmony One carrying 59 where the unit reports 54, and a Harmony 600 carrying 73 where the
+unit reports 71. Both numbers are unallocated in Logitech's classic client table, which is where
+`reference/models.md` gets its 46 entries, and section 81 explained them as a numbering artefact.
+
+They are not an artefact. **59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA**, two products
+in Logitech's own catalogue, and the owner of both bench remotes is in the Netherlands.
+
+### Where the answer came from
+
+`ProductsManager/GetAllProducts` on the live MyHarmony service, read on 13 August 2026. It answers a
+plain logged in session and returns 120 products, 80 of them with a skin number below 100, against
+the 46 entries the classic client's table holds and the 27 that `GetHarmonyProducts` offers for
+setup. So the client table was not wrong about the numbers it had; it was incomplete, and the two
+numbers it lacked are the two the corpus could not explain.
+
+The pairing is systematic rather than a coincidence of two models. Grouping the 80 by name with the
+regional suffix removed, **14 base names carry two or more skins**, and the split is regional every
+time:
+
+| model | its skins |
+|---|---|
+| Harmony One | 54, and **59** EMEA |
+| Harmony 600 | 71, and **73** EMEA |
+| Harmony 650 | 72, and 74 EMEA |
+| Harmony 700 | 66, and 69 EMEA |
+| Harmony 900 | 61, and 60 EMEA |
+| Harmony 1100 | 62, and 63 EMEA |
+| Harmony 300 | 78, and 79 EMEA |
+| Harmony 200 | 80, and 81 EMEA |
+| Harmony 800 | 86, and 87 EMEA |
+
+Plus the rebadges: an RF extender at 20 and 24, Monster AVL 100 at 37 and 38, Olive at 82 and 83, and
+two Harman Kardon pairs that split by bundled against retail rather than by region. The Harmony 1000
+adds a fifteenth pair the grouping rule missed, 49 against 53, because `1000EU` carries no separator.
+
+### The corpus reads the same way once the numbers have names
+
+| config | word | skin | the product it names |
+|---|---|---|---|
+| the owner's Harmony One, 2023 | `0x0D3B` | 59 | Harmony One **EMEA** |
+| the spare One after section 58's sync | `0x0D36` | 54 | Harmony One |
+| the spare One, compiled 13 August 2026 | `0x0D36` | 54 | Harmony One |
+| the owner's Harmony 600 | `0x0D49` | 73 | Harmony 600 **EMEA** |
+| the same 600, compiled 13 August 2026 | `0x0D47` | 71 | Harmony 600 |
+| dmrzzz's Harmony 700, both configs | `0x0D42` | 66 | Harmony 700 |
+
+The 700 is the second contributor and the independent case: its owner is American and its configs
+carry the non European number of the pair, where the Dutch owner's two remotes carry the European
+one. Two contributors, three models, two architectures, and the regional reading fits all of them.
+
+### Why the old rule held and why it was still wrong
+
+Section 81's rule was that each unexplained number is the first free number above the contiguous run
+containing the remote's own skin: 54 sits in `52-58`, whose first free number is 59, and 71 sits in
+`71-72`, whose first free number is 73. Both exact, computed rather than eyeballed, and asserted in a
+test.
+
+It was arithmetic on an incomplete table. 59 follows 58 because Logitech allocated the European One
+right after the run it extended, and 73 follows 72 for the same reason, so the rule was reading the
+allocation order back out of the gaps it left. That is the failure mode this project names elsewhere
+as a rule that fits every example and predicts nothing: it could not say **which** of the two numbers
+a given config would carry, which is exactly the question section 81 recorded as not established.
+
+It is worth being precise about what survives. Section 81's conclusion, that both numbers name a
+model the way a skin does rather than being a different kind of value, is not merely intact; it is
+now the whole of the answer. What is superseded is the run rule and the word orphan.
+
+### What selects one of the pair is not settled
+
+Both configs compiled here on 13 August 2026 were asked for with `localeId: "en-US"` and both came
+back with the non European number, which is consistent with the compile's locale choosing the
+product. It is not isolated, and one case argues against it: section 58's sync ran on the owner's own
+account and also produced 54. So the candidate explanations are the locale passed to the compiler and
+the product record the account holds for that unit, and nothing here separates them. Recorded as
+open rather than guessed, because a writer does not need the answer: an editor copies this word, per
+section 81, and a generator writing a config for a connected remote should carry the value the
+remote's existing config carries.
+
+### What it settles about the skin table
+
+`packages/usb/src/models.ts` held 21 skins and could not recognise a European Harmony 600, 650 or
+700. Eighteen of the missing numbers name models the project already describes, so their architecture
+comes from `reference/models.md` rather than from a guess, and the Harmony 665 moves out of
+`MODELS_WITHOUT_A_SKIN` with skin 75. Forty one further skins name models this project cannot place
+on an architecture, including the Monster and Harman Kardon rebadges and the Harmony 200, 300 and
+350, and they stay out: a capability record with an invented architecture is worse than a gap.
+
+Seventeen of the numbers also stop being codenames. The client table calls 49 `Cognac` and 50
+`Khalua`; the service says Harmony 1000 and Harmony 670. Where both sources name the same skin they
+agree, which is the calibration: the five skins this project measured from firmware literals and live
+remotes are all in the service list with the models they were measured on.
+
+### The device limits disagree, and the vendor loses
+
+`models.ts` takes its capability figures from the community comparison table at
+harmony-remote-forum.de, which `reference/capabilities.md` marks unconfirmed throughout, so a vendor
+stated number looks like a straight upgrade. On device limits it is not.
+
+The two sources agree on the Harmony 600 at 5, the 665 at 10, the 880 at 15 and the One at 15. They
+disagree twice: the community table says the **700** takes 6 devices and Logitech's
+`MaxDevicesPerAccount` says 8, and it says the **650** takes 5 where the service says 8.
+
+**The 700's 6 is kept**, and this is the one place in this section where the vendor's own record is
+refused. Both Harmony 700 configs in the corpus hold exactly six devices, which is the only figure in
+this whole column with any corroboration at all, and it is the calibration the column rests on: a
+maximum nothing reaches is consistent with any number. Take 8 and that agreement becomes a
+coincidence. The 650 is left at 5 for the weaker version of the same reason, that no config here
+reaches either number so nothing chooses. Both disagreements are recorded in `models.ts` beside the
+figures rather than resolved.
+
+This is worth stating as a rule and not just a decision: **a vendor source is a source and not an
+authority.** The same lesson is already in `docs/host-client.md`, whose arch 8 constants contradict
+four real configs, and the pattern here is the same one from the other direction. What made this
+catchable was the test that asserts the 700 sits exactly at its limit, which failed the moment the
+number moved.
+
+Favourite channel counts are not taken from the service at all: it reports 0 for every pre MyHarmony
+model including the 880, where our table says 16 and the configs draw them. So that field describes
+what MyHarmony manages rather than what the hardware has, and a source has to be read for what it is
+about before its numbers are copied.

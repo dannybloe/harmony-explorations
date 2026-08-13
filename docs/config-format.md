@@ -1847,9 +1847,11 @@ on every architecture, which is what settles that the BCD in the USB descriptor'
 property of that field and not of the skin. Section 113. Seven of the nine
 containers whose remote's skin is known independently carry it exactly, 54, 66, 71, 72, 22, 15 and
 **17**, the last from a Harmony 885 contributed on 10 August 2026;
-the two that do not carry 59 and 73, each unallocated in Logitech's classic software table and each
-the next free number inside its own platform's block. So it names a model the way a skin does, and
-what selects 54 over 59 for one remote is **not established**. The high byte is `0x0D` in every
+the two that do not carry 59 and 73, which are the **European variants of those same two models**,
+Harmony One EMEA and Harmony 600 EMEA, per Logitech's live product catalogue. Section 131. So it
+names a model the way a skin does, and both bench remotes are Dutch units. **Which member of a
+regional pair a config carries is not established**: the locale passed to the compiler and the
+product record the account holds are both candidates. The high byte is `0x0D` in every
 container built from 2009 onward and `0x0C` in the One's 2007 factory container.
 
 **Nothing on the remote reads this section, or base slot 0.** The firmware's section seeker is

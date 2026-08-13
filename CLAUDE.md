@@ -746,6 +746,16 @@ name a skin the remote does not report. **The word is per config, not per model*
 carries two different words either side of the sync section 58 watched. Its low byte is a skin
 number, and an editor copies it rather than computing it. Section 81.
 
+**The two skins that did not match a remote are the European models**, section 131, not the numbering
+artefact section 81 read them as: 59 is the Harmony One EMEA and 73 the Harmony 600 EMEA, so both bench
+remotes' own configs name their region correctly and the run arithmetic that fitted both cases was
+reading Logitech's allocation order out of the gaps it left. The source is
+`ProductsManager/GetAllProducts` on the live service, which lists 80 skins below 100 against the classic
+client table's 46 and pairs 14 models with a regional variant. **What selects one of a pair is still
+open.** `packages/usb/src/models.ts` carries 35 skins now, and its one refusal of a vendor number is the
+part worth remembering: Logitech says a Harmony 700 takes eight devices, both 700 configs hold exactly
+six, and six is kept because it is the only figure in that column with a corroboration.
+
 **Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
 `0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
 seven byte field assignment is believed; the assignment itself is the only one of 336 candidates
@@ -1007,7 +1017,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 130 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 131 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

@@ -541,39 +541,58 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
                 self.assertEqual(word, carried)
                 self.assertNotEqual(word, skin)
 
-    def test_every_measured_skin_is_allocated_and_the_two_exceptions_are_not(self):
-        """The vendor's skin table against this corpus. `reference/models.md`.
+    def test_the_two_skins_no_config_explained_are_the_european_models(self):
+        """Section 131, and it replaces a test that asserted the opposite for four days.
 
-        Client sourced, so this asserts a relationship rather than the table itself: every skin
-        this project measured independently appears in it, and the two numbers section 81 could
-        not explain, 59 and 73, appear in neither.
+        The classic client table in `reference/models.md` holds 46 skins and lacks 59 and 73, the
+        two numbers containers here carry where the remote reports 54 and 71. Two rules were
+        derived from that absence and both are dead, `reference/superseded.md`; the second one
+        said each was the first free number above the run containing the remote's own skin, and
+        it was asserted here, exactly, computed from the table.
 
-        The rule is computed rather than asserted by hand, and it is tighter than section 81's,
-        which said "the next free number inside its own family's block" from a partial view of
-        the table. Gin's block is 54 alone and 55 is allocated, so that wording is wrong. The
-        table is a set of contiguous runs, and each orphan is **the first free number above the
-        run containing that remote's own skin**: 54 sits in 52 to 58 and the orphan is 59, 71
-        sits in 71 to 72 and the orphan is 73. Two cases, both exact.
+        It was arithmetic where a fact was missing. **59 is the Harmony One EMEA and 73 is the
+        Harmony 600 EMEA**, from Logitech's live catalogue, which lists 80 skins below 100. The
+        old rule worked because each European variant was allocated immediately above the run its
+        American sibling sat in, so it read the allocation order out of the gaps it left. It fitted
+        both cases and predicted nothing, which is the shape of a wrong rule that never fails.
 
-        The failure this guards against is the table quietly becoming the source of the skin
-        numbers instead of a check on them. If a measured skin ever falls outside it, the
-        measurement wins and this test is what forces that to be a decision.
+        What this asserts instead is the pairing, from the corpus rather than from either table:
+        each of the two contested numbers belongs to a container whose remote reports the other
+        member of a regional pair, and the corpus holds both members of both pairs. The classic
+        table is still checked for what it is good for, that every independently measured skin is
+        in it, because it quietly becoming the source of those numbers instead of a check on them
+        is the failure that has not gone away.
         """
-        allocated = {3, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-                     36, 39, 40, 41, 44, 45, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 60, 61,
-                     62, 63, 64, 65, 66, 67, 68, 71, 72}
-        self.assertEqual(len(allocated), 46)
+        classic = {3, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                   36, 39, 40, 41, 44, 45, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 60, 61,
+                   62, 63, 64, 65, 66, 67, 68, 71, 72}
+        self.assertEqual(len(classic), 46)
         for skin in (54, 66, 71, 72, 22, 15):
-            self.assertIn(skin, allocated, 'a measured skin missing from the table')
-        for skin, orphan in ((54, 59), (71, 73)):
-            self.assertNotIn(orphan, allocated)
-            # Walk up from the remote's own skin to the top of its contiguous run, then the very
-            # next number is the orphan. Computed, so a changed table changes the answer.
-            top = skin
-            while top + 1 in allocated:
-                top += 1
-            self.assertEqual(top + 1, orphan,
-                             'skin %d run ends at %d, expected orphan %d' % (skin, top, orphan))
+            self.assertIn(skin, classic, 'a measured skin missing from the classic table')
+        # And the two the classic table lacks, which is what made them look like artefacts.
+        for skin in (59, 73):
+            self.assertNotIn(skin, classic)
+
+        # The pairing, measured against the corpus. Each entry is (samples carrying the European
+        # skin, samples carrying its American sibling), so both members have to be present for the
+        # pair to mean anything: one config carrying an odd number proves nothing about a pair.
+        pairs = {
+            (54, 59): (('one_config',), ('one_spare_after_sync',)),
+            (71, 73): (('h600_config',), ()),
+        }
+        for (home, emea), (emea_samples, home_samples) in pairs.items():
+            names = [n for group in (emea_samples, home_samples) for n in group]
+            lab.require(*names)
+            for name in emea_samples:
+                word = gspm.parse(lab.load(name)).version_word & 0xFF
+                self.assertEqual(word, emea, '%s should carry the European skin' % name)
+            for name in home_samples:
+                word = gspm.parse(lab.load(name)).version_word & 0xFF
+                self.assertEqual(word, home, '%s should carry the non European skin' % name)
+            # The two members are adjacent in the vendor's numbering, which is what the old rule
+            # was really seeing. Asserted so that the coincidence is on the record rather than
+            # being rediscovered as a rule a third time.
+            self.assertGreater(emea, home)
 
     def test_a_three_byte_record_states_an_architecture_and_no_version_word(self):
         """Section 79. The record's extent is the gap to the next pointer, like every section's.
