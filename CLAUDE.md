@@ -50,7 +50,10 @@ propose firmware modification as a route to anything.
    reason is read now: only selector 1 has a body in arch 9's `READ_MISC` executor, and every other
    selector emits two bytes the firmware has just cleared. Selector 1 **does** answer, and this
    project read it as zero for a year because the reply carries its value in the byte after the one
-   the decoder took.
+   the decoder took. **`READ_FLASH`'s data memory window is dead there too**, section 137, so arch 9
+   (Harmony 525) has no route to its RAM at all: top byte `0x40` answers zero even for the bank 2 bytes
+   holding the offset and buffer pointer of the read that is answering, which is the control that makes
+   the zeros the window's rather than the memory's.
    **Whether it can watch a config being interpreted is also per architecture, and the answer is not
    the one this file carried for a day.** On arch 14 it cannot, section 110: the journal's five
    variables are zero on a connected 600, so nothing loaded the config. On **arch 12 it can**, section
@@ -812,10 +815,14 @@ order two configs of the same remote: it contradicts the recorded direction of t
 and that is unresolved, though the section 58 pair, whose direction was observed rather than
 recorded, is ordered correctly by it.
 
-**On arch 12 it is also what the remote's clock is set to**, at every boot, section 111: a power cycled
-Harmony One read this record's date exactly and its time plus its ninety seconds of uptime. **Arch 14
-and arch 9 are not measured and must not be assumed**, since both carry the same record and neither has
-been power cycled and read. The **rail does not depend on that scope**: a writer stamps this record with
+**On arch 12 the remote's clock carries the same value**, at every boot, section 111: a power cycled
+Harmony One read this record's date exactly and its time plus its ninety seconds of uptime. **Whether the
+firmware gets it from here is under-determined**, section 137, and this said "it is also what the
+remote's clock is set to" until 13 August 2026: base slot 13's first seven records carry the identical
+fields, section 130, so the value cannot say which of the two the firmware reads and no measurement of a
+clock on any architecture can. **Arch 14 and arch 9 are not measured and must not be assumed**, since
+both carry the same record and neither has been power cycled and read, and arch 9 (Harmony 525) now has
+no read path to its data memory to be read with. The **rail does not depend on any of that scope**: a writer stamps this record with
 the moment of writing, and on an architecture that ignores it for its clock that is still the correct
 provenance value, so the action is right either way and only the reason changes. Reproducing the input's
 timestamp is right for a round trip and wrong for a save, and it is the first field where those two come
@@ -1064,7 +1071,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 136 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 137 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1132,10 +1139,12 @@ produce a config the remote accepts and mishandles.
   and the year's is that year plus one, so stamping the year without its maximum leaves a config
   declaring a value outside a variable's own range. `clockStateEdits` in `packages/codec/src/edit.ts`,
   and it refuses a base slot 13 whose other six maxima are not the clock's.
-* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote sets
-  its clock from it at every boot, so a stale timestamp is a wrong clock by exactly its staleness. The
-  rail holds on the other architectures too without needing their measurement, because stamping the
-  moment of writing is the right provenance value whatever the remote does with it. This is the one
+* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote's
+  clock holds this value at every boot, so a stale timestamp is a wrong clock by exactly its staleness.
+  The rail holds on the other architectures too without needing their measurement, because stamping the
+  moment of writing is the right provenance value whatever the remote does with it, and it holds whether
+  the firmware reads this record or base slot 13's `first`, which section 137 says nothing separates:
+  both get stamped by a save. This is the one
   field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
   thing for a save.
 * **`end_addr` is restamped when anything changes length**, and it is the only header field that
@@ -1227,14 +1236,26 @@ produce a config the remote accepts and mishandles.
   with each other through the config's own base slot 15, which is how we know an arch 12 remote on USB
   has read its config. Finishing the sensor needs the remote off USB, which no read path reaches.
   Channel 0 is the battery, `0x111`, eight levels, and it reads 7 of 8 on a charging remote.
-* **Whether arch 14 and arch 9 also set their clocks from base slot 3**, section 111. Measured on arch
-  12 and on nothing else, and all three carry the same eleven byte record. **Not a blocker for anything**:
-  the write rail is to stamp the record at write time, which is the right value whichever way this goes,
-  so the answer would change a sentence and no code. One round of hardware settles it per architecture,
-  the same one as on the One: batteries out, batteries in, cable in, read `0x108` to `0x10E` on arch 12's
-  numbering or wherever the equivalent fields sit. **The 600 is the awkward one**, because a remote on
-  arch 14 does not load its config on USB at all, section 110, so its clock may have no config derived
-  value to show and a null result there would mean less than it looks.
+* **Whether a remote's clock comes from base slot 3 or from base slot 13's `first`**, section 137, which
+  is a firmware question and used to be posed as a hardware one. The rewrite is the instructive part: the
+  item said One round of hardware settles it per architecture<!--superseded-->, and a round was spent on a Harmony 525
+  (arch 9) on 13 August 2026 to find out that **no measurement of a clock can settle it on any
+  architecture**. Section 130 established that base slot 13's first seven records carry base slot 3's
+  timestamp field for field, asserted across the corpus, so both mechanisms predict the same bytes and
+  section 111's attribution to base slot 3 is under-determined. All 19 containers carry at least 16 raw
+  base slot 13 records, so the corpus holds no separator either. **Still not a blocker**: the write rail is
+  to stamp the record at write time, which is right whichever way it goes. What would settle it is
+  whether the arch 12 writer of `0x108` to `0x10E` reads the record or the state variable array's
+  initialiser, and a candidate worth testing is that `0x108` **is** state variable 0, which would make the
+  clock the head of base slot 13's array in RAM. Two things that route has to reconcile: no direct write to
+  `0x109` exists, and section 111 reads `0x110` to `0x113` as hardware state where `0x108 + n` would make
+  them variables 8 to 11.
+* **Arch 9 (Harmony 525) has no read path to its data memory at all**, section 137, which the same round
+  established with a control worth copying: the `READ_FLASH` window at top byte `0x40` answers zero for
+  the bank 2 bytes holding the offset and buffer pointer of the read in progress, so the zeros are the
+  window's and not the memory's. `READ_MISC` was already dead there, section 90. So the reading of a
+  Harmony 600 (arch 14) is the only bench measurement left of the two, and on arch 14 a remote does not
+  load its config on USB at all, section 110, which would make a null result there mean less than it looks.
 * **Where the minute is incremented on arch 12**, section 111. No direct write to `0x109` exists in the
   image and no `LFSR` reaches the range, so the pointer comes from a variable, which is the `FSR` dead
   end `trace-section` names first. The field is named from the firmware's own subtraction against the

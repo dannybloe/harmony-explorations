@@ -18063,3 +18063,139 @@ than a lookup.
 * `reference/capabilities.md`: the max devices verification row.
 * `docs/host-client.md`: `IsEnabled`, the serial validation, and the null `CompilerArchitecture`.
 * `reference/superseded.md`: the circular test's own title.
+
+## 137. Arch 9's data memory window answers zeros about bytes it is using, and the clock question was not answerable by measuring a clock
+
+Section 111 measured a Harmony One (arch 12) whose clock held base slot 3's build timestamp plus its own
+uptime, and closed with an open item: whether a Harmony 600 (arch 14) and a Harmony 525 (arch 9) do the
+same, since all three carry the same eleven byte record and only arch 12 had been power cycled and read.
+`docs/memory-map-525.md` carries four predictions for the Harmony 525 (arch 9), written down and
+committed on 13 August 2026 before anything was read, and the owner pulled and replaced the batteries at
+11:53 local so that the remote would have chosen its clock afresh.
+
+Its own config was built at **2013-10-01T18:40:44**, which is what made the reading cheap: nothing about
+2026 resembles it, so the seven stored fields `2c 28 12 01 03 09 0d` are a signature rather than a
+coincidence.
+
+### Prediction 1 is refuted, and the refutation has a control
+
+`ARCH9_WINDOWS` serves data memory as `READ_FLASH` top byte `0x40`, 2048 bytes, and
+`docs/memory-map-525.md` recorded it as answering all zeros. That row rested on a read taken while this
+remote was **stranded in safe mode**, with no config loaded and the application not resident, so the
+prediction was that an application running normally would answer content. Five separate 16 byte reads at
+offsets `0x000`, `0x010`, `0x100`, `0x400` and `0x700` all came back zero, and so did all 1984 bytes of
+one read covering the rest of the window.
+
+Zeros prove nothing on their own, which is why the reading needed a byte known to be nonzero. Bank 2 is
+that byte, and it is the strongest control available here because **the read itself is using it**:
+
+| address | what the firmware keeps there | read back |
+|---|---|---|
+| `0x279`, `0x27a` | the offset of the read in progress, loaded into `FSR0` each iteration | `00 00` |
+| `0x2a6`, `0x2a7` | the reply buffer pointer, incremented per byte sent | `00 00` |
+| `0x2ac` | the byte being sent, this iteration | `00` |
+
+Those five bytes cannot be zero while a `READ_FLASH` is walking and answering, and they read as zero. So
+**the window returns zeros regardless of content**, and section 90's "returns zero for every address" is
+now a claim about the window rather than about the memory. The firmware arm is real and correct, which is
+what makes this worth recording rather than filing as an unimplemented case. Read out of the read arm's
+`XORLW` chain at `0x0335A`, whose case values are `0x80`, `0x40`, `0x30`, `0x20` and `0x00`:
+
+```
+033be: RCALL 0x0351c        ; 0x70e:0x70f <- 0x279:0x27a, the offset
+033c0: MOVFF 0x70e,FSR0L
+033c4: MOVFF 0x70f,FSR0H
+033c8: MOVFF INDF0,0x70c    ; the byte, indirect
+033cc: MOVLB 0x7
+033ce: RCALL 0x03548        ; increment the offset, send 0x70c, decrement the count
+033d0: BNC   0x033c0
+```
+
+`0x03548` is `INCF 0x70e` with `ADDWFC 0x70f`, then `MOVFF 0x70c,0x2ac` and the transmit at `0x034da`,
+which appends through `FSR0` from `0x2a6:0x2a7` and bumps the endpoint byte count at `0x40d`. So the arm
+walks, sends and counts. Where it loses the byte is not established and is deliberately left open: the
+measurement stands without it, and the consequence does not change.
+
+One artefact is recorded so nobody chases it twice. With `GET_VERSION` as the immediately preceding
+exchange, a read of 62 bytes or more carries `25 12 ff 90 16 09`, that reply minus its first byte,
+followed by zeros and repeating with period 62 across however many chunks are asked for. At 16, 32 and 48
+bytes it does not appear, and it does not appear at 1984 bytes either once a 16 byte read of the same
+window has come in between. So it is reply residue and not memory, and the tell is that one address
+answers differently according to how much of it is asked for and what was asked before it, which memory
+does not do. It read as content for half an hour.
+
+**The first version of that paragraph left the condition out**, saying a count of 62 or more carries the
+residue full stop, and the test written from it failed on the first run because two 16 byte reads had
+come first. Being wrong about a trap is worse than leaving it undescribed, so the condition is stated and
+the test asserts the zeros rather than the artefact.
+
+### So predictions 2, 3 and 4 are unanswerable by this route
+
+There is no read path to a Harmony 525's clock. `READ_MISC` returns zero for every address on this
+architecture, section 90, and the `READ_FLASH` window does too. A Harmony One (arch 12) answers because
+its special function registers and its data memory both read back, section 111, and that is arch 12's
+property and not the protocol's.
+
+### The question was under-determined anyway, and that is the correction
+
+Section 111 says a Harmony One "sets its clock from base slot 3", and the evidence is that the clock's
+value equals base slot 3's timestamp plus the uptime. **That evidence cannot distinguish base slot 3 from
+base slot 13.** Section 130 established that base slot 13's first seven records are the firmware's clock
+and that each one's `first` is the corresponding field of base slot 3's timestamp, and
+`packages/codec/test/inventory.test.ts` asserts it across the corpus. Two mechanisms therefore predict the
+same bytes:
+
+* the firmware reads base slot 3's record into its clock, or
+* the firmware seeds state variables from base slot 13's `first`, of which the first seven are the clock.
+
+Section 111 did not separate them, because it did not have to: it was answering what the value is. It also
+records that **no direct write to the minute at `0x109` exists in the image and no `LFSR` reaches the
+range**, so the write is indirect, which is what a bulk initialiser looks like and is not what a seven
+field copy out of a record looks like.
+
+**The corpus cannot separate them either**, checked rather than assumed: all 19 containers carry at least
+16 raw base slot 13 records, so every one of them has the seven the clock needs, and there is no sample
+where base slot 3 exists and the records do not. A config where the two disagree would separate them and
+writing one is what this project does not do.
+
+The consequence for the open item is the useful part. **Measuring a Harmony 600's clock would not have
+settled the mechanism either**, so the item as posed was never one round of hardware away from an answer
+on any architecture. What replaces it is a firmware question that needs no remote: does the arch 12
+routine that writes `0x108` to `0x10E` read base slot 3's record, or the state variable array's
+initialiser? A candidate worth testing and deliberately not asserted here: `0x108` may be state variable
+0 itself, which would make the clock the head of base slot 13's array in RAM and explain both the
+indirect write and the seconds increment at `0x27A0E` addressing `0x108` directly. What that has to
+reconcile is section 111's reading of `0x110` to `0x113` as display band, battery gauge, saved state and
+cached level, which under `0x108 + n` would be variables 8 to 11.
+
+### Arch 9 configures Timer 1 in firmware, which is a difference worth having
+
+On arch 12, section 111 reads `T1CON` as `0x1F` and attributes the `0x1E` beneath it to base slot 3's
+routine. On arch 9 the same literal is written by a compiled in peripheral setup block, present twice and
+byte for byte alike, at `0x00E7A` in the bootloader and `0x07EDC` in the application, between the
+`ADCON2` and `T3CON` writes of a run that initialises every peripheral from literals. `0x1E` leaves
+`TMR1ON` clear, and the enable is separate, at `0x03C4A`, which clears a block of bank 1 variables, zeroes
+`TMR1H` and `TMR1L` and then sets `T1CON` bit 0.
+
+Scoped deliberately: this says where arch 9's Timer 1 configuration comes from, and it does **not** say
+that arch 9 ignores base slot 3, because arch 9's consumer for that slot has not been traced. Two other
+`T1CON` bit 0 sites exist, at `0x03C96` and `0x03CAA`, each gated on a mode byte at `0x1DD` and `0x1DE`
+being 2.
+
+### What would falsify this
+
+A byte in arch 9 data memory that reads back nonzero over `READ_FLASH` top byte `0x40`, which would mean
+the window works and every address tried was genuinely zero. A trace of the arch 12 clock's writer showing
+it reading base slot 3's record, which would restore section 111's attribution as stated. A container
+carrying base slot 3 and fewer than seven base slot 13 records, which would separate the two mechanisms
+from the corpus.
+
+### Where it lands
+
+* `docs/memory-map-525.md`: the four predictions with their outcomes, and the data memory row corrected
+  from a description of the memory to a description of the window.
+* `packages/usb/test/protocol.test.ts`: the arch 9 window's zeros pinned with the bank 2 control named,
+  so the claim is about the window.
+* `packages/codec/test/inventory.test.ts`: the clock test guarded up front and its total asserted exactly
+  rather than at `>= 15`, which was equal to the population by coincidence and would not have stayed so.
+* `reference/superseded.md`: the two dead phrasings.

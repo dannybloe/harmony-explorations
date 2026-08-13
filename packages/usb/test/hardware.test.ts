@@ -394,6 +394,48 @@ test('the RAM read is dead on arch 9: every address on the 525 answers zero', as
   }
 });
 
+test('the arch 9 data memory window answers zero about the bytes it is using', async (t) => {
+  if (!HARDWARE || !(await present(HARMONY_525))) {
+    t.skip('needs HARMONY_HARDWARE_TESTS=1 and the Harmony 525 attached');
+    return;
+  }
+  const { HarmonyRemote, architectureFromVersion, openHarmony } = await import('../src/index.ts');
+  const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_525 }), {
+    timeoutMs: 500,
+  });
+  try {
+    // Taken from the remote rather than passed in, because the region rule defaults to arch 12 and
+    // would refuse top byte 0x40 outright. Asserting it first also makes the read's own precondition
+    // visible: a 525 that reported anything else would fail here rather than at an address.
+    const version = await retryingEmptyReply(() => remote.getVersion());
+    assert.equal(architectureFromVersion(version), 9, 'the remote states architecture 9');
+    remote.useArchitecture(9);
+
+    // Section 137. The other route into the same 2048 bytes: `READ_FLASH` with top byte 0x40, whose
+    // read arm at 0x033BE walks data memory through FSR0 and sends every byte. It answers zeros, and
+    // zeros on their own would only say the memory is boring. Bank 2 is what makes it a statement
+    // about the window: 0x279 and 0x27a are the offset of this very read, reloaded into FSR0 on each
+    // iteration, and 0x2a6, 0x2a7 and 0x2ac are the reply buffer pointer and the byte being sent. A
+    // command that is walking and answering cannot have zero in all five.
+    const control = { 0x400279: 'the offset of the read in progress', 0x4002a6: 'the buffer pointer' };
+    for (const [address, what] of Object.entries(control)) {
+      const window = await remote.readFlash(Number(address), 16);
+      assert.equal(window.length, 16, `${what}: short reply`);
+      assert.ok(window.every((b) => b === 0),
+        `${what} at ${address} answered content, so the window works after all and section 137 ` +
+        'needs revisiting: the zeros elsewhere would then be real memory');
+    }
+
+    // The whole window, in one read and in the largest one this tool will do, so that the claim is
+    // about all 2048 bytes rather than about the offsets a spread happened to pick.
+    const whole = await remote.readFlash(0x400000, 0x800 - 0x40);
+    const nonzero = [...whole].filter((b) => b !== 0).length;
+    assert.equal(nonzero, 0, `${nonzero} of ${whole.length} bytes of data memory answered content`);
+  } finally {
+    await remote.close();
+  }
+});
+
 test('the two internal sub-selectors address different memory, and 0xFE maps from zero', async (t) => {
   if (!HARDWARE || !(await present(HARMONY_ONE))) {
     t.skip('needs HARMONY_HARDWARE_TESTS=1 and a single Harmony One attached');

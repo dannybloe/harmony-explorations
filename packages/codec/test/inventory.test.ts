@@ -1036,7 +1036,13 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
       for (const [index] of expected) assert.ok(!named.has(index), `${name} names record ${index}`);
       agreeing += 1;
     }
-    assert.ok(agreeing >= 15, `only ${agreeing} containers could be checked`);
+    // Exactly the population, not a floor under it. This read `>= 15` while INVENTORY held 15 rows,
+    // so it was equal to "all of them" by coincidence and would have stopped being so the moment a
+    // row was added, letting one container skip in silence. Section 137 needed the claim to cover
+    // every sample, because what rests on it is that the corpus contains no container where base slot
+    // 3 and base slot 13 disagree, and one absent sample is exactly where such a container would hide.
+    assert.equal(agreeing, INVENTORY.length,
+      `${agreeing} of ${INVENTORY.length} containers were checked, so one skipped silently`);
     // The table is what a caller reads, so it must cover exactly what is proven and no more.
     assert.deepEqual(Object.keys(FIRMWARE_STATE_VARIABLES), ['0', '1', '2', '3', '4', '5', '6']);
   });

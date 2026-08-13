@@ -173,7 +173,7 @@ believed as a whole rather than window by window.
 | `0x00` | `0x8000` | internal program flash, 32 KiB | the reset vector above |
 | `0x20` | `0x0100` | on chip EEPROM, 256 bytes | byte 0 is the bootloader's image selector |
 | `0x30` | `0x0008` | eight bytes, read arm fetches nothing | unread |
-| `0x40` | `0x0800` | data memory, 2048 bytes | answers all zeros, as `READ_MISC` does |
+| `0x40` | `0x0800` | data memory, 2048 bytes | the window answers zeros whatever is there, section 137 |
 | `0x80` to `0x87` | the block | the serial flash chip, 512 KiB | everything in the table above |
 
 The EEPROM is the one that mattered: concordance's firmware update state cell, which its table calls
@@ -275,6 +275,22 @@ coincidence. As stored, `2c 28 12 01 03 09 0d`, being second 44, minute 40, hour
 The rail does not move either way, per `CLAUDE.md`: a writer stamps this record with the moment of
 writing, which is the right provenance value on an architecture that ignores it for its clock and the
 right clock value on one that does not. So the answer changes a sentence and no code.
+
+### The outcomes, measured the same day
+
+Kept beside the predictions rather than rewritten over them, which is this document's whole method.
+
+| | outcome |
+|---|---|
+| 1. data memory answers content | **Refuted, with a control.** Zero at every offset tried, and bank 2 is what makes that a fact about the window rather than about the memory: `0x279` and `0x27a` hold the offset of the read in progress and `0x2a6`, `0x2a7` and `0x2ac` the buffer pointer and the byte being sent, and all five read back zero while answering. So the window returns zeros regardless of content, and the read arm at `0x033BE` is nonetheless real, walking data memory through `FSR0` and sending each byte. |
+| 2. the seven fields are present | Unanswerable by this route, and by any read path this architecture has: `READ_MISC` returns zero too, section 90. |
+| 3. they are contiguous, in record order | Unanswerable, same reason. |
+| 4. what falsifies it | **The prediction set was under-determined**, which is the finding rather than the outcome. A clock's value cannot distinguish base slot 3 from base slot 13's `first`, because section 130 established the two carry identical values in every container and a corpus wide test asserts it. So neither this measurement nor the same one on a Harmony 600 (arch 14) would have named the mechanism. Section 137. |
+
+Timer 1 did come out of it. On arch 9 the `0x1E` that arch 12 attributes to base slot 3's routine is
+written by a compiled in peripheral setup, at `0x00E7A` in the bootloader and `0x07EDC` in the
+application, and only the enable is separate. That does not say arch 9 ignores base slot 3: its consumer
+for that slot has not been traced.
 
 ## Safety, which is different here
 
