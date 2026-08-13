@@ -252,6 +252,30 @@ In rough order of value.
    reach for once there are bytes, and the margin over the runner up is what says whether to believe
    it.
 
+## Does a Harmony 525 set its clock from base slot 3? Predicted 13 August 2026, before reading
+
+Section 111 measured a Harmony One (arch 12) reading base slot 3's timestamp into its clock at every
+boot: a power cycled remote reported that record's date exactly and its time plus its own uptime. All
+three architectures on the bench carry the same eleven byte record and only arch 12 has been measured,
+so this is one round of hardware on a Harmony 525 (arch 9), read only, with the batteries pulled and
+replaced at 11:53 local on 13 August 2026.
+
+The bench remote's own config was built at **2013-10-01T18:40:44**, which is what makes the reading
+cheap: nothing about today resembles it, so the seven field values are a signature rather than a
+coincidence. As stored, `2c 28 12 01 03 09 0d`, being second 44, minute 40, hour 18, day 1, day of week
+3, month 9 counted from zero and year 13.
+
+| | prediction |
+|---|---|
+| 1. data memory answers content | The window answered all zeros in section 119 and that read was taken while this remote was **stranded in safe mode**, with no config and no application running. It is the application's turn now, so a nonzero count is the positive control and it comes before the clock question. If it is still all zeros, nothing below is answerable and section 90's scope stands as written. |
+| 2. the seven fields are present | Somewhere in the 2048 bytes, a run carrying day 1, day of week 3, month 9 and year 13, with the hour at 18 and the minute at 40 or a little above it. |
+| 3. they are contiguous, in record order | Second first, as base slot 3 stores them, because the arch 12 firmware subtracts against the record field by field and a per field copy is what makes that work. The **address** is deliberately not predicted: arch 12 keeps them at `0x108` to `0x10E` and arch 9 is a different part with 2048 bytes rather than 4096, so a matching address would be luck. |
+| 4. what falsifies it | A date of 2000-01-01, or a zero run, while the rest of data memory answers content. That would say arch 9 starts its clock at the format's own epoch and reads base slot 3 for nothing, which makes the record pure provenance on this architecture and leaves the arch 12 behaviour a Gin family feature. |
+
+The rail does not move either way, per `CLAUDE.md`: a writer stamps this record with the moment of
+writing, which is the right provenance value on an architecture that ignores it for its clock and the
+right clock value on one that does not. So the answer changes a sentence and no code.
+
 ## Safety, which is different here
 
 The rails in [../CLAUDE.md](../CLAUDE.md) apply unchanged, and one thing about this model makes them
