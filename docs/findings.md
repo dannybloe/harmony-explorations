@@ -18389,21 +18389,21 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Sixteen shipped readers answered plausibly where they should have refused, and five were rails
+## 139. Seventeen shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Sixteen defects came out of it that a sample could not have found, and they share one shape, which is
+Seventeen defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 16, which were read a day later and are
+They are listed newest reading first, except entries 13 to 17, which were read a day later and are
 appended rather than reordered so the numbering stays citable. Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
-Entries 5, 11 and 16 are the rails, and 16 is two of them: an editor that would rewrite a container's
+Entries 5, 11, 16 and 17 are the rails, and 16 is two of them: an editor that would rewrite a container's
 own cookie and one that would stamp a damaged config as valid. 11 is where "it cannot brick anything"
 turned out to be a claim
 about an address. The rest are corrections to code this document already relies on.
@@ -18964,6 +18964,39 @@ shared tail arm, which declines to rebuild a record whose end another record sta
 **0 times in 239 records**, the same zero its counterpart in `coverage.ts` reports; both are asserted
 now, so the day one fires somebody reads it instead of a record quietly declining and the residue copy
 covering for it.
+
+### 17. The refusal that stops a remote hanging was arithmetic that is false for a whole class of counts
+
+Section 94 read why an odd internal memory read never returns: the fetch primitive emits two bytes and
+subtracts two, its exit test is equality with zero, and `CLRWDT` inside the loop keeps the watchdog from
+ending it. The refusal built on that reading was `count % 2 === 1`.
+
+In JavaScript `-3 % 2` is `-1` and `3.5 % 2` is `1.5`, so **a negative odd count and a fractional one
+both read as even** and walked through the rail, at both of its sites. Whether a caller can reach those
+values is not the argument: this is the refusal standing between a script and a remote leaving the USB
+bus, and it now refuses anything it cannot prove the loop reaches zero from, which is one predicate used
+by both sites rather than the arithmetic written twice. The test asserts the old expression's answer on
+each of those counts alongside the new one, so the difference is visible rather than described.
+
+**And two comments called it a one chunk cap**, including the module docstring, which is the bound that
+was tried before the mechanism was found: 124 bytes is two chunks and is fine, and the comment three
+lines below one of them says so. Section 93 installed that bound and section 94 replaced it; the prose
+on top of the corrected code did not move.
+
+**The misc reply branch matched on the whole first byte** where every other branch of `decodeReply`
+masks the length nibble off first. `MISC_REPLY` is `0xC2`, whose `2` is a declared payload length, so a
+misc reply declaring any other length fell past the branch and out of the decoder entirely. Nothing else
+in the protocol occupies `0xC0`. Every real reply declares two, which is why nothing failed, and is
+exactly the reason to pin it: a length nobody has seen is what a new architecture sends.
+
+**One review item was tried and reverted, which is worth recording as much as the fixes.** The same
+branch reads its low byte as `report[3] ?? 0`, called out as making an absent byte indistinguishable
+from a zero one. True of the expression, false of anything the transport produces: a HID report is fixed
+length and zero filled, so the default is unreachable outside a hand built array in a test. Refusing a
+short report instead was written, and it failed two tests that state the opposite decision outright,
+that a remote answering in two bytes leaves `word` defined on every architecture and meaningful on one.
+So the expression stands with the reasoning beside it, rather than a documented decision being
+overturned for a case that does not arise.
 
 ### What it changes
 

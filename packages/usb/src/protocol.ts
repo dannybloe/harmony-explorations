@@ -303,8 +303,10 @@ export function validateRegionByte(
   if (architecture === 9) {
     // Internal program memory is at plain low addresses on this part, a PIC18LF4550 with 32 KiB
     // of it, so the top byte is `0x00` and there is no `0xFE` window. It is still reported as
-    // internal, which is what keeps `readInternalMemory`'s one chunk cap over it: arch 12 restarts
-    // when such a read ends in a one byte chunk and nothing establishes that arch 9 does not.
+    // internal, which is what keeps the **odd count** refusal over it: on arch 12 (Harmony One) an
+    // odd internal read never terminates, section 94, and nothing establishes that arch 9 (Harmony
+    // 525) does not. Called a one chunk cap here and in two other places, which was the bound tried
+    // before the mechanism was read: 124 bytes is two chunks and is fine.
     const window = ARCH9_WINDOWS[topByte];
     if (window) {
       // The bound is the firmware's, so enforcing it here only ever agrees with the device. Checked
@@ -385,6 +387,16 @@ export function nextFlashSequence(previous: number): number {
 export const FLASH_CHUNK_DATA = 62;
 /** `READ_MISC` replies with this: two payload bytes, the selector echoed and one data byte. */
 export const MISC_REPLY = 0xc2;
+/**
+ * The reply code alone, without the length nibble.
+ *
+ * **Matched on the code like every other branch, not on the whole byte.** `decodeReply` tested
+ * `first === MISC_REPLY`, so a reply declaring any payload length but two fell past the misc branch
+ * entirely, while the acknowledgement, data and version branches all mask first. Nothing else in the
+ * protocol occupies `0xC0`, so masking cannot swallow another reply, and the nibble still decides the
+ * payload extent as it does everywhere else.
+ */
+export const MISC_REPLY_CODE = MISC_REPLY & 0xf0;
 /** `GET_VERSION` replies with this high nibble, whatever the generation. */
 export const VERSION_REPLY_CODE = 0x20;
 /** What an arch 12 or arch 14 remote answers: this byte, then twelve fields. */
@@ -495,18 +507,27 @@ export function decodeReply(report: Uint8Array): Reply {
     if (sequence === undefined) throw new ProtocolError('flash data chunk with no sequence byte');
     return { kind: 'flash-data', sequence, data: payload.subarray(1) };
   }
-  if (first === MISC_REPLY) {
+  if (code === MISC_REPLY_CODE) {
     const selector = payload[0];
     const value = payload[1];
     if (selector === undefined || value === undefined) {
       throw new ProtocolError('READ_MISC reply is short');
     }
     // Read one byte past the declared payload, the way the acknowledgement above does. The header
-    // nibble claims two bytes on every architecture, and arch 9 sends **three**: the selector it
-    // echoes and then a sixteen bit result, high byte first. libconcord has carried a comment about
-    // exactly this since 2007; the firmware reading is section 90. A remote that sent only two
-    // leaves this byte at whatever the report was zero filled with, which is why `value` stays the
-    // arch 12 and arch 14 answer and nothing here guesses between them.
+    // nibble claims two bytes on every architecture, and arch 9 (Harmony 525) sends **three**: the
+    // selector it echoes and then a sixteen bit result, high byte first. libconcord has carried a
+    // comment about exactly this since 2007; the firmware reading is section 90.
+    //
+    // **The `?? 0` stays, and it is worth saying why rather than leaving it to be read as sloppiness.**
+    // The review called it a default that makes an absent third byte indistinguishable from a zero
+    // one, which is true of the expression and false of anything the transport produces: a HID report
+    // is fixed length and zero filled, so `report[3]` is always there and the default is unreachable
+    // outside a hand built array in a test. Refusing a short report instead was tried on 13 August
+    // 2026 and reverted, because it would have overturned a decision two tests state outright, that a
+    // remote answering in two bytes leaves `word` defined on every architecture and meaningful on one.
+    // A remote that sent only two leaves this byte at whatever the report was zero filled with, which
+    // is why `value` stays the arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) answer and
+    // nothing here guesses between them.
     const low = report[3] ?? 0;
     return {
       kind: 'misc',

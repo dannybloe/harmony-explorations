@@ -18,6 +18,8 @@ import {
   GET_VERSION,
   MAX_PAYLOAD,
   MISC_RAM,
+  MISC_REPLY,
+  MISC_REPLY_CODE,
   ProtocolError,
   READ_FLASH,
   READ_MISC,
@@ -393,4 +395,34 @@ test('a flash id comes from the remote, because the client table disagrees with 
   const exported = Object.keys(everything);
   assert.deepEqual(exported.filter((n) => /flash.*id/i.test(n)), [],
     'the library grew a flash id table, and a flash id is a property of the unit');
+});
+
+test('the misc branch matches on the reply code, not on the whole first byte', () => {
+  // Every other branch of `decodeReply` masks the low nibble off before comparing, because the nibble
+  // is the payload length rather than part of the identity. This one tested `first === MISC_REPLY`,
+  // whose `0xC2` includes a declared length of two, so a misc reply declaring any other length fell
+  // past the branch entirely and out of the decoder. Nothing else in the protocol occupies `0xC0`, so
+  // masking cannot swallow another reply.
+  //
+  // The corpus of real replies all declare two, which is why nothing failed. That is the reason to
+  // pin it rather than to leave it: a length nobody has seen is exactly what a new architecture sends.
+  assert.equal(MISC_REPLY_CODE, 0xc0);
+  const three = new Uint8Array(REPORT_SIZE);
+  three[0] = MISC_REPLY_CODE | 0x03;
+  three[1] = MISC_RAM;
+  three[2] = 0x12;
+  three[3] = 0x34;
+  const reply = decodeReply(three);
+  assert.equal(reply.kind, 'misc', 'a misc reply declaring three bytes is still a misc reply');
+  if (reply.kind !== 'misc') return;
+  assert.equal(reply.selector, MISC_RAM);
+  assert.equal(reply.value, 0x12);
+  assert.equal(reply.word, 0x1234);
+  // And the declared two is unchanged, which is what says the fix widened nothing else.
+  const two = new Uint8Array(REPORT_SIZE);
+  two[0] = MISC_REPLY;
+  two[1] = MISC_RAM;
+  two[2] = 0x5a;
+  const usual = decodeReply(two);
+  assert.equal(usual.kind === 'misc' && usual.word, 0x5a00);
 });

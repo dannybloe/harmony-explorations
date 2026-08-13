@@ -407,6 +407,31 @@ test('an internal read ending in a one byte chunk is refused, because they resta
   assert.equal(written.length, 0, 'and it is refused before anything reaches the device');
 });
 
+test('the odd test was arithmetic that is false for a whole class of counts', async () => {
+  // The predicate was `count % 2 === 1`, and in JavaScript `-3 % 2` is `-1` and `3.5 % 2` is `1.5`,
+  // so a negative odd count and a fractional one both read as even and walked through the rail that
+  // exists because an odd internal read never terminates. A rail whose predicate is wrong for a class
+  // of inputs is worse than no rail, because every test around it passes.
+  //
+  // Whether a caller can reach these values is not the argument: this is the refusal that stands
+  // between a script and a remote leaving the bus, so it refuses anything it cannot prove terminates.
+  const { transport, written } = scriptedRemote([], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1 });
+  for (const count of [-3, -1, 3.5, 62.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    await assert.rejects(
+      () => remote.readInternalMemory(0xff, 0, count),
+      /never terminates/,
+      `${count} is not a count the fetch loop can reach zero from`,
+    );
+  }
+  assert.equal(written.length, 0, 'and none of them reached the device');
+  // The old predicate, spelled out, so the difference is visible rather than asserted about: every
+  // one of those counts reads as even under it.
+  for (const count of [-3, -1, 3.5, 62.5, Number.NaN]) {
+    assert.equal(count % 2 === 1, false, `${count} passes the arithmetic that used to be the rail`);
+  }
+});
+
 test('an even internal read is allowed, because the loop can reach zero', async () => {
   // The other half, and the one that matters: the refusal used to be `> 62`, which is a bound
   // around the hazard rather than the hazard, and it refused the 64 byte read Logitech's own client

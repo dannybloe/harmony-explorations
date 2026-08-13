@@ -12,8 +12,10 @@
  * the bytes it asked for, leaving the trailing acknowledgement in the pipe for the next command to
  * trip over, which looked exactly like a device with a size limit.
  *
- * `readInternalMemory` works and is capped at one chunk, because a multi chunk read of that region
- * restarted a remote. See the method. Every write path has still never touched a device.
+ * `readInternalMemory` works and refuses an **odd** count, because an odd read of that region does
+ * not terminate and has restarted a remote. Not a one chunk cap, which is what this said: 124 bytes
+ * is two chunks and is fine, and section 94 read the mechanism. See the method. Every write path has
+ * still never touched a device.
  *
  * The one thing the firmware makes certain is that **replies are asynchronous**: a handler parses
  * its arguments, sets a state, and returns; the main loop acts on the state later. So every read
@@ -55,6 +57,20 @@ import {
   writeMiscRequest,
 } from './writes.ts';
 import type { Transport } from './transport.ts';
+
+/**
+ * Whether a count is one the internal fetch loop can terminate on.
+ *
+ * **`count % 2 === 1` is not that test**, and both refusals used it. In JavaScript `-3 % 2` is `-1`
+ * and `3.5 % 2` is `1.5`, so a negative odd count and a fractional one both read as even and walked
+ * straight through the rail that exists because an odd internal read does not terminate: the loop
+ * emits two bytes, subtracts two, and exits on equality with zero, with `CLRWDT` inside it so the
+ * watchdog cannot end it either. Section 94. A rail whose predicate is wrong for a whole class of
+ * inputs is worse than none, because the tests around it all pass.
+ */
+function refusableInternalCount(count: number): boolean {
+  return !Number.isInteger(count) || count < 0 || count % 2 !== 0;
+}
 
 export class RemoteError extends Error {}
 
@@ -203,13 +219,18 @@ export class HarmonyRemote {
   async readFlash(address: number, count: number): Promise<Uint8Array> {
     // Throws for a top byte the device's own rule rejects, and tells us which region this is.
     const region = regionOf(address, this.architecture);
-    if (region === 'internal-program-memory' && count % 2 === 1) {
-      // The one chunk cap, enforced here rather than only in `readInternalMemory`. It lived there
-      // alone until 8 August 2026, which was fine while internal memory was only reachable through
-      // the `0xFE` window that method builds. On arch 9 it is at plain low addresses, so every
-      // caller of `readFlash` could reach it uncapped and the documents claimed otherwise. The
-      // hazard is in `readInternalMemory`'s comment: a multi chunk read of this region has
-      // restarted a remote, five times, on arch 12.
+    if (region === 'internal-program-memory' && refusableInternalCount(count)) {
+      // The odd count refusal, enforced here rather than only in `readInternalMemory`. It lived
+      // there alone until 8 August 2026, which was fine while internal memory was only reachable
+      // through the `0xFE` window that method builds. On arch 9 (Harmony 525) it is at plain low
+      // addresses, so every caller of `readFlash` could reach it unguarded. The hazard is in
+      // `readInternalMemory`'s comment: a read of this region has restarted a remote, five times, on
+      // arch 12 (Harmony One).
+      //
+      // **Not a chunk cap**, which is what this and the module docstring both called it: 124 bytes is
+      // two chunks and is fine, and the same comment below says so. Section 94 read the trigger and
+      // it is the parity, so a comment naming the bound that was tried before the mechanism was found
+      // is a superseded reading sitting on top of the correct code.
       throw new RemoteError(
         `an internal memory read of ${count} bytes is an odd count, and the firmware's fetch loop ` +
           `decrements by two and exits on zero, so an odd count never terminates; ask for an even one`,
@@ -287,7 +308,7 @@ export class HarmonyRemote {
    * single probe rather than from the device. `docs/findings.md` section 22.
    */
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
-    if (count % 2 === 1) {
+    if (refusableInternalCount(count)) {
       // A read of this region can restart the remote, and this refusal is what avoids it. Measured
       // on the spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
       //
