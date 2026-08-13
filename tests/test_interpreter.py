@@ -1688,15 +1688,23 @@ class TestTheTouchScreenHitMap(unittest.TestCase):
         from harmony import gspm
         return gspm.parse(lab.load(name)).touch_pages()
 
-    def test_only_architecture_twelve_populates_it(self):
-        """The reason it stayed unnamed: eleven of thirteen containers say nothing."""
+    def test_only_architecture_twelve_has_it_at_all(self):
+        """The reason it stayed unnamed: eleven of thirteen containers say nothing.
+
+        **The answer elsewhere is None and it used to be an empty list**, which is the correction
+        rather than a change of shape: base slot 17 names the **picture bank** on every other
+        architecture, so "no touch pages" was a fabrication about a section that is not a touch
+        map. Two callers in `packages/codec` then read that empty list back as the picture bank
+        discriminator, which is a rule derived from a reader that should have refused. Section 139.
+        """
+        lab.require(*self.CONTAINERS)
         for name in self.CONTAINERS:
             pages = self._pages(name)
             with self.subTest(container=name):
                 if name in self.TOUCH:
                     self.assertGreater(len(pages), 30)
                 else:
-                    self.assertEqual(pages, [])
+                    self.assertIsNone(pages)
 
     def test_the_areas_tile_and_carry_their_own_address(self):
         """Two independent closures on a twelve byte record."""

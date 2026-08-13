@@ -18389,20 +18389,23 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Twenty seven shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Forty shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Twenty seven defects came out of it that a sample could not have found, and they share one shape, which
+Forty defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
 
-They are listed newest reading first, except entries 13 to 20, which were read a day later and are
+They are listed newest reading first, except entries 13 to 21, which were read a day later and are
 appended rather than reordered so the numbering stays citable. Entries 19 and 20 are the Python side, nine
 readings in two entries: 19 holds the five that no sample in the corpus reaches, and 20 the four found by
 reading the same partition list properly afterwards, two of which are producing a wrong answer today.
+Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
+is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
+thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
 Entry 6 needed firmware and is the only new firmware reading here;
 entries 7 and 8 came out of correcting entry 1 in the other language. Entries 7, 8 and 9 are the ones
 that moved a published number, and 9 is the one this document had already written down and not acted on.
@@ -19151,6 +19154,85 @@ the map. What survives is that nothing binds a part to an image, which is caller
 design question rather than a defect, and `sfr_name`'s own tests already pin the two maps apart.
 Recorded because a finding that was checked and did not hold is worth as much here as one that did.
 
+### 21. The container parser's own claims, and two of them were false about the corpus in front of them
+
+Thirteen readings of `gspm.ts`, `tables.ts` and `ezhex.ts`, the layer everything else here stands on.
+The population is what makes this entry different from the two above: the lab parses **33 containers**
+now, and three of the parser's own comments quote a snapshot of thirteen, twelve and twenty four. Two
+of the claims those numbers carry had gone from true to false without anything failing.
+
+**"No container in the corpus has an odd body."**<!--superseded--> `trailerChecksum` does not fold an odd trailing byte
+in, because the firmware counts words, and the comment beside it said no sample tests that so the
+behaviour is the firmware's rather than a tested one. **19 of the 33 have an odd extent**, spanning arch
+8, 9, 10, 12 and 14, and 14 of those verify their stored checksum under exactly that loop. So the
+behaviour is tested by more than half the corpus. The direction of the error is what makes it worth
+correcting rather than deleting: it invited a reader to fold the byte in on the grounds that nothing
+would catch it, and only **two** of the fourteen have a nonzero trailing byte, so the change would have
+broken two containers and been invisible on twelve.
+
+**"Nothing in the corpus reaches that path."**<!--superseded--> The flash base falls back to `endAddr - offsetOfEndMarker`
+when the clock anchor refuses, and the docstring said nothing reaches the fallback. **Three lab samples
+do**, all reads of one Harmony 890, and each lands on `0x02FF94`, `0x02FEF2` and `0x02FD78`, none of them
+block aligned. Every one is then pronounced consistent by `end_addr_points_at_end_marker`, because a
+fallback base is computed from the marker's own position: that is section 117's circularity, still live
+inside the second arm of the `??`. `src/harmony/gspm.py` has carried the corrected sentence since section
+122 and this copy did not, which is the two copies rule caught in documentation rather than arithmetic.
+`flash_base_is_block_aligned` is a check now, and it is the one thing about a fallback base that can fail.
+
+**Two more checks and one corrected length, all from the same place.** `format_high_half_is_zero`, because
+`formatVersion` is `formatRaw >>> 12` on a `u32` and one bit set sixteen places up renders a 1.4 container
+as **17.4** with nothing saying the file is wrong. `sections_ascend`, because `sectionLength` is the
+distance to the next non NULL pointer and returns a negative if they ever stop ascending, which was a
+precondition stated in a comment and checked by nothing. And `key_table_is_complete`, because the key
+table loop stops at the end of the blob and said nothing about having stopped, while section 17's whole
+argument about that table is a count. All three hold on all 33.
+
+**The last section's length came from a declared field.** `sectionLength` measured the final section to
+`endAddr`, which is the same field the base stopped trusting in section 117 and for the same reason: where
+a container ends is data. They agree on 31 of 33; on the two that disagree, both damaged Harmony 890 reads,
+the last section was reported 864 and 324 bytes short with nothing saying so. It is measured against the
+end marker's own position now, which is where `end_addr_points_at_end_marker` looks, so the file that fails
+that check is exactly the file where the two answers differ.
+
+**`blobOffsetOf` was a NULL test wearing a range test's signature.** It refused `address === 0` and nothing
+else, so it answered 16515071 for a 1.6 MB blob and -16 for an address below the base. Every caller guarded
+the upper bound and none guarded the lower, so a pointer below the base reached `u8` and `u24` and threw out
+of functions typed `| undefined`. In Python the same reading is worse, because a negative index does not
+fail, it reads from the end, which is entry 19's theme meeting entry 21's.
+
+**Two claims in `tables.ts` that were documentation rather than code.** A touch area's twelve byte record
+carries its own address at `+0x09`, described in the type as "what makes the twelve byte reading self
+checking", and **nothing ever compared it**: it holds on all 977 areas, so it is a closure that had never
+been closed. And `touchPages` was documented as arch 12 only and gated on nothing, so it read base slot 17
+on 17 containers of arch 8, 9 and 14, where that slot is the **picture bank**, and answered
+`{ records: [], length: 1 }`: "no touch pages" where the truth is "not a touch map". Two callers then
+re derived `records.length === 0` as the picture bank discriminator, which is two copies of one rule with
+`c.architecture` in hand, and a nonzero leading byte in front of a bank would have made both mis-account and
+fabricated areas out of pixels. Both readers are gated now and `touchMapStart` is what the accounting and the
+emitter use for the slot's offset.
+
+**An empty frame's length is zero and zero means seven.** `frameLength` returns the field, and for the empty
+frame the field is 0 while the frame occupies `EMPTY_FRAME_LENGTH + FRAME_END_LENGTH`. Three call sites
+decoded that sentinel separately. The demonstration came from a probe written to check something else: the
+frame tiles to the next section on **24 of the 26** containers that have one, and the two misses are exactly
+the two empty frames, so a fourth caller had already been written and had already got it wrong. `frameExtent`
+is the one place it is decoded now.
+
+**A header past the window read as a file with no header.** `parseEzhex` decodes the first 16 KiB as text to
+find `</INFORMATION>`, and the largest header in the lab is 6851 bytes, a margin of 2.4. Prepending a comment
+past the window made the structural split, the declared size and the declared checksum all undefined at once,
+reported `bare-container` for a file that plainly has one, and then **passed every check on a payload with a
+flipped byte** where the same file unpadded correctly fails. A file whose first byte is `<` has an XML header,
+so exceeding the window is an error now. With it, `decodePayload` glued every `<DATA>` element in a file into
+one payload across `<PHASE>` boundaries, which makes one buffer out of several destinations; no file in the
+lab holds a `<DATA>` element at all, which is why it survived, so both arms are exercised by a synthetic now
+and the multi phase case refuses.
+
+**And the header guard was smaller than a header the lab holds.** `blob.length < 0x68` is 104 bytes, arch 12's
+header through its key count, where an arch 10 (Harmony 890) one needs 107. So the guard passed a blob three
+bytes short of the header its own message claimed to have proved room for. It is derived from the three
+constants that decide it now.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -19202,6 +19284,18 @@ Recorded because a finding that was checked and did not hold is worth as much he
   `LFSR` already did, so a data word is no longer claimed as two and the scan after it stays aligned.
 * **The container reporter prints no base slot where the format states no architecture**, instead of
   `base slot False`, and it no longer raises out of an unknown one.
+* **A container carries four more checks**: `flash_base_is_block_aligned`, `format_high_half_is_zero`,
+  `sections_ascend` and `key_table_is_complete`. The first fails on three Harmony 890 reads and is the only
+  thing about a fallback base that can; the other three hold on all 33 and are guards.
+* **19 of the 33 parseable containers have an odd body**, not none, and 14 of them verify their checksum
+  under the loop as written. Folding the trailing byte in would break two and be invisible on twelve.
+* **A section's length no longer ends at a declared field**: the last one is measured to the end marker,
+  which is 864 and 324 bytes different on the two damaged reads.
+* **`blobOffsetOf` is a range test in both languages**, so an address outside the blob has no offset.
+* **A touch area's back pointer is compared**, 977 of 977, and `touchPages` refuses on any architecture
+  where base slot 17 is the picture bank instead of fabricating an empty table for it.
+* **An EZHex whose header runs past the read window is an error**, where it used to report itself as a
+  bare container and then pass every check on a corrupted payload.
 
 ### What would falsify it
 
@@ -19213,7 +19307,10 @@ story. For the closure: a record whose header timings name NEC or Kaseikyo and w
 or 48, which is now checkable because the two numbers come from the same record's own bytes. For the overlap detector: a container where the new rule reports an overlap, which would mean
 two readers claim one byte and one of them is wrong. For entry 19: any image or container that reaches
 one of the five, which would move it from latent to live and is the one thing that would make it worth
-more than it currently claims. For entry 20: a banked access to the USB block that this still does not
+more than it currently claims. For entry 21: a container whose base is unaligned and which is not a
+damaged read, which would say the alignment is a property of this corpus rather than of the format; or a
+touch area whose back pointer does not equal its own address, which would say the field is not a back
+pointer. For entry 20: a banked access to the USB block that this still does not
 name, or a two word instruction whose real trailing word is not `0xFxxx`, which would say the encoding
 read here is not the encoding. For base slot 15's continuation: an arch 12 container
 whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body

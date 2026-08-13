@@ -74,7 +74,8 @@ import {
 } from './sections.ts';
 import type { TaggedList } from './sections.ts';
 import { fontSets, glyphs } from './font.ts';
-import { SCREEN_END, bitmaps, deadTerminator, pictureBank, pictureBankStart, reachablePrograms }
+import { PICTURE_BANK_BIAS, SCREEN_END, bitmaps, deadTerminator, pictureBank, pictureBankStart,
+  reachablePrograms }
   from './screen.ts';
 import { EMPTY_ARRAY_LIMIT, RAW_SLOT_PREFIX, claims, namedContentEnd } from './coverage.ts';
 import {
@@ -102,6 +103,7 @@ import {
   lightBandExtras,
   parameterGroups,
   timers,
+  touchMapStart,
   touchPages,
 } from './tables.ts';
 import { archSlot } from './gspm.ts';
@@ -478,17 +480,17 @@ export function rebuilds(c: Container): Rebuild[] {
   // Base slot 17: the touch map, three levels of it, all typed. Each area carries its own address
   // at +0x09, which is what made the twelve byte reading self checking, and writing it back from
   // the field keeps that property in the emitter.
+  // Which section base slot 17 is comes from the architecture, mirroring `coverage.ts`: on arch 12
+  // (Harmony One) a touch map, elsewhere the two bytes in front of the picture bank. Both are zero
+  // in all thirteen containers that do this and both are written as zeros, so a nonzero second byte
+  // fails the round trip rather than being carried past unnoticed. Section 84.
   const touch = touchPages(c);
+  const slot17 = touchMapStart(c);
+  if (touch === undefined && slot17 !== undefined && pictureBankStart(c) !== undefined) {
+    framed(slot17, 'slot-17-table', new Writer(PICTURE_BANK_BIAS).u8(0).u8(0));
+  }
   if (touch !== undefined) {
-    // Two bytes rather than one where the section names the picture bank instead of a touch map,
-    // because the bank starts `PICTURE_BANK_BIAS` past the pointer and both bytes are zero in all
-    // thirteen containers that do this. Written as zeros, so a nonzero second byte fails the round
-    // trip rather than being carried past unnoticed. Section 84.
-    const bank = pictureBankStart(c);
-    const header = bank !== undefined && touch.records.length === 0
-      ? bank - touch.start
-      : touch.length;
-    const w = new Writer(header).u8(touch.records.length);
+    const w = new Writer(touch.length).u8(touch.records.length);
     for (const page of touch.records) w.u24(page.address);
     while (w.remaining > 0) w.u8(0);
     framed(touch.start, 'slot-17-table', w);

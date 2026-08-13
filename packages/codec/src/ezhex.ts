@@ -36,6 +36,16 @@ export const CHECKSUM_SEED = 0x69;
 
 /** The end of the XML header. The payload starts after this line's terminator. */
 export const HEADER_TERMINATOR = '</INFORMATION>';
+/**
+ * How much of the file is decoded as text to look for the header.
+ *
+ * The header is a few hundred bytes and the payload can be megabytes, and nothing in the payload
+ * is text. The largest header in the lab is 6851 bytes, so the margin is 2.4, which is small enough
+ * that exceeding the window has to be an error rather than a quieter reading.
+ */
+export const HEADER_WINDOW = 0x4000;
+/** A file whose first byte is `<` has an XML header, whatever else is or is not found in it. */
+const XML_OPEN = 0x3c;
 
 /**
  * The six fields a compatibility check compares, section 87.
@@ -159,10 +169,22 @@ function containerOffset(data: Uint8Array): number {
 export function parseEzhex(blob: Uint8Array, name = '<blob>'): EzHex {
   // Only the head is decoded as text: the header is a few hundred bytes and the payload can be
   // megabytes, and nothing in the payload is text.
-  const head = latin1(blob.subarray(0, Math.min(blob.length, 0x4000)));
+  const head = latin1(blob.subarray(0, Math.min(blob.length, HEADER_WINDOW)));
   const size = xmlInt(head, 'BINARYDATASIZE');
   const declaredChecksum = xmlInt(head, 'CHECKSUM');
   const structural = structuralSplitOf(head);
+  // A file that opens with `<` has an XML header, and if the terminator is not inside the window
+  // then the window is too small, not the header absent. This used to fall through to the declared
+  // length and then to the cookie search, and report `bare-container` for a file with a header:
+  // prepending a 16 KiB comment to a real config made the structural split, the declared size and
+  // the declared checksum all undefined, and **all four checks then passed on a payload with a
+  // flipped byte** where the unpadded file correctly fails. The largest header in the lab is 6851
+  // bytes against a 16384 byte window, a margin of 2.4, so the honest answer when it is exceeded is
+  // an error rather than a different reading.
+  if (blob[0] === XML_OPEN && structural === undefined) {
+    throw new EzFileError(
+      `${name}: an XML header with no ${HEADER_TERMINATOR} in the first ${HEADER_WINDOW} bytes`);
+  }
   const declared =
     size !== undefined && size > 0 && size <= blob.length ? blob.length - size : undefined;
 
@@ -219,6 +241,7 @@ export function parseEzhex(blob: Uint8Array, name = '<blob>'): EzHex {
 }
 
 const DATA_ELEMENT = /<DATA>([0-9A-Fa-f]+)<\/DATA>/g;
+const PHASE_ELEMENT = /<PHASE>/g;
 
 function unhex(text: string, name: string): Uint8Array {
   if (text.length % 2 !== 0) throw new EzFileError(`${name}: odd number of hex digits`);
@@ -236,6 +259,17 @@ export function decodePayload(blob: Uint8Array, name = '<blob>'): Region {
   const text = latin1(blob);
   const chunks = [...text.matchAll(DATA_ELEMENT)].map((m) => m[1] as string);
   if (chunks.length > 0) {
+    // Every `<DATA>` in the file, glued into one payload. An EZUp groups them into `<PHASE>`
+    // elements, each with its own destination, so gluing across a phase boundary produces one
+    // buffer out of several destinations and reports it as a single payload. Reading the phases
+    // apart stays in `src/harmony/ezfile.py`, per the module docstring, so this refuses rather
+    // than answers. Nothing exercises either arm: no file in the lab holds a `<DATA>` element at
+    // all, which is why the gluing survived.
+    const phases = [...text.matchAll(PHASE_ELEMENT)].length;
+    if (phases > 1) {
+      throw new EzFileError(
+        `${name}: ${phases} phases, each with its own destination: read them apart in Python`);
+    }
     return { name, payload: unhex(chunks.join(''), name), encoding: 'hex-data-elements' };
   }
 

@@ -37,6 +37,7 @@ import {
   parse,
   pictureBankStart,
   reachablePrograms,
+  touchMapStart,
   touchPages,
   valueMaps,
 } from '../src/index.ts';
@@ -792,11 +793,17 @@ test('four claims that used to rest on a coincidence now rest on a comparison',
     // Base slot 17 where it names the picture bank: the header is `PICTURE_BANK_BIAS`, and the
     // subtraction it used to be could only ever produce that, since `pictureBankStart` is the section
     // start plus the bias. The identity belongs here, where it can be seen for what it is.
+    //
+    // **Which case this is comes from the architecture now**, not from `touchPages` answering with
+    // an empty table: that reader is gated on arch 12 (Harmony One) and returns undefined here, so
+    // this condition is the one the accounting itself uses rather than a second derivation of it.
     const touch = touchPages(c);
+    const start = touchMapStart(c);
     const bank = pictureBankStart(c);
-    if (touch !== undefined && bank !== undefined && touch.records.length === 0) {
+    if (touch === undefined && start !== undefined && bank !== undefined) {
       banks += 1;
-      assert.equal(bank - touch.start, PICTURE_BANK_BIAS,
+      assert.notEqual(c.architecture, 12, `${name}: a Harmony One has a touch map, not a bank`);
+      assert.equal(bank - start, PICTURE_BANK_BIAS,
         `${name}: the bank sits one bias past the section, by construction`);
       const header = claims(c).find((x) => x.owner === 'slot-17-table');
       assert.equal(header?.length, PICTURE_BANK_BIAS, `${name}: claimed as the constant`);

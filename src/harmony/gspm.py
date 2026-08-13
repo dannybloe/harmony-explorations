@@ -8,7 +8,8 @@ module is written against the shape and not against a model table:
   * The flash base address the blob was linked for is recovered from a **content anchor**, the
     single slot 3 clock record, and not from the header's `end_addr` field. See
     `recover_flash_base` for why: the obvious `base = end_addr - offset_of_end_marker` reading
-    is right on 23 of the 24 containers here and silently wrong on the 24th.
+    is right on 23 of the 24 containers that existed when it was measured and silently wrong
+    on the 24th.
   * The pointer table length differs per architecture and is not stated in the header, but
     it follows from where the marker after the table sits:
     `count = (marker_offset - 3 - 0x0C) / 4`.
@@ -61,7 +62,8 @@ END_MARKER = b'PTYY'
 # That cost one section. The last item's pointer occupies the three bytes immediately before the
 # trailer marker, and the old derivation subtracted exactly those three bytes as unexplained
 # padding, so every container was parsed one slot short. It went unnoticed because the final
-# section is NULL in all thirteen samples.
+# section is NULL in all 33 containers the lab can parse, which the `last_section_is_null` check
+# is what asserts.
 #
 # The reading is closed by arithmetic rather than by inspection: 0x0B + 4 * count lands exactly on
 # the measured marker offset in every sample of all four architectures, which the old reading
@@ -91,8 +93,13 @@ def trailer_checksum(blob: bytes) -> int:
     """Recompute a container's trailer checksum from its bytes.
 
     An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-    counts words. No container in the corpus has an odd body, so that is the firmware's behaviour
-    rather than a tested one.
+    counts words.
+
+    This said "no container in the corpus has an odd body, so that is the firmware's behaviour<!--superseded-->
+    rather than a tested one", and both halves were wrong. **19 of the 33 parseable containers here
+    have an odd extent**, spanning arch 8, 9, 10, 12 and 14, and 14 of them verify their stored
+    checksum under exactly this loop. So the behaviour is tested, by more than half the corpus, and
+    it is the comment that was untested. Section 139 entry 21.
     """
     accumulator = TRAILER_CHECKSUM_SEED
     body = memoryview(blob)[:len(blob) - TRAILER_CHECKSUM_OFFSET]
@@ -104,6 +111,8 @@ def trailer_checksum(blob: bytes) -> int:
 # the Harmony 525. Stored little endian, so the cookie reads `ed fe` in a hex dump.
 FRAME_COOKIE = b'\xed\xfe'
 FRAME_END = b'\xef\xbe'
+# Both container cookies are four ASCII bytes, magic and end marker alike.
+END_MARKER_LENGTH = 4
 # An empty frame carries length 0 and its terminator sits five bytes in, so the length rule
 # below does not apply to it. Seen only in the One's safe mode config so far.
 EMPTY_FRAME_LENGTH = 5
@@ -125,8 +134,8 @@ ARCH_VERSION_WORD_END = 4
 
 # Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator
 # are their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly
-# once in every one of the thirteen samples, so it identifies the record without needing a length
-# to validate it.
+# once in every one of the 33 containers the lab can parse, so it identifies the record without
+# needing a length to validate it.
 #
 #     +0x00  u16  0xADDF
 #     +0x02  u8   second, minute, hour, day of month, day of week, month (0 = January)
@@ -530,6 +539,8 @@ IMAGE_PACKED_INK = 1
 # rectangles on it. The firmware walks a page in order and returns the first rectangle containing
 # the point, so overlapping rectangles are resolved by position rather than being a defect.
 TOUCH_MAP_SLOT = 17
+# The one architecture where that slot is a touch map. Everywhere else it is the picture bank.
+TOUCH_MAP_ARCHITECTURE = 12
 # The same slot names the picture bank on the architectures that do not have a touch screen, two
 # bytes ahead of it. Arch 12 is the exception and names the bank nowhere.
 PICTURE_BANK_BIAS = 2
@@ -1032,10 +1043,20 @@ class Container:
         return '%d.%d' % (self.format_raw >> 12, (self.format_raw >> 8) & 0xF)
 
     def blob_offset_of(self, address: int) -> Optional[int]:
-        """Convert an absolute flash address to an offset within the container blob."""
+        """Convert an absolute flash address to an offset within the container blob.
+
+        None for a NULL pointer and for an address outside the blob. It used to test only
+        `address == 0`, so it was a NULL test wearing a range test's signature, and a negative
+        result is worse in Python than in TypeScript: a negative index does not fail, it reads
+        from the end. Nothing in the corpus carries such a pointer; a container whose base came
+        from the marker fallback can.
+        """
         if address == 0:
             return None
-        return address - self.flash_base
+        off = address - self.flash_base
+        if off < 0 or off >= self.length:
+            return None
+        return off
 
     def file_offset(self, address: int) -> Optional[int]:
         """Convert an absolute flash address to an offset within the file that was parsed.
@@ -1057,14 +1078,22 @@ class Container:
         """Bytes from this section's start to the next non NULL one, or to the end marker.
 
         The header does not state section lengths, so they come from the layout: the non NULL
-        pointers ascend with the slot number in every sample, which is what makes this well
-        defined. NULL slots have no length.
+        pointers ascend with the slot number in every sample, which the `sections_ascend` check
+        now verifies rather than this docstring asserting it. NULL slots have no length.
+
+        The **last** section's end is the end marker's own position and not the header's
+        `end_addr`, which is the same correction the base got in section 117 and for the same
+        reason: `end_addr` is a declared field and where a container actually ends is data. They
+        agree on 31 of the 33 parseable containers; on the two that disagree, both damaged reads
+        of one Harmony 890, this used to report the last section 864 and 324 bytes short with
+        nothing saying so.
         """
         if slot >= len(self.sections) or self.sections[slot].is_null:
             return None
         start = self.sections[slot].address
         following = [s.address for s in self.sections[slot + 1:] if s.address]
-        return (following[0] if following else self.end_addr) - start
+        end = self.flash_base + self.length - END_MARKER_LENGTH
+        return (following[0] if following else end) - start
 
     def pointer_array(self, slot: int) -> Optional[List[int]]:
         """Read a section as a count followed by that many three byte flash pointers.
@@ -2443,9 +2472,15 @@ class Container:
         +0x09  u24  the record's own address
         ```
 
-        Empty on every architecture but 12, where both Harmony One configs carry it.
-        `docs/findings.md` section 45.
+        **Arch 12 only, and that is enforced here rather than described.** Elsewhere base slot 17
+        names the picture bank, and this read it anyway, answering with an empty list: "no touch
+        pages" where the truth is "not a touch map". `docs/findings.md` sections 45 and 139.
+
+        The back pointer at `+0x09` is what makes the twelve byte reading self checking, and it is
+        compared now rather than only read. It holds on all 977 areas in the corpus.
         """
+        if self.architecture != TOUCH_MAP_ARCHITECTURE:
+            return None
         try:
             pages = self._counted_pointers(arch_slot(self.architecture, TOUCH_MAP_SLOT), 1)
         except GspmError:
@@ -2464,6 +2499,8 @@ class Container:
                     return None
                 fields = [int.from_bytes(self.blob[off + 2 * k:off + 2 * k + 2], 'little')
                           for k in range(4)]
+                if int.from_bytes(self.blob[off + 9:off + 12], 'little') != address:
+                    return None
                 areas.append(TouchArea(address=address, x=fields[0], width=fields[1],
                                        y=fields[2], height=fields[3],
                                        code=self.blob[off + 8],
@@ -2694,7 +2731,7 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
 def find_clock_records(blob: bytes) -> List[int]:
     """Every offset in `blob` where a clock record validates.
 
-    Exactly one in all 24 containers this project holds, which is what makes it usable as an
+    Exactly one in all 33 containers the lab can parse, which is what makes it usable as an
     anchor. `clock_record` requires the stored day of week to agree with the stored date, so a
     hit is a closure rather than a two byte cookie match: the cookie pair turns up by chance
     roughly once per 32 KiB and none of those chance hits validates.
@@ -2706,6 +2743,18 @@ def find_clock_records(blob: bytes) -> List[int]:
             out.append(off)
         off = blob.find(CLOCK_COOKIE, off + 1)
     return out
+
+
+def _sections_ascend(sections: List['Section']) -> bool:
+    """Whether the non NULL pointers ascend with the slot number, which `section_length` needs."""
+    previous = 0
+    for s in sections:
+        if s.is_null:
+            continue
+        if s.address < previous:
+            return False
+        previous = s.address
+    return True
 
 
 def recover_flash_base(blob: bytes, addresses: List[int]) -> Optional[int]:
@@ -2733,7 +2782,8 @@ def recover_flash_base(blob: bytes, addresses: List[int]) -> Optional[int]:
         start of a flash block, and
       * every non-NULL pointer resolves inside the blob under it.
 
-    One candidate survives in all 24 containers. Calibration, which is the point: 23 of them had
+    One candidate survives in 24 of the 27 containers it was measured over, the three misses
+    being the damaged Harmony 890 reads named below. Calibration, which is the point: 23 of them had
     a base already established by the old reading and the anchor recovers every one, spanning
     five architectures and six distinct bases from `0x002000` to `0x040000`. The 24th is
     `H890-Bedroom-2`, where the two disagree, and the anchor is the one that agrees with an
@@ -2890,6 +2940,16 @@ def parse(data: bytes) -> Container:
         # on `H890-Bedroom-2`, whose header describes a container 864 bytes shorter than the body
         # behind it. Under the old circular reading this could not fail on any input at all.
         'end_addr_points_at_end_marker': blob[end_off:end_off + 4] == family.end_marker,
+        # The one thing about a **fallback** base that can fail, and the reason it is a check
+        # rather than an assumption: when the clock anchor refuses, the base comes from the
+        # marker's own position and the check above then passes by construction. Three Harmony 890
+        # reads take that path and every one of them lands off a block boundary. A container is
+        # written at the start of a flash block, so an unaligned base is not a base. Section 122.
+        'flash_base_is_block_aligned': flash_base % FLASH_BASE_ALIGNMENT == 0,
+        # Both halves of the format word are read, because the version only uses the top two
+        # nibbles and nothing said the rest is zero. It is, in all 33 parseable containers, and
+        # without this a `format_raw` of 0x00011600 would render as "17.6" rather than be refused.
+        'format_high_half_is_zero': format_raw >> 16 == 0,
         # The table has to end exactly where the marker begins, which fails if the marker offset
         # is not congruent to the table start. This is the check that would have caught the off
         # by one had it existed: under the old derivation the table stopped three bytes short.
@@ -2902,6 +2962,10 @@ def parse(data: bytes) -> Container:
         'sections_within_blob': all(
             s.is_null or 0 <= s.address - flash_base < len(blob)
             for s in container.sections),
+        # `section_length` is the distance to the next non NULL pointer, so it silently returns a
+        # negative if they ever stop ascending. The ascent was stated as a precondition in a
+        # comment and checked by nothing; it holds on all 33 parseable containers.
+        'sections_ascend': _sections_ascend(container.sections),
         'slot0_is_a_feed_frame': container.frame_length is not None,
         'slot1_states_the_architecture': container.architecture is not None,
         # Passing this means the stored day of week agrees with the date, so it is a closure and
@@ -2923,6 +2987,11 @@ def parse(data: bytes) -> Container:
             code = blob[o]
             idx = struct.unpack_from('<H', blob, o + 1)[0]
             container.keys.append(KeyRecord(k, code, idx, blob[o + 3]))
+        # The loop stops at the end of the blob and used to say nothing about having stopped, so a
+        # damaged read with a short tail yielded fewer records than the table declares while
+        # section 17's whole argument about the key table is a count. Declared and parsed agree on
+        # every container here, so this is a guard rather than a live defect.
+        container.checks['key_table_is_complete'] = len(container.keys) == count
 
     return container
 

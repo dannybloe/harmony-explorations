@@ -44,7 +44,7 @@ import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Bod
 import { eventMap, handlerSets, logArea, modeRecords, modeTable, stateRecords, stateTable,
   taggedList, taggedListPools } from './sections.ts';
 import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, lightBandExtras, parameterGroups, timers,
-  touchPages } from './tables.ts';
+  touchMapStart, touchPages } from './tables.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
 export interface Claim {
@@ -160,9 +160,9 @@ export function claims(c: Container, withPictures = true): Claim[] {
   // written the extra pair, which is where the mismatch showed. An empty frame states a length of
   // zero and is the fixed seven bytes of cookie, length, spare and terminator. Section 83.
   const tree = c.sections[0];
-  if (tree !== undefined && !tree.isNull && c.frameLength !== undefined) {
-    const stated = c.frameLength === 0 ? EMPTY_FRAME_LENGTH : c.frameLength;
-    at(tree.address, stated + FRAME_END_LENGTH, 'slot-0-tree');
+  const extent = c.frameExtent;
+  if (tree !== undefined && !tree.isNull && extent !== undefined) {
+    at(tree.address, extent, 'slot-0-tree');
   }
 
   // Base slot 8's leading action list, `u8 count; { u16 operand; u8 opcode }[count]`, which is
@@ -460,25 +460,28 @@ export function claims(c: Container, withPictures = true): Claim[] {
     at(extras.pair.address, extras.pair.length, 'slot-15-band-pair');
     at(extras.fields.address, extras.fields.length, 'slot-15-band-fields');
   }
+  // Base slot 17 is two different sections, and which one it is comes from the architecture rather
+  // than from the shape of what is there. On arch 12 (Harmony One) it is the touch map; everywhere
+  // else it names the picture bank, and its own part is the two bytes in front of it. Section 84.
+  //
+  // **The architecture decides, not an empty table.** This asked `touchPages(c)` on every
+  // architecture and read `records.length === 0` as "picture bank", which is a rule derived from a
+  // reader that should have refused, spelled out here and again in `emit.ts`. A nonzero leading
+  // byte in front of a bank would have made both claim the wrong length.
+  //
+  // The constant is named rather than subtracted for the same reason as before: this read
+  // `pictureBankStart(c) - touch.start`, presented as derived from where the bank sits, and the
+  // difference was `PICTURE_BANK_BIAS` by construction.
   const touch = touchPages(c);
+  const slot17 = touchMapStart(c);
   if (touch !== undefined) {
-    // Where base slot 17 names the picture bank rather than a touch map, its own part is the two
-    // bytes in front of the bank, not the one byte an empty count accounts for. Section 84.
-    //
-    // **The constant, not a subtraction that can only produce it.** This read `pictureBankStart(c) -
-    // touch.start`, presented as derived from where the bank sits, and `pictureBankStart` is
-    // `blobOffsetOf(slot 17) + PICTURE_BANK_BIAS` while `touch.start` is `blobOffsetOf(slot 17)`, so
-    // the difference was `PICTURE_BANK_BIAS` by construction and could never be anything else. Naming
-    // the constant says what the claim is; the identity it rested on is asserted in the test rather
-    // than performed here, where it looked like a measurement.
-    const header = pictureBankStart(c) !== undefined && touch.records.length === 0
-      ? PICTURE_BANK_BIAS
-      : touch.length;
-    add(touch.start, header, 'slot-17-table');
+    add(touch.start, touch.length, 'slot-17-table');
     for (const page of touch.records) {
       add(page.start, page.length, 'slot-17-page');
       for (const area of page.areas) at(area.address, TOUCH_AREA_LENGTH, 'slot-17-area');
     }
+  } else if (slot17 !== undefined && pictureBankStart(c) !== undefined) {
+    add(slot17, PICTURE_BANK_BIAS, 'slot-17-table');
   }
 
   // Base slot 14's own records, which are what supplied half of those roots.

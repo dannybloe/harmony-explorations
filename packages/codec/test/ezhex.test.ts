@@ -9,8 +9,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless } from '@harmony/lab';
-import { allChecksPass, parse, parseEzhex, payloadChecksum, payloadOf } from '../src/index.ts';
+import { load, require_, skipUnless } from '@harmony/lab';
+import { HEADER_WINDOW, allChecksPass, decodePayload, parse, parseEzhex, payloadChecksum,
+  payloadOf } from '../src/index.ts';
 
 /**
  * Every sample that arrived as an EZHex file, which is all ten configs.
@@ -174,3 +175,36 @@ test('payloadOf unwraps XML and passes a raw dump through', skipUnless('h525_con
   const raw = load('h700_code') as Uint8Array;
   assert.equal(payloadOf(raw, 'raw').length, raw.length, 'a raw image is passed through');
 });
+
+test('a header past the window is an error, not a file without one',
+  skipUnless('h525_config'), () => {
+    // The window is a literal 16 KiB and the largest header in the lab is 6851 bytes, a margin of
+    // 2.4. Prepending a comment past it used to make the structural split, the declared size and
+    // the declared checksum all undefined at once, report `bare-container` for a file that plainly
+    // has a header, and then pass every check on a payload with a flipped byte, where the same
+    // file unpadded correctly fails. Section 139.
+    const original = require_('h525_config');
+    assert.equal(original[0], 0x3c, 'the sample is XML headed');
+    const padded = new Uint8Array(HEADER_WINDOW + original.length);
+    const comment = latin1Bytes(`<!--${'x'.repeat(HEADER_WINDOW - 7)}-->`);
+    padded.set(comment, 0);
+    padded.set(original, comment.length);
+    assert.throws(() => parseEzhex(padded, 'padded'), /INFORMATION/);
+    assert.throws(() => decodePayload(padded, 'padded'), /INFORMATION/);
+    // The control: the same file unpadded reads its header and verifies.
+    const ez = parseEzhex(original, 'h525_config');
+    assert.notEqual(ez.structuralSplit, undefined);
+  });
+
+test('an EZUp with more than one phase is refused rather than glued into one payload', () => {
+  // Each `<PHASE>` states its own destination, so concatenating every `<DATA>` across them makes
+  // one buffer out of several destinations and reports it as a single payload. Reading them apart
+  // stays in `src/harmony/ezfile.py`. Nothing in the lab holds a `<DATA>` element at all, which is
+  // why this went unnoticed, so both arms are exercised here by construction.
+  const one = latin1Bytes('<EZUP><PHASE><DATA>4142</DATA><DATA>4344</DATA></PHASE></EZUP>');
+  assert.deepEqual([...decodePayload(one, 'one').payload], [0x41, 0x42, 0x43, 0x44]);
+  const two = latin1Bytes(
+    '<EZUP><PHASE><DATA>4142</DATA></PHASE><PHASE><DATA>4344</DATA></PHASE></EZUP>');
+  assert.throws(() => decodePayload(two, 'two'), /2 phases/);
+});
+

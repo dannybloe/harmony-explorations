@@ -244,7 +244,9 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words. No container in the corpus has an odd body.
+counts words, and **19 of the 33 parseable containers have an odd body**, of which 14 verify their
+stored checksum under that rule. This said the corpus holds none<!--superseded-->, which made the
+behaviour read as untested when more than half the corpus tests it.
 
 **This is the value a writer has to get right**; the remote refuses a config whose checksum does
 not recompute. It is also a weak check: a word XOR catches any single changed byte but is blind to

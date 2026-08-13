@@ -70,6 +70,7 @@ import {
   taggedList,
   taggedListPools,
   timers,
+  touchMapStart,
   touchPages,
   bytes,
 } from '../src/index.ts';
@@ -179,14 +180,17 @@ test('a mode entry reads as a tagged list, and its extent is not trusted', skipU
  * `[sample, timers, longest duration, group lengths, touch pages, touch areas]`, again the numbers
  * `src/harmony/gspm.py` produces. findings.md sections 43, 44 and 45.
  */
-const TABLES: readonly [string, number, number, number[], number, number][] = [
-  ['h700_config', 9, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], 0, 0],
-  ['h600_config', 5, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], 0, 0],
+const TABLES: readonly [string, number, number, number[], number | undefined, number][] = [
+  // The touch map is `undefined` rather than an empty table where the architecture is not 12: base
+  // slot 17 names the picture bank there, so "no touch pages" was a fabrication about a section
+  // that is not one. Section 139.
+  ['h700_config', 9, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], undefined, 0],
+  ['h600_config', 5, 10, [1, 4, 1, 4, 6, 14, 14, 1, 2], undefined, 0],
   ['one_config', 30, 20, [1, 6, 1, 1, 6, 16, 16, 1, 2, 6, 8], 42, 247],
-  ['arch8_config_a', 19, 20, [1, 6, 1, 1, 6, 14, 14, 1, 2], 0, 0],
+  ['arch8_config_a', 19, 20, [1, 6, 1, 1, 6, 14, 14, 1, 2], undefined, 0],
   // The longest duration anywhere in the corpus, and it is two hours, which is what makes the one
   // second tick believable rather than merely arithmetically possible.
-  ['h525_config', 5, 7200, [1, 1, 4, 1, 1], 0, 0],
+  ['h525_config', 5, 7200, [1, 1, 4, 1, 1], undefined, 0],
 ];
 
 for (const [name, count, longest, groups, pages, areas] of TABLES) {
@@ -205,7 +209,9 @@ for (const [name, count, longest, groups, pages, areas] of TABLES) {
       assert.equal(touch?.records.length, pages);
       assert.equal((touch?.records ?? []).reduce((n, p) => n + p.areas.length, 0), areas);
       // Every area carries its own address, which is what makes the twelve byte reading self
-      // checking rather than a plausible split of a run of bytes.
+      // checking rather than a plausible split of a run of bytes. The reader compares it now, so
+      // this is the assertion that says the closure holds on real data and not only that the
+      // refusal is unreachable.
       for (const page of touch?.records ?? []) {
         for (const area of page.areas) assert.equal(area.self, area.address);
       }
@@ -1486,3 +1492,29 @@ test('the tagged list form has one derivation, and the three it replaced still a
   }
   assert.equal(lists, 5701, `${lists} tagged lists compared three ways`);
 });
+
+test('a flipped touch area back pointer is refused, and a picture bank is not a touch map',
+  skipUnless('one_config', 'h700_config'), () => {
+    // Two claims that were documented and unenforced. The back pointer at +0x09 was called the
+    // thing that makes the twelve byte reading self checking and was never compared to anything;
+    // and `touchPages` read base slot 17 on every architecture, where elsewhere it is the picture
+    // bank, answering "no touch pages" for a section that is not one. Section 139.
+    const original = require_('one_config');
+    const c = parse(original);
+    const first = touchPages(c)?.records[0]?.areas[0];
+    assert.ok(first !== undefined);
+    const off = c.blobOffsetOf(first.address);
+    assert.ok(off !== undefined);
+    assert.equal(first.self, first.address);
+
+    const edited = new Uint8Array(original);
+    const at = c.blobOffset + off + 9;
+    edited[at] = (edited[at] as number) ^ 0x01;
+    assert.equal(touchPages(parse(edited)), undefined, 'a wrong back pointer is not an area');
+
+    // And the architecture decides which section this is, rather than the shape of what is there.
+    const bank = parse(require_('h700_config'));
+    assert.equal(bank.architecture, 14);
+    assert.equal(touchPages(bank), undefined);
+    assert.notEqual(touchMapStart(bank), undefined);
+  });

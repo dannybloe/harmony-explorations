@@ -18,6 +18,8 @@ export const TIMER_SLOT = 12;
 export const TIMER_RECORD_LENGTH = 7;
 export const PARAMETER_SLOT = 15;
 export const TOUCH_MAP_SLOT = 17;
+/** The one architecture where that slot is a touch map. Everywhere else it names the picture bank. */
+export const TOUCH_MAP_ARCHITECTURE = 12;
 export const TOUCH_AREA_LENGTH = 12;
 /** The firmware runs at most this many timers at once, however many the config describes. */
 export const TIMER_SLOTS_IN_RAM = 4;
@@ -193,10 +195,34 @@ export interface TouchPage {
  * Base slot 17: `u8 pages`, `u24 page[]`, each page `u8 areas`, `u24 area[]`, each area twelve
  * bytes of `{ u16 x; u16 width; u16 y; u16 height; u8 code; u24 self }`.
  *
- * Populated only on arch 12, and the firmware answers a touch with the **first** rectangle the
- * point falls in, so a page's order is data rather than presentation.
+ * Arch 12 only, and the firmware answers a touch with the **first** rectangle the point falls in,
+ * so a page's order is data rather than presentation.
+ *
+ * **The architecture gate is enforced here now and was documentation before.** Elsewhere base slot
+ * 17 names the picture bank, and this read it anyway, returning `{ records: [], length: 1 }` on 17
+ * containers of arch 8, 9 and 14: "no touch pages" where the truth is "not a touch map". Two
+ * callers then re derived `records.length === 0` as the picture bank discriminator, which is two
+ * copies of one rule with `c.architecture` in hand, and a nonzero leading byte in front of a
+ * picture bank would have made both mis-account and fabricated areas out of pixels.
  */
+/**
+ * Where base slot 17 begins, whatever it holds there.
+ *
+ * Exists because `touchPages` is gated on arch 12 now, and the two callers that account for that
+ * slot still need its offset on the architectures where it names the picture bank instead. They
+ * used to get it from `touchPages` answering with an empty table, which is the fabrication the
+ * gate removes.
+ */
+export function touchMapStart(c: Container): number | undefined {
+  const slot = slotOf(c, TOUCH_MAP_SLOT);
+  if (slot === undefined) return undefined;
+  const section = c.sections[slot];
+  if (section === undefined || section.address === 0) return undefined;
+  return c.blobOffsetOf(section.address);
+}
+
 export function touchPages(c: Container): Table<TouchPage> | undefined {
+  if (c.architecture !== TOUCH_MAP_ARCHITECTURE) return undefined;
   const slot = slotOf(c, TOUCH_MAP_SLOT);
   if (slot === undefined) return undefined;
   const table = countedPointers(c, slot, 1);
@@ -212,6 +238,10 @@ export function touchPages(c: Container): Table<TouchPage> | undefined {
       const at = u24(c.blob, off + 1 + 3 * k);
       const p = c.blobOffsetOf(at);
       if (p === undefined || p + TOUCH_AREA_LENGTH > c.blob.length) return undefined;
+      // The back pointer at +0x09 is what makes the twelve byte reading self checking, and until
+      // now nothing compared it: the field was read, documented as the closure, and never used as
+      // one. It holds on all 977 areas in the corpus, so this refuses nothing that was being read.
+      if (u24(c.blob, p + 9) !== at) return undefined;
       areas.push({
         x: u16(c.blob, p),
         width: u16(c.blob, p + 2),

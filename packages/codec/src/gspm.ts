@@ -11,7 +11,7 @@
  *   * The flash base address the blob was linked for is recovered from a **content anchor**, the
  *     single slot 3 clock record, and not from the header's `endAddr` field. See
  *     `recoverFlashBase`: the obvious `base = endAddr - offsetOfEndMarker` reading is right on 23
- *     of the 24 containers here and silently wrong on the 24th.
+ *     of the 24 containers that existed when it was measured and silently wrong on the 24th.
  *   * The pointer table length differs per architecture and is not stated in the header, but it
  *     follows from where the marker after the table sits:
  *     `count = (markerOffset - 0x0B) / 4`.
@@ -76,7 +76,8 @@ export const FAMILIES: readonly Family[] = [
  * That cost one section. The last item's pointer occupies the three bytes immediately before the
  * trailer marker, and the old derivation subtracted exactly those three bytes as unexplained
  * padding, so every container was parsed one slot short. It went unnoticed because the final
- * section is NULL in all thirteen samples.
+ * section is NULL in all 33 containers the lab can parse, which the `last_section_is_null` check
+ * is what asserts.
  *
  * The reading is closed by arithmetic rather than by inspection: 0x0B + 4 * count lands exactly on
  * the measured marker offset in every sample of all four architectures, which the old reading
@@ -93,6 +94,21 @@ export const MARKER_SEARCH_LIMIT = 0x200;
 export const KNOWN_POINTER_COUNTS: readonly number[] = [20, 21, 22];
 
 /**
+ * The shortest blob `parse` will look at, which is the header through the key count of the longest
+ * pointer table the lab holds.
+ *
+ * It was the literal `0x68`, unnamed and with no section reference, which is 104: arch 12's header
+ * through its key count and **three bytes short of an arch 10 (Harmony 890) one**, whose 23 slots
+ * need 107. So the guard was smaller than a header in the corpus while its message claimed to have
+ * proved there is room for one. Derived from the three constants that decide it instead, and 23 is
+ * deliberately taken from the samples rather than from `KNOWN_POINTER_COUNTS`, which stops at 22
+ * because the arch 10 slot mapping is not established.
+ */
+export const LONGEST_POINTER_TABLE = 23;
+export const MINIMUM_HEADER_LENGTH =
+  SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * LONGEST_POINTER_TABLE + 5;
+
+/**
  * The trailer checksum's seed, written as two literals by the boot validator on all three images.
  * The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
  * to the stored value, which sits six bytes from the end. `docs/findings.md` section 41.
@@ -105,8 +121,15 @@ export const TRAILER_CHECKSUM_OFFSET = 6;
  * Recompute a container's trailer checksum from its bytes.
  *
  * An odd trailing byte is not folded in, because the firmware divides the byte count by two and
- * counts words. No container in the corpus has an odd body, so that is the firmware's behaviour
- * rather than a tested one.
+ * counts words.
+ *
+ * This said "no container in the corpus has an odd body"<!--superseded--> and called that the
+ * firmware's behaviour rather than a tested one, and both halves were wrong. **19 of the 33 parseable
+ * containers here have an odd extent**, spanning arch 8, 9, 10, 12 and 14, and 14 of them verify
+ * their stored checksum under exactly this loop. So the behaviour is tested, by more than half the
+ * corpus, and it is the comment that was untested. The direction of the error is what makes it worth
+ * correcting rather than deleting: it invited a reader to fold the last byte in on the grounds that
+ * nothing would catch it, and folding it in breaks fourteen containers at once.
  */
 export function trailerChecksum(blob: Uint8Array): number {
   let accumulator = TRAILER_CHECKSUM_SEED;
@@ -155,8 +178,8 @@ export function archRecordExtent(room: number | undefined): number {
 /**
  * Section slot 3 is an eleven byte framed record holding a timestamp. Its cookie and terminator are
  * their own pair, nothing to do with slot 0's, and unlike `0xFEED` this pair occurs exactly once in
- * every one of the thirteen samples, so it identifies the record without needing a length to
- * validate it.
+ * every one of the 33 containers the lab can parse, so it identifies the record without needing a
+ * length to validate it.
  *
  * ```
  * +0x00  u16  0xADDF
@@ -391,6 +414,22 @@ export class Container {
   }
 
   /** Nibble BCD: 0x1600 is 1.6, 0x1400 is 1.4. */
+  /**
+   * How many bytes slot 0's frame occupies, terminator included.
+   *
+   * `frameLength` is the field, and for an empty frame the field is **zero**, which is a sentinel
+   * meaning `EMPTY_FRAME_LENGTH` and nothing in the type says so. Three call sites decoded it
+   * separately and a fourth writing `frameLength + FRAME_END_LENGTH` would get 2 where the answer
+   * is 7. Measured before this existed: the frame tiles to the next section on 24 of the 26
+   * containers that have one, and the two misses are exactly the two empty frames, so the sentinel
+   * was already producing a wrong extent in a probe written to check something else.
+   */
+  get frameExtent(): number | undefined {
+    if (this.frameLength === undefined) return undefined;
+    const stated = this.frameLength === 0 ? EMPTY_FRAME_LENGTH : this.frameLength;
+    return stated + FRAME_END_LENGTH;
+  }
+
   get formatVersion(): string {
     return `${this.formatRaw >>> 12}.${(this.formatRaw >>> 8) & 0xf}`;
   }
@@ -399,10 +438,22 @@ export class Container {
     return Object.values(this.checks).every((ok) => ok);
   }
 
-  /** Convert an absolute flash address to an offset within the container blob. */
+  /**
+   * Convert an absolute flash address to an offset within the container blob.
+   *
+   * Undefined for a NULL pointer and for an address outside the blob. It used to test only
+   * `address === 0`, so it was a NULL test wearing a range test's signature: it answered 16515071
+   * for a 1.6 MB blob and -16 for an address below the base. Every caller guarded the upper bound
+   * and none guarded the lower, so a pointer below the base reached `u8` and `u24` and threw a
+   * `BytesError` out of functions typed `| undefined`, which is a crash where the type says
+   * "no answer". Nothing in the corpus carries such a pointer; a container whose base came from
+   * the marker fallback can.
+   */
   blobOffsetOf(address: number): number | undefined {
     if (address === 0) return undefined;
-    return address - this.flashBase;
+    const off = address - this.flashBase;
+    if (off < 0 || off >= this.blob.length) return undefined;
+    return off;
   }
 
   /**
@@ -422,15 +473,24 @@ export class Container {
    * Bytes from this section's start to the next non NULL one, or to the end marker.
    *
    * The header does not state section lengths, so they come from the layout: the non NULL
-   * pointers ascend with the slot number in every sample, which is what makes this well defined.
-   * NULL slots have no length.
+   * pointers ascend with the slot number in every sample, which the `sections_ascend` check now
+   * verifies rather than this comment asserting it. NULL slots have no length.
+   *
+   * The **last** section's end is the end marker's own position and not the header's `endAddr`,
+   * which is the same correction the base got in section 117 and for the same reason: `endAddr` is
+   * a declared field, and where a container actually ends is data. They agree on 31 of the 33
+   * parseable containers here; on the two that disagree, both damaged reads of one Harmony 890,
+   * this used to report the last section 864 and 324 bytes short with nothing saying so. The
+   * marker's position is where `end_addr_points_at_end_marker` looks, so the file that fails that
+   * check is exactly the file where the two answers differ.
    */
   sectionLength(slot: number): number | undefined {
     const section = this.sections[slot];
     if (section === undefined || section.isNull) return undefined;
     const following = this.sections.slice(slot + 1).filter((s) => !s.isNull);
     const next = following[0];
-    return (next === undefined ? this.endAddr : next.address) - section.address;
+    const end = this.flashBase + this.blob.length - END_MARKER_LENGTH;
+    return (next === undefined ? end : next.address) - section.address;
   }
 
   /**
@@ -439,7 +499,7 @@ export class Container {
    * Six sections per architecture are arrays of this shape, and they are recognised rather than
    * tabulated: the count is a `u8` or a `u16` and is accepted only when `width + 3 * count`
    * accounts for the section exactly. That test is strict enough to pick out the same six slots
-   * in all nine config samples and no others.
+   * in the same six slots per architecture across the corpus and in no others.
    *
    * Returns undefined when the section is not this shape, or when there is no blob to read.
    */
@@ -615,7 +675,8 @@ export function findMarker(blob: Uint8Array): number {
  * ```
  *
  * So the frame occupies `length + 2` bytes, and that lands exactly on the next section in all
- * twelve samples. The length is validated by requiring the terminator where it says, which is
+ * container that has one, once the empty frame's zero length is read as `EMPTY_FRAME_LENGTH`; see
+ * `frameExtent`. The length is validated by requiring the terminator where it says, which is
  * what distinguishes a real frame from the `ed fe` byte pair that turns up by chance roughly once
  * per 64 KiB: the One's 1.6 MB config holds 31 of those pairs and only one of them is a frame.
  *
@@ -675,7 +736,7 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
 /**
  * Every offset in `blob` where a clock record validates.
  *
- * Exactly one in all 24 containers this project holds, which is what makes it usable as an
+ * Exactly one in all 33 containers the lab can parse, which is what makes it usable as an
  * anchor. `clockRecord` requires the stored day of week to agree with the stored date, so a hit
  * is a closure and not a two byte cookie match: the pair turns up by chance roughly once per
  * 32 KiB and none of those chance hits validates.
@@ -712,12 +773,23 @@ export const FLASH_BASE_ALIGNMENT = 0x1000;
  * So the base comes from the data. Each non-NULL pointer is absolute and exactly one targets the
  * clock record, so `address - offsetOfClockRecord` is a candidate base per pointer, filtered by
  * block alignment and by every other pointer resolving inside the blob. One candidate survives in
- * all 24 containers: 23 where the base was already established, spanning five architectures and
+ * 24 of the 27 containers it was measured over, the three misses being the damaged Harmony 890
+ * reads below. Of those 24: 23 where the base was already established, spanning five architectures and
  * six bases, plus the one where the two readings disagree and this one agrees with the
  * independent fact that its trailer checksum fails. `docs/findings.md` section 117.
  *
  * Undefined when the anchor is unavailable or ambiguous, so the caller falls back rather than
- * this guessing. Nothing in the corpus reaches that path.
+ * this guessing. This said "nothing in the corpus reaches that path"<!--superseded--> and **three
+ * lab samples do**: `h890_config_2_rescan`, `h890_config_2_redump_2` and `h890_config_2_redump_3`,
+ * all reads of one Harmony 890 whose clock record sits 54 bytes off the pointer that names it, so
+ * no candidate is aligned and none survives. The fallback then returns `0x02FF94`, `0x02FEF2` and
+ * `0x02FD78`, **none of them block aligned**, and `end_addr_points_at_end_marker` reports true for
+ * each because the base came from the marker's own position. That is section 117's circularity,
+ * still live inside the second arm of the `??`, which is why `flash_base_is_block_aligned` is a
+ * check now: it is the one thing about a fallback base that can fail.
+ *
+ * `src/harmony/gspm.py` has carried the corrected sentence since section 122 and this copy did not,
+ * which is the two copies rule caught in its documentation rather than in its arithmetic.
  */
 export function recoverFlashBase(blob: Uint8Array, addresses: number[]): number | undefined {
   const clocks = findClockRecords(blob);
@@ -803,7 +875,7 @@ export function containerExtent(data: Uint8Array): { family: Family; start: numb
 
 export function parse(data: Uint8Array): Container {
   const { family, start, blob } = containerExtent(data);
-  if (blob.length < 0x68) {
+  if (blob.length < MINIMUM_HEADER_LENGTH) {
     throw new GspmError(`blob too short to hold a header: ${blob.length} bytes`);
   }
 
@@ -843,7 +915,7 @@ export function parse(data: Uint8Array): Container {
     markerOffset,
     marker: ascii(blob, markerOffset, 4),
     family,
-    trailerChecksum: u16(blob, blob.length - 6),
+    trailerChecksum: u16(blob, blob.length - TRAILER_CHECKSUM_OFFSET),
     blob,
     sections,
   });
@@ -887,6 +959,16 @@ export function parse(data: Uint8Array): Container {
     // `H890-Bedroom-2`, whose header describes a container 864 bytes shorter than the body behind
     // it. Under the old circular reading it could not fail on any input at all.
     end_addr_points_at_end_marker: matchesAt(blob, endOff, bytesOf(family.endMarker)),
+    // The one thing about a **fallback** base that can fail, and the reason it is a check rather
+    // than an assumption: when the clock anchor refuses, the base comes from the marker's own
+    // position, and then the check above passes by construction. Three Harmony 890 reads take that
+    // path and every one of them lands off a block boundary. A container is written at the start
+    // of a flash block, so an unaligned base is not a base. `recoverFlashBase`, section 122.
+    flash_base_is_block_aligned: flashBase % FLASH_BASE_ALIGNMENT === 0,
+    // Both halves of the format word are read, because the version only uses the top two nibbles
+    // and nothing said the rest is zero. It is, in all 33 parseable containers, and without this
+    // a `formatRaw` of 0x00011600 would render as "17.6" rather than being refused.
+    format_high_half_is_zero: formatRaw >>> 16 === 0,
     // The table has to end exactly where the marker begins, which fails if the marker offset is
     // not congruent to the table start. This is the check that would have caught the off by one
     // had it existed: under the old derivation the table stopped three bytes short.
@@ -899,6 +981,19 @@ export function parse(data: Uint8Array): Container {
     sections_within_blob: sections.every(
       (s) => s.isNull || (s.address - flashBase >= 0 && s.address - flashBase < blob.length),
     ),
+    // `sectionLength` is the distance to the next non NULL pointer, so it silently returns a
+    // negative if they ever stop ascending, and `pointerArrayAt` then reports "not a pointer
+    // array" rather than refusing. The ascent was stated as a precondition in a comment and
+    // checked by nothing; it holds on all 33 parseable containers.
+    sections_ascend: (() => {
+      let previous = 0;
+      for (const s of sections) {
+        if (s.isNull) continue;
+        if (s.address < previous) return false;
+        previous = s.address;
+      }
+      return true;
+    })(),
     slot0_is_a_feed_frame: container.frameLength !== undefined,
     slot1_states_the_architecture: container.architecture !== undefined,
     // Passing this means the stored day of week agrees with the date, so it is a closure and not
@@ -917,7 +1012,13 @@ export function parse(data: Uint8Array): Container {
       if (o + 4 > blob.length) break;
       container.keys.push(new KeyRecord(k, u8(blob, o), u16(blob, o + 1), u8(blob, o + 3)));
     }
+    // The loop above stops at the end of the blob and used to say nothing about having stopped, so
+    // a damaged read with a short tail yielded fewer records than the table declares while section
+    // 17's whole argument about the key table is a count. Declared and parsed agree on every
+    // container here, so this is a guard rather than a live defect.
+    container.checks['key_table_is_complete'] = container.keys.length === count;
   }
+
 
   return container;
 }

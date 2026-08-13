@@ -2343,13 +2343,21 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
 
     def test_the_two_remotes_carry_configs_of_the_same_length_and_shape(self):
         """
-        Every section is the same length in both, the last one included, and so is the container.
+        Every section is the same length in both, and the last one is longer by the damage.
 
         **This used to assert that the second file was 864 bytes longer and that the growth was all
         in the final section**, which was section 117's evidence that a generator had failed to
         restamp `end_addr`. The 864 bytes are not in the config at all, section 122: they are
         duplicated transfer chunks, and the file the remote holds is the same 396225 bytes as its
         sibling's. So the pair is a pair of equals and the interesting difference was never there.
+
+        **It then asserted the last section too, and that was only true because `section_length`
+        measured it against `end_addr`.** The two files declare the same `end_addr` and one of them
+        has 864 surplus bytes after it, so a length taken from that field reported them equal for a
+        file with more bytes in it. Measured against the end marker's own position, which is what
+        section 139 entry 21 changed, the last section of the damaged read is longer by exactly the
+        surplus, and that is the honest reading: the bytes are there, they just are not the
+        remote's. Section 122.
         """
         lab.require('h890_config', 'h890_config_2', 'h890_config_2_rescan')
         a = gspm.parse(lab.load('h890_config'))
@@ -2360,9 +2368,16 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
         # is surplus. It does not have to, because either choice gives the same bytes.
         self.assertEqual(len(repair_duplicated_chunks(gspm.parse(lab.load('h890_config_2_rescan')))),
                          ARCH10_CONFIG_LENGTH)
+        surplus = len(b.blob) - ARCH10_CONFIG_LENGTH
+        self.assertEqual(surplus, 864)
+        last = max(slot for slot in range(a.pointer_count)
+                   if a.section_length(slot) is not None)
         for slot in range(a.pointer_count):
             with self.subTest(slot=slot):
-                self.assertEqual(a.section_length(slot), b.section_length(slot))
+                expected = a.section_length(slot)
+                if slot == last and expected is not None:
+                    expected += surplus
+                self.assertEqual(b.section_length(slot), expected)
 
 
 #: What an arch 10 read chunk is, section 122. Measured, not derived from a protocol document.

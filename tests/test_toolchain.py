@@ -329,6 +329,12 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
 TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
     'packages/corpus/test/derived-state.test.ts': 1,
     'packages/usb/test/hardware.test.ts': 1,
+    # `parseable()` enumerates every name in `IMAGES` and keeps the ones that parse, which is the
+    # one loop here whose population is deliberately "whatever the lab holds": it exists to state
+    # properties over a wider set than the thirteen pinned samples. What the rule protects against
+    # is a claim shrinking in silence, and every caller asserts the count up front instead, so a
+    # lab missing a sample fails on that number rather than checking less.
+    'packages/codec/test/gspm.test.ts': 1,
 }
 
 

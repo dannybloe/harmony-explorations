@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { IMAGES, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_TABLE_SLOT,
   ARCH_RECORD_SLOT,
@@ -22,6 +22,7 @@ import {
   CLOCK_RECORD_LENGTH,
   CLOCK_RECORD_SLOT,
   FLASH_BASE_ALIGNMENT,
+  MINIMUM_HEADER_LENGTH,
   SECTION_ITEM_SIZE,
   SECTION_TABLE_OFFSET,
   archSlot,
@@ -543,3 +544,170 @@ test('the arch 10 clock record sits one slot later than everywhere else',
       assert.equal(c.builtAt, undefined, name);
     }
   });
+
+/**
+ * Every container the lab can parse, which is a wider population than `EXPECTED`.
+ *
+ * `EXPECTED` is the thirteen samples whose header fields are pinned one by one; the checks below
+ * are properties of the parser rather than of a sample, so they are stated over everything that
+ * parses. That difference is the point of the count being asserted: three source comments quoted
+ * "all thirteen samples" and "all 24 containers" while the lab held 33.
+ */
+const PARSEABLE = 33;
+
+function parseable(): { name: string; container: Container }[] {
+  const out: { name: string; container: Container }[] = [];
+  for (const name of Object.keys(IMAGES)) {
+    const data = load(name);
+    if (data === undefined) continue;
+    try {
+      out.push({ name, container: parse(data) });
+    } catch {
+      // Not a container. The population is what parses, not what is named.
+    }
+  }
+  return out;
+}
+
+test('the flash base is block aligned, and the three that are not took the fallback',
+  skipWithoutLab(), () => {
+    // The one thing about a fallback base that can fail. `end_addr_points_at_end_marker` cannot,
+    // because a fallback base is computed from the marker's own position, which is section 117's
+    // circularity surviving inside the second arm of the `??`. The docstring said nothing in the
+    // corpus reaches that arm; three reads of one Harmony 890 do.
+    const all = parseable();
+    assert.equal(all.length, PARSEABLE);
+    const unaligned = all
+      .filter(({ container }) => container.checks['flash_base_is_block_aligned'] === false)
+      .map(({ name }) => name);
+    assert.deepEqual(unaligned.sort(), [
+      'h890_config_2_redump_2', 'h890_config_2_redump_3', 'h890_config_2_rescan',
+    ]);
+    for (const name of unaligned) {
+      const c = parse(require_(name));
+      // Each took the fallback, which is what makes the alignment the only test left, and each is
+      // then pronounced consistent by the check that cannot fail on a fallback base.
+      assert.equal(recoverFlashBase(c.blob, c.sections.map((s) => s.address)), undefined, name);
+      assert.notEqual(c.flashBase % FLASH_BASE_ALIGNMENT, 0, name);
+      assert.equal(c.checks['end_addr_points_at_end_marker'], true, name);
+    }
+  });
+
+test('the format word has nothing in its high half, and a byte there would be refused',
+  skipWithoutLab(), () => {
+    const all = parseable();
+    assert.equal(all.length, PARSEABLE);
+    for (const { name, container } of all) {
+      assert.equal(container.checks['format_high_half_is_zero'], true, name);
+      assert.equal(container.checks['sections_ascend'], true, name);
+    }
+    // The negative, which is what makes it a check: the version reads the top two nibbles only, so
+    // without this a 0x00011600 renders as "17.6" and nothing anywhere says the file is wrong.
+    const edited = new Uint8Array(require_('h700_config'));
+    const c = parse(edited);
+    // The word is a little endian u32 at +8, so the high half is the last two bytes of it.
+    edited[c.blobOffset + 10] = 0x01;
+    const bad = parse(edited);
+    // h700_config is format 1.4, and one bit set sixteen places up renders it as 17.4: the major
+    // digit is `formatRaw >>> 12`, so bits nobody reads become part of the number that is read.
+    assert.equal(c.formatVersion, '1.4');
+    assert.equal(bad.formatVersion, '17.4');
+    assert.equal(bad.checks['format_high_half_is_zero'], false);
+  });
+
+test('19 of the parseable containers have an odd body and 14 of those verify',
+  skipWithoutLab(), () => {
+    // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
+    // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
+    const all = parseable();
+    assert.equal(all.length, PARSEABLE);
+    const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
+    assert.equal(odd.length, 19);
+    const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
+    assert.equal(verifying.length, 14);
+    // Every one of the fourteen recomputes under the loop as written, which is what makes the
+    // behaviour tested rather than assumed. Folding the trailing byte in would break the two whose
+    // trailing byte is not zero, and be invisible on the other twelve: so the comment was inviting
+    // a change that six sevenths of the corpus could not detect, which is the worse half of it.
+    let breaks = 0;
+    for (const { name, container } of verifying) {
+      const blob = container.blob;
+      const end = blob.length - TRAILER_CHECKSUM_OFFSET;
+      let recomputed = TRAILER_CHECKSUM_SEED;
+      for (let o = 0; o + 1 < end; o += 2) {
+        recomputed ^= (blob[o] as number) | ((blob[o + 1] as number) << 8);
+      }
+      assert.equal(recomputed, container.trailerChecksum, name);
+      const tail = blob[end - 1] as number;
+      if (tail !== 0) {
+        breaks += 1;
+        assert.notEqual(recomputed ^ tail, container.trailerChecksum, name);
+      }
+    }
+    assert.equal(breaks, 2, 'containers whose trailing byte would change the answer');
+  });
+
+test('the last section ends at the end marker, not at the declared end',
+  skipWithoutLab(), () => {
+    // `endAddr` is a declared field and where a container ends is data, which is the same
+    // correction the base got in section 117. They agree on 31 of 33; the two that disagree are
+    // the damaged Harmony 890 reads, where the old reading reported the last section short.
+    const all = parseable();
+    assert.equal(all.length, PARSEABLE);
+    let agree = 0;
+    const differ: string[] = [];
+    for (const { name, container: c } of all) {
+      const marker = c.flashBase + c.blob.length - 4;
+      if (marker === c.endAddr) agree += 1;
+      else differ.push(name);
+      const last = c.sections.filter((s) => !s.isNull).at(-1);
+      if (last === undefined) continue;
+      assert.equal(c.sectionLength(last.slot), marker - last.address, name);
+    }
+    assert.equal(agree, 31);
+    assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
+  });
+
+test('the header guard is long enough for the longest header in the lab', skipWithoutLab(), () => {
+  // It was the literal 0x68, which is 104 and three bytes short of an arch 10 (Harmony 890)
+  // header, while its message claimed to have proved there is room for one.
+  assert.equal(MINIMUM_HEADER_LENGTH, 108);
+  for (const { name, container } of parseable()) {
+    const header = SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * container.pointerCount + 1;
+    assert.ok(header <= MINIMUM_HEADER_LENGTH, `${name} needs ${header}`);
+  }
+  assert.throws(() => parse(new Uint8Array(0)), /no PTYY|magic|short/);
+});
+
+test('an address outside the blob has no offset, rather than a number outside the blob',
+  skipWithoutLab(), () => {
+    // It tested `address === 0` only, so it was a NULL test with a range test's signature: every
+    // caller guarded the upper bound and none guarded the lower.
+    const c = parse(require_('one_config'));
+    assert.equal(c.blobOffsetOf(0), undefined);
+    assert.equal(c.blobOffsetOf(c.flashBase - 16), undefined);
+    assert.equal(c.blobOffsetOf(c.flashBase + c.blob.length), undefined);
+    assert.equal(c.blobOffsetOf(c.flashBase + 1), 1);
+    assert.equal(c.fileOffset(c.flashBase - 16), undefined);
+  });
+
+test('the frame tiles to the next section on every container that has one', skipWithoutLab(), () => {
+  // `frameLength` is the field and the field is zero for an empty frame, which is a sentinel for
+  // `EMPTY_FRAME_LENGTH` that nothing in the type says. Three call sites decoded it separately.
+  // Written as `frameLength + FRAME_END_LENGTH`, the tiling closes on 24 of the 26 containers with
+  // a frame and misses exactly the two empty ones; through `frameExtent` it closes on all 26.
+  let framed = 0;
+  let naive = 0;
+  for (const { name, container: c } of parseable()) {
+    if (c.frameLength === undefined) continue;
+    framed += 1;
+    const start = c.blobOffsetOf((c.sections[0] as { address: number }).address);
+    const next = c.sections.slice(1).find((s) => !s.isNull);
+    assert.ok(start !== undefined && next !== undefined, name);
+    const target = c.blobOffsetOf(next.address);
+    assert.equal(start + (c.frameExtent as number), target, name);
+    if (start + c.frameLength + 2 === target) naive += 1;
+  }
+  assert.equal(framed, 26);
+  assert.equal(naive, 24, 'the two the sentinel gets wrong are the two empty frames');
+});
