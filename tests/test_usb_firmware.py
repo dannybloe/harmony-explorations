@@ -1347,10 +1347,6 @@ class TestTheEndpointSetup(unittest.TestCase):
         self.assertFalse(0x40 & 0x80, 'UOWN clear on the IN descriptor')
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class TestTheInternalReadLoopCannotEndOnAnOddCount(unittest.TestCase):
     """Section 94: an odd internal read count never terminates on a Harmony One.
 
@@ -1987,3 +1983,7 @@ class TestArch12Band0xC0(unittest.TestCase):
         self.assertEqual(jump.fields['target'], 0x23952)
         # Which dispatches on the three bit field as a state, starting at 7.
         self.assertEqual(self.at(code, 0x23952).fields['k'], 0x07)
+
+
+if __name__ == '__main__':
+    unittest.main()

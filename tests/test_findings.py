@@ -508,10 +508,6 @@ class TestArch14UsesSpi(unittest.TestCase):
         self.assertIn('BCF LATF,7', text)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class TestArch9ScreenOpcodes22And23(unittest.TestCase):
     """Section 101: a page select and a page transfer, not a row marker.
 
@@ -1317,3 +1313,7 @@ class TestTheStagedFirmwareSurvivedSafeMode(unittest.TestCase):
         self.assertEqual(staged[4:6], b'HG')
         populated = sum(1 for b in staged if b != 0xFF)
         self.assertGreater(populated / len(staged), 0.95)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -12,6 +12,7 @@ have a `bin`, so the nine scripts behind `make coverage`, `make reading` and the
 typechecked by nothing at all and an editor gave them default compiler options. Nothing failed. A
 file no project claims does not announce itself, which is exactly the shape a test is for.
 """
+import glob
 import json
 import os
 import re
@@ -173,6 +174,50 @@ class TheLibraryImports(unittest.TestCase):
         for name in names:
             with self.subTest(module=name):
                 self.assertIsNotNone(importlib.import_module('harmony.' + name))
+
+
+class TheRunnerSeesEveryTest(unittest.TestCase):
+    """A `unittest.main()` that is not the last thing in its file hides everything below it.
+
+    `unittest.main()` collects from the module's globals at the moment it runs, so a class defined
+    after the call does not exist yet and is never collected. `make test` uses discovery and is
+    unaffected, which is why this went unnoticed: the trap is for a person verifying a change the
+    way each file's own `__main__` block invites.
+
+    Found on 13 August 2026 in four files. `test_usb_firmware.py` ran 80 of its 125 tests and
+    printed OK, with nine classes below the block including every one section 94 onward added;
+    `test_concordance_notes.py` ran 12 of 27, hiding the class its own docstring says must run in a
+    fresh clone; `test_documents.py` ran 4 of 9, hiding the phrase check over the real tree; and
+    `test_findings.py` ran 70 of 80. **Three of those four came out of a review sweep and the
+    fourth came out of writing this test**, which is the argument for having it rather than for
+    having fixed the three.
+    """
+
+    def _test_files(self):
+        return sorted(glob.glob(os.path.join(ROOT, 'tests', 'test_*.py')))
+
+    def test_a_main_block_is_the_last_thing_in_its_file(self):
+        files = self._test_files()
+        # The population, so a glob that stops matching fails here rather than passing quietly.
+        self.assertGreaterEqual(len(files), 24, 'only %d test files found' % len(files))
+        with_block = 0
+        for path in files:
+            with open(path, encoding='utf-8') as handle:
+                lines = handle.read().splitlines()
+            at = [i for i, line in enumerate(lines) if line.startswith('if __name__')]
+            if not at:
+                continue          # two files have none, which is also fine
+            with_block += 1
+            hidden = [line.split('(')[0] for line in lines[at[0] + 1:]
+                      if line.startswith('class ') or line.startswith('def ')]
+            self.assertEqual(hidden, [],
+                             '%s calls unittest.main() at line %d and defines %d thing(s) below '
+                             'it, which running the file directly will not see: %s'
+                             % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
+        # And the check has teeth only if most files actually carry a block.
+        self.assertGreaterEqual(with_block, 20,
+                                'only %d files carry a __main__ block, so this test is checking '
+                                'almost nothing' % with_block)
 
 
 if __name__ == '__main__':

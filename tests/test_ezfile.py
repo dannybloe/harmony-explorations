@@ -40,14 +40,76 @@ class TestScrubDataXml(unittest.TestCase):
         self.assertIn('<Data>', out)
         self.assertIn('REMOVED', out)
 
-    def test_real_package_metadata_is_clean(self):
-        lab.load('one_hfw')            # skips if unavailable
-        text = ezfile.read_hfw_metadata(lab.path('one_hfw'))
+    @staticmethod
+    def _sensitive_values(text):
+        """Every value in `text` that the scrubber is supposed to remove.
+
+        The three shapes `scrub_data_xml` handles, so this walks the same ground the scrubber
+        does and can therefore be pointed at its input and its output and compared.
+        """
+        found = []
         for field in ezfile.SENSITIVE_XML_FIELDS:
-            for line in text.splitlines():
-                if field in line:
-                    self.assertIn('REMOVED', line, 'unscrubbed %s' % field)
-        self.assertIn('<Architecture>12</Architecture>', text,
+            found += re.findall(r'<%s>(.*?)</%s>' % (field, field), text, re.DOTALL)
+            found += re.findall(
+                r'<KEY>%s</KEY>\s*<VALUE>(.*?)</VALUE>' % field, text, re.DOTALL)
+        found += re.findall(r'<VALUE>([^<]*ASPSESSIONID[^<]*)</VALUE>', text)
+        return [v for v in found if v.strip() and v.strip() != 'REMOVED']
+
+    def test_real_package_metadata_is_clean(self):
+        """No value the scrubber removes survives anywhere in its output.
+
+        **This test used to inspect only lines that already named a sensitive field**, as
+        `if field in line: assertIn('REMOVED', line)`. Measured on 13 August 2026, that ran one
+        assertion out of four: `UserId` is a `<KEY>`/`<VALUE>` pair so its name survives, and
+        `CookieKeyValue`, `ServerID` and `ASPSESSIONID` all sit inside one cookie value, so their
+        names leave with it and the loop found no line to judge. Three fields asserting nothing
+        was therefore a **consequence of the scrubber working**, which is exactly what the old
+        shape could not tell apart from the scrubber having been deleted.
+
+        So the claim is about values now, not names, and it is a differential: the same extraction
+        is run over the input and the output, and it has to find something in the first.
+        """
+        lab.require('one_hfw')
+        path = lab.path('one_hfw')
+        with zipfile.ZipFile(path) as archive:
+            name = next(n for n in archive.namelist() if n.lower().endswith('data.xml'))
+            raw = archive.read(name).decode('utf-8', 'replace')
+        clean = ezfile.read_hfw_metadata(path)
+
+        # The control, and it comes first: an extraction that finds nothing would make every
+        # assertion below vacuous, which is the failure this test is being rewritten out of.
+        before = self._sensitive_values(raw)
+        self.assertEqual(len(before), 4,
+                         'the package should carry two UserId values and two cookie values; '
+                         'found %d, so either the shape changed or the extraction is broken'
+                         % len(before))
+        # Long enough that finding it in a document this size is not a coincidence. The UserId
+        # values are a short number, so containment cannot speak for them and the structural leg
+        # below does.
+        checkable = {v for v in before if len(v.strip()) >= 8}
+        self.assertGreaterEqual(len(checkable), 1, 'nothing long enough to search for')
+
+        # Teeth: the same search must succeed against the unscrubbed text.
+        for value in checkable:
+            self.assertIn(value, raw, 'the extraction does not find its own value')
+        # The claim.
+        for value in checkable:
+            self.assertNotIn(value, clean,
+                             'a %d character sensitive value survived scrubbing' % len(value))
+        self.assertEqual(self._sensitive_values(clean), [],
+                         'a sensitive value survived in one of the three shapes')
+
+        # The structural leg, which covers the short values containment cannot: every sensitive
+        # key that is still named in the output has REMOVED where its value was.
+        keys = 0
+        for field in ezfile.SENSITIVE_XML_FIELDS:
+            for value in re.findall(
+                    r'<KEY>%s</KEY>\s*<VALUE>(.*?)</VALUE>' % field, clean, re.DOTALL):
+                keys += 1
+                self.assertEqual(value, 'REMOVED', 'unscrubbed %s' % field)
+        self.assertEqual(keys, 2, 'the two UserId pairs should still be named, with no value')
+
+        self.assertIn('<Architecture>12</Architecture>', clean,
                       'useful metadata should survive scrubbing')
 
 

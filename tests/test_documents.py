@@ -107,9 +107,6 @@ class TestTheCorrectionExemption(unittest.TestCase):
         self.assertTrue(facts.is_correction('* a bullet, which the lists of consequences use'))
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 class TestAPhraseCanHideInALineBreak(unittest.TestCase):
     """`docs/findings.md` section 74's sweep.
 
@@ -144,3 +141,7 @@ class TestAPhraseCanHideInALineBreak(unittest.TestCase):
     def test_the_documents_are_clean_under_the_flattened_check(self):
         """The check itself, over the real tree. Pure text, so it needs no lab."""
         self.assertEqual(facts.check_phrases(), [])
+
+
+if __name__ == '__main__':
+    unittest.main()

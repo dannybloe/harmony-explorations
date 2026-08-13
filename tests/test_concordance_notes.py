@@ -167,10 +167,6 @@ class TestArch8And9DumpTheWholeFirmware(unittest.TestCase):
         self.assertLess(entry['serial_address'], entry['firmware_base'])
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 @skipWithoutSource
 class TestArch9KeepsItsFirmwareInExternalFlash(unittest.TestCase):
     """Section 118. The row that made a stranded 525 recoverable, and nothing here had read it.
@@ -387,3 +383,7 @@ class TestTheFrontPageOnlyTellsStrangersToRead(unittest.TestCase):
         # Because concordance's own help documents `--binary-only` and its getopt registers `binary`,
         # per the test above. The short form is the only spelling that works everywhere.
         self.assertNotIn('--binary-only', _read_repo('README.md'))
+
+
+if __name__ == '__main__':
+    unittest.main()
