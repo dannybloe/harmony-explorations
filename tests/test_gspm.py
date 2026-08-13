@@ -484,7 +484,7 @@ class TestTheConfigStatesItsOwnArchitecture(unittest.TestCase):
     def test_the_version_word_is_per_config_and_usually_agrees_within_a_model(self):
         """
         The u16 beside the architecture, as far as the corpus pins it. **This test used to claim
-        the word is per model rather than per config**, which section 81 falsified with a pair
+        the word is per model rather than per config**<!--superseded-->, which section 81 falsified with a pair
         nobody had compared: one physical Harmony One carries a different word before and after
         the sync of section 58. The observations below all survived that, so they stay; the claim
         the name made did not.
@@ -1228,9 +1228,13 @@ class TestTheArch9InfraredHeader(unittest.TestCase):
 class TestTheInfraredRecordExtent(unittest.TestCase):
     """findings.md section 61: where an infrared record's bytes actually are.
 
-    The header is 21 bytes and two of its pointers name data blocks that sit **below** it, so a
-    record is not one contiguous run and the durations are not after the header. A block ends at a
-    zero word.
+    The header states its own length, `12 + 9 * count` at `+0x0B`, and each nine byte group is three
+    pointers naming data blocks that sit **below** it, so a record is not one contiguous run and the
+    durations are not after the header. A block ends at a zero word.
+
+    This docstring said a flat twenty one bytes with two pointers until section 139, which is the
+    `count == 1` case with its third pointer dropped. Section 75 corrected it in `packages/codec` and
+    this side kept the old reading for a week.
 
     The reason this matters beyond tidiness is that it replaced a heuristic. The duration run used
     to be located as the longest alternating one, which found a single frame of a record that holds
@@ -1585,7 +1589,11 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
 
 
 class TestTheHighOperandBand(unittest.TestCase):
-    """findings.md section 31: four opcodes address a second operand space and never leave it.
+    """findings.md section 31: four opcodes keep their operand at or above one band, and never leave it.
+
+    Section 31 called the band "a second operand space"<!--superseded--> and section 72 read the
+    dispatcher: it is the opcode continuing into the operand, and `0xC000` is the lowest band tested.
+    The partition below is unaffected, which is why the class is still here under a better name.
 
     Every config in the corpus that has action lists, so ten of them across four architectures.
     The claim is a partition, which means the interesting assertion is the absence of a

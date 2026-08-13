@@ -18389,12 +18389,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Nine shipped readers answered plausibly where they should have refused, and one of them was a rail
+## 139. Ten shipped readers answered plausibly where they should have refused, and one of them was a rail
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Nine defects came out of it that a sample could not have found, and they share one shape, which is
+Ten defects came out of it that a sample could not have found, and they share one shape, which is
 this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18623,6 +18623,30 @@ failure takes and the reason it survived.
 `Container.actionList` still returns both slots, deliberately: the emitter reproduces the argument byte
 for byte and the reader must not read it, so the boundary is a caller's business rather than the byte
 reader's.
+
+### 10. The check against restating a dead claim did not read the code
+
+`make facts` refuses any wording in `reference/superseded.md` outside a correction, and the whole point
+of it is step 4 of the `finding` skill: what a finding kills must stop being said. It walked `*.md`
+only.
+
+So the documents were protected and the code was not, which is the half where it matters more: a stale
+document misleads a reader, and a stale comment misleads whoever edits the reader beside it. Switched
+on over `.ts` and `.py`, it found **twenty** hits. Two were written that morning, by the commits that
+superseded them: `tests/test_gspm.py` and `packages/codec/src/coverage.ts` both still said "the header<!--superseded-->
+is 21 bytes" in the entry 7 commit's own files.
+
+Eleven of the twenty were deliberate quotations, a correction naming the claim it kills, and they carry
+the `<!--superseded-->` escape now. The other nine were live restatements of dead readings, with the
+reader beside each one correct: base slot 13's eight byte values described as undecoded where section 86
+decoded them, base slot 7's font header keyed on the architecture where section 78 read the first glyph
+code, section 31's "second operand space" where section 72 read the opcode continuing into the operand,
+a screen program count two findings out of date, and arch 9's 277 blocks.
+
+**The structural escapes do not apply in source, and that is not strictness.** Every line of a JSDoc
+block begins with `*`, which the checker reads as a markdown bullet, so honouring the markdown forms in
+a `.ts` file makes the check pass on any comment in `packages/`. It did exactly that: the dead screen
+program count sat behind it and was invisible until the rule was narrowed to the explicit token.
 
 ### What it changes
 

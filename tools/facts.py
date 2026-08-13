@@ -12,7 +12,7 @@ with no test. So this tool makes the copies executable.
 
 Two checks, because the eleven fell into exactly two kinds.
 
-**Numbers.** Six of them were figures the test suites already pin, restated in prose: 20260
+**Numbers.** Six of them were figures the test suites already pin, restated in prose: 20260<!--superseded-->
 programs where the tests said 20374, 40588 string codes where they said 41793, a coverage table
 frozen at a snapshot. A number in a document carries a marker naming the fact it states, and this
 recomputes the fact and compares:
@@ -92,12 +92,35 @@ def is_correction(line):
 QUOTED = '<!--superseded-->'
 
 
+SKIP_DIRECTORIES = ('.git', 'node_modules', 'dist', '__pycache__')
+# What the phrase check reads beyond the documents. Not the number check: a `fact:` marker belongs in
+# prose, where a reader sees the value, and a source file that wanted one would be stating a corpus
+# total in a comment instead of computing it.
+SOURCE_SUFFIXES = ('.ts', '.py')
+
+
 def documents():
     """Every published markdown file, which is everything not under .git or node_modules."""
     for base, dirs, files in os.walk(ROOT):
-        dirs[:] = [d for d in dirs if d not in ('.git', 'node_modules', 'dist')]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
         for name in sorted(files):
             if name.endswith('.md'):
+                yield os.path.join(base, name)
+
+
+def sources():
+    """Every TypeScript and Python file, for the phrase check only.
+
+    **The check walked `*.md` alone until 13 August 2026 and that was a hole**, section 139: the
+    documents were protected from restating a dead claim and the code was not, while the code is where
+    a claim does damage, because a comment stating a superseded reading is what the next person builds
+    on. Twenty hits the day it was switched on, two of them in comments written that morning by the
+    commit that superseded them.
+    """
+    for base, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
+        for name in sorted(files):
+            if name.endswith(SOURCE_SUFFIXES):
                 yield os.path.join(base, name)
 
 
@@ -402,13 +425,25 @@ def flatten(lines):
 
 
 def check_phrases():
-    """A dead phrase may appear only inside a correction. Returns a list of complaints."""
+    """A dead phrase may appear only inside a correction. Returns a list of complaints.
+
+    Over the documents **and the source**, since section 139. A source file has no blockquote and no
+    italic, so the only escape available there is the explicit `<!--superseded-->` token, which is
+    ordinary text inside a comment: a correction in code says what the old reading was and why it is
+    dead, and that token is what marks the quotation as deliberate.
+    """
     problems = []
     phrases = superseded_phrases()
-    for doc in documents():
+    for doc in list(documents()) + list(sources()):
         if os.path.abspath(doc) == os.path.abspath(SUPERSEDED):
             continue
-        lines = open(doc, encoding='utf-8').read().splitlines()
+        # **In source, only the explicit token counts**, and that is not strictness for its own sake:
+        # every line of a JSDoc block begins with `*`, which `is_correction` reads as a markdown
+        # bullet, so allowing the structural forms here makes the check pass on any comment in
+        # `packages/`. Measured: it accepted a dead screen program count in `screen.ts` for exactly
+        # that reason.
+        structural = not doc.endswith(SOURCE_SUFFIXES)
+        lines = open(doc, encoding='utf-8', errors='replace').read().splitlines()
         flat, owner = flatten(lines)
         low = flat.lower()
         for phrase, killed_by in phrases:
@@ -427,7 +462,7 @@ def check_phrases():
                 if last + 1 < len(lines):
                     context.append(lines[last + 1].lstrip())
                 if not any(QUOTED in line for line in span) \
-                        and not any(is_correction(c) for c in context):
+                        and not (structural and any(is_correction(c) for c in context)):
                     problems.append('%s:%d: superseded by %s: "%s"'
                                     % (rel(doc), first + 1, killed_by, phrase))
                 at = low.find(wanted, at + 1)

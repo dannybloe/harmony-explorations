@@ -789,6 +789,13 @@ test. So the copies are executable now, and `make facts` is the check:
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
   refute it is what `<!--superseded-->` on the line is for.
+* **the phrase half reads the source too**, `.ts` and `.py`, since section 139. It walked `*.md` alone,
+  so a comment restating a dead reading was unguarded, which is the half that matters more: a stale
+  document misleads a reader and a stale comment misleads whoever edits the reader beside it. Twenty
+  hits the day it was switched on, two of them written that morning by the commit that superseded them.
+  **In source only the explicit token counts**, because every JSDoc line opens with `*` and the checker
+  reads that as a markdown bullet, so allowing the structural forms there passes anything in
+  `packages/`.
 
 It runs in `make all` and in the pre-commit hook, so a document that contradicts the code cannot be
 committed. The numeric half needs a lab and skips cleanly without one; the phrase half is pure text

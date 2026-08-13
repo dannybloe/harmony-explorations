@@ -202,8 +202,8 @@ class TestTheComparisonSelector(unittest.TestCase):
     def test_the_index_byte_under_64_belongs_to_0x71_alone(self):
         """Section 33's "low byte always under 64" is `0x71`'s, and it is not a bound on the field.
 
-        **The docstring here used to say "every 0x70, 0x71 and 0x72 operand's low byte is under 64,
-        in every config", and that is measurably false**: over these seven configs `0x70` reaches 81
+        **The docstring here used to say "every 0x70, 0x71 and 0x72 operand's low byte is under<!--superseded-->
+        64, in every config", and that is measurably false**: over these seven configs `0x70` reaches 81
         and `0x72` reaches 83. The body only ever filtered `0x71`, so nothing failed. Found by a
         review sweep on 13 August 2026 asking which tests state more than they check.
 

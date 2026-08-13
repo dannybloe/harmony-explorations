@@ -243,11 +243,13 @@ INSTRUCTION_LENGTH = 3
 BINDING_TABLE_SLOT = 8
 BINDING_LENGTH = 4
 
-# Four opcodes address a second operand space and never leave it: their operand is always at or
-# above `OPERAND_HIGH_BAND`, and no other opcode's operand set overlaps theirs. `docs/findings.md`
-# section 31. The practical consequence is the reason this is in the library rather than only in
-# a test: a value up here survives byte identical between two remotes that share no equipment, so
-# it names something the firmware supplies and a codec must carry it through unrenumbered.
+# Four opcodes carry the rest of the opcode in the operand, and its high byte is always at or above
+# `OPERAND_HIGH_BAND`, with no other opcode's operand set overlapping theirs. `docs/findings.md`
+# section 31 read it as "a second operand space"; section 72 read the dispatcher and found it is the
+# opcode continuing into the operand, with `0xC000` the lowest band tested. The practical consequence
+# is the reason this is in the library rather than only in a test: a value up here survives byte
+# identical between two remotes that share no equipment, so it names something the firmware supplies
+# and a codec must carry it through unrenumbered.
 OPERAND_HIGH_BAND = 0xC000
 HIGH_BAND_OPCODES = frozenset({0x07, 0x0F, 0x1F, 0x3F})
 
@@ -464,9 +466,12 @@ SELECT_HANDLER_OPERAND_HIGH = 0xFF
 # opcode 16 indexes; the entries are read in section 46.
 #
 #     +0x00  u8   glyph height in pixels, the same for every glyph in the set
-#     +0x01  u8   the glyph count on arch 12, and 1 on arch 8, 9 and 14
-#     +0x02  u8   the glyph count on arch 8, 9 and 14, and 0 on arch 12
+#     +0x01  u8   the first glyph code, or the count when +0x02 is zero
+#     +0x02  u8   the glyph count, or zero
 #     +0x03  u24  glyph[count]     NULL for a code the config never uses
+#
+# The two count bytes were read as an architecture rule and are not one, section 78: `font_set_header`
+# has the reading and this comment kept the old one until section 139.
 #
 # and each glyph
 #
@@ -705,8 +710,8 @@ class StateRecord:
     address: int
     count: int
     length: int
-    second: int          # the u16 at +0x02, unexplained
-    values: List[bytes]  # the eight byte records, undecoded
+    second: int          # the variable's highest value, which its name states plus one, section 86
+    values: List[bytes]  # the eight byte transitions; `state_transitions` decodes them, section 86
 
 
 @dataclass
@@ -2671,7 +2676,8 @@ def frame_length(blob: bytes, off: int) -> Optional[int]:
     Logitech's own client reads three bytes here, `docs/host-client.md`, and that is client
     sourced and unconfirmed. Adopted anyway because the two readings cannot disagree on any
     sample this project has and the wider one survives a config the corpus does not contain.
-    Same family as the font header's spare byte, which was the first glyph code, section 78.
+    Same family as the font header's spare byte<!--superseded-->, which was the first glyph code,
+    section 78.
     """
     if blob[off:off + 2] != FRAME_COOKIE:
         return None

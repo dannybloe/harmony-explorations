@@ -539,7 +539,7 @@ def sfr_name(addr: int, adshr: bool = False, part: str = DEFAULT_PART) -> str:
     """Name an SFR address, honouring the ADSHR shadow set when that bit is set.
 
     Below the part's SFR page there is no SFR to name, so the address is reported as the general
-    purpose register it is rather than as an unnamed peripheral.
+    purpose register it is rather than as a peripheral it is not.
 
     `part` selects the register map. It defaults to the 67J50 family because that is what arch 12
     and arch 14 are; arch 9 is a `PIC18F4550` and 65 of 139 addresses differ, so a listing taken

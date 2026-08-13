@@ -7,8 +7,11 @@
  *
  * **Instructions are variable length with no length field anywhere**, so a walk either stays in
  * step or falls off a cliff, and `undefined` is the cliff. That is also what makes this worth
- * porting first for M2: 18252 programs across ten configs decode with nothing left over, which is
- * a real check precisely because a misread length would desynchronise rather than mis-render.
+ * porting first for M2: every program in the corpus decodes with nothing left over, which is a real
+ * check precisely because a misread length would desynchronise rather than mis-render. The count is
+ * `screen_programs` in `tools/facts.py`, recomputed rather than quoted here: this comment said 18252
+ * across ten configs until section 139, where section 53 had taken it past twenty thousand and
+ * section 121 past twenty one, and a number in a comment is the one copy nothing recomputes.
  *
  * Every instruction carries `start` and `length`, which the Python original does not. The byte
  * accounting needs the extent, and the only place that can produce it without a second copy of

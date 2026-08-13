@@ -1868,8 +1868,8 @@ class TestTheLearnSamplesAreNeverSent(unittest.TestCase):
 class TestUsbModeHasAGatedExit(unittest.TestCase):
     """Section 99: the exit from USB mode is conditional on the command state being zero.
 
-    This overturns section 97's "a polite end is a reboot, or it is nothing", so the chain it
-    rests on is asserted step by step rather than summarised.
+    This overturns section 97's "a polite end is a reboot, or it is nothing"<!--superseded-->, so the
+    chain it rests on is asserted step by step rather than summarised.
     """
 
     NAME, BASE = 'one34_code', 0x20000

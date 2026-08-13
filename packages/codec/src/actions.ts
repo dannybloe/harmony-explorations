@@ -201,7 +201,10 @@ const BANDS_3F: readonly Band[] = [
   [0xf0, placed('six stores, disjoint between architectures; nibble 3 is the sound enable', 74)],
   [0xe0, placed('four operations on a pair of RAM words', 73)],
   [0xd0, placed('consume the following three bytes as an argument, a six byte instruction', 73)],
-  [0xb0, placed('a peripheral operation selected by operand bits 4 to 8', 73)],
+  // Arch 14's lowest band, and the wording is deliberately its own: describing it as "selected by
+  // operand bits 4 to 8" was what got copied onto arch 12's handler, section 102, where the field is
+  // five bits selecting between three unrelated mechanisms. `BANDS_3F_ARCH12` has its own entry.
+  [0xb0, placed("a peripheral operation arch 14's handler selects on the operand's low bits", 73)],
 ];
 
 const BANDS_1F: readonly Band[] = [

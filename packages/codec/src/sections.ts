@@ -391,8 +391,11 @@ export const CLOCK_DAY_INDEX = 3;
  *
  * Nothing in the container declares the length, so `7 + 8 * count` is the reader. The evidence is
  * a config whose contents were chosen deliberately plus a corpus wide check that no record
- * overruns the next: `docs/findings.md` section 60. The eight byte values are not decoded, so
- * this returns their count and not their contents.
+ * overruns the next: `docs/findings.md` section 60.
+ *
+ * The eight byte values are **transitions**, `u8 zero; i16 from; i16 to; u16 operand; u8 opcode`,
+ * where the last three are an action list instruction, section 86. This docstring said they are not
+ * decoded until section 139, which they have been since section 86: `stateTransitions` reads them.
  */
 export function stateRecords(c: Container): StateRecord[] | undefined {
   const table = stateTable(c);

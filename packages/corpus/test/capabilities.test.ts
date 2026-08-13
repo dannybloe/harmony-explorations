@@ -51,7 +51,8 @@ test('no config holds more devices than its model is stated to take', skipUnless
 
 test('no sample reaches a stated maximum, so the column is bounded below only',
   skipUnless(...NAMES), () => {
-  // **This test used to be called `the 700 sits exactly at its stated maximum` and it was circular**,
+  // **This test used to be called `the 700 sits exactly at its stated maximum`<!--superseded--> and it
+  // was circular**,
   // section 136. `maxDevices` for the 700 had been set to 6 because both its configs hold six devices,
   // and then this asserted the configs sit at the maximum, which is the assumption restated. A config
   // holding six devices bounds the maximum **below**: nothing about it forbids a seventh.

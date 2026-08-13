@@ -1098,8 +1098,8 @@ const ARCH8_WITHOUT_IT = ['arch8_config_880', 'arch8_config_885'];
 const ARCH8_ALL = [...ARCH8_WITH_THE_DEVICE, ...ARCH8_WITHOUT_IT];
 
 test('a two group record belongs to a device, not to an architecture', skipUnless(...ARCH8_ALL), () => {
-  // **This test used to be called `every arch 8 config has exactly 37 two group records` and its title
-  // was false while it passed**, because its body only ever looked at one contributor's four configs.
+  // **This test used to be called `every arch 8 config has exactly 37 two group records`<!--superseded-->
+  // and its title was false while it passed**, because its body only ever looked at one contributor's four configs.
   // The two arch 8 configs contributed on 10 August 2026 have none at all, which is exactly the
   // falsifier section 75 offered for its own claim. Section 134 has the mechanism: the thirty seven are
   // a single biphase device's records, so the count follows the equipment and not the architecture.

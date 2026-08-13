@@ -337,11 +337,16 @@ export function claims(c: Container, withPictures = true): Claim[] {
 
   // The infrared database. This used to claim the group arrays alone, because a record's extent
   // was not established and the duration run was located as the longest alternating one, which is
-  // a heuristic wearing a measurement's clothes. Section 61 replaced it: the header is 21 bytes and
-  // names two data blocks below itself, and a block ends at a zero word, so both extents are read
+  // a heuristic wearing a measurement's clothes. Section 61 replaced it and section 75 fixed the
+  // header's size: it states its own length, `12 + 9 * count`, and each group of nine bytes is three
+  // pointers to data blocks below it, and a block ends at a zero word, so both extents are read
   // rather than inferred. A block may be named by two records, hence the deduplication, and one
   // that does not close is not claimed at all. What keeps arch 9 out is the **class byte**, not the
-  // terminator: all 277 of its blocks find a zero word and none of them is the right one.
+  // terminator: all 380 of its blocks find a zero word and none of them is the right one.
+  //
+  // This comment said "21 bytes and two data blocks" and "277 blocks" until section 139. The claim
+  // code was right, because it asks the reader for the extent rather than computing one, which is
+  // exactly why nothing failed while the sentence beside it was a week out of date.
   for (const group of irGroups(c) ?? []) {
     add(group.start, group.length, 'slot-5-group');
   }

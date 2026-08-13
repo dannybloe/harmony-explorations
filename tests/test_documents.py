@@ -14,6 +14,7 @@ in the tool.
 import os
 import re
 import sys
+import os
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,9 +132,10 @@ class TestAPhraseCanHideInALineBreak(unittest.TestCase):
 
     def test_a_phrase_split_across_a_wrap_is_found(self):
         """The behaviour the fix exists for, stated against the checker's own search."""
-        lines = ['some text wanting a', 'firmware nobody has, restated']
+        # The phrase is dead and quoted on purpose, which is what the escape token is for.
+        lines = ['some text wanting a', 'firmware nobody has, restated']  # <!--superseded-->
         flat, owner = facts.flatten(lines)
-        at = flat.lower().find('wanting a firmware nobody has')
+        at = flat.lower().find('wanting a firmware nobody has')  # <!--superseded-->
         self.assertGreaterEqual(at, 0, 'a wrapped phrase must be visible once flattened')
         # And it must report the line the phrase starts on, not the one it ends on.
         self.assertEqual(owner[at], 0)
@@ -141,6 +143,36 @@ class TestAPhraseCanHideInALineBreak(unittest.TestCase):
     def test_the_documents_are_clean_under_the_flattened_check(self):
         """The check itself, over the real tree. Pure text, so it needs no lab."""
         self.assertEqual(facts.check_phrases(), [])
+
+    def test_the_check_reads_the_source_and_not_only_the_documents(self):
+        """The hole section 139 closed, asserted rather than assumed.
+
+        The check walked `*.md` alone, so a comment restating a superseded claim was unguarded, which
+        is the half where it matters: a stale document misleads a reader and a stale comment misleads
+        whoever edits the code beside it. Twenty hits the day it was switched on, two of them written
+        that morning by the commit that superseded them.
+        """
+        seen = list(facts.sources())
+        self.assertTrue(any(p.endswith('gspm.py') for p in seen))
+        self.assertTrue(any(p.endswith('gspm.ts') for p in seen))
+        # Nothing from a build output or a dependency, which would be somebody else's prose.
+        for path in seen:
+            for skipped in facts.SKIP_DIRECTORIES:
+                self.assertNotIn(os.sep + skipped + os.sep, path, path)
+
+    def test_a_source_comment_may_not_lean_on_the_markdown_escapes(self):
+        """Only the explicit token counts in source, and the reason is mechanical.
+
+        Every line of a JSDoc block opens with `*`, which `is_correction` reads as a markdown bullet,
+        so honouring the structural forms in a `.ts` file makes the check pass on any comment in
+        `packages/`. It did: a dead screen program count sat in `screen.ts` behind exactly that.
+        """
+        dead = 'The header is 21 bytes'  # <!--superseded-->, quoted to check the checker
+        self.assertIn(dead, [p for p, _ in facts.superseded_phrases()])
+        # A bullet is the escape in markdown and is not one in source. Asserted through the checker's
+        # own predicate, so the test fails if the convention changes rather than if the wording does.
+        self.assertTrue(facts.is_correction('* %s' % dead))
+        self.assertFalse(facts.QUOTED in '* %s' % dead)
 
 
 if __name__ == '__main__':

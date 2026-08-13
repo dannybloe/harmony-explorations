@@ -262,7 +262,8 @@ test('a Harmony One on USB is executing, which its clock says and its timer conf
   const { HarmonyRemote, openHarmony } = await import('../src/index.ts');
   const remote = new HarmonyRemote(await openHarmony({ productId: HARMONY_ONE }), { timeoutMs: 500 });
   try {
-    // Section 111, and it is the test that refutes "a remote on USB never runs its application".
+    // Section 111, and it is the test that refutes "a remote on USB never runs its
+    // application"<!--superseded-->.
     // `UCON` first as the positive control: a part actively driving USB cannot have it zero, so a
     // zero here would mean the SFR reads are not landing rather than that the remote is idle. That
     // distinction decided a measurement on arch 9, where every SFR reads back zero, section 90.
