@@ -198,13 +198,45 @@ const MAIN: ReadonlyMap<number, MainEntry> = new Map<number, MainEntry>([
 type Band = readonly [number, Reading | ((operand: number) => Reading)];
 
 const BANDS_3F: readonly Band[] = [
-  [0xf0, placed('six stores, disjoint between architectures; nibble 3 is the sound enable', 74)],
+  // The nibble selects through an `XORLW` chain whose **case set differs per architecture**, so the
+  // wording says which is which rather than stating one remote's as everyone's. It read "six
+  // stores, disjoint between architectures; nibble 3 is the sound enable", and nibble 3 is the
+  // sound enable on arch 12 (Harmony One), section 74, while on arch 14 (Harmony 600 and 700) the
+  // chain's cases are 0, 1, 2, 6 and 7, so nibbles 3 and 5 fall into the default and do nothing,
+  // section 73. One line cannot be both, and the corpus uses those nibbles 84 times.
+  [0xf0, placed('six stores selected by the nibble through a per architecture chain; nibble 3 is '
+    + 'the sound enable on arch 12 and falls into the default on arch 14', 74)],
   [0xe0, placed('four operations on a pair of RAM words', 73)],
   [0xd0, placed('consume the following three bytes as an argument, a six byte instruction', 73)],
-  // Arch 14's lowest band, and the wording is deliberately its own: describing it as "selected by
-  // operand bits 4 to 8" was what got copied onto arch 12's handler, section 102, where the field is
-  // five bits selecting between three unrelated mechanisms. `BANDS_3F_ARCH12` has its own entry.
-  [0xb0, placed("a peripheral operation arch 14's handler selects on the operand's low bits", 73)],
+  // Arch 14's lowest band, and the wording is deliberately its own. Describing it as "a peripheral
+  // operation selected by the operand's low bits" was arch 12's `0x24F24` again, the mistake
+  // section 102 records, put back on arch 14's floor: section 73 says `0x0F782` **seeks base slot
+  // 8** and bounds the operand against that section's leading byte. `BANDS_3F_ARCH12` has the
+  // peripheral one, at its own floor.
+  [0xb0, placed("arch 14's handler seeks base slot 8 and bounds the operand against its leading "
+    + 'byte', 73)],
+];
+
+/**
+ * The Harmony 525's own `0x3F` bands, read out of `h525_code`.
+ *
+ * Four bands like everywhere else and **the lowest is at `0xC0`, not `0xB0`**, so the shared table
+ * gave a `0xC0` to `0xCF` instruction arch 14's base slot 8 reading and gave one at `0xB0` to `0xBF`
+ * a reading where this firmware simply exits. The ladder: `0x01F78` tests `0xF0`, `0x01F8E` tests
+ * `0xE0`, `0x01FD4` tests `0xD0` and hands the six byte path at `0x01FDA` two more fetched bytes,
+ * and `0x02030` tests `0xC0`, masks the low nibble into `0x3DC` and calls `0x02432`. Below `0xC0`
+ * every arm branches to the dispatcher's exit at `0x023E4`.
+ *
+ * `0x02432` is neither arch 12's `0x24F24` nor arch 14's `0x0F782`: it reads a bit of `0x109` and
+ * switches on the stored nibble. It has not been read further, so the entry is placement and says
+ * so, which is the honest depth for a handler nobody has followed. Section 139 entry 23.
+ */
+const BANDS_3F_ARCH9: readonly Band[] = [
+  BANDS_3F[0] as Band,
+  BANDS_3F[1] as Band,
+  BANDS_3F[2] as Band,
+  [0xc0, placed('the handler at 0x02432, which reads a bit of 0x109 and switches on the nibble; '
+    + 'not arch 12\'s peripheral handler and not arch 14\'s base slot 8 seeker', 139)],
 ];
 
 const BANDS_1F: readonly Band[] = [
@@ -411,7 +443,12 @@ function bandsFor(opcode: number, architecture: number): readonly Band[] | undef
     // Arch 9 (Harmony 525) has its own `0x0F` ladder, read from its own firmware. Until 13 August
     // 2026 it borrowed arch 14's, which is how twelve of its instructions were reported as no-ops.
     if (bands === BANDS_0F && architecture === 9) return BANDS_0F_ARCH9;
-    if (bands !== BANDS_3F || architecture !== 12) return bands;
+    if (bands !== BANDS_3F) return bands;
+    // Arch 9 (Harmony 525) has its own lowest floor too, `0xC0` like arch 12's and with a different
+    // handler behind it. Until 13 August 2026 it borrowed arch 14's `0xB0`, so a `0xC0` instruction
+    // read as a base slot 8 seek and a `0xB0` one read as anything at all where its firmware exits.
+    if (architecture === 9) return BANDS_3F_ARCH9;
+    if (architecture !== 12) return bands;
     return BANDS_3F.map((b) => (b[0] === 0xb0 ? ([0xc0, band3fC0Arch12] as const) : b));
   }
   return undefined;

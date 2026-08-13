@@ -104,7 +104,11 @@ export const IMAGE_PACKED_INK = 1;
 
 export interface FontSet {
   address: number;
-  /** Shared by every glyph in the set, and checked against every decoded glyph. */
+  /**
+   * Shared by every glyph in the set, and checked against every glyph decoded through a route that
+   * has the set in hand: `glyphs`, `decodedSet` and `glyphOf`. `glyphAt` on its own cannot, since
+   * it is handed an address and no set.
+   */
   height: number;
   /** The code `glyphs[0]` belongs to. 1 in every user config, 32 and 72 in a safe mode one. */
   first: number;
@@ -297,6 +301,21 @@ function packedGlyph(
 }
 
 /**
+ * The set's own height, enforced rather than described.
+ *
+ * `FontSet.height` said "shared by every glyph in the set, and checked against every decoded glyph"
+ * and nothing checked it: the only comparison was an assertion in `screen.test.ts`, so the promise
+ * held for the corpus and not for a caller. It is a real guarantee now, on every route that has a
+ * set in hand, and it costs nothing today because all 3772 glyphs in the corpus agree with their
+ * set's header. What it buys is the container that does not, which is the shape section 46 and
+ * section 78 each found once in this very field. Section 139.
+ */
+function ofDeclaredHeight(font: FontSet, glyph: Glyph | undefined): Glyph | undefined {
+  if (glyph === undefined || glyph.rows.length !== font.height) return undefined;
+  return glyph;
+}
+
+/**
  * Every glyph in base slot 7, grouped by set, with the NULL codes dropped.
  *
  * Each glyph is bounded by the next one's address, and the last by the set's own header, because
@@ -307,17 +326,47 @@ export function glyphs(c: Container): Glyph[][] | undefined {
   if (sets === undefined) return undefined;
   const out: Glyph[][] = [];
   for (const font of sets) {
-    const live = font.glyphs.filter((a): a is number => a !== undefined).sort((a, b) => a - b);
     const decoded: Glyph[] = [];
-    for (let i = 0; i < live.length; i += 1) {
-      const next = c.blobOffsetOf((live[i + 1] ?? font.address) as number);
-      const picture = glyphAt(c, live[i] as number, next);
-      if (picture === undefined) return undefined;
-      decoded.push(picture);
+    for (const { glyph } of decodedSet(c, font)) {
+      if (glyph === undefined) return undefined;
+      decoded.push(glyph);
     }
     out.push(decoded);
   }
   return out;
+}
+
+/**
+ * One decoded glyph per **live** address in the set, in address order.
+ *
+ * Shared by `glyphs` and by `text.ts`'s resolver, which decoded the same glyphs itself and did so
+ * **unbounded**, so the one path whose decode nothing constrained was the one that resolves a
+ * character. Both routes go through here now, which is the rule about a derivation existing once.
+ * An entry is `undefined` where the glyph does not decode or does not match the set's height.
+ */
+export function decodedSet(c: Container, font: FontSet): DecodedGlyph[] {
+  const live: { index: number; address: number }[] = [];
+  for (const [index, address] of font.glyphs.entries()) {
+    if (address !== undefined) live.push({ index, address });
+  }
+  live.sort((a, b) => a.address - b.address);
+  return live.map(({ index, address }, i) => ({
+    index,
+    address,
+    // Bounded by the next glyph, and the last by the set's own header, because the glyphs are laid
+    // out immediately before the array that points at them.
+    glyph: ofDeclaredHeight(
+      font,
+      glyphAt(c, address, c.blobOffsetOf((live[i + 1]?.address ?? font.address) as number)),
+    ),
+  }));
+}
+
+export interface DecodedGlyph {
+  /** The position in `FontSet.glyphs`, so the code is `font.first + index`. */
+  index: number;
+  address: number;
+  glyph: Glyph | undefined;
 }
 
 /**
@@ -334,5 +383,5 @@ export function glyphOf(c: Container, font: FontSet, code: number): Glyph | unde
   if (address === undefined) return undefined;
   const live = font.glyphs.filter((a): a is number => a !== undefined).sort((a, b) => a - b);
   const after = live.find((a) => a > address);
-  return glyphAt(c, address, c.blobOffsetOf(after ?? font.address));
+  return ofDeclaredHeight(font, glyphAt(c, address, c.blobOffsetOf(after ?? font.address)));
 }

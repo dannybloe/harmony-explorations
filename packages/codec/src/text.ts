@@ -32,7 +32,7 @@
  *   nothing of gets no alphabet.
  */
 import { Container } from './gspm.ts';
-import { fontSets, glyphAt } from './font.ts';
+import { decodedSet, fontSets } from './font.ts';
 import type { Glyph } from './font.ts';
 import {
   reachablePrograms,
@@ -137,7 +137,11 @@ export function glyphRunAt(c: Container, address: number): Uint8Array | undefine
   if (start === undefined || start >= c.blob.length) return undefined;
   let end = start;
   while (end < c.blob.length && c.blob[end] !== 0) end += (c.blob[end] as number) & 0x80 ? 2 : 1;
-  if (end > c.blob.length) return undefined;
+  // The loop leaves `end` either on the terminator or past the blob, and the guard was `end >
+  // c.blob.length`, so a run that walked to the last byte **without** a terminator came back as a
+  // string rather than as a refusal. Silently truncated text is the worst answer available here.
+  // Unreachable in the corpus, since every container ends in a six byte trailer. Section 139.
+  if (end >= c.blob.length) return undefined;
   return c.blob.subarray(start, end);
 }
 
@@ -173,21 +177,16 @@ export function glyphsReferencedBy(c: Container, instruction: ScreenInstruction)
  * is the answer. An empty intersection means the two disagree, which is a contradiction rather
  * than an ambiguity, so it is reported as such by leaving the code out of `codes`.
  */
-function resolveWith(c: Container, alphabet: Alphabet): CharacterMap {
+function resolveWith(alphabet: Alphabet, context: ResolveContext): CharacterMap {
   const candidates = new Map<number, Set<string>>();
   const blankOnly = new Map<number, boolean>();
-  for (const set of fontSets(c) ?? []) {
-    for (const [index, address] of set.glyphs.entries()) {
-      if (address === undefined) continue;
-      const glyph = glyphAt(c, address);
-      if (glyph === undefined) continue;
-      const code = set.first + index;
-      if (isBlank(glyph)) {
+  for (const { code, blank, key } of context.shapes) {
+      if (blank) {
         if (!blankOnly.has(code)) blankOnly.set(code, true);
         continue;
       }
       blankOnly.set(code, false);
-      const character = alphabet.shapes[shapeKey(set.height, glyph)];
+      const character = alphabet.shapes[key];
       if (character === undefined) continue;
       const had = candidates.get(code);
       candidates.set(
@@ -196,7 +195,6 @@ function resolveWith(c: Container, alphabet: Alphabet): CharacterMap {
           ? new Set(character)
           : new Set([...had].filter((one) => character.includes(one))),
       );
-    }
   }
 
   // **A container gives one code to one character**, so a character some other code has settled is
@@ -240,7 +238,7 @@ function resolveWith(c: Container, alphabet: Alphabet): CharacterMap {
     // outright when the container's sets state ASCII, and otherwise the seed config's own
     // assignment is the best evidence there is, since the codes of one skin share a prefix.
     const ascii = String.fromCharCode(code);
-    if (usesAscii(c) && found.has(ascii)) {
+    if (context.ascii && found.has(ascii)) {
       codes.set(code, ascii);
       continue;
     }
@@ -251,10 +249,50 @@ function resolveWith(c: Container, alphabet: Alphabet): CharacterMap {
   // about it and nothing else needs to be.
   for (const [code, blank] of blankOnly) if (blank && !codes.has(code)) codes.set(code, ' ');
 
-  const drawn = drawnCodes(c);
+  const drawn = context.drawn;
   let resolved = 0;
   for (const code of drawn) if (codes.has(code)) resolved += 1;
   return { alphabet: alphabet.name, codes, ambiguous, drawn: { resolved, total: drawn.size } };
+}
+
+/**
+ * Everything `resolveWith` needs that does not vary with the alphabet, computed once.
+ *
+ * **The review that prompted this named the wrong two inputs, and measuring is what said so.** It
+ * called out `usesAscii` re-reading every font set inside the ambiguity loop and `drawnCodes`
+ * re-walking every reachable program, seven times each. Both are real repetitions and both are
+ * free: `characterMap` on `one_config` was 31.2 ms before the hoist and 33.4 ms after, because
+ * `drawnCodes` costs 1.13 ms and `usesAscii` 0.01 ms.
+ *
+ * What costs is `shapeKey`, which hashes every glyph's pixels and was doing it once per glyph **per
+ * alphabet**, so seven times for a table that cannot change with the alphabet. Hoisting that is what
+ * moves the number. The hoists the review asked for are kept because they are correct and now cost
+ * nothing to keep, but the entry in `docs/findings.md` records the measurement rather than the
+ * proposal, since a fix adopted on a premise nobody checked is the shape this project keeps
+ * catching. Section 139.
+ */
+interface ResolveContext {
+  /** One entry per decoded glyph, in set then address order, with its shape already hashed. */
+  shapes: { code: number; blank: boolean; key: string }[];
+  ascii: boolean;
+  drawn: Set<number>;
+}
+
+function resolveContext(c: Container): ResolveContext {
+  const shapes: ResolveContext['shapes'] = [];
+  for (const set of fontSets(c) ?? []) {
+    for (const { index, glyph } of decodedSet(c, set)) {
+      // A glyph that does not decode, or whose height contradicts its set's header. It used to be
+      // decoded here with `glyphAt(c, address)` and **no bound**, so the one route that turns pixels
+      // into a character was the one route nothing constrained. Section 139.
+      if (glyph === undefined) continue;
+      const blank = isBlank(glyph);
+      // The key's height prefix is the set's declared height, which `decodedSet` has just refused to
+      // return a glyph disagreeing with, so it is now the decoded height as well.
+      shapes.push({ code: set.first + index, blank, key: blank ? '' : shapeKey(set.height, glyph) });
+    }
+  }
+  return { shapes, ascii: usesAscii(c), drawn: drawnCodes(c) };
 }
 
 /** Whether the container's font sets state ASCII codes, per `ASCII_FIRST_CODE`. */
@@ -272,8 +310,9 @@ export function usesAscii(c: Container): boolean {
  */
 export function characterMap(c: Container): CharacterMap | undefined {
   let best: CharacterMap | undefined;
+  const context = resolveContext(c);
   for (const alphabet of ALPHABETS) {
-    const found = resolveWith(c, alphabet);
+    const found = resolveWith(alphabet, context);
     if (found.drawn.resolved === 0) continue;
     if (best === undefined || found.drawn.resolved > best.drawn.resolved) best = found;
   }

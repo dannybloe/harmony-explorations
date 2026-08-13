@@ -119,6 +119,14 @@ export function blankScreen(c: Container): Raster | undefined {
  *
  * **A skipped pixel is transparent and not black**, which is what makes an icon over a background
  * look right, and it is also why `Raster` carries `UNDRAWN` rather than starting black.
+ *
+ * **This walk exists twice**, here and as `bitmapAt` plus `encodedExtent` in `screen.ts`, which walk
+ * the same three forms to compute a length rather than pixels. They are not merged, because
+ * `bitmapAt` runs inside `pictureBank`'s offset search and would then decode every candidate's
+ * pixels; two copies of a derivation is the state `CLAUDE.md`'s oldest rule warns about, so the two
+ * are tied by a test that can see both, `the length walk and the pixel walk agree about every
+ * picture` in `render.test.ts`. Section 85's row padding correction had to be applied in both places
+ * by hand, with nothing to say so. Section 139.
  */
 export function bitmapPixels(c: Container, b: Bitmap): (number | undefined)[][] | undefined {
   const off = c.blobOffsetOf(b.address);

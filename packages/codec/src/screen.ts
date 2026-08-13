@@ -459,6 +459,9 @@ export function bitmapReference(instruction: ScreenInstruction): number | undefi
  * The firmware loads only the **low byte** of each `u16`, so a writer emitting a stride or a row
  * count above 255 gets it modulo 256 and no error. Every value in the corpus is far below that,
  * which is why data cannot tell the two readings apart and the firmware has to settle it.
+ *
+ * **The same three forms are walked again by `bitmapPixels` in `render.ts`**, which produces pixels
+ * where this produces a length. `render.test.ts` ties the two, since nothing else can. Section 139.
  */
 export function bitmapAt(c: Container, address: number): Bitmap | undefined {
   const off = c.blobOffsetOf(address);
@@ -538,9 +541,18 @@ export function pictureRun(c: Container, from: number): Bitmap[] | undefined {
  *
  * The bank begins where everything with a name ends, but not on that exact byte: sections this
  * codec does not fully read leave a short head, 181 bytes on one Harmony One. So offsets are tried
- * in order under two constraints, and exactly one start satisfies both in every container that has
- * a bank: the walk lands on the trailer, **and** every picture opcode 2 names appears in it at its
- * own address. The first alone leaves several candidates on two arch 8 configs.
+ * under two constraints: the walk lands on the trailer, **and** every picture opcode 2 names
+ * appears in it at its own address. The first alone leaves up to 30 candidates on an arch 8
+ * (Harmony 880 or 885) config.
+ *
+ * **"Exactly one start satisfies both in every container that has a bank" was false**, and it was
+ * the sentence justifying a 1024 byte search. On the three arch 9 (Harmony 525) containers the
+ * second constraint is **empty**, because no Harmony 525 program names a picture with opcode 2 at
+ * all, so 2, 2 and 3 offsets satisfy both and the function returned whichever came first. It was
+ * masked because `pictureBankStart` answers before the search on every architecture that states the
+ * bank, and arch 9 (Harmony 525) is one of them. The search refuses an ambiguous answer now rather
+ * than taking the lowest, which is the same rule as the container base anchor in section 117: a
+ * unique survivor or nothing. Section 139.
  */
 /**
  * Where the picture array begins when the container says so, as a blob offset.
@@ -570,13 +582,18 @@ export function pictureBank(c: Container, from: number, search = 1024): Bitmap[]
     if (run !== undefined) return run;
   }
   const wanted = new Set(bitmaps(c).map((b) => b.address));
+  let only: Bitmap[] | undefined;
   for (let start = from; start < Math.min(from + search, c.blob.length); start += 1) {
     const run = pictureRun(c, start);
     if (run === undefined) continue;
     const have = new Set(run.map((b) => b.address));
-    if ([...wanted].every((a) => have.has(a))) return run;
+    if (![...wanted].every((a) => have.has(a))) continue;
+    // A second survivor means the two constraints do not pick a bank out here, which is what an
+    // empty `wanted` guarantees. Refuse rather than hand back the lowest of several.
+    if (only !== undefined) return undefined;
+    only = run;
   }
-  return undefined;
+  return only;
 }
 
 /** Every distinct picture any reachable screen program addresses, in address order. */

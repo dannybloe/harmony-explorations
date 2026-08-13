@@ -35,6 +35,10 @@ import {
   bitmapAt,
   bitmaps,
   namedContentEnd,
+  SECTION_ITEM_SIZE,
+  SECTION_TABLE_OFFSET,
+  TOUCH_MAP_SLOT,
+  archSlot,
   pictureBank,
   pictureBankStart,
   pictureRun,
@@ -640,3 +644,42 @@ test('an arch 9 row draw is opcode 22 then opcode 3, and the row index is the op
         Array.from({ length: 8 }, (_, k) => [k, pages.length]));
     }
   });
+
+test('the bank search refuses when its two constraints do not pick one start', skipWithoutLab(), () => {
+  // The docstring said "exactly one start satisfies both in every container that has a bank", and
+  // that sentence is what justified searching 1024 offsets. It is false where the second constraint
+  // is **empty**: no arch 9 (Harmony 525) program names a picture with opcode 2, so `wanted` is a
+  // set of nothing and any tiling start satisfies it. Two, two and three offsets do, on the three
+  // arch 9 (Harmony 525) containers. It was masked because base slot 17 states the bank there and
+  // `pictureBankStart` answers first. Section 139.
+  //
+  // Counted here rather than asserted away, so the number is on the record: for each container, how
+  // many starts in the search window tile to the trailer and hold every opcode 2 address.
+  const AMBIGUOUS = ['h525_config', 'h525_config_2', 'h525_safemode_ahcm'];
+  for (const name of AMBIGUOUS) {
+    const c = parse(require_(name));
+    const stated = pictureBankStart(c) as number;
+    const wanted = bitmaps(c);
+    assert.equal(wanted.length, 0, `${name} names a picture with opcode 2 after all`);
+    let candidates = 0;
+    for (let start = stated; start < Math.min(stated + 1024, c.blob.length); start += 1) {
+      if (pictureRun(c, start) !== undefined) candidates += 1;
+    }
+    assert.ok(candidates > 1, `${name} has ${candidates} candidates, so it is not the ambiguous case`);
+    // The stated start still answers, because `pictureBank` asks base slot 17 before it searches.
+    assert.notEqual(pictureBank(c, stated), undefined);
+  }
+  // And the refusal itself, constructed, because no container in the corpus reaches the branch: a
+  // copy of an arch 9 (Harmony 525) container with base slot 17's pointer zeroed. `pictureBankStart`
+  // declines a NULL section, so the search is the only route left, `wanted` is empty and two starts
+  // tile. It used to hand back the lower of the two.
+  const blob = new Uint8Array(require_('h525_config'));
+  const c = parse(blob);
+  const slot = archSlot(c.architecture as number, TOUCH_MAP_SLOT);
+  const at = (c.blobOffset as number) + SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * slot;
+  assert.notEqual(pictureBankStart(c), undefined, 'the sample has to state its bank for this to bite');
+  blob.fill(0, at, at + SECTION_ITEM_SIZE);
+  const blinded = parse(blob);
+  assert.equal(pictureBankStart(blinded), undefined);
+  assert.equal(pictureBank(blinded, namedContentEnd(blinded)), undefined);
+});

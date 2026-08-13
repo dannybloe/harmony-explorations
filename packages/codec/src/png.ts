@@ -114,6 +114,11 @@ export function contactSheetPng(
   const first = rasters[0];
   if (first === undefined) return undefined;
   const { width, height } = first;
+  // The grid is laid out from the first raster's size and each tile was then copied at its **own**
+  // size, so a wider one wrote across the tile beside it and a taller one past the end of the
+  // buffer. Only reachable by putting two architectures in one sheet, which no caller does today,
+  // and the failure is a silently wrong picture rather than an error. Section 139.
+  if (rasters.some((r) => r.width !== width || r.height !== height)) return undefined;
   const gap = 4;
   const rows = Math.ceil(rasters.length / columns);
   const total = { width: columns * (width + gap) + gap, height: rows * (height + gap) + gap };

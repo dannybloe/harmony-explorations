@@ -18389,12 +18389,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Forty six shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Fifty five shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Forty six defects came out of it that a sample could not have found, and they share one shape, which
+Fifty five defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18404,7 +18404,10 @@ appended rather than reordered so the numbering stays citable. Entries 19 and 20
 readings in two entries: 19 holds the five that no sample in the corpus reaches, and 20 the four found by
 reading the same partition list properly afterwards, two of which are producing a wrong answer today.
 Entry 22 is the one to read for what it says about itself: three of its six changes cannot be made to
-fail by any test, and it says which and why rather than leaving that to be discovered.
+fail by any test, and it says which and why rather than leaving that to be discovered. Entry 23 is the
+one where the **review was wrong**: the performance defect it reported is real and free, the cost is
+somewhere else entirely, and the hoist it asked for makes the function slower. It also holds the
+fourth architecture ladder read for another remote, one partition after entry 19 found the third.
 Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
 is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
 thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
@@ -19349,6 +19352,100 @@ list in `CLAUDE.md`.
 * **`FIELD_RULES` states its scope**: it is a table of fields, and the rails that come from sharing are
   relations, which no row can express.
 
+### 23. The interpreter table answered for a remote it had never read, and one hoist was measured before it was believed
+
+The `actions.ts`, `screen.ts`, `text.ts`, `font.ts`, `render.ts` and `png.ts` partition. Nine changes,
+and the one worth reading is not a fix at all: **the review's own performance finding was wrong, and
+measuring the premise before executing it is what said so.**
+
+**Arch 9 (Harmony 525) has its own `0x3F` floor and was reading arch 14's (Harmony 600 and 700).**
+Section 73 read the second operand space on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700),
+and `bandsFor` varied only arch 12's lowest band, so every other architecture took arch 14's table.
+Disassembled out of `h525_code` with `--part 4550`, the Harmony 525's ladder is `0x01F78` testing
+`0xF0`, `0x01F8E` testing `0xE0`, `0x01FD4` testing `0xD0` and handing the six byte path at `0x01FDA`
+two more fetched bytes, and `0x02030` testing `0xC0`, which masks the low nibble into `0x3DC` and calls
+`0x02432`. Below `0xC0` every arm branches to the dispatcher's exit at `0x023E4`.
+
+So its lowest floor is `0xC0` and the shared table's is `0xB0`. A Harmony 525 instruction with high
+byte `0xC0` to `0xCF` was read as arch 14's base slot 8 seek, and one in `0xB0` to `0xBF` got a reading
+where this firmware simply returns. `0x02432` is neither arch 12's `0x24F24` nor arch 14's `0x0F782`;
+it reads a bit of `0x109` and switches on the stored nibble, and it has not been followed further, so
+the entry is `placement` and says which handler it stands for. **This is the same shape as entry 19's
+`0x0F` ladder, one partition apart**, and it is the fourth time section 73's own warning about reading
+a handler on an architecture that does not use the opcode has been met.
+
+**Neither costs a number**: no Harmony 525 config emits `0x3F` in `0xB0` to `0xCF` at all, so
+`make reading` is unmoved at 98.4% overall and 95.2% on arch 9 (Harmony 525). It is a trap for the next
+arch 9 sample rather than a wrong figure today, which is exactly the class this whole section is about.
+
+**Two shared entries described one architecture's handler as everyone's.** `0x3F` band `0xB0` stands
+for arch 14's (Harmony 600 and 700) `0x0F782` and read "a peripheral operation selected by the
+operand's low bits", which is arch 12's (Harmony One) `0x24F24`; section 73 says `0x0F782` seeks base
+slot 8 and bounds the operand against that section's leading byte. The docstring seventy lines below
+records this exact mistake being made and fixed, and the fix gave the Harmony One its own entry and
+left the Harmony One's words on the Harmony 700's floor. And band `0xF0` read "nibble 3 is the sound
+enable", which is arch 12's (Harmony One) fact from `0x24EE2`: on arch 14 (Harmony 600 and 700) the
+chain's cases are 0, 1, 2, 6 and 7, so nibbles 3 and 5 fall into the default and do nothing. The corpus
+uses those nibbles 84 times. One line cannot be both, and it was.
+
+**The review asked for two hoists and both are free.** `characterMap` re-read every font set inside its
+loop over ambiguous codes through `usesAscii`, and re-walked every reachable program through
+`drawnCodes`, once per alphabet, seven times. Both repetitions are real. Measured on `one_config`:
+`drawnCodes` costs 1.13 ms and `usesAscii` 0.01 ms, and hoisting both moved `characterMap` from
+**31.2 ms to 33.4 ms**. What costs is `shapeKey`, which hashes a glyph's pixels and was doing it once
+per glyph per alphabet for a table that cannot vary with the alphabet. Hoisting that gives **7.6 ms**.
+
+The hoists the review asked for are kept, because they are correct and now free. The lesson is the
+order: the proposal named two plausible repetitions and the profile named a third, and adopting the
+first two on the strength of the argument would have produced a change that looked like a fix, passed
+every test, and made the function slower.
+
+**And the ceiling that guards it had to have its own control run.** The first bound was 30 ms, four
+times the standalone 7.6 ms, and with `shapeKey` put back inside the alphabet loop the test **passed**:
+inside the suite the JIT is warm by the time it runs, and the same code measures 15.3 ms against
+4.7 ms rather than 33 against 7.6. The bound is 12 ms, set from that control. A wall clock ceiling whose
+regression case was never run is a ceiling that passes whatever happens, which is the same defect as a
+test that cannot fail.
+
+**A font set stated its glyph height and nothing enforced it.** `FontSet.height` carried the comment
+"shared by every glyph in the set, and checked against every decoded glyph"; the only comparison in the
+repository was an assertion inside `screen.test.ts`, so the promise held for the corpus and not for any
+caller. It matters because `text.ts` keyed a glyph's shape on the **declared** height while decoding the
+glyph **unbounded**, on the one path that turns pixels into a character, and the height prefix is what
+stops a tall `l` reading as an `I`. Both routes now go through `decodedSet`, which bounds a glyph by its
+neighbour and refuses one whose height contradicts its set. All 5814 live glyphs in the corpus agree, so
+the refusal costs nothing and the case it guards is the one section 46 and section 78 each found once in
+this very field.
+
+**The picture geometry exists twice and now has a test that can see both.** `bitmapAt` with
+`encodedExtent` walks the three picture forms to compute a length, and `bitmapPixels` walks the same
+three to produce pixels: the raw extent, the arch 9 (Harmony 525) monochrome row padding, and the whole
+skip and literal and row break loop. Section 85's padding correction had to be applied in both places by
+hand, with nothing to say so. They are not merged, because `bitmapAt` runs inside `pictureBank`'s offset
+search and merging would decode every candidate's pixels; instead they are tied over the corpus, on 558
+pictures, by row count, by every row's width, and for the encoded form by the row breaks the length walk
+counted on its way past. **What the tie cannot see is stated in the test**: both walks emit `stride`
+pixels a row whatever the padding, so the monochrome half is caught by the bank walk failing to land on
+the trailer, and a control was run for each.
+
+**"Exactly one start satisfies both" was the sentence justifying a 1024 byte search, and it is false.**
+`pictureBank` tries offsets under two constraints, that the walk lands on the trailer and that every
+picture screen opcode 2 names appears in it. On the three arch 9 (Harmony 525) containers the second
+constraint is **empty**, because no Harmony 525 program names a picture with opcode 2 at all, so 2, 2
+and 3 offsets satisfy both and the function returned whichever came first. It is masked because base
+slot 17 states the bank on that architecture and `pictureBankStart` answers before the search. The
+search refuses an ambiguous answer now, the same rule as the container base anchor in section 117: a
+unique survivor or nothing. The control is constructed, a copy of a Harmony 525 container with base
+slot 17's pointer zeroed, since nothing in the corpus reaches the branch.
+
+**Two smaller refusals.** A glyph run whose walk reached the last byte **without** a terminator was
+returned as a string rather than refused, because the guard was `end > c.blob.length` where the loop
+leaves `end` at the length; silently truncated text is the worst answer available. And
+`contactSheetPng` laid its grid out from the first raster's size and then copied each tile at its
+**own** size, so a wider raster wrote across the tile beside it and a taller one past the end of the
+buffer. Both are unreachable from the corpus today, both are constructed in tests, and both have a
+control that bites.
+
 ### What would falsify it
 
 For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
@@ -19368,3 +19465,9 @@ read here is not the encoding. For base slot 15's continuation: an arch 12 conta
 whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body
 runs into them, either of which would say the offsets are not the structure. For the day maximum: a Logitech generated config
 built on a 31st, which would settle by measurement what is currently our choice.
+
+For entry 23: a Harmony 525 config emitting `0x3F` with a high byte in `0xB0` to `0xCF`, which would
+move that ladder from latent to live; a container whose font set header and glyph heights disagree,
+which the corpus does not have and which the new refusal would surface rather than resolve wrongly; or
+an arch 9 (Harmony 525) program that names a picture with screen opcode 2, which would make the bank
+search's second constraint non empty there and its uniqueness claim true after all.

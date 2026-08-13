@@ -18,16 +18,21 @@ import {
   SCREEN_DRAW_IMAGE,
   SCREEN_SIZES,
   UNDRAWN,
+  BITMAP_ENCODED,
+  BITMAP_NOTHING,
   bitmapAt,
   bitmapPixels,
   bitmapReference,
   characterMap,
+  contactSheetPng,
   IMAGE_PACKED_PAPER,
   fontSets,
   glyphOf,
   glyphs,
   modePages,
+  namedContentEnd,
   parse,
+  pictureBank,
   reachablePrograms,
   renderPage,
   renderPages,
@@ -323,4 +328,67 @@ test('the arms of a switch are the values that select them', skipWithoutLab(), (
     }
   }
   assert.ok(switches > 100, `only ${switches} switches in the corpus`);
+});
+
+test('the length walk and the pixel walk agree about every picture', skipWithoutLab(), () => {
+  // `bitmapAt` walks a picture to compute a length and `bitmapPixels` walks it to produce pixels,
+  // three forms each, and nothing tied them: section 85's monochrome row padding had to be applied
+  // in both by hand. Two right copies is the state that precedes two diverging ones, and no test
+  // could see it. Section 139.
+  //
+  // Three ties, because a wrong copy could pass any one of them: the row count, every row's length,
+  // and for the encoded form the row breaks the length walk counted on its way past.
+  //
+  // **What this cannot see is a byte offset inside a row**, which is what section 85's monochrome
+  // padding is: both walks emit `stride` pixels a row either way, so `Math.floor` for `Math.ceil` in
+  // either copy leaves every count here intact. That half is caught by the bank walk in
+  // `screen.test.ts`, which stops landing on the trailer. Controls run for both, and stated here
+  // because a tie test that is assumed to cover everything is the failure this whole entry is about.
+  let pictures = 0;
+  let monochrome = 0;
+  for (const name of SAMPLES) {
+    const c = parse(require_(name));
+    for (const b of pictureBank(c, namedContentEnd(c)) ?? []) {
+      const pixels = bitmapPixels(c, b);
+      assert.notEqual(pixels, undefined, `${name} 0x${b.address.toString(16)} does not draw`);
+      // Kind 2 is a firmware RETURN off arch 9 (Harmony 525), so it draws nothing there by design
+      // and there is no geometry to compare. On arch 9 it is the monochrome form and is compared.
+      if (b.kind === BITMAP_NOTHING && c.architecture !== 9) {
+        assert.deepEqual(pixels, [], `${name} 0x${b.address.toString(16)} draws where it should not`);
+        continue;
+      }
+      if (b.kind === BITMAP_NOTHING) monochrome += 1;
+      pictures += 1;
+      assert.equal((pixels ?? []).length, b.rows, `${name} 0x${b.address.toString(16)} row count`);
+      for (const row of pixels ?? []) {
+        assert.equal(row.length, b.stride, `${name} 0x${b.address.toString(16)} row width`);
+      }
+      if (b.kind !== BITMAP_ENCODED) continue;
+      assert.equal((pixels ?? []).length, (b.rowBreaks as number) + 1,
+        `${name} 0x${b.address.toString(16)} row breaks`);
+    }
+  }
+  // The exact population, not a floor: it moves when a reader changes or a sample is added, and
+  // then it moves in the diff. The monochrome count is stated separately because it is the form
+  // section 85 corrected and the one a single container carries an odd width of.
+  assert.equal(pictures, 558);
+  assert.equal(monochrome, 13);
+});
+
+test('a contact sheet refuses rasters of mixed sizes rather than drawing them wrong', () => {
+  // The grid was laid out from the first raster's size and every tile then copied at its **own**
+  // size, so a wider raster wrote across the tile beside it and a taller one past the end of the
+  // buffer. Only reachable by putting two architectures in one sheet, which no caller does, and the
+  // failure is a silently wrong picture rather than an error. Constructed, since the corpus renders
+  // one container at a time. Section 139.
+  const raster = (width: number, height: number) =>
+    ({ width, height, pixels: new Int32Array(width * height).fill(0x1234) });
+  const same = [raster(20, 10), raster(20, 10), raster(20, 10)];
+  assert.notEqual(contactSheetPng(same, 2), undefined);
+  assert.equal(contactSheetPng([...same, raster(21, 10)], 2), undefined, 'a wider tile');
+  assert.equal(contactSheetPng([...same, raster(20, 11)], 2), undefined, 'a taller tile');
+  // The first raster decides, so a mismatch in position 0 is the same refusal seen from the other
+  // side rather than a different rule.
+  assert.equal(contactSheetPng([raster(21, 10), ...same], 2), undefined);
+  assert.equal(contactSheetPng([], 2), undefined, 'and an empty sheet is still nothing');
 });

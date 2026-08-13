@@ -731,3 +731,48 @@ test('the low state variable records are identical across architectures', skipUn
   assert.equal(shapes.size, 4, 'every architecture named above has to state its shape');
   assert.equal(new Set(shapes.values()).size, 1, [...shapes].map(([a, s]) => `${a}: ${s}`).join(' | '));
 });
+
+test('arch 9 has its own 0x3F floor, so it borrows neither neighbour', () => {
+  // The Harmony 525's ladder tests `0xF0`, `0xE0`, `0xD0` and then `0xC0`, and exits below that.
+  // The shared table's lowest floor is `0xB0`, arch 14's, so a `0xC0` instruction read as arch 14's
+  // base slot 8 seek and a `0xB0` one got a reading where this firmware simply returns. Read at
+  // 0x01F78, 0x01F8E, 0x01FD4 and 0x02030 in `h525_code`. Section 139.
+  const at = (operand: number, architecture: number) =>
+    reading({ operand, opcode: 0x3f }, architecture);
+
+  // The floor itself: arch 9 answers at 0xC0 and arch 14 does not have a band there of its own.
+  assert.notEqual(at(0xc000, 9), undefined);
+  assert.notEqual(at(0xc000, 9)?.what, at(0xc000, 14)?.what);
+  assert.notEqual(at(0xc000, 9)?.what, at(0xc000, 12)?.what);
+  // And below its floor the firmware exits, which `reading` states as a no-op rather than as a
+  // gap. Where the shared table used to hand back arch 14's base slot 8 seek instead.
+  assert.equal(at(0xb000, 9)?.noop, true);
+  assert.equal(at(0xb000, 14)?.noop, undefined);
+  assert.match(at(0xb000, 14)?.what ?? '', /base slot 8/);
+  // The three bands it shares are the same entries, not copies.
+  for (const high of [0xf000, 0xe000, 0xd000]) {
+    assert.equal(at(high, 9)?.what, at(high, 14)?.what, `0x${high.toString(16)}`);
+  }
+});
+
+test('arch 14 lowest band is described as its own handler, not as arch 12 peripheral one', () => {
+  // Section 73: arch 14's `0x0F782` seeks base slot 8 and bounds the operand against that section's
+  // leading byte, where arch 12's `0x24F24` drives a peripheral. The peripheral wording had been
+  // copied onto arch 14's floor, which is the mistake section 102 records happening the other way.
+  const arch14 = reading({ operand: 0xb000, opcode: 0x3f }, 14);
+  assert.match(arch14?.what ?? '', /base slot 8/);
+  assert.doesNotMatch(arch14?.what ?? '', /peripheral/);
+  // And arch 12's own entry is the peripheral one, at its own floor, with the exit below it.
+  assert.equal(reading({ operand: 0xb000, opcode: 0x3f }, 12)?.noop, true);
+  // Selector 17 arrives with high byte 0xC1, since bit 8 of the five bit selector is the band's own.
+  assert.match(reading({ operand: 0xc110, opcode: 0x3f }, 12)?.what ?? '', /display's light level/);
+});
+
+test('the 0xF0 band says which architecture nibble 3 is the sound enable on', () => {
+  // It read "nibble 3 is the sound enable", which is arch 12's fact stated for everyone: section 73
+  // gives arch 14's chain cases as 0, 1, 2, 6 and 7, so nibbles 3 and 5 fall into its default and
+  // do nothing. One line cannot be both, and the corpus uses those nibbles 84 times.
+  const what = reading({ operand: 0xf300, opcode: 0x3f }, 14)?.what ?? '';
+  assert.match(what, /arch 12/);
+  assert.match(what, /arch 14/);
+});

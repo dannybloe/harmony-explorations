@@ -20,6 +20,7 @@ import {
   SCREEN_TEXT_INLINE,
   characterMap,
   decode,
+  decodedSet,
   drawnCodes,
   fontSets,
   glyphAt,
@@ -426,3 +427,73 @@ test('a code that only ever appears in a referenced string is still a drawn code
     // population, which is what the claim is about.
     assert.ok(seen > 100_000, `only ${seen} drawn codes were checked for containment`);
   });
+
+test('a set states its glyph height and every route that has the set enforces it', skipWithoutLab(), () => {
+  // `FontSet.height` said it was "checked against every decoded glyph" and nothing checked it: the
+  // only comparison in the repository was an assertion in `screen.test.ts`, so the promise held for
+  // the corpus and not for a caller. `decodedSet` and `glyphOf` refuse a glyph that disagrees now.
+  // Section 139.
+  let glyphs = 0;
+  for (const name of SAMPLES) {
+    const c = parse(require_(name));
+    for (const set of fontSets(c) ?? []) {
+      for (const { glyph } of decodedSet(c, set)) {
+        assert.notEqual(glyph, undefined, `${name} set 0x${set.address.toString(16)}`);
+        assert.equal((glyph as { rows: unknown[] }).rows.length, set.height);
+        glyphs += 1;
+      }
+    }
+  }
+  // Every live glyph in the corpus, exactly, so the refusal costs nothing today and the number
+  // moves in a diff rather than silently.
+  assert.equal(glyphs, 5814);
+});
+
+test('a glyph whose height contradicts its set is refused rather than resolved', skipUnless('one_config'), () => {
+  // The control, since the corpus cannot supply the case: flip a set's declared height and the
+  // routes that hold the set stop answering, where they used to hand the resolver a glyph keyed by
+  // a height its pixels do not have. `glyphAt` still answers, because it is given an address and no
+  // set and therefore cannot know.
+  const c = parse(require_('one_config'));
+  const set = (fontSets(c) ?? [])[0] as { address: number; height: number; first: number };
+  const before = decodedSet(c, set as never);
+  assert.ok(before.length > 0 && before.every((d) => d.glyph !== undefined));
+  const lying = { ...set, height: set.height + 1 };
+  assert.ok(decodedSet(c, lying as never).every((d) => d.glyph === undefined));
+  const address = (before[0] as { address: number }).address;
+  assert.notEqual(glyphAt(c, address), undefined, 'glyphAt has no set and cannot check');
+});
+
+test('a glyph run with no terminator is refused, not truncated', skipUnless('one_config'), () => {
+  // The guard was `end > c.blob.length`, so a run that walked to the last byte without meeting a
+  // zero came back as a string. Unreachable in the corpus, since every container ends in a six byte
+  // trailer, so the case is constructed. Section 139.
+  const c = parse(require_('one_config'));
+  const last = c.flashBase + c.blob.length - 1;
+  const nonZero = c.blob[c.blob.length - 1] !== 0;
+  assert.ok(nonZero, 'the constructed case needs the final byte to be nonzero');
+  assert.equal(glyphRunAt(c, last), undefined);
+  // And the positive control: a real referenced string still reads, so the guard did not simply
+  // stop answering.
+  const real = screenStrings(c).find((one) => one.referencedFrom !== undefined);
+  assert.notEqual(real, undefined);
+  assert.notEqual(glyphRunAt(c, (real as { referencedFrom: number }).referencedFrom), undefined);
+});
+
+test('resolving a container costs the pixel hash once, not once per alphabet', skipUnless('one_config'), () => {
+  // A coarse wall clock ceiling of the kind `bench.test.ts` uses. **Its bound is set from a control
+  // rather than guessed**: with `shapeKey` put back inside the alphabet loop this test measures
+  // 15.3 ms here and 4.7 ms as it stands, so 12 ms bites the regression and leaves 2.5 times the
+  // headroom for a slow machine. The first bound was 30 ms, from a standalone measurement of 33 ms
+  // against 7.6 ms, and it did **not** bite in the suite, where the JIT is warm by the time this
+  // runs. A ceiling whose control was never run is a ceiling that passes whatever happens.
+  //
+  // **The review that prompted this named the wrong two inputs**: hoisting `drawnCodes` and
+  // `usesAscii` moved `characterMap` from 31.2 ms to 33.4 ms. Section 139.
+  const c = parse(require_('one_config'));
+  characterMap(c);
+  const started = process.hrtime.bigint();
+  characterMap(c);
+  const ms = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.ok(ms < 12, `characterMap took ${ms.toFixed(1)} ms`);
+});
