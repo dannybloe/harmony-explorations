@@ -486,6 +486,29 @@ say so is worse than a door that announces itself. `0xE0 0x01` clears the gate a
 `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
 profile does not add a write target and must not.
 
+## Never write a bare architecture number in conversation
+
+Say "arch 12 (Harmony One)", not "arch 12". Every time, including the fourth mention in the same
+paragraph. The owner asked for this on 12 August 2026 and again with emphasis on 13 August, because the
+architecture numbers are this project's internal handle and map to nothing on his desk.
+
+| architecture | the remote to name |
+|---|---|
+| 9 | Harmony 525 |
+| 12 | Harmony One, or the spare Harmony One |
+| 14 | Harmony 600, or the Harmony 700 for the reference image |
+| 8 | Harmony 880 or 885, contributed configs only |
+| 10 | Harmony 890, contributed configs only |
+
+**The failure mode is the trailing mention.** It gets done in headings and first mentions and dropped
+mid-sentence in enumerations, as in "measured on arch 12 and on arch 9 and arch 14 not". That is the
+place it matters most, because that sentence is telling him what is still open. Check every occurrence
+in a reply rather than the first.
+
+**This applies to conversation and to commit messages, not to these documents.** A document may use the
+bare number where the claim is genuinely about the architecture and not about a model, since several
+models share one, and `docs/findings.md` does so throughout.
+
 ## Documents must not contain em-dashes or en-dashes
 
 Convention for everything published here. Verify with a check that does not itself contain the
