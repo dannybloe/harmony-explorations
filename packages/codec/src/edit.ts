@@ -57,6 +57,7 @@ import {
   TRAILER_CHECKSUM_OFFSET,
   clockRecord,
   clockRecordFields,
+  timestampOf,
   trailerChecksum,
 } from './gspm.ts';
 import { claims } from './coverage.ts';
@@ -86,11 +87,22 @@ export interface FieldRule {
 }
 
 /**
- * Every field in this format whose treatment on a write is not "carry it through unchanged".
+ * Every **field** whose treatment on a write is not "carry it through unchanged".
  *
  * Exported because it is the answer to a question that otherwise lives in somebody's memory: does
  * this field go across, or does it get recomputed? `test/edit.test.ts` fails if a rule is added
  * without a test covering it, so the table cannot drift away from the code the way a comment would.
+ *
+ * **What it deliberately does not cover is sharing, and a caller has to know that.** This used to
+ * say "every field in this format", which reads as a complete list of the write rails and is not
+ * one: the rails a config's structure imposes are **relations** rather than fields, so none of them
+ * can be a row here. An infrared duration block is named by several records, section 61; a glyph
+ * string is drawn from several programs, section 121; a mode page's tagged list has a second copy,
+ * section 69; and a picture's position is implied by everything before it, section 55. Editing one
+ * end of any of those changes the other end and no field says so. They are enforced where they can
+ * be seen, in the individual editors, and the whole reason `edit.ts` refuses to change a length is
+ * that a length change moves everything downstream and no table can catch that either. The full
+ * list is "Rails a writer will have to respect" in `CLAUDE.md`.
  */
 export const FIELD_RULES: readonly FieldRule[] = [
   {
@@ -286,9 +298,11 @@ export function applyEdits(c: Container, edits: Edit[]): EditReport {
  * vectors independent of where the tests run, so the two are not symmetrical on purpose.
  */
 export function localTimestamp(when: Date): string {
-  const p = (n: number, w = 2): string => String(n).padStart(w, '0');
-  return `${p(when.getFullYear(), 4)}-${p(when.getMonth() + 1)}-${p(when.getDate())}`
-    + `T${p(when.getHours())}:${p(when.getMinutes())}:${p(when.getSeconds())}`;
+  // Through `timestampOf`, beside `clockRecord`, because this used to spell the same padded format
+  // out again with its own helper. Both were right, which is the state that precedes two that are
+  // not, and nothing could have seen it while they agreed.
+  return timestampOf(when.getFullYear(), when.getMonth() + 1, when.getDate(),
+    when.getHours(), when.getMinutes(), when.getSeconds());
 }
 
 /**
@@ -436,9 +450,20 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
   }
   const off = c.blobOffsetOf(timer.address);
   if (off === undefined) throw new EditError(`timer ${index} is outside the container`);
+  // The third byte is the record's own, carried through because this writes a fixed width field
+  // and only the low sixteen bits are the duration. That leaks the rail it sits under: a record
+  // whose stored duration already has a high byte keeps it, so a caller asking for 100 seconds
+  // produces a `u24` the firmware clamps, which is exactly what the refusal above exists to stop.
+  // All 222 corpus timers sit under sixteen bits, so this refuses nothing that is being read.
+  if (timer.duration >>> 16) {
+    throw new EditError(
+      `timer ${index} already stores 0x${timer.duration.toString(16)}, whose high byte this write `
+      + 'would carry through into a value the firmware clamps',
+    );
+  }
   return [{
     start: off + 1,
-    bytes: Uint8Array.from([seconds & 0xff, (seconds >>> 8) & 0xff, (timer.duration >>> 16) & 0xff]),
+    bytes: Uint8Array.from([seconds & 0xff, (seconds >>> 8) & 0xff, 0]),
     owner: `timer ${index}`,
   }];
 }

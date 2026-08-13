@@ -831,3 +831,22 @@ test('four claims that used to rest on a coincidence now rest on a comparison',
   assert.equal(records, 239, `${records} base slot 14 records`);
   assert.equal(shared, 0, `${shared} base slot 14 records overlap a neighbour`);
 });
+
+test('the accounting refuses nothing, and says so rather than refusing in silence',
+  skipWithoutLab(), () => {
+    // A refused claim used to be a silent `return`, so a claim the accounting threw away and a
+    // reader with nothing to say were the same thing from the outside: the bytes show up as a gap
+    // either way and only one of the two is a defect in the accounting. Section 139.
+    for (const [name] of ACCOUNTED) {
+      const report = coverage(parse(require_(name)));
+      assert.deepEqual(report.refused, [], `${name} offered claims the accounting threw away`);
+    }
+    // And the array reaches a caller who passes their own, which is what makes it a diagnostic
+    // rather than a field on a report nobody constructs. Deliberately without a negative built
+    // from a synthetic container: what would populate it is a reader returning a length that runs
+    // past the blob, and no container here has one, so a fabricated case would test the assertion
+    // and not the accounting. The claim this makes is the one that can fail: zero refusals.
+    const refusals: string[] = [];
+    claims(parse(require_(ACCOUNTED[0]?.[0] as string)), true, refusals);
+    assert.deepEqual(refusals, []);
+  });

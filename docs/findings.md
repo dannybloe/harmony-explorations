@@ -18389,12 +18389,12 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Forty shipped readers answered plausibly where they should have refused, and six were rails
+## 139. Forty six shipped readers answered plausibly where they should have refused, and six were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
 independent readers, each given one partition and told to look for a claim the tests cannot fail on.
-Forty defects came out of it that a sample could not have found, and they share one shape, which
+Forty six defects came out of it that a sample could not have found, and they share one shape, which
 is this project's own recurring one: **each produced a plausible answer where it should have produced an
 error.** Not one of them failed a test, and five of them had a test asserting the wrong thing was
 right.
@@ -18403,6 +18403,8 @@ They are listed newest reading first, except entries 13 to 21, which were read a
 appended rather than reordered so the numbering stays citable. Entries 19 and 20 are the Python side, nine
 readings in two entries: 19 holds the five that no sample in the corpus reaches, and 20 the four found by
 reading the same partition list properly afterwards, two of which are producing a wrong answer today.
+Entry 22 is the one to read for what it says about itself: three of its six changes cannot be made to
+fail by any test, and it says which and why rather than leaving that to be discovered.
 Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
 is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
 thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
@@ -19233,6 +19235,50 @@ header through its key count, where an arch 10 (Harmony 890) one needs 107. So t
 bytes short of the header its own message claimed to have proved room for. It is derived from the three
 constants that decide it now.
 
+### 22. Six in the emitter and the editor, and three of them have no control that bites
+
+The remainder of the `ir.ts`, `edit.ts` and `emit.ts` partition, and the entry worth reading for what
+it says about itself rather than for what it fixes: **three of the six changes here cannot be made to
+fail by any test**, and that is stated per change rather than left for someone to discover.
+
+**The byte accounting refused claims in silence.** `add` returned without a word on an undefined
+start, a length at or below zero, or a run past the end of the blob. So a claim the accounting threw
+away and a reader that had nothing to say were the same thing from the outside: the bytes appear as a
+gap either way, and only one of the two is a defect in the accounting rather than in the reading. A
+report carries `refused` now, `owner: why`, empty on every sample.
+
+**A record with no carrier reported 0 Hz.** `irCarrier` computed `periodNs === 0 ? 0 : 1e9 / periodNs`,
+and **0 Hz is a real infrared case**: an unmodulated code has no carrier. A record whose period field is
+zero and a genuinely unmodulated one said the same thing. No corpus record has a zero period, so the
+test builds the case by zeroing one, which is what makes this the one latent change in the entry with a
+control that bites.
+
+**The timer editor leaked the rail it sits under.** `setTimerDuration` refuses a duration past sixteen
+bits, because the firmware clamps there with no error, and then wrote a three byte field whose **third
+byte it copied from the record**. A record already storing a value above sixteen bits would keep its
+high byte, so the seconds the caller asked for would become the `u24` the refusal exists to prevent.
+All 222 corpus timers sit under sixteen bits; the write now refuses such a record rather than carrying
+it.
+
+**A comment claimed a guarantee its own `continue` withdrew.** The emitter writes an empty counted
+array as zeros "so a section that is not actually empty fails the round trip", and the loop skips any
+run with a nonzero byte in it, which hands that run to the residue copy, which reproduces it exactly
+and passes. The claim it can make is the narrower one: a section this **does** frame is written from
+zeros rather than carried.
+
+**The three with no failing control, said plainly.** The trailer's six bytes move from `copied` to
+`framed` unconditionally at the end of an emit, which assumes no rebuilder above reached them; it is
+true in every container and a rebuilder that broke it would be double counted and then overwritten
+with nothing reported, so there is a guard now and **nothing can make it fire**. `localTimestamp` and
+`clockRecord` each spelled out the same padded `YYYY-MM-DDTHH:MM:SS` with their own helper, both
+correct, and reverting the shared formatter passes every test: that is the two right copies case
+exactly as `CLAUDE.md` describes it, caught by looking and not by running. And `FIELD_RULES` called
+itself "every field in this format whose treatment on a write is not carry it through unchanged",
+which reads as the complete set of write rails and is not: the rails a config's structure imposes are
+**relations** rather than fields, so a shared infrared block, a shared glyph string, a page list's copy
+and a picture's implied position cannot be rows in it. Its docstring says so now and points at the
+list in `CLAUDE.md`.
+
 ### What it changes
 
 * **`0x3F`'s bands are one of three structures that are not one table across architectures**, not one of
@@ -19296,6 +19342,12 @@ constants that decide it now.
   where base slot 17 is the picture bank instead of fabricating an empty table for it.
 * **An EZHex whose header runs past the read window is an error**, where it used to report itself as a
   bare container and then pass every check on a corrupted payload.
+* **A coverage report says which claims the accounting refused**, so a refusal and a reader with nothing
+  to say stop looking alike. Empty on every sample.
+* **An unmodulated infrared record reports no frequency**, not 0 Hz, which is a real case rather than an
+  absent reading.
+* **`FIELD_RULES` states its scope**: it is a table of fields, and the rails that come from sharing are
+  relations, which no row can express.
 
 ### What would falsify it
 

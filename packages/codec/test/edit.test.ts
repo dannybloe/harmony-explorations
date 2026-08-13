@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, require_, skipUnless } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   CLOCK_RECORD_SLOT,
@@ -30,6 +30,7 @@ import {
   stateRecords,
   CLOCK_FIELD_COUNT,
   localTimestamp,
+  timestampOf,
   saveEdits,
   timestampEdit,
   claims,
@@ -652,3 +653,35 @@ test('a container whose own checksum disagrees with its bytes is refused, not st
     'a damaged container was edited and its damage stamped as valid',
   );
 });
+
+test('the timestamp is spelled in one place, and both callers reach it', () => {
+  // `localTimestamp` and `clockRecord` each spelled out the same padded YYYY-MM-DDTHH:MM:SS with
+  // their own `padStart` helper, and both were right. Two right copies is the state that precedes
+  // two that are not, and no test can see it while they agree, so this is the test that would.
+  assert.equal(timestampOf(2026, 8, 4, 9, 5, 3), '2026-08-04T09:05:03');
+  assert.equal(localTimestamp(new Date(2026, 7, 4, 9, 5, 3)), '2026-08-04T09:05:03');
+  // And the parser on the other side accepts what the formatter produces, which is what makes the
+  // two sitting together worth anything.
+  assert.notEqual(clockRecordFields(timestampOf(2026, 8, 4, 9, 5, 3)), undefined);
+});
+
+test('a timer whose stored duration has a high byte is refused rather than carried',
+  skipUnless('one_config'), () => {
+    // The write is three bytes and only two of them are the duration, so the third used to be
+    // copied from the record: a stored value above sixteen bits kept its high byte and the seconds
+    // the caller asked for became a u24 the firmware clamps, which is what the refusal beside it
+    // exists to prevent. Every corpus timer sits under sixteen bits, so this is latent.
+    const c = parse(require_('one_config'));
+    const table = timers(c);
+    assert.ok(table !== undefined && table.records.length > 0);
+    for (const timer of table.records) assert.equal(timer.duration >>> 16, 0);
+    const edits = setTimerDuration(c, 0, 30);
+    assert.equal(edits[0]?.bytes[2], 0, 'the high byte is written, not carried');
+
+    // The negative, on a container edited to hold a timer the corpus does not have.
+    const first = table.records[0] as { address: number };
+    const off = c.blobOffsetOf(first.address) as number;
+    const edited = new Uint8Array(require_('one_config'));
+    edited[c.blobOffset + off + 3] = 0x01;
+    assert.throws(() => setTimerDuration(parse(edited), 0, 30), /high byte/);
+  });

@@ -365,8 +365,9 @@ export interface IrCarrier {
   periodNs: number;
   /** Carrier on time in nanoseconds, `periodNs >> 1` in all 3387 records of the corpus. */
   onNs: number;
-  /** The frequency the period states, in hertz. Derived, not stored. */
-  hertz: number;
+  /** The frequency the period states, in hertz. Derived, not stored, and undefined at a zero
+   * period, since an unmodulated code genuinely has no carrier. */
+  hertz: number | undefined;
 }
 
 /**
@@ -383,7 +384,11 @@ export function irCarrier(c: Container, address: number): IrCarrier | undefined 
   if (off === undefined || off + IR_HEADER_BASE > c.blob.length) return undefined;
   const periodNs = u24(c.blob, off + IR_CARRIER_AT);
   const onNs = u24(c.blob, off + IR_CARRIER_ON_AT);
-  return { periodNs, onNs, hertz: periodNs === 0 ? 0 : 1e9 / periodNs };
+  // Undefined rather than 0 for a zero period, because **0 Hz is a real infrared case**: an
+  // unmodulated code has no carrier. Reporting 0 makes a record with a zero period field and a
+  // genuinely unmodulated one say the same thing, and only one of those is a reading. No record in
+  // the corpus has a zero period, so this refuses nothing that is being read.
+  return { periodNs, onNs, hertz: periodNs === 0 ? undefined : 1e9 / periodNs };
 }
 
 /**

@@ -729,8 +729,22 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
   if (back.getUTCMonth() !== month || back.getUTCDate() !== day) return undefined;
   const days = Math.floor((Date.UTC(year, month, day) - CLOCK_EPOCH_MS) / MS_PER_DAY);
   if (((days % 7) + 7) % 7 !== dow) return undefined;
+  return timestampOf(year, month + 1, day, hour, minute, second);
+}
+
+/**
+ * The one place a `builtAt` string is spelled, `YYYY-MM-DDTHH:MM:SS` with every field padded.
+ *
+ * It was spelled twice, here and in `edit.ts`'s `localTimestamp`, each with its own `padStart`
+ * helper and both correct. Two right copies is the state that precedes two diverging ones, which is
+ * this repository's oldest rule and which no test can see while they agree. `TIMESTAMP` below is
+ * what parses the result, so the encoder and its decoder sit together.
+ */
+export function timestampOf(
+  year: number, month: number, day: number, hour: number, minute: number, second: number,
+): string {
   const p = (n: number, w = 2): string => String(n).padStart(w, '0');
-  return `${p(year, 4)}-${p(month + 1)}-${p(day)}T${p(hour)}:${p(minute)}:${p(second)}`;
+  return `${p(year, 4)}-${p(month)}-${p(day)}T${p(hour)}:${p(minute)}:${p(second)}`;
 }
 
 /**

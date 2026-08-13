@@ -290,7 +290,9 @@ test('a second pointer group is the same code with one cell swapped', skipUnless
       for (const record of group.addresses) {
         if (irGroupCount(c, record) !== 2) continue;
         records += 1;
-        carriers.add(Math.round(irCarrier(c, record)!.hertz));
+        // The `!` on the frequency is the claim that no corpus record is unmodulated: a zero
+        // period reports undefined now, since 0 Hz is a real case rather than a missing reading.
+        carriers.add(Math.round(irCarrier(c, record)!.hertz!));
         const blocks: number[] = irRecordBlocks(c, record).filter((b) => b);
         // The first group's blocks then the second's, so block `i` and block `i + half` are the same
         // slot of the two groups: once against once, held against held. Section 127 names the slots.

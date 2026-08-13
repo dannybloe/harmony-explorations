@@ -55,8 +55,8 @@ const WITH_INFRARED = [
 ] as const;
 
 /** The carrier of every record, in address order. */
-function carriers(c: Container): { periodNs: number; onNs: number; hertz: number }[] {
-  const out: { periodNs: number; onNs: number; hertz: number }[] = [];
+function carriers(c: Container): { periodNs: number; onNs: number; hertz: number | undefined }[] {
+  const out: { periodNs: number; onNs: number; hertz: number | undefined }[] = [];
   for (const group of irGroups(c) ?? []) {
     for (const address of group.addresses) {
       const carrier = irCarrier(c, address);
@@ -96,7 +96,11 @@ for (const name of WITH_INFRARED) {
     // 30 to 60 kHz is the band consumer infrared uses. This is the test that fails if the unit is
     // not nanoseconds: at tenths of a microsecond every record here would read as 380 Hz.
     for (const { hertz } of carriers(container(name))) {
-      assert.ok(hertz >= 30_000 && hertz <= 60_000, `${Math.round(hertz)} Hz is not a carrier`);
+      // Undefined would be an unmodulated record, which is a real infrared case and which no
+      // container here carries. Asserting it separately keeps "no carrier" apart from "0 Hz".
+      assert.notEqual(hertz, undefined, 'an unmodulated record, which the corpus has none of');
+      assert.ok((hertz as number) >= 30_000 && (hertz as number) <= 60_000,
+        `${Math.round(hertz as number)} Hz is not a carrier`);
     }
   });
 }
@@ -388,3 +392,25 @@ test('the block a key repeats is not the block a tap sends', skipUnless('one_con
   }
   assert.ok(pairs >= 200, `enough pairs to mean something, got ${pairs}`);
 });
+
+test('a record with no carrier reports no frequency, not zero hertz',
+  skipUnless('one_config'), () => {
+    // 0 Hz is a real infrared case: an unmodulated code has no carrier. Reporting `0` made a record
+    // whose period field is zero and a genuinely unmodulated one say the same thing, and only one
+    // of those is a reading. No corpus record has a zero period, so the case is built here.
+    const original = require_('one_config');
+    const c = parse(original);
+    const first = (irGroups(c) ?? [])[0]?.addresses[0];
+    assert.ok(first !== undefined);
+    const carrier = irCarrier(c, first);
+    assert.ok(carrier !== undefined && carrier.periodNs > 0);
+    assert.equal(typeof carrier.hertz, 'number');
+
+    const start = irRecordStart(c, first) as number;
+    const off = c.blobOffsetOf(start) as number;
+    const edited = new Uint8Array(original);
+    for (let i = 0; i < 3; i += 1) edited[c.blobOffset + off + IR_CARRIER_AT + i] = 0;
+    const zeroed = irCarrier(parse(edited), first);
+    assert.equal(zeroed?.periodNs, 0);
+    assert.equal(zeroed?.hertz, undefined, 'a zero period is no carrier rather than 0 Hz');
+  });

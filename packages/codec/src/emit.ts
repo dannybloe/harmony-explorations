@@ -537,8 +537,14 @@ export function rebuilds(c: Container): Rebuild[] {
   }
 
   // A counted array whose count is zero, which `coverage` claims and nothing else here would: the
-  // section is the count field and, on arch 12's base slot 16, two zero bytes after it. Written as
-  // zeros rather than copied, so a section that is not actually empty fails the round trip.
+  // section is the count field and, on arch 12's base slot 16, two zero bytes after it.
+  //
+  // This said the zeros are "written rather than copied, so a section that is not actually empty
+  // fails the round trip"<!--superseded-->, and the `continue` below is what withdraws that: a run
+  // with a nonzero byte in it is skipped here and reproduced byte for byte by the residue copy, so
+  // the round trip passes and says nothing. The claim it can make is the narrower one, that a
+  // section this **does** frame is written from zeros rather than carried, and the skip is now what
+  // it is, a reader declining a run it has not read.
   for (const claim of claims(c)) {
     if (!claim.owner.endsWith('-table')) continue;
     if (claim.length > EMPTY_ARRAY_LIMIT) continue;
@@ -896,6 +902,13 @@ export function emit(c: Container): EmitReport {
   const checksumAt = out.length - TRAILER_CHECKSUM_OFFSET;
   out[checksumAt] = checksum & 0xff;
   out[checksumAt + 1] = (checksum >>> 8) & 0xff;
+  // The six trailer bytes move from `copied` to `framed` unconditionally, which assumes no
+  // rebuilder above reached them. True in every container here and checked rather than assumed,
+  // because a rebuilder that did would be silently double counted and then overwritten by the two
+  // stores above with no disagreement reported.
+  if (byOwner.has('trailer')) {
+    throw new GspmError('a rebuilder already claimed the trailer, so its bytes would be counted twice');
+  }
   framed += TRAILER_CHECKSUM_OFFSET;
   copied -= TRAILER_CHECKSUM_OFFSET;
   byOwner.set('trailer', TRAILER_CHECKSUM_OFFSET);

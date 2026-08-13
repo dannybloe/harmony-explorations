@@ -85,6 +85,14 @@ export interface CoverageReport {
   gapBytes: number;
   /** Runs more than one claim wants. Always a defect in one of them. */
   overlaps: Overlap[];
+  /**
+   * Claims a reader offered that the accounting refused, as `owner: why`.
+   *
+   * Empty on every sample here. It exists because a refusal used to be indistinguishable from a
+   * reader that had nothing to say: both leave a gap, and only one of them is a defect in the
+   * accounting rather than in the reading.
+   */
+  refused: string[];
 }
 
 /** How many of the largest gaps and overlaps a report carries. The rest are counted, not listed. */
@@ -105,15 +113,27 @@ export const EMPTY_ARRAY_LIMIT = 3;
  * Deliberately separate from folding them into a map, so a caller debugging a bad extent can see
  * the raw claims with their owners rather than only the merged result.
  */
-export function claims(c: Container, withPictures = true): Claim[] {
+export function claims(c: Container, withPictures = true, refusals: string[] = []): Claim[] {
   const out: Claim[] = [];
   let bankClaims: () => void = () => {};
   // The pointer array claims, deferred so they can compare against a section reader's own claim
   // rather than duplicating it. See the comment beside their loop below.
   let tableClaims: () => void = () => {};
+  // `refusals` collects claims a reader offered and this rejected, as `owner: why`. A refusal used
+  // to be a silent `return`, so a claim the accounting threw away and a reader that returned
+  // nothing were the same thing from the outside: the bytes showed up as a gap and the cause showed
+  // up nowhere. Passed in rather than returned so there is still one implementation; every sample
+  // here refuses zero, so it is a diagnostic rather than a number that moves.
   const add = (start: number | undefined, length: number | undefined, owner: string): void => {
-    if (start === undefined || length === undefined || length <= 0) return;
-    if (start < 0 || start + length > c.blob.length) return;
+    if (start === undefined) return;
+    if (length === undefined || length <= 0) {
+      refusals.push(`${owner}: length ${length}`);
+      return;
+    }
+    if (start < 0 || start + length > c.blob.length) {
+      refusals.push(`${owner}: ${start} + ${length} outside ${c.blob.length}`);
+      return;
+    }
     out.push({ start, length, owner });
   };
   const at = (address: number, length: number | undefined, owner: string): void =>
@@ -591,7 +611,8 @@ export function coverage(c: Container): CoverageReport {
   // infrared block, section 61, or two readers reaching one structure, which `emit.ts` deduplicates
   // the same way. Anything else is an overlap now, owner name or not. It costs nothing: over all
   // nineteen containers the stricter rule finds zero bytes.
-  const list = claims(c);
+  const refused: string[] = [];
+  const list = claims(c, true, refused);
   const which = new Int32Array(total).fill(-1);
 
   list.forEach((claim, index) => {
@@ -628,6 +649,7 @@ export function coverage(c: Container): CoverageReport {
     gapCount: gaps.length,
     gapBytes: gaps.reduce((n, gap) => n + gap.length, 0),
     overlaps: mergeOverlaps(total, overlapping).slice(0, REPORT_LIMIT),
+    refused,
   };
 }
 
