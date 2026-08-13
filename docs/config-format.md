@@ -1399,16 +1399,55 @@ The carrier is **per record, not per config and not per device**. One Harmony On
 56.3 kHz and 38 kHz inside a single infrared group.
 
 The count is **1 in every record on arch 12, arch 14 and most of arch 9**, and that case is exactly
-the 21 byte header with two pointers and a trailing NULL that section 61 described. On arch 8 it is
-**2 in exactly 37 records of every config**, whatever else the config holds, and on arch 9 in 61.
-A two group header is 30 bytes and names up to six blocks. `620 + 208 + 21` is the whole of a
-typical Harmony One record, since arch 12 has one group everywhere.
+the 21 byte header with two pointers and a trailing NULL that section 61 described. ~~On arch 8 it is
+2 in exactly 37 records of every config~~<!--superseded--> **it is 2 in 37 records of four arch 8
+configs and in none of two others**, and the count follows the **devices** rather than the
+architecture, section 134. On arch 9 it is 2 in 61 records. A two group header is 30 bytes and names
+up to six blocks. `620 + 208 + 21` is the whole of a typical Harmony One record, since arch 12 has one
+group everywhere.
+
+**A second group is the same code with one bit inverted**, section 134. Block `i` of the second group
+and block `i` of the first differ in exactly two adjacent words, which are a mark and a space of equal
+duration exchanged, at a fixed offset in the frame, in all 61 block pairs of each of the four configs
+that have any. Exchanging equal halves of a pair is what inverting one cell of a **biphase** code does,
+and those records read as RC6 mode 6 at 36200 Hz: a six and two unit leader on a 441 us unit, a start
+bit of one, mode bits 110 and a double width trailer. So the two groups are the two states of a bit
+the protocol requires the sender to alternate between presses, and a config stores both because the
+action list language has no arithmetic that could compute one. Which group a given press uses is
+**unconfirmed**: the firmware side has not been traced.
 
 **A block ends at a zero word, and that is not a validity check.** Over 3490 blocks in eleven
 configs the terminator agrees exactly with the region's tiling 3357 times, stops short 133 times,
 all on arch 8 and all padding, and overruns never. But arch 9's 277 blocks all find a zero word too
 and **not one is in the right place**, so what separates a block this reading covers from one it
 does not is the **class byte**, which is 1 here and 5 there.
+
+#### A class 1 record's bit frame is recoverable from its durations
+
+Section 133. Consumer infrared encodes one bit in the length of one half of a mark and space pair, so
+the bits come back by skipping the header pair, measuring the same half of every pair after it and
+splitting the measurements at the midpoint between the shortest and the longest.
+
+**Which half carries the bit is per protocol family and does not have to be supplied**: under the wrong
+choice every measurement is the constant half, so there is nothing to split and the reading is refused.
+Across the corpus 4029 records read under exactly one convention, 936 under none, and the only records
+reading under both are the two group records above, whose code is biphase and therefore neither.
+
+Two boundary rules, both of which cost a decoder that matched nothing:
+
+* a pair whose measured half is itself a gap, above 4000 us, is the terminator and **not** a bit
+* the pair carrying the last bit is also the one whose other half is the trailing gap, so the gap is
+  tested **after** the bit is taken and not before
+
+`packages/codec/src/irframe.ts`. It recovers bits and nothing else: it does not name the protocol,
+split an address from a command, or check a parity bit, and it cannot re-encode a frame, because the
+timings, the header and the repeat are protocol facts the bits do not carry.
+
+What that buys is comparison against a number stated outside the config. Matching a frame against the
+command catalogue of the account that generated a config, and that account's button maps, names the
+**button** a scan code belongs to: `reference/button-maps.md` has 28 buttons of a Harmony One and 32 of
+a Harmony 600. That needs the generating account, so it is a per model calibration and not a reader,
+and a scan code's **position** does not follow from it at all, section 133.
 
 #### Class 5 shares the header, and behind it spells a code from a dictionary
 

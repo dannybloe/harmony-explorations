@@ -1043,17 +1043,43 @@ test('only arch 8 and arch 9 carry a second pointer group', skipUnless('one_conf
   }
 });
 
-test('every arch 8 config has exactly 37 two group records', skipUnless('arch8_config_a'), () => {
-  // The four configs carry 234, 397, 454 and 462 records between them, and the count of two group
-  // ones does not move. Whatever selects the second group, it is not how much the config holds.
-  for (const name of ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d']) {
+test('a two group record belongs to a device, not to an architecture', skipUnless('arch8_config_a'), () => {
+  // **This test used to be called `every arch 8 config has exactly 37 two group records` and its title
+  // was false while it passed**, because its body only ever looked at one contributor's four configs.
+  // The two arch 8 configs contributed on 10 August 2026 have none at all, which is exactly the
+  // falsifier section 75 offered for its own claim. Section 134 has the mechanism: the thirty seven are
+  // a single biphase device's records, so the count follows the equipment and not the architecture.
+  const counts: Record<string, number> = {};
+  for (const name of [
+    'arch8_config_a',
+    'arch8_config_b',
+    'arch8_config_c',
+    'arch8_config_d',
+    'arch8_config_880',
+    'arch8_config_885',
+  ]) {
     if (!load(name)) continue;
     const c = parse(load(name)!);
     let two = 0;
-    for (const group of irGroups(c) ?? []) {
-      for (const address of group.addresses) if (irGroupCount(c, address) === 2) two += 1;
-    }
-    assert.equal(two, 37, name);
+    const groupsWithTwo = new Set<number>();
+    (irGroups(c) ?? []).forEach((group, index) => {
+      for (const address of group.addresses) {
+        if (irGroupCount(c, address) !== 2) continue;
+        two += 1;
+        groupsWithTwo.add(index);
+      }
+    });
+    counts[name] = two;
+    // Whatever the count is, the records are never spread over the devices: it is one group or none.
+    assert.ok(groupsWithTwo.size <= 1, `${name} spreads two group records over ${groupsWithTwo.size}`);
+  }
+  // The four configs carry 234, 397, 454 and 462 records between them and the count does not move,
+  // because they drive the same device. The two later ones drive no such device.
+  for (const name of ['arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d']) {
+    if (name in counts) assert.equal(counts[name], 37, name);
+  }
+  for (const name of ['arch8_config_880', 'arch8_config_885']) {
+    if (name in counts) assert.equal(counts[name], 0, name);
   }
 });
 

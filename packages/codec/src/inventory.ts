@@ -957,8 +957,16 @@ export interface KeyCode {
  * Nothing sends a code on a release or on a repeat. And most bindings send nothing at all, because
  * navigation and screen switching are bindings too.
  *
- * **A code has no name.** An infrared record is a code and its index in its group, so a label for a
- * button comes from the screen where the screen draws one, and from nowhere for a hard key.
+ * **A code carries no name of its own**, since an infrared record is a stream of durations and an index
+ * in its group, so a label for a button comes from the screen where a screen draws one. This used to
+ * end "and from nowhere for a hard key"<!--superseded-->, and section 133 is where that stopped being
+ * true: the durations decode back into the bit frame the device sees, `irframe.ts`, and a frame can be
+ * matched against a catalogue of named commands. Twenty eight buttons of a Harmony One and thirty two
+ * of a Harmony 600 are named in `reference/button-maps.md` that way, with nothing written anywhere.
+ *
+ * **That route is not available from inside this function**, which is why the return value still has a
+ * number and no name: it needs the catalogue and the button maps of the account that generated the
+ * config, so it works on a config we had made and not on one somebody contributed.
  */
 export function keyCodes(c: Container): KeyCode[] {
   const codes = infraredCodesPerList(c);

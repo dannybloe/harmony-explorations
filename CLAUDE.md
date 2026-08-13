@@ -535,6 +535,9 @@ reference/silhouettes/          which buttons a model has, as a drawing, one SVG
                                 so a hit region must not be taken from these coordinates. Drawing
                                 the other 33 models was started on 11 August 2026 and stopped for
                                 that reason; it is parked until FreeHarmony needs it
+reference/button-maps.md        which button a scan code is, per model, measured through the account
+                                that generated the calibration configs. Partial and honest about it:
+                                the scans two buttons share are listed as sets, not assigned
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
@@ -551,7 +554,10 @@ packages/codec/                 TS: the one config codec, container through comp
                                 side on purpose, and src/edit.ts the M3 groundwork: same length
                                 edits, rails as refusals, and FIELD_RULES, which is why a round
                                 trip and a save differ. src/text.ts reads the screen's text, with
-                                src/alphabets.ts generated from the seeds in bin/alphabets.ts
+                                src/alphabets.ts generated from the seeds in bin/alphabets.ts.
+                                src/irframe.ts turns a record's durations back into the bit frame a
+                                device sees, which is what lets a code be compared to a number stated
+                                outside the config
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
@@ -1026,7 +1032,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 132 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 134 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1284,6 +1290,19 @@ produce a config the remote accepts and mishandles.
   share one sense line, so that number is a count of a photograph and the drawing says so rather than
   implying confirmation. Neither carries a `data-scan` or even a candidate set, since nothing narrows
   either.
+  **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
+  sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
+  matched against the command catalogue and button maps of the account that generated a config names the
+  button. 28 buttons of a Harmony One and 32 of a Harmony 600, `reference/button-maps.md`, with nothing
+  written to anything. **It is a calibration instrument and not a reader**: it needs the generating
+  account, so it works on the two configs Logitech compiled to our specification and cannot name a key in
+  a contributed config. Three things to carry. The names are **not** in
+  `packages/usb/src/models.ts`, because four scans per remote are genuinely undecided where two buttons
+  send one code, and a library answering those would turn four honest refusals into four plausible wrong
+  answers. The silhouettes still get no `data-scan` for the same reason. And **the geometry does not
+  follow**: under section 48's own column formula the digits 1, 2 and 3 of a Harmony 600 sit in columns 3,
+  2 and 2, and no divisor to 19 in either direction puts a digit row on one line, so a matrix position is
+  a wiring decision and a test asserts it cannot be recovered.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
 
@@ -1581,10 +1600,21 @@ them byte for byte.
 
 **Arch 8 closed on 8 August 2026 and needed no firmware to do it**, section 75. Its whole
 remainder came from one byte: an infrared record header is `12 + 9 * count` with the count at
-`+0x0B`, not the flat 21 bytes section 61 read, and 37 records a config carry a second pointer
-group. That one number explained three separate gap families at once, 37 short headers, 37
-unclaimed blocks and the 37 gaps between them, and none of the counts moves when the config grows
-from 234 records to 462.
+`+0x0B`, not the flat 21 bytes section 61 read, and 37 records of that contributor's four configs
+carry a second pointer group. That one number explained three separate gap families at once, 37 short
+headers, 37 unclaimed blocks and the 37 gaps between them, and none of the counts moves when the
+config grows from 234 records to 462.
+
+**What that second group holds is read now, and the 37 was never a property of arch 8**, section 134.
+It is the same code with **one biphase bit cell inverted**, a mark and a space of equal duration
+exchanged at a fixed offset, in every block pair of every one of the 37; the records read as RC6 mode 6
+at 36200 Hz, they all sit in **one device group**, and the two arch 8 configs contributed later have
+**zero**. So the count follows the equipment. Two things to carry from it. The test asserting the
+count was called `every arch 8 config has exactly 37 two group records`<!--superseded--> and its body
+looped over four configs of one contributor, so **its title was false while it passed**, which is
+section 75's own falsifier met and unnoticed. And it was found by a decoder **declining** to read
+those records rather than by looking for it, which is the second time a rule survived because the
+corpus agreed with itself.
 
 **Read the whole gap list before choosing a target**, and this is the second finding it produced:
 `make coverage --detail` used to print only the largest few of 128, and both this and section 66

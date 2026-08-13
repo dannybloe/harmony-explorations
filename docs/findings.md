@@ -17635,3 +17635,224 @@ that compile in August 2026 stamped the right date; the drift appeared afterward
 on it, since `edit.ts` already stamps at write time, and it changes no rail. It is recorded so that
 nobody reads the field as provenance, and because on arch 12 a remote sets its clock from it at boot,
 section 111, which means a config Logitech compiles today gives a Harmony One a clock almost a day slow.
+
+
+## 133. A scan code gets a button name, read only, by decoding the code it sends
+
+Section 48 measured how far a connected remote can be pushed towards the keypad map and stopped in the
+right place: a remote on USB never runs its keypad handler, arch 14 yields the electrical column only
+and arch 12 yields nothing at all, and finishing the census needs a write into the running remote's
+memory to drive the matrix rows. That write is forbidden here and this section does not propose it.
+`keyCodes` has therefore always returned a number for a hard key, and its own docstring said so: a code
+has no name, and a label comes from the screen where a screen draws one and from nowhere otherwise.
+
+Twenty eight buttons of a Harmony One and thirty two of a Harmony 600 now have their names, and nothing
+was written to either remote or asked of either remote. The tables are in `reference/button-maps.md`.
+
+### The chain, and why it is content rather than order
+
+Three things are joined, and the join is by **what a code is** rather than by where it sits:
+
+1. The container binds a scan code to a base slot 9 handler set, whose action list sends an infrared
+   code as a group and an index, `keyCodes`. Sections 39, 67 and 128.
+2. That record's duration stream is decoded back into the **bit frame** a device sees,
+   `packages/codec/src/irframe.ts`, new here.
+3. The frame is looked up in the catalogue of named commands held by the account that generated the
+   config, and the button map held by the same account says which button sends that command.
+
+Step 2 is what was missing, and it is the whole content of the new module. A duration stream can be
+compared to another duration stream and to nothing else, so before this two codes were either byte
+identical or unrelated. A frame is a number that can be compared to a number written down somewhere
+else, and Logitech's own catalogue writes one down per command: `G:Sony 12 Bit:()(0x910)():3`, section
+132.
+
+### The decoder, which is deliberately protocol agnostic
+
+Consumer infrared encodes a bit in the length of one half of a mark and space pair. Which half is a
+property of the protocol family: Sony varies the mark, and the two forty eight bit families in the
+calibration account vary the space. The decoder tries both, skips one header pair, splits the measured
+durations at the midpoint between their shortest and longest, and returns the bits most significant
+first. It does not name the protocol, decode an address or a command, or check a parity bit.
+
+**The convention selects itself, and that closure is what makes the module usable.** Under the wrong
+convention every measured duration is the constant half of the pair, so there is nothing to split and
+the reading is refused: a pulse width protocol read as pulse distance yields a train of identical
+spaces. Across the corpus 4029 records read under exactly one convention, 936 under none, and the only
+records reading under both are the ones section 134 is about. So a caller never has to know the family,
+and `irFrames` returns every reading so that an ambiguous record is visible rather than silently
+resolved.
+
+Two mistakes are recorded because both produced a decoder that matched nothing at all while looking
+correct, and both are one line:
+
+* **The terminator is not a bit.** A forty eight bit frame ends with a pair whose space is 32767, and
+  counting that pair gave forty nine bits, which matched no catalogue entry.
+* **The trailing gap arrives with the last bit, not instead of it.** A Sony frame's final bit is a mark
+  followed by that gap, so testing the other half of the pair before taking the bit dropped the last
+  one and made every twelve bit frame read as eleven.
+
+The two tests look redundant and are the opposite: one guards the measured half of the pair and one the
+other half.
+
+### What it produced
+
+Every record of every device in both calibration containers decodes and matches the catalogue: 241 of
+241 on the Harmony One and 241 of 242 on the Harmony 600. **Each group's records identify their own
+device**, by majority vote over the catalogue, and the answer agrees with section 126's pairing through
+base slot 13 on six of six groups across the two architectures. That is a third route to which group is
+which device, and the first that reads no name at all.
+
+For the button names the join has to be made **inside one button map**, because a command name is not
+unique across maps: an activity's map can put one command on two buttons where a device's map puts it on
+one. So every map votes, a map votes only where the command sits on exactly one hard button in it, and a
+scan is named only if the vote is unanimous. On the Harmony 600 thirty six scans reach a vote, thirty two
+unanimously, and **no button is claimed by two scans**. On the Harmony One thirty six reach a vote and
+thirty two are unanimous, of which four collapse into two pairs claiming one button each, leaving twenty
+eight.
+
+Four cases per remote cannot be resolved and are listed as sets rather than assigned. Two buttons that
+send the same infrared code cannot be told apart by a route that reads the code, and that is inherent
+rather than a gap in the method: `ChannelUp` and `SkipForward` are one code in an activity that has no
+channels.
+
+### Two closures, one of which reads nothing
+
+**The two models agree.** Every one of the twenty eight button names present in both tables carries an
+identical frame, and the four the Harmony 600 has on top are exactly the teletext colour keys a Harmony
+One does not have. Two containers, two architectures, two separate runs of Logitech's generator, and the
+same command decodes to the same bits.
+
+**The frames are checked against the bytes.** `packages/codec/test/irframe.test.ts` parses the tables out
+of `reference/button-maps.md` and asserts that each scan still sends exactly the listed frames in the
+container the table was measured on. One copy of the derivation, in the document, because a table of
+sixty numbers duplicated into a test is two copies until one of them moves.
+
+### The geometry does not follow, and that is the useful negative
+
+The expectation going in was that a named keypad would fall into rows. It does not. Section 48 derived
+the electrical column on arch 14 as `(scan - 1) mod 4`, and under it the digits 1, 2 and 3 of a Harmony
+600 sit in columns 3, 2 and 2, which is not a row of three keys. Every divisor from 2 to 19 was tried,
+with and without an offset, taking the row from the quotient and then from the remainder, and **none
+puts each of the three digit rows on one line**. A matrix position is a wiring decision on a board.
+
+So a scan code carries a name and no place, this route is the only source for the name, and
+`reference/silhouettes/` still gets no `data-scan`: the two remotes here have twenty eight and thirty
+two of their forty four and fifty four buttons named, and filling in a drawing would mean guessing the
+rest. A test asserts the geometry cannot be recovered, so nobody has to re-derive that.
+
+### What this is, and what it is not
+
+**A calibration instrument, not a reader.** It works for a config generated through an account we
+control, which is what the two calibration samples are, and it cannot name a button in a contributed
+config, because that config's own catalogue and button maps are not ours to have. What it yields is a
+per model table, once, which afterwards is a fact about the model.
+
+It is also not in `packages/usb/src/models.ts` beside the other per model hardware facts, deliberately.
+The tables are partial and four scans per remote are genuinely undecided, and a library that hands
+FreeHarmony a name for those would turn four honest refusals into four plausible wrong answers, which is
+the failure mode this project already refused for arch 10's pointer slots.
+
+### What would falsify it
+
+A scan code in the tables that a container binds to a different code. A button name in both tables with
+different frames on the two architectures. A remote whose digits do fall into rows under some modulus,
+which would mean the column formula and the layout do coincide and the negative above is wrong. And an
+independent naming of any of these keys, from a photograph or from another host, disagreeing with the
+table.
+
+### Where it lands
+
+* `reference/button-maps.md`: the two tables, the unresolved sets, and the provenance.
+* `packages/codec/src/irframe.ts`: `irFrame`, `irFrames`, `frameKey`.
+* `packages/codec/test/irframe.test.ts`: the corpus census, the tables against the containers, the
+  agreement between the two models, and the geometry negative.
+* `docs/config-format.md`: base slot 5, that a record's frame is recoverable and what it is not.
+
+
+## 134. Arch 8's second pointer group is the same code with one bit inverted, and the code is biphase
+
+Section 75 closed arch 8's byte accounting on one number: an infrared record header is `12 + 9 * count`
+with the count at `+0x0B`, and thirty seven records of every config on that architecture carry a second
+group of three block pointers. That explained three gap families at once and it left the obvious question
+open, in those words: whatever selects the second group, it is not how much the config holds.<!--superseded-->
+
+The frame decoder answered it without being pointed at it. Section 133's census reports which records
+decode, and the only records in the entire corpus that read under **both** conventions are exactly the
+thirty seven, in all four configs. A biconditional over every class 1 record in every container: reading
+under both conventions and carrying a second pointer group are the same thing.
+
+### What the two groups hold
+
+For each of the thirty seven, comparing a block of the first group with the block in the same slot of the
+second gives sixty one comparable pairs per config, and **every single pair differs in exactly two
+adjacent words, which are a mark and a space of equal duration exchanged**. Not an edited duration, a
+swap. And the position is fixed: word forty one after the first mark, in all sixty one pairs of all four
+configs, whose block lengths and lead in gaps differ.
+
+Exchanging a mark and a space of equal length is what inverting one cell of a **biphase** code does. So
+the second group is the same command with one bit flipped, which is why a duration comparison could never
+have named it and why the decoder declined to choose a convention: in a biphase code both halves of a
+pair vary, so neither convention is the right one.
+
+### The protocol reads out of the pulses
+
+The unit is 441 microseconds, the shortest duration present. On that unit every one of the thirty seven
+records reads identically:
+
+| what | measured |
+|---|---|
+| leader | six units of mark then two of space |
+| start bit | one, in all thirty seven |
+| next three cells | 1, 1, 0 |
+| the cell after | double width |
+| carrier | 36200 Hz |
+
+A six and two unit leader, a start bit, three mode bits reading 110 and a double width trailer is RC6
+mode 6, at RC6's own 36 kHz. Mode 6 is the mode the Media Center protocol uses, and **all thirty seven
+records sit in one device group in every one of the four configs**, whose generic role name is
+`Media_Center_PC`. The swapped cell is single width, so it is a payload bit and not the double width
+trailer, and it is payload bit sixteen counting the first cell after the trailer as zero. Which field of
+the protocol that belongs to is not established here.
+
+So the reading is: **a config stores two variants of a code whose protocol carries a bit the sender must
+alternate between presses.** The remote's action list language has no arithmetic reaching a duration
+stream, section 73, so alternating a bit is not something the runtime could compute; storing both and
+alternating between two pointer groups is how a config does it. That the two variants come as complete
+groups of once, held and tail blocks, section 127, is consistent: a press picks a group and then plays
+the ordinary three slots out of it.
+
+Marked unconfirmed on one point only, and it is the firmware: which of the two groups a given press
+uses, and on what the firmware alternates, has not been traced. The structure and the difference between
+the groups are measured.
+
+### It also corrects section 75's own claim
+
+Section 75 offered as a falsifier: an arch 8 config whose count of two group records is not thirty seven.
+**That has happened and it went unnoticed.** The two arch 8 application images and eleven configs
+contributed on 10 August 2026, sections 113 and 114, include two configs with **zero** two group records.
+The test asserting the count is called `every arch 8 config has exactly 37 two group records`<!--superseded--> and its body
+loops over the four configs of one contributor, so it passed while its title became false.
+
+The corrected claim is narrower and has a mechanism: the count is a property of the **devices** a config
+drives, and it is thirty seven because those four configs drive the same Media Center device. A config with
+no biphase device has none, which is what the two later ones are. The test is renamed and its body now
+asserts both halves.
+
+This is the second time a claim here survived because the population agreed with itself, after the first
+glyph code in section 79, and the shape is identical: a corpus that cannot contradict a rule is not
+evidence for it.
+
+### What would falsify it
+
+A two group record whose two groups differ in more than one cell, or in a changed duration rather than a
+swap, or at a different offset. A two group record outside a biphase device group. An arch 8 config
+driving a Media Center device with no two group records, or one driving none with them. And a firmware
+reading of the record player showing it uses both groups in some way other than alternating.
+
+### Where it lands
+
+* `docs/config-format.md`: base slot 5's record header, what the second group is.
+* `packages/codec/test/irframe.test.ts`: the biconditional, the single adjacent swap at a fixed offset,
+  and the RC6 mode 6 reading.
+* `packages/codec/test/sections.test.ts`: the renamed count test, now asserting the narrower claim.
+* `reference/superseded.md`: the wording that made the count a property of the architecture.

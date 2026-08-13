@@ -260,6 +260,23 @@ are second, minute, hour, day, weekday, month and year, every one of them equal 
 in all 21 containers. A writer has to stamp them, or the remote's clock comes up set to whenever the old
 config was made.
 
+**And a hard key has its name**, section 133, which is the part of that sentence which used to stop at
+the screen. The durations a record stores decode back into the **bit frame** the device sees, and a frame
+is a number that can be matched against a catalogue of named commands, where a duration stream could only
+ever be compared to another duration stream. Matching against the catalogue and button maps of the
+account that generated a config names the button a scan code belongs to: 28 buttons of a Harmony One and
+32 of a Harmony 600, in [reference/button-maps.md](../reference/button-maps.md), read only and with
+nothing written to either remote, which is what section 48 said needed a write into a running remote's
+memory. It is a calibration instrument rather than a reader, since it needs the generating account. And
+the **position** of a key still does not follow: under the electrical column formula the digits 1, 2 and 3
+of a Harmony 600 sit in columns 3, 2 and 2, so a matrix number is a wiring decision.
+
+**The same decoder answered a question that had been open since arch 8 closed**, section 134: the second
+pointer group 37 infrared records carry is the same code with **one biphase bit cell inverted**, which is
+a bit the protocol makes the sender alternate between presses. It was found by the decoder refusing to
+read those records, they all belong to one device, and the two arch 8 configs contributed later have none,
+so the 37 was never a property of the architecture.
+
 **So a config now reads as what it is for**: which devices, what each is called, which activities, what
 each is called, which key starts it, which devices it drives, what each button sends and what the screen
 calls it.
