@@ -18586,7 +18586,16 @@ database at all, so the first thing it did once it carried the header reading wa
 disagreeing: the header, the pointer count, the distinct blocks and the block bytes matched to the byte
 on every container, and `framed` did not, by 37 records on `arch8_config_a` and by one on `h600_config`.
 
-**Which of the two was wrong is measured, not argued, and that is the part worth keeping.** Held over the
+**The order this was done in was wrong, and the record says so.** The Python decoder was removed on the
+strength of its provenance, that only the other had been checked against a catalogue outside the code,
+and which of the two was actually wrong was measured afterwards. It happened to agree. That is luck: had
+it gone the other way, the correct decoder and the evidence against the broken one would have gone in one
+commit. A disagreement between two independent implementations is the most informative signal this
+project produces, and the golden vector exists to manufacture it, so removing half of it before reading
+it is the one response that cannot be right. `CLAUDE.md` carries the rule now, beside the one about two
+copies.
+
+**With that said, which of the two was wrong is measured, not argued.** Held over the
 same block words, so the header reading is constant and only the decoder varies, they agree on every
 pulse **distance** record and differ on **100 of the 241** both accept in each calibration config, by
 exactly one bit, every one of them a pulse **width** code.

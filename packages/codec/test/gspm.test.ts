@@ -30,6 +30,8 @@ import {
   parse,
   recoverFlashBase,
   trailerChecksum,
+  TRAILER_CHECKSUM_SEED,
+  TRAILER_CHECKSUM_OFFSET,
   type Container,
 } from '../src/index.ts';
 
@@ -382,13 +384,16 @@ const TRAILER_SAMPLES = [
   'one_safemode',
 ];
 
-// This is the whole data side claim, and deliberately the only one here. A test called `without the
-// seed nothing matches, which is what pins 0x4321` used to sit below it and was **algebra rather than
-// a measurement**: `trailerChecksum(blob) ^ SEED` is the unseeded body XOR, so requiring it to differ
-// from the stored value reduces to `SEED != 0` and held for any nonzero seed whatever the bytes were.
-// The checksum is XOR linear in the seed, so one container determines it exactly and this test over
-// fourteen already carries that; the golden vectors carry `trailer_checksum` in both directions, so
-// the two implementations cannot drift apart on it either.
+// A test called `without the seed nothing matches, which is what pins 0x4321` sat below this and was
+// **algebra rather than a measurement**: `trailerChecksum(blob) ^ SEED` is the unseeded body XOR, so
+// requiring it to differ from the stored value reduces to `SEED != 0` and held for any nonzero seed
+// whatever the bytes were.
+//
+// **It was deleted for that on 13 August 2026 and deleting it was wrong**, per the owner's rule that a
+// test only goes when the code it exercises does. The seed is still here, so the right answer was a body
+// that can fail, and the test below is it: the checksum is XOR linear in the seed, so one container
+// **determines** the seed rather than merely being consistent with it, and every container has to name
+// the same one.
 //
 // Where the value comes from is a firmware question and cannot be asked from here, since this package
 // has no disassembler and must not grow a second one. `tests/test_gspm.py` decodes the boot validator's
@@ -400,6 +405,30 @@ test('the trailer checksum recomputes on every container in the corpus', skipWit
     assert.equal(trailerChecksum(c.blob), c.trailerChecksum, name);
     assert.equal(c.checks['trailer_checksum_recomputes'], true, name);
   }
+});
+
+test('every container solves for the same seed, and it is 0x4321', skipWithoutLab(), () => {
+  // The measurement the deleted test should have been. `trailerChecksum` starts from `SEED` and XORs
+  // every word of the body, so `stored == SEED ^ body` and therefore `SEED == stored ^ body`, where
+  // `body` is the same walk with a zero seed. So each container **states** the seed on its own, and the
+  // claim is that fourteen independent files agree on the value.
+  //
+  // This can fail, which is the whole point of it existing: a wrong seed, a wrong extent or a wrong word
+  // order all move `body` and each container would name a different number.
+  const solved = new Map<number, number>();
+  for (const name of TRAILER_SAMPLES) {
+    const c = parse(require_(name));
+    let body = 0;
+    const end = c.blob.length - TRAILER_CHECKSUM_OFFSET;
+    for (let at = 0; at + 1 < end; at += 2) {
+      body ^= (c.blob[at] as number) | ((c.blob[at + 1] as number) << 8);
+    }
+    const seed = c.trailerChecksum ^ body;
+    solved.set(seed, (solved.get(seed) ?? 0) + 1);
+  }
+  // One seed, and the count, so a shrunken corpus cannot satisfy it.
+  assert.deepEqual([...solved], [[TRAILER_CHECKSUM_SEED, TRAILER_SAMPLES.length]]);
+  assert.equal(TRAILER_CHECKSUM_SEED, 0x4321);
 });
 
 test('a flipped byte is caught', skipUnless('h600_safemode_gspm'), () => {

@@ -772,6 +772,34 @@ test can see it, so it is caught by looking. A field's encoder lives next to its
 `clockRecordFields` beside `clockRecord` in `packages/codec/src/gspm.ts`, with a test that walks the
 corpus asserting they invert.
 
+**When two copies are found already disagreeing, the disagreement is the finding, and it gets measured
+before either copy is touched.** This was got wrong on 13 August 2026 and the owner was right to call it
+unacceptable: two infrared frame decoders differed on 100 records of one config, and the losing one was
+deleted on the strength of its **provenance**, that only the other had ever been checked against a
+catalogue outside the code. The measurement came afterwards, on his question, and it happened to agree.
+That is luck and not method: had it gone the other way, the correct decoder and the evidence against the
+broken one would have gone in one commit. A disagreement between two independent implementations is the
+most informative signal this repository produces, which is what the golden vectors exist to manufacture,
+so destroying half of it is the one response that cannot be right. The order is: reproduce the
+disagreement on the same inputs, find an **external** answer, say which copy was wrong **and why**, and
+only then remove one. The why is not optional either, because it is what stops the same mistake being
+written again: the decoder that was removed measured the wrong half of a mark and space pair and dropped
+the last bit of every pulse width code, and `irframe.ts` had that lesson in its own docstring.
+
+**Never delete a test unless the thing it tests has left the repository.** The owner's rule, 13 August
+2026, and it is narrower than it sounds on purpose: a test whose claim has been refuted is rewritten to
+state what is true, a test whose title overclaims is renamed, a test that cannot fail is given a body
+that can, and a test whose subject moved to the other language moves with it. What none of those is, is
+deletion. The only case that justifies removing one outright is that the code it exercises is gone, and
+then the commit says which code and why it went.
+
+Two things this rules out that had looked reasonable. **A test that reduces to algebra is not therefore
+worthless**, it is a test with the wrong body: `without the seed nothing matches, which is what pins
+0x4321` was dropped on 13 August 2026 because its assertion reduced to `SEED != 0`, and the right answer
+was to solve the seed out of one container and assert it equals `0x4321`, which is a measurement and can
+fail. And **a test does not go away because its implementation is about to**: measure first, per the rule
+above, because the test is often the only thing that can tell you which of two implementations to keep.
+
 When something new is confirmed, four things happen together:
 
 1. the **structured fact** goes in `docs/config-format.md`, which is what other tools consume
