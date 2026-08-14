@@ -67,22 +67,24 @@ const CONTAINERS = [
 ];
 
 /**
- * The samples `tests/test_gspm.py` asserted the protocol closure over, carried across with it.
+ * Every user config in the lab: what a remote was actually programmed with.
  *
- * A narrower list than `CONTAINERS` on purpose: it is the population section 32 quoted, so the counts
- * below are comparable to the ones that document states.
+ * **It was the nine configs section 32 quoted** until 14 August 2026, on the reasoning that keeping
+ * that population made the counts comparable to the document's. That is the wrong trade, and section
+ * 140 is why: the same reasoning had eight Python test classes each carrying their own literal of ten,
+ * and widening them turned up five claims that were properties of the samples rather than of the
+ * format. A count in a document is cheap to update; a population nobody widens is not cheap at all.
+ *
+ * Arch 9 (Harmony 525) is in the list even though its records use class 5 and carry no frame here,
+ * because a decoder declining to read them is part of the assertion rather than a gap in it.
+ *
+ * Derived from `CONTAINERS` rather than written out, because two lists of fifteen names in one file
+ * are two lists to keep in step and the file already holds the other one. What it removes is the two
+ * calibration configs, which are synthetic and are deliberately outside any corpus wide total. The
+ * Python mirror is `lab.USER_CONFIGS`.
  */
-const SECTION_32_CONFIGS = [
-  'h700_config',
-  'h700_config_2',
-  'h600_config',
-  'one_config',
-  'one_config_unprogrammed',
-  'arch8_config_a',
-  'arch8_config_b',
-  'arch8_config_c',
-  'arch8_config_d',
-];
+const CALIBRATION = ['calibration_one', 'calibration_h600'];
+const SECTION_32_CONFIGS = CONTAINERS.filter((name) => !CALIBRATION.includes(name));
 
 /**
  * Header timings as a tolerance band, against the bit count the protocol specifies.
@@ -141,13 +143,13 @@ test(
         }
       }
     }
-    assert.deepEqual({ records, framed }, { records: 2858, framed: 2085 });
+    assert.deepEqual({ records, framed }, { records: 4147, framed: 3065 });
     // Both populations, so the closure cannot be satisfied by finding nothing.
     assert.deepEqual(
       [...seen].sort(),
       [
-        ['Kaseikyo 3456/1728', 257],
-        ['NEC 9000/4500', 1106],
+        ['Kaseikyo 3456/1728', 670],
+        ['NEC 9000/4500', 1567],
       ],
     );
   },

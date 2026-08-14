@@ -468,6 +468,27 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
                              % (relative, sorted(set(first) - set(names)),
                                 sorted(set(names) - set(first))))
 
+    def test_the_user_config_population_is_the_same_in_both_languages(self):
+        """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.
+
+        The four lists above are containers, which includes the safe mode ones. The user configs are
+        a second population, and there are two copies of it for the same reason there were four of
+        the first: the frame closure lives in TypeScript because the frame decoder does, and every
+        other claim about a user config is asserted from Python. So they have to be compared, and
+        this is the check that says so rather than a paragraph claiming they mirror each other.
+
+        The TypeScript side is `CONTAINERS` minus the two calibration configs, which are synthetic
+        and deliberately outside every corpus wide total. Comparing the derived list rather than the
+        expression is the point: if somebody adds a name to one side only, the sets differ here.
+        """
+        import lab
+        ts = set(self._names('packages/codec/test/irframe.test.ts', 'const CONTAINERS'))
+        ts -= {'calibration_one', 'calibration_h600'}
+        self.assertEqual(sorted(ts), sorted(lab.USER_CONFIGS),
+                         'missing %s, extra %s'
+                         % (sorted(set(lab.USER_CONFIGS) - ts), sorted(ts - set(lab.USER_CONFIGS))))
+        self.assertEqual(len(lab.USER_CONFIGS), 15, 'fifteen user configs')
+
 
 if __name__ == '__main__':
     unittest.main()

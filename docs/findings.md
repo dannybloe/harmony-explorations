@@ -3519,8 +3519,13 @@ The framing is fixed:
 [leading gap]  header mark, header space,  bits * (mark, space),  trailing mark, trailing gap
 ```
 
-so the run from the first mark is `2 * bits + 4` values long. **That identity holds for all 2137
-framed records in the corpus, with no exception.**
+so the run from the first mark is `2 * bits + 4` values long. This said **that identity holds for all
+2137 framed records in the corpus, with no exception**<!--superseded-->, and section 139 entry 7
+refuted it: the run being measured belonged to a neighbouring record, because the locator searched
+from a fixed offset instead of following the header's pointers, and both ends of the identity came
+out of the same wrong bytes. A closure whose two numbers come from one field is not a closure. On the
+right bytes the identity is false, since a once block also carries a repeat header and a silence, and
+what replaces it is the decoded bit count against the protocol the timings name.
 
 ### The closure
 
@@ -3626,10 +3631,14 @@ does not involve the infrared table at all, and it ties `0x7C`'s group to the sa
 answering the question section 29 left open about whether the two were the same thing. They are, at
 least here.
 
-The `0x7C` value that accompanies a send is small. Over all ten configs it takes six values,
-`0, 1, 2, 4, 5, 10`, and 2260 of the 3164 sends carry 1. So it is a count of something rather than
-an identifier, which fits `0x7C`'s established reading as a quantity of at most 100 spelled out
-above that.
+The `0x7C` value that accompanies a send is small. **Corrected in section 140**: this said it takes
+six values, `0, 1, 2, 4, 5, 10`<!--superseded-->, which was a property of the ten configs this
+section was written against. Over all fifteen user configs it takes seven, adding 3, from
+`arch8_config_885`. The set was never the argument, though, and section 140 says why the correction
+is worth having: what rules out this operand being a second identifier is that an identifier would
+have to separate the records of a group, the largest group in the corpus holds 111 records, and the
+firmware caps this field at 100. So the bound carries the claim and the set is an observation beside
+it, which fits `0x7C`'s established reading as a quantity spelled out above that.
 
 ### What arch 14 adds
 
@@ -3754,7 +3763,9 @@ bit value in `PROD`, so the low byte is an index into a lookup that routine owns
 The result is written to the flag at `0x008`. The left hand side is what separates the two opcodes:
 **`0x71` compares the byte variable `0x00D`, `0x70` compares the accumulator.**
 
-The corpus splits the same way. `0x71` uses selectors `0` to `5` and nothing else, over 2164 uses.
+The corpus splits the same way. `0x71` uses selectors `0` to `5` and nothing else, over 2477 uses
+across all fifteen user configs; the figure was 2164<!--superseded--> over the ten this section was
+written against.
 `0x70` uses `0`, `1`, `2`, `3` and **`7`**, the last one nine times. So the six comparisons belong
 to `0x71` and the odd selector to `0x70`. Selector `6` is never used by either.
 
@@ -3765,7 +3776,11 @@ operands in ten configs with no violation. Read against the firmware:
 * the "group 0 to 5" is the **comparison selector**, and `0x71` uses exactly the six values the
   firmware implements as comparisons and none of the two it does not,
 * the low byte under 64 is the **index bound of whatever `0x17E28` looks up**,
-* bit 15 is a separate flag on the high byte, which the dispatcher masks off with `& 0x0F`.
+* bit 15 is a separate flag on the high byte, which the dispatcher masks off with `& 0x0F`. **Read
+  in section 140**, and the wording here was the mistake worth recording: the mask is real, and it
+  belongs to the nibble decode rather than to the instruction. The same handler tests the bit eighty
+  instructions later and it is the language's **else** arm, so "masks off" described one
+  routine's first act and read as though nothing consumed the bit at all.
 
 Three independent measurements of the same field, agreeing. And `[0x71, 0x7F]`, the second most
 common two instruction list on arch 14, is a **conditional call**: compare, then call an action
@@ -18602,12 +18617,14 @@ from the block's **length**, `2 * bits + 4` from the first mark, over 2137 recor
 Both numbers came from the same wrong run, so it compared a neighbouring record with itself. On the
 right bytes the identity is simply false: `0x035571` of `h700_config` carries a 32 bit NEC code, a gap,
 the protocol's **repeat header** and a long silence, so its length gives 36 bits where its timings say
-32. Every class 1 record in the corpus, 2858 of 2858, holds a gap somewhere other than at the end of its
-once block, which is what says a block is more than one transmission.
+32. Every class 1 record in the corpus holds a gap somewhere other than at the end of its once block,
+which is what says a block is more than one transmission: 2858 of 2858 when this was written, and
+3840 of 3840 now that the population is all fifteen user configs, section 140.
 
-The closure is real again and it lives in TypeScript now: **1106 records with NEC timings all carry 32
-bits and 257 with Kaseikyo timings all carry 48**, zero exceptions,
-`packages/codec/test/irframe.test.ts`.
+The closure is real again and it lives in TypeScript now: **every record with NEC timings carries 32
+bits and every record with Kaseikyo timings carries 48**, zero exceptions,
+`packages/codec/test/irframe.test.ts`. It was 1106 and 257 over the nine configs section 32 quoted,
+and it is 1567 and 670 now that the population is every user config, section 140.
 
 ### 8. Two frame decoders, caught by the check added to catch them
 
@@ -19695,3 +19712,161 @@ which would make the refusal a live one and would need a rule for which page nam
 For entry 26: a container of a family that carries a key table after the marker and reports fourteen
 checks, which would say the count is not decided by the family; or a document where the detached
 marker diagnostic still names a marker that has a number in front of it.
+
+**Entry 27 is the population sweep and it is section 140**, because what it found is a field rather
+than a defect. Widening eight test classes from ten configs to all fifteen user configs broke five
+claims, and every one of them was a property of the samples: the four exceptions in the action list
+packing, where one Harmony 525 config packs into four runs and the other fourteen into five; the 53
+scan codes a config binds, where the Harmony 885 binds 55 and the ceiling belongs to the architecture
+while the count belongs to the config; "no printable run of four or more contains a letter", where
+that config has one; the `0x7C` value set, which gained a 3; and the event map's single reserved block
+collision, which is both Harmony 525 configs. Two of the five were caught by the same config, which is
+the argument for the whole exercise: it had been read by the TypeScript suite and the golden vectors
+and by no Python assertion at all. **And one thing found by widening was not a claim about the format
+at all**: the two level infrared table's totals moved to 67 groups and 4347 records, because the
+class's own list predated `lab.USER_CONFIGS` and appended one config by name, so widening the list
+counted that config twice. A population appended to is a population to check.
+
+## 140. Bit 15 of a comparison is the else arm, and the queue is writable because of it
+
+Section 34 read `0x70` and `0x71` down to the `XORLW` chain that picks one of eight operations out of
+the operand's high byte, and recorded what it could not read.
+
+> bit 15 is a separate flag on the high byte, which the dispatcher masks off with `& 0x0F`<!--superseded-->
+
+That was true of the nibble decode and false of the instruction. The same handler tests the bit eighty
+instructions later, and what it does is the language's **else** arm.
+
+**How it was found is worth stating, because it was not by looking for it.** The population of eight
+test classes was widened from ten configs to all fifteen user configs, entry 26 of section 139, and a
+scratch measurement of the operand's whole high byte printed values `0x80` to `0x84` beside the
+expected `0x00` to `0x05`. Every test still passed, because every one of them masks with `0x0F` first,
+copying the firmware. So a field that no reader read and no test could see had been in every config in
+the corpus from the beginning, and what surfaced it was printing a byte instead of a nibble.
+
+### The firmware
+
+On the Harmony 700 image, the selector chain starts at `0x0EEA8`:
+
+```
+0eea8: MOVLW 0x0f
+0eeac: ANDWF 0x1bc,W          the operand's high byte, masked to the selector
+0eeae: XORLW 0x07             the chain section 34 read
+...
+0ef62: BTFSS 0x1bc,7          the same byte, bit 7
+0ef64: BRA   0x0efe0          clear: the one armed form
+0ef66: MOVF  0xd08,W          the comparison's result
+0ef6a: BZ    0x0efe8          false: skip the next instruction
+0ef6c: MOVFF 0x19f,0xd09      true: the interpreter's own queue pointer
+0ef70: MOVFF 0x1a0,0xd0a
+0ef74: MOVLW 0x03             one instruction width
+0ef76: ADDWF 0x09,B,F
+0ef7c: MOVLW 0x9f             the wrap bound, 0x019F
+...
+0ef8e: MOVFF 0xd09,FSR0L      and three bytes zeroed, one at a time, wrapping
+0ef96: CLRF  INDF0
+```
+
+`0x19F` and `0x1A0` are the queue's read pointer: `0x0E82C` loads them into `FSR0`, fetches a byte and
+increments, which is how the executor consumes an instruction. By the time a handler runs, that
+pointer already sits on the **next** instruction, so `+3` lands on the one after it, and the three
+`CLRF INDF0` overwrite that instruction with `0x00 0x00 0x00`. Opcode `0x00` does nothing.
+
+The two paths out are the reading:
+
+| bit 15 | comparison | what happens |
+|---|---|---|
+| clear | false | the next instruction is skipped, by fetching its three bytes and discarding them at `0x0EFE8` |
+| clear | true | nothing further: the next instruction runs |
+| set | false | the same skip, so the instruction after the next one runs |
+| set | true | the instruction after the next one is zeroed, and the next one runs |
+
+So the two instructions following a flagged comparison are its two arms, and whichever is not taken
+is **neutralised rather than jumped over**. That is not a stylistic choice. The handler returns
+before either arm runs, and the interpreter has no way to skip an instruction it has not reached yet,
+so cancelling the untaken arm has to happen in advance, by writing over it. Which answers a question
+this project had not asked: why the action list interpreter runs out of a 120 byte circular buffer in
+RAM rather than straight out of the memory mapped config on arch 12 (Harmony One). It is not only a
+queue. It is the instruction stream, and the language mutates it.
+
+### It is one table across architectures
+
+Two structures in this language are not, `0x3F`'s bands and the block `0x65` to `0x6E`, and section
+139 found a third the day before this one, where `0x0F`'s bands had been read on arch 12 (Harmony One)
+and arch 14 (Harmony 600 and 700) and applied to arch 9 (Harmony 525), which does not implement them.
+So an "every architecture" claim about this interpreter is exactly the kind that has been wrong here,
+and this one is measured per image rather than ported. The route on each is the same: find the
+`MOVLW 0x0F; MOVLB b; ANDWF f,W` that opens the chain, then trace `f`.
+
+| image | architecture | mask | `BTFSS f,7` | the byte |
+|---|---|---|---|---|
+| `h700_code` | 14 (Harmony 700) | `0x0EEAC` | `0x0EF62` | `0x1BC` |
+| `h600_code_complete` | 14 (Harmony 600) | `0x0EABC` | `0x0EB72` | `0x2B3` |
+| `h650_code` | 14 (Harmony 650) | `0x0EE9A` | `0x0EF50` | `0x1BC` |
+| `one34_code` | 12 (Harmony One) | `0x2519C` | `0x25252` | `0xEBE` |
+| `h525_code` | 9 (Harmony 525) | `0x01E48` | `0x01EFE` | `0x3D8` |
+| `arch8_code_880` | 8 (Harmony 880) | `0x133EA` | `0x134A0` | `0x3B3` |
+| `arch8_code_885` | 8 (Harmony 885) | `0x133EA` | `0x134A0` | `0x3B3` |
+
+Seven images, four architectures, and **exactly one** test of that bit in each: if there were two, the
+reading would be incomplete. Arch 9 (Harmony 525) is compiled with less inlining and is the case to
+check rather than skip: one `CLRF INDF0` sits inline and a helper at `0x024F8` clears, increments and
+bounds, called twice, so it is three clears the same as everywhere else.
+
+**The tracer earns its keep here and a sweep does not.** The first version of the test decoded each
+image linearly from offset 0 and reported a second bit 7 test on both arch 8 images, at `0x1259C`. It
+is not one: a linear decode has no idea which bank is selected, so it read byte `0xB3` of some other
+bank as this one. `harmony/pic18/trace.py` follows `MOVLB` and reports one site. An extra hit that
+looks like a finding is what the bank tracking exists to prevent, and it was believed for about a
+minute.
+
+### The corpus closure, and it is exact in both directions
+
+Nothing in the container states how many instructions belong to a conditional, so the arm count is a
+pure prediction of the firmware reading. Over all fifteen user configs, four architectures:
+
+| bit 15 | instructions | followed by |
+|---|---|---|
+| clear | 2084 | exactly one instruction, and the list ends there |
+| set | 600 | exactly two instructions, and the list ends there |
+
+Never three, never none, no exception. A wrong reading of the flag would show up here as a
+conditional whose arms run off the end of its own list, or as a list with bytes at the end that
+nothing reaches. And the shape is stronger than the counts: **no list holds two conditionals** and
+**no arm is itself a conditional**, so an action list is a straight run with at most one branch at
+the end of it, and an editor never has to reason about a nested condition.
+
+What the arms hold says how a config gets more than one instruction into a branch: 2357 of the 3284
+arms are `0x7F`, a call to another action list. The 17 arms that are opcode `0x00` are an explicitly
+**empty** branch, which is the corpus agreeing with the mechanism from the other side, since zeroing
+a slot is exactly how the flag cancels an arm.
+
+The bit is set on 600 instructions and all of them are `0x71`. That is a fact about the corpus and not
+about the format: one handler serves both opcodes and tests the bit for both, so a two armed `0x70` is
+representable and no generator has emitted one. `packages/codec/src/actions.ts` reads it for both,
+because a reading is about the instruction.
+
+Bits 12 to 14 are read by nothing and set in no instruction in the corpus, so the high byte is a
+nibble and a flag with three dead bits between them.
+
+### Two numbers corrected in place
+
+Section 34 said `0x71` uses selectors 0 to 5 "over 2164 uses"; the figure over all fifteen user
+configs is 2477. And section 33 said the `0x7C` count beside an infrared send takes six values,
+`0, 1, 2, 4, 5, 10`; it takes seven, adding 3, from `arch8_config_885`. Both were properties of the
+ten configs those sections were written against. The `0x7C` one is the instructive half, because the
+set was doing the work of the claim: what rules out that operand being a second identifier is that an
+identifier would have to separate the records of a group and the largest group here holds 111, while
+the firmware caps this field at 100. The bound is the argument and the set is an observation, and the
+test now says so in that order.
+
+### What would falsify it
+
+A config whose flagged comparison is the last instruction in its list, or has three instructions after
+it, either of which would say the arm count is not what the flag means. A config setting bit 15 on
+`0x70`, which is representable and would move that line from a corpus fact to a format one, or bits 12
+to 14 on anything, which would say the high byte has a third field. An arch 10 (Harmony 890) or arch 7
+image whose handler does not test the bit, which would take this off the list of structures that are
+one table across architectures. And, for the mechanism rather than the field: an action list
+interpreter found reading instructions from anywhere other than a writable copy, which would leave the
+zeroing with nothing to write to.

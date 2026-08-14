@@ -80,7 +80,8 @@ const noop = (section: number): Reading => ({
  * place the language is not one table across architectures, after arch 12's `0x3F` band `0xC0`.
  *
  * An entry may be a **function of the operand**, for the opcodes whose handler dispatches again on
- * a field of its own: `0x70` and `0x71` resolve eight operations out of the operand's high nibble.
+ * a field of its own: `0x70` and `0x71` resolve eight operations out of bits 8 to 11 of the operand,
+ * and read bit 15 as well.
  */
 type MainEntry = Reading | ((operand: number) => Reading);
 
@@ -90,7 +91,9 @@ type MainEntry = Reading | ((operand: number) => Reading);
  * Six comparisons in complementary pairs and two updates, from the `XORLW` chain at `0x0EEA8` on
  * the Harmony 700 and `0x25198` on the One, which are the same chain. The left hand side is the
  * accumulator for `0x70` and a byte register for `0x71`; the right hand side is always the state
- * variable the operand's low byte names. Nibbles 8 to 15 fall off the end of the chain.
+ * variable the operand's low byte names. Nibbles 8 to 15 fall off the end of the chain, and bits
+ * 12 to 14 are read by nothing and zero in every instruction in the corpus, so the high byte is a
+ * nibble and a flag with three dead bits between them.
  *
  * Section 34 read this as "compare" alone, which is what six of the eight are. Nibble 7 is what a
  * generator builds a remainder out of, so calling it a comparison hid the whole of section 107.
@@ -112,7 +115,7 @@ export const ARITHMETIC_BLOCK: ReadonlySet<number> = new Set([
 ]);
 
 /**
- * `0x70` and `0x71`, whose high nibble picks one of eight operations on a state variable.
+ * `0x70` and `0x71`, whose operand bits 8 to 11 pick one of eight operations on a state variable.
  *
  * A comparison is a meaning: it sets the condition flag the caller's next instruction consumes. An
  * update is a meaning too, and a stronger one, because the value written is clamped to the range
@@ -126,11 +129,30 @@ function stateOperation(opcode: number, operand: number): Reading {
   if (entry === undefined) return noop(107);
   const left = opcode === 0x70 ? 'the accumulator' : 'the byte register';
   const [what, compares] = entry;
+  if (!compares) {
+    return means(
+      `${left} ${what} the state variable the low byte names, clamped to its stated range`,
+      107,
+    );
+  }
+  // Bit 15 is the **else** arm, section 140. Section 34 saw the bit and could only say the
+  // dispatcher masks it off with `& 0x0F`, which is true of the nibble decode above and not of the
+  // instruction: the same handler tests it with a `BTFSS`, at `0x0EF62` on the Harmony 700, `0x25252`
+  // on the Harmony One, `0x01EFE` on the Harmony 525 and `0x134A0` on the Harmony 880, so all seven
+  // images and all four architectures we hold firmware for implement it identically, which is not
+  // something to assume here: three structures in this language are per architecture.
+  // A false comparison always skips the next instruction by fetching
+  // it; with the bit set, a **true** one additionally zeroes the three bytes two slots ahead in the
+  // queue, and opcode `0x00` does nothing. So the two instructions after the comparison are the two
+  // arms, and whichever is not taken is neutralised rather than jumped over. It has to be
+  // neutralised, because the handler returns before the arm runs and the interpreter has no way to
+  // skip an instruction it has not reached: which is also why the queue is a writable copy in RAM.
   return means(
-    compares
-      ? `condition: ${left} ${what} the state variable the low byte names`
-      : `${left} ${what} the state variable the low byte names, clamped to its stated range`,
-    compares ? 34 : 107,
+    `condition: ${left} ${what} the state variable the low byte names, ` +
+      (operand & 0x8000
+        ? 'and the next two instructions are its two arms'
+        : 'and the next instruction runs only if it holds'),
+    operand & 0x8000 ? 140 : 34,
   );
 }
 

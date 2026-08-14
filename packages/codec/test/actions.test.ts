@@ -439,6 +439,35 @@ test('0x70 and 0x71 resolve eight operations, six comparisons and two updates', 
   }
 });
 
+test('bit 15 of a comparison operand is the else arm, and only for a comparison', () => {
+  const at = (opcode: number, nibble: number, flag: number) =>
+    reading({ opcode, operand: (flag << 15) | (nibble << 8) | 0x2d }, 14)!;
+
+  // The pair that carries the claim: the same nibble reads differently with the bit set, and the
+  // section moves with it, because one arm is section 34's reading and two arms are section 140's.
+  for (let nibble = 0; nibble <= 5; nibble += 1) {
+    assert.match(at(STATE_OPERATION, nibble, 0).what, /next instruction runs only if it holds$/);
+    assert.equal(at(STATE_OPERATION, nibble, 0).section, 34);
+    assert.match(at(STATE_OPERATION, nibble, 1).what, /next two instructions are its two arms$/);
+    assert.equal(at(STATE_OPERATION, nibble, 1).section, 140);
+  }
+
+  // The negative, and it is the reason this is not simply appended to the string in every case: the
+  // two updates write the variable and set no condition, so there is nothing for a second arm to
+  // be. The firmware reaches the `BTFSS` from the comparison arms only.
+  for (const nibble of [6, 7]) {
+    assert.equal(at(STATE_OPERATION, nibble, 1).what, at(STATE_OPERATION, nibble, 0).what);
+    assert.equal(at(STATE_OPERATION, nibble, 1).section, 107);
+  }
+
+  // Both opcodes reach the one handler, so the bit is `0x70`'s too even though no config in the
+  // corpus sets it there. A reading is about the instruction and not about the population.
+  assert.match(at(0x70, 0, 1).what, /two arms$/);
+
+  // Bits 12 to 14 are read by nothing, so they must not change a reading.
+  assert.equal(reading({ opcode: 0x71, operand: 0xf02d }, 14)!.what, at(0x71, 0, 1).what);
+});
+
 test('every corpus multiply follows a divide by the same operand', skipUnless('one_config'), () => {
   // The arch 8 and arch 12 remainder idiom, and the reason both opcodes are believed: eight
   // multiplies in the whole corpus, eight of them the second half of `x / n * n`. A multiply used

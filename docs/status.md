@@ -47,7 +47,7 @@ sample. Among the recent ones is **the timer table**, which is where a backlight
 power off live: a record says how long to wait and which single instruction to run afterwards, and
 the set of records a config's action lists start is exactly the set it declares. Next to it is
 **the parameter block**, whose every group has a length the firmware demands and silently ignores
-the group if it differs: fourteen such lengths read off two images, holding in all thirteen
+the group if it differs: fourteen such lengths read off two images, holding in all fifteen
 containers. Then **the touch screen hit map**, which only the Harmony One
 carries, because it is the only remote here with a touch panel: per screen page a list of
 rectangles, each reporting a key code, and the firmware answers a touch with the first rectangle
@@ -84,8 +84,10 @@ run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrom
 every one of 58083<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
 program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
-a binary search dispatcher, and a **second interpreter draws the screen**: its own one byte opcodes
-for text, bitmaps, a switch on a state variable and a jump, with 21552<!--fact:screen_programs--> programs across thirteen
+a binary search dispatcher, and the queue is in RAM because the language mutates it: a comparison can
+carry an **else** arm, and it cancels the arm it does not take by writing a do nothing instruction
+over it, section 140. and a **second interpreter draws the screen**: its own one byte opcodes
+for text, bitmaps, a switch on a state variable and a jump, with 21552<!--fact:screen_programs--> programs across fifteen
 containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field

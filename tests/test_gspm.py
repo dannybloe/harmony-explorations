@@ -889,21 +889,46 @@ class TestActionLists(unittest.TestCase):
     that many three byte instructions. See `docs/findings.md` section 17.
     """
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a')
+    CONFIGS = lab.USER_CONFIGS
 
     def test_the_table_and_the_counts_agree_on_the_packing(self):
         """
         The closure that carries the reading: addresses come from the pointer table, counts
-        come from the lists, and all but four consecutive pairs sit exactly `1 + 3 * count`
-        apart. Two unrelated parts of the file telling the same story.
+        come from the lists, and every consecutive pair sits exactly `1 + 3 * count` apart bar the
+        run boundaries. Two unrelated parts of the file telling the same story.
+
+        **The exception count was hard coded at four and that is a sample property.** It held on ten
+        configs and fails on fifteen: `h525_config_2` packs its lists into **four** contiguous runs
+        where every other config here uses five, so it has three exceptions. The rule is that an
+        exception is a run boundary, so there is exactly one fewer exception than there are runs, and
+        that is what is asserted. Section 139.
         """
         lab.require(*self.CONFIGS)
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 fit, of = c.action_list_packing()
-                self.assertEqual(of - fit, 4, '%s: %d of %d packed' % (name, fit, of))
+                runs = len(self._runs(c))
+                self.assertEqual(of - fit, runs - 1,
+                                 '%s: %d of %d packed into %d run(s)' % (name, fit, of, runs))
+                # And a run boundary is a real jump rather than an off by one, on every config: the
+                # smallest across the corpus is 140 bytes, where the packed distance would be at
+                # most `1 + 3 * 255`. Stated as the measured floor so the slack is visible.
+                self.assertGreaterEqual(runs, 4, '%s packs into %d run(s)' % (name, runs))
+
+    def test_only_one_config_packs_into_four_runs(self):
+        """Which is what makes the rule above a rule and not a second hard coded number.
+
+        Five runs on fourteen of fifteen, four on `h525_config_2`, and nothing in the format says
+        five: the generator lays the lists out in as many runs as it needs. Section 139.
+        """
+        lab.require(*self.CONFIGS)
+        counts = {}
+        for name in self.CONFIGS:
+            counts.setdefault(len(self._runs(gspm.parse(lab.load(name)))), []).append(name)
+        self.assertEqual(sorted(counts), [4, 5])
+        self.assertEqual(counts[4], ['h525_config_2'])
+        self.assertEqual(len(counts[5]), 14)
 
     def test_the_four_exceptions_are_run_boundaries(self):
         """
@@ -1441,9 +1466,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
     the protocol its header timings name.
     """
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     # Header timings, as a tolerance band, against the bit count the protocol specifies. The bands
     # are wide because the corpus holds several calibrations of each: NEC turns up as 8990/4490 and
@@ -1454,13 +1477,15 @@ class TestTheInfraredDatabase(unittest.TestCase):
     )
 
     def test_the_group_count_matches_the_0x7c_group_count(self):
-        """Ten configs, four architectures, counts from 1 to 7, and it matches every time.
+        """Fifteen configs, four architectures, counts from 1 to 7, and it matches every time.
 
-        Includes the arch 9 sample, whose records use a different encoding: the two level pointer
-        structure is shared even where the leaf format is not.
+        Includes the arch 9 samples, whose records use a different encoding: the two level pointer
+        structure is shared even where the leaf format is not. They are in `lab.USER_CONFIGS` and
+        used to be appended here by name, which is harmless in a loop and was not in the packing
+        test next door, where it counted one config twice.
         """
-        lab.require(*self.CONFIGS, 'h525_config')
-        for name in self.CONFIGS + ('h525_config',):
+        lab.require(*self.CONFIGS)
+        for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 groups = {i.operand >> 8 for lst in (c.action_lists() or []) for i in lst
@@ -1477,11 +1502,13 @@ class TestTheInfraredDatabase(unittest.TestCase):
 
     def test_the_two_level_table_is_exactly_packed(self):
         """Lead byte zero, `3 + 3 * count` bytes per group, groups adjacent, pointers in range."""
-        lab.require(*self.CONFIGS, 'h525_config')
+        lab.require(*self.CONFIGS)
         groups = records = 0
-        # Includes arch 9, whose leaf records use a different encoding: the two level pointer
-        # structure holds there too, and saying so is the point of the wide totals.
-        for name in self.CONFIGS + ('h525_config',):
+        # Arch 9 is in the population, and its leaf records use a different encoding: the two level
+        # pointer structure holds there anyway, which is the point of the wide totals. It used to be
+        # appended here by name, because the class's own list predated `lab.USER_CONFIGS` and left it
+        # out; widening the list then counted that config twice and moved the totals to 67 and 4347.
+        for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 table = c.pointer_array(gspm.arch_slot(c.architecture, gspm.IR_TABLE_SLOT))
@@ -1497,7 +1524,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
                 for group in c.ir_groups():
                     for address in group:
                         self.assertLess(c.blob_offset_of(address), len(c.blob))
-        self.assertEqual((groups, records), (49, 3058), 'pin the corpus wide totals')
+        self.assertEqual((groups, records), (63, 4147), 'pin the corpus wide totals')
 
     def test_no_record_pointer_is_an_action_list(self):
         """Which is what makes this a different table rather than another view of slot 10."""
@@ -1548,7 +1575,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
                         with_interior_gap += 1
         # Every class 1 record in the corpus, which is why the old identity could not hold on any of
         # them once the right bytes were being read.
-        self.assertEqual(with_interior_gap, 2858)
+        self.assertEqual(with_interior_gap, 3840)
 
     # `test_the_header_timings_and_the_length_agree_on_the_bit_count` lived here and is now
     # `the header timings and the bit count name the same protocol` in
@@ -1583,9 +1610,7 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
     range check and fail this.
     """
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     def test_the_operands_are_exactly_the_valid_group_index_pairs(self):
         """Onto, and nothing outside the table. Set equality, not a range check.
@@ -1604,7 +1629,7 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
                 named = set(c.ir_references())
                 self.assertEqual(named, everything)
                 total += len(everything)
-        self.assertEqual(total, 3058, 'pin the corpus wide count')
+        self.assertEqual(total, 4147, 'pin the corpus wide count')
 
     def test_a_record_may_be_sent_from_more_than_one_list(self):
         """The exception to exactness, stated so the claim above is not read as stronger."""
@@ -1646,10 +1671,21 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
                 with self.subTest(image=name):
                     self.assertEqual(value.operand >> 8, send.operand >> 8)
                 checked += 1
-        self.assertEqual(checked, 3164, 'pin the count over all ten configs')
+        self.assertEqual(checked, 4267, 'pin the count over all fifteen user configs')
 
     def test_the_accompanying_count_is_small(self):
-        """Recorded because it is what rules out the 0x7C being a second identifier."""
+        """Recorded because it is what rules out the 0x7C being a second identifier.
+
+        The set was `{0, 1, 2, 4, 5, 10}` while the population was ten configs, and widening it to
+        all fifteen user configs added a 3, from `arch8_config_885`. So the set was a property of
+        the samples and not of the format, and the claim that carries the weight is the bound: an
+        identifier would have to distinguish the records of a group, and the 700's largest group
+        holds 111. What the firmware states is a cap of 100, section 127, and every value in the
+        corpus sits an order of magnitude under it. The set is asserted too, because it is a fact
+        about the corpus worth noticing when it moves, but it is asserted as an observation rather
+        than as the reason.
+        """
+        lab.require(*self.CONFIGS)
         seen = set()
         for name in self.CONFIGS:
             c = gspm.parse(lab.load(name))
@@ -1657,7 +1693,8 @@ class TestOpcode7DSendsInfrared(unittest.TestCase):
                 ops = [i.opcode for i in lst]
                 if gspm.OPCODE_SEND_IR in ops:
                     seen.add(lst[ops.index(0x7C)].operand & 0xFF)
-        self.assertEqual(seen, {0, 1, 2, 4, 5, 10})
+        self.assertLessEqual(max(seen), 10, 'far under the firmware cap of 100')
+        self.assertEqual(seen, {0, 1, 2, 3, 4, 5, 10})
 
 
 class TestTheHighOperandBand(unittest.TestCase):
@@ -1672,9 +1709,7 @@ class TestTheHighOperandBand(unittest.TestCase):
     counterexample rather than the presence of an example.
     """
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     # Two configs of one architecture, three times over. Both members of a pair must agree for
     # a value set to count as a vocabulary rather than as this config's contents.
@@ -1702,7 +1737,7 @@ class TestTheHighOperandBand(unittest.TestCase):
         # stood here against a measured 10381, which is a floor 3.8% under the figure it was
         # guarding: the four samples that carry over 900 each could have dropped out together and
         # left it passing. The population is a literal tuple above, so an exact total is stable.
-        self.assertEqual(total, 10381)
+        self.assertEqual(total, 14565)
 
     def test_the_floor_is_exactly_the_band_boundary(self):
         """Not merely at or above 0xC000: the lowest value observed IS 0xC000.
@@ -1815,9 +1850,7 @@ class TestPointerArraySections(unittest.TestCase):
     # Slot numbers in the 19 slot base layout, so one expectation covers all architectures.
     BASE_SLOTS = [5, 7, 10, 11, 12, 15]
 
-    CONFIGS = ('h700_config', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     def test_the_same_six_sections_are_arrays_in_every_config(self):
         lab.require(*self.CONFIGS)
@@ -2667,9 +2700,7 @@ class TestArch12SafeModeConfig(unittest.TestCase):
 class TestTheInfraredClassByte(unittest.TestCase):
     """findings.md section 42: the byte the pointer array lands on selects the send routine."""
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-               'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     def _records(self, name):
         c = gspm.parse(lab.load(name))

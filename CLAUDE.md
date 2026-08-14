@@ -1196,7 +1196,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 139 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 140 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1214,7 +1214,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 ## What is known, by base slot
 
 Twenty base slots, all accounted for. 0 and 1 are header records, 2 to 17 are named sections, 18
-and 19 are NULL in all thirteen containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
+and 19 are NULL in all fifteen containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
 arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at slot 18.
 
 | slot | what it is | sections |
@@ -1249,6 +1249,19 @@ that have one, and **every picture in an arch 12 bank is drawn by a program**, 9
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
 byte opcodes, section 40, whose closure is that 21552<!--fact:screen_programs--> programs across the
 corpus decode with nothing left over.
+
+**And the queue is writable because the language has an if/else**, section 140, which is the one
+thing about the action list interpreter that had never been explained. Bit 15 of a `0x70` or `0x71`
+comparison is the **else** arm: with it set, a comparison that comes out **true** zeroes the three
+bytes two slots ahead, and opcode `0x00` does nothing, so the two instructions after a flagged
+comparison are its two arms and the untaken one is overwritten rather than jumped over. It has to be
+overwritten, because the handler returns before either arm runs. Section 34 saw the bit and wrote
+"the dispatcher masks it off"<!--superseded-->, which was true of the nibble decode and read as
+though nothing consumed it. The corpus closure is exact both ways, 600<!--fact:compare_else_arms-->
+flagged instructions each followed by exactly two instructions and
+2084<!--fact:compare_one_arm--> unflagged each by exactly one, with the list ending there, no list
+holding two conditionals and no arm being one. **It is one table across architectures**, measured on
+all seven images rather than ported, which matters because three structures in this language are not.
 
 ## Rails a writer will have to respect
 

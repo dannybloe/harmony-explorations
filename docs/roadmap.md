@@ -1015,13 +1015,13 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
 * **Section labelling is at thirteen slots of twenty**, and the newest is base slot 12, **the timer
   table**: a seven byte record holding a duration and the single instruction to queue when it
   expires, started and cancelled by two branches of the opcode `0x1F` ladder. The closure is that
-  the set of indices a config's action lists start is exactly `0` to `count - 1`, in all ten configs
-  across four architectures, with the three safe mode containers carrying neither. It also yields
+  the set of indices a config's action lists start is exactly `0` to `count - 1`, in all fifteen user
+  configs across four architectures, with the three safe mode containers carrying neither. It also yields
   two writer rails: a timer fires one instruction rather than a list, and its duration is clamped to
   sixteen bits without an error. `docs/findings.md` section 43. **Base slot 15 followed**, section 44, and it corrects section 38's
   reading of it: it is the parameter block, numbered groups of sixteen bit constants, and the
   firmware demands the length of every group as well as the section's count. Fourteen such lengths
-  are literals in two images and every one holds in all thirteen containers. **Slot 17 followed**, section 45: it is the touch
+  are literals in two images and every one holds in all fifteen containers. **Slot 17 followed**, section 45: it is the touch
   screen hit map, populated only on arch 12 because the Harmony One is the only remote here with a
   touch panel, and empty in the other eleven containers, which is why decoding arch 14 first could
   never have found it. **Slot 2 closed the table**, section 47: it is the log area, three numbers

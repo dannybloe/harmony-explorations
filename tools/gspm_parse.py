@@ -22,7 +22,8 @@ def main():
     try:
         data = ezfile.load_image(path)
     except Exception:
-        data = open(path, 'rb').read()
+        with open(path, 'rb') as fh:
+            data = fh.read()
 
     container = gspm.parse(data)
     if '--json' in sys.argv:

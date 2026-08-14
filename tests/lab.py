@@ -111,8 +111,10 @@ IMAGES = {
     'arch8_config_c': 'Update-2.EZHex',
     'arch8_config_d': 'Update-3.EZHex',
     # Two of the eleven configs kkong42 posted on 10 August 2026. Deliberately in IMAGES and not
-    # in CONTAINERS: they are here as headers to check a skin against, and adding them to the
-    # corpus would move every coverage figure in one commit with the reading of them unexamined.
+    # in CONTAINERS: adding them there would move every coverage figure in one commit. They **are**
+    # in USER_CONFIGS since section 140, because the reading of them is no longer unexamined: they
+    # supplied four of the five counterexamples that sweep found, including the 55 scan codes the 885
+    # binds where every skin 15 config binds 53.
     # The 885 is the case that breaks the tie, since 0x0F reads as 15 under either rule and 0x11
     # does not. The 890 is arch 10, a fourth format version and 23 pointer slots.
     'arch8_config_885': 'H885-LivingRoom.EZHex',
@@ -193,7 +195,7 @@ def _find(filename):
 
 
 # Every config container in the corpus, in the order the coverage report prints them. One list,
-# because the same thirteen are walked by the Python tests, by `packages/codec/test/coverage.test.ts`
+# because the same fifteen are walked by the Python tests, by `packages/codec/test/coverage.test.ts`
 # and by `tools/facts.py`, and a corpus total is only comparable between them if they agree on what
 # the corpus is. The two Harmony One sync-pair dumps are deliberately absent: they are two states of
 # one remote rather than two remotes, so counting them would double one unit in every total.
@@ -206,6 +208,26 @@ CONTAINERS = (
     # the corpus agreeing with itself, which is exactly the condition that hid the first glyph
     # code for a month. Sections 77 and 78.
     'h525_safemode_ahcm',
+)
+
+# Every **user** config: what a remote was actually programmed with, so no safe mode container and
+# nothing from arch 10 (Harmony 890), where every reader is gated because the slot mapping is not
+# established. Unlike `CONTAINERS` this **does** include the two Harmony One sync-pair dumps, because
+# a claim of the form "this holds in every config" is about configs and not about units, and it is
+# not a corpus wide total that double counting could distort.
+#
+# **It exists because eight test classes each carried their own literal** of seven, nine or ten
+# names, while `docs/config-format.md` said "ten configs across four architectures" throughout and
+# the lab holds fifteen. Two of them, `arch8_config_880` and `arch8_config_885`, were read by the
+# TypeScript suite and by the golden vectors and by no assertion on this side at all. A population
+# nobody compares is a population that drifts, which `TheCorpusWidePopulationsAgree` already says of
+# the four container lists and now says of this one against its TypeScript mirror.
+# `docs/findings.md` section 140.
+USER_CONFIGS = (
+    'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
+    'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
+    'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+    'arch8_config_880', 'arch8_config_885',
 )
 
 # The one container whose fonts do not follow the generator's conventions. Named here rather than

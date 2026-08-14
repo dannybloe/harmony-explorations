@@ -59,7 +59,8 @@ def main():
     try:
         data = ezfile.decode_payload(ezfile.load_image(path)).payload
     except Exception:
-        data = open(path, 'rb').read()
+        with open(path, 'rb') as fh:
+            data = fh.read()
     container = gspm.parse(data)
     groups = extract(container)
     if groups is None:

@@ -209,7 +209,7 @@ Three rules that a reader has to get right, all of them with a sample in the cor
   measured.
 
 Both splits are computed and compared, `src/harmony/ezfile.py` and `packages/codec/src/ezhex.ts`,
-and they agree on all ten config samples. `docs/findings.md` section 87.
+and they agree on all fifteen config samples. `docs/findings.md` section 87.
 
 `INTENDEDVERSION` is compared field by field, and **an absent or empty field matches anything**, so
 an entry with no fields at all matches every remote. `BOARD` is normalised on the file's side
@@ -294,6 +294,18 @@ architectures with per architecture insertions, so a slot number only means some
 said which layout it belongs to. See "One table, four architectures" further down; arch 9 and
 arch 14 use the base layout directly.
 
+**The evidence column names a population, and the two corpus wide ones are defined in exactly one
+place**, `lab.USER_CONFIGS` and `lab.CONTAINERS` in `tests/lab.py`, at fifteen each. Where a row says
+"user configs" it carries a marker `make facts` recomputes, because that count is what drifted: this
+column said "ten configs" in eight rows and "thirteen containers" in three while the lab held fifteen
+of each, and it drifted because eight test classes each carried their own literal and none of them was
+this document's. Section 140.
+
+Rows naming any other population, "nine configs" or "sixteen samples" or "twelve containers", quote a
+list declared inside their own test rather than one of those two. Those are **floors, not current
+populations**: each is what the claim was asserted over when the row was written, and widening them is
+the obvious next sweep rather than something this table should guess at.
+
 Known so far:
 
 | Slot | Meaning | Evidence |
@@ -301,23 +313,23 @@ Known so far:
 | 0 | the one `0xFEED` frame, holding a list of named nodes by level and index | sixteen samples, below |
 | 1 | seven byte record stating the architecture | sixteen samples, below |
 | 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
-| 5 | of those, the **infrared database**, grouped | ten configs, four architectures, below |
+| 5 | of those, the **infrared database**, grouped | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 10 | of those, the **action list address table** | nine configs, below |
-| 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | ten configs, four architectures, below |
+| 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | sixteen samples, three images, below |
-| 6 | the **mode table**: what `0x7E` and the event map both index | ten configs, four architectures, below |
-| 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | thirteen containers, two images, below |
-| 13 | the **state variable table**, named from its firmware consumer | ten configs, four architectures, below |
+| 6 | the **mode table**: what `0x7E` and the event map both index | 15<!--fact:user_configs--> user configs, four architectures, below |
+| 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | fifteen containers, two images, below |
+| 13 | the **state variable table**, named from its firmware consumer | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
 | 7 | a pointer array **indexed by opcode 16 of the screen language** | three images, below |
-| 9 | the **binding table**: eight to sixteen sets of button bindings with an enter and a leave handler | ten configs, four architectures, below |
-| 11 | the **screen program table**: programs in the screen language | ten configs, four architectures, below |
-| 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | ten configs, four architectures, below |
+| 9 | the **binding table**: six to seventeen sets of button bindings with an enter and a leave handler | 15<!--fact:user_configs--> user configs, four architectures, below |
+| 11 | the **screen program table**: programs in the screen language | 15<!--fact:user_configs--> user configs, four architectures, below |
+| 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
-| 12 | the **timer table**: wait, then queue one instruction | ten configs, four architectures, below |
+| 12 | the **timer table**: wait, then queue one instruction | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 17 | the **touch screen hit map**, populated on arch 12 only | two configs, one image, below |
-| 2 | the **log area**: a region of flash the firmware appends to and never erases | thirteen containers, one image, below |
-| 18, 19 | NULL in every sample of every architecture | thirteen containers |
+| 2 | the **log area**: a region of flash the firmware appends to and never erases | fifteen containers, one image, below |
+| 18, 19 | NULL in every sample of every architecture | fifteen containers |
 
 **Every slot from 2 to 19 has a located firmware consumer**, on the Harmony 700, the 600 and the
 One. See [findings.md](findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
@@ -333,7 +345,7 @@ a large section. See section 36.
 
 ### Base slot 2: the log area
 
-**Confirmed on thirteen containers across four architectures**, and on the one arch 12 image, which
+**Confirmed on fifteen containers across four architectures**, and on the one arch 12 image, which
 is the only firmware that reads it.
 
 Not a pointer to a structure: three numbers reserving a region of flash above the config that the
@@ -384,7 +396,7 @@ writer that copies these three numbers unchanged is doing everything the corpus 
 
 ### Base slot 4: the firmware event map
 
-**Confirmed on ten configs across four architectures**, and the same shape in every one.
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, and the same shape in every one.
 
 ```
 +0x00  u24  fallback        used when no key matches
@@ -397,8 +409,11 @@ Only `N` varies: 19 on the 700, 14 on the 600, 11 on the 525, 10 on both Ones, 4
 
 The firmware raises an event by loading a literal key and looking it up here, and the value goes to
 the same register opcode `0x7E`'s operand goes to. So the two share a numbering space, and the
-block `N` to `N + 29` is **reserved**: across ten configs `0x7E` names 1246 distinct operands and
-lands inside the block once, on the 525. On the programmed Harmony One the config uses 0 to 9, the
+block `N` to `N + 29` is **reserved**: across 15<!--fact:user_configs--> user configs `0x7E` names 1593<!--fact:event_map_operands--> distinct
+operands and lands inside the block on the two Harmony 525 configs and nowhere else, at operand 25
+in both. The exception was one config when the population was ten, so widening it made the
+counterexample a pair rather than a singleton, which is a stronger statement about arch 9 and a
+weaker one about the reservation. On the programmed Harmony One the config uses 0 to 9, the
 block takes 10 to 39, and the config resumes at 40, abutting on both sides.
 
 Read with `gspm.event_map`.
@@ -410,7 +425,7 @@ See the warning under "Sections" about what that distance means.
 
 ### Base slot 6: the mode table
 
-**Confirmed on ten configs across four architectures.**
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.**
 
 ```
 +0x00  u24  count
@@ -421,7 +436,7 @@ A `u24` count, where the six recognised pointer arrays use a `u8` or a `u16`, so
 heuristic does not pick this slot up.
 
 **The count is exactly one more than the largest `0x7E` operand, in every config**, over counts from
-103 to 374. Every value in the event map of base slot 4 is in range too. So `0x7E` and the event map
+75 to 374. Every value in the event map of base slot 4 is in range too. So `0x7E` and the event map
 both index this table, and `0x7E` is the instruction that **switches to the entry its operand
 names**.
 
@@ -527,15 +542,15 @@ Read with `gspm.tagged_list`. [findings.md](findings.md) section 39.
 
 ### Base slot 9: the binding table
 
-**Confirmed on ten configs across four architectures.**
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.**
 
 ```
 +0x00  u8   count
 +0x01  u24  address[count]
 ```
 
-Eight to sixteen entries, each pointing at a tagged list. **The largest index any config uses is
-exactly the count minus one, in all ten**, over counts from 8 to 16.
+Six to seventeen entries, each pointing at a tagged list. **The largest index any config uses is
+exactly the count minus one, in all fifteen**, over counts from 6 to 17.
 
 **The pointer is the list**, unlike base slot 6's, which lands inside a record. Read a slot 9
 target as slot 6's shape, a `u8` and a `u24` back pointer, and not one of the 54 sets in the corpus
@@ -586,7 +601,7 @@ Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.m
 
 ### Base slot 14: the state value map
 
-**Confirmed on ten configs across four architectures.**
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.**
 
 ```
 +0x00  u8   count
@@ -611,9 +626,9 @@ of the records and the other three are all behind it.
 Opcode `0x72` names both halves of this at once. Its operand's **low byte is a state variable
 index** into base slot 13 and its **high byte selects the record** here. The record is searched for
 the variable's value, then, if nothing matched, for a range containing it; the bounds are inclusive.
-Both operand bounds hold in all ten configs and neither is ever overrun.
+Both operand bounds hold in all fifteen user configs and neither is ever overrun.
 
-**The payload is a flash address, not an instruction.** All 9776 targets across ten configs land
+**The payload is a flash address, not an instruction.** All 15594<!--fact:value_map_targets--> targets across 15<!--fact:user_configs--> configs land
 inside their own container. The firmware follows one and hands it to a **second interpreter**, a
 one byte opcode language with ten opcodes and a terminator, which is not the action list language
 and is not decoded. Base slot 6's mode switch reaches the same interpreter.
@@ -621,7 +636,7 @@ and is not decoded. Base slot 6's mode switch reaches the same interpreter.
 Records share their tails: a few addresses point into the middle of a longer record rather than to
 a record of their own, so two records can overlap by design.
 
-The range table is empty in eight of the ten configs; two carry one range between them.
+The range table is empty in eleven of the fifteen configs; the other four carry one range each.
 
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
@@ -1009,7 +1024,7 @@ ones. The Harmony One is the only remote here with a touch panel.
 
 Where it is empty the section is **two** zero bytes rather than one, because the pointer lands two
 bytes in front of the picture bank that follows it, which is the same bias the bank walk starts
-from. Both bytes are zero in all thirteen containers that do this. `docs/findings.md` section 84.
+from. Both bytes are zero in all fifteen containers that do this. `docs/findings.md` section 84.
 
 ```
 +0x00  u8   pages
@@ -1090,7 +1105,7 @@ Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript wi
 
 ### Base slot 15: the parameter block
 
-**Confirmed on thirteen containers across four architectures**, and every length claim below is a
+**Confirmed on fifteen containers across four architectures**, and every length claim below is a
 literal in the firmware rather than a count of what the corpus carries.
 
 ```
@@ -1181,7 +1196,7 @@ Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 a
 
 ### Base slot 12: the timer table
 
-**Confirmed on ten configs across four architectures**, with three more as a negative case.
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, with three more as a negative case.
 
 ```
 +0x00  u8   count
@@ -1254,7 +1269,7 @@ Read with `gspm.number_senders`. [findings.md](findings.md) section 39.
 
 ### Base slot 13: the state variable table
 
-**Confirmed on ten configs across four architectures**, and named from the firmware routine that
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, and named from the firmware routine that
 loads it rather than from what the bytes look like.
 
 ```
@@ -1265,7 +1280,7 @@ loads it rather than from what the bytes look like.
 +0x08  u24  entry[count]
 ```
 
-`8 + 3 * count` equals the section's length exactly, in all ten. Counts run from 24 to 94.
+`8 + 3 * count` equals the section's length exactly, in all fifteen. Counts run from 21 to 94.
 
 The firmware copies this into RAM as two runs, `narrow` single bytes followed by `wide` pairs, so
 **an index below `narrow` is a one byte variable and an index at or above it is a two byte one**.
@@ -1380,7 +1395,7 @@ Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stat
 
 ### Base slot 5: the infrared database
 
-**Confirmed on ten configs across four architectures.** Two levels of pointer array over records of
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.** Two levels of pointer array over records of
 mark and space durations.
 
 ```
@@ -1570,27 +1585,35 @@ word carries at most 32767 us: a gap already spelled over three words can be rai
 without changing the block's length, and anything beyond that lengthens the block and relocates
 everything above it. The sharing rule applies first.
 
-49 groups and 3058 record pointers checked: the lead byte is zero every time, each group is exactly
+63<!--fact:ir_groups--> groups and 4147<!--fact:ir_references--> record pointers checked: the lead byte is zero every time, each group is exactly
 `3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the
 container, and none of them is an action list address.
 
 **The number of groups equals the number of distinct high bytes a `0x7C` operand takes**, in all
-ten configs, with the group indices contiguous from zero. The count runs from 1 to 7, and the
+fifteen user configs, with the group indices contiguous from zero. The count runs from 1 to 7, and the
 unprogrammed Harmony One is the minimal case at 1.
 
 The duration run has bit 15 strictly alternating, and is framed as `header mark, header space,
-bits * (mark, space), trailing mark, trailing gap`. So the run from the first mark is
-`2 * bits + 4` values, which holds for all 2137 framed records in the corpus.
+bits * (mark, space), trailing mark, trailing gap`. **The run from the first mark is not
+`2 * bits + 4` values**<!--superseded-->, which this said on the strength of 2137 framed records with
+no exception: section 139 found that both numbers in that identity came from a neighbouring record,
+because the locator searched from a fixed offset instead of following the header's pointers. On the
+right bytes it is simply false. A once block commonly carries the code, a gap, the protocol's own
+**repeat header** and a long silence, so its length gives more bits than its timings say, and every
+class 1 record in the corpus has a gap somewhere other than at its end.
 
-| header mark / space | records | bits, from the run length |
+The closure is real again and it is a different one: the **decoded bit count** against the protocol
+the header timings name, over all fifteen user configs.
+
+| header mark / space | records | bits, decoded |
 |---|---|---|
-| 8990 / 4490, 9000 / 4500 | 1052 | 32, every one |
-| 3480 / 1730, 3460 / 1730, 3364 / 1682 | 313 | 48, every one |
-| 4500 / 4500, 4485 / 4485 | 168 | 32 |
-| 4000 / 4500 | 111 | 24 |
+| 8900 to 9100 / 4400 to 4600, which is NEC | 1567 | 32, every one |
+| 3350 to 3520 / 1650 to 1760, which is Kaseikyo | 670 | 48, every one |
 
-Those header timings name NEC and Kaseikyo, whose bit counts are 32 and 48. Two quantities computed
-from opposite ends of the record, agreeing with no exception.
+Two quantities computed from opposite ends of the record, agreeing with no exception on 2237 of
+them. The bands are ranges because the corpus holds several calibrations of each: NEC turns up as
+8990/4490 and as 9000/4500, Kaseikyo as 3364/1682, 3460/1730 and 3480/1730. Read with
+`irFrame` in `packages/codec/src/irframe.ts`, which is the only frame decoder here.
 
 **Not every record uses this encoding.** The whole arch 9 sample uses something else, and the 880
 has a second population with headers near 303 / 310. The firmware routes four infrared encoding
@@ -2225,7 +2248,7 @@ the same 0 to 450 that `0x7C` carries by a different route. [findings.md](findin
 #### `0x07`, `0x0F`, `0x1F` and `0x3F` carry a second opcode field in the operand
 
 **Confirmed on four architectures.** These four opcodes never carry an operand below `0xC000`, and
-every other opcode in the inventory does. 10381 uses of the four, no exception, in ten configs
+every other opcode in the inventory does. 14565<!--fact:high_band_uses--> uses of the four, no exception, in 15<!--fact:user_configs--> configs
 holding 85962 instructions between them.
 
 | opcode | operands, signed, over the whole corpus | distinct | uses |
@@ -2389,17 +2412,20 @@ The operand indexes base slot 11, the same table the screen language programs li
 
 #### `0x7D` sends an infrared code
 
-**Confirmed on ten configs across four architectures.** The operand is `{ u8 group; u8 index }`
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures.** The operand is `{ u8 group; u8 index }`
 into the base slot 5 table above, and **the set of distinct operands is exactly the set of valid
-`(group, index)` pairs**: every record is reached and nothing outside the table is named, 3058
-records and 3058 distinct operands over the ten configs. Onto rather than one to one, since a
+`(group, index)` pairs**: every record is reached and nothing outside the table is named,
+4147<!--fact:ir_references--> records and 4147<!--fact:ir_references--> distinct operands over the
+15<!--fact:user_configs--> user configs. Onto rather than one to one, since a
 record can be sent from more than one list.
 
 `0x7D` appears in exactly one list shape per config, `{0x7F, 0x7D, 0x7C}` on arch 14 and
-`{0x7D, 0x7C}` on arch 8, 9 and 12, and in all 3164 of those lists the `0x7C` operand's high byte
+`{0x7D, 0x7C}` on arch 8, 9 and 12, and in all 4267<!--fact:send_lists--> of those lists the `0x7C` operand's high byte
 equals the `0x7D` operand's. So the grouping is shared between the infrared database, `0x7C` and
-`0x7D`. The accompanying `0x7C` value takes only `0, 1, 2, 4, 5, 10` across the corpus and is 1 in
-2260 of the 3164 sends, which is a count and not an identifier.
+`0x7D`. The accompanying `0x7C` value takes seven values across the corpus, `0, 1, 2, 3, 4, 5, 10`, and is
+1 in most sends. What says it is a count rather than a second identifier is not the size of that set,
+which grew when the population did: an identifier would have to separate the records of a group, the
+largest group here holds 111, and the firmware caps this field at 100. Section 140.
 
 Read with `gspm.ir_reference` and `gspm.ir_references`.
 [findings.md](findings.md) section 33.
@@ -2430,8 +2456,8 @@ Placed by their handlers:
 | `0x79` | add the operand to the accumulator |
 | `0x78`, `0x77` | ~~two more accumulator operations, through helper routines~~<!--superseded--> **multiply and divide**, section 107: one 16 by 16 multiply and one restoring division, `0x78` taking the product's low sixteen bits and `0x77` the quotient |
 | `0x7B` | build an instruction from a runtime byte and push it back on the queue |
-| `0x71` | **eight operations on a state variable**: low byte indexes it, low nibble of the high byte selects, left hand side is a byte variable. Six comparisons and two updates, section 107 |
-| `0x70` | the same eight, with the accumulator as the left hand side |
+| `0x71` | **eight operations on a state variable**: low byte indexes it, low nibble of the high byte selects, left hand side is a byte variable. Six comparisons and two updates, section 107, and **bit 15 gives a comparison a second arm**, section 140 |
+| `0x70` | the same eight, and the same bit 15, with the accumulator as the left hand side |
 | `0x72` | **map a state variable's value**: low byte a state variable, high byte a base slot 14 record |
 | `0x6D`, `0x68` | accumulator **shifted left** or **right** by the operand's low byte; a count of zero is a defined no-op |
 | `0x6B`, `0x6A`, `0x69` | accumulator **AND**, **OR**, **XOR** operand |
@@ -2454,8 +2480,36 @@ Placed by their handlers:
 
 The comparison selector is `0` equal, `1` not equal, `2` greater, `3` less, `4` greater or equal,
 `5` less or equal. Selectors `6` and `7` are not comparisons. **`0x71` uses exactly `0` to `5` and
-nothing else**, over 2164 uses in ten configs, which is what made its high byte look like a group of
-six. `0x70` uses `0` to `3` and also `7`, nine times.
+nothing else**, over 2477<!--fact:compare_71_uses--> uses in 15<!--fact:user_configs--> configs, which is what made its high byte look like a group
+of six. `0x70` uses `0` to `3` and also `7`, nine times.
+
+The high byte's other end is a **flag, and it says how many arms the conditional has**, section 140.
+The handler tests bit 15 after the comparison, on all seven firmware images across four
+architectures, and with the bit set a comparison that comes out **true** zeroes the three bytes two
+slots ahead in the interpreter's queue, which opcode `0x00` makes a no-op. So:
+
+```
++0x00  u8   opcode, 0x70 or 0x71
++0x01  u16  operand:
+             bits  0 to  7   the base slot 13 state variable index
+             bits  8 to 11   the operation, 0 to 7 above
+             bits 12 to 14   read by nothing, zero in every instruction in the corpus
+             bit  15         set: the next two instructions are the two arms
+                             clear: the next instruction runs only if the comparison holds
+```
+
+A false comparison always skips the next instruction by fetching its three bytes and discarding
+them, so the untaken arm of a two armed conditional is cancelled in whichever direction it falls. The
+untaken arm has to be **overwritten** rather than jumped over, because the handler returns before the
+arm runs, which is why the interpreter reads its instructions out of a writable copy in RAM.
+
+The corpus closure is exact in both directions: a flagged conditional is followed by exactly two
+instructions and an unflagged one by exactly one, and the list ends there, over 600<!--fact:compare_else_arms--> and
+2084<!--fact:compare_one_arm--> instructions with no exception. No list holds two conditionals and no arm is itself a conditional, so
+an action list is a straight run with at most one branch at the end of it. 2357 of the 3284<!--fact:compare_arms--> arms are
+`0x7F`, a call to another list, which is how a config puts more than one instruction in a branch; 17
+are opcode `0x00`, an explicitly empty one. Every flagged instruction in the corpus is a `0x71`, which
+is a fact about the corpus and not the format, since one handler serves both opcodes.
 
 **What `6` and `7` are is read**, section 107: the left hand side is **added to** the variable and,
 for `7`, negated first and so **subtracted from** it, in both cases clamped to the range base slot 13
@@ -2680,7 +2734,7 @@ Where the division happens is not established.
 ## Open questions
 
 1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted
-   for: two header records, sixteen named sections, and 18 and 19 NULL in all thirteen containers.
+   for: two header records, sixteen named sections, and 18 and 19 NULL in all fifteen containers.
    Section 47 closed the last one. What is open is now one level down, inside the sections, and
    each entry above says which part of itself is not established.
 2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is

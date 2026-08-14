@@ -11,7 +11,7 @@ import collections
 import unittest
 
 import lab
-from harmony.pic18 import chains, isa
+from harmony.pic18 import chains, isa, trace
 
 BASE = 0x9000
 
@@ -42,12 +42,22 @@ INSTRUCTION_BYTES = 3
 
 
 def instructions(name, start, count):
+    return instructions_at(name, BASE, start, count)
+
+
+def instructions_at(name, base, start, count):
+    """`instructions` for an image that does not load at `BASE`.
+
+    Section 140 needs the same window on four architectures, whose bases are `0x0000`, `0x9000`,
+    `0x10000` and `0x20000`. A wrong base here does not fail, it produces a plausible listing, which
+    is why the base is a parameter rather than a default with an override.
+    """
     code = lab.load(name)
     out = []
-    offset = start - BASE
+    offset = start - base
     for _ in range(count):
-        instr = isa.decode(code, offset, BASE)
-        out.append((BASE + offset, instr))
+        instr = isa.decode(code, offset, base)
+        out.append((base + offset, instr))
         offset += 2 * instr.words
     return out
 
@@ -168,7 +178,15 @@ class TestTheDispatcher(unittest.TestCase):
 
 
 class TestTheComparisonSelector(unittest.TestCase):
-    """0x70 and 0x71: the low nibble of the operand's high byte picks the operator."""
+    """0x70 and 0x71: the low nibble of the operand's high byte picks the operator.
+
+    Section 140 adds bit 15, which section 34 could see and not read. The class keeps its name
+    because the selector is still the subject; the flag is a second field of the same byte and the
+    tests for it are below.
+    """
+
+    CONFIGS = lab.USER_CONFIGS
+    CONDITIONALS = (0x70, 0x71)
 
     def test_the_chain_has_seven_cases_numbered_one_to_seven(self):
         name = 'h700_code'
@@ -186,10 +204,9 @@ class TestTheComparisonSelector(unittest.TestCase):
         not a comparison, nine times. So the rule belongs to 0x71 and not to the pair.
         """
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         selectors = {0x70: set(), 0x71: set()}
-        for config in ('h700_config', 'h700_config_2', 'h600_config', 'h525_config',
-                       'one_config', 'one_config_unprogrammed', 'arch8_config_a',
-                       'arch8_config_b', 'arch8_config_c', 'arch8_config_d'):
+        for config in self.CONFIGS:
             c = gspm.parse(lab.load(config))
             for lst in (c.action_lists() or []):
                 for i in lst:
@@ -198,6 +215,89 @@ class TestTheComparisonSelector(unittest.TestCase):
         self.assertEqual(selectors[0x71], {0, 1, 2, 3, 4, 5})
         self.assertEqual(selectors[0x70], {0, 1, 2, 3, 7})
         self.assertNotIn(6, selectors[0x70] | selectors[0x71], 'selector 6 is never used')
+
+    def test_the_selector_is_a_nibble_and_a_flag_with_three_dead_bits_between(self):
+        """Section 140: what the rest of that byte is, measured rather than masked away.
+
+        The test above masks with `0x0F`, which is what the firmware's own nibble decode does, so it
+        could not see the top bit at all. Stating the whole byte is what makes the mask a reading
+        instead of a habit: bit 15 is set on 600 instructions, all of them `0x71`, and bits 12 to 14
+        are set on none.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        flagged = {0x70: 0, 0x71: 0}
+        middle = 0
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for i in lst:
+                    if i.opcode not in self.CONDITIONALS:
+                        continue
+                    flagged[i.opcode] += (i.operand >> 15) & 1
+                    middle += 1 if (i.operand >> 8) & 0x70 else 0
+        self.assertEqual(middle, 0, 'bits 12 to 14 are read by nothing and set by nothing')
+        # Not a format rule: the one handler tests the bit for both opcodes, so `0x70` could carry
+        # it. What the corpus says is that no generator has ever emitted a two armed `0x70`.
+        self.assertEqual(flagged, {0x70: 0, 0x71: 600})
+
+    def test_the_flag_says_whether_the_conditional_has_one_arm_or_two(self):
+        """Section 140's corpus closure, and it is exact in both directions.
+
+        The firmware reading is that a false comparison skips the next instruction by fetching it,
+        and that with bit 15 set a true one also zeroes the three bytes two slots ahead, which
+        opcode `0x00` makes a no-op. So the instructions after the comparison are its arms: one
+        without the flag and two with it.
+
+        What makes this a closure rather than a bound is that both counts are exact and the list
+        ends there. A flagged conditional has exactly two instructions after it, never three, and an
+        unflagged one exactly one, never two, over all 2684 conditionals in the corpus. Nothing in
+        the container states either number, so a wrong reading of the flag would show up here as a
+        conditional whose arms run off the end of its own list or as a list with unreachable bytes
+        at the end.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        following = {0: collections.Counter(), 1: collections.Counter()}
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                for at, i in enumerate(lst):
+                    if i.opcode not in self.CONDITIONALS:
+                        continue
+                    flag = (i.operand >> 15) & 1
+                    following[flag][len(lst) - at - 1] += 1
+        self.assertEqual(dict(following[0]), {1: 2084}, 'one arm, and the list ends after it')
+        self.assertEqual(dict(following[1]), {2: 600}, 'two arms, and the list ends after them')
+
+    def test_a_list_holds_at_most_one_conditional_and_never_as_an_arm(self):
+        """The other half of section 140's shape, and it is what rules out nesting.
+
+        A flagged conditional with a second conditional as its first arm would satisfy the counts
+        above, since the inner one would then have one instruction after it. None exists. So an
+        action list is a straight run of instructions with at most one branch at the end of it, and
+        an editor never has to reason about a nested condition.
+        """
+        from harmony import gspm
+        lab.require(*self.CONFIGS)
+        per_list = collections.Counter()
+        arms = collections.Counter()
+        for config in self.CONFIGS:
+            c = gspm.parse(lab.load(config))
+            for lst in (c.action_lists() or []):
+                at = [k for k, i in enumerate(lst) if i.opcode in self.CONDITIONALS]
+                per_list[len(at)] += 1
+                for k in at:
+                    for arm in lst[k + 1:k + 2 + ((lst[k].operand >> 15) & 1)]:
+                        arms[arm.opcode] += 1
+        self.assertEqual(sorted(per_list), [0, 1], 'no list carries two conditionals')
+        self.assertEqual(per_list[1], 2684)
+        self.assertEqual(arms[0x70] + arms[0x71], 0, 'and no arm is itself a conditional')
+        # Most arms are a call, which is how a config puts more than one instruction in a branch:
+        # 2357 of the 3284. The 17 arms that are opcode `0x00` are the empty branch, which is the
+        # corpus agreeing with the mechanism, since zeroing a slot is how the flag cancels an arm.
+        self.assertEqual(sum(arms.values()), 3284)
+        self.assertEqual((arms[0x7F], arms[0x00]), (2357, 17))
 
     def test_the_index_byte_under_64_belongs_to_0x71_alone(self):
         """Section 33's "low byte always under 64" is `0x71`'s, and it is not a bound on the field.
@@ -230,6 +330,110 @@ class TestTheComparisonSelector(unittest.TestCase):
         self.assertEqual((worst[0x70], worst[0x72]), (81, 83))
 
 
+class TestTheElseArmIsOneTableAcrossArchitectures(unittest.TestCase):
+    """findings.md section 140: every firmware here tests bit 15 and zeroes three queue bytes.
+
+    Worth its own class because of what it rules out. Two structures in this language are **not** one
+    table across architectures, `0x3F`'s bands and the block `0x65` to `0x6E`, and a third was found
+    on 13 August 2026 when `0x0F`'s bands turned out to have been read on two architectures and
+    applied to a third that does not implement them. So an "all architectures" claim about the
+    interpreter is exactly the kind that has been wrong here before, and this one is asserted per
+    image rather than inferred from arch 14.
+
+    Seven images, four architectures. The addresses are recorded because finding them again is a
+    search: the route is the `MOVLW 0x0F; ANDWF f,W` that starts the selector chain, then a trace of
+    `f` for the one instruction that reads bit 7 of it.
+    """
+
+    # image -> (load base, the chain's nibble mask, the BTFSS, the data address both read,
+    #           how many `CLRF INDF0` are inline on the taken path)
+    #
+    # The data address is the full one, bank included, because that is what the tracer takes; the
+    # instructions themselves encode only its low byte and a bank select two instructions earlier.
+    SITES = {
+        'h700_code': (0x9000, 0x0EEAC, 0x0EF62, 0x1BC, 3),
+        'h600_code_complete': (0x9000, 0x0EABC, 0x0EB72, 0x2B3, 3),
+        'h650_code': (0x9000, 0x0EE9A, 0x0EF50, 0x1BC, 3),
+        'one34_code': (0x20000, 0x2519C, 0x25252, 0xEBE, 3),
+        # Arch 9 compiles the same thing with less inlining: one clear inline and a helper called
+        # twice that clears, increments and bounds. Stated exactly rather than as "at least one",
+        # because a bound under the figure is what a missing clear would slip through.
+        'h525_code': (0x0, 0x01E48, 0x01EFE, 0x3D8, 1),
+        'arch8_code_880': (0x10000, 0x133EA, 0x134A0, 0x3B3, 3),
+        'arch8_code_885': (0x10000, 0x133EA, 0x134A0, 0x3B3, 3),
+    }
+
+    def test_the_nibble_mask_and_the_bit_test_read_the_same_byte(self):
+        """The pairing, which is what says the flag lives in the operand and not somewhere else.
+
+        A `BTFSS` on bit 7 of some byte proves nothing on its own. It is evidence about the operand
+        only because the byte is the one the selector chain has just masked with `0x0F`, so this
+        asserts both instructions and their shared register in one place.
+        """
+        lab.require(*self.SITES)
+        for name, (base, mask, test, f, _) in self.SITES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                masking = isa.decode(code, mask - base, base)
+                self.assertEqual(masking.mnemonic, 'ANDWF')
+                self.assertEqual(masking.fields['f'], f & 0xFF)
+                self.assertEqual(masking.fields['d'], 0, 'the result goes to W, not back to the byte')
+                # The bank select sits between the literal and the mask, and it is what makes the
+                # low byte in the encoding the address in the table.
+                bank = isa.decode(code, mask - base - 2, base)
+                self.assertEqual((bank.mnemonic, bank.fields['k']), ('MOVLB', f >> 8))
+                literal = isa.decode(code, mask - base - 4, base)
+                self.assertEqual((literal.mnemonic, literal.fields['k']), ('MOVLW', 0x0F))
+
+                testing = isa.decode(code, test - base, base)
+                self.assertEqual(testing.mnemonic, 'BTFSS')
+                self.assertEqual((testing.fields['f'], testing.fields['b']), (f & 0xFF, 7))
+
+    def test_the_bit_is_read_exactly_once_per_image(self):
+        """The falsifier for reading one site as the whole mechanism.
+
+        If the same byte's bit 7 were tested in two places the reading would be incomplete, and the
+        `& 0x0F` that section 34 recorded would still be the only thing anybody could say about it.
+
+        Traced through `harmony.pic18.trace` rather than by sweeping the image, and the difference
+        is not cosmetic: a linear decode from offset 0 reports a second site on both arch 8 images,
+        because it has no idea which bank is selected and reads whatever byte happens to sit at
+        offset `0xB3` of some other one. The tracer follows `MOVLB`, which is the whole reason it
+        exists. The first version of this test did the sweep and its extra hit looked like a
+        finding.
+        """
+        lab.require(*self.SITES)
+        for name, (base, _, test, f, _) in self.SITES.items():
+            with self.subTest(image=name):
+                accesses = trace.trace(lab.load(name), base, [f])[f]
+                at = [a.addr for a in accesses if a.kind.startswith(('BTFSS', 'BTFSC'))]
+                self.assertEqual(at, [test])
+                self.assertEqual([a.kind for a in accesses if a.addr == test], ['BTFSS bit7'])
+
+    def test_the_taken_path_steps_three_bytes_on_and_clears_three(self):
+        """What the bit does, as far as a decoded window can state it.
+
+        Three is the instruction width, so `+3` from the interpreter's own pointer, which already
+        sits on the next instruction, lands on the one after it. The clears then walk forward one
+        byte at a time with a wrap, which is why the queue's size appears as a literal in the same
+        window: 120 bytes, `QUEUE_BYTES`.
+        """
+        lab.require(*self.SITES)
+        for name, (base, _, test, _, clears) in self.SITES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                window = instructions_at(name, base, test, 60)
+                steps = [b for (_, a), (_, b) in zip(window, window[1:])
+                         if a.mnemonic == 'MOVLW' and a.fields.get('k') == INSTRUCTION_BYTES
+                         and b.mnemonic == 'ADDWF']
+                self.assertEqual(len(steps), 1, 'one step of one instruction width')
+                inline = [1 for _, i in window if i.mnemonic == 'CLRF' and i.fields.get('f') == 0xEF]
+                self.assertEqual(len(inline), clears)
+                wrap = [i.fields['k'] for _, i in window
+                        if i.mnemonic == 'MOVLW' and i.fields.get('k') == QUEUE_BYTES]
+                self.assertEqual(len(wrap), 1, 'and one wrap by the queue length')
+
+
 class TestTheStateVariableRecord(unittest.TestCase):
     """findings.md section 60: what base slot 13's pointers land on, and how long it is.
 
@@ -239,10 +443,7 @@ class TestTheStateVariableRecord(unittest.TestCase):
     chose.
     """
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d', 'one_spare_before_sync',
-               'one_spare_after_sync', 'h700_gspm', 'one_safemode')
+    CONFIGS = lab.USER_CONFIGS
 
     def test_no_record_overruns_the_next_and_most_abut_it_exactly(self):
         """
@@ -262,8 +463,8 @@ class TestTheStateVariableRecord(unittest.TestCase):
                     self.assertLessEqual(address + length, following, 'the record overruns')
                 total += 1
                 exact += address + length == following
-        self.assertEqual(total, 627, 'consecutive pairs checked')
-        self.assertEqual(exact, 610, 'pairs where the record ends exactly where the next begins')
+        self.assertEqual(total, 686, 'consecutive pairs checked')
+        self.assertEqual(exact, 664, 'pairs where the record ends exactly where the next begins')
 
     def test_the_count_is_the_one_the_owner_asked_for(self):
         """
@@ -319,9 +520,7 @@ class TestTheStateVariableRecord(unittest.TestCase):
 class TestTheStateVariableTable(unittest.TestCase):
     """findings.md section 35: base slot 13, and the split the firmware's lookup uses."""
 
-    CONFIGS = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-               'arch8_config_c', 'arch8_config_d')
+    CONFIGS = lab.USER_CONFIGS
 
     @staticmethod
     def _table(name):
@@ -346,7 +545,7 @@ class TestTheStateVariableTable(unittest.TestCase):
                                  'the header accounts for the whole section')
                 counts.add(table.count)
         self.assertGreater(len(counts), 5, 'the count varies, so matching it means something')
-        self.assertEqual((min(counts), max(counts)), (24, 94))
+        self.assertEqual((min(counts), max(counts)), (21, 94))
 
     def test_every_index_is_inside_its_own_config_s_table(self):
         from harmony import gspm
@@ -382,7 +581,7 @@ class TestTheStateVariableTable(unittest.TestCase):
                         wide_uses += 1
                         with self.subTest(image=name, opcode='0x70'):
                             self.assertFalse(table.is_narrow(i.operand & 0xFF))
-        self.assertEqual((narrow_uses, wide_uses), (2164, 146), 'pin what the claim rests on')
+        self.assertEqual((narrow_uses, wide_uses), (2477, 207), 'pin what the claim rests on')
 
     def test_the_boundary_is_not_the_same_number_in_every_config(self):
         """Otherwise the previous test would pass on a constant rather than on a match."""
@@ -434,7 +633,11 @@ class TestTheEventMap(unittest.TestCase):
     def test_0x7e_avoids_the_reserved_block(self):
         """Two writers of one register share a numbering space, and they do not collide.
 
-        One exception, on the 525, asserted by name so it cannot grow quietly.
+        The exception is asserted by name so it cannot grow quietly, and widening the population
+        from ten configs to fifteen made it **both** arch 9 (Harmony 525) configs rather than one.
+        That is a stronger statement than the old "one exception, on the 525": operand 25 inside the
+        reserved block 11 to 40 is a property of that architecture's own numbering and not a one off
+        in a single file. Section 139.
         """
         from harmony import gspm
         collisions = {}
@@ -448,8 +651,8 @@ class TestTheEventMap(unittest.TestCase):
             inside = sorted(v for v in values if low <= v <= high)
             if inside:
                 collisions[name] = inside
-        self.assertEqual(collisions, {'h525_config': [25]})
-        self.assertEqual(operands, 1246, 'pin the count the claim rests on')
+        self.assertEqual(collisions, {'h525_config': [25], 'h525_config_2': [25]})
+        self.assertEqual(operands, 1593, 'pin the count the claim rests on')
 
     def test_the_block_abuts_the_configs_own_numbering_on_the_one(self):
         """0 to 9, then the reserved 10 to 39, then 40 upward. One allocator, one pool."""
@@ -468,10 +671,13 @@ class TestTheModeTable(unittest.TestCase):
     CONFIGS = TestTheStateVariableTable.CONFIGS
 
     def test_the_count_is_one_more_than_the_largest_0x7e_operand(self):
-        """Ten counts from 103 to 374, each landing on the maximum plus one.
+        """Fifteen counts from 75 to 374, each landing on the maximum plus one.
 
         Asserted as equality rather than as "in range": a table merely large enough would pass a
         bounds check, and that would be true of half the config.
+
+        The floor moved from 103 to 75 when the population went from ten configs to fifteen, which
+        is a range widening rather than a rule breaking: the equality holds on every one. Section 139.
         """
         from harmony import gspm
         lab.require(*self.CONFIGS)
@@ -485,7 +691,7 @@ class TestTheModeTable(unittest.TestCase):
                 self.assertEqual(len(modes), max(operands) + 1)
                 counts.add(len(modes))
         self.assertGreaterEqual(len(counts), 6)
-        self.assertEqual((min(counts), max(counts)), (103, 374))
+        self.assertEqual((min(counts), max(counts)), (75, 374))
 
     def test_the_event_map_indexes_the_same_table(self):
         from harmony import gspm
@@ -702,7 +908,27 @@ class TestTheBindingTable(unittest.TestCase):
     # the closure the comment below used to claim and nothing asserted. The others are sparse, and
     # arch 9's highest is 57 because its codes are `group * 8 + column` with no multiple of eight
     # bound, so a bound of 50 there would be wrong rather than conservative.
-    SCANS_PER_ARCHITECTURE = {8: (53, 63), 9: (50, 57), 12: (52, 55), 14: (54, 54)}
+    # **The highest scan a set binds, per architecture**, which is the half that is a property of
+    # the keypad. It is a ceiling and not a count: the corpus never binds a code above it on that
+    # architecture, and section 48 is why a ceiling is the strongest claim available, since a config
+    # binds the keys its owner's activities use rather than the keys the remote has.
+    HIGHEST_SCAN_PER_ARCHITECTURE = {8: 63, 9: 57, 12: 55, 14: 54}
+
+    # **How many distinct scans each config binds, which is per config and was written as per
+    # architecture.** It held while every arch 8 sample was one skin: `arch8_config_885` states
+    # version word 3345, skin 17, where the five 880 samples state 3343, skin 15, and it binds scans
+    # 19 and 60 which none of them ever does. So the 53 was a property of one model. Consistent with
+    # `reference/capabilities.md`'s reading that the 880 and 885 differ by teletext colour keys, and
+    # **not evidence for it**: two extra bound codes against four extra keys, from one config, where
+    # an unbound key proves nothing at all. Section 139.
+    SCANS_PER_CONFIG = {
+        'arch8_config_a': 53, 'arch8_config_b': 53, 'arch8_config_c': 53, 'arch8_config_d': 53,
+        'arch8_config_880': 53, 'arch8_config_885': 55,
+        'h525_config': 50, 'h525_config_2': 50,
+        'one_config': 52, 'one_config_unprogrammed': 52,
+        'one_spare_before_sync': 52, 'one_spare_after_sync': 52,
+        'h700_config': 54, 'h700_config_2': 54, 'h600_config': 54,
+    }
 
     def test_the_other_tags_are_key_events_by_the_slot_8_split(self):
         """Tags at 0x80 and above decode as press, release or repeat with a scan code."""
@@ -719,8 +945,10 @@ class TestTheBindingTable(unittest.TestCase):
                 # Every one is a real event type, never the 0x40 release-only bit on its own.
                 self.assertTrue(all(t & gspm.EVENT_MASK in (0x80, 0xC0) for t in high))
                 scans = {t & gspm.SCAN_MASK for t in high}
-                count, highest = self.SCANS_PER_ARCHITECTURE[c.architecture]
-                self.assertEqual((len(scans), max(scans)), (count, highest))
+                self.assertEqual(max(scans), self.HIGHEST_SCAN_PER_ARCHITECTURE[c.architecture],
+                                 'the ceiling is the keypad and belongs to the architecture')
+                self.assertEqual(len(scans), self.SCANS_PER_CONFIG[name],
+                                 'the count is what this config binds and belongs to the config')
                 self.assertEqual(min(scans), 1, 'a scan code is one based on every architecture')
                 if c.architecture == 14:
                     # The whole key table, which is what makes this a closure rather than a count:
@@ -974,14 +1202,19 @@ class TestTheScreenInterpreter(unittest.TestCase):
                         continue
                     total += 1
                     printable += all(32 <= b < 127 for b in instruction.glyphs)
-        self.assertGreater(total, 500)
+        self.assertEqual(total, 7362)
         # The claim that matters is that no *word* appears. Short strings land in the printable
-        # range by chance, and section 66 tripled the corpus of them, so the by-chance rate moved
-        # from under 1 in 50 to 1 in 28: 201 of 5656, of which 198 are three codes or shorter.
+        # range by chance, and the rate has moved twice as the corpus grew: under 1 in 50, then
+        # 1 in 28 after section 66 tripled the population, and 1 in 30.4 now, 242 of 7362.
         self.assertLess(printable, total / 25)
-        # The three longer ones are `)!6$!` twice and `'=''`, so the sharper statement is that no
-        # printable run of four or more contains a **letter**. That was true under the old
-        # threshold too and it stays true here, where the weaker length rule would now fail.
+        # **The sharper statement used to be that no printable run of four or more contains a
+        # letter at all, and that was a property of the population rather than of the format.** It
+        # held on ten configs and fails on fifteen: `arch8_config_885` has one five code run that is
+        # entirely printable and holds a single letter. Chance, which is what the ratio above says
+        # to expect, and the honest form of "no word appears" is that **no two letters are ever
+        # adjacent**, which holds over the whole corpus with the longest such run at one. Section
+        # 139. Stated as a maximum rather than an absence, so it says how much slack there is.
+        longest = 0
         for name in self.CONFIGS:
             c = gspm.parse(lab.load(name))
             for program in self._walk(c)[0]:
@@ -989,8 +1222,13 @@ class TestTheScreenInterpreter(unittest.TestCase):
                     codes = instruction.glyphs
                     if not codes or len(codes) < 4:
                         continue
-                    if all(32 <= b < 127 for b in codes):
-                        self.assertFalse(any(chr(b).isalpha() for b in codes))
+                    if not all(32 <= b < 127 for b in codes):
+                        continue
+                    run = 0
+                    for b in codes:
+                        run = run + 1 if chr(b).isalpha() else 0
+                        longest = max(longest, run)
+        self.assertEqual(longest, 1, 'two adjacent letters would be a word rather than chance')
 
     def test_a_truncated_program_is_refused_rather_than_guessed(self):
         from harmony import gspm

@@ -366,12 +366,68 @@ def corpus_facts():
     return {k: str(v) for k, v in totals.items()}
 
 
+def user_config_facts():
+    """The totals `docs/config-format.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
+
+    **Every one of these had drifted**, and section 140 is the write up. The document said "ten
+    configs across four architectures" in 23 places while the lab held fifteen, because eight test
+    classes each carried their own literal and none of them was the document's. Widening the classes
+    moved nine totals at once, so the totals are computed here rather than transcribed: a number
+    nobody recomputes is a number that goes stale the next time a sample arrives, which is the whole
+    argument this file opens with.
+
+    One pass over the corpus, because parsing fifteen containers twice would double the cost of
+    `make facts` for nothing.
+    """
+    import lab
+    from harmony import gspm
+
+    if any(lab.path(n) is None for n in lab.USER_CONFIGS):
+        return {}
+
+    totals = dict.fromkeys(
+        ('ir_references', 'ir_groups', 'send_lists', 'high_band_uses', 'value_map_targets',
+         'event_map_operands', 'compare_71_uses', 'compare_else_arms', 'compare_one_arm',
+         'compare_arms'), 0)
+    for name in lab.USER_CONFIGS:
+        c = gspm.parse(lab.load(name))
+
+        groups = c.ir_groups() or []
+        totals['ir_groups'] += len(groups)
+        totals['ir_references'] += sum(len(g) for g in groups)
+
+        for m in (c.value_maps() or []):
+            totals['value_map_targets'] += len(m.entries) + len(m.ranges)
+
+        events = {i.operand for lst in (c.action_lists() or []) for i in lst if i.opcode == 0x7E}
+        totals['event_map_operands'] += len(events)
+
+        for lst in (c.action_lists() or []):
+            opcodes = [i.opcode for i in lst]
+            if gspm.OPCODE_SEND_IR in opcodes:
+                totals['send_lists'] += 1
+            for at, i in enumerate(lst):
+                if i.opcode in (0x1F, 0x3F, 0x07, 0x0F) and i.operand >= 0xC000:
+                    totals['high_band_uses'] += 1
+                if i.opcode not in (0x70, 0x71):
+                    continue
+                if i.opcode == 0x71:
+                    totals['compare_71_uses'] += 1
+                arms = 2 if (i.operand >> 15) & 1 else 1
+                totals['compare_arms'] += arms
+                totals['compare_else_arms' if arms == 2 else 'compare_one_arm'] += 1
+    totals['user_configs'] = len(lab.USER_CONFIGS)
+    return {k: str(v) for k, v in totals.items()}
+
+
 def superseded_phrases():
     """The dead phrasings, read from the table in `reference/superseded.md`."""
     if not os.path.exists(SUPERSEDED):
         return []
     out = []
-    for line in open(SUPERSEDED, encoding='utf-8'):
+    with open(SUPERSEDED, encoding='utf-8') as fh:
+        superseded_lines = fh.read().splitlines(True)
+    for line in superseded_lines:
         if not line.startswith('| `'):
             continue
         cells = [c.strip() for c in line.strip().strip('|').split('|')]
@@ -391,7 +447,8 @@ def check_numbers(facts, write, edits=None):
     """
     problems = []
     for doc in documents():
-        text = open(doc, encoding='utf-8').read()
+        with open(doc, encoding='utf-8') as fh:
+            text = fh.read()
         changed = text
         # **Counted, not a set of names**, which is a correction rather than a tidy-up. `attached` was
         # a set, so two properly attached uses of one fact in a document collapsed to one entry and
@@ -426,7 +483,8 @@ def check_numbers(facts, write, edits=None):
                 problems.append('%s: %s says %s, the corpus says %s'
                                 % (rel(doc), name, value, want))
         if write and changed != text:
-            open(doc, 'w', encoding='utf-8').write(changed)
+            with open(doc, 'w', encoding='utf-8') as fh:
+                fh.write(changed)
     return problems
 
 
@@ -469,7 +527,8 @@ def check_phrases():
         # `packages/`. Measured: it accepted a dead screen program count in `screen.ts` for exactly
         # that reason.
         structural = not doc.endswith(SOURCE_SUFFIXES)
-        lines = open(doc, encoding='utf-8', errors='replace').read().splitlines()
+        with open(doc, encoding='utf-8', errors='replace') as fh:
+            lines = fh.read().splitlines()
         flat, owner = flatten(lines)
         low = flat.lower()
         for phrase, killed_by in phrases:
@@ -510,6 +569,7 @@ def main():
     facts.update(text_facts())
     facts.update(activity_facts())
     facts.update(device_facts())
+    facts.update(user_config_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):
@@ -540,7 +600,13 @@ def main():
         print('facts: %d problem(s). `tools/facts.py --write` fixes the numeric ones.'
               % len(problems))
         return 1
-    marked = sum(len(MARKER.findall(open(d, encoding='utf-8').read())) for d in documents())
+    # `with`, not a bare `open` in a generator: this walks every document and every source file, so
+    # leaking a handle per file printed a screen of ResourceWarnings over the end of `make all`,
+    # which is where anybody looking for a real warning would look.
+    marked = 0
+    for d in documents():
+        with open(d, encoding='utf-8') as fh:
+            marked += len(MARKER.findall(fh.read()))
     print('facts: %d marked value(s) agree, %d superseded phrase(s) absent'
           % (marked, len(superseded_phrases())))
     return 0

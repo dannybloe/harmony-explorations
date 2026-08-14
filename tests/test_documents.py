@@ -215,7 +215,8 @@ class TestTheDetachedMarkerDiagnostic(unittest.TestCase):
 
     def test_the_shipped_tool_agrees_with_this_reading(self):
         """Against `tools/facts.py` itself, so the two cannot drift apart."""
-        source = open(os.path.join(ROOT, 'tools', 'facts.py'), encoding='utf-8').read()
+        with open(os.path.join(ROOT, 'tools', 'facts.py'), encoding='utf-8') as fh:
+            source = fh.read()
         self.assertIn('collections.Counter(m.group(2) for m in MARKER.finditer(text))', source)
         self.assertNotIn('attached = {m.group(2) for m in MARKER.finditer(text)}', source)
 
