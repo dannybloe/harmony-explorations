@@ -1052,7 +1052,11 @@ class TestActionLists(unittest.TestCase):
         """
         lab.require(*self.CONFIGS)
         scans = {}
-        for name in ('h700_config', 'h600_config', 'one_config', 'h525_config', 'arch8_config_a'):
+        # Every user config, section 141: five names stood here, one per architecture, and the claim
+        # in the title is about every binding. The entry floor stays a floor rather than becoming a
+        # count, because the number of bindings is a property of each config; what is exact is the
+        # event type set and the per model comparisons below.
+        for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 entries = [b for r in c.binding_records() for b in r]
@@ -1312,14 +1316,24 @@ class TestTheArch9InfraredHeader(unittest.TestCase):
         self.assertEqual(c.ir_pulses(records[0]), [])
 
     def test_the_other_architectures_are_unaffected(self):
-        """The calibration: opening the header claim to class 5 must not touch class 1."""
+        """The calibration: opening the header claim to class 5 must not touch class 1.
+
+        Every user config that is not arch 9 (Harmony 525), which is stated as a predicate rather
+        than by naming three of them, section 141. Arch 9 is the architecture whose records are class
+        5, so excluding it by architecture is the claim and excluding it by omission was not.
+        """
         from harmony import gspm
-        for name in ('h700_config', 'one_config', 'arch8_config_a'):
-            lab.require(name)
+        lab.require(*lab.USER_CONFIGS)
+        checked = 0
+        for name in lab.USER_CONFIGS:
             c = gspm.parse(lab.load(name))
+            if c.architecture == 9:
+                continue
             classes = {c.ir_class(a) for g in c.ir_groups() for a in g}
             with self.subTest(config=name):
                 self.assertEqual(classes, {gspm.IR_CLASS_STREAM})
+            checked += 1
+        self.assertEqual(checked, 13, 'and the two arch 9 configs are the only ones skipped')
 
 
 class TestTheInfraredRecordExtent(unittest.TestCase):
@@ -1339,10 +1353,11 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
     the ones the heuristic could not pass.
     """
 
-    STREAM = ('h700_config', 'h700_config_2', 'h600_config', 'one_config',
-              'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b',
-              'arch8_config_c', 'arch8_config_d', 'one_spare_before_sync',
-              'one_spare_after_sync')
+    # Every user config whose records are class 1, which is every architecture but arch 9 (Harmony
+    # 525). Derived rather than listed, section 141: eleven names stood here and the two arch 8
+    # (Harmony 880 and 885) configs were the ones missing, which is exactly where section 134's second
+    # pointer group came from, so the tiling closure had never been asserted on them.
+    STREAM = tuple(n for n in lab.USER_CONFIGS if not n.startswith('h525_'))
 
     def blocks_and_headers(self, c):
         """Every distinct block address, every record header start, and the top of the area.
@@ -1396,8 +1411,11 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
         # could not see, because the header's second pointer group was missing from the boundary list.
         # With all three pointers of every declared group the tiling is exact on every block, which
         # makes it a real closure rather than one with an unexplained remainder.
+        # 3715 over the eleven names this class used to list. The two arch 8 (Harmony 880 and 885)
+        # configs it was missing are where section 134's second pointer group lives, so the tiling had
+        # never been asserted on the configs the correction came from. Section 141.
         self.assertEqual(short, 0)
-        self.assertEqual(exact, 3715)
+        self.assertEqual(exact, 4692)
 
     def test_arch_9_finds_a_terminator_and_it_is_the_wrong_one(self):
         """
@@ -2031,27 +2049,80 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
     popular remote is the arch 12 Harmony One.
     """
 
+    #: The six base slots that hold a count prefixed array of three byte flash pointers.
+    ARRAYS = [5, 7, 10, 11, 12, 15]
+
+    def _fingerprint(self, name):
+        c = gspm.parse(lab.load(name))
+        return c, [gspm.base_slot(c.architecture, s) for s in c.pointer_array_slots]
+
     def test_the_mapping_collapses_every_fingerprint_onto_the_base_layout(self):
         """
         Two independent fingerprints, the six pointer array slots and the single one byte
         section, both land on the same base slots for all four architectures. Two anchors that
         agree is what makes this an alignment rather than an arithmetic coincidence.
+
+        **The population is stated by a predicate rather than by names**, section 141. Six names stood
+        here, one per architecture plus the unprogrammed Harmony One, and widening it to every
+        container fails on all six safe mode ones. Not because the alignment is wrong there: the
+        fingerprint is a **content** heuristic, a section reads as an array when a count and that many
+        in range pointers are actually present, and in a safe mode container base slots 5, 11 and 12
+        are one or two bytes, which is an array with a count of zero. A heuristic cannot see a
+        structure with no members. So the honest claim is over the containers where all six sections
+        carry something, and which those are is measured below rather than listed.
         """
-        lab.require('h700_config', 'h600_config', 'h525_config', 'one_config', 'one_config_unprogrammed', 'arch8_config_a')
-        for name in ('h700_config', 'h600_config', 'h525_config', 'one_config',
-                     'one_config_unprogrammed', 'arch8_config_a'):
+        lab.require(*lab.ALL_CONTAINERS)
+        populated = []
+        for name in lab.ALL_CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            if all(c.section_length(gspm.arch_slot(c.architecture, b)) > 2 for b in self.ARRAYS):
+                populated.append(name)
+        # Every user config in the corpus, and no safe mode container. Exact, because "most of them"
+        # would hide a config that had stopped reading as one.
+        self.assertEqual(len(populated), 15)
+        for name in populated:
             with self.subTest(image=name):
-                c = gspm.parse(lab.load(name))
-                arrays = [gspm.base_slot(c.architecture, s) for s in c.pointer_array_slots]
+                c, arrays = self._fingerprint(name)
                 one_byte = [gspm.base_slot(c.architecture, i)
                             for i in range(c.pointer_count) if c.section_length(i) == 1]
-                self.assertEqual(arrays, [5, 7, 10, 11, 12, 15])
+                self.assertEqual(arrays, self.ARRAYS)
                 self.assertEqual(one_byte, [16])
 
+    def test_a_safe_mode_container_fails_the_fingerprint_for_a_stated_reason(self):
+        """The other half of the population above, asserted rather than left as an exclusion.
+
+        An excluded sample is a claim: that it is excluded for the reason given and not because it
+        disagrees. So this says what each safe mode container is missing and that every missing slot
+        is an **empty** array, two bytes or fewer, which is what the heuristic cannot recognise. Base
+        slot 9 reads as an array in all six of them and in no user config, which is the same effect
+        the other way round: there it is populated only in safe mode.
+        """
+        lab.require(*lab.ALL_CONTAINERS)
+        safe = [n for n in lab.ALL_CONTAINERS
+                if any(gspm.parse(lab.load(n)).section_length(
+                    gspm.arch_slot(gspm.parse(lab.load(n)).architecture, b)) <= 2
+                    for b in self.ARRAYS)]
+        self.assertEqual(len(safe), 6)
+        for name in safe:
+            with self.subTest(image=name):
+                c, arrays = self._fingerprint(name)
+                for base in self.ARRAYS:
+                    if base in arrays:
+                        continue
+                    raw = gspm.arch_slot(c.architecture, base)
+                    self.assertLessEqual(c.section_length(raw), 2,
+                                         'base slot %d is missing and is not empty' % base)
+                self.assertIn(9, arrays, 'and base slot 9 reads as an array in every one')
+
     def test_the_base_layouts_trailing_slot_is_null_on_every_architecture(self):
-        """A third anchor, and it is free: base slot 18 is NULL in all four."""
-        lab.require('h700_config', 'h525_config', 'one_config', 'arch8_config_a')
-        for name in ('h700_config', 'h525_config', 'one_config', 'arch8_config_a'):
+        """A third anchor, and it is free: base slot 18 is NULL in every container.
+
+        Four names stood here, one per architecture, which is what "on every architecture" asks for
+        and is not what `docs/config-format.md` says: that document claims base slots 18 and 19 are
+        NULL in every container. Section 141.
+        """
+        lab.require(*lab.ALL_CONTAINERS)
+        for name in lab.ALL_CONTAINERS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 self.assertTrue(c.sections[gspm.arch_slot(c.architecture, 18)].is_null)
@@ -2751,12 +2822,13 @@ class TestTheInfraredClassByte(unittest.TestCase):
 class TestTheTrailerChecksum(unittest.TestCase):
     """findings.md section 41: a seeded sixteen bit word XOR, derived from the boot validator."""
 
-    SAMPLES = ('h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-               'arch8_config_d', 'h600_safemode_gspm', 'h650_safemode_gspm', 'h700_gspm',
-               'one_safemode')
+    # **Every container, and it used to be fourteen names**, section 141: this list was missing
+    # `h525_config_2` and `h525_safemode_ahcm`, which the corpus has held for a week, while the test
+    # below is called "on every container in the corpus". A title is a claim.
+    SAMPLES = lab.ALL_CONTAINERS
 
     def test_it_recomputes_on_every_container_in_the_corpus(self):
+        lab.require(*self.SAMPLES)
         for name in self.SAMPLES:
             data = lab.load(name)
             c = gspm.parse(data)

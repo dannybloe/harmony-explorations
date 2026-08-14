@@ -1190,13 +1190,20 @@ Established norms:
   `REBUILT` and `ALL_CONTAINERS` are the same nineteen containers and one of them held eighteen for
   as long as that sample had existed, because each file's own totals stayed self consistent.
   `TheCorpusWidePopulationsAgree` in `tests/test_toolchain.py` compares them statically, in a fresh
-  clone with no lab.
+  clone with no lab. **And the same check was needed one boundary further out**, sections 140 and 141:
+  the Python side had its own corpus of fifteen against those nineteen, and twenty nine hand written
+  populations between the test files, nine of which were smaller than the claim above them. There are
+  three lists now and each states its question: `lab.ALL_CONTAINERS` at 21 for a per container claim,
+  `lab.CONTAINERS` at 15 for a corpus wide total, `lab.USER_CONFIGS` at 15 for every programmed
+  config. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
+  ones where the exclusion had a reason, and stating the reason as a measurement turns an exclusion
+  into a check.
 
 ## Where the work stands
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 140 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 141 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

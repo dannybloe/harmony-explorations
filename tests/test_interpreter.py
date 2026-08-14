@@ -128,10 +128,11 @@ class TestTheExecutor(unittest.TestCase):
         """So the firmware has a path the corpus does not exercise. Worth knowing before a
         writer emits an operand it has never seen the remote handle."""
         from harmony import gspm
+        lab.require(*lab.USER_CONFIGS)
         seen = set()
-        for config in ('h700_config', 'h700_config_2', 'h600_config', 'h525_config',
-                       'one_config', 'one_config_unprogrammed', 'arch8_config_a',
-                       'arch8_config_b', 'arch8_config_c', 'arch8_config_d'):
+        # "No config in the corpus" is the title, so the population is the corpus and not the ten
+        # names that stood here. Section 141.
+        for config in lab.USER_CONFIGS:
             c = gspm.parse(lab.load(config))
             for lst in (c.action_lists() or []):
                 for i in lst:
@@ -315,9 +316,9 @@ class TestTheComparisonSelector(unittest.TestCase):
         narrow half, and the two that reach the wide half go straight past 64.
         """
         from harmony import gspm
+        lab.require(*self.CONFIGS)
         worst = {0x70: 0, 0x71: 0, 0x72: 0}
-        for config in ('h700_config', 'h600_config', 'h525_config', 'one_config',
-                       'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_c'):
+        for config in self.CONFIGS:
             c = gspm.parse(lab.load(config))
             for lst in (c.action_lists() or []):
                 for i in lst:
@@ -2235,12 +2236,16 @@ class TestTheLogArea(unittest.TestCase):
         self.assertEqual(self._area('h700_gspm').limit, 0x100000)
         self.assertEqual(self._area('h525_config').limit, 0x080000)
         self.assertEqual(self._area('h700_config').limit, 0x200000)
-        # And the capacity closure holds on all four, which is what says the field split is right
-        # whatever chip any of them was built for.
-        for name in ('h525_config', 'h525_safemode_ahcm', 'h700_config', 'h700_gspm'):
+        # And the capacity closure holds on **every** container, which is what says the field split is
+        # right whatever chip any of them was built for. Four names stood here, the four this test
+        # names limits for, and the closure is not about those four. Section 141.
+        checked = 0
+        for name in lab.ALL_CONTAINERS:
             area = self._area(name)
             with self.subTest(container=name):
                 self.assertEqual(area.limit - area.start, area.capacity * area.stride)
+            checked += 1
+        self.assertEqual(checked, 21)
 
     def test_the_wrong_field_split_does_not_close(self):
         """Calibration. Reading the leading field as a u24 on the eight byte architectures leaves
@@ -2462,12 +2467,19 @@ class TestTheBitmap(unittest.TestCase):
         The encoded body reads the two `u16` of the header and throws them away, then draws until
         its own terminator. So the number of row breaks it contains and the row count the header
         states are two independent statements, and a walk that is off by one control byte would
-        desynchronise and produce neither. All 95 encoded pictures in the corpus break exactly
-        `rows - 1` times, across the three architectures that carry any.
+        desynchronise and produce neither. Every encoded picture in the corpus
+        breaks exactly `rows - 1` times, across the three architectures that carry any.
+
+        **The population is every container and not `SHAPES`**, section 141: this closure needs only
+        a name, where `SHAPES` is a fixture of expected stride and row sets per sample, so running it
+        over the wider list costs nothing and asserts more. And the total was guarded by
+        `if all(lab.path(...))`, which is unreachable protection, since `lab.load` in the loop raises
+        `SkipTest` for a missing sample so the guard can only ever be true.
         """
         from harmony import gspm
+        lab.require(*lab.ALL_CONTAINERS)
         total = 0
-        for name, _, _, _, _ in self.SHAPES:
+        for name in lab.ALL_CONTAINERS:
             data = lab.load(name)
             with self.subTest(name):
                 c = gspm.parse(data)
@@ -2477,9 +2489,9 @@ class TestTheBitmap(unittest.TestCase):
                         continue
                     self.assertEqual(bitmap.row_breaks, bitmap.rows - 1)
                     total += 1
-        if all(lab.path(name) for name, count, _, _, _ in self.SHAPES if count):
-            # 95 before section 66 reached the programs a mode's pages state.
-            self.assertEqual(total, 129)
+        # 95 before section 66 reached the programs a mode's pages state, and 129 over the eight
+        # names `SHAPES` holds.
+        self.assertEqual(total, 185)
 
     def test_the_pictures_tile_the_region(self):
         """The closure on the extent, and the correction of an earlier negative.
@@ -2522,13 +2534,16 @@ class TestTheModeRecord(unittest.TestCase):
     usually zero it looks like the wide tagged list form with a count running to 255.
     """
 
-    SAMPLES = ['h600_config', 'h700_config', 'h700_config_2', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'h525_config', 'h600_safemode_gspm']
+    # Every container, section 141. Eight names stood here and the claims are per record, so the
+    # population is every container that has records rather than one sample per architecture plus a
+    # safe mode one.
+    SAMPLES = list(lab.ALL_CONTAINERS)
     #: Configs whose modes each carry exactly one enter and one leave handler.
     PAIRED = {'one_config', 'one_config_unprogrammed'}
 
     def test_every_pointer_lands_inside_its_own_record(self):
         from harmony import gspm
+        lab.require(*self.SAMPLES)
         total = 0
         for name in self.SAMPLES:
             data = lab.load(name)
@@ -2542,8 +2557,11 @@ class TestTheModeRecord(unittest.TestCase):
                     self.assertIsNotNone(start)
                     self.assertLess(start, at, 'the back pointer must point backwards')
                     total += 1
-        if all(lab.path(name) for name in self.SAMPLES):
-            self.assertEqual(total, 1616)
+        # An unconditional total. `if all(lab.path(...))` stood here and was unreachable protection:
+        # `lab.load` inside the loop raises `SkipTest` for a missing sample, so the guard could only
+        # ever be true, and a guard that reads as protection and is not is worse than none. It needs
+        # `lab.require` up front instead, which the loop below now has. Section 141.
+        self.assertEqual(total, 2926)
 
     def test_the_list_fits_inside_the_record_it_belongs_to(self):
         """The closure the record start rests on.
@@ -2603,9 +2621,9 @@ class TestTheModePages(unittest.TestCase):
     then indexing with stride 3. The four byte reading it replaces was not wrong, only short.
     """
 
-    SAMPLES = ['h600_config', 'h700_config', 'h700_config_2', 'one_config',
-               'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-               'arch8_config_d', 'h525_config', 'h600_safemode_gspm', 'one_safemode']
+    # Every container, section 141: twelve names stood here, which was every container the corpus
+    # held when the class was written and three short of it afterwards.
+    SAMPLES = list(lab.ALL_CONTAINERS)
 
     def test_every_page_pointer_lands_in_the_container(self):
         """The first thing a wrong stride or a wrong offset would break."""
@@ -2621,8 +2639,7 @@ class TestTheModePages(unittest.TestCase):
                     for page in record.pages:
                         self.assertIsNotNone(c.blob_offset_of(page.address))
                         pages += 1
-        if all(lab.path(name) for name in self.SAMPLES):
-            self.assertEqual(pages, 2510)
+        self.assertEqual(pages, 3530)
 
     def test_a_page_precedes_the_entry_by_its_own_length(self):
         """The closure on the page's size, which nothing states.
@@ -2688,8 +2705,7 @@ class TestTheModePages(unittest.TestCase):
                         agreed += 1
                     else:
                         disagreed += 1
-        if all(lab.path(name) for name in self.SAMPLES):
-            self.assertEqual((agreed, disagreed), (1618, 461))
+        self.assertEqual((agreed, disagreed), (2185, 741))
 
 
 class TestThePictureBank(unittest.TestCase):
@@ -2792,13 +2808,19 @@ class TestThePictureBank(unittest.TestCase):
     def test_base_slot_17_states_where_the_bank_begins(self):
         """
         Two bytes ahead of it, on every sample of the three architectures that do not have a touch
-        screen. Arch 12 puts the touch hit map in that slot and names the bank nowhere, so the
-        search stays for it alone.
+        screen. Arch 12 (Harmony One) puts the touch hit map in that slot and names the bank nowhere,
+        so the search stays for it alone.
+
+        **The population is a predicate, section 141**: every user config whose architecture is not
+        12. Eight names stood here, which was every non arch 12 config the corpus held when the test
+        was written and three short of it afterwards, and the exclusion is by architecture rather than
+        by omission so a new sample joins the claim by being parsed.
         """
         from harmony import gspm
-        stated = ('h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-                  'arch8_config_d', 'h600_config', 'h700_config', 'h700_config_2')
-        lab.require(*stated, 'one_config')
+        lab.require(*lab.USER_CONFIGS, 'one_config')
+        stated = [n for n in lab.USER_CONFIGS
+                  if gspm.parse(lab.load(n)).architecture != 12]
+        self.assertEqual(len(stated), 11, 'and the four arch 12 configs are the ones left out')
         for name in stated:
             with self.subTest(name):
                 c = gspm.parse(lab.load(name))

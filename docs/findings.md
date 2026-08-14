@@ -19870,3 +19870,101 @@ image whose handler does not test the bit, which would take this off the list of
 one table across architectures. And, for the mechanism rather than the field: an action list
 interpreter found reading instructions from anywhere other than a writable copy, which would leave the
 zeroing with nothing to write to.
+
+## 141. The two languages disagreed about what the corpus is, and four claims were smaller than their titles
+
+Section 140 widened eight test classes from ten configs to fifteen and found five claims that were
+properties of the samples. This is the rest of that sweep: every remaining hand written population in
+`tests/`, twenty nine of them. Most were correctly narrow. Nine were not, and what they were hiding is
+worth separating into three kinds, because only one kind is a claim about the format.
+
+### The corpus had two definitions and nothing compared them
+
+`lab.CONTAINERS` held fifteen names. The four TypeScript lists that
+`TheCorpusWidePopulationsAgree` already compares with each other held nineteen. Both were called the
+corpus, neither knew about the other, and each side's totals stayed self consistent, so the same defect
+that check was written for was live one boundary further out.
+
+The two are **not** the same question, which is why this is not a fix to one of them. `CONTAINERS` is
+the population a corpus wide **total** is computed from, and it leaves the Harmony One sync pair out so
+that one unit is not counted twice, plus the two arch 8 (Harmony 880 and 885) configs because adding
+them moves every coverage figure in one commit. A claim of the form "this holds in every container"
+inherits neither reason. So there are three lists now, each with a stated question:
+
+| list | count | the question |
+|---|---|---|
+| `ALL_CONTAINERS` | 21 | every container a per container claim is made over |
+| `CONTAINERS` | 15 | the population a corpus wide total is computed from |
+| `USER_CONFIGS` | 15 | every config a remote was actually programmed with |
+
+`ALL_CONTAINERS` is a superset of both, and `test_the_python_populations_nest_and_each_exclusion_is_named`
+asserts exactly what each of the other two leaves out, so widening one without deciding about the
+other fails rather than passing quietly. The TypeScript lists are checked for **containment** and not
+equality, deliberately: whether the sync pair belongs in a coverage total is a decision about the
+corpus rather than a defect, and equality would encode today's answer as a rule.
+
+What stays out of all three, so that "every container" is a statement rather than a shrug: arch 10
+(Harmony 890), where every reader is gated because the slot mapping is not established; the two
+calibration configs, which are synthetic and deliberately outside every corpus wide figure; and the
+firmware images, several of which `gspm.parse` is permissive enough to accept.
+
+### Four titles were larger than their bodies
+
+* `test_it_recomputes_on_every_container_in_the_corpus` walked **fourteen** names, missing
+  `h525_config_2` and `h525_safemode_ahcm`, which the corpus has held since 8 August 2026, and adding
+  `one_safemode`, which `CONTAINERS` does not list. The trailer checksum recomputes on all 21.
+* `test_the_base_layouts_trailing_slot_is_null_on_every_architecture` walked four, one per
+  architecture, where `docs/config-format.md` claims base slots 18 and 19 are NULL in every container.
+  They are, on all 21.
+* The infrared tiling closure walked eleven configs and the two it was missing are the arch 8 (Harmony
+  880 and 885) ones. That is where section 134's second pointer group lives, so the closure that
+  section 139 corrected had never been asserted on the configs the correction came from. 4692 blocks
+  now, every one exact, against 3715.
+* The mode record and mode page closures walked eight and twelve names, each of them every container
+  the corpus held on the day the class was written. 2926 records and 3530 page pointers now.
+
+None of those four changed a reading. What they change is what the numbers in the documents mean, and
+one of them, the tiling, was a closure asserted everywhere except where it had been in doubt.
+
+### A population is better stated as a predicate than as a list
+
+Three sites could not simply be widened, and they are the instructive ones.
+
+The pointer array fingerprint, base slots 5, 7, 10, 11, 12 and 15, holds on every user config and
+fails on all six safe mode containers. **Not because the alignment is wrong there.** The fingerprint is
+a **content** heuristic: a section reads as an array when a count and that many in range pointers are
+actually present, and in a safe mode container base slots 5, 11 and 12 are one or two bytes, which is
+an array whose count is zero. A heuristic cannot see a structure with no members. So the population is
+now "every container where all six sections carry more than two bytes", which is measured to be exactly
+fifteen, and a second test asserts of each excluded container that every slot it is missing is
+**empty** rather than different. An excluded sample is a claim, and stating why turns an exclusion into
+a check. The same shape twice more: the class 1 infrared claim excludes arch 9 (Harmony 525) by
+architecture rather than by omission, and base slot 17's stated bank start excludes arch 12 (Harmony
+One) the same way.
+
+`tests/test_ezfile.py`'s population is now derived from the file names, every `.EZHex` in the lab that
+is not arch 10, and that one is a repeat offender: two Harmony 700 configs were missing from it until
+the TypeScript port wrote the same list a second time and the absence became visible, and then the two
+arch 8 (Harmony 880 and 885) configs were missing for the four days they had been in the lab. Both
+times the files verified like the rest. A list written by hand produced the same gap twice, so the list
+is gone.
+
+### Three dead guards, and why an unreachable guard is worse than none
+
+`if all(lab.path(name) for name in self.SAMPLES): self.assertEqual(total, ...)` stood in three tests,
+so a corpus wide total was asserted only when every sample was present. It reads as care and it is
+unreachable: `lab.load` inside the loop raises `SkipTest` for a missing sample, so the loop never
+finishes without them and the guard can only ever be true. Section 139 entry 26 removed 34 of these on
+the argument that an unreachable guard reads as protection; these three survived because they guard an
+assertion rather than a load. `lab.require` up front and an unconditional total is the shape, and it is
+what `make test-partial` enforces.
+
+### What would falsify it
+
+A container that parses, is not arch 10 (Harmony 890) and is not synthetic, and is in none of the three
+lists, which would say the populations are still hand maintained where they claim not to be. A safe
+mode container whose pointer array fingerprint fails while all six of its sections carry more than two
+bytes, which would mean the predicate is not the reason the six are excluded. And, for the corpus
+question the section deliberately leaves open: a coverage figure computed over `CONTAINERS` and quoted
+beside one computed over the TypeScript nineteen, which is the confusion the containment check permits
+and the equality check would have caught.

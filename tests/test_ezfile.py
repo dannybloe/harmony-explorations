@@ -174,12 +174,32 @@ class TestEzHexHeader(unittest.TestCase):
     a file, and a mismatch is refused by the device.
     """
 
-    # The two Harmony 700 configs were missing here until the TypeScript port wrote the same list
-    # out a second time and the absence became visible. They verify like the rest, so it was a
-    # coverage gap and not a property of those files.
-    CONFIGS = ('h525_config', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
-               'arch8_config_d', 'one_config', 'one_config_unprogrammed', 'h600_config',
-               'h700_config', 'h700_config_2')
+    # Every EZHex file in the lab that is not arch 10 (Harmony 890), derived from the file names so
+    # that a new one joins by arriving. Section 141: two Harmony 700 configs were missing here until
+    # the TypeScript port wrote the same list out a second time, and then the two arch 8 (Harmony 880
+    # and 885) configs were missing for the four days they had been in the lab. Both times the files
+    # verified like the rest, so both times it was a coverage gap rather than a property of the files,
+    # and a list written by hand is what produced the gap twice.
+    #
+    # Arch 10 is excluded because every read of those remotes came back with duplicated chunks,
+    # section 122, so their split is a measurement of a damaged read rather than of the format.
+    CONFIGS = tuple(sorted(n for n, f in lab.IMAGES.items()
+                           if f.lower().endswith('.ezhex') and not n.startswith('h890_')))
+
+    def test_the_population_is_every_ezhex_in_the_lab_bar_arch_10(self):
+        """The derivation, asserted, because a derived list can narrow as quietly as a written one.
+
+        Section 141: the check that says so was missing when this list stopped being written by hand,
+        and a control found it. Narrowing the comprehension to drop the two arch 8 (Harmony 880 and
+        885) configs left every test in this file green, since each one verifies the files it is given
+        and none of them counted. So the count is the claim and the four exclusions are named.
+        """
+        ez = {n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex')}
+        self.assertEqual(len(ez), 16)
+        self.assertEqual(sorted(ez - set(self.CONFIGS)),
+                         ['h890_config', 'h890_config_2', 'h890_config_2_rescan',
+                          'h890_config_rescan'])
+        self.assertEqual(len(self.CONFIGS), 12)
 
     def test_every_config_verifies_its_own_split(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its

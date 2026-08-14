@@ -468,6 +468,34 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
                              % (relative, sorted(set(first) - set(names)),
                                 sorted(set(names) - set(first))))
 
+    def test_the_python_populations_nest_and_each_exclusion_is_named(self):
+        """Section 141: three lists, and which is a subset of which.
+
+        `ALL_CONTAINERS` is every container a per container claim is made over. `CONTAINERS` is the
+        narrower population a corpus wide **total** is computed from, and `USER_CONFIGS` is every user
+        config. Both are subsets, and this asserts exactly what each leaves out, so that widening one
+        without deciding about the other has to fail here rather than pass quietly.
+
+        The TypeScript lists are checked for **containment** rather than equality, and deliberately:
+        they hold nineteen of these twenty one, which is a disagreement about what belongs in a
+        coverage total and is a decision about the corpus rather than a defect. Equality would encode
+        an accident as a rule; containment catches a name that exists on one side only.
+        """
+        import lab
+        allc = set(lab.ALL_CONTAINERS)
+        self.assertEqual(len(allc), len(lab.ALL_CONTAINERS), 'no duplicates')
+        self.assertEqual(len(allc), 21)
+        self.assertLess(set(lab.CONTAINERS), allc)
+        self.assertEqual(sorted(allc - set(lab.CONTAINERS)),
+                         ['arch8_config_880', 'arch8_config_885', 'one34_region2', 'one_safemode',
+                          'one_spare_after_sync', 'one_spare_before_sync'])
+        # The user configs are containers too, bar none: a config read off a remote is a container.
+        self.assertLess(set(lab.USER_CONFIGS), allc)
+        for relative, declaration in self.POPULATIONS.items():
+            names = set(self._names(relative, declaration))
+            self.assertLessEqual(names, allc, '%s names something outside the corpus: %s'
+                                 % (relative, sorted(names - allc)))
+
     def test_the_user_config_population_is_the_same_in_both_languages(self):
         """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.
 

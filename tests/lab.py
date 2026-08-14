@@ -230,6 +230,36 @@ USER_CONFIGS = (
     'arch8_config_880', 'arch8_config_885',
 )
 
+# Every container a per container claim is made over, which is **not** `CONTAINERS`, and the
+# distinction is the reason this list exists. `CONTAINERS` is the population a corpus wide **total**
+# is computed over: it leaves the Harmony One sync pair out so that one unit is not counted twice, and
+# it leaves the arch 8 (Harmony 880 and 885) configs out because adding them would move every coverage
+# figure in one commit. Neither reason applies to a claim of the form "this holds in every container",
+# which wants every container there is.
+#
+# **The two languages disagreed about what the corpus is and nothing compared them**, section 141,
+# which is the defect `TheCorpusWidePopulationsAgree` was written for, one boundary further out: the
+# four TypeScript lists hold nineteen of these while `CONTAINERS` holds fifteen, and each side's own
+# totals stayed self consistent so no test could see it. That disagreement is **not resolved here**,
+# because which containers belong in a coverage total is a decision about the corpus rather than a
+# defect; what is fixed is the per container claims, which had four hand written populations of four
+# to fourteen names between them.
+#
+# What stays out, and why, so that "every container" is a statement and not a shrug. Arch 10 (Harmony
+# 890): every reader is gated, because the slot mapping is not established. The calibration pair: they
+# are synthetic and deliberately outside every corpus wide figure. Firmware images: `gspm.parse` is
+# permissive enough to accept several of them, which is why this is a list rather than a filter.
+ALL_CONTAINERS = CONTAINERS + (
+    # The arch 12 (Harmony One) pair, containers found inside firmware images rather than read off a
+    # remote: the safe mode container at flash 0x002000, and the config region of the 3.4 image.
+    'one_safemode', 'one34_region2',
+    # Two states of one Harmony One, either side of the sync section 58 watched.
+    'one_spare_before_sync', 'one_spare_after_sync',
+    # The two arch 8 (Harmony 880 and 885) configs, whose reading is no longer unexamined: section 140
+    # is what they broke when the config populations were widened.
+    'arch8_config_880', 'arch8_config_885',
+)
+
 # The one container whose fonts do not follow the generator's conventions. Named here rather than
 # spelled out in each test, so a claim that has to exclude it says why.
 ASCII_FONTS = 'h525_safemode_ahcm'

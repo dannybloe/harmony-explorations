@@ -294,42 +294,46 @@ architectures with per architecture insertions, so a slot number only means some
 said which layout it belongs to. See "One table, four architectures" further down; arch 9 and
 arch 14 use the base layout directly.
 
-**The evidence column names a population, and the two corpus wide ones are defined in exactly one
-place**, `lab.USER_CONFIGS` and `lab.CONTAINERS` in `tests/lab.py`, at fifteen each. Where a row says
-"user configs" it carries a marker `make facts` recomputes, because that count is what drifted: this
-column said "ten configs" in eight rows and "thirteen containers" in three while the lab held fifteen
-of each, and it drifted because eight test classes each carried their own literal and none of them was
-this document's. Section 140.
+**The evidence column names a population, and every population is defined in exactly one place**,
+`tests/lab.py`. There are three, and the difference between them is a difference in the question:
 
-Rows naming any other population, "nine configs" or "sixteen samples" or "twelve containers", quote a
-list declared inside their own test rather than one of those two. Those are **floors, not current
-populations**: each is what the claim was asserted over when the row was written, and widening them is
-the obvious next sweep rather than something this table should guess at.
+* `ALL_CONTAINERS`, 21, every container a **per container** claim is made over.
+* `CONTAINERS`, 15, the narrower population a corpus wide **total** is computed from. It leaves the
+  Harmony One sync pair out so one unit is not counted twice, and the two arch 8 (Harmony 880 and 885)
+  configs out because adding them moves every coverage figure in one commit.
+* `USER_CONFIGS`, 15, every config a remote was actually programmed with.
+
+Where a row says "user configs" the count carries a marker `make facts` recomputes, because a count in
+prose is exactly what drifted here. This column said "ten configs" in eight rows and "thirteen
+containers" in three while the lab held fifteen of each, section 140, and then said "nine configs" or
+"sixteen samples" or "twelve containers" in seven more, each of them a list written by hand inside one
+test, section 141. Every row now states the population its test walks, and where a row is short of 21
+it says which containers are missing and why, because an excluded sample is a claim too.
 
 Known so far:
 
 | Slot | Meaning | Evidence |
 |---|---|---|
-| 0 | the one `0xFEED` frame, holding a list of named nodes by level and index | sixteen samples, below |
-| 1 | seven byte record stating the architecture | sixteen samples, below |
-| 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | nine configs, below |
+| 0 | the one `0xFEED` frame, holding a list of named nodes by level and index | 19 of 21 containers: the two arch 12 image containers carry none, below |
+| 1 | seven byte record stating the architecture | 21 containers, below |
+| 5, 7, 10, 11, 12, 15 | count prefixed arrays of three byte flash pointers | the 15 containers where all six carry an entry, below |
 | 5 | of those, the **infrared database**, grouped | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 10 | of those, the **action list address table** | nine configs, below |
+| 10 | of those, the **action list address table** | 15<!--fact:user_configs--> user configs, below |
 | 4 | the **firmware event map**: thirty events, each named in the space `0x7E` indexes | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | sixteen samples, three images, below |
+| 3 | the build timestamp, and the firmware **starts Timer 1 from it**, so it is the clock | 21 containers, three images, below |
 | 6 | the **mode table**: what `0x7E` and the event map both index | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | fifteen containers, two images, below |
+| 15 | the **parameter block**: numbered groups of 16 bit constants, every length demanded | 15 containers, two images, below |
 | 13 | the **state variable table**, named from its firmware consumer | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | seven configs, four architectures, below |
-| 7 | a pointer array **indexed by opcode 16 of the screen language** | three images, below |
+| 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | 18 of 21 containers: the arch 14 safe mode ones bind nothing, below |
+| 7 | a pointer array **indexed by opcode 16 of the screen language** | 21 containers, three images, below |
 | 9 | the **binding table**: six to seventeen sets of button bindings with an enter and a leave handler | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 11 | the **screen program table**: programs in the screen language | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all twelve containers, below |
+| 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all 21 containers, below |
 | 12 | the **timer table**: wait, then queue one instruction | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 17 | the **touch screen hit map**, populated on arch 12 only | two configs, one image, below |
-| 2 | the **log area**: a region of flash the firmware appends to and never erases | fifteen containers, one image, below |
-| 18, 19 | NULL in every sample of every architecture | fifteen containers |
+| 2 | the **log area**: a region of flash the firmware appends to and never erases | 21 containers, one image, below |
+| 18, 19 | NULL in every sample of every architecture | 21 containers |
 
 **Every slot from 2 to 19 has a located firmware consumer**, on the Harmony 700, the 600 and the
 One. See [findings.md](findings.md) sections 35 and 38 for the addresses. On arch 12 the firmware
@@ -450,7 +454,7 @@ at the table pointer  u8 kind; u24 the record's own start; u16 pages; u24 page[p
 ```
 
 Records are contiguous and run to about seven hundred bytes, so the pointer lands hundreds of bytes
-past the head. Closures over 1616 records in eight containers: the back pointer always points
+past the head. Closures over 2926 records in 21 containers: the back pointer always points
 backwards, and the count read at the start always gives a list that fits inside the record, where a
 wrong start overruns.
 
@@ -1232,7 +1236,7 @@ Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) s
 
 ### Base slot 16: the number sender
 
-**Read from three firmware images and unexercised by any container.** All twelve containers in the
+**Read from three firmware images and unexercised by any container.** All 21 containers in the
 corpus carry a count of zero here, so the layout below comes from the code alone and no sample
 confirms it.
 
@@ -1469,13 +1473,18 @@ the protocol requires the sender to alternate between presses, and a config stor
 action list language has no arithmetic that could compute one. Which group a given press uses is
 **unconfirmed**: the firmware side has not been traced.
 
-**A block ends at a zero word, and that is not a validity check.** Over **3715 blocks in eleven
+**A block ends at a zero word, and that is not a validity check.** Over **4692 blocks in thirteen
 configs the terminator agrees exactly with the region's tiling on every one of them**, and none stops
 short or overruns. But arch 9's **380** blocks all find a zero word too and **not one is in the right
 place**, so what separates a block this reading covers from one it does not is the **class byte**,
 which is 1 here and 5 there.
 
-Both figures moved in section 139 and for one reason: a two group header's second set of pointers was
+Both figures moved again in section 141, and for a different reason from section 139's: the population
+did. The two arch 8 (Harmony 880 and 885) configs were missing from the eleven this closure walked,
+which is where section 134's second pointer group lives, so the tiling had never been asserted on the
+configs the correction came from.
+
+The first move was in section 139 and for one reason: a two group header's second set of pointers was
 missing from the boundary list, so 133 blocks looked as though they stopped short of the next boundary
 and 103 of arch 9's blocks were not seen at all. The old reading was 3490 blocks with 3357 exact and
 133 short<!--superseded-->, and the 133 had an explanation, that they were padding on arch 8. A
