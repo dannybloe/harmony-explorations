@@ -921,7 +921,7 @@ about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
-Four project skills carry the rituals that are easy to half-perform:
+Five project skills carry the rituals that are easy to half-perform:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
@@ -932,6 +932,10 @@ Four project skills carry the rituals that are easy to half-perform:
 * **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
   pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
   answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
+* **`status-report`**, how to tell the owner where the work stands: short, plain, one concrete example
+  with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
+  complete answer. It carries a good example and a bad one, because the bad one is what gets written by
+  default.
 
 ```
 make test          run the suite; image-backed tests need a lab directory
