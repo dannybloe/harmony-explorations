@@ -46,6 +46,14 @@ now and it arrived with a seventeenth sample rather than by the number being rig
 counts are computed in
 `tests/test_gspm.py` now rather than written down, so they cannot drift again.
 
+**That last sentence was half true for a week, which section 143 found and fixed.** The test did compute
+the five spans, and then asserted a **lower bound** on each: three cookies, four base addresses, three
+format versions, three lengths, four architectures. Four of those bounds were exactly the span and the
+base address one was **under by one**, so the document said five addresses while the test would have
+passed on four. Computing a number and asserting a bound under it is not pinning it. All five are
+asserted exactly now, and the TypeScript twin of that test reports 4 addresses over a 13 sample table
+against these 17, which is the second thing section 143 found.
+
 ```
 0x00  char[4]  cookie          per architecture, see the table below
 0x04  u32      end_addr        absolute flash address of the trailing end marker

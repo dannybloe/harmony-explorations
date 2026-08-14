@@ -32,6 +32,12 @@ sys.path.insert(0, os.path.join(ROOT, 'src'))
 SOURCE_DIRECTORIES = ('src', 'test', 'bin')
 
 
+def read_repo_file(relative):
+    """A repository file as text. One copy, because three static rules here read source the same way."""
+    with open(os.path.join(ROOT, relative), encoding='utf-8') as handle:
+        return handle.read()
+
+
 def read_jsonc(path):
     """A tsconfig with its comments stripped. Only whole line comments, which is all these use."""
     with open(path, encoding='utf-8') as fh:
@@ -61,8 +67,10 @@ class TypeScriptProjects(unittest.TestCase):
                                   f'packages/{name}/{directory} is outside its own tsconfig, so it '
                                   f'is typechecked by nothing and an editor gives it defaults')
         # A guard on the guard: if the packages ever move, this test must fail rather than pass by
-        # having found nothing to check.
-        self.assertGreater(found, 12, 'no source directories found, so this test checked nothing')
+        # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
+        # decided by the workspace layout and moves only when a package or a directory is added,
+        # and then it moves in the diff rather than being absorbed.
+        self.assertEqual(found, 17, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles."""
@@ -100,7 +108,9 @@ class PyrightConfiguration(unittest.TestCase):
         with open(os.path.join(ROOT, 'pyrightconfig.json'), encoding='utf-8') as fh:
             lines = [line.strip() for line in fh]
         silenced = [n for n, line in enumerate(lines) if re.match(r'"report\w+": "none",?$', line)]
-        self.assertGreaterEqual(len(silenced), 4, 'the silenced rules moved, so check this still fits')
+        # Exact: four rules are silenced, and a fifth appearing is a decision somebody has to make
+        # rather than a number this test should absorb.
+        self.assertEqual(len(silenced), 4, 'the silenced rules moved, so check this still fits')
         for at in silenced:
             with self.subTest(rule=lines[at]):
                 above = ' '.join(lines[max(0, at - 6):at])
@@ -171,7 +181,7 @@ class TheLibraryImports(unittest.TestCase):
                        if f.endswith('.py') and not f.startswith('__'))
         names += ['pic18.' + f[:-3] for f in sorted(os.listdir(os.path.join(base, 'pic18')))
                   if f.endswith('.py') and not f.startswith('__')]
-        self.assertGreater(len(names), 8)
+        self.assertEqual(len(names), 11, 'the modules under src/harmony, pic18 included')
         for name in names:
             with self.subTest(module=name):
                 self.assertIsNotNone(importlib.import_module('harmony.' + name))
@@ -200,7 +210,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
     def test_a_main_block_is_the_last_thing_in_its_file(self):
         files = self._test_files()
         # The population, so a glob that stops matching fails here rather than passing quietly.
-        self.assertGreaterEqual(len(files), 24, 'only %d test files found' % len(files))
+        # Exact, since a test file is added deliberately and rarely, unlike a test function.
+        self.assertEqual(len(files), 25, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -215,10 +226,10 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
                              '%s calls unittest.main() at line %d and defines %d thing(s) below '
                              'it, which running the file directly will not see: %s'
                              % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
-        # And the check has teeth only if most files actually carry a block.
-        self.assertGreaterEqual(with_block, 20,
-                                'only %d files carry a __main__ block, so this test is checking '
-                                'almost nothing' % with_block)
+        # And the check has teeth only if most files actually carry a block. Exact: 23 of the 25 do,
+        # and the two that do not are named in the comment above rather than left to a tolerance.
+        self.assertEqual(with_block, 23,
+                         'files carrying a __main__ block, of %d' % len(files))
 
 
 #: Test functions whose whole body is a loop that loads its samples inside a `subTest`, with no
@@ -310,6 +321,13 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
         counted, scanned = self._offenders()
         # A guard on the guard: if the glob or the AST walk stops matching, fail here rather than
         # reporting a clean tree, which is the failure mode this whole class is about.
+        #
+        # **Deliberately a bound and not the count**, which is the one exception section 143 argues
+        # for: the population is every test function in the repository, 832 of them, and it grows
+        # with any unrelated commit that adds a test. An exact number here would be updated
+        # mechanically every few days, and a number nobody reads while changing it has stopped
+        # being a measurement. The two neighbouring populations, test files and TypeScript test
+        # files, are exact because adding one of those is a deliberate act.
         self.assertGreater(scanned, 600, 'only %d test functions scanned' % scanned)
         self.assertEqual(
             {name: len(found) for name, found in counted.items()},
@@ -382,7 +400,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        self.assertGreater(scanned, 20, 'only %d TypeScript test files found' % scanned)
+        self.assertEqual(scanned, 33, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -519,6 +537,188 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
             self.assertGreaterEqual(len(why.split()), 2, 'no reason recorded for %s' % (site,))
 
 
+#: The Python half of `TYPESCRIPT_BOUNDS_WITH_A_REASON`, on the same three grounds, plus one this
+#: side has and the other does not: a **churning population**, where the exact number would be
+#: rewritten by unrelated work often enough that nobody would read it while changing it.
+PYTHON_BOUNDS_WITH_A_REASON = {
+    # A physical band.
+    ('tests/test_backlight.py', 'CURVE_HIGH_ON_CHARGE / 4', '>', 1023):
+        'a ten bit converter, so the scale is what is being ruled out',
+    ('tests/test_clock.py', 'per_day / 60', '>', 5):
+        'a pair of bounds on a rate, deliberately not a measurement, see the open question',
+    ('tests/test_gspm.py', 'gap', '>', 20000):
+        'a forward jump of many kilobytes against an off by one',
+    # Per item in a loop, where "not one" or "not empty" is the whole claim.
+    ('tests/test_ezfile.py', 'len(checkable)', '>=', 1): 'something long enough to search for',
+    ('tests/test_ezfile.py', 'len(widths)', '>', 1): 'per body: one chunk would say nothing',
+    ('tests/test_gspm.py', 'len(deltas)', '>', 1): 'more than one delta is the exception itself',
+    ('tests/test_toolchain.py', 'len(why.split())', '>=', 2):
+        'two words, a shape rather than a length, so an empty reason cannot pass',
+    # Somebody else's source, whose exact shape is not ours to pin.
+    ('tests/test_concordance_notes.py', "body.count('cb(')", '>', 1):
+        'upstream libconcord, which may reformat',
+    # A churning population, argued at the site.
+    ('tests/test_toolchain.py', 'scanned', '>', 600):
+        'every test function in the repository, which grows with unrelated work',
+}
+
+
+class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
+    """`ABoundOnACorpusTotalIsExact` for the other language, and the halves were measured together.
+
+    52 floors on the TypeScript side and 41 on this one, section 143, and they were loose in different
+    ways. Here: a floor of 100 under key binding counts running from 103 to 883, a floor of 20 under
+    screen program counts running from 111 to 6620, a floor of 1000 under a bootloader difference of
+    15694. And **fifteen** sat exactly on the value they guarded, four of those on the smallest member of
+    a per sample loop, which is the shape that reads as tolerance and has none: tight on one sample and
+    up to 39% loose on its neighbour.
+
+    The one ground this side needs and the other does not is a **churning population**. Two of the
+    floors here count files or functions that exist rather than samples in a list, and an exact number
+    over "every test function in the repository" would be rewritten by any commit that adds a test.
+    A number nobody reads while changing it has stopped being a measurement, so the bound stays and
+    the argument is written at the site. Its neighbours, the test files and the TypeScript test files,
+    are exact because adding one of those is deliberate.
+
+    A comment is skipped, which is insurance rather than a measurement: see the falsifier below, which
+    says what actually makes a quoted floor invisible and what it cost to find out.
+    """
+
+    PATTERN = re.compile(r'self\.assert(Greater)(Equal)?\(\s*(.+?),\s*([0-9][0-9_]*)\s*[,)]')
+
+    #: One site the scan has to find, so a pattern that stops matching fails here rather than
+    #: reporting a clean tree.
+    CONTROL = ('tests/test_clock.py', 'per_day / 60', '>', 5)
+
+    def _bounds(self):
+        found, scanned = {}, []
+        for path in sorted(glob.glob(os.path.join(ROOT, 'tests', 'test_*.py'))):
+            relative = os.path.relpath(path, ROOT)
+            scanned.append(relative)
+            with open(path, encoding='utf-8') as handle:
+                for number, line in enumerate(handle.read().splitlines(), 1):
+                    if line.strip().startswith('#'):
+                        continue
+                    match = self.PATTERN.search(line)
+                    if not match:
+                        continue
+                    value = int(match.group(4).replace('_', ''))
+                    if value == 0:
+                        continue  # `> 0` is "not empty", a claim rather than a tolerance
+                    site = (relative, ' '.join(match.group(3).split()),
+                            '>=' if match.group(2) else '>', value)
+                    found.setdefault(site, []).append(number)
+        return found, scanned
+
+    def test_the_pattern_still_matches_a_known_bound(self):
+        found, scanned = self._bounds()
+        self.assertEqual(len(scanned), 25, 'Python test files, which moves when one is added')
+        self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
+
+    def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
+        found, _ = self._bounds()
+        unexplained = sorted(site for site in found if site not in PYTHON_BOUNDS_WITH_A_REASON)
+        self.assertEqual(
+            unexplained, [],
+            'these assert a lower bound where the value can be measured, so a total short of the '
+            'truth and a total past it both pass: %s. Measure it and use assertEqual, or add the '
+            'site to PYTHON_BOUNDS_WITH_A_REASON above with the reason it is genuinely a bound.'
+            % '; '.join('%s: %s %s %d at line %s'
+                        % (site[0], site[1], site[2], site[3], ','.join(str(n) for n in found[site]))
+                        for site in unexplained))
+
+    def test_no_reason_is_recorded_for_a_bound_that_has_gone(self):
+        found, _ = self._bounds()
+        stale = sorted(site for site in PYTHON_BOUNDS_WITH_A_REASON if site not in found)
+        self.assertEqual(stale, [], 'these no longer exist and their reasons should go with them')
+
+    def test_every_reason_is_a_reason(self):
+        for site, why in PYTHON_BOUNDS_WITH_A_REASON.items():
+            self.assertGreaterEqual(len(why.split()), 2, 'no reason recorded for %s' % (site,))
+
+    def test_a_comment_quoting_a_floor_is_not_read_as_one(self):
+        """The scan's own falsifier, and it is narrower than the first version of it claimed.
+
+        `test_gspm.py` explains a floor it removed by quoting it, `assertGreater(total, 10000)`, and a
+        looser scan does report that as a live offender: this whole sweep began by finding it that way.
+        What makes it invisible here is **two** things, and the first version of this test credited only
+        the comment skip. The pattern is anchored on `self.assert`, so a quote written without the
+        receiver never matches whatever the scan does with comments. The skip is what covers a comment
+        that quotes the whole call, which nothing does today, so it is insurance rather than a
+        measurement and this test says so instead of pretending otherwise.
+        """
+        with open(os.path.join(ROOT, 'tests', 'test_gspm.py'), encoding='utf-8') as handle:
+            lines = handle.read().splitlines()
+        quotes = [n for n, line in enumerate(lines, 1)
+                  if line.strip().startswith('#') and 'assertGreater(total, 10000)' in line]
+        self.assertEqual(len(quotes), 1, 'the comment that quotes a removed floor has moved')
+        found, _ = self._bounds()
+        self.assertEqual([site for site in found if site[0] == 'tests/test_gspm.py'
+                          and site[3] == 10000], [], 'the quoted floor was read as a live one')
+        # And the receiverless form is why, demonstrated rather than asserted about the comment. The
+        # two calls are assembled rather than written out, for the same reason the em-dash check must
+        # not contain an em-dash: a test that spells the pattern it scans for becomes an offender in
+        # its own report, which this one did on the first attempt.
+        call = 'assert' + 'Greater(total, 10000)'
+        self.assertIsNone(self.PATTERN.search(call))
+        self.assertIsNotNone(self.PATTERN.search('self.' + call))
+
+
+class TheTwoExpectationTablesNameTheSameContainers(unittest.TestCase):
+    """`EXPECTED` in `tests/test_gspm.py` and in `packages/codec/test/gspm.test.ts`, which nothing compared.
+
+    Both tables list containers with their cookie, base address, format version, pointer count and
+    marker, and both are the population every container framing claim in their file is asserted over.
+    On 14 August 2026 the Python one held 17 names and the TypeScript one 13.
+
+    It surfaced only because section 143's sweep made the corpus span exact on both sides, which put two
+    numbers that a pair of floors had been hiding beside each other: 5 distinct base addresses here
+    against 4 there, from the same reader on the same corpus. So the lesson is not only that unwatched
+    lists drift. **When two lists disagree, the assertion that was letting them is the thing to look
+    for.**
+
+    The owner decided the same day that the four belong in both, so this test now asserts equality. What
+    widening cost is the interesting part and it was not the data entry: three tests in that file broke
+    at once, `the same six base slots are pointer arrays in every config`, the packing agreement and the
+    action list parse, because the three added safe mode containers arrived on the user config side of a
+    hand written line. All three were right and none had ever been asked about a safe mode container. A
+    fourth had to be renamed, since "bar four" became false for a config that packs into four runs rather
+    than five. That is four claims whose population was doing the work, found by adding four names.
+
+    Static, like its neighbours, so it runs in a fresh clone with nothing installed.
+    """
+
+    def _table(self, relative, declaration, end):
+        source = read_repo_file(relative)
+        self.assertIn(declaration, source, '%s no longer declares %s' % (relative, declaration))
+        body = source[source.index(declaration) + len(declaration):]
+        self.assertIn(end, body, '%s: no end to the %s table' % (relative, declaration))
+        body = body[:body.index(end)]
+        # A key is a name at the start of a line, quoted on the Python side and bare on the other.
+        return set(re.findall(r"^\s+'?([a-z0-9_]+)'?:", body, re.M))
+
+    def test_both_tables_name_the_same_seventeen(self):
+        python = self._table('tests/test_gspm.py', 'EXPECTED = {', '\n}')
+        typescript = self._table('packages/codec/test/gspm.test.ts', 'const EXPECTED', '\n};')
+        self.assertEqual(len(python), 17, 'the Python framing table')
+        self.assertEqual(len(typescript), 17, 'and the TypeScript one, widened on 14 August 2026')
+        self.assertEqual(sorted(python), sorted(typescript),
+                         'the two framing populations have drifted apart again')
+
+    def test_the_typescript_side_still_draws_the_user_config_line(self):
+        """The widening's real cost, pinned: six of the seventeen are not somebody's configuration, and
+        a claim about "every config" means the other eleven. Left implicit, the safe mode containers
+        silently join the population that three tests in that file are about."""
+        source = read_repo_file('packages/codec/test/gspm.test.ts')
+        self.assertIn('const NOT_A_USER_CONFIG', source, 'the line is no longer drawn by name')
+        body = source[source.index('const NOT_A_USER_CONFIG'):]
+        body = body[:body.index('];')]
+        excluded = sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
+        self.assertEqual(excluded, ['h525_safemode_ahcm', 'h600_safemode_gspm', 'h650_safemode_gspm',
+                                    'h700_gspm', 'one34_region2', 'one_safemode'],
+                         'the non user containers')
+
+
 class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
     """`recover_flash_base` and `recoverFlashBase` are one derivation in two languages.
 
@@ -573,9 +773,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
     }
 
     def _names(self, relative, declaration):
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', relative)
-        with open(path, encoding='utf-8') as fh:
-            source = fh.read()
+        source = read_repo_file(relative)
         self.assertIn(declaration, source, '%s no longer declares %s' % (relative, declaration))
         body = source[source.index(declaration):]
         body = body[:body.index('];')]

@@ -997,14 +997,14 @@ class TestTheArch12BootloaderDoesNotTestAKey(unittest.TestCase):
         code = lab.load('one_internal_fe')
         self.assertEqual(self.port_access(code, 0, self.BOOTLOADER_END, True), [])
         writes = self.port_access(code, 0, self.BOOTLOADER_END, False)
-        self.assertGreaterEqual(len(writes), 10)
+        self.assertEqual(len(writes), 13, 'port writes in the bootloader, which is the positive half')
 
     def test_the_safe_mode_image_does_read_the_matrix(self):
         """The positive control for the scan, and consistent with a mode that answers buttons."""
         lab.require('one_internal_fe')
         code = lab.load('one_internal_fe')
         reads = self.port_access(code, self.BOOTLOADER_END, 0x8000, True)
-        self.assertGreaterEqual(len(reads), 10)
+        self.assertEqual(len(reads), 15, 'port reads above the bootloader, so safe mode does scan')
 
     def test_no_literal_config_base_reaches_the_table_pointer(self):
         """

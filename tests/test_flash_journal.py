@@ -263,8 +263,11 @@ class JournalTest(unittest.TestCase):
         pairs = instructions('h700_code', ARCH14_BASE, JOURNAL_APPEND, 40)
         # Five 24 bit values are collected, then the start and the size are tested for zero and the
         # routine returns on either. Two `RETURN`s before any write is the refusal.
-        self.assertGreaterEqual([i.mnemonic for _, i in pairs].count('IORWF'), 4)
-        self.assertGreaterEqual([i.mnemonic for _, i in pairs].count('RETURN'), 2)
+        # Exact, not floors of 4 and 2: five zero tests reduce to four `IORWF`s and the two refusals
+        # to two `RETURN`s, so both numbers are the reading and the floors were the reading with a
+        # tolerance nobody needed.
+        self.assertEqual([i.mnemonic for _, i in pairs].count('IORWF'), 4)
+        self.assertEqual([i.mnemonic for _, i in pairs].count('RETURN'), 2)
 
     def test_the_program_step_writes_the_byte_at_0x0fc_through_the_page_program(self):
         pairs = instructions('h700_code', ARCH14_BASE, JOURNAL_PROGRAM, 10)

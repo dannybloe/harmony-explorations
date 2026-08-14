@@ -234,7 +234,9 @@ class HelperTest(unittest.TestCase):
                 pairs = instructions(name, where['base'], where['multiply'], 14)
                 mnemonics = [i.mnemonic for _, i in pairs]
                 # Four partial products and the additions that combine them.
-                self.assertGreaterEqual(mnemonics.count('MULWF'), 3)
+                # Exact: three partial products on all three images, so the count is a fact about the
+                # routine rather than a bound under it.
+                self.assertEqual(mnemonics.count('MULWF'), 3)
                 self.assertIn('ADDWF', mnemonics)
                 self.assertIn('ADDWFC', mnemonics)
 
@@ -359,7 +361,9 @@ class ArmTest(unittest.TestCase):
                 targets = [i.fields['target'] for _, i in pairs if i.mnemonic == 'BRA']
                 self.assertEqual(len(set(targets)), 1, 'one destination for both arms')
                 self.assertEqual(targets[0], where['exit'])
-                self.assertGreaterEqual(len(targets), 2)
+                # Exact per image: three branches on a Harmony 525 and two on a Harmony One, both to
+                # the one destination asserted above.
+                self.assertEqual(len(targets), 3 if name == 'h525_code' else 2, name)
 
 
 class StateOperationTest(unittest.TestCase):

@@ -100,8 +100,13 @@ class TestContainerAcrossSamples(unittest.TestCase):
                 # The names, not only their values. A loop over an empty `checks` dict passes every
                 # assertion inside it, so a parser that stopped reporting checks would have satisfied
                 # this test rather than failed it.
-                self.assertGreaterEqual(len(c.checks), 4,
-                                        '%s reported %d checks' % (name, len(c.checks)))
+                # The count exactly, and then the names, per section 143: fifteen checks on every
+                # container bar the arch 9 (Harmony 525) ones, which carry no key table and so have no
+                # `key_table_is_complete`. A floor of 4 could not tell a parser that lost eleven checks
+                # from one that gained one nobody asked for.
+                self.assertEqual(len(c.checks), 14 if c.architecture == 9 else 15,
+                                 '%s reported %d checks' % (name, len(c.checks)))
+                self.assertEqual('key_table_is_complete' in c.checks, c.architecture != 9, name)
                 self.assertIn('trailer_checksum_recomputes', c.checks, name)
                 for check, ok in c.checks.items():
                     self.assertTrue(ok, '%s failed check %s' % (name, check))
@@ -136,11 +141,15 @@ class TestContainerAcrossSamples(unittest.TestCase):
     def test_the_corpus_spans_more_than_one_of_everything(self):
         """A derivation confirmed on one value of a variable is not confirmed."""
         seen = [gspm.parse(lab.load(n)) for n in EXPECTED]
-        self.assertGreaterEqual(len({c.family.magic for c in seen}), 3, 'architectures')
-        self.assertGreaterEqual(len({c.flash_base for c in seen}), 4, 'base addresses')
-        self.assertGreaterEqual(len({c.format_version for c in seen}), 3, 'format versions')
-        self.assertGreaterEqual(len({c.pointer_count for c in seen}), 3, 'table lengths')
-        self.assertGreaterEqual(len({c.architecture for c in seen}), 4, 'architectures')
+        # Exact, per section 143. All five floors here were equal to or one under the span they
+        # measured, which reads as tolerance and has none, and stating the span documents it: a sample
+        # that widens any of these moves the number in the diff rather than passing in silence. The
+        # base address count is 5 and its floor said 4, so this one was quietly under by one.
+        self.assertEqual(len({c.family.magic for c in seen}), 3, 'container cookies')
+        self.assertEqual(len({c.flash_base for c in seen}), 5, 'base addresses')
+        self.assertEqual(len({c.format_version for c in seen}), 3, 'format versions')
+        self.assertEqual(len({c.pointer_count for c in seen}), 3, 'table lengths')
+        self.assertEqual(len({c.architecture for c in seen}), 4, 'architectures')
 
     def test_the_document_quotes_the_spread_this_table_actually_has(self):
         """The header of docs/config-format.md states the corpus in numbers, and it drifted.
@@ -327,7 +336,7 @@ class TestSlot3Timestamp(unittest.TestCase):
         do in any informative way.
         """
         raws = [raw for _, _, _, raw in self.records()]
-        self.assertGreaterEqual(len(raws), 9, 'not enough samples for the search to mean anything')
+        self.assertEqual(len(raws), 17, 'the clock records the search runs against')
         solutions = []
         for day_i, mon_i, yr_i, dow_i in itertools.permutations(range(3, 7)):
             for mbase in (0, 1):
@@ -706,7 +715,10 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         data = lab.load('one_config')
         c = gspm.parse(data)
         blob = data[c.blob_offset:c.blob_offset + c.length]
-        self.assertGreater(blob.count(gspm.FRAME_COOKIE), 20)
+        # Exact: 31 occurrences of the cookie in this container, of which exactly one frames a
+        # section, which is what the rest of the test establishes. A floor of 20 would have let ten
+        # of them vanish while the claim about the one still read as confirmed.
+        self.assertEqual(blob.count(gspm.FRAME_COOKIE), 31)
 
     def test_every_non_empty_frame_holds_a_root_node(self):
         """`Root` is a name at level 0, not a header.
@@ -883,6 +895,18 @@ class TestKeyCodesAreEventTypePlusScanCode(unittest.TestCase):
                          [('press', 47), ('press', 46)])
 
 
+#: Key binding entries per config, measured. A per config property stated per config, which is what
+#: replaced a floor of 100 standing under values from 103 to 883. Section 143.
+BINDING_ENTRY_COUNTS = {
+    'arch8_config_880': 507, 'arch8_config_885': 881, 'arch8_config_a': 466,
+    'arch8_config_b': 610, 'arch8_config_c': 700, 'arch8_config_d': 700,
+    'h525_config': 216, 'h525_config_2': 103, 'h600_config': 403,
+    'h700_config': 765, 'h700_config_2': 767, 'one_config': 883,
+    'one_config_unprogrammed': 451, 'one_spare_after_sync': 418,
+    'one_spare_before_sync': 451,
+}
+
+
 class TestActionLists(unittest.TestCase):
     """
     Base slot 10 is a table of addresses of action lists, and a list is a count followed by
@@ -913,8 +937,11 @@ class TestActionLists(unittest.TestCase):
                                  '%s: %d of %d packed into %d run(s)' % (name, fit, of, runs))
                 # And a run boundary is a real jump rather than an off by one, on every config: the
                 # smallest across the corpus is 140 bytes, where the packed distance would be at
-                # most `1 + 3 * 255`. Stated as the measured floor so the slack is visible.
-                self.assertGreaterEqual(runs, 4, '%s packs into %d run(s)' % (name, runs))
+                # most `1 + 3 * 255`. Exact per config rather than the floor of 4 that stood here,
+                # which was the value of the single config the next test names: fourteen of the
+                # fifteen pack into five runs and that one into four, so the floor was the exception.
+                self.assertEqual(runs, 4 if name == 'h525_config_2' else 5,
+                                 '%s packs into %d run(s)' % (name, runs))
 
     def test_only_one_config_packs_into_four_runs(self):
         """Which is what makes the rule above a rule and not a second hard coded number.
@@ -975,7 +1002,8 @@ class TestActionLists(unittest.TestCase):
                 c = gspm.parse(lab.load(name))
                 lists = c.action_lists()
                 operands = [i.operand for l in lists for i in l if i.opcode == 0x7F]
-                self.assertGreater(len(operands), 1000, 'too few uses to say anything')
+                self.assertEqual(len(operands), {'h700_config': 2795, 'h600_config': 1465}[name],
+                                 'the uses the claim rests on')
 
                 self.assertTrue(all(0 <= o < len(lists) for o in operands),
                                 'an operand that is not a valid list index')
@@ -1053,14 +1081,17 @@ class TestActionLists(unittest.TestCase):
         lab.require(*self.CONFIGS)
         scans = {}
         # Every user config, section 141: five names stood here, one per architecture, and the claim
-        # in the title is about every binding. The entry floor stays a floor rather than becoming a
-        # count, because the number of bindings is a property of each config; what is exact is the
-        # event type set and the per model comparisons below.
+        # in the title is about every binding.
+        #
+        # The entry count used to be a floor of 100, on the reasoning that the number of bindings is a
+        # property of each config rather than of the format. That reasoning was half right and drew the
+        # wrong conclusion, section 143: a per config property is stated per config, which is what the
+        # table below does, and the floor was standing under values from 103 to 883.
         for name in self.CONFIGS:
             with self.subTest(image=name):
                 c = gspm.parse(lab.load(name))
                 entries = [b for r in c.binding_records() for b in r]
-                self.assertGreater(len(entries), 100)
+                self.assertEqual(len(entries), BINDING_ENTRY_COUNTS[name], name)
                 self.assertEqual({b.event_type for b in entries}, {gspm.EVENT_PRESS})
                 scans[name] = frozenset(b.scan_code for b in entries)
         self.assertEqual(scans['h700_config'], scans['h600_config'], 'same architecture, same keypad')
@@ -1099,8 +1130,9 @@ class TestActionLists(unittest.TestCase):
                 final = [o for o in calls if first <= o <= last]
                 self.assertEqual(sorted(final), list(range(first, last + 1)),
                                  'not a cover of the final run, once each')
-                # And it calls plenty of lists outside that run as well.
-                self.assertGreater(len(calls) - len(final), 100)
+                # And it calls plenty of lists outside that run as well, exactly this many.
+                self.assertEqual(len(calls) - len(final),
+                                 {'h700_config': 229, 'h600_config': 109}[name])
 
     def test_arch_14_is_mostly_one_cross_product_against_a_fixed_vocabulary(self):
         """
@@ -1231,8 +1263,11 @@ class TestActionLists(unittest.TestCase):
             ops[name] = {i.opcode for l in c.action_lists() for i in l}
         self.assertIn(0x6C, ops['h700_config'])
         self.assertNotIn(0x6C, ops['h525_config'])
-        # And they do overlap, so this is not two unrelated encodings.
-        self.assertGreater(len(ops['h700_config'] & ops['h525_config']), 8)
+        # And they do overlap, so this is not two unrelated encodings. All three counts, because the
+        # shared core only means something against the size of the two sets: 11 of the Harmony 525's
+        # 20 opcodes are also the Harmony 700's, which emits 52.
+        self.assertEqual(len(ops['h700_config'] & ops['h525_config']), 11)
+        self.assertEqual((len(ops['h700_config']), len(ops['h525_config'])), (52, 20))
 
 
 class TestTheArch9InfraredHeader(unittest.TestCase):

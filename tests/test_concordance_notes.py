@@ -361,7 +361,7 @@ class TestTheFrontPageOnlyTellsStrangersToRead(unittest.TestCase):
 
     def test_the_front_page_does_invoke_concordance(self):
         # Without this the rest passes vacuously the moment somebody reformats the section.
-        self.assertGreaterEqual(len(self._invocations()), 2, self._invocations())
+        self.assertEqual(len(self._invocations()), 2, self._invocations())
 
     def test_every_flag_on_the_front_page_only_reads(self):
         for line in self._invocations():

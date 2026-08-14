@@ -51,12 +51,26 @@ const EXPECTED: Readonly<Record<string, Expectation>> = {
   one_safemode: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
   one34_region2: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
   h700_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 20, marker: 'LWJL', keys: 0, architecture: 14 },
+  // The other two arch 14 safe mode containers, added on 14 August 2026 by the owner's decision. They
+  // were parsed by every other test in this package and absent from this table, which is the framing
+  // claims' population, so those claims covered 13 containers where `tests/test_gspm.py` covered 17.
+  // Section 143.
+  h600_safemode_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 20, marker: 'LWJL', keys: 0, architecture: 14 },
+  h650_safemode_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 20, marker: 'LWJL', keys: 0, architecture: 14 },
   one_config: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 22, marker: 'LWJL', keys: 55, architecture: 12 },
   one_config_unprogrammed: { magic: 'GSPM', base: 0x040000, version: '1.6', slots: 22, marker: 'LWJL', keys: 55, architecture: 12 },
   h600_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 162, architecture: 14 },
   h700_config: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 163, architecture: 14 },
   h700_config_2: { magic: 'GSPM', base: 0x030000, version: '1.4', slots: 20, marker: 'LWJL', keys: 163, architecture: 14 },
   h525_config: { magic: 'AHCM', base: 0x020000, version: '1.4', slots: 20, marker: 'CMAH', keys: 0, architecture: 9 },
+  // The bench Harmony 525's own config, read over USB, identical in every container field to the
+  // published sample from another owner. Section 76.
+  h525_config_2: { magic: 'AHCM', base: 0x020000, version: '1.4', slots: 20, marker: 'CMAH', keys: 0, architecture: 9 },
+  // And its safe mode container, cut out of the firmware region at flash `0x818000`. Its base is
+  // `0x018000`, which is `0x800000` below the address READ_FLASH names, exactly as the user config's
+  // `0x020000` is below `0x820000`: two containers, one offset. It is the **fifth** base address in the
+  // corpus, and its absence here is why this side reported four while the documents said five.
+  h525_safemode_ahcm: { magic: 'AHCM', base: 0x018000, version: '1.4', slots: 20, marker: 'CMAH', keys: 0, architecture: 9 },
   arch8_config_a: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
   arch8_config_b: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
   arch8_config_c: { magic: 'TPTP', base: 0x020000, version: '1.5', slots: 21, marker: 'WLWL', keys: 56, architecture: 8 },
@@ -68,14 +82,27 @@ const NAMES = Object.keys(EXPECTED);
 /**
  * The samples that are somebody's actual configuration.
  *
- * The other three are containers of the same format with no user assignments in them: the factory
- * config packed inside a firmware image (`h700_gspm`) and the two safe mode configs. They have no
- * action lists at all and only some of the pointer array sections, so a claim about "every
- * config" has to mean these ten. `tests/test_gspm.py` draws the same line.
+ * The others are containers of the same format with no user assignments in them: the factory config
+ * packed inside a firmware image (`h700_gspm`) and four safe mode configs. They have no action lists
+ * at all and only some of the pointer array sections, so a claim about "every config" has to mean the
+ * twelve. `tests/test_gspm.py` draws the same line.
+ *
+ * **The list grew on 14 August 2026 and three tests are why it had to.** When `EXPECTED` was widened to
+ * the seventeen the Python table already held, the three added safe mode containers arrived on this side
+ * of the line and broke `the same six base slots are pointer arrays in every config`, the packing
+ * agreement and the action list parse. All three were correct and none of them had ever been asked about
+ * a safe mode container: the population was what made them pass. Section 143, and the same shape as the
+ * arch 9 safe mode container contradicting six claims when it entered the corpus, sections 77 to 79.
  */
-const USER_CONFIGS = NAMES.filter(
-  (n) => !['h700_gspm', 'one_safemode', 'one34_region2'].includes(n),
-);
+const NOT_A_USER_CONFIG = [
+  'h700_gspm',
+  'one_safemode',
+  'one34_region2',
+  'h525_safemode_ahcm',
+  'h600_safemode_gspm',
+  'h650_safemode_gspm',
+];
+const USER_CONFIGS = NAMES.filter((n) => !NOT_A_USER_CONFIG.includes(n));
 
 function userConfigs(): Array<{ name: string; container: Container; expected: Expectation }> {
   return everySample().filter((s) => USER_CONFIGS.includes(s.name));
@@ -174,7 +201,7 @@ test('the corpus spans more than one of everything', skipWithoutLab(), () => {
   // tolerance and has none. Stated exactly, the span is documented and a sample that widens it moves
   // these numbers in the diff instead of passing silently.
   assert.equal(distinct((s) => s.container.family.magic), 3, 'container cookies');
-  assert.equal(distinct((s) => s.container.flashBase), 4, 'base addresses');
+  assert.equal(distinct((s) => s.container.flashBase), 5, 'base addresses');
   assert.equal(distinct((s) => s.container.formatVersion), 3, 'format versions');
   assert.equal(distinct((s) => s.container.pointerCount), 3, 'table lengths');
   assert.equal(distinct((s) => s.container.architecture), 4, 'architectures');
@@ -255,17 +282,24 @@ test('every pointer array entry is an address inside the config', skipWithoutLab
   }
 });
 
-test('the action list table and the lists agree on the packing, bar four', skipWithoutLab(), () => {
+test('the action list table and the lists agree on the packing, bar the run boundaries', skipWithoutLab(), () => {
   // The addresses come from the pointer table and the counts come from the lists themselves, so
-  // agreement between them is two unrelated parts of the file telling the same story. The four
-  // exceptions are the boundaries between the runs the lists are packed into.
+  // agreement between them is two unrelated parts of the file telling the same story. The exceptions
+  // are the boundaries between the runs the lists are packed into, so there are one fewer of them than
+  // there are runs: four in eleven of the twelve configs and three in the one with four runs. The title
+  // said "bar four" until 14 August 2026, when a twelfth config made that false while the test passed
+  // on the number being asserted per config.
   const configs = userConfigs();
   assert.ok(configs.length > 0, 'no config present');
   for (const { name, container: c } of configs) {
     const slot = archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT);
     if (c.pointerArray(slot) === undefined) continue;
     const [fit, of] = c.actionListPacking();
-    assert.equal(of - fit, 4, `${name}: ${fit} of ${of} packed`);
+    // Four boundaries means five runs, and one config has four runs and therefore three: the bench
+    // Harmony 525's own config, which `tests/test_gspm.py` gives its own test for. It arrived on this
+    // side with the population widening of 14 August 2026 and this claim had never met it, so the
+    // exception is named here rather than the title being quietly weakened. Section 143.
+    assert.equal(of - fit, name === 'h525_config_2' ? 3 : 4, `${name}: ${fit} of ${of} packed`);
   }
 });
 
@@ -325,7 +359,7 @@ test('every sample carries a slot 3 timestamp, and the cookie pair is unique in 
   // apart occurs exactly once in every blob including the One's 1.6 MB one. That is why the
   // record needs no length field to be recognised.
   const samples = everySample();
-  assert.equal(samples.length, 13, 'the samples this claim is asserted over');
+  assert.equal(samples.length, 17, 'the samples this claim is asserted over');
   for (const { name, container } of samples) {
     assert.notEqual(container.builtAt, undefined, `${name} has no timestamp`);
     const off = container.blobOffsetOf(

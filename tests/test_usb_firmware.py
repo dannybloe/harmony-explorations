@@ -731,7 +731,9 @@ class TestFieldFourIsTheArchitecture(unittest.TestCase):
         app_diff = sum(1 for x, y in zip(*app) if x != y)
         boot_diff = sum(1 for x, y in zip(*boot) if x != y)
         self.assertEqual(app_diff, 2, 'the applications are one build')
-        self.assertGreater(boot_diff, 1000, 'the bootloaders are not')
+        # Exact: 15694 bytes differ, against a floor of 1000. The magnitude is the evidence here,
+        # since the claim is that these are two different bootloaders rather than one with a patch.
+        self.assertEqual(boot_diff, 15694, 'the bootloaders are not')
         self.assertNotEqual(boot[0][:4], boot[1][:4], 'even the reset vector differs')
 
     def test_the_low_nibble_is_the_software_type(self):
@@ -1352,7 +1354,7 @@ class TestTheEndpointSetup(unittest.TestCase):
         hits = trace.trace(lab.load('h700_code'), self.BASE, (0x400, 0x408, 0x40C, 0x410))
         self.assertEqual(hits[0x408], [], 'endpoint 1 OUT descriptor')
         neighbours = len(hits[0x400]) + len(hits[0x40C]) + len(hits[0x410])
-        self.assertGreater(neighbours, 20)
+        self.assertEqual(neighbours, 23, 'accesses to the three neighbouring descriptor bytes')
 
     def test_the_out_descriptor_is_handed_to_the_hardware_and_the_in_one_is_not(self):
         """

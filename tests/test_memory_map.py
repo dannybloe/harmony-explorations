@@ -542,7 +542,7 @@ class TestEveryMap(unittest.TestCase):
         byte run's length. It also asserts that it examined every document, because the failure it is
         replacing was silence.
         """
-        self.assertGreaterEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
+        self.assertEqual(len(_MAPS), 5, 'the memory map glob stopped matching')
         examined = 0
         for name in _MAPS:
             with self.subTest(document=name):

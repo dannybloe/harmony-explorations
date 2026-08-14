@@ -20048,12 +20048,15 @@ would be the first real case for the old exclusion and would need its own popula
 change to this one. And, for the two configs still outside: their coverage, once computed, differing
 from every other arch 8 container in a way that says they should have stayed out.
 
-## 143. Fifty two floors, and the median one sat 41 percent below the truth it was guarding
+## 143. Ninety three floors across both languages, and the two halves were loose in different ways
 
 Section 142 ended by making three floors exact in one file and calling them "the population wearing a
 tolerance". This section is what happened when every one of them was measured instead of three. There
-were **52**, in 15 TypeScript test files, from **23 commits between 5 and 13 August 2026**, and none of
-them had ever failed.
+were **52** in the TypeScript tests and **41** more in the Python ones, 93 in all, and none of them had
+ever failed. The TypeScript half is below, then the Python half, which turned out to be loose in a
+different way, and then a second defect the sweep exposed on its way past.
+
+The TypeScript 52 sit in 15 files and come from **23 commits between 5 and 13 August 2026**.
 
 The verification standard already said "assert the count, not a bound under it". What it did not say,
 because nobody had measured it, is how far under. The answer per floor is the interesting part and the
@@ -20164,13 +20167,134 @@ Three controls, all of which bit: a new unexplained floor added to a test file, 
 after its floor had gone, and the pattern itself broken so that it matches nothing. The third is the one
 worth having, because a static rule that silently stops matching reports that everything is clean.
 
-### What is left, counted
+### What was left when this section was first written
 
-**The Python half is untouched and it is 50 sites**, 39 of which are on a length or a count. It is a
-separate sweep and not a bigger version of this one, because several of them are bounds on a
-**filesystem** scan rather than on the corpus, where the population is not a literal list in the file
-and an exact count moves whenever anybody adds a source file. `tests/test_toolchain.py` now contains one
-of those itself, at 33 TypeScript test files.
+**The Python half was untouched and counted at 50 sites**, and it was swept the same day rather than
+left, which is what the next part of this section reports. The reason it was written up as a separate
+half rather than a bigger version of the same sweep still holds: several of its bounds are on a
+**filesystem** scan rather than on the corpus, where the population is not a literal list in the file.
+
+### The Python half, measured the same day, and its distribution is different
+
+51 sites on this side, of which **41 guard a number that can be measured** and became exact: 29 scalar
+assertions, 4 conditionals and four per sample tables holding 63 measured numbers. Ten remain as bounds
+with a recorded reason. Same method as the TypeScript half, a probe in place of each assertion with the
+suite run whole and the files restored from copies.
+
+The distribution is not the same, and the difference says what each half was doing wrong.
+
+| | TypeScript | Python |
+|---|---|---|
+| floors made exact | 52 | 41 |
+| bounds kept, with a reason | 25 | 10 |
+| median headroom | 41% | 13% |
+| exactly on the value guarded | 6 | 15 |
+
+**The dominant Python failure mode is a floor pinned to the smallest sample**, where the TypeScript one
+was a floor pinned to a stale total. Fifteen of the 41 sat exactly on the value they guarded, and four
+of those were per sample sites where the floor was the population's **minimum**: `counts.pop() >= 46`
+against font glyph counts of 46 to 76, `len(curve) >= 14` against 14 and 16, `runs >= 4` against 4 and
+5, `len(targets) >= 2` against 2 and 3. Such a floor is tight on one sample and up to 39% loose on
+another in the same loop, and it reads as though somebody had chosen a tolerance.
+
+The reason the two halves differ is what each kind of test asserts. The Python tests mostly read
+**firmware**, where a count is the shape of a routine and the author measured it and then wrote it down
+as a floor: four `IORWF`s, two `RETURN`s, three `MULWF`s, four calls in an executor window. Nothing
+about those numbers was ever going to drift, so the floor never bit and never could. The TypeScript
+tests mostly total the **corpus**, which grew under them.
+
+Three of the Python conversions are worth naming.
+
+* **A floor that was under by one and nobody noticed.** `test_the_corpus_spans_more_than_one_of_everything`
+  bounded its five spans at 3, 4, 3, 3 and 4. Four of those are exactly the span. The base address
+  count is **five**, so that floor had been one under since a fifth base address entered the corpus, and
+  the test whose whole purpose is to say the corpus spans things could not say how far.
+* **A per config property is stated per config.** `len(entries) > 100` on key bindings carried a written
+  reason: that the number of bindings is a property of each config rather than of the format. That
+  reasoning is right and its conclusion was wrong. A per config property belongs in a per config table,
+  which is what it has now, 103 to 883 across the fifteen; the floor stood under all of them and
+  asserted the property of none.
+* **The light curve is two entries longer on a Harmony One.** `len(curve) >= 14` hid it. Groups 5 and 6
+  hold 14 entries on arch 8 (Harmony 880 and 885) and arch 14 (Harmony 600 and 700) and **16** on arch
+  12 (Harmony One), asserted per architecture now. A small format fact that a floor had been sitting on
+  top of for as long as the test existed.
+
+### One ground for a bound that only the Python side needs
+
+A **churning population**. Two Python floors count files or functions that exist rather than samples in
+a list: `scanned > 600` over every test function in the repository, 832 of them. An exact number there
+would be rewritten by any commit that adds a test, and a number nobody reads while changing it has
+stopped being a measurement. So that one stays a bound with the argument written at the site, and its
+two neighbours are exact because adding a test **file** is deliberate: 25 Python test files, 33
+TypeScript ones.
+
+`APythonBoundOnACorpusTotalIsExact` enforces this half, with `PYTHON_BOUNDS_WITH_A_REASON` holding the
+ten that remain: three physical bands, four per item claims, one over somebody else's source and the
+churning one, plus the two word rule on the reasons themselves.
+
+**Its falsifier caught the scan reading its own text.** The first version of the comment skip test
+asserted that `test_gspm.py`'s comment quoting a removed floor is what the skip protects against. It is
+not: the pattern is anchored on `self.assert`, and that comment quotes the call without its receiver, so
+it was never visible either way. Worse, the test **spelled the pattern it scans for**, and the scan
+promptly reported the test as an offender in its own report. Both are fixed and both are stated: the
+demonstration assembles the call from two strings, for the same reason the em-dash check must not contain
+an em-dash.
+
+### And the sweep found a second pair of populations that nobody compares
+
+Not a floor, and worth more than most of them. `packages/codec/test/gspm.test.ts` and `tests/test_gspm.py`
+each hold an `EXPECTED` table of containers with their cookie, base address, format version, pointer
+count and marker, and they are the tables every container framing claim is asserted over. The Python one
+holds **17** names and the TypeScript one **13**. The Python set is a strict superset; the four it has and
+the other does not are `h525_config_2`, `h525_safemode_ahcm`, `h600_safemode_gspm` and `h650_safemode_gspm`.
+
+This is why the two sides now report different spans: 5 distinct base addresses here against 4 there, from
+the same reader on the same corpus. It surfaced only because making both spans exact put two numbers side
+by side that a pair of floors had been hiding.
+
+It is the same defect the Python table's own comment records having had once before, one language later:
+"Both were in the corpus without being in this table, which is how `docs/config-format.md` came to say
+thirteen samples while fifteen containers were being parsed elsewhere." `TheCorpusWidePopulationsAgree`
+compares four other lists for exactly this reason and does not compare these two.
+
+**All four already parse on the TypeScript side**, which is what makes this a table and not a reader:
+every one of them is in that package's `ALL_CONTAINERS`, the nineteen its coverage, emitter and edit
+tests walk. So widening was data entry, with the values in the Python table already and nothing to read
+first.
+
+**The owner decided the same day that they count, and the data entry was the cheap part.** Adding four
+names broke **three** tests at once and made a fourth title false, and every one of them was correct
+before and after:
+
+* `the same six base slots are pointer arrays in every config`, `the action list table and the lists
+  agree on the packing` and `every action list parses and no list is empty` all failed, because the three
+  added safe mode containers landed on the **user config** side of a hand written exclusion list of three
+  names. A safe mode container has no action lists and only some of the pointer arrays, so those claims
+  had never been asked about one. `NOT_A_USER_CONFIG` names six now and says why it grew.
+* `the action list table and the lists agree on the packing, **bar four**` then still failed, on content
+  rather than population: the bench Harmony 525's own config packs into four runs where every other packs
+  into five, so it has three boundaries and not four. The Python side has a whole test for that fact and
+  this side had never met the sample. The exception is named and the title now says "bar the run
+  boundaries", because "bar four" was a claim and it had become false.
+
+So four names exposed four claims whose population was doing the work, which is the same lesson as the
+arch 9 (Harmony 525) safe mode container contradicting six claims when it entered the corpus, sections 77
+to 79, and the same lesson as excluding it would have left the corpus agreeing with itself.
+`TheTwoExpectationTablesNameTheSameContainers` asserts the two tables are equal now, and separately that
+the user config line is still drawn by name, since leaving it implicit is what broke the three.
+
+### The control sweep left one perturbation behind, and the gate is what caught it
+
+Worth recording because it is the failure mode of the method rather than of the code. The Python control
+ran 51 sites by perturbing a literal, running the one test that holds it, and restoring the file from a
+copy. It reported 51 of 51 biting, and one perturbation survived: `len(calls)` was left asserting 5
+where it measures 4, which `make all` then failed on. The cause is **not established** and the mechanism
+is narrowed to one thing: the restore is a plain statement rather than a `finally`, so anything that
+interrupts a site leaves that file dirty, and the script shares one copy path per file across its sites.
+
+Two rules come out of it, and the second is the one that saved this. A control that mutates the tree
+restores in a `finally`. And **a control sweep is followed by the full gate**, not by the sweep's own
+summary: the sweep said 51 of 51 and the tree was wrong.
 
 ### What would falsify it
 

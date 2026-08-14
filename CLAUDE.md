@@ -1181,18 +1181,20 @@ Established norms:
   list that is a literal in its own file, so an exact count moves only when somebody changes a reader
   or adds a sample, and then it moves in the diff. Same rule for a share: state both counts, since
   `0.95` hides which side moved.
-  **All of them were measured on 14 August 2026 and there were 52**, section 143, in 15 TypeScript
-  test files from 23 commits, where the median floor sat **41%** below the value it guarded and six
-  sat exactly on it. Two things the section adds to this rule. A floor is a **fossil**: `glyphs >
-  65000` was 0.7% under the truth the day it was written and is 62% under now, so a passing test never
-  says how old its bound is. And what a floor cannot do is notice a total moving **up**, which is how
-  a double counted sample gets in, nor tell a control's magnitude, where 54 against 227 is the
-  evidence. Three floors turned out to want a **closure** rather than a number, which is stronger
-  because it cannot be restamped from one side. The rule is enforced now:
-  `ABoundOnACorpusTotalIsExact` in `tests/test_toolchain.py` refuses a numeric lower bound in a
-  TypeScript test unless it is named in `TYPESCRIPT_BOUNDS_WITH_A_REASON`, which holds the 25 that are
-  a per item claim, a physical band or a consequence beside an exact assertion. **The Python half is
-  50 sites and untouched.**
+  **All of them were measured on 14 August 2026 and there were 93**, section 143, 52 in the TypeScript
+  tests and 41 in the Python ones, and **the two halves were loose in different ways**. TypeScript: the
+  median floor sat **41%** below the value it guarded, because a floor is a **fossil**, `glyphs > 65000`
+  being 0.7% under the truth the day it was written and 62% under now. Python: the median sat 13% under
+  and **fifteen sat exactly on the value**, four of them on the **smallest sample** of a per sample
+  loop, which is tight on one sample and 39% loose on its neighbour. Two things a floor cannot do at
+  all: notice a total moving **up**, which is how a double counted sample gets in, and tell a control's
+  magnitude, where 54 against 227 is the evidence. Three turned out to want a **closure** rather than a
+  number, which cannot be restamped from one side. Both halves are enforced now, by
+  `ABoundOnACorpusTotalIsExact` and `APythonBoundOnACorpusTotalIsExact` in `tests/test_toolchain.py`:
+  a numeric lower bound has to be named in `TYPESCRIPT_BOUNDS_WITH_A_REASON` or
+  `PYTHON_BOUNDS_WITH_A_REASON`, which hold the 25 and the 10 that are a per item claim, a physical
+  band, a consequence beside an exact assertion, somebody else's source, or a **churning population**,
+  the last being the one ground only the Python side needs.
 * **A test's title is a claim and gets checked like one.** Four titles in that sweep named more than
   their bodies carried, and the failure is invisible because the test passes: `every key a screen
   labels gets a label` where 74 of 6988 have none, `six reads and nothing that writes` over a table
@@ -1214,6 +1216,18 @@ Established norms:
   `make facts-write` is what did it. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
   ones where the exclusion had a reason, and stating the reason as a measurement turns an exclusion
   into a check.
+  **A third pair turned up on 14 August and the owner settled it the same day**, section 143: the
+  `EXPECTED` tables that every container framing claim is asserted over held **17** names in
+  `tests/test_gspm.py` and **13** in `packages/codec/test/gspm.test.ts`, the Python set being a strict
+  superset, so the two sides reported 5 base addresses and 4 from the same reader on the same corpus. It
+  surfaced only because making both corpus spans exact put two numbers beside each other that a pair of
+  floors had hidden, which is the lesson to carry: **when two lists disagree, look for the assertion that
+  was letting them.** Both tables name the same seventeen now and
+  `TheTwoExpectationTablesNameTheSameContainers` keeps them equal. **The data entry was the cheap part**:
+  four names broke three tests and falsified a fourth title, because the added safe mode containers landed
+  on the user config side of a hand written line of three names, and because one Harmony 525 config packs
+  into four action list runs where every other packs into five. So `NOT_A_USER_CONFIG` is named and
+  asserted, and a claim about "every config" has to say which population it means.
 
 ## Where the work stands
 

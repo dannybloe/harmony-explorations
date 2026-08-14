@@ -71,8 +71,19 @@ class TestTheStoredVectorsStillDescribeTheSamples(unittest.TestCase):
             with open(path) as fh:
                 vector = json.load(fh)
             with self.subTest(sample=name):
-                self.assertGreaterEqual(len(vector['sections']), 19)
-                self.assertGreaterEqual(len(vector['checks']), 7)
+                # The section count is the vector's own `pointer_count`, on all 33, which is a closure
+                # between two fields the writer emitted separately and stronger than the floor of 19
+                # that stood here. And the checks by name: fifteen everywhere bar the arch 9
+                # (Harmony 525) containers, which have no key table. Section 143, and the TypeScript
+                # side of this same test carries the same two claims.
+                self.assertEqual(len(vector['sections']), vector['pointer_count'], name)
+                # Keyed on the architecture the vector states, not on whether the key is present,
+                # which is the shape that would derive the expectation from the answer and could then
+                # only fail by arithmetic. Same reason `end_addr_points_at_end_marker` was circular,
+                # section 117.
+                arch9 = vector['architecture'] == 9
+                self.assertEqual(len(vector['checks']), 14 if arch9 else 15, name)
+                self.assertEqual('key_table_is_complete' in vector['checks'], not arch9, name)
                 for field in ('flash_base', 'end_addr', 'pointer_count', 'trailer_checksum'):
                     self.assertIn(field, vector)
 

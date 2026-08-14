@@ -114,7 +114,7 @@ class TestTheExecutor(unittest.TestCase):
             with self.subTest(image=name):
                 window = instructions(name, at['executor'], 14)
                 calls = [i for _, i in window if i.mnemonic in ('RCALL', 'CALL')]
-                self.assertGreaterEqual(len(calls), 4, 'empty test plus three pops')
+                self.assertEqual(len(calls), 4, 'empty test plus three pops')
 
     def test_the_special_case_is_opcode_0x1f_with_operand_high_0xfc(self):
         for name, at in IMAGES.items():
@@ -515,7 +515,9 @@ class TestTheStateVariableRecord(unittest.TestCase):
                 for value in record.values:
                     self.assertEqual(value[0], 0)
                     seen += 1
-        self.assertGreater(seen, 500)
+        # Exact, not a floor of 500 (section 143): every eight byte value in the fifteen user
+        # configs, so it moves when a reader changes or a sample is added and not otherwise.
+        self.assertEqual(seen, 657, 'state record values across the user configs')
 
 
 class TestTheStateVariableTable(unittest.TestCase):
@@ -545,7 +547,7 @@ class TestTheStateVariableTable(unittest.TestCase):
                 self.assertEqual(8 + 3 * table.count, after - start,
                                  'the header accounts for the whole section')
                 counts.add(table.count)
-        self.assertGreater(len(counts), 5, 'the count varies, so matching it means something')
+        self.assertEqual(len(counts), 11, 'the count varies, so matching it means something')
         self.assertEqual((min(counts), max(counts)), (21, 94))
 
     def test_every_index_is_inside_its_own_config_s_table(self):
@@ -587,7 +589,7 @@ class TestTheStateVariableTable(unittest.TestCase):
     def test_the_boundary_is_not_the_same_number_in_every_config(self):
         """Otherwise the previous test would pass on a constant rather than on a match."""
         boundaries = {self._table(name).narrow for name in self.CONFIGS}
-        self.assertGreaterEqual(len(boundaries), 6)
+        self.assertEqual(len(boundaries), 11, 'distinct boundaries across fifteen configs')
 
 
 class TestTheEventMap(unittest.TestCase):
@@ -609,7 +611,7 @@ class TestTheEventMap(unittest.TestCase):
                 self.assertEqual(table.fallback, low, 'the fallback is the value for key 0')
                 self.assertEqual(table.length, gspm.EVENT_MAP_BYTES)
                 bases.add(low)
-        self.assertGreaterEqual(len(bases), 4, 'the base varies, so matching it means something')
+        self.assertEqual(len(bases), 5, 'the base varies, so matching it means something')
 
     def test_the_section_is_much_smaller_than_the_gap_to_the_next_pointer(self):
         """The correction section 36 carries: a gap is an upper bound, not a size.
@@ -691,7 +693,7 @@ class TestTheModeTable(unittest.TestCase):
                             if i.opcode == gspm.OPCODE_ENTER_MODE}
                 self.assertEqual(len(modes), max(operands) + 1)
                 counts.add(len(modes))
-        self.assertGreaterEqual(len(counts), 6)
+        self.assertEqual(len(counts), 12, 'distinct mode table sizes')
         self.assertEqual((min(counts), max(counts)), (75, 374))
 
     def test_the_event_map_indexes_the_same_table(self):
@@ -1107,6 +1109,19 @@ class TestTheNumberSender(unittest.TestCase):
                 self.assertEqual(c.number_senders(), [])
 
 
+#: Screen programs per config, measured. Stated here rather than inside the loop so that the fifteen
+#: numbers sit together, where a sixteenth sample has to be added deliberately, and so that the
+#: spread is visible: a floor of 20 stood here against values from 111 to 6620.
+SCREEN_PROGRAM_COUNTS = {
+    'arch8_config_880': 427, 'arch8_config_885': 604, 'arch8_config_a': 394,
+    'arch8_config_b': 427, 'arch8_config_c': 463, 'arch8_config_d': 463,
+    'h525_config': 157, 'h525_config_2': 111, 'h600_config': 4544,
+    'h700_config': 6620, 'h700_config_2': 6620, 'one_config': 1013,
+    'one_config_unprogrammed': 586, 'one_spare_after_sync': 588,
+    'one_spare_before_sync': 586,
+}
+
+
 class TestTheScreenInterpreter(unittest.TestCase):
     """findings.md section 40: the second interpreter, its opcodes and its encoding."""
 
@@ -1176,7 +1191,10 @@ class TestTheScreenInterpreter(unittest.TestCase):
             programs, failed = self._walk(c)
             with self.subTest(config=name):
                 self.assertEqual(failed, 0)
-                self.assertGreater(len(programs), 20)
+                # Exact per sample, not a floor of 20 (section 143). The spread is the point: 111 on
+                # a Harmony 525 against 6620 on a Harmony 700, so one number for all fifteen would
+                # have to sit under the smallest and would then say nothing about the largest.
+                self.assertEqual(len(programs), SCREEN_PROGRAM_COUNTS[name], name)
 
     def test_every_program_ends_the_way_the_firmware_ends_one(self):
         from harmony import gspm
@@ -1331,8 +1349,23 @@ class TestTheParameterBlock(unittest.TestCase):
             for index in (5, 6):
                 curve = c.parameter_groups()[index]
                 with self.subTest(container=name, group=index):
-                    self.assertGreaterEqual(len(curve), 14)
+                    # Exact per architecture, not a floor of 14: a Harmony One's curve has two more
+                    # entries than a Harmony 880's or a Harmony 600's, which a single floor hid.
+                    self.assertEqual(len(curve), {8: 14, 12: 16, 14: 14}[c.architecture],
+                                     '%s group %d' % (name, index))
                     self.assertTrue(all(a <= b for a, b in zip(curve, curve[1:])), curve)
+
+
+#: Glyphs per font set, per container, measured. Every container of the corpus bar the one that
+#: declares four counts, which the test names as its counterexample. The 46 that stood here as a floor
+#: is what the three safe mode containers carry, so the floor was the smallest member of the population.
+FONT_GLYPH_COUNTS = {
+    'arch8_config_a': 75, 'arch8_config_b': 74, 'arch8_config_c': 76, 'arch8_config_d': 76,
+    'h525_config': 66, 'h525_config_2': 70, 'h600_config': 71, 'h600_safemode_gspm': 46,
+    'h650_safemode_gspm': 46, 'h700_config': 75, 'h700_config_2': 75, 'h700_gspm': 46,
+    'one34_region2': 46, 'one_config': 73, 'one_config_unprogrammed': 72, 'one_safemode': 46,
+    'one_spare_after_sync': 73, 'one_spare_before_sync': 72,
+}
 
 
 class TestTheFontTable(unittest.TestCase):
@@ -1409,7 +1442,10 @@ class TestTheFontTable(unittest.TestCase):
                     self.assertEqual(counts, {91, 90, 50})
                     continue
                 self.assertEqual(len(counts), 1, counts)
-                self.assertGreaterEqual(counts.pop(), 46)
+                # Exact per container, not a floor of 46: the 46 is what a safe mode container carries
+                # and it was standing in for values up to 76, so the floor was the smallest member of
+                # the population wearing a tolerance. Section 143.
+                self.assertEqual(counts.pop(), FONT_GLYPH_COUNTS[name], name)
 
     def test_the_header_byte_below_the_height_is_the_first_glyph_code(self):
         """Section 78, and the claim it replaced was that this byte is a spare.
@@ -2022,6 +2058,16 @@ class TestTheTouchScreenHitMap(unittest.TestCase):
         self.assertEqual(overlaps, 186)
 
 
+#: Timer records per config, measured. Five on a Harmony 525 and a Harmony 600, thirty on a
+#: programmed Harmony One, and the floor of 4 that stood in the loop sat under all of them.
+TIMER_COUNTS = {
+    'arch8_config_880': 17, 'arch8_config_885': 17, 'arch8_config_a': 19, 'arch8_config_b': 18,
+    'arch8_config_c': 18, 'arch8_config_d': 18, 'h525_config': 5, 'h525_config_2': 5,
+    'h600_config': 5, 'h700_config': 9, 'h700_config_2': 9, 'one_config': 30,
+    'one_config_unprogrammed': 28, 'one_spare_after_sync': 28, 'one_spare_before_sync': 28,
+}
+
+
 class TestTheTimerTable(unittest.TestCase):
     """findings.md section 43: base slot 12, and the two instructions that drive it."""
 
@@ -2050,7 +2096,8 @@ class TestTheTimerTable(unittest.TestCase):
             timers = c.timers()
             started, cancelled = self._started_and_cancelled(c)
             with self.subTest(config=name):
-                self.assertGreater(len(timers), 4)
+                # Exact per config, not a floor of 4, which was the value a Harmony 525 carries.
+                self.assertEqual(len(timers), TIMER_COUNTS[name], name)
                 self.assertEqual(started, set(range(len(timers))))
                 self.assertTrue(cancelled <= started, 'a cancel names a timer that is started')
 
