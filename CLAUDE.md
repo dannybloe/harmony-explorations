@@ -817,7 +817,7 @@ carries step 3; the documents that summarise it had, because a summary is a copy
 test. So the copies are executable now, and `make facts` is the check:
 
 * a number quoted in prose carries a marker naming the fact it states,
-  `21552<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
+  `22846<!--fact:screen_programs-->`, invisible when rendered. `tools/facts.py` recomputes it from
   the corpus, `make facts-write` updates every copy, and `--list` shows what is available.
 * a claim that a finding kills goes into `reference/superseded.md` **in the same commit**, and the
   check then refuses that wording anywhere outside a correction. Quoting a dead claim in order to
@@ -1194,8 +1194,12 @@ Established norms:
   the Python side had its own corpus of fifteen against those nineteen, and twenty nine hand written
   populations between the test files, nine of which were smaller than the claim above them. There are
   three lists now and each states its question: `lab.ALL_CONTAINERS` at 21 for a per container claim,
-  `lab.CONTAINERS` at 15 for a corpus wide total, `lab.USER_CONFIGS` at 15 for every programmed
-  config. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
+  `lab.CONTAINERS` at 19<!--fact:containers--> for a corpus wide total, `lab.USER_CONFIGS` at 15 for
+  every programmed config. **The corpus is nineteen and that was decided rather than derived**, section
+  142: it was fifteen here and nineteen in TypeScript, and the owner settled it on the ground that a
+  corpus wide total measures what a reader can read and not how many remotes exist, so the unit is the
+  container rather than the unit. Sixteen numbers in five documents moved in one commit and
+  `make facts-write` is what did it. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
   ones where the exclusion had a reason, and stating the reason as a measurement turns an exclusion
   into a check.
 
@@ -1221,7 +1225,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 ## What is known, by base slot
 
 Twenty base slots, all accounted for. 0 and 1 are header records, 2 to 17 are named sections, 18
-and 19 are NULL in all fifteen containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
+and 19 are NULL in all 21 containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
 arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at slot 18.
 
 | slot | what it is | sections |
@@ -1254,7 +1258,7 @@ that have one, and **every picture in an arch 12 bank is drawn by a program**, 9
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 21552<!--fact:screen_programs--> programs across the
+byte opcodes, section 40, whose closure is that 22846<!--fact:screen_programs--> programs across the
 corpus decode with nothing left over.
 
 **And the queue is writable because the language has an if/else**, section 140, which is the one
@@ -1760,7 +1764,7 @@ entry by entry**. What opened it was the arch 9 safe mode container, whose first
 that node's own length.
 
 **Every device in the corpus has its name, section 126**, 63<!--fact:devices_named--> of
-63<!--fact:devices_total--> in fifteen containers, and the route is ASCII rather than pixels. Base slot 0
+63<!--fact:devices_total--> in 15<!--fact:user_configs--> user configs, and the route is ASCII rather than pixels. Base slot 0
 names no devices: a device's label is a **prefix** of a state variable's name, `<label>_<property>_<values>`,
 where a name belonging to the config has a **number** in the property's place instead, which is the
 discriminator. What ties a label to an infrared group is base slot 13: the variable's transitions carry

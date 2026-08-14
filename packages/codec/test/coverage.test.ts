@@ -401,7 +401,9 @@ test('every user config is accounted for to the byte', skipWithoutLab(), () => {
     assert.equal(report.gapCount, 0);
     checked += 1;
   }
-  assert.ok(checked >= 18, `only ${checked} containers checked, expected the whole corpus`);
+  // Exact, not a floor: 18 is 19 minus the one container that is the work left, so a floor at 18
+  // was the population itself wearing a tolerance it does not have. Section 142.
+  assert.equal(checked, 18, 'every container bar the one that is the work left');
 });
 
 test('a screen program that ends by transferring still carries its terminator',
@@ -503,13 +505,15 @@ test('base slot 3 is fourteen bytes, three of them zero past the record', skipWi
       assert.equal(c.blob[claim.start + i], 0, `${name}: a nonzero byte past the clock record`);
     }
   }
-  assert.ok(seen >= 18, `only ${seen} clocks, expected one per container`);
+  // One clock record per container, and every container has one. Exact for the same reason.
+  assert.equal(seen, 19, 'one clock record per container');
 });
 
 test('base slot 17 is two zero bytes where it names the picture bank', skipWithoutLab(), () => {
   // Section 62 established that the pointer lands `PICTURE_BANK_BIAS` bytes in front of the bank on
   // arch 8, 9 and 14. Which means the section's own part is those two bytes, not the one byte an
-  // empty count accounts for, and both are zero in all thirteen containers that do this.
+  // empty count accounts for, and both are zero in all thirteen containers that do this: every
+  // container that is not arch 12 (Harmony One), of the nineteen. Section 142.
   let seen = 0;
   for (const [name] of ACCOUNTED) {
     const data = require_(name);
@@ -525,7 +529,9 @@ test('base slot 17 is two zero bytes where it names the picture bank', skipWitho
       assert.equal(c.blob[claim.start + i], 0, `${name}: a nonzero byte in front of the bank`);
     }
   }
-  assert.ok(seen >= 13, `only ${seen} banks, expected thirteen`);
+  // Thirteen: every container that is not arch 12 (Harmony One), which is the six that carry a
+  // touch hit map in this slot instead. Exact, so a container losing its bank fails here.
+  assert.equal(seen, 13, 'every non arch 12 container names a picture bank');
 });
 
 test('base slot 15s twelve arch 12 bytes are claimed by two readers, not by position',

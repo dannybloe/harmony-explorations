@@ -1268,7 +1268,8 @@ class TestTheParameterBlock(unittest.TestCase):
                 self.assertEqual(slack, 12 if c.architecture == 12 else 0)
 
     def test_every_group_is_the_length_its_firmware_demands(self):
-        """The closure: fourteen literals off two images, against thirteen containers."""
+        """The closure: fourteen literals off two images, against every container that has a firmware
+        reading of the guard, which is arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)."""
         from harmony import gspm
         lab.require(*self.CONTAINERS)
         checked = {}
@@ -1284,7 +1285,11 @@ class TestTheParameterBlock(unittest.TestCase):
         # was tight by coincidence and would have absorbed a container quietly dropping out on either
         # side. Stated per architecture instead, because the point of the closure is that two
         # different demanded lengths each fit their own containers.
-        self.assertEqual(checked, {12: 2, 14: 6})
+        # Arch 12 went from 2 to 6 in section 142, when the corpus took in the Harmony One sync pair
+        # and the two containers inside its firmware image. That is the closure holding on four more
+        # containers of the architecture whose demanded lengths differ from arch 14's, so it is the
+        # half of the claim that was thinnest.
+        self.assertEqual(checked, {12: 6, 14: 6})
         self.assertEqual(len(lab.CONTAINERS) - sum(checked.values()), 7,
                          'arch 8 and arch 9 have no firmware read of this guard')
 
@@ -1499,8 +1504,9 @@ class TestTheFontTable(unittest.TestCase):
                             self.assertEqual(len(row), glyph.width)
                 total += sum(len(g) for g in sets)
         # 3933 until section 63 read arch 9's packing and added its 160 glyphs, 4093 until
-        # section 76 put a second arch 9 config in the corpus, read off the bench 525.
-        self.assertEqual(total, 4315)
+        # section 76 put a second arch 9 config in the corpus, read off the bench 525, and 4315 until
+        # section 142 took the corpus from fifteen containers to nineteen.
+        self.assertEqual(total, 5220)
 
     def test_every_inline_string_resolves_through_its_own_font(self):
         """The closure the wrong count destroyed, and the reason this section was corrected."""
@@ -1531,8 +1537,8 @@ class TestTheFontTable(unittest.TestCase):
         # **Every one of the bench 525's own codes resolves too**, which is the first time that
         # closure has run on an arch 9 config this project read itself.
         # 58068 until section 85 made one more arch 9 program reachable, whose two strings are
-        # thirteen codes and two.
-        self.assertEqual(codes, 58083)
+        # thirteen codes and two, and 58083 until section 142 took the corpus to nineteen containers.
+        self.assertEqual(codes, 67303)
         self.assertEqual(resolved, codes)
 
     def test_a_one_byte_pixel_scores_near_zero(self):
@@ -1928,22 +1934,35 @@ class TestTheTouchScreenHitMap(unittest.TestCase):
         return gspm.parse(lab.load(name)).touch_pages()
 
     def test_only_architecture_twelve_has_it_at_all(self):
-        """The reason it stayed unnamed: eleven of thirteen containers say nothing.
+        """The reason it stayed unnamed: thirteen of nineteen containers say nothing.
 
         **The answer elsewhere is None and it used to be an empty list**, which is the correction
         rather than a change of shape: base slot 17 names the **picture bank** on every other
         architecture, so "no touch pages" was a fabrication about a section that is not a touch
         map. Two callers in `packages/codec` then read that empty list back as the picture bank
         discriminator, which is a rule derived from a reader that should have refused. Section 139.
+
+        **The split is by architecture and it used to be by name**, section 142: `TOUCH` held two
+        names, and when the corpus grew to nineteen the other four arch 12 (Harmony One) containers
+        were on the wrong side of a test whose title says architecture. All six have a hit map and no
+        other container does, so the title is provable now instead of being a coincidence of which
+        samples were listed. The two containers from inside the firmware image carry exactly one page,
+        which is what a safe mode screen is.
         """
+        from harmony import gspm
         lab.require(*self.CONTAINERS)
+        with_map = 0
         for name in self.CONTAINERS:
+            c = gspm.parse(lab.load(name))
             pages = self._pages(name)
             with self.subTest(container=name):
-                if name in self.TOUCH:
-                    self.assertGreater(len(pages), 30)
+                if c.architecture == 12:
+                    self.assertIsNotNone(pages)
+                    self.assertGreater(len(pages), 0)
+                    with_map += 1
                 else:
                     self.assertIsNone(pages)
+        self.assertEqual(with_map, 6, 'every arch 12 container and nothing else')
 
     def test_the_areas_tile_and_carry_their_own_address(self):
         """Two independent closures on a twelve byte record."""

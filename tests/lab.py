@@ -195,10 +195,18 @@ def _find(filename):
 
 
 # Every config container in the corpus, in the order the coverage report prints them. One list,
-# because the same fifteen are walked by the Python tests, by `packages/codec/test/coverage.test.ts`
-# and by `tools/facts.py`, and a corpus total is only comparable between them if they agree on what
-# the corpus is. The two Harmony One sync-pair dumps are deliberately absent: they are two states of
-# one remote rather than two remotes, so counting them would double one unit in every total.
+# because the same nineteen are walked by the Python tests, by
+# `packages/codec/test/coverage.test.ts` and by `tools/facts.py`, and a corpus total is only
+# comparable between them if they agree on what the corpus is.
+#
+# **It was fifteen until 14 August 2026**, and the four it left out are the Harmony One sync pair and
+# the two containers found inside the arch 12 (Harmony One) firmware images. The sync pair was excluded
+# on the argument that two dumps of one remote would count one unit twice in every total. That argument
+# was **decided against by the owner**, section 142, on two grounds: a corpus wide total measures what
+# a reader can read and not how many remotes exist, so the unit is the container; and the two dumps are
+# genuinely different files, since Logitech's own software wrote a config between them, which is what
+# made that pair the evidence for section 58. The TypeScript side had been counting all nineteen the
+# whole time, so this is one definition replacing two rather than a widening.
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
     'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
@@ -208,6 +216,11 @@ CONTAINERS = (
     # the corpus agreeing with itself, which is exactly the condition that hid the first glyph
     # code for a month. Sections 77 and 78.
     'h525_safemode_ahcm',
+    # Two states of one Harmony One, either side of the sync section 58 watched.
+    'one_spare_before_sync', 'one_spare_after_sync',
+    # The two containers inside the arch 12 (Harmony One) 3.4 image: the safe mode container at flash
+    # 0x002000, and the config region.
+    'one_safemode', 'one34_region2',
 )
 
 # Every **user** config: what a remote was actually programmed with, so no safe mode container and
@@ -230,35 +243,23 @@ USER_CONFIGS = (
     'arch8_config_880', 'arch8_config_885',
 )
 
-# Every container a per container claim is made over, which is **not** `CONTAINERS`, and the
-# distinction is the reason this list exists. `CONTAINERS` is the population a corpus wide **total**
-# is computed over: it leaves the Harmony One sync pair out so that one unit is not counted twice, and
-# it leaves the arch 8 (Harmony 880 and 885) configs out because adding them would move every coverage
-# figure in one commit. Neither reason applies to a claim of the form "this holds in every container",
-# which wants every container there is.
+# Every container a per container claim is made over. It differs from `CONTAINERS` by exactly two
+# names now, section 142, where it used to differ by six: the arch 8 (Harmony 880 and 885) configs are
+# containers and are outside the corpus wide totals, because adding them there moves every coverage
+# figure and that is its own step with its own reading to check.
 #
 # **The two languages disagreed about what the corpus is and nothing compared them**, section 141,
 # which is the defect `TheCorpusWidePopulationsAgree` was written for, one boundary further out: the
-# four TypeScript lists hold nineteen of these while `CONTAINERS` holds fifteen, and each side's own
-# totals stayed self consistent so no test could see it. That disagreement is **not resolved here**,
-# because which containers belong in a coverage total is a decision about the corpus rather than a
-# defect; what is fixed is the per container claims, which had four hand written populations of four
-# to fourteen names between them.
+# four TypeScript lists held nineteen while `CONTAINERS` held fifteen, and each side's own totals
+# stayed self consistent so no test could see it. `CONTAINERS` is the nineteen now and the check is an
+# equality rather than a containment.
 #
-# What stays out, and why, so that "every container" is a statement and not a shrug. Arch 10 (Harmony
-# 890): every reader is gated, because the slot mapping is not established. The calibration pair: they
-# are synthetic and deliberately outside every corpus wide figure. Firmware images: `gspm.parse` is
-# permissive enough to accept several of them, which is why this is a list rather than a filter.
-ALL_CONTAINERS = CONTAINERS + (
-    # The arch 12 (Harmony One) pair, containers found inside firmware images rather than read off a
-    # remote: the safe mode container at flash 0x002000, and the config region of the 3.4 image.
-    'one_safemode', 'one34_region2',
-    # Two states of one Harmony One, either side of the sync section 58 watched.
-    'one_spare_before_sync', 'one_spare_after_sync',
-    # The two arch 8 (Harmony 880 and 885) configs, whose reading is no longer unexamined: section 140
-    # is what they broke when the config populations were widened.
-    'arch8_config_880', 'arch8_config_885',
-)
+# What stays out of both, and why, so that "every container" is a statement and not a shrug. Arch 10
+# (Harmony 890): every reader is gated, because the slot mapping is not established. The calibration
+# pair: they are synthetic and deliberately outside every corpus wide figure. Firmware images:
+# `gspm.parse` is permissive enough to accept several of them, which is why this is a list rather than
+# a filter.
+ALL_CONTAINERS = CONTAINERS + ('arch8_config_880', 'arch8_config_885')
 
 # The one container whose fonts do not follow the generator's conventions. Named here rather than
 # spelled out in each test, so a claim that has to exclude it says why.

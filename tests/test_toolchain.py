@@ -476,25 +476,29 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         config. Both are subsets, and this asserts exactly what each leaves out, so that widening one
         without deciding about the other has to fail here rather than pass quietly.
 
-        The TypeScript lists are checked for **containment** rather than equality, and deliberately:
-        they hold nineteen of these twenty one, which is a disagreement about what belongs in a
-        coverage total and is a decision about the corpus rather than a defect. Equality would encode
-        an accident as a rule; containment catches a name that exists on one side only.
+        **The TypeScript lists are checked for equality now**, section 142: they held nineteen where
+        `CONTAINERS` held fifteen, and the owner decided the nineteen. That was the one thing section
+        141 deliberately left open, because whether two dumps of one remote count twice in a total is
+        a decision about the corpus rather than a defect, and a containment check was what permitted
+        the two answers to coexist. Equality is what makes them one definition.
         """
         import lab
         allc = set(lab.ALL_CONTAINERS)
         self.assertEqual(len(allc), len(lab.ALL_CONTAINERS), 'no duplicates')
         self.assertEqual(len(allc), 21)
         self.assertLess(set(lab.CONTAINERS), allc)
+        # Two names, and both are configs whose coverage figures have never been computed. Widening
+        # the totals to them is its own step, with its own reading to check.
         self.assertEqual(sorted(allc - set(lab.CONTAINERS)),
-                         ['arch8_config_880', 'arch8_config_885', 'one34_region2', 'one_safemode',
-                          'one_spare_after_sync', 'one_spare_before_sync'])
+                         ['arch8_config_880', 'arch8_config_885'])
         # The user configs are containers too, bar none: a config read off a remote is a container.
         self.assertLess(set(lab.USER_CONFIGS), allc)
         for relative, declaration in self.POPULATIONS.items():
-            names = set(self._names(relative, declaration))
-            self.assertLessEqual(names, allc, '%s names something outside the corpus: %s'
-                                 % (relative, sorted(names - allc)))
+            names = self._names(relative, declaration)
+            self.assertEqual(names, sorted(lab.CONTAINERS),
+                             '%s names a different corpus: missing %s, extra %s'
+                             % (relative, sorted(set(lab.CONTAINERS) - set(names)),
+                                sorted(set(names) - set(lab.CONTAINERS))))
 
     def test_the_user_config_population_is_the_same_in_both_languages(self):
         """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.

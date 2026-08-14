@@ -81,14 +81,14 @@ line, so arch 12 wakes differently from arch 14 and USB yields no part of its ma
 
 Both of the config's languages are read, and with them the text: base slot 7 is the **font table**,
 run length encoded glyphs at two bytes a pixel, or **two bits** on the monochrome 5xx panel, and
-every one of 58083<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
+every one of 67303<!--fact:inline_string_codes--> inline string codes in the corpus resolves to a glyph of the font its own
 program selected. `tools/screen_dump.py --strings` draws them, and they come out as readable
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
 a binary search dispatcher, and the queue is in RAM because the language mutates it: a comparison can
 carry an **else** arm, and it cancels the arm it does not take by writing a do nothing instruction
 over it, section 140. and a **second interpreter draws the screen**: its own one byte opcodes
-for text, bitmaps, a switch on a state variable and a jump, with 21552<!--fact:screen_programs--> programs across fifteen
-containers decoding with nothing left over. Its one instruction that
+for text, bitmaps, a switch on a state variable and a jump, with 22846<!--fact:screen_programs--> programs across
+19<!--fact:containers--> containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
 glyph uses, and the firmware states two rails a writer needs: only the low byte of each size field
 is loaded, and the row loop stops drawing above row 128 while still consuming the stream.
@@ -229,7 +229,7 @@ which turns out to be three blocks down the screen, at most two side by side, pl
 points below the display and a key at each side of it. Nothing was fitted to get there bar one offset.
 
 **Every device in the corpus has its name too**, section 126, 63<!--fact:devices_named--> of
-63<!--fact:devices_total--> across fifteen containers, and this one is ASCII rather than pixels. A
+63<!--fact:devices_total--> across 15<!--fact:user_configs--> user configs, and this one is ASCII rather than pixels. A
 device's label is a prefix of one of its state variables' names, and what says which infrared group the
 label belongs to is the variable's own transitions: they carry the action list that performs the change,
 and for a power or input variable that list is the one that sends the code. 102 variables reach exactly

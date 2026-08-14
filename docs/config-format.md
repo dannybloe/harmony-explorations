@@ -349,8 +349,8 @@ a large section. See section 36.
 
 ### Base slot 2: the log area
 
-**Confirmed on fifteen containers across four architectures**, and on the one arch 12 image, which
-is the only firmware that reads it.
+**Confirmed on 19<!--fact:containers--> containers across four architectures**, and on the one arch
+12 image, which is the only firmware that reads it.
 
 Not a pointer to a structure: three numbers reserving a region of flash above the config that the
 firmware appends to and never erases.
@@ -751,7 +751,7 @@ second byte with it, so a terminator cannot be found by scanning for a zero; no 
 is wide. What a code means is under base slot 7 below: the assignment is per config, and the text is
 recovered from the glyph's pixels rather than from the code.
 
-**21552<!--fact:screen_programs--> programs across 15<!--fact:containers--> containers and four architectures decode with nothing left over**,
+**22846<!--fact:screen_programs--> programs across 19<!--fact:containers--> containers and four architectures decode with nothing left over**,
 which is the check that matters: instructions are variable length with no length field, so a wrong
 operand count desynchronises the walk immediately. Programs are reached from base slot 11, from a
 base slot 14 lookup, and on **every** architecture **from a mode record**, whose own program sits
@@ -921,11 +921,11 @@ read at all. `findings.md` section 78.
 
 Three checks, on twelve containers across three architectures. Arch 9 is excluded because it packs
 a glyph differently and has its own figures in the subsection below; the corpus totals including it
-are 4315<!--fact:glyphs--> glyphs and 58083<!--fact:inline_string_codes--> codes.
+are 5220<!--fact:glyphs--> glyphs and 67303<!--fact:inline_string_codes--> codes.
 
-* every row comes to exactly `width`, for **3933<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
+* every row comes to exactly `width`, for **4838<!--fact:glyphs_two_byte_pixel--> glyphs**, with no stream ending mid row
 * every glyph decodes to exactly the height its set declares, 3933 of 3933
-* every inline string resolves: **54107<!--fact:string_codes_two_byte_pixel--> glyph codes** land on a non-NULL glyph of the font their
+* every inline string resolves: **63327<!--fact:string_codes_two_byte_pixel--> glyph codes** land on a non-NULL glyph of the font their
   own program selected, none out of range and none on an empty slot
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.
@@ -1028,7 +1028,9 @@ ones. The Harmony One is the only remote here with a touch panel.
 
 Where it is empty the section is **two** zero bytes rather than one, because the pointer lands two
 bytes in front of the picture bank that follows it, which is the same bias the bank walk starts
-from. Both bytes are zero in all fifteen containers that do this. `docs/findings.md` section 84.
+from. Both bytes are zero in all thirteen containers that do this, which is every container that is not
+arch 12 (Harmony One), since there the slot holds the touch hit map instead.
+`docs/findings.md` section 84.
 
 ```
 +0x00  u8   pages
@@ -1109,8 +1111,10 @@ Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript wi
 
 ### Base slot 15: the parameter block
 
-**Confirmed on fifteen containers across four architectures**, and every length claim below is a
-literal in the firmware rather than a count of what the corpus carries.
+**Confirmed on the twelve containers whose architecture has a firmware reading of the guard**, six
+arch 12 (Harmony One) and six arch 14 (Harmony 600 and 700), and every length claim below is a literal
+in the firmware rather than a count of what the corpus carries. Arch 8 and arch 9 carry the section and
+no image here reads it, so their seven containers are outside the claim.
 
 ```
 +0x00  u8   count
@@ -1846,8 +1850,8 @@ and not the highest.
 
 #### Which devices a config drives, and what each one is called
 
-**Confirmed on fifteen containers across four architectures**, section 126, which names
-63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device is an infrared group,
+**Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, section 126,
+which names 63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device is an infrared group,
 section 86, so the list is base slot 5's group array and the question is only the name.
 
 A level 1 name that belongs to a device is spelled
@@ -2743,7 +2747,7 @@ Where the division happens is not established.
 ## Open questions
 
 1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted
-   for: two header records, sixteen named sections, and 18 and 19 NULL in all fifteen containers.
+   for: two header records, sixteen named sections, and 18 and 19 NULL in all 21 containers.
    Section 47 closed the last one. What is open is now one level down, inside the sections, and
    each entry above says which part of itself is not established.
 2. Three of the four IR encoding classes. The dispatcher routes four selectors and only one is

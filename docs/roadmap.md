@@ -556,7 +556,7 @@ Ported: the header, the section table, the marker, the trailer, the key table, s
 supply half the screen programs' entry points.
 
 **Those two proved themselves by arithmetic rather than by golden vectors**, which is worth more.
-Section 40 states 21552<!--fact:screen_programs--> programs across the corpus and section 46 states 3933<!--fact:glyphs_two_byte_pixel--> glyphs and 54107<!--fact:string_codes_two_byte_pixel-->
+Section 40 states 22846<!--fact:screen_programs--> programs across the corpus and section 46 states 4838<!--fact:glyphs_two_byte_pixel--> glyphs and 63327<!--fact:string_codes_two_byte_pixel-->
 resolving string codes, all three produced by `src/harmony/gspm.py` and published before this port
 existed. The TypeScript readers reach the same three numbers. A vector file compares an
 implementation against a recording of itself; this compares two implementations against a number
@@ -1021,7 +1021,8 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
   sixteen bits without an error. `docs/findings.md` section 43. **Base slot 15 followed**, section 44, and it corrects section 38's
   reading of it: it is the parameter block, numbered groups of sixteen bit constants, and the
   firmware demands the length of every group as well as the section's count. Fourteen such lengths
-  are literals in two images and every one holds in all fifteen containers. **Slot 17 followed**, section 45: it is the touch
+  are literals in two images and every one holds in all twelve containers of the two architectures
+  whose firmware states them. **Slot 17 followed**, section 45: it is the touch
   screen hit map, populated only on arch 12 because the Harmony One is the only remote here with a
   touch panel, and empty in the other eleven containers, which is why decoding arch 14 first could
   never have found it. **Slot 2 closed the table**, section 47: it is the log area, three numbers

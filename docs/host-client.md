@@ -276,7 +276,7 @@ Section 47 read base slot 2 as three numbers reserving a region of flash that th
 appends to and never erases, and identified what appends: ten call sites on one operand ladder.
 What it could not say is what an entry means. The client says, and its reading of the reserving
 record is identical to section 47's, stride of 8 included, which section 47 derived from
-arithmetic across fifteen containers with no code at all.
+arithmetic across nineteen containers with no code at all.
 
 An entry is eight bytes, and the byte at `+0x07` says how many are used:
 

@@ -9363,8 +9363,8 @@ which is the condition that hid the first glyph code, so the tests assert the ex
 skipping it.
 
 The corpus totals it moves are the sixth item on section 76's list, and they move as arithmetic:
-21552<!--fact:screen_programs--> screen programs, 4315<!--fact:glyphs--> glyphs and
-58083<!--fact:inline_string_codes--> inline string codes.
+22846<!--fact:screen_programs--> screen programs, 5220<!--fact:glyphs--> glyphs and
+67303<!--fact:inline_string_codes--> inline string codes.
 
 ### One tooling hole, found on the way
 
@@ -19968,3 +19968,82 @@ bytes, which would mean the predicate is not the reason the six are excluded. An
 question the section deliberately leaves open: a coverage figure computed over `CONTAINERS` and quoted
 beside one computed over the TypeScript nineteen, which is the confusion the containment check permits
 and the equality check would have caught.
+
+## 142. The corpus is nineteen containers, decided rather than derived
+
+Section 141 found that this project had two definitions of "the corpus", fifteen on the Python side and
+nineteen on the TypeScript side, and deliberately did not pick one, because the difference is a decision
+about what a corpus wide total should measure rather than a defect in either. The owner decided the
+nineteen on 14 August 2026. This section records the decision, the argument, and everything it moved,
+because sixteen numbers in five documents changed in one commit and a reader is entitled to know why.
+
+### The four containers, and the argument for counting them
+
+Two of them are the Harmony One **sync pair**, two reads of the spare unit either side of the config
+Logitech's own software wrote to it, section 58. Two are containers found **inside** the arch 12
+(Harmony One) firmware image, the safe mode container at flash `0x002000` and the config region.
+
+The old exclusion rested on one sentence: two dumps of one remote would count that unit twice in every
+total. Against it:
+
+* **A corpus wide total measures what a reader can read, not how many remotes exist.** Coverage,
+  attributed bytes, screen programs decoded: the unit of every one of those figures is a container, and
+  nothing about them is per remote. The double counting the exclusion guarded against was a distortion
+  of a statistic nobody computes.
+* **The two dumps are genuinely different files.** A sync ran between them, which is why that pair is
+  the evidence for section 58 and for base slot 3's timestamp being confirmed against a date known in
+  advance. Treating them as one sample discards the one controlled difference in the corpus.
+* **The other side was already counting them.** `packages/codec`'s coverage, emitter, edit and section
+  tests have walked all nineteen for as long as they have existed, so this is one definition replacing
+  two rather than a population growing.
+
+The two arch 8 (Harmony 880 and 885) configs stay outside the totals, and that is now the **only**
+difference between `CONTAINERS` and `ALL_CONTAINERS`. Their coverage has never been computed, so
+including them would move every figure with a reading nobody has checked, which is its own step.
+
+### What moved
+
+| fact | was | is |
+|---|---|---|
+| containers | 15 | 19<!--fact:containers--> |
+| screen programs decoded | 21552 | 22846<!--fact:screen_programs--> |
+| glyphs | 4315 | 5220<!--fact:glyphs--> |
+| glyphs, two byte pixel | 3933 | 4838<!--fact:glyphs_two_byte_pixel--> |
+| inline string codes | 58083 | 67303<!--fact:inline_string_codes--> |
+| string codes, two byte pixel | 54107 | 63327<!--fact:string_codes_two_byte_pixel--> |
+| infrared records | 3165 | 3387<!--fact:infrared_records--> |
+| mode records | 2238 | 2515<!--fact:mode_records--> |
+
+Every one of them is a count over a larger population and not a changed reading. `make facts-write`
+performed the document half, which is what that tool exists for, and it printed all sixteen rewrites so
+that each could be read against the sentence around it. Two sentences did need rewriting rather than
+renumbering, and both are the same mistake in miniature: a figure quoted with a population in words
+beside it, where only the figure carried a marker.
+
+### Three floors that were the population wearing a tolerance
+
+`packages/codec/test/coverage.test.ts` ended three corpus wide tests with `assert.ok(seen >= 18)`,
+`assert.ok(seen >= 18)` and `assert.ok(seen >= 13)`. The measured values are 18, 19 and 13. So two of
+the three were **exactly** the population, which is the shape this project's verification standard
+names as worse than a loose floor: it reads as tolerance and has none, and the third would have
+absorbed a whole container dropping out of the picture bank claim. All three are exact now, and the
+thirteen has a reason attached rather than a number: it is every container that is not arch 12 (Harmony
+One), because there base slot 17 holds the touch hit map instead of naming the picture bank.
+
+### And one claim got its architecture back
+
+`test_only_architecture_twelve_has_it_at_all` split its containers by a two name list, `TOUCH`. When the
+corpus took in four more arch 12 (Harmony One) containers, four of them landed on the wrong side of a
+test whose title is about an architecture. All six arch 12 containers carry a touch hit map and no other
+container does, so the title is provable now instead of being a coincidence of which samples were
+listed. The two containers from inside the firmware image carry exactly **one** page, which is what a
+safe mode screen is. Same lesson as section 141's three predicates, found by a decision rather than by a
+sweep.
+
+### What would falsify it
+
+A figure quoted anywhere against fifteen containers that `make facts` cannot see, which would mean the
+sweep missed a copy. A corpus wide total that is genuinely per remote rather than per container, which
+would be the first real case for the old exclusion and would need its own population rather than a
+change to this one. And, for the two configs still outside: their coverage, once computed, differing
+from every other arch 8 container in a way that says they should have stayed out.
