@@ -548,7 +548,7 @@ test('every device in the corpus has a name, and most of them are stated rather 
       seen.total += rows.length;
       perArchitecture.set(c.architecture as number, seen);
     }
-    assert.ok(total >= 60, `enough devices to mean something, got ${total}`);
+    assert.equal(total, 63, 'every device in the corpus, which is the same figure `make devices` prints');
     assert.equal(named, total, `every device is named: ${named} of ${total}`);
     for (const architecture of [8, 9, 12, 14]) {
       const here = perArchitecture.get(architecture) as { named: number; total: number };
@@ -585,7 +585,7 @@ test('a device label is drawn on the screen as well, which is two encodings of o
         else assert.fail(`${name}: a device label nothing draws`);
       }
     }
-    assert.ok(exact >= 50, `enough labels to mean something, got ${exact}`);
+    assert.equal(exact, 53, 'the labels the drawn name check agrees on');
     assert.ok(truncated <= 2, `and the screen truncates few of them, got ${truncated}`);
   });
 
@@ -737,13 +737,13 @@ test('every button that sends a code sends it on the press, and every code exist
         bindings += 1;
       }
     }
-    assert.ok(bindings >= 3000, `enough bindings to mean something, got ${bindings}`);
-    assert.ok(macros >= 50, `and enough of them are macros, got ${macros}`);
+    assert.equal(bindings, 4448, 'every key binding in the corpus');
+    assert.equal(macros, 88, 'of those, the macros: more than one code in an order that matters');
     // **Both kinds of list are covered**, which they were not at first: the hard keys of an activity
     // are in its base slot 9 set and in no mode page, so a view built on pages alone showed every
     // soft key and no volume key. Asserted as a count of each rather than a total.
-    assert.ok(fromPages >= 1000, `enough page bindings, got ${fromPages}`);
-    assert.ok(fromSets >= 1000, `enough set bindings, got ${fromSets}`);
+    assert.equal(fromPages, 3106, 'the bindings that come from a mode page');
+    assert.equal(fromSets, 1342, 'and the ones that come from a base slot 9 set');
     assert.equal(handlers, 17, 'and the handler entries that send are a known, small set');
   });
 
@@ -809,10 +809,23 @@ test('a screen key and a keypad key never share a scan code', skipWithoutLab(), 
     for (const key of keyCodes(c)) if (key.where === 'set') seen.hard.add(key.scan);
     census.set(c.architecture, seen);
   }
+  // How many keypad scans each architecture binds through a base slot 9 set. Measured, and stated
+  // here rather than in the loop so the four numbers sit together where a fifth architecture would
+  // have to be added deliberately.
+  //
+  // The first version of this table had the four values in the wrong order, because they were read off
+  // a map whose insertion order is which container came first rather than the architecture. It failed
+  // immediately, which is the argument for an exact count in one line: a floor of 20 could not have
+  // told a right table from a shuffled one.
+  const KEYPAD_SCANS: Record<number, number> = { 8: 42, 9: 39, 12: 37, 14: 41 };
   let shared = 0;
   for (const [architecture, seen] of census) {
     for (const scan of seen.soft) if (seen.hard.has(scan)) shared += 1;
-    assert.ok(seen.hard.size > 20, `arch ${architecture} should bind many keypad keys`);
+    // Exact per architecture, not a floor of 20: 42 on arch 8 (Harmony 880 and 885), 39 on arch 9
+    // (Harmony 525), 37 on arch 12 (Harmony One) and 41 on arch 14 (Harmony 600 and 700). A floor at
+    // 20 would have absorbed half the keypad of any of them.
+    assert.equal(seen.hard.size, KEYPAD_SCANS[architecture],
+      `arch ${architecture} binds ${seen.hard.size} keypad keys`);
   }
   assert.equal(shared, 1, 'exactly one scan is bound both ways anywhere in the corpus');
   const soft = (architecture: number): number[] => [...(census.get(architecture)?.soft ?? [])]
@@ -867,7 +880,7 @@ test('a Harmony One labels its soft keys from the hit map, and by the nearest re
         if (containing.length > 1) overlapping += 1;
       }
     }
-    assert.ok(overlapping >= 7, `only ${overlapping} labels start inside two rectangles`);
+    assert.equal(overlapping, 544, 'labels whose start point is inside two rectangles, where the floor said seven');
   });
 
 test('the labels agree with the activity names derived a different way', skipWithoutLab(), () => {
@@ -902,8 +915,13 @@ test('the labels agree with the activity names derived a different way', skipWit
   assert.equal(agree, 62, `${agree} keys agree`);
   assert.deepEqual(disagreed, ['arch8_config_885 page 40 scan 44 by row'], 'the known exception, alone');
   // And both routes are calibrated, not just the stated one.
-  assert.ok((perSource.get('touch') ?? 0) >= 8, 'the hit map is checked');
-  assert.ok((perSource.get('row') ?? 0) >= 45, 'and so are the screen rows');
+  // Exact, and the two now close on the total: 11 keys are named through the hit map and 51 through
+  // the screen rows, and 11 plus 51 is the 62 asserted above. So a route quietly answering for the
+  // other one cannot pass, which is what the two floors of 8 and 45 allowed.
+  assert.equal(perSource.get('touch'), 11, 'keys named through the hit map');
+  assert.equal(perSource.get('row'), 51, 'and through the screen rows');
+  assert.equal((perSource.get('touch') ?? 0) + (perSource.get('row') ?? 0), agree,
+    'the two routes account for every agreeing key');
 });
 
 test('a row with two items has two keys that do different things', skipWithoutLab(), () => {
@@ -945,7 +963,7 @@ test('a row with two items has two keys that do different things', skipWithoutLa
   }
   assert.equal(twoItems, 1989, `${twoItems} rows draw two items`);
   assert.equal(twoItemsSame, 0, 'two items always mean two different actions');
-  assert.ok(oneItemSame >= 50, `and one item can mean one action, seen ${oneItemSame} times`);
+  assert.equal(oneItemSame, 82, 'rows where one item means one action');
 });
 
 // Named keys against bound keys, per architecture. Stated here so the numbers are visible without
@@ -998,7 +1016,7 @@ test('a label wrapped onto a second line is one label', skipUnless('one_config')
   // order. Without this a wrapped label reads as whichever line happened to come first.
   const c = parse(load('one_config') as Uint8Array);
   const joined = [...keyLabels(c).values()].filter((label) => label.text.includes(' '));
-  assert.ok(joined.length >= 7, `only ${joined.length} labels span more than one draw`);
+  assert.equal(joined.length, 27, 'labels that span more than one draw');
   for (const label of joined) assert.ok(label.text.trim() === label.text, 'and they are trimmed');
 });
 
@@ -1165,7 +1183,7 @@ test('a page binds more keys than it sends codes with, which is why pageScans ex
       }
     }
     assert.equal(pages, 2184, `${pages} pages bind anything`);
-    assert.ok(extra > 500, `only ${extra} bindings send no code, so the two populations barely differ`);
+    assert.equal(extra, 3882, 'bindings that send no code, which is what makes the two populations differ');
   });
 
 test('a key label names a scan its own page binds, on every architecture', skipWithoutLab(), () => {

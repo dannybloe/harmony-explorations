@@ -30,6 +30,16 @@ import {
 const SAMPLES = ['one_config', 'one_config_unprogrammed'];
 const SCAN = 0x3f;
 
+/**
+ * How many pages a wrong lead byte breaks, per sample and per offset. Measured, and exact rather
+ * than the floor of 20 that used to stand in the loop: the numbers are what says the lead byte fits
+ * **uniquely** rather than merely fitting, and the two are the same claim at different strengths.
+ */
+const SHIFT_FAILURES: Record<string, Record<number, number>> = {
+  one_config: { 1: 91, 2: 81, 3: 69, [-1]: 214, 5: 68, 7: 83, 11: 227 },
+  one_config_unprogrammed: { 1: 57, 2: 54, 3: 56, [-1]: 71, 5: 57, 7: 55, 11: 56 },
+};
+
 test('the mode page lead byte is an index into the hit map, and no other value works',
   skipUnless(...SAMPLES), () => {
     for (const name of SAMPLES) {
@@ -57,11 +67,18 @@ test('the mode page lead byte is an index into the hit map, and no other value w
         return n + (want.every((code) => offered.has(code)) ? 0 : 1);
       }, 0);
       const checked = demands.filter((d) => d.length > 0).length;
-      assert.ok(checked >= 100, `${name}: only ${checked} pages bind a touch code`);
+      // Exact per sample, not a floor of 100: the two configs bind 268 and 104 touch pages, and a
+      // floor sized to the smaller one would let the larger lose more than half of its pages.
+      assert.equal(checked, name === 'one_config' ? 268 : 104, `${name}: pages binding a touch code`);
       assert.equal(failures(0), 0, `${name}: the lead byte fits every page`);
+      // The control, exact per offset. A floor of 20 said "many pages break" and could not tell 54
+      // from 227, which is the difference between a lead byte that barely fits and one that fits
+      // uniquely. The spread is itself the evidence: `one_config` binds more codes per page, so a
+      // wrong offset costs it more, and the two offsets that wrap the whole table cost the most.
       for (const shift of [1, 2, 3, -1, 5, 7, 11]) {
-        assert.ok(failures(shift) > 20,
-          `${name}: offset ${shift} should break many pages, broke ${failures(shift)}`);
+        assert.equal(failures(shift), (SHIFT_FAILURES[name] as Record<number, number>)[shift],
+          `${name}: offset ${shift} broke ${failures(shift)} pages`);
+        assert.ok(failures(shift) > 20, `${name}: offset ${shift} should break many pages`);
       }
     }
   });
@@ -87,7 +104,7 @@ test('the panel to pixel transform puts every drawn label inside a hit region',
         }
       }
     }
-    assert.ok(inside > 1700, `only ${inside} labels have a hit region`);
+    assert.equal(inside, 1775, 'labels that have a hit region');
     assert.equal(outside, 2, 'and the two that do not are the known pair');
   });
 
@@ -145,7 +162,7 @@ test('a point maps to the first rectangle that contains it, as the firmware does
         }
       }
     }
-    assert.ok(overlapping > 100, `only ${overlapping} overlapping pairs, so the order would not matter`);
+    assert.equal(overlapping, 104, 'overlapping pairs, which is why the order matters');
     // And the two directions are inverses, which is what a caller drawing a hit region needs.
     for (const [x, y] of [[0, 0], [88, 110], [175, 219]] as [number, number][]) {
       const back = pixelPoint(panelPoint(x, y).x, panelPoint(x, y).y);

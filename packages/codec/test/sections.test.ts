@@ -1095,7 +1095,7 @@ test('only arch 8 and arch 9 carry a second pointer group',
       }
     }
   }
-  assert.ok(records > 300, `only ${records} records carried the negative`);
+  assert.equal(records, 864, 'records that carried the negative case');
 });
 
 // The two populations this claim is about, named once so the guard and the loop cannot drift apart.

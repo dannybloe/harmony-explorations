@@ -1181,6 +1181,18 @@ Established norms:
   list that is a literal in its own file, so an exact count moves only when somebody changes a reader
   or adds a sample, and then it moves in the diff. Same rule for a share: state both counts, since
   `0.95` hides which side moved.
+  **All of them were measured on 14 August 2026 and there were 52**, section 143, in 15 TypeScript
+  test files from 23 commits, where the median floor sat **41%** below the value it guarded and six
+  sat exactly on it. Two things the section adds to this rule. A floor is a **fossil**: `glyphs >
+  65000` was 0.7% under the truth the day it was written and is 62% under now, so a passing test never
+  says how old its bound is. And what a floor cannot do is notice a total moving **up**, which is how
+  a double counted sample gets in, nor tell a control's magnitude, where 54 against 227 is the
+  evidence. Three floors turned out to want a **closure** rather than a number, which is stronger
+  because it cannot be restamped from one side. The rule is enforced now:
+  `ABoundOnACorpusTotalIsExact` in `tests/test_toolchain.py` refuses a numeric lower bound in a
+  TypeScript test unless it is named in `TYPESCRIPT_BOUNDS_WITH_A_REASON`, which holds the 25 that are
+  a per item claim, a physical band or a consequence beside an exact assertion. **The Python half is
+  50 sites and untouched.**
 * **A test's title is a claim and gets checked like one.** Four titles in that sweep named more than
   their bodies carried, and the failure is invisible because the test passes: `every key a screen
   labels gets a label` where 74 of 6988 have none, `six reads and nothing that writes` over a table
@@ -1207,7 +1219,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 141 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 143 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

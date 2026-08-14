@@ -229,7 +229,7 @@ test('no section content reaches the report', skipUnless('h700_config'), () => {
     assert.equal(text.includes(JSON.stringify(run)), false, `bytes of slot ${section.slot}`);
     checked += 1;
   }
-  assert.ok(checked > 10, 'should have checked most slots');
+  assert.equal(checked, 18, 'the slots the probe reports on');
 });
 
 test('the base is the codec derivation and not a second copy of it',

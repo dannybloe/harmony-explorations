@@ -33,5 +33,9 @@ test('the TypeScript and Python fixture tables agree', () => {
 test('the Python table was actually parsed, rather than read as empty', () => {
   // Without this, a change to lab.py's formatting would turn the check above into a comparison
   // of two empty objects, and it would pass.
-  assert.ok(Object.keys(pythonImages()).length >= 18);
+  //
+  // Exact, and the number is the point: the floor that stood here was 18, which was the size of the
+  // table when it was written. The table is 49 entries now, so the guard had been satisfied by 37% of
+  // it for weeks, and a regex that lost two thirds of the lines would have passed.
+  assert.equal(Object.keys(pythonImages()).length, 49, 'every fixture tests/lab.py names');
 });

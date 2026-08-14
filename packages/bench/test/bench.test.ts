@@ -199,7 +199,7 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
     assert.ok(activity.devices.length >= 1, `activity ${activity.activity} drives nothing`);
     for (const group of activity.devices) assert.ok(group < view.devices.length);
   }
-  assert.ok(view.keys.length > 200, `${view.keys.length} keys send a code`);
+  assert.equal(view.keys.length, 461, 'keys that send a code in the config the bench inspects');
   for (const key of view.keys) {
     const device = view.devices[key.group];
     assert.ok(device !== undefined && key.code < device.codes, `key ${key.scan} names a missing code`);
@@ -247,8 +247,8 @@ test('the biggest config in the lab is inspected in well under a second',
     const took = performance.now() - started;
     // The work is real, so this is not passing by returning nothing: the sample has 289 mode pages and
     // the view has to reach every one of them.
-    assert.ok(view.pages.length > 200, `${view.pages.length} pages, so this measured the wrong thing`);
-    assert.ok(view.activities.length >= 5, `${view.activities.length} activities`);
+    assert.equal(view.pages.length, 289, 'pages in that config');
+    assert.equal(view.activities.length, 5, 'and its activities');
     assert.ok(took < 3000, `inspecting one config took ${Math.round(took)}ms`);
   });
 

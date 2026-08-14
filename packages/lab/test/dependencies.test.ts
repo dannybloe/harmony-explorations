@@ -75,6 +75,6 @@ test('the lock file records the same exact specifiers', () => {
 test('the manifest scan found the workspace, rather than nothing', () => {
   // Without this, a wrong REPO_ROOT would make both checks above pass by finding no manifests.
   const found = manifests();
-  assert.ok(found.length >= 3, `only found ${found.length} manifests`);
+  assert.equal(found.length, 7, 'the workspace manifests: the root plus six packages');
   assert.ok(found.some((m) => m.path === 'packages/codec/package.json'));
 });

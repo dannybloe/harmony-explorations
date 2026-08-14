@@ -167,7 +167,7 @@ test('the page draws a screen, and the browser is what says so', skip, async () 
     // The picker offers every page that binds a key, and the activity pages are in it: taking the list
     // from the key table instead left them out, because an activity key sends no code of its own.
     const options = await picker.locator('option').allTextContents();
-    assert.ok(options.length > 100, `only ${options.length} pages offered`);
+    assert.equal(options.length, 268, 'the pages the bench offers');
     assert.ok(options.some((one) => one.includes('starts ')), 'no activity page in the picker');
 
     // The image has to have actually decoded. `naturalWidth` is zero for a broken one, which is what a

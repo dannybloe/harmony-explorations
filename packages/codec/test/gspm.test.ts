@@ -169,11 +169,15 @@ test('the corpus spans more than one of everything', skipWithoutLab(), () => {
   assert.equal(samples.length, NAMES.length);
   const distinct = <T>(pick: (s: (typeof samples)[number]) => T) =>
     new Set(samples.map(pick)).size;
-  assert.ok(distinct((s) => s.container.family.magic) >= 3, 'container cookies');
-  assert.ok(distinct((s) => s.container.flashBase) >= 4, 'base addresses');
-  assert.ok(distinct((s) => s.container.formatVersion) >= 3, 'format versions');
-  assert.ok(distinct((s) => s.container.pointerCount) >= 3, 'table lengths');
-  assert.ok(distinct((s) => s.container.architecture) >= 4, 'architectures');
+  // Exact, and all five floors that stood here were **equal** to the span they measured, which is
+  // the shape this project's verification standard calls worse than a loose one: it reads as
+  // tolerance and has none. Stated exactly, the span is documented and a sample that widens it moves
+  // these numbers in the diff instead of passing silently.
+  assert.equal(distinct((s) => s.container.family.magic), 3, 'container cookies');
+  assert.equal(distinct((s) => s.container.flashBase), 4, 'base addresses');
+  assert.equal(distinct((s) => s.container.formatVersion), 3, 'format versions');
+  assert.equal(distinct((s) => s.container.pointerCount), 3, 'table lengths');
+  assert.equal(distinct((s) => s.container.architecture), 4, 'architectures');
 });
 
 test('the architecture is not derivable from the cookie', skipWithoutLab(), () => {
@@ -296,7 +300,11 @@ test('the opcode inventory differs between architectures', skipWithoutLab(), () 
   if (h700 === undefined || h525 === undefined) return; // covered by the skip on the shape tests
   assert.ok(h700.has(0x6c), 'arch 14 uses opcode 0x6C');
   assert.ok(!h525.has(0x6c), 'arch 9 does not');
-  assert.ok([...h700].filter((o) => h525.has(o)).length > 8, 'and yet they share a core');
+  // Exact: 11 of the 20 opcodes a Harmony 525 emits are also emitted by a Harmony 700, which is the
+  // shared core. A floor of eight could not tell that from a core of nine.
+  assert.equal([...h700].filter((o) => h525.has(o)).length, 11, 'and yet they share a core');
+  assert.equal(h700.size, 52, 'the arch 14 (Harmony 700) opcode set');
+  assert.equal(h525.size, 20, 'and the arch 9 (Harmony 525) one, which is where the 11 sits');
 });
 
 test('a disagreeing pair of architecture bytes is not reported as an architecture', skipUnless('h700_config'), () => {
@@ -317,7 +325,7 @@ test('every sample carries a slot 3 timestamp, and the cookie pair is unique in 
   // apart occurs exactly once in every blob including the One's 1.6 MB one. That is why the
   // record needs no length field to be recognised.
   const samples = everySample();
-  assert.ok(samples.length >= 9, 'not enough samples for this to mean anything');
+  assert.equal(samples.length, 13, 'the samples this claim is asserted over');
   for (const { name, container } of samples) {
     assert.notEqual(container.builtAt, undefined, `${name} has no timestamp`);
     const off = container.blobOffsetOf(

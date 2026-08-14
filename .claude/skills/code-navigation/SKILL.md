@@ -38,11 +38,14 @@ conveniences over what Glob and Grep already do well.
 renderVariants"` and then a position based call is the normal shape, and there is nothing wrong with
 it. `ide_find_class` and `ide_find_file` are the alternative when the name is only half remembered.
 
-## Pitfalls, both measured on 12 August 2026
+## Pitfalls, three measured on 12 August 2026 and the third of the four on 14 August
 
-**`project_path` is not optional here.** Two projects are open in the IDE, this one and an unrelated
-one, so every call without it fails with `multiple_projects_open`. Pass
-`/Users/dannybloemendaal/projects/diversen/harmony/harmony-explorations`.
+**`project_path` is not optional here.** Several projects are open in the IDE, this one among them, so
+every call without it fails with `multiple_projects_open`. Pass this repository's own checkout root,
+which is `${CLAUDE_PROJECT_DIR}` and which the error itself lists among `available_projects`. Written
+that way deliberately: an absolute path under somebody's home directory in a public repository is what
+`bin/check-publishable.py` refuses, and it refused this line on 14 August 2026, having never seen the
+file before because nothing had modified it since the rule existed.
 
 **The IDE does not index Python, and it does not say so.** A position on
 `def chunk_sizes` in `src/harmony/readloop.py` did not fail. It resolved to the **directory**
@@ -54,6 +57,21 @@ searched, including its `kind`. If that is not the function, type or constant in
 noise. This is the same failure this project has recorded three times in other forms, a wrong load
 address producing a readable listing and a wrong register map producing a readable disassembly: the
 tool that answers confidently is the one to check.
+
+**A value reference can resolve to a type, and then the real declaration is reported as unused.**
+Measured on 14 August 2026. `ide_diagnostics` on `packages/codec/test/sections.test.ts` reported
+`Unused constant entries` at the `for (const [name, sets, entries] of HANDLER_SETS)` on line 307, and
+`ide_find_references` on that position agreed: zero usages. The variable is read three lines further
+down, at `assert.equal(total, entries)`. `ide_find_definition` on **that** occurrence is what explains
+it: the IDE resolves the identifier to the property `entries` in the **type annotation**
+`(list as { entries: unknown[] })` a few lines above, which is not in value scope at all. So one
+misresolution produced two confident wrong answers, a false diagnostic and a false empty reference
+list.
+
+Confirmed a false positive by measurement rather than by reasoning: perturbing the tuple's value made
+the test fail on it, so the runtime reads the tuple element. **A diagnostic is a hypothesis here, and
+"this is unused" is checkable in one run.** `make ts` and `make pyright` are the authorities, because
+they are the same compilers the scripts use.
 
 **A star re-export produces no reference.** `packages/codec/src/index.ts` is
 `export * from './inventory.ts'`, so the barrel does not appear in the references of anything it

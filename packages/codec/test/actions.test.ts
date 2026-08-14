@@ -749,10 +749,17 @@ test('arch 12 and arch 14 never use each others 0x3F 0xF0 nibbles', skipUnless('
 test('the low state variable records are identical across architectures', skipUnless('one_config'), () => {
   // Which is what "state variables 3, 5 and 6 are firmware defined" predicts from the config side.
   const shapes = new Map<number, string>();
+  // The state record count per sample, measured. The slice below needs twelve and each of these is
+  // well above it, so the numbers are a fact about the configs rather than the slice's requirement.
+  const STATE_RECORD_COUNTS: Record<string, number> = {
+    one_config: 46, h700_config: 94, h600_config: 74, arch8_config_a: 33, h525_config: 24,
+  };
   for (const name of ['one_config', 'h700_config', 'h600_config', 'arch8_config_a', 'h525_config']) {
     const c = parse(require_(name));
     const records = stateRecords(c) ?? [];
-    assert.ok(records.length >= 12, `${name} has fewer than twelve state records`);
+    // Twelve is what the slice below needs, and the exact count is a per sample fact worth pinning
+    // as well: a floor here is how one architecture sat out of the shape comparison before.
+    assert.equal(records.length, STATE_RECORD_COUNTS[name], `${name}: state record count`);
     shapes.set(c.architecture as number, records.slice(2, 12).map((r) => r.count).join(','));
   }
   // Four architectures are named in the loop and four have to answer. It was `>= 3`, which let one

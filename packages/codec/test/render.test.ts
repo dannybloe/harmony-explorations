@@ -85,7 +85,7 @@ test('every page of every config draws with nothing left unresolved', skipWithou
       missing += rendered.picturesMissing + rendered.glyphsMissing;
     }
   }
-  assert.ok(pages > 1500, `only ${pages} pages rendered`);
+  assert.equal(pages, 3530, 'every mode page in the corpus renders');
   assert.equal(missing, 0, 'no picture and no glyph is unresolvable');
   assert.deepEqual([...architectures].sort((a, b) => a - b), [8, 9, 12, 14]);
 });
@@ -150,7 +150,11 @@ test('a pixel is big endian, and the little endian reading draws a rainbow', ski
       if (pictures >= 40) break;
     }
   }
-  assert.ok(stored + swappedWins > 80, `only ${stored + swappedWins} pictures decide the question`);
+  // Exact, not a floor of 80: both numbers are decided by the corpus and by the cap of forty above,
+  // so a container dropping out of the sampling moves them and a reader losing a picture kind does
+  // too. The ratio below is then the claim rather than the measurement.
+  assert.equal(stored, 283, 'pictures the stored byte order draws more smoothly');
+  assert.equal(swappedWins, 2, 'and the ones the swapped order does, which is why this is a ratio');
   assert.ok(stored > 20 * swappedWins,
     `the stored order wins ${stored} and loses ${swappedWins}`);
   assert.deepEqual([...architectures].sort((a, b) => a - b), [8, 12, 14], 'on every architecture');
@@ -254,7 +258,9 @@ test('the space between letters belongs to the glyph, not to the pen', skipWitho
   };
   assert.equal(GLYPH_ADVANCE, 0);
   assert.equal(overflowing(GLYPH_ADVANCE), 0, 'no string passes the edge of the display');
-  assert.ok(overflowing(1) > 20, 'and one extra column would push dozens off it');
+  // The negative control, exact: one extra column per glyph pushes 38 strings off the display. A
+  // control's magnitude is evidence, so it is asserted rather than bounded.
+  assert.equal(overflowing(1), 38, 'and one extra column would push dozens off it');
 });
 
 test('a page that draws a background leaves no pixel undrawn', skipUnless('h600_config'), () => {
@@ -270,7 +276,7 @@ test('a page that draws a background leaves no pixel undrawn', skipUnless('h600_
     assert.equal(undrawn, 0, `a page with a background left ${undrawn} pixels undrawn`);
     covered += 1;
   }
-  assert.ok(covered > 100, `only ${covered} pages draw a background`);
+  assert.equal(covered, 254, 'pages that draw a background');
 });
 
 test('a page with a branch has one variant per arm, and variant 0 is what renderPage draws',
@@ -303,7 +309,7 @@ test('a page with a branch has one variant per arm, and variant 0 is what render
         for (const choice of one.choices) assert.ok(choice.arms > 1);
       }
     }
-    assert.ok(branching >= 30, `only ${branching} pages branch, so this proved little`);
+    assert.equal(branching, 36, 'pages of `one_config` that branch');
   });
 
 test('the arms of a switch are the values that select them', skipWithoutLab(), () => {
@@ -327,7 +333,7 @@ test('the arms of a switch are the values that select them', skipWithoutLab(), (
       }
     }
   }
-  assert.ok(switches > 100, `only ${switches} switches in the corpus`);
+  assert.equal(switches, 214, 'switches in the corpus');
 });
 
 test('the length walk and the pixel walk agree about every picture', skipWithoutLab(), () => {

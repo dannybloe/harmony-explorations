@@ -20047,3 +20047,135 @@ sweep missed a copy. A corpus wide total that is genuinely per remote rather tha
 would be the first real case for the old exclusion and would need its own population rather than a
 change to this one. And, for the two configs still outside: their coverage, once computed, differing
 from every other arch 8 container in a way that says they should have stayed out.
+
+## 143. Fifty two floors, and the median one sat 41 percent below the truth it was guarding
+
+Section 142 ended by making three floors exact in one file and calling them "the population wearing a
+tolerance". This section is what happened when every one of them was measured instead of three. There
+were **52**, in 15 TypeScript test files, from **23 commits between 5 and 13 August 2026**, and none of
+them had ever failed.
+
+The verification standard already said "assert the count, not a bound under it". What it did not say,
+because nobody had measured it, is how far under. The answer per floor is the interesting part and the
+distribution is the finding.
+
+### The measurement
+
+Each floor was instrumented in place, its guarded expression printed rather than asserted, the file
+run, and the file restored from a copy. Then the floor was scored against the value it had been
+guarding.
+
+| | |
+|---|---|
+| floors | 52 |
+| median headroom | 41% of the value |
+| mean headroom | 37% |
+| at or above half the value | 20 of 52 |
+| largest, absolutely | 105922 |
+| zero headroom | 6 |
+
+The two extremes are the two failure modes and they are different.
+
+**The fossil.** `assert.ok(glyphs > 65000)` in `text.test.ts` was written on 10 August 2026, in the
+commit that first read the screen's text, when `make text` reported 65456 glyphs. It was tight on the
+day, 0.7% under. Section 121 then found that two thirds of a config's drawn text is stored once and
+referenced, which took the figure to 146846, and section 142's corpus decision took it to
+170922<!--fact:text_glyphs-->. The floor never moved. It now sits 62% below the number it guards, so
+the claim "the corpus did not shrink" is satisfied by a corpus that lost 105921 glyphs. A floor is a
+fossil of the measurement that was true when it was written, and nothing in a passing test says how old
+it is.
+
+**Loose from birth.** `assert.ok(seen > 100_000)` in the same file was written on 13 August 2026, in a
+commit whose subject is "Seven more claims whose only assertions sat behind a continue", against a
+population that was already 170922 and that the same commit's own document sweep had quoted. So this one
+was not decay. It is a round number chosen to be comfortably below a value the author had in front of
+them, which is the habit rather than the drift.
+
+**Three of the 52 were written by the two commits that were sweeping the neighbouring defect**, that one
+and section 141's. That is the strongest evidence that this is a habit: while removing assertions that
+could not fail, the same hands wrote bounds that would not fail.
+
+### Zero headroom is worse, and there were six
+
+A floor that equals the value it guards reads as tolerance and has none. `bench.test.ts` asserted
+`view.activities.length >= 5` against exactly 5. And `gspm.test.ts`'s test titled "the corpus spans more
+than one of everything" carried five of them at once: three container cookies, four base addresses, three
+format versions, three table lengths, four architectures, every floor exactly the span. Those five do bite
+downward, which is what makes them tempting, and they are silent in the direction that matters here: a
+sample added to the corpus widens the span and the test never says so, so the document that quotes the
+span drifts away from the code with nothing to catch it. Stated exactly, the span moves in the diff.
+
+### What a floor cannot do at all
+
+Two things, and neither is about size.
+
+**It cannot see a total move up.** A reader that stops deduplicating, a sample counted twice, a loop that
+double visits: every one of those raises a total, and every floor accepts it. Section 142 found exactly
+this shape in Python, where `test_the_two_level_table_is_exactly_packed` appended `h525_config` to a list
+that already held it and reported 67 records where there are 63.
+
+**It cannot tell a control's magnitude.** `touch.test.ts` proves the mode page lead byte is an index into
+the touch hit map by shifting it and demanding pages break. The floor was `failures(shift) > 20`. Measured,
+the seven offsets break 54 to 227 pages on `one_config` and 54 to 71 on `one_config_unprogrammed`. The
+spread is itself evidence, because `one_config` binds more codes per page so a wrong offset costs it more,
+and a floor of 20 flattens all fourteen numbers into "many".
+
+### Three of them were not a number at all
+
+Making a floor exact is usually a measurement. Three times it turned out the right answer was a closure
+between two things the code already had, which is stronger than any literal because it cannot be
+restamped from one side.
+
+* `golden.test.ts` asserted `sections.length >= 19`. The section count **is** the vector's own
+  `pointer_count`, on all 33 vectors, taking the four values 20 to 23 that are the corpus's four pointer
+  table lengths. So the assertion is now that the two fields the Python side emitted separately agree.
+* The same test asserted `Object.keys(checks).length >= 7` against a real 15. Counting checks cannot tell
+  a vector that lost `trailer_checksum_recomputes` from one that gained a check nobody asked for, so the
+  14 universal names are listed and asserted, and `key_table_is_complete`, which needs a key table, is
+  asserted on exactly 29 of the 33.
+* `inventory.test.ts` bounded its two label routes at 8 and 45 beside an exact 62 agreeing keys. The
+  measured values are 11 and 51, which sum to the 62, so the two routes now have to account for every
+  agreeing key and one route cannot quietly answer for the other.
+* `ir.test.ts` had one loose line between two exact ones, `shapes.get('BB0') > 1500` next to a total of
+  3703 and an exact 95. All four shapes are stated now, 1699, 1541, 368 and 95, and their sum is asserted
+  against the total.
+
+### The controls
+
+Every one of the 52 sites was perturbed by one and its file rerun: 51 failed immediately, and the
+fifty second, in `page.test.ts`, failed once its `HARMONY_PAGE_TESTS=1` gate was opened, which is the
+point of running a control per site rather than a suite. Both arms of the two per sample tables were
+perturbed separately, because a table whose values are right but in the wrong order is the failure a
+floor cannot see: `KEYPAD_SCANS` was written in map insertion order on the first attempt, which put arch
+8's 42 where arch 12's 37 belongs, and it failed at once where a floor of 20 would have accepted either.
+
+### The rule, and its own three controls
+
+`ABoundOnACorpusTotalIsExact` in `tests/test_toolchain.py` scans every TypeScript test for
+`assert.ok(<expression> >= <number>)` and demands each remaining site appear in
+`TYPESCRIPT_BOUNDS_WITH_A_REASON` with the reason it is genuinely a bound. There are 25, and they fall
+into three kinds: a claim about **one item** in a loop, where "at least one" is the whole claim; a
+**physical band**, where being in range is the point; and a **consequence** stated beside an exact
+assertion of the same expression, which is what `top > 31` is next to `assert.equal(top, 69)`. A ratio
+such as `stored > 20 * swappedWins` is deliberately not matched, because its right hand side is a
+measurement rather than a literal.
+
+Three controls, all of which bit: a new unexplained floor added to a test file, a reason left behind
+after its floor had gone, and the pattern itself broken so that it matches nothing. The third is the one
+worth having, because a static rule that silently stops matching reports that everything is clean.
+
+### What is left, counted
+
+**The Python half is untouched and it is 50 sites**, 39 of which are on a length or a count. It is a
+separate sweep and not a bigger version of this one, because several of them are bounds on a
+**filesystem** scan rather than on the corpus, where the population is not a literal list in the file
+and an exact count moves whenever anybody adds a source file. `tests/test_toolchain.py` now contains one
+of those itself, at 33 TypeScript test files.
+
+### What would falsify it
+
+A floor found in a TypeScript test that the scan does not report, which would mean the pattern is
+narrower than the habit. A number pinned here that moves for a reason nobody changed, which would mean it
+was not a fact about the corpus but about the order a container happens to be read in. And, for the
+three closures, a container where the two sides genuinely differ, which would make the closure a
+coincidence of this corpus rather than a property of the format.

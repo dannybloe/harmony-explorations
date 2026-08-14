@@ -394,6 +394,131 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
                         for name, lines in sorted(counted.items())))
 
 
+#: Every numeric lower bound left in the TypeScript tests, with the reason it is a bound rather than
+#: a measurement. A bound is right for three things and wrong for everything else.
+#:
+#: The three: a claim about **one item** in a loop, where the count genuinely differs per item and
+#: "at least one" is the whole claim; a **physical band**, where the point is that the value is in
+#: range rather than what it is; and a **consequence** stated beside an exact assertion of the same
+#: expression, which is a sentence about what the number means. Anything aggregated over the corpus
+#: belongs in the fourth group and gets `assert.equal`.
+#:
+#: Adding an entry here is a deliberate act with a reason attached, in the same spirit as
+#: `HARMONY_ODD_READ_EXPERIMENT` being a named door rather than a source edit.
+TYPESCRIPT_BOUNDS_WITH_A_REASON = {
+    # Per item: the claim is that the thing is not empty, and its size is a property of the config.
+    ('packages/bench/test/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
+    ('packages/bench/test/bench.test.ts', 'key.sends', '>=', 1): 'per key',
+    ('packages/bench/test/bench.test.ts', 'branching.variants.length', '>', 1): 'per page',
+    ('packages/bench/test/bench.test.ts', 'variant.conditions.length', '>=', 1): 'per variant',
+    ('packages/bench/test/page.test.ts', 'keys', '>', 1): 'per page the picker landed on',
+    ('packages/codec/test/inventory.test.ts', '(one.name as string).trim().length', '>=', 2):
+        'per device: a name, not its length',
+    ('packages/codec/test/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
+    ('packages/codec/test/inventory.test.ts', 'key.codes.length', '>=', 1): 'per binding',
+    ('packages/codec/test/render.test.ts', 'variants.length', '>=', 1): 'per page',
+    ('packages/codec/test/render.test.ts', 'variants.length', '>', 1): 'per branching page',
+    ('packages/codec/test/render.test.ts', 'choice.arms', '>', 1): 'per switch',
+    ('packages/codec/test/screen.test.ts', 'candidates', '>', 1): 'per shape, the ambiguity itself',
+    ('packages/corpus/test/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
+    ('packages/usb/test/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
+    ('packages/usb/test/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
+    ('packages/usb/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
+    # A physical band, where being in range is the claim and the value is hardware's business.
+    ('packages/bench/test/bench.test.ts', 'period', '>', 20): 'a repeat interval a finger can feel',
+    ('packages/codec/test/actions.test.ts', 'frequency', '>', 200): 'audible, which is the finding',
+    ('packages/codec/test/ir.test.ts', '(hertz as number)', '>=', 30_000): 'an infrared carrier',
+    ('packages/codec/test/irframe.test.ts', 'largestBit < 2000 && smallestGap', '>', 2000):
+        'a bit cell against a frame gap',
+    ('packages/codec/test/screen.test.ts', 'code', '>=', 32): 'a printable character',
+    ('packages/codec/test/touch.test.ts', '(common[3]?.[1] as number)', '>', 220):
+        'a panel row below a 220 pixel display, which is section 125',
+    # A consequence, next to an exact assertion of the same expression.
+    ('packages/codec/test/actions.test.ts', 'top', '>', 31): 'beside assert.equal(top, 69)',
+    ('packages/codec/test/touch.test.ts', 'failures(shift)', '>', 20): 'beside SHIFT_FAILURES',
+    # And one rule about prose, where the length is a floor on effort rather than a measurement.
+    ('packages/codec/test/edit.test.ts', 'rule.why.length', '>', 40): 'a sentence, not a word',
+}
+
+
+class ABoundOnACorpusTotalIsExact(unittest.TestCase):
+    """A floor under a corpus wide total is a fossil of the measurement that was true when it was written.
+
+    Found on 14 August 2026 by measuring all of them. 38 numeric floors stood in 13 TypeScript test
+    files, from 20 commits between 5 and 13 August, and the median one sat 53% below the value it was
+    guarding. Two are worth naming. `glyphs > 65000` was written when `make text` read 65456, so it
+    was tight on the day and is 62% low now that the figure is 170922, which is the fossil.
+    `seen > 100_000` was written on 13 August against a population of 170922 that the same commit
+    knew, which is the other failure mode: loose from birth. And three of the 38 were introduced by
+    the two commits that were sweeping the neighbouring defect, so this is a habit rather than a
+    lapse.
+
+    What a floor cannot do is notice a total moving **up**, which is how a double counted sample or a
+    reader that stopped deduplicating gets in, and it cannot tell 54 from 227 in a control whose
+    magnitude is the evidence.
+
+    The rule is a text scan, like its two neighbours above, so it needs no TypeScript parser on this
+    side. A ratio such as `stored > 20 * swappedWins` is not a numeric bound and the pattern
+    deliberately does not match it: the right hand side is a measurement, not a literal.
+    """
+
+    #: `assert.ok(<expression> >= <number>)`, where the number ends the comparison. `,` closes the
+    #: argument, `)` closes the call, `&` continues a compound condition.
+    PATTERN = re.compile(r'assert\.ok\((.+?)\s*(>=|>)\s*([0-9][0-9_]*)\s*[,)&]')
+
+    #: One site the scan has to find, so that a pattern which stopped matching fails here rather than
+    #: reporting that every file is clean. `top > 31` is deliberate and documented above.
+    CONTROL = ('packages/codec/test/actions.test.ts', 'top', '>', 31)
+
+    def _bounds(self):
+        found, scanned = {}, []
+        for path in sorted(glob.glob(os.path.join(ROOT, 'packages', '*', 'test', '*.ts'))):
+            relative = os.path.relpath(path, ROOT)
+            scanned.append(relative)
+            with open(path, encoding='utf-8') as handle:
+                for number, line in enumerate(handle.read().splitlines(), 1):
+                    match = self.PATTERN.search(line)
+                    if not match:
+                        continue
+                    value = int(match.group(3).replace('_', ''))
+                    if value == 0:
+                        continue  # `> 0` is "not empty", which is a claim and not a tolerance
+                    site = (relative, ' '.join(match.group(1).split()), match.group(2), value)
+                    found.setdefault(site, []).append(number)
+        return found, scanned
+
+    def test_the_pattern_still_matches_a_known_bound(self):
+        found, scanned = self._bounds()
+        self.assertEqual(len(scanned), 33, 'TypeScript test files, which moves when one is added')
+        self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
+
+    def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
+        found, _ = self._bounds()
+        unexplained = sorted(site for site in found if site not in TYPESCRIPT_BOUNDS_WITH_A_REASON)
+        self.assertEqual(
+            unexplained, [],
+            'these assert a lower bound where the value can be measured, so a total that falls short '
+            'of the truth and a total that grows past it both pass: %s. Measure it and use '
+            'assert.equal, or add the site to TYPESCRIPT_BOUNDS_WITH_A_REASON above with the reason '
+            'it is genuinely a bound.'
+            % '; '.join('%s: %s %s %d at line %s'
+                        % (site[0], site[1], site[2], site[3], ','.join(str(n) for n in found[site]))
+                        for site in unexplained))
+
+    def test_no_reason_is_recorded_for_a_bound_that_has_gone(self):
+        """The other direction: an entry left behind after its assertion became exact reads as though
+        the exception were still needed, and the next person adds one beside it."""
+        found, _ = self._bounds()
+        stale = sorted(site for site in TYPESCRIPT_BOUNDS_WITH_A_REASON if site not in found)
+        self.assertEqual(stale, [], 'these no longer exist and their reasons should go with them')
+
+    def test_every_reason_is_a_reason(self):
+        """Two words at least, which is a shape and not a length: a bound whose reason is `''` or `'x'`
+        is an exception nobody has to justify, and that is how an allow-list turns into a bypass."""
+        for site, why in TYPESCRIPT_BOUNDS_WITH_A_REASON.items():
+            self.assertGreaterEqual(len(why.split()), 2, 'no reason recorded for %s' % (site,))
+
+
 class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
     """`recover_flash_base` and `recoverFlashBase` are one derivation in two languages.
 

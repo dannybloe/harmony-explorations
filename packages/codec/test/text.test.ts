@@ -97,7 +97,7 @@ test('every glyph the corpus draws has a character behind it, bar two that are n
     }
     // Not a share: the count of unread glyphs, which is what a rounded percentage would hide.
     assert.equal(glyphs - read, 2);
-    assert.ok(glyphs > 65000, `only ${glyphs} glyphs, so the corpus shrank`);
+    assert.equal(glyphs, 170922, 'every drawn glyph in the corpus, the `text_glyphs` figure');
   });
 
 test('a string drawn on screen turns up verbatim inside a base slot 0 name, which this decoder never reads',
@@ -191,7 +191,7 @@ test('a shape that draws two characters keeps both, so the ambiguity is reported
         both += 1;
       }
     }
-    assert.ok(both >= 10, `the corpus has shapes that draw two characters, got ${both}`);
+    assert.equal(both, 22, 'shapes that draw two characters');
     // Wherever a container is left holding one, the pair is that same one and nothing else, and the
     // container still decodes: the fallbacks name a character rather than dropping the code.
     let ambiguous = 0;
@@ -288,7 +288,7 @@ test('the two arch 9 containers share a typeface, which is how the user one was 
     const h525 = ALPHABETS.find((a) => a.name === 'h525');
     assert.ok(ascii !== undefined && h525 !== undefined);
     const shared = Object.keys(ascii.shapes).filter((key) => key in h525.shapes);
-    assert.ok(shared.length > 30, `only ${shared.length} shapes in common`);
+    assert.equal(shared.length, 48, 'shapes two alphabets have in common');
     for (const key of shared) {
       // The same pixels mean the same character in both, which is the claim that made the
       // derivation legitimate.
@@ -358,7 +358,7 @@ test('the commoner text opcode names a string another program carries', skipUnle
       assert.ok(targets.size <= drawnByReference, `${name}: ${targets.size} strings, ${drawnByReference} draws`);
     }
   }
-  assert.ok(references > 10000, `enough references to mean something, got ${references}`);
+  assert.equal(references, 15742, 'referenced strings, the `text_referenced` figure');
   assert.equal(onAPayload, references, 'every reference lands on an inline payload');
   assert.ok(distinct * 3 < references, `a string is shared: ${distinct} distinct, ${references} draws`);
 });
@@ -425,7 +425,7 @@ test('a code that only ever appears in a referenced string is still a drawn code
     // Every assertion above sits behind two `continue`s and there was no counter, so the containment
     // could have been checked on nothing at all. This is the number `make text` reports for the same
     // population, which is what the claim is about.
-    assert.ok(seen > 100_000, `only ${seen} drawn codes were checked for containment`);
+    assert.equal(seen, 170922, 'every drawn code checked for containment');
   });
 
 test('a set states its glyph height and every route that has the set enforces it', skipWithoutLab(), () => {

@@ -112,7 +112,7 @@ test('the corpus spans architectures, so the carrier is not one model', skipWith
     const c = parse(payloadOf(bytes));
     if (carriers(c).length > 0 && c.architecture !== undefined) seen.add(c.architecture);
   }
-  assert.ok(seen.size >= 3, `only ${[...seen].join(', ')}`);
+  assert.equal(seen.size, 4, 'all four architectures carry a carrier, so it is not one model');
 });
 
 /**
@@ -151,7 +151,7 @@ test('the periods the arithmetic predicts are the ones the corpus carries', skip
     assert.ok(found.has(periodNs), `${hertz} Hz is not in the corpus`);
   }
   // And the field is not a constant, which is what would make the halving above trivial.
-  assert.ok(found.size >= 5, `only ${found.size} distinct carriers`);
+  assert.equal(found.size, 12, 'distinct stored periods, so the field is not a constant');
 });
 
 test('read the other way round the fields are not a carrier', skipWithoutLab(), () => {
@@ -313,9 +313,14 @@ test('a pointer group takes one of four shapes, and slot 1 is the one that repea
     // pointer is always a real block, which is what makes slot 0 "what a tap sends".
     assert.deepEqual([...shapes.keys()].sort(), ['B00', 'B0B', 'BB0', 'BBB']);
     const total = [...shapes.values()].reduce((sum, n) => sum + n, 0);
-    assert.ok(total > 3500, `enough groups to mean something, got ${total}`);
-    assert.ok((shapes.get('BB0') ?? 0) > 1500, 'most repeating codes are the plain once plus held');
+    assert.equal(total, 3703, 'every infrared group in the corpus');
+    // All four exact, so they have to sum to the total above: the one loose line here sat between two
+    // exact ones, and a floor of 1500 against 1541 would have absorbed 41 groups changing shape.
+    assert.equal(shapes.get('B00'), 1699, 'a once block alone, which is a code that does not repeat');
+    assert.equal(shapes.get('BB0'), 1541, 'most repeating codes are the plain once plus held');
+    assert.equal(shapes.get('B0B'), 368, 'once plus a tail, with nothing held');
     assert.equal(shapes.get('BBB'), 95, 'and the three block form is rare and only on arch 8');
+    assert.equal([...shapes.values()].reduce((sum, n) => sum + n, 0), total, 'the four shapes are all of them');
   });
 
 test('a held key repeats at the length of its second block, which is tens of milliseconds',
@@ -390,7 +395,7 @@ test('the block a key repeats is not the block a tap sends', skipUnless('one_con
       pairs += 1;
     }
   }
-  assert.ok(pairs >= 200, `enough pairs to mean something, got ${pairs}`);
+  assert.equal(pairs, 205, 'pairs of records sharing a duration block');
 });
 
 test('a record with no carrier reports no frequency, not zero hertz',

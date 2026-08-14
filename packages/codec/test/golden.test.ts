@@ -93,20 +93,57 @@ for (const name of CONTAINERS) {
   });
 }
 
+/**
+ * The checks every golden vector carries, by name. Listed rather than counted, because a count
+ * cannot tell a vector that lost `trailer_checksum_recomputes` from one that gained a check nobody
+ * asked for, and the count is what stood here as a floor of seven against a real fifteen.
+ */
+const UNIVERSAL_CHECKS = [
+  'end_addr_points_at_end_marker',
+  'flash_base_is_block_aligned',
+  'format_high_half_is_zero',
+  'last_section_is_null',
+  'marker_as_expected_for_family',
+  'pointer_count_known',
+  'section_spare_bytes_are_zero',
+  'section_table_ends_at_the_marker',
+  'sections_ascend',
+  'sections_within_blob',
+  'slot0_is_a_feed_frame',
+  'slot1_states_the_architecture',
+  'slot3_is_a_timestamp',
+  'trailer_checksum_recomputes',
+];
+
 test('the vectors carry the fields worth comparing, rather than being nearly empty', () => {
   // Guards the comparison itself. A vector reduced to a couple of scalars, or a summary that
   // quietly stopped emitting sections, would let every test above pass while checking almost
   // nothing.
   const present = CONTAINERS.map(goldenVector).filter((v) => v !== undefined);
   if (present.length === 0) return; // no lab: the skips above have already said so
+  let complete = 0;
   for (const vector of present) {
     for (const field of ['flash_base', 'end_addr', 'pointer_count', 'trailer_checksum']) {
       assert.ok(field in vector, `vector is missing ${field}`);
     }
+    // The section count is the vector's own `pointer_count` and not a floor of nineteen. That is
+    // stronger than any literal here, because it is a closure between two fields the Python side
+    // emitted separately: a summary that stopped emitting sections would have to corrupt the count
+    // in the same direction to pass, and the four values it takes, 20 to 23, are the four pointer
+    // table lengths in the corpus rather than a number this file chose.
     const sections = vector['sections'] as unknown[];
-    assert.ok(Array.isArray(sections) && sections.length >= 19, 'a vector has no section table');
-    assert.ok(Object.keys(vector['checks'] as object).length >= 7, 'a vector has no checks');
+    assert.ok(Array.isArray(sections), 'a vector has no section table');
+    assert.equal(sections.length, vector['pointer_count'], 'one section per pointer slot');
+    // And the checks by name, not by count. Fourteen are on every vector; `key_table_is_complete`
+    // needs a key table, so it is on 29 of the 33 and the four without one are asserted below.
+    const checks = Object.keys(vector['checks'] as object);
+    for (const name of UNIVERSAL_CHECKS) assert.ok(checks.includes(name), `no ${name} check`);
+    assert.ok(checks.every((n) => n === 'key_table_is_complete' || UNIVERSAL_CHECKS.includes(n)),
+      `an unexpected check: ${checks.filter((n) => n !== 'key_table_is_complete' && !UNIVERSAL_CHECKS.includes(n)).join(', ')}`);
+    if (checks.includes('key_table_is_complete')) complete += 1;
   }
+  assert.equal(present.length, 33, 'every vector, which is what `make golden` compares');
+  assert.equal(complete, 29, 'the vectors whose container has a key table at all');
 });
 
 test('the list above covers exactly what the Python side writes a vector for', () => {
@@ -117,7 +154,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.ok(python.length >= 19, 'the tuple was read as empty, so this test proves nothing');
+  assert.equal(python.length, 33, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
