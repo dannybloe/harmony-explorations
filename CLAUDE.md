@@ -166,18 +166,34 @@ package. And importing the source by path fails with `ERR_UNSUPPORTED_NODE_MODUL
 because **Node refuses to strip types for any file inside `node_modules`**, whatever the flag. That
 second one is structural rather than a slip, so the route is abandoned rather than fixed.
 
-**A path dependency does work, measured the same day**: an empty project declaring
-`"@harmony/codec": "file:../harmony-explorations/packages/codec"` imports 335 exports and parses a
-real arch 14 container, with nothing built and nothing published. It works precisely where the git
-install cannot, because the install is a symlink and Node resolves the real path, which is outside
-`node_modules`.
+**A link dependency works, and the spelling is per package manager, which took a second measurement to
+find out.** This said "a path dependency does work" and gave
+`"@harmony/codec": "file:../harmony-explorations/packages/codec"`<!--superseded--> on the strength of one
+install with npm. FreeHarmony uses pnpm, like this workspace, and under pnpm that spelling **fails**: the
+package is copied into `node_modules/.pnpm`, so its real path is inside `node_modules` and Node refuses
+to strip its types. All four combinations, measured on 14 August 2026 while installing the dependency for
+real:
+
+| tool | spelling | result |
+|---|---|---|
+| npm | `file:` | works, a direct symlink to the sibling |
+| npm | `link:` | installs nothing at all |
+| pnpm | `file:` | fails, per above |
+| pnpm | `link:` | works, a direct symlink to the sibling |
+
+So **no single spelling works under both**, the mechanism in the old wording was right, and what was
+wrong was generalising one tool's behaviour to the claim "a path dependency works". The export count in
+the old wording was 335 and is 361 now, which is the library growing rather than a correction.
 
 **What publishing will need is deliberately not built yet**, because one of its inputs is a
 FreeHarmony decision nobody has made: a bundler compiles TypeScript sources itself, in which case
 source only packages are right and a `dist` is dead weight, and an unbundled Electron main process
 needs the opposite. So `exports`, `dist` and dropping `private` wait for that, and the item to carry
 is the boundary itself: whatever it becomes, it should be exercised by a probe that installs and
-imports rather than by a paragraph like this one.
+imports rather than by a paragraph like this one. **That probe exists now**, in FreeHarmony's
+`test/boundary.test.ts`, and writing it refuted the paragraph above within a minute of running: it
+asserts the resolved real path is outside `node_modules`, which is the mechanism, and that the
+dependency's spelling matches the stated package manager, which is what a fresh clone needs.
 
 **A hand maintained copy in FreeHarmony is the one route that is refused**, and not on taste: it is
 this repository's oldest rule, that two copies of a derivation are two copies until one of them moves.
