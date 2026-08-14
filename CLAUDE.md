@@ -150,6 +150,12 @@ lands as a structured fact, a written argument and a regression test only works 
 implementing it sits next to the documents. Move the codec out and a finding can land in `docs/`
 and never reach the code.
 
+**FreeHarmony has its own plan of record now**, its `docs/roadmap.md`, written on 14 August 2026 after
+its first code existed, and it carries the product milestones as P0 to P6. So `docs/roadmap.md` here is
+the plan for the library side, its M numbers name the P they feed, and the product questions it used to
+imply belong there: which version writes, what an interface offers, and which shell, that last one never
+having been decided.
+
 **FreeHarmony gets these as published packages, eventually, and as the folder next door until then.**
 Decided by the owner on 12 August 2026 on one question: somebody who does not have this repository has
 to be able to build the application. That makes publishing the endpoint. It does not make it work

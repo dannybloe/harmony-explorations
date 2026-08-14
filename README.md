@@ -23,8 +23,11 @@ Logitech can make a new one.
 configuration off your remote, lets you change your devices and activities, learns codes from your old
 remotes, and writes it back. Nothing hosted, nothing that can be switched off later.
 
-It does not exist yet, and it cannot be written until the file a remote stores is properly understood.
-Working that out is what this repository is for: the understanding, and the code that does the reading.
+It has begun and there is nothing to install. As of 14 August 2026 it holds one script, which reads a
+configuration file and prints the devices and activities it found, so the seam between the two
+repositories is proven by something that runs. Everything else about it is still ahead, and it cannot be
+written until the file a remote stores is properly understood. Working that out is what this repository is
+for: the understanding, and the code that does the reading.
 
 **The first version will only read, never write.** These remotes cannot be bought new and a bad write
 can turn one into a brick, so the first thing this project ever writes to a remote will not be a guess.
