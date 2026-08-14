@@ -875,7 +875,7 @@ Still to do, in the order the application needs them:
 **The read pipeline. Done, on both architectures.** `packages/corpus`, with `bin/read-config.ts` as
 the command. Run against the spare Harmony One and the Harmony 600: 1232237 bytes in 40 seconds and
 738149 bytes in 24, both at about 30 KiB/s, and **both byte identical to that unit's stored dump**
-with all ten container checks passing. The sidecar carries the version block, the addresses and the
+with all 15<!--fact:container_checks--> container checks passing. The sidecar carries the version block, the addresses and the
 timings. Fifteen tests drive it from a fake remote serving a real config at the address the hardware
 would map it at, which is how the address arithmetic is asserted without hardware.
 
@@ -905,7 +905,7 @@ started with `make bench`. Node plus a browser page, not Electron.
   keeps the dependency tree this workspace already argued for, and the same modules can be dropped
   into an Electron renderer later, so the work is not thrown away when FH starts.
 * First views: what is attached, identity from `GET_VERSION`, a config read with progress, the
-  container summary with its ten checks, and the section table whose mostly empty label column is
+  container summary with its 15<!--fact:container_checks--> checks, and the section table whose mostly empty label column is
   this project's real progress bar.
 * A visible log of every command sent to a remote. In a project built on restraint, it should be
   possible to see that nothing happened that was not asked for.
@@ -1131,7 +1131,9 @@ contents:
 * the container header: magic, `end_addr`, format, the recovered flash base, the slot count, the
   marker, and the `spare` bytes
 * the section table: per slot the address and the length, **never** the contents
-* the outcome of each of the ten container checks, and any parse failure in full
+* the outcome of each of the 15<!--fact:container_checks--> container checks, and any parse
+  failure in full. 14<!--fact:container_checks_arch9--> on arch 9 (Harmony 525), whose family
+  carries no key table after the marker, so one check does not apply and is honestly absent
 
 A few kilobytes of JSON, which the contributor can read before sending. It answers the questions
 that actually block generalisation: how many slots does arch 16 carry, does the USB command layer work
@@ -1155,11 +1157,32 @@ things are left out of the USB half on the same reasoning: the device's serial n
 version block was measured identical on two different Harmony Ones and so describes a model rather
 than a unit.
 
+**That last argument is per architecture and this step exists for the architectures it does not
+cover**, which is a scope the sentence above did not carry until section 139 entry 25. The
+measurement is two Harmony Ones, arch 12; fields 7, 10 and 11 have no reading on any architecture,
+section 87, and a byte with no reading on a model nobody here owns is a byte nobody can say is not
+per unit. The block stays in, because it is what says which firmware a contributed report describes
+and a report of unknown provenance is worth much less, and because every field has been the same on
+every unit of one model this project has read. But it is the one field in the report whose safety is
+an **argument** where everything else is a structure, and it is the first thing to drop if a
+contributor asks.
+
 **The probe does not refuse a remote it does not recognise, which is the whole point.**
 `packages/corpus` maps a product id onto a config base and refuses anything else, which is right for
 a backup and wrong here. The probe instead tries each base this project has evidence for, sixteen
 bytes at a time, and accepts any four uppercase letters as a container cookie with an `end_addr`
-that lands plausibly above the base. Everything the report states is then derived rather than looked
+that lands plausibly above the base.
+
+**It could not do that for a Harmony 525 until section 139 entry 25, and the failure is worth
+recording because it is the shape this step is most exposed to.** Arch 9 (Harmony 525) is the one
+architecture whose read base and container base are different numbers: `READ_FLASH` will not answer
+below `0x800000` and the container's own pointers are `0x02xxxx`, so `end_addr` is stated against
+the second while the bytes come from the first. `packages/corpus` has known that since a Harmony 525
+was connected on 8 August 2026 and the probe did not, so `0x820000` was simply absent from the
+candidate list; and adding it alone would not have helped, because the length came out about a
+megabyte negative and was rejected as implausible. So the instrument built for models nobody here
+owns was silently blind to the one unusual remote that is here. A candidate carries a
+`containerBase` now, absent everywhere else because there the two are one number. Everything the report states is then derived rather than looked
 up: the flash base from the codec's clock anchor, the slot count from the marker offset, the
 section lengths from the pointers ascending. So an unknown magic still yields a full section table,
 and the codec's refusal is reported verbatim next to it, because on a new architecture the refusal
@@ -1186,8 +1209,16 @@ Not optional, and they belong in the code rather than in a document:
 * Firmware is never written. `WRITE_FLASH` is restricted to the config region for the detected
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the UI.
-* The programmed Harmony One and the Harmony 600 are read only in practice. The spare
-  spare One is the only write target until a write has been demonstrated repeatable there.
+* **A region needs a ceiling as well as a base, and a missing one is a refusal.** Arch 12 (Harmony
+  One) is the only architecture with both: its ceiling is `0x3D0000` rather than the nominal
+  `0x400000`, because the stored application firmware sits inside the nominally writable region,
+  section 88. Arch 14 (Harmony 600 and 700) has a base and no measured ceiling, so `writableRange`
+  refuses it outright. It used to treat the hole as "no ceiling" and hand back an unbounded range,
+  while the erase rail read the identical hole as a refusal: two rails, one table, opposite
+  readings, found by review on 13 August 2026 and unreachable only because arch 14 has no write
+  target either. Adding one would have been the moment it mattered. Section 139 entry 24.
+* The programmed Harmony One and the Harmony 600 are read only in practice. The spare Harmony One
+  is the only write target until a write has been demonstrated repeatable there.
 * **There is no spare for architecture 14, and that blocks writing to it entirely.** The spare
   is a Harmony One, so it is arch 12. Writing to the 600 means writing to the only 600 on the
   bench, which the rail above already forbids and which no amount of read-back verification makes
@@ -1204,8 +1235,15 @@ Not optional, and they belong in the code rather than in a document:
   guess at.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
   reported as a failure, not a warning.
-* Recovery paths are documented before the first write: the safe mode config already dumped for
-  each unit (`*-safe.bin`), and the hardwired reset key combination at `0x19120`.
+* Recovery paths are documented before the first write, and **the file's name is not evidence of
+  what is in it**. On arch 12 (Harmony One) `*-safe.bin` is flash `0x000000` to `0x010000`, holding
+  the safe mode container at `0x002000`, verified against the device byte for byte. On arch 14
+  (Harmony 600 and 700) the file called `-safe.bin` is **not a safe mode image at all**: the 600's
+  is the application firmware from program `0x9000`, truncated at 64 KiB and byte identical to
+  `600-0.2-code-base0x9000-TRUNCATED64k.bin`. Its real safe mode is the 24320 byte image at
+  internal `0xFE+0x1000`, which verifies its own checksum. A rail saying "restore from the safe
+  dump" would have restored the wrong thing on arch 14. The hardwired reset key combination at
+  `0x19120` is the other path.
 * Concordance stays available as an independent second opinion, and a patched concordance build is
   treated as read only because the architecture patch also redirects `erase_firmware()`.
 

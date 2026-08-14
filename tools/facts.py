@@ -47,6 +47,7 @@ beside it, which is what the house convention already asks a correction to carry
 numbers as unavailable and still runs the phrases, because the phrase check is pure text and a
 fresh clone with no lab must still be protected by it.
 """
+import collections
 import os
 import re
 import subprocess
@@ -346,6 +347,22 @@ def corpus_facts():
             1 for r in records if c.screen_program(r.start + r.length) is not None)
 
     totals['containers'] = len(lab.CONTAINERS)
+    # **How many checks a container reports, which five documents quote in prose and which drifted.**
+    # It was ten when the phrase was written and section 139 entry 21 took it to fourteen and entry
+    # 22 to fifteen, with nothing to notice: a count of checks is a number about the code, so it
+    # moves whenever somebody adds one and no test about the format can see it.
+    #
+    # **Two numbers, not one**, which computing it found: `key_table_is_complete` is gated on the
+    # family carrying a key table after the marker, and `AHCM` does not, so the three arch 9
+    # (Harmony 525) containers report one fewer. That is correct, a check that does not apply is
+    # honestly absent, and it is why a single figure quoted in five documents was wrong twice over.
+    by_key_table = {}
+    for name in lab.CONTAINERS:
+        c = gspm.parse(lab.load(name))
+        by_key_table.setdefault(c.family.key_table_at_marker, set()).add(len(c.checks))
+    if all(len(v) == 1 for v in by_key_table.values()) and len(by_key_table) == 2:
+        totals['container_checks'] = by_key_table[True].pop()
+        totals['container_checks_arch9'] = by_key_table[False].pop()
     return {k: str(v) for k, v in totals.items()}
 
 
@@ -376,11 +393,20 @@ def check_numbers(facts, write, edits=None):
     for doc in documents():
         text = open(doc, encoding='utf-8').read()
         changed = text
+        # **Counted, not a set of names**, which is a correction rather than a tidy-up. `attached` was
+        # a set, so two properly attached uses of one fact in a document collapsed to one entry and
+        # the second use was reported as unattached. The diagnostic then named an innocent site while
+        # the real offender, a different fact somewhere else in the same file, went unnamed. It fires
+        # exactly when a document uses one fact twice **and** has a genuinely detached marker
+        # elsewhere, which is why it went unseen: the second condition is rare and the message is
+        # believed. Found on 14 August 2026 while adding `container_checks`, which supplied the
+        # detached marker. Same shape as the readers of section 139: a confident wrong answer where
+        # the honest one is available.
         if len(ANY_MARKER.findall(text)) != len(MARKER.findall(text)):
-            attached = {m.group(2) for m in MARKER.finditer(text)}
+            attached = collections.Counter(m.group(2) for m in MARKER.finditer(text))
             for name in ANY_MARKER.findall(text):
-                if name in attached:
-                    attached.discard(name)
+                if attached[name] > 0:
+                    attached[name] -= 1
                     continue
                 problems.append('%s: the `%s` marker has no number in front of it, so nothing '
                                 'checks it' % (rel(doc), name))

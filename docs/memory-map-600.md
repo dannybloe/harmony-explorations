@@ -51,7 +51,7 @@ answering at `0x1F0000` and refusing above.
 | Address | Length | Contents | Source |
 |---|---|---|---|
 | `0x000000` to `0x0112C0` | 70336 | the **application firmware as stored**, which the bootloader copies to internal `0x9000` | `concordance --dump-firmware` returns the first 64 KiB of exactly this image |
-| `0x020000` to `0x021BCB` | 7115 | the **safe mode config**, a `GSPM` container, format 1.4, 20 section slots | read off the device; all ten container checks pass and the recovered base is `0x020000` |
+| `0x020000` to `0x021BCB` | 7115 | the **safe mode config**, a `GSPM` container, format 1.4, 20 section slots | read off the device; all 15<!--fact:container_checks--> container checks pass and the recovered base is `0x020000` |
 | `0x030000` to `0x200000` | 1856 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex`, 738149 of 738149 bytes |
 
 The 1077 bytes after the safe mode container, up to the end of the 8192 that were read, are erased.

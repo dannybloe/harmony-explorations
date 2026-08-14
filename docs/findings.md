@@ -18398,7 +18398,7 @@ A container where base slot 0 names any of variables 0 to 12. A container whose 
 `0x108` from a path other than the state variable store. And on the closure, a Harmony One measurement
 where `0x111` exceeds 7 or `0x110` exceeds 3, which the config's own maxima forbid.
 
-## 139. Seventy six shipped readers answered plausibly where they should have refused, and nine were rails
+## 139. Seventy nine shipped readers answered plausibly where they should have refused, and nine were rails
 
 Every finding in this document rests on code, and this section is about the code rather than about a
 remote. On 13 August 2026 the whole of `packages/` and `src/harmony/` was reviewed by nine
@@ -18421,7 +18421,10 @@ Entry 24 is the USB one and holds the only defect in this section with a **live*
 bench: a Harmony 525 on an unpinned handle was read under arch 12 (Harmony One)'s address rule, so the
 refusal that stops a remote hanging did not apply to it. Entry 25 is the last partition and closes
 the review: its own instructive one is that the contribution probe, built for models nobody here
-owns, could not report the one unusual remote that is here.
+owns, could not report the one unusual remote that is here. **Entry 26 is not from the review at
+all**: it is three more of the same shape, found while sweeping the summaries against entries 23 to
+25, which is why the title counts seventy nine and the paragraph above counts the review's own
+seventy six.
 Entry 21 is thirteen readings of the container parser itself, and it is the one where the **population**
 is the finding: the lab parses 33 containers and three of the parser's own comments quote a snapshot of
 thirteen, twelve and twenty four, with two of the claims those numbers carry gone from true to false.
@@ -19617,6 +19620,42 @@ re-derived since the codec gives a family no name; and the magic it publishes, r
 is now asserted equal to the one `parse` found by searching, which could describe different bytes of
 one blob.
 
+### 26. The check that guards the documents named the wrong site, and the number it was asked about had drifted
+
+Not from the review. Found on 14 August 2026 while sweeping the summaries against entries 23 to 25,
+and it belongs here because it is the same shape as everything above it: a confident wrong answer
+where the honest one was available.
+
+**Five documents quoted "the ten container checks" and there are fifteen.** A count of checks is a
+number about the code rather than about the format, so it moves whenever somebody adds one and no
+test about a config can see it. Entry 21 took it from ten to fourteen and entry 22 to fifteen, in
+`docs/roadmap.md` three times, `docs/memory-map-525.md` and `docs/memory-map-600.md`, with nothing to
+notice. It carries a `fact:` marker now, which is what `CLAUDE.md` requires of a number in prose and
+what nobody had applied to this one.
+
+**And it is two numbers, which computing it found rather than reading it.** `key_table_is_complete`
+is gated on the family carrying a key table after the marker, and `AHCM` does not, so the three arch
+9 (Harmony 525) containers report **fourteen**. That is correct behaviour, a check that does not
+apply is honestly absent, and it means the single figure the documents quoted was wrong twice over:
+wrong in value and wrong in being one figure. `container_checks` and `container_checks_arch9` are
+both computed, and the test names the missing check rather than counting to fourteen, because a count
+off by one says nothing about which one went.
+
+**The tool's own diagnostic then named an innocent site.** `tools/facts.py` complains when a `fact:`
+marker has no number in front of it, and it built `attached` as a **set** of fact names, so two
+properly attached uses of one fact in a document collapsed to a single entry and the second use was
+reported as detached while the real offender elsewhere in the same file went unnamed. It fires only
+when a document uses one fact twice **and** carries a genuinely detached marker, which is why it had
+never been seen: the second condition is rare and the message is believed. Adding
+`container_checks` supplied the detached marker, `docs/roadmap.md` already used `text_glyphs` twice,
+and the tool reported `text_glyphs`. A `collections.Counter` now.
+
+**The checker's rule turned out to be stricter than it reads, and that is right.** It wants a
+**digit** before the marker, so a marker with the word "fifteen" in front of it is refused rather
+than accepted: a spelled out number cannot be rewritten by `facts-write` and would drift exactly as
+this one did. Which is also why this paragraph describes the shape instead of quoting it, since a
+quoted marker is a live one.
+
 ### What would falsify it
 
 For the ladder: a Harmony 525 config emitting `0x0F` with a low byte below `0x60` or in `0x70` to
@@ -19652,3 +19691,7 @@ For entry 25: an arch 9 (Harmony 525) remote whose config does not sit at `0x820
 the candidate is a property of the two units here; a container that contests an infrared group,
 which would turn a constructed test into a corpus one; or an activity whose keys are on two pages,
 which would make the refusal a live one and would need a rule for which page names it.
+
+For entry 26: a container of a family that carries a key table after the marker and reports fourteen
+checks, which would say the count is not decided by the family; or a document where the detached
+marker diagnostic still names a marker that has a number in front of it.

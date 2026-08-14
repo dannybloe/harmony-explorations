@@ -2788,6 +2788,40 @@ class TestTheTrailerChecksum(unittest.TestCase):
         self.assertNotEqual(gspm.trailer_checksum(bytes(damaged)), c.trailer_checksum)
 
 
+class TestHowManyChecksAContainerReports(unittest.TestCase):
+    """The count five documents quote in prose, which drifted from ten to fifteen unnoticed.
+
+    A count of checks is a number about the code, so it moves whenever somebody adds one and no
+    test about the format can see it. `make facts` recomputes both numbers now. It is **two**
+    numbers and not one, which computing it found: `key_table_is_complete` is gated on the family
+    carrying a key table after the marker and `AHCM` does not, so the arch 9 (Harmony 525)
+    containers report one fewer. That is correct, since a check that does not apply is honestly
+    absent, and it is why a single figure quoted in five documents was wrong twice over.
+    `docs/findings.md` section 139.
+    """
+
+    def setUp(self):
+        lab.require(*lab.CONTAINERS)
+
+    def test_the_count_is_decided_by_the_family_and_by_nothing_else(self):
+        seen = {}
+        for name in lab.CONTAINERS:
+            c = gspm.parse(lab.load(name))
+            seen.setdefault(c.family.key_table_at_marker, {}).setdefault(len(c.checks), []).append(name)
+        self.assertEqual(sorted(seen), [False, True], 'the corpus has to span both families')
+        for has_key_table, counts in seen.items():
+            self.assertEqual(len(counts), 1,
+                             'containers of one family disagree: %r' % {k: v for k, v in counts.items()})
+        self.assertEqual(list(seen[True]), [15])
+        self.assertEqual(list(seen[False]), [14])
+
+    def test_the_missing_one_is_named_rather_than_counted(self):
+        """A count off by one says nothing about which check went, so name it."""
+        with_table = gspm.parse(lab.load('h600_config'))
+        without = gspm.parse(lab.load('h525_config'))
+        self.assertEqual(set(with_table.checks) - set(without.checks), {'key_table_is_complete'})
+        self.assertEqual(set(without.checks) - set(with_table.checks), set())
+
+
 if __name__ == '__main__':
     unittest.main()
-

@@ -12,6 +12,7 @@ the live column is marked. That is a property of the document, so it is testable
 in the tool.
 """
 import os
+import collections
 import re
 import sys
 import os
@@ -173,6 +174,50 @@ class TestAPhraseCanHideInALineBreak(unittest.TestCase):
         # own predicate, so the test fails if the convention changes rather than if the wording does.
         self.assertTrue(facts.is_correction('* %s' % dead))
         self.assertFalse(facts.QUOTED in '* %s' % dead)
+
+
+class TestTheDetachedMarkerDiagnostic(unittest.TestCase):
+    """`tools/facts.py`: which site the "no number in front of it" complaint names.
+
+    The complaint is a diagnostic rather than a check, and it named the wrong site. `attached` was
+    a **set** of fact names, so two properly attached uses of one fact in a document collapsed to a
+    single entry and the second use was reported as detached, while the real offender elsewhere in
+    the same file went unnamed. It needs a document that uses one fact twice **and** carries a
+    genuinely detached marker, which is why it survived: the second condition is rare and the
+    message is believed. Found on 14 August 2026 while adding `container_checks`, which supplied
+    the detached marker to `docs/roadmap.md`, where `text_glyphs` appears twice.
+    """
+
+    def complaints(self, text):
+        """What the diagnostic says about one document's text, with the rest of the tool stubbed."""
+        seen = []
+        attached = collections.Counter(m.group(2) for m in facts.MARKER.finditer(text))
+        for name in facts.ANY_MARKER.findall(text):
+            if attached[name] > 0:
+                attached[name] -= 1
+                continue
+            seen.append(name)
+        return seen
+
+    def test_a_fact_used_twice_and_attached_twice_is_not_reported(self):
+        text = 'a 5<!--fact:alpha--> and later 7<!--fact:alpha--> again'
+        self.assertEqual(self.complaints(text), [])
+
+    def test_the_detached_marker_is_the_one_named(self):
+        """The case that was wrong: the innocent duplicate used to be reported and the guilty one not."""
+        text = ('a 5<!--fact:alpha--> and later 7<!--fact:alpha--> again, '
+                'plus fifteen<!--fact:beta--> spelled out')
+        self.assertEqual(self.complaints(text), ['beta'])
+
+    def test_a_genuinely_detached_marker_is_still_caught(self):
+        """So the fix cannot have been to stop complaining."""
+        self.assertEqual(self.complaints('fifteen<!--fact:beta--> spelled out'), ['beta'])
+
+    def test_the_shipped_tool_agrees_with_this_reading(self):
+        """Against `tools/facts.py` itself, so the two cannot drift apart."""
+        source = open(os.path.join(ROOT, 'tools', 'facts.py'), encoding='utf-8').read()
+        self.assertIn('collections.Counter(m.group(2) for m in MARKER.finditer(text))', source)
+        self.assertNotIn('attached = {m.group(2) for m in MARKER.finditer(text)}', source)
 
 
 if __name__ == '__main__':

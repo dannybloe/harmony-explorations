@@ -202,7 +202,9 @@ arch 12, where 64 and 124 byte reads are measured safe; **that measurement is ar
 ## The container, already known from one sample
 
 These are not predictions about the hardware but about the config it will be carrying, and they are
-what a successful read should produce. All ten container checks pass on the sample.
+what a successful read should produce. All 14<!--fact:container_checks_arch9--> container checks pass on the sample. Fourteen and not
+fifteen because the `AHCM` family carries no key table after the marker, so `key_table_is_complete`
+does not apply here.
 
 | | |
 |---|---|
