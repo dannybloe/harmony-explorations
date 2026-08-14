@@ -800,7 +800,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         without deciding about the other has to fail here rather than pass quietly.
 
         **The TypeScript lists are checked for equality now**, section 142: they held nineteen where
-        `CONTAINERS` held fifteen, and the owner decided the nineteen. That was the one thing section
+        `CONTAINERS` held fifteen, and nineteen was decided. That was the one thing section
         141 deliberately left open, because whether two dumps of one remote count twice in a total is
         a decision about the corpus rather than a defect, and a containment check was what permitted
         the two answers to coexist. Equality is what makes them one definition.

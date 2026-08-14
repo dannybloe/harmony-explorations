@@ -1,12 +1,12 @@
 ---
 name: status-report
-description: Write a short, plain status update for the owner: what changed, one concrete example with real numbers, where that puts us in the plan of record, and one next step. Use when asked for a status update, for "waar staan we", for "vertel het even kort", or when a long working stretch ends and the last real report is stale.
+description: Write a short, plain status update: what changed, one concrete example with real numbers, where that puts us in the plan of record, and one next step. Use when asked for a status update, for "waar staan we", for "vertel het even kort", or when a long working stretch ends and the last real report is stale.
 ---
 
-# A status update the owner can read in a minute
+# A status update that can be read in a minute
 
-The person reading this did not just read the code. He may be away from the bench, on a phone, or
-picking the project up after a week. He wants to know where it stands, to feel that it moved, and to be
+The person reading this did not just read the code. They may be away from the bench, on a phone, or
+picking the project up after a week. They want to know where it stands, to feel that it moved, and to be
 able to answer with one word.
 
 So this is not a smaller version of a commit message. Three registers, one subject:
@@ -15,13 +15,13 @@ So this is not a smaller version of a commit message. Three registers, one subje
 |---|---|---|
 | `docs/findings.md` | whoever has to believe it | long, technical, with the evidence |
 | a commit message | the record | long, technical, addresses and counts |
-| a status update | the owner, now | short, plain, one example |
+| a status update | whoever has to decide what happens next | short, plain, one example |
 
 ## The shape
 
 Five parts, in this order, and every one of them short.
 
-1. **What changed**, in his words rather than in the repository's. Not "made 93 corpus totals exact",
+1. **What changed**, in plain words rather than in the repository's. Not "made 93 corpus totals exact",
    but "veel tests controleerden of een getal minstens iets was in plaats van of het precies klopte".
 2. **What it bought.** One sentence on why it mattered. If it bought nothing measurable, say that.
 3. **One concrete example with real numbers.** This is the part that makes it real, and it is the part
@@ -43,7 +43,7 @@ a report that only ever contains good news stops being read as information.
   a sentence. A section number is fine as a pointer at the end; it is not the news.
 * **Name the remote, never the architecture number alone.** "de Harmony One", "de Harmony 600", not
   "arch 12". This is a standing rule for all conversation here and it matters most in a report, because
-  the numbers are this project's internal handle and map to nothing on his desk.
+  the numbers are this project's internal handle and map to nothing on the desk.
 * **Dutch in conversation**, per the standing preference; documents and code stay English.
 * **A number needs its denominator.** "98,9%" says less than "3100 van de 3106 toetsen".
 * **No em-dashes and no en-dashes**, like everything else published here.
@@ -53,7 +53,7 @@ a report that only ever contains good news stops being read as information.
 
 ## What it looks like
 
-Good, and this is close to one he asked for and accepted:
+Good, and this is close to one that was asked for and accepted:
 
 > Veel van onze tests controleerden of een getal **minstens** iets was, in plaats van of het **precies**
 > klopte. Bijvoorbeeld "er moeten meer dan 65.000 lettertekens uit de configs komen", terwijl het er

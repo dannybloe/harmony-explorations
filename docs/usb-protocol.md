@@ -328,8 +328,8 @@ length nibble is computed so its code byte is never a literal. Section 91 has th
 
 What is established instead is that **every architecture configures CCP2 as a capture on both
 edges** while CCP1 does the transmit carrier, so all four remotes have a working infrared receiver
-in firmware, arch 9 included. And the samples **do** reach the host during a session: the owner
-used this feature with the classic software and the client recognised a received code immediately,
+in firmware, arch 9 included. And the samples **do** reach the host during a session: this feature
+was used here with the classic software and the client recognised a received code immediately,
 which is a first hand account rather than a measurement and is still the best evidence available.
 
 **What no search has found is the sender.** No state body emits `0x90` on either architecture, 10
@@ -1308,7 +1308,7 @@ The offsets themselves are a hypothesis and are not derived here. They are worth
 than arguing about, since a read costs nothing and the answer is checkable.
 
 **A read of this region can restart the remote.** Found by accident, then reproduced deliberately on
-the spare unprogrammed Harmony One, with the owner watching the device restart, so it is the device
+the spare unprogrammed Harmony One, with the restart watched at the remote itself, so it is the device
 resetting and not a host artefact.
 
 | Read | Result |

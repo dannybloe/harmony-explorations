@@ -202,7 +202,7 @@ def _find(filename):
 # **It was fifteen until 14 August 2026**, and the four it left out are the Harmony One sync pair and
 # the two containers found inside the arch 12 (Harmony One) firmware images. The sync pair was excluded
 # on the argument that two dumps of one remote would count one unit twice in every total. That argument
-# was **decided against by the owner**, section 142, on two grounds: a corpus wide total measures what
+# was **decided against**, section 142, on two grounds: a corpus wide total measures what
 # a reader can read and not how many remotes exist, so the unit is the container; and the two dumps are
 # genuinely different files, since Logitech's own software wrote a config between them, which is what
 # made that pair the evidence for section 58. The TypeScript side had been counting all nineteen the

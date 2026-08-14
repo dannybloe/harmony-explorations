@@ -59,7 +59,7 @@ documented change between them, 979184 and 979242 bytes. It is the only controll
 corpus and it is what the section 16 analysis rests on.
 
 It also carries the one unresolved contradiction in the format work: the build timestamps in slot 3
-order the pair the opposite way round from the owner's stated direction of the change. Until that is
+order the pair the opposite way round from the contributor's stated direction of the change. Until that is
 settled, a timestamp is not used to order two configs of the same remote. See `findings.md` section
 21.
 

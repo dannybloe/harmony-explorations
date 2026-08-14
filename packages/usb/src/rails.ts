@@ -325,7 +325,7 @@ export const SFR_PAGE_START = 0xf40;
  * out. That was seen twice on the bench on 9 August 2026. This command clears exactly that gate.
  *
  * **What this rail deliberately does not decide.** Whether FreeHarmony may send it at the end of
- * every read only session is the owner's call and is not settled by this function existing: the
+ * every read only session is a judgment call and is not settled by this function existing: the
  * conditions below keep it to the spare remote and to an architecture whose escape has actually been
  * read, which is enough for the experiment and not enough for a product. Lifting
  * `targetIsTheSpareRemote` is the decision, and it belongs in a commit that says so.

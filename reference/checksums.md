@@ -173,7 +173,7 @@ this project that a file named for safe mode has held something else. The corpus
 Unlike the applications, which are one build differing in two bytes, the two bootloaders differ in
 15694 bytes including the reset vector, so they were compiled separately.
 
-The configs. Their names are the owner's room names and **the skin is the authority on the model**:
+The configs. Their names are the contributor's room names and **the skin is the authority on the model**:
 `H885-Bedroom` carries skin 15, so by its own header it is an 880.
 
 | File | Protocol | Skin | Bytes |

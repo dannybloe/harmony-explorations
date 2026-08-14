@@ -512,7 +512,7 @@ _PUBLISHABLE_BYTE_RUNS = {
     '09 00 20 11 02 18 e0 3c 00 67 01',      # the Harmony 600's descriptor bytes
     '27 30 25 12 ff 90 16 09',               # the Harmony 525's GET_VERSION reply
     # Base slot 3's clock record on the bench Harmony 525: a build timestamp of 2013-10-01, the
-    # owner's own remote, and the document spells out what each byte means two lines above it.
+    # unit on our own bench, and the document spells out what each byte means two lines above it.
     '2c 28 12 01 03 09 0d',
 }
 

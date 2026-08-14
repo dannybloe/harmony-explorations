@@ -44,7 +44,7 @@ container, same magic markers, same trailer).
   time-sensitive item in the whole plan. Those files are irreplaceable, there is no
   authoritative source left, and everything else here depends on them.
 * Publish the load addresses and a scripted Ghidra project setup so nobody repeats section 4.
-* Start a labelled config corpus: dumps plus the owner's description of what is in them
+* Start a labelled config corpus: dumps plus each contributor's description of what is in them
   (which devices, which activities, which buttons do what). A dump with a known description
   is ground truth. A dump without one is much less useful.
 

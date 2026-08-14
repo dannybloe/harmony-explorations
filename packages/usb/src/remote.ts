@@ -353,7 +353,7 @@ export class HarmonyRemote {
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
     if (refusableInternalCount(count)) {
       // A read of this region can restart the remote, and this refusal is what avoids it. Measured
-      // on the spare unprogrammed Harmony One, deliberately, with the owner watching it restart:
+      // on the spare unprogrammed Harmony One, deliberately, with the restart watched at the remote:
       //
       //   63 bytes at 0x1000   restarts it, 3 times out of 3, wherever it sits in a sequence
       //   63 bytes at 0x0040   completed, and the remote died immediately afterwards

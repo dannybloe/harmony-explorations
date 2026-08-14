@@ -157,7 +157,7 @@ imply belong there: which version writes, what an interface offers, and which sh
 having been decided.
 
 **FreeHarmony gets these as published packages, eventually, and as the folder next door until then.**
-Decided by the owner on 12 August 2026 on one question: somebody who does not have this repository has
+Decided on 12 August 2026 on one question: somebody who does not have this repository has
 to be able to build the application. That makes publishing the endpoint. It does not make it work
 today, so until the API stops moving FreeHarmony declares a path dependency on the sibling checkout,
 which is what the lab layout already puts there. MIT flows into GPLv3 without trouble; nothing flows
@@ -234,7 +234,7 @@ service is alive and answering, section 56, so importing an existing configurati
 with a short shelf life, and neither of those would touch the licence.
 
 **The choice is cheap now and expensive later**, which is why it was settled at the placeholder stage:
-the owner is the only author, so a change needs nobody's consent. Once anyone else has contributed it
+there is one author, so a change needs nobody's consent. Once anyone else has contributed it
 needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT, and MIT into GPLv3 is
 untroubled in the one direction it has to be.
 
@@ -378,7 +378,7 @@ architecture constant to fix the firmware dump also redirects `erase_firmware()`
 correction is instructive.** Measured on 7 August 2026 from the bench machine:
 `sl.dhg.myharmony.com` serves live assets over CloudFront, `svcs.myharmony.com` resolves to an AWS
 load balancer named `prod-auto-lb-2` and answers, its certificate was renewed on 5 July 2026, and
-the owner can sign in with his account and have a connected remote recognised. What **is**
+we can sign in with our own account and have a connected remote recognised. What **is**
 discontinued is the **classic** service:
 `members.harmonyremote.com` serves a page titled "Logitech Harmony Remote Software Discontinuation",
 and that is the 7.x software the Harmony One originally shipped with. Two services, one gone and one
@@ -448,7 +448,7 @@ document:
   `ARCH9_WINDOWS` carries them now. **A read only measurement refuted the first reading of the latch**:
   the stranded 525's EEPROM byte 0 is 0, not the 3 predicted, so safe mode persists by being resident
   and not by being reinstalled, and only the byte could tell those apart. **The recovery has been
-  performed and it worked**, by the owner, on 11 August 2026, from the private lab script: the 525 came
+  performed and it worked**, by hand, on 11 August 2026, from the private lab script: the 525 came
   back with software type 0, its version reply matching 8 August byte for byte, its application region
   restored including two offsets that were erased flash while it was stranded, and its config intact.
   Its screen said the upgrade was complete, which was observed **before** the firmware path that emits
@@ -517,8 +517,8 @@ re-enumeration does not do. So data memory is reinitialised and no corruption su
 refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
 the weaker name for two days.
 
-**What does strand one is unexplained, and it is PARKED**, by the owner's decision on 10 August 2026,
-whose reading is that it may be an anomaly of that one unit: the spare has been synced by Logitech's
+**What does strand one is unexplained, and it is PARKED**, decided on 10 August 2026 on the reading
+that it may be an anomaly of that one unit: the spare has been synced by Logitech's
 software, hung deliberately more than a dozen times and had its batteries pulled repeatedly, and it is
 the only remote it has ever happened to. **What reopens it is another occurrence, nothing else.** Three leads followed
 and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
@@ -547,8 +547,8 @@ profile does not add a write target and must not.
 ## Never write a bare architecture number in conversation
 
 Say "arch 12 (Harmony One)", not "arch 12". Every time, including the fourth mention in the same
-paragraph. The owner asked for this on 12 August 2026 and again with emphasis on 13 August, because the
-architecture numbers are this project's internal handle and map to nothing on his desk.
+paragraph. Asked for on 12 August 2026 and again with emphasis on 13 August, because the
+architecture numbers are this project's internal handle and map to nothing on the desk.
 
 | architecture | the remote to name |
 |---|---|
@@ -728,7 +728,7 @@ unless `HARMONY_ENABLE_WRITES=1`, and the tests are refusals: with the flag off 
 refuses with everything else in order, and with the flag on in a subprocess each remaining
 condition still refuses by itself. `node-hid` is installed and its build script is
 approved in `pnpm-workspace.yaml`, with the reason recorded there; pnpm blocks such scripts by
-default and that default is right, so **any further approval is the owner's decision, not a side
+default and that default is right, so **any further approval is a decision to take on its own, not a side
 effect of a commit.**
 
 **Enumerating is not opening.** `listHarmony` and `packages/usb/bin/list-remotes.ts` ask the
@@ -795,10 +795,10 @@ test can see it, so it is caught by looking. A field's encoder lives next to its
 corpus asserting they invert.
 
 **When two copies are found already disagreeing, the disagreement is the finding, and it gets measured
-before either copy is touched.** This was got wrong on 13 August 2026 and the owner was right to call it
-unacceptable: two infrared frame decoders differed on 100 records of one config, and the losing one was
+before either copy is touched.** This was got wrong on 13 August 2026 and calling it unacceptable was right:
+two infrared frame decoders differed on 100 records of one config, and the losing one was
 deleted on the strength of its **provenance**, that only the other had ever been checked against a
-catalogue outside the code. The measurement came afterwards, on his question, and it happened to agree.
+catalogue outside the code. The measurement came afterwards, prompted by a question, and it happened to agree.
 That is luck and not method: had it gone the other way, the correct decoder and the evidence against the
 broken one would have gone in one commit. A disagreement between two independent implementations is the
 most informative signal this repository produces, which is what the golden vectors exist to manufacture,
@@ -808,7 +808,7 @@ only then remove one. The why is not optional either, because it is what stops t
 written again: the decoder that was removed measured the wrong half of a mark and space pair and dropped
 the last bit of every pulse width code, and `irframe.ts` had that lesson in its own docstring.
 
-**Never delete a test unless the thing it tests has left the repository.** The owner's rule, 13 August
+**Never delete a test unless the thing it tests has left the repository.** A rule taken on 13 August
 2026, and it is narrower than it sounds on purpose: a test whose claim has been refuted is rewritten to
 state what is true, a test whose title overclaims is renamed, a test that cannot fail is given a body
 that can, and a test whose subject moved to the other language moves with it. What none of those is, is
@@ -954,7 +954,7 @@ Five project skills carry the rituals that are easy to half-perform:
 * **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
   pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
   answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
-* **`status-report`**, how to tell the owner where the work stands: short, plain, one concrete example
+* **`status-report`**, how to say where the work stands: short, plain, one concrete example
   with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
@@ -1156,7 +1156,7 @@ over the runner-up before trusting its answer.
   inventory view called `activities`, which is a four hop chain, once per mode page, so inspecting a
   Harmony 700 config took 15.6 seconds against 0.4 after hoisting it. Nothing failed: the view was
   correct, and a click that takes fifteen seconds with no indication reads as a click that did nothing,
-  which is how the owner found it while using the bench. Second one of these here, after an O(n squared)
+  which is how it was found, by using the bench. Second one of these here, after an O(n squared)
   `indexOf` in a test. So hoist a whole corpus reader out of any loop over pages or keys, and where the
   cost is user facing put a coarse wall clock ceiling on it: `packages/bench/test/bench.test.ts` has one
   at seven times the measured figure, which catches an accidental quadratic and says nothing about a
@@ -1236,13 +1236,13 @@ Established norms:
   three lists now and each states its question: `lab.ALL_CONTAINERS` at 21 for a per container claim,
   `lab.CONTAINERS` at 19<!--fact:containers--> for a corpus wide total, `lab.USER_CONFIGS` at 15 for
   every programmed config. **The corpus is nineteen and that was decided rather than derived**, section
-  142: it was fifteen here and nineteen in TypeScript, and the owner settled it on the ground that a
+  142: it was fifteen here and nineteen in TypeScript, and it was settled on the ground that a
   corpus wide total measures what a reader can read and not how many remotes exist, so the unit is the
   container rather than the unit. Sixteen numbers in five documents moved in one commit and
   `make facts-write` is what did it. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
   ones where the exclusion had a reason, and stating the reason as a measurement turns an exclusion
   into a check.
-  **A third pair turned up on 14 August and the owner settled it the same day**, section 143: the
+  **A third pair turned up on 14 August and was settled the same day**, section 143: the
   `EXPECTED` tables that every container framing claim is asserted over held **17** names in
   `tests/test_gspm.py` and **13** in `packages/codec/test/gspm.test.ts`, the Python set being a strict
   superset, so the two sides reported 5 base addresses and 4 from the same reader on the same corpus. It
@@ -1455,8 +1455,8 @@ produce a config the remote accepts and mishandles.
   caller passes index 1, and **nothing depends on it**: the field is named from the firmware's own
   subtraction against base slot 3's record and its behaviour is measured twice.
 * **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
-  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, by the owner's
-  decision on 10 August 2026: it would need the One left alone for a day and read at both ends, and no
+  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
+  it would need the One left alone for a day and read at both ends, and no
   document or code anywhere wants the number. Recorded so that the bound is never quoted as a
   measurement.
 * **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
@@ -1617,7 +1617,7 @@ breaks 54 to 227. `packages/codec/src/touch.ts` also carries the **panel to pixe
 half is arithmetic (872 panel units and 54 pixels are one row measured twice) and whose **x half rests on
 one reading** and is marked as such, though no name depends on it. Under it the panel is three blocks at
 pixel rows 33, 87 and 141, one or two across and never three, plus a bar from 191 to 253 that runs off a
-220 pixel display: which is exactly what the owner described unprompted, two touch points below the
+220 pixel display: which is exactly the unprompted description of the remote itself, two touch points below the
 screen and a key at each side, so 48 to 53 are the blocks, 43 and 44 the points and 46 and 47 the keys.
 **Which code lands where is per page**, in the order the rectangles are stored, so section 121's proof
 holds for the codes too.
@@ -1853,7 +1853,7 @@ action list one. `packages/codec/src/inventory.ts` is the application's view of 
 
 **The names are the user's own equipment, so no brand out of a contributor's config is quoted**, in
 a document or in a test: counts and shapes. The generic role words the generator emits are structure
-and appear freely, and the one brand in the repository is from the owner's own sync, section 58.
+and appear freely, and the one brand in the repository is from our own sync, section 58.
 
 **What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
 mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in

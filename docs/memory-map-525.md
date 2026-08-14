@@ -143,7 +143,7 @@ Arch 12's is 4 MiB and arch 14's is 2 MiB, both fixed by their own address valid
 That was first inferred here from one number, the log area's limit of `0x080000` with section 47's
 rule that the region sits above the config, and it agrees with what the sample's owner reported
 independently. It also fixes the config region at `0x020000` to `0x080000`, which is 384 KiB, and
-the owner's "77 of 384 KiB" is the same arithmetic from the other side.
+the contributor's "77 of 384 KiB" is the same arithmetic from the other side.
 
 > **Corrected on 8 August 2026, section 76.** This said "bit 23 reads as a flag rather than an<!--superseded-->
 > address bit", and it is the reverse. Both numbers are real and they are two address spaces: a

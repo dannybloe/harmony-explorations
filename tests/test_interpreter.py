@@ -440,7 +440,7 @@ class TestTheStateVariableRecord(unittest.TestCase):
 
     Nothing in the container declares the record's length, so `7 + 8 * count` is the whole reader
     and everything here is a check on that one rule. Two independent ones: the records abut without
-    ever overrunning the next, and the deliberately built config pair reads the count the owner
+    ever overrunning the next, and the deliberately built config pair reads the count we
     chose.
     """
 

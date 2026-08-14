@@ -92,7 +92,7 @@ table above stays honest about it, and closing it is not the next job.
 
 `docs/plan.md` is the roadmap that came out of the harmony-decompiler discussion. It treats the
 user-facing tool as Phase 6, last, because it was written as an argument for how to reverse
-engineer the format. The project owner's actual goal is the opposite way round: a local,
+engineer the format. The actual goal here is the opposite way round: a local,
 cross-platform, fully self-contained application that reads a Harmony config off a remote,
 edits devices and activities, learns new IR codes and writes the result back. The reverse
 engineering is the cost of that application, not the deliverable.
@@ -102,7 +102,7 @@ format questions get answered in the order the application needs them. It also r
 decisions taken in the planning session, because several of them are one-way doors.
 
 Scope for now is deliberately narrow: the Harmony One (arch 12) and the Harmony 600 (arch 14),
-both of which the owner has on the desk. The Harmony 700 2.8 image was the arch 14 reference while
+both of which are on the desk. The Harmony 700 2.8 image was the arch 14 reference while
 the 600 dump was truncated; the 600's own image is complete now, read off the remote, so the 700
 image is a second sample rather than a stand in. Other models are iterated on later.
 
@@ -135,7 +135,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    repositories" in `CLAUDE.md`.
 
    **Its licence is GPLv3 and that is a reversal**, decided on 12 August 2026 while FreeHarmony was
-   still a placeholder with no author but its owner. The Affero variant was chosen here for its network
+   still a placeholder with a single author. The Affero variant was chosen here for its network
    clause and dropped for two better reasons: that clause fires when a program is **offered to users
    over a network**, which a desktop application is not and a network client never becomes, and Affero
    is a one way door with concordance and harmony-decompiler, whose GPLv3 code can come here while
@@ -147,7 +147,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    decision said "as a pinned git dependency" until that was tried and failed twice: a git install of
    this repository resolves no `@harmony/*` package, and Node refuses to strip types for any file
    inside `node_modules`, so `exports` pointing at `src/index.ts` cannot work for a consumer on any
-   version.* The endpoint is **published packages**, on the owner's answer to the only question that
+   version.* The endpoint is **published packages**, on the answer to the only question that
    changes anything: somebody who does not have this repository has to be able to build the
    application. Until the API stops moving, FreeHarmony declares a **path dependency on the sibling
    checkout**, which is measured working today where the git route cannot work at all. What publishing
@@ -210,7 +210,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    14 still says so.
 
 11. **Offline is the floor, Logitech's live service is an optional import, and provenance decides what
-   may be shared.** *Taken 12 August 2026 by the owner, and it is the first decision here about the
+   may be shared.** *Taken 12 August 2026, and it is the first decision here about the
    product rather than about the format.* Three parts, in the order they constrain each other.
 
    **FreeHarmony works with no server and, ideally, with no network at all.** Not a preference: it is
@@ -244,7 +244,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
    is a stronger check than anything available here.
 
-   **The requests were made on 13 August 2026, with the owner's authorisation and a throwaway account,
+   **The requests were made on 13 August 2026, with authorisation and a throwaway account,
    and the route works end to end.** Section 132. What the paragraph above listed as unknown is
    measured now, and four things follow for this decision.
 
@@ -841,7 +841,7 @@ Still to do, in the order the application needs them:
   algorithm came free: the 700 image contains exactly one 16-bit accumulate anywhere, nowhere
   near a config read, so the checksum is not a plain 16-bit sum accumulated that way. Derived in
   step 6.
-* Cross-check the documented protocol against a concordance run on the owner's remotes: same
+* Cross-check the documented protocol against a concordance run on our own remotes: same
   bytes on the wire, same answers.
 
 ### Step 4: the TypeScript workspace and the codec
@@ -872,7 +872,7 @@ Still to do, in the order the application needs them:
   interface, and the tests are refusals: with the flag off every write path refuses even with
   everything else in order, and with the flag on in a subprocess each remaining condition still
   refuses on its own.
-* **`node-hid` is installed and its build script is approved**, by the owner, after looking at what
+* **`node-hid` is installed and its build script is approved**, deliberately, after looking at what
   it pulls in: two dependencies, `node-addon-api` and `pkg-prebuilds`, maintained under the
   node-hid organisation, no advisories. `pnpm-workspace.yaml` carries the approval with the reason
   next to it, because pnpm blocks dependency build scripts by default and that default is right: an

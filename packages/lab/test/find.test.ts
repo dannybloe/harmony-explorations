@@ -14,7 +14,7 @@ import { join, sep } from 'node:path';
 import { IMAGES, LAB, imagePath, imagePaths, skipWithoutLab } from '../src/index.ts';
 
 test('a name that resolves twice resolves to the curated copy, not the scratch one', skipWithoutLab(), () => {
-  // The ambiguity is real and is not being removed: the lab is the owner's and holds working copies.
+  // The ambiguity is real and is not being removed: the lab is ours and holds working copies.
   // What is fixed is that the choice is now a stated rule rather than the filesystem's traversal
   // order. Both pairs are byte identical today, which is why nothing was wrong and why nothing would
   // have said so if one had been edited.

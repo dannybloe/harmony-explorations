@@ -1980,7 +1980,7 @@ class TestTheHarmony700Pair(unittest.TestCase):
                    if self.a.section_length(i) != self.b.section_length(i)]
         self.assertEqual(changed, [8])
         # `b` is the older dump, so the newer one is eight bytes shorter here and 58 shorter
-        # overall, despite the owner's notes describing only additions.
+        # overall, despite the contributor's notes describing only additions.
         self.assertEqual(self.b.section_length(8) - self.a.section_length(8), 8)
         self.assertEqual(len(self.b.blob) - len(self.a.blob), 58)
 

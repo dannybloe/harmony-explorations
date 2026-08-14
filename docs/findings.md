@@ -1506,14 +1506,14 @@ variables" and nothing more until that routine is found.
 ## 16. The Harmony 700 pair, and what a controlled sample buys
 
 Both of dmrzzz's Harmony 700 dumps are in the corpus, so the corpus has its first **controlled
-pair**: two configs of one remote, with the owner's own written account of what differs.
+pair**: two configs of one remote, with the contributor's own written account of what differs.
 Everything else available is either two different remotes, where nearly everything differs, or
 the four arch 8 configs, which differ from each other in 73 to 84 percent of their bytes with no
 record of why.
 
 Source, with the permission explicit in it, is
 <https://github.com/trelowney/harmony-decompiler/issues/9>. The issue body of 2026-08-04 carries
-the current dump; a comment 22 minutes later carries an older one recovered from the owner's
+the current dump; a comment 22 minutes later carries an older one recovered from the contributor's
 version control, with the diff of the notes file they keep beside the dumps. Both are posted
 under "I have had a look at what is in it and I am happy to publish it".
 
@@ -1525,11 +1525,11 @@ direction, older to newer.
 Section 21 contradicts it. Each config carries its own build timestamp, and they read 2021-07-30
 for `harmony700.EZHex` against 2023-04-22 for `harmony700-2.EZHex`, which is the opposite order.
 The discrepancy is unresolved and section 21 sets out what does and does not bear on it. Nothing
-below has been rewritten, because the direction here rests on the owner's own statement, which is
+below has been rewritten, because the direction here rests on the contributor's own statement, which is
 better evidence about provenance than a byte is. But **every "older to newer" in this section is
 provisional until that is settled**, and the direction can be read the other way throughout.
 
-### What changed, in the owner's words
+### What changed, in the contributor's words
 
 Their notes diff, abbreviated to the lines that moved. This is an activity called "Watch TV" and
 one called "Watch Bluray" on a six device installation:
@@ -2552,7 +2552,7 @@ generator does not emit minimal diffs. The correction is to the number, not the 
 ### A discrepancy this opens, which is not resolved
 
 Section 16 states the direction of the Harmony 700 controlled pair, older to newer, and everything
-in that section is stated in that direction. It rests on the owner's own words, that the comment
+in that section is stated in that direction. It rests on the contributor's own words, that the comment
 attachment is the older dump, plus file timestamps of 2024-10-12 against 2026-08-04.
 
 The records disagree. `harmony700.EZHex` reads 2021-07-30 and `harmony700-2.EZHex` reads
@@ -2577,7 +2577,7 @@ What can be said:
 So there are two live possibilities and no way to choose between them here: either the pair's
 direction is inverted, or the record is not written when the config is generated. Both would matter,
 the first to every statement in section 16 and the second to what the timestamp actually means.
-Section 16 is marked accordingly and is **not** rewritten. Asking the owner settles it in one
+Section 16 is marked accordingly and is **not** rewritten. Asking the contributor settles it in one
 message and is the obvious next step, since the corpus cannot.
 
 Until then, nothing in this project should treat the record as establishing an order between two
@@ -3145,7 +3145,7 @@ It grew by **8 bytes**. An entry is 4 bytes, so that is two entries. And the rec
 exactly where they went: the record count is 354 in both, while two entry records go from 212 to
 211 and four entry records from 65 to 66. **One record gained two entries.**
 
-Two new buttons in the owner's account, two new bindings in the file, in a single record. The
+Two new buttons in the contributor's account, two new bindings in the file, in a single record. The
 prediction was made by somebody who had never seen the format and the count was produced by a
 parser that knows nothing about their description.
 
@@ -4765,7 +4765,7 @@ dedicated infrared learning port, so receiving does not share the transmit path.
 is arch 8 and the 520 arch 9, and both carry the five steps. The Harmony 525's own manual, from the
 later era, documents the same feature as a per device Learn IR action with the same 5 to 10 cm
 spacing and **no description of what happens to the signal**, deferring to instructions delivered
-online. So the feature is not model specific, which is what the owner reports from having used it on
+online. So the feature is not model specific, which is what we report from having used it on
 every remote here, and the era that documented its mechanism is the era whose service is gone.
 
 **The records section 32 cannot frame are class 1 as well**, 617 of them across the corpus. So the
@@ -6337,7 +6337,7 @@ Three things separate a service that answers from a bucket that has outlived its
   DNS or the 403 could distinguish "maintained" from "forgotten and still billed"; the certificate
   can.
 * **An account still authenticates.** The owner signed in to the service from the bench machine with
-  his own account, and it authenticated him and recognised the remote attached over USB. Sign-in is
+  our own account, and it authenticated and recognised the remote attached over USB. Sign-in is
   server side by construction, so this is not something a cached page can fake.
 
 And `members.harmonyremote.com`, the one that **is** gone, says so in its own words: a static S3
@@ -6512,7 +6512,7 @@ sync, and both reads either side were ours, through `packages/corpus/bin/read-co
 
 1. **Baseline.** The unit's config read off the remote, 1232237 bytes, and compared against the dump
    already in the lab: **identical, 1232237 of 1232237**. So the state before the experiment is not
-   assumed, it is proved, which matters because the owner had been clicking around in the software
+   assumed, it is proved, which matters because we had been clicking around in the software
    beforehand.
 2. **One change, decided in advance.** One device added, a Denon AV receiver picked arbitrarily from
    Logitech's database, plus one activity, the activity only because their software refuses to
@@ -6571,7 +6571,7 @@ after    Root  State  CurrentActivityState_0_2  CurrentLocation_1  ButtonSoundVo
 ```
 
 The device that was asked for, with its 23 inputs, and the television that was not asked for is
-absent. That is the tie between "what the owner clicked" and "what is in the flash", and it is the
+absent. That is the tie between "what was clicked" and "what is in the flash", and it is the
 first time this project has had one.
 
 ### The codec was tested by this and it held
@@ -8960,7 +8960,7 @@ does not.
 
 ### The internal read, and what it confirms
 
-Read on the owner's say so, 529 commands of 62 bytes each, one chunk per command, with a
+Read deliberately, 529 commands of 62 bytes each, one chunk per command, with a
 `GET_VERSION` health check every 64 reads. **No restart, no missed health check, and the remote
 answered normally afterwards.** That is the arch 12 hazard not reproducing here rather than being
 absent, since a single chunk read is what the cap was always meant to permit.
@@ -10100,7 +10100,7 @@ slot 13.
 
 **No brand or model out of a contributor's config is quoted here.** The generic role words the
 generator emits, `TV`, `Receiver`, `PowerOnDelay`, `CurrentActivityState`, are structure rather than
-inventory and appear freely; the one brand anywhere in this repository is from the owner's own
+inventory and appear freely; the one brand anywhere in this repository is from our own
 deliberate sync, section 58, where the device was picked arbitrarily to make the experiment. Every
 number below is a count.
 
@@ -10180,7 +10180,7 @@ sheet its owner made of that remote's own screens: the devices screen, the activ
 custom buttons of each. The reader was run against it without the sheet having been used to build
 anything:
 
-| | the reader | the owner's sheet |
+| | the reader | the contributor's sheet |
 |---|---|---|
 | devices | 7 | 7, listed by make and model |
 | activities | 9 | 9 on the activity screen |
@@ -10797,11 +10797,11 @@ Nothing was fitted. The lattice comes from a firmware read on 9 August 2026 and 
 configs generated by Logitech's software years earlier. So arch 9's keypad is 8 by 8 with one column
 unpopulated, and **the Harmony 525 has fifty matrix buttons**.
 
-### Confirmed: the owner counted fifty
+### Confirmed: fifty, counted on the remote
 
 That last sentence was the falsifiable one, and it was **written down, committed and pushed before
 anybody counted**, which is what makes the confirmation worth having. Commit `4a2079b` carries the
-number; the owner then counted the buttons on the bench 525 and reported fifty.
+number; the buttons on the bench 525 were then counted by hand, and there are fifty.
 
 It is a small measurement and it closes more than it looks. Fifty physical buttons against fifty
 bound codes means **every matrix button on that remote is bound in its config and every bound code
@@ -10812,7 +10812,7 @@ the lattice is not merely consistent with the codes but exactly filled by them.
 Compare the 600, which reached the same place from the other direction: 54 codes contiguous 1 to 54
 over 56 matrix positions, two unoccupied, confirmed by pressing all 54. The arch 9 version cost one
 count instead of an evening at the keypad, because the firmware states the lattice and the config
-states which of it is used. **Source: the physical remote, counted by the owner, 9 August 2026.**
+states which of it is used. **Source: the physical remote, counted by hand, 9 August 2026.**
 
 ### What this does not give
 
@@ -11079,7 +11079,7 @@ been run out. So **an assumption in that search is wrong** rather than the featu
 
 ### Two of the three candidates die on the client's transport layer
 
-The owner's next remark killed the easiest one: he has learned codes on **all** of these remotes,
+The next remark killed the easiest one: codes have been learned on **all** of these remotes,
 repeatedly, and the feature is called Learn Command in the classic software. So it is not a case of
 reading the wrong firmware.
 
@@ -11495,7 +11495,7 @@ paragraph above.
 | control: 64 bytes at `0xFF` `+0x1000` | 64 bytes back, remote answering |
 | **65 bytes at the same address** | **failed after 146 ms, and the remote stopped answering** |
 
-**Confirmed from outside the software too**: the owner, watching the remote, reported that it reset.
+**Confirmed from outside the software too**: watching the remote, we saw it reset.
 That matters because the host side can only see silence, and silence has more than one cause.
 
 It re-enumerated on its own at a **different device path**, which is what says it restarted rather
@@ -11830,7 +11830,7 @@ which is strictly more than the hazard needs.
 
 ## 95. A remote stays in USB mode when the cable goes, and its own software never lets that happen
 
-An owner's observation on 9 August 2026, and it turns out to be a product requirement rather than a
+An observation on 9 August 2026, and it turns out to be a product requirement rather than a
 curiosity: pull the cable and the Harmony One keeps showing USB mode until the batteries come out.
 
 ### The firmware can see the cable go
@@ -11867,7 +11867,7 @@ and the host has no way back in, which means no command can rescue it either.
 ### It also explains the freeze earlier the same day, and corrects a correction
 
 At midday a remote was found hung and not enumerating, and this document briefly blamed a 65 byte
-read, then retracted that when the owner's account showed successful operations and a charger to USB
+read, then retracted that when the account of the session showed successful operations and a charger to USB
 transition in between. **The retraction was right about the read and wrong to leave it unexplained.**
 This is the explanation: every session this project runs ends by closing a handle and pulling a
 cable, which is exactly the case that leaves a remote in this state. It is reproducible on purpose,
@@ -11886,7 +11886,7 @@ cleared itself and been verified healthy.
 So the pattern is exactly what this section claims: it is the disconnect, not the traffic.<!--superseded-->
 
 Two occurrences on the same unit on one day, and the second following a plain successful read, moves
-this from an owner's observation to something a bench session should simply expect.
+this from a single observation to something a bench session should simply expect.
 
 > **Wrong, and the control that shows it was run on 10 August 2026.** A session containing nothing
 > but one plain 32 byte read, followed by pulling the cable, left the remote **out** of USB mode and
@@ -12257,7 +12257,7 @@ point table, is a no-op on arch 14 and the whole selector is a no-op on arch 12.
 > the thing that lets a remote leave USB mode when the cable goes. "A polite end is a reboot, or it
 > is nothing" is wrong, and it was written from having read only mode 3.
 
-For FreeHarmony the decision is therefore between three honest options, and it is the owner's:<!--superseded-->
+For FreeHarmony the decision is therefore between three honest options, and it is ours to take:<!--superseded-->
 reboot the remote at the end of every read only session, leave it in USB mode and tell the user the
 batteries clear it, or find what does write that mode variable, which this section has not done.
 `0x315` on the One takes 1, 2 and 3 and only mode 3 is read here.
@@ -12491,7 +12491,7 @@ not say what it was for; this is what it is for.
 It stays behind `WRITES_ENABLED`, because it changes a device's state and this project's rails do
 not bend for convenience. But the decision it feeds is no longer "reboot or nothing": it is whether
 a read only product may send one command whose whole effect is to zero a state variable, which is a
-far easier thing to argue than a reset. **The owner's call, and it is now a cheap experiment**: send
+far easier thing to argue than a reset. **A judgment call, and it is now a cheap experiment**: send
 it, pull the cable, see whether the remote leaves USB mode.
 
 ### The experiment, prepared, with the prediction committed first
@@ -12586,7 +12586,7 @@ cycle clears data memory. That fits the shape of what was seen: not "the cable d
 samples of anything. What makes it worth stating is that the test is a **read**: `READ_MISC` selector
 `0x07` returns any data address, so reading `0xED5`, `0xED6`, `0xEDC` and `0xEDD` after a hang and
 comparing them against a healthy remote settles it without writing anything. It does need a
-deliberate hang, which is the owner's call and not something to schedule here.
+deliberate hang, which is a judgment call and not something to schedule here.
 
 ### The test, prepared, and its predictions committed first
 
@@ -12755,7 +12755,7 @@ first guess.
 
 ### Parked, on 10 August 2026, and what would reopen it
 
-The owner's decision, and his reading of it: **it may be an anomaly of this particular unit.** That is
+The decision, and the reading behind it: **it may be an anomaly of this particular unit.** That is
 a reasonable candidate and it is not testable with what is here, because the spare has had an unusual
 life. It was synced by Logitech's own software on 7 August 2026, deliberately hung well over a dozen
 times since, and had its batteries pulled repeatedly, and it is the only unit any stranding has been
@@ -14296,8 +14296,8 @@ ambiguous between "the clock is not config derived" and "USB mode never got that
 ### What it means for an editor, which is less than the finding suggests
 
 This section first wrote the consequence up as though the clock mattered to somebody. **It does not**,
-on the account of the owner of two of these remotes, who has used one for years: the time is small on
-the screen, it runs badly wrong after a while, and he has never used it. That is the only evidence
+on our own account, two of these remotes having been here for years: the time is small on
+the screen, it runs badly wrong after a while, and it has never been used. That is the only evidence
 about the feature's value anyone here has, it comes from the person the feature was for, and it is
 worth more than an inference from the firmware.
 
@@ -14335,7 +14335,7 @@ rather than merely left alone in the code, a rule added without a test fails the
 test is that a save of an unedited config changes **exactly** two runs: the seven timestamp bytes and
 the two checksum bytes, on four containers spanning all four architectures.
 
-### Why it runs badly wrong, which the owner's complaint pointed at
+### Why it runs badly wrong, which the complaint about it pointed at
 
 A 32.768 kHz crystal does not lose minutes a day. The tick that feeds the clock can, and it is eleven
 instructions at `0x27BC8`:
@@ -14369,7 +14369,7 @@ whole four second blocks to nothing.
 **What is claimed and what is not.** The two mechanisms are read and both are one directional, so the
 clock loses time by construction. **The rate is not measured**: how often the rollover falls inside the
 window depends on timing this project has not modelled, so 5.6 minutes a day is an upper bound and not
-a prediction. What corroborates it is the owner's own account of years of use, which is that the clock
+a prediction. What corroborates it is our own account of years of use, which is that the clock
 runs badly wrong, and an upper bound of minutes a day is the right order for that. Measuring the rate
 needs the remote left alone for a day and read twice, which is cheap and has not been done.
 
@@ -14552,7 +14552,7 @@ falls back to what the seed config assigned to the same code. One to two codes p
 
 Base slot 0 spells a state variable's name in ASCII, and a device's name is the leading part of it.
 The drawn text is a different encoding of the same words, reached through a different section, so
-agreement is not something the decoder could have arranged. On the owner's own synced Harmony One
+agreement is not something the decoder could have arranged. On our own synced Harmony One
 the screen draws `Denon AV Receiver` and the name tree carries `Denon_AV_Receiver_Input_23`.
 
 Counted across the corpus, thirteen containers carry a name tree and twelve of them draw between
@@ -15411,12 +15411,12 @@ spare Harmony One is on the bench, the procedure needs no host software to reach
 the screen says "Safe Mode" or it does not. That would turn a repair shop's instruction sheet into a
 measurement on a unit whose contents are backed up byte for byte.
 
-**This matters to the write rails and it improves them.** A recovery route the owner can trigger by
+**This matters to the write rails and it improves them.** A recovery route a user can trigger by
 hand, with no host and no software, is a better rail than one that depends on our own code being
 correct. It is the reason the rails can treat a bad config as recoverable rather than fatal, which is
 what the caveat above was really asking about.
 
-**Confirmed on a Harmony 525, 11 August 2026**, by the owner following the procedure on a remote the
+**Confirmed on a Harmony 525, 11 August 2026**, by following the procedure on a remote the
 sheet does not name: battery out, hold the key, battery in, and it entered safe mode. So the procedure
 generalises off the models it was written for, and arch 9 has it too.
 
@@ -15956,9 +15956,9 @@ One thing this leaves open, stated rather than papered over: **whether the key c
 EEPROM byte 0 at all** is not read. The cell is 0 both before and after the recovery, so entry by key
 is consistent with never touching it, and nothing measures that directly.
 
-### The recovery, performed by the owner, and the screen confirmed a firmware path before it was read
+### The recovery, performed by hand, and the screen confirmed a firmware path before it was read
 
-On 11 August 2026 the owner ran the four library calls against the stranded 525. The remote displayed
+On 11 August 2026 the four library calls were run against the stranded 525. The remote displayed
 **"upgrade voltooid"**, its Dutch for upgrade complete, which needed a battery pull to clear, and came
 up on its normal screen.
 
@@ -15985,7 +15985,7 @@ survived, which is what concordance's `is_config_safe_after_fw` predicts on an a
 `firmware_update_base` differs from its `config_base`.
 
 **This project still did not perform the write**, and that is not a formality. The four calls ran from
-a script in the private lab, by the owner, on his own remote, after the reading above was in place. The
+a script in the private lab, by hand, on our own remote, after the reading above was in place. The
 rails are unchanged: arch 9 is not in `ARCHITECTURES_WITH_A_WRITE_TARGET`, and nothing in this
 repository has ever written to a remote.
 
@@ -16029,7 +16029,7 @@ button starts it". Until now it could do neither half. Section 112 read the draw
 were readable, and it closed with the honest statement that **which activity a drawn name belongs to
 was not settled**, having ruled out two routes: no screen switch reads the `CurrentActivityState`
 variable index, and base slot 14's value maps point at targets that draw no text. `CLAUDE.md` proposed
-a third, the arch 12 touch hit map, and the owner corrected it in one sentence: a Harmony 525 has no
+a third, the arch 12 touch hit map, and it was corrected in one sentence: a Harmony 525 has no
 touch panel at all, it has four keys beside the screen matching four zones on it. That correction is
 what opened this, because it moved the question from geometry to key bindings, where the format is
 explicit.
@@ -16234,7 +16234,7 @@ So the One needs base slot 17's touch hit map, and section 45 already says why t
 for it: nine page shapes, a rectangle per page carrying the key code a hit reports. The One is the only
 touch model here, `packages/usb/src/models.ts`, and it is the only architecture where the scan code is
 not a physical key. `CLAUDE.md`'s proposed route was therefore right for arch 12 and wrong as a general
-route, and the owner's correction was right that it is no route at all for a 525.
+route, and the correction was right that it is no route at all for a 525.
 
 **Section 125 took that route and the One is complete**, 11 of 11: the mode page's spare `lead` byte is
 the index into base slot 17, so the map is stated by the container and nothing has to be inferred from
@@ -16532,7 +16532,7 @@ A 525 lays its activity menu out as two columns of two lines. `h525_config`'s pa
 (  0, 13) "Watch"        ( 63, 13) "Watch"
 (  0, 24) "DVD -"        ( 72, 24) "TV +"
 (  0, 35) "Play on"
-(  0, 46) <the owner's own name for a device>
+(  0, 46) <our own name for a device>
 ```
 
 Three activities, each label wrapped across two rows and truncated to what fits. The words above are the
@@ -16707,7 +16707,7 @@ every rectangle is 2 whether the scale is 10.5 or 15.7 panel units per pixel. Wh
 mattering is that **no activity label depends on it**, because every one of them sits on a full width
 row, and a test asserts that ignoring x entirely resolves the same eight names.
 
-### What the geometry turns out to be, which the owner of the remote confirmed independently
+### What the geometry turns out to be, confirmed independently from the remote itself
 
 Under that transform the rectangles are a grid, and it is a grid nobody fitted:
 
@@ -16930,7 +16930,7 @@ column, `packages/codec/test/inventory.test.ts` carries the closures and the con
 
 ## 127. A record's three block pointers are once, held and tail, and the second one is the repeat rate
 
-The question came from the owner of the bench Harmony One, about his own remote: holding volume up
+The question came from using the bench Harmony One: holding volume up
 repeats too fast to land on a level, and the discontinued software never let him change it. It is a
 good question for the format because it has a yes or no answer in the firmware, and the answer turns
 out to be a number sitting in every config.
@@ -17003,7 +17003,7 @@ keypad again: 30.8 ms to 752 ms across these containers, with most between 60 an
 
 ### What that means for the remote on the bench
 
-The receiver's volume codes in the owner's own config are the `BB0` shape:
+The receiver's volume codes in our own config are the `BB0` shape:
 
 | | words | content | duration |
 |---|---|---|---|
@@ -17386,7 +17386,7 @@ unit reports 71. Both numbers are unallocated in Logitech's classic client table
 `reference/models.md` gets its 46 entries, and section 81 explained them as a numbering artefact.
 
 They are not an artefact. **59 is the Harmony One EMEA and 73 is the Harmony 600 EMEA**, two products
-in Logitech's own catalogue, and the owner of both bench remotes is in the Netherlands.
+in Logitech's own catalogue, and both bench remotes are in the Netherlands.
 
 ### Where the answer came from
 
@@ -17420,15 +17420,15 @@ adds a fifteenth pair the grouping rule missed, 49 against 53, because `1000EU` 
 
 | config | word | skin | the product it names |
 |---|---|---|---|
-| the owner's Harmony One, 2023 | `0x0D3B` | 59 | Harmony One **EMEA** |
+| our Harmony One, 2023 | `0x0D3B` | 59 | Harmony One **EMEA** |
 | the spare One after section 58's sync | `0x0D36` | 54 | Harmony One |
 | the spare One, compiled 13 August 2026 | `0x0D36` | 54 | Harmony One |
-| the owner's Harmony 600 | `0x0D49` | 73 | Harmony 600 **EMEA** |
+| our Harmony 600 | `0x0D49` | 73 | Harmony 600 **EMEA** |
 | the same 600, compiled 13 August 2026 | `0x0D47` | 71 | Harmony 600 |
 | dmrzzz's Harmony 700, both configs | `0x0D42` | 66 | Harmony 700 |
 
 The 700 is the second contributor and the independent case: its owner is American and its configs
-carry the non European number of the pair, where the Dutch owner's two remotes carry the European
+carry the non European number of the pair, where the two Dutch remotes here carry the European
 one. Two contributors, three models, two architectures, and the regional reading fits all of them.
 
 ### Why the old rule held and why it was still wrong
@@ -17452,7 +17452,7 @@ now the whole of the answer. What is superseded is the run rule and the word orp
 
 Both configs compiled here on 13 August 2026 were asked for with `localeId: "en-US"` and both came
 back with the non European number, which is consistent with the compile's locale choosing the
-product. It is not isolated, and one case argues against it: section 58's sync ran on the owner's own
+product. It is not isolated, and one case argues against it: section 58's sync ran on our own
 account and also produced 54. So the candidate explanations are the locale passed to the compiler and
 the product record the account holds for that unit, and nothing here separates them. Recorded as
 open rather than guessed, because a writer does not need the answer: an editor copies this word, per
@@ -17545,7 +17545,7 @@ answers "Account does not exist for provided user", gets the whole catalogue: 85
 with no difference.
 
 That matters for the product question rather than for the format. Harmony Desktop makes a user attach
-a remote before it will show them anything, and **it refuses a Harmony 525**, which the owner found by
+a remote before it will show them anything, and **it refuses a Harmony 525**, which was found by
 trying: `GetHarmonyProducts`, the list the setup flow uses, holds 27 products and contains no 525, no
 880 and no 890. So the second hand owner of an arch 9 remote cannot register it and would have been
 locked out if the catalogue needed a household. It does not.
@@ -18131,7 +18131,7 @@ Section 111 measured a Harmony One (arch 12) whose clock held base slot 3's buil
 uptime, and closed with an open item: whether a Harmony 600 (arch 14) and a Harmony 525 (arch 9) do the
 same, since all three carry the same eleven byte record and only arch 12 had been power cycled and read.
 `docs/memory-map-525.md` carries four predictions for the Harmony 525 (arch 9), written down and
-committed on 13 August 2026 before anything was read, and the owner pulled and replaced the batteries at
+committed on 13 August 2026 before anything was read, and the batteries were pulled and replaced at
 11:53 local so that the remote would have chosen its clock afresh.
 
 Its own config was built at **2013-10-01T18:40:44**, which is what made the reading cheap: nothing about

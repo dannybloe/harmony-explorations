@@ -273,7 +273,7 @@ export function require_(name: keyof typeof IMAGES | string): Uint8Array {
  *
  * **The line is consent, not the data**, and saying it the other way put this in contradiction with
  * `packages/probe`, whose `SectionReport` publishes per slot addresses and lengths deliberately.
- * That is the same shape of information and the opposite situation: the probe runs on the owner's
+ * That is the same shape of information and the opposite situation: the probe runs on a contributor's
  * own machine, on their own remote, and produces a file they decide whether to send. Two stated
  * policies in one repository with no way for a reader to tell which was meant, found by review on
  * 13 August 2026 and reconciled here and in `report.ts` in one commit. Section 139.

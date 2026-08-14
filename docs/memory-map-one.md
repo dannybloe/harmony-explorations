@@ -50,7 +50,7 @@ Two independent closures on the last row. concordance reports the config region 
 identifies itself as an Atmel AT49BV322A, a 4 MiB parallel NOR.
 
 The two configs read here occupy 1672832 and 1232237 bytes of that region, so the size varies with
-what the owner put on the remote and only the region is fixed.
+what was put on the remote and only the region is fixed.
 
 `0x000000` to `0x010000` is what `concordance --dump-safemode` returns, all 64 KiB of it, mostly
 erased. It is also what `--dump-firmware` returns, which is why that option was useless here: on

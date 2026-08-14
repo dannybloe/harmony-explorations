@@ -51,7 +51,7 @@ const EXPECTED: Readonly<Record<string, Expectation>> = {
   one_safemode: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
   one34_region2: { magic: 'GSPM', base: 0x002000, version: '1.6', slots: 22, marker: 'LWJL', keys: 2, architecture: 12 },
   h700_gspm: { magic: 'GSPM', base: 0x020000, version: '1.4', slots: 20, marker: 'LWJL', keys: 0, architecture: 14 },
-  // The other two arch 14 safe mode containers, added on 14 August 2026 by the owner's decision. They
+  // The other two arch 14 safe mode containers, added on 14 August 2026 by decision. They
   // were parsed by every other test in this package and absent from this table, which is the framing
   // claims' population, so those claims covered 13 containers where `tests/test_gspm.py` covered 17.
   // Section 143.
@@ -432,7 +432,7 @@ const TRAILER_SAMPLES = [
 // requiring it to differ from the stored value reduces to `SEED != 0` and held for any nonzero seed
 // whatever the bytes were.
 //
-// **It was deleted for that on 13 August 2026 and deleting it was wrong**, per the owner's rule that a
+// **It was deleted for that on 13 August 2026 and deleting it was wrong**, per the rule that a
 // test only goes when the code it exercises does. The seed is still here, so the right answer was a body
 // that can fail, and the test below is it: the checksum is XOR linear in the seed, so one container
 // **determines** the seed rather than merely being consistent with it, and every container has to name

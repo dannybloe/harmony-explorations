@@ -42,7 +42,7 @@ what this said for a day.** Every key in all three files sits on a horizontal ax
 many rows sit at an angle or follow a curve across the face. So the case contour is measured and the
 placement inside it is schematic: the drawings say which keys exist and roughly where, and they are not
 accurate enough to put a hit region on a screen. Thirty three further drawings were started on 11 August
-2026 and stopped for exactly that reason, by the owner, who saw it in the output. The rule the case
+2026 and stopped for exactly that reason, after seeing it in the output. The rule the case
 outline already follows, sample the photograph rather than draw the obvious shape, has to apply to the key
 rows too before the fleet is worth having, and the work is parked until FreeHarmony needs it.
 
@@ -106,7 +106,7 @@ cut, because a field is either checkable here or it is not.
 |---|---|---|
 | skin, architecture | **confirmed** for six skins | 15, 22, 54, 66, 71, 72, from firmware literals and live remotes, none of which consulted the client's table. `reference/models.md` |
 | touch screen | **confirmed, including its negative** | base slot 17 is a touch hit map on arch 12 and names the picture bank everywhere else, sections 45 and 62. The One is the only arch 12 model and the only one this table calls touch, so the two agree without either being derived from the other |
-| panel | **confirmed for the 600 only, and confirmed not derivable from a config** | the owner has the remote and its screen is monochrome. Its config still carries two byte pixels, 43 distinct low bytes and 96 distinct high bytes over 15 raw pictures, and only 3.3% of its values are grey read as RGB565. So the format is the architecture's and the panel is the model's, and a renderer cannot infer one from the other |
+| panel | **confirmed for the 600 only, and confirmed not derivable from a config** | we have the remote and its screen is monochrome. Its config still carries two byte pixels, 43 distinct low bytes and 96 distinct high bytes over 15 raw pictures, and only 3.3% of its values are grey read as RGB565. So the format is the architecture's and the panel is the model's, and a renderer cannot infer one from the other |
 | page button | **consistent, and it explains a measurement** | the 5xx has none, and the four soft keys on a 525 carry opcode `0x7E`, "enter the base slot 6 mode the operand indexes", 57 and 18 times across its two configs. So paging is a soft key binding there rather than a missing feature |
 | max devices | **bounded below only, and the earlier claim was circular** | a device is an infrared group, section 86. This row claimed consistency at a limit<!--superseded--> on the strength of the 700's config holding exactly 6 against a stated 6, and the stated 6 had been set from that same count, section 136. A config holding six devices forbids no seventh. **No sample reaches any stated maximum**: the 600 holds 4 of 5, the One 5 of 15, the 525 4 of 12, the arch 8 sample 3 of 15, the 700 6 of 8. What is confirmed is that nothing exceeds its figure, and the figures themselves rest on two vendor tables that agree on 28 of 35 skins |
 | macros | **consistent** | every architecture read here runs action lists of many instructions, section 34. The 748's lone "no" is unchecked, since nothing here has an arch 3 sample |

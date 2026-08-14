@@ -123,7 +123,7 @@ section 82.
 anybody edit anything: **a device is an infrared group**, and one state variable, named
 `CurrentActivityState` in every container that carries names, counts the **activities**. The
 calibration is a config Logitech's own service compiled for one device and one activity while we
-watched, which reports one and one. The names in that tree are the owner's own equipment, so what
+watched, which reports one and one. The names in that tree are our own equipment, so what
 is published here is counts and shapes rather than anybody's inventory. Section 86.
 
 Not established: what a binding table entry corresponds to, three of the four infrared encoding

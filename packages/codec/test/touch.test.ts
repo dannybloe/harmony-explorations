@@ -141,7 +141,7 @@ test('the three rows of blocks are where the screen actually draws them', skipUn
       .sort((a, b) => (a[0] as number) - (b[0] as number));
     assert.deepEqual(common, [[33, 83], [87, 137], [141, 191], [191, 253]]);
     // The bar starts exactly where the third row ends, and it runs past the bottom of the display,
-    // which is what the owner of the remote describes: two touch points below the screen rather than
+    // which is what the remote itself has: two touch points below the screen rather than
     // on it. The two edge strips are the other touch keys, one at each side.
     assert.equal(common[2]?.[1], common[3]?.[0]);
     assert.ok((common[3]?.[1] as number) > 220, 'the bar is partly off the display');

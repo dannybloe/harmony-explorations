@@ -21,7 +21,7 @@ import lab
 
 PAIR = ('one_spare_before_sync', 'one_spare_after_sync')
 
-# What the owner asked the service for, recorded before the sync ran. The device was picked
+# What was asked of the service, recorded before the sync ran. The device was picked
 # arbitrarily from Logitech's database; the activity is there because their software will not
 # proceed without one.
 REQUESTED = 'one device, a Denon AV receiver, plus one activity'
@@ -29,8 +29,8 @@ REQUESTED = 'one device, a Denon AV receiver, plus one activity'
 # Section 21: the day of week byte is days since this date modulo 7.
 CLOCK_EPOCH = datetime.date(2000, 1, 1)
 
-# The build stamps, and for the second one the date is known independently: the owner made the
-# change on 6 August 2026 and synced it on the 7th.
+# The build stamps, and for the second one the date is known independently: the
+# change was made on 6 August 2026 and synced it on the 7th.
 BUILT = {
     'one_spare_before_sync': datetime.datetime(2023, 7, 28, 13, 27, 33),
     'one_spare_after_sync': datetime.datetime(2026, 8, 6, 13, 54, 22),

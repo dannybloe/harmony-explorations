@@ -10,7 +10,7 @@ having and is also the easiest place to do permanent damage. This skill is the r
 the two.
 
 This used to add "with Logitech's recovery servers gone", which is wrong: the MyHarmony service was
-measured alive on 7 August 2026 and the owner can sign in and read a remote through it. The classic
+measured alive on 7 August 2026 and we can sign in and read a remote through it. The classic
 `members.harmonyremote.com` service is the one that is discontinued. Nothing about the rails
 changes, because a remote is still irreplaceable, the service can go at any time, and it has not
 been shown to compile a config any more. See `docs/findings.md` section 56.

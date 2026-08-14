@@ -184,7 +184,7 @@ test('the inventory view says what a config is for, and needs no remote', skipUn
   // The skin a config states is not always the one its remote reports: this file says 59 where the
   // unit reports 54. **It is nameable now**, section 131, because 59 is the European Harmony One, and
   // until 13 August 2026 this assertion read `undefined` and cited section 81's numbering artefact.
-  // The bench could not name the model of the owner's own config, which is what that cost.
+  // The bench could not name the model of our own config, which is what that cost.
   assert.equal(view.skin, 59);
   assert.equal(view.model, 'One EMEA');
   assert.equal(view.devices.length, 5);
@@ -233,7 +233,7 @@ test('the biggest config in the lab is inspected in well under a second',
     // pages ran the four hop activity chain 289 times and took 15.6 seconds to inspect. Every
     // assertion in this file still passed: the view was correct, it was just useless, because a click
     // that takes fifteen seconds with no indication reads as a click that did nothing. That is how it
-    // was found, by the owner trying to use the bench.
+    // was found, by using the bench.
     //
     // The ceiling is coarse on purpose. It is roughly seven times the measured 0.4 seconds, so it says
     // nothing about a slow machine or a cold cache and everything about an accidental quadratic, which

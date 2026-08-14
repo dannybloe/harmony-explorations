@@ -16,7 +16,7 @@ The claims under test, in the order they are argued in the section:
 * the clock is **initialised from that record at boot**, which a power cycle measured: the remote
   read its config's build timestamp plus ninety seconds of uptime;
 * and the tick that feeds it can only lose time, by an eight bit read, modify and write on a running
-  timer, which is why the owner's account of years of use is that it runs badly wrong.
+  timer, which is why our own account of years of use is that it runs badly wrong.
 
 The measured values are pinned as a **relation** and not only as bytes: a seconds field that steps
 by four cannot leave its residue class modulo 4, and the observed set is exactly that class, while the

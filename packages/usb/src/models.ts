@@ -126,7 +126,7 @@ export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {
   // Gin, confirmed: the Harmony One. The only touch panel this library can address.
   54: { name: 'One', alias: 'One EMEA', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   58: { name: '620', architecture: 7, maxDevices: 12, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: true, firmwareSeen: '4.1.0' },
-  // The European One. Section 131: this is the number the owner's own Harmony One configs carry, and
+  // The European One. Section 131: this is the number our own Harmony One configs carry, and
   // it was read as an unallocated artefact for as long as the only skin table here predated MyHarmony.
   59: { name: 'One EMEA', alias: 'One', architecture: 12, maxDevices: 15, favourites: 24, panel: 'colour', touch: true, macros: true, pageButton: true, soundPictureButtons: false, firmwareSeen: '3.4.0' },
   65: { name: '610', architecture: 7, maxDevices: 5, favourites: 23, panel: 'monochrome', touch: false, macros: true, pageButton: false, soundPictureButtons: false, firmwareSeen: '3.5.0' },

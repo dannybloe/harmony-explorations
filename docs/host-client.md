@@ -105,7 +105,7 @@ forty retired models, and the manuals are indexed under Logitech's support asset
 
 Added 9 August 2026, and it is a **different application** from the MyHarmony client the section
 near the end of this document reports as empty. That one is the Silverlight era. This one is
-`Harmony Desktop.app`, built January 2022, and it is the application the owner used on 7 August
+`Harmony Desktop.app`, built January 2022, and it is the application used here on 7 August
 2026 to program a Harmony One, so it demonstrably still drives an arch 12 remote.
 
 **Its native half knows nothing.** The application binary is 141 KB and the two C++ frameworks
@@ -673,7 +673,7 @@ It does not, and the reason is structural rather than accidental.
 shell, so the interesting half is managed .NET rather than machine code, and a disassembler is
 the wrong tool for it. The application itself is not installed either: it was downloaded from
 Logitech's servers at run time. What survives is 16 copies in the shell's browser cache, in two
-vintages, from the owner's own sessions. They decompile to about 244000 lines of readable C#.
+vintages, from our own sessions. They decompile to about 244000 lines of readable C#.
 
 **Its USB layer carries no protocol constants at all.** In 17800 lines of driver code there are
 nine distinct byte-valued hex literals and not one of them is a command byte. Every operation is
