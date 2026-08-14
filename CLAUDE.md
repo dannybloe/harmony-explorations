@@ -151,10 +151,13 @@ implementing it sits next to the documents. Move the codec out and a finding can
 and never reach the code.
 
 **FreeHarmony has its own plan of record now**, its `docs/roadmap.md`, written on 14 August 2026 after
-its first code existed, and it carries the product milestones as P0 to P6. So `docs/roadmap.md` here is
-the plan for the library side, its M numbers name the P they feed, and the product questions it used to
-imply belong there: which version writes, what an interface offers, and which shell, that last one never
-having been decided.
+its first code existed, and it carries the product as **eight numbered steps written for a reader rather
+than for a builder**: no section numbers, no architecture numbers, no code, and every step something a
+person can watch appear. That register was asked for on 14 August 2026 after a first version read as a
+dependency graph, so **the technical half of the product plan stays here**, as a step to milestone table
+in `docs/roadmap.md`. Its M numbers name the step they feed. The product questions it used to imply
+belong there: which version writes, what an interface offers, and which shell, that last one never having
+been decided.
 
 **FreeHarmony gets these as published packages, eventually, and as the folder next door until then.**
 Decided on 12 August 2026 on one question: somebody who does not have this repository has

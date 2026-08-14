@@ -385,13 +385,28 @@ These were written when this repository was going to hold the application too, s
 which side of the split it belongs to. **Here** means the API and the evidence and the bench
 instrument; **FH** means the product.
 
-**Since 14 August 2026 the FH half is planned in FreeHarmony's own `docs/roadmap.md`**, as P0 to P6,
-written after the first code existed there. So the milestones below keep the **library** side of each M
-and no longer describe the product: what an interface should offer, in which order, and what version 1
-refuses is that document's business. Each M that has a product half names the P it feeds and stops
-there. Two things it says that this document used to imply and never stated: version 1 is an
-**inspector**, since writing is decision 8 and only the Harmony One has a write target, and the shell
-has never actually been chosen.
+**Since 14 August 2026 the FH half is planned in FreeHarmony's own `docs/roadmap.md`**, as eight
+numbered steps. It is deliberately written **for a reader rather than for a builder**: each step is
+something a person can watch appear, it carries no section numbers, no architecture numbers and no code,
+and where it states a limit the limit is one a user would run into. That was asked for explicitly on 14
+August 2026, after a first version of it read as a technical dependency graph. **So the technical half of
+the product plan is here**, in this table and in the milestones below, and that is the split to maintain:
+a technical claim about the product belongs on this side of the fence.
+
+| FreeHarmony step | what it is called there | what this repository owes it |
+|---|---|---|
+| 1 | See what is on your remote | M1 and M2, both done. Plus `inventory`, `render`, `activities`, `devices` and `text`, all done |
+| 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
+| 3 | Change something, without touching the remote | M3's codec half, `edit.ts` with `FIELD_RULES`, done, same length only |
+| 4 | Put it back, changing nothing | **M4**, not started. The write rails, `ERASE_FLASH` scoping and the read back compare |
+| 5 | Change what your remote does | M4 again, plus nothing new from the format |
+| 6 | Add and remove devices and activities | M6, and the **unscheduled** one: length changing edits, which relocate everything above the insertion |
+| 7 | Teach it a code from your old remote | **M5**, not started. Capture is read, section 98; the encoder from timings to a record is the open item |
+| 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |
+
+Two things the product plan states that this document used to imply and never said: version 1 is an
+**inspector**, since writing is decision 8 and only the Harmony One has a write target, and **the shell
+has never actually been chosen**, which is also the input decision 4 waits on.
 
 **M0 Infrastructure. Done. Here.** Corpus widened to four architectures, container generalised
 across all of them, the workspace standing with the codec ported and proven equal by golden vectors,
@@ -630,11 +645,11 @@ suggestive of pixels without being a decode. **The next move is to find the seco
 sweeping addresses out of the sections that are decoded but whose record fields are not all named,
 rather than to read more of the dispatcher.
 
-**M3 Offline editor. Here for the codec, FH's P3 for the rest.** Edit understood fields, minimal diff
+**M3 Offline editor. Here for the codec, FreeHarmony's step 3 for the rest.** Edit understood fields, minimal diff
 against the original, every change validated by recompiling. The codec support for it is M2 and lives
 here; the editing experience does not. What follows under this heading is therefore what the codec can
 already do, and it is quite a lot: the product question of how narrow a same length edit feels to
-somebody typing into a text field is P3's.
+somebody typing into a text field is step 3's.
 
 **What the interface will list is read now**, section 86, and it is the piece M3 could not have
 started without: **a device is an infrared group**, and one state variable, `CurrentActivityState`,
@@ -699,19 +714,19 @@ walks all eighteen containers asserting they are inverses.
 
 **M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
-facing "write my config" is FH's P3, which is blocked on this and says so.
+facing "write my config" is FreeHarmony's steps 4 and 5, which are blocked on this and say so.
 
 **M5 Learning. Both.** IR capture over USB and the encoder from raw timings to a config record are
-API. The learning interface is FH's P4. The encoder is the part with no owner: it replaces a choice
+API. The learning interface is FreeHarmony's step 7. The encoder is the part with nobody assigned: it replaces a choice
 Logitech's own service used to make, which is why three of the four encoding classes appear in no
 config anybody has.
 
-**M6 Authoring. FH's P5**, on top of the action list bytecode, which is M2 territory and comes from
+**M6 Authoring. FreeHarmony's step 6**, on top of the action list bytecode, which is M2 territory and comes from
 here. The one part of it that could not be deferred is a **field**: a device definition carries its
 provenance from the first version of the format, because retrofitting it means auditing a database
 whose origins nobody kept. Decision 11 and FreeHarmony's `CLAUDE.md`.
 
-**Packaging has no M and that is correct.** It is FH's P6 outright, and the only thing it demands of
+**Packaging has no M and that is correct.** It is FreeHarmony's step 8 outright, and the only thing it demands of
 this repository is that `packages/*` become installable by somebody who does not have this checkout,
 which is what decision 4 defers until the API stops moving.
 
