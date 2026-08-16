@@ -1316,7 +1316,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 143 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 144 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1563,8 +1563,17 @@ produce a config the remote accepts and mishandles.
   12 it does load it, section 111, because the config is memory mapped and there is no load step.
   Arch 14 yields the **column**
   only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
-  region of the One share one sense line. Finishing it needs a RAM write to drive the rows, which
-  the rails forbid, and **that is not proposed here.** **There is a route that needs no write**,
+  region of the One share one sense line. Finishing it **over USB** needs a RAM write to drive the
+  rows, which the rails forbid, and **that is not proposed here.**
+  **The cheapest route needs no remote on the bus at all, and it is the board**, section 144: a
+  survey of an 885's circuit board, done by somebody else and checked here against our own configs,
+  is what settled arch 8's lattice as 4 by 16 with `scan = (line - 1) * 4 + input`. The 885 config's
+  column census and that board agree at 14, 14, 14, 13 through routes with nothing in common. **The
+  arithmetic is per architecture and must not be ported**: arch 9 (Harmony 525) is `group * 8 +
+  column`, arch 14 (Harmony 600 and 700) is 4 by 14, and searching all nine images this project
+  holds finds arch 8's encoder in the four arch 8 ones and in none of the others. On arch 12
+  (Harmony One) the board is the **only** route left, since a live census there yields nothing.
+  **There is a second route that needs no write**,
   section 123: the 525 implements infrared learning, so pointing the original equipment's own remote
   at it and matching the capture against the class 5 records section 82 read names the command, and
   the config already binds a scan code to it. `0x70` is still a command that changes a remote's

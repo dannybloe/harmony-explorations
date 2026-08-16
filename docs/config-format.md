@@ -2666,6 +2666,25 @@ key, which made the arch 14 table describe a keypad that cannot exist. See
 So arch 14 enumerates all three event types for every key while arch 12 and arch 8 record presses
 only. That is a real difference between the architectures rather than an artefact of the reading.
 
+### A scan code's arithmetic is per architecture
+
+The scanner that produces the code is not one routine across the family, so the same number means a
+different position on each. Confirmed on arch 8 and arch 9 from the firmware and on arch 14 from a
+live census; arch 12 is stated as the shape its sense wiring implies and is **unconfirmed**, since
+no measurement there can produce a code.
+
+| Arch | Lattice | Scan code | Range | Source |
+|---|---|---|---|---|
+| 8 (880, 885) | 4 by 16 | `(line - 1) * 4 + input`, `input` 1 to 4 | 1 to 64, nothing binds 64 | firmware, all four images, [findings.md](findings.md) section 144 |
+| 9 (525) | 8 by 8 | `group * 8 + column`, both 1 to 8 | 1 to 64, nothing binds a multiple of 8 | firmware, section 89 |
+| 14 (600, 700) | 4 by 14 | column is `(code - 1) mod 4` | 1 to 54 bound of 56 | 54 buttons pressed on the bench, section 48 |
+| 12 (One) | not established | not established | 1 to 55 bound | sixteen buttons share one sense line, so no census yields a code. Section 48 |
+
+The **position** of a key is a separate question and is not established anywhere: an encoding says
+which cell a code is, not which printed button sits in that cell. Section 133 measured that it does
+not follow from the codes either, since no divisor puts a Harmony 600's digit row on one line.
+Recovering it needs the board, which is how the arch 8 lattice above was corroborated.
+
 ### Arch 8 and arch 12 share a canonical code ordering
 
 47 `(event, scan)` pairs appear in both the One's table and the arch 8 table, and on that shared

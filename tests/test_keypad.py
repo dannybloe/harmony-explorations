@@ -197,5 +197,192 @@ class TestTheHarmony525Keypad(unittest.TestCase):
         self.assertEqual(len(arch9_press_codes('h525_config')), BUTTONS_COUNTED_ON_THE_525)
 
 
+# Arch 8's scan code encoder, one routine present in all four arch 8 images. findings.md section
+# 144. The addresses differ between an application and a bootloader and are identical between the
+# two models, which is what the pair of them being one build predicts.
+ARCH8_ENCODER_AT = {
+    'arch8_code_880': 0x08C26,
+    'arch8_code_885': 0x08C26,
+    'arch8_boot_880': 0x04D06,
+    'arch8_boot_885': 0x04D14,
+}
+
+# What the routine is, instruction for instruction: decrement both inputs, multiply the line by
+# four, add the sense input back, add one. So `scan = (line - 1) * 4 + input`.
+ARCH8_ENCODER = (
+    'DECF', 'DECF', 'MOVLW', 'MULWF', 'MOVFF', 'MOVF', 'ADDWF', 'INCF', 'MOVF', 'RETURN',
+)
+
+ARCH8_COLUMNS = 4
+ARCH8_LINES = 16
+
+# Every other firmware image this project holds, so that the negative is over a population rather
+# than over whatever was to hand. Arch 12 (Harmony One), arch 14 (Harmony 600, 650 and 700) and
+# arch 9 (Harmony 525).
+IMAGES_WITHOUT_THE_ARCH8_ENCODER = (
+    'one34_code', 'h600_code_complete', 'h700_code', 'h650_code', 'h525_code',
+)
+
+ARCH8_CONTAINERS = ('arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+                    'arch8_config_880', 'arch8_config_885')
+
+# Counted off an 885 board by a third party and reported in harmony-decompiler discussion 6 on 15
+# August 2026, as four pad letters against sixteen numbered nets. Held here as somebody else's
+# measurement, per the standing rule that an upstream finding is a hypothesis: what this file
+# checks is that our own configs agree with it, not that it is true because it was published.
+ARCH8_885_COLUMN_CENSUS_REPORTED_UPSTREAM = (14, 14, 14, 13)
+
+
+def multiply_by_four_sites(name):
+    """Every `MOVLW 0x04` immediately followed by a `MULWF`, and whether two `DECF` precede it.
+
+    The literal load and the multiply on their own are not distinctive: each arch 8 image holds
+    three of them and the other images hold one or two. The decrement pair in front is what selects
+    the encoder, and reporting both counts is what makes this a calibration rather than a search
+    that found what it was looking for.
+    """
+    from harmony.pic18 import isa
+
+    code, plain, with_decrements = lab.load(name), [], []
+    for at in range(4, len(code) - 4, 2):
+        here, then = isa.decode(code, at, 0), isa.decode(code, at + 2, 0)
+        if here.mnemonic != 'MOVLW' or here.fields.get('k') != 4 or then.mnemonic != 'MULWF':
+            continue
+        before = (isa.decode(code, at - 4, 0).mnemonic, isa.decode(code, at - 2, 0).mnemonic)
+        (with_decrements if before == ('DECF', 'DECF') else plain).append(at)
+    return plain, with_decrements
+
+
+def arch8_press_codes(name):
+    """Every scan code an arch 8 container binds with a press event, out of its key table."""
+    from harmony import gspm
+
+    container = gspm.parse(lab.load(name))
+    return {key.scan_code for key in container.keys if key.event_type == PRESS}
+
+
+def column_census(codes):
+    """How many of the codes fall in each of the four sense inputs, in input order.
+
+    Under `scan = (line - 1) * 4 + input` the input is `(scan - 1) mod 4` counting from zero, so
+    this is the same census the 600 was measured for by pressing all of its buttons, computed from
+    a file instead of from a remote.
+    """
+    return tuple(sum(1 for scan in codes if (scan - 1) % ARCH8_COLUMNS == i)
+                 for i in range(ARCH8_COLUMNS))
+
+
+class TestTheArch8Keypad(unittest.TestCase):
+    """findings.md section 144: the Harmony 880 and 885 encode a scan code as a line times four.
+
+    Prompted by an upstream claim and confirmed here against our own images, which is the whole
+    point of holding them. What is **not** adopted is the physical geometry that came with it: a
+    board survey we have not seen says which net is which key, and this file has nothing that could
+    check that.
+    """
+
+    def setUp(self):
+        lab.require(*ARCH8_ENCODER_AT, *IMAGES_WITHOUT_THE_ARCH8_ENCODER, *ARCH8_CONTAINERS)
+
+    def test_all_four_images_carry_the_same_encoder(self):
+        """One routine, four images, two models, an application and a bootloader each."""
+        from harmony.pic18 import isa
+
+        lab.require(*ARCH8_ENCODER_AT)
+        for name, at in ARCH8_ENCODER_AT.items():
+            with self.subTest(image=name):
+                code, decoded, offset = lab.load(name), [], at
+                for _ in ARCH8_ENCODER:
+                    instruction = isa.decode(code, offset, 0)
+                    decoded.append(instruction.mnemonic)
+                    offset += 2 * instruction.words
+                self.assertEqual(tuple(decoded), ARCH8_ENCODER)
+                self.assertEqual(isa.decode(code, at + 4, 0).fields['k'], ARCH8_COLUMNS)
+
+    def test_the_two_images_of_a_model_pair_differ_only_in_where_the_variables_live(self):
+        """Byte identical bar the operand of each instruction that names one of the two variables.
+
+        An application holds them at `0x2b2` and `0x2b3` and a bootloader at `0x200` and `0x201`,
+        so the raw bytes differ while the arithmetic does not. Comparing the decoded operands
+        against each other is what says the difference is an offset and not a different routine.
+        """
+        from harmony.pic18 import isa
+
+        shapes = {}
+        for name, at in ARCH8_ENCODER_AT.items():
+            code, fields, offset = lab.load(name), [], at
+            for _ in ARCH8_ENCODER:
+                instruction = isa.decode(code, offset, 0)
+                # The low byte of a file operand is what moves; everything else has to match.
+                fields.append((instruction.mnemonic, instruction.words,
+                               instruction.fields.get('f', 0) & 0x01))
+                offset += 2 * instruction.words
+            shapes[name] = tuple(fields)
+        self.assertEqual(len(set(shapes.values())), 1, shapes)
+
+    def test_no_other_image_carries_it(self):
+        """The negative, with the score for the wrong answer beside it.
+
+        A bare multiply by four is common: every image here has one or two that are not this
+        routine. With the decrement pair in front it appears exactly once in each of the four arch
+        8 images and in none of the five others, so the discriminator scores 4 of 4 and 0 of 5
+        against a background of 13 near misses it correctly refuses.
+        """
+        for name in ARCH8_ENCODER_AT:
+            with self.subTest(image=name):
+                plain, found = multiply_by_four_sites(name)
+                self.assertEqual(len(found), 1, f'{name}: {found}')
+                self.assertEqual(len(plain), 2, 'the near misses are what make this a calibration')
+        for name in IMAGES_WITHOUT_THE_ARCH8_ENCODER:
+            with self.subTest(image=name):
+                plain, found = multiply_by_four_sites(name)
+                self.assertEqual(found, [], f'{name} carries the arch 8 encoder')
+                # Two in the Harmony One's image and one in each of the others. Stated exactly
+                # rather than as a floor, so that a reader losing sight of a site shows up here.
+                self.assertEqual(len(plain), 2 if name == 'one34_code' else 1)
+
+    def test_every_bound_code_fits_a_four_wide_lattice(self):
+        """The closure from the other end: the configs, which share no code with the firmware.
+
+        A scan code is a line times four plus an input, so with sixteen lines the range is 1 to 64.
+        Every code every arch 8 container binds is inside it, and all four inputs are occupied,
+        which is what says the four is a real factor rather than an artefact of the arithmetic.
+        """
+        for name in ARCH8_CONTAINERS:
+            with self.subTest(container=name):
+                codes = arch8_press_codes(name)
+                self.assertTrue(codes <= set(range(1, ARCH8_COLUMNS * ARCH8_LINES + 1)))
+                self.assertTrue(all(census > 0 for census in column_census(codes)))
+
+    def test_the_last_position_is_bound_by_nothing(self):
+        """Every container stops at 63, so line 16 input 4 exists and carries no button.
+
+        The same shape as the 600's two unoccupied positions and the 525's unpopulated column, and
+        it is the reason the range is quoted as 1 to 63 rather than 1 to 64: the ceiling is a
+        property of these boards and the arithmetic reaches one higher.
+        """
+        for name in ARCH8_CONTAINERS:
+            with self.subTest(container=name):
+                self.assertEqual(max(arch8_press_codes(name)), ARCH8_COLUMNS * ARCH8_LINES - 1)
+
+    def test_the_885_census_agrees_with_the_board_somebody_else_counted(self):
+        """Two routes, no shared code, and neither of them ours alone.
+
+        The census here is computed from an 885 config's key table through the firmware's own
+        arithmetic. The one it is compared against was counted off an 885 circuit board by somebody
+        who has never seen this repository. They agree number for number, which is the strongest
+        thing said about arch 8 here and the reason the encoder is believed rather than merely
+        decoded.
+
+        The 880 is deliberately asserted too and deliberately differs: 53 codes against 55, which
+        is the two colour keys the 885 has and the 880 does not.
+        """
+        self.assertEqual(column_census(arch8_press_codes('arch8_config_885')),
+                         ARCH8_885_COLUMN_CENSUS_REPORTED_UPSTREAM)
+        self.assertEqual(sum(ARCH8_885_COLUMN_CENSUS_REPORTED_UPSTREAM), 55)
+        self.assertEqual(column_census(arch8_press_codes('arch8_config_880')), (14, 14, 13, 12))
+        self.assertEqual(len(arch8_press_codes('arch8_config_880')), 53)
+
+
 if __name__ == '__main__':
     unittest.main()

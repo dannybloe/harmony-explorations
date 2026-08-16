@@ -20303,3 +20303,93 @@ narrower than the habit. A number pinned here that moves for a reason nobody cha
 was not a fact about the corpus but about the order a container happens to be read in. And, for the
 three closures, a container where the two sides genuinely differ, which would make the closure a
 coincidence of this corpus rather than a property of the format.
+
+## 144. Arch 8 spells a scan code as a line times four, and no other architecture here does
+
+Prompted from outside. harmony-decompiler discussion 6 carries a claim, on 15 August 2026, that the
+Harmony 880 and 885 compute a keypad scan code as `scan = (line - 1) * 4 + input`, from a routine
+in the application image and in the safe mode image. Under decision 7 an upstream finding is a
+hypothesis rather than a fact, and this project has held four arch 8 images since 10 August, so it
+was checkable here. It checks out, it closes twice, and the half of it this project cannot check is
+named below rather than adopted.
+
+### The routine
+
+One routine, in all four arch 8 images, at `0x08C26` in both applications and at `0x04D06` in the
+Harmony 880's bootloader and `0x04D14` in the 885's. Ten instructions:
+
+```
+DECF  input       ; input -= 1
+DECF  line        ; line -= 1
+MOVLW 0x04
+MULWF line        ; PRODL = (line - 1) * 4
+MOVFF PRODL, line
+MOVF  input, W
+ADDWF line, F     ; += input - 1
+INCF  line, F     ; += 1
+MOVF  line, W
+RETURN
+```
+
+So `scan = (line - 1) * 4 + input`, with `input` running 1 to 4 and `line` 1 to 16. The caller at
+`0x08C1A` reads `PORTB` and returns early when the line is zero, which is what makes zero mean no
+key rather than line zero.
+
+The four copies are the same routine and not merely the same arithmetic: decoded instruction for
+instruction they agree in mnemonic, length and operand parity, and the only difference is where the
+two variables live. An application holds them at `0x2b2` and `0x2b3`, a bootloader at `0x200` and
+`0x201`. The upstream text gives the two bootloader addresses as though both were in one image;
+they are one address per model.
+
+### It is arch 8 and nothing else, with the score for the wrong answer
+
+A multiply by four is not distinctive on its own. Searching every firmware image this project holds
+for a `MOVLW 0x04` immediately followed by a `MULWF` finds three sites in each arch 8 image, two in
+the Harmony One's, and one in each of the Harmony 600, 650, 700 and 525 images. Requiring two
+`DECF` immediately before it selects **exactly one site in each of the four arch 8 images and none
+in any of the five others**, so the discriminator scores 4 of 4 where it should hit and 0 of 5
+where it should not, against a background of 13 near misses it refuses.
+
+That is the load bearing half for this project, because it means the arithmetic must not be ported.
+Arch 9 (Harmony 525) is `group * 8 + column` on an 8 by 8 lattice, section 89. Arch 14 (Harmony 600
+and 700) yields `(code - 1) mod 4` as a column from a live census, section 48, and its 54 codes fit
+4 by 14. Arch 8 is 4 by 16. Three architectures, three shapes, and the same family of encodings
+computed by three different pieces of code.
+
+### The closure, from the configs
+
+The firmware and the containers share no code, so the six arch 8 containers are an independent end.
+Every scan code any of them binds with a press falls inside 1 to 64, and all four inputs are
+occupied in every one, which is what says four is a real factor rather than an artefact of the
+arithmetic. Every one stops at 63, so line 16 input 4 is a position with no button on either board.
+That is the same shape as the 600's two unoccupied positions and the 525's unpopulated column.
+
+The stronger closure is the census. Counting the press codes by `(scan - 1) mod 4` gives, for the
+885's config, **14, 14, 14, 13**. The board survey reported upstream, counted off an 885 circuit
+board by somebody who has never seen this repository, is **14, 14, 14, 13**. Two routes with no
+shared anything, agreeing number for number. The Harmony 880 gives 14, 14, 13, 12, summing to the
+53 press codes `docs/config-format.md` already recorded, against the 885's 55.
+
+### What is not adopted
+
+The physical geometry. Which numbered net carries which printed key rests on a board survey this
+project has not seen and cannot check, and the upstream write up says itself that occupancy alone
+leaves over eleven thousand relabellings. So nothing here claims a scan code names a button on arch
+8. What is claimed is the arithmetic and the lattice it implies.
+
+### What it changes
+
+`CLAUDE.md` listed the physical button map as needing a RAM write to drive the matrix rows, which
+the rails forbid, and said no more. That was true of the routes this project had tried, and it read
+as though there were no others. There is a third: **a board survey plus firmware, which needs no
+write, no risk and no remote on USB**. It is the route that produced the arch 8 answer, and on arch
+12 (Harmony One) it is the only one left, since a live census there yields nothing at all because
+sixteen buttons share one sense line.
+
+### What would falsify it
+
+An arch 8 container binding a code above 64, which would break the lattice. The same decrement and
+multiply shape turning up in an arch 12 or arch 14 image, which would make the encoder shared after
+all. An arch 8 image whose routine differs, which would make it per build rather than per
+architecture. Or a second 885 whose column census is not 14, 14, 14, 13, which would make the
+agreement with the board a coincidence of one config.
