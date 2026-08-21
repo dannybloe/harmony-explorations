@@ -14,6 +14,7 @@ alongside the repository is used when one exists:
 Files are located by name anywhere beneath that directory, so the corpus can be arranged
 however suits it. See reference/checksums.md for what the names refer to.
 """
+import json
 import os
 import sys
 import unittest
@@ -266,9 +267,51 @@ ALL_CONTAINERS = CONTAINERS + ('arch8_config_880', 'arch8_config_885')
 ASCII_FONTS = 'h525_safemode_ahcm'
 
 
+#: Where the captured replies from Logitech's live service sit, relative to the lab root.
+#:
+#: **Addressed by path and not through `IMAGES`**, unlike everything else here, and for a measured
+#: reason: `_find` walks the lab for a bare filename and takes the first hit, and four of these
+#: filenames exist four times over, once per account the measurement used. Those captures are from
+#: different accounts and say different things, so the first hit is the wrong answer three times in
+#: four and the walk order is the file system's business rather than ours. One directory, named.
+SERVICE_RESPONSES = ('work', 'myharmony', 'responses')
+
+
 def path(name):
     """Absolute path to a named image, or None when it is not available."""
     return _find(IMAGES[name])
+
+
+def response_path(filename):
+    """Absolute path to a captured service reply, or None when the lab has not got it."""
+    if not LAB:
+        return None
+    p = os.path.join(LAB, *SERVICE_RESPONSES, filename)
+    return p if os.path.isfile(p) else None
+
+
+def response(filename):
+    """One captured service reply, parsed, or raise SkipTest when the lab has not got it.
+
+    The replies carry a byte order mark, which `json.loads` refuses by name, so the encoding is
+    stated here once rather than in every caller.
+    """
+    p = response_path(filename)
+    if not p:
+        raise unittest.SkipTest(
+            'no %s captured; set HARMONY_LAB (searched: %s)'
+            % (filename, LAB or 'nothing, HARMONY_LAB unset'))
+    with open(p, encoding='utf-8-sig') as fh:
+        return json.load(fh)
+
+
+def require_responses(*filenames):
+    """Skip the whole test unless every named reply is present, per `require`'s own argument."""
+    missing = [f for f in filenames if not response_path(f)]
+    if missing:
+        raise unittest.SkipTest(
+            'no %s captured; set HARMONY_LAB (searched: %s)'
+            % (', '.join(missing), LAB or 'nothing, HARMONY_LAB unset'))
 
 
 def load(name):

@@ -366,6 +366,27 @@ One of the two is wrong about arch 9. Ours is a live measurement of a real remot
 client's is a constant, so the burden is on the client, but the disagreement is worth keeping
 because arch 9 is the architecture this project understands least.
 
+### Confirmed on 21 August 2026, from the captured replies
+
+Section 145, and all of it recomputed by `tests/test_host_client.py` rather than transcribed.
+
+* **`IsEnabled` is real and decides registration.** 19 skins of 120 carry it, and the list the setup
+  flow reads holds exactly those 19. Skin 22 is false, which is why a Harmony 525 cannot be registered
+  and why its compile ends in a bare error. This was section 136's inference and is now an equality
+  with no exception either way.
+* **`CompilerArchitecture` is null on all 120.** The field would have handed us the architecture per
+  model and it carries nothing.
+* **`MaxActivities` is null on every model here.** One enabled product states a value, the Harmony 350
+  at 1. Everything else enabled is null and the disabled half is a flat 255. So the claim that no
+  source states an activity limit for these remotes holds, with the field named.
+* **The device and favourite counts agree with `packages/usb/src/models.ts`** on every model here.
+* **An activity is roles plus a wanted state**, and `EnterActions` and `LeaveActions` are empty on both
+  captured activities. A role names its device, its selected input by name, and its position in the
+  power up and power down order.
+* **A `KeyCode` has three shapes, not one**, and 124 of 419 commands do not use the shape this document
+  quoted. See section 145 for the table; the compound form is the one that parses to a plausible wrong
+  answer rather than to nothing.
+
 ### Confirmed and moved out
 
 **The platform codenames and the skin number table**, 9 August 2026. A resource file carries nine

@@ -86,8 +86,10 @@ August 2026, its config and its firmware are in the lab, and `docs/memory-map-52
 was predicted before it was connected against what it measured. **It will not get a known answer sample**,
 sections 135 and 136: the live service accepts a skin 22 remote record and names it a Harmony 525, so
 Harmony Desktop's refusal to see one is the client's, but the compile is accepted and then ends in a bare
-`status='Error'`. The likeliest reason is a stated per product `IsEnabled` flag, false for skin 22, whose
-true set is exactly the client's own supported list minus the two hubs. **And no other model can be
+`status='Error'`. **The reason is confirmed and it is a policy field**, section 145: a stated per product
+`IsEnabled` flag, false for skin 22, whose true set is exactly the client's own supported list, 19 skins
+of 120 with no exception in either direction. The earlier reading added "minus the two hubs"<!--superseded-->,
+which was an artefact of comparing 27 records against 19 skins rather than skins against skins. **And no other model can be
 tried**, because `ValidateRemote` refuses a synthetic serial, so registering a remote nobody here owns is
 not possible: an 880 or an 890 needs the hardware, and the contributed dumps carry no serial. Other models are iterated on later.
 

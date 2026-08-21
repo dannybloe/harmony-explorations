@@ -20393,3 +20393,135 @@ multiply shape turning up in an arch 12 or arch 14 image, which would make the e
 all. An arch 8 image whose routine differs, which would make it per build rather than per
 architecture. Or a second 885 whose column census is not 14, 14, 14, 13, which would make the
 agreement with the board a coincidence of one config.
+
+## 145. The product table confirms `IsEnabled`, states no architecture and no activity limit, and its button maps close against ours
+
+Section 132 measured Logitech's live service and left three things as inferences. This is the
+measurement of all three, made on 21 August 2026 from the replies captured on 13 August rather than
+from the service, so no call was made and no account was involved. `tests/test_host_client.py`
+recomputes every figure below.
+
+### The supported list is exactly the enabled set
+
+`ProductsManager/GetAllProducts` returns 120 product records. 19 distinct skins carry `IsEnabled`
+true, and `GetHarmonyProducts`, the list the setup flow reads, holds exactly those 19 skins. The
+equality is asserted in both directions because a subset either way would be a different claim.
+
+Section 136 read the Harmony 525's compile failure as "the likeliest reason is a stated per product
+`IsEnabled` flag, false for skin 22, whose true set is exactly the client's own supported list minus
+the two hubs". The flag exists, skin 22 is false, and the set matches with no exception in either
+direction, so the hypothesis is confirmed and the "minus the two hubs" qualifier was an artefact of
+comparing 27 records against 19 skins rather than skins against skins. A skin can appear more than
+once in the table.
+
+That settles why an arch 9 (Harmony 525) remote cannot be registered and why its compile ends in a
+bare `status='Error'`: it is a policy field in the vendor's own product table, not a property of the
+remote, the config or the architecture.
+
+### Two fields that would have answered open questions and answer nothing
+
+`CompilerArchitecture` is a field on every product record and is **null on all 120**. It would have
+handed this project the architecture per model, which is otherwise derived from firmware and from a
+config's own section slot 1.
+
+`MaxActivities` is the more interesting of the two, because it is not empty everywhere. One enabled
+product states a value: the Harmony 350, skin 104, states 1, which is true of that remote. Every
+other enabled product is null, including every model this project works on, and the 93 disabled
+records carry a flat 255, which is a sentinel rather than a generous limit.
+
+So `CLAUDE.md`'s standing claim that no source states an activity limit survives, with its scope
+named rather than merely unrefuted: the field exists, Logitech filled it in where they cared, and
+none of those places is a remote here. Recorded because a reader who finds `MaxActivities` in this
+reply would otherwise conclude the question is closed.
+
+### The device and favourite counts agree with our own table
+
+`packages/usb/src/models.ts` already carried the vendor's device counts, adopted in section 136, and
+it also carried favourite channel counts that had never been checked against this reply. Both agree
+on every model here: 15 devices and 24 favourites for the Harmony One, 5 and 23 for the Harmony 600
+in both regions, 8 and 23 for the Harmony 700, 12 devices for the Harmony 525. The favourite counts
+are stated only on enabled products; a disabled record carries zero, which is the same shape as
+`MaxActivities`.
+
+`DisplayName` for skin 54 is `Harmony One+`, where our table says `One`. Not a correction: the table
+is deliberately the name a person would use, and the plus is Logitech's own suffix for the later
+revision.
+
+### The button maps close against `reference/button-maps.md`, in both directions
+
+Section 133 built that document by decoding a scan code's infrared record into the bit frame a device
+sees and looking the frame up in the button maps of the account that generated the config. What it
+never checked is the other direction: whether the vendor's maps hold a button the document failed to
+place, and whether the document holds a button the maps never named.
+
+Both sides are empty on both remotes.
+
+| remote | vendor names | placed against a scan | left in symmetric pairs | left over |
+|---|---|---|---|---|
+| Harmony One, skin 54 | 36 | 32 | 4 | 0 |
+| Harmony 600, skin 71 | 40 | 36 | 4 | 0 |
+
+The four per remote are the two up keys and the two down keys, which send one command each, and
+section 133 already records that no decoding breaks that symmetry. So the derivation used every name
+available to it and invented none, which is a completeness closure rather than a new name: it says
+the 32 and the 36 are not a sample of what the vendor offered but all of it.
+
+The Harmony 600's two activity keys are the exception the document already claims in prose, and they
+are now measured. They sit in a `RootButtonMap`, which is neither a device layout nor an activity's,
+they are its whole content, and they appear in no other map. That is exactly the population split
+section 128 found from the container: an activity key selects a handler set and sends nothing itself,
+so it is named by section 120's four hop chain and never by a frame.
+
+### An activity is roles and a wanted state, not a list of actions
+
+The captured activity records are the two activities that produced the calibration configs of section
+121 and section 125, so this is the vendor's own description of a file whose bytes this project reads
+to the last one.
+
+An activity carries `Roles`, one per appliance with a job to do, typed by the job:
+`DisplayActivityRole`, `VolumeActivityRole`, `ChannelChangingActivityRole` and
+`PlayMovieActivityRole` across the two. Each role names its device, a `SelectedInput` **by name**,
+`HDMI 1/MHL` and `BD` in these two, and a `PowerOnOrder` and `PowerOffOrder`, 1, 2 and 3. There is a
+`NextDevicePowerOnDelay`, null on all five roles here.
+
+`EnterActions` and `LeaveActions` are **empty on both activities**. That is the finding rather than a
+detail: the vendor does not store an activity as a sequence of commands either. The sequence is what
+their compiler works out from the roles, the selected inputs and the power order, which is the same
+division base slot 9 and base slot 13 implement on the remote, section 130 and section 138. It is
+also why FreeHarmony's document model holds a role with an input and an order rather than a list of
+steps.
+
+Two smaller fields worth recording: `StartScreen`, `Numpad` and `Gesturepad` on these two, and
+`SuggestedDisplay`, `WatchTV` and `WatchDvd`, both of which are host side presentation with no
+counterpart in the container.
+
+### The command code is a small language, not a number
+
+419 commands were fetched from `GetGlobalLanguageCommands` across six devices, section 132, and each
+carries a `KeyCode` string. Section 132 read its shape as `G:<protocol>:()(<value>)():3` from the
+examples it quoted. Over all 419 there are three shapes, and only the first is that one.
+
+| shape | count | example |
+|---|---|---|
+| the value in the second group | 295 | `G:Sony 12 Bit:()(0x910)():3` |
+| the value in the **first** group, the literal word `Repeat` in the second | 77 | `G:Toshiba 32 Bit:(0x5EA17B84)(Repeat)():3` |
+| a compound value with numbered subfields | 47 | `G:Philips Hurd 16 Bit LongToggle:()(0x7_1x0_2xFFFF)():3` |
+
+So an importer that parses the second group as one hexadecimal number reads 124 of 419 commands
+wrongly, and 77 of those would come out empty rather than wrong, which is the failure that gets
+noticed. The 47 compound ones are the dangerous half: `0x7_1x0_2xFFFF` parses as `0x7` under a lenient
+reader and produces a valid looking frame that is not the command.
+
+The stated bit count is not the value width either. `Philips Hurd 16 Bit LongToggle` names 16 bits and
+carries 48 bits of value across its three subfields, and `Sharp 15 Bit 2` names 15 and carries 44. So
+a protocol family's name is a label and not a specification, which matters because an encoder has to
+be written per family: nine families answer for six devices.
+
+### What would change any of this
+
+A second capture of `GetAllProducts` in which a model this project works on states a `MaxActivities`,
+which would reopen the activity limit. A `CompilerArchitecture` that is not null, which would give the
+architecture per model for free. A button map capture for a third remote whose names do not close
+against a derived table, which would make the two closures above coincidences of two samples. Or a
+seventh device whose `KeyCode` uses a fourth shape, which is the outcome to expect rather than hope
+against.

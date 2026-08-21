@@ -68,6 +68,21 @@ so a key neither activity binds to a decodable code is never reached.
 | 26, 50 | `DirectionUp` and `UpArrow` | two scans against two buttons, and every activity gives both the same command |
 | 27, 42 | `DirectionDown` and `DownArrow` | two scans against two buttons, and every activity gives both the same command |
 
+## Every name the vendor offered is here, checked both ways
+
+Added 21 August 2026, section 145. The derivation above reads a frame out of a config and looks it up
+in the button maps of the account that generated it. That says every name here came from the vendor and
+says nothing about whether any name was **missed**, which is the question a completeness claim needs.
+
+Both directions are empty on both remotes. The vendor's maps for the Harmony One name 36 buttons
+against 32 placed below and 4 left in the symmetric pairs above; the Harmony 600's name 40 against 36
+and 4. Nothing the vendor offers is unplaced and nothing placed is unoffered.
+`tests/test_host_client.py` asserts it, and removing one row from a table below makes it fail.
+
+So the 32 and the 36 are not a sample of what was available. They are all of it, and the twelve and the
+eighteen buttons with no name are unnamed because these configs never bind them, which the next
+paragraph is about.
+
 ## What is deliberately not here
 
 **The physical position of a key.** A scan code's arithmetic says nothing about where the key is:
