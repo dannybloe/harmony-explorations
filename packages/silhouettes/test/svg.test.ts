@@ -47,19 +47,32 @@ test('every colour in the file is a documented default', () => {
 test('every fill and stroke can be replaced from outside', () => {
   for (const [id, model] of drawn) {
     const svg = toSvg(model);
-    // Each colour appears twice by design: as the fallback inside var() and as a presentation
-    // attribute, which is what a renderer with no support for custom properties falls back to. What
-    // must not happen is a declaration with no variable in front of it.
+    /**
+     * Each colour appears twice by design: as the fallback inside `var()` and as a presentation
+     * attribute, which is what a renderer with no support for custom properties falls back to.
+     *
+     * **The fallback is the half this test was missing**, and the comment above claimed it while the
+     * body only checked for `var(`. The defaults were declared in a `.silhouette` rule instead, on the
+     * drawing's own root, which beats anything a host sets on an ancestor: so `--key-fill` on a wrapper
+     * did nothing and the same property on a key group worked. Per key colouring is the case that gets
+     * exercised, so the gap survived. Two claims now, and the second is what makes the title true: no
+     * rule may declare a custom property, and every `var()` has to carry its default.
+     */
     for (const m of svg.matchAll(/<style>([\s\S]*?)<\/style>/g)) {
-      for (const line of m[1]!.split('\n')) {
-        // Not a custom property's own definition: `--case-fill: #fff` is where the default is
-        // declared, so it is literal by nature. The leading check is what tells the two apart, and
-        // the first version of this test failed on exactly that line.
-        const decl = line.match(/(?:^|[\s{])(fill|stroke):\s*([^;]+);/);
+      const block = m[1]!;
+      assert.doesNotMatch(block, /^\s*--[a-z-]+\s*:/m,
+        `${id}: a custom property is declared, so an override from an ancestor loses`);
+      assert.doesNotMatch(block, /\{[^}]*--[a-z-]+\s*:/,
+        `${id}: a custom property is declared inside a rule`);
+      for (const line of block.split('\n')) {
+        const decl = line.match(/(?:^|[\s{])(fill|stroke|font-family):\s*([^;]+);/);
         if (decl === null) continue;
         const value = decl[2]!.trim();
-        assert.ok(value.startsWith('var(') || value === 'none',
+        if (value === 'none') continue;
+        assert.ok(value.startsWith('var('),
           `${id}: ${decl[1]} is ${value}, which the interface cannot override`);
+        assert.match(value, /^var\(--[a-z-]+,\s*\S/,
+          `${id}: ${decl[1]} reads ${value} with no default, so the file cannot stand alone`);
       }
     }
   }

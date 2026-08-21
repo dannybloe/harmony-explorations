@@ -410,9 +410,17 @@ function describe(model: Model): string {
 /**
  * The style block, which is the whole contract with the host.
  *
- * Each declaration reads a custom property with a fallback, so the drawing works standing alone and
- * every colour can be replaced from outside without regenerating anything. `--key-fill` is what a
- * host sets to colour the keys of one device.
+ * **Every default is a `var()` fallback and nothing is declared**, and that is a correction. This used
+ * to open with `.silhouette { --case-fill: #fff; ... }` and then read the bare `var(--case-fill)`. A
+ * declaration on the drawing's own root beats anything a host sets on an ancestor, because the ancestor
+ * is further away in the cascade, so `--key-fill` set on a wrapper was silently ignored and only a
+ * property set on the svg element itself or on a key group inside it did anything. Per key colouring
+ * worked, which is why it went unnoticed, and theming the whole drawing did not.
+ *
+ * The docstring here already said "a custom property with a fallback" and the description says "the
+ * interface decides the colours", so the intent was always this; the fallback form is also what the
+ * plan asked for in as many words. Nothing declares a property now, so a host can set one anywhere up
+ * the tree and the file still renders standing alone.
  *
  * `vector-effect: non-scaling-stroke` is here rather than being optional: at thumbnail size a stroke
  * of one unit on a drawing a thousand units tall is a grey haze, and this keeps the line a line
@@ -421,26 +429,23 @@ function describe(model: Model): string {
 function style(): string {
   const D = DEFAULTS;
   return `  <style>
-    .silhouette { --case-fill: ${D.caseFill}; --case-stroke: ${D.caseStroke};
-                  --recess-fill: ${D.recessFill}; --key-fill: ${D.keyFill};
-                  --key-stroke: ${D.keyStroke}; --key-text: ${D.keyText};
-                  --accent: ${D.accent}; --font: ${D.font}; }
-    .body   { fill: var(--case-fill); stroke: var(--case-stroke); }
-    .region-recess { fill: var(--recess-fill); stroke: var(--case-stroke); }
-    .region-seam   { fill: none; stroke: var(--case-stroke); }
-    .lcd    { fill: var(--recess-fill); stroke: var(--case-stroke); }
-    .rocker-fill { fill: var(--key-fill); stroke: none; }
-    .rocker { fill: none; stroke: var(--key-stroke); }
-    .key    { fill: var(--key-fill); stroke: var(--key-stroke); }
+    .body   { fill: var(--case-fill, ${D.caseFill}); stroke: var(--case-stroke, ${D.caseStroke}); }
+    .region-recess { fill: var(--recess-fill, ${D.recessFill});
+                     stroke: var(--case-stroke, ${D.caseStroke}); }
+    .region-seam   { fill: none; stroke: var(--case-stroke, ${D.caseStroke}); }
+    .lcd    { fill: var(--recess-fill, ${D.recessFill}); stroke: var(--case-stroke, ${D.caseStroke}); }
+    .rocker-fill { fill: var(--key-fill, ${D.keyFill}); stroke: none; }
+    .rocker { fill: none; stroke: var(--key-stroke, ${D.keyStroke}); }
+    .key    { fill: var(--key-fill, ${D.keyFill}); stroke: var(--key-stroke, ${D.keyStroke}); }
     /* A rocker's segment takes the key fill and no outline of its own, so the moulding reads as the
        one physical key it is while the halves still colour and click separately. */
     .key-segment { stroke: none; }
-    .seam   { fill: none; stroke: var(--key-stroke); }
-    .lbl    { fill: var(--key-text); stroke: none; font-family: var(--font); }
-    .mark-fill   { fill: var(--key-text); }
-    .mark-stroke { stroke: var(--key-text); }
-    .mark-accent.mark-fill   { fill: var(--accent); }
-    .mark-accent.mark-stroke { stroke: var(--accent); }
+    .seam   { fill: none; stroke: var(--key-stroke, ${D.keyStroke}); }
+    .lbl    { fill: var(--key-text, ${D.keyText}); stroke: none; font-family: var(--font, ${D.font}); }
+    .mark-fill   { fill: var(--key-text, ${D.keyText}); }
+    .mark-stroke { stroke: var(--key-text, ${D.keyText}); }
+    .mark-accent.mark-fill   { fill: var(--accent, ${D.accent}); }
+    .mark-accent.mark-stroke { stroke: var(--accent, ${D.accent}); }
     .body, .region-recess, .region-seam, .lcd, .key, .rocker, .seam
       { vector-effect: non-scaling-stroke; }
   </style>`;

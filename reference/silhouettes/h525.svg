@@ -13,26 +13,23 @@
   -->
 
   <style>
-    .silhouette { --case-fill: #fff; --case-stroke: #333;
-                  --recess-fill: #eee; --key-fill: #fff;
-                  --key-stroke: #666; --key-text: #222;
-                  --accent: #d23c3c; --font: system-ui, sans-serif; }
-    .body   { fill: var(--case-fill); stroke: var(--case-stroke); }
-    .region-recess { fill: var(--recess-fill); stroke: var(--case-stroke); }
-    .region-seam   { fill: none; stroke: var(--case-stroke); }
-    .lcd    { fill: var(--recess-fill); stroke: var(--case-stroke); }
-    .rocker-fill { fill: var(--key-fill); stroke: none; }
-    .rocker { fill: none; stroke: var(--key-stroke); }
-    .key    { fill: var(--key-fill); stroke: var(--key-stroke); }
+    .body   { fill: var(--case-fill, #fff); stroke: var(--case-stroke, #333); }
+    .region-recess { fill: var(--recess-fill, #eee);
+                     stroke: var(--case-stroke, #333); }
+    .region-seam   { fill: none; stroke: var(--case-stroke, #333); }
+    .lcd    { fill: var(--recess-fill, #eee); stroke: var(--case-stroke, #333); }
+    .rocker-fill { fill: var(--key-fill, #fff); stroke: none; }
+    .rocker { fill: none; stroke: var(--key-stroke, #666); }
+    .key    { fill: var(--key-fill, #fff); stroke: var(--key-stroke, #666); }
     /* A rocker's segment takes the key fill and no outline of its own, so the moulding reads as the
        one physical key it is while the halves still colour and click separately. */
     .key-segment { stroke: none; }
-    .seam   { fill: none; stroke: var(--key-stroke); }
-    .lbl    { fill: var(--key-text); stroke: none; font-family: var(--font); }
-    .mark-fill   { fill: var(--key-text); }
-    .mark-stroke { stroke: var(--key-text); }
-    .mark-accent.mark-fill   { fill: var(--accent); }
-    .mark-accent.mark-stroke { stroke: var(--accent); }
+    .seam   { fill: none; stroke: var(--key-stroke, #666); }
+    .lbl    { fill: var(--key-text, #222); stroke: none; font-family: var(--font, system-ui, sans-serif); }
+    .mark-fill   { fill: var(--key-text, #222); }
+    .mark-stroke { stroke: var(--key-text, #222); }
+    .mark-accent.mark-fill   { fill: var(--accent, #d23c3c); }
+    .mark-accent.mark-stroke { stroke: var(--accent, #d23c3c); }
     .body, .region-recess, .region-seam, .lcd, .key, .rocker, .seam
       { vector-effect: non-scaling-stroke; }
   </style>
