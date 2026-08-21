@@ -20,6 +20,7 @@ import {
   BITMAP_HEADER,
   BITMAP_NOTHING,
   BITMAP_RAW,
+  PIXEL_BITS,
   PIXEL_BYTES,
   GLYPH_FIRST_CODE_DEFAULT,
   IMAGE_ARCHITECTURES,
@@ -55,7 +56,7 @@ import {
   screenProgramRoots,
   valueMaps,
 } from '../src/index.ts';
-import type { Glyph } from '../src/index.ts';
+import type { Container, Glyph } from '../src/index.ts';
 
 /** `[sample, reachable programs, decoded glyphs]`. Same walk as `tests/test_interpreter.py`. */
 const DECODED: readonly [string, number, number][] = [
@@ -380,24 +381,32 @@ for (const [name, count, ceiling] of REGION) {
  * `[sample, pictures, kinds, strides, row counts]`, mirroring `tests/test_interpreter.py`.
  * findings.md section 50.
  *
- * The numbers are small on purpose: this is also the measurement that says opcode 2 does **not**
- * explain the unreached region of section 49. Sixteen pictures of 125 to 885 bytes account for
- * under two kilobytes of a container where the region runs to hundreds of them.
+ * The numbers are small on purpose: this is also the measurement that says the two drawing opcodes
+ * do **not** explain the unreached region of section 49. Eighteen pictures of 125 to 885 bytes
+ * account for under two kilobytes of a container where the region runs to hundreds of them.
+ *
+ * **Every count here moved on 21 August 2026 and the reason is section 146**, not a reader getting
+ * better at the same question: `bitmaps` asked opcode 2 alone and there are two drawing opcodes.
+ * Opcode 3 adds two pictures to each arch 8 (Harmony 880) and arch 14 (Harmony 600 and 700)
+ * container and it is the **only** one arch 9 (Harmony 525) emits, which is why that row said zero.
  */
 const BITMAPS: readonly [string, number, number[], number[], number[]][] = [
   // Strides 128 and 64 appear only through a mode record's own program, section 53, and they are
-  // where the large pictures are: one is 16389 bytes against 125 for an icon.
-  ['h700_config', 22, [0, 1], [12, 128], [10, 128]],
-  ['h600_config', 16, [0, 1], [12, 128], [10, 128]],
+  // where the large pictures are: one is 16389 bytes against 125 for an icon. The 16 row entry is
+  // opcode 3's, and it is the same picture twice on this architecture.
+  ['h700_config', 24, [0, 1], [12, 128], [10, 16, 128]],
+  ['h600_config', 18, [0, 1], [12, 128], [10, 16, 128]],
   // Section 66 took arch 12 from 28 to 98 by making the program a mode's pages state a root,
-  // which is where the One does its screen drawing.
+  // which is where the One does its screen drawing. **Unmoved by section 146**, since no arch 12
+  // (Harmony One) program emits an opcode 3 at all: 98 of 98 were already addressed.
   ['one_config', 98, [0, 1],
     [20, 22, 42, 47, 51, 61, 62, 69, 81, 87, 88, 98, 133, 147, 162, 163, 164, 176],
     [10, 11, 18, 33, 42, 48, 50, 52, 58, 62, 69, 80, 83, 85, 89, 91, 96, 114, 220]],
-  ['arch8_config_a', 30, [0, 1], [15, 16, 17, 18, 19, 64, 128], [8, 10, 32, 160]],
-  // Arch 9 emits no opcode 2 at all and neither does a safe mode container, which is what says
-  // the pictures are optional rather than structural.
-  ['h525_config', 0, [], [], []],
+  ['arch8_config_a', 32, [0, 1], [15, 16, 17, 18, 19, 64, 128], [8, 10, 24, 32, 160]],
+  // Arch 9 draws with opcode 3 only, and every one of its four pictures is the whole 96 by 64
+  // screen. A safe mode container emits neither opcode, which is what says the pictures are
+  // optional rather than structural.
+  ['h525_config', 4, [2], [96], [64]],
   ['h600_safemode_gspm', 0, [], [], []],
 ];
 
@@ -413,6 +422,14 @@ for (const [name, count, kinds, strides, rows] of BITMAPS) {
     for (const bitmap of found) {
       if (bitmap.kind === BITMAP_RAW) {
         assert.equal(bitmap.length, BITMAP_HEADER + PIXEL_BYTES * bitmap.stride * bitmap.rows);
+        assert.equal(bitmap.rowBreaks, undefined);
+      } else if (bitmap.kind === BITMAP_NOTHING) {
+        // Arch 9 (Harmony 525) only, one bit a pixel with a row padded to a whole byte, section 85.
+        // The arm exists because section 146 put an arch 9 sample in this table for the first time:
+        // the row asserted zero pictures while the container had four, so the two arm if/else below
+        // had never been handed anything but a raw or an encoded one.
+        assert.equal(bitmap.length,
+                     BITMAP_HEADER + Math.ceil(bitmap.stride / PIXEL_BITS) * bitmap.rows);
         assert.equal(bitmap.rowBreaks, undefined);
       } else {
         // The closure the encoded extent rests on: the body discards the header and then breaks
@@ -437,8 +454,12 @@ test('the pictures tile the region', skipUnless('h600_config'), () => {
     const here = pictures[k] as { address: number; length: number };
     if (here.address + here.length === (pictures[k + 1] as { address: number }).address) exact += 1;
   }
-  assert.equal(pictures.length, 16);
-  assert.equal(exact, 14);
+  // Eighteen and seventeen since section 146 added opcode 3's two, against sixteen and fourteen
+  // before it. **Adding two pictures closed the run rather than breaking it further**, which is the
+  // check worth having: sixteen pictures left one pair that did not abut, eighteen leave none, so
+  // the two nobody was known to address are exactly what sat in that hole.
+  assert.equal(pictures.length, 18);
+  assert.equal(exact, 17);
 });
 
 test('a kind above the three the firmware knows is refused', skipUnless('h600_config'), () => {
@@ -497,8 +518,10 @@ test('a start one byte out does not walk', skipUnless('h600_config'), () => {
 
 test('arch 9 has a bank after all, of four monochrome pictures', skipUnless('h525_config'), () => {
   // This asserted `undefined` until section 62. Section 55 concluded arch 9 had no picture region,
-  // on the strength of it emitting no screen opcode 2, and the conclusion did not follow: nothing
-  // there draws a picture, and the pictures are there anyway. Base slot 17 names them.
+  // on the strength of it emitting no screen opcode 2, and the conclusion did not follow: base slot
+  // 17 names them. **And something does draw them**, section 146, which is the second half of the
+  // same mistake: a Harmony 525 draws with opcode 3, and all four of these are addressed by one.
+  // "Nothing there draws a picture" was this comment's own wording for a year.
   const c = parse(load('h525_config') as Uint8Array);
   const bank = pictureBank(c, namedContentEnd(c));
   assert.notEqual(bank, undefined);
@@ -645,41 +668,68 @@ test('an arch 9 row draw is opcode 22 then opcode 3, and the row index is the op
     }
   });
 
-test('the bank search refuses when its two constraints do not pick one start', skipWithoutLab(), () => {
+test('the bank search is ambiguous on one container, and it used to be three', skipWithoutLab(), () => {
   // The docstring said "exactly one start satisfies both in every container that has a bank", and
-  // that sentence is what justified searching 1024 offsets. It is false where the second constraint
-  // is **empty**: no arch 9 (Harmony 525) program names a picture with opcode 2, so `wanted` is a
-  // set of nothing and any tiling start satisfies it. Two, two and three offsets do, on the three
-  // arch 9 (Harmony 525) containers. It was masked because base slot 17 states the bank there and
-  // `pictureBankStart` answers first. Section 139.
+  // section 139 refuted it on all three arch 9 (Harmony 525) containers, on the grounds that no
+  // Harmony 525 program names a picture with opcode 2 so the second constraint is **empty**.
   //
-  // Counted here rather than asserted away, so the number is on the record: for each container, how
-  // many starts in the search window tile to the trailer and hold every opcode 2 address.
-  const AMBIGUOUS = ['h525_config', 'h525_config_2', 'h525_safemode_ahcm'];
-  for (const name of AMBIGUOUS) {
+  // **The empty set was the reader's and not the container's**, section 146. Arch 9 (Harmony 525)
+  // draws with opcode 3, which names 4 and 5 pictures in the two user configs, so the constraint
+  // is not empty there and exactly one start satisfies both after all. What is left ambiguous is
+  // the safe mode container, where two of four pictures are addressed by nothing at all, and that
+  // is a property of the file rather than of the reading.
+  //
+  // Counted rather than asserted away, so the numbers are on the record: tiling starts in the
+  // search window, and how many of those hold every address either drawing opcode names.
+  const AMBIGUITY: readonly [string, number, number, number][] = [
+    // sample, pictures addressed, starts that tile, starts that also hold every address
+    ['h525_config', 4, 2, 1],
+    ['h525_config_2', 5, 2, 1],
+    ['h525_safemode_ahcm', 2, 3, 2],
+  ];
+  for (const [name, addressed, tiling, both] of AMBIGUITY) {
     const c = parse(require_(name));
     const stated = pictureBankStart(c) as number;
-    const wanted = bitmaps(c);
-    assert.equal(wanted.length, 0, `${name} names a picture with opcode 2 after all`);
-    let candidates = 0;
+    const wanted = new Set(bitmaps(c).map((b) => b.address));
+    assert.equal(wanted.size, addressed, `${name}: pictures addressed`);
+    let tiles = 0;
+    let satisfies = 0;
     for (let start = stated; start < Math.min(stated + 1024, c.blob.length); start += 1) {
-      if (pictureRun(c, start) !== undefined) candidates += 1;
+      const run = pictureRun(c, start);
+      if (run === undefined) continue;
+      tiles += 1;
+      const have = new Set(run.map((b) => b.address));
+      if ([...wanted].every((address) => have.has(address))) satisfies += 1;
     }
-    assert.ok(candidates > 1, `${name} has ${candidates} candidates, so it is not the ambiguous case`);
-    // The stated start still answers, because `pictureBank` asks base slot 17 before it searches.
+    assert.equal(tiles, tiling, `${name}: starts that tile`);
+    assert.equal(satisfies, both, `${name}: starts that also hold every address`);
+    // The stated start answers regardless, because `pictureBank` asks base slot 17 before it
+    // searches, which is what masked the ambiguity for as long as it existed.
     assert.notEqual(pictureBank(c, stated), undefined);
   }
-  // And the refusal itself, constructed, because no container in the corpus reaches the branch: a
-  // copy of an arch 9 (Harmony 525) container with base slot 17's pointer zeroed. `pictureBankStart`
-  // declines a NULL section, so the search is the only route left, `wanted` is empty and two starts
-  // tile. It used to hand back the lower of the two.
-  const blob = new Uint8Array(require_('h525_config'));
-  const c = parse(blob);
+
+  // The refusal itself, constructed, because no container in the corpus reaches the branch: base
+  // slot 17's pointer zeroed, so `pictureBankStart` declines a NULL section and the search is the
+  // only route left. **The construction had to move with the finding.** It was `h525_config`, whose
+  // search was ambiguous and is not any more: blinded, that container's search now finds its bank on
+  // its own and agrees with base slot 17, which is a stronger statement about the reading than the
+  // test used to make and no longer exercises the refusal. The safe mode container still has two
+  // survivors, so it is the one that does.
+  const found = new Uint8Array(require_('h525_config'));
+  const blindedFound = blind(parse(found), found);
+  assert.equal(pictureBankStart(blindedFound), undefined);
+  assert.equal(pictureBank(blindedFound, namedContentEnd(blindedFound))?.length, 4);
+
+  const ambiguous = new Uint8Array(require_('h525_safemode_ahcm'));
+  const blindedAmbiguous = blind(parse(ambiguous), ambiguous);
+  assert.equal(pictureBankStart(blindedAmbiguous), undefined);
+  assert.equal(pictureBank(blindedAmbiguous, namedContentEnd(blindedAmbiguous)), undefined);
+});
+
+/** A copy of the container with base slot 17's section item zeroed, so it states no bank. */
+function blind(c: Container, blob: Uint8Array): Container {
   const slot = archSlot(c.architecture as number, TOUCH_MAP_SLOT);
   const at = (c.blobOffset as number) + SECTION_TABLE_OFFSET + SECTION_ITEM_SIZE * slot;
-  assert.notEqual(pictureBankStart(c), undefined, 'the sample has to state its bank for this to bite');
   blob.fill(0, at, at + SECTION_ITEM_SIZE);
-  const blinded = parse(blob);
-  assert.equal(pictureBankStart(blinded), undefined);
-  assert.equal(pictureBank(blinded, namedContentEnd(blinded)), undefined);
-});
+  return parse(blob);
+}

@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets silhouettes all clean
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean
 
 BENCH_PORT ?= 8731
 
@@ -40,6 +40,7 @@ help:
 	@echo "watch-columns report the matrix column of every key pressed, read only"
 	@echo "coverage     byte accounting per sample; COVERAGE_ARGS=--detail for owners and gaps"
 	@echo "emit         how much of each sample the emitter can put back; EMIT_ARGS=--detail"
+	@echo "growth       what a length change would move, per sample; GROWTH_ARGS=--detail"
 	@echo "reading      the step 6 depth number; READING_ARGS=--detail for one line a sample"
 	@echo "text         how much on screen text reads back as characters; TEXT_ARGS=--detail"
 	@echo "render       draw a config's screens as PNG; RENDER_ARGS=--config X --page N"
@@ -184,6 +185,9 @@ coverage:
 
 emit:
 	@node packages/codec/bin/emit.ts $(EMIT_ARGS)
+
+growth:
+	@node packages/codec/bin/growth.ts $(GROWTH_ARGS)
 
 reading:
 	@node packages/codec/bin/reading.ts $(READING_ARGS)

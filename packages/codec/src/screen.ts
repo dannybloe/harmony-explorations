@@ -447,6 +447,37 @@ export function bitmapReference(instruction: ScreenInstruction): number | undefi
 }
 
 /**
+ * The second opcode that names a picture, nine operands ending in a flash address.
+ *
+ * Section 55 read this opcode's width from the firmware and section 85 read the address as a
+ * picture, in the course of settling opcode 22's operand count on arch 9 (Harmony 525): "nine
+ * operands ending in a flash address". Nothing followed it for a month, because `bitmaps` was
+ * written from opcode 2 alone.
+ */
+export const SCREEN_DRAW_IMAGE_AT = 3;
+
+/**
+ * The picture an instruction names, whichever of the two opcodes it is.
+ *
+ * **This is why the picture bank had unreachable pictures in it.** The accounting reported exactly
+ * two pictures per container that no program addressed on arch 8 (Harmony 880) and arch 14 (Harmony
+ * 600 and 700), and none at all reachable on arch 9 (Harmony 525), where `pictureBank`'s docstring
+ * records the consequence: its second search constraint was empty there, so two or three offsets
+ * satisfied it and the function had to refuse. Every one of those pictures is named by an opcode 3,
+ * 4548 of 4548 across the corpus landing inside the container and decoding as a picture header.
+ * Section 146.
+ *
+ * Two opcodes and one reader, rather than a caller testing both: they name the same kind of thing
+ * and every caller wants both.
+ */
+export function pictureReference(instruction: ScreenInstruction): number | undefined {
+  if (instruction.opcode === SCREEN_DRAW_IMAGE) return bitmapReference(instruction);
+  if (instruction.opcode !== SCREEN_DRAW_IMAGE_AT) return undefined;
+  if (instruction.operands.length < 9) return undefined;
+  return u24(instruction.operands, instruction.operands.length - 3);
+}
+
+/**
  * Decode the header of the picture at `address`.
  *
  * ```
@@ -601,7 +632,7 @@ export function bitmaps(c: Container): Bitmap[] {
   const addresses = new Set<number>();
   for (const [, program] of reachablePrograms(c)) {
     for (const instruction of program) {
-      const reference = bitmapReference(instruction);
+      const reference = pictureReference(instruction);
       if (reference !== undefined) addresses.add(reference);
     }
   }

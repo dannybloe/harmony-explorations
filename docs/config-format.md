@@ -812,13 +812,21 @@ on arch 8, and **176 over 220 on arch 12**, which is the Harmony One's panel.
 Pictures do not sit where they are addressed; they sit in **one contiguous array** running from the
 end of the named content to the trailer, with **no table, no count and no header**. Walking it from
 its start lands exactly on the trailer in every container that has one: 98 pictures on a Harmony
-One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. **Every entry of an arch 12 bank is drawn by a
-screen program**, 98 of 98 and 70 of 70, and exactly two per container are not on arch 8 and arch
-14. So the bank is the set of pictures the programs draw rather than a region that happens to
-contain them. [findings.md](findings.md) section 66.
+One, 18 on a 600, 24 on a 700, 31 to 33 on arch 8. **Every entry of a bank is drawn by a screen
+program**, on all four architectures, with two exceptions in the whole corpus and both in the arch 9
+safe mode container. So the bank is the set of pictures the programs draw rather than a region that
+happens to contain them. [findings.md](findings.md) sections 66 and 146.
+
+**Two opcodes draw one**, 2 and 3, each naming it in its last three operand bytes. This said "exactly
+two per container are not" drawn on arch 8 and arch 14 until section 146, and those were opcode 3's:<!--superseded-->
+4548 of 4548 opcode 3 instructions in the corpus name a picture, arch 12 emits none at all and arch 9
+emits nothing else, which is why a reader written from opcode 2 looked complete on the architecture
+this project reads code on and reported zero pictures for a Harmony 525.
 
 The start is found by trying offsets above the named content under two constraints, the exact
-landing and the presence of every addressed picture; exactly one candidate satisfies both.
+landing and the presence of every addressed picture; exactly one candidate satisfies both, except in
+the arch 9 safe mode container, where two do because two of its four pictures are addressed by
+nothing.
 `gspm.picture_bank`. [findings.md](findings.md) sections 49 to 55.
 
 **For a writer:** a picture's position is implied by everything before it, so inserting or resizing

@@ -695,6 +695,9 @@ docs/memory-map-one.md          where everything lives on a Harmony One, derived
 docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, entirely unmeasured, a list of what to read
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
+docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
+                                implied positions and the three restamped fields. A survey behind
+                                edit.ts's refusal to change a length, not a plan to lift it
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -743,6 +746,10 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
 
 ```
 packages/codec/                 TS: the one config codec, container through compiler,
+                                src/growth.ts the read only survey of what a length change would
+                                move, whose implied set is derived from coverage minus the address
+                                census rather than listed, so a new reader joins one side or the
+                                other on its own,
                                 src/coverage.ts the M2 byte accounting, src/emit.ts the
                                 emitter that reads it back the other way and is the round trip
                                 side on purpose, and src/edit.ts the M3 groundwork: same length
@@ -1091,6 +1098,8 @@ make golden        compare the golden vectors; golden-write regenerates them. Si
                    disagreeing about 328 block pointers with every test on both sides passing
 make coverage      byte accounting per sample, the M2 progress number; COVERAGE_ARGS=--detail
 make emit          how much of each sample the emitter puts back, and whether it round trips
+make growth        what a length change would move, per sample: addresses stated, positions implied,
+                   and the cost of making room in three places. GROWTH_ARGS=--detail
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
 make render        draw a config's screens as PNG files, into the lab and never into the repository.
@@ -1369,7 +1378,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 144 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 147 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1411,12 +1420,17 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 16 | the number sender. Used by no config in the corpus | 39 |
 | 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
-**Most of a config is pictures**, sections 49 to 55, 62 and 66: one contiguous array from the end of
-the named content to the trailer, no table and no count, addressed only by screen opcode 2 inside
-mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch 8, 12
-and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine containers
-that have one, and **every picture in an arch 12 bank is drawn by a program**, 98 of 98 and 70 of
-70, with exactly two per container unreached on arch 8 and arch 14.
+**Most of a config is pictures**, sections 49 to 55, 62, 66 and 146: one contiguous array from the end
+of the named content to the trailer, no table and no count, addressed by screen opcodes 2 **and 3**
+inside mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch
+8, 12 and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine
+containers that have one, and **every picture in every bank is drawn by a program**, on all four
+architectures, with two exceptions in the whole corpus and both in the arch 9 safe mode container.
+That used to read "addressed only by screen opcode 2" with "exactly two per container unreached on<!--superseded-->
+arch 8 and arch 14", and the two were opcode 3's: 4548 of 4548 of its instructions name a picture,
+arch 12 (Harmony One) emits none at all and arch 9 (Harmony 525) emits nothing else, so a reader
+written from opcode 2 looked complete on the architecture this project reads code on and reported
+zero pictures for a Harmony 525 whose bank holds four.
 
 **Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
 instructions dispatched by binary search on the opcode, section 34. And the screen language, one

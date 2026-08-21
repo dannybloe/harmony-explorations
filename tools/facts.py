@@ -168,6 +168,28 @@ def emit_facts():
     return found
 
 
+def growth_facts():
+    """What a length change would move, corpus wide. `docs/growing-a-config.md` quotes these.
+
+    Shelled out for the reason the two above are: `packages/codec/src/growth.ts` is the one census
+    of a container's addresses, and a second count here would be free to disagree with it.
+    """
+    try:
+        out = subprocess.run(['node', 'packages/codec/bin/growth.ts'], cwd=ROOT,
+                             capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    for line in out.stdout.splitlines():
+        parts = line.split()
+        if not parts or parts[0] != 'TOTAL':
+            continue
+        pairs = parts[1:]
+        return {'growth_' + pairs[i]: pairs[i + 1] for i in range(0, len(pairs) - 1, 2)}
+    return {}
+
+
 def reading_facts():
     """The step 6 progress number and its depth, per architecture and for the corpus.
 
@@ -565,6 +587,7 @@ def main():
     facts.update(corpus_facts())
     facts.update(coverage_facts())
     facts.update(emit_facts())
+    facts.update(growth_facts())
     facts.update(reading_facts())
     facts.update(text_facts())
     facts.update(activity_facts())

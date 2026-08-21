@@ -260,8 +260,7 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
   // extents differ, which makes a divergence an overlap instead of a silent second opinion.
   tableClaims = () => {
     for (let i = 0; i < c.sections.length; i += 1) {
-      const base = c.architecture === undefined ? undefined : baseOf(c, i);
-      const owner = base === undefined ? `${RAW_SLOT_PREFIX}-${i}-table` : `slot-${base}-table`;
+      const owner = tableOwner(c, i);
       const already = out.find((claim) => claim.owner === owner);
       const array = c.pointerArrayAt(i);
       if (array !== undefined) {
@@ -576,8 +575,20 @@ export function namedContentEnd(c: Container): number {
  */
 export const RAW_SLOT_PREFIX = 'raw';
 
+/**
+ * What the byte accounting calls a slot's own pointer array, base slot number or raw index.
+ *
+ * Exported because `growth.ts` names the holder of a pointer in this same vocabulary, and a second
+ * spelling of it would be a second derivation of which architecture inserts a slot where. The rule
+ * this repository is named for, applied to a string.
+ */
+export function tableOwner(c: Container, slot: number): string {
+  const base = c.architecture === undefined ? undefined : baseOf(c, slot);
+  return base === undefined ? `${RAW_SLOT_PREFIX}-${slot}-table` : `slot-${base}-table`;
+}
+
 /** The base slot number an architecture slot corresponds to, or undefined when it is inserted. */
-function baseOf(c: Container, slot: number): number | undefined {
+export function baseOf(c: Container, slot: number): number | undefined {
   if (c.architecture === undefined) return undefined;
   for (let base = 0; base < 20; base += 1) {
     try {

@@ -630,8 +630,11 @@ readers takes coverage to roughly 35% and no further, and **decoding that region
 actually needs next.**
 
 *Half of that closure did not hold, and the "roughly 35%" did not either.* Section 62 found four
-pictures in the 525's config regardless, named by base slot 17, and section 64 found the opcode 2
-instructions that draw them, inside mode programs nothing could reach at the time. Only the three
+pictures in the 525's config regardless, named by base slot 17, and section 64 found the instructions
+that draw them, inside mode programs nothing could reach at the time. **Not opcode 2**, which a
+Harmony 525 never emits: section 85 corrected the reading to an opcode 22 followed by an opcode 3,
+and section 146 is what finally made a reader follow opcode 3's address, a year after section 85 wrote
+down that it was a picture. Only the three
 safe mode containers really have no region. The ceiling went too, once the region turned out to be
 pictures rather than something a reader could not attribute.
 
@@ -682,7 +685,12 @@ every remote the corpus covers, and on a One it can also draw where the key is.
 **Its groundwork exists**, `packages/codec/src/edit.ts`. Every edit replaces a run with a run of the
 same length and there is deliberately no way to insert, delete or resize anything, because a
 picture's position is implied by everything before it and base slot 15's group lengths are demanded
-by the firmware: a resize relocates everything above it and is a different milestone. Three rails
+by the firmware: a resize relocates everything above it and is a different milestone.
+**How much of one is counted now** rather than asserted, `docs/growing-a-config.md` and section 147:
+140272<!--fact:growth_pointers--> addresses across the corpus, 71267<!--fact:growth_implied-->
+positions nothing states, and a cost that depends entirely on where the room is made, from every
+address in a container down to none at all at the top of the picture bank. It is a survey behind the
+refusal and not a proposal to lift it. Three rails
 are refusals rather than documentation. An edit outside every claim the byte accounting makes is
 refused, because a run no reader understands is a run whose consequences nobody can state. Two
 edits on one byte are refused. And a mode page's list cannot be edited without its copy, section 69,

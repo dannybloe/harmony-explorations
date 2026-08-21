@@ -33,3 +33,4 @@ export * from './render.ts';
 export * from './png.ts';
 export * from './coverage.ts';
 export * from './edit.ts';
+export * from './growth.ts';

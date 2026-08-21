@@ -21,6 +21,12 @@ export const TOUCH_MAP_SLOT = 17;
 /** The one architecture where that slot is a touch map. Everywhere else it names the picture bank. */
 export const TOUCH_MAP_ARCHITECTURE = 12;
 export const TOUCH_AREA_LENGTH = 12;
+/**
+ * Where an area's back pointer to itself sits, which is what makes the twelve byte reading self
+ * checking. Named because `growth.ts` counts it as a pointer and a literal 9 in two files is two
+ * copies of one layout.
+ */
+export const TOUCH_AREA_SELF_AT = 9;
 /** The firmware runs at most this many timers at once, however many the config describes. */
 export const TIMER_SLOTS_IN_RAM = 4;
 export const TIMER_KIND_SCHEDULED = 0x01;
@@ -241,14 +247,14 @@ export function touchPages(c: Container): Table<TouchPage> | undefined {
       // The back pointer at +0x09 is what makes the twelve byte reading self checking, and until
       // now nothing compared it: the field was read, documented as the closure, and never used as
       // one. It holds on all 977 areas in the corpus, so this refuses nothing that was being read.
-      if (u24(c.blob, p + 9) !== at) return undefined;
+      if (u24(c.blob, p + TOUCH_AREA_SELF_AT) !== at) return undefined;
       areas.push({
         x: u16(c.blob, p),
         width: u16(c.blob, p + 2),
         y: u16(c.blob, p + 4),
         height: u16(c.blob, p + 6),
         code: u8(c.blob, p + 8),
-        self: u24(c.blob, p + 9),
+        self: u24(c.blob, p + TOUCH_AREA_SELF_AT),
         address: at,
       });
     }

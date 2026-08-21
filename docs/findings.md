@@ -7572,11 +7572,14 @@ Screen programs across the corpus go from 20374 to 21392 and inline string codes
 55542, every one of which still resolves to a glyph of the font its own program selected.
 
 **And the pictures.** Section 55 could name about a third of a picture bank by screen opcode 2.
-Now **every picture in an arch 12 bank is named**, 98 of 98 and 70 of 70, with exactly two left
-over per container on arch 8 and arch 14. The One goes from 28 addressed pictures to 98, with
-strides up to 176 and row counts up to 220. So the bank is not a region that happens to hold
-pictures, it is the set of pictures the programs draw, and the two unnamed ones per arch 8 and
-arch 14 container are the whole of what is left of that question.
+Now **every picture in an arch 12 bank is named**, 98 of 98 and 70 of 70. The One goes from 28
+addressed pictures to 98, with strides up to 176 and row counts up to 220. So the bank is not a
+region that happens to hold pictures, it is the set of pictures the programs draw.
+
+This ended "with exactly two left over per container on arch 8 and arch 14" and called those two<!--superseded-->
+"the whole of what is left of that question", which was right about the size and wrong about the
+cause: they are drawn by screen opcode **3**, section 146, which nothing followed for a year. Every
+picture in every bank in the corpus is addressed bar two, both in the arch 9 safe mode container.
 
 ### What it does not do
 
@@ -20525,3 +20528,221 @@ architecture per model for free. A button map capture for a third remote whose n
 against a derived table, which would make the two closures above coincidences of two samples. Or a
 seventh device whose `KeyCode` uses a fourth shape, which is the outcome to expect rather than hope
 against.
+
+## 146. Two opcodes draw a picture, and the second one is why a bank held pictures nothing reached
+
+Screen opcode 2 names a picture in its last three operand bytes, section 50, and `bitmaps` was
+written from it. **Opcode 3 does the same and nothing followed it**, which was found on 21 August
+2026 while building the pointer census of section 147: the census asks which fields in a container
+hold a flash address, so an opcode with nine operands ending in one is either a pointer or a
+counterexample, and it had to be measured either way.
+
+It is a pointer. Across the nineteen containers there are 4548 opcode 3 instructions in reachable
+programs, **4548 of 4548** land inside their own container, and **4548 of 4548** decode as a picture
+header. Neither number is a coincidence available to a wrong reading: a `u24` taken out of the wrong
+three bytes lands outside a container most of the time, and a picture header is a kind byte of 0, 1
+or 2 followed by a stride and a row count that have to walk to a sensible extent.
+
+### It accounts for exactly the pictures that were unreachable
+
+The claim it corrects is a count that had been quoted for weeks: every picture in an arch 12
+(Harmony One) bank is drawn by a program, 98 of 98 and 70 of 70, "with exactly two per container
+unreached on arch 8 and arch 14". Reading opcode 3 takes those to zero.
+
+| architecture | pictures in the bank | named by opcode 2 | named by opcode 3 | unreached |
+|---|---|---|---|---|
+| 8 (Harmony 880) | 31 to 33 | 29 to 31 | 2 | 0 |
+| 9 (Harmony 525), user configs | 4 and 5 | 0 | 4 and 5 | 0 |
+| 9 (Harmony 525), safe mode | 4 | 0 | 2 | 2 |
+| 12 (Harmony One) | 64 to 98 | all | 0 | 0 |
+| 14 (Harmony 600, 700) | 18 and 24 | 16 and 22 | 2 | 0 |
+
+Arch 12 (Harmony One) emits no opcode 3 at all, which is why its own count never moved and why the
+reader looked complete on the architecture this project reads code on. Arch 9 (Harmony 525) emits
+**only** opcode 3, which is why `bitmaps` reported zero pictures for a Harmony 525 whose bank holds
+four, and section 62's own test comment said "nothing there draws a picture, and the pictures are
+there anyway" for a year.
+
+The clean corroboration is a tiling. `h600_config`'s addressed pictures went from 16 to 18, and the
+number of adjacent pairs that abut exactly went from 14 to 17: sixteen pictures left one hole in the
+run and eighteen leave none, so the two nobody could reach are precisely what sat in that hole.
+
+### And it half restores a claim section 139 refuted
+
+`pictureBank` searches for the bank's start under two constraints, that the walk lands on the
+trailer and that every addressed picture appears in the run. Its docstring said "exactly one start
+satisfies both in every container that has a bank"; section 139 refuted that on all three arch 9
+(Harmony 525) containers, on the grounds that the second constraint is **empty** there, so any
+tiling start satisfies it.
+
+The empty set was the reader's and not the container's. With opcode 3 read, the two arch 9 user
+configs have 4 and 5 addressed pictures, two starts tile and exactly **one** satisfies both. What
+stays ambiguous is the arch 9 safe mode container, where 2 of 4 pictures are addressed by nothing at
+all: three starts tile and two satisfy both. So the refutation was right about the shape and wrong
+about the population, which is three containers in section 139 and one here.
+
+That also moved the control. The refusal branch used to be exercised by blinding `h525_config`, and
+a blinded `h525_config` now finds its own bank uniquely and agrees with base slot 17, which is a
+stronger statement about the reading and no longer a refusal. `h525_safemode_ahcm` is what exercises
+it now.
+
+### What it does not settle
+
+Where opcode 3 draws its picture is unread. Opcode 2 draws at its first two operand bytes and
+`render.ts` uses them; opcode 3 has nine operands and section 85 read one case, an arch 9 (Harmony
+525) row draw at `y = 8 * operand` following an opcode 22. **So `render.ts` does not draw an opcode
+3 at all**, and a rendered arch 9 page is missing every picture in it while reporting nothing
+missing, because a reader that never looks at an instruction cannot count it as unresolved. That is
+a real gap in the render check and it is left open here deliberately: this section is about an
+address, and where the picture lands is a separate reading.
+
+## 147. What a length change moves, counted: 140272 addresses, and growth has a price per place
+
+`edit.ts` refuses to change the length of anything, and its docstring gives the reason as a list of
+consequences: a picture's position is implied by everything before it, base slot 15's group lengths
+are demanded by the firmware, a relocation moves everything above it. Those were true and none of
+them was a number. This is the survey, made on 21 August 2026, and it is a read only instrument:
+`packages/codec/src/growth.ts`, `make growth`, `packages/codec/test/growth.test.ts`.
+
+Nothing here writes to a remote, and nothing here changes a container. Two tests build a modified
+copy in memory because a control has to.
+
+### The two populations, and the difference is the whole point
+
+A position in a container is either **stated**, meaning some field holds its flash address, or
+**implied**, meaning nothing does. A stated position is mechanical: a relocation rewrites the field.
+An implied one cannot be rewritten and cannot be checked, so getting it wrong produces a file that
+parses and means something else.
+
+The implied set is **derived rather than listed**, which is what makes it exhaustive. Every claim
+`coverage.ts` makes is a structure this codec can see; every entry in the census is an address this
+codec can read; a claim whose start no address names is implied by construction. A reader added
+tomorrow therefore joins one population or the other without anybody deciding, and `IMPLIED_BY` has
+to say why nothing states it, per owner, or the report names the owner as unexplained.
+
+Corpus wide, over the nineteen containers and 10242346 bytes:
+
+| | count |
+|---|---|
+| addresses stated | 140272<!--fact:growth_pointers--> |
+| of those, naming flash outside the container | 38, two per container, base slot 2's log area |
+| of those, landing inside a structure rather than on its first byte | 16740 |
+| addresses named by more than one field | 18751<!--fact:growth_shared--> |
+| implied positions | 71267<!--fact:growth_implied--> |
+
+The 71267<!--fact:growth_implied--> break into three kinds, and they cost different things:
+
+| kind | count | what places it |
+|---|---|---|
+| frame | 76 | the container's own arithmetic: the header, the section table, the end marker, the trailer. Four per container and nothing a writer can get wrong |
+| packed | 3017<!--fact:growth_packed--> | it sits immediately after a structure of a different kind. 3005 are section 69's mode page list copies, 12 are base slot 15's group 9 continuation, section 103 |
+| chain | 68174<!--fact:growth_chain--> | the byte after the previous element of a run. 68172 are screen program instructions and 2 are the arch 9 (Harmony 525) safe mode pictures nothing addresses |
+
+The frame count is exactly four per container, and the key table is deliberately not among them: it
+looks like a fifth, because nothing points at the four bytes after the end marker, and it **is** base
+slot 6's first mode record, section 52, so the mode table names it like any other mode.
+
+### Growth has no price. It has a price per place
+
+The cost of making room at an offset is the number of addresses naming something at or above it, and
+that is monotonic in the offset, so "how expensive is a length change" has no answer and "where is it
+cheap" has one. Three places, per container, as pointer rewrites:
+
+| | at the first byte of content | at the bottom of the picture bank | just below the trailer |
+|---|---|---|---|
+| `one_config` (arch 12) | 12043 | 1091 | 0 |
+| `h600_config` (arch 14) | 17435 | 501 | 0 |
+| `h700_config` (arch 14) | 27102 | 893 | 0 |
+| `h525_config` (arch 9) | 4808 | 1114 | 0 |
+| `arch8_config_a` (arch 8) | 5505 | 980 | 0 |
+| `h525_safemode_ahcm` (arch 9) | 951 | 344 | 0 |
+
+The first column is an identity rather than a measurement: it is the container's address count less
+two, on all nineteen, because the only addresses that do not name something above the first content
+byte are base slot 2's pair naming flash above the container.
+
+The third column is the finding. **Appending to a container costs no pointer rewrites at all**, on
+all nineteen, because the picture bank is the last thing in it and the only implied position above
+the insertion point is the trailer. So a new picture, or a longer last picture, needs the two
+restamped header fields and nothing else. Growth in the middle needs thousands.
+
+### The fields a growth makes wrong on its own
+
+Three, before anything has moved:
+
+* **`end_addr`**, the `u32` at offset 4. It names the **end marker's own address**, which is the
+  flash base plus the length less four, exactly, on all nineteen containers. That is also why
+  deriving the container's base back out of it is circular, section 117: the check tests the
+  assumption it was computed from.
+* **the trailer checksum**, section 41, which any change voids and which a writer restamps in two
+  bytes of arithmetic. It is the only check the remote makes.
+* **the end marker's position**, `0x0B` plus four times the pointer count. It moves with the number
+  of slots, which is per architecture, so a growth never touches it. Listed to say so.
+
+Base slot 3's timestamp and base slot 13's clock records are **not** here. They are wrong because
+time passed rather than because the file got longer, and `FIELD_RULES` in `edit.ts` is their table.
+
+### Five hazards that are not counts
+
+**Sharing.** 18751<!--fact:growth_shared--> addresses are named by more than one field, and editing what sits at one changes
+several meanings. The shapes: 15507 are a screen program named both by base slot 11's table and by a
+base slot 14 record, so moving one program rewrites two fields in different sections; 2008 are a
+program named by several jumps or switch arms, and one address in `h525_config` is named 472 times;
+788 are a touch area named by its page and by its own back pointer; 431 are section 61's shared
+infrared duration blocks.
+
+**Interior addresses.** 16740 of the 140234 inward addresses land inside a structure rather than on
+its first byte, so they need the containing structure's new address plus an offset. There are exactly
+two families and both are mechanical: 13353 are section 121's shared glyph runs, where opcode 4
+names the payload of an opcode 5 instruction in another program, and 3387 are an infrared group's
+record pointers, which land `IR_RECORD_POINTER_BIAS` bytes into their record, seven, asserted rather
+than assumed.
+
+**The checksum is blind to this.** A control in `growth.test.ts` moves one action list pointer by
+three bytes, restamps the trailer the way a writer would, and the container parses, passes every
+check it makes about itself, and reads a different action list. Nothing in the format validates an
+address, which is the same hazard as section 117's wrong base and section 122's damaged read: a wrong
+address does not error, it reads the neighbouring bytes.
+
+**The copy nothing reads.** Every mode page's tagged list has a second copy whose position is
+implied, section 69, and nothing on the remote reads it. So an emitter that omitted it, or placed it
+wrongly, passes every check the remote makes.
+
+**Lengths the firmware demands.** Base slot 15's group lengths and entry count are not free,
+section 44: a group whose length differs is silently replaced by compiled in defaults, and a
+different entry count is a silent no-op. So those two structures cannot grow at all, whatever the
+addressing says.
+
+### What the emitter can and cannot do today
+
+`coverage.ts` says which structure owns a byte and `emit.ts` says whether that structure can be
+written back from typed fields, so the two together say which addresses a relocation could rewrite.
+**Every one of the 140272<!--fact:growth_pointers--> sits inside a rebuild**, in every container, so there is no address in a
+region no rebuilder reaches.
+
+Four rebuilds carry bytes they do not frame, and only one of them carries its own addresses. Base
+slot 5's headers, base slot 7's font sets and base slot 14's records each write their addresses with
+a `u24` and carry a different byte. **Screen programs frame the opcode and carry every operand**, so
+the 33660 addresses inside a screen instruction are the whole of the framing work a relocation would
+need and today's emitter does not do. That is one item, not a programme.
+
+### What could not be settled
+
+* **Whether there is room to grow.** A container's `end_addr` says where it ends and nothing in it
+  says where the flash region ends. That bound is a `packages/usb` question, `WRITE_FLASH`'s region
+  per architecture, and the ceiling on arch 12 is `0x3D0000` rather than `0x400000` because the
+  stored application firmware sits inside the nominally writable region.
+* **Whether a remote validates anything a growth would break.** The trailer checksum is what the
+  boot validator computes, section 41, and no other check is read. Absence of evidence: the firmware
+  was not re-read for this survey.
+* **Screen opcodes 1 and 21.** Six operand bytes and four, and neither is known to hold an address.
+  They are not in the census, so if either does the count is low by however many there are.
+* **Where opcode 3 draws.** Section 146, and it does not affect the census: the address is a picture
+  wherever it is drawn.
+* **The two byte bias.** Base slot 17 names the picture bank two bytes in front of it on arch 8, 9
+  and 14, section 62, and what those two bytes are for is unread. A relocation has to reproduce the
+  bias rather than the address.
+* **Whether growth is the right route at all.** Section 66's other finding stands: three arch 8
+  configs generated ten minutes apart differ in 73 to 84% of their bytes, so an editor makes minimal
+  diffs against an existing config and reproducing what Logitech's generator would have emitted is
+  not achievable. A relocation is for changing a config, not for matching one.

@@ -400,7 +400,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        self.assertEqual(scanned, 36, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 37, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -437,7 +437,8 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/codec/test/render.test.ts', 'variants.length', '>=', 1): 'per page',
     ('packages/codec/test/render.test.ts', 'variants.length', '>', 1): 'per branching page',
     ('packages/codec/test/render.test.ts', 'choice.arms', '>', 1): 'per switch',
-    ('packages/codec/test/screen.test.ts', 'candidates', '>', 1): 'per shape, the ambiguity itself',
+    ('packages/codec/test/growth.test.ts', 'one.holders.length', '>', 1):
+        'per shared address: what makes it shared, beside an exact count of them',
     ('packages/corpus/test/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
     ('packages/usb/test/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
     ('packages/usb/test/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
@@ -510,7 +511,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 36, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 37, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -773,6 +774,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         'packages/codec/test/emit.test.ts': 'const REBUILT',
         'packages/codec/test/edit.test.ts': 'const ALL_CONTAINERS',
         'packages/codec/test/sections.test.ts': 'const MODE_PROGRAM_CONTAINERS',
+        'packages/codec/test/growth.test.ts': 'const SURVEYED',
     }
 
     def _names(self, relative, declaration):
