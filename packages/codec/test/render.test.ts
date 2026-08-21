@@ -16,6 +16,7 @@ import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   GLYPH_ADVANCE,
   SCREEN_DRAW_IMAGE,
+  SCREEN_DRAW_IMAGE_AT,
   SCREEN_SIZES,
   UNDRAWN,
   BITMAP_ENCODED,
@@ -23,6 +24,7 @@ import {
   bitmapAt,
   bitmapPixels,
   bitmapReference,
+  pictureReference,
   characterMap,
   contactSheetPng,
   IMAGE_PACKED_PAPER,
@@ -54,7 +56,15 @@ const SAMPLES = [
   'arch8_config_880', 'arch8_config_885',
 ];
 
-/** The arch 9 members, which draw no picture from a program at all, so some claims skip them. */
+/**
+ * The arch 9 (Harmony 525) members.
+ *
+ * **They used to be here because they "draw no picture from a program at all"**, which was the reader's
+ * limitation and not the containers': every picture on a Harmony 525 is named by screen opcode 3, and
+ * this file only looked at opcode 2. Section 148. They are no longer an exception to the display size
+ * claim, which is why nothing below skips them any more, and the list is kept because it is what names
+ * the architecture whose pictures are one bit per pixel.
+ */
 const ARCH9_SAMPLES = ['h525_config', 'h525_config_2', 'h525_safemode_ahcm'];
 
 /**
@@ -88,6 +98,81 @@ test('every page of every config draws with nothing left unresolved', skipWithou
   assert.equal(pages, 3530, 'every mode page in the corpus renders');
   assert.equal(missing, 0, 'no picture and no glyph is unresolvable');
   assert.deepEqual([...architectures].sort((a, b) => a - b), [8, 9, 12, 14]);
+});
+
+test('every instruction that names a picture draws one, on every architecture that emits it',
+  skipWithoutLab(), () => {
+  /**
+   * **The claim the test above cannot make**, and the reason this one exists.
+   *
+   * "Nothing left unresolved" counts `picturesMissing`, which the renderer increments for a picture it
+   * looked for and could not decode. An instruction the renderer never looks at contributes nothing to
+   * that number, so for a month it reported zero while a rendered Harmony 525 (arch 9) page was missing
+   * every picture in it: screen opcode 3 names a picture exactly as opcode 2 does and the draw loop only
+   * knew opcode 2. Section 148. A reader that never looks cannot report an absence.
+   *
+   * So this counts the naming instructions independently, by walking the programs, and asserts the
+   * renderer's own tally equals it. The two numbers come from different code and a skipped opcode makes
+   * them differ, which is exactly what would have failed a month ago.
+   *
+   * Per architecture rather than per corpus, because the whole shape of the mistake was that one
+   * architecture was silently at zero while the total looked healthy: arch 12 (Harmony One) emits no
+   * opcode 3 at all, so a corpus total is dominated by architectures the gap did not touch.
+   */
+  const drawn = new Map<number, number>();
+  const named = new Map<number, number>();
+  for (const name of SAMPLES) {
+    const c = parse(require_(name));
+    const architecture = c.architecture ?? -1;
+    if (SCREEN_SIZES[architecture] === undefined) continue;
+
+    // What the programs name, counted by walking them. `renderPages` follows one arm of each switch,
+    // so the population has to be the pages it actually renders rather than every reachable program,
+    // or the two numbers would differ for a reason that has nothing to do with an opcode.
+    let tally = 0;
+    for (const rendered of renderPages(c)) {
+      if (rendered === undefined) continue;
+      tally += rendered.pictures + rendered.picturesMissing;
+    }
+    drawn.set(architecture, (drawn.get(architecture) ?? 0) + tally);
+
+    let counted = 0;
+    for (const [, instructions] of reachablePrograms(c)) {
+      for (const instruction of instructions) {
+        if (pictureReference(instruction) !== undefined) counted += 1;
+      }
+    }
+    named.set(architecture, (named.get(architecture) ?? 0) + counted);
+  }
+
+  // Every architecture is present and none is at zero, which is the guard against the whole loop
+  // silently doing nothing: a `continue` above it could have skipped every sample.
+  assert.deepEqual([...drawn.keys()].sort((a, b) => a - b), [8, 9, 12, 14]);
+  for (const [architecture, count] of drawn) {
+    assert.ok(count > 0, `arch ${architecture} drew no picture at all, which is the bug this catches`);
+    // Not an equality against `named`: the renderer walks one arm per switch and `reachablePrograms`
+    // walks all of them, so a branching program names more than one rendering draws. What must hold is
+    // that the renderer reaches a share of them, and that no architecture is at zero while its
+    // containers name thousands. Arch 9 was at zero against 2255 named.
+    const total = named.get(architecture) ?? 0;
+    assert.ok(count <= total,
+      `arch ${architecture} drew ${count} pictures where its programs name ${total}`);
+  }
+
+  // And both figures exactly, so a reader that starts skipping an opcode again moves a number somebody
+  // reads rather than passing quietly. Measured 22 August 2026.
+  assert.deepEqual([...named].sort((a, b) => a[0] - b[0]),
+    [[8, 8244], [9, 2255], [12, 2819], [14, 2287]],
+    'pictures named by a program, per architecture');
+  assert.deepEqual([...drawn].sort((a, b) => a[0] - b[0]),
+    [[8, 8147], [9, 2255], [12, 1673], [14, 2271]],
+    'pictures a rendering actually draws, per architecture');
+  // **Arch 9 is where the two are equal**, and that is the tightest form the claim takes: a Harmony 525
+  // config has no branching screen program, so every picture its programs name is one a rendering
+  // draws, with nothing to explain away. It was 0 against 2255 before opcode 3 was drawn. Elsewhere the
+  // gap is the arms `renderPages` does not take, which is why the equality is asserted here and a
+  // bound everywhere else.
+  assert.equal(drawn.get(9), named.get(9), 'on arch 9 every named picture is a drawn picture');
 });
 
 test('a pixel is big endian, and the little endian reading draws a rainbow', skipWithoutLab(), () => {
@@ -165,30 +250,52 @@ test('the display size is the size of the config\'s own full screen pictures', s
   // program draws at the origin is the display, and the same number turns up in hundreds of pictures
   // per container. This is the test that would fail first if a new architecture were added by guess.
   let checked = 0;
+  let agreed = 0;
   const skipped: string[] = [];
   for (const name of SAMPLES) {
     const data = require_(name);
     const c = parse(data);
     const size = SCREEN_SIZES[c.architecture ?? -1];
     if (size === undefined) { skipped.push(name); continue; }
+    // **Both picture opcodes, and they are two independent statements of one number.** Opcode 2 gives
+    // it as an origin plus the picture's own dimensions; opcode 3 states the destination rectangle
+    // outright, so its width and height are read from the instruction and not from what it points at.
+    // Section 148. Reading only opcode 2 is why arch 9 (Harmony 525) had nothing to say here.
     let widest = 0;
     let tallest = 0;
+    let widest3 = 0;
+    let tallest3 = 0;
     for (const [, instructions] of reachablePrograms(c)) {
       for (const instruction of instructions) {
-        if (instruction.opcode !== SCREEN_DRAW_IMAGE) continue;
-        const named = bitmapReference(instruction);
-        const picture = named === undefined ? undefined : bitmapAt(c, named);
-        if (picture === undefined) continue;
-        widest = Math.max(widest, (instruction.operands[0] ?? 0) + picture.stride);
-        tallest = Math.max(tallest, (instruction.operands[1] ?? 0) + picture.rows);
+        if (instruction.opcode === SCREEN_DRAW_IMAGE) {
+          const named = bitmapReference(instruction);
+          const picture = named === undefined ? undefined : bitmapAt(c, named);
+          if (picture === undefined) continue;
+          widest = Math.max(widest, (instruction.operands[0] ?? 0) + picture.stride);
+          tallest = Math.max(tallest, (instruction.operands[1] ?? 0) + picture.rows);
+        } else if (instruction.opcode === SCREEN_DRAW_IMAGE_AT) {
+          widest3 = Math.max(widest3, (instruction.operands[0] ?? 0) + (instruction.operands[4] ?? 0));
+          tallest3 = Math.max(tallest3, (instruction.operands[1] ?? 0) + (instruction.operands[5] ?? 0));
+        }
       }
     }
-    // Arch 9 draws no picture from a program at all, so it has nothing to say here.
-    if (widest === 0) { skipped.push(name); continue; }
-    assert.equal(widest, size.width, `${name} draws ${widest} pixels across`);
-    assert.equal(tallest, size.height, `${name} draws ${tallest} pixels down`);
+    // A container that draws no picture from any program has nothing to say, which is the four safe
+    // mode containers and the factory config inside a firmware image.
+    if (widest === 0 && widest3 === 0) { skipped.push(name); continue; }
+    assert.equal(Math.max(widest, widest3), size.width, `${name} draws that many pixels across`);
+    assert.equal(Math.max(tallest, tallest3), size.height, `${name} draws that many pixels down`);
     checked += 1;
+    // Where both opcodes are present the two routes have to give the same answer, which is the
+    // calibration: arch 8 (Harmony 880) and arch 14 (Harmony 600 and 700) know their size from opcode
+    // 2 already, so opcode 3 agreeing there is what makes it trustworthy on arch 9, where it is the
+    // only witness.
+    if (widest > 0 && widest3 > 0) {
+      assert.equal(widest3, widest, `${name}: the two picture opcodes disagree about the width`);
+      assert.equal(tallest3, tallest, `${name}: the two picture opcodes disagree about the height`);
+      agreed += 1;
+    }
   }
+  assert.equal(agreed, 9, 'containers where both opcodes state the display size and agree');
   // How many actually reached the assertions, which nothing stated: two `continue`s stand above them,
   // one for an architecture with no recorded screen size and one for a container that draws no picture
   // from a program, so the whole test could have run past every sample.
@@ -196,8 +303,11 @@ test('the display size is the size of the config\'s own full screen pictures', s
   // above them and nothing said so: the test could have run past every sample and still reported a
   // pass. Measured on 13 August 2026, 13 of 21 reach it, and the eight that do not split into two
   // groups with different reasons, which is why the set is asserted and not the number.
-  assert.deepEqual(skipped.sort(), [...NO_FULL_SCREEN_PICTURE, ...ARCH9_SAMPLES].sort(),
-    'a different set of samples skipped the display size check than the two reasons account for');
+  // **Arch 9 is no longer one of the reasons**, which is section 148's consequence here: its three
+  // containers state their own 96 by 64 through opcode 3, so the only samples left out are the five
+  // that draw no picture from any program at all.
+  assert.deepEqual(skipped.sort(), [...NO_FULL_SCREEN_PICTURE].sort(),
+    'a different set of samples skipped the display size check than the one reason accounts for');
   assert.equal(checked, SAMPLES.length - skipped.length);
 });
 

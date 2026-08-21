@@ -32,11 +32,12 @@ import {
   PIXEL_BITS,
   PIXEL_BYTES,
   SCREEN_DRAW_IMAGE,
+  SCREEN_DRAW_IMAGE_AT,
   SCREEN_SELECT_FONT,
   SCREEN_TEXT_AT,
   SCREEN_TEXT_INLINE,
   bitmapAt,
-  bitmapReference,
+  pictureReference,
   screenProgram,
   screenSwitch,
   transfers,
@@ -198,6 +199,34 @@ function drawPixels(raster: Raster, rows: (number | undefined)[][], x: number, y
 }
 
 /**
+ * Copy a `w` by `h` region of a picture from `sx, sy` to `dx, dy` on the screen.
+ *
+ * **Opcode 3's shape, and it is a blit rather than a draw**, which is the difference that made it
+ * worth reading rather than treating as a second spelling of opcode 2. A page strip is copied to
+ * where it already sits 2624 times in the corpus, and 708 arch 8 (Harmony 880) instructions copy a
+ * region from somewhere else to somewhere else.
+ *
+ * The rectangle is clipped at both ends rather than trusted, though nothing in the corpus needs it:
+ * every destination fits its display and every source fits its picture, 3540 of 3540, which is the
+ * measurement that says the six bytes were read in the right order. A future container may not, and
+ * a renderer that walked off the end of a row would silently paint a neighbouring one.
+ */
+function drawRegion(raster: Raster, rows: (number | undefined)[][],
+                    dx: number, dy: number, sx: number, sy: number, w: number, h: number): void {
+  for (let row = 0; row < h; row += 1) {
+    const from = rows[sy + row];
+    const at = dy + row;
+    if (from === undefined || at < 0 || at >= raster.height) continue;
+    for (let column = 0; column < w; column += 1) {
+      const pixel = from[sx + column];
+      const into = dx + column;
+      if (pixel === undefined || into < 0 || into >= raster.width) continue;
+      raster.pixels[at * raster.width + into] = pixel;
+    }
+  }
+}
+
+/**
  * A glyph's pixels, with arch 9's two bit grey levels turned into the same RGB565 the others use.
  *
  * Arch 9 stores ink and paper as the values 1 and 2, section 63, so a caller that treated them as
@@ -356,13 +385,21 @@ function draw(
     let next: number | undefined;
     for (const instruction of program) {
       if (instruction.opcode === SCREEN_SELECT_FONT) font = instruction.operands[0] ?? -1;
-      else if (instruction.opcode === SCREEN_DRAW_IMAGE) {
-        const named = bitmapReference(instruction);
+      else if (instruction.opcode === SCREEN_DRAW_IMAGE
+               || instruction.opcode === SCREEN_DRAW_IMAGE_AT) {
+        const named = pictureReference(instruction);
         const picture = named === undefined ? undefined : bitmapAt(c, named);
         const rows = picture === undefined ? undefined : bitmapPixels(c, picture);
         if (rows === undefined) out.picturesMissing += 1;
         else {
-          drawPixels(raster, rows, instruction.operands[0] ?? 0, instruction.operands[1] ?? 0);
+          const o = instruction.operands;
+          if (instruction.opcode === SCREEN_DRAW_IMAGE) {
+            drawPixels(raster, rows, o[0] ?? 0, o[1] ?? 0);
+          } else {
+            // Opcode 3 is a **region copy**, not a whole picture draw: six bytes are
+            // `dx, dy, sx, sy, w, h` with the destination first, section 118 and section 148.
+            drawRegion(raster, rows, o[0] ?? 0, o[1] ?? 0, o[2] ?? 0, o[3] ?? 0, o[4] ?? 0, o[5] ?? 0);
+          }
           out.pictures += 1;
         }
       } else if (instruction.opcode === SCREEN_TEXT_INLINE || instruction.opcode === SCREEN_TEXT_AT) {

@@ -823,6 +823,41 @@ two per container are not" drawn on arch 8 and arch 14 until section 146, and th
 emits nothing else, which is why a reader written from opcode 2 looked complete on the architecture
 this project reads code on and reported zero pictures for a Harmony 525.
 
+**They are not two spellings of one instruction.** Opcode 2 draws a whole picture at an origin, two
+operand bytes:
+
+```
++0x00  u8   x
++0x01  u8   y
+...          the last three bytes are the u24 address
+```
+
+Opcode 3 is a **region copy**, nine operands, and the destination comes first:
+
+```
++0x00  u8   dx     where on the display it lands
++0x01  u8   dy
++0x02  u8   sx     where in the picture it comes from
++0x03  u8   sy
++0x04  u8   w      in pixels, both ends
++0x05  u8   h
++0x06  u24  the picture's address
+```
+
+Read as stated, every destination rectangle fits its display and every source rectangle fits the
+picture it names, 3540 of 3540 across the corpus. Swapping the two pairs puts 292 of the 708
+asymmetric arch 8 instructions outside their own picture, against none as stated.
+[findings.md](findings.md) sections 118 and 148.
+
+2624 of the 3540 copy a rectangle onto itself, which is a page strip drawn where it already sits.
+Why is unread and it costs nothing either way, since the copy is idempotent.
+
+**A config states its own display size**, and both opcodes say it: opcode 2 as an origin plus the
+picture's own dimensions, opcode 3 as `dx + w` by `dy + h` from the instruction itself. Nine
+containers state it both ways and agree exactly, on arch 8 and arch 14, which is what makes opcode 3
+trustworthy on arch 9, where it is the only witness and where the 96 by 64 rested on nothing in the
+container until section 148. `SCREEN_SIZES`. [findings.md](findings.md) section 148.
+
 The start is found by trying offsets above the named content under two constraints, the exact
 landing and the presence of every addressed picture; exactly one candidate satisfies both, except in
 the arch 9 safe mode container, where two do because two of its four pictures are addressed by

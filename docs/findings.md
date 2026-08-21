@@ -20596,6 +20596,11 @@ missing, because a reader that never looks at an instruction cannot count it as 
 a real gap in the render check and it is left open here deliberately: this section is about an
 address, and where the picture lands is a separate reading.
 
+**Closed the next day, section 148.** It is a region copy, `dx, dy, sx, sy, w, h`, the renderer
+performs it, and the arch 9 page that was missing every picture now draws all of them. Two things
+that section did not expect: the order is confirmed a second time on arch 8 rather than arch 9, and
+arch 9 turns out to state its own display size through this instruction's destination rectangle.
+
 ## 147. What a length change moves, counted: 140272 addresses, and growth has a price per place
 
 `edit.ts` refuses to change the length of anything, and its docstring gives the reason as a list of
@@ -20746,3 +20751,106 @@ need and today's emitter does not do. That is one item, not a programme.
   configs generated ten minutes apart differ in 73 to 84% of their bytes, so an editor makes minimal
   diffs against an existing config and reproducing what Logitech's generator would have emitted is
   not achievable. A relocation is for changing a config, not for matching one.
+
+## 148. Opcode 3 is a region copy, the renderer draws it now, and arch 9 states its own display size
+
+Section 146 read screen opcode 3's address and left two things open: where it draws, and the
+consequence that `render.ts` did not draw it at all. Both are closed here. The instruction is a
+**region copy**, its six position bytes are `dx, dy, sx, sy, w, h` as section 118 read them, and the
+renderer performs it. Two things fall out that neither section predicted: a Harmony 525 (arch 9) page
+was missing every picture in it while the render check reported nothing missing, and arch 9 turns out
+to state its own display size after all.
+
+### The order, confirmed on a second architecture by a second mechanism
+
+Section 118 established `dx, dy, sx, sy, w, h` on arch 9 (Harmony 525), from 55 asymmetric
+instructions, with the closure that opcode 22 has already selected a page and the destination has to be
+inside it. That reading is now checked on the whole corpus by a different test: a destination rectangle
+has to fit the **display**, and a source rectangle has to fit the **picture it names**.
+
+| container | arch | opcode 3 | asymmetric | destination off the display | source off the picture |
+|---|---|---|---|---|---|
+| `h700_config` | 14 | 461 | 0 | 0 | 0 |
+| `h700_config_2` | 14 | 461 | 0 | 0 | 0 |
+| `h600_config` | 14 | 243 | 0 | 0 | 0 |
+| `h525_config` | 9 | 1114 | 34 | 0 | 0 |
+| `h525_config_2` | 9 | 797 | 21 | 0 | 0 |
+| `h525_safemode_ahcm` | 9 | 344 | 0 | 0 | 0 |
+| `arch8_config_a` | 8 | 204 | 131 | 0 | 0 |
+| `arch8_config_b` | 8 | 264 | 169 | 0 | 0 |
+| `arch8_config_c` | 8 | 328 | 204 | 0 | 0 |
+| `arch8_config_d` | 8 | 328 | 204 | 0 | 0 |
+
+Read as stated, 3540 of 3540 fit at both ends. The control is to swap the two pairs, which is the
+order somebody else's renderer used, and it is only a control where the two differ: **292 of the 708
+asymmetric arch 8 instructions then read a region off the end of their own picture**, against 0 as
+stated. Arch 9's own 55 are indifferent to this particular test, which is why section 118 needed the
+page selection argument there, and arch 8 is a genuinely independent confirmation: a different
+architecture, a different bound, and 6 of every 10 asymmetric instructions breaking under the swap.
+
+Arch 12 (Harmony One) emits no opcode 3 at all, section 146, so it says nothing either way.
+
+### What the renderer was reporting, and why nothing failed
+
+`render.ts` handled opcode 2 and no other picture instruction. So on arch 9, where every picture is
+named by an opcode 3, a rendered page drew its text and nothing else: `h525_config` page 46 came out
+with **0 pictures and 4549 of its 6144 pixels never touched**, and the same page now draws 9 pictures
+and leaves none. Across the corpus the arch 9 total goes from 0 to 2255.
+
+**Nothing failed, and the reason is the shape to remember.** The render check's claim is "every page of
+every config draws with nothing left unresolved", and its body counts `picturesMissing`, which the
+renderer increments for a picture it **looked for** and could not decode. An instruction the renderer
+never looks at contributes nothing to that number. So the claim was true of what the reader read and
+said nothing about what it skipped, which is the same defect as the `slot-15-spare` catch-all in
+section 103: a claim that cannot fail because the thing it would fail on is outside its own
+population.
+
+The test that would have caught it counts the naming instructions by walking the programs and compares
+that with the renderer's own tally, per architecture. Per architecture and not per corpus, because the
+whole shape of the mistake was one architecture sitting at zero while a total looked healthy.
+
+| arch | pictures a program names | a rendering draws |
+|---|---|---|
+| 8 | 8244 | 8147 |
+| 9 | 2255 | 2255 |
+| 12 | 2819 | 1673 |
+| 14 | 2287 | 2271 |
+
+Arch 9 is the equality, because a Harmony 525's screen programs do not branch, so every picture named
+is a picture drawn with nothing to explain away. Elsewhere the gap is the switch arms `renderPages`
+does not take, which is why the claim is an equality there and a bound in general.
+
+### Arch 9 states its own display size, and where both opcodes speak they agree
+
+`SCREEN_SIZES` is derived from the config rather than tabulated: a program draws its own backgrounds,
+so the widest picture drawn at the origin is the display. That derivation read opcode 2 only, so arch 9
+had nothing to say and its 96 by 64 rested on nothing in the container. Opcode 3 states its destination
+rectangle outright, so `dx + w` and `dy + h` give the same answer without going through a picture's
+dimensions at all.
+
+| container | arch | stated | from opcode 2 | from opcode 3 |
+|---|---|---|---|---|
+| `h525_config` | 9 | 96x64 | nothing | 96x64 |
+| `h525_config_2` | 9 | 96x64 | nothing | 96x64 |
+| `h525_safemode_ahcm` | 9 | 96x64 | nothing | 96x64 |
+| `h600_config` | 14 | 128x128 | 128x128 | 128x128 |
+| `h700_config` | 14 | 128x128 | 128x128 | 128x128 |
+| `arch8_config_a` | 8 | 128x160 | 128x160 | 128x160 |
+| `one_config` | 12 | 176x220 | 176x220 | nothing |
+
+Nine containers state it both ways and agree exactly, on arch 8 and arch 14, which is the calibration
+case: those two already knew their size from opcode 2, so opcode 3 agreeing there is what makes it
+trustworthy on arch 9 where it is the only witness. So arch 9 stops being an exception to the display
+size claim, and the three containers that used to be excluded from it are excluded no longer. What is
+left out is the five containers that draw no picture from any program at all, which is four safe mode
+containers and the factory config found inside a firmware image.
+
+### What this does not settle
+
+Nothing about **why** a page strip is copied to where it already sits, which is 2624 of the corpus's
+3540 opcode 3 instructions: the destination and the source are the same rectangle, so the instruction
+draws what is already there. A refresh of a page the firmware has just cleared is the obvious guess and
+it is a guess. It costs nothing either way, since the copy is idempotent.
+
+And screen opcodes 1 and 21, which section 147 lists as possibly carrying an address and which are in
+neither the census nor the renderer.

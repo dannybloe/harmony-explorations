@@ -1378,7 +1378,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 147 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 148 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1786,8 +1786,18 @@ test in this repository: a reader test says a number came back and cannot see a 
 icon over its own caption or a colour channel one bit wrong. **Every mode page of every container
 renders with nothing unresolved**, over 1500 pages on four architectures, which needs a picture's
 extent, a glyph's encoding, a font set's first code, a referenced string's address and a page's program
-pointer all to be right at once. Three things it needed that no reader did: the display size, which the
-configs state through their own full screen pictures; the pen advance, which is **nothing** because the
+pointer all to be right at once. **And that claim was hollow for a month**, section 148: it counts
+pictures the renderer looked for and could not decode, so an instruction the renderer never looks at
+contributes nothing to it. The renderer knew screen opcode 2 and not opcode 3, and on arch 9 (Harmony
+525) every picture is an opcode 3, so a rendered Harmony 525 page drew its text and left 4549 of 6144
+pixels untouched while the check reported nothing missing. Same defect as section 103's catch-all
+owner: a claim whose falsifier is outside its own population. The test that can fail counts the naming
+instructions by walking the programs and compares that with the renderer's own tally, **per
+architecture**, because the whole shape of the mistake was one architecture at zero while a total
+looked healthy. Three things it needed that no reader did: the display size, which the
+configs state through their own full screen pictures, **both picture opcodes saying it and agreeing
+exactly on nine containers**, which is what took arch 9 (Harmony 525) from having no witness for its
+96 by 64 to having the only one; the pen advance, which is **nothing** because the
 gap between letters is a column the glyph carries; and the pixel byte order, where the first reading was
 wrong. **A pixel is big endian RGB565**, the only field here that is not little endian, because it is
 stored the way a display controller is fed rather than the way the container is written. Little endian
