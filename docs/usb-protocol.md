@@ -933,6 +933,15 @@ bytes exactly as predicted.
 | 10 | `0x02` | `0x34` | **the safe mode firmware's version**, from `0x001007` |
 | 11 | `0x02` | `0x34` | **the running application image's own header version**, from `0x009007` |
 
+**The reading is executable, in `readVersion`.** Added on 21 August 2026 in
+`packages/usb/src/protocol.ts`, because FreeHarmony needs a firmware version and a flash id for a
+document and must not compute either itself: interpreting a reply is the library's job. It surfaces the
+six fields this table establishes and no more, keeps the whole block beside them so nothing it does not
+understand is lost, and refuses a block under seven bytes, which carries neither the architecture nor
+the skin. `VERSION_FIELD_NAMES` moved there in the same change, from `packages/bench`, which had been
+the only place the block was labelled at all and had carried a wrong claim about field 6 for a month.
+Asserted against all three bench remotes in `packages/usb/test/protocol.test.ts`.
+
 That is six fields agreeing across two architectures, with the second remote differing in every one
 of the values the reading predicts. Fields 2 and 3 are the 16-bit SPI read the firmware performs with
 the chip select low, characterised as "the flash id" from the image alone; fields 0 and 1 are the

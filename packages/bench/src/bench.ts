@@ -28,7 +28,7 @@ import {
   parse,
   summary,
 } from '@harmony/codec';
-import { modelForSkin } from '@harmony/usb';
+import { modelForSkin, VERSION_FIELD_NAMES } from '@harmony/usb';
 
 export interface AttachedRemote {
   readonly productId: number;
@@ -56,35 +56,18 @@ export interface BenchDeps {
 }
 
 /**
- * The version block, named where this project has earned a name for a field.
+ * The version block's field names, from the library.
  *
- * Ten of the twelve were unnamed when the block was first read and five still are. Showing "field 7"
- * is the honest rendering: inventing a label for a byte nobody has placed is exactly the kind of
- * thing `docs/config-format.md` marks as unconfirmed, and a screen should not be laxer than a
- * document. See `docs/usb-protocol.md` section 4.
+ * **This was a table here and it moved on 21 August 2026.** It was the only place the block was
+ * labelled anywhere, which was fine while the bench was the only thing showing one; FreeHarmony
+ * needing a firmware version and a flash id is what made a second copy imminent, and this project's
+ * oldest rule is that two copies of a derivation are two copies until one of them moves. It had
+ * already drifted: it called field 6 a constant `0x0C` for a month after the bench Harmony 525
+ * reported `0x09`, section 76, because `make facts` cannot see prose inside code.
+ *
+ * Re-exported rather than imported at the call site so that the page's own shape does not change.
  */
-export const VERSION_FIELDS: readonly (string | undefined)[] = [
-  'firmware version',
-  'hardware version',
-  'flash device id',
-  'flash manufacturer id',
-  'protocol, high nibble',
-  'skin',
-  // **Not "constant 0x0C on every remote seen"**, which this said until section 139 and which had
-  // been false since 8 August 2026: the bench Harmony 525 reports 0x09, section 76, and the field
-  // names a **platform** rather than an architecture, section 116. 0x0C on arch 12 (Harmony One) and
-  // arch 14 (Harmony 600 and 700), which are one platform under it, 0x09 on arch 9 (Harmony 525),
-  // 0x08 on arch 8 (Harmony 880 and 885), and 0x00 for a bootloader or a remote in safe mode. The
-  // Harmony 525 enumerates on this machine, so the page was printing 9 beside a label saying it is
-  // always 0x0C, and `make facts` cannot see prose inside code.
-  'platform',
-  undefined,
-  'version of the image at 0xFF +0xE000',
-  'version of the image at 0xFF +0x0000',
-  undefined,
-  undefined,
-];
-
+export const VERSION_FIELDS = VERSION_FIELD_NAMES;
 
 /** A device as the page shows it: what it is called, and how it behaves when a key is held. */
 export interface DeviceView {

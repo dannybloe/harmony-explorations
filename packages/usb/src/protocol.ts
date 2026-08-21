@@ -472,6 +472,131 @@ export function softwareTypeFromVersion(fields: Uint8Array): number | undefined 
   return byte === undefined ? undefined : byte & 0x0f;
 }
 
+/**
+ * The version block, read as far as this project has earned a reading, with every byte kept.
+ *
+ * Written on 21 August 2026 for FreeHarmony, which needs a firmware version and a flash id to put in
+ * a document and must not compute either itself: interpreting a protocol reply is this library's job,
+ * and a second reading of these fields in the product is exactly the split the two repositories are
+ * arranged to prevent. The names were already here, in `packages/bench`, and the **values** were
+ * computed nowhere, so the labels and the arithmetic now sit together.
+ *
+ * Six fields, and no more, because six is what `docs/usb-protocol.md` section 4 establishes: the
+ * reading was written down as a prediction from a Harmony 600 and then confirmed on a Harmony One
+ * whose first six bytes came back exactly as predicted, with a third architecture, the Harmony 525,
+ * agreeing on all of them. Fields 7 to 11 have placements in that document and are deliberately not
+ * surfaced as named values, because they name **images inside a remote** rather than anything about
+ * the remote, and a caller wanting them can read `fields`.
+ *
+ * `fields` is the whole block regardless, which is the point: nothing this function does not
+ * understand is lost, and a caller can always show what it actually said.
+ */
+export interface VersionReading {
+  /** Every byte the remote sent, so this reading never has to be the only record of it. */
+  readonly fields: Uint8Array;
+  /** Field 0 as two nibbles: `3.4` on a Harmony One, `0.2` on a Harmony 600. */
+  readonly firmware: string;
+  /** Field 1 the same way. `concordance -i` calls it the board version. */
+  readonly hardware: string;
+  /** Fields 3 and 2, manufacturer first, as `1F:C8`. One 16-bit SPI read with chip select low. */
+  readonly flash: string;
+  /** Field 4's high nibble. The remote's own statement of which architecture it is. */
+  readonly architecture: number;
+  /** Field 4's low nibble: 0 in normal operation, 4 in safe mode. Logitech's own values. */
+  readonly softwareType: number;
+  /** Logitech's own word for that value, or undefined for one nobody has seen. */
+  readonly softwareTypeName: string | undefined;
+  /** Field 5, which `bcdDevice` states independently, so the two are a check on each other. */
+  readonly skin: number;
+  /**
+   * Field 6, which names a **platform** and not an architecture, section 116.
+   *
+   * `0x0C` on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), which are one platform under
+   * it, `0x09` on arch 9 (Harmony 525), `0x08` on arch 8 (Harmony 880 and 885), and `0x00` for a
+   * bootloader or a remote in safe mode.
+   */
+  readonly platform: number;
+}
+
+/**
+ * The names of the fields, for a caller showing the block as it came.
+ *
+ * **Moved here from `packages/bench` on 21 August 2026**, where it had been the only place the block
+ * was labelled at all. A second consumer arriving is what made that a problem rather than a location:
+ * two tables of names drift, and this one had already carried a wrong claim for a month, that field 6
+ * is a constant `0x0C`, which the bench Harmony 525 had contradicted since 8 August 2026.
+ *
+ * `undefined` where nothing is placed. Showing "field 7" is the honest rendering, and inventing a
+ * label for a byte nobody has placed is what `docs/config-format.md` marks as unconfirmed elsewhere.
+ */
+export const VERSION_FIELD_NAMES: readonly (string | undefined)[] = [
+  'firmware version',
+  'hardware version',
+  'flash device id',
+  'flash manufacturer id',
+  'architecture and software type',
+  'skin',
+  'platform',
+  undefined,
+  'version of the image at 0xFF +0xE000',
+  'version of the image at 0xFF +0x0000',
+  undefined,
+  undefined,
+];
+
+/**
+ * Logitech's own names for the software type, from their firmware packages and their client.
+ *
+ * Both sources name all five and they agree: 0 application, 1 test, 2 minimal, 3 bootloader, 4 safe
+ * mode. Only 0 and 4 have been seen on a remote here, sections 87 and 118.
+ */
+export const SOFTWARE_TYPE_NAMES: Readonly<Record<number, string>> = {
+  0: 'application',
+  1: 'test mode',
+  2: 'minimal',
+  3: 'bootloader',
+  4: 'safe mode',
+};
+
+/** A byte as two decimal nibbles, which is how the firmware packs a version. `0x34` is `3.4`. */
+function twoNibbles(byte: number): string {
+  return `${byte >> 4}.${byte & 0x0f}`;
+}
+
+function hex(byte: number): string {
+  return byte.toString(16).toUpperCase().padStart(2, '0');
+}
+
+/**
+ * Read a version block. Throws on one too short to carry an identity.
+ *
+ * The refusal is `VERSION_FIELD_COUNT_MIN`, seven, and it is not caution: five is what concordance
+ * also accepts and a block that short carries neither the architecture nor the skin, so it would be
+ * an identity missing the two fields worth having. `HarmonyRemote.getVersion` already refuses the
+ * same length, so a caller of both sees one rule.
+ */
+export function readVersion(fields: Uint8Array): VersionReading {
+  if (fields.length < VERSION_FIELD_COUNT_MIN) {
+    throw new Error(
+      `a version block of ${fields.length} bytes carries no architecture and no skin, ` +
+        `so it is not an identity; ${VERSION_FIELD_COUNT_MIN} is the minimum`,
+    );
+  }
+  const at = (index: number): number => fields[index] as number;
+  const softwareType = at(VERSION_FIELD_ARCH_AND_TYPE) & 0x0f;
+  return {
+    fields,
+    firmware: twoNibbles(at(0)),
+    hardware: twoNibbles(at(1)),
+    flash: `${hex(at(3))}:${hex(at(2))}`,
+    architecture: at(VERSION_FIELD_ARCH_AND_TYPE) >> 4,
+    softwareType,
+    softwareTypeName: SOFTWARE_TYPE_NAMES[softwareType],
+    skin: at(5),
+    platform: at(6),
+  };
+}
+
 export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
   | {

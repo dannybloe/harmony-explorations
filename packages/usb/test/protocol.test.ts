@@ -31,6 +31,11 @@ import {
   WRITE_MISC,
   WRITE_MISC_SELECTORS,
   architectureFromVersion,
+  readVersion,
+  SOFTWARE_TYPE_NAMES,
+  SOFTWARE_TYPE_SAFE_MODE,
+  VERSION_FIELD_COUNT,
+  VERSION_FIELD_NAMES,
   softwareTypeFromVersion,
   decodeReply,
   encodeRequest,
@@ -371,9 +376,101 @@ test('the version fields we derived are the ones the client reads, in order', ()
   const one = Uint8Array.from([0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c]);
   assert.equal(architectureFromVersion(one), 12, 'architecture in the high nibble');
   assert.equal(softwareTypeFromVersion(one), 0, 'software type in the low nibble, application');
-  // Field 5 is the skin, and there is no accessor for it in the library because nothing needed one
-  // yet; `modelForSkin` takes the number rather than the reply.
-  assert.equal(one[5], 0x36, 'skin 54, which the client calls SKIN54');
+  // Field 5 is the skin, read through `readVersion` now that something needed it. It was
+  // `one[5]` under a comment saying no accessor existed, which is the same defect the paragraph
+  // above corrects one line up: a test restating the reading in its own arithmetic.
+  assert.equal(readVersion(one).skin, 0x36, 'skin 54, which the client calls SKIN54');
+});
+
+test('the whole block reads back as the three bench remotes reported it', () => {
+  /**
+   * The reading of `docs/usb-protocol.md` section 4, as one assertion per architecture.
+   *
+   * Three literals, and each is a **measurement**: the Harmony 600 was read live, the Harmony One's
+   * first six bytes were written down as a prediction from it and then confirmed, and the Harmony 525
+   * was read on the bench on 8 August 2026 with seven fields where the other two have twelve. So this
+   * spans three architectures and two block lengths, which is what the verification standard asks of a
+   * derivation before it is believed.
+   *
+   * Every value asserted here is stated in that document's own table, so a change to `readVersion`
+   * that happens to be self consistent still fails.
+   */
+  const h600 = Uint8Array.from([0x02, 0x11, 0x1c, 0x15, 0xe0, 0x47, 0x0c, 0x02, 0x00, 0x00, 0x02, 0x02]);
+  const one = Uint8Array.from([0x34, 0x05, 0xc8, 0x1f, 0xc0, 0x36, 0x0c, 0x34, 0x34, 0x16, 0x34, 0x34]);
+  const h525 = Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09]);
+
+  assert.deepEqual(
+    { ...readVersion(h600), fields: h600.length },
+    { fields: 12, firmware: '0.2', hardware: '1.1', flash: '15:1C', architecture: 14,
+      softwareType: 0, softwareTypeName: 'application', skin: 71, platform: 0x0c },
+  );
+  assert.deepEqual(
+    { ...readVersion(one), fields: one.length },
+    { fields: 12, firmware: '3.4', hardware: '0.5', flash: '1F:C8', architecture: 12,
+      softwareType: 0, softwareTypeName: 'application', skin: 54, platform: 0x0c },
+  );
+  assert.deepEqual(
+    { ...readVersion(h525), fields: h525.length },
+    { fields: 7, firmware: '3.0', hardware: '2.5', flash: 'FF:12', architecture: 9,
+      softwareType: 0, softwareTypeName: 'application', skin: 22, platform: 0x09 },
+  );
+
+  // The platform is not the architecture, section 116, and these three are what says so: two
+  // architectures share `0x0c` and the third differs. A reading that returned the architecture twice
+  // would pass every other assertion in this test.
+  assert.equal(readVersion(h600).platform, readVersion(one).platform);
+  assert.notEqual(readVersion(h600).architecture, readVersion(one).architecture);
+});
+
+test('safe mode is the one software type a remote here has ever reported besides application', () => {
+  // Predicted in `docs/usb-protocol.md` before anyone tried it, `0xC4` for a Harmony One and `0xE4`
+  // for a Harmony 600, and then met on a stranded Harmony 525, section 118. The names are Logitech's
+  // own, from their firmware packages and their client, which agree on all five.
+  const stranded = Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x94, 0x16, 0x00]);
+  const reading = readVersion(stranded);
+  assert.equal(reading.softwareType, SOFTWARE_TYPE_SAFE_MODE);
+  assert.equal(reading.softwareTypeName, 'safe mode');
+  assert.equal(reading.architecture, 9, 'and the architecture is unaffected by the low nibble');
+  // A bootloader and a remote in safe mode both report platform 0, section 118, which is why the
+  // platform cannot be used to tell what is running.
+  assert.equal(reading.platform, 0);
+
+  // All five of Logitech's own values are named, which is the claim `docs/usb-protocol.md` makes:
+  // their firmware packages and their client name the same five and agree on every one. Two of the
+  // five have been seen on a remote here and the other three are their word alone, which is why they
+  // are a table of names and nothing here branches on them.
+  assert.deepEqual(Object.keys(SOFTWARE_TYPE_NAMES).map(Number).sort((a, b) => a - b), [0, 1, 2, 3, 4]);
+  assert.equal(SOFTWARE_TYPE_NAMES[1], 'test mode');
+  assert.equal(SOFTWARE_TYPE_NAMES[3], 'bootloader');
+});
+
+test('a block too short to carry an architecture is refused rather than read', () => {
+  // Five is what concordance accepts, and a block that short has neither the architecture nor the
+  // skin, so a reading of it would be an identity missing the two fields worth having. The refusal
+  // names the reason, since a caller seeing it has a remote in front of them.
+  assert.throws(() => readVersion(Uint8Array.from([0x34, 0x05, 0xc8, 0x1f, 0xc0])),
+                /carries no architecture and no skin/);
+  assert.throws(() => readVersion(new Uint8Array(0)), /0 bytes/);
+  // And seven is accepted, which is the control: without it the refusal could be off by any amount.
+  assert.equal(readVersion(Uint8Array.from([0x30, 0x25, 0x12, 0xff, 0x90, 0x16, 0x09])).architecture, 9);
+});
+
+test('every named field has a name and every unnamed one does not, which is the honest rendering', () => {
+  // The table moved here from `packages/bench` on 21 August 2026, where it was the only place the
+  // block was labelled and had carried a wrong claim about field 6 for a month. Exact counts, not a
+  // floor: nine named and three not, out of twelve. The three are fields 7, 10 and 11, which
+  // `docs/usb-protocol.md` places and this table deliberately does not label, because a value that
+  // names an **image inside a remote** is not a fact about the remote and a screen would read it as
+  // one. Nine was measured rather than counted by eye, which is the house rule and the reason this
+  // said seven for a minute.
+  assert.equal(VERSION_FIELD_NAMES.length, VERSION_FIELD_COUNT);
+  const named = VERSION_FIELD_NAMES.filter((name) => name !== undefined);
+  assert.equal(named.length, 9, `named: ${named.join(', ')}`);
+  for (const index of [7, 10, 11]) {
+    assert.equal(VERSION_FIELD_NAMES[index], undefined,
+                 `field ${index} is placed in the document and deliberately not labelled here`);
+  }
+  assert.equal(new Set(named).size, named.length, 'and no two fields share a name');
 });
 
 test('a flash id comes from the remote, because the client table disagrees with our hardware', () => {

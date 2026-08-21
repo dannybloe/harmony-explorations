@@ -719,7 +719,10 @@ packages/codec/                 TS: the one config codec, container through comp
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
-                                model and its hardware capabilities
+                                model and its hardware capabilities, and readVersion, which reads
+                                the six identified fields of a version block and keeps the rest.
+                                That reading lived only as a table of names in packages/bench until
+                                21 August 2026, and it moved because FreeHarmony needed the values
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
 packages/bench/                 TS: the bench instrument, a server plus a page in web/
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
