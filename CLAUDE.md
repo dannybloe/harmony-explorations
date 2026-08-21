@@ -649,6 +649,13 @@ What that means in practice:
   happen and still land in the code, the tests and the documents. What changes is that the reply is
   written for the person reading it rather than for the record.
 
+**A document does not lie, and neither does a plan.** It is wrong, or out of date, or it was written
+before somebody knew better. Said on 21 August 2026 after a reply claimed the roadmap "lied" about four
+things, and the objection is not squeamishness: lying takes intent, so the word hands the mistake to the
+document and quietly takes it away from whoever wrote it. Which in that case was this assistant. The
+same goes for code, tests and findings. They can be incorrect, stale, overclaiming or unfalsifiable, and
+each of those says something useful about how to fix it, where "lied" says nothing at all.
+
 **This is about conversation, not about the documents.** `docs/findings.md` and its neighbours stay
 technical, because their reader is whoever is building this. The distinction is the same one that
 `docs/roadmap.md` in FreeHarmony already makes for itself.
