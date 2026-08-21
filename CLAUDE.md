@@ -669,16 +669,28 @@ reference/models.md             the 40 models Logitech retired in 2025, mapped t
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
                                 otherwise, and `packages/usb/src/models.ts` is the executable form
-reference/silhouettes/          which buttons a model has, as a drawing, one SVG per model, outline
-                                only bar the teletext keys. Drawn rather than traced, so it is ours
-                                to publish, and tested: the count has to match what the firmware
-                                implies, and the case has to be a measured contour rather than a
-                                rounded box. The three bench remotes are drawn, 50, 54 and 44
-                                buttons. **Not the button map: placement is schematic**, since every
-                                key sits on a horizontal axis where real rows are angled or curved,
-                                so a hit region must not be taken from these coordinates. Drawing
-                                the other 33 models was started on 11 August 2026 and stopped for
-                                that reason; it is parked until FreeHarmony needs it
+reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
+                                `packages/silhouettes/src/models/<id>.ts` and never edited by hand.
+                                What the interface needs of it: every key addressable by name,
+                                every colour from a custom property, and layers a thumbnail can
+                                drop. `.claude/skills/draw-remote/SKILL.md` is the method.
+                                **The geometry is traced from Logitech's own documentation**, by
+                                hand, into an SVG that lives in the lab, and `bin/extract.ts` moves
+                                it into this package's coordinates. Decided on 21 August 2026 by
+                                Danny, against the argument recorded here that a traced path is
+                                Logitech's expression rather than a fact about the product and that
+                                this repository is public and MIT. What that replaced was a drawing
+                                measured off a photograph, and the measurement is why: a key on
+                                these remotes is four cubics with no straight side, so the best
+                                rounded rectangle through one sits a whole unit out on a key nine
+                                units tall. **Placement is no longer schematic**, which is the
+                                claim this entry used to carry and the reason the other 33 models
+                                were parked on 11 August 2026: a traced key is where it is on the
+                                product. The button map is still not here, since a name still comes
+                                from `reference/button-maps.md` and 22 of the 600's 54 keys have no
+                                measured code. The printed words, the colour on the teletext keys
+                                and the regions a rocker's halves cover are ours and not the
+                                document's, and each says so where it sits
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
@@ -1589,9 +1601,10 @@ produce a config the remote accepts and mishandles.
   button. **Counted a third way on 11 August 2026 and it is fifty**, from a product photograph, which
   is a free confirmation of a number that had cost a firmware read and a hardware census.
   `reference/silhouettes/h525.svg` is that count as a drawing, and what it does
-  **not** carry is any scan code: the positions are drawn and the assignment is open, since section 48
-  is why no read path here can produce it. Nor is it a usable map of **where** the keys are, since every
-  key in it sits on a horizontal axis and a 525's rows do not. The four soft keys are narrowed to the set
+  **not** carry is any scan code, because arch 9 (Harmony 525) has none measured at all: the positions
+  are drawn and the assignment is open, since section 48 is why no read path here can produce it. Nor is
+  it yet a usable map of **where** the keys are, since every key in it sits on a horizontal axis and a
+  525's rows do not, which is what the traced geometry fixes on the models that have it. The four soft keys are narrowed to the set
   `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
   columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
   filling one in has to be a deliberate change with a measurement behind it.

@@ -8,6 +8,9 @@
       "path": "./packages/codec"
     },
     {
+      "path": "./packages/silhouettes"
+    },
+    {
       "path": "./packages/usb"
     },
     {

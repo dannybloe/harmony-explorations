@@ -1,292 +1,326 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 880" width="240" height="880"
-     role="img" aria-labelledby="title desc">
-  <title id="title">Harmony 525, button silhouette</title>
-  <desc id="desc">Outline drawing of the Harmony 525 front face, one shape per button, drawn from a
-    product photograph rather than traced from it. Fifty buttons, which is the count section 89
-    derived from the firmware and the config before this was drawn. It names one member of the
-    520 and 525 pair rather than both, because a regional alias is not the same hardware: the two
-    photographs of that pair differ by exactly the four teletext colour keys below, and this drawing
-    was made from the one that has them. So a silhouette belongs to a skin rather than to a model.
-    Stroke only apart from those four colour keys, where the colour is the button's identity rather
-    than decoration.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 263.787 1004"
+     role="img" aria-labelledby="title desc" class="silhouette silhouette-h525">
+  <title id="title">Harmony 525, front face</title>
+  <desc id="desc">Outline drawing of the Harmony 525 front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 50 buttons, of which 0 carry a measured scan code. Its screen is not a touch surface: the keys flanking it are how its labels are reached. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
 
   <!--
-    A stated limitation, from the owner on 11 August 2026, and it is about the buttons rather than the
-    case. **Every key in this file sits on a horizontal axis**, and on a real Harmony many rows do not:
-    they sit at an angle or follow a curve across the face. The contour is measured and the placement
-    within it is schematic, so this drawing is good for saying which keys exist and roughly where, and
-    not for putting a hit region on a screen at the right place.
+    GENERATED FILE. Do not edit.
 
-    That is why the fleet of thirty odd further drawings was stopped rather than finished. The rule the
-    case outline already follows, sample the photograph rather than draw the obvious shape, has to
-    apply to the key rows too, and it did not. The work is parked until FreeHarmony needs it, since the
-    interface that would expose the difference does not exist yet.
-  -->
-
-  <!--
-    Why this exists and why it is here rather than in FreeHarmony.
-
-    It is the physical button map in executable form. `docs/findings.md` section 89 established that
-    the 525 has fifty matrix buttons, scan code `group * 8 + column` running 1 to 64, with fifty
-    codes bound by both of its configs. That is a set of numbers with no positions attached, and a
-    position is what a user interface has to show. So each shape here carries an id, and a
-    `data-scan` attribute wherever the code is actually known.
-
-    **Almost none of them is known, and the file says so rather than guessing.** Only the four soft
-    keys have been narrowed, to the set {30, 31, 38, 39}, and not individually: the assignment inside
-    that block needs to know which of columns 6 and 7 is the left one, which nothing here has
-    established. `data-scan-candidates` marks that honestly. Filling these in is what a key press
-    census on the remote would produce, and section 48 explains why USB alone cannot: a remote on USB
-    never runs its keypad handler.
-
-    Drawn, not traced. The reference photograph is third party and unpublishable,
-    `../lab/reference/forum-images/PROVENANCE.md`; this is our own geometry and carries no such
-    problem, which is the whole reason for drawing rather than shipping a photo.
+    The measured geometry lives in packages/silhouettes/src/models/, which is where a
+    correction goes, and `make silhouettes` writes this. A test asserts this file is byte
+    for byte what the generator produces, so an edit here fails the suite rather than
+    surviving as a second source.
   -->
 
   <style>
-    /* currentColor throughout, so the page decides light or dark and this follows. */
-    .body { fill: none; stroke: currentColor; stroke-width: 2; }
-    .key  { fill: none; stroke: currentColor; stroke-width: 1.4; }
-    .lcd  { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 4 3; }
-    .lbl  { fill: currentColor; stroke: none; font: 8px system-ui, sans-serif; text-anchor: middle; }
-    .lbl-sm { fill: currentColor; stroke: none; font: 6px system-ui, sans-serif; text-anchor: middle; }
-    .zone { fill: none; stroke: currentColor; stroke-width: 0.8; stroke-dasharray: 2 2; }
-    .region { fill: none; stroke: currentColor; stroke-width: 1.2; }
-    /* The teletext keys keep the currentColor stroke as well as the fill, so the shape still reads
-       against a light and a dark background. These four fills are the only ones in the file. */
-    .key-colour { stroke: currentColor; stroke-width: 1.2; }
-    .c-red    { fill: #d23c3c; }
-    .c-green  { fill: #2f9e44; }
-    .c-yellow { fill: #d9c22b; }
-    .c-blue   { fill: #3b6fd4; }
+    .silhouette { --case-fill: #fff; --case-stroke: #333;
+                  --recess-fill: #eee; --key-fill: #fff;
+                  --key-stroke: #666; --key-text: #222;
+                  --accent: #d23c3c; --font: system-ui, sans-serif; }
+    .body   { fill: var(--case-fill); stroke: var(--case-stroke); }
+    .region-recess { fill: var(--recess-fill); stroke: var(--case-stroke); }
+    .region-seam   { fill: none; stroke: var(--case-stroke); }
+    .lcd    { fill: var(--recess-fill); stroke: var(--case-stroke); }
+    .rocker-fill { fill: var(--key-fill); stroke: none; }
+    .rocker { fill: none; stroke: var(--key-stroke); }
+    .key    { fill: var(--key-fill); stroke: var(--key-stroke); }
+    /* A rocker's segment takes the key fill and no outline of its own, so the moulding reads as the
+       one physical key it is while the halves still colour and click separately. */
+    .key-segment { stroke: none; }
+    .seam   { fill: none; stroke: var(--key-stroke); }
+    .lbl    { fill: var(--key-text); stroke: none; font-family: var(--font); }
+    .mark-fill   { fill: var(--key-text); }
+    .mark-stroke { stroke: var(--key-text); }
+    .mark-accent.mark-fill   { fill: var(--accent); }
+    .mark-accent.mark-stroke { stroke: var(--accent); }
+    .body, .region-recess, .region-seam, .lcd, .key, .rocker, .seam
+      { vector-effect: non-scaling-stroke; }
   </style>
 
-  <!--
-    The case, as one closed contour.
-
-    **This one is the counterexample to its own brief.** The instruction that produced it said the 5xx
-    is a near rectangle with slightly drawn in sides, and the sides are not drawn in at all: sampling
-    the photograph row by row gives a half width of 110 from y=31 to y=830 with a wobble of one pixel,
-    which is jpeg noise and not a taper. So the sides are drawn straight, because that is what the
-    measurement says, and what actually distinguishes this remote is the pair of very generous ends,
-    a shallow domed top with a flat apex 62 wide and a tightly rounded foot. The curves below are
-    fitted to those samples: the top reaches full width by y=31, the foot leaves it at y=830.
-  -->
-  <path class="body" d="M 14 31
-    C 14 20 42 10 89 10
-    C 110 8 130 8 151 10
-    C 198 10 226 20 226 31
-    L 226 830
-    C 226 845 216 862 190 869
-    C 172 873 68 873 50 869
-    C 24 862 14 845 14 830 Z" />
-
-  <!--
-    The recessed black panel, which is how a 5xx reads at a glance: a tall bay holding everything from
-    the power key down to the backlight, pinching in at the rockers and closing in a horseshoe under
-    the direction pad. Measured left edge 33 from y=29 down to y=464, then stepping in to 56 and
-    closing by y=600. Not a button, and no `k-` id, so nothing counts it.
-  -->
-  <path class="region" id="panel-recess" d="M 42 28
-    L 198 28
-    C 204 28 208 32 208 38
-    L 208 430
-    C 208 452 176 452 176 470
-    L 176 530
-    C 176 570 168 602 140 602
-    L 100 602
-    C 72 602 64 570 64 530
-    L 64 470
-    C 64 452 32 452 32 430
-    L 32 38
-    C 32 32 36 28 42 28 Z" />
-
-  <g id="power-and-mode">
-    <!-- 1 -->
-    <circle class="key" id="k-power" cx="42" cy="44" r="11" />
-    <text class="lbl-sm" x="42" y="66">power</text>
-    <!-- 2 -->
-    <rect class="key" id="k-activities" x="62" y="76" width="120" height="17" rx="8.5" />
-    <text class="lbl" x="122" y="88">Activities</text>
-    <!-- 3, 4 -->
-    <rect class="key" id="k-devices" x="46" y="101" width="70" height="16" rx="8" />
-    <text class="lbl" x="81" y="112">Devices</text>
-    <rect class="key" id="k-help" x="124" y="101" width="70" height="16" rx="8" />
-    <text class="lbl" x="159" y="112">Help</text>
+  <g class="layer-case">
+    <path class="body" d="M 259.787 17.815 L 259.787 943.114 C 259.787 975.797 258.376 1000 128.463 1000 C -0.028 1000 0 966.289 0 938.197 L 0 12.733 C 0 12.733 49.02 0.113 128.119 0 C 207.206 -0.11 259.787 12.733 259.787 12.733 L 259.787 17.815 Z" fill="#fff" stroke="#333" stroke-width="2" />
+    <clipPath id="case-clip"><path d="M 259.787 17.815 L 259.787 943.114 C 259.787 975.797 258.376 1000 128.463 1000 C -0.028 1000 0 966.289 0 938.197 L 0 12.733 C 0 12.733 49.02 0.113 128.119 0 C 207.206 -0.11 259.787 12.733 259.787 12.733 L 259.787 17.815 Z" /></clipPath>
+    <path class="region region-recess" id="top-band" d="M 128.119 0 C 49.02 0.113 0 12.733 0 12.733 L 0 38.906 L 259.787 38.906 L 259.787 12.733 C 259.787 12.733 207.206 -0.11 128.119 0 Z" clip-path="url(#case-clip)" fill="#eee" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="panel" d="M 16.868 38.906 L 16.868 598.782 C 16.868 657.324 66.214 704.78 127.072 704.78 L 134.743 704.78 C 195.611 704.78 244.957 657.324 244.957 598.782 L 244.957 38.906 L 16.868 38.906 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="activities-bezel" d="M 189.183 69.79 C 189.183 77.501 183.043 83.751 175.465 83.751 L 85.267 83.751 C 77.689 83.751 71.549 77.501 71.549 69.79 C 71.549 62.089 77.689 55.839 85.267 55.839 L 175.465 55.839 C 183.043 55.839 189.183 62.089 189.183 69.79 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-recess" id="screen-bezel" d="M 213.401 261.855 C 213.401 267.811 209.402 272.633 204.47 272.633 L 55.197 272.633 C 50.263 272.633 46.263 267.811 46.263 261.855 L 46.263 172.919 C 46.263 166.965 50.263 162.141 55.197 162.141 L 204.47 162.141 C 209.402 162.141 213.401 166.965 213.401 172.919 L 213.401 261.855 Z" clip-path="url(#case-clip)" fill="#eee" stroke="#333" stroke-width="1" />
   </g>
-
-  <!-- The screen, and the four buttons flanking it. Not a button itself, so it is dashed. -->
-  <g id="screen">
-    <rect class="lcd" x="52" y="146" width="136" height="86" rx="4" />
-    <line class="zone" x1="120" y1="146" x2="120" y2="232" />
-    <line class="zone" x1="52" y1="189" x2="188" y2="189" />
-    <text class="lbl-sm" x="86" y="170">zone 1</text>
-    <text class="lbl-sm" x="154" y="170">zone 2</text>
-    <text class="lbl-sm" x="86" y="213">zone 3</text>
-    <text class="lbl-sm" x="154" y="213">zone 4</text>
+  <g class="layer-screen">
+    <rect class="lcd" id="screen" x="46.263" y="162.141" width="167.138" height="110.492" rx="3" data-pixels="96x64" data-touch="false" fill="#eee" stroke="#333" stroke-width="1" />
   </g>
-
-  <!--
-    The four soft keys, 5 to 8. Two on each side of the screen, each answering the zone beside it,
-    which is what makes this remote's screen navigable without a touch panel or a page button.
-
-    Their scan codes are the set below and the assignment within it is open, so every one of the four
-    carries the same candidate list rather than a guess. Section 119's capability table records the
-    other half of this: the 5xx has no page button, and these carry the mode switches instead.
-  -->
-  <g id="soft-keys">
-    <rect class="key" id="k-soft-upper-left"  x="30" y="152" width="14" height="30" rx="6"
-          data-scan-candidates="30 31 38 39" data-zone="1" />
-    <rect class="key" id="k-soft-lower-left"  x="30" y="196" width="14" height="30" rx="6"
-          data-scan-candidates="30 31 38 39" data-zone="3" />
-    <rect class="key" id="k-soft-upper-right" x="196" y="152" width="14" height="30" rx="6"
-          data-scan-candidates="30 31 38 39" data-zone="2" />
-    <rect class="key" id="k-soft-lower-right" x="196" y="196" width="14" height="30" rx="6"
-          data-scan-candidates="30 31 38 39" data-zone="4" />
+  <defs>
+    <clipPath id="seg-k-devices"><path d="M 40.359 94.218 L 130.563 94.218 L 130.563 112.732 L 40.359 112.732 Z" /></clipPath>
+    <clipPath id="seg-k-help"><path d="M 130.563 94.218 L 220.766 94.218 L 220.766 112.732 L 130.563 112.732 Z" /></clipPath>
+    <clipPath id="seg-k-soft-upper-left"><path d="M 16.988 177.327 L 28.538 177.327 L 28.538 226.718 L 16.988 226.718 Z" /></clipPath>
+    <clipPath id="seg-k-soft-lower-left"><path d="M 16.988 226.718 L 28.538 226.718 L 28.538 276.109 L 16.988 276.109 Z" /></clipPath>
+    <clipPath id="seg-k-soft-upper-right"><path d="M 233.098 177.327 L 244.638 177.327 L 244.638 226.718 L 233.098 226.718 Z" /></clipPath>
+    <clipPath id="seg-k-soft-lower-right"><path d="M 233.098 226.718 L 244.638 226.718 L 244.638 276.109 L 233.098 276.109 Z" /></clipPath>
+    <clipPath id="seg-k-screen-prev"><path d="M 40.359 291.468 L 130.563 291.468 L 130.563 309.985 L 40.359 309.985 Z" /></clipPath>
+    <clipPath id="seg-k-screen-next"><path d="M 130.563 291.468 L 220.766 291.468 L 220.766 309.985 L 130.563 309.985 Z" /></clipPath>
+    <clipPath id="seg-k-guide"><path d="M 41.414 437.731 L 131.618 437.731 L 131.618 456.245 L 41.414 456.245 Z" /></clipPath>
+    <clipPath id="seg-k-info"><path d="M 131.618 437.731 L 221.821 437.731 L 221.821 456.245 L 131.618 456.245 Z" /></clipPath>
+    <clipPath id="seg-k-exit"><path d="M 41.414 471.544 L 131.618 471.544 L 131.618 490.059 L 41.414 490.059 Z" /></clipPath>
+    <clipPath id="seg-k-menu"><path d="M 131.618 471.544 L 221.821 471.544 L 221.821 490.059 L 131.618 490.059 Z" /></clipPath>
+    <clipPath id="seg-k-channel-up"><path d="M 128.865 600.433 L 128.865 200.433 A 400 400 0 0 1 528.728 589.962 Z" /></clipPath>
+    <clipPath id="seg-k-channel-down"><path d="M 128.865 600.433 L 528.728 589.962 A 400 400 0 0 1 410.719 884.261 Z" /></clipPath>
+    <clipPath id="seg-k-glow"><path d="M 128.865 600.433 L 410.719 884.261 A 400 400 0 0 1 -141.885 894.872 Z" /></clipPath>
+    <clipPath id="seg-k-volume-down"><path d="M 128.865 600.433 L -141.885 894.872 A 400 400 0 0 1 -270.55 578.801 Z" /></clipPath>
+    <clipPath id="seg-k-volume-up"><path d="M 128.865 600.433 L -270.55 578.801 A 400 400 0 0 1 128.865 200.433 Z" /></clipPath>
+    <clipPath id="seg-k-direction-up"><path d="M 128.865 600.433 L 73.744 544.344 L 183.986 544.344 Z" /></clipPath>
+    <clipPath id="seg-k-direction-right"><path d="M 128.865 600.433 L 183.986 544.344 L 183.986 656.522 Z" /></clipPath>
+    <clipPath id="seg-k-direction-down"><path d="M 128.865 600.433 L 183.986 656.522 L 73.744 656.522 Z" /></clipPath>
+    <clipPath id="seg-k-direction-left"><path d="M 128.865 600.433 L 73.744 656.522 L 73.744 544.344 Z" /></clipPath>
+  </defs>
+  <g class="layer-keys">
+    <path class="rocker-fill" id="rocker-ring" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-pad" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-rail-left" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-rail-right" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-bar-activity" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-bar-page" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-bar-guide" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-bar-exit" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" fill="#fff" stroke="none" />
+    <g class="key-group" id="k-all-off" data-name="AllOff" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 58.55 38.933 C 58.55 45.9 53.002 51.543 46.161 51.543 C 39.312 51.543 33.761 45.9 33.761 38.933 C 33.761 31.967 39.312 26.321 46.161 26.321 C 53.002 26.321 58.55 31.967 58.55 38.933 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(46.156 38.932) scale(8.439)"><path class="mark mark-stroke" d="M -0.5 -0.55 A 0.75 0.75 0 1 0 0.5 -0.55" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M 0 -0.9 V -0.1" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-activities" data-name="Activities" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 182.194 69.79 C 182.194 74.243 178.65 77.846 174.277 77.846 L 86.452 77.846 C 82.079 77.846 78.538 74.243 78.538 69.79 C 78.538 65.349 82.079 61.743 86.452 61.743 L 174.277 61.743 C 178.65 61.743 182.194 65.349 182.194 69.79 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="130.366" y="75.045" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Activities</text>
+    </g>
+    <g class="key-group" id="k-devices" data-name="Devices" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#seg-k-devices)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="85.461" y="108.725" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Devices</text>
+    </g>
+    <g class="key-group" id="k-help" data-name="Help" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" clip-path="url(#seg-k-help)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="175.664" y="108.725" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Help</text>
+    </g>
+    <g class="key-group" id="k-soft-upper-left" data-name="SoftUpperLeft" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="1">
+      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#seg-k-soft-upper-left)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(22.763 202.022) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-soft-lower-left" data-name="SoftLowerLeft" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="3">
+      <path class="key key-segment" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" clip-path="url(#seg-k-soft-lower-left)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(22.763 251.414) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-soft-upper-right" data-name="SoftUpperRight" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="2">
+      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#seg-k-soft-upper-right)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(238.868 202.022) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-soft-lower-right" data-name="SoftLowerRight" data-kind="screen" data-src="printed" data-scan-candidates="30 31 38 39" data-zone="4">
+      <path class="key key-segment" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" clip-path="url(#seg-k-soft-lower-right)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(238.868 251.414) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-screen-prev" data-name="ScreenPrev" data-kind="screen" data-src="printed">
+      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#seg-k-screen-prev)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(85.461 300.727) scale(7.647)"><path class="mark mark-fill" d="M 0.85 -0.85 L 0.85 0.85 L -0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-screen-next" data-name="ScreenNext" data-kind="screen" data-src="printed">
+      <path class="key key-segment" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" clip-path="url(#seg-k-screen-next)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(175.664 300.727) scale(7.647)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-stop" data-name="Stop" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 72.539 343.495 C 72.539 353.426 64.625 361.483 54.861 361.483 C 45.106 361.483 37.192 353.426 37.192 343.495 C 37.192 333.574 45.106 325.517 54.861 325.517 C 64.625 325.517 72.539 333.574 72.539 343.495 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(54.866 343.5) scale(9.333)"><path class="mark mark-fill" d="M -0.75 -0.75 H 0.75 V 0.75 H -0.75 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="54.866" y="369.683" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Stop</text>
+    </g>
+    <g class="key-group" id="k-skip-back" data-name="SkipBack" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 123.165 343.495 C 123.165 353.426 115.251 361.483 105.495 361.483 C 95.732 361.483 87.825 353.426 87.825 343.495 C 87.825 333.574 95.732 325.517 105.495 325.517 C 115.251 325.517 123.165 333.574 123.165 343.495 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(105.495 343.5) scale(8)"><path class="mark mark-fill" d="M -1 -0.85 H -0.78 V 0.85 H -1 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.15 -0.85 L 0.15 0.85 L -0.72 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 1 -0.85 L 1 0.85 L 0.15 0 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="105.495" y="369.683" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Replay</text>
+    </g>
+    <g class="key-group" id="k-skip-forward" data-name="SkipForward" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 173.801 343.495 C 173.801 353.426 165.887 361.483 156.131 361.483 C 146.368 361.483 138.452 353.426 138.452 343.495 C 138.452 333.574 146.368 325.517 156.131 325.517 C 165.887 325.517 173.801 333.574 173.801 343.495 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(156.127 343.5) scale(8)"><path class="mark mark-fill" d="M -1 -0.85 L -1 0.85 L -0.15 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M -0.15 -0.85 L -0.15 0.85 L 0.72 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.78 -0.85 H 1 V 0.85 H 0.78 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="156.127" y="369.683" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Skip</text>
+    </g>
+    <g class="key-group" id="k-play" data-name="Play" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 224.428 343.495 C 224.428 353.426 216.524 361.483 206.758 361.483 C 196.994 361.483 189.088 353.426 189.088 343.495 C 189.088 333.574 196.994 325.517 206.758 325.517 C 216.524 325.517 224.428 333.574 224.428 343.495 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(206.758 343.5) scale(8.824)"><path class="mark mark-fill" d="M -0.7 -0.85 L -0.7 0.85 L 0.8 0 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="206.758" y="369.683" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Play</text>
+    </g>
+    <g class="key-group" id="k-record" data-name="Record" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 72.539 395.324 C 72.539 405.256 64.625 413.312 54.861 413.312 C 45.106 413.312 37.192 405.256 37.192 395.324 C 37.192 385.393 45.106 377.344 54.861 377.344 C 64.625 377.344 72.539 385.393 72.539 395.324 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(54.866 395.328) scale(10.484)"><path class="mark mark-fill mark-accent" d="M -0.62 0 A 0.62 0.62 0 1 0 0.62 0 A 0.62 0.62 0 1 0 -0.62 0 Z" fill="#d23c3c" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="54.866" y="421.512" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Rec</text>
+    </g>
+    <g class="key-group" id="k-rewind" data-name="Rewind" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 123.165 395.324 C 123.165 405.256 115.251 413.312 105.495 413.312 C 95.732 413.312 87.825 405.256 87.825 395.324 C 87.825 385.393 95.732 377.344 105.495 377.344 C 115.251 377.344 123.165 385.393 123.165 395.324 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(105.495 395.328) scale(8.649)"><path class="mark mark-fill" d="M 0.05 -0.85 L 0.05 0.85 L -0.9 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.95 -0.85 L 0.95 0.85 L 0.05 0 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="105.495" y="421.512" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Rew</text>
+    </g>
+    <g class="key-group" id="k-fast-forward" data-name="FastForward" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 173.801 395.324 C 173.801 405.256 165.887 413.312 156.131 413.312 C 146.368 413.312 138.452 405.256 138.452 395.324 C 138.452 385.393 146.368 377.344 156.131 377.344 C 165.887 377.344 173.801 385.393 173.801 395.324 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(156.127 395.328) scale(8.649)"><path class="mark mark-fill" d="M -0.95 -0.85 L -0.95 0.85 L -0.05 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M -0.05 -0.85 L -0.05 0.85 L 0.9 0 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="156.127" y="421.512" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Fwd</text>
+    </g>
+    <g class="key-group" id="k-pause" data-name="Pause" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 224.428 395.324 C 224.428 405.256 216.524 413.312 206.758 413.312 C 196.994 413.312 189.088 405.256 189.088 395.324 C 189.088 385.393 196.994 377.344 206.758 377.344 C 216.524 377.344 224.428 385.393 224.428 395.324 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(206.758 395.328) scale(7.647)"><path class="mark mark-fill" d="M -0.65 -0.85 H -0.25 V 0.85 H -0.65 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.25 -0.85 H 0.65 V 0.85 H 0.25 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="206.758" y="421.512" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Pause</text>
+    </g>
+    <g class="key-group" id="k-guide" data-name="Guide" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#seg-k-guide)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="86.516" y="452.238" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Guide</text>
+    </g>
+    <g class="key-group" id="k-info" data-name="Info" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" clip-path="url(#seg-k-info)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="176.719" y="452.238" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Info</text>
+    </g>
+    <g class="key-group" id="k-exit" data-name="Exit" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#seg-k-exit)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="86.516" y="486.052" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Exit</text>
+    </g>
+    <g class="key-group" id="k-menu" data-name="Menu" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" clip-path="url(#seg-k-menu)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="176.719" y="486.052" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Menu</text>
+    </g>
+    <g class="key-group" id="k-volume-mute" data-name="VolumeMute" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 119.484 515.292 C 119.484 520.173 115.587 524.143 110.785 524.143 L 49.591 524.143 C 44.777 524.143 40.88 520.173 40.88 515.292 C 40.88 510.397 44.777 506.43 49.591 506.43 L 110.785 506.43 C 115.587 506.43 119.484 510.397 119.484 515.292 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="80.182" y="520.537" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Mute</text>
+    </g>
+    <g class="key-group" id="k-prev-channel" data-name="PrevChannel" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 219.709 515.292 C 219.709 520.173 215.812 524.143 211.01 524.143 L 149.816 524.143 C 145.012 524.143 141.115 520.173 141.115 515.292 C 141.115 510.397 145.012 506.43 149.816 506.43 L 211.01 506.43 C 215.812 506.43 219.709 510.397 219.709 515.292 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="180.412" y="520.537" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Prev</text>
+    </g>
+    <g class="key-group" id="k-channel-up" data-name="ChannelUp" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-channel-up)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(231.33 562) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.248 H -0.248 V -0.903 H 0.248 V -0.248 H 1 V 0.248 H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-channel-down" data-name="ChannelDown" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-channel-down)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(221.98 635) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-glow" data-name="Glow" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-glow)" fill="#fff" stroke="none" />
+      <text class="lbl layer-text" x="130.74" y="697.92" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Glow</text>
+    </g>
+    <g class="key-group" id="k-volume-down" data-name="VolumeDown" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-volume-down)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(38.1 635) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-volume-up" data-name="VolumeUp" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" clip-path="url(#seg-k-volume-up)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(30.54 562) scale(5.5)"><path class="mark mark-fill" d="M -1 -0.248 H -0.248 V -0.903 H 0.248 V -0.248 H 1 V 0.248 H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-up" data-name="DirectionUp" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-up)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(128.87 564.05) scale(6.471)"><path class="mark mark-fill" d="M -0.8 0.85 L 0.8 0.85 L 0 -0.85 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-right" data-name="DirectionRight" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-right)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(165.24 600.43) scale(6.471)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-down" data-name="DirectionDown" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-down)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(128.87 636.81) scale(6.471)"><path class="mark mark-fill" d="M -0.8 -0.85 L 0.8 -0.85 L 0 0.85 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-left" data-name="DirectionLeft" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" clip-path="url(#seg-k-direction-left)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(92.49 600.43) scale(6.471)"><path class="mark mark-fill" d="M 0.85 -0.85 L 0.85 0.85 L -0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-select" data-name="Select" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 149.077 600.433 C 149.077 611.79 140.033 620.995 128.866 620.995 C 117.699 620.995 108.655 611.79 108.655 600.433 C 108.655 589.073 117.699 579.869 128.866 579.869 C 140.033 579.869 149.077 589.073 149.077 600.433 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="128.866" y="605.682" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">OK</text>
+    </g>
+    <g class="key-group" id="k-number1" data-name="Number1" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 85.986 736.614 C 85.986 741.844 81.322 746.087 75.566 746.087 L 45.461 746.087 C 39.705 746.087 35.041 741.844 35.041 736.614 L 35.041 735.587 C 35.041 730.357 39.705 726.112 45.461 726.112 L 75.566 726.112 C 81.322 726.112 85.986 730.357 85.986 735.587 L 85.986 736.614 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="51.514" y="741.35" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">1</text>
+    </g>
+    <g class="key-group" id="k-number2" data-name="Number2" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 155.74 736.614 C 155.74 741.844 151.087 746.087 145.331 746.087 L 115.213 746.087 C 109.457 746.087 104.796 741.844 104.796 736.614 L 104.796 735.587 C 104.796 730.357 109.457 726.112 115.213 726.112 L 145.331 726.112 C 151.087 726.112 155.74 730.357 155.74 735.587 L 155.74 736.614 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="121.268" y="741.35" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">2</text>
+      <text class="lbl layer-text" x="139.268" y="739.25" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">abc</text>
+    </g>
+    <g class="key-group" id="k-number3" data-name="Number3" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 225.503 736.614 C 225.503 741.844 220.839 746.087 215.093 746.087 L 184.978 746.087 C 179.222 746.087 174.558 741.844 174.558 736.614 L 174.558 735.587 C 174.558 730.357 179.222 726.112 184.978 726.112 L 215.093 726.112 C 220.839 726.112 225.503 730.357 225.503 735.587 L 225.503 736.614 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="191.031" y="741.35" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">3</text>
+      <text class="lbl layer-text" x="209.031" y="739.25" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">def</text>
+    </g>
+    <g class="key-group" id="k-number4" data-name="Number4" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 85.986 769.435 C 85.986 774.665 81.322 778.908 75.566 778.908 L 45.461 778.908 C 39.705 778.908 35.041 774.665 35.041 769.435 L 35.041 768.405 C 35.041 763.168 39.705 758.933 45.461 758.933 L 75.566 758.933 C 81.322 758.933 85.986 763.168 85.986 768.405 L 85.986 769.435 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="51.514" y="774.171" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">4</text>
+      <text class="lbl layer-text" x="69.514" y="772.07" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">ghi</text>
+    </g>
+    <g class="key-group" id="k-number5" data-name="Number5" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 155.74 769.435 C 155.74 774.665 151.087 778.908 145.331 778.908 L 115.213 778.908 C 109.457 778.908 104.796 774.665 104.796 769.435 L 104.796 768.405 C 104.796 763.168 109.457 758.933 115.213 758.933 L 145.331 758.933 C 151.087 758.933 155.74 763.168 155.74 768.405 L 155.74 769.435 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="121.268" y="774.171" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">5</text>
+      <text class="lbl layer-text" x="139.268" y="772.07" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">jkl</text>
+    </g>
+    <g class="key-group" id="k-number6" data-name="Number6" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 225.503 769.435 C 225.503 774.665 220.839 778.908 215.093 778.908 L 184.978 778.908 C 179.222 778.908 174.558 774.665 174.558 769.435 L 174.558 768.405 C 174.558 763.168 179.222 758.933 184.978 758.933 L 215.093 758.933 C 220.839 758.933 225.503 763.168 225.503 768.405 L 225.503 769.435 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="191.031" y="774.171" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">6</text>
+      <text class="lbl layer-text" x="209.031" y="772.07" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">mno</text>
+    </g>
+    <g class="key-group" id="k-number7" data-name="Number7" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 85.986 802.256 C 85.986 807.484 81.322 811.729 75.566 811.729 L 45.461 811.729 C 39.705 811.729 35.041 807.484 35.041 802.256 L 35.041 801.219 C 35.041 795.989 39.705 791.744 45.461 791.744 L 75.566 791.744 C 81.322 791.744 85.986 795.989 85.986 801.219 L 85.986 802.256 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="51.514" y="806.987" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">7</text>
+      <text class="lbl layer-text" x="69.514" y="804.887" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">pqrs</text>
+    </g>
+    <g class="key-group" id="k-number8" data-name="Number8" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 155.74 802.256 C 155.74 807.484 151.087 811.729 145.331 811.729 L 115.213 811.729 C 109.457 811.729 104.796 807.484 104.796 802.256 L 104.796 801.219 C 104.796 795.989 109.457 791.744 115.213 791.744 L 145.331 791.744 C 151.087 791.744 155.74 795.989 155.74 801.219 L 155.74 802.256 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="121.268" y="806.987" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">8</text>
+      <text class="lbl layer-text" x="139.268" y="804.887" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">tuv</text>
+    </g>
+    <g class="key-group" id="k-number9" data-name="Number9" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 225.503 802.256 C 225.503 807.484 220.839 811.729 215.093 811.729 L 184.978 811.729 C 179.222 811.729 174.558 807.484 174.558 802.256 L 174.558 801.219 C 174.558 795.989 179.222 791.744 184.978 791.744 L 215.093 791.744 C 220.839 791.744 225.503 795.989 225.503 801.219 L 225.503 802.256 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="191.031" y="806.987" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">9</text>
+      <text class="lbl layer-text" x="209.031" y="804.887" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">wxyz</text>
+    </g>
+    <g class="key-group" id="k-star" data-name="Star" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 85.986 835.067 C 85.986 840.305 81.322 844.54 75.566 844.54 L 45.461 844.54 C 39.705 844.54 35.041 840.305 35.041 835.067 L 35.041 834.038 C 35.041 828.81 39.705 824.565 45.461 824.565 L 75.566 824.565 C 81.322 824.565 85.986 828.81 85.986 834.038 L 85.986 835.067 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="60.514" y="839.803" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">*</text>
+      <text class="lbl layer-text" x="60.514" y="852.74" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">clear</text>
+    </g>
+    <g class="key-group" id="k-number0" data-name="Number0" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 155.74 835.067 C 155.74 840.305 151.087 844.54 145.331 844.54 L 115.213 844.54 C 109.457 844.54 104.796 840.305 104.796 835.067 L 104.796 834.038 C 104.796 828.81 109.457 824.565 115.213 824.565 L 145.331 824.565 C 151.087 824.565 155.74 828.81 155.74 834.038 L 155.74 835.067 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(139 836) scale(4.444)"><path class="mark mark-stroke" d="M -0.9 0 H 0.9" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+      <text class="lbl layer-text" x="121.268" y="839.803" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">0</text>
+    </g>
+    <g class="key-group" id="k-hash" data-name="Hash" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 225.503 835.067 C 225.503 840.305 220.839 844.54 215.093 844.54 L 184.978 844.54 C 179.222 844.54 174.558 840.305 174.558 835.067 L 174.558 834.038 C 174.558 828.81 179.222 824.565 184.978 824.565 L 215.093 824.565 C 220.839 824.565 225.503 828.81 225.503 834.038 L 225.503 835.067 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="200.031" y="839.803" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">#</text>
+      <text class="lbl layer-text" x="200.031" y="852.74" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">enter</text>
+    </g>
+    <g class="key-group" id="k-red" data-name="Red" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 73.95 867.879 C 73.95 873.116 70.381 877.351 65.988 877.351 L 42.993 877.351 C 38.602 877.351 35.041 873.116 35.041 867.879 L 35.041 866.851 C 35.041 861.621 38.602 857.376 42.993 857.376 L 65.988 857.376 C 70.381 857.376 73.95 861.621 73.95 866.851 L 73.95 867.879 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(54.496 867.363) scale(9)" style="--accent: #d23c3c"><path class="mark mark-fill mark-accent" d="M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z" fill="#d23c3c" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-green" data-name="Green" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 124.428 867.879 C 124.428 873.116 120.867 877.351 116.476 877.351 L 93.471 877.351 C 89.078 877.351 85.517 873.116 85.517 867.879 L 85.517 866.851 C 85.517 861.621 89.078 857.376 93.471 857.376 L 116.476 857.376 C 120.867 857.376 124.428 861.621 124.428 866.851 L 124.428 867.879 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(104.973 867.363) scale(9)" style="--accent: #2f9e44"><path class="mark mark-fill mark-accent" d="M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z" fill="#2f9e44" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-yellow" data-name="Yellow" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 174.904 867.879 C 174.904 873.116 171.343 877.351 166.952 877.351 L 143.957 877.351 C 139.564 877.351 135.996 873.116 135.996 867.879 L 135.996 866.851 C 135.996 861.621 139.564 857.376 143.957 857.376 L 166.952 857.376 C 171.343 857.376 174.904 861.621 174.904 866.851 L 174.904 867.879 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(155.45 867.363) scale(9)" style="--accent: #d9c22b"><path class="mark mark-fill mark-accent" d="M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z" fill="#d9c22b" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-blue" data-name="Blue" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 225.39 867.879 C 225.39 873.116 221.821 877.351 217.428 877.351 L 194.433 877.351 C 190.043 877.351 186.482 873.116 186.482 867.879 L 186.482 866.851 C 186.482 861.621 190.043 857.376 194.433 857.376 L 217.428 857.376 C 221.821 857.376 225.39 861.621 225.39 866.851 L 225.39 867.879 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(205.936 867.363) scale(9)" style="--accent: #3b6fd4"><path class="mark mark-fill mark-accent" d="M -0.5 0 A 0.5 0.5 0 1 0 0.5 0 A 0.5 0.5 0 1 0 -0.5 0 Z" fill="#3b6fd4" stroke="none" /></g></g>
+    </g>
+    <path class="rocker" d="M 16.868 530.443 C 44.264 530.443 44.123 559.305 44.123 559.305 L 44.208 558.743 L 44.208 608.212 C 44.208 638.775 83.041 678.295 130.959 678.295 C 178.866 678.295 217.701 638.775 217.701 590.026 L 217.701 558.743 C 217.701 558.743 217.561 529.882 244.957 529.882 L 244.957 598.782 C 244.957 657.324 195.611 704.78 134.743 704.78 L 127.072 704.78 C 66.214 704.78 16.868 657.324 16.868 598.782 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 186.687 658.562 L 206.87 679.091" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 74.045 660.006 L 54.458 679.938" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 244.35 597.441 L 216.223 597.441" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 44.609 595.835 L 16.484 595.835" fill="none" stroke="#666" stroke-width="1.4" />
+    <text class="lbl layer-text" x="30.54" y="591" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Vol.</text>
+    <text class="lbl layer-text" x="231.33" y="591" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Ch.</text>
+    <path class="rocker" d="M 183.986 600.433 C 183.986 631.412 159.309 656.522 128.866 656.522 C 98.423 656.522 73.744 631.412 73.744 600.433 C 73.744 569.454 98.423 544.344 128.866 544.344 C 159.309 544.344 183.986 569.454 183.986 600.433 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 17.783 177.327 C 17.522 177.327 17.259 177.355 16.988 177.372 L 16.988 276.074 C 17.259 276.091 17.522 276.109 17.783 276.109 C 23.727 276.109 28.538 271.217 28.538 265.175 L 28.538 188.271 C 28.538 182.229 23.727 177.327 17.783 177.327 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 16.53 224.808 L 28.07 224.808" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 243.854 177.327 C 244.117 177.327 244.378 177.355 244.638 177.372 L 244.638 276.074 C 244.378 276.091 244.117 276.109 243.854 276.109 C 237.912 276.109 233.098 271.217 233.098 265.175 L 233.098 188.271 C 233.098 182.229 237.912 177.327 243.854 177.327 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 233.098 224.808 L 244.638 224.808" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 220.766 103.475 C 220.766 108.585 216.103 112.732 210.346 112.732 L 50.777 112.732 C 45.02 112.732 40.359 108.585 40.359 103.475 C 40.359 98.358 45.02 94.218 50.777 94.218 L 210.346 94.218 C 216.103 94.218 220.766 98.358 220.766 103.475 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 130.269 98.894 L 130.269 108.264" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 220.766 300.725 C 220.766 305.842 216.103 309.985 210.346 309.985 L 50.777 309.985 C 45.02 309.985 40.359 305.842 40.359 300.725 C 40.359 295.61 45.02 291.468 50.777 291.468 L 210.346 291.468 C 216.103 291.468 220.766 295.61 220.766 300.725 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 130.583 296.094 L 130.583 305.472" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 221.821 446.988 C 221.821 452.105 217.15 456.245 211.401 456.245 L 51.832 456.245 C 46.078 456.245 41.414 452.105 41.414 446.988 C 41.414 441.871 46.078 437.731 51.832 437.731 L 211.401 437.731 C 217.15 437.731 221.821 441.871 221.821 446.988 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 129.946 441.715 L 129.946 451.093" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 221.821 480.802 C 221.821 485.911 217.15 490.059 211.401 490.059 L 51.832 490.059 C 46.078 490.059 41.414 485.911 41.414 480.802 C 41.414 475.684 46.078 471.544 51.832 471.544 L 211.401 471.544 C 217.15 471.544 221.821 475.684 221.821 480.802 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="seam" d="M 129.931 474.897 L 129.931 484.277" fill="none" stroke="#666" stroke-width="1.4" />
   </g>
-
-  <!-- 9, 10: the two arrow bars under the screen. -->
-  <g id="arrow-bars">
-    <rect class="key" id="k-prev-page" x="46" y="244" width="66" height="15" rx="7.5" />
-    <text class="lbl" x="79" y="255">&#9664;&#9664;</text>
-    <rect class="key" id="k-next-page" x="128" y="244" width="66" height="15" rx="7.5" />
-    <text class="lbl" x="161" y="255">&#9654;&#9654;</text>
+  <g class="layer-text">
+    <text class="lbl nameplate" x="130" y="155" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Harmony 525</text>
   </g>
-
-  <!-- 11 to 18: two rows of four round transport keys. -->
-  <g id="transport">
-    <circle class="key" id="k-stop"   cx="58"  cy="286" r="13" />
-    <circle class="key" id="k-replay" cx="94"  cy="286" r="13" />
-    <circle class="key" id="k-skip"   cx="146" cy="286" r="13" />
-    <circle class="key" id="k-play"   cx="182" cy="286" r="13" />
-    <text class="lbl-sm" x="58"  y="306">Stop</text>
-    <text class="lbl-sm" x="94"  y="306">Replay</text>
-    <text class="lbl-sm" x="146" y="306">Skip</text>
-    <text class="lbl-sm" x="182" y="306">Play</text>
-
-    <circle class="key" id="k-record" cx="58"  cy="330" r="13" />
-    <circle class="key" id="k-rewind" cx="94"  cy="330" r="13" />
-    <circle class="key" id="k-forward" cx="146" cy="330" r="13" />
-    <circle class="key" id="k-pause"  cx="182" cy="330" r="13" />
-    <text class="lbl-sm" x="58"  y="350">Rec</text>
-    <text class="lbl-sm" x="94"  y="350">Rew</text>
-    <text class="lbl-sm" x="146" y="350">Fwd</text>
-    <text class="lbl-sm" x="182" y="350">Pause</text>
-  </g>
-
-  <!-- 19 to 24: three rows of two. -->
-  <g id="menu-keys">
-    <rect class="key" id="k-guide" x="46" y="366" width="70" height="16" rx="8" />
-    <text class="lbl" x="81" y="377">Guide</text>
-    <rect class="key" id="k-info" x="124" y="366" width="70" height="16" rx="8" />
-    <text class="lbl" x="159" y="377">Info</text>
-
-    <rect class="key" id="k-exit" x="46" y="390" width="70" height="16" rx="8" />
-    <text class="lbl" x="81" y="401">Exit</text>
-    <rect class="key" id="k-menu" x="124" y="390" width="70" height="16" rx="8" />
-    <text class="lbl" x="159" y="401">Menu</text>
-
-    <rect class="key" id="k-mute" x="46" y="414" width="70" height="16" rx="8" />
-    <text class="lbl" x="81" y="425">Mute</text>
-    <rect class="key" id="k-prev" x="124" y="414" width="70" height="16" rx="8" />
-    <text class="lbl" x="159" y="425">Prev</text>
-  </g>
-
-  <!-- 25 to 33: the two rockers and the direction pad. -->
-  <g id="rockers-and-pad">
-    <rect class="key" id="k-volume-up"   x="34" y="444" width="24" height="20" rx="8" />
-    <text class="lbl" x="46" y="458">+</text>
-    <rect class="key" id="k-volume-down" x="34" y="508" width="24" height="20" rx="8" />
-    <text class="lbl" x="46" y="522">&#8722;</text>
-    <text class="lbl-sm" x="46" y="484">Vol</text>
-
-    <rect class="key" id="k-channel-up"   x="182" y="444" width="24" height="20" rx="8" />
-    <text class="lbl" x="194" y="458">+</text>
-    <rect class="key" id="k-channel-down" x="182" y="508" width="24" height="20" rx="8" />
-    <text class="lbl" x="194" y="522">&#8722;</text>
-    <text class="lbl-sm" x="194" y="484">Ch</text>
-
-    <circle class="key" id="k-pad" cx="120" cy="486" r="42" />
-    <circle class="key" id="k-ok" cx="120" cy="486" r="15" />
-    <text class="lbl" x="120" y="489">OK</text>
-    <path class="key" id="k-up"    d="M113 456 h14 l-7 -9 z" />
-    <path class="key" id="k-down"  d="M113 516 h14 l-7 9 z" />
-    <path class="key" id="k-left"  d="M90 479 v14 l-9 -7 z" />
-    <path class="key" id="k-right" d="M150 479 v14 l9 -7 z" />
-  </g>
-
-  <!-- 34: the backlight. -->
-  <rect class="key" id="k-glow" x="86" y="546" width="68" height="16" rx="8" />
-  <text class="lbl" x="120" y="557">Glow</text>
-
-  <!-- 35 to 46: the keypad, three by four. -->
-  <g id="keypad">
-    <rect class="key" id="k-1" x="40" y="614" width="44" height="20" rx="6" />
-    <text class="lbl" x="62" y="628">1</text>
-    <rect class="key" id="k-2" x="98" y="614" width="44" height="20" rx="6" />
-    <text class="lbl" x="120" y="628">2 abc</text>
-    <rect class="key" id="k-3" x="156" y="614" width="44" height="20" rx="6" />
-    <text class="lbl" x="178" y="628">3 def</text>
-
-    <rect class="key" id="k-4" x="40" y="642" width="44" height="20" rx="6" />
-    <text class="lbl" x="62" y="656">4 ghi</text>
-    <rect class="key" id="k-5" x="98" y="642" width="44" height="20" rx="6" />
-    <text class="lbl" x="120" y="656">5 jkl</text>
-    <rect class="key" id="k-6" x="156" y="642" width="44" height="20" rx="6" />
-    <text class="lbl" x="178" y="656">6 mno</text>
-
-    <rect class="key" id="k-7" x="40" y="670" width="44" height="20" rx="6" />
-    <text class="lbl" x="62" y="684">7 pqrs</text>
-    <rect class="key" id="k-8" x="98" y="670" width="44" height="20" rx="6" />
-    <text class="lbl" x="120" y="684">8 tuv</text>
-    <rect class="key" id="k-9" x="156" y="670" width="44" height="20" rx="6" />
-    <text class="lbl" x="178" y="684">9 wxyz</text>
-
-    <rect class="key" id="k-star" x="40" y="698" width="44" height="20" rx="6" />
-    <text class="lbl" x="62" y="712">&#42;</text>
-    <text class="lbl-sm" x="62" y="728">clear</text>
-    <rect class="key" id="k-0" x="98" y="698" width="44" height="20" rx="6" />
-    <text class="lbl" x="120" y="712">0</text>
-    <rect class="key" id="k-hash" x="156" y="698" width="44" height="20" rx="6" />
-    <text class="lbl" x="178" y="712">&#35;</text>
-    <text class="lbl-sm" x="178" y="728">enter</text>
-  </g>
-
-  <!--
-    47 to 50: the teletext keys. The only filled shapes in this file, because here the colour is the
-    button and the printed face carries no word at all: four identical outlined circles would have
-    thrown away the only thing that tells one from another. Named as well as filled, so the drawing
-    still says which is which where the fill does not render.
-
-    They are also why this file names one member of the 520 and 525 pair rather than both, and the
-    standing of that is worth stating precisely because it is weaker than it first looks.
-
-    **What the photographs establish.** Two images of the 5xx exist in the lab reference set and they
-    differ by exactly these four keys: one has them and one does not, everything else identical. And
-    the 880 and 885 pair splits the same way, four small coloured dots below the direction pad on one
-    and a pair of chevrons on the other. Two independent pairs differing in the same feature, with a
-    mechanism, since colour keys are teletext and teletext is European. So a regional alias is not the
-    same hardware and a silhouette belongs to a skin rather than to a model. That much is solid.
-
-    **What they do not establish is which name goes with which**, on this pair. The 885 image carries
-    "HARMONY 885" on its own face, so there the direction is printed on the product. Both 5xx images
-    carry "Harmony 520" on the face, so the only thing assigning the colour keyed variant to the 525
-    is the community site's own file naming, plus the analogy to the 880 pair. That is a hypothesis of
-    upstream standing, not a measurement, and the file name here follows it because this drawing is
-    made from the colour keyed image. If it turns out backwards, the drawing is right and its name is
-    wrong, which is the cheaper of the two errors.
-  -->
-  <g id="colour-keys">
-    <circle class="key-colour c-red"    id="k-red"    cx="62"  cy="746" r="8" />
-    <text class="lbl-sm" x="62"  y="765">red</text>
-    <circle class="key-colour c-green"  id="k-green"  cx="101" cy="746" r="8" />
-    <text class="lbl-sm" x="101" y="765">green</text>
-    <circle class="key-colour c-yellow" id="k-yellow" cx="139" cy="746" r="8" />
-    <text class="lbl-sm" x="139" y="765">yellow</text>
-    <circle class="key-colour c-blue"   id="k-blue"   cx="178" cy="746" r="8" />
-    <text class="lbl-sm" x="178" y="765">blue</text>
-  </g>
-
-  <text class="lbl-sm" x="120" y="840">Harmony 525</text>
 </svg>

@@ -76,9 +76,11 @@ and 3 of a Harmony 600 sit in columns 3, 2 and 2. No modulus and no offset makes
 digits into one line, which was checked over every divisor up to 19 in both directions. A matrix
 position is a wiring decision and the tables below are the only route to a name.
 
-That is also why `reference/silhouettes/` still carries no `data-scan` attribute. A name could be placed
-on a drawing by hand, since a drawing's `Number4` is not in doubt, but the two remotes here have 32 and
-36 of their 44 and 54 buttons named, so filling in a drawing would mean guessing the rest.
+`reference/silhouettes/` carries these codes as a `data-scan` attribute, and **only** these: a drawing
+states a code on the 36 keys of a Harmony 600 and the 32 of a Harmony One that appear below, and no
+attribute at all on the rest. This paragraph used to say the drawings carry none, on the reasoning that
+filling one in would mean guessing the other 18.<!--superseded--> It would not: leaving the attribute off
+is exactly what says a code is unknown, and a test refuses a `data-scan` that this file does not name.
 
 **A key that sends no code.** The Harmony 600's two activity keys are hard buttons in its maps and never
 appear below, because an activity key selects a handler set and sends nothing itself. They are named by a

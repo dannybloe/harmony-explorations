@@ -17,7 +17,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets all clean
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading text render page activities devices alphabets silhouettes all clean
 
 BENCH_PORT ?= 8731
 
@@ -43,6 +43,7 @@ help:
 	@echo "reading      the step 6 depth number; READING_ARGS=--detail for one line a sample"
 	@echo "text         how much on screen text reads back as characters; TEXT_ARGS=--detail"
 	@echo "render       draw a config's screens as PNG; RENDER_ARGS=--config X --page N"
+	@echo "silhouettes  regenerate the remote face drawings; SILHOUETTE_ARGS=--preview"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "devices      which devices a config drives, and what each one is called"
@@ -198,6 +199,13 @@ page:
 
 # Draw a config's screens as PNG files, into the private lab rather than into the repository, because a
 # rendered screen is a picture of somebody's own equipment. Not part of `all`: it writes files.
+# The remote face drawings. `reference/silhouettes/*.svg` is generated output, so this is what changes
+# them; editing the SVG by hand fails the suite. SILHOUETTE_ARGS=--preview also writes an overlay page
+# into the lab, the drawing over the photograph it was measured from, which is the check that decides
+# whether a drawing is right. Every test in the package can pass on a key in the wrong place.
+silhouettes:
+	@node packages/silhouettes/bin/generate.ts $(SILHOUETTE_ARGS)
+
 render:
 	@node packages/codec/bin/render.ts $(RENDER_ARGS)
 

@@ -70,7 +70,7 @@ class TypeScriptProjects(unittest.TestCase):
         # having found nothing to check. Exact, not a floor of 12, per section 143: the number is
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed.
-        self.assertEqual(found, 17, 'source directories claimed by a tsconfig')
+        self.assertEqual(found, 20, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
         """`make ts` builds the root, so a package missing from it is a package nobody compiles."""
@@ -400,7 +400,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        self.assertEqual(scanned, 33, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 36, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -442,6 +442,7 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/usb/test/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
     ('packages/usb/test/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
     ('packages/usb/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
+    ('packages/silhouettes/test/models.test.ts', 'rocker.keys.length', '>=', 2): 'per rocker',
     # A physical band, where being in range is the claim and the value is hardware's business.
     ('packages/bench/test/bench.test.ts', 'period', '>', 20): 'a repeat interval a finger can feel',
     ('packages/codec/test/actions.test.ts', 'frequency', '>', 200): 'audible, which is the finding',
@@ -456,6 +457,8 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/codec/test/touch.test.ts', 'failures(shift)', '>', 20): 'beside SHIFT_FAILURES',
     # And one rule about prose, where the length is a floor on effort rather than a measurement.
     ('packages/codec/test/edit.test.ts', 'rule.why.length', '>', 40): 'a sentence, not a word',
+    ('packages/silhouettes/test/models.test.ts', 'want.why.length', '>', 40):
+        'a sentence, not a word',
 }
 
 
@@ -507,7 +510,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 33, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 36, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

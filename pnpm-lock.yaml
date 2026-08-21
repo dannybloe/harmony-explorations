@@ -72,6 +72,8 @@ importers:
         specifier: workspace:*
         version: link:../usb
 
+  packages/silhouettes: {}
+
   packages/usb:
     dependencies:
       node-hid:

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  // `bin` is included deliberately. `packages/codec` shipped nine scripts that no tsconfig claimed
+  // until 12 August 2026, so they were typechecked by nothing and a language server gave them
+  // default options. Adding a directory of TypeScript means adding it to the project in the same
+  // commit.
+  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"]
+}

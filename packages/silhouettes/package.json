@@ -1,0 +1,14 @@
+{
+  "name": "@harmony/silhouettes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Measured front face geometry per Harmony model, and the SVG it generates",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}

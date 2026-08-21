@@ -33,6 +33,9 @@ and leave this table alone.
 | phrase | superseded by | what is true instead |
 |---|---|---|
 | `another reader will not move it` | section 53 | seven readers moved it, from 26.3% to 98.1% on a Harmony 700 |
+| `still carries no `data-scan` attribute` | the traced drawings, 21 August 2026 | a drawing states a code on the keys `reference/button-maps.md` names and no attribute on the rest |
+| `Drawn rather than traced` | the traced drawings, 21 August 2026 | the geometry is traced from Logitech's own documentation, by Danny's decision, and the lab holds the trace |
+| `placement is schematic` | the traced drawings, 21 August 2026 | a traced key is where it is on the product, so a hit region may be taken from the coordinates |
 | `Twelve are named now` | section 47 | all twenty base slots are accounted for |
 | `20260 programs` | section 64 | 20374, once arch 9's mode programs became reachable |
 | `18252 programs across ten configs` | section 53 | 20374 across thirteen containers |

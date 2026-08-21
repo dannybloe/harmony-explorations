@@ -9,6 +9,13 @@ must not claim a scan code that nothing has established.
 **No lab needed.** The files are our own work and live in the repository, so these run in a fresh
 clone, which is deliberate: the assertion that costs nothing should be the one that always runs.
 
+**Two kinds of drawing live here now, and the difference is stated rather than left to be noticed.**
+`h600.svg` is **generated** from the measured geometry in `packages/silhouettes`, and the rest are
+still hand written until they are redrawn. A generated file is edited by changing the geometry and
+running `make silhouettes`; a hand edit to one fails a test in that package. What that changed for the
+checks below is how a colour is declared, not whether one may be there, so the claims are rewritten
+rather than dropped.
+
 **The conventions are asserted once, in a mixin, and not once per drawing.** Three drawings each
 carrying its own copy of the same four checks is the state `CLAUDE.md` warns about for the opcode
 table: two right copies is what precedes two diverging ones, and no test can see the drift. So
@@ -105,26 +112,52 @@ class _SilhouetteConventions:
         raw = re.findall(r'id="(k-[^"]+)"', _text(self.NAME))
         self.assertEqual(len(raw), len(set(raw)))
 
-    def test_nothing_claims_a_scan_code_yet(self):
+    def test_a_scan_code_appears_only_where_it_has_been_measured(self):
         """
-        The honest state of the button map, asserted so that filling one in has to be a deliberate
-        change with a measurement behind it. Section 48: a remote on USB never runs its keypad
-        handler, so no read path here can produce these, and arch 12 would not give up a column even
-        if it did.
+        This said **nothing** may claim a scan code, and that was true when it was written and is not
+        now. Section 133 named 32 of a Harmony One's 44 keys and 36 of a Harmony 600's 54, by decoding
+        what each scan sends and looking the frame up in the command catalogue of the account that
+        generated the config, and `reference/button-maps.md` records the result.
+
+        So the claim becomes the one that still bites: a code is here **only** if that document names
+        it. The document is parsed rather than copied, so a drawing cannot drift away from it, and a
+        drawing that names none still passes, which is right for the Harmony 525, where the route
+        needs a config Logitech compiled for us and no such config exists for that model.
+
+        Section 48 is still why this cannot be finished from hardware: a remote on USB never runs its
+        keypad handler, and arch 12 (Harmony One) would not give up a column even if it did.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
-        claimed = {k: e.get('data-scan') for k, e in buttons.items() if e.get('data-scan')}
-        self.assertEqual(claimed, {})
+        claimed = {k: int(e.get('data-scan')) for k, e in buttons.items() if e.get('data-scan')}
+        measured = set()
+        with open(os.path.join(SILHOUETTES, '..', 'button-maps.md')) as handle:
+            text = handle.read()
+        for row in re.finditer(r'^\| (\d+) \| `(\w+)` \| `[^`]*` \|$', text, re.M):
+            measured.add(int(row.group(1)))
+        for ident, scan in claimed.items():
+            with self.subTest(button=ident):
+                self.assertIn(scan, measured,
+                              f'{ident} claims scan {scan}, which nothing has measured')
+        # And no code is claimed twice, which would make one key unreachable by code.
+        self.assertEqual(len(set(claimed.values())), len(claimed))
 
-    def test_it_is_outline_only_so_it_takes_the_viewer_s_colour(self):
+    def test_no_colour_is_placed_beyond_the_interface_s_reach(self):
         """
-        The drawing convention, which is a requirement rather than taste: a grey shape is wrong in one
-        of the two themes and a hard coded colour is wrong in both. Grey is refused in every form,
-        because grey was never information. The one exception is the teletext keys, and the test below
-        is what keeps that exception from spreading.
+        What "outline only" was really protecting, restated now that a drawing has fills.
+
+        This asserted `currentColor` and no fill at all, and the requirement changed under it: the
+        interface has to colour a key to show which device it drives, so a key has a fill. The claim
+        that survives is the one that mattered, that **no colour is placed where the host cannot
+        replace it**. Two spellings satisfy it. A hand written drawing uses `currentColor`, so the page
+        decides. A generated one declares every colour through a custom property with the literal as a
+        fallback, which is also why the same literal appears as a presentation attribute: librsvg drops
+        a declaration it cannot parse, and without the attribute the whole drawing rendered black.
+
+        Grey stays refused in every form, because grey was never information.
         """
         text = _text(self.NAME)
-        self.assertIn('currentColor', text)
+        self.assertTrue('currentColor' in text or 'var(--' in text,
+                        'every colour has to come from somewhere the host can set')
         for forbidden in ('fill: grey', 'fill: gray', 'fill="grey"', 'fill="gray"'):
             self.assertNotIn(forbidden, text)
 
@@ -141,12 +174,17 @@ class _SilhouetteConventions:
         """
         text = _text(self.NAME)
         buttons = _buttons(_tree(self.NAME).getroot())
+        generated = 'GENERATED FILE' in text
 
-        used = set()
         for ident, element in buttons.items():
             classes = set((element.get('class') or '').split())
             coloured = {c for c in classes if c.startswith('c-')}
             with self.subTest(button=ident):
+                if generated:
+                    # A generated drawing states a key's own colour as `--accent` on the marking, so
+                    # the key's fill stays free for the interface. The palette classes do not exist
+                    # there, and the group is what carries the identity.
+                    continue
                 self.assertIsNone(element.get('fill'),
                                   'a fill comes from a class, never from an attribute')
                 if ident in PALETTE:
@@ -157,10 +195,24 @@ class _SilhouetteConventions:
                 else:
                     self.assertEqual(coloured, set(),
                                      'only a teletext key may be coloured')
-            used |= coloured
 
-        # The style block may declare exactly the rules the shapes use, and nothing else may declare
-        # a hex fill anywhere in the file.
+        if generated:
+            # The same claim, in the spelling a generated drawing uses: the only colours in the file
+            # beyond the palette of defaults are the four the colour keys state for themselves.
+            # The per key form only. `--accent` is also declared once as the palette's default, which
+            # is where the record dot's red comes from, and that is not a key stating a colour.
+            stated = re.findall(r'style="--accent:\s*(#[0-9a-fA-F]{6})"', text)
+            # Per model, not the whole palette: a Harmony One has no teletext keys at all, so the
+            # right expectation there is none, and asserting the four everywhere made a correct
+            # drawing fail. What the claim is really about is that nothing **else** states one.
+            present = sorted(colour for ident, (_, colour) in PALETTE.items()
+                             if f'id="{ident}"' in text)
+            self.assertEqual(sorted(stated), present,
+                             'a stated accent has spread beyond the colour keys this model has')
+            return
+
+        used = {c for e in buttons.values() for c in (e.get('class') or '').split()
+                if c.startswith('c-')}
         declared = dict(re.findall(r'\.(c-[a-z]+)\s*\{\s*fill:\s*(#[0-9a-fA-F]{6});\s*\}', text))
         self.assertEqual(set(declared), used, 'a palette rule exists if and only if a key uses it')
         for name, value in declared.items():
@@ -262,34 +314,42 @@ class TestTheHarmony600Silhouette(_SilhouetteConventions, unittest.TestCase):
         """
         self.assertEqual(sum(self.COLUMN_CENSUS), self.EXPECTED_BUTTONS)
 
-    def test_the_four_soft_keys_flank_the_screen_and_name_their_zones(self):
+    def test_the_four_keys_flanking_the_screen_name_the_zones_beside_them(self):
         """
         Same arrangement as the 525's, four keys against four quadrants, which is what makes the
-        arrangement the architecture's rather than the model's. What is different is that nothing
-        narrows their codes: section 89 narrowed the 525's to a block of four and there is no arch 14
-        equivalent, so these carry a zone and deliberately no candidate list. A candidate list here
-        would be a guess wearing the 525's clothes.
+        arrangement the architecture's rather than the model's. Logitech's own manual says as much:
+        "the side buttons beside the screen let you choose those options."
+
+        What is different is that nothing narrows their codes. Section 89 narrowed the 525's to a
+        block of four and there is no arch 14 equivalent, so these carry a zone and deliberately no
+        candidate list. A candidate list here would be a guess wearing the 525's clothes.
+
+        The ids moved from `k-soft-*` to `k-screen-*` when the drawing became generated, because an id
+        is now derived from the key's name and these are named for what the manual calls them.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
-        soft = {k: v for k, v in buttons.items() if k.startswith('k-soft-')}
-        self.assertEqual(len(soft), 4)
-        self.assertEqual(sorted(e.get('data-zone') for e in soft.values()), ['1', '2', '3', '4'])
-        for name, element in soft.items():
+        flanking = {k: v for k, v in buttons.items()
+                    if k.startswith('k-screen-') and k.endswith(('-left', '-right'))}
+        self.assertEqual(len(flanking), 4)
+        self.assertEqual(sorted(e.get('data-zone') for e in flanking.values()), ['1', '2', '3', '4'])
+        for name, element in flanking.items():
             with self.subTest(button=name):
                 self.assertIsNone(element.get('data-scan-candidates'))
 
     def test_the_fifth_screen_key_is_the_one_the_525_does_not_have(self):
         """
-        The 600 has a row of three below its screen where the 525 has two arrow bars: two page arrows
-        and a fifth screen key whose printed marking is a bar, matching the bar the panel draws across
-        its bottom row. So it claims zone 5, on the same geometric footing as the other four and
-        nothing stronger. Named outside the `k-soft-` family on purpose, so the count of flanking soft
-        keys above stays four.
+        The 600 has a row of three below its screen where the 525 has two arrow bars, and the manual
+        splits them by function: the two arrows "move through various options on the remote screen"
+        and "the center button below the remote screen" chooses one. So the centre key claims zone 5,
+        on the same geometric footing as the other four and nothing stronger, and its printed marking
+        is a bar matching the bar the panel draws across its bottom row.
+
+        Named outside the flanking family on purpose, so the count of four above stays four.
         """
         buttons = _buttons(_tree(self.NAME).getroot())
-        self.assertEqual(buttons['k-screen-bottom'].get('data-zone'), '5')
-        self.assertIn('k-page-prev', buttons)
-        self.assertIn('k-page-next', buttons)
+        self.assertEqual(buttons['k-screen-select'].get('data-zone'), '5')
+        self.assertIn('k-screen-prev', buttons)
+        self.assertIn('k-screen-next', buttons)
 
     def test_the_panel_is_not_a_touch_surface(self):
         """
@@ -305,16 +365,22 @@ class TestTheHarmony600Silhouette(_SilhouetteConventions, unittest.TestCase):
         self.assertEqual([e for e in root.iter() if e.get('id') == 'touch-surface'], [])
         self.assertIn('not a touch surface', _text(self.NAME))
 
-    def test_the_teletext_keys_are_present_and_filled(self):
+    def test_the_teletext_keys_are_present_and_each_states_its_own_colour(self):
         """
         The 600 carries all four, checked against the photograph rather than carried over from the
-        525. `_SilhouetteConventions` polices how a fill may be declared; this says that here there
-        is one, since a rule about permitted fills passes vacuously on a drawing that forgot them.
+        525. The convention above polices how a colour may be declared; this says that here there is
+        one, since a rule about permitted colours passes vacuously on a drawing that forgot them.
+
+        On the product the key itself is a light pill with a small coloured bar inside it, and that is
+        how it is drawn: the colour sits on the marking, which leaves the key's own fill free for the
+        interface to use for the device it drives.
         """
+        text = _text(self.NAME)
         buttons = _buttons(_tree(self.NAME).getroot())
-        for ident, (klass, _) in PALETTE.items():
+        for ident, (_, colour) in PALETTE.items():
             with self.subTest(button=ident):
-                self.assertIn(klass, buttons[ident].get('class').split())
+                self.assertIn(ident, buttons, f'{ident} is missing')
+                self.assertIn(f'--accent: {colour}', text)
 
 
 class TestTheHarmonyOneSilhouette(_SilhouetteConventions, unittest.TestCase):
@@ -328,21 +394,28 @@ class TestTheHarmonyOneSilhouette(_SilhouetteConventions, unittest.TestCase):
     # and nothing else. If a census ever contradicts it, the drawing is what is wrong.
     EXPECTED_BUTTONS = 44
 
-    def test_the_touch_surface_is_drawn_and_is_not_one_of_the_forty_four(self):
+    def test_the_touch_panel_is_the_screen_and_the_regions_off_it_are_buttons(self):
         """
         The positive half of the capability that base slot 17 confirms: a hit on the One's panel goes
         through a hit map rather than through the keypad matrix, sections 45 and 62, and the One is
-        the only arch 12 model. So the surface is drawn and described, and it carries no `k-` id,
-        which is what keeps it out of the count without needing an exclusion in `_buttons`.
+        the only arch 12 model.
+
+        This looked for an element called `touch-surface` and there is not one any more, which is a
+        change in the claim rather than a regression. The panel is now the **screen rectangle**, which
+        says `data-touch="true"` and carries no `k-` id, so it stays out of the button count; and the
+        four regions **off** the display, two beside it and two under it, are buttons of the forty
+        four, because they are permanent and an interface has to be able to point at them. The buttons
+        **on** the display are not here at all: they are drawn from a config, not from the case.
         """
         root = _tree(self.NAME).getroot()
-        surface = None
-        for element in root.iter():
-            if element.get('id') == 'touch-surface':
-                surface = element
-        self.assertIsNotNone(surface, 'the One draws its panel as a touch surface')
-        self.assertNotIn('touch-surface', _buttons(root))
+        screen = [e for e in root.iter() if e.get('id') == 'screen']
+        self.assertEqual(len(screen), 1, 'the One draws exactly one screen')
+        self.assertEqual(screen[0].get('data-touch'), 'true', 'and says it can be pressed')
+        self.assertNotIn('screen', _buttons(root))
         self.assertIn('touch surface', _text(self.NAME))
+        touch = {k: v for k, v in _buttons(root).items() if v.get('data-kind') == 'touch'}
+        self.assertEqual(sorted(touch),
+                         ['k-screen-next', 'k-screen-prev', 'k-soft-left', 'k-soft-right'])
 
     def test_the_two_keys_below_the_screen_name_the_half_of_the_row_above_them(self):
         """
