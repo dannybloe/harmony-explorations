@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./read": "./src/read.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"
