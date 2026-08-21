@@ -624,6 +624,35 @@ in a reply rather than the first.
 bare number where the claim is genuinely about the architecture and not about a model, since several
 models share one, and `docs/findings.md` does so throughout.
 
+## Answer in plain language, and keep the jargon out of the reply
+
+Asked for on 21 August 2026, after a long technical answer had to be repeated in ordinary words before
+it could be understood, and the plain version was the better answer. **That register is the default from
+now on**, in every reply, and the technical one only when he asks for it.
+
+What that means in practice:
+
+* **Say what a thing is before saying what happened to it.** An infrared command is a lamp blinking in a
+  precise rhythm. Once that sentence is there, "a duration block" means something; without it, it means
+  nothing and the rest of the paragraph is wasted.
+* **No internal handles in a reply.** Base slot numbers, section numbers, opcodes, arch numbers, field
+  names and file paths are this project's own vocabulary. A path is fine when he needs to open the file,
+  and a section number is fine as a pointer at the end. Neither belongs in the sentence carrying the
+  point.
+* **A number needs the thing it is a number of.** "599 of 1729 blocks" says nothing on its own. "Six of
+  every ten codes start with a pause instead of a pulse" is the same measurement and it can be checked
+  against intuition, which is what he is doing when he reads it.
+* **Lead with the consequence.** He wants to know what it means for the work: what would have broken,
+  what is now possible, what is still unknown. The route that produced the finding comes after, and
+  briefly.
+* **The rigour does not get dropped, it moves.** The measurement, the control and the counts still
+  happen and still land in the code, the tests and the documents. What changes is that the reply is
+  written for the person reading it rather than for the record.
+
+**This is about conversation, not about the documents.** `docs/findings.md` and its neighbours stay
+technical, because their reader is whoever is building this. The distinction is the same one that
+`docs/roadmap.md` in FreeHarmony already makes for itself.
+
 ## Documents must not contain em-dashes or en-dashes
 
 Convention for everything published here. Verify with a check that does not itself contain the
