@@ -29,6 +29,7 @@ export * from './inventory.ts';
 export * from './font.ts';
 export * from './alphabets.ts';
 export * from './text.ts';
+export * from './language.ts';
 export * from './render.ts';
 export * from './png.ts';
 export * from './coverage.ts';

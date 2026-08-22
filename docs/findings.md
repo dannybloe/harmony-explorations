@@ -20854,3 +20854,93 @@ it is a guess. It costs nothing either way, since the copy is idempotent.
 
 And screen opcodes 1 and 21, which section 147 lists as possibly carrying an address and which are in
 neither the census nor the renderer.
+
+## 149. A config's interface is localised, no field says which language, and one of ours is Dutch
+
+Noticed by accident. A search for the Help walkthrough's wording across the corpus returned nothing at
+all for one container, and the reason was that its screens are in **Dutch**. Twelve of the thirteen
+user configs here are English and the second Harmony 525 read is not, which nobody had spotted in a
+year of reading them.
+
+**Nothing in the file states it.** The architecture is stated, in base slot 1. The format version is
+stated. The build timestamp is stated. The language is a property of a few hundred drawn strings and of
+nothing else, so it has to be inferred, and `configLanguage` in `packages/codec/src/language.ts` is
+that inference: a set of Logitech's own menu and Help words per language, and a refusal below two
+matches.
+
+### Why it matters, which is about writing rather than reading
+
+A third to a half of every config's mode pages are the **Help walkthrough**: a chain of pages asking
+one question per device, with two keys branching to the next. Measured over seven configs:
+
+| container | arch | activities | mode pages | help pages |
+|---|---|---|---|---|
+| `h525_config` | 9 | 3 | 135 | 48 |
+| `h525_config_2` | 9 | 1 | 97 | 29 |
+| `h600_config` | 14 | 3 | 254 | 95 |
+| `h700_config` | 14 | 5 | 426 | 183 |
+| `one_config` | 12 | 8 | 330 | 168 |
+| `arch8_config_a` | 8 | 1 | 141 | 44 |
+| `arch8_config_880` | 8 | 4 | 164 | 62 |
+
+The wording is Logitech's template with the user's own device names dropped into it, so anything that
+**generates** a page has to generate it in the right language, and the service that held the
+translations is the discontinued one. This is not a blocker for a first writable config, because an
+editor makes minimal diffs and those pages are already there: as long as no device is added or removed
+the existing pages stay correct and are carried through untouched. It becomes real work at the point
+where a device or an activity is added, which is FreeHarmony's step 6.
+
+### The markers, and three corrections while choosing them
+
+| container | best | markers matched | runner up |
+|---|---|---|---|
+| `h525_config` | en | 6 of 9 | 0 |
+| `h525_config_2` | **nl** | 9 of 9 | 0 |
+| `h600_config` | en | 6 of 9 | 0 |
+| `h700_config` | en | 8 of 9 | 0 |
+| `h700_config_2` | en | 8 of 9 | 0 |
+| `one_config` | en | 7 of 9 | 0 |
+| `one_config_unprogrammed` | en | 8 of 9 | 0 |
+| `arch8_config_a` to `_d` | en | 7 of 9 | 0 |
+| `arch8_config_880` | en | 7 of 9 | 0 |
+| `arch8_config_885` | en | 6 of 9 | 0 |
+| `h525_safemode_ahcm` | none | 0 | 0 |
+| `h600_safemode_gspm` | none | 0 | 0 |
+| `h700_gspm` | none | 0 | 0 |
+
+Every runner up scores **zero**, so the answer does not rest on a margin between two plausible
+languages, and the three containers that are nobody's config score zero too, which is the calibration:
+a detector that always answered would pass a table of user configs perfectly, since twelve of thirteen
+are English.
+
+Getting there took three corrections and each is a different kind of mistake.
+
+**Shared words.** The first set included `no`, `ja` and `si`, which several of these languages use, and
+a French runner up then scored two on an English container. `yes` survived, because among these six
+only English uses it.
+
+**Diagnostic words rather than interface words.** `battery` matches all twelve English configs and also
+all three containers that are nobody's config, because a safe mode image draws battery and flash memory
+faults. It was the only thing those three matched, so removing it took the calibration from one marker
+to zero. That is the difference between a threshold with slack and a threshold with none.
+
+**An activity name is not a marker**, and a test found this rather than a measurement. `watch tv`
+matched seven configs' **activity names**, because Logitech's own software suggests that name and the
+person keeps it, so the template word and the user's own text are the same string. A Dutch config with
+an activity somebody had called "Watch TV" would have scored for English. Every activity shaped word is
+gone from all six sets, including from the four languages nothing here holds.
+
+The test that found it is the one worth copying: rather than asserting the patterns are anchored, which
+is a convention, it asserts that **no marker matches any of the 109 device labels and activity names in
+the corpus**, which is the thing anchoring was a proxy for.
+
+### What is unconfirmed
+
+Four of the six languages. German, French, Spanish and Italian are written from Logitech's own menu
+wording and nothing here holds a config in any of them, so those rows are a prediction; a test over
+them would only be checking this file against itself. The Dutch set rests on **one** container, which
+is enough to make the distinction real and not enough to be sure the set generalises.
+
+And the fact that base slot 15 or base slot 1 does not carry a language code somewhere is a negative
+result from looking rather than from reading the firmware. Nothing seeks such a field, so a byte
+holding one would be unattributed, and the byte accounting says there are none of those left.

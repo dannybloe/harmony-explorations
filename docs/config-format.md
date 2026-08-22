@@ -852,6 +852,19 @@ asymmetric arch 8 instructions outside their own picture, against none as stated
 2624 of the 3540 copy a rectangle onto itself, which is a page strip drawn where it already sits.
 Why is unread and it costs nothing either way, since the copy is idempotent.
 
+**A config's interface is localised and no field says which language.** Every word a remote shows is
+in the file as a run of glyph codes, in the language of whoever generated it, and the language itself
+is a property of a few hundred strings and of nothing else. Twelve of the thirteen user configs here
+are English and one is Dutch. It is therefore **inferred**, from Logitech's own menu and Help wording,
+which answers on all thirteen with every rival language at zero and refuses on the three containers
+that are nobody's config. A third to a half of the mode pages are the Help walkthrough, whose wording
+is that template with the user's own device names in it, so a generator has to know the language and a
+reader does not. `configLanguage`, `LANGUAGE_MARKERS`. [findings.md](findings.md) section 149.
+
+**For a writer:** the language cannot be changed by editing a field, because there is no field. It
+means regenerating every drawn string, and the service that held Logitech's translations is the
+discontinued one.
+
 **A config states its own display size**, and both opcodes say it: opcode 2 as an origin plus the
 picture's own dimensions, opcode 3 as `dx + w` by `dy + h` from the instruction itself. Nine
 containers state it both ways and agree exactly, on arch 8 and arch 14, which is what makes opcode 3
