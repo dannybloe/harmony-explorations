@@ -33,21 +33,41 @@ a design question got answered out of the file format, and the file format canno
 
 **A Harmony has activities and it has device mode, and both map the whole keypad.** An activity is
 "Watch TV": it switches equipment on, sets inputs, and gives the keypad a map spanning several devices,
-so volume goes to the amplifier and channels to the set top box. Device mode is what the **Devices** key
-gives you: a list of your equipment, and picking one points **every** button at **that one device**. A
-**Current Activity** item goes back. The Harmony 600 and the Harmony 525 have a physical Devices key; the
-Harmony One has one on its touch panel.
+so volume goes to the amplifier and channels to the set top box. Device mode is what **Devices** gives
+you: a list of your equipment, and picking one points **every** button at **that one device**. That last
+part is **Logitech's own statement** and no longer an inference, from the Harmony One manual in the lab:
+"After you select a device, the Harmony One controls only that device."
+
+**Getting in and out is per model and the words differ**, which matters because a drawing has to agree
+with the remote. The Harmony 525 has a Devices key and its own Activities key. **The Harmony 600 has no
+Devices key at all**, which this file claimed for a day: its screen writes "Devices" above the centre key<!--superseded-->
+of the three below the display, and "Activity" to come back, and the manual's button table lists every
+key on the remote without one. The Harmony One has both on its touch panel, the second called "Current
+Activity", which is **that model's wording** rather than the product's. On a Harmony 885 you press DEVICE
+and press it again to leave.
 
 Device mode is not a corner of the product. It is how anybody reaches a command that is not on their
 activity's map, which is most commands: an activity binds thirty buttons and a television answers to a
 hundred. You are watching television, you want an obscure picture setting, you press Devices, pick the
-TV, press the button, and go back to Current Activity.
+TV, press the button, and go back. **Logitech's advice is the opposite of that practice** and both are
+worth knowing: the 885 manual says you "should never need to use Device mode during normal use" and that
+customising an activity eliminates it. Danny uses it routinely. The application serves both, which is an
+argument for an activity screen editor rather than against the device page.
 
 **A button map therefore belongs to a device before it belongs to an activity**, section 151: of 1105
 pairs of a device and a button, 1096 send the same command in every activity that binds them, and 47 of
 50 devices agree everywhere. An activity's map is the device's map plus that activity's overrides. So a
 writer that changes a device's button has to reach every activity that inherited it, or the change is
 invisible in the activity somebody is sitting in.
+
+**Except the activities where another device holds that button, which is the common case.** Asked across
+the activities that drive a device rather than the ones that bind a pair: 131 of the 1105 pairs have
+another device holding the button in at least one, and 117 have nothing holding it in at least one. A
+total understates it, so the test names one device too: **the Harmony One's receiver has 35 buttons, eight
+activities drive it, and 3 of the 35 are its own in all eight.** So writing every driving activity **steals
+buttons**, and refusing when one is in the way blocks the other 32; the answer is to write where there is
+room, leave the rest, and say which before the change. FreeHarmony's `src/shared/buttonmap.ts` is that
+derivation, once, for its writer and its keypad.
 
 **Where device mode's own keypad map lives is open and must not be guessed.** No keypad map in any config
 here sends a code outside an activity: 158 maps, 65 installed by the config, 50 by an activity, exactly

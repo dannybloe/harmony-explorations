@@ -1363,6 +1363,85 @@ test('a button map belongs to a device, and an activity map is that plus its ove
   assert.equal(devicesAgreeing, 47, 'devices whose every button agrees across the activities');
 });
 
+test('a device\'s button is often another device\'s in one of the activities that drive it',
+     skipUnless(...USER_CONFIGS), () => {
+  // **The half of section 151 that a count of pairs hides**, and it decided the shape of FreeHarmony's
+  // writer. The test above asks whether the activities that **bind** a pair agree about its command,
+  // which they do 1096 times of 1105. This asks a different question, the one an editor has to answer
+  // before it writes: across the activities that **drive the device**, is that button available at all?
+  //
+  // Often it is not, because a button that works the television while you are watching television and
+  // the amplifier while you are listening to music is how a Harmony is set up. So a change to a device's
+  // button cannot simply be written into every activity that drives the device: that takes the button off
+  // the other device. Nor can it be refused when one activity is in the way, since that blocks most of the
+  // keypad. It goes where there is room, and the activities in the way are named rather than touched.
+  //
+  // The two ends come from different fields: which activities drive a device is the activity's own record
+  // through `activities`, and who holds a scan code in an activity is the keypad maps. Same split as the
+  // test above, asked per activity instead of per pair.
+  let pairs = 0;
+  let settled = 0;
+  let anotherDeviceSomewhere = 0;
+  let unboundSomewhere = 0;
+  let both = 0;
+  // One remote's first device as well, because a corpus total cannot show how concentrated this is: the
+  // figure that matters to somebody editing is what they see on one page.
+  const one = { pairs: 0, settled: 0, another: 0, unbound: 0, driving: 0 };
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const acts = activities(c);
+    const activityOfSet = new Map(acts.map((a) => [a.set, a.activity]));
+    const keys = keyCodes(c).filter((one) =>
+      one.event !== 0 && one.where !== 'page' && one.codes.length === 1);
+
+    // Who holds each scan code in each activity, over the whole remote.
+    const holder = new Map<number, Map<number, number>>();
+    for (const key of keys) {
+      const activity = activityOfSet.get(key.index);
+      if (activity === undefined) continue;
+      const row = holder.get(key.scan) ?? new Map<number, number>();
+      row.set(activity, key.codes[0]!.group);
+      holder.set(key.scan, row);
+    }
+
+    // Every pair of a device and a scan code that device holds somewhere, deduplicated.
+    const held = new Set(keys
+      .filter((key) => activityOfSet.get(key.index) !== undefined)
+      .map((key) => `${key.codes[0]!.group}:${key.scan}`));
+
+    for (const where of held) {
+      const [device, scan] = where.split(':').map(Number);
+      const driving = acts.filter((a) => a.devices.includes(device!)).map((a) => a.activity);
+      const row = holder.get(scan!) ?? new Map<number, number>();
+      const elsewhere = driving.filter((a) => row.has(a) && row.get(a) !== device).length;
+      const nowhere = driving.filter((a) => !row.has(a)).length;
+      pairs += 1;
+      if (elsewhere > 0) anotherDeviceSomewhere += 1;
+      if (nowhere > 0) unboundSomewhere += 1;
+      if (elsewhere > 0 && nowhere > 0) both += 1;
+      if (elsewhere === 0 && nowhere === 0) settled += 1;
+      if (name === 'one_config' && device === 0) {
+        one.pairs += 1;
+        one.driving = driving.length;
+        if (elsewhere > 0) one.another += 1;
+        if (nowhere > 0) one.unbound += 1;
+        if (elsewhere === 0 && nowhere === 0) one.settled += 1;
+      }
+    }
+  }
+
+  // Exact, per this repository's rule about a corpus total.
+  assert.equal(pairs, 1105, 'the same population as the test above, reached a different way');
+  assert.equal(settled, 938, 'the button is this device\'s in every activity that drives it');
+  assert.equal(anotherDeviceSomewhere, 131, 'another device holds it in at least one of them');
+  assert.equal(unboundSomewhere, 117, 'nothing holds it in at least one of them');
+  assert.equal(both, 81, 'and these are both, which is why the three do not sum to the population');
+
+  // The Harmony One's receiver, which is the case that makes the rail necessary rather than tidy: eight
+  // activities drive it, and only three of its 35 buttons are its own in all eight.
+  assert.deepEqual(one, { pairs: 35, settled: 3, another: 32, unbound: 29, driving: 8 });
+});
+
 test('a keypad map that sends a code is an activity\'s, so no config here holds a device mode map',
      skipUnless(...USER_CONFIGS), () => {
   // The other half of section 151, and it is the open question stated as a check rather than as a

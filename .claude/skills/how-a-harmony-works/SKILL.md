@@ -1,6 +1,6 @@
 ---
 name: how-a-harmony-works
-description: What a Harmony does from the point of view of somebody holding one: activities, device mode, the Devices button, the Current Activity item. Read this BEFORE designing or building anything about what a remote does, what an interface offers, or what a config field means for a person. Use when a task touches button mapping, activities, devices, screens, or any question of the form "what should the interface show here".
+description: What a Harmony does from the point of view of somebody holding one: activities, device mode, how each model gets into device mode and back. Read this BEFORE designing or building anything about what a remote does, what an interface offers, or what a config field means for a person. Use when a task touches button mapping, activities, devices, screens, or any question of the form "what should the interface show here".
 ---
 
 # How a Harmony works, from the outside
@@ -24,25 +24,39 @@ A Harmony has **activities** and it has **device mode**, and both map the whole 
 
 An activity is "Watch TV": it switches equipment on, sets inputs, and gives the keypad a map that
 spans several devices, so volume goes to the amplifier and channels go to the set top box. Device mode
-is what the **Devices** button gives you: a list of your equipment, and picking one points **every**
-button at **that one device**. There is a **Current Activity** item to get back.
+is what **Devices** gives you: a list of your equipment, and picking one points **every** button at
+**that one device**. Logitech's own words, from the Harmony One manual: "After you select a device, the
+Harmony One controls only that device."
 
 Device mode is not a corner of the product. It is how anybody reaches a command that is not on their
 activity's map, which is most commands most of the time: you are watching television, you want an
-obscure picture setting, you press Devices, pick the TV, press the button, and go back to Current
-Activity. Every Harmony works this way. The Harmony 600 and the Harmony 525 have a physical Devices
-key; the Harmony One has one on its touch panel.
+obscure picture setting, you press Devices, pick the TV, press the button, and go back.
+
+**How you get in and out is per model, and the words differ.** A Harmony 525 has a Devices key and its
+own Activities key. A **Harmony 600 has no such key at all**: its screen writes "Devices" above the
+centre key of the three below the display, and "Activity" to come back. A Harmony One has both as items
+on its touch panel, the second called "Current Activity". On a Harmony 885 you press DEVICE and press it
+again to leave. So do not print "Current Activity" as though it were the product's vocabulary, and do
+not put a Devices key on a drawing of a 600. `docs/how-a-harmony-works.md` has the table with the
+manuals' own wording.
 
 ## What follows for the format work
 
 **A button map belongs to a device first.** Logitech's own software authors it per device, which is
-what the measurement in `docs/findings.md` section 151 shows from the other side: 333 of 341 device
-and button pairs send the same command in every activity that binds them, and 11 of 13 devices agree
-everywhere. An activity's map is that device map plus the activity's own overrides.
+what the measurement in `docs/findings.md` section 151 shows from the other side: of 1105 pairs of a
+device and a button across the fifteen user configurations, 1096 send the same command in every activity
+that binds them, and 47 of 50 devices agree everywhere. An activity's map is that device map plus the
+activity's own overrides.
 
 **So an interface about a device shows the device's map**, not one activity's. And a change to a
 device's button has to reach every activity that inherited it, or the change is invisible in the very
 activity somebody is sitting in.
+
+**But not the activities where another device holds that button**, which is the ordinary case and not an
+edge: the Harmony One's receiver in the lab has 35 buttons, eight activities drive it, and **three of the
+35 are its own in all eight**. A button that works the television while you are watching television and
+the amplifier while you are listening to music is how a Harmony is set up. Write where there is room,
+leave the rest, and say which.
 
 **Where device mode's own keypad map lives is open**, and it is named as an open question rather than
 guessed at: no keypad map in any configuration here sends a code outside an activity. Do not close

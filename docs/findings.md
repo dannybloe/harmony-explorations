@@ -21026,6 +21026,29 @@ and the measurement had been used to answer a question it cannot answer.
 `.claude/skills/how-a-harmony-works/SKILL.md` is the ritual that makes it get read. The finding below is
 what the corpus does say once the right question is asked of it.
 
+**Logitech's own manuals corroborate it, and they were in the lab the whole time.** Four of them, for the
+Harmony 525, 600, One and 885. The One's is the plainest statement of the mechanism: "After you select a
+device, the Harmony One controls only that device. You have access to all the commands for the device
+system." The 885's gives the example, "If you choose Television as the device, the number, volume and
+channel buttons will all control your television", and names the mode: "Press **Devices** to enter device
+mode... To access device mode you do not need to be in an Activity." So the keypad remap is the vendor's
+statement rather than an inference, and what is open below is only where the map lives in the file.
+
+They also corrected three things this project had just written down.
+
+**The Harmony 600 has no Devices key.** Its button table lists every key on the remote and there is none;
+the screen writes "Devices" above the **centre key** of the three below the display, and "Activity" to come
+back. `docs/how-a-harmony-works.md` and both `CLAUDE.md` files had said it has a physical one.
+
+**"Current Activity" is the Harmony One's wording**, not the product's. The 600 says "Activity", the 525
+uses its Activities key, and an 885 leaves device mode by pressing DEVICE again.
+
+**And Logitech's advice runs against the way the feature is actually used.** The 885 manual: "you should
+never need to use Device mode during normal use of your Harmony remote", and "you can eliminate the use of
+device mode by customizing your Activities", by putting the command on the display or on a button. Danny
+uses device mode routinely for exactly those commands. Both are true, and the second is an argument for an
+activity screen editor rather than against a device page.
+
 ### A device's own map is what the activity maps agree on
 
 For every pair of a device and a scan code, collect the command that pair sends in each activity map
@@ -21060,6 +21083,36 @@ which activity a map belongs to is read off the activity's own record.
 **A change to a device's button has to be written into every activity map that inherited it.** Writing
 it in one place leaves the remote behaving exactly as before in the activity somebody is sitting in,
 which is the worst failure available: the file changed, the checksum still passes, and nothing happened.
+
+**And not into the activities where another device holds that button**, which is the correction the rail
+needed and which the table above hides by being a count of pairs. Ask it the other way round: across the
+activities that **drive the device**, is that button available at all? Same 1105 pairs, and which
+activities drive a device now comes from the activity's own record while who holds a scan code comes from
+the keypad maps.
+
+| | count |
+|---|---|
+| this device's button in every activity that drives it | 938 |
+| another device holds it in at least one of them | 131 |
+| nothing holds it in at least one of them | 117 |
+| both of those | 81 |
+
+So a button that works the television while you are watching television and the amplifier while you are
+listening to music is ordinary rather than exceptional. And a corpus total understates how concentrated it
+is, which is why the test asserts one device as well: **the Harmony One's receiver has 35 buttons, eight
+activities drive it, and 3 of the 35 are its own in all eight.** Writing every driving activity would take
+the other 32 off another device. Refusing when one activity is in the way, which FreeHarmony's writer did
+for a day, blocks those same 32.
+
+The rail is therefore: write where there is room, which is where this device already has the button or
+nothing has, leave the rest exactly as they are, and name them before the change is made.
+
+Two things the earlier phrasing hid. The **pair** count above answers "do the activities that bind this
+button agree", which is a different question from "can a change reach every activity that drives this
+device"; the first is 1096 of 1105 and the second is 3 of 35 on one real remote. And a **device page**
+cannot be built from the first alone, which is how FreeHarmony's second version of that page came to be
+destructive. Its own page reports 30 buttons rather than 35 for that receiver, because it only counts
+buttons whose scan code has been measured on the drawn model, 34 of a Harmony One's 44.
 
 ### Where device mode's own keypad map lives is open
 
