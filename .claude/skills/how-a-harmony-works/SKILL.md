@@ -28,9 +28,17 @@ is what **Devices** gives you: a list of your equipment, and picking one points 
 **that one device**. Logitech's own words, from the Harmony One manual: "After you select a device, the
 Harmony One controls only that device."
 
-Device mode is not a corner of the product. It is how anybody reaches a command that is not on their
-activity's map, which is most commands most of the time: you are watching television, you want an
-obscure picture setting, you press Devices, pick the TV, press the button, and go back.
+**Danny's picture of device mode is the one to build from**: it is like reaching for the old remote that
+came in the box with that appliance. There is nothing but that appliance on it. So the two maps are
+separate things, authored separately, and Logitech's software has a page for each. In an activity any key
+may carry any command of any appliance you own; in a device's map there is one appliance, so **two
+appliances holding the same key is not a conflict** and a page about a device mentions no activity at all.
+
+**The screen is the bigger half of device mode.** An old remote has far more buttons than a Harmony, so
+what people build there is pages on the screen, a screenful of commands at a time, for the functions the
+keypad has no room for. Those never belonged on an activity's keypad map, which carries what you use
+often. That is why Logitech can say you hardly ever need device mode and be right, and why it matters
+anyway: the alternative is walking to the cupboard.
 
 **How you get in and out is per model, and the words differ.** A Harmony 525 has a Devices key and its
 own Activities key. A **Harmony 600 has no such key at all**: its screen writes "Devices" above the
@@ -42,26 +50,22 @@ manuals' own wording.
 
 ## What follows for the format work
 
-**A button map belongs to a device first.** Logitech's own software authors it per device, which is
-what the measurement in `docs/findings.md` section 151 shows from the other side: of 1105 pairs of a
-device and a button across the fifteen user configurations, 1096 send the same command in every activity
-that binds them, and 47 of 50 devices agree everywhere. An activity's map is that device map plus the
-activity's own overrides.
+**A button map belongs to a device first**, which is how Logitech's software authors it, and the corpus
+shows it from the other side, `docs/findings.md` section 151: of 1105 pairs of a device and a button across
+the fifteen user configurations, 1096 send the same command in every activity that binds them, and 47 of 50
+devices agree everywhere. So an activity's map reads as the device's map plus that activity's overrides,
+which is what lets a device map be **reconstructed** where the file states none.
 
-**So an interface about a device shows the device's map**, not one activity's. And a change to a
-device's button has to reach every activity that inherited it, or the change is invisible in the very
-activity somebody is sitting in.
+**That measurement is about the activity maps and says nothing about what a device page shows.** Getting
+that backwards is the mistake this skill exists for, and it was made three times running: a keypad per
+activity, then a device map annotated with activities, then a save reported per activity. A page about a
+device shows one appliance and mentions no activity.
 
-**But not the activities where another device holds that button**, which is the ordinary case and not an
-edge: the Harmony One's receiver in the lab has 35 buttons, eight activities drive it, and **three of the
-35 are its own in all eight**. A button that works the television while you are watching television and
-the amplifier while you are listening to music is how a Harmony is set up. Write where there is room,
-leave the rest, and say which.
-
-**Where device mode's own keypad map lives is open**, and it is named as an open question rather than
-guessed at: no keypad map in any configuration here sends a code outside an activity. Do not close
-that by inventing a mechanism, and do not restate the closed version of it either, which is the dead
-phrasing `every keypad binding belongs to an activity` in `reference/superseded.md`.
+**Where the remote keeps a device's own map is open** and is named as an open question rather than guessed
+at: no keypad map in any configuration here sends a code outside an activity. That the keypad **is**
+remapped is not in doubt, since Logitech says so. Do not close the storage question by inventing a
+mechanism, and do not restate the dead phrasing `every keypad binding belongs to an activity` in
+`reference/superseded.md`.
 
 ## The rule this skill is really about
 

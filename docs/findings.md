@@ -21078,11 +21078,32 @@ rather than structure: an activity's map holds the buttons that make sense in it
 comparison come from different places, since which activities drive a device is read off the bindings and
 which activity a map belongs to is read off the activity's own record.
 
-### The consequence, which is a rail for a writer
+### What this is a measurement of, which is the activity maps
 
-**A change to a device's button has to be written into every activity map that inherited it.** Writing
-it in one place leaves the remote behaving exactly as before in the activity somebody is sitting in,
-which is the worst failure available: the file changed, the checksum still passes, and nothing happened.
+**It is not a statement about what a device page shows**, and reading it as one is the mistake this section
+records rather than a rail it establishes. FreeHarmony got it wrong three times running on the strength of
+these numbers: a keypad shown per activity, then a device map annotated with which activities carried each
+key, then a save that reported per activity what it had reached. Each was a fact about the **activity** map
+put on a page about a device.
+
+**A device's map and an activity's map are two maps of the same keypad, authored separately**, and Danny's
+picture of the first is the one to hold: switching to a device is like reaching for the old remote that came
+in the box with that appliance. There is nothing but that appliance on it. Logitech's own software has a
+page for each, "Changing how buttons work for a device" and "Changing how buttons work in an Activity". So
+in an activity any key may carry any appliance's command, and in a device's map two appliances holding the
+same key is not a conflict at all.
+
+What the numbers above **do** establish is that an activity's map reads as the device's map plus that
+activity's own overrides, which is what makes a device map **reconstructable** where a file states none:
+where every activity that binds a key agrees, that agreement is the device's answer, and the nine
+disagreements are left unbound rather than decided.
+
+### The consequence, which is a rail for an activity editor
+
+**A change to an activity's map has to be written into the whole activity**, and there the buttons other
+appliances hold are the constraint. Writing one activity of several leaves the remote behaving exactly as
+before in the activity somebody is sitting in, which is the worst failure available: the file changed, the
+checksum still passes, and nothing happened.
 
 **And not into the activities where another device holds that button**, which is the correction the rail
 needed and which the table above hides by being a count of pairs. Ask it the other way round: across the
@@ -21104,15 +21125,27 @@ activities drive it, and 3 of the 35 are its own in all eight.** Writing every d
 the other 32 off another device. Refusing when one activity is in the way, which FreeHarmony's writer did
 for a day, blocks those same 32.
 
-The rail is therefore: write where there is room, which is where this device already has the button or
-nothing has, leave the rest exactly as they are, and name them before the change is made.
+So an **activity** editor writes where there is room, leaves the rest exactly as they are, and names them
+before the change is made. A **device** editor has none of this to worry about, since its map holds one
+appliance and nothing can be in the way.
 
 Two things the earlier phrasing hid. The **pair** count above answers "do the activities that bind this
-button agree", which is a different question from "can a change reach every activity that drives this
-device"; the first is 1096 of 1105 and the second is 3 of 35 on one real remote. And a **device page**
-cannot be built from the first alone, which is how FreeHarmony's second version of that page came to be
-destructive. Its own page reports 30 buttons rather than 35 for that receiver, because it only counts
-buttons whose scan code has been measured on the drawn model, 34 of a Harmony One's 44.
+button agree", which is a different question from "can a change to an activity reach every activity that
+uses this appliance"; the first is 1096 of 1105 and the second is 3 of 35 on one real remote. And neither
+question is the one a device page asks. FreeHarmony's own figures for that receiver are 30 rather than 35,
+because it counts only buttons whose scan code has been measured on the drawn model, 34 of a Harmony One's
+44.
+
+### The screen is the bigger half of device mode
+
+Recorded here because it explains both the vendor's advice and why the feature exists. An old remote has
+far more buttons than a Harmony, so what people build in device mode is **pages on the screen**: a
+screenful of commands at a time, for the functions the keypad has no room for. Those never belonged on an
+activity's keypad map, which carries what somebody uses often.
+
+That makes the keypad the smaller half of a device's map, and it means the screen keys, section 128's
+second population, are where the interesting part of device mode lives. Nothing here reads which appliance
+a screen page belongs to, section 52, so that is the reading a device page eventually needs.
 
 ### Where device mode's own keypad map lives is open
 

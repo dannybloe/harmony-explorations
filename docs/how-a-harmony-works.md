@@ -22,7 +22,16 @@ it is what the marketing was about.
 button on the remote now drives the television and nothing else. Something takes you back to what you
 were doing, and what it is called differs per model.
 
-Both map the entire keypad. Neither is a special case of the other.
+**Danny's picture of it is the one to build from**, and it is worth more than any measurement here:
+switching to a device is like reaching for the old remote that came in the box with that appliance. There
+is nothing but that appliance on it. You cannot reach the amplifier from the television's old remote,
+because it has no amplifier on it.
+
+Both map the entire keypad. Neither is a special case of the other, and **they are two separate maps of
+the same keys, authored separately**. Logitech's own software has a page for each, called "Changing how
+buttons work for a device" and "Changing how buttons work in an Activity" in the Harmony 600 manual's
+contents. In an activity **any key may carry any command of any appliance you own**; in a device's map
+there is one appliance, so two appliances holding the same key is not a conflict at all.
 
 **Logitech says so in its own manuals**, which is the corroboration this document lacked when it was
 written on 22 August 2026 and got in the same afternoon from the four manuals in the lab. The Harmony
@@ -63,6 +72,19 @@ must not grow one.
 uses its own Activities key, and on an 885 you press DEVICE again. So an interface must not print that
 phrase as though it were the product's vocabulary.
 
+## The screen is the bigger half of device mode
+
+An old remote has far more buttons than a Harmony does. So what people actually build in device mode is
+**pages on the screen**: a screenful of commands at a time, for the obscure functions the keypad has no
+room for. Those would never fit an activity's keypad map, and they are not meant to, since an activity
+carries what you use often.
+
+That is why Logitech can say you should hardly ever need device mode and be right, and it is also why the
+feature matters: without it, reaching one rare function means walking to the cupboard for the old remote.
+
+For anything being built it means the keypad is the **smaller** half of a device's map, and a device page
+without screen pages is unfinished rather than complete.
+
 ## What that means for a button map
 
 **A button map belongs to a device before it belongs to an activity.** Logitech's own software is
@@ -78,30 +100,29 @@ like.
 So the configuration stores a keypad map **per activity**, and a device's own map is what those maps
 agree on. Both statements are true and only the second is a fact about the product.
 
-Three consequences for anything being built:
+So the measurement is about the **activity** maps, and that is what it may be used for: it says an
+activity's map reads as the device's map plus that activity's overrides, which is what lets a device map be
+**reconstructed** where a file states none. It says nothing about what an interface should show.
 
-* **An interface about a device shows the device's map**, not one activity's. Showing one activity's
-  map on a device's page answers a question nobody asked.
-* **A change to a device's button has to reach every activity that inherited it.** Change it in one
-  place only and it is invisible in the activity somebody is actually sitting in, which is the worst
-  kind of wrong: the file changed and the remote did not.
-* **Except in the activities where another device holds that button**, and this is not an edge case.
-  Asked across the activities that drive a device rather than the ones that bind a pair: 131 of the 1105
-  pairs have another device holding the button in at least one of them, and 117 have nothing holding it.
-  A total understates how concentrated that is, so here is one device: **the Harmony One's receiver in
-  the lab has 35 buttons, eight activities drive it, and three of the 35 are its own in all eight.** A
-  button that works the television while you are watching television and the amplifier while you are
-  listening to music is how a Harmony is set up. So a change goes where there is room, leaves the rest
-  alone, and says which. Writing all of them steals buttons; refusing when one activity is in the way
-  blocks the other 32. Only **two different commands for one device** is a conflict the map cannot
-  resolve, and that is nine pairs of 1105.
+Two consequences for anything being built, and they belong to different screens:
+
+* **A page about a device shows that one appliance and mentions no activity.** Not which activity uses a
+  key, not which other appliance holds it, not where a change will land. Inside one device's map there is
+  one appliance, so a key sends one of its commands or it sends nothing, and a change is one binding.
+  FreeHarmony got this wrong three times, each time by importing an activity map's concerns onto it.
+* **A page about an activity is where the rest lives.** There a key may carry any appliance's command, so
+  a change has to reach the whole activity, and the buttons other appliances already hold are the real
+  constraint: 131 of the 1105 pairs have another appliance holding the button in at least one activity
+  that uses this one, and on the Harmony One's receiver in the lab 3 of its 35 buttons are its own in all
+  eight activities that use it. That is the activity editor's rail and it must not be carried into the
+  device one.
 
 **Logitech's own advice is the opposite of Danny's practice, and both are worth knowing.** The 885
 manual says "you should never need to use Device mode during normal use" and that "you can eliminate the
 use of device mode by customizing your Activities", by putting the command on the display or on a button.
-Danny uses device mode routinely for exactly the commands Logitech would have you add to an activity. The
-application has to serve both, which is an argument for the activity screen editor and not against the
-device page.
+Danny uses device mode routinely for exactly the commands Logitech would have you add to an activity, and
+the reason is the screen pages above: that is where an appliance's rare functions live. The application
+serves both.
 
 ## What the screen does, and what it does not
 

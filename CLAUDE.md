@@ -54,20 +54,32 @@ worth knowing: the 885 manual says you "should never need to use Device mode dur
 customising an activity eliminates it. Danny uses it routinely. The application serves both, which is an
 argument for an activity screen editor rather than against the device page.
 
-**A button map therefore belongs to a device before it belongs to an activity**, section 151: of 1105
-pairs of a device and a button, 1096 send the same command in every activity that binds them, and 47 of
-50 devices agree everywhere. An activity's map is the device's map plus that activity's overrides. So a
-writer that changes a device's button has to reach every activity that inherited it, or the change is
-invisible in the activity somebody is sitting in.
+**A device's map and an activity's map are two maps of the same keypad, authored separately**, and that is
+the sentence to keep. Logitech's own software has a page for each, "Changing how buttons work for a device"
+and "Changing how buttons work in an Activity". A device's map holds **one** appliance's commands and can
+hold nothing else; an activity's map may put any appliance's command on any key. So two appliances holding
+the same key is not a conflict, and a page about a device says nothing about activities at all: not which
+activity uses a key, not which other appliance holds it, not where a change lands. That took three attempts
+to get right in FreeHarmony, and each attempt answered a question about the activity map on a page about a
+device. `src/shared/buttonmap.ts` there is the derivation and carries the history.
 
-**Except the activities where another device holds that button, which is the common case.** Asked across
-the activities that drive a device rather than the ones that bind a pair: 131 of the 1105 pairs have
-another device holding the button in at least one, and 117 have nothing holding it in at least one. A
-total understates it, so the test names one device too: **the Harmony One's receiver has 35 buttons, eight
-activities drive it, and 3 of the 35 are its own in all eight.** So writing every driving activity **steals
-buttons**, and refusing when one is in the way blocks the other 32; the answer is to write where there is
-room, leave the rest, and say which before the change. FreeHarmony's `src/shared/buttonmap.ts` is that
-derivation, once, for its writer and its keypad.
+**The screen is the bigger half of device mode.** An old remote has far more buttons than a Harmony, so
+what people build in device mode is pages on the screen, a screenful of commands at a time, for the
+functions the keypad has no room for. Those never belonged on an activity's keypad map, which carries what
+you use often. That is also why Logitech can say you hardly ever need device mode and be right, and why it
+still matters: the alternative is walking to the cupboard for the old remote.
+
+**What the corpus does say is about the activity maps**, section 151: of 1105 pairs of a device and a
+button, 1096 send the same command in every activity that binds them, and 47 of 50 devices agree
+everywhere. That is why an activity's map reads as a device's map plus that activity's overrides, and it is
+what lets a device map be **reconstructed** where the file states none. It says nothing about what a device
+page shows.
+
+**A writer that changes an activity's map has to reach the whole activity**, and there the buttons other
+devices hold are the constraint: 131 of the 1105 pairs have another device holding the button in at least
+one driving activity, and on the Harmony One's receiver 3 of its 35 buttons are its own in all eight
+activities that use it. That is the activity editor's rail and it must not be carried into the device
+one.
 
 **Where device mode's own keypad map lives is open and must not be guessed.** No keypad map in any config
 here sends a code outside an activity: 158 maps, 65 installed by the config, 50 by an activity, exactly
