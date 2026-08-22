@@ -222,6 +222,13 @@ measured fact here with a cost attached. `GetGlobalLanguageCommands` returns a p
 value per command, `Raw` null on all 419 fetched, so the infrared blocks in base slot 5 are the compiled
 form and an importer needs an encoder per protocol family. Section 132 has the numbers.
 
+**And the frame value is directly comparable with one this project decodes, which is worth more than the
+encoder would have been.** Measured on 22 August 2026: 52 of the 58 commands Logitech states for a
+Panasonic television equal a frame `irframe.ts` read out of `h600_config`, byte for byte, on a different
+model of the same family. So the catalogue names a code a remote already holds without anything being
+encoded at all, which is the whole of what an importer needed for names. The encoder is still what a
+**new** device would need, and that is a smaller claim than this document used to make.
+
 **And the button mapping service says more than its name suggested.** The paragraph below is still
 right that no operation promises a scan code. But an account's own button maps split
 `HardRemoteButton` from `SoftRemoteButton` and carry a **name** on each, which is the same two disjoint

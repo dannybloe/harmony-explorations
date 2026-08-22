@@ -17583,8 +17583,27 @@ G:PanasonicV2 48 Bit:()(0x40040D00808D)():3
 
 `Raw` is null on all 419 commands fetched across six devices and `IsLearned` is false on all of them.
 So Logitech stores a protocol plus a frame value and the pulse and space blocks that base slot 5 holds
-are the **compiled** form of that. The values are bit reversed frames, visible in the Sony digits: 1 is
-`0x010`, 2 is `0x810`, 3 is `0x410`.
+are the **compiled** form of that.
+
+**The value is in transmission order, which is the same order `irframe.ts` produces, and this section said
+the opposite for nine days.** It said "the values are bit reversed frames, visible in the Sony digits: 1 is<!--superseded-->
+`0x010`, 2 is `0x810`, 3 is `0x410`", which is a true observation with the wrong conclusion attached. Those
+digits really are reversed, and what they are reversed against is the **logical** digit, because Sony
+transmits least significant bit first. This project's decoder reads the order the pulses arrive in, so it
+produces `0x010` for that digit too. Reversed against a command number, unreversed against a rhythm, and
+only the second one is what a comparison needs.
+
+Measured on 22 August 2026, from FreeHarmony, against the live service: **52 of the 58** commands Logitech
+states for a Panasonic television are byte for byte equal to a frame this project's own reader decoded out
+of `h600_config`, on a **different model** of the same family. So a catalogue name reaches a code read off
+a remote by comparing two numbers, with nothing turned round in between, and the wrong wording here would
+have sent anybody who implemented it looking for a bug in their decoder. Established on one 48 bit family:
+a family whose order differed would produce no matches rather than wrong ones, since a frame either equals
+another frame or does not.
+
+**No regression test here, for the reason this section already gives**: the subject is a remote service.
+The test lives in FreeHarmony, `test/logitech.live.test.ts`, behind an environment flag and skipped without
+credentials, and it asserts that one stated frame equals one decoded frame.
 
 That agrees with section 42 from the other direction. Three of the four infrared encoding classes are
 used by no config here, and the reason recorded there is that the storage form was a server decision;
