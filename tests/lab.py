@@ -62,6 +62,14 @@ IMAGES = {
     # application from 0x810000 and the arch 9 safe mode container at +0x8000 that section 76 cut
     # out of it.
     'h525_external_firmware': '20260808-harmony-525-flash-810000.bin',
+    # The second internal program page of the three bench remotes, whole, as read over USB and
+    # verified against each unit's backup. `0xFF` in the protocol's addressing, and the page that
+    # holds the per unit blocks Logitech's client names: a serial, key timing, unit, keypad, display
+    # and power settings, a battery calibration and a manufacturing identifier, at 0xF400 and every
+    # 0x40 after it. Section 150 is what they turn out to hold, which is almost nothing.
+    'one_page_ff': 'one-internal-ff-full.bin',
+    'one_spare_page_ff': 'one2-internal-ff-full.bin',
+    'h600_page_ff': '600-internal-ff-full.bin',
     # The same staged application, read again on 11 August 2026 while the remote was stranded in
     # safe mode. Kept alongside rather than replacing anything, because its whole value is the
     # comparison: it is byte identical to the other two copies, which is how we know entering safe

@@ -324,10 +324,18 @@ believes each holds, restated:
 The first address is also declared as the start of a 1024 byte system parameter block, so the
 twelve records are probably subdivisions of one block rather than twelve unrelated ones.
 
-**This is the answer to a question already asked here**: which settings a remote has that its
-config does not carry, and therefore what FreeHarmony would need per model rather than per
-architecture. It is also directly readable over USB, since it is inside the `0xFE` window that
-`READ_FLASH` already reaches, so confirming it needs a remote rather than a disassembler.
+**This was read as the answer to a question already asked here**, which settings a remote has that
+its config does not carry, and **the answer turns out to be none**, section 150. Six of the seven
+settings records are erased flash on all three bench remotes: key timing, infrared capture silence,
+unit, keypad, display and other settings have never been written. Only `power settings` holds
+anything, one byte, 94, on the two Harmony Ones and not on the Harmony 600, and that is the value
+section 105 read at `0x01F5C0` and could not attribute.
+
+It said "confirming it needs a remote rather than a disassembler", and it needed **neither**: the<!--superseded-->
+internal pages of every bench remote were read over USB months ago and verified against their
+backups, so the bytes were already in the lab. `tests/test_unit_settings.py`. The record names stay
+here as client sourced labels, since a name is what the client gave and the emptiness is what we
+measured.
 
 Arch 12 has the same idea at different addresses: an identifier block at `0xFFF400` and a
 manufacturing identifier at `0xFFF640`, both 64 bytes, with a 1024 byte granularity stated for

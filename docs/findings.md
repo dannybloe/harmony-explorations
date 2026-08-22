@@ -20944,3 +20944,69 @@ is enough to make the distinction real and not enough to be sure the set general
 And the fact that base slot 15 or base slot 1 does not carry a language code somewhere is a negative
 result from looking rather than from reading the firmware. Nothing seeks such a field, so a byte
 holding one would be unattributed, and the byte accounting says there are none of those left.
+
+## 150. The per unit settings blocks are empty, so a settings page edits the config and nothing else
+
+`docs/host-client.md` recorded Logitech's client naming twelve 64 byte records above the application
+firmware, seven of them settings: key timing, infrared capture silence, unit, keypad, display, power
+and other. It called that "the answer to a question already asked here, which settings a remote has
+that its config does not carry", and added that confirming it needs a remote rather than a
+disassembler.
+
+**It needed neither.** Every bench remote's internal pages were read over USB months ago and verified
+against its backup, so the bytes were already in the lab. Six of the seven settings records are
+**erased flash** on all three units. The regions exist and nothing has ever written them.
+
+| record | Harmony One | spare Harmony One | Harmony 600 |
+|---|---|---|---|
+| unit serial | 48 bytes | 48 bytes | 48 bytes |
+| key timing | empty | empty | empty |
+| infrared capture silence | empty | empty | empty |
+| unit settings | empty | empty | empty |
+| keypad settings | empty | empty | empty |
+| display settings | empty | empty | empty |
+| battery calibration | 3 bytes | 3 bytes | 3 bytes |
+| power settings | **1 byte** | **1 byte** | empty |
+| other settings | empty | empty | empty |
+| manufacturing identifier | 9 bytes | 9 bytes | 10 bytes |
+
+The control is in the same table: three records carry something on every unit, so the page is not
+simply blank and "six records are empty" is a measurement rather than a tautology.
+
+### The one populated byte is a value section 105 could not explain
+
+`power settings` byte 0 is **94** on both Harmony Ones and absent on the Harmony 600. Section 105 read
+94 at `0x01F5C0` from the firmware side, fetched by the same helper that reads the battery scale, and
+listed it as open because nothing traced its consumer. This is the same byte from the other direction,
+and the client's label for that address is `power settings`.
+
+That is a **name and not a reading**, so section 105's open item stays open: what consumes it is still
+untraced. What has changed is that it is not noise, it is one deliberately written byte, and the
+client's word for where it lives is on record.
+
+### The layout is shared between arch 12 and arch 14, which the client's map does not say
+
+The client gives the twelve record addresses for arch 14 and, for arch 12, only an identifier block at
+`0xFFF400` and a manufacturing identifier at `0xFFF640`. Both spellings put those at offsets `0xF400`
+and `0xF640` of the second internal page, and the two Harmony Ones populate **exactly** the four
+offsets the arch 14 map names, three of them the same three the Harmony 600 populates. So the whole
+twelve record layout is the same on both architectures and only the address spelling differs. Two
+architectures, three units, and it costs nothing to believe because nothing depends on it.
+
+### What this means for a settings page
+
+Danny asked on 22 August 2026 what a settings page in FreeHarmony would hold, and this closes the
+per unit half of the answer: **nothing**. There is no per unit state to read or write, so a settings
+page is an editor for base slot 15 of a configuration, which sections 44 and 103 have already read:
+four display light levels, the fade's per step delay, three light sensor threshold pairs, the I2C
+device's register values per band, a timeout in seconds, and the battery curve. Every one of those is
+in the file and rebuildable from named fields.
+
+**The remote's own on screen menu is a third thing and it is tiny.** Measured across the corpus by
+walking the pages of a config's Options menu: a Harmony One offers Date and Time, screen sounds on and
+off, and a tutorial. That is all. Every other hit for "Settings", "Setup" or "Options" in the corpus is
+a **button of somebody's own equipment**, a television's own setup key, rather than a setting of the
+remote.
+
+So the three places a setting could live are all accounted for, and only one of them has anything in
+it.
