@@ -40,8 +40,15 @@ export interface IrFrame {
   long: number;
 }
 
-/** A mark or a space, in microseconds. */
-interface Pulse {
+/**
+ * A mark or a space, in microseconds.
+ *
+ * Exported since 22 August 2026, because FreeHarmony holds a command's durations in exactly this shape
+ * and needed to frame them. It could not: every entry point here took a container and a record number,
+ * so the only way to reuse the decoder was to copy it, and a second copy of a derivation is the one
+ * thing this workspace refuses. `framesOfPulses` is the entry point that fixed that.
+ */
+export interface Pulse {
   mark: boolean;
   us: number;
 }
@@ -174,7 +181,25 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
   if (!first) return [];
   const words = irBlockWords(c, first);
   if (!words) return [];
-  const d = pulses(words);
+  return framesOfPulses(pulses(words), headerPairs);
+}
+
+/**
+ * The same, from a pulse train somebody already has.
+ *
+ * **The one entry point that does not need a container**, and it exists because a caller turned up that
+ * has the durations and not the file: FreeHarmony keeps a command's marks and spaces in its own model,
+ * copied out of a config at import, and wanted the frame so it could be matched against a catalogue of
+ * named commands. Without this the only route was a second decoder, which is the state this workspace's
+ * oldest rule is about. `irFrames` above is now a thin wrapper over it, so there is one decoder and a
+ * test asserts the two agree on every record in the corpus.
+ *
+ * The leading gap is trimmed here rather than by the caller, since a block commonly opens with several
+ * 32767 spaces and knowing that is knowing the format.
+ */
+export function framesOfPulses(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
+  const first = train.findIndex((one) => one.mark);
+  const d = first < 0 ? [] : train.slice(first);
   const out: IrFrame[] = [];
   for (const carries of ['mark', 'space'] as const) {
     const one = decode(d, carries, headerPairs);

@@ -26,7 +26,7 @@ import {
   irHeaderPointers,
   irRecordBlocks,
 } from '../src/ir.ts';
-import { frameKey, irFrame, irFrames } from '../src/irframe.ts';
+import { frameKey, framesOfPulses, irFrame, irFrames } from '../src/irframe.ts';
 import { keyCodes } from '../src/inventory.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -224,6 +224,46 @@ test('a record reads under exactly one convention, or under none', skipWithoutLa
   assert.deepEqual({ one, both, none }, { one: 3547, both: 148, none: 935 });
   // Every ambiguous record is a two group record, which is what the next test is about. There is no
   // record anywhere that is ambiguous for any other reason.
+});
+
+test('framing a pulse train and framing a record are one decoder', skipWithoutLab(), () => {
+  // **The check that keeps there being one decoder.** `framesOfPulses` was added on 22 August 2026 for a
+  // caller with the durations and not the file: FreeHarmony holds a command's marks and spaces in its own
+  // model and wanted the frame, so that a code can be matched against a catalogue of named commands. The
+  // alternative was a second decoder in that repository, which is the state this workspace's oldest rule
+  // is about, and the failure mode is two right copies until one of them moves.
+  //
+  // So `irFrames` is a wrapper over it now, and this asserts they agree on every record in the corpus by
+  // taking the same pulse train the long way round: out of the block, through the model's own shape, and
+  // back in. A count of agreements would pass on a decoder that returned nothing, so the population is
+  // asserted too.
+  let compared = 0;
+  let framed = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        const first = irHeaderPointers(c, record)[0];
+        if (!first) continue;
+        const words = irBlockWords(c, first);
+        if (!words) continue;
+        // The shape a caller outside this package has: marks and spaces, the terminating zero dropped,
+        // and the leading gap left in, since trimming it is knowing the format.
+        const train = words
+          .filter((word) => (word & IR_PULSE_MAX) !== 0)
+          .map((word) => ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX }));
+        const throughPulses = framesOfPulses(train).map(frameKey);
+        const throughRecord = irFrames(c, record).map(frameKey);
+        assert.deepEqual(throughPulses, throughRecord, `${name} record ${record}`);
+        compared += 1;
+        framed += throughRecord.length;
+      }
+    }
+  }
+  // The same population as the partition above, and the same total number of readings, so this cannot
+  // pass by comparing two empty lists.
+  assert.equal(compared, 4630);
+  assert.equal(framed, 3547 + 2 * 148);
 });
 
 test('reading under both conventions means a two group record, and the reverse', skipWithoutLab(), () => {
