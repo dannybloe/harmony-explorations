@@ -21010,3 +21010,98 @@ remote.
 
 So the three places a setting could live are all accounted for, and only one of them has anything in
 it.
+
+## 151. A button map belongs to a device, and an activity's map is that plus its overrides
+
+**This section exists because a design was got wrong, and the wrong design passed every check.** On 22
+August 2026 FreeHarmony grew a page for one device on one remote, with the remote drawn and its keys
+clickable, and it showed the keypad **per activity**. The reasoning was a measurement: every keypad
+binding in the corpus sits in a map that an activity installs, with no counterexample across three
+architectures. Danny's objection was one sentence, and it is not about
+the bytes at all: a Harmony has **device mode**, reached by the Devices key, where the whole keypad
+drives one chosen device with no activity running. So the page being built was the device mode editor,
+and the measurement had been used to answer a question it cannot answer.
+
+`docs/how-a-harmony-works.md` is the missing context, written the same day, and
+`.claude/skills/how-a-harmony-works/SKILL.md` is the ritual that makes it get read. The finding below is
+what the corpus does say once the right question is asked of it.
+
+### A device's own map is what the activity maps agree on
+
+For every pair of a device and a scan code, collect the command that pair sends in each activity map
+that binds it. Over all fifteen user configurations:
+
+| | count |
+|---|---|
+| pairs of a device and a button | 1105 |
+| the same command in every activity that binds them | 1096 |
+| disagreeing across activities | 9 |
+| devices with bound buttons | 50 |
+| devices whose every button agrees | 47 |
+
+The nine are not noise and they are what an override looks like: an amplifier whose input selection
+differs per activity, and a handful of keys customised inside one. That is what Logitech's own software
+offers, and it is the reason a device's map is the **agreement** rather than the union.
+
+Split the 1096 a second way, by whether every activity that drives the device binds the button at all:
+
+| | count |
+|---|---|
+| bound in every activity that drives that device | 970 |
+| bound in only some of them | 126 |
+
+So the 126 are a device's button that some activities carry and others do not, which is again authoring
+rather than structure: an activity's map holds the buttons that make sense in it. The two ends of that
+comparison come from different places, since which activities drive a device is read off the bindings and
+which activity a map belongs to is read off the activity's own record.
+
+### The consequence, which is a rail for a writer
+
+**A change to a device's button has to be written into every activity map that inherited it.** Writing
+it in one place leaves the remote behaving exactly as before in the activity somebody is sitting in,
+which is the worst failure available: the file changed, the checksum still passes, and nothing happened.
+
+### Where device mode's own keypad map lives is open
+
+**No keypad map in any configuration here sends an infrared code outside an activity.** Counted over the
+fifteen user configs: 158 keypad maps, of which 65 are installed by something in the configuration
+itself, `0x1F` with a high byte of `0xFF` selecting one per section 120, and 50 of those by an activity.
+**Exactly those 50 send a code**, and no map an activity does not install sends one. The other 108 send
+nothing, and 38 of them bind fifty or more keys to lists made of comparisons, register work and mode
+entries, which is a menu rather than a device.
+
+The screen side is ruled out separately: mode page bindings use four distinct scan codes on the Harmony
+600, seven on the Harmony One and four on the Harmony 525, and **none of them is a physical key**
+according to the measured geometry in `packages/silhouettes`. That is section 128's disjointness seen
+from the other end.
+
+So three readings remain and none is established: the firmware builds the map from the selected device's
+own command order in base slot 5; device mode reuses the running activity's map filtered to one device;
+or there is a map in the container nothing here recognises. **Do not close this by choosing one.** What
+settles it is the firmware routine behind the Devices item, followed to whatever it installs.
+
+### The methodological failure, recorded because it will recur
+
+Two things went wrong and only one of them was the conclusion.
+
+**A measurement over the corpus was used to answer a question about the product.** The corpus agreed
+with itself, on three architectures, with no counterexample, about a feature it holds no bytes for. That
+is not a weak corpus, it is the wrong instrument, and no amount of samples would have helped.
+
+**And the walk that produced the supporting number was memoised**, which is the defect this repository
+names in section 126 and warns about in `CLAUDE.md`. A first pass asked whether each keypad map reaches
+a `0x7D` and threaded one visited set through the whole recursion, so a list seen on one branch was
+skipped on every other. The number it produced happened to be right, checked afterwards against
+`infraredCodesPerList`, which does it correctly with a fresh set per list. Right by luck is the outcome
+that stops anybody looking.
+
+### The test
+
+`packages/codec/test/inventory.test.ts` asserts every count above and, as the assertion that carries the
+claim, that **no keypad map sends a code without an activity installing it**. A sample holding a device
+mode map fails there rather than being absorbed. The counterweight is asserted beside it, the 38 maps
+that bind the whole keypad and send nothing, so the zero is not read as "there are no other maps".
+
+It is TypeScript rather than Python because the readers are: `keyCodes`, `activities` and
+`infraredCodesPerList` live in `packages/codec`, and the last of those is what the walk has to go
+through, per the memoisation failure recorded above.

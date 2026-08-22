@@ -828,6 +828,28 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
                              % (relative, sorted(set(lab.CONTAINERS) - set(names)),
                                 sorted(set(names) - set(lab.CONTAINERS))))
 
+    def test_the_button_map_population_is_every_user_config(self):
+        """Section 151: `inventory.test.ts`'s `INVENTORY` table is the user configs, and no other list.
+
+        A fourth population list appeared on 22 August 2026 when section 151's two tests needed every
+        user config. Rather than write a fourth literal, they derive it from the `INVENTORY` table that
+        file already carries, which is the right move and is exactly the move that needs checking: the
+        table is a per sample claim about variables, activities and devices, and nothing said it also
+        happened to be the whole user config population. If somebody adds a sample to one and not the
+        other, section 151's totals are computed over a different corpus than they claim.
+        """
+        import lab
+        names = self._names('packages/codec/test/inventory.test.ts',
+                            'const INVENTORY: readonly [string, number, number, number, number][]')
+        self.assertEqual(names, sorted(lab.USER_CONFIGS),
+                         'missing %s, extra %s'
+                         % (sorted(set(lab.USER_CONFIGS) - set(names)),
+                            sorted(set(names) - set(lab.USER_CONFIGS))))
+        # And the derivation is still a derivation rather than a literal that drifted back in.
+        source = read_repo_file('packages/codec/test/inventory.test.ts')
+        self.assertIn('const USER_CONFIGS = INVENTORY.map(([name]) => name);', source,
+                      'section 151 stopped deriving its population from the table')
+
     def test_the_user_config_population_is_the_same_in_both_languages(self):
         """Section 140: `lab.USER_CONFIGS` and the fifteen `irframe.test.ts` asserts over.
 

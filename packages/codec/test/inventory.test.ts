@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
+  handlerSets,
   ACTIVITY_STATE_NAME,
   activities,
   deviceModeTitles,
@@ -1279,4 +1280,146 @@ test('an activity whose keys are on two pages is refused, not labelled from one 
     }
   }
   assert.equal(activities, 50);
+});
+
+/**
+ * The population for section 151: every user config, derived from the table at the top of this file.
+ *
+ * Derived rather than written out, because a second list of fifteen names in one file is a second list
+ * to keep in step, and `tests/test_toolchain.py` compares this one against `lab.USER_CONFIGS`.
+ */
+const USER_CONFIGS = INVENTORY.map(([name]) => name);
+
+test('a button map belongs to a device, and an activity map is that plus its overrides',
+     skipUnless(...USER_CONFIGS), () => {
+  // **Section 151, and it exists because a design was got wrong.** FreeHarmony's device page was built
+  // to show a keypad per activity, on the strength of every keypad binding here sitting in an activity's
+  // map. The measurement was right and the question was wrong: a Harmony has a **device mode**, where
+  // the Devices key points the whole keypad at one chosen device, and that is what a page about a device
+  // is for. `docs/how-a-harmony-works.md` is the context that was missing.
+  //
+  // What the corpus does say, once asked properly: for each pair of a device and a scan code, the
+  // command that pair sends is the **same in every activity that binds it**, 1096 of 1105 times. So the
+  // device's own map is what the activity maps agree on, and an activity map is that plus its own
+  // overrides. The nine exceptions are what an override looks like: an amplifier whose input selection
+  // differs per activity, and two keys customised inside one.
+  let pairs = 0;
+  let sameEverywhere = 0;
+  let inEveryActivity = 0;
+  let inSomeOnly = 0;
+  let devices = 0;
+  let devicesAgreeing = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const activityOfSet = new Map(activities(c).map((one) => [one.set, one.activity]));
+    // One code only, so the question is "which command", not "which macro". A macro is a key sending
+    // several codes in an order that matters and it is a different claim.
+    const keys = keyCodes(c).filter((one) =>
+      one.event !== 0 && one.where !== 'page' && one.codes.length === 1);
+
+    // Which activities drive each device, from the bindings rather than from the activity record, so
+    // the two ends of the comparison below come from different places.
+    const driving = new Map<number, Set<number>>();
+    for (const key of keys) {
+      const group = key.codes[0]!.group;
+      driving.set(group, new Set([...(driving.get(group) ?? []), activityOfSet.get(key.index) ?? -1]));
+    }
+
+    // Per device and scan: which command, and which activities said so.
+    const per = new Map<string, Map<number, Set<number>>>();
+    for (const key of keys) {
+      const { group, code } = key.codes[0]!;
+      const where = `${group}:${key.scan}`;
+      const row = per.get(where) ?? new Map<number, Set<number>>();
+      row.set(code, new Set([...(row.get(code) ?? []), activityOfSet.get(key.index) ?? -1]));
+      per.set(where, row);
+    }
+
+    const perDevice = new Map<number, number>();
+    for (const [where, row] of per) {
+      const group = Number(where.split(':')[0]);
+      pairs += 1;
+      perDevice.set(group, (perDevice.get(group) ?? 0) + (row.size > 1 ? 1 : 0));
+      if (row.size > 1) continue;
+      sameEverywhere += 1;
+      const said = new Set([...row.values()].flatMap((one) => [...one])).size;
+      if (said === driving.get(group)!.size) inEveryActivity += 1;
+      else inSomeOnly += 1;
+    }
+    for (const [, disagreeing] of perDevice) {
+      devices += 1;
+      if (disagreeing === 0) devicesAgreeing += 1;
+    }
+  }
+
+  // Exact, per this repository's rule about a corpus total: the population is a literal in this file,
+  // so these move only when a reader changes or a sample is added, and then they move in the diff.
+  assert.equal(pairs, 1105);
+  assert.equal(sameEverywhere, 1096, 'the same command in every activity that binds the pair');
+  assert.equal(pairs - sameEverywhere, 9, 'and the overrides, which are the interesting nine');
+  assert.equal(inEveryActivity, 970, 'bound in every activity that drives the device');
+  assert.equal(inSomeOnly, 126, 'bound in only some of them, which is authoring rather than structure');
+  assert.equal(devices, 50);
+  assert.equal(devicesAgreeing, 47, 'devices whose every button agrees across the activities');
+});
+
+test('a keypad map that sends a code is an activity\'s, so no config here holds a device mode map',
+     skipUnless(...USER_CONFIGS), () => {
+  // The other half of section 151, and it is the open question stated as a check rather than as a
+  // paragraph. Device mode points the whole keypad at one device with no activity running, so its map
+  // would be a keypad map that sends codes and that no activity installs. There is none.
+  //
+  // **Do not close this by inventing a mechanism.** Three readings remain: the firmware builds the map
+  // from the device's own command order, device mode reuses the running activity's map filtered to one
+  // device, or there is a map nothing here recognises. What settles it is the firmware routine behind
+  // the Devices item.
+  let maps = 0;
+  let installedByTheConfig = 0;
+  let installedByAnActivity = 0;
+  let sending = 0;
+  let sendingAndNotAnActivity = 0;
+  let bindingTheWholeKeypad = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    assert.ok(sets !== undefined, `${name}: no keypad maps at all`);
+    // `infraredCodesPerList` rather than a walk of our own, and that matters: a first attempt threaded
+    // one visited set through the whole recursion, so a list seen on one branch was skipped on every
+    // other. That is section 126's defect, which this repository warns about and which only produced
+    // the right number here by luck.
+    const codes = infraredCodesPerList(c);
+    const byAnActivity = new Set(activities(c).map((one) => one.set).filter((one) => one >= 0));
+    // Which maps the config installs: `0x1F` with a high byte of `0xFF` selects one, section 120.
+    const chosen = new Set<number>();
+    for (const list of c.actionLists() ?? []) {
+      for (const one of list ?? []) {
+        if (one.opcode === 0x1f && (one.operand >> 8) === 0xff) chosen.add(one.operand & 0xff);
+      }
+    }
+
+    maps += sets.addresses.length;
+    installedByTheConfig += chosen.size;
+    installedByAnActivity += byAnActivity.size;
+    sets.addresses.forEach((address, index) => {
+      const entries = taggedList(c, address)?.entries ?? [];
+      const emits = entries.some((one) =>
+        one.opcode === ACTION_LIST_INDEX_OPCODE && codes.has(one.operand));
+      if (emits) {
+        sending += 1;
+        if (!byAnActivity.has(index)) sendingAndNotAnActivity += 1;
+      }
+      if (entries.length >= 50) bindingTheWholeKeypad += 1;
+    });
+  }
+
+  assert.equal(maps, 158);
+  assert.equal(installedByTheConfig, 65);
+  assert.equal(installedByAnActivity, 50);
+  assert.equal(sending, 50, 'exactly as many send a code as an activity installs');
+  // **The assertion that carries the claim.** A keypad map that sends a code and is not an activity's
+  // would be a device mode map, and a sample holding one fails here rather than being absorbed.
+  assert.equal(sendingAndNotAnActivity, 0);
+  // And the counterweight, so the zero above is not read as "there are no other maps": 38 of them bind
+  // fifty or more keys, to lists of comparisons, register work and mode entries. That is a menu.
+  assert.equal(bindingTheWholeKeypad, 38);
 });

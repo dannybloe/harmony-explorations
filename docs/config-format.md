@@ -593,6 +593,29 @@ byte for byte, and their position is implied by everything packed before them, a
 *Why the generator emits them is not established*, and no config can answer it.
 [findings.md](findings.md) sections 67, 68 and 69.
 
+**A set is one activity's keypad map, and a device's own map is what those maps agree on.**
+[findings.md](findings.md) section 151, and it is the fact the format states least directly. Over the
+fifteen user configs: 158 sets, 65 installed by something in the config, 50 of those by an activity, and
+**exactly those 50 send an infrared code**. No set an activity does not install sends one, so **no config
+here holds a keypad map for device mode**, which the product certainly has. The other 108 send nothing,
+and 38 of them bind fifty or more keys to lists of comparisons, register work and mode entries, which is a
+menu.
+
+For every pair of a device and a scan code, the command that pair sends is the **same in every activity
+map that binds it**, 1096 of 1105, and 47 of 50 devices agree on every one of their buttons. The nine
+exceptions are per activity overrides, an amplifier's input selection being the clearest. So:
+
+* a device's button map is the **agreement** across the activity maps, never their union
+* 970 of the 1096 are bound in every activity that drives that device and 126 in only some, which is
+  authoring rather than structure
+* **a writer that changes a device's button has to write every activity map that inherited it**, or the
+  change is invisible in the activity a person is sitting in
+
+Where device mode's own map comes from is **open**: the firmware may build it from the device's own
+command order, device mode may reuse the running activity's map filtered to one device, or a map in the
+container may be unrecognised. Not established, and not to be guessed.
+[how-a-harmony-works.md](how-a-harmony-works.md) is the product side of this.
+
 The index is carried by opcode `0x1F` with the operand's high byte `0xFF` and the index in the low
 byte. When it changes, the firmware runs the outgoing entry's list with **tag 2** and the incoming
 one's with **tag 1**, the same leave and enter arrangement base slot 6 has with tags 7 and 6.

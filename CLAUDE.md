@@ -23,6 +23,43 @@ data format and the firmware is its interpreter, so the firmware is the authorit
 every config field. Reading it turns format work from inference into fact-finding. Never
 propose firmware modification as a route to anything.
 
+## How a Harmony works, and why this is the first section
+
+**This is the operating concept of the product, and its absence cost a whole screen.** On 22 August 2026
+FreeHarmony's device page was built to show a keypad per **activity**, on the strength of a correct
+measurement over fifteen configs: every keypad binding sits in a map an activity installs. The thing
+being built was the **device mode** editor. Nothing in this repository described what a Harmony does, so
+a design question got answered out of the file format, and the file format cannot answer it.
+
+**A Harmony has activities and it has device mode, and both map the whole keypad.** An activity is
+"Watch TV": it switches equipment on, sets inputs, and gives the keypad a map spanning several devices,
+so volume goes to the amplifier and channels to the set top box. Device mode is what the **Devices** key
+gives you: a list of your equipment, and picking one points **every** button at **that one device**. A
+**Current Activity** item goes back. The Harmony 600 and the Harmony 525 have a physical Devices key; the
+Harmony One has one on its touch panel.
+
+Device mode is not a corner of the product. It is how anybody reaches a command that is not on their
+activity's map, which is most commands: an activity binds thirty buttons and a television answers to a
+hundred. You are watching television, you want an obscure picture setting, you press Devices, pick the
+TV, press the button, and go back to Current Activity.
+
+**A button map therefore belongs to a device before it belongs to an activity**, section 151: of 1105
+pairs of a device and a button, 1096 send the same command in every activity that binds them, and 47 of
+50 devices agree everywhere. An activity's map is the device's map plus that activity's overrides. So a
+writer that changes a device's button has to reach every activity that inherited it, or the change is
+invisible in the activity somebody is sitting in.
+
+**Where device mode's own keypad map lives is open and must not be guessed.** No keypad map in any config
+here sends a code outside an activity: 158 maps, 65 installed by the config, 50 by an activity, exactly
+those 50 sending codes. Three readings remain, section 151, and the dead phrasing is in
+`reference/superseded.md`.
+
+`docs/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
+ritual that makes it get read. **The rule behind both**: a measurement over the corpus answers "what do
+these files contain" and never "what does the product do". The corpus will agree with itself about a
+feature it holds no bytes for. When the product answer is not written down here, ask Danny rather than
+designing around its absence.
+
 ## Decisions already taken, do not relitigate
 
 1. **Licence stays MIT.** libconcord and harmony-decompiler are GPLv3, so their code is not
@@ -698,6 +735,9 @@ docs/memory-map-525.md          arch 9, predictions written down before the remo
 docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
                                 implied positions and the three restamped fields. A survey behind
                                 edit.ts's refusal to change a length, not a plan to lift it
+docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
+                                the keypad and the screen each do. Read before designing anything about
+                                behaviour, since every other document here is about bytes
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -1071,6 +1111,8 @@ Five project skills carry the rituals that are easy to half-perform:
 * **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
   pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
   answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
+* **`how-a-harmony-works`**, the operating concept of the product, and the rule that a corpus
+  measurement cannot answer a question about behaviour. Read before designing anything.
 * **`status-report`**, how to say where the work stands: short, plain, one concrete example
   with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
