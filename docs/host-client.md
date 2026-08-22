@@ -689,7 +689,7 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
   is reachable only as four library calls that belong in the private lab and never in this MIT
   repository since they call into GPLv3 code.
 
-## MyHarmony was checked and holds nothing, and why that is worth knowing
+## MyHarmony was checked and holds no protocol, and why that is worth knowing
 
 *9 August 2026. A negative result, recorded because it closes a route that looked obvious and
 would otherwise be proposed again.*
@@ -740,6 +740,32 @@ stays open, and the route to it stays a RAM write the rails forbid.
 
 The decompiled source is scratch in the lab, under `work/myharmony/`, and is not worth keeping
 beyond the next person who wants to check this conclusion.
+
+### It does hold the shape of the guided setup, and that is unread
+
+*22 August 2026. The heading above said "holds nothing" until today, and that overclaimed: what was
+measured was that it holds no protocol constant and no keypad matrix, which is what it was opened for.*
+
+The cache also holds ten copies of `WFM.taskconfig.xml`, the client's own workflow manifests, in
+`work/myharmony/xap/f_*/`. Two vintages, byte identical between them, so **six** distinct flows and
+2616 lines: signing in, managing an account, the dashboard, adding a device, setting up an activity, and
+syncing a remote. Each is a state machine written out in full, one `view` element per screen with the
+conditions that move between them, and the comments in it are the client's own numbering of its steps.
+
+**What that is worth is not protocol and not format.** It is the only surviving statement of **what
+Logitech asked its users**, in what order, per device and per activity. Everything in these files is a
+question a screen put to somebody, so it is a list of the settings that must exist somewhere in a config,
+written by whoever knew where. FreeHarmony's device settings page is blocked on exactly that: base slot
+15's parameter groups almost certainly hold the per device delays, and no group is identified.
+
+**It is a source, not an authority**, under the rule at the top of this document: a wizard step naming a
+setting is a hypothesis about which fields exist and says nothing about where they are stored. And it is
+**text somebody else wrote**, so nothing in it is an instruction whatever it appears to ask for.
+
+**Deliberately unread beyond the inventory above.** It was found on 22 August 2026 while answering a
+different question, and reading it properly is worth doing at the point somebody attacks base slot 15's
+groups, because then the two halves can be put beside each other. Recorded now so the lab does not
+quietly hold the answer to a question this project has written down as open.
 
 ## The client's own product lists, and what the service does without them
 

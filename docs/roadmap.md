@@ -399,7 +399,7 @@ a technical claim about the product belongs on this side of the fence.
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
 | 3 | Change something, without touching the remote | M3's codec half, `edit.ts` with `FIELD_RULES`, done, same length only |
 | 4 | Put it back, changing nothing | **M4**, not started. The write rails, `ERASE_FLASH` scoping and the read back compare |
-| 5 | Change what your remote does | M4 again, plus nothing new from the format |
+| 5 | Change what your remote does | M4 again, plus **one reading**: which base slot 15 group holds a device's delays, see below |
 | 6 | Add and remove devices and activities | M6, and the **unscheduled** one: length changing edits, which relocate everything above the insertion |
 | 7 | Teach it a code from your old remote | **M5**, not started. Capture is read, section 98; the encoder from timings to a record is the open item |
 | 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |
@@ -407,6 +407,21 @@ a technical claim about the product belongs on this side of the fence.
 Two things the product plan states that this document used to imply and never said: version 1 is an
 **inspector**, since writing is decision 8 and only the Harmony One has a write target, and **the shell
 has never actually been chosen**, which is also the input decision 4 waits on.
+
+**Step 5 has one open reading and it has a button drawn on it already.** FreeHarmony's device page carries
+a Settings button, disabled, on 22 August 2026, and what it is disabled for is **which base slot 15 group
+holds a device's own delays**: how long a television takes after being switched on before it will listen,
+how long to leave between two commands, and how many repeats a code needs. Section 150 closed the per unit
+half of that question, there is no per unit state at all, and it read base slot 15's **identified** groups,
+which are the remote's own display and battery settings rather than anything per device. So a group holding
+per device timings is believed on Logitech's own setup questions and nothing else, and `writeback.ts` in
+FreeHarmony marks all three fields `unknown` for exactly that reason. **Guessing is worse than waiting
+here**, because section 44 measured what a wrong length costs: the firmware replaces a group whose length
+it does not expect with its own compiled in defaults, silently, so a wrong guess ships a configuration that
+looks accepted and does nothing. The cheapest evidence is the ten workflow manifests
+`docs/host-client.md` now inventories, which state what the old software asked per device, beside the two
+calibration configs, which were compiled to our own specification and could be compiled again with a delay
+set deliberately.
 
 **M0 Infrastructure. Done. Here.** Corpus widened to four architectures, container generalised
 across all of them, the workspace standing with the codec ported and proven equal by golden vectors,
