@@ -9,6 +9,25 @@
 # checkout no environment variable is needed.
 
 PYTHON  ?= python3
+# Run independent targets concurrently, which is what makes `make all` bearable. Measured on 23
+# August 2026, on this machine, with everything passing at both settings:
+#
+#   serial   about 5:50   (350s of CPU work at one core)
+#   -j4            1:44
+#   -j8            1:45
+#
+# So -j4 is not a guess and -j8 buys nothing: the floor is the Python suite itself, 105s and single
+# threaded, and `all` runs it three times over (test, test-nolab, test-partial) plus the TypeScript
+# suite. -j4 reaches that floor, so the only way lower is splitting the suite, which is not worth a
+# dependency. Raise it with `make -j8 all` if the mix ever changes; the variable is overridable.
+#
+# **Two things to know when it fails.** This is Apple's GNU Make 3.81, which has no `--output-sync`,
+# so concurrent targets interleave their output and a failure is hard to read: make still names the
+# target in `*** [target] Error`, so re-run that one alone. And the one hazard here is `lint`, whose
+# `compileall` writes the same `.pyc` files the three suites are importing. Two clean runs is evidence
+# and not proof, so a weird import error under -j is worth trying serially before believing it.
+MAKEFLAGS += -j4
+
 PNPM    ?= pnpm
 SRC     := src
 TESTS   := tests
