@@ -145,6 +145,30 @@ activity's own key map, and not on a device page. FreeHarmony's `docs/data-model
 modelling consequence, including one gap that writing it down exposed: a key the screen speaks for
 records which page it is on and not which activity, and by this rule every sequence has an activity.
 
+## What a sequence is allowed to be: 25 steps and 20 seconds
+
+Danny read both off Logitech's own editor on 23 August 2026. A sequence holds at most **25 steps**, and
+a pause is at most **20 seconds**.
+
+**The 20 seconds is just a limit** and there is nothing to say about it beyond writing it down. A pause
+is already read as a whole number of seconds in a sixteen bit field, section 43, so 20 is nowhere near
+anything the format struggles with, and the bound is somebody's judgement about what a person should be
+able to build.
+
+**The 25 may not be arbitrary, and that is worth a hypothesis rather than a shrug.** The thing a
+sequence runs on is a queue of **120 bytes holding three byte instructions**, section 34, which is 40
+instructions and no more. A sequence of 25 sends therefore fits, with fifteen instructions left for
+whatever else has to be pending, and a sequence of 45 could not. So the editor's limit may be a
+consequence of a structure we have already read rather than a number Logitech chose.
+
+**Unconfirmed, and stated so that it gets tested rather than believed.** Two things would have to hold
+for it: that a sequence's sends are enqueued together rather than one at a time, and that 40 minus 25
+is the room the rest of the machinery needs. Neither is established, and the arithmetic being tidy is
+exactly the kind of coincidence this project has been caught by before, where a wrong field split
+produced a number that looked like it described a keypad. What would settle it is a sequence at the
+limit, compiled and read: if 25 sends land in one list, the queue is the reason, and if they arrive in
+segments the limit is somebody's taste after all.
+
 ## A sequence can only use the activity's own appliances
 
 The third of the sequence rules Danny established on 23 August 2026, and it follows from the first: if
@@ -177,6 +201,24 @@ ordered list a button emits, so a sequence counts as one thing rather than as it
 the same command or sequence on a second pad of the touch panel, on any page. So this is a rule the
 authoring tool holds, which is why a config can only ever be consistent with it and can never
 demonstrate it.
+
+**And it is the screen's rule only, which is what makes the measurement mean something.** On the
+**keypad** the same command or sequence may go on as many keys as you like within one activity, said by
+Danny and then measured here, and the contrast is stark:
+
+| | two bindings sending the same thing |
+|---|---|
+| screen pages | **0** of 1319 |
+| keypad sets | **20** of 44 |
+
+Nearly half the keypad sets in the corpus put one command on two keys, and no screen page anywhere does
+it once. An absence on its own could be a coincidence of what people happen to build. An absence on one
+surface beside abundance on the other, measured the same way in the same configs, is the rule showing
+through. This is the closest thing to a confirmed product rule in this document.
+
+It also fits what the format already says about the two surfaces. They are separate maps whose scan
+codes do not overlap, section 128, so there was never a reason for a rule about one to apply to the
+other.
 
 **And the two facts together pin its scope, which neither does alone.** Counting across all of a
 config's pages gives plenty of repeats, 39 of 110 distinct sends in one Harmony One config. So the rule
