@@ -28,7 +28,7 @@ import { join } from 'node:path';
 import { LAB } from '@harmony/lab';
 import { irdaString } from '../src/irda.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
-import { pulsesOfStatedCode } from '../src/stated.ts';
+import { pulsesOfStatedCode, statedCode } from '../src/stated.ts';
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 const ANALYSIS = 'https://svcs.myharmony.com/InfraredAnalysisPlatform/InfraredAnalysisManager.svc/json/';
@@ -87,13 +87,19 @@ console.log('signed in\n');
 /** The census `bin/protocols.ts`'s companion script wrote: catalogue devices and their command codes. */
 interface Census {
   devices: { make: string; model: string; id: number; families: string[] }[];
-  codes?: { family: string; bits: number; value: string }[];
+  /** Their raw notation, parsed here by `statedCode`, so the census holds no second copy of it. */
+  codes?: { family: string; keyCode: string }[];
 }
 const censusPath = join(LAB ?? '.', 'work', 'myharmony', 'responses', 'ProtocolCensus.json');
 const census = JSON.parse(readFileSync(censusPath, 'utf8')) as Census;
-// Deduplicated, since the census walks makes and two makes can list the same code.
-const codes = [...new Map((census.codes ?? [])
-  .map((one) => [`${one.family}|${one.value}`, one])).values()];
+// Deduplicated, since the census walks makes and two makes can list the same code. Anything their
+// notation states in a shape `statedCode` refuses is dropped here and counted, rather than guessed at.
+const parsed = (census.codes ?? []).map((one) => statedCode(one.keyCode))
+  .filter((one) => one !== undefined);
+const unreadable = (census.codes ?? []).length - parsed.length;
+const codes = [...new Map(parsed.map((one) =>
+  [`${one.family}|${one.frames.join('_')}`, one])).values()];
+if (unreadable > 0) console.log(`${unreadable} catalogue codes are in a shape statedCode refuses\n`);
 if (codes.length === 0) {
   console.error(`${censusPath} carries no codes; rerun the census with --codes`);
   process.exit(1);
@@ -110,6 +116,7 @@ interface Row {
   family: string;
   bits: number;
   value: string;
+  frames: number;
   triedAs: string;
   theirs?: string;
   sameNumber: boolean;
@@ -118,9 +125,13 @@ interface Row {
 const rows: Row[] = [];
 let asked = 0;
 let readBack = 0;
+let namedRight = 0;
 
 outer: for (const code of codes) {
-  const value = BigInt(code.value);
+  // **The first frame only, and the row says so.** A two frame code needs the gap between the frames as
+  // well, and that is exactly what section 152 measured as not following from the bits. So this asks
+  // whether the first frame is right and leaves the pair for the compile route.
+  const value = code.frames[0]!;
   // One candidate per family: two entries of one family differ only in their carrier, and their analyser
   // is told the carrier in the string anyway, so trying both asks the same question twice.
   const byFamily = new Map(PROTOCOLS.map((one) => [one.family, one]));
@@ -148,18 +159,34 @@ outer: for (const code of codes) {
     // the reply as unparseable and reported a correct code as a refusal. Twelve of sixty rows.
     const stated = /^G:([^:]+):\([^)]*\)\(0x([0-9A-Fa-f]+)\)/.exec(theirs ?? '');
     const sameNumber = stated !== null && BigInt(`0x${stated[2]!}`) === value;
-    const sameName = stated !== null && stated[1]!.trim() === code.family;
+    // **The name is the signal and the number is not**, which took a second run to see. Their analyser
+    // identifies by rhythm, so emitting a Sharp 15 Bit number with Sony's durations comes back as
+    // `Sony 15 Bit` carrying that number: the bits are right, the rhythm is somebody else's, and an
+    // appliance would hear nothing it recognised. So agreement on the number alone means the encoder
+    // laid the bits out correctly and nothing at all about whether the code would work.
+    //
+    // Compared with their `O1` suffix stripped, since that is their analyser's and not their catalogue's:
+    // `JVC 16 Bit` comes back as `JVCO1 16 Bit`, which is agreement rather than a mismatch.
+    const canonical = (name: string): string => name.replace(/O1(?= \d)/, '');
+    const sameName = stated !== null && canonical(stated[1]!.trim()) === canonical(code.family);
     if (sameNumber) readBack += 1;
-    rows.push({ family: code.family, bits: code.bits, value: code.value, triedAs: entry.family,
+    if (sameName && sameNumber) namedRight += 1;
+    rows.push({ family: code.family, bits: code.bits, value: `0x${value.toString(16)}`,
+      frames: code.frames.length, triedAs: entry.family,
       sameNumber, sameName, ...(theirs === undefined ? {} : { theirs }) });
-    console.log(`${code.family.padEnd(22)} ${code.value.padEnd(14)} as ${entry.family.padEnd(20)} `
+    console.log(`${code.family.padEnd(22)} `
+      + `${`0x${value.toString(16)}${code.frames.length > 1 ? '+1' : ''}`.padEnd(14)} `
+      + `as ${entry.family.padEnd(20)} `
       + `-> ${theirs ?? 'refused'}${sameNumber ? '  NUMBER OK' : ''}${sameName ? ' NAME OK' : ''}`);
-    // Their answer is the arbiter, so once a candidate reads back correctly the rest are not asked.
-    if (sameNumber) break;
+    // Their answer is the arbiter, and the **name** is what settles it, so a candidate that only gets
+    // the number right does not stop the search: another entry may be the rhythm they recognise.
+    if (sameName && sameNumber) break;
   }
 }
 
-console.log(`\n${readBack} of ${asked} emitted codes read back with the number they were built from`);
+console.log(`\n${readBack} of ${asked} answers carry the number the code was built from`);
+console.log(`${namedRight} of ${codes.length} codes were also named as the family they came from, `
+  + 'which is the claim that says the rhythm is right and not only the bits');
 const out = flag('out', '');
 if (out !== '') {
   writeFileSync(out, JSON.stringify({ asked, readBack, rows }, null, 1));

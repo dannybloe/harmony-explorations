@@ -21819,3 +21819,52 @@ always empty: a JVC reply is `G:JVCO1 16 Bit:(Start)(0xC55A)():3`, and a pattern
 twelve correct answers as refusals and reported 32 of 60 where the truth was 30 of 30 over the
 deduplicated set. The first run therefore looked like a partial success and was a complete one.
 
+### 158 corrected the same evening: the number is not the test, the name is
+
+**The claim above is true and the framing around it was wrong**, and the correction is worth more than the
+original because it is the difference between a code that works and a code that does not.
+
+Their analyser identifies a rhythm. So emitting a `Sharp 15 Bit` number using **Sony's** durations comes
+back as `G:Sony 15 Bit:()(0x1BAC)():3`: the number is exactly the one it was built from, and the rhythm is
+somebody else's. A Sharp television would hear pulses in Sony's timing and recognise nothing. So agreement
+on the **number** says the encoder laid the bits out correctly and says nothing whatever about whether the
+code would do anything, and the first run's 30 of 30 was measuring the former while reading as the latter.
+
+**The test is whether their analyser returns the family the catalogue named**, with their `O1` suffix
+stripped, since that is their analyser's spelling and not their catalogue's: `JVC 16 Bit` coming back as
+`JVCO1 16 Bit` is agreement. Rerun that way over 44 catalogue codes and 144 answers:
+
+| catalogue family | rhythm confirmed by | right bits, wrong rhythm |
+|---|---|---|
+| Sony 12 Bit | Sony 12 Bit | |
+| Sony 15 Bit | Sony 15 Bit | |
+| Pioneer 32 Bit | Pioneer 32 Bit | |
+| Memorex 32 Bit | MemorexO1 32 Bit | |
+| JVC 16 Bit | MemorexO1 32 Bit | |
+| Pioneer 32 Bit 2 | | MemorexO1 32 Bit, Pioneer 32 Bit |
+| Pioneer 32 Bit Dual | | MemorexO1 32 Bit, Pioneer 32 Bit |
+| Panasonic 16 Bit | | MemorexO1 32 Bit, Pioneer 32 Bit |
+| Sharp 15 Bit | | Sony 12 Bit, Sony 15 Bit |
+| Sharp 48 Bit | | MemorexO1 32 Bit, Pioneer 32 Bit, SharpO1 48 Bit |
+| Sharp 48 Bit 2 | | MemorexO1 32 Bit, Pioneer 32 Bit, SharpO1 48 Bit |
+| Samsung 16 and 20 Bit | | SharpO1 48 Bit, Sony 12 Bit, Sony 15 Bit |
+| Samsung 38 Bit | | nothing at all |
+
+**Five families of thirteen are confirmed**, and the four whose name matches outright are the ones to
+trust: Sony 12, Sony 15, Pioneer 32 and Memorex 32, each emitted with the entry of its own name. `JVC 16
+Bit` is confirmed through NEC's durations, which is either an alias or their decoder being tolerant, and
+that is not distinguishable from here.
+
+**So the honest state of writing infrared from Logitech's catalogue** is that the bit layout is solved, the
+notation is read including its second frame, and the **rhythm** is measured for five families of the
+fourteen their database uses. What the other nine need is durations, and the corpus cannot supply them
+because our own equipment does not use those protocols. That is what the compile route is for: their
+service will build a config for any catalogue appliance with the remote unplugged, and the durations can
+then be read straight out of it. It has not been run, and it is the next thing to do rather than an
+alternative to any of this.
+
+**A second reading of `Samsung 38 Bit` is refused by everything**, including every entry in the table, so
+it is not a case of the wrong rhythm but of a shape nothing here produces. Its notation is
+`0x00801_1x1DA05F`, a five digit first frame and a `1x` second, and neither the widths nor the prefix is
+understood.
+
