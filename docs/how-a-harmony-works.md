@@ -145,6 +145,23 @@ activity's own key map, and not on a device page. FreeHarmony's `docs/data-model
 modelling consequence, including one gap that writing it down exposed: a key the screen speaks for
 records which page it is on and not which activity, and by this rule every sequence has an activity.
 
+## A sequence can only use the activity's own appliances
+
+The third of the sequence rules Danny established on 23 August 2026, and it follows from the first: if
+an activity owns its sequences, the sequence editor offers only the appliances that activity drives. In
+his example the activity drives a television, a set top box and an amplifier, and those three are the
+only sources of commands the editor will offer.
+
+**This one cannot be checked here, and the reason is worth stating rather than filed as unmeasured.**
+What an activity drives is not declared anywhere in a config: it is **derived** from the codes the
+activity's own bindings send, section 126. So "a binding only sends what the activity drives" is true by
+construction of the derivation, and no config could ever contradict it. The rule is real and it comes
+from the product, not from a measurement that could have gone either way.
+
+It does bound what an authored sequence may contain, which is the part an editor has to enforce, and it
+gives the device list a second job: it is not only a description of what an activity switches on, it is
+also the palette a sequence may draw from.
+
 ## A command appears once on an activity's screen
 
 Said by Danny on 23 August 2026, in the same breath as the rule above: a sequence, and **any** other
