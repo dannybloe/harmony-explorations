@@ -20,6 +20,58 @@ import { pulsesOfFrame, type FrameTimings, type Pulse } from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
 
 /**
+ * One code as Logitech's database states it: a family, and one or two frames.
+ *
+ * **Two frames, and that is the part a first reading of this notation missed.** Their string is
+ * `G:<family>:(<parameters>)(<frames>)(<...>):<n>`, and the frames field holds one value or two joined by
+ * an underscore: `0x1BAC_0x1853` for Sharp 15 Bit, `0x0400_1xED02F` for the family they call
+ * "Samsung 16 and 20 Bit". A pattern reading hexadecimal up to the underscore takes the first and drops
+ * the second silently, which is a code that sends half of what it should.
+ *
+ * **It closes a loop with section 152**, which measured that 226 records of the corpus hold a second,
+ * different code in the tail, systematic rather than authored, being a complement or a near variant or a
+ * constant lead in, and said a writer has to know which shape its group is in. For these families it does
+ * not have to work it out: the catalogue states the second frame outright.
+ *
+ * The `1x` prefix on a second value is theirs and its meaning is unread. It is kept as written rather
+ * than normalised, because a notation nobody has decoded is not a notation to tidy.
+ */
+export interface StatedCode {
+  readonly family: string;
+  readonly bits: number;
+  readonly frames: readonly bigint[];
+  /** The second frame's prefix as written, `0x` or `1x`, where there is a second frame. */
+  readonly secondPrefix?: string;
+}
+
+/**
+ * Read one of their catalogue codes, or `undefined` where the shape is not one this has seen.
+ *
+ * The bit width comes out of the family's own name, which is where they put it, and a family naming two
+ * widths, "Samsung 16 and 20 Bit", yields the last one. That is a guess about their spelling and it is
+ * marked as such: nothing here has established which width belongs to which frame.
+ */
+export function statedCode(keyCode: string): StatedCode | undefined {
+  const parsed = /^G:([^:]+):\([^)]*\)\(([^)]*)\)/.exec(keyCode);
+  if (parsed === null) return undefined;
+  const family = parsed[1]!.trim();
+  const widths = [...family.matchAll(/(\d+)\s*Bit/gi)].map((one) => Number(one[1]));
+  const bits = widths[widths.length - 1];
+  if (bits === undefined || bits === 0) return undefined;
+  const parts = parsed[2]!.split('_');
+  const frames: bigint[] = [];
+  let secondPrefix: string | undefined;
+  for (const [at, part] of parts.entries()) {
+    const value = /^([01])x([0-9A-Fa-f]+)$/.exec(part);
+    if (value === null) return undefined;
+    frames.push(BigInt(`0x${value[2]!}`));
+    if (at === 1) secondPrefix = `${value[1]!}x`;
+  }
+  if (frames.length === 0 || frames.length > 2) return undefined;
+  return { family, bits, frames, ...(secondPrefix === undefined ? {} : { secondPrefix }) };
+}
+
+/**
  * The entry for a family, at a carrier where one is given.
  *
  * **The carrier is part of the key and that is measured, not tidiness.** SharpO1 48 Bit arrives at 36.4

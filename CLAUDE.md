@@ -1202,6 +1202,9 @@ make growth        what a length change would move, per sample: addresses stated
                    and the cost of making room in three places. GROWTH_ARGS=--detail
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make emitcheck     build a code from a name and a number out of Logitech's catalogue and ask their own
+                   analyser to read it back, which is the closed loop for writing infrared. Needs the
+                   network and their credentials, never in `make all`. EMITCHECK_ARGS=--limit 40
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
@@ -1485,7 +1488,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 157 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 158 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

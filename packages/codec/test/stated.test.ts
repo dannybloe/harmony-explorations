@@ -15,7 +15,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { PROTOCOLS } from '../src/protocols.ts';
-import { closingSpace, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
+import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
+  from '../src/stated.ts';
 
 test('the table states six entries and what each one is worth', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
@@ -87,4 +88,28 @@ test('a family at two carriers is two entries, and asking without one picks the 
   assert.equal(statedProtocol('SharpO1 48 Bit', 26315)?.header[0], 3364);
   assert.equal(statedProtocol('SharpO1 48 Bit')?.codes, 33);
   assert.equal(statedProtocol('SharpO1 48 Bit', 12345), undefined);
+});
+
+test('a catalogue code may state two frames, and reading one is reading half a command', () => {
+  // **The notation has an underscore and a first reading of it did not**, which is the kind of quiet
+  // mistake this project keeps a rule about: a pattern reading hexadecimal up to the separator takes the
+  // first frame, parses cleanly, and emits a command that sends half of what it should.
+  const one = statedCode('G:Sony 12 Bit:()(0x910)():3');
+  assert.deepEqual(one, { family: 'Sony 12 Bit', bits: 12, frames: [0x910n] });
+  const two = statedCode('G:Sharp 15 Bit:()(0x1BAC_0x1853)():3');
+  assert.deepEqual(two,
+                   { family: 'Sharp 15 Bit', bits: 15, frames: [0x1BACn, 0x1853n], secondPrefix: '0x' });
+  // Their own second prefix, kept as written because what it means is unread. Their `1x` appears on the
+  // families whose two frames are different widths.
+  const wide = statedCode('G:Samsung 16 and 20 Bit:()(0x0400_1xED02F)():3');
+  assert.equal(wide?.secondPrefix, '1x');
+  assert.deepEqual(wide?.frames, [0x0400n, 0xED02Fn]);
+  // A family naming two widths yields the last, and the docstring says that is a guess about their
+  // spelling rather than a reading. The parameter slot may be occupied, which their JVC answers do.
+  assert.equal(wide?.bits, 20);
+  assert.equal(statedCode('G:JVCO1 16 Bit:(Start)(0xC55A)():3')?.bits, 16);
+  // And the refusals, which is what stops a malformed code becoming a plausible one.
+  assert.equal(statedCode('not their notation at all'), undefined);
+  assert.equal(statedCode('G:Mystery Protocol:()(0x12)():3'), undefined, 'no width in the name');
+  assert.equal(statedCode('G:Sony 12 Bit:()(0x1_0x2_0x3)():3'), undefined, 'three frames');
 });

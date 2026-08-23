@@ -21766,3 +21766,56 @@ block, which is the same boundary `pulsesOfFrame` already had.
 `test/stated.test.ts` asserts the counts, the 45 ms closure, the refusal for a family that is not there,
 and that a family at two carriers is two entries.
 
+## 158. A code built from a name and a number reads back correctly, on 30 of 30, and a stated code has two frames
+
+**What was manufactured.** Section 157 measured the durations of six protocol entries off the corpus. This
+takes codes out of Logitech's **catalogue**, which states a family and a number and no rhythm at all,
+builds the rhythm from that table, and sends it to Logitech's own analyser. **30 of 30 came back carrying
+the number they were built from.** So a code no remote here has ever recorded was made from nothing but a
+name and a number, and their own decoder agrees it is that code. `packages/codec/bin/emitcheck.ts`, read
+only in both directions.
+
+**The naming problem this settles, which would otherwise have been fatal.** The table's keys come from
+their **analyser** and the codes come from their **catalogue**, and the two vocabularies are not the same.
+Their catalogue's `Toshiba 32 Bit`, `Memorex 32 Bit`, `Pioneer 32 Bit 2`, `JVC 16 Bit`, `Panasonic 16 Bit`,
+`Sharp 48 Bit` and `Sharp 48 Bit 2` all emit correctly using the durations their analyser files under
+`MemorexO1 32 Bit`, which is NEC. Their analyser then names the result `MemorexO1 32 Bit`, `JVCO1 16 Bit`
+or `Delonghi 48 Bit` depending on the width. So **one rhythm serves seven of their fourteen catalogue
+family names**, and three more, `Sony 12 Bit`, `Sony 15 Bit` and `Pioneer 32 Bit`, match by name and by
+number both. A table keyed on one vocabulary and looked up with the other would have found nothing, and
+the mapping is now measured rather than guessed.
+
+**A census of what their database actually uses**, read only, 36 appliances over 25 makes and 2402
+commands: 14 protocol families, and three of them carry 1949 of the 2402 commands. `Toshiba 32 Bit` 801,
+`Sharp 15 Bit` 618, `JVC 16 Bit` 530, `Samsung 16 and 20 Bit` 137, `Pioneer 32 Bit` 120,
+`Pioneer 32 Bit Dual` 66, `Memorex 32 Bit` 53, `Samsung 38 Bit` 34, `Sharp 48 Bit 2` 20, `Sony 12 Bit` 7,
+`Pioneer 32 Bit 2` 6, `Sony 15 Bit` 6, `Panasonic 16 Bit` 2, `Sharp 48 Bit` 2. So the distribution is
+concentrated, which is why six measured entries reach as far as they do.
+
+**And a stated code holds one or two frames, which a first reading of the notation missed.** Four of the
+fourteen families never reached the emit check at all, and the reason was a pattern rather than a service:
+their frames field is `0x1BAC_0x1853` for `Sharp 15 Bit` and `0x0400_1xED02F` for
+`Samsung 16 and 20 Bit`, two values joined by an underscore. A pattern reading hexadecimal up to the
+separator takes the first, parses cleanly and emits **half a command**, which is the shape of mistake this
+project keeps a rule about. `statedCode` in `src/stated.ts` reads both now and refuses three.
+
+**That closes a loop with section 152**, which measured 226 records of the corpus holding a second,
+different code in the tail, found it systematic rather than authored, a complement or a near variant or a
+constant lead in, and said a writer has to know which shape its group is in. For these families it does
+not have to work anything out: the catalogue states the second frame outright. The `1x` prefix on a second
+value is theirs and unread, and it is kept as written rather than normalised, because a notation nobody
+has decoded is not a notation to tidy. Their own family names carry the same fact, since `Dual`, `2` and
+`and` all appear in them.
+
+**Two limits to state plainly, because the 30 of 30 invites overreading.** Their analyser reading the
+number back proves the **bit encoding** is right and says nothing about whether the appliance accepts
+those durations: their decoder is generic and a television's is not. Settling that needs the compile
+route, where their own service builds a config for a catalogue device and the rhythms can be compared byte
+for byte, which has not been run. And four families are still unmeasured, `Sharp 15 Bit` among them at 618
+commands, plus the biphase ones section 157 leaves out.
+
+**A bug in the check itself, recorded because it inverted a result.** Their answer's parameter slot is not
+always empty: a JVC reply is `G:JVCO1 16 Bit:(Start)(0xC55A)():3`, and a pattern demanding `()` read
+twelve correct answers as refusals and reported 32 of 60 where the truth was 30 of 30 over the
+deduplicated set. The first run therefore looked like a partial success and was a complete one.
+

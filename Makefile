@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
 
 BENCH_PORT ?= 8731
 
@@ -227,6 +227,13 @@ analyze:
 # --write to regenerate packages/codec/src/protocols.ts.
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
+
+# Build a code from a protocol name and a number out of Logitech's catalogue and ask their own analyser to
+# read it back, which is the closed loop the infrared side of this project wanted: `analyze` sends a
+# rhythm the corpus holds and takes their reading, this manufactures one and checks it. Needs a network and
+# somebody's credentials, so never part of `all`. Read only in both directions.
+emitcheck:
+	@node packages/codec/bin/emitcheck.ts $(EMITCHECK_ARGS)
 
 # Drive the bench page in a real browser. Not part of `all`, and not part of `ts`, for the same reason
 # the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips
