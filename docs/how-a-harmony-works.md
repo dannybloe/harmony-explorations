@@ -145,6 +145,36 @@ activity's own key map, and not on a device page. FreeHarmony's `docs/data-model
 modelling consequence, including one gap that writing it down exposed: a key the screen speaks for
 records which page it is on and not which activity, and by this rule every sequence has an activity.
 
+## A command appears once on an activity's screen
+
+Said by Danny on 23 August 2026, in the same breath as the rule above: a sequence, and **any** other
+command, may appear only once on the screen of an activity, counting all of that activity's pages
+together. You cannot put the television's mute on page one and again on page three.
+
+**This one is partly checkable, unlike most rules in this document**, and the checkable half holds
+exactly: across 1319 screen pages in the corpus that bind at least one command, and 3122 such bindings,
+**no page holds the same send twice**. Not once, on any architecture. A send here means the whole
+ordered list a button emits, so a sequence counts as one thing rather than as its codes.
+
+**It is enforced rather than merely conventional.** Danny tried it: Logitech's software refuses to put
+the same command or sequence on a second pad of the touch panel, on any page. So this is a rule the
+authoring tool holds, which is why a config can only ever be consistent with it and can never
+demonstrate it.
+
+**And the two facts together pin its scope, which neither does alone.** Counting across all of a
+config's pages gives plenty of repeats, 39 of 110 distinct sends in one Harmony One config. So the rule
+cannot mean "once anywhere on the remote", and since the tool genuinely refuses a second pad, the thing
+it counts within has to be narrower than the whole remote. An activity is what that leaves.
+
+What is still not measured is that last step, because telling which pages belong to which activity is a
+reading nobody has made: what exists is the chain that **names** an activity, sections 121 and 125, not
+an attribution of every page to one. The measurement to want is per activity, and it becomes available
+the day that attribution does. Until then the per page zero is the part that stands on evidence.
+
+**For anything being built**, the constraint is on the editor rather than on the file: offering a
+command for a screen page has to refuse it when it already sits on another page of the same activity,
+and the message has to say where it already is.
+
 ## What the screen does, and what it does not
 
 The screen is a second population of keys, and it shares almost no scan code with the keypad: none at
