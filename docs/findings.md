@@ -21633,3 +21633,64 @@ is the same request both times; a remote that never speaks still fails, with exa
 the retry cannot turn a dead remote into a hang; and a remote that has already answered does not get
 a retry on a later silence, because that is a different event and reporting it is right. With the
 retry removed, two of the three fail.
+
+## 156. A favourite channel with a leading zero does not use the number sender at all
+
+Section 154 read base slot 16 off a config made for it, three favourite channels whose numbers were 1,
+100 and 666, and left two of the record's fields without a reading. One of them is the byte at `+0x04`,
+which the firmware treats as a **floor**: it converts the value it was handed to packed decimal and
+raises this count to however many digits the value actually needs. So a channel written `001` looked
+like the case that would set it, and a set holding both `1` and `001` looked like the case that would
+force the generator to choose.
+
+`calibration_favzero` is that set, compiled on 23 August 2026 from the second test account, on a Harmony
+One carrying a real configuration of six devices. Five favourite channels, authored by hand:
+
+| label | channel authored |
+|---|---|
+| `Chan_1` | 1 |
+| `Chan_11` | 11 |
+| `Chan111` | 111 |
+| `Chan11` | 011 |
+| `Chan1` | 001 |
+
+**The field is not what expresses a leading zero, and neither is anything else in base slot 16.** It
+reads 0 in this config, as it did in the last one. Three of the five channels reach the number sender in
+the way section 154 described, a base slot 10 list holding `0x7A <value>` then `0x1F 0xF300`, and the
+values are 1, 11 and 111. The two written with a leading zero have no such list. Their base slot 13
+transition runs a list of `0x7F`s, one per digit, each naming a list whose body is a single `0x7D` send
+followed by `0x7C`. The codes are the television's own digit commands.
+
+So Logitech's generator has **two** mechanisms for a favourite channel and chooses between them on
+whether the number survives being written as an integer. `001` and `1` are the same integer, which is
+why the first cannot use the sender.
+
+**The closure is internal and needs no outside answer.** The two spelled out sequences are built from
+the same two send lists, and each uses one of them twice, in the arrangement that spells its own label:
+one is `0, 0, 1` and the other is `0, 1, 1`. Two codes, two arrangements, two labels, and the pairing is
+forced. The test states it as a comparison of the two shapes rather than by naming a code, so it cannot
+pass by recognising a particular command.
+
+The control is `calibration_favchannels`, the same measurement over the earlier sample, where all three
+channels are plain numbers and all three go through the sender, with no digit spelling anywhere. Without
+it the reading above would describe any config that has favourites.
+
+**What this costs a writer** is in the rails: adding a favourite is not one mechanism but a choice
+between two, and the choice is not free, because the spelled out form needs the appliance's digit codes
+to exist as sends in base slot 5 while the sender form needs the record in base slot 16. Section 154
+already said a favourite is not a key binding; this says it is not one structure either.
+
+**Two things this sample settles in passing.** An account device that no activity references is
+**kept**: six devices on the account, one of them added minutes before the compile and used by nothing,
+and six groups in base slot 5. An earlier note on this account had read a device as dropped, and that
+note is withdrawn. And the sample accounts to the byte with no gap and no overlap and is rebuilt byte
+for byte with nothing copied, which is the first time a config holding this structure has been through
+either.
+
+**One thing it does not settle, and it is a falsifier for something already believed.** This config's
+base slot 3 build timestamp reads 22 August 2026 13:56:17, the day before the compile, while the file
+contains changes made in the half hour before it. Section 111 measured an arch 12 remote seeding its
+clock from that record at every boot, so a remote synced with this file would come up a day slow. Either
+the field is not the moment the config was built or the service stamps it from something older. Left
+open here rather than explained, and the cheap test is another compile after another change.
+

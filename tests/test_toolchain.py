@@ -796,7 +796,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
     #: accounting and round trip are asserted in `calibration.test.ts` instead, which is where the
     #: gap this list creates gets closed.
     KNOWN_ANSWER = ('calibration_one', 'calibration_h600', 'calibration_favchannels',
-                    'one_spare_myharmony')
+                    'one_spare_myharmony', 'calibration_favzero')
 
     def test_no_corpus_wide_list_holds_a_known_answer_sample(self):
         """Widening one of those lists to include an authored sample has to be deliberate.

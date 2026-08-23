@@ -62,10 +62,15 @@ CONTAINERS = (
     # activities were chosen before the bytes existed, so a disagreement between Python and TypeScript
     # about them would be a disagreement about a known answer.
     'calibration_one', 'calibration_h600',
-    # The third, and the only config anywhere that populates base slot 16. Its vector is the only one
+    # The third, and the first config anywhere to populate base slot 16. Its vector is the only one
     # whose `number_senders` is not an empty list, so it is the only place the two implementations of
     # that reader are compared at all. Section 154.
     'calibration_favchannels',
+    # The fourth, and the second to populate base slot 16, from the other test account. Its value
+    # is the structure beside the record rather than the record: two of its five favourites do not
+    # use base slot 16 at all, so the vector compares the two implementations on the action lists
+    # and state transitions that spell a channel out instead. Section 156.
+    'calibration_favzero',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

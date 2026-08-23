@@ -160,9 +160,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   calibration_one: 'calibration-one-spare.bin',
   calibration_h600: 'calibration-h600.bin',
   // The third, 23 August 2026: the same account and the same Harmony One as `calibration_one`, with
-  // three favourite channels added and nothing else. **The only config anywhere that populates base
+  // three favourite channels added and nothing else. **The first config anywhere to populate base
   // slot 16**, which section 39 read out of firmware and no found config exercises. Section 154.
   calibration_favchannels: 'calibration-favchannels.bin',
+  // The fourth, 23 August 2026, and the first from the **second** test account: Danny's spare Harmony
+  // One with five favourite channels, two of them written with a leading zero. Those two do not use
+  // base slot 16 at all, they send one digit code each in order, which is what this sample settled.
+  // Six devices, one of them referenced by no activity, which refutes the note that the generator
+  // drops such a device. Section 156.
+  calibration_favzero: 'calibration-favzero.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
   // for the three devices of the calibration account. Not an image and not a config. It is here so
   // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number

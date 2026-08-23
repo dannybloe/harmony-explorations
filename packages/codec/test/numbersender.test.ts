@@ -1,5 +1,5 @@
 /**
- * Base slot 16, the number sender, on the one config anywhere that populates it.
+ * Base slot 16, the number sender, on the two configs that populate it, both of them made for it.
  *
  * **This section was read entirely out of firmware and exercised by nothing for a year.** Section 39
  * decoded the consumer on three images, established the record layout from the bytes it reads in
@@ -25,6 +25,7 @@ import {
   numberSenders,
 } from '../src/tables.ts';
 import { claims, coverage } from '../src/coverage.ts';
+import { stateRecords } from '../src/sections.ts';
 import { emit } from '../src/emit.ts';
 import { IR_CLASS_STREAM, irBlockWords, irClass, irGroups, irHeaderPointers } from '../src/ir.ts';
 import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
@@ -175,11 +176,11 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('one container declares a method for sending a number, 25 declare none, 9 are unread',
+test('two containers declare a method for sending a number, 25 declare none, 9 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
-    // of them go to zero unnoticed. The interesting number is the 1: this section stayed unexercised
-    // for a year because that column was empty.
+    // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
+    // for a year because that column was empty, and both of its members were manufactured.
     let populated = 0;
     let declaredEmpty = 0;
     let unread = 0;
@@ -198,8 +199,8 @@ test('one container declares a method for sending a number, 25 declare none, 9 a
     }
     // The sum first, because it is what makes the three below a partition rather than three
     // independent numbers: a lab missing a sample moves this one and fails here.
-    assert.equal(populated + declaredEmpty + unread, 35, 'every container the lab can parse');
-    assert.equal(populated, 1);
+    assert.equal(populated + declaredEmpty + unread, 36, 'every container the lab can parse');
+    assert.equal(populated, 2);
     assert.equal(declaredEmpty, 25);
     // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
     // states no architecture, plus the two containers found inside arch 8 firmware images, which
@@ -242,3 +243,115 @@ test('the emitter puts the whole container back byte for byte', skipUnless(SAMPL
   assert.deepEqual(report.bytes, data);
   assert.equal(report.copied, 0);
 });
+
+/**
+ * The fourth known answer sample, and what it settled: a leading zero takes another road entirely.
+ *
+ * `calibration_favzero` was authored with five favourite channels whose labels and numbers were chosen
+ * to force the question. `1`, `11` and `111` are plain numbers; `001` and `011` are the same first two
+ * written with a leading zero, so a config that pads would have to say so somewhere.
+ *
+ * It does not pad. The three plain numbers reach base slot 16 through the accumulator, and the two
+ * written with zeros **do not use base slot 16 at all**: their transition runs a list of one send per
+ * digit. So the `digits` field, which the firmware treats as a floor the conversion raises, is not how
+ * Logitech expresses a leading zero, and a writer therefore has two mechanisms rather than one field.
+ *
+ * The closure is internal, which is why this needs no outside answer: the two sequences are built from
+ * the **same two** send lists, in the two arrangements that spell their own labels.
+ */
+const ZERO_SAMPLE = 'calibration_favzero';
+
+/** `0x1F` with this operand is what hands the accumulator to the number sender. */
+const HANDOVER_OPERAND = 0xf300;
+/** Loads a literal into the accumulator. */
+const OPCODE_LOAD = 0x7a;
+/** Runs another base slot 10 list, its operand naming the entry. */
+const OPCODE_RUN = 0x7f;
+/** Sends an infrared code, its operand being `{ u8 group; u8 index }`. */
+const OPCODE_SEND = 0x7d;
+const OPCODE_REGISTER = 0x1f;
+
+/** Every base slot 10 list that hands a value to the number sender, and the value it loads. */
+function handoverLists(lists: readonly { opcode: number; operand: number }[][]) {
+  const found = new Map<number, number>();
+  lists.forEach((list, index) => {
+    const hands = list.some((i) => i.opcode === OPCODE_REGISTER && i.operand === HANDOVER_OPERAND);
+    const load = list.find((i) => i.opcode === OPCODE_LOAD);
+    if (hands && load !== undefined) found.set(index, load.operand);
+  });
+  return found;
+}
+
+test('three channels reach the number sender and the two with a leading zero do not',
+  skipUnless(ZERO_SAMPLE), () => {
+    const c = parse(require_(ZERO_SAMPLE));
+    const lists = c.actionLists() ?? [];
+    const senders = handoverLists(lists);
+    // Five favourites were authored and only three hand a value over, because 001 and 011 collapse
+    // onto 1 and 11 as integers and the generator refuses to lose the zeros that way.
+    assert.deepEqual([...senders.values()].sort((a, b) => a - b), [1, 11, 111]);
+    // And the record itself carries no minimum digit count, which is the field a padding reading
+    // would have had to use.
+    const record = numberSenders(c)?.records ?? [];
+    assert.equal(record.length, 1);
+    assert.equal(record[0]?.digits, 0);
+  });
+
+test('the two zero padded channels spell themselves out of one pair of digit codes',
+  skipUnless(ZERO_SAMPLE), () => {
+    const c = parse(require_(ZERO_SAMPLE));
+    const lists = c.actionLists() ?? [];
+    const senders = handoverLists(lists);
+
+    // The reference lives in base slot 13, not in a key binding: a favourite is a state variable
+    // value whose transition runs the list. Section 154. Two records hold them, a mode page's set
+    // and the copy nothing reads, so the assertion is over the record rather than over the corpus.
+    const wrappers = new Set<number>();
+    lists.forEach((list, index) => {
+      if (list.some((i) => i.opcode === OPCODE_RUN && senders.has(i.operand))) wrappers.add(index);
+    });
+    const holders = (stateRecords(c) ?? []).filter((r) =>
+      r.values.some((v) => v.opcode === OPCODE_RUN && wrappers.has(v.operand)));
+    assert.equal(holders.length, 2);
+
+    for (const holder of holders) {
+      // Five transitions, one per authored favourite, and every one of them wired.
+      assert.equal(holder.values.length, 5);
+      const spelled: number[][] = [];
+      let viaSender = 0;
+      for (const value of holder.values) {
+        const body = lists[value.operand] ?? [];
+        if (body.some((i) => i.opcode === OPCODE_RUN && senders.has(i.operand))) { viaSender += 1; continue; }
+        // Otherwise it runs one list per digit, each of which sends a single code.
+        const digits = body
+          .filter((i) => i.opcode === OPCODE_RUN)
+          .map((i) => (lists[i.operand] ?? []).find((x) => x.opcode === OPCODE_SEND)?.operand)
+          .filter((x): x is number => x !== undefined);
+        if (digits.length > 0) spelled.push(digits);
+      }
+      assert.equal(viaSender, 3);
+      assert.equal(spelled.length, 2);
+
+      // The closure. Two codes only, and each sequence is three digits long.
+      const codes = new Set(spelled.flat());
+      assert.equal(codes.size, 2);
+      assert.deepEqual(spelled.map((s) => s.length), [3, 3]);
+      // One sequence uses the first code twice and the other uses the second twice, which is 001
+      // against 011. Written as a comparison of the two shapes so it cannot pass by naming a code.
+      const shapes = spelled
+        .map((s) => s.map((code) => (code === s[0] ? 'a' : 'b')).join(''))
+        .sort();
+      assert.deepEqual(shapes, ['aab', 'abb']);
+    }
+  });
+
+test('the control has no digit spelling at all, because none of its channels carries a zero',
+  skipUnless(SAMPLE), () => {
+    // `calibration_favchannels` authored 1, 100 and 666, so every one of its three is a plain number
+    // and all three go through the sender. Without this the test above could be describing any config
+    // with favourites rather than the leading zero case.
+    const c = parse(require_(SAMPLE));
+    const lists = c.actionLists() ?? [];
+    const senders = handoverLists(lists);
+    assert.deepEqual([...senders.values()].sort((a, b) => a - b), [1, 100, 666]);
+  });

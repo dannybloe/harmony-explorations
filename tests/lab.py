@@ -184,8 +184,14 @@ IMAGES = {
     'calibration_h600': 'calibration-h600.bin',
     # The third, 23 August 2026: the same account and the same Harmony One as `calibration_one` with
     # three favourite channels added and nothing else, so the pair is a before and after over one
-    # logical change. The only config anywhere that populates base slot 16. Section 154.
+    # logical change. The first config anywhere to populate base slot 16. Section 154.
     'calibration_favchannels': 'calibration-favchannels.bin',
+    # The fourth, 23 August 2026, and the first from the **second** test account: Danny's spare Harmony
+    # One with five favourite channels, two of them written with a leading zero. Those two do not use
+    # base slot 16 at all, they send one digit code each in order, which is what this sample settled.
+    # Six devices, one of them referenced by no activity, which refutes the note that the generator
+    # drops such a device. Section 156.
+    'calibration_favzero': 'calibration-favzero.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

@@ -1327,10 +1327,18 @@ Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) s
 
 ### Base slot 16: the number sender
 
-**Confirmed on one container, which was made rather than found.** Every container in the corpus
+**Confirmed on two containers, both made rather than found.** Every container in the corpus
 carries a count of zero here, so for a year the layout came from three firmware images and nothing
 else. A configuration with three favourite channels on it was then compiled by Logitech's own service
 and every field below sits where the firmware reading put it, byte for byte. Section 154.
+
+**This section does not carry every favourite channel.** A channel is sent through here only when its
+number survives being written as an integer. One with a **leading zero** takes another route entirely:
+its base slot 13 transition runs one base slot 10 list per digit, each sending that appliance's own
+digit code, and this section is not involved. Measured on a config authored with `1` and `001`
+together, where the two go different ways. So `minimum` below is **not** how a leading zero is
+expressed, which is the one thing a reading of the firmware alone would have got wrong about it.
+Section 156.
 
 **A record is a method for sending a number, not a number.** Three channels produce **one** record and
 three action lists, each loading a constant and handing it to that record. So `count` is the number of
@@ -1381,8 +1389,8 @@ The fourteen bytes read in sequence end exactly where the first of the three fix
 begins, which is the closure for this layout, and the routine is identical on the 700, the 600 and
 the One.
 
-Read with `gspm.number_senders` and `tables.numberSenders`. [findings.md](findings.md) sections 39
-and 154.
+Read with `gspm.number_senders` and `tables.numberSenders`. [findings.md](findings.md) sections 39,
+154 and 156.
 
 ### Base slot 13: the state variable table
 

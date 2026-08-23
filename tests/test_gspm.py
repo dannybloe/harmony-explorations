@@ -2961,13 +2961,20 @@ class TestHowManyChecksAContainerReports(unittest.TestCase):
         self.assertEqual(set(without.checks) - set(with_table.checks), set())
 
 
-class TheNumberSenderReadsItsOnlySample(unittest.TestCase):
-    """Base slot 16 on the one config anywhere that populates it, section 154.
+class TheNumberSenderReadsTheChannelSample(unittest.TestCase):
+    """Base slot 16 on `calibration_favchannels`, the first config anywhere to populate it, section 154.
 
     The Python reader had never had a record to read: section 39 derived the layout from three
     firmware images and every container in the corpus carries a count of zero. This is the reader
     against a config that was **made** to exercise it, three favourite channels on a Harmony One
     compiled by Logitech's own service, with the numbers chosen before the file existed.
+
+    **Named for its sample rather than for the population**, since the class was called
+    `TheNumberSenderReadsItsOnlySample` until a second one existed. `calibration_favzero` is that
+    second, and what it settles is not this layout but the route a channel takes: a leading zero
+    bypasses base slot 16 entirely and spells the number out one digit code at a time, section 156.
+    It is asserted in `packages/codec/test/numbersender.test.ts`, where the action list and state
+    variable readers it needs already live.
 
     The TypeScript side asserts the same fields and a golden vector compares the two, so what this
     adds is the Python claim standing on its own rather than through the vector's mechanism.

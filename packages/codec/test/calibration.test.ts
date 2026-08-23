@@ -154,6 +154,7 @@ const KNOWN_ANSWER = [
   'calibration_h600',
   'calibration_favchannels',
   'one_spare_myharmony',
+  'calibration_favzero',
 ] as const;
 
 for (const name of KNOWN_ANSWER) {

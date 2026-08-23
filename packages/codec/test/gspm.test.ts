@@ -595,7 +595,7 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  * parses. That difference is the point of the count being asserted: three source comments quoted
  * "all thirteen samples" and "all 24 containers" while the lab held 33.
  */
-const PARSEABLE = 35;
+const PARSEABLE = 36;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -706,7 +706,7 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    assert.equal(agree, 33);
+    assert.equal(agree, 34);
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
@@ -750,6 +750,6 @@ test('the frame tiles to the next section on every container that has one', skip
     assert.equal(start + (c.frameExtent as number), target, name);
     if (start + c.frameLength + 2 === target) naive += 1;
   }
-  assert.equal(framed, 28);
-  assert.equal(naive, 26, 'the two the sentinel gets wrong are the two empty frames');
+  assert.equal(framed, 29);
+  assert.equal(naive, 27, 'the two the sentinel gets wrong are the two empty frames');
 });
