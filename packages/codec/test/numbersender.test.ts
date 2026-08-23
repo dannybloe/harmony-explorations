@@ -175,7 +175,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('one container declares a method for sending a number, 24 declare none, 9 are unread',
+test('one container declares a method for sending a number, 25 declare none, 9 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 1: this section stayed unexercised
@@ -198,9 +198,9 @@ test('one container declares a method for sending a number, 24 declare none, 9 a
     }
     // The sum first, because it is what makes the three below a partition rather than three
     // independent numbers: a lab missing a sample moves this one and fails here.
-    assert.equal(populated + declaredEmpty + unread, 34, 'every container the lab can parse');
+    assert.equal(populated + declaredEmpty + unread, 35, 'every container the lab can parse');
     assert.equal(populated, 1);
-    assert.equal(declaredEmpty, 24);
+    assert.equal(declaredEmpty, 25);
     // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
     // states no architecture, plus the two containers found inside arch 8 firmware images, which
     // report architecture 0. Counted separately because "the reader declined" and "the config says

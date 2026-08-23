@@ -27,9 +27,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { imagePath, skipUnless } from '@harmony/lab';
+import { imagePath, require_, skipUnless } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import { devices, activities, inventory } from '../src/inventory.ts';
+import { coverage } from '../src/coverage.ts';
+import { emit } from '../src/emit.ts';
 
 /** What was chosen, before any of these bytes existed. */
 const CHOSEN = {
@@ -133,3 +135,44 @@ test(
     }
   },
 );
+
+/**
+ * Every known answer sample, whether the readers can account for it and put it back.
+ *
+ * **These four sit outside the corpus wide populations on purpose, and that had a cost nobody had
+ * noticed**: `ACCOUNTED`, `REBUILT` and the coverage loops all walk `CONTAINERS`, so until this test
+ * existed the samples that differ most from the corpus were the ones whose byte accounting and round
+ * trip nothing asserted. They were measured by hand on the day each arrived, which is not a test.
+ *
+ * They differ in ways that matter for a reader: three were compiled by Logitech's current service
+ * rather than by the software of ten years ago, one is a real five device setup, one carries the only
+ * base slot 16 record anywhere, and their device definitions come from today's database and are richer
+ * than the corpus's. A reader that broke on any of that would have gone unnoticed.
+ */
+const KNOWN_ANSWER = [
+  'calibration_one',
+  'calibration_h600',
+  'calibration_favchannels',
+  'one_spare_myharmony',
+] as const;
+
+for (const name of KNOWN_ANSWER) {
+  test(`${name} accounts to the byte, with no gap and no overlap`, skipUnless(name), () => {
+    const c = parse(require_(name));
+    const report = coverage(c);
+    // Stated as the three separate facts rather than as the percentage: a percentage rounds, and a
+    // gap of one byte in 1.6 MB still reports 100.0%.
+    assert.deepEqual(report.gaps, []);
+    assert.deepEqual(report.overlaps, []);
+    assert.equal(report.accounted, report.total);
+  });
+
+  test(`${name} is rebuilt byte for byte with nothing copied`, skipUnless(name), () => {
+    // `copied` is the number that carries this: an emitter that starts from a copy of its input
+    // round trips while writing nothing, so byte equality alone is not the claim.
+    const data = require_(name);
+    const report = emit(parse(data));
+    assert.deepEqual(report.bytes, data);
+    assert.equal(report.copied, 0);
+  });
+}

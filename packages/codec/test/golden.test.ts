@@ -58,6 +58,9 @@ const CONTAINERS = [
   'h525_external_firmware',
   'one_spare_before_sync',
   'one_spare_after_sync',
+  // The third state of that unit, section 155, and the richest known answer sample: a real five
+  // device setup built by MyHarmony from an account whose contents we can ask for.
+  'one_spare_myharmony',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -138,15 +141,15 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
     assert.ok(Array.isArray(sections), 'a vector has no section table');
     assert.equal(sections.length, vector['pointer_count'], 'one section per pointer slot');
     // And the checks by name, not by count. Fourteen are on every vector; `key_table_is_complete`
-    // needs a key table, so it is on 30 of the 34 and the four without one are asserted below.
+    // needs a key table, so it is on 31 of the 35 and the four without one are asserted below.
     const checks = Object.keys(vector['checks'] as object);
     for (const name of UNIVERSAL_CHECKS) assert.ok(checks.includes(name), `no ${name} check`);
     assert.ok(checks.every((n) => n === 'key_table_is_complete' || UNIVERSAL_CHECKS.includes(n)),
       `an unexpected check: ${checks.filter((n) => n !== 'key_table_is_complete' && !UNIVERSAL_CHECKS.includes(n)).join(', ')}`);
     if (checks.includes('key_table_is_complete')) complete += 1;
   }
-  assert.equal(present.length, 34, 'every vector, which is what `make golden` compares');
-  assert.equal(complete, 30, 'the vectors whose container has a key table at all');
+  assert.equal(present.length, 35, 'every vector, which is what `make golden` compares');
+  assert.equal(complete, 31, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
   // and null on 8, so a summary that stopped emitting it would break nothing anybody would notice:
@@ -156,7 +159,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   const senders = present.map((v) => v['number_senders'] as unknown[] | null);
   assert.equal(senders.every((one) => one !== undefined), true, 'a vector is missing number_senders');
   assert.equal(senders.filter((one) => one === null).length, 9, 'the containers with no readable slot');
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 24);
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 25);
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 1,
     'exactly one config anywhere populates base slot 16');
 });
@@ -169,7 +172,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 34, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 35, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

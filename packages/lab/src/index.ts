@@ -148,6 +148,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
+  // A third state of that same unit, 23 August 2026: Danny's real Classic era configuration,
+  // imported into a MyHarmony account and synced onto it by Logitech's own software. **The richest
+  // known answer sample here**, because the account behind it is one we hold credentials for, so
+  // every device and activity name a reader extracts can be checked against what Logitech says the
+  // account holds. Five devices and seven activities against the other three samples' three and two.
+  // Out of the corpus wide lists like them. Section 155.
+  one_spare_myharmony: 'one-spare-myharmony-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',

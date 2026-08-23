@@ -169,6 +169,11 @@ IMAGES = {
     # compiled by the live service rather than found. findings.md section 58.
     'one_spare_before_sync': 'one-spare-before-sync-config.bin',
     'one_spare_after_sync': 'one-spare-after-sync-config.bin',
+    # A third state of that same unit, 23 August 2026: Danny's real Classic era configuration,
+    # imported into a MyHarmony account and synced onto it by Logitech's own software. The richest
+    # known answer sample here, since the account behind it can be queried for every name a reader
+    # extracts. Five devices and seven activities. Out of the corpus wide lists. Section 155.
+    'one_spare_myharmony': 'one-spare-myharmony-config.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.

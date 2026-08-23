@@ -52,6 +52,9 @@ CONTAINERS = (
     # is a duplicate on purpose: the alternative is a special case in the test that asserts every
     # container sample has one, and a special case there is worth less than a duplicate file.
     'one_spare_before_sync', 'one_spare_after_sync',
+    # And the third state of that unit, section 155: a real five device setup built by MyHarmony from
+    # an account we can query. A golden vector is worth most exactly where the answer is known.
+    'one_spare_myharmony',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

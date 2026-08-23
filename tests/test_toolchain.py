@@ -789,6 +789,31 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         body = body[:body.index('];')]
         return sorted(set(re.findall(r"'([a-z0-9_]+)'", body)))
 
+    #: The known answer samples, which must appear in none of those lists. Three were compiled by
+    #: Logitech to a specification we wrote and one is a real setup imported through an account we
+    #: hold credentials for, so all four were **authored** rather than found, and a corpus wide total
+    #: measures what a reader can read across configs that were found, section 142. Their own byte
+    #: accounting and round trip are asserted in `calibration.test.ts` instead, which is where the
+    #: gap this list creates gets closed.
+    KNOWN_ANSWER = ('calibration_one', 'calibration_h600', 'calibration_favchannels',
+                    'one_spare_myharmony')
+
+    def test_no_corpus_wide_list_holds_a_known_answer_sample(self):
+        """Widening one of those lists to include an authored sample has to be deliberate.
+
+        The lists are checked against each other above, so adding a name to all five keeps them
+        agreeing and silently changes what every corpus wide total means. This is the check that
+        makes that a conversation rather than a passing test suite.
+        """
+        for relative, declaration in self.POPULATIONS.items():
+            names = self._names(relative, declaration)
+            for sample in self.KNOWN_ANSWER:
+                self.assertNotIn(
+                    sample, names,
+                    '%s names the authored sample %s, so its corpus wide totals no longer measure '
+                    'found configs. If that is intended, say so here and sweep every marked number.'
+                    % (relative, sample))
+
     def test_every_list_names_the_same_containers(self):
         found = {relative: self._names(relative, declaration)
                  for relative, declaration in self.POPULATIONS.items()}
