@@ -4409,10 +4409,19 @@ So a Harmony sends a channel number by looking up one action list per digit, wit
 table for the leading and trailing digit, and optional prefix and terminator instructions. That is
 the shape of every "enter 1, 2, 3 then Enter" sequence a television needs.
 
-**Every config in the corpus carries a count of zero.** All twelve, spanning four architectures.
-The section exists, its pointer is real, and nobody on this bench has a device configured to use
-it. That is worth stating plainly, because it also explains why no operand statistic could ever
-have found this slot, and because `gspm.number_senders` has never had a record to read.
+**Every config in the corpus carries a count of zero.** All twelve at the time, twenty one now,
+spanning four architectures. The section exists, its pointer is real, and nobody on this bench has a
+device configured to use it. That is worth stating plainly, because it also explains why no operand
+statistic could ever have found this slot, and because `gspm.number_senders` has never had a record to
+read.
+
+**That last clause stopped being true on 23 August 2026 and the layout above is confirmed**, section
+154: a configuration with three favourite channels on it was compiled by Logitech's own service, and
+every field here sits where this reading put it. Two details this section could not know: the count is
+the number of **appliances** that take a number rather than the number of channels, and a count of zero
+is not a NULL slot but a declared section holding one byte. One prediction made from this reading was
+wrong, that the prefix would be disarmed; `flags` is `0x04` there, arming it at a hundred, while the
+prefix instruction itself is a no-op.
 
 ### What the accumulator computes
 
@@ -4462,7 +4471,10 @@ and activities together is the reading the counts support and it is not proven.
 **The second table in a base slot 14 record**, empty in every record in the corpus.
 
 **What base slot 16's `flags` bits above 2 do**, and the record's `base` field, which nothing in
-the corpus exercises because nothing in the corpus has a record.
+the corpus exercises because nothing in the corpus has a record. **Half answered in section 154**:
+`base` is 0 in the one record that exists, and bit 2 is set there with the prefix it arms pointing at
+a no-op, which is a fact rather than a reading. Bit 0 and the bits above 2 are still untouched by any
+sample, and the compile that would touch them is named at the end of that section.
 
 **Slots 7, 11, 12, 15 and 17.** Five left, with the same footing section 38 gave them.
 
@@ -21395,3 +21407,145 @@ answers unauthenticated and states the address, along with 307 other operations 
 same service, `Ping`, `SaveTeachingRequest`, `GetTeachingRequest` and `GetTeachingStatus`, which are
 the rest of the learning flow. `Ping` answers 200 with no session; `AnalyzeInfrared` answers 400 and
 `Access is denied`.
+
+## 154. Base slot 16 has a sample now, it was made rather than found, and a record is a method
+
+Section 39 read the number sender out of three firmware images and had to end by saying that every
+container in the corpus carries a count of zero. So the layout rested on the code alone, two of its
+fields could not be read from anything, and both parsers had a reader that had never seen a record.
+That is the weakest position any section here has been in: not unread, but **unfalsifiable**, because
+nothing in the corpus could disagree with it.
+
+The sample was manufactured. Danny created three favourite channels on a Harmony One in a MyHarmony
+account, for a television, labelled `Chan1`, `Chan100` and `Chan666` with channels 1, 100 and 666, and
+Logitech's own service compiled a configuration for it with the remote unplugged. The predictions were
+written and **committed before the file was fetched**, `docs/predictions-number-sender.md`, so what
+follows is a comparison rather than a story.
+
+### The prediction that carried the section, and it holds
+
+**The count is 1, not 3.** A record is a **method for sending a number** and not a number: it holds
+digit tables, a base and a minimum digit count, and the value arrives in the accumulator. So one
+television is one record however many channels point at it, and the three numbers live somewhere else.
+
+They live in three action lists, one per channel, each exactly two instructions:
+
+```
+list 0x0394:  0x7A 0x0001    0x1F 0xF300
+list 0x0209:  0x7A 0x0064    0x1F 0xF300
+list 0x02E2:  0x7A 0x029A    0x1F 0xF300
+```
+
+`0x7A` loads the accumulator with a constant and `0x1F` with an operand whose high byte is `0xF3`
+hands it to the base slot 16 record its low byte selects, which is section 39's own reading of the
+high band ladder. The three constants are 1, 100 and 666. Had the count been 3, a record would have
+been a channel and section 39's central claim would have been wrong; this is the one outcome this
+sample could produce that would have cost the most to find out any other way.
+
+### The record, byte for byte
+
+```
+06b639  04 00 00 00 00  00 00 00  89 02 7f  00 00 00  df b5 06  fd b5 06  1b b6 06
+        ^^ flags        ^ digits  ^^^^^^^^  ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^ base         epilogue    prefix    first, middle, last tables
+                    ^^^^^^^^ prologue
+```
+
+Twenty three bytes, every field where section 39 put it. `base` is 0 and the prologue and prefix are
+NULL, all three as predicted. Two predictions were wrong and both are worth the ink:
+
+**`digits` is 0 and the prediction said 1.** The two behave identically, because the conversion raises
+the floor to however many digits the value needs, so channel 1 is sent as one digit either way. What
+makes 0 the interesting value is that it agrees with what the account states: a channel is stored
+there as **text**, `"1"`, `"100"`, `"666"`, so a leading zero can be authored, and a per record minimum
+width could not pad two channels of one television differently. The field is a floor and this config
+declines to use it.
+
+**`flags` is `0x04` and the prediction said bits 1 and 2 would be clear.** Bit 2 sets the prefix
+threshold to `0x0100`, so the prefix fires for any value of three digits or more, which two of these
+three channels are. And the prefix it arms is NULL, an opcode `0x00` that does nothing. So the
+mechanism is switched on and points at a no-op. One sample cannot say why, and the two readings it
+cannot separate are that the generator sets bit 2 whenever a channel reaches three digits and leaves
+the prefix empty when the appliance needs none, or that bit 2 carries a second meaning section 39 did
+not see. A second sample with only one and two digit channels separates them, and it is cheap.
+
+### The closure, and its two ends have nothing in common
+
+Each digit table is ten instructions, all `0x7F`, each running an action list that sends one infrared
+code. Decoding those codes into the bit frames a device sees, and looking each frame up in the command
+catalogue of the account that generated this configuration, gives:
+
+| table index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| the name Logitech gives that code | `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` |
+
+Ten of ten, in order. **The index comes from the firmware's reading of the record and the name comes
+from Logitech's own catalogue, matched through a decoded infrared frame**, so a position in a table
+predicts a word somebody at Logitech chose, and nothing is shared between the two routes. The
+epilogue, the instruction queued after the last digit, resolves the same way to that television's
+`Select`. Section 39 predicted "an Enter or a Select command, or NULL" from the firmware alone.
+
+The three table pointers are **three distinct addresses**, thirty bytes apart, holding byte identical
+copies. Nothing requires that: a config is free to point two of them at one table, which is why both
+the accounting and the emitter deduplicate by address rather than claiming ninety bytes as one run.
+
+### A second closure, from a routine that knows nothing about any of this
+
+The byte accounting had never heard of base slot 16. Run on this container before the reader was
+wired in, it reported **exactly one gap, of 113 bytes**, and nothing else changed. Section 39's layout
+says 23 for the record and 30 for each of three digit tables:
+
+```
+23 + 3 * 30 = 113
+```
+
+Two routines with no code in common agreeing on a number to the byte. The accounting reaches 100.00%
+with zero gaps and zero overlaps once the three owners exist, and the emitter puts the whole container
+back byte for byte with nothing copied.
+
+### The control, and the thing it corrects
+
+`calibration_one` is the same Harmony One on the same account compiled ten days earlier, differing in
+the three channels and nothing else. Its slot is **not NULL**: it declares the section, gives it one
+byte, and puts a count of zero in it. The sample gives it four, a count and one pointer. So the
+section grows by exactly the width of a pointer, and **an empty record list is a different answer from
+an unreadable slot**. Both readers now distinguish them, and the population splits three ways over the
+34 containers the lab can parse: 1 populated, 24 declaring none, and 9 the reader declines, being the
+seven arch 10 (Harmony 890) reads whose slot mapping is deliberately ungated and the two containers
+found inside arch 8 (Harmony 880 and 885) firmware images, which report architecture 0.
+
+### Where the channels hang, which is not where the prediction put them
+
+The prediction said "one mode page, three bindings, each to a base slot 10 list", by analogy with
+section 120's activity pages. It is not that. Nothing in any page's tagged list names the three
+channel lists, and nothing names the six wrapper lists above them either. The reference comes from
+**base slot 13**, the state variable table: the three wrappers are the targets of transitions, the same
+mechanism section 126 found for a device's `Power` and `Input`, where a variable's transition carries
+one action list instruction and that list is what sends the code.
+
+So a favourite channel is modelled as **a value of a state variable**, not as a key binding, and the
+container gains two state records for three channels. That also explains the profile: against the
+control, three channels cost one mode record, one mode page, two screen programs, one binding set, one
+timer, two state records and 35 action lists, and cost **no** new key bindings and no new infrared
+group. The three labels are drawn and read back by `make text`, which is an independent check that the
+fetched file is the one that was asked for, since the text route touches this section not at all.
+
+### Two things about the compile, measured on the way
+
+**A byte diff between two compiles is worthless and now quantified on arch 12 (Harmony One).** Two
+compiles of an unchanged account differ in 997855 of 1489789 bytes, 67%, which is the same phenomenon
+three arch 8 (Harmony 880 and 885) configs showed at 73 to 84%. So the comparison here is structural
+throughout.
+
+**But two of the three earlier compiles are byte identical, and they share a build timestamp.** The
+third has a different timestamp and differs everywhere. So the reshuffle travels with that field rather
+than with the request, and an unchanged account asked twice can hand back the same artefact. That is
+worth knowing before anybody treats two downloads as two samples.
+
+### What this does not settle
+
+`flags` bit 0, which makes the prefix consume a digit, and the bits above 2. Three plain channel
+numbers exercise none of them. What would: a channel authored with a leading zero, which tests whether
+`digits` is what pads; a channel entered as a two part number, which is what a prefix is for; and one
+and two digit channels only, which separates the two readings of bit 2 above. Each is one more compile
+on the same account and none needs a remote.

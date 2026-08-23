@@ -98,15 +98,19 @@ import {
 } from './ir.ts';
 import { VALUE_MAP_COUNT_WIDTH, valueMaps } from './valuemap.ts';
 import {
+  NUMBER_SENDER_RECORD_LENGTH,
+  NUMBER_SENDER_TABLE_LENGTH,
   TIMER_RECORD_LENGTH,
   TOUCH_AREA_LENGTH,
   lightBandExtras,
+  numberSenders,
   parameterGroups,
   timers,
   touchMapStart,
   touchPages,
 } from './tables.ts';
 import { archSlot } from './gspm.ts';
+import type { Instruction } from './gspm.ts';
 
 /** Bytes of the container frame: the cookie, the two `u32`s, the trailer and the end marker. */
 export const COOKIE_LENGTH = 4;
@@ -465,6 +469,39 @@ export function rebuilds(c: Container): Rebuild[] {
         .u24(timer.duration)
         .u16(timer.instruction.operand)
         .u8(timer.instruction.opcode));
+    }
+  }
+
+  // Base slot 16: the number sender, its record and its digit tables.
+  //
+  // No found config reaches this, since the slot is NULL in all twenty one of them; the one made
+  // config does. It is here rather than left to the residue copy because `rebuilds` is the mirror of
+  // `claims` owner for owner, and the accounting claims these three, section 154.
+  const senderTable = numberSenders(c);
+  if (senderTable !== undefined) {
+    const w = new Writer(senderTable.length).u8(senderTable.records.length);
+    for (const sender of senderTable.records) w.u24(sender.address);
+    framed(senderTable.start, 'slot-16-table', w);
+    const digits = new Map<number, Instruction[]>();
+    for (const sender of senderTable.records) {
+      at(sender.address, 'slot-16-record', new Writer(NUMBER_SENDER_RECORD_LENGTH)
+        .u8(sender.flags)
+        .u24(sender.base)
+        .u8(sender.digits)
+        .u16(sender.prologue.operand).u8(sender.prologue.opcode)
+        .u16(sender.epilogue.operand).u8(sender.epilogue.opcode)
+        .u16(sender.prefix.operand).u8(sender.prefix.opcode)
+        .u24(sender.tables[0]?.address ?? 0)
+        .u24(sender.tables[1]?.address ?? 0)
+        .u24(sender.tables[2]?.address ?? 0));
+      // Deduplicated for the same reason the accounting deduplicates: two of a record's three
+      // pointers may name one table, and writing it twice would be a rebuild claiming it twice.
+      for (const table of sender.tables) digits.set(table.address, table.instructions);
+    }
+    for (const [address, instructions] of digits) {
+      const table = new Writer(NUMBER_SENDER_TABLE_LENGTH);
+      for (const one of instructions) table.u16(one.operand).u8(one.opcode);
+      at(address, 'slot-16-digits', table);
     }
   }
 

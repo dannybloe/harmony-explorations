@@ -7,10 +7,16 @@
  * is stated by the format, not inferred from the distance to the next one. That is what base slot
  * 5's records lack, which is why the accounting claims these and not those.
  *
- * Base slot 16, the number sender, is not here. Every config in the corpus carries a count of zero
- * for it, so a port would add no bytes and would be exercised by nothing.
+ * Base slot 16, the number sender, **is** here since 23 August 2026, and this docstring said it was
+ * deliberately absent because every config in the corpus carries a count of zero for it, so a port
+ * would be exercised by nothing. That was true of every config that had been **found**. A config was
+ * then **made**: three favourite channels on a Harmony One, compiled by Logitech's own service, and it
+ * carries one record. Section 154. The reason to note the old wording rather than replace it is that
+ * the same sentence could be written today about the three unused infrared encoding classes, and it
+ * would be just as true and just as temporary.
  */
 import { Container, GspmError, archSlot } from './gspm.ts';
+import type { Instruction } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import { countedPointers } from './valuemap.ts';
 
@@ -30,6 +36,19 @@ export const TOUCH_AREA_SELF_AT = 9;
 /** The firmware runs at most this many timers at once, however many the config describes. */
 export const TIMER_SLOTS_IN_RAM = 4;
 export const TIMER_KIND_SCHEDULED = 0x01;
+export const NUMBER_SENDER_SLOT = 16;
+/**
+ * The bytes the consumer reads in sequence before it indexes anything, and the closure for the
+ * layout: `1 + 3 + 1 + 3 + 3 + 3` is exactly where the first of the three fixed offsets sits, so the
+ * record is one structure rather than two that happen to be adjacent. Section 39.
+ */
+export const NUMBER_SENDER_HEADER = 14;
+/** First digit, middle digits, last digit, at fixed byte offsets in the record. */
+export const NUMBER_SENDER_DIGIT_TABLES = [14, 17, 20] as const;
+export const NUMBER_SENDER_DIGITS = 10;
+/** `0x14 + 3`, the last of the three pointers plus its own width. */
+export const NUMBER_SENDER_RECORD_LENGTH = 23;
+export const NUMBER_SENDER_TABLE_LENGTH = 3 * NUMBER_SENDER_DIGITS;
 
 function slotOf(c: Container, base: number): number | undefined {
   if (c.architecture === undefined) return undefined;
@@ -75,6 +94,94 @@ export function timers(c: Container): Table<Timer> | undefined {
       kind: u8(c.blob, off),
       duration: u24(c.blob, off + 1),
       instruction: { operand: u16(c.blob, off + 4), opcode: u8(c.blob, off + 6) },
+    });
+  }
+  return { records, start: table.start, length: table.length };
+}
+
+/** One of a record's three digit tables: ten instructions, indexed by the digit. */
+export interface DigitTable {
+  address: number;
+  instructions: Instruction[];
+}
+
+/**
+ * One base slot 16 record: a **method for sending a number**, not a number.
+ *
+ * The firmware adds `base` to the value it was handed, converts the sum to packed decimal by repeated
+ * subtraction of 10000, 1000, 100 and 10, and queues one instruction per digit, taken from the first,
+ * middle or last table according to where the digit sits. `digits` is a floor that the conversion
+ * raises to however many digits the value needs.
+ *
+ * **That a record is a method is the thing the first sample settled.** Three favourite channels
+ * produce **one** record, and the three numbers live in three action lists that each load a constant
+ * and hand it to this record. Had a record been a channel, the count would have been three and section
+ * 39's central claim would have been wrong. Section 154.
+ */
+export interface NumberSender {
+  address: number;
+  /**
+   * Bits 1 and 2 set the threshold the packed decimal value is compared against before `prefix`
+   * fires, `0x0100` and `0x0010`, so a hundred and ten; with neither the threshold is `0xFFFF` and it
+   * never fires. Bit 0 makes the prefix consume one of the digits. Bits above 2 are unread.
+   */
+  flags: number;
+  /** Added to the value before conversion. */
+  base: number;
+  /** Minimum digit count, a floor rather than a width. */
+  digits: number;
+  /** Queued before anything else. NULL in the one sample. */
+  prologue: Instruction;
+  /** Queued after the last digit. The television's own `Select` in the one sample. */
+  epilogue: Instruction;
+  /** Queued before the digits when the value clears the `flags` threshold. */
+  prefix: Instruction;
+  /** First, middle and last, in that order. Three distinct addresses in the one sample. */
+  tables: DigitTable[];
+}
+
+/**
+ * Base slot 16: `u8 count` then `u24 address[count]`, and at each address a 23 byte record.
+ *
+ * **The slot is not NULL in a config that has no channels, it is a count of zero**, which this
+ * docstring got wrong for its first hour by predicting undefined. Every container in the corpus states
+ * this section and gives it one byte; the made sample gives it four, a count and a single pointer. So
+ * `undefined` here means the architecture has no such slot or the array could not be read, and an
+ * empty `records` means the config declares no method for sending a number. A caller that conflates
+ * the two would report a Harmony 890, whose slot mapping is deliberately ungated, as a remote with no
+ * channels rather than as a remote nobody has read.
+ */
+export function numberSenders(c: Container): Table<NumberSender> | undefined {
+  const slot = slotOf(c, NUMBER_SENDER_SLOT);
+  if (slot === undefined) return undefined;
+  const table = countedPointers(c, slot, 1);
+  if (table === undefined) return undefined;
+  const records: NumberSender[] = [];
+  for (const address of table.values) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined || off + NUMBER_SENDER_RECORD_LENGTH > c.blob.length) return undefined;
+    const tables: DigitTable[] = [];
+    for (const at of NUMBER_SENDER_DIGIT_TABLES) {
+      const target = c.blobOffsetOf(u24(c.blob, off + at));
+      if (target === undefined || target + NUMBER_SENDER_TABLE_LENGTH > c.blob.length) return undefined;
+      const instructions: Instruction[] = [];
+      for (let d = 0; d < NUMBER_SENDER_DIGITS; d += 1) {
+        instructions.push({
+          operand: u16(c.blob, target + 3 * d),
+          opcode: u8(c.blob, target + 3 * d + 2),
+        });
+      }
+      tables.push({ address: u24(c.blob, off + at), instructions });
+    }
+    records.push({
+      address,
+      flags: u8(c.blob, off),
+      base: u24(c.blob, off + 1),
+      digits: u8(c.blob, off + 4),
+      prologue: { operand: u16(c.blob, off + 5), opcode: u8(c.blob, off + 7) },
+      epilogue: { operand: u16(c.blob, off + 8), opcode: u8(c.blob, off + 10) },
+      prefix: { operand: u16(c.blob, off + 11), opcode: u8(c.blob, off + 13) },
+      tables,
     });
   }
   return { records, start: table.start, length: table.length };

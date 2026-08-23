@@ -1,4 +1,10 @@
-# Predictions for base slot 16, written before the sample exists
+# Predictions for base slot 16, written before the sample existed
+
+> **Settled on 23 August 2026.** The sample was fetched and read; the scoring is at the bottom of this
+> file and the finding is `docs/findings.md` section 154. Nothing above the scoring has been edited,
+> which is the whole point of the file: two of the fourteen predictions were wrong and the record of
+> which two is worth more than a document that agrees with the outcome.
+
 
 Base slot 16 is the one section of the config format that was read entirely out of firmware and never
 once exercised by a file. All 21 containers in the corpus carry a count of zero, so
@@ -75,3 +81,38 @@ its central claim. That is the single most informative outcome this sample can p
 three channels happens to exercise them. Three plain numbers probably do not. A channel entered as a
 two part number, `4-1` style, is what would, and it is worth a second sample if the first comes back
 with every flag clear.
+
+## The scoring, 23 August 2026
+
+Twelve of fourteen right, and the two that were wrong are the interesting ones.
+
+| what | predicted | measured | |
+|---|---|---|---|
+| base slot 16 count | 1 | 1 | right, and it is the claim the section rests on |
+| the three numbers | operands of accumulator loads in three action lists | `0x7A` with 1, 100 and 666, each followed by the send | right |
+| `base` | 0 | 0 | right |
+| minimum digits | 1 | 0 | **wrong**, and identical in behaviour: the conversion raises the floor. 0 agrees with the account, where a channel is text and a per record width could not pad two channels of one appliance differently |
+| the three digit tables | ten instructions each, naming the television's codes | ten each, all `0x7F` running lists that each send one code | right |
+| first, middle and last | may be the same address three times | three **distinct** addresses, thirty bytes apart, byte identical contents | right as stated, and the distinctness is the part a writer has to respect |
+| `instruction queued last` | an `Enter` or `Select`, or NULL | the television's `Select` | right, and named from Logitech's own catalogue |
+| `flags` | bits 1 and 2 clear, so the prefix never fires | `0x04`, bit 2 set, arming the prefix at a hundred, with the prefix a no-op | **wrong**, and the only field whose reading is now less settled than before |
+| the labels | `Chan1`, `Chan100`, `Chan666` readable by `make text` | all three read back | right, and it is the check that the file fetched is the file asked for |
+| where the buttons live | one mode page, three bindings to base slot 10 lists | **not that.** The reference is a base slot 13 state variable transition; a channel is a value of a variable | **wrong** in the mechanism it named, though a page does exist and does carry the labels |
+| record length | 23 bytes | 23 | right |
+| the fourteen byte closure | the sequential reads end where the first table pointer begins | they do | right |
+| a digit table's length | ten entries | ten | right |
+| the numbers inside base slot 16 | they will **not** be there | they are not | right, and this is the same claim as the count seen from the other side |
+
+The scoring above counts the mode page prediction as wrong, which is a judgement: it named the
+mechanism and the mechanism is different. Three of fourteen wrong is the honest reading if a reader
+prefers that.
+
+**What the two genuine misses have in common** is that both were predictions about what a **generator**
+would choose rather than about what the format allows. The layout was derived from firmware and every
+prediction about it holds. The two that failed were guesses about Logitech's own habits: whether their
+compiler bothers to set a minimum width, and whether it arms a mechanism it does not use. That is a
+distinction worth carrying into the next prediction of this kind: the firmware constrains the format,
+and nothing constrains the generator.
+
+**What is still open** is `flags` bit 0 and the bits above 2, and section 154 names the three compiles
+that would close them. Each is one more channel typed into the same account and none needs a remote.

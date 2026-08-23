@@ -1327,9 +1327,18 @@ Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) s
 
 ### Base slot 16: the number sender
 
-**Read from three firmware images and unexercised by any container.** All 21 containers in the
-corpus carry a count of zero here, so the layout below comes from the code alone and no sample
-confirms it.
+**Confirmed on one container, which was made rather than found.** Every container in the corpus
+carries a count of zero here, so for a year the layout came from three firmware images and nothing
+else. A configuration with three favourite channels on it was then compiled by Logitech's own service
+and every field below sits where the firmware reading put it, byte for byte. Section 154.
+
+**A record is a method for sending a number, not a number.** Three channels produce **one** record and
+three action lists, each loading a constant and handing it to that record. So `count` is the number of
+appliances that take a number, not the number of channels.
+
+**A count of zero is not a NULL slot.** A config with no channels still declares this section and
+gives it one byte; the one that has them gives it four. So an empty record list and an unreadable slot
+are different answers and a reader must not merge them.
 
 ```
 +0x00  u8   count
@@ -1356,11 +1365,24 @@ the value it is given, converts the sum to packed decimal by subtracting `10000`
 table according to where the digit sits. `flags` bit 2 makes the prefix instruction fire at a
 hundred and bit 1 at ten; with neither, it never fires. Bit 0 makes the prefix consume a digit.
 
+In the one sample the ten instructions of a digit table run action lists that send that television's
+commands `0` through `9`, in table order, ten of ten, and the instruction queued last sends its
+`Select`. The names come from the catalogue of the account that generated the config, matched by
+decoding each stored code into its bit frame, so a table index predicts a word Logitech chose through
+a route with nothing in common. The three table pointers are three distinct addresses holding
+identical copies; nothing requires that, so a reader must not assume one table serves all three.
+
+`digits` is a **floor** and not a width: the conversion raises it to however many digits the value
+needs, and the one sample declares 0. `flags` is `0x04` there, arming the prefix at a hundred while
+the prefix instruction is NULL, so the mechanism is switched on and does nothing. **Unconfirmed**:
+bit 0, and the bits above 2.
+
 The fourteen bytes read in sequence end exactly where the first of the three fixed pointer offsets
 begins, which is the closure for this layout, and the routine is identical on the 700, the 600 and
 the One.
 
-Read with `gspm.number_senders`. [findings.md](findings.md) section 39.
+Read with `gspm.number_senders` and `tables.numberSenders`. [findings.md](findings.md) sections 39
+and 154.
 
 ### Base slot 13: the state variable table
 

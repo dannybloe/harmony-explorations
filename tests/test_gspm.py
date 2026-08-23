@@ -2961,5 +2961,60 @@ class TestHowManyChecksAContainerReports(unittest.TestCase):
         self.assertEqual(set(without.checks) - set(with_table.checks), set())
 
 
+class TheNumberSenderReadsItsOnlySample(unittest.TestCase):
+    """Base slot 16 on the one config anywhere that populates it, section 154.
+
+    The Python reader had never had a record to read: section 39 derived the layout from three
+    firmware images and every container in the corpus carries a count of zero. This is the reader
+    against a config that was **made** to exercise it, three favourite channels on a Harmony One
+    compiled by Logitech's own service, with the numbers chosen before the file existed.
+
+    The TypeScript side asserts the same fields and a golden vector compares the two, so what this
+    adds is the Python claim standing on its own rather than through the vector's mechanism.
+    """
+
+    def setUp(self):
+        lab.require('calibration_favchannels', 'calibration_one')
+
+    def test_one_record_and_not_three(self):
+        """The prediction that carried the section: a record is a method, not a channel."""
+        senders = gspm.parse(lab.load('calibration_favchannels')).number_senders()
+        self.assertIsNotNone(senders)
+        self.assertEqual(len(senders), 1)
+
+    def test_the_fields_are_the_layout_section_39_derived(self):
+        record = gspm.parse(lab.load('calibration_favchannels')).number_senders()[0]
+        self.assertEqual(record.base, 0)
+        self.assertEqual(record.digits, 0)
+        # Bit 2, which arms the prefix at a hundred, while the prefix itself does nothing.
+        self.assertEqual(record.flags, 0x04)
+        self.assertEqual((record.prefix.opcode, record.prefix.operand), (0x00, 0x0000))
+        self.assertEqual((record.prologue.opcode, record.prologue.operand), (0x00, 0x0000))
+        self.assertEqual((record.epilogue.opcode, record.epilogue.operand), (0x7F, 0x0289))
+        # Three separate copies, thirty bytes apart, with identical contents.
+        self.assertEqual(record.table_addresses, [0x06B5DF, 0x06B5FD, 0x06B61B])
+        self.assertEqual(len(set(record.table_addresses)), 3)
+        self.assertEqual(record.middle, record.first)
+        self.assertEqual(record.last, record.first)
+        self.assertEqual(len(record.first), gspm.NUMBER_SENDER_DIGITS)
+        # Every digit runs an action list, which is what makes the index resolvable to a command.
+        self.assertEqual({i.opcode for i in record.first}, {0x7F})
+
+    def test_the_control_declares_the_section_and_fills_it_with_nothing(self):
+        """The same remote on the same account before the channels, and the slot is not NULL.
+
+        The obvious reading is that a config with no channels omits the section. It does not: the
+        count is zero and the section is one byte, against four in the sample. So a caller must not
+        read an empty list as "no such slot".
+        """
+        before = gspm.parse(lab.load('calibration_one'))
+        self.assertEqual(before.number_senders(), [])
+        slot = gspm.arch_slot(before.architecture, gspm.NUMBER_SENDER_SLOT)
+        self.assertEqual(before.section_length(slot), 1)
+        after = gspm.parse(lab.load('calibration_favchannels'))
+        self.assertEqual(after.section_length(
+            gspm.arch_slot(after.architecture, gspm.NUMBER_SENDER_SLOT)), 4)
+
+
 if __name__ == '__main__':
     unittest.main()

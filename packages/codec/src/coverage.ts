@@ -43,7 +43,8 @@ import { IR_CLASS_STREAM, IR_HEADER_CLASSES, irBlockLength, irClass, irClass5Bod
   irHeaderLength, irRecordBlocks, irRecordStart, irSymbolBlock, irSymbolTable } from './ir.ts';
 import { eventMap, handlerSets, logArea, modeRecords, modeTable, stateRecords, stateTable,
   taggedList, taggedListPools } from './sections.ts';
-import { TIMER_RECORD_LENGTH, TOUCH_AREA_LENGTH, lightBandExtras, parameterGroups, timers,
+import { NUMBER_SENDER_RECORD_LENGTH, NUMBER_SENDER_TABLE_LENGTH, TIMER_RECORD_LENGTH,
+  TOUCH_AREA_LENGTH, lightBandExtras, numberSenders, parameterGroups, timers,
   touchMapStart, touchPages } from './tables.ts';
 
 /** One attributed run of bytes, as offsets into the container blob. */
@@ -246,8 +247,11 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
   // entries there is nothing for `width + 3 * count === length` to check, so accepting it would
   // let any short section pass as an array. So it is claimed here instead, under the same name,
   // and only when the section is at most `EMPTY_ARRAY_LIMIT` bytes and every one of them is zero.
-  // That is the whole of base slot 16 in every container, since no config in the corpus uses the
-  // number sender, and of base slots 5 and 11 in the safe mode containers. Section 83.
+  // That is the whole of base slot 16 in every **found** container, since none of them uses the number
+  // sender, and of base slots 5 and 11 in the safe mode containers. Section 83. The one container that
+  // does use it has a real array here and is claimed by `numberSenders` below instead, which is why
+  // that claim and this one cannot both fire: a count of zero has no pointers and a count of one is
+  // not all zero bytes. Section 154.
   //
   // **Deferred, because several sections read their own table and this used to claim it again.**
   // The comment beside base slot 12 said its array is not one `pointerArrayAt` recognises, and it is:
@@ -458,6 +462,28 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
   if (timerTable !== undefined) {
     add(timerTable.start, timerTable.length, 'slot-12-table');
     for (const timer of timerTable.records) at(timer.address, TIMER_RECORD_LENGTH, 'slot-12-record');
+  }
+  // Base slot 16, and it is the one owner here that no found config exercises: the slot is NULL in
+  // all twenty one of them, so this claims nothing on any of them. The single made config that does
+  // carry a record left **113 bytes** unclaimed before this existed, which is exactly `23 + 3 * 30`,
+  // the record plus its three digit tables. That the accounting's gap and section 39's layout agree
+  // to the byte is the closure, since the two numbers come from routines that know nothing of each
+  // other. Section 154.
+  //
+  // The three tables are claimed separately rather than as one run of 90, because their addresses are
+  // three distinct pointers. This sample carries three byte identical copies, and **a config is free
+  // to point two of them at one table**, which is why the addresses are deduplicated: claiming one
+  // run twice would be reported as an overlap, and an overlap is supposed to mean two readers
+  // disagree about who owns a byte.
+  const senderTable = numberSenders(c);
+  if (senderTable !== undefined) {
+    add(senderTable.start, senderTable.length, 'slot-16-table');
+    const digits = new Set<number>();
+    for (const sender of senderTable.records) {
+      at(sender.address, NUMBER_SENDER_RECORD_LENGTH, 'slot-16-record');
+      for (const table of sender.tables) digits.add(table.address);
+    }
+    for (const address of digits) at(address, NUMBER_SENDER_TABLE_LENGTH, 'slot-16-digits');
   }
   const groups = parameterGroups(c) ?? [];
   for (const group of groups) {

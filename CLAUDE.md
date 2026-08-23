@@ -899,9 +899,12 @@ language server gave them default options. Fixed on 12 August 2026, and it typec
 nothing was hiding in there. When adding a directory of TypeScript, add it to the project in the same
 commit.
 
-**The codec port is complete.** Every reader `src/harmony/gspm.py` has now exists in
-`packages/codec` too, bar base slot 16, the number sender, whose count is zero in every config so a
-port would be exercised by nothing. **The reverse is deliberately not true**, section 139: the Python
+**The codec port is complete**, and base slot 16 was the last gap. Every reader
+`src/harmony/gspm.py` has now exists in `packages/codec` too. The number sender was left out on the
+grounds that its count is zero in every config, which was true of every config that had been
+**found**; section 154 made one, so it is ported, claimed by the accounting, rebuilt by the emitter
+and compared between the two implementations by a golden vector. **The reverse is deliberately not
+true**, section 139: the Python
 side reads infrared durations and does not decode them into a bit frame, because for a day it did and
 the two decoders disagreed about 37 records of one arch 8 (Harmony 880) config. A reader that exists
 twice is the state this file's oldest rule forbids, so the direction to add one is towards
@@ -1462,7 +1465,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 153 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 154 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1501,7 +1504,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
-| 16 | the number sender. Used by no config in the corpus | 39 |
+| 16 | the number sender: one record per appliance that takes a number, with a table per digit. One made config populates it and no found one does | 39, 154 |
 | 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
 **Most of a config is pictures**, sections 49 to 55, 62, 66 and 146: one contiguous array from the end
@@ -1631,9 +1634,25 @@ produce a config the remote accepts and mishandles.
   found rather than the firmware: several control streams draw the same image, so re-encoding one
   produces a valid file that is not the original. An editor carries every image it did not change
   through byte for byte.
+* **A favourite channel is not a key binding**, section 154, and a writer that adds one has to touch
+  four sections rather than a keypad map. Base slot 16 gains a record **per appliance** that takes a
+  number, not per channel; base slot 10 gains a list per channel, loading the number and handing it to
+  that record; base slot 13 gains the state variable values whose transitions run those lists, which is
+  where the reference actually lives; and the screen gains a page. No new key binding and no new
+  infrared group. Reading a favourite channel as a page of keys is the mistake to avoid, and it is the
+  same mistake `docs/how-a-harmony-works.md` warns about generally: the format answers "what is in this
+  file" and not "how does the product model this".
+* **A record's three digit tables are three pointers and may be shared**, section 154. The one sample
+  carries three byte identical copies at three addresses, and nothing in the format requires that, so
+  editing a digit's instruction in place needs the same check base slot 5's duration blocks need: who
+  else names this table. The accounting and the emitter both deduplicate by address for that reason.
 * **A small logical change reshuffles the whole image.** Three arch 8 configs generated ten minutes
-  apart differ in 73 to 84% of their bytes. So an editor makes minimal diffs against an existing
-  config; reproducing what Logitech's generator would have emitted is not achievable.
+  apart differ in 73 to 84% of their bytes, and two compiles of an **unchanged** arch 12 (Harmony One)
+  account differ in 67%, section 154. So an editor makes minimal diffs against an existing
+  config; reproducing what Logitech's generator would have emitted is not achievable. What that
+  section adds is the other half: two compiles that share a build timestamp are **byte identical**, so
+  the reshuffle travels with that field and asking twice can hand back the same artefact rather than a
+  second sample.
 
 ## Open
 

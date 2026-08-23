@@ -63,6 +63,9 @@ const CONTAINERS = [
   // two implementations about them would be a disagreement about a known answer.
   'calibration_one',
   'calibration_h600',
+  // The only config anywhere that populates base slot 16, so the only vector where the two
+  // implementations of that reader are compared on a record rather than on an empty list.
+  'calibration_favchannels',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -135,15 +138,27 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
     assert.ok(Array.isArray(sections), 'a vector has no section table');
     assert.equal(sections.length, vector['pointer_count'], 'one section per pointer slot');
     // And the checks by name, not by count. Fourteen are on every vector; `key_table_is_complete`
-    // needs a key table, so it is on 29 of the 33 and the four without one are asserted below.
+    // needs a key table, so it is on 30 of the 34 and the four without one are asserted below.
     const checks = Object.keys(vector['checks'] as object);
     for (const name of UNIVERSAL_CHECKS) assert.ok(checks.includes(name), `no ${name} check`);
     assert.ok(checks.every((n) => n === 'key_table_is_complete' || UNIVERSAL_CHECKS.includes(n)),
       `an unexpected check: ${checks.filter((n) => n !== 'key_table_is_complete' && !UNIVERSAL_CHECKS.includes(n)).join(', ')}`);
     if (checks.includes('key_table_is_complete')) complete += 1;
   }
-  assert.equal(present.length, 33, 'every vector, which is what `make golden` compares');
-  assert.equal(complete, 29, 'the vectors whose container has a key table at all');
+  assert.equal(present.length, 34, 'every vector, which is what `make golden` compares');
+  assert.equal(complete, 30, 'the vectors whose container has a key table at all');
+
+  // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
+  // and null on 8, so a summary that stopped emitting it would break nothing anybody would notice:
+  // every comparison would still pass, and the one vector where the two implementations are actually
+  // compared on a record would go quiet. Same shape as section 148's hollow claim, where a count of
+  // what a reader looked for could not see what it never looked at.
+  const senders = present.map((v) => v['number_senders'] as unknown[] | null);
+  assert.equal(senders.every((one) => one !== undefined), true, 'a vector is missing number_senders');
+  assert.equal(senders.filter((one) => one === null).length, 9, 'the containers with no readable slot');
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 24);
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 1,
+    'exactly one config anywhere populates base slot 16');
 });
 
 test('the list above covers exactly what the Python side writes a vector for', () => {
@@ -154,7 +169,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 33, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 34, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

@@ -15,6 +15,7 @@ import {
   irRegion,
 } from './ir.ts';
 import type { Container } from './gspm.ts';
+import { numberSenders } from './tables.ts';
 
 /**
  * The container as a plain object, the same shape `tools/gspm_parse.py --json` emits.
@@ -62,7 +63,35 @@ export function summary(c: Container): Record<string, unknown> {
       scan: k.scanCode,
     })),
     ir: irSummary(c),
+    number_senders: numberSenderSummary(c),
   };
+}
+
+/**
+ * Every base slot 16 record, or null where the slot cannot be read at all.
+ *
+ * **An empty array and null are different answers and both occur.** The array is empty in every
+ * config that declares no method for sending a number, which is every one that was found, and null
+ * means the architecture has no such slot or the array did not parse, which is the arch 10 (Harmony
+ * 890) reads and the containers inside arch 8 firmware images.
+ *
+ * Every field is listed rather than summarised, unlike the infrared header above, because one config
+ * in the world carries one record and a total could not say which digit a divergence was in.
+ */
+function numberSenderSummary(c: Container): unknown[] | null {
+  const table = numberSenders(c);
+  if (table === undefined) return null;
+  return table.records.map((one) => ({
+    address: one.address,
+    flags: one.flags,
+    base: one.base,
+    digits: one.digits,
+    prologue: [one.prologue.operand, one.prologue.opcode],
+    epilogue: [one.epilogue.operand, one.epilogue.opcode],
+    prefix: [one.prefix.operand, one.prefix.opcode],
+    table_addresses: one.tables.map((t) => t.address),
+    tables: one.tables.map((t) => t.instructions.map((i) => [i.operand, i.opcode])),
+  }));
 }
 
 /**

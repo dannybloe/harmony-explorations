@@ -177,6 +177,13 @@ IMAGES = {
     # specification. The lab directory's META.md has the full argument.
     'calibration_one': 'calibration-one-spare.bin',
     'calibration_h600': 'calibration-h600.bin',
+    # The third, 23 August 2026: the same account and the same Harmony One as `calibration_one` with
+    # three favourite channels added and nothing else, so the pair is a before and after over one
+    # logical change. The only config anywhere that populates base slot 16. Section 154.
+    'calibration_favchannels': 'calibration-favchannels.bin',
+    # The account's own command list, captured 13 August 2026: a name and a stated code per command.
+    # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
+    'account_commands': 'GetCommands_mine.json',
     # Not an image and not a config: Harmony Desktop's whole hosted client, mirrored from Logitech's
     # content network on 9 August 2026 and unauthenticated. It is here because the service API surface
     # documented in `docs/host-client.md` is extracted from it, and a claim about that surface has to

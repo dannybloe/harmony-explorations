@@ -152,6 +152,16 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
   calibration_h600: 'calibration-h600.bin',
+  // The third, 23 August 2026: the same account and the same Harmony One as `calibration_one`, with
+  // three favourite channels added and nothing else. **The only config anywhere that populates base
+  // slot 16**, which section 39 read out of firmware and no found config exercises. Section 154.
+  calibration_favchannels: 'calibration-favchannels.bin',
+  // The account's own command list, captured 13 August 2026: a name and a stated code per command,
+  // for the three devices of the calibration account. Not an image and not a config. It is here so
+  // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number
+  // sender are matched against these names through a decoded infrared frame, which needs both a
+  // container reader and a frame decoder, and only TypeScript has the second.
+  account_commands: 'GetCommands_mine.json',
   // Not an image and not a config: Harmony Desktop's whole hosted client, mirrored on 9 August 2026.
   // The service API surface in `docs/host-client.md` is extracted from it by
   // `tests/test_host_client.py`. Nothing in TypeScript reads it, and it is here because the two

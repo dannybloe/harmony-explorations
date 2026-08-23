@@ -595,7 +595,7 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  * parses. That difference is the point of the count being asserted: three source comments quoted
  * "all thirteen samples" and "all 24 containers" while the lab held 33.
  */
-const PARSEABLE = 33;
+const PARSEABLE = 34;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -657,16 +657,16 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('19 of the parseable containers have an odd body and 14 of those verify',
+test('20 of the parseable containers have an odd body and 15 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
     const all = parseable();
     assert.equal(all.length, PARSEABLE);
     const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
-    assert.equal(odd.length, 19);
+    assert.equal(odd.length, 20);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 14);
+    assert.equal(verifying.length, 15);
     // Every one of the fourteen recomputes under the loop as written, which is what makes the
     // behaviour tested rather than assumed. Folding the trailing byte in would break the two whose
     // trailing byte is not zero, and be invisible on the other twelve: so the comment was inviting
@@ -692,7 +692,7 @@ test('19 of the parseable containers have an odd body and 14 of those verify',
 test('the last section ends at the end marker, not at the declared end',
   skipWithoutLab(), () => {
     // `endAddr` is a declared field and where a container ends is data, which is the same
-    // correction the base got in section 117. They agree on 31 of 33; the two that disagree are
+    // correction the base got in section 117. They agree on 32 of 34; the two that disagree are
     // the damaged Harmony 890 reads, where the old reading reported the last section short.
     const all = parseable();
     assert.equal(all.length, PARSEABLE);
@@ -706,7 +706,7 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    assert.equal(agree, 31);
+    assert.equal(agree, 32);
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
@@ -736,8 +736,8 @@ test('an address outside the blob has no offset, rather than a number outside th
 test('the frame tiles to the next section on every container that has one', skipWithoutLab(), () => {
   // `frameLength` is the field and the field is zero for an empty frame, which is a sentinel for
   // `EMPTY_FRAME_LENGTH` that nothing in the type says. Three call sites decoded it separately.
-  // Written as `frameLength + FRAME_END_LENGTH`, the tiling closes on 24 of the 26 containers with
-  // a frame and misses exactly the two empty ones; through `frameExtent` it closes on all 26.
+  // Written as `frameLength + FRAME_END_LENGTH`, the tiling closes on 25 of the 27 containers with
+  // a frame and misses exactly the two empty ones; through `frameExtent` it closes on all 27.
   let framed = 0;
   let naive = 0;
   for (const { name, container: c } of parseable()) {
@@ -750,6 +750,6 @@ test('the frame tiles to the next section on every container that has one', skip
     assert.equal(start + (c.frameExtent as number), target, name);
     if (start + c.frameLength + 2 === target) naive += 1;
   }
-  assert.equal(framed, 26);
-  assert.equal(naive, 24, 'the two the sentinel gets wrong are the two empty frames');
+  assert.equal(framed, 27);
+  assert.equal(naive, 25, 'the two the sentinel gets wrong are the two empty frames');
 });

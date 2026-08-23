@@ -353,6 +353,11 @@ TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
     # is a claim shrinking in silence, and every caller asserts the count up front instead, so a
     # lab missing a sample fails on that number rather than checking less.
     'packages/codec/test/gspm.test.ts': 1,
+    # The same shape and the same reason: the loop asks how many containers declare a method for
+    # sending a number, over whatever the lab holds, and the three answers it splits them into are
+    # each asserted exactly and their sum is asserted too. So a missing sample moves one of four
+    # numbers and fails, rather than shrinking the claim. Section 154.
+    'packages/codec/test/numbersender.test.ts': 1,
 }
 
 
@@ -400,7 +405,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        self.assertEqual(scanned, 40, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 41, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -511,7 +516,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 40, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 41, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

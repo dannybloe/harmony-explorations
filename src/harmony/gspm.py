@@ -808,6 +808,10 @@ class NumberSender:
     first: List[Instruction]
     middle: List[Instruction]
     last: List[Instruction]
+    #: The three pointers themselves, in first, middle, last order. Kept because a config may point
+    #: two of them at one table and because `packages/codec` claims their bytes by address, so a
+    #: golden vector that omitted them would compare the decoded digits and not the layout.
+    table_addresses: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -2196,7 +2200,10 @@ class Container:
                 prologue=self._instruction_at(off + 5),
                 epilogue=self._instruction_at(off + 8),
                 prefix=self._instruction_at(off + 11),
-                first=tables[0], middle=tables[1], last=tables[2]))
+                first=tables[0], middle=tables[1], last=tables[2],
+                table_addresses=[
+                    int.from_bytes(self.blob[off + at:off + at + 3], 'little')
+                    for at in NUMBER_SENDER_DIGIT_TABLES]))
         return out
 
     def timers(self) -> Optional[List['Timer']]:
@@ -3046,7 +3053,42 @@ def summary(c: Container) -> Dict[str, object]:
         # here that can see a difference nobody wrote a test about, and it was not looking at the
         # infrared database at all.
         'ir': _ir_summary(c),
+        # Base slot 16, added on 23 August 2026 for the same reason the infrared header was: two
+        # implementations of one reader with nothing comparing them. It was worse here than there,
+        # because until this section had a sample neither side could be wrong in a way any test could
+        # see. Every field is listed rather than summarised, since one config in the world has one
+        # record. Section 154.
+        'number_senders': _number_sender_summary(c),
     }
+
+
+def _number_sender_summary(c: Container) -> Optional[List[Dict[str, object]]]:
+    """Every base slot 16 record, or None where the slot cannot be read at all.
+
+    An empty list and None are different answers and both occur: the list is empty in every config
+    that declares no method for sending a number, which is all of them bar one, and None means the
+    architecture has no such slot or the array did not parse.
+    """
+    senders = c.number_senders()
+    if senders is None:
+        return None
+    return [
+        {
+            'address': s.address,
+            'flags': s.flags,
+            'base': s.base,
+            'digits': s.digits,
+            'prologue': [s.prologue.operand, s.prologue.opcode],
+            'epilogue': [s.epilogue.operand, s.epilogue.opcode],
+            'prefix': [s.prefix.operand, s.prefix.opcode],
+            # The three tables as their instruction lists, in first, middle, last order. Listed and
+            # not hashed, because thirty instructions is small and a hash cannot say which digit a
+            # divergence is in.
+            'table_addresses': s.table_addresses,
+            'tables': [[[i.operand, i.opcode] for i in table]
+                       for table in (s.first, s.middle, s.last)],
+        }
+        for s in senders]
 
 
 def _ir_summary(c: Container) -> Optional[Dict[str, object]]:
