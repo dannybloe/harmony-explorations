@@ -124,6 +124,27 @@ Danny uses device mode routinely for exactly the commands Logitech would have yo
 the reason is the screen pages above: that is where an appliance's rare functions live. The application
 serves both.
 
+## A sequence belongs to an activity
+
+One button can send several commands in a row, with a pause between them if the equipment needs one.
+Logitech calls it a sequence and most people would call it a macro: press one key and the remote sends
+channel two, zero, zero, then red, then red again.
+
+**It is a property of an activity and not of an appliance.** Danny established that on 23 August 2026 by
+looking in Logitech's own software, having assumed the opposite first. You author a sequence inside an
+activity, and the only places it can be put are a key or a button on the screen. There is no sequence
+that belongs to a television, and so there is none to reach from device mode.
+
+That is not something the files can tell you. A configuration holds an ordered list of commands attached
+to a button and says nothing about who authored it or where the software offered it, so every config
+here would read the same either way. It is the same shape of question as the one this document opens
+with, and it presented itself the same way: as a plausible property of an appliance.
+
+**What it means for anything being built.** A sequence editor belongs on the activity, beside the
+activity's own key map, and not on a device page. FreeHarmony's `docs/data-model.md` carries the
+modelling consequence, including one gap that writing it down exposed: a key the screen speaks for
+records which page it is on and not which activity, and by this rule every sequence has an activity.
+
 ## What the screen does, and what it does not
 
 The screen is a second population of keys, and it shares almost no scan code with the keypad: none at
