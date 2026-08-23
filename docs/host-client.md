@@ -165,9 +165,13 @@ three more are built by hand, which is why the surface is "at least this" rather
 | `easyZapperManager` | 0 | bound but declares nothing: its calls are the hand built ones |
 | `softwareUpdateService` | 0 | the same |
 
-**The device database is `deviceManager`**, and four of its operations are the ones that matter:
-`SearchGlobalDevices`, `GetCommands`, `GetGlobalLanguageCommands` and
-`GetAllTeachingCommandsForGivenPowerAndInputTypes`. `userAccountDirector` carries
+**The device database is `deviceManager`**, and six of its operations are the ones that matter:
+`SearchGlobalDevices`, `GetCommands`, `GetGlobalLanguageCommands`,
+`GetAllTeachingCommandsForGivenPowerAndInputTypes` and, found on 23 August 2026 and missing from this
+list until then, `DetectLanguage` and `DetectLanguageForMultiCodeDevice`, which are the two that turn a
+button press on somebody's original remote into an appliance. They have their own section below, and the
+reason they were missed is worth saying: this table was built from the **discovery document**, and those
+two are declared by the client rather than advertised, exactly like `RemoteConfigurationInJson`. `userAccountDirector` carries
 `SimpleRestSearchGlobalDevices` as well, whose name says it is the plain REST form of the search, and
 `userFeatureManager` has `CopyFeaturesFromGlobalDevice`. So a device can be searched for and its
 commands fetched without going anywhere near a config, a remote or a compile.
@@ -516,6 +520,81 @@ has the full argument; what is believed on the client's word alone is:
 Worth confirming in the order given: the report framing first, because it is what an implementation
 gets wrong silently, and the calibration arithmetic second, because section 32 already knows the
 carrier from the transmit side and the two should agree.
+
+#### What the analysis service takes, and it is one string
+
+The desktop client turns a capture into a single string and posts it to
+`infraredAnalysisManager.AnalyzeInfrared` as `{ rawSequence }`. The answer carries a `KeyCode` in the
+same notation the device database uses, section 132, so **the service is a protocol decoder we can
+call**: durations in, a protocol name and a frame value out. The client keeps the raw string beside the
+answer and uploads both when the command is saved, as `KeyCode` and `RawInfrared`.
+
+The string is `F` and the carrier in hertz, then one letter and one duration per interval: `P` for a
+mark, which the client calls a carrier interval because that is when the emitter modulates, and `S` for
+a space. Every number is upper case hexadecimal padded to four digits, or eight where it does not fit.
+Microseconds throughout.
+
+Five modules build it and each states one rule:
+
+* **the report**, `infrareddata`: byte 0's high nibble is `0x90` for data and `0xF0` for done, byte 1's
+  high nibble is a sequence that must advance by one and wrap at fifteen, byte 1's **low nibble is an
+  error code** and anything but zero aborts the capture, the **last byte** carries the real byte count,
+  and the words are big endian starting at offset 2. That confirms the report framing above from a
+  second client, and it **corrects one part**: this document read byte 1's low nibble as a dropped
+  sample counter whose increase means samples were lost in pairs. The desktop client treats it as a
+  hard error. Both may be true of the same field, and only a capture settles it.
+* **the calibration**, `carrierprocessor`: the first three words are a first pulse time, a header pulse
+  time and a cycle count. The count is decremented, the difference of the times must be positive, and
+  the carrier is `1e6 / (difference / count)` hertz. The difference is then **emitted as the first
+  mark**, so the header pulse is both the calibration and the first interval of the code.
+* **the data**, the same module: words alternate envelope and gap. An envelope word is the mark's own
+  length. A **gap word is total elapsed time**, so the space is that minus the preceding mark, and a
+  gap shorter than its own mark is dropped. A zero word still flips the phase, which is a trap for
+  anyone implementing it.
+* **the merge**, `carrierrecorder`: two intervals of the same kind in a row are one interval, summed.
+  This is the rule that matters most for reusing the service on a stored record, since a stored
+  duration is fifteen bits and a long silence is spelled as several words.
+* **the stop**, the same module: an interval longer than **500000 microseconds** ends the capture.
+
+`packages/codec/src/irda.ts` builds the string, with the merge, and `packages/codec/test/irda.test.ts`
+asserts it over the corpus. **Nothing here has yet seen the service accept one.**
+
+**The format is ambiguous above 65535 microseconds and the corpus says it does not have to matter.** `F`
+is a hexadecimal digit as well as a token letter, so a duration cannot be found by scanning for
+letters: 1647 of 4323 class 1 records hold one whose four digits contain an `F`. And a field that is
+four digits or eight cannot be read at a fixed width either. Both problems live entirely in the closing
+silence: 3309 records hold an interval above 65535 microseconds and **none holds one before its own
+closing silence**. So a caller sends the code up to and including the silence that closes it, clamped,
+and every duration fits in four digits. Cutting **before** that silence is wrong, and measurably: a
+pulse width frame's last bit is a mark whose space is the trailing gap, so a Sony code read as twelve
+bits over the whole block reads as eleven over a train cut short of it.
+
+#### DetectLanguage: the service works out which code set an appliance uses
+
+This is the flow the user manuals gesture at and never describe, and it is the reason a Harmony asked
+people to press buttons on their original remote. `deviceManager` carries two operations this document's
+own service table missed, `DetectLanguage` and `DetectLanguageForMultiCodeDevice`, and the client's
+teach page has three modes: detect the language, teach a missing command, teach a missing input.
+
+The request is smaller than expected:
+
+```
+DetectLanguage { deviceType, maxNewCommands: 1, learnedCommands: [ { Name, KeyCode, RawInfrared } ] }
+```
+
+**A device type and nothing else.** No manufacturer, no model number. The reply is a status of five,
+`Success`, `NeedMoreCommands`, `Failure`, `NoMatchFound` and `NoMoreCommandExist`, plus
+`DetectLanguageCommands`, which on `NeedMoreCommands` names **the next button to press**, and on
+`Success` an `UpdateLanguageOperation` carrying the `GlobalLanguageVersionId`. That identifier is what
+`GetGlobalLanguageCommands` takes, so one loop of press, ask, press again ends with every command of
+the appliance as a protocol and a frame value.
+
+The multi code variant is for an appliance already chosen from the catalogue whose model has several
+code sets, and it takes a `publicGlobalDeviceId` in place of the type. When detection gives up the
+client falls back to a search by make and model, which is the route Logitech's wizard is remembered
+for.
+
+**Unconfirmed here, entirely.** Nothing in this project has called either operation.
 
 #### And the session around it, from the Desktop client, for the Harmony One specifically
 

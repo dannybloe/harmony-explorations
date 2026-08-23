@@ -19,6 +19,7 @@ export * from './ir.ts';
 // which read a neighbouring record's durations, while the tested decoder here was reachable only by
 // file path. The wrong one is gone and this is the only `irFrame` now.
 export * from './irframe.ts';
+export * from './irda.ts';
 // After both, since it composes them. Section 139.
 export * from './summary.ts';
 export * from './actions.ts';
