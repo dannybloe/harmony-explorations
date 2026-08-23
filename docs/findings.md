@@ -21267,8 +21267,35 @@ separates and follows the copies does not follow from the bits:
 
 The tail is a closing mark, a long gap, sometimes the protocol's own short repeat frame, and a silence
 built out of 32767 microsecond spaces, which is the cap on one duration. A constant total block duration
-explains it in only 31 of 41 classes, so no rule is claimed. A writer copies the tail from a record that
-already has one, and an editor that changes how fast a held key repeats edits that gap, section 127.
+explains it in only 31 of 41 classes, so no rule is claimed. An editor that changes how fast a held key
+repeats edits that gap, section 127.
+
+**"A writer copies the tail from a record that already has one" is what this said, and it is too
+simple.** Danny asked on 23 August 2026 whether a command made of several presses plays into any of
+this, since a Harmony can be taught one. It does, and not in the way the question expected: **226
+records in the corpus hold more than one distinct code in a single block.** Splitting a block on
+silences longer than ten milliseconds, so that each burst is one press, and reading each burst on its
+own: 117 records are six bursts carrying two codes, 58 are two bursts carrying two, 47 are three
+bursts carrying two, and 4 are **thirty six bursts carrying four**. They are in arch 8, arch 12 and
+arch 14 containers and in one Logitech compiled to our own specification, so this is not one
+architecture's habit.
+
+Copying such a tail from a sibling would emit the sibling's second code, which is a different command.
+The byte comparison behind the 2942 of 3546 above already refused those pairs, since it demanded
+equality, so the measurement was right and the sentence was not.
+
+**What the second code is turns out to be systematic rather than authored**, which is the part worth
+carrying. Three shapes, each consistent within its group: a code and its **exact complement**, on a
+Harmony One's 14 bit codes, where the pair's exclusive or is `0x3ff` in every one of them; a code and
+a **near variant** differing in two to six bits, on a Harmony 700, with the difference always of the
+form `0x101`, `0x303` or `0x707`; and a **constant lead in** followed by the command, in 88 records of
+one arch 8 config where the first burst is the same code every time. So these are protocol structure,
+and a writer that needs to emit one has to know which shape it is in.
+
+**Where a command of several presses actually lives is the button, and we already read it**: an action
+list sends several codes in order, 12 such bindings in one Harmony 600 config, 26 in a Harmony 700's
+and 6 sending three codes in a config Logitech compiled for us, with `keyCodes` returning them in
+order. Nothing inside a record is a user authored macro.
 
 **An earlier version of this measurement reported 1951 of 2085 whole blocks rebuilt**<!--superseded-->**, and that number was
 an artefact of its own classifier.** It trimmed trailing terminators and trailing maximum length spaces

@@ -569,6 +569,42 @@ and every duration fits in four digits. Cutting **before** that silence is wrong
 pulse width frame's last bit is a mark whose space is the trailing gap, so a Sony code read as twelve
 bits over the whole block reads as eleven over a train cut short of it.
 
+#### What the clients offer around a learned code, and one of them names an unread section
+
+Asked on 23 August 2026, because a stored code may be one somebody taught their remote and a taught
+command may be several presses. What the two clients offer, from their own vocabulary:
+
+* **The teaching flow is server driven in both eras.** The classic client has `EZTutor`, which fetches a
+  list of commands to teach by name, walks it, captures each and uploads it, and uploads an **empty**
+  capture for one the user skipped. Its default when the list is empty is a single `PowerToggle`. That is
+  the same shape as `DetectLanguage` above, twelve years earlier.
+* **The classic client uploads XML where the desktop one uploads a string**: `PULSESEQUENCES` holding an
+  `IRSEQUENCE` with a `FREQUENCY` and a `PULSESEQUENCE` of `PULSE` and space elements in microseconds.
+  Different transport, and behind it the **same class names**, `CarrierRecorder` and an `Interval` with
+  `isCarrier` and a time in microseconds. So the merge rule is one derivation in two eras rather than a
+  detail of the newer client.
+* **A button map carries `Sequences` beside `Buttons`**, and a step is a `ButtonSequenceAction`. So a
+  command made of several presses is a property of the map, not of the infrared record, which agrees
+  with what the configs show: an action list sends several codes in order.
+* **An activity's actions are a typed list**: `CommandActivityAction`, `DelayActivityAction` with a
+  duration, and `ChannelActivityAction`, each with an `ActionOrder`.
+
+**And the feature list is per product, which is the find.** A product record carries a numbered
+capability set, over a hundred flags, and four of them are this mechanism: `FavoriteChannels` is 1,
+`SupportActivitySequence` 21, `ButtonSequences` 22 and `ActivityStartUpChannel` 63. Others worth noting
+are `ModeMap` 2, `FunctionMapping` 6, `DeviceDelay` 14 and `LongPressAction` 29. It is reachable live,
+since `productsManager` carries `GetProduct` and `GetProductButtonList`, so `reference/capabilities.md`
+has a vendor source for its verification column beyond the device count section 136 adopted.
+
+**A channel is a number, and base slot 16 is the number sender.** Section 39 read that section out of
+three firmware images down to the decimal conversion, and it is empty in all 21 containers, so what its
+`flags` bits above 2 do and what its `base` field is could not be read from anything. The client says
+what would fill it: a favourite channel or an activity's start up channel is a **number** the remote has
+to spell out one digit at a time, which is exactly what that section does. Not proven, and cheap to
+prove: setting a favourite channel on an account with a bench remote and compiling would produce the
+first config anywhere with base slot 16 populated, with the number known in advance. That is the same
+known answer trick that produced the two calibration configs.
+
 #### DetectLanguage: the service works out which code set an appliance uses
 
 This is the flow the user manuals gesture at and never describe, and it is the reason a Harmony asked

@@ -13,6 +13,7 @@ import { parse } from '../src/gspm.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
   from '../src/ir.ts';
 import { irdaString, mergedIntervals, pulsesOfWords, untilSilence } from '../src/irda.ts';
+import type { Pulse } from '../src/irframe.ts';
 import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
 
 const CONTAINERS = [
@@ -226,4 +227,76 @@ test('a real record becomes a well formed string, with its own carrier', skipWit
   // 92's rail is to truncate rather than round.
   assert.deepEqual([...carriers].sort((a, b) => a - b),
     [36001, 36200, 36401, 37000, 37237, 37900, 37954, 38001, 39325, 40000, 56303]);
+});
+
+test('a block may hold a second, different code, which a writer cannot copy', skipWithoutLab(), () => {
+  // **Section 152 said a writer copies the tail from a record of the same appliance, and that is too
+  // simple.** Danny asked whether a command made of several presses plays into this, and the answer is
+  // that 226 records in the corpus hold more than one distinct code in one block. Copying such a tail
+  // from a sibling would emit the sibling's second code, which is a different command.
+  //
+  // A press is a burst, so the block is split on silences longer than ten milliseconds and each burst
+  // read on its own, with a closing silence given back because a pulse width frame needs one. What the
+  // pairs turn out to be is systematic rather than authored: a code and its exact complement, a code
+  // and a near variant, or a constant lead in followed by the command. So this is protocol structure
+  // and the hazard for a writer is real either way.
+  const QUIET = 10_000;
+  const per: Record<string, number> = {};
+  const shapes = new Map<string, number>();
+  for (const name of CONTAINERS) {
+    const c = parse(require_(name));
+    let counted = 0;
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irClass(c, record) !== IR_CLASS_STREAM) continue;
+        const first = irHeaderPointers(c, record)[0];
+        if (first === undefined) continue;
+        const words = irBlockWords(c, first);
+        if (words === undefined) continue;
+        const train = mergedIntervals(fromFirstMark(pulsesOfWords(words)));
+        if (train.length === 0) continue;
+        const bursts: Pulse[][] = [];
+        let one: Pulse[] = [];
+        for (const pulse of train) {
+          if (!pulse.mark && pulse.us > QUIET) {
+            if (one.length > 0) bursts.push(one);
+            one = [];
+            continue;
+          }
+          one.push(pulse);
+        }
+        if (one.length > 0) bursts.push(one);
+        const codes = new Set<string>();
+        for (const burst of bursts) {
+          const readings = framesOfPulses([...burst, { mark: false, us: 20_000 }]);
+          if (readings.length === 1) codes.add(frameKey(readings[0]!));
+        }
+        if (codes.size > 1) {
+          counted += 1;
+          const shape = `${bursts.length} bursts, ${codes.size} codes`;
+          shapes.set(shape, (shapes.get(shape) ?? 0) + 1);
+        }
+      }
+    }
+    if (counted > 0) per[name] = counted;
+  }
+  // Per container and exact, since the point is that this is not one architecture's habit: it happens
+  // on arch 8, 12 and 14, and in a configuration Logitech compiled to our own specification.
+  assert.deepEqual(per, {
+    one_config: 13,
+    h600_config: 2,
+    h700_config: 29,
+    h700_config_2: 29,
+    arch8_config_b: 18,
+    arch8_config_c: 18,
+    arch8_config_d: 18,
+    arch8_config_885: 88,
+    one_spare_after_sync: 9,
+    calibration_one: 1,
+    calibration_h600: 1,
+  });
+  assert.equal(Object.values(per).reduce((a, b) => a + b, 0), 226);
+  assert.deepEqual([...shapes].sort((a, b) => b[1] - a[1]),
+    [['6 bursts, 2 codes', 117], ['2 bursts, 2 codes', 58], ['3 bursts, 2 codes', 47],
+      ['36 bursts, 4 codes', 4]]);
 });

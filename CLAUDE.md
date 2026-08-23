@@ -1601,13 +1601,15 @@ produce a config the remote accepts and mishandles.
   is how a repeat rate changes, per code, and a duration word caps at 32767 us so a same length edit can
   only reach the ceiling of the words already there. `0x7C` is **not** what repeats a held key, which is
   the reading section 70 guessed at and this refutes.
-* **A frame can be written and its tail has to be copied**, section 152. Five durations off a record
-  rebuild its frame exactly, 3547 of 3547, and 52 of 58 device groups use one set of timings for every
-  code, so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
+* **A frame can be written and its tail cannot simply be copied**, section 152. Five durations off a
+  record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
+  so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
   follows the frame does **not** follow from the bits: 151 distinct shapes across the corpus, no rule
-  behind them, and a constant total block duration explains only 31 of 41 classes. So a writer copies
-  the repeat count, the gap and the closing silence from a record of the same appliance, and a config
-  with no such record cannot have one invented for it.
+  behind them, and a constant total block duration explains only 31 of 41 classes. **And 226 records
+  hold a second, different code in the tail**, so copying a sibling's tail would emit the sibling's
+  second command. The second code is systematic rather than authored, a complement, a near variant or a
+  constant lead in, so a writer has to know which shape its group is in. A config with no record of that
+  appliance cannot have one invented for it either way.
 * **A record's carrier period is truncated, not rounded**, section 92: it is `floor(1e9 / f)` in
   nanoseconds, so 36 kHz is stored as 27777 and a writer that rounds emits 27778 and differs from
   Logitech's generator by one byte per device. The carrier is per record, not per device.
