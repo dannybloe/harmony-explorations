@@ -21292,3 +21292,79 @@ claim beside them, which is exactly the pair of diverging population lists secti
   space carrier has none, and the closing space differs from the flat half in all 200
 * the boundary above, so nobody reads the rebuild as a whole block
 * the timings per device group, 52 of 58, which is the half the application needs
+
+## 153. Logitech's own decoder answers for any code, and it settles two things ours could not
+
+**Section 133's decoder had one thing to be checked against and it was not enough.** A frame it recovers
+could be compared with the command catalogue of the one account that generated two configurations, and
+with nothing else, so for every other code in the corpus the only evidence that a reading was right was
+that it looked like one. `infraredAnalysisManager.AnalyzeInfrared` is a second decoder: it takes a
+rhythm and answers with a protocol family and a value, it was written by the people who wrote the
+generator, and **it answers for any record**. Two independent implementations over hundreds of codes is
+the shape this repository keeps asking for and has almost never been able to arrange.
+
+347 records were asked about, twelve of each verdict our own decoder gives, across all fifteen
+containers with an infrared table. The answers are recorded in the lab and
+`packages/codec/test/analyzed.test.ts` asserts against the file rather than the network, because the
+service is one announcement away from withdrawal and a recorded reply outlives it.
+
+| what our decoder said | asked | they named | same number |
+|---|---|---|---|
+| one reading | 180 | 180 | **177** |
+| both conventions, so refused | 48 | **48** | not applicable |
+| one reading, none once merged | 36 | **0** | not applicable |
+| no reading | 83 | 4 | not applicable |
+
+### The three that differ are ours plus four bits, and that is by design
+
+Our decoder is deliberately protocol agnostic: it reports every bit the rhythm carries and does not
+know which of them a family treats as payload. Theirs names the family, so it drops what the family
+says is not the value. All three differences are the same protocol, `Makita 10 Bit`, and in every one
+our value is theirs **shifted left by four**, with fourteen cells read against ten in the name. So we
+read four bit cells past the end of the protocol's own field, which is what a checksum or a fixed tail
+would look like. Stated as a shift rather than as agreement in spirit, because a shift can fail.
+
+### Every biphase code they name, and it confirms section 134 from outside
+
+A biphase code puts the bit in a transition, so both of our conventions fit it and `irFrame` refuses
+rather than guessing, section 133. Their decoder names all 48 asked about, and names them one thing:
+`Microsoft 30 Bit`, which is RC6. **Section 134 read exactly those records as RC6 mode 6 out of the
+bytes alone**, from one biphase cell being inverted between a record's two block pointers, so that
+identification has now arrived by a route with nothing in common with it. It also means the 148 such
+records in the corpus are readable and we cannot read them: a capability gap rather than a defect, and
+the service can close it today for anybody who asks.
+
+### And the 45 spurious readings are settled, which needed an outside answer
+
+Merging adjacent durations of one kind is what an emitter physically does, and a stored block does not
+do it: a duration is fifteen bits, so a long silence is several words, and a biphase code is spelled as
+unit cells. Comparing the two over the corpus, merging leaves 3502 records reading as before, turns 616
+unreadable ones into ambiguous ones, and **takes a reading away from 45**.
+
+Those 45 are the finding. They sit in three configurations of one contributor, they are all eight bits,
+which is exactly `MIN_BITS`, and **they all read the same value**. Forty-five different commands cannot
+send one code, so the internal argument was already conclusive; what was missing was an outside
+opinion, because a decoder is the last thing to trust about its own output. Their decoder produces
+nothing for a single one of the 36 asked about, and by hand nothing for the merged whole block or for
+the raw words either. And it is not that the shape defeats them, since they name 48 biphase codes in
+the same run.
+
+**So `framesOfPulses` reads an unmerged train and should not.** That is a change to a derivation with
+corpus wide numbers behind it and it is deliberately not made in the same commit as the measurement,
+per this repository's rule about measuring before removing. What it would move, counted: the partition
+in section 133 from 3547 under one convention, 148 under both and 935 under none, to 3502, 764 and 57;
+section 152's frame rebuild from 3547 of 3547 to 3502 of 3502; and nothing in
+`reference/button-maps.md`, because all 45 are in arch 8 (Harmony 880 and 885) containers and every
+named button came from a Harmony One or a Harmony 600.
+
+### What else the run said
+
+Eight protocol families across 347 codes, and the four `Logitech 24 Bit` answers are in the population
+our decoder refuses, so there are codes we cannot read whose family is a Logitech device. Of the 83
+records neither of us reads, they name four, so our refusals are very nearly theirs.
+
+**The service needs a login and the discovery document does not.** `Discovery/GetJsonOperations`
+answers unauthenticated and states the address, along with 307 other operations and four more on this
+same service, `Ping`, `SaveTeachingRequest`, `GetTeachingRequest` and `GetTeachingStatus`, which are
+the rest of the learning flow. `Ping` answers 200 with no session; `AnalyzeInfrared` answers 400 and
+`Access is denied`.

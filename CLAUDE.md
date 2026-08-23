@@ -1462,7 +1462,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 152 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 153 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1686,6 +1686,15 @@ produce a config the remote accepts and mishandles.
   shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
   the screen. **Not confirmed and deliberately not named.** A datasheet search on the address and the
   register numbers, or a photograph of the board, settles it; firmware cannot.
+* **Our frame decoder reads an unmerged pulse train and should not**, section 153, which is a decided
+  change that has not been made: adjacent durations of one kind are one interval physically, and merging
+  them takes a reading away from 45 records that read the same eight bit value in three configs of one
+  contributor. Logitech's own decoder refuses all of them and names 48 biphase codes in the same run, so
+  the outside answer is in. It moves section 133's partition to 3502, 764 and 57 and section 152's
+  rebuild to 3502 of 3502, and touches no button name.
+* **148 biphase codes are readable and we cannot read them**, section 153. `Microsoft 30 Bit`, which is
+  RC6, named by the service on every one of the 48 asked about. `irFrame` refuses them because both of
+  its conventions fit, which is right for a decoder that only knows mark and space lengths.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
   user manuals say the learned signal was uploaded to their web site, which did the pattern matching
