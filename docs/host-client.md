@@ -252,6 +252,49 @@ what section 48 derived from the firmware and what this document already says: a
 the firmware resolves the name. No operation anywhere in the surface mentions a scan code, a matrix or a
 keypad, and the test asserts that too.
 
+### The button maps were read, on 23 August 2026, and a favourite channel is a button
+
+The paragraph above calls an account's own button maps unexplored and the largest thing left on the
+table. They were read, for one purpose: base slot 16, the number sender, is the one section of the config
+format read entirely out of firmware and exercised by no file, so a config that populates it had to be
+manufactured. Danny created three favourite channels on a Harmony One for a television, `Chan1`, `Chan100`
+and `Chan666`. This is what the account states about them, with nothing compiled and nothing synced.
+
+**A favourite channel is not a structure of its own.** It is a `SoftRemoteButton` on the television's own
+`DeviceButtonMap`, whose `ButtonAction` is a `ButtonChannelAction` carrying a `ChannelNumber` and naming
+the device, and whose `MenuItem` puts it at a position on a menu called `FavoriteChannels`. The label is
+`TextOnRemote`. Three buttons, positions 0, 1 and 2, all three naming the same device. The other two
+remotes on the same account carry none, so the feature is per remote rather than per household, and the
+television's map holds 77 buttons of which these three are the addition.
+
+**The channel is text and not a number**, `"1"`, `"100"`, `"666"`. So a leading zero can be authored, and
+whatever pads a short channel in the compiled form cannot be a per record field, because two channels of
+one television would want different padding.
+
+**There is a before and an after, and the control is the two devices that did not move.** The same
+account's button maps were captured on 13 August 2026, through a different operation, ten days before the
+channels existed. The television went from 74 buttons to 77 and the three extra ones are exactly the three
+on the `FavoriteChannels` menu, its other 41 soft buttons and 33 hard ones being unchanged in count. Two
+different calls could simply count differently, which is why the other two devices matter: they come back
+at 77 and 52 in both reads. And **only the edited device has a saved map**. Before, all three were
+defaults named by a string; after, the television's is a stored map with a number and the other two are
+still defaults. So authoring one channel persists that device's entire button map.
+
+**The request shape is the part worth writing down**, because two spellings of it are refused with no
+usable reason. `UserButtonMappingManager/GetButtonMaps` takes `deviceIds` and `activityIds` as **lists**
+of `{__type: 'DeviceId:#Logitech.Harmony.Services.Common.Contracts.Data', Value, IsPersisted}`, plus
+`remoteSkinId`, `accountId` wrapped as `{Value}`, and a bare `surfaceId`. A **surface** is not a remote:
+the household reply carries a `Surfaces` array whose entries pair a surface id with a `RemoteId` and a
+`SkinId`, and the button maps are asked for by surface. Sending a `remoteId` instead answers 400 with
+`ThrowArgumentNullException`, and `UserAccountDirector/GetButtonMaps` answers 400 with
+`AuthorizeActionOnAccount`, neither of which says what is missing.
+
+**Which call serves a remote's favourites is a product decision of theirs, and the One is on the old
+side of it.** The client gates the flow on a list holding the Harmony One, the 600, the 650, the 665 and
+the 700, and calls that branch by an internal codename; every later remote reads its channels through
+`GetDeviceModeButtonMaps` instead, whose request wants `deviceIds` as a list as well. So a reader written
+against the newer call would find nothing on a Harmony One and report that the account holds no channels.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in

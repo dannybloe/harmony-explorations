@@ -322,5 +322,104 @@ class ButtonMapCompleteness(unittest.TestCase):
         self.assertEqual(kinds['RootButtonMap'] & others, set())
 
 
+#: The three surfaces' button maps, read on 23 August 2026 once three favourite channels existed on the
+#: Harmony One, plus the reply from ten days earlier that is the before half of the control.
+CHANNEL_REPLIES = ('GetButtonMaps_skin54.json', 'GetButtonMaps_skin71.json',
+                   'GetButtonMaps_skin22.json', 'GET_MapList_skin54.json')
+
+
+def device_maps(maps):
+    """The device maps in a `GetButtonMaps` reply, keyed on their own identifier."""
+    return {m.get('ButtonMapIdentifier'): m
+            for m in maps if m['__type'].split(':')[0] == 'DeviceButtonMap'}
+
+
+def channel_buttons(reply):
+    """Every button in a reply whose action carries a channel number."""
+    found = []
+    for button_map in reply['GetButtonMapsResult']:
+        for button in button_map['Buttons']:
+            action = button.get('ButtonAction') or {}
+            if 'ButtonChannelAction' in str(action.get('__type')):
+                found.append((button, action))
+    return found
+
+
+class AFavouriteChannelIsAButton(unittest.TestCase):
+    """What the account states about a favourite channel, which is the input side of base slot 16.
+
+    Base slot 16 is the one section of the config format read entirely out of firmware and populated by
+    no file in the corpus, so a sample had to be manufactured: three favourite channels were created on
+    a Harmony One for a television, labelled `Chan1`, `Chan100` and `Chan666`. This test is what the
+    service says about them **before** anything is compiled, so that the compiled form is compared
+    against a stated intent rather than against a memory of one.
+
+    The claim is that a favourite channel is not a structure of its own. It is a soft button on the
+    television's own device map, on a menu Logitech calls `FavoriteChannels`, whose action carries the
+    channel and names the device.
+    """
+
+    def setUp(self):
+        lab.require_responses(*CHANNEL_REPLIES)
+
+    def test_the_three_channels_are_three_buttons_on_one_device(self):
+        found = channel_buttons(lab.response('GetButtonMaps_skin54.json'))
+        self.assertEqual(len(found), 3)
+        # The channel is **text**, which is why these are compared as strings: a leading zero can be
+        # authored, so nothing downstream may treat the field as a number.
+        self.assertEqual([a['ChannelNumber'] for _, a in found], ['1', '100', '666'])
+        self.assertEqual([b['TextOnRemote'] for b, _ in found], ['Chan1', 'Chan100', 'Chan666'])
+        self.assertEqual([b['MenuItem']['MenuName'] for b, _ in found], ['FavoriteChannels'] * 3)
+        self.assertEqual([b['MenuItem']['IndexInMenu'] for b, _ in found], [0, 1, 2])
+        self.assertEqual([b['__type'].split(':')[0] for b, _ in found], ['SoftRemoteButton'] * 3)
+        # All three name the same device, and it is one of the account's three.
+        self.assertEqual({a['DeviceId']['Value'] for _, a in found}, {83281442})
+
+    def test_the_feature_is_per_remote_and_not_per_household(self):
+        """The other two remotes on the same account carry none, over the same three devices.
+
+        Worth asserting because the alternative reading is that a channel belongs to the device, in
+        which case every remote that drives that television would carry it.
+        """
+        for reply in ('GetButtonMaps_skin71.json', 'GetButtonMaps_skin22.json'):
+            with self.subTest(reply=reply):
+                self.assertEqual(len(channel_buttons(lab.response(reply))), 0)
+
+    def test_creating_a_channel_added_exactly_three_buttons(self):
+        """The before and after control, and the point is the two devices that did not move.
+
+        The two reads are **different operations** ten days apart, `MapList` then `GetButtonMaps`, so a
+        difference in one map proves nothing on its own: the two calls could simply count differently.
+        The other two devices come back identical across both, which is what makes the third one's three
+        extra buttons the three channels rather than an artefact of the call.
+        """
+        before = device_maps(lab.response('GET_MapList_skin54.json')['ButtonMaps'])
+        after = device_maps(lab.response('GetButtonMaps_skin54.json')['GetButtonMapsResult'])
+        for device, count in (('83281443', 77), ('83281444', 52)):
+            with self.subTest(device=device):
+                self.assertEqual(len(before['16417Device%s' % device]['Buttons']), count)
+                self.assertEqual(len(after['device_%s' % device]['Buttons']), count)
+        # The television is the one map whose identifier is gone, because it is the one that got saved.
+        television = after[None]
+        self.assertEqual(len(before['16417Device83281442']['Buttons']), 74)
+        self.assertEqual(len(television['Buttons']), 77)
+        self.assertEqual(len(channel_buttons(
+            {'GetButtonMapsResult': [television]})), 3)
+
+    def test_only_the_edited_device_has_a_saved_map(self):
+        """A default map is named by a string and a saved one by a number, which is the state change.
+
+        Before, none of the three devices had a saved map identifier. After, the television has one and
+        the other two are still defaults. So authoring a channel persists that device's whole button map,
+        which is why a writer cannot treat a channel as an addition to something it does not own.
+        """
+        before = device_maps(lab.response('GET_MapList_skin54.json')['ButtonMaps'])
+        after = device_maps(lab.response('GetButtonMaps_skin54.json')['GetButtonMapsResult'])
+        self.assertEqual([m.get('ButtonMapId') for m in before.values()], [None, None, None])
+        saved = {k: (m.get('ButtonMapId') or {}).get('Value') is not None for k, m in after.items()}
+        self.assertEqual(saved, {None: True, 'device_83281443': False, 'device_83281444': False})
+
+
+
 if __name__ == '__main__':
     unittest.main()
