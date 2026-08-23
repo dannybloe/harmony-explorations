@@ -21549,3 +21549,87 @@ numbers exercise none of them. What would: a channel authored with a leading zer
 `digits` is what pads; a channel entered as a two part number, which is what a prefix is for; and one
 and two digit channels only, which separates the two readings of bit 2 above. Each is one more compile
 on the same account and none needs a remote.
+
+## 155. A remote idle in USB mode drops its first command, and the retry alone clears it
+
+The stranding of the spare Harmony One has been PARKED since 10 August 2026 on the reading that it
+may be an anomaly of that one unit. `CLAUDE.md` says what would reopen it, another occurrence and
+nothing else, and names the two things every previous occurrence lost: how many commands the session
+had sent, and whether the screen still said USB mode before anything was unplugged.
+
+Both were captured on 23 August 2026, along with a third nobody had thought to ask for.
+
+### What happened, in order
+
+Danny had synced the spare Harmony One from MyHarmony on a Windows machine, and reported that the
+remote restarted at the end of the sync while their client sat waiting for a re-enumeration it never
+saw. The remote was then on this machine's bus.
+
+1. `list-remotes` enumerated it. That opens nothing.
+2. `read-config.ts` opened it and sent `GET_VERSION`. **No reply at all**, three polls of 2000 ms.
+3. Asked at that moment, before anything was touched, the screen said **"USB Connected"**.
+4. A few minutes later a second attempt answered, and a **1645938 byte config read off it** with
+   both of section 122's integrity checks passing.
+5. Danny confirmed afterwards: **the cable was not touched and the remote was not reconnected** at
+   any point during the tests.
+
+### What the clock excludes, which is the part worth having
+
+The remote's live clock read `1e 32 0c 16 00 07 1a` at state variables 0 to 6, and the config it had
+booted from is stamped 2026-08-22 12:02:52. Under section 111 an arch 12 remote seeds those seven
+variables from base slot 3's timestamp at every boot, so the two are comparable field by field:
+
+| | config | live | |
+|---|---|---|---|
+| hour, day, weekday, month, year | 12, 22, 0, 7, 26 | 12, 22, 0, 7, 26 | identical |
+| minute | 2 | 50 | +48 |
+| second | 52 | 30 | uptime 47 m 38 s |
+
+**So no reboot happened between the command that failed and the one that worked.** Uptime was
+continuous with the boot that followed the sync, which had been roughly forty minutes earlier. The
+remote was not restarting, not re-enumerating and not being power cycled; it had simply been sitting
+in USB mode, untouched, and it dropped the one command it was given.
+
+A second closure falls out for free. The stored month is **zero based**, 7 being August, which is why
+the live value and the config's agree exactly. `built_at` adds one when it renders, and a reader
+comparing the rendered month against the variable would have reported a discrepancy that is not
+there.
+
+### What it narrows, and what it does not
+
+Three of the leads `CLAUDE.md` lists as dead stay dead and one of its framings needs correcting.
+
+* **"Dozens of commands" is not necessary.** Both previous occurrences followed hours of bench work.
+  This session had sent **zero** commands before the failure, since enumeration opens nothing. So a
+  busy session is not the trigger, and the note's observation that "those two sessions ran dozens of
+  commands where every round here ran one" was a real difference between the cases and not a cause.
+* **A disconnect is not what clears it.** Nothing was disconnected. The retry alone was enough.
+* **A reset is not what clears it either**, which the clock settles rather than infers. Section 100
+  established that a hang ends in a genuine device reset with the clock reset; here the clock is
+  continuous, so whatever happened was not that.
+* **What is left is idleness.** The remote had been in USB mode, unaddressed, for about forty
+  minutes. That is the one condition this occurrence shares with the earlier ones that a busy session
+  does not, since both of those also followed long unattended stretches.
+
+This is a **milder instance and not proof they are the same event**: this remote recovered on a
+retry and the earlier ones needed a battery pull. The honest statement is that the failure mode
+"enumerated, screen says USB Connected, first command unanswered" now has a recorded instance with a
+known cause excluded, and that a retry is sometimes sufficient. The unexplained case stays open.
+
+### The library change, and why it is bounded to one command
+
+Without a retry, a person plugging a remote into FreeHarmony would be shown a hard failure that a
+second attempt clears. `HarmonyRemote.exchangeVersion` now sends `GET_VERSION` a second time when the
+first attempt draws no reply at all, once, and only while the remote has never answered on that
+handle.
+
+**The bound is the point.** A general retry inside `exchange` would resend whatever it was given,
+which for a write is the one thing `packages/usb` must never do. `GET_VERSION` is the session opener
+on every path here, it is a pure read, and resending it cannot change anything on a remote. The
+evidence covers this command and no other, so the code covers this command and no other.
+
+Three tests, and the second and third are the ones that carry weight: the request goes out twice and
+is the same request both times; a remote that never speaks still fails, with exactly two writes, so
+the retry cannot turn a dead remote into a hang; and a remote that has already answered does not get
+a retry on a later silence, because that is a different event and reporting it is right. With the
+retry removed, two of the three fail.

@@ -663,6 +663,19 @@ start with the remote already on USB because its first wait is the measurement. 
 dead leads**: each cost a round of hardware, and if it happens again the two things to capture in the
 moment are how many commands the session had sent and whether the screen still said USB mode before
 anything was unplugged. Every previous occurrence lost both.
+
+**Both were captured on 23 August 2026 and the answer narrows it**, section 155, on a milder instance
+that recovered by itself. A Harmony One that had sat in USB mode for about forty minutes after a sync
+by Logitech's own software dropped its first `GET_VERSION` entirely; the screen said "USB Connected",
+this session had sent it **zero** commands, the cable was never touched, and the next attempt answered
+and read the whole config off it. Its clock excludes the obvious explanation by measurement rather than
+by argument: uptime was continuous with the boot that followed the sync, so **no reset happened between
+the failure and the recovery**. So a busy session is not the trigger and a disconnect is not the cure,
+and what the cases share is idleness rather than traffic. It is **not proof they are the same event**,
+since this one cleared on a retry and the earlier two needed a battery pull, and the unexplained case
+stays open. What changed in the code is one bounded thing: `getVersion` resends once when a remote that
+has never spoken says nothing, because otherwise a person plugging a remote in sees a hard failure that
+a second attempt clears.
 `packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
 demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
 `rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
@@ -1465,7 +1478,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 154 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 155 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

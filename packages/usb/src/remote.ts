@@ -138,12 +138,51 @@ export class HarmonyRemote {
     await this.transport.write(request);
     for (let poll = 0; poll < this.idlePolls; poll += 1) {
       const report = await this.transport.read(this.timeoutMs);
-      if (report !== undefined) return decodeReply(report);
+      if (report !== undefined) {
+        this.answeredOnce = true;
+        return decodeReply(report);
+      }
     }
     throw new RemoteError(
       `no reply to command 0x${(request[0] as number).toString(16)} within ` +
         `${this.idlePolls} polls of ${this.timeoutMs} ms`,
     );
+  }
+
+  /**
+   * True once any command has been answered on this handle, which is what bounds the retry below.
+   *
+   * Not a counter: the only thing anything needs to know is whether this remote has spoken at all.
+   */
+  private answeredOnce = false;
+
+  /**
+   * Send `GET_VERSION` and, if the remote says nothing at all, send it exactly once more.
+   *
+   * **Measured on 23 August 2026 and this is the whole of the evidence.** A Harmony One that had sat
+   * idle in USB mode for about forty minutes after a sync by Logitech's own software did not answer
+   * its first `GET_VERSION`: three polls of two seconds, nothing. Its screen said "USB Connected",
+   * this session had sent it no commands at all, the cable was not touched and the remote was not
+   * reconnected, and the next attempt a few minutes later answered and a whole 1.6 MB config read
+   * off it with both integrity checks passing. Its clock proved no reboot happened in between, since
+   * uptime was continuous with the boot that followed the sync. Section 155.
+   *
+   * So the first command of a long idle session can be dropped, and without this a person plugging a
+   * remote in would be shown a hard failure that a second attempt clears.
+   *
+   * **Bounded to this command and to a remote that has never spoken**, deliberately. `GET_VERSION`
+   * is the session opener on every path here, it is a pure read, and resending it cannot do anything
+   * to a remote. A general retry inside `exchange` would resend whatever it was given, which for a
+   * write is the one thing this package must never do, and the evidence covers this command and no
+   * other.
+   */
+  private async exchangeVersion(): Promise<Reply> {
+    try {
+      return await this.exchange(getVersionRequest());
+    } catch (error) {
+      if (this.answeredOnce || !(error instanceof RemoteError)) throw error;
+      return this.exchange(getVersionRequest());
+    }
   }
 
   /**
@@ -163,7 +202,7 @@ export class HarmonyRemote {
    * on bytes nobody has identified would be worse than none, because they would be believed.
    */
   async getVersion(): Promise<Uint8Array> {
-    const reply = await this.exchange(getVersionRequest());
+    const reply = await this.exchangeVersion();
     if (reply.kind !== 'version') {
       throw new RemoteError(`GET_VERSION answered with a ${reply.kind} reply`);
     }

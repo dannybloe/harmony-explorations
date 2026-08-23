@@ -588,3 +588,66 @@ test('an internal read that ends exactly on the page boundary is allowed', async
   assert.equal(data.length, 62);
   assert.equal(written.length, 1);
 });
+
+test('the first GET_VERSION of a session is sent twice when the remote says nothing', () => {
+  // **Measured on the bench, 23 August 2026, section 155.** A Harmony One idle in USB mode for about
+  // forty minutes after a sync by Logitech's own software dropped its first GET_VERSION entirely:
+  // three polls of two seconds, no reply, while its screen said "USB Connected". The cable was not
+  // touched, the remote was not reconnected, and its clock proved no reboot happened, so the retry
+  // alone is what cleared it. Without this a person plugging in a remote sees a hard failure that a
+  // second attempt fixes.
+  //
+  // The transport here answers nothing at all to the first request and the version block to the
+  // second, which is exactly what the bench did.
+  let seen = 0;
+  const written: Uint8Array[] = [];
+  const transport: Transport = {
+    async write(request) {
+      written.push(new Uint8Array(request));
+      seen += 1;
+    },
+    async read() {
+      // Silent for the first request, forthcoming for the second.
+      return seen < 2 ? undefined : report(0x28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    },
+    async close() {},
+  };
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3 });
+  return remote.getVersion().then((fields) => {
+    assert.equal(written.length, 2, 'the request went out twice');
+    assert.deepEqual(written[0], written[1], 'and the second is the same request, not a variant');
+    assert.deepEqual([...fields], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+});
+
+test('the retry is spent once, so a remote that never speaks still fails', () => {
+  // The negative, and it is the one that matters: a retry that repeats forever turns a dead remote
+  // into a hang, which is worse than the error it was added to avoid.
+  let writes = 0;
+  const transport: Transport = {
+    async write() { writes += 1; },
+    async read() { return undefined; },
+    async close() {},
+  };
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3 });
+  return assert.rejects(() => remote.getVersion(), /no reply to command 0x10/)
+    .then(() => assert.equal(writes, 2, 'one attempt and one retry, and no more'));
+});
+
+test('a remote that has already answered does not get the retry', () => {
+  // The bound. The evidence is about the **first** command of a session, so a silence later on is a
+  // different event and is reported rather than papered over.
+  let requests = 0;
+  const transport: Transport = {
+    async write() { requests += 1; },
+    // Answers the first request, then goes quiet for good.
+    async read() {
+      return requests === 1 ? report(0x28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12) : undefined;
+    },
+    async close() {},
+  };
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3 });
+  return remote.getVersion()
+    .then(() => assert.rejects(() => remote.getVersion(), /no reply to command 0x10/))
+    .then(() => assert.equal(requests, 2, 'the second call sent one request and did not retry'));
+});
