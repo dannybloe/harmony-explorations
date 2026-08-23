@@ -1667,6 +1667,18 @@ produce a config the remote accepts and mishandles.
   carries three byte identical copies at three addresses, and nothing in the format requires that, so
   editing a digit's instruction in place needs the same check base slot 5's duration blocks need: who
   else names this table. The accounting and the emitter both deduplicate by address for that reason.
+* **A sequence at Logitech's own stated limit can hang a remote for good**, measured on 23 August 2026 and
+  deliberately not a finding, by Danny's call: the notes sit in the lab beside the config,
+  `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`, so a session that finds no section for it must not
+  conclude it is unread. A 25 step sequence, their maximum, expands to roughly 55 three byte instructions
+  in one action list, and heavy tapping of the touch panel while it runs killed a Harmony One three times
+  out of three with the batteries out each time, against five gentle or untouched runs that all completed.
+  The mechanism is open and two readings are dead. **This is a new hazard class**: a config the remote
+  accepts, whose checksums verify, which this project accounts for to the byte, and which writes nowhere it
+  should not. It simply runs. So a writer **refuses** an oversized sequence rather than warning, bounded by
+  the expanded instruction count and not by their item count, which permits this one. The pause itself is
+  opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the format can
+  express and their 20 second limit sits just under it.
 * **A small logical change reshuffles the whole image.** Three arch 8 configs generated ten minutes
   apart differ in 73 to 84% of their bytes, and two compiles of an **unchanged** arch 12 (Harmony One)
   account differ in 67%, section 154. So an editor makes minimal diffs against an existing

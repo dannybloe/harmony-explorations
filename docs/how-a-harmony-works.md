@@ -150,24 +150,41 @@ records which page it is on and not which activity, and by this rule every seque
 Danny read both off Logitech's own editor on 23 August 2026. A sequence holds at most **25 steps**, and
 a pause is at most **20 seconds**.
 
-**The 20 seconds is just a limit** and there is nothing to say about it beyond writing it down. A pause
-is already read as a whole number of seconds in a sixteen bit field, section 43, so 20 is nowhere near
-anything the format struggles with, and the bound is somebody's judgement about what a person should be
-able to build.
+**Both paragraphs below were written before either number was measured, and the measurement moved both
+of them.** A sequence at the limit was authored, compiled and read on 23 August 2026, and the notes are
+in the lab beside the config rather than in `docs/findings.md`, by Danny's call on the day.
 
-**The 25 may not be arbitrary, and that is worth a hypothesis rather than a shrug.** The thing a
-sequence runs on is a queue of **120 bytes holding three byte instructions**, section 34, which is 40
-instructions and no more. A sequence of 25 sends therefore fits, with fifteen instructions left for
-whatever else has to be pending, and a sequence of 45 could not. So the editor's limit may be a
-consequence of a structure we have already read rather than a number Logitech chose.
+**The 20 seconds is close to the ceiling rather than far from it**, which is the opposite of what this
+said. The dead wording was that a pause is a whole number of seconds in a sixteen bit field so
+*20 is nowhere near anything the format struggles with*<!--superseded-->, and both halves were wrong. No
+timer is involved at all: a pause is one action list instruction, opcode `0x7C`, inline, and its value is
+**tenths of a second in the low byte**, exact on five authored values from one second to twenty. A byte
+holds 255, so the largest pause the format can express is 25.5 seconds and their limit of 20 is a round
+number just under it. So it is a bound with something behind it, and a writer that offered 30 seconds
+would be offering something unrepresentable.
 
-**Unconfirmed, and stated so that it gets tested rather than believed.** Two things would have to hold
-for it: that a sequence's sends are enqueued together rather than one at a time, and that 40 minus 25
-is the room the rest of the machinery needs. Neither is established, and the arithmetic being tidy is
-exactly the kind of coincidence this project has been caught by before, where a wrong field split
-produced a number that looked like it described a keypad. What would settle it is a sequence at the
-limit, compiled and read: if 25 sends land in one list, the queue is the reason, and if they arrive in
-segments the limit is somebody's taste after all.
+**The 25 counts pauses, and the queue is not the reason for it.** The hypothesis here was that
+*the 25 may not be arbitrary*<!--superseded-->, because the action list queue is 120 bytes of three byte
+instructions, section 34, which is 40 instructions, so 25 sends would fit with fifteen to spare. The
+sequence that was built has 25 items and only 21 of them are sends: the other 4 are pauses, so the limit
+is on items and not on commands. And it does not fit. Every send expands to a two instruction list plus
+its own dispatch, so 25 items become roughly 55 instructions, well past 40, and the compiled answer is one
+action list of 34 instructions rather than a chain. So the queue cannot be what chose 25.
+
+**What the same run found instead is a hazard, and it is worth more than the arithmetic was.** That 25
+item sequence **hangs a Harmony One for good** when its touch panel is tapped heavily while it runs. Three
+runs of that, no recovery in any of them, batteries out each time; against three runs with no taps and two
+with gentle taps that all completed in 62 to 70 seconds. Reproducible rather than variance, and the
+mechanism is open: a destructive queue overflow is dead, because a queue one instruction from the edge
+would have tipped on the single tap and did not, and a backlog of queued taps is dead too, because 65 taps
+at one a second cost nothing at all.
+
+**So Logitech's own stated maximum is not a safe bound**, and that is the sentence to carry into the
+writer. A config at their limit is one the remote accepts, whose checksums verify, which this project
+accounts for to the byte, and which can leave the remote unusable until its batteries come out. It writes
+nowhere it should not; it simply runs. A writer should therefore **refuse** an oversized sequence rather
+than warn about it, and bound it by the expanded instruction count rather than by the item count, which
+permits this one.
 
 ## A sequence can only use the activity's own appliances
 
@@ -242,6 +259,109 @@ mode's screen shows that device's commands four at a time and you page through t
 on a Harmony One the same thing happens on the touch panel.
 
 So "the buttons of a device" is two questions, not one, and an interface has to keep them apart.
+
+## A favourite channel is a screen button, and the channel is text
+
+Read out of Logitech's own button records on 23 August 2026, for three of the models on the bench. A
+favourite channel is a **thing you keep**, with a name you type and a picture if you want one, and it
+shows up as a pad on the screen: their records put them in a menu of their own, called `FavoriteChannels`,
+alongside the menus that hold a device's commands and an activity's, and each pad carries the appliance it
+tunes and the word drawn on it.
+
+**The menu names no appliance and each favourite names its own**, which is worth stating because it is the
+opposite of how the rest of the screen works. A device's commands sit in a menu named after the device, so
+the pad inherits its appliance from the page it is on. A favourite does not: the appliance is on the
+tuning action itself. So a favourites page can hold channels for more than one tuner, and anything that
+took the appliance from the page would be wrong for exactly this one case.
+
+**FreeHarmony does not offer them, decided on 23 August 2026**, and the reason belongs here rather than
+only in that repository: Danny has used these remotes for years, has never used favourites, does not know
+how to switch them on, and never understood the need, because a **sequence** does the same thing. Tuning to
+channel 100 is sending one, zero and zero, which is exactly what a sequence is for. So the feature is
+described in this document and expressed as a sequence in the application, and what a sequence cannot do is
+carry a picture and be reachable from device mode. `FreeHarmony/docs/data-model.md` weighs that.
+
+**The channel is stored as text and that is not a detail.** Channel 1 and channel 001 are different
+channels on a real set top box, and a config takes two entirely different roads for them, section 156: a
+number that survives being written as an integer goes through the number sender, and one with a leading
+zero is spelled out one digit code at a time instead. Their own records hold it as a string. So anything
+that treats a channel as a number loses a channel somebody can actually tune to, and the leading zero is
+the case that proves it rather than an edge case to be tidied away.
+
+**Where it goes in a config is four places and none of them is a keypad map**, section 154, which is the
+mistake this document exists to warn about in general form. A favourite reaches the file as a record per
+appliance in the number sender, a list per channel, the state variable values whose transitions run those
+lists, and a page on the screen. Nothing in any of them says a channel was ever typed, so a favourite can
+be written and cannot be read back, and reading a favourites page as a page of key bindings would be
+answering a question about the product out of the file's own shape.
+
+**What it turns into is that appliance's own digit codes**, which is the sentence that makes the rest of it
+concrete. Tuning to 100 is sending the codes for one, zero and zero, so a favourite is only authorable
+where those codes can be picked out by name, and a config read off a remote carries no command names at
+all. So somebody who imports their remote has the channels working and cannot add a channel until the
+appliance has been named, which is a product consequence rather than a format one.
+
+**Which screen page belongs to which appliance is still open**, section 151, so an import can see the page
+and not its owner. That is the same asymmetry that runs through this whole document: the product knows
+things the compiled form threw away.
+
+## Holding a key is two mechanisms, and a repeat and a long press exclude each other
+
+Put together on 23 August 2026 from Logitech's own interface and its own product data. Three key
+behaviours are visible to a user: a key that does nothing extra when held, a key that keeps firing
+while held, and a key that does something **different** when held. That is three behaviours and two
+mechanisms, and reading it as three kinds of key is the mistake this document exists to prevent.
+
+**Repeating is a property of the command**, not of the key. Section 127 read it: an infrared record
+carries three block pointers, once, held and tail, the firmware samples the keypad at every block
+boundary, and the held block is sent for as long as the key is down. So the interval a user feels is
+that block's own duration, and it is per code. One appliance can have a volume command that repeats
+and a power command that does not, and no keypad map anywhere states either.
+
+**A long press is a property of the button.** Logitech's own button record carries three actions,
+`ButtonAction`, `ButtonLongPressAction` and `ButtonDoublePressAction`, so the second action is chosen
+by how long the key is held and belongs to the button rather than to any command.
+
+**The two cannot coexist on one key, and the reason is mechanical.** A firmware that has to decide
+between two actions must wait to learn which one was meant, and a key that is waiting cannot also be
+repeating. So the third behaviour is not a third kind of key: it is a key whose long press has taken
+its repeat away.
+
+**Which models have a long press is a generation boundary**, from `ProductsManager/GetAllProducts` on
+the live service, where a product record lists its own capabilities. Declaring `LongPressAction`: the
+950, the Touch, the Ultimate One, the 350, and the nine products of the Elite and Smart Control
+families. Not declaring it: the Harmony One, 600, 650, 665, 700, 300 and 200, in both regional
+variants where there are two, and the two hubs, which have no buttons at all. So **no architecture
+this project can read has a long press**, and a keypad map read out of any configuration here cannot
+contain one.
+
+**On the Harmony 350 the long press is what the device count is made of**, which is the closure worth
+keeping because it explains three numbers with one mechanism. Its interface says four device buttons
+control up to eight devices, and its stated maximum is eight. The 300 has four buttons, no long press,
+and a maximum of four. The 200 has three, no long press, and three. So for the models with no screen
+the maximum is the number of device buttons times two where a long press exists and times one where it
+does not, and it is not an entry in a table.
+
+That arithmetic does not extend to the models with a screen, where a device is reached through the
+screen rather than through a dedicated button, and their maxima run from five on a Harmony 600 to
+fifteen on a Harmony One.
+
+## A remote with no screen holds exactly one activity
+
+Measured on 23 August 2026 by filling seventeen model records in one account with the same six devices
+and seven activities, through Logitech's own copy step, and reading back what each accepted. Fourteen
+of them took all seven activities. Three took **one**: the Harmony 300, the Harmony 200 and the Harmony
+350, which are exactly the three models with no screen.
+
+Only the 350 states that limit anywhere: its product record carries a maximum of one activity where
+every other record leaves the field empty. For the 200 and the 300 the number appears in no field at
+all and the copy step simply stops after one, which is why filling a record and reading it back finds
+things that reading the product table cannot.
+
+Their capability lists agree from the other side, and this is the independent half: the 200 and the 300
+declare no `Activities` capability at all, only `PartiallySetupActivities`, while the 350 declares
+both. So a screenless Harmony is an activity machine with room for one activity, plus a device button
+per appliance, and the screen is what buys a remote more than one.
 
 ## Open: where device mode's own keypad map lives
 
