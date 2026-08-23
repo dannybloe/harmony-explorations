@@ -1182,6 +1182,10 @@ make growth        what a length change would move, per sample: addresses stated
                    and the cost of making room in three places. GROWTH_ARGS=--detail
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make analyze       ask Logitech's own analyser what a code in the corpus is and compare it with ours,
+                   which is the only second opinion available on `irframe.ts` for a code no calibration
+                   account generated. Needs HARMONY_LOGITECH_EMAIL and HARMONY_LOGITECH_PASSWORD and
+                   refuses without them. Never in `make all`. ANALYZE_ARGS=--config h600_config --limit 25
 make render        draw a config's screens as PNG files, into the lab and never into the repository.
                    RENDER_ARGS=--config one_config --page 45, or --sheet for every page, or
                    --undrawn to paint the pixels nothing reached. The check that fails differently

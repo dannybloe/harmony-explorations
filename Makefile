@@ -195,6 +195,13 @@ reading:
 text:
 	@node packages/codec/bin/text.ts $(TEXT_ARGS)
 
+# Ask Logitech's own analyser what a code in the corpus is and compare it with what we read. Not part
+# of `all` and never will be: it needs a network and somebody's credentials, and the whole point of it
+# is a second opinion from outside this repository. Read only in both directions, and it refuses to
+# start without the two environment variables rather than reporting a page of access denials.
+analyze:
+	@node packages/codec/bin/analyze.ts $(ANALYZE_ARGS)
+
 # Drive the bench page in a real browser. Not part of `all`, and not part of `ts`, for the same reason
 # the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips
 # cleanly where there is no Chrome, since no browser is downloaded on purpose.
