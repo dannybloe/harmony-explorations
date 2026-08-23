@@ -14,8 +14,14 @@
  * button that sends it. It is also the first half of what learning a code needs, since what comes off
  * the remote during a capture is a duration stream too, section 98.
  *
- * **This is a decoder and not an encoder.** Going the other way needs the protocol, because the timings,
- * the header, the repeat and the trailing gap are all protocol facts that the bits do not carry.
+ * **It decodes and it encodes the frame, and only the frame.** This said "this is a decoder and not an
+ * encoder" until 23 August 2026, on the reasoning that going the other way needs the protocol because
+ * the timings, the header, the repeat and the trailing gap are protocol facts the bits do not carry.
+ * Half of that is measured and wrong, section 152: a record states its own timings, so the frame comes
+ * back from five durations read off the record itself, exactly, on every one of the 3547 records in
+ * the corpus that read as a frame. What the bits genuinely do not carry is everything **after** the
+ * frame, the closing mark and the silence, and that stays undecided rather than being guessed at, so
+ * `pulsesOfFrame` returns the frame and stops there.
  */
 import type { Container } from './gspm.ts';
 import { IR_PULSE_MARK, IR_PULSE_MAX, irBlockWords, irHeaderPointers } from './ir.ts';
@@ -198,12 +204,120 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
  * 32767 spaces and knowing that is knowing the format.
  */
 export function framesOfPulses(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
-  const first = train.findIndex((one) => one.mark);
-  const d = first < 0 ? [] : train.slice(first);
+  const d = fromFirstMark(train);
   const out: IrFrame[] = [];
   for (const carries of ['mark', 'space'] as const) {
     const one = decode(d, carries, headerPairs);
     if (one) out.push(one);
+  }
+  return out;
+}
+
+/**
+ * A pulse train from its first mark, which is where a frame starts.
+ *
+ * Exported so that the encoder below and the decoder above agree about it. A block commonly opens with
+ * several 32767 spaces and then a shorter one, and two copies of that rule are two copies.
+ */
+export function fromFirstMark(train: readonly Pulse[]): readonly Pulse[] {
+  const first = train.findIndex((one) => one.mark);
+  return first < 0 ? [] : train.slice(first);
+}
+
+/**
+ * The durations a frame is built out of, in microseconds, section 152.
+ *
+ * **Five numbers, and they come off the record rather than out of a protocol table.** That is the
+ * finding: a stored record states its own timings, so nothing here has to know what a Panasonic or an
+ * NEC frame looks like in order to write one. What it cannot do is invent them, which is the shape of
+ * the problem FreeHarmony has with Logitech's catalogue: that service states a protocol family and a
+ * frame value and no durations at all, so the timings have to come from a record of the same family
+ * that some configuration already holds.
+ */
+export interface FrameTimings {
+  /** The header: a mark, and the space between it and the first bit. */
+  header: readonly [number, number];
+  /** The half of every pair that carries no bit, and is one length throughout. */
+  flat: number;
+  /** The carried half's length for a zero bit, and for a one bit. */
+  zero: number;
+  one: number;
+  carries: FrameCarrier;
+  /**
+   * The space that closes the last pair, where the bit is in the mark.
+   *
+   * **A pulse width frame's last space is a trailing gap and not a bit cell**, and reading it as one is
+   * what made 200 records of the corpus look as though their timings did not split: 112 of twelve bits
+   * and 88 of fifteen, all of them in the two configurations Logitech compiled to our own
+   * specification, all with two values in the half that is supposed to be constant. The second value
+   * was always the last one. So it is one number more for that convention and not a defect, and it is
+   * absent for a pulse distance frame, where the last space is an ordinary bit.
+   */
+  closing?: number;
+}
+
+/**
+ * The timings a record's own frame was built with, or `undefined` where they do not split.
+ *
+ * They split on every framed record in the corpus, so this returning `undefined` is a claim about a
+ * record and not a limitation here: it means the half that should be constant is not, which would be
+ * a protocol this corpus does not hold.
+ */
+export function timingsOfFrame(
+  train: readonly Pulse[],
+  frame: IrFrame,
+  headerPairs = 1,
+): FrameTimings | undefined {
+  const d = fromFirstMark(train);
+  const cells = d.slice(2 * headerPairs, 2 * headerPairs + 2 * frame.bits);
+  if (cells.length !== 2 * frame.bits) return undefined;
+  const at = frame.carries === 'mark' ? 0 : 1;
+  const carried = new Set(cells.filter((_, i) => i % 2 === at).map((p) => p.us));
+  // Every pair but the last contributes its flat half. The last pair's other half closes the frame,
+  // and on a pulse width protocol that is the trailing gap rather than another cell of the same length.
+  const flat = new Set(cells.slice(0, -1).filter((_, i) => i % 2 !== at).map((p) => p.us));
+  if (flat.size !== 1 || carried.size > 2 || carried.size === 0) return undefined;
+  const lengths = [...carried].sort((a, b) => a - b);
+  const header = d.slice(0, 2 * headerPairs);
+  if (header.length !== 2 * headerPairs) return undefined;
+  const base = {
+    header: [header[0]!.us, header[1]!.us] as const,
+    flat: [...flat][0]!,
+    zero: lengths[0]!,
+    one: lengths[lengths.length - 1]!,
+    carries: frame.carries,
+  };
+  // `exactOptionalPropertyTypes`, so the field is present or it is not there at all.
+  return frame.carries === 'mark'
+    ? { ...base, closing: cells[cells.length - 1]!.us }
+    : base;
+}
+
+/**
+ * The pulse train a frame and its timings make, which is the encoder.
+ *
+ * **The frame and nothing after it.** A record's block holds the frame one, three, seven, eleven or
+ * thirty times over, with a gap between the copies and a closing silence at the end, and none of that
+ * follows from the bits: it is 151 distinct shapes across the corpus. So this stops where the evidence
+ * does, and a caller that wants a whole block copies the rest from a record that already has one.
+ *
+ * Refuses a pulse width frame with no closing space rather than falling back on `flat`, because that
+ * would emit a frame no remote in the corpus has ever stored.
+ */
+export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pulse[] {
+  if (t.carries === 'mark' && t.closing === undefined) {
+    throw new Error('a pulse width frame needs the space that closes its last pair');
+  }
+  const out: Pulse[] = [{ mark: true, us: t.header[0] }, { mark: false, us: t.header[1] }];
+  for (let i = bits - 1; i >= 0; i -= 1) {
+    const carried = (value >> BigInt(i)) & 1n ? t.one : t.zero;
+    if (t.carries === 'mark') {
+      out.push({ mark: true, us: carried });
+      out.push({ mark: false, us: i === 0 ? t.closing! : t.flat });
+    } else {
+      out.push({ mark: true, us: t.flat });
+      out.push({ mark: false, us: carried });
+    }
   }
   return out;
 }

@@ -26,7 +26,9 @@ import {
   irHeaderPointers,
   irRecordBlocks,
 } from '../src/ir.ts';
-import { frameKey, framesOfPulses, irFrame, irFrames } from '../src/irframe.ts';
+import type { FrameTimings, Pulse } from '../src/irframe.ts';
+import { frameKey, framesOfPulses, fromFirstMark, irFrame, irFrames, pulsesOfFrame, timingsOfFrame }
+  from '../src/irframe.ts';
 import { keyCodes } from '../src/inventory.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -640,4 +642,256 @@ test('how many pointer groups a record declares, per architecture', skipWithoutL
     [12, [[1, 888]]],
     [14, [[1, 1128]]],
   ]);
+});
+
+
+/**
+ * A record's first block as pulses, from its first mark, which is what both directions work on.
+ *
+ * The tests below all need the same three things at once, the train, the frame and the timings, and
+ * writing that out five times is five places for the leading gap to be trimmed differently.
+ */
+function framedRecord(c: ReturnType<typeof parse>, record: number):
+  { train: readonly Pulse[]; frame: ReturnType<typeof framesOfPulses>[number]; timings: FrameTimings }
+  | undefined {
+  const first = irHeaderPointers(c, record)[0];
+  if (!first) return undefined;
+  const words = irBlockWords(c, first);
+  if (!words) return undefined;
+  const train = fromFirstMark(words.map((word) =>
+    ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX })));
+  const readings = framesOfPulses(train);
+  if (readings.length !== 1) return undefined;
+  const frame = readings[0]!;
+  const timings = timingsOfFrame(train, frame);
+  return timings === undefined ? undefined : { train, frame, timings };
+}
+
+const alike = (a: readonly Pulse[], b: readonly Pulse[]): boolean =>
+  a.length === b.length && a.every((p, i) => b[i]!.mark === p.mark && b[i]!.us === p.us);
+
+test('every frame in the corpus rebuilds from five durations read off its own record',
+  skipWithoutLab(), () => {
+  // **Section 152, and the claim is that the frame half of a duration block is redundant.** A record
+  // states its header pair, the flat half of every mark and space pair, and the two lengths the carried
+  // half takes; with the bits, that is the whole frame back, byte for byte. Nothing here knows what a
+  // Panasonic or an NEC frame looks like.
+  //
+  // Why it matters beyond tidiness: Logitech's own catalogue states a protocol family and a frame value
+  // and no durations at all, so turning one of its commands into something a remote can send needs the
+  // timings from somewhere. This says where: any record of the same family that a configuration already
+  // holds.
+  //
+  // Three counts and not one, because each can fail differently. `framed` is the decoder's population,
+  // `split` is how many of those state timings that separate into a flat half and two carried lengths,
+  // and `rebuilt` is how many come back identical. Equality between the second and the third is the
+  // finding; equality between the first and the second is what stops a refusal being counted as a pass.
+  const per: Record<string, { framed: number; split: number; rebuilt: number }> = {};
+  let records = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    const counts = { framed: 0, split: 0, rebuilt: 0 };
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        records += 1;
+        if (framesOfPulses(fromFirstMark((irBlockWords(c, irHeaderPointers(c, record)[0] ?? 0) ?? [])
+          .map((w) => ({ mark: (w & IR_PULSE_MARK) !== 0, us: w & IR_PULSE_MAX })))).length === 1) {
+          counts.framed += 1;
+        }
+        const one = framedRecord(c, record);
+        if (one === undefined) continue;
+        counts.split += 1;
+        const built = pulsesOfFrame(one.timings, one.frame.bits, one.frame.value);
+        if (alike(built, one.train.slice(0, built.length))) counts.rebuilt += 1;
+      }
+    }
+    per[name] = counts;
+  }
+  // Per container rather than a total, because a total hides one architecture sitting at zero, which is
+  // the shape section 148 found in the renderer's own completeness claim.
+  assert.deepEqual(per, {
+    one_config: { framed: 270, split: 270, rebuilt: 270 },
+    one_config_unprogrammed: { framed: 97, split: 97, rebuilt: 97 },
+    h600_config: { framed: 134, split: 134, rebuilt: 134 },
+    h700_config: { framed: 346, split: 346, rebuilt: 346 },
+    h700_config_2: { framed: 346, split: 346, rebuilt: 346 },
+    // Arch 9 (Harmony 525) stores class 5 records, which carry no duration stream at the record at all,
+    // section 82. Zero is the right answer and it is asserted rather than skipped.
+    h525_config: { framed: 0, split: 0, rebuilt: 0 },
+    h525_config_2: { framed: 0, split: 0, rebuilt: 0 },
+    arch8_config_a: { framed: 71, split: 71, rebuilt: 71 },
+    arch8_config_b: { framed: 233, split: 233, rebuilt: 233 },
+    arch8_config_c: { framed: 290, split: 290, rebuilt: 290 },
+    arch8_config_d: { framed: 298, split: 298, rebuilt: 298 },
+    arch8_config_880: { framed: 298, split: 298, rebuilt: 298 },
+    arch8_config_885: { framed: 460, split: 460, rebuilt: 460 },
+    one_spare_before_sync: { framed: 97, split: 97, rebuilt: 97 },
+    one_spare_after_sync: { framed: 125, split: 125, rebuilt: 125 },
+    calibration_one: { framed: 241, split: 241, rebuilt: 241 },
+    calibration_h600: { framed: 241, split: 241, rebuilt: 241 },
+  });
+  assert.equal(records, 4630, 'the same population the partition above is over');
+});
+
+test('a pulse width frame\'s last space is a trailing gap and not a bit cell', skipWithoutLab(), () => {
+  // **The correction that took the count from 3347 to 3547.** Reading the last space as another cell of
+  // the flat half made 200 records look as though their timings did not split: the half that is supposed
+  // to be one length had two values, and the second was always the last one. All 200 are pulse width,
+  // where the bit is in the mark and the frame ends on a space that no bit occupies.
+  //
+  // So it is one number more for that convention rather than a defect, and it is asserted here as a
+  // property of the population rather than as a note: every mark carrier in the corpus has a closing
+  // space, every space carrier has none, and the closing space differs from the flat half in all of them.
+  let mark = 0;
+  let space = 0;
+  const widths = new Map<number, number>();
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        const one = framedRecord(c, record);
+        if (one === undefined) continue;
+        if (one.timings.carries === 'space') {
+          assert.equal(one.timings.closing, undefined, `${name} 0x${record.toString(16)}`);
+          space += 1;
+          continue;
+        }
+        mark += 1;
+        assert.notEqual(one.timings.closing, undefined);
+        assert.notEqual(one.timings.closing, one.timings.flat,
+          'a closing space equal to the flat half would mean the correction was unnecessary');
+        widths.set(one.frame.bits, (widths.get(one.frame.bits) ?? 0) + 1);
+      }
+    }
+  }
+  assert.deepEqual({ mark, space }, { mark: 200, space: 3347 });
+  // The two protocol widths, and where they are. Both configurations Logitech compiled to our own
+  // specification drive the same equipment, which is why the population is theirs alone: no contributed
+  // configuration here holds a pulse width record that reads under one convention.
+  assert.deepEqual([...widths].sort((a, b) => a[0] - b[0]), [[12, 112], [15, 88]]);
+  // And the negative: refusing to build one without that number, rather than falling back on the flat
+  // half, which would emit a frame no remote in this corpus has ever stored.
+  assert.throws(() => pulsesOfFrame(
+    { header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark' }, 12, 0x910n));
+});
+
+test('a rebuilt frame is sensitive to every number it was built from', skipWithoutLab(), () => {
+  // A rebuild that cannot fail is not a check. Each of the five durations is moved by one microsecond
+  // and each bit of the value is flipped, on one real record per container, and every one of those has
+  // to stop matching. One microsecond because the frame is stored in whole microseconds, so it is the
+  // smallest change the format can express and therefore the sharpest control.
+  let containers = 0;
+  let nudges = 0;
+  let flips = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    let done = false;
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (done) break;
+        const one = framedRecord(c, record);
+        if (one === undefined) continue;
+        done = true;
+        containers += 1;
+        const { train, frame, timings } = one;
+        const right = pulsesOfFrame(timings, frame.bits, frame.value);
+        const head = train.slice(0, right.length);
+        assert.ok(alike(right, head));
+        const nudged: FrameTimings[] = [
+          { ...timings, header: [timings.header[0] + 1, timings.header[1]] },
+          { ...timings, header: [timings.header[0], timings.header[1] + 1] },
+          { ...timings, flat: timings.flat + 1 },
+          { ...timings, zero: timings.zero + 1 },
+          { ...timings, one: timings.one + 1 },
+        ];
+        for (const [i, t] of nudged.entries()) {
+          assert.equal(alike(pulsesOfFrame(t, frame.bits, frame.value), head), false,
+            `${name} timing ${i} moved by one microsecond and the frame still matched`);
+          nudges += 1;
+        }
+        for (let bit = 0; bit < frame.bits; bit += 1) {
+          const flipped = frame.value ^ (1n << BigInt(bit));
+          assert.equal(alike(pulsesOfFrame(timings, frame.bits, flipped), head), false,
+            `${name} bit ${bit} flipped and the frame still matched`);
+          flips += 1;
+        }
+      }
+    }
+  }
+  // Fifteen of the seventeen containers hold a framed record, the two arch 9 ones (Harmony 525) do not,
+  // and each of the fifteen contributes five timing nudges. The flips are the bit widths of those
+  // fifteen records added up, so all three are stated: a container dropping quietly out of the loop
+  // shows up here rather than in a share.
+  assert.deepEqual({ containers, nudges, flips }, { containers: 15, nudges: 75, flips: 524 });
+});
+
+test('what a frame does not determine is everything after it', skipWithoutLab(), () => {
+  // **The boundary, asserted so that nobody reads the rebuild above as a whole block.** A record's block
+  // holds its frame over and over, and what separates and follows the copies does not follow from the
+  // bits: it is a closing mark, a gap, sometimes the protocol's own short repeat frame, and a silence
+  // built out of 32767 microsecond spaces.
+  //
+  // Two halves. The repeat count is a small discrete set and the gap between consecutive copies is byte
+  // identical every time, which is structure worth having. The tail is 151 distinct shapes over 3547
+  // records, which is why `pulsesOfFrame` stops at the frame: a writer copies the rest from a record
+  // that already has one, and an editor that changes a repeat rate edits that gap, section 127.
+  const repeats = new Map<number, number>();
+  const tails = new Set<string>();
+  let oneGap = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        const one = framedRecord(c, record);
+        if (one === undefined) continue;
+        const { train, frame, timings } = one;
+        const built = pulsesOfFrame(timings, frame.bits, frame.value);
+        let cursor = built.length;
+        let seen = 1;
+        const gaps = new Set<string>();
+        for (;;) {
+          let next = cursor;
+          while (next < train.length && !alike(built, train.slice(next, next + built.length))) next += 1;
+          if (next >= train.length) break;
+          gaps.add(train.slice(cursor, next).map((p) => `${p.mark ? '+' : '-'}${p.us}`).join(' '));
+          seen += 1;
+          cursor = next + built.length;
+        }
+        if (gaps.size <= 1) oneGap += 1;
+        repeats.set(seen, (repeats.get(seen) ?? 0) + 1);
+        tails.add(train.slice(cursor).map((p) => `${p.mark ? '+' : '-'}${p.us}`).join(' '));
+      }
+    }
+  }
+  assert.equal(oneGap, 3547, 'one gap separates every copy of a frame, in every record');
+  assert.deepEqual([...repeats].sort((a, b) => a[0] - b[0]),
+    [[1, 2233], [3, 1305], [7, 4], [11, 1], [30, 4]]);
+  // Stated exactly, and it is the number that would move if somebody found the rule. A bound under it
+  // would read as "the tail is complicated" and say nothing about how complicated.
+  assert.equal(tails.size, 151);
+});
+
+test('the timings belong to the device rather than to the command', skipWithoutLab(), () => {
+  // The half of section 152 the application needs. If every code of one appliance shares one set of
+  // timings, then a code Logitech states as a bare number can be written using the timings of any other
+  // code of that appliance. 52 of 58 device groups in the corpus do; six carry two sets, which is why
+  // the number is stated rather than the claim being made universal.
+  let groups = 0;
+  let single = 0;
+  for (const name of CONTAINERS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      const sets = new Set<string>();
+      for (const record of group.addresses) {
+        const one = framedRecord(c, record);
+        if (one === undefined) continue;
+        const t = one.timings;
+        sets.add(`${t.header[0]}/${t.header[1]}/${t.flat}/${t.zero}/${t.one}/${t.carries}`);
+      }
+      if (sets.size === 0) continue;
+      groups += 1;
+      if (sets.size === 1) single += 1;
+    }
+  }
+  assert.deepEqual({ groups, single }, { groups: 58, single: 52 });
 });

@@ -220,7 +220,10 @@ login with `AccountId: 0` and no household. A compile does need a remote on the 
 **The device data is symbolic**, which no reading of the client would have shown, and it is the one
 measured fact here with a cost attached. `GetGlobalLanguageCommands` returns a protocol name and a frame
 value per command, `Raw` null on all 419 fetched, so the infrared blocks in base slot 5 are the compiled
-form and an importer needs an encoder per protocol family. Section 132 has the numbers.
+form. This concluded that "an importer needs **an encoder per protocol family**"<!--superseded-->, and
+section 152 refutes it: a stored record states its own timings, so a frame is rebuilt exactly from five
+durations taken off any code of the same appliance, and 52 of 58 device groups in the corpus carry one
+set of timings for every code they hold. Section 132 has the numbers for the catalogue itself.
 
 **And the frame value is directly comparable with one this project decodes, which is worth more than the
 encoder would have been.** Measured on 22 August 2026: 52 of the 58 commands Logitech states for a

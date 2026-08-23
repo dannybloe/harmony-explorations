@@ -254,12 +254,21 @@ image is a second sample rather than a stand in. Other models are iterated on la
    `SearchGlobalDevices` then `GetGlobalLanguageCommands`; `GetCommands` is a dead end that reads the
    caller's own devices.
 
-   **The expensive route acquired a cost nobody had priced: an infrared encoder.** Logitech stores a
-   protocol name and a frame value, not pulses, so converting a catalogue device into our format means
-   implementing the protocol families. Six devices gave nine of them. This is the real work item in the
-   import and it belongs in the milestone that takes it on, not in a footnote. **It does not touch the
-   cheap route**, which reads base slot 5 out of a compiled config and needs no encoder at all, and that
-   asymmetry is now the strongest argument for keeping the cheap route as the first version.
+   **The cost this decision was afraid of is not there, and section 152 is why.** It read: the expensive
+   route acquired a cost nobody had priced, an infrared encoder, because Logitech stores a protocol name
+   and a frame value and not pulses, so converting a catalogue device into our format means implementing
+   the protocol families, of which six devices gave nine. What that missed is that **a stored record
+   states its own timings**. Five durations read off any code of the same appliance rebuild a frame
+   exactly, on 3547 of 3547 records in the corpus, and 52 of 58 device groups use one set of timings for
+   every code they carry. So a command fetched from the catalogue is written using the timings a config
+   already holds, and the nine families are nine names rather than nine encoders.
+
+   **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
+   quiet, and that tail is 151 distinct shapes across the corpus with no rule behind it, so it is copied
+   from a record of the same appliance rather than computed. That is a smaller job and a different one:
+   it needs a record to copy from, which means the catalogue import wants a configuration beside it
+   rather than standing alone. **The cheap route** still reads base slot 5 out of a compiled config and
+   needs neither, so it stays the first version, but no longer because the other one is expensive.
 
    `downloadManager.RemoteConfigurationInJson` **was called, and it is less than this decision hoped.**
    Discovery does not advertise the service; the URL comes back from a compile. What it returns is a ZIP

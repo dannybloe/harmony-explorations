@@ -334,9 +334,12 @@ read off the remote and converted with today's code.
 service advertises **308 operations over 50 services**, the device database opens for **a plain Logitech
 login with no account record and no registered remote**, and the chain is `SearchGlobalDevices` then
 `GetGlobalLanguageCommands`. **What it serves is symbolic, not pulses**: a protocol name and a frame
-value, `Raw` null on all 419 commands fetched, so an importer needs an **infrared encoder per protocol
-family** and that is a work item nobody had priced. The cheap route, reading base slot 5 out of a
-compiled config, needs none of it. Two things on that list matter beyond the import.
+value, `Raw` null on all 419 commands fetched. That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
+and as "**a work item nobody had priced**"<!--superseded-->, and section 152 refutes both: a record
+states its own timings, so a frame is rebuilt from five durations read off any code of the same
+appliance a config already holds, exactly, on 3547 of 3547 records. 52 of 58 device groups carry one set
+of timings for every code, which is what makes those five numbers transferable. The cheap route, reading
+base slot 5 out of a compiled config, still needs none of it. Two things on that list matter beyond the import.
 `downloadManager.RemoteConfigurationInJson` **was called and it is less than its name promised**: the
 URL is not advertised, it comes back from a compile, and it returns a ZIP holding a bare `GSPM` container
 plus a manifest. The manifest corroborates section 41's trailer checksum, seed and algorithm, from its
@@ -831,8 +834,11 @@ packages/codec/                 TS: the one config codec, container through comp
                                 src/irframe.ts turns a record's durations back into the bit frame a
                                 device sees, which is what lets a code be compared to a number stated
                                 outside the config, and it is **the only** frame decoder here since
-                                section 139. src/summary.ts is the golden vector shape, above gspm.ts
-                                and ir.ts because it composes both
+                                section 139. It **encodes** as well since section 152, in the same file
+                                because a field's encoder lives next to its decoder: five durations read
+                                off a record rebuild its frame byte for byte, and it stops at the frame
+                                because nothing after it follows from the bits. src/summary.ts is the
+                                golden vector shape, above gspm.ts and ir.ts because it composes both
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
@@ -1452,7 +1458,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 150 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 152 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1591,6 +1597,13 @@ produce a config the remote accepts and mishandles.
   is how a repeat rate changes, per code, and a duration word caps at 32767 us so a same length edit can
   only reach the ceiling of the words already there. `0x7C` is **not** what repeats a held key, which is
   the reading section 70 guessed at and this refutes.
+* **A frame can be written and its tail has to be copied**, section 152. Five durations off a record
+  rebuild its frame exactly, 3547 of 3547, and 52 of 58 device groups use one set of timings for every
+  code, so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
+  follows the frame does **not** follow from the bits: 151 distinct shapes across the corpus, no rule
+  behind them, and a constant total block duration explains only 31 of 41 classes. So a writer copies
+  the repeat count, the gap and the closing silence from a record of the same appliance, and a config
+  with no such record cannot have one invented for it.
 * **A record's carrier period is truncated, not rounded**, section 92: it is `floor(1e9 / f)` in
   nanoseconds, so 36 kHz is stored as 27777 and a writer that rounds emits 27778 and differs from
   Logitech's generator by one byte per device. The carrier is per record, not per device.

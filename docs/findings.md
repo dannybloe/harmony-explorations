@@ -17611,8 +17611,10 @@ this is the server, and it decides from a protocol table rather than from sample
 
 Six devices gave nine distinct protocol names, and the names are **families rather than brands**: a
 Samsung television's commands are `GoVideoO1 32 Bit` and a Yamaha amplifier's are `Toshiba 32 Bit`,
-which is the same naming habit as DecodeIR. So converting a catalogue device into this project's format
-needs an encoder per protocol family, and the size of that job is bounded but not small.
+which is the same naming habit as DecodeIR. This concluded that converting a catalogue device into this
+project's format needs **an encoder per protocol family**<!--superseded-->, "and the size of that job is
+bounded but not small". Section 152 refutes it: the durations come off a record of the same appliance
+rather than out of a protocol table, so the nine families are nine names and not nine encoders.
 
 ### The compile, and the artefact it produces
 
@@ -17760,8 +17762,10 @@ first. It does not name the protocol, decode an address or a command, or check a
 **The convention selects itself, and that closure is what makes the module usable.** Under the wrong
 convention every measured duration is the constant half of the pair, so there is nothing to split and
 the reading is refused: a pulse width protocol read as pulse distance yields a train of identical
-spaces. Across the corpus 4029 records read under exactly one convention, 936 under none, and the only
-records reading under both are the ones section 134 is about. So a caller never has to know the family,
+spaces. Across the corpus 3547 records read under exactly one convention, 148 under both and 935 under
+none, corrected here on 23 August 2026 from **4029 under one and 936 under none**<!--superseded-->, which
+partitions 4965 records where the population is 4630 and predates a change to the container list. The
+only records reading under both are the ones section 134 is about. So a caller never has to know the family,
 and `irFrames` returns every reading so that an ambiguous record is visible rather than silently
 resolved.
 
@@ -21210,3 +21214,81 @@ that bind the whole keypad and send nothing, so the zero is not read as "there a
 It is TypeScript rather than Python because the readers are: `keyCodes`, `activities` and
 `infraredCodesPerList` live in `packages/codec`, and the last of those is what the walk has to go
 through, per the memoisation failure recorded above.
+
+## 152. A stored code's frame is redundant: five durations and the bits rebuild it exactly, 3547 of 3547
+
+**An infrared command is a lamp blinking in a precise rhythm, and a record stores that rhythm as a list
+of on and off times.** Section 133 read the bits back out of one: a code carries a number, and comparing
+that number to a number written down elsewhere is what let a scan code be given a button name. This is
+the other direction, and it was believed impossible here. `irframe.ts` said so in its own docstring:
+"this is a decoder and not an encoder", because the timings, the header, the repeat and the trailing gap
+are protocol facts the bits do not carry.
+
+Half of that is wrong, and it is the half that matters. **A record states its own timings.** Take five
+numbers off it, the leading mark and the space after it, the length of the half of every pair that
+carries no bit, and the two lengths the carrying half takes, and the frame comes back byte for byte from
+those five plus the bits. On **3547 of 3547** records in the corpus that read as a frame at all, across
+seventeen containers and three of the four architectures. Nothing in the codec knows what a Panasonic or
+an NEC frame looks like, and it does not need to.
+
+**Why this is not tidiness.** Logitech's surviving service states a command as a protocol family and a
+frame value with the durations field null, on all 419 commands ever fetched, `docs/host-client.md`. That
+made "an **infrared encoder per protocol family**" "**a work item nobody had priced**"<!--superseded-->,
+and it is the wrong shape of the problem: the durations do not have to come from a protocol table at all, they can come from any
+record of the same appliance that a configuration already holds. **52 of 58 device groups in the corpus
+use exactly one set of timings for every code they carry**, six carry two, so the timings are a property
+of the appliance and not of the command. That is what makes importing a named command from the catalogue
+a possibility rather than a research project.
+
+### The correction that took the count from 3347 to 3547
+
+The first measurement said 3347, and the 200 that refused were the instructive part. All of them were in
+the two configurations Logitech compiled to our own specification, all pulse width, 112 of twelve bits
+and 88 of fifteen. Their supposedly constant half had **two** values, which is what the splitter
+refuses.
+
+The second value was always the last one. **A pulse width frame's last space is a trailing gap and not a
+bit cell**: the bit is in the mark, so the frame ends on a space no bit occupies, and section 133's
+decoder already knew this from the other side, where `TRAILING_GAP_US` is tested after the push rather
+than before it. So it is one number more for that convention rather than a defect in the reading, and
+the shape of the mistake is the familiar one: a rule read off the architectures that dominate the corpus,
+refused by the population that has an independent answer.
+
+### What the frame does not determine, stated so it is not read as more
+
+`pulsesOfFrame` returns the frame and stops. A record's block holds that frame over and over, and what
+separates and follows the copies does not follow from the bits:
+
+| | |
+|---|---|
+| copies of the frame per block | 1 in 2233 records, 3 in 1305, 7 in 4, 11 in 1, 30 in 4 |
+| the gap between consecutive copies | byte identical every time, in all 3547 |
+| what follows the last copy | 151 distinct shapes |
+
+The tail is a closing mark, a long gap, sometimes the protocol's own short repeat frame, and a silence
+built out of 32767 microsecond spaces, which is the cap on one duration. A constant total block duration
+explains it in only 31 of 41 classes, so no rule is claimed. A writer copies the tail from a record that
+already has one, and an editor that changes how fast a held key repeats edits that gap, section 127.
+
+**An earlier version of this measurement reported 1951 of 2085 whole blocks rebuilt**<!--superseded-->**, and that number was
+an artefact of its own classifier.** It trimmed trailing terminators and trailing maximum length spaces
+before comparing gaps, and the trimming was doing the work: with the heuristics removed the count is
+zero, because every tail carries a mark the frame does not account for. Two lessons already in this
+repository, met again. A remainder with an explanation attached is a remainder nobody counts again,
+section 139. And the population matters: the first run used a hand written list of thirteen containers
+where the frame tests use seventeen, so the totals were computed over four containers fewer than the
+claim beside them, which is exactly the pair of diverging population lists section 143 is about.
+
+### The tests
+
+`packages/codec/test/irframe.test.ts`. Five, and the two that carry the weight are not the rebuild:
+
+* the per container counts, deep equal rather than totalled, because a total hides one architecture
+  sitting at zero, which is the defect section 148 found in the renderer's own completeness claim
+* **the sensitivity control**: each of the five durations moved by one microsecond and each bit of the
+  value flipped, on one real record per container, all 599 of which have to stop matching. One
+  microsecond is the smallest change the format can express, so it is the sharpest control available
+* the pulse width population, asserted as a biconditional: every mark carrier has a closing space, every
+  space carrier has none, and the closing space differs from the flat half in all 200
+* the boundary above, so nobody reads the rebuild as a whole block
+* the timings per device group, 52 of 58, which is the half the application needs
