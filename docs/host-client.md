@@ -985,6 +985,45 @@ lists and answers anyway, and its reply is wrapped in `CreateNewAccountInHouseho
 its own name. So the operation census is a floor, and the names the client uses are not always the
 service's.
 
+### A sync is recorded when the client says so, not when the remote is programmed
+
+Measured on 23 August 2026, on our own second account, and it is a before and after on the service's
+own record rather than a reading of the client. The client showed the spare Harmony One as setup not
+complete, refused the ordinary interface until a re-sync, and that re-sync then failed repeatedly. The
+household record at that moment stated:
+
+```
+Remotes[0].FirstSyncDate  = ''
+Remotes[0].LastSyncDate   = ''
+Remotes[0].IsSyncRequired = False
+```
+
+After the sync finally went through, both dates hold the same timestamp to the second and nothing else
+about the remote's record moved. So `FirstSyncDate` was written on that retry, which is the field that
+makes this a finding rather than an anecdote: the account had never recorded a completed sync for that
+remote at all.
+
+**The control is that the remote was already programmed.** The previous day's sync did reach it, and we
+know that independently of anything the service says, because the config was read off the remote and
+filed byte for byte as `one_spare_myharmony`. So there was a fully programmed remote and an account
+record stating it had never been synced, at the same moment.
+
+The reading is that the service records a sync when the client reports the session finished, and the
+client reports that only after it sees the remote come back on the bus. That matches what was observed
+from the other side: after an earlier sync the remote restarted and the client sat waiting for a
+connection that never arrived. Section 155 is the same phenomenon measured from our own host code, where
+a remote left idle in USB mode drops the first command it is given and answers the next.
+
+**One occurrence, so the mechanism stays a reading.** What would settle it is interrupting a sync
+deliberately at the moment the remote restarts, which is not a thing to do to an irreplaceable remote.
+What the measurement does settle, without the mechanism, is that the record can disagree with the
+hardware and that `IsSyncRequired` is not the field the interface keys on, since it was false throughout.
+
+The consequence for FreeHarmony is a design rule rather than a protocol fact: what is on a remote is
+established by reading the remote, never by a bookkeeping field a lost handshake can leave empty. The
+captured pair is `GetMyHousehold_account2_before_sync.json` and `..._after_sync.json`, and
+`tests/test_host_client.py` asserts the transition.
+
 ### The compile refuses architecture 9, without saying so
 
 With devices and activities in place the compile is accepted, reports `Compiling`, and ends

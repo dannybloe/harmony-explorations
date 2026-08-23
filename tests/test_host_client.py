@@ -420,6 +420,81 @@ class AFavouriteChannelIsAButton(unittest.TestCase):
         self.assertEqual(saved, {None: True, 'device_83281443': False, 'device_83281444': False})
 
 
+SYNC_REPLIES = ('GetMyHousehold_account2_before_sync.json',
+                'GetMyHousehold_account2_after_sync.json')
+
+
+def only_remote(reply):
+    """The one remote record in a household reply, which every account here has exactly one of."""
+    accounts = reply['GetMyHouseholdResult']['Accounts']
+    assert len(accounts) == 1, len(accounts)
+    remotes = accounts[0]['Remotes']
+    assert len(remotes) == 1, len(remotes)
+    return remotes[0]
+
+
+class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
+    """The account's record of a sync can disagree with the remote, and this is the pair that shows it.
+
+    On 23 August 2026 the client refused to show its ordinary interface for the spare Harmony One,
+    saying setup was not complete, and the re-sync it demanded failed until the machine was restarted.
+    The household record was read either side of the sync that finally succeeded.
+
+    **The control is outside the service.** That remote was already carrying the previous day's config,
+    which is known from the remote itself rather than from anything Logitech states: it was read off
+    over USB and filed as `one_spare_myharmony`, whose own accounting and round trip are asserted in
+    `packages/codec/test/calibration.test.ts`. So a programmed remote and a record saying it had never
+    been synced existed at the same moment.
+
+    What the pair cannot establish is the mechanism, since it is one occurrence. See
+    `docs/host-client.md` for the reading and for why the deliberate repeat is not worth doing.
+    """
+
+    def setUp(self):
+        lab.require_responses(*SYNC_REPLIES)
+        self.before = only_remote(lab.response(SYNC_REPLIES[0]))
+        self.after = only_remote(lab.response(SYNC_REPLIES[1]))
+
+    def test_the_account_had_no_record_of_any_sync_while_the_remote_was_programmed(self):
+        """Both dates empty is the claim, and `FirstSyncDate` is the half that matters.
+
+        A stale `LastSyncDate` would only say the account had lost track of the latest sync. An empty
+        `FirstSyncDate` says it had never recorded one at all, which is what makes the disagreement with
+        the hardware total rather than partial.
+        """
+        self.assertEqual(self.before['FirstSyncDate'], '')
+        self.assertEqual(self.before['LastSyncDate'], '')
+
+    def test_the_field_the_interface_keys_on_is_not_the_one_named_for_it(self):
+        """`IsSyncRequired` is false on both sides, so it is not what refused the interface.
+
+        Asserted because it is the field a reader would reach for first, and reaching for it would
+        produce a client that cannot tell the broken state from the healthy one.
+        """
+        self.assertIs(self.before['IsSyncRequired'], False)
+        self.assertIs(self.after['IsSyncRequired'], False)
+
+    def test_the_sync_wrote_both_dates_at_once_and_moved_nothing_else(self):
+        """The negative half: exactly two fields differ across the pair, and they hold one value.
+
+        Both dates being equal is what says the service treated this as the remote's first sync. The
+        rest of the record being byte for byte identical is what rules out the two reads having caught
+        the account mid-change for some unrelated reason.
+        """
+        moved = sorted(k for k in set(self.before) | set(self.after)
+                       if self.before.get(k) != self.after.get(k))
+        self.assertEqual(moved, ['FirstSyncDate', 'LastSyncDate'])
+        self.assertNotEqual(self.after['FirstSyncDate'], '')
+        self.assertEqual(self.after['FirstSyncDate'], self.after['LastSyncDate'])
+
+    def test_both_reads_are_the_same_remote(self):
+        """Without this the pair could be two different remotes and the whole reading would dissolve."""
+        for field in ('GlobalRemoteId', 'GlobalRemoteSkinId', 'SkinId'):
+            with self.subTest(field=field):
+                self.assertEqual(self.before[field], self.after[field])
+        # Skin 54 is the Harmony One, which is the unit the control was read off.
+        self.assertEqual(self.after['SkinId'], 54)
+
 
 if __name__ == '__main__':
     unittest.main()
