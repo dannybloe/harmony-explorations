@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols
 
 BENCH_PORT ?= 8731
 
@@ -220,6 +220,13 @@ text:
 # start without the two environment variables rather than reporting a page of access denials.
 analyze:
 	@node packages/codec/bin/analyze.ts $(ANALYZE_ARGS)
+
+# What rhythm each protocol family uses, measured off the corpus against the family names Logitech's own
+# analyser gave it, and the generated table that lets a code stated as a name and a number be emitted.
+# Needs a lab because it reads the analyser reports, needs no network. PROTOCOLS_ARGS=--detail, or
+# --write to regenerate packages/codec/src/protocols.ts.
+protocols:
+	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
 
 # Drive the bench page in a real browser. Not part of `all`, and not part of `ts`, for the same reason
 # the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips

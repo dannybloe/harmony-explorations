@@ -21694,3 +21694,75 @@ clock from that record at every boot, so a remote synced with this file would co
 the field is not the moment the config was built or the service stamps it from something older. Left
 open here rather than explained, and the cheap test is another compile after another change.
 
+## 157. A protocol family's durations are the family's, so a stated code can be emitted with no sibling
+
+**The gap this closes.** Logitech's device database states a code as a protocol name and a number,
+`G:Sony 12 Bit:()(0x910)():3`, and never as a rhythm: `Raw` was null on all 419 commands ever fetched
+from it, section 132. A config holds durations. Section 152 measured that a code's durations can be read
+off any other code of the **same appliance**, exactly, on 3547 of 3547 records, and 52 of 58 device
+groups carry one set for every code. That serves a config which already drives the appliance and it
+cannot serve a document starting from nothing, because there is no sibling code to read from. So the
+question is whether the durations belong to the **family** instead of to the appliance.
+
+**They do, and the measurement is per family at a carrier frequency.** 347 codes across 15 configs were
+put to Logitech's own analyser by `bin/analyze.ts`, which named a protocol for 232 of them. 177 of those
+have a reading of ours carrying the number they returned, and those 177 fall into six entries:
+
+| family | kHz | codes | duration sets | frame period | reproduced exactly | tightest band |
+|---|---|---|---|---|---|---|
+| MemorexO1 32 Bit | 38.0 | 108 | 3 | n/a | 81 of 108 | 2.0% |
+| SharpO1 48 Bit | 38.0 | 33 | 1 | n/a | 33 of 33 | exact |
+| Pioneer 32 Bit | 40.0 | 12 | 1 | n/a | 12 of 12 | exact |
+| SharpO1 48 Bit | 36.4 | 12 | 1 | n/a | 12 of 12 | exact |
+| Sony 15 Bit | 40.0 | 9 | 1 | 45000 us | 9 of 9 | exact |
+| Sony 12 Bit | 40.0 | 3 | 1 | 45000 us | 3 of 3 | exact |
+
+"Reproduced exactly" is the entry's own durations put through `pulsesOfFrame` with the code's number and
+compared pulse for pulse against what the config actually holds. So five of six entries emit every one of
+their codes to the microsecond, and 150 of 177 codes overall.
+
+**Two things had to be separated before any of that appeared, and both were found by the measurement
+refusing to be tidy.**
+
+**The closing space is not a protocol constant, it is a pad.** On a pulse width protocol the space that
+closes the last pair takes whatever is left of the protocol's frame period, so it is shorter by one bit's
+worth for every one bit the code carries. Keyed with it in the table, Sony 12 Bit came out as **three
+duration sets over three codes** and Sony 15 Bit as three over nine, which reads as a protocol whose
+timings are per code and would have killed the whole idea. Computed from a frame period instead, each is
+one set. **And the period is the independent closure**: it is not a field anywhere, it is the sum of a
+code's own header, bits and closing space, computed per code and then found identical across the family,
+and it lands on exactly 45000 microseconds, which is the documented frame period of that protocol.
+Nothing here was fitted to 45 ms.
+
+**The carrier is part of the key.** SharpO1 48 Bit's codes arrive at 36.4 and 38 kHz and its durations
+came out as two sets; split by carrier, each half is one set and reproduces every code exactly. The
+entry stores the carrier as the **period in nanoseconds** the record itself carries, 26315 and 27472,
+rather than a frequency, because section 92 measured the field as `floor(1e9 / f)` and a round trip
+through the frequency would not always land back on the byte.
+
+**The one loose entry is named rather than tolerated.** MemorexO1 32 Bit at 38 kHz, which is NEC, carries
+three duration sets across the corpus: 8990/4490/568/552/1662 on five arch 8 configs and two Harmony One
+ones, 9000/4500/562/562/1688 on both Harmony 700 configs, and 9000/4500/560/560/1690 on three records of
+one arch 8 config. The third is nominal NEC exactly. Since one config carries two of the three, the
+variation is **per appliance within a family**, which is section 152's finding seen from the other side.
+The commonest set reproduces 81 of 108 exactly and all 108 within 2%, so a code emitted from the table is
+inside any receiver's tolerance and is not byte identical to what Logitech's compiler emitted. Those are
+two different claims and the table states both, as `exact` and `spread`.
+
+**What is not in the table and must not be guessed.** 55 of the 232 named codes have no reading of ours
+carrying their number, and they are the biphase ones: 48 `Microsoft 30 Bit`, which is RC6, 4
+`Logitech 24 Bit` and 3 `Makita 10 Bit`. `framesOfPulses` models pulse distance and pulse width and not
+Manchester, section 153, so no durations were ever derived for them and `pulsesOfStatedCode` returns
+nothing for that family. A guessed rhythm there would be a command that does nothing, presented as one
+that works. A further 115 codes their own analyser declined to name at all.
+
+**Where this stops.** A record holds the frame several times over with gaps between the copies and a
+closing silence, and none of that follows from the bits: 151 distinct shapes across the corpus, section
+152. So the table and the encoder produce the **frame** and a caller still has to decide the rest of the
+block, which is the same boundary `pulsesOfFrame` already had.
+
+`packages/codec/src/protocols.ts` is the generated table, `src/stated.ts` the lookup and the encoder,
+`bin/protocols.ts` the measurement, `make protocols` prints it and `--write` regenerates it, and
+`test/stated.test.ts` asserts the counts, the 45 ms closure, the refusal for a family that is not there,
+and that a family at two carriers is two entries.
+

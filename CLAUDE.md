@@ -851,7 +851,11 @@ packages/codec/                 TS: the one config codec, container through comp
                                 because a field's encoder lives next to its decoder: five durations read
                                 off a record rebuild its frame byte for byte, and it stops at the frame
                                 because nothing after it follows from the bits. src/summary.ts is the
-                                golden vector shape, above gspm.ts and ir.ts because it composes both
+                                golden vector shape, above gspm.ts and ir.ts because it composes both.
+                                src/protocols.ts is the generated table of what rhythm each protocol
+                                family uses and src/stated.ts the lookup and encoder over it, which is
+                                what lets a code Logitech's database states as a name and a number be
+                                emitted with no sibling code to copy the durations from, section 157
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
@@ -1198,6 +1202,9 @@ make growth        what a length change would move, per sample: addresses stated
                    and the cost of making room in three places. GROWTH_ARGS=--detail
 make reading       the step 6 depth number, meaning against placement; READING_ARGS=--detail
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
+make protocols     what rhythm each protocol family uses, measured off the corpus against the family
+                   names Logitech's analyser gave it, and the table that turns a code stated as a name
+                   and a number into pulses. --write regenerates it. Needs a lab, no network
 make analyze       ask Logitech's own analyser what a code in the corpus is and compare it with ours,
                    which is the only second opinion available on `irframe.ts` for a code no calibration
                    account generated. Needs HARMONY_LOGITECH_EMAIL and HARMONY_LOGITECH_PASSWORD and
@@ -1478,7 +1485,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 156 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 157 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
