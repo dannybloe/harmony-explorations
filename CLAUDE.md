@@ -823,7 +823,11 @@ docs/adding-a-device.md         THE checklist for one goal: pick an appliance ou
                                 fail, written on 24 August 2026 because every part of it had been
                                 started and none finished. A session working towards that goal
                                 starts at its first unticked box and ticks one only when its check
-                                is a test in the repository
+                                is a test in the repository. **The checklist is phases 0 to 6**,
+                                which need no remote plugged in and move no rail; the write and the
+                                button press are behind a gate, because they would be the first
+                                write this project has ever performed and the restore route is
+                                unproven
 docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes

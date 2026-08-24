@@ -393,8 +393,10 @@ dependency is added without looking at what it pulls in: that is what rejected `
 **One goal has its own checklist**, `docs/adding-a-device.md`, written on 24 August 2026: pick an
 appliance out of Logitech's catalogue, put it on a Harmony One, and have the appliance respond. It cuts
 across M2, M3, M4 and M6 rather than sitting inside one of them, which is exactly why it kept being
-started and never finished, and it is the plan of record for that goal. This document stays the plan of
-record for everything else.
+started and never finished, and it is the plan of record for that goal. Its own finish line is a config we
+built that Logitech's compiler agrees with, with nothing written to a remote; the hardware run is M4 and
+sits behind a gate in that document rather than inside the list. This document stays the plan of record
+for everything else.
 
 These were written when this repository was going to hold the application too, so each one now says
 which side of the split it belongs to. **Here** means the API and the evidence and the bench
