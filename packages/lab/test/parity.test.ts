@@ -35,7 +35,7 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // of two empty objects, and it would pass.
   //
   // Exact, and the number is the point: the floor that stood here was 18, which was the size of the
-  // table when it was written. The table is 52 entries now, so the guard had been satisfied by 35% of
+  // table when it was written. The table is 58 entries now, so the guard had been satisfied by 31% of
   // it for weeks, and a regex that lost two thirds of the lines would have passed.
-  assert.equal(Object.keys(pythonImages()).length, 57, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 58, 'every fixture tests/lab.py names');
 });

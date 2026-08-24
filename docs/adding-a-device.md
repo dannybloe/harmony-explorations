@@ -131,8 +131,8 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds 15 of the catalogue's 33 families, which is 4193 of 5219 commands and 70 of 102
-appliances complete. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
+The table holds 19 of the catalogue's 33 families since the first sitting, which is 4716 of 5219
+commands. It held 15 when this phase was written. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
 `Samsung 16 and 20 Bit` (137), `Thomson 12 Bit Toggle` (124), `Galaxis 16 Bit Quad Toggle` (104),
 `Philips Hurd 16 Bit LongToggle` (85), `RCAV1 LF 24 Bit` (83), `Philips RC5 13 Bit Toggle` (40),
 `Samsung 38 Bit` (34), `Short 11 Bit 2` (31), `MitsubishiO1 Dual 8 16 Bit` (28), `Panasonic 16 Bit` (26),
@@ -156,11 +156,28 @@ durations in the result are the ones their generator emits.
       in a frame the reader does not reach. So they move to phase 3 and are named there. Attributing them
       without reading the second frame would be elimination dressed as measurement.
       `../lab/reads/20260824-plan/family-batches.md`
-- [ ] **the appliances go on by hand**, in Logitech's own client, because the scripted route was refused
+- [x] **the appliances go on by hand**, in Logitech's own client, because the scripted route was refused
       on that account. Our side starts at the compile, and the read only capture of what their catalogue
       states has to run **while the appliances are still on the record**: it is one half of the join and
       the script reads the list off the account rather than from a file
-- [ ] one compile per account batch, filed in the lab beside the existing one with its own read date
+- [x] **a measurement's two halves are filed together**, added after getting it wrong on 24 August 2026:
+      the capture script writes to one path in the working directory, and capturing for the second sample
+      overwrote the first sample's. Nothing would have complained, since the generator would have joined
+      the first config's records against the second record's appliances and printed a smaller table with
+      every remaining row still exact. Each sample now carries its own `catalogue-commands.json` beside
+      its container and the generator reads that. The rebuilt half cost one provenance label:
+      `Microsoft 30 Bit` is confirmed by one route rather than two, with its durations unchanged
+- [x] one compile per account batch, filed in the lab beside the existing one with its own read date.
+      The first sitting was 24 August 2026: ten appliances, 945 records, and **four families measured**,
+      `Sharp 15 Bit`, `Thomson 12 Bit Toggle`, `RCAV1 LF 24 Bit` and `Philips RC5 13 Bit Toggle`, each
+      exact on every one of its own records, with no existing entry's durations moving
+- [ ] the remaining four appliances, worth 48 catalogue commands, and a second compile
+- [ ] **six of the ten families did not land and none of them is a data problem**: `Samsung 16 and 20
+      Bit`, `Samsung 38 Bit`, `Galaxis 16 Bit Quad Toggle`, `Philips Hurd 16 Bit LongToggle`,
+      `Short 11 Bit 2` and `MitsubishiO1 Dual 8 16 Bit`. Their records are in the sample and the reader
+      refuses them: 170 match no code of their own appliance, 90 produce no reading at all, 46 have half
+      cells of more than one length. That is phase 3 again, so phase 2's remainder and phase 3 are one
+      job rather than two
 - [ ] `make protocols` measures each new family and each entry reproduces every one of its own records
       byte for byte, with `source: 'compiled'`
 - [ ] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is

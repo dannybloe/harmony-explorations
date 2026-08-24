@@ -149,18 +149,41 @@ function closingFor(t: FrameTimings, bits: number, value: bigint, period: number
  * counting an experiment we designed. Same reason the two calibration containers sit outside
  * `CONTAINERS`.
  */
-const COMPILED_NAME = 'compiled-20260824';
-const COMPILED = imagePath('compiled_protocols') ?? '';
-const COMPILED_COMMANDS = join(LAB, 'work', 'myharmony', 'responses-account2', 'OneResCommands.json');
+/**
+ * The compiled samples, each paired with the catalogue capture filed **beside it**.
+ *
+ * **The pairing is the point and it was learned the hard way on 24 August 2026.** The catalogue half used
+ * to be read from one mutable path in the lab's working directory, `responses-account2/OneResCommands.json`,
+ * which is where the capture script writes. Capturing for the second sample overwrote the first sample's
+ * half, and nothing would have complained: the generator would have joined the first config's records
+ * against the second record's appliances, found the five appliances the two have in common, and reported
+ * a smaller table with every remaining row still exact. A measurement's two inputs belong together, so
+ * each sample now carries its own `catalogue-commands.json` in its own read directory.
+ *
+ * The first one's was rebuilt afterwards and is short: two of its fifteen appliances are not in the wide
+ * census either, so 13 of 15 are recoverable and `X4S2000` and `AVR-28` are not. Anything that turns out
+ * to depend on those two is a row that has to be measured again rather than trusted.
+ */
+const COMPILED_SAMPLES = ['compiled_protocols', 'compiled_protocols_2']
+  .map((image) => ({ image, path: imagePath(image) ?? '' }))
+  .filter((one) => one.path !== '')
+  .map((one) => ({
+    // The name a row records, which is what `--detail` prints and what a reader has to be able to find.
+    name: one.image === 'compiled_protocols' ? 'compiled-20260824' : 'compiled-20260824b',
+    path: one.path,
+    commands: join(dirname(one.path), 'catalogue-commands.json'),
+  }));
+const COMPILED_NAMES = new Set(COMPILED_SAMPLES.map((one) => one.name));
 
 const containers = new Map<string, Container>();
 function container(name: string): Container | undefined {
   if (!containers.has(name)) {
     // The compiled sample is loaded by path rather than through `imagePath`, since it is a read filed
     // under its own date and not one of the lab's named images.
-    if (name === COMPILED_NAME) {
+    if (COMPILED_NAMES.has(name)) {
+      const sample = COMPILED_SAMPLES.find((one) => one.name === name)!;
       try {
-        containers.set(name, parse(payloadOf(new Uint8Array(readFileSync(COMPILED)), COMPILED)));
+        containers.set(name, parse(payloadOf(new Uint8Array(readFileSync(sample.path)), sample.path)));
       } catch { return undefined; }
       return containers.get(name);
     }
@@ -305,22 +328,38 @@ for (const file of files) {
 interface Appliance {
   make: string;
   model: string;
-  /** The name the account gives this appliance, which is what the config's own device name matches. */
-  name: string;
+  /**
+   * The name the account gives this appliance, which is what the config's own device name matches.
+   *
+   * Optional because a catalogue capture rebuilt from the wide census does not have it: the census
+   * states a make, a model and the commands. Such an appliance is attributed by its numbers alone.
+   */
+  name?: string;
   commands: { name: string; keyCode: string }[];
 }
 
 /** The complement of a value at its own width, which is one family's bit polarity. */
 function complement(value: bigint, bits: number): bigint { return value ^ ((1n << BigInt(bits)) - 1n); }
 
+/** Every compiled sample, measured in turn. A sample missing either half is skipped and says so. */
 function compiledRows(): Measured[] {
+  if (COMPILED_SAMPLES.length === 0) {
+    console.log('no compiled sample in this lab, so only the analyser reports are measured\n');
+    return [];
+  }
+  return COMPILED_SAMPLES.flatMap((sample) => rowsOfCompiled(sample));
+}
+
+function rowsOfCompiled(sample: { name: string; path: string; commands: string }): Measured[] {
+  const COMPILED = sample.path;
+  const COMPILED_NAME = sample.name;
   let blob: Uint8Array;
   let catalogue: { appliances: Appliance[] };
   try {
     blob = new Uint8Array(readFileSync(COMPILED));
-    catalogue = JSON.parse(readFileSync(COMPILED_COMMANDS, 'utf8')) as { appliances: Appliance[] };
+    catalogue = JSON.parse(readFileSync(sample.commands, 'utf8')) as { appliances: Appliance[] };
   } catch {
-    console.log('no compiled sample in this lab, so only the analyser reports are measured\n');
+    console.log(`${sample.name}: no container or no catalogue beside it, skipped\n`);
     return [];
   }
   const c = parse(payloadOf(blob, COMPILED));
@@ -344,10 +383,16 @@ function compiledRows(): Measured[] {
   // device's name is a prefix of a state variable's, reached through the list that sends its codes,
   // section 126, and the account gives the same name to the appliance. Underscores are the config's
   // spelling of the spaces in it.
+  // **An appliance with no `name` cannot take this route, and one sample has eight of them.** The first
+  // compiled sample's catalogue capture was overwritten and had to be rebuilt out of the wide census,
+  // which states a make, a model and the commands and not the name the account gave the appliance. So
+  // those eight fall through to the number vote, which is the weaker route and is why the rebuild is
+  // recorded as a loss rather than as a repair.
   const named = new Map<number, number>();
   for (const device of devices(c)) {
     const at = device.name === undefined ? -1
-      : appliances.findIndex((a) => a.name.replace(/ /g, '_') === device.name);
+      : appliances.findIndex((a) => (a.name ?? '').replace(/ /g, '_') === device.name
+        && (a.name ?? '') !== '');
     if (at >= 0) named.set(device.group, at);
   }
 
@@ -644,12 +689,21 @@ interface Entry {
  * which is why the pass is safe without a name to match on. Section 163.
  */
 function biphaseFromCatalogue(configs: readonly string[]): Measured[] {
-  let catalogue: { appliances: Appliance[] };
-  try {
-    catalogue = JSON.parse(readFileSync(COMPILED_COMMANDS, 'utf8')) as { appliances: Appliance[] };
-  } catch { return []; }
+  // **Every sample's catalogue, pooled deliberately here and nowhere else.** This pass asks only "does
+  // any catalogue appliance state this number", because the record it is naming belongs to somebody's
+  // own remote and not to any of these appliances, so there is no owning appliance to scope it to. The
+  // measurement pass above scopes strictly by appliance, which is what keeps a shared value from being
+  // attributed to the wrong family.
+  const appliances: Appliance[] = [];
+  for (const sample of COMPILED_SAMPLES) {
+    try {
+      appliances.push(...(JSON.parse(readFileSync(sample.commands, 'utf8')) as
+        { appliances: Appliance[] }).appliances);
+    } catch { /* a sample with no catalogue beside it contributes nothing */ }
+  }
+  if (appliances.length === 0) return [];
   const stated = new Map<string, string>();
-  for (const a of catalogue.appliances) {
+  for (const a of appliances) {
     for (const cmd of a.commands) {
       const read = statedCode(cmd.keyCode);
       if (read === undefined) continue;

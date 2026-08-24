@@ -179,6 +179,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // joined the population of EZHex files whose signed header is checked and failed four of those
   // checks, correctly. Section 165.
   compiled_protocols: 'compiled-20260824-protocols-gspm.bin',
+  // **The second of these, 24 August 2026 in the evening**, made the same way and for the same reason:
+  // ten more appliances chosen so that Logitech's compiler emits the families the first one did not
+  // reach. It sits beside a `catalogue-commands.json` of its own, which is the fix for what went wrong
+  // between the two: the first sample's catalogue capture lived at one mutable path in the working
+  // directory and the second capture overwrote it. A measurement's two inputs are filed together now.
+  compiled_protocols_2: 'compiled-20260824b-protocols-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
   // for the three devices of the calibration account. Not an image and not a config. It is here so
   // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number

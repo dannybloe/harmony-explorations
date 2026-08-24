@@ -201,6 +201,10 @@ IMAGES = {
     # is also not an EZHex: no XML header at all, just the bare container, which is what section 132 said
     # the download is. Section 165. Read by the TypeScript side only, like the command list below.
     'compiled_protocols': 'compiled-20260824-protocols-gspm.bin',
+    # The second of them, the same evening. Its catalogue capture is filed **beside it** rather than at
+    # the working directory path the capture script writes to, which is the fix for the second capture
+    # having overwritten the first sample's.
+    'compiled_protocols_2': 'compiled-20260824b-protocols-gspm.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

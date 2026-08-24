@@ -77,6 +77,8 @@ const CONTAINERS = [
   // table's entries are measured off this one file, so a disagreement about it is a disagreement about
   // the table.
   'compiled_protocols',
+  // The second of the pair, ten more appliances chosen for the families the first did not reach.
+  'compiled_protocols_2',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -149,15 +151,15 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
     assert.ok(Array.isArray(sections), 'a vector has no section table');
     assert.equal(sections.length, vector['pointer_count'], 'one section per pointer slot');
     // And the checks by name, not by count. Fourteen are on every vector; `key_table_is_complete`
-    // needs a key table, so it is on 31 of the 35 and the four without one are asserted below.
+    // needs a key table, so it is on 34 of the 38 and the four without one are asserted below.
     const checks = Object.keys(vector['checks'] as object);
     for (const name of UNIVERSAL_CHECKS) assert.ok(checks.includes(name), `no ${name} check`);
     assert.ok(checks.every((n) => n === 'key_table_is_complete' || UNIVERSAL_CHECKS.includes(n)),
       `an unexpected check: ${checks.filter((n) => n !== 'key_table_is_complete' && !UNIVERSAL_CHECKS.includes(n)).join(', ')}`);
     if (checks.includes('key_table_is_complete')) complete += 1;
   }
-  assert.equal(present.length, 37, 'every vector, which is what `make golden` compares');
-  assert.equal(complete, 33, 'the vectors whose container has a key table at all');
+  assert.equal(present.length, 38, 'every vector, which is what `make golden` compares');
+  assert.equal(complete, 34, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
   // and null on 9, so a summary that stopped emitting it would break nothing anybody would notice:
@@ -168,10 +170,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   assert.equal(senders.every((one) => one !== undefined), true, 'a vector is missing number_senders');
   assert.equal(senders.filter((one) => one === null).length, 9, 'the containers with no readable slot');
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 25);
-  // Three since 24 August 2026, section 165: the compiled sample was made from the same account as
-  // `calibration_favzero`, so it carries a record too, and its digit tables are three byte identical
-  // copies at three addresses like the first sample's.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 3,
+  // **Four since the second compiled sample**, and the reason is the account rather than the request:
+  // every configuration compiled from the account that carries favourite channels carries the sender
+  // record too, whichever appliances are on it that day. Three of them were made deliberately for base
+  // slot 16 and this one came with it, section 165.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 4,
     'the made configs that populate base slot 16');
 });
 
@@ -183,7 +186,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 37, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 38, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

@@ -601,7 +601,7 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  * of the parser, so a further real container can only strengthen them, and a calibration sample inside a
  * corpus total would be counting our own request as evidence.
  */
-const PARSEABLE = 37;
+const PARSEABLE = 38;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -670,8 +670,8 @@ test('21 of the parseable containers have an odd body and 16 of those verify',
     const all = parseable();
     assert.equal(all.length, PARSEABLE);
     const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
-    // 21 and 16 since the compiled sample was named, section 165, which is one more container with an
-    // odd body whose checksum recomputes: the title carries the counts, so both move together.
+    // 21 and 16 since the compiled sample was named, section 165, and the second compiled sample of 24
+    // August 2026 did **not** move them: its body is even. The title carries the counts, so a move shows.
     assert.equal(odd.length, 21);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
     assert.equal(verifying.length, 16);
@@ -700,7 +700,7 @@ test('21 of the parseable containers have an odd body and 16 of those verify',
 test('the last section ends at the end marker, not at the declared end',
   skipWithoutLab(), () => {
     // `endAddr` is a declared field and where a container ends is data, which is the same
-    // correction the base got in section 117. They agree on 33 of 35; the two that disagree are
+    // correction the base got in section 117. They agree on 36 of 38; the two that disagree are
     // the damaged Harmony 890 reads, where the old reading reported the last section short.
     const all = parseable();
     assert.equal(all.length, PARSEABLE);
@@ -714,9 +714,9 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    // 35 since the compiled sample was named, section 165. The two that disagree are the claim and
-    // they are unchanged, both being damaged reads of one Harmony 890.
-    assert.equal(agree, 35);
+    // 36 since the second compiled sample, 24 August 2026. The two that disagree are the claim and they
+    // are unchanged, both being damaged reads of one Harmony 890.
+    assert.equal(agree, 36);
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
@@ -760,8 +760,8 @@ test('the frame tiles to the next section on every container that has one', skip
     assert.equal(start + (c.frameExtent as number), target, name);
     if (start + c.frameLength + 2 === target) naive += 1;
   }
-  // 30 since the compiled sample was named, section 165, and the two the sentinel misses are still
-  // exactly the two empty frames, which is the claim rather than the total.
-  assert.equal(framed, 30);
-  assert.equal(naive, 28, 'the two the sentinel gets wrong are the two empty frames');
+  // 31 since the second compiled sample, and the two the sentinel misses are still exactly the two
+  // empty frames, which is the claim rather than the total.
+  assert.equal(framed, 31);
+  assert.equal(naive, 29, 'the two the sentinel gets wrong are the two empty frames');
 });

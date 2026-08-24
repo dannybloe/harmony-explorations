@@ -76,6 +76,7 @@ CONTAINERS = (
     # Eighteen of the rhythm table's entries are measured off this one file, so a disagreement between
     # the two implementations about it is a disagreement about the table. Section 165.
     'compiled_protocols',
+    'compiled_protocols_2',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

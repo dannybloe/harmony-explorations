@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('three containers declare a method for sending a number, 25 declare none, 9 are unread',
+test('four containers declare a method for sending a number, 25 declare none, 9 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -199,12 +199,12 @@ test('three containers declare a method for sending a number, 25 declare none, 9
     }
     // The sum first, because it is what makes the three below a partition rather than three
     // independent numbers: a lab missing a sample moves this one and fails here.
-    // 37 since the compiled sample was named, section 165, and it lands in `populated`: it was compiled
-    // from the same account as `calibration_favzero`, which has favourite channels on it, so this is a
-    // third container exercising the section rather than a new way of populating it. Its record carries
-    // the same three byte identical digit tables at three addresses that section 154 measured.
-    assert.equal(populated + declaredEmpty + unread, 37, 'every container the lab can parse');
-    assert.equal(populated, 3);
+    // 38 since the second compiled sample of 24 August 2026, and it lands in `populated` for the same
+    // reason the first did: both were compiled from the account that carries favourite channels, so the
+    // section comes along whichever appliances are on the record that day. Four containers exercise it
+    // now, three of them made deliberately for it.
+    assert.equal(populated + declaredEmpty + unread, 38, 'every container the lab can parse');
+    assert.equal(populated, 4);
     assert.equal(declaredEmpty, 25);
     // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
     // states no architecture, plus the two containers found inside arch 8 firmware images, which
