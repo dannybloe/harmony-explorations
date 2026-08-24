@@ -31,6 +31,7 @@ import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark, irFrame, irFram
          pulsesOfBiphaseFrame, timingsOfBiphase, timingsOfFrame }
   from '../src/irframe.ts';
 import { keyCodes } from '../src/inventory.ts';
+import { statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -987,4 +988,74 @@ test('the biphase reading lands on the number Logitech named, in a contributed c
   const back = pulsesOfBiphaseFrame(t, 30, 0x3FF07BE5n);
   assert.deepEqual(back.map((one) => [one.mark, one.us]),
                    train.slice(0, back.length).map((one) => [one.mark, one.us]));
+});
+
+test('a code whose bits are all the same cannot be read blind, and its family reads it',
+  skipUnless('h600_config', 'h700_config'), () => {
+  // **The guard that refuses this record is the right guard**, section 162. Under the wrong carrier
+  // convention every duration a reader measures is the constant half of the pair, so `SPLIT_RATIO`
+  // refuses a train with one carried length. A code of 24 zero bits genuinely has one carried length,
+  // so it is refused for a correct reason and no blind decoder can do better.
+  //
+  // What reads it is the family. Logitech's analyser names these records `Logitech 24 Bit` and states
+  // `0x000000`, and the entry for that family was measured off a PS3 in a configuration their compiler
+  // produced for appliances chosen here. Emitting their number under those durations reproduces four
+  // records in four other configs, on televisions, byte for byte.
+  const entry = statedProtocol('Logitech 24 Bit');
+  assert.ok(entry !== undefined);
+  const t = timingsOf(entry);
+  assert.ok(t !== undefined);
+  for (const [name, record] of [['h600_config', 0x3c60b], ['h700_config', 0x384ca]] as const) {
+    const c = parse(require_(name));
+    const first = irHeaderPointers(c, record)[0];
+    assert.ok(first !== undefined);
+    const words = irBlockWords(c, first);
+    assert.ok(words !== undefined);
+    const train = fromFirstMark(words
+      .filter((word) => (word & IR_PULSE_MAX) !== 0)
+      .map((word) => ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX })));
+    assert.deepEqual(framesOfPulses(train), [], `${name} should read as nothing blind`);
+    const built = pulsesOfFrame(t, 24, 0n);
+    assert.deepEqual(built.map((one) => [one.mark, one.us]),
+                     train.slice(0, built.length).map((one) => [one.mark, one.us]), name);
+    // **The control, and it is what makes these records evidence rather than arithmetic.** The polarity
+    // of this family was derived in section 161 from the catalogue stating the complement of what our
+    // decoder reads. Here the same number under the opposite polarity puts a 500 where the record has a
+    // 1000, so these four records test the polarity independently of how it was found.
+    const flipped = pulsesOfFrame({ ...t, zero: t.one, one: t.zero }, 24, 0n);
+    assert.notEqual(flipped[3]?.us, train[3]?.us);
+  }
+});
+
+test('the three records their analyser calls Makita are Sharp codes on a Denon receiver',
+  skipUnless('one_config', 'one_spare_after_sync'), () => {
+  // **Their analyser named the wrong family and the wrong width**, section 162, and this is the case
+  // where an independent answer exists. Each record reads as fifteen bits with no lead in, its own
+  // durations are byte identical to the `Sharp 15 Bit 2` entry their own **compiler** emitted for two
+  // Denon receivers, and the group holding it is the config's Denon. Their analyser answers
+  // `Makita 10 Bit` and states bits 1 to 10 of the fifteen.
+  const entry = statedProtocol('Sharp 15 Bit 2');
+  assert.ok(entry !== undefined);
+  const want = timingsOf(entry);
+  assert.ok(want !== undefined);
+  for (const [name, record, stated] of [['one_config', 0x44179, 0x227n],
+                                        ['one_spare_after_sync', 0x43961, 0x217n]] as const) {
+    const c = parse(require_(name));
+    const first = irHeaderPointers(c, record)[0];
+    assert.ok(first !== undefined);
+    const words = irBlockWords(c, first);
+    assert.ok(words !== undefined);
+    const train = fromFirstMark(words
+      .filter((word) => (word & IR_PULSE_MAX) !== 0)
+      .map((word) => ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX })));
+    const frame = framesOfPulses(train, 0).find((one) => one.bits === 15);
+    assert.ok(frame !== undefined, `${name} does not read as fifteen bits`);
+    assert.deepEqual(timingsOfFrame(train, frame, 0), want, `${name} has other durations`);
+    // Their ten bits are ours with the first dropped and the last four cut, which is the claim.
+    assert.equal((frame.value >> 4n) & 0x3FFn, stated, `${name} against their number`);
+    // And the frame rebuilds from the entry, so the family is not an inference from a name.
+    const back = pulsesOfFrame(want, 15, frame.value);
+    assert.deepEqual(back.map((one) => [one.mark, one.us]),
+                     train.slice(0, back.length).map((one) => [one.mark, one.us]), name);
+  }
 });

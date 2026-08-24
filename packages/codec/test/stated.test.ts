@@ -29,7 +29,7 @@ test('the table states twenty entries, and what each is worth is its provenance'
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 13, 4]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 12, 5]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -38,7 +38,8 @@ test('the table states twenty entries, and what each is worth is its provenance'
   // The three confirmed twice over, named rather than counted, since agreement between two independent
   // routes is the strongest thing this table has and losing one silently is the risk.
   assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
-                   ['Microsoft 30 Bit', 'Sony 12 Bit', 'Pioneer 32 Bit', 'Sony 15 Bit']);
+                   ['Microsoft 30 Bit', 'Logitech 24 Bit', 'Sony 12 Bit', 'Pioneer 32 Bit',
+                    'Sony 15 Bit']);
   // And they agree **exactly**, not within a band, which is what makes it a confirmation.
   for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
     assert.equal(one.spread, 0, `${one.family} disagrees between the two routes`);

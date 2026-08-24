@@ -1727,6 +1727,13 @@ rebuild their own pulses byte for byte. `Microsoft 30 Bit` reads the polarity th
 RC-6's own convention, and it is confirmed on 48 further records in four contributed configs where
 Logitech's analyser had already stated the number.
 
+**A code whose bits are all the same cannot be read without knowing its family**, section 162. Every
+carried half is then one length, so there is nothing to split, and the reader refuses it for the same
+reason it refuses a frame read under the wrong carrier convention: the two are indistinguishable from the
+durations. Four records in the corpus are of this kind, 24 zero bits of `Logitech 24 Bit`, and what reads
+them is the family's own rhythm plus the number Logitech states, which then reproduces the record byte for
+byte and tests the family's polarity into the bargain.
+
 **A set bit longer than the terminator rule is unreadable, and no constant fixes it**, section 161.
 `irframe.ts` ends a frame at a carried duration above 4000 microseconds, and `JerroldO1 16 Bit` carries a
 set bit at 4505, so every record of it reads as nothing. 45 records of three arch 8 configs carry a mid

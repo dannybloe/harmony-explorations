@@ -22360,12 +22360,49 @@ convention, or a half cell, a lead in and a polarity. `pulsesOfStatedCode` branc
 asking for a code by family and number gets pulses either way and does not have to know which kind of
 protocol it asked about.
 
+### The last seven corpus records, and they are two cases
+
+The corpus's remainder after this, records where their analyser named a family and no reading of ours
+carries their number, was **7**, down from 55. All seven are now accounted for and they are two things.
+
+**Four records are a code whose bits are all the same, and no blind decoder can read one.** Their
+analyser names them `Logitech 24 Bit` and states `0x000000`, and the train is a 4000/4500 lead in
+followed by 24 cells of 400 and 1000. Every carried half is the same length, so there is nothing to
+split, and `SPLIT_RATIO` refuses it. That refusal is **correct in general**: a train whose measured half
+has one length is exactly what reading a pulse width protocol under the pulse distance convention
+produces, and dropping the guard would let every record read twice. A code of 24 zero bits genuinely has
+one carried length, so the two cases are indistinguishable from the durations alone.
+
+What reads it is the family. The `Logitech 24 Bit` entry was measured off a PS3 in the compiled sample,
+and emitting their stated number under those durations reproduces all four records **byte for byte**,
+in four other configs, on televisions rather than a games console. So the generator has a last pass that
+can **confirm** an entry this way and can never create one: the family and the number are Logitech's, the
+durations come from a row measured elsewhere, and the test is byte equality. `Logitech 24 Bit` is now 75
+codes over both routes.
+
+**The control is what makes those four evidence.** Section 161 derived this family's polarity from the
+catalogue stating the complement of what our decoder reads. Here the same number under the opposite
+polarity would put a 500 where the record has a 1000, so four records in four configs, two of them the
+bench remotes' own, test that polarity by a route with nothing in common.
+
+**The other three are their analyser being wrong**, and the independent answer is available. It names
+them `Makita 10 Bit` and states a ten bit number. Each record reads as **fifteen** bits with no lead in;
+its own durations are byte identical to the `Sharp 15 Bit 2` entry, 270 then 260 with 790 and 1850 at 37
+kHz, which their own **compiler** emitted for two Denon receivers in the compiled sample; and the group
+holding it is the config's own **Denon** receiver, named by the route in section 126. Their ten bits are
+our fifteen with the first dropped and the last four cut, on all three.
+
+So this is a fourth case of their analyser answering confidently and wrongly, after `JVC 16 Bit` under
+NEC's durations, the Sharp seed out by a quarter, and the coarse names of section 159. It is the worst of
+the four, because the other three were wrong about the rhythm behind a right number and this one is wrong
+about the family, the width and the number. The three records stay out of the table rather than being
+reattributed: a row's family here always comes from Logitech, never from our own rhythm matching, and
+naming them ourselves would break that rule for three records that change nothing.
+
 ### What this leaves
 
-The table is twenty entries and the compiled sample's remainder is 49 records, which is the
-`JerroldO1 16 Bit` case section 161 measured and deliberately did not take. The corpus's own remainder,
-records where their analyser named a family and no reading of ours carries their number, is **7**, down
-from 55.
+The table is twenty entries, five of them confirmed on both routes, and the compiled sample's remainder
+is 49 records, which is the `JerroldO1 16 Bit` case section 161 measured and deliberately did not take.
 
 Two things worth stating plainly. **Section 153's decided change is still not made**: this reader merges
 nothing, because a config stores each half cell as its own word and that is what makes the alignment

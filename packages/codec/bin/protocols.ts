@@ -71,7 +71,7 @@ interface Measured {
    * therefore exact, or by its bit **width** where the value did not match and the owning appliance
    * states exactly one family at that width. The second is an inference and is counted separately.
    */
-  joinedBy?: 'value' | 'width';
+  joinedBy?: 'value' | 'width' | 'stated';
   /**
    * The carrier as the record states it, a period in nanoseconds.
    *
@@ -184,6 +184,17 @@ const reports = join(LAB, 'work', 'myharmony', 'analyzed');
 const files = readdirSync(reports).filter((one) => one.endsWith('.json'));
 
 const byEntry = new Map<string, Measured[]>();
+/**
+ * Corpus records their analyser named and no blind reading of ours matches, kept for a last pass.
+ *
+ * **Why a pass and not a branch.** A code whose bits are all the same has **one** carried length, so
+ * there is nothing to split and the decoder refuses it, which is the guard that stops a pulse width
+ * protocol being read as a pulse distance one. Section 162 measured four such records, all stating
+ * `Logitech 24 Bit` as 24 zero bits. Reading one needs the family's rhythm from somewhere else, so it
+ * runs after the compiled rows are in, and it can only ever confirm an entry rather than create one.
+ */
+const unresolved: { family: string; config: string; record: number; periodNs: number;
+                    wanted: bigint; train: readonly Pulse[] }[] = [];
 let rows = 0;
 let named = 0;
 const dropped = new Map<string, number>();
@@ -241,7 +252,12 @@ for (const file of files) {
       }
       if (bi !== undefined) break;
     }
-    if (bi === undefined) { drop('no reading of ours carries their number'); continue; }
+    if (bi === undefined) {
+      // Kept rather than dropped here: a family's rhythm measured on the other route can still read
+      // this record, and that pass has to wait until every row is in. Section 162.
+      unresolved.push({ family, config: report.config, record, periodNs, wanted, train });
+      continue;
+    }
     byEntry.set(entryOf(bi), [...(byEntry.get(entryOf(bi)) ?? []), bi]);
   }
 }
@@ -473,6 +489,45 @@ function compiledRows(): Measured[] {
 }
 
 for (const m of compiledRows()) byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
+
+/**
+ * The last pass: a record no reading of ours matches, read under a rhythm the other route measured.
+ *
+ * **This can confirm an entry and never create one**, which is what keeps it out of a circle. The family
+ * and the number both come from Logitech, the durations come from a row measured elsewhere, and the test
+ * is that emitting their number under those durations reproduces this record byte for byte. A wrong
+ * rhythm fails it, and so does the wrong **polarity**, which is the part worth having: all four records
+ * this rescues state 24 zero bits, and under the opposite polarity the same number would put a 500 where
+ * the record has a 1000. So they are independent evidence for the polarity section 161 derived from the
+ * complement, on four configs including two of the bench remotes' own.
+ */
+for (const row of unresolved) {
+  let rescued: Measured | undefined;
+  for (const [, list] of byEntry) {
+    for (const m of list) {
+      if (m.family !== row.family || m.timings === undefined) continue;
+      // The width comes from the family's own name, as `statedCode` reads it, since there is no reading
+      // of ours here to take it from.
+      const read = statedCode(`G:${row.family}:()(0x${row.wanted.toString(16)})():3`);
+      const bits = read?.frames[0]?.bits;
+      if (bits === undefined) continue;
+      let built: Pulse[];
+      try { built = pulsesOfFrame(m.timings, bits, row.wanted); } catch { continue; }
+      const same = built.length <= row.train.length
+        && built.every((one, i) => row.train[i]!.mark === one.mark && row.train[i]!.us === one.us);
+      if (!same) continue;
+      rescued = { family: row.family, source: 'corpus', joinedBy: 'stated', periodNs: row.periodNs,
+        config: row.config, record: row.record, bits, value: row.wanted, timings: m.timings };
+      break;
+    }
+    if (rescued !== undefined) break;
+  }
+  if (rescued === undefined) {
+    drop('no reading of ours carries their number, and no measured rhythm reproduces it');
+    continue;
+  }
+  byEntry.set(entryOf(rescued), [...(byEntry.get(entryOf(rescued)) ?? []), rescued]);
+}
 
 /** One frame period per entry, where every code of it agrees on one. */
 const periods = new Map<string, number>();

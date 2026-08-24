@@ -368,7 +368,9 @@ as the shorter space where every other one here uses the longer.
 correction: it accepted two rhythms their compiler does not emit, `JVC 16 Bit` under NEC's durations and
 a Sharp seed whose every duration was out by a fifth to a quarter, and it named both correctly. So a
 family judged only by their analyser is a command that will be recognised by their decoder and by no
-appliance. `source` on a table entry says which route it came from and the documented category is
+appliance. **And it is wrong about families too**, section 162: three records on a Denon receiver come
+back `Makita 10 Bit` with a ten bit number, where the record is a fifteen bit Sharp code whose durations
+their own compiler emits, and their ten bits are ours with the first dropped and the last four cut. `source` on a table entry says which route it came from and the documented category is
 deliberately empty.
 
 Two things on that list matter beyond the import.
@@ -888,8 +890,9 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Twenty entries, and each carries the route it came from, since a rhythm
-                                two independent routes agree on is worth more than one, section 160. Two
+                                Twenty entries, five of them measured on both routes, and each carries
+                                the route it came from, since a rhythm two independent routes agree on is
+                                worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
                                 than allowed for: a `[0, 0]` header means a protocol with no lead in, and
                                 `firstMark` a longer opening burst, which Sharp has and which a reader

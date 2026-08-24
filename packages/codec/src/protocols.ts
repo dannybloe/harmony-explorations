@@ -127,7 +127,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
   { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },
   { family: 'Magnavox 13 Bit', periodNs: 26315, biphase: { mark: 880, space: 900, lead: [{ mark: true, us: 880 }], setIsMark: true }, codes: 105, exact: 105, spread: 0, source: 'compiled' },
-  { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 71, exact: 71, spread: 0, source: 'compiled' },
+  { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 75, exact: 75, spread: 0, source: 'both' },
   { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 59, exact: 59, spread: 0, source: 'both' },
   { family: 'Kreatel IP 22 Bit', periodNs: 17761, biphase: { mark: 325, space: 320, lead: [{ mark: true, us: 320 }, { mark: false, us: 320 }], setIsMark: true }, codes: 56, exact: 56, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
