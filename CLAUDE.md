@@ -1556,7 +1556,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 164 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 165 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1595,7 +1595,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
-| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Two made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156 |
+| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Three made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
 | 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
 **Most of a config is pictures**, sections 49 to 55, 62, 66 and 146: one contiguous array from the end
@@ -1829,8 +1829,12 @@ produce a config the remote accepts and mishandles.
   it a biphase code can produce a plausible pulse distance reading, two `Magnavox 13 Bit` records among
   them, so the rhythm table's join prefers a reading that lands on a number by **value** over one that
   lands only by matching a width.
-* **A frame's non carrying half has to be one length**, section 163, which is the rule the terminator
-  constant had been standing in for. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
+* **A frame's non carrying half has to be one length**, sections 163 and 165, which is the rule the
+  terminator constant had been standing in for. **One length means it does not split**, by the same ratio
+  the carried half has to split by, and not byte identical: exact equality refused ten records of the
+  compiled sample whose flat half alternates between 433 and 434, nine of which our reader now puts on
+  the exact number Logitech's own analyser states. The margin is 6.1% admitted against 100% refused, with
+  nothing in between. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
   could rise from 4000 to 8000 and `JerroldO1 16 Bit`, whose set bit is a 4505 space, is the twenty first
   entry in the table. It cost one direction of section 134's biconditional: the 148 records that read
   under **both** conventions now read under none, which is exactly the biphase population, so the

@@ -192,6 +192,15 @@ IMAGES = {
     # Six devices, one of them referenced by no activity, which refutes the note that the generator
     # drops such a device. Section 156.
     'calibration_favzero': 'calibration-favzero.bin',
+    # The fifth, 24 August 2026, and the largest: fifteen appliances chosen so that every protocol family
+    # in Logitech's catalogue that the corpus could not settle appears in it, compiled by their own
+    # generator. Eighteen of the rhythm table's entries are measured off it, sections 160 to 163. Filed
+    # **Renamed twice, and both times the name was saying something false.** Their service hands it back as
+    # `Result.EzHex`, and eight files in this lab carry that name, so a lookup by it resolves to whichever
+    # the walk reaches first, which is the trap SERVICE_RESPONSES below is addressed by path to avoid. It
+    # is also not an EZHex: no XML header at all, just the bare container, which is what section 132 said
+    # the download is. Section 165. Read by the TypeScript side only, like the command list below.
+    'compiled_protocols': 'compiled-20260824-protocols-gspm.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

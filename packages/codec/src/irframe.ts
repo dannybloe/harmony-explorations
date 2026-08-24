@@ -155,10 +155,25 @@ const SPLIT_RATIO = 1.4;
  * conventions now read under none, so the biconditional that identified a two pointer group record by
  * that ambiguity, section 134, holds in one direction only. Those records are biphase and `biphaseFrames`
  * reads them, which is why the loss is acceptable and not free.
+ *
+ * **It demanded exact equality until 24 August 2026 and that was too strict**, section 165. Logitech's
+ * own generator emits a flat half of 433 on one cell and 434 on the next, and it emits a Pioneer code
+ * whose mark is 560 before a short space and 594 before a long one, so ten records of the compiled
+ * sample read as nothing at all. The test is now that the flat half does not **split**, by the same
+ * `SPLIT_RATIO` the carried half has to split by, which makes the two halves' rules complementary
+ * rather than one exact and one a ratio.
+ *
+ * The margin is measured and it is wide: over the corpus and the compiled sample, the largest flat
+ * spread among the records this admits is **6.1%** and the smallest among everything it still refuses is
+ * **100%**, which is a biphase code's two halves in a two to one ratio. Nothing at all lies between
+ * 1.061 and 2.0, and the threshold is 1.4.
  */
 function oneFlatLength(flats: readonly number[]): boolean {
-  if (flats.length === 0) return true;
-  return new Set(flats.slice(1)).size <= 1;
+  // The opening one may differ by any amount, which is `firstMark` and is a protocol's longer first
+  // burst rather than jitter.
+  const tail = flats.slice(1);
+  if (tail.length === 0) return true;
+  return Math.max(...tail) < Math.min(...tail) * SPLIT_RATIO;
 }
 
 function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number): IrFrame | undefined {

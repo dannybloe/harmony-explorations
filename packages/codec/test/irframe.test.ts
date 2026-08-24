@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { imagePath, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
+import { payloadOf } from '../src/ezhex.ts';
 import {
   IR_CLASS_STREAM,
   IR_PULSE_MARK,
@@ -1115,4 +1116,71 @@ test('the three records their analyser calls Makita are Sharp codes on a Denon r
     assert.deepEqual(back.map((one) => [one.mark, one.us]),
                      train.slice(0, back.length).map((one) => [one.mark, one.us]), name);
   }
+});
+
+test('a flat half of 433 and 434 is one length, and Logitech names the ten codes it unlocks',
+  skipUnless('compiled_protocols'), () => {
+  // **The rule was exact equality and Logitech's own generator does not emit that**, section 165. A
+  // pulse distance frame has one constant half by definition, and the reader took "constant" to mean
+  // byte identical, so ten records of the configuration their compiler produced read as nothing at all:
+  // six Denon codes whose marks alternate between 433 and 434, a JVC pair at 409 and 410, and two
+  // Pioneer codes whose mark is 560 before a short space and 594 before a long one.
+  //
+  // The rule is now that the flat half must not **split**, by the same ratio the carried half has to
+  // split by, and the margin is measured: over the corpus and this sample the widest flat spread this
+  // admits is 6.1% and the narrowest it still refuses is 100%, which is a biphase code's two halves in
+  // a two to one ratio. Nothing lies between 1.061 and 2.0 and the threshold is 1.4.
+  //
+  // **The numbers are Logitech's, from their own analyser**, asked on 24 August 2026 and recorded in
+  // `../lab/reads/20260824-merge/compiled-unread.json`. Nine of the ten land exactly; the tenth is a
+  // `Panasonic 16 Bit` code where their number is the complement of ours, which is the same per family
+  // polarity convention `Logitech 24 Bit` has and which the rhythm table already carries. The two
+  // records this still refuses are 16 zero bits of `JerroldO1 16 Bit`, and their analyser refuses both.
+  const c = parse(payloadOf(require_('compiled_protocols'), 'compiled_protocols'));
+  const WANT: readonly (readonly [number, number, bigint, boolean])[] = [
+    [0x43679, 32, 0x15EA9867n, false],
+    [0x46814, 32, 0x15EA9867n, false],
+    [0x857eb, 48, 0xC080442AFC92n, false],
+    [0x9aca9, 48, 0x2A4C02878005n, false],
+    [0x9bbf3, 48, 0x2A4C028D800Fn, false],
+    [0xa403a, 48, 0x2A4C028B8009n, false],
+    [0xa4df2, 48, 0x2A4C028F800Dn, false],
+    [0xa58d1, 48, 0x2A4C02838001n, false],
+    [0xc8fc6, 48, 0x2A4C028E34B8n, false],
+    // The complement case, marked rather than quietly compared the other way up.
+    [0x8510b, 16, 0x3AF7n, true],
+  ];
+  let landed = 0;
+  for (const [record, bits, stated, inverted] of WANT) {
+    const first = irHeaderPointers(c, record)[0];
+    assert.ok(first !== undefined, `0x${record.toString(16)} has no block`);
+    const words = irBlockWords(c, first);
+    assert.ok(words !== undefined);
+    const train = fromFirstMark(pulsesOfWords(words));
+    // The headerless convention is tried too, because the Panasonic code has no lead in and its
+    // sixteenth bit is the one a skipped header pair eats.
+    const readings = [...framesOfPulses(train), ...framesOfPulses(train, 0)];
+    const mask = (1n << BigInt(bits)) - 1n;
+    const want = inverted ? stated ^ mask : stated;
+    const found = readings.find((one) => one.bits === bits && one.value === want);
+    assert.ok(found !== undefined,
+      `0x${record.toString(16)} read [${readings.map(frameKey)}], wanted ${bits}:${want.toString(16)}`);
+    landed += 1;
+  }
+  assert.equal(landed, 10);
+  // **The two it still refuses, which is the control.** Every carried duration of these is 2250, so
+  // there is nothing to split and no blind reader can do better; the family's own rhythm reads them.
+  for (const record of [0xb93c7, 0xb998b]) {
+    const words = irBlockWords(c, irHeaderPointers(c, record)[0] ?? 0);
+    assert.ok(words !== undefined);
+    const train = fromFirstMark(pulsesOfWords(words));
+    assert.deepEqual([...framesOfPulses(train), ...framesOfPulses(train, 0)], [],
+      `0x${record.toString(16)} has one carried length`);
+  }
+  // And the negative that pins the threshold: a flat half that splits by two is biphase and stays
+  // refused, whatever its lengths are.
+  const cell = (mark: number, space: number) => [{ mark: true, us: mark }, { mark: false, us: space }];
+  const biphaseLike = [...cell(433, 426), ...Array.from({ length: 12 }, (_, i) =>
+    i % 2 === 0 ? cell(433, 1267) : cell(866, 426)).flat(), { mark: false, us: 20_000 }];
+  assert.deepEqual(framesOfPulses(biphaseLike, 0), [], 'a flat half of 433 and 866 is two lengths');
 });

@@ -150,7 +150,7 @@ function closingFor(t: FrameTimings, bits: number, value: bigint, period: number
  * `CONTAINERS`.
  */
 const COMPILED_NAME = 'compiled-20260824';
-const COMPILED = join(LAB, 'reads', '20260824-protocols', 'Result.EzHex');
+const COMPILED = imagePath('compiled_protocols') ?? '';
 const COMPILED_COMMANDS = join(LAB, 'work', 'myharmony', 'responses-account2', 'OneResCommands.json');
 
 const containers = new Map<string, Container>();
@@ -427,6 +427,8 @@ function compiledRows(): Measured[] {
       // their biphase reading lands on the **value**. So the order is by strength of evidence and not by
       // shape: a number that matches beats a width that matches, whichever reader produced it.
       let byWidthOnly: Measured | undefined;
+      /** Whether a reading landed on a stated number but its durations would not split. */
+      let matched = false;
       for (const pairs of [1, 0]) {
         for (const r of readings(d.train, pairs)) {
           read = true;
@@ -444,7 +446,10 @@ function compiledRows(): Measured[] {
           const family = asRead ?? asFlipped ?? byWidth;
           if (family === undefined) continue;
           const measured = timingsOfFrame(d.train, r.f, pairs);
-          if (measured === undefined) { drop('compiled: the durations do not split'); continue; }
+          // **Remembered rather than dropped here**, section 165: a record whose durations do not split
+          // also reaches the fall through below, so dropping in both places counted ten records twenty
+          // times and read as though twenty had failed. One record, one reason, the specific one.
+          if (measured === undefined) { matched = true; continue; }
           const timings = asFlipped === undefined ? measured
             : { ...measured, zero: measured.one, one: measured.zero };
           const candidate: Measured = { family, source: 'compiled',
@@ -494,8 +499,9 @@ function compiledRows(): Measured[] {
       // record nothing could read at all reported, and those need different work: one is a number
       // question and the other is the decoder's.
       if (!landed) {
-        drop(read ? 'compiled: no reading matches a code of the record\'s own appliance'
-                  : 'compiled: no reading of ours at all, which is a biphase code or a long bit space');
+        drop(matched ? 'compiled: the code is named and its durations do not split'
+          : read ? 'compiled: no reading matches a code of the record\'s own appliance'
+                 : 'compiled: no reading of ours at all, which is a biphase code or a long bit space');
       }
     }
   }

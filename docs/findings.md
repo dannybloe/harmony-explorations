@@ -22585,3 +22585,122 @@ fixture rather than editing it. And the synthetic `JerroldO1 16 Bit` train in th
 because it was written by hand with the last bit's space running straight into the inter frame silence.
 Every framed record in the corpus carries a closing mark between the two, which is what makes the merge
 cost 45 records rather than thousands, and the train carries one now.
+
+## 165. A flat half of 433 and 434 is one length, and ten codes Logitech names come back
+
+**The rule section 163 introduced was right and its test was too strict.** A pulse distance frame has one
+constant half by definition, and `oneFlatLength` read "constant" as byte identical. Logitech's own
+generator does not emit that: six Denon codes in the configuration their compiler produced for fifteen
+appliances chosen here alternate between 433 and 434 microseconds on the half that carries no bit, a JVC
+pair alternates 409 and 410, and two Pioneer codes carry a mark of 560 before a short space and 594
+before a long one. Ten records read as nothing at all.
+
+The test is now that the flat half must not **split**, by the same `SPLIT_RATIO` the carried half has to
+split by. That makes the two halves' rules complementary rather than one exact and one a ratio, which is
+what the distinction between the two halves actually is.
+
+### The margin, which is what makes a threshold a measurement
+
+Over the nineteen containers and the compiled sample, taking every record our reader refuses and asking
+what its flat half does:
+
+| the flat half's spread | records |
+|---|---|
+| 0.23% to 6.07% | 10 |
+| nothing at all | 0 |
+| 100% or more | 552, plus every one of the 478 refused records that a biphase reading fits |
+
+So the ten sit between 1.0023 and 1.0607, everything else sits at 2.0 or above, and there is nothing in
+between. `SPLIT_RATIO` is 1.4. A spread of 100% is a biphase code's two halves in a two to one ratio,
+which is the population section 163 spent to buy `JerroldO1 16 Bit`, and it stays refused.
+
+### Logitech names nine of the ten, and the tenth is the complement
+
+Asked of `AnalyzeInfrared` on 24 August 2026, twelve records, recorded in the lab beside the sample.
+Their analyser names ten and refuses two.
+
+| record | their family | agreement |
+|---|---|---|
+| two Pioneer | `MemorexO1 32 Bit` | exact, 32 bits |
+| one JVC | `SharpO1 48 Bit` | exact, 48 bits |
+| five Denon and one Motorola | `SharpO1 48 Bit` | exact, 48 bits |
+| one JVC | `Panasonic 16 Bit` | the **complement** of ours, 16 bits |
+| two Motorola | refused | refused here too |
+
+Nine exact matches by a route with nothing in common with theirs. The complement is not a disagreement:
+`Panasonic 16 Bit` states a set bit as the shorter space, which is the same per family polarity
+convention section 161 measured on `Logitech 24 Bit`, and the rhythm table already expresses it by
+carrying a `zero` longer than its `one`. So the family list of inverted protocols grows by one and the
+mechanism is unchanged.
+
+**The two it still refuses are 16 zero bits of `JerroldO1 16 Bit`.** Every carried duration is 2250, so
+there is nothing to split and no blind reader can do better, which is section 162's constant bit code
+exactly. Their analyser refuses both, which is the confirmation that the refusal is the code's property
+and not ours.
+
+**And the account's own catalogue says the same thing independently, on nine of the ten.** Nine land on a
+number the appliance's own command list states, which is a second external answer taken from the data
+their compiler was given rather than from their decoder. The tenth is the `Panasonic 16 Bit` code, whose
+number that appliance's list does not carry, so it rests on their analyser alone. The generator's drop
+list is where that shows: nine records are named and refused for their durations, one is read and matches
+no code of its own appliance, and two have no reading at all.
+
+### What it does not buy, which is the honest half
+
+None of the ten contributes a rhythm to the table. `timingsOfFrame` still demands an exactly constant
+flat half, correctly, because five durations cannot reproduce a record whose flat half is 433 on one cell
+and 434 on the next. So the table is byte identical to before, at 21 entries, and what changes is the
+accuracy of the refusal: twelve records that reported "no reading of ours at all" now report nine named
+and refused for their durations, one read and matching no code of its own appliance, and two with no
+reading at all.
+
+**And one record was being counted twice while that was measured**, which is worth recording because it
+is the same shape as a hollow claim. A record whose durations do not split also reaches the fall through
+that reports no match, so both fired and the ten appeared as twenty. One record, one reason, and the
+specific one.
+
+The corpus partition does not move either: 3502 records read under exactly one convention before and
+after, with none under both and 1128 under none. Every one of the ten is in the compiled sample.
+
+### The three loose ends of the infrared side, closed
+
+With this in place the two decoders can be compared across the whole 347 record sample section 153 asked
+about, and the matrix has an empty cell where it matters:
+
+| | they name a family | they refuse |
+|---|---|---|
+| we read a frame, same number | 177 | **0** |
+| we read a frame, a different number | 3 | 0 |
+| we refuse, a biphase reading fits | 48 | 23 |
+| we refuse outright | 4 | 92 |
+
+**The zero is section 164's doing and it was 36 before it.** A record we read and they refuse is the one
+combination that should not exist, and merging adjacent durations emptied it. The 3 are the
+`Makita 10 Bit` disagreement, which section 162 established is theirs: the records are fifteen bit Sharp
+codes whose durations their own compiler emits, and their ten bits are ours with the first dropped and
+the last four cut. The 4 are constant bit codes, read from their family's rhythm. The 48 are biphase,
+read by `biphaseFrames`, and the 23 are biphase codes their analyser declines to name at all, which is
+section 159's point that their analyser is not a general decoder.
+
+So there is no record left in that sample where their decoder answers and nothing here can account for
+the answer.
+
+### Two things that fell out of naming the sample
+
+The compiled sample had been addressed by a hardcoded path, and giving it a name in the lab index put it
+into two populations it had never been in.
+
+**Its file name was wrong twice over.** Their service hands the download back as `Result.EzHex`, and
+eight files in this lab carry that name, so a lookup by filename resolves to whichever the walk reaches
+first: the same trap `SERVICE_RESPONSES` on the Python side is addressed by path to avoid. It is also not
+an EZHex at all. There is no XML header on it, just the bare container, which is what section 132 said
+the download is, and under the old extension it joined the population of EZHex files whose signed header
+is checked and failed four of those checks correctly. It is `compiled-20260824-protocols-gspm.bin` now.
+
+**It is a 37th parseable container and a third that populates base slot 16.** The parser property checks
+gain a sample; `CONTAINERS`, which every corpus wide total is computed from, deliberately does not, since
+a sample we asked for is not evidence about how many configurations exist. Its number sender record
+carries the same three byte identical digit tables at three distinct addresses that section 154 measured
+on one sample, from a compile that shares only the account with it. And it has a golden vector now, which
+matters more here than anywhere: eighteen of the rhythm table's entries are measured off this one file, so
+a disagreement between the two implementations about it is a disagreement about the table.

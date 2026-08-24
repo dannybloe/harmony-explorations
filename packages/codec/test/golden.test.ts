@@ -72,6 +72,11 @@ const CONTAINERS = [
   // The second to populate it, and the one that shows the section does not carry every favourite:
   // two of its five spell the number out one digit code at a time. Section 156.
   'calibration_favzero',
+  // The largest sample anywhere here, section 165: fifteen appliances chosen so that every protocol
+  // family in Logitech's catalogue the corpus could not settle appears in it. Eighteen of the rhythm
+  // table's entries are measured off this one file, so a disagreement about it is a disagreement about
+  // the table.
+  'compiled_protocols',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -151,8 +156,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
       `an unexpected check: ${checks.filter((n) => n !== 'key_table_is_complete' && !UNIVERSAL_CHECKS.includes(n)).join(', ')}`);
     if (checks.includes('key_table_is_complete')) complete += 1;
   }
-  assert.equal(present.length, 36, 'every vector, which is what `make golden` compares');
-  assert.equal(complete, 32, 'the vectors whose container has a key table at all');
+  assert.equal(present.length, 37, 'every vector, which is what `make golden` compares');
+  assert.equal(complete, 33, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
   // and null on 9, so a summary that stopped emitting it would break nothing anybody would notice:
@@ -163,8 +168,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   assert.equal(senders.every((one) => one !== undefined), true, 'a vector is missing number_senders');
   assert.equal(senders.filter((one) => one === null).length, 9, 'the containers with no readable slot');
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 25);
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 2,
-    'the two made configs that populate base slot 16');
+  // Three since 24 August 2026, section 165: the compiled sample was made from the same account as
+  // `calibration_favzero`, so it carries a record too, and its digit tables are three byte identical
+  // copies at three addresses like the first sample's.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 3,
+    'the made configs that populate base slot 16');
 });
 
 test('the list above covers exactly what the Python side writes a vector for', () => {
@@ -175,7 +183,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 36, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 37, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

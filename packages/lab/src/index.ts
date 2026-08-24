@@ -169,6 +169,16 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // Six devices, one of them referenced by no activity, which refutes the note that the generator
   // drops such a device. Section 156.
   calibration_favzero: 'calibration-favzero.bin',
+  // The fifth, 24 August 2026, and the largest: fifteen appliances chosen so that every protocol family
+  // in Logitech's catalogue that the corpus could not settle appears in it, compiled by their own
+  // generator. It is what eighteen of the rhythm table's entries are measured off, sections 160 to 163.
+  // **Renamed twice, and both times the name was saying something false.** Their service hands it back
+  // as `Result.EzHex`, and eight files in this lab carry that name, so a lookup by it resolves to
+  // whichever the walk reaches first. It is also not an EZHex: there is no XML header on it at all,
+  // just the bare container, which is what section 132 said the download is. Under the old extension it
+  // joined the population of EZHex files whose signed header is checked and failed four of those
+  // checks, correctly. Section 165.
+  compiled_protocols: 'compiled-20260824-protocols-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
   // for the three devices of the calibration account. Not an image and not a config. It is here so
   // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number

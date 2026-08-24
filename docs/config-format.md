@@ -1740,8 +1740,12 @@ durations. Four records in the corpus are of this kind, 24 zero bits of `Logitec
 them is the family's own rhythm plus the number Logitech states, which then reproduces the record byte for
 byte and tests the family's polarity into the bargain.
 
-**The non carrying half of a frame is one length, and that is a rule the reader enforces**, sections 161
-and 163. It is what a pulse distance or pulse width frame **is**, and the encoder had always demanded it
+**The non carrying half of a frame is one length, and that is a rule the reader enforces**, sections 161,
+163 and 165. **One length means it does not split**, by the same ratio the carried half has to split by,
+and not that it is byte identical: their generator emits a flat half of 433 on one cell and 434 on the
+next, so exact equality refused ten records of the compiled sample that their own analyser names. The
+margin is measured, since the widest flat spread admitted is 6.1% and the narrowest refused is 100%,
+which is a biphase code's two halves in a two to one ratio. It is what a pulse distance or pulse width frame **is**, and the encoder had always demanded it
 while the decoder had not, so a duration threshold was standing in for it: a frame ended at a carried
 duration above 4000 microseconds, which refused every `JerroldO1 16 Bit` record, whose set bit is a 4505
 space. 45 records of three arch 8 configs carry a mid frame **gap** of 4480, so no constant separates the

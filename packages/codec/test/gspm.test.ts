@@ -594,8 +594,14 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  * are properties of the parser rather than of a sample, so they are stated over everything that
  * parses. That difference is the point of the count being asserted: three source comments quoted
  * "all thirteen samples" and "all 24 containers" while the lab held 33.
+ *
+ * **37 since 24 August 2026**, when the configuration Logitech's compiler produced for fifteen chosen
+ * appliances was given a name in the lab index, section 165. It joins this population and not
+ * `CONTAINERS`, which is where every corpus wide total is computed from: the checks below are properties
+ * of the parser, so a further real container can only strengthen them, and a calibration sample inside a
+ * corpus total would be counting our own request as evidence.
  */
-const PARSEABLE = 36;
+const PARSEABLE = 37;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -657,16 +663,18 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('20 of the parseable containers have an odd body and 15 of those verify',
+test('21 of the parseable containers have an odd body and 16 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
     const all = parseable();
     assert.equal(all.length, PARSEABLE);
     const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
-    assert.equal(odd.length, 20);
+    // 21 and 16 since the compiled sample was named, section 165, which is one more container with an
+    // odd body whose checksum recomputes: the title carries the counts, so both move together.
+    assert.equal(odd.length, 21);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 15);
+    assert.equal(verifying.length, 16);
     // Every one of the fourteen recomputes under the loop as written, which is what makes the
     // behaviour tested rather than assumed. Folding the trailing byte in would break the two whose
     // trailing byte is not zero, and be invisible on the other twelve: so the comment was inviting
@@ -706,7 +714,9 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    assert.equal(agree, 34);
+    // 35 since the compiled sample was named, section 165. The two that disagree are the claim and
+    // they are unchanged, both being damaged reads of one Harmony 890.
+    assert.equal(agree, 35);
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
@@ -750,6 +760,8 @@ test('the frame tiles to the next section on every container that has one', skip
     assert.equal(start + (c.frameExtent as number), target, name);
     if (start + c.frameLength + 2 === target) naive += 1;
   }
-  assert.equal(framed, 29);
-  assert.equal(naive, 27, 'the two the sentinel gets wrong are the two empty frames');
+  // 30 since the compiled sample was named, section 165, and the two the sentinel misses are still
+  // exactly the two empty frames, which is the claim rather than the total.
+  assert.equal(framed, 30);
+  assert.equal(naive, 28, 'the two the sentinel gets wrong are the two empty frames');
 });

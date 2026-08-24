@@ -16,6 +16,7 @@
  * node packages/codec/bin/analyze.ts [--config h600_config] [--limit 25] [--out report.json]
  *   [--records 0x4282d,0x428fe]   ask about named records rather than the first few
  *   [--per-kind 12]               at most this many of each verdict our own decoder gives
+ *   [--file <path.EzHex>]         a container by path, for a compiled sample the lab does not name
  * ```
  *
  * **The credentials come out of the lab and are not arguments**, which is that file's own instruction:
@@ -32,6 +33,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { imagePath, LAB } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
+import { payloadOf } from '../src/ezhex.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
   from '../src/ir.ts';
 import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
@@ -131,9 +133,19 @@ const limit = Number(flag('limit', '25'));
 /** Named records, for a question about a specific reading rather than about a sample. */
 const only = new Set(flag('records', '').split(',').filter((one) => one !== '')
   .map((one) => Number.parseInt(one, 16)));
-const path = imagePath(config);
+/**
+ * A container by path rather than by name, which is what the compiled samples need.
+ *
+ * The configurations Logitech's own compiler produced to our specification are filed under their read
+ * date rather than as named lab images, and they are the population whose codes are most worth asking
+ * about: the appliances were chosen here, so the account's own command catalogue states what each code
+ * should be. `--file` takes the `.EzHex` and `--config` then only names the report's rows.
+ */
+const file = flag('file', '');
+const path = file === '' ? imagePath(config) : file;
 if (path === undefined) throw new Error(`no ${config} in the lab`);
-const c = parse(new Uint8Array(readFileSync(path)));
+const blob = new Uint8Array(readFileSync(path));
+const c = parse(file === '' ? blob : payloadOf(blob, path));
 
 /**
  * One question and its answer, kept verbatim.
