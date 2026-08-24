@@ -29,6 +29,7 @@ import { imagePath, LAB } from '@harmony/lab';
 import { parse, type Container } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import { statedCode } from '../src/stated.ts';
+import { devices } from '../src/inventory.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
          irHeaderPointers } from '../src/ir.ts';
 import { pulsesOfWords } from '../src/irda.ts';
@@ -220,9 +221,19 @@ for (const file of files) {
  *
  * The join is per group and then per record, and both halves were got wrong first:
  *
- * * **The owning appliance is decided by overlap**, not by the group's drawn label: whichever
- *   appliance's stated numbers the group's decoded numbers hit most. Pooling every appliance's numbers
- *   instead left 88 of them claimed by two appliances at once and therefore unusable.
+ * * **The owning appliance is named by the config itself**, section 161, and the overlap is the fallback
+ *   rather than the rule. A group's device name comes out of base slot 0 through base slot 13, section
+ *   126, and the account states the same name for the appliance, so the two join on a string with no
+ *   number involved. That agrees with the overlap on 11 of the 11 groups the overlap could decide, and
+ *   it decides the 4 it could not, which had been dropped whole: 242 records, including every record of
+ *   three protocol families. Pooling every appliance's numbers, which came first, left 88 of them
+ *   claimed by two appliances at once and therefore unusable.
+ * * **A family may carry its bits the other way up**, section 161. `Logitech 24 Bit` states the number
+ *   whose complement our decoder reads, on 71 of 71 records, because its set bit is the **shorter**
+ *   space where every other family here uses the longer one. Nothing in the durations says which, so the
+ *   join tries the complement and, where it hits, records the stated value with `zero` and `one`
+ *   exchanged. That needs no new field: the entry says `zero: 1000, one: 500` and an encoder reading it
+ *   emits the right pulses, which `reproduces` then checks against the record byte for byte.
  * * **The header convention is per record**, not per group. One Denon receiver carries a 48 bit family
  *   that opens with a lead in and a 15 bit one that opens on its first bit; deciding it per group read
  *   the headerless half with a header, which eats its first bit cell and yields a number no catalogue
@@ -232,8 +243,13 @@ for (const file of files) {
 interface Appliance {
   make: string;
   model: string;
+  /** The name the account gives this appliance, which is what the config's own device name matches. */
+  name: string;
   commands: { name: string; keyCode: string }[];
 }
+
+/** The complement of a value at its own width, which is one family's bit polarity. */
+function complement(value: bigint, bits: number): bigint { return value ^ ((1n << BigInt(bits)) - 1n); }
 
 function compiledRows(): Measured[] {
   let blob: Uint8Array;
@@ -259,11 +275,24 @@ function compiledRows(): Measured[] {
         byWidth.set(f.bits, (byWidth.get(f.bits) ?? new Set()).add(read.family));
       }
     }
-    return { label: `${a.make} ${a.model}`, byValue, byWidth };
+    return { label: `${a.make} ${a.model}`, name: a.name, byValue, byWidth };
   });
 
+  // **The config names its own groups**, so the attribution is a string join rather than a vote. A
+  // device's name is a prefix of a state variable's, reached through the list that sends its codes,
+  // section 126, and the account gives the same name to the appliance. Underscores are the config's
+  // spelling of the spaces in it.
+  const named = new Map<number, number>();
+  for (const device of devices(c)) {
+    const at = device.name === undefined ? -1
+      : appliances.findIndex((a) => a.name.replace(/ /g, '_') === device.name);
+    if (at >= 0) named.set(device.group, at);
+  }
+
   const out: Measured[] = [];
-  for (const group of irGroups(c) ?? []) {
+  /** How the two attribution routes compared, which is the closure rather than a diagnostic. */
+  const attribution = { agree: 0, differ: 0, namedOnly: 0, votedOnly: 0 };
+  for (const [groupAt, group] of (irGroups(c) ?? []).entries()) {
     const decoded: { record: number; periodNs: number; train: readonly Pulse[] }[] = [];
     for (const record of group.addresses) {
       if (irClass(c, record) !== IR_CLASS_STREAM) { drop('compiled: not a stream record'); continue; }
@@ -278,7 +307,9 @@ function compiledRows(): Measured[] {
     }
     const readings = (train: readonly Pulse[], pairs: number) =>
       framesOfPulses(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
-    let best = { hits: 0, at: -1 };
+    // The name if the config states one, and the overlap where it does not. Both are computed every
+    // time, because the two agreeing is the closure and only comparing them can show it.
+    let vote = { hits: 0, at: -1 };
     for (const [at, a] of appliances.entries()) {
       let hits = 0;
       for (const d of decoded) {
@@ -286,33 +317,61 @@ function compiledRows(): Measured[] {
           hits += 1;
         }
       }
-      if (hits > best.hits) best = { hits, at };
+      if (hits > vote.hits) vote = { hits, at };
     }
-    if (best.at < 0) { drop('compiled: no appliance matches any number in the group'); continue; }
-    const owner = appliances[best.at]!;
+    const stated = named.get(groupAt) ?? -1;
+    if (stated >= 0 && vote.at >= 0) {
+      if (stated === vote.at) attribution.agree += 1; else attribution.differ += 1;
+    } else if (stated >= 0) attribution.namedOnly += 1;
+    else if (vote.at >= 0) attribution.votedOnly += 1;
+    const at = stated >= 0 ? stated : vote.at;
+    if (at < 0) { drop('compiled: no appliance matches any number in the group'); continue; }
+    const owner = appliances[at]!;
     for (const d of decoded) {
       let landed = false;
+      let read = false;
       for (const pairs of [1, 0]) {
         for (const r of readings(d.train, pairs)) {
-          const byValue = owner.byValue.get(r.key);
+          read = true;
+          // **A family may carry its bits the other way up.** `Logitech 24 Bit` states the complement
+          // of what our decoder reads, because its set bit is the shorter space. Where the complement
+          // is what the appliance states, the frame recorded is theirs and the two carried lengths are
+          // exchanged, so an encoder built from the entry emits this record again exactly.
+          const flipped = complement(r.f.value, r.f.bits);
+          const asRead = owner.byValue.get(r.key);
+          const asFlipped = asRead === undefined
+            ? owner.byValue.get(`${r.f.bits}:${flipped.toString(16)}`) : undefined;
           const widths = owner.byWidth.get(r.f.bits);
-          const byWidth = byValue === undefined && widths?.size === 1
+          const byWidth = asRead === undefined && asFlipped === undefined && widths?.size === 1
             ? [...widths][0] : undefined;
-          const family = byValue ?? byWidth;
+          const family = asRead ?? asFlipped ?? byWidth;
           if (family === undefined) continue;
-          const timings = timingsOfFrame(d.train, r.f, pairs);
-          if (timings === undefined) { drop('compiled: the durations do not split'); continue; }
-          out.push({ family, source: 'compiled', joinedBy: byValue === undefined ? 'width' : 'value',
+          const measured = timingsOfFrame(d.train, r.f, pairs);
+          if (measured === undefined) { drop('compiled: the durations do not split'); continue; }
+          const timings = asFlipped === undefined ? measured
+            : { ...measured, zero: measured.one, one: measured.zero };
+          out.push({ family, source: 'compiled',
+            joinedBy: asRead === undefined && asFlipped === undefined ? 'width' : 'value',
             periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
-            bits: r.f.bits, value: r.f.value, timings });
+            bits: r.f.bits, value: asFlipped === undefined ? r.f.value : flipped, timings });
           landed = true;
           break;
         }
         if (landed) break;
       }
-      if (!landed) drop('compiled: no reading matches a code of the record\'s own appliance');
+      // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
+      // record nothing could read at all reported, and those need different work: one is a number
+      // question and the other is the decoder's.
+      if (!landed) {
+        drop(read ? 'compiled: no reading matches a code of the record\'s own appliance'
+                  : 'compiled: no reading of ours at all, which is a biphase code or a long bit space');
+      }
     }
   }
+  console.log(`attribution: the config's own device name and the number overlap agree on `
+    + `${attribution.agree} group(s) and differ on ${attribution.differ}; `
+    + `${attribution.namedOnly} named where no number matched, `
+    + `${attribution.votedOnly} matched where the config states no name\n`);
   return out;
 }
 

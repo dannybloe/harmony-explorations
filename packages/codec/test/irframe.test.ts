@@ -567,6 +567,34 @@ test(
   },
 );
 
+test('a bit space above the gap threshold is unreadable, and that is a live limitation', () => {
+  // **The counterexample the threshold's own docstring predicted, section 161.** `JerroldO1 16 Bit`, the
+  // Motorola cable box, carries a set bit as a space of 4505 microseconds, which is above `GAP_US`, so
+  // the first bit cell of every one of its records reads as the end of the frame. This test states that
+  // as a refusal rather than leaving it as an absence, and it fails if somebody raises the threshold
+  // without dealing with what raising it costs: 45 records of three arch 8 (Harmony 880) configs carry a
+  // mid frame gap of 4480, twenty five microseconds below this, and at 8000 they read as a sixteen bit
+  // frame they are not.
+  const train = (long: number): Pulse[] => {
+    const out: Pulse[] = [{ mark: true, us: 9000 }, { mark: false, us: 4520 }];
+    // The first eight cells of a real record, 0x5006 style: a set bit is the long space.
+    for (const bit of [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0]) {
+      out.push({ mark: true, us: 495 });
+      out.push({ mark: false, us: bit ? long : 2250 });
+    }
+    out.push({ mark: false, us: 19636 });
+    return out;
+  };
+  assert.deepEqual(framesOfPulses(train(4505), 1), [], 'a 4505 us bit space ends the frame instead');
+  // The control, which is what makes this about the threshold and not about the shape: move that space
+  // just under the constant and the same train reads as the sixteen bits it is.
+  const under = framesOfPulses(train(3900), 1);
+  assert.equal(under.length, 1);
+  assert.equal(under[0]?.bits, 16);
+  assert.equal(under[0]?.value, 0b1000111000000110n);
+  assert.equal(under[0]?.carries, 'space');
+});
+
 test('the two gap thresholds are tuned, and these are the margins they are tuned to',
   skipWithoutLab(), () => {
   // The docstring on `GAP_US` and `TRAILING_GAP_US` said the corpus leaves "three orders of magnitude

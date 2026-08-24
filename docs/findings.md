@@ -22136,12 +22136,15 @@ measured it refusing a rhythm at one bit width and accepting the same rhythm at 
 a limit on what it can rule on. It is also a statement about what it accepts, and nothing followed the
 second reading through.
 
-### What did not join, and the largest of it is one question
+### What did not join, and it is three questions rather than one
 
 171 records matched no catalogue code of their own appliance, and 11 readings would not yield timings.
 Those two counts overlap rather than adding up, because a record whose durations refuse to split then
 fails to land at all and is counted in both, which is how the Sharp family was 162 of each until it
-joined. Seven families are in this configuration and not in the table: `Microsoft 30 Bit`,
+joined. **Section 161 took this apart and the count is 75 now**: the attribution was a vote that
+returned nothing on four groups of the fifteen, so 242 records were being dropped whole and a further
+210 turn out to read as nothing at all rather than to match nothing. Seven families are in this
+configuration and not in the table: `Microsoft 30 Bit`,
 `Panasonic 16 Bit`, `Magnavox 13 Bit`, `Sharp 48 Bit`, `Logitech 24 Bit`, `Kreatel IP 22 Bit`,
 `JerroldO1 16 Bit`, plus `MemorexV2 32 Bit Dual`. The biphase one is expected, since `irFrame` cannot
 read it at all and section 153 says why.
@@ -22185,3 +22188,102 @@ instrument here and cost less than the pair did.
 **The inversion itself was confirmed on the record and stays confirmed**: the two frames a record sends
 differ by exactly `0x3FF`, the low ten bits, which is what section 159 read out of the notation and what
 the published protocol does.
+
+## 161. The config names the appliance a group belongs to, one family counts its bits the other way up, and no constant can find the end of a frame
+
+Section 160 left a remainder it described as one question: 171 records of the compiled sample matched no
+catalogue code of their own appliance. It is three questions, and two of them are ours rather than
+Logitech's. What made them separable was fixing the attribution first, because a group attributed to the
+wrong appliance produces exactly the same symptom as a code we cannot read.
+
+### The attribution was a vote and the config states the answer
+
+The join in `bin/protocols.ts` decided which appliance a group of infrared records belongs to by
+**overlap**: whichever appliance's stated numbers the group's decoded numbers hit most. On the eleven
+groups where that works it is unanimous, and on the other four it returns nothing at all, so 242 records
+were dropped whole and with them every record of three protocol families. Worse, it silently attributed
+one group to an appliance that had exactly **one** number in common with it, which is a vote of one.
+
+The config names its own groups. A device's label is a prefix of a state variable's name, reached
+through the action list that sends that device's codes, section 126, and the account gives the appliance
+the same name, so the two join on a string with no number in it. Under that route every group has an
+owner: thirteen of the fifteen by name, and the remaining two by elimination once the named ones are
+taken.
+
+**The two routes agree on every group where both have an answer**, 10 of 10 with none differing, and
+each decides cases the other cannot: 3 groups are named where no number matched, and 2 groups carry no
+name where the numbers do match. That is a closure rather than a convenience, since the routes share no
+code: one walks base slot 0 and base slot 13 and reads ASCII, the other decodes pulse trains and
+compares integers.
+
+| group | what the config calls it | family the account states | records |
+|---|---|---|---|
+| 3 | Microsoft Media Player | Microsoft 30 Bit | 65 |
+| 5 | PS3 | Logitech 24 Bit | 71 |
+| 12 | Motorola STB | JerroldO1 16 Bit | 49 |
+| 14 | (unnamed, by elimination) | Kreatel IP 22 Bit | 57 |
+
+### `Logitech 24 Bit` states the complement, and the table can say so without a new field
+
+Group 5 decodes cleanly and matched nothing. Our decoder reads `0xD2BE41` where the catalogue states
+`0x2D41BE`, and those are complements: this family sends a set bit as the **shorter** space, where every
+other family measured here uses the longer one. Nothing in a pulse train says which way round a protocol
+counts, so a decoder that only knows durations has to pick one convention and ours picks long.
+
+The join tries the complement and, where that is what the appliance states, records **their** number
+with `zero` and `one` exchanged. So the entry reads `zero: 1000, one: 500`, an encoder built from it
+emits the record again exactly, and no field was added: the polarity is already expressible in the two
+numbers that were always there. 71 of 71 records, exact, and `Logitech 24 Bit` is the seventeenth entry
+in the table.
+
+It is the only inverted entry in the table, which a test asserts by looking for `zero > one` rather than
+by naming it, so a second one arriving is a failure rather than a surprise.
+
+### No constant can separate the end of a frame from a long bit, and 25 microseconds is the margin
+
+`JerroldO1 16 Bit`, the Motorola cable box, carries its set bit as a space of **4505** microseconds.
+`GAP_US` in `irframe.ts` is 4000 and ends a frame above it, so the first bit cell of every one of those
+49 records reads as the end of the frame and the record reads as nothing. The docstring on that constant
+had already stated the risk in as many words, that "a device whose long bit runs 8% above this population
+truncates its own frame", and here is the device.
+
+Raising it looks free and is measured to be worse. Over every record that frames, in the nineteen
+containers and in the compiled sample, the longest duration consumed as a bit is **3480** and the
+smallest duration that **ends** a frame is **15300**, so the window between them appears empty and 8000
+sits comfortably in it. At 8000, 45 records of three arch 8 (Harmony 880) configs start reading as a
+plausible sixteen bit frame. They are biphase codes whose mid frame gap is **4480**, twenty five
+microseconds below Jerrold's set bit, and the values they yield are single set bits at moving positions
+with bit counts of 16, 17 and 18 for records of one device. So no threshold separates the two cases.
+
+**What does separate them is structural.** A Jerrold record's marks are 495 throughout while its spaces
+take two lengths, which is what a pulse distance frame is; those 45 records take 840 and 1680 in **both**
+halves, which is what biphase is. `timingsOfFrame` already demands a constant non carrying half of the
+encoder side, so demanding it in `decode` would make the two agree and would read Jerrold correctly.
+
+Measured, on the whole corpus, and **not adopted**: with that requirement and the threshold at 8000, the
+partition of the corpus becomes 3547 records reading under exactly one convention, unchanged, **0** under
+both, and 1083 under none, against 3547, 148 and 935 today. The 148 that read under both conventions are
+exactly the records that declare two pointer groups, in every container and nowhere else, section 134,
+and that biconditional is the only thing here that identifies a biphase record. A direct predicate was
+tried as a replacement, that both halves take at least two lengths, and it lands on 976 records rather
+than 148, of which 672 read perfectly well as frames. So the ambiguity is a **sharper** biphase detector
+than the property that causes it, which is the surprise of the section.
+
+So the trade is: read one more protocol family and lose the corpus's only structural test for biphase.
+Deliberately not taken, recorded here with the numbers so that whoever takes it does not have to
+re-measure, and the two candidates for doing it properly are a decoder that reports biphase explicitly
+rather than by refusing twice, and a terminator found by clustering the durations rather than by a
+constant.
+
+### What is left, and it is one cause with three faces
+
+With the attribution fixed and the polarity handled, the compiled sample's unmeasured records are 210
+that yield **no reading of ours at all** and 75 that read and match no number. The drop reasons are two
+now rather than one, because the old label said "no reading matches a code" for a record nothing could
+read, and those need different work: one is a question about numbers and the other is the decoder's.
+
+Of the 210, three groups account for nearly all: `Microsoft 30 Bit` at 36.2 kHz, which is RC-6 and
+section 153 already says why; `Magnavox 13 Bit`, whose every duration is 880 or 900, which is RC-5; and
+`Kreatel IP 22 Bit` at **56.3 kHz** with every duration 320 or 325. All three are biphase, so the whole
+of what is left in this sample is one known gap plus the Jerrold case above. The 56.3 kHz is worth
+noticing on its own: every other carrier measured anywhere here is between 36 and 40 kHz.

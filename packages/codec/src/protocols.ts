@@ -99,6 +99,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 118, exact: 118, spread: 0, source: 'compiled' },
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
   { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },
+  { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 71, exact: 71, spread: 0, source: 'compiled' },
   { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 59, exact: 59, spread: 0, source: 'both' },
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },

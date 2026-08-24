@@ -347,7 +347,7 @@ both matter to an importer. A code states its frames in **two** slots, either of
 naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
 catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
 33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
-**Thirteen families have a rhythm measured off Logitech's own compiler**, section 160, and that route is
+**Fourteen families have a rhythm measured off Logitech's own compiler**, sections 160 and 161, and that route is
 open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
@@ -358,7 +358,11 @@ Sharp was written up as two problems, a rhythm that would not split and numbers 
 transform, and it was one. Its opening mark is 270 where every later one is 260, which a strict reader
 refuses, and its numbers needed no transform at all: the second half was a pair of numbers compared
 without establishing they were the same command, and a set against a set maps 162 of 162 under the
-identity.
+identity. The fourteenth needed the attribution fixed rather than another appliance, section 161: the
+join decided which appliance a group of codes belongs to by a vote of overlapping numbers, and the config
+**states** it, so four groups of fifteen had been dropped whole. One of them, the PS3's, then joined once
+it was allowed to state the **complement** of what our decoder reads, because that family sends a set bit
+as the shorter space where every other one here uses the longer.
 
 **Their analyser is retired as evidence for a rhythm**, section 160, and that is the load bearing
 correction: it accepted two rhythms their compiler does not emit, `JVC 16 Bit` under NEC's durations and
@@ -884,12 +888,16 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Sixteen entries, and each carries the route it came from, since a rhythm
+                                Seventeen entries, and each carries the route it came from, since a rhythm
                                 two independent routes agree on is worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
                                 than allowed for: a `[0, 0]` header means a protocol with no lead in, and
                                 `firstMark` a longer opening burst, which Sharp has and which a reader
-                                demanding one flat length throughout refuses.
+                                demanding one flat length throughout refuses. **A family's bit polarity
+                                is in the table without a field for it**, section 161: one entry has a
+                                `zero` longer than its `one`, which is how `Logitech 24 Bit` says that a
+                                set bit is its shorter space, and a test looks for that shape rather
+                                than for the name.
                                 **A table entry says where its durations came from**: three off the
                                 corpus, ten off a configuration Logitech's own compiler produced, and
                                 three off both, which is the column to look at first. The fourth value,
@@ -1534,7 +1542,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 160 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 161 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1805,6 +1813,16 @@ produce a config the remote accepts and mishandles.
 * **148 biphase codes are readable and we cannot read them**, section 153. `Microsoft 30 Bit`, which is
   RC6, named by the service on every one of the 48 asked about. `irFrame` refuses them because both of
   its conventions fit, which is right for a decoder that only knows mark and space lengths.
+* **A protocol whose set bit is longer than the gap rule is unreadable, and the fix costs the biphase
+  detector**, section 161. `JerroldO1 16 Bit` carries a set bit as a space of 4505 microseconds against
+  `GAP_US` at 4000, so 49 records of the compiled sample read as nothing. Raising the constant is
+  measured to be worse: 45 records of three arch 8 (Harmony 880) configs carry a mid frame gap of 4480,
+  twenty five microseconds below it, and they then read as a sixteen bit frame they are not. The
+  structural separator is that a Jerrold record's marks are one length and theirs are two, which is what
+  `timingsOfFrame` already demands of the encoder, and adopting it takes the 148 records that read under
+  **both** conventions to none. That ambiguity is the corpus's only test for a biphase record, section
+  134, and a direct predicate was tried and lands on 976 rather than 148. So the trade is written down
+  and not taken.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
   user manuals say the learned signal was uploaded to their web site, which did the pattern matching

@@ -89,6 +89,16 @@ function pulses(words: readonly number[]): Pulse[] {
  * 4000, which the strict `>` admits as a bit. None of them is in a framed record today. The numbers
  * are asserted in `test/irframe.test.ts` so widening either constant has to be a decision rather than
  * a habit.
+ *
+ * **It refuses a real protocol and raising it alone is worse than leaving it**, section 161, measured
+ * rather than argued. `JerroldO1 16 Bit` carries a set bit as a space of **4505**, so every record of
+ * it reads as nothing; at 8000 they read correctly, and 45 records of three arch 8 (Harmony 880)
+ * configs then read as a plausible sixteen bit frame they are not, because their mid frame gap is
+ * **4480**. Twenty five microseconds apart, so no constant separates them. What does separate them is
+ * structural, that a Jerrold record's marks are 495 throughout where those 45 are biphase and take two
+ * mark lengths, and requiring the non carrying half to be constant reads Jerrold and costs the
+ * biconditional in `test/irframe.test.ts` that identifies a two group record by its ambiguity. That
+ * trade is written up in section 161 and deliberately not taken here.
  */
 const GAP_US = 4000;
 /** The other half of a pair being this long also ends the frame, which is how a pulse width protocol

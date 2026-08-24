@@ -19,17 +19,17 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states sixteen entries, and what each is worth is its provenance', () => {
+test('the table states seventeen entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 16);
+  assert.equal(PROTOCOLS.length, 17);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 10, 3]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 11, 3]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -82,7 +82,17 @@ test('the table states sixteen entries, and what each is worth is its provenance
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
   // Every other entry reproduces every code of its own rows to the microsecond.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 15);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 16);
+
+  // **One family carries its bits the other way up, and the table says so by its numbers**, section
+  // 161. `Logitech 24 Bit` sends a set bit as the **shorter** space, so its `zero` is longer than its
+  // `one`, and it is the only entry here where that is true. Nothing in a pulse train says which way
+  // round a protocol counts, so this came from the catalogue stating the complement of what our decoder
+  // read, on 71 of 71 records, and it needs no field of its own: an encoder reading these two numbers
+  // emits the record again.
+  const inverted = PROTOCOLS.filter((one) => one.zero > one.one);
+  assert.deepEqual(inverted.map((one) => [one.family, one.zero, one.one]),
+                   [['Logitech 24 Bit', 1000, 500]]);
 });
 
 test("Sony's frame period is the published 45 ms, which nothing here fitted to", () => {
@@ -157,6 +167,19 @@ test('a stated code becomes a frame, and an unknown family becomes nothing', () 
   assert.equal(toshiba?.length, 66, 'a lead in pair and thirty two bit cells');
   assert.equal(toshiba?.[0]?.us, 8990, 'the lead in their compiler emits');
   assert.equal(pulsesOfStatedCode('Not A Protocol', 8, 0x12n), undefined);
+
+  // **The inverted family emits from the number Logitech states**, which is the point of carrying the
+  // polarity in the table rather than in a caller. A set bit is the short space here, so the first cell
+  // of `0x800001` is 500 and the last is 500 while everything between is 1000.
+  const logitech = pulsesOfStatedCode('Logitech 24 Bit', 24, 0x800001n);
+  assert.equal(logitech?.length, 2 + 2 * 24);
+  assert.deepEqual(logitech?.slice(0, 4).map((one) => one.us), [4000, 4500, 400, 500]);
+  assert.deepEqual(logitech?.slice(-2).map((one) => one.us), [400, 500]);
+  assert.equal(new Set(logitech?.slice(4, -2).filter((_, i) => i % 2 === 1).map((one) => one.us)).size, 1);
+  // And decoding it gives the **complement**, which is not a defect and is worth pinning: our decoder
+  // reads the longer carried half as a set bit always, because a pulse train does not say which way a
+  // protocol counts. The polarity lives in the table, and this is what says so.
+  assert.equal(framesOfPulses(logitech!, 1)[0]?.value, ~0x800001n & 0xFFFFFFn);
 });
 
 test('a family at two carriers is two entries, and asking without one picks the larger', () => {

@@ -1691,6 +1691,21 @@ own compiler produced rather than allowed for in advance, section 160:
   of the first cell, 162 of 162 frames land on numbers Logitech's catalogue states. Only the **opening**
   flat may differ, so a genuinely inconsistent run is still a refusal.
 
+**Which carried length means a set bit is per family and is not derivable from a pulse train**, section
+161. A decoder that knows only durations has to pick a convention, and this one reads the **longer**
+carried half as a set bit. `Logitech 24 Bit` is the other way up, so Logitech's catalogue states the
+complement of what this reads, on 71 of 71 records of the compiled sample. The rhythm table expresses
+that without a field of its own, by stating a `zero` longer than its `one`, and an encoder reading those
+two numbers emits the record again exactly. It is the only inverted entry, which a test asserts by
+looking for the shape rather than for the name.
+
+**A set bit longer than the terminator rule is unreadable, and no constant fixes it**, section 161.
+`irframe.ts` ends a frame at a carried duration above 4000 microseconds, and `JerroldO1 16 Bit` carries a
+set bit at 4505, so every record of it reads as nothing. 45 records of three arch 8 configs carry a mid
+frame gap of 4480, so the two cases are 25 microseconds apart and a threshold cannot separate them. The
+separator is structural, that the non carrying half of a frame is one length and a biphase code's is two,
+and adopting it is a decided trade recorded in that section rather than a change made here.
+
 #### Class 5 shares the header, and behind it spells a code from a dictionary
 
 Arch 9's 200 records all read class 5, and every structural property of the header above holds on
