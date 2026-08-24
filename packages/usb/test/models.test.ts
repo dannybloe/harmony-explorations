@@ -15,7 +15,9 @@ import {
   MODELS_WITHOUT_A_SKIN,
   SKINS_WITHOUT_A_MODEL_RECORD,
   OUT_OF_TRANSPORT_REACH,
+  SKINS_WITH_A_LONG_PRESS,
   architectureHasTouch,
+  hasLongPress,
   modelForSkin,
 } from '../src/index.ts';
 
@@ -174,4 +176,28 @@ test('a model states an architecture this library may not be able to address', (
   for (const architecture of unaddressable) {
     assert.throws(() => validateRegionByte(0x04, architecture));
   }
+});
+
+test('no model this library describes offers a long press, and the list is why', () => {
+  // **The claim FreeHarmony carried in a docstring, moved here so it can fail.** A long press is a
+  // second action on one button chosen by how long it is held, and a binding read out of a config this
+  // project can read never has one. That was written as a sentence in the application's own model file,
+  // which makes it a fact with no test in the repository that owns the capability table.
+  //
+  // Stated as the positive list, from `ProductsManager/GetAllProducts` on 24 August 2026: 37 of 120
+  // product records declare `LongPressAction`, 15 of them with a skin number, and every one of those 15
+  // is outside `MODELS_BY_SKIN`. So the two sets being disjoint is the assertion, and it is what fails if
+  // a model with the feature is ever added to the table with `hasLongPress` left saying no.
+  assert.equal(SKINS_WITH_A_LONG_PRESS.length, 15);
+  const described = Object.keys(MODELS_BY_SKIN).map(Number);
+  const both = described.filter((skin) => SKINS_WITH_A_LONG_PRESS.includes(skin));
+  assert.deepEqual(both, [], 'a described model with a long press needs a field, not a list');
+  for (const skin of described) assert.equal(hasLongPress(skin), false, `skin ${skin}`);
+  // And the positive half, so this cannot pass on a predicate that always says no. Skin 112 is the
+  // record Logitech sold as the Harmony 950 and 104 is the Harmony 350, which is the model where the
+  // feature is load bearing: four device buttons times two presses is its stated maximum of eight.
+  for (const skin of [104, 112]) assert.equal(hasLongPress(skin), true, `skin ${skin}`);
+  // Nor on a skin nobody has: the whole list is skins above every number this table holds.
+  assert.ok(Math.min(...SKINS_WITH_A_LONG_PRESS) > Math.max(...described));
+  assert.equal(hasLongPress(undefined), false);
 });

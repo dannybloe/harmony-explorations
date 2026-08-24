@@ -113,6 +113,53 @@ cut, because a field is either checkable here or it is not.
 | firmware seen | **contradicted as a ceiling, correct as a floor** | the table says 2.5.0 for the 700 where the lab holds 2.8, and 0.2 for the 650 where it holds 0.4. It is right about the three bench remotes: 3.4.0 on the One, 0.2 on the 600, 3.0 on the 525 |
 | favourites, battery, RF channels, sound and picture buttons | **unchecked** | nothing measured here bears on any of them |
 
+## A long press is a capability too, and no model here has one
+
+A **long press** is a second, different action on one button, chosen by how long it is held. It is not a
+repeat, and the two get called the same thing: whether a code repeats while a key is down is a property
+of the code, section 127, and a button with a long press cannot repeat at all, because the firmware has
+to wait to find out which of the two was meant.
+
+It is not in the table above, because it comes from a different source and it does not vary there. From
+`ProductsManager/GetAllProducts` on the live service, read on 24 August 2026: **37 of the 120 product
+records declare `LongPressAction`**, none of them denied, covering 17 distinct product names. Fifteen
+carry a skin number, and **every one of the fifteen is outside `MODELS_BY_SKIN`**:
+
+| skin | the record's name | what Logitech sold it as |
+|---|---|---|
+| 98 | Harmony Smart Control | Harmony Smart Control |
+| 99 | Harmony Touch | Harmony Touch |
+| 100 | Harmony Touch Plus | Harmony Ultimate |
+| 101 | HarmonySmartKeyboard | Harmony Smart Keyboard |
+| 102 | Harmony Ultimate One | Harmony Ultimate One |
+| 104 | Harmony 350 | Harmony 350 |
+| 105, 108 | HarmonyUltimateHome, white | Harmony Ultimate Home |
+| 107, 109 | HarmonyHomeControl, white | Harmony Companion / Home Control |
+| 111 | HarmonyElitePlus | Harmony Elite |
+| 112 | HarmonyElite | **Harmony 950** |
+| 113, 114 | PavarottiHub, PavarottiRemote | Harmony Express |
+| 116 | Orville | Harmony Pro 2400 |
+
+The other 22 rows report skin **0**, being regional duplicates of twelve of those same products, so a
+skin lookup could not answer for them even if this library could reach one. The cut is clean: the
+feature arrives with the Touch generation and no earlier model declares it.
+
+**Same standing as `maxDevices`, which is the vendor's word.** Nothing here confirms it and nothing can,
+since no model on that list is addressable by `packages/usb` at all, `docs/host-client.md`.
+
+**Why it is a list rather than a column.** A `longPress` field on `Model` would be 35 copies of `false`,
+which states a property of this table rather than of the product, and a claim nothing can contradict is
+the failure mode this repository keeps finding in its own prose. `SKINS_WITH_A_LONG_PRESS` and
+`hasLongPress` are the executable form, and `packages/usb/test/models.test.ts` asserts the two sets are
+disjoint, which is what fails if a model with the feature is ever added to the table.
+
+**It was written down in FreeHarmony first**, in a docstring on the field that would hold one, and moved
+here on 24 August 2026 for the ordinary reason: a per model capability stated in the application is a
+fact with no test in the repository that owns the capability table. On the Harmony 350 the feature is
+load bearing rather than a nicety, which is the part worth keeping: four device buttons times two
+presses is exactly its stated maximum of eight devices, where the 300 has four buttons, no long press
+and a maximum of four.
+
 ## What this is for
 
 Three things a user interface cannot do without it.

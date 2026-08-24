@@ -239,6 +239,48 @@ export const SKINS_WITHOUT_A_MODEL_RECORD: Readonly<Record<number, string>> = {
  */
 export const OUT_OF_TRANSPORT_REACH: readonly string[] = ['900', '1000', '1000i', '1100', '1100i'];
 
+/**
+ * The skins whose product record declares a **long press**, from Logitech's own live service.
+ *
+ * A long press is a second, different action on one button, chosen by how long it is held. It is not a
+ * repeat: whether a code repeats while a key is down is a property of the code, section 127, and a
+ * button with a long press cannot repeat at all, because the firmware has to wait to find out which of
+ * the two was meant.
+ *
+ * **Stated as the positive list on purpose.** Every skin in `MODELS_BY_SKIN` is absent from it, so a
+ * `longPress` field on `Model` would be 35 copies of `false` and would be making a claim about this
+ * table rather than about the product. `hasLongPress` answers the question a caller actually asks, and
+ * `test/models.test.ts` asserts the two sets are disjoint, which is what would fail if a model with the
+ * feature were ever added here.
+ *
+ * The measurement, from `ProductsManager/GetAllProducts` on 24 August 2026: 37 of the 120 product
+ * records declare `LongPressAction`, none of them denied, covering 17 distinct product names. 15 carry a
+ * skin number and are below; the other 22 rows report skin **0**, being regional duplicates of twelve of
+ * those same products, so a skin lookup could not answer for them even if they were reachable. The
+ * feature arrives with the Touch generation and no earlier model has it, which is what makes this list a
+ * clean cut rather than a scattering.
+ *
+ * **It is the vendor's word and nothing here confirms it**, the same standing as `maxDevices`. No model
+ * on this list is addressable by this library at all, so there is no route to checking it: `docs/host-client.md`.
+ *
+ * Two names in it are worth spelling out, because the marketing name and the record's name differ and
+ * a reader will look for the marketing one. Skin 112 is `HarmonyElite`, which Logitech sold as the
+ * **Harmony 950**; skin 100 is `Harmony Touch Plus`, sold as the **Harmony Ultimate**.
+ */
+export const SKINS_WITH_A_LONG_PRESS: readonly number[] =
+  [98, 99, 100, 101, 102, 104, 105, 107, 108, 109, 111, 112, 113, 114, 116];
+
+/**
+ * Whether the model a skin names offers a long press as a separate action.
+ *
+ * False for every skin this library can address, which is the answer FreeHarmony needs: a button read
+ * out of a config it can read never carries one, so the field on a binding is always absent after an
+ * import.
+ */
+export function hasLongPress(skin: number | undefined): boolean {
+  return skin !== undefined && SKINS_WITH_A_LONG_PRESS.includes(skin);
+}
+
 /** The model a skin names, or undefined when the table does not have it. */
 export function modelForSkin(skin: number | undefined): Model | undefined {
   return skin === undefined ? undefined : MODELS_BY_SKIN[skin];
