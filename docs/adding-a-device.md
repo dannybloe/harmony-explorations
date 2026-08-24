@@ -3,13 +3,23 @@
 **The goal, in one sentence.** Pick an appliance out of Logitech's catalogue, put it on a Harmony One,
 and press a button on the remote and have the appliance respond.
 
-**The button is one the remote draws on its screen, and that is a decision rather than a detail.** On a
-Harmony One a screen button's position is **stated** by the config, base slot 17's rectangles picked out
-by a mode page's own byte, section 125, so a target we author is a target the firmware will hit. A
-physical key is not: 32 of the One's 44 keys have a name, only through the account that generated the
-calibration configs, section 133, and nothing here can name the rest. So the appliance gets a device page
-with its commands drawn on it, which is also what device mode is mostly used for, and binding a physical
-key stays out of this goal.
+**The button is one the remote draws on its screen**, and the reason is convenience rather than
+necessity. A screen button's position is **stated** by the config, base slot 17's rectangles picked out
+by a mode page's own byte, section 125, so a target we author is a target the firmware will hit, and a
+device page full of commands is what device mode is mostly used for anyway.
+
+**A physical key is available too, and an earlier version of this paragraph said otherwise.** It claimed
+nothing here can name the keypad, which is wrong in a way worth recording: `reference/button-maps.md`
+names 32 of the Harmony One's 44 keys, `Guide` among them at scan 18, so binding one of those is a
+lookup and not a guess. What is true is narrower. A key is named by joining a config's own bindings
+against the button map of the account that compiled it, section 133, so a key **no config on that
+account has ever bound** has no name, which is the other 12. Those are learnable by exactly the route
+that named the 32: bind them in Logitech's client, compile, and read the pair back. Four of the 44 stay
+genuinely ambiguous, two up keys and two down keys carrying one command each, and separating them needs
+distinct commands deliberately assigned.
+
+So the keypad is a second route rather than a closed door, and this goal takes the screen because it
+needs no lookup at all.
 
 **It has two finish lines and only the first one is this checklist's.** Phases 0 to 6 end in a config we
 built ourselves, carrying a device that was not in it before, which every reader here reports correctly
@@ -228,7 +238,8 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       would pass every reader test in phase 5's check. That page needs the label drawn, a hit rectangle
       and a binding that enters the new mode
 - [ ] base slot 8: the key bindings for that page
-- [ ] base slot 9: **not touched.** That is the keypad, and this goal binds no physical key
+- [ ] base slot 9: the keypad, **optional and only for a named scan.** Not needed for this goal, and a
+      scan `reference/button-maps.md` does not name must not be bound on a guess
 - [ ] **check**: take a real config, add a television from the catalogue, and our own readers report one
       more device with the right name, its commands decode back to the exact numbers the catalogue states,
       every screen still renders with nothing unresolved, the byte accounting is still 100% with no
