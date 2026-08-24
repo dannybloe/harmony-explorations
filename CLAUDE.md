@@ -819,7 +819,7 @@ docs/growing-a-config.md        what a length change would move, counted: the st
                                 edit.ts's refusal to change a length, not a plan to lift it
 docs/adding-a-device.md         THE checklist for one goal: pick an appliance out of Logitech's
                                 catalogue, put it on a Harmony One, press the button and have the
-                                appliance respond. Eight phases, each ending in a check that can
+                                appliance respond. Nine phases, each ending in a check that can
                                 fail, written on 24 August 2026 because every part of it had been
                                 started and none finished. A session working towards that goal
                                 starts at its first unticked box and ticks one only when its check

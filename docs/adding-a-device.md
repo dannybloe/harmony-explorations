@@ -28,10 +28,10 @@ client is not possible.
 So the keypad is a real second route for 32 keys, and this goal takes the screen because it needs no
 lookup at all.
 
-**It has two finish lines and only the first one is this checklist's.** Phases 0 to 6 end in a config we
+**It has two finish lines and only the first one is this checklist's.** Phases 1 to 7 end in a config we
 built ourselves, carrying a device that was not in it before, which every reader here reports correctly
 and which Logitech's own compiler agrees with. Nothing is written to any remote to get there and no rail
-moves. Phases 7 and 8 put it on the spare Harmony One and press the button, and they are the **first write
+moves. Phases 8 and 9 put it on the spare Harmony One and press the button, and they are the **first write
 this project would ever perform**, so they are a decision of their own and are gated as such below. Work
 the first part without waiting on the second.
 
@@ -49,20 +49,20 @@ starts at the first unticked box.
 
 | phase | what it gets us | status |
 |---|---|---|
-| 0 | the catalogue reads whole, in the application too | not started |
-| 1 | every family in the catalogue has a measured rhythm | not started |
-| 2 | a whole command, not just its frame | not started |
-| 3 | the data model describes a device that does not exist yet | not started |
-| 4 | a config can change length without breaking | not started |
-| 5 | a device composed into a config, read back by our own readers | not started |
-| 6 | Logitech compiles the same addition and the two agree | not started |
+| 1 | the catalogue reads whole, in the application too | not started |
+| 2 | every family in the catalogue has a measured rhythm | not started |
+| 3 | a whole command, not just its frame | not started |
+| 4 | the data model describes a device that does not exist yet | not started |
+| 5 | a config can change length without breaking | not started |
+| 6 | a device composed into a config, read back by our own readers | not started |
+| 7 | Logitech compiles the same addition and the two agree | not started |
 
 That is the checklist. Below it, behind a gate:
 
 | phase | what it gets us | status |
 |---|---|---|
-| 7 | the write path, on the spare Harmony One | needs a decision first |
-| 8 | the appliance responds | needs a decision first |
+| 8 | the write path, on the spare Harmony One | needs a decision first |
+| 9 | the appliance responds | needs a decision first |
 
 ## What this deliberately does not need
 
@@ -71,35 +71,35 @@ Named so that nobody adds them to the critical path.
 * **Learning a code from an old remote.** That is M5 and a second route to the same place. The catalogue
   route is enough for this goal, and capture is already read, section 98.
 * **An encoder for pictures and glyph bodies.** A device page reuses glyphs the config already has,
-  which is why phase 5 has a text item rather than a font item.
+  which is why phase 6 has a text item rather than a font item.
 * **Matching Logitech's byte layout.** Two compiles of one unchanged account differ in 67% of their
-  bytes, section 154, so equality with their generator is not achievable and not wanted. Phase 5
+  bytes, section 154, so equality with their generator is not achievable and not wanted. Phase 6
   compares inventories.
 * **Any remote other than the Harmony One.** It is the only architecture with a write target, and arch
-  14 (Harmony 600) stays read only until a second one exists. Phases 0 to 6 are architecture neutral and
+  14 (Harmony 600) stays read only until a second one exists. Phases 1 to 7 are architecture neutral and
   7 and 8 are the One alone.
-* **The application's interface.** Phase 0 touches FreeHarmony's main process and no screen. The rest of
+* **The application's interface.** Phase 1 touches FreeHarmony's main process and no screen. The rest of
   this repository owes FreeHarmony an API, not a page.
 * **An activity.** A device added in device mode is reachable without one, `docs/how-a-harmony-works.md`,
   and an activity would add a second keypad map to author for no gain here. Adding a device **to** an
   existing activity is the natural next goal and is not this one.
 * **Logitech's device search in the application.** It exists already, `src/main/logitech/client.ts` in
-  FreeHarmony, which is why phase 0 is a parser swap and not a new route.
+  FreeHarmony, which is why phase 1 is a parser swap and not a new route.
 
 ## Assumptions, which are decisions if any of them is wrong
 
 1. **The checklist ends short of hardware, and that is deliberate.** It used to say "the plan ends on
    hardware", which quietly put lifting the write flag on an irreplaceable remote inside a list of boxes
-   to tick. Phases 0 to 6 are checkable with nothing plugged in, so they get worked to the end first, and
+   to tick. Phases 1 to 7 are checkable with nothing plugged in, so they get worked to the end first, and
    the write is asked for separately when there is something worth writing. Shipping a writer to users is
    a third thing again, FreeHarmony's step 4, and version 1 is read only by decision 8.
 2. **Logitech's service is a measurement instrument, not a runtime dependency.** Asking their compiler
    for a family we hold no sample of is how the current eighteen were measured, sections 160 to 163, and
    it is how the rest get measured. Nothing built here calls it at run time.
-3. **The first device added is one whose family we already hold**, so that phase 5 is not blocked on
-   phase 1 finishing. A television of a family in the table, on the spare Harmony One.
+3. **The first device added is one whose family we already hold**, so that phase 6 is not blocked on
+   phase 2 finishing. A television of a family in the table, on the spare Harmony One.
 
-## Phase 0: the catalogue reads whole, in the application too
+## Phase 1: the catalogue reads whole, in the application too
 
 FreeHarmony carries its own parser for Logitech's code notation, written before section 159 read that
 notation as a grammar. Measured against the 5219 commands in the wide census: it reads **1221**, and on
@@ -117,7 +117,7 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
 - [ ] **check**: the number of commands FreeHarmony parses out of the recorded census is 2852 of 2921
       distinct codes, and the one family refused is `Galaxis 16 Bit Quad Toggle` by name
 
-## Phase 1: every family in the catalogue has a measured rhythm
+## Phase 2: every family in the catalogue has a measured rhythm
 
 The table holds 15 of the catalogue's 33 families, which is 4193 of 5219 commands and 70 of 102
 appliances complete. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -152,7 +152,7 @@ durations in the result are the ones their generator emits.
       every entry exact on its own records, and the covered share is asserted in a test against the
       recorded census rather than printed
 
-## Phase 2: a whole command, not just its frame
+## Phase 3: a whole command, not just its frame
 
 `pulsesOfFrame` stops at the frame, correctly, because nothing after it follows from the bits. A stored
 command is the frame several times over with a gap between copies and a closing silence. Measured on 24
@@ -173,7 +173,7 @@ one tail shape across every record. What varies is the closing silence.
       byte for byte, and the families where it does not are named with their counts
 - [ ] **the negative**: a family with no measured tail is refused, and the test says so
 
-## Phase 3: the data model carries what a new device needs
+## Phase 4: the data model carries what a new device needs
 
 The application's model was shaped for what a config **read** so far, and this goal asks it to describe a
 device that does not exist yet. Its command already holds a family, a width, a frame, a carrier and the
@@ -181,7 +181,7 @@ three duration blocks, `InfraredSignal` in FreeHarmony's `src/shared/library.ts`
 has somewhere to land. What is not established is everything a config needs and the model has no field
 for.
 
-- [ ] **the audit first, and it is the item that cannot be skipped**: walk every byte phase 5 has to
+- [ ] **the audit first, and it is the item that cannot be skipped**: walk every byte phase 6 has to
       write and check it against the model, naming each gap. Not a redesign, a list
 - [ ] decide whether a definition **stores** its pulses or **derives** them from the family plus the
       number. Deriving keeps one source and makes a definition portable; storing survives the rhythm
@@ -200,7 +200,7 @@ for.
       same pulses on the way out as it did on the way in, and a definition with no family and no pulses
       is refused rather than written as a device that sends nothing
 
-## Phase 4: a config can change length without breaking
+## Phase 5: a config can change length without breaking
 
 The wall. A Harmony One config states **12045** addresses inside itself and another **5884** positions are
 implied by what precedes them, `make growth`. Adding anything moves everything above it.
@@ -224,9 +224,9 @@ lifts that refusal.
 - [ ] `edit.ts` keeps refusing a length change by default. The relocation pass is a separate entry point,
       so a same length edit cannot accidentally take this road
 
-## Phase 5: a device composed into a config
+## Phase 6: a device composed into a config
 
-A device is not a list of codes. Seven pieces, and each one is an insertion that phase 4 has to carry.
+A device is not a list of codes. Seven pieces, and each one is an insertion that phase 5 has to carry.
 
 - [ ] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
       `irBuildBlock`, which exist and are tested
@@ -242,7 +242,7 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       inferred on this remote, section 125
 - [ ] **the device list page gains a row, and nothing else navigates to a new page.** The mode that lists
       the equipment is what device mode opens on, so a device page nobody can reach is the failure that
-      would pass every reader test in phase 5's check. That page needs the label drawn, a hit rectangle
+      would pass every reader test in phase 6's check. That page needs the label drawn, a hit rectangle
       and a binding that enters the new mode
 - [ ] base slot 8: the key bindings for that page
 - [ ] base slot 9: the keypad, **optional and only for a named scan.** Not needed for this goal, and a
@@ -255,11 +255,11 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       new page's bindings reach the new commands, walked by the same four hop chain that names an
       activity, section 120. A page that renders and cannot be reached passes everything above
 
-## Phase 6: Logitech compiles the same addition and the two agree
+## Phase 7: Logitech compiles the same addition and the two agree
 
 The known answer check, and the only one that can catch a config that is valid and wrong.
 
-- [ ] compile two configurations on the same account, differing by exactly the device phase 5 adds
+- [ ] compile two configurations on the same account, differing by exactly the device phase 6 adds
 - [ ] compare **inventories, not bytes**: device count and names, command numbers per device, activity
       structure, and what each key sends
 - [ ] **check**: the difference between their addition and ours is empty, or every difference in it is
@@ -267,7 +267,7 @@ The known answer check, and the only one that can catch a config that is valid a
 
 ## The gate between the two parts
 
-**Why the write cannot simply be dropped.** Nothing in phases 0 to 6 can prove a config **works**. The
+**Why the write cannot simply be dropped.** Nothing in phases 1 to 7 can prove a config **works**. The
 strongest cautionary case this project holds is section 117: somebody cloned a device into a config, and
 the result passed both checksums, rendered every screen pixel identical, closed its counts and was
 accepted by this parser, while every infrared command in it addressed the wrong place. Agreement with
@@ -282,10 +282,10 @@ the unit, and restoring from a dump has never been tried, here or anywhere in th
 on the Harmony 525. And it is a milestone with its own place in the plan, M4, which a checklist item is
 not allowed to consume on its way past.
 
-**So the gate is one sentence.** Phase 7 starts when Danny says so, with phase 6 ticked and the
-restore-from-dump route rehearsed first, and not because phase 6 finished.
+**So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the
+restore-from-dump route rehearsed first, and not because phase 7 finished.
 
-## Phase 7: the write path, on the spare Harmony One
+## Phase 8: the write path, on the spare Harmony One
 
 M4, and behind the gate above. The rails are written and off, `packages/usb/src/rails.ts`.
 
@@ -308,9 +308,9 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       we sent
 - [ ] the flag stays off for anything that is not this bench script
 
-## Phase 8: the appliance responds
+## Phase 9: the appliance responds
 
-- [ ] write the config phase 5 produced to the spare Harmony One
+- [ ] write the config phase 6 produced to the spare Harmony One
 - [ ] press the device's button at the appliance and watch it respond
 - [ ] **check**: the appliance responds, the remote still boots, its clock is right, its other activities
       still work, and the config reads back byte identical
@@ -318,15 +318,15 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
 
 ## The order, and what could be done in parallel
 
-Phase 0 is independent of everything and is half a day. Phase 1 needs one bench session with the network
-and then a measurement pass. Phase 2 depends on 1 only for the families 1 adds, so it can start on the
-families already in the table. Phase 3's audit can be done today and its decisions want phase 2's answer.
-Phase 4 depends on nothing and is the longest; it is the one to start early and it is where the risk is.
-Phase 5 needs 2, 3 and 4. Phase 6 needs 5, and it is where the checklist ends. Phases 7 and 8 need
-hardware, phase 5, and the gate.
+Phase 1 is independent of everything and is half a day. Phase 2 needs one bench session with the network
+and then a measurement pass. Phase 3 depends on phase 2 only for the families phase 2 adds, so it can
+start on the families already in the table. Phase 4's audit can be done today and its decisions want
+phase 3's answer. Phase 5 depends on nothing and is the longest; it is the one to start early and it is
+where the risk is. Phase 6 needs phases 3, 4 and 5. Phase 7 needs phase 6, and it is where the checklist
+ends. Phases 8 and 9 need hardware, phase 6, and the gate.
 
-**The one thing that would change this plan**: if phase 4's check cannot be made to pass on all nineteen
+**The one thing that would change this plan**: if phase 5's check cannot be made to pass on all nineteen
 containers, then adding a device to an existing config is out, and the fallback is a config **generated**
-whole rather than edited, which is a different project and much larger. That is why phase 4's check is
+whole rather than edited, which is a different project and much larger. That is why phase 5's check is
 stated as an equality over every reader rather than as a round trip: a round trip would pass on a
 relocation that moved a pointer nobody reads.
