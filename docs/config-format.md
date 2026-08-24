@@ -1699,6 +1699,34 @@ that without a field of its own, by stating a `zero` longer than its `one`, and 
 two numbers emits the record again exactly. It is the only inverted entry, which a test asserts by
 looking for the shape rather than for the name.
 
+#### A biphase code has one duration, and the bit is which half of the cell carries it
+
+Section 162. Three families in the corpus and the compiled sample state a bit by **position** rather than
+by length: there is one half cell, and a set bit is the carrier in one half and silence in the other.
+None of the five durations above applies, so a row of the rhythm table has one shape or the other and
+never both.
+
+| the number | what it is |
+|---|---|
+| mark | one half cell of carrier |
+| space | one half cell of silence |
+| first mark | a different opening mark where the family sends one |
+| lead in | every interval before the first bit cell, **as a record stores them** |
+| polarity | whether a mark in the first half means a set bit |
+
+The lead in is stored intervals rather than a count of cells because that is what makes an emitted frame
+byte identical to a recorded one: RC-6's preamble holds a 2632 and a 1323 that are six and three cells
+long, and Logitech's generator writes 443 and 439 in two places where the cell is 441.
+
+Three unknowns are not derivable from the durations and are settled against Logitech's catalogue instead:
+where the payload starts, which half means a set bit, and the frame's width. What the train does decide
+is the **parity** of the alignment, so `biphaseFrames` returns one reading per parity and a caller trims
+to the width it is looking for. Measured this way, one tuple accounts for every record of each family:
+105 of 105 `Magnavox 13 Bit`, 65 of 65 `Microsoft 30 Bit`, 56 of 56 `Kreatel IP 22 Bit`, and all 226
+rebuild their own pulses byte for byte. `Microsoft 30 Bit` reads the polarity the other way up, which is
+RC-6's own convention, and it is confirmed on 48 further records in four contributed configs where
+Logitech's analyser had already stated the number.
+
 **A set bit longer than the terminator rule is unreadable, and no constant fixes it**, section 161.
 `irframe.ts` ends a frame at a carried duration above 4000 microseconds, and `JerroldO1 16 Bit` carries a
 set bit at 4505, so every record of it reads as nothing. 45 records of three arch 8 configs carry a mid

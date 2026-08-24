@@ -16,7 +16,8 @@
  * between the copies, and none of that follows from the bits, 151 distinct shapes across the corpus. So
  * this returns the frame and a caller that wants a whole block still has to decide the rest.
  */
-import { pulsesOfFrame, type FrameTimings, type Pulse } from './irframe.ts';
+import { pulsesOfBiphaseFrame, pulsesOfFrame, type BiphaseTimings, type FrameTimings, type Pulse }
+  from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
 
 /**
@@ -176,7 +177,14 @@ export function statedProtocol(family: string, periodNs?: number): StatedProtoco
  * protocol it is the gap that pads the frame out to a constant total and therefore depends on how many
  * one bits the code carries. Tabling it would make one protocol look like one protocol per code.
  */
-export function timingsOf(entry: StatedProtocol): FrameTimings {
+export function timingsOf(entry: StatedProtocol): FrameTimings | undefined {
+  // A biphase family has none of these fields, section 162, so there is nothing to build and the
+  // caller wants `biphaseOf` instead. Returning `undefined` rather than throwing keeps the two shapes
+  // symmetrical: each function answers for its own kind of family and nothing for the other.
+  if (entry.header === undefined || entry.flat === undefined || entry.zero === undefined
+      || entry.one === undefined || entry.carries === undefined) {
+    return undefined;
+  }
   return {
     header: [entry.header[0], entry.header[1]],
     flat: entry.flat,
@@ -194,6 +202,7 @@ export function closingSpace(
 ): number | undefined {
   if (entry.framePeriod === undefined) return undefined;
   const t = timingsOf(entry);
+  if (t === undefined) return undefined;
   let before = t.header[0] + t.header[1];
   for (let i = bits - 1; i >= 0; i -= 1) {
     before += (value >> BigInt(i)) & 1n ? t.one : t.zero;
@@ -216,7 +225,20 @@ export function pulsesOfStatedCode(
 ): Pulse[] | undefined {
   const entry = statedProtocol(family, periodNs);
   if (entry === undefined) return undefined;
+  // **A biphase family is emitted by its own encoder**, section 162: one half cell, a fixed prelude and
+  // which half of the cell means a set bit, with none of the five durations below.
+  if (entry.biphase !== undefined) {
+    const b: BiphaseTimings = {
+      mark: entry.biphase.mark,
+      space: entry.biphase.space,
+      ...(entry.biphase.firstMark === undefined ? {} : { firstMark: entry.biphase.firstMark }),
+      lead: entry.biphase.lead.map((one) => ({ mark: one.mark, us: one.us })),
+      setIsMark: entry.biphase.setIsMark,
+    };
+    return pulsesOfBiphaseFrame(b, bits, value);
+  }
   const base = timingsOf(entry);
+  if (base === undefined) return undefined;
   const closing = closingSpace(entry, bits, value);
   const timings: FrameTimings = closing === undefined ? base : { ...base, closing };
   if (timings.carries === 'mark' && timings.closing === undefined) return undefined;

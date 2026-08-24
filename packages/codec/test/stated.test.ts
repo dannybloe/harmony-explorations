@@ -19,17 +19,17 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states seventeen entries, and what each is worth is its provenance', () => {
+test('the table states twenty entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 17);
+  assert.equal(PROTOCOLS.length, 20);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 11, 3]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 13, 4]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -38,7 +38,7 @@ test('the table states seventeen entries, and what each is worth is its provenan
   // The three confirmed twice over, named rather than counted, since agreement between two independent
   // routes is the strongest thing this table has and losing one silently is the risk.
   assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
-                   ['Sony 12 Bit', 'Pioneer 32 Bit', 'Sony 15 Bit']);
+                   ['Microsoft 30 Bit', 'Sony 12 Bit', 'Pioneer 32 Bit', 'Sony 15 Bit']);
   // And they agree **exactly**, not within a band, which is what makes it a confirmation.
   for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
     assert.equal(one.spread, 0, `${one.family} disagrees between the two routes`);
@@ -82,7 +82,7 @@ test('the table states seventeen entries, and what each is worth is its provenan
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
   // Every other entry reproduces every code of its own rows to the microsecond.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 16);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 19);
 
   // **One family carries its bits the other way up, and the table says so by its numbers**, section
   // 161. `Logitech 24 Bit` sends a set bit as the **shorter** space, so its `zero` is longer than its
@@ -90,7 +90,7 @@ test('the table states seventeen entries, and what each is worth is its provenan
   // round a protocol counts, so this came from the catalogue stating the complement of what our decoder
   // read, on 71 of 71 records, and it needs no field of its own: an encoder reading these two numbers
   // emits the record again.
-  const inverted = PROTOCOLS.filter((one) => one.zero > one.one);
+  const inverted = PROTOCOLS.filter((one) => (one.zero ?? 0) > (one.one ?? 0));
   assert.deepEqual(inverted.map((one) => [one.family, one.zero, one.one]),
                    [['Logitech 24 Bit', 1000, 500]]);
 });
@@ -114,7 +114,7 @@ test("Sony's frame period is the published 45 ms, which nothing here fitted to",
   const zeroes = closingSpace(sony, 12, 0x000n);
   const ones = closingSpace(sony, 12, 0xFFFn);
   assert.ok(zeroes !== undefined && ones !== undefined);
-  assert.equal(zeroes - ones, 12 * (sony.one - sony.zero),
+  assert.equal(zeroes - ones, 12 * (sony.one! - sony.zero!),
                'the gap gives back exactly what the one bits took');
 });
 
@@ -160,7 +160,19 @@ test('a stated code becomes a frame, and an unknown family becomes nothing', () 
   // `Sharp 15 Bit`, without their `2`, is a different catalogue family and no sample here holds one, so
   // it answers nothing rather than borrowing its sibling's rhythm.
   assert.equal(pulsesOfStatedCode('Sharp 15 Bit', 15, 0x1BACn), undefined);
-  assert.equal(pulsesOfStatedCode('Microsoft 30 Bit', 30, 0x3FF07BA1n), undefined);
+  // **`Microsoft 30 Bit` answers now**, section 162, and it is the entry this refusal used to name: it
+  // is biphase, so a decoder that knows only mark and space lengths cannot produce its number and no
+  // durations could be derived for it. Reading it as half cells settles all three of its unknowns
+  // against Logitech's own catalogue, and the frame is 13 lead in intervals plus one word per half cell.
+  const rc6 = pulsesOfStatedCode('Microsoft 30 Bit', 30, 0x3FF07BA1n);
+  assert.equal(rc6?.length, 13 + 2 * 30);
+  assert.deepEqual(rc6?.slice(0, 2).map((one) => one.us), [2632, 900], 'the RC-6 lead in');
+  // A set bit is the **space** first on this family and the mark first on the other two, which is a
+  // protocol fact rather than a reading. This value's top bit is set, so its first cell opens on
+  // silence, and that is the whole of what "the other way up" means.
+  assert.equal(rc6?.[13]?.mark, false);
+  assert.equal(rc6?.[14]?.mark, true);
+  assert.equal(pulsesOfStatedCode('Not In Their Catalogue 9 Bit', 9, 0x1n), undefined);
   // The families the compiled sample did settle do answer, and the largest of them is the one worth
   // asserting: Toshiba 32 Bit is over a third of their whole catalogue.
   const toshiba = pulsesOfStatedCode('Toshiba 32 Bit', 32, 0x20DF08F7n);
@@ -193,8 +205,8 @@ test('a family at two carriers is two entries, and asking without one picks the 
   assert.notDeepEqual(timingsOf(sharp[0]!), timingsOf(sharp[1]!));
   // Asked with a carrier it is exact; asked without, it is whichever was measured over more codes, and
   // that is a documented best guess rather than an answer.
-  assert.equal(statedProtocol('SharpO1 48 Bit', 27472)?.header[0], 3480);
-  assert.equal(statedProtocol('SharpO1 48 Bit', 26315)?.header[0], 3364);
+  assert.equal(statedProtocol('SharpO1 48 Bit', 27472)?.header?.[0], 3480);
+  assert.equal(statedProtocol('SharpO1 48 Bit', 26315)?.header?.[0], 3364);
   assert.equal(statedProtocol('SharpO1 48 Bit')?.codes, 33);
   assert.equal(statedProtocol('SharpO1 48 Bit', 12345), undefined);
 });

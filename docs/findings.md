@@ -22287,3 +22287,89 @@ section 153 already says why; `Magnavox 13 Bit`, whose every duration is 880 or 
 `Kreatel IP 22 Bit` at **56.3 kHz** with every duration 320 or 325. All three are biphase, so the whole
 of what is left in this sample is one known gap plus the Jerrold case above. The 56.3 kHz is worth
 noticing on its own: every other carrier measured anywhere here is between 36 and 40 kHz.
+
+## 162. Biphase codes read, and the reading is confirmed on somebody else's configs
+
+Section 153 recorded 148 codes in the corpus that Logitech's own service reads and this project cannot,
+and section 161 added three families of the compiled sample to that list. They are all the same kind of
+code, and the reason it was out of reach is that the decoder here answers a different question.
+
+**What a biphase code is, in one sentence.** Every other family in this corpus states a bit by the
+**length** of one half of a pair: a constant mark and then a space that is short for a clear bit and long
+for a set one. A biphase code has only one length, the half cell, and a bit is **which half of the cell
+the carrier is on**. So there is nothing to split, which is exactly why `irFrame` refuses these records:
+under both of its conventions every duration it measures is the same length, and it reports two readings
+rather than none, which section 134 turned into the corpus's only test for the family.
+
+### Three unknowns, and the catalogue settles all three
+
+A biphase reader has to decide where the payload starts, which half means a set bit, and how wide the
+frame is. None of the three is in the durations:
+
+* **Where it starts.** The lead in differs per family and part of it is not transmitted at all: an RC-5
+  frame's first start bit begins with a space, so a capture opens on a lone half cell with nothing before
+  it. Taking the longest run of valid cells was tried and is wrong: it gets `Magnavox 13 Bit` right, is
+  one bit out on `Kreatel IP 22 Bit` and two out on RC-6.
+* **Which half.** The complement reading is equally self consistent, which is the same problem section
+  161 hit on the pulse distance side, where `Logitech 24 Bit` turned out to state the complement of what
+  this file reads.
+* **How wide.** The run of valid cells can be longer than the family's frame, because lead in cells are
+  valid cells too.
+
+What the train **does** decide is the **parity** of the alignment, and within one parity the shorter
+readings are the longest one with leading bits dropped. So two readings cover every alignment,
+`biphaseFrames` returns one per parity, and the caller trims to the width it is looking for and tries
+both polarities. That is the same shape as `irFrames` returning both carrier conventions: the reading
+that survives is chosen by evidence from outside the file.
+
+Against the fifteen appliances of the compiled sample, exactly one tuple accounts for every record of
+each family, with no record matching two:
+
+| family | carrier | half cell | lead in | a set bit is | width | records |
+|---|---|---|---|---|---|---|
+| Magnavox 13 Bit | 38 kHz | 880 mark, 900 space | one 880 mark | mark first | 13 | 105 of 105 |
+| Microsoft 30 Bit | 36.2 kHz | 441 mark, 446 space | thirteen intervals of RC-6 preamble | space first | 30 | 65 of 65 |
+| Kreatel IP 22 Bit | 56.3 kHz | 325 mark, 320 space | 320 mark, 320 space | mark first | 22 | 56 of 56 |
+
+`Microsoft 30 Bit` being the other way up is not an anomaly to explain away: RC-6 inverts the convention
+relative to RC-5, and the measurement says so without being told.
+
+### The confirmation is in four configs from another household
+
+The tuple above was derived from a configuration Logitech's compiler produced for appliances chosen here.
+Their analyser had already been asked, weeks earlier, what 48 records of four **contributed** arch 8
+(Harmony 880) configs are, and it answered `Microsoft 30 Bit` with a number for each. Read with the tuple
+derived from the compiled sample, **48 of 48** land on those numbers, at the same alignment, the same
+polarity and the same 439 half cell.
+
+So `Microsoft 30 Bit` is the fourth entry in the rhythm table with `source: 'both'`, and it is the
+strongest of the four: 113 codes over two households and two routes, one set of durations, and every one
+of them reproduced exactly. `packages/codec/test/irframe.test.ts` pins one of the 48 by number, with the
+analyser's own answer quoted beside it.
+
+### They can be written, not only read
+
+The three families reproduce their own records **byte for byte**, all 226 of them, which is the same
+standard the pulse distance families are held to. That needed one thing that is not obvious: a family's
+lead in is carried as the intervals a record stores rather than as a count of half cells, because RC-6's
+preamble holds a 2632 and a 1323 that are six and three cells long and their generator writes 443 and 439
+in two places where the cell is 441. Idealised multiples would be close and not identical.
+
+`StatedProtocol` therefore has two shapes, one row being one or the other: five durations and a carrier
+convention, or a half cell, a lead in and a polarity. `pulsesOfStatedCode` branches on it, so a caller
+asking for a code by family and number gets pulses either way and does not have to know which kind of
+protocol it asked about.
+
+### What this leaves
+
+The table is twenty entries and the compiled sample's remainder is 49 records, which is the
+`JerroldO1 16 Bit` case section 161 measured and deliberately did not take. The corpus's own remainder,
+records where their analyser named a family and no reading of ours carries their number, is **7**, down
+from 55.
+
+Two things worth stating plainly. **Section 153's decided change is still not made**: this reader merges
+nothing, because a config stores each half cell as its own word and that is what makes the alignment
+legible in the first place. And the biconditional that identifies a biphase record by its **ambiguity**
+under the pulse distance decoder, section 134, is now doing two jobs: it is the detector, and it is the
+thing that would break if the terminator rule were relaxed, section 161. Reading these codes does not
+change that trade, because it needs no change to `decode` at all.

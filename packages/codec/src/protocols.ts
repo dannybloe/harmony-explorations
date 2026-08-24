@@ -39,9 +39,15 @@ export interface StatedProtocol {
   readonly family: string;
   /** The carrier as a record states it, a period in nanoseconds. 38 kHz is 26315. */
   readonly periodNs: number;
-  /** `[0, 0]` where the protocol has no lead in and opens on its first bit cell. */
-  readonly header: readonly [number, number];
-  readonly flat: number;
+  /**
+   * `[0, 0]` where the protocol has no lead in and opens on its first bit cell.
+   *
+   * **Absent, with `flat`, `zero`, `one` and `carries`, on a biphase family**, which has none of
+   * them: see `biphase` below. A row has one shape or the other and never both, and
+   * `test/stated.test.ts` asserts that.
+   */
+  readonly header?: readonly [number, number];
+  readonly flat?: number;
   /**
    * The opening burst, where the protocol makes it longer than the rest.
    *
@@ -49,11 +55,31 @@ export interface StatedProtocol {
    * without it a rebuilt code differs from what their compiler emits on its very first pulse.
    */
   readonly firstMark?: number;
-  readonly zero: number;
-  readonly one: number;
-  readonly carries: FrameCarrier;
+  readonly zero?: number;
+  readonly one?: number;
+  readonly carries?: FrameCarrier;
   /** The constant total a pulse width frame is padded out to, absent on a pulse distance one. */
   readonly framePeriod?: number;
+  /**
+   * A biphase family, where the bit is in **which half** of one cell the carrier is on.
+   *
+   * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
+   * fields above apply: what there is instead is one half cell, a fixed prelude the family always sends,
+   * and which half of the cell means a set bit. Three families here are of this kind and each reproduces
+   * every one of its records byte for byte.
+   */
+  readonly biphase?: {
+    /** One half cell of carrier. */
+    readonly mark: number;
+    /** One half cell of silence. */
+    readonly space: number;
+    /** A different opening mark where the family sends one. */
+    readonly firstMark?: number;
+    /** Everything before the first bit cell, exactly as a record stores it. */
+    readonly lead: readonly { readonly mark: boolean; readonly us: number }[];
+    /** Whether a mark in the **first** half of a cell means a set bit. RC-6 is the other way up. */
+    readonly setIsMark: boolean;
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -97,10 +123,13 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 189, exact: 189, spread: 0, source: 'compiled' },
   { family: 'Sharp 15 Bit 2', periodNs: 27027, header: [0, 0], flat: 260, firstMark: 270, zero: 790, one: 1850, carries: 'space', codes: 162, exact: 162, spread: 0, source: 'compiled' },
   { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 118, exact: 118, spread: 0, source: 'compiled' },
+  { family: 'Microsoft 30 Bit', periodNs: 27624, biphase: { mark: 441, space: 446, lead: [{ mark: true, us: 2632 }, { mark: false, us: 900 }, { mark: true, us: 441 }, { mark: false, us: 443 }, { mark: true, us: 441 }, { mark: false, us: 439 }, { mark: true, us: 441 }, { mark: false, us: 887 }, { mark: true, us: 441 }, { mark: false, us: 879 }, { mark: true, us: 1323 }, { mark: false, us: 889 }, { mark: true, us: 441 }], setIsMark: false }, codes: 113, exact: 113, spread: 0, source: 'both' },
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
   { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },
+  { family: 'Magnavox 13 Bit', periodNs: 26315, biphase: { mark: 880, space: 900, lead: [{ mark: true, us: 880 }], setIsMark: true }, codes: 105, exact: 105, spread: 0, source: 'compiled' },
   { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 71, exact: 71, spread: 0, source: 'compiled' },
   { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 59, exact: 59, spread: 0, source: 'both' },
+  { family: 'Kreatel IP 22 Bit', periodNs: 17761, biphase: { mark: 325, space: 320, lead: [{ mark: true, us: 320 }, { mark: false, us: 320 }], setIsMark: true }, codes: 56, exact: 56, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },
   { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 37, exact: 37, spread: 0, source: 'compiled' },

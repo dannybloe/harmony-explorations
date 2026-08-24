@@ -27,7 +27,8 @@ import {
   irRecordBlocks,
 } from '../src/ir.ts';
 import type { FrameTimings, Pulse } from '../src/irframe.ts';
-import { frameKey, framesOfPulses, fromFirstMark, irFrame, irFrames, pulsesOfFrame, timingsOfFrame }
+import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark, irFrame, irFrames, pulsesOfFrame,
+         pulsesOfBiphaseFrame, timingsOfBiphase, timingsOfFrame }
   from '../src/irframe.ts';
 import { keyCodes } from '../src/inventory.ts';
 
@@ -922,4 +923,68 @@ test('the timings belong to the device rather than to the command', skipWithoutL
     }
   }
   assert.deepEqual({ groups, single }, { groups: 58, single: 52 });
+});
+
+test('a biphase code reads as half cells, and a pulse distance one does not', () => {
+  // **A biphase frame has one duration and the bit is in which half of the cell carries it**, section
+  // 162, so there is no constant half and no two carried lengths to split. This is `Magnavox 13 Bit` as
+  // Logitech's own compiler emits it: an 880 mark of lead in, then thirteen cells of 880 and 900.
+  const lead = [{ mark: true, us: 880 }];
+  const timings = { mark: 880, space: 900, lead, setIsMark: true };
+  const value = 0x07FFn;
+  const built = pulsesOfBiphaseFrame(timings, 13, value);
+  assert.equal(built.length, 1 + 2 * 13, 'the lead in plus one word per half cell');
+  // Unmerged, which is what a record stores: two adjacent halves of one kind are two words.
+  assert.deepEqual(built.slice(1, 5).map((one) => one.us), [900, 880, 900, 880]);
+
+  // And it comes back. The alignment is not derivable, so the reader offers one per parity and the
+  // caller picks by what a catalogue states; the reading that carries this number is the 13 bit one.
+  const readings = biphaseFrames(built);
+  const found = readings.find((one) => one.bits === 13);
+  assert.ok(found !== undefined, 'no thirteen bit reading among ' + readings.length);
+  assert.equal(found.value, value);
+  assert.equal(found.base, 880);
+  assert.equal(found.skipped, 1, 'the lead in is one half cell');
+  // The durations come back too, which is the encoder and the decoder agreeing on one field.
+  assert.deepEqual(timingsOfBiphase(built, found.skipped, 13, true), timings);
+
+  // **The negative, and it is the one that matters**: a pulse distance frame is not biphase, because its
+  // carried half is three or four times its flat half and its lead in is ten or twenty, so the intervals
+  // are not whole multiples of one cell. Without this the reader would answer for every record it saw.
+  const nec = pulsesOfFrame(
+    { header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space' }, 32, 0x20DF08F7n);
+  assert.deepEqual(biphaseFrames(nec), []);
+});
+
+test('the biphase reading lands on the number Logitech named, in a contributed config',
+  skipUnless('arch8_config_a'), () => {
+  // **The known answer check, section 162.** The alignment, the polarity and the width were worked out
+  // on a configuration Logitech's compiler produced for appliances chosen here. This record is in a
+  // contributed arch 8 (Harmony 880) config from somebody else's household, and the number below is
+  // what Logitech's own analyser answered when asked what it is: `G:Microsoft 30 Bit:()(0x3FF07BE5)():3`.
+  // Nothing about it was used to derive the reading.
+  const c = parse(require_('arch8_config_a'));
+  const record = 0x241a8;
+  const first = irHeaderPointers(c, record)[0];
+  assert.ok(first !== undefined);
+  const words = irBlockWords(c, first);
+  assert.ok(words !== undefined);
+  const train = fromFirstMark(words
+    .filter((word) => (word & IR_PULSE_MAX) !== 0)
+    .map((word) => ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX })));
+  // The pulse distance decoder reads this record under **both** conventions and so refuses it, which is
+  // what section 153 recorded and what made these 148 records unreadable.
+  assert.equal(framesOfPulses(train).length, 2, 'a biphase record fits both carrier conventions');
+  // RC-6 is the other way up: a set bit is the space first. The reading is 32 bits of run and the
+  // catalogue states 30, so the two leading bits are lead in.
+  const reading = biphaseFrames(train).find((one) => one.bits >= 30);
+  assert.ok(reading !== undefined);
+  const mask = (1n << 30n) - 1n;
+  assert.equal((reading.value & mask) ^ mask, 0x3FF07BE5n, 'their analyser named this number');
+  // And the durations rebuild the record's own pulses, which is what makes the family writable.
+  const t = timingsOfBiphase(train, reading.skipped + 2 * (reading.bits - 30), 30, false);
+  assert.ok(t !== undefined);
+  const back = pulsesOfBiphaseFrame(t, 30, 0x3FF07BE5n);
+  assert.deepEqual(back.map((one) => [one.mark, one.us]),
+                   train.slice(0, back.length).map((one) => [one.mark, one.us]));
 });

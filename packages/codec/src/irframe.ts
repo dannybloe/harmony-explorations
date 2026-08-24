@@ -373,3 +373,201 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
 export function frameKey(f: IrFrame): string {
   return `${f.bits}:${f.value.toString(16)}`;
 }
+
+/**
+ * A biphase reading of a train: the half cell, where the payload starts, and the bits.
+ *
+ * **Separate from `IrFrame` because it is a different measurement**, section 162. A pulse distance frame
+ * has a constant half and a carrying half and the two durations are the protocol's own; a biphase frame
+ * has **one** duration, the half cell, and the bit is in which half of the cell the carrier is on. There
+ * is nothing here to fill `short`, `long` or `carries` with that would not be a lie.
+ */
+export interface BiphaseFrame {
+  /** The half cell, in microseconds: the shortest interval in the frame, which every other is a multiple of. */
+  base: number;
+  /** How many half cells sit before the first bit cell, which is the lead in this reader does not interpret. */
+  skipped: number;
+  bits: number;
+  /** First transmitted bit in the most significant position, as `IrFrame.value` does it. */
+  value: bigint;
+}
+
+/** How many bit cells a biphase reading needs before it is a frame rather than a run of noise. */
+const MIN_BIPHASE_BITS = 8;
+/** The longest interval accepted as a multiple of the half cell. RC-6's lead in mark is six. */
+const MAX_HALF_CELLS = 6;
+/** How far an interval may sit from a whole number of half cells, as a share of one. */
+const HALF_CELL_SLACK = 0.3;
+
+/**
+ * The half cells of a train, one entry per half cell, `true` for carrier present.
+ *
+ * The frame is taken up to the first interval too long to be a multiple of the half cell, which is the
+ * gap before the next copy. Every interval inside it has to be a whole number of half cells, and that is
+ * the test that says the code is biphase at all: a pulse distance frame's long half is 3 or 4 times its
+ * short one and its lead in is 10 or 20, so it fails this rather than reading as nonsense.
+ */
+function halfCells(train: readonly Pulse[]): { base: number; cells: boolean[] } | undefined {
+  const inside: Pulse[] = [];
+  for (const one of train) {
+    // A zero closes the block and a one is the marker the emitter leaves; neither is a duration.
+    if (one.us <= 1) break;
+    if (one.us > GAP_US) break;
+    inside.push(one);
+  }
+  if (inside.length < 2 * MIN_BIPHASE_BITS) return undefined;
+  const base = Math.min(...inside.map((one) => one.us));
+  if (base <= 0) return undefined;
+  const cells: boolean[] = [];
+  for (const one of inside) {
+    const n = Math.round(one.us / base);
+    if (n < 1 || n > MAX_HALF_CELLS) return undefined;
+    if (Math.abs(one.us - n * base) > base * HALF_CELL_SLACK) return undefined;
+    for (let i = 0; i < n; i += 1) cells.push(one.mark);
+  }
+  return { base, cells };
+}
+
+/**
+ * The biphase frame a train encodes, or `undefined` where it is not biphase.
+ *
+ * **The polarity is a convention pinned from outside, exactly as the pulse distance one is.** A mark in
+ * the first half of a cell is a set bit. Both readings are self consistent, so nothing in the durations
+ * decides it, and this one is what makes 105 of 106 `Magnavox 13 Bit` records and 56 of 57
+ * `Kreatel IP 22 Bit` records land on the numbers Logitech's own catalogue states for those very
+ * commands, section 162. The other reading is the complement, and a family may well use it: that already
+ * happened on the pulse distance side, where `Logitech 24 Bit` states the complement of what this file
+ * reads and the rhythm table carries the polarity in its two durations.
+ *
+ * **Two readings, and the longest is not the answer**, which cost two attempts to learn. Where the
+ * payload starts cannot be read off the train: the lead in differs per family and part of it is not
+ * transmitted at all, since an RC-5 frame's first start bit begins with a space, so a capture opens on a
+ * lone half cell. Taking the longest run gets `Magnavox 13 Bit` right and both of the others wrong, by
+ * one bit on `Kreatel IP 22 Bit` and by two on RC-6.
+ *
+ * What the train does decide is the **parity** of the alignment, and there are only two. Within one
+ * parity the shorter runs are the longest one with leading bits dropped, so two readings cover every
+ * alignment and a caller matching against a catalogue trims to the width it is looking for. That is the
+ * same shape as `irFrames` returning both carrier conventions: the reading that survives is chosen by
+ * evidence from outside the file, and section 162 measured which one each family uses.
+ */
+export function biphaseFrames(train: readonly Pulse[]): BiphaseFrame[] {
+  const read = halfCells(train);
+  if (read === undefined) return [];
+  const { base, cells } = read;
+  const out: BiphaseFrame[] = [];
+  for (const parity of [0, 1]) {
+    let best: BiphaseFrame | undefined;
+    for (let skipped = parity; skipped + 2 * MIN_BIPHASE_BITS <= cells.length; skipped += 2) {
+      let value = 0n;
+      let bits = 0;
+      for (let at = skipped; at + 1 < cells.length; at += 2) {
+        // A cell whose two halves are the same is not a bit, so the run ends there. That is what stops
+        // this walking through RC-6's double width trailer bit as though it were payload.
+        if (cells[at] === cells[at + 1]) break;
+        value = (value << 1n) | (cells[at] ? 1n : 0n);
+        bits += 1;
+      }
+      if (bits >= MIN_BIPHASE_BITS && (best === undefined || bits > best.bits)) {
+        best = { base, skipped, bits, value };
+      }
+    }
+    if (best !== undefined) out.push(best);
+  }
+  return out;
+}
+
+/**
+ * What a biphase family's pulses are made of, which is the encoder's side of `biphaseFrames`.
+ *
+ * **Three numbers and a lead in, against a pulse distance frame's five.** There is one cell length, so
+ * a bit is which half of it carries, and the only durations are the mark and the space that make one
+ * half cell. What varies between families is the lead in, which is a fixed prelude they all send and
+ * none of them derives from the bits: `Magnavox 13 Bit` sends a single mark, `Microsoft 30 Bit` sends
+ * eleven intervals of RC-6 preamble, and `Kreatel IP 22 Bit` sends nothing at all.
+ *
+ * The lead in is carried as the intervals a record stores rather than as a count of half cells, because
+ * that is what makes an emitted frame byte identical to a stored one: RC-6's preamble holds a 2632 and a
+ * 1323 that are six and three half cells long, and their own generator writes 443 and 439 in two places
+ * where the cell is 441.
+ */
+export interface BiphaseTimings {
+  /** One half cell of carrier. */
+  mark: number;
+  /** One half cell of silence. */
+  space: number;
+  /** A different opening mark where the family sends one, as `FrameTimings.firstMark`. */
+  firstMark?: number;
+  /** Everything before the first bit cell, exactly as a record stores it. */
+  lead: readonly Pulse[];
+  /** Whether a mark in the **first** half of a cell means a set bit. RC-6 is the other way up. */
+  setIsMark: boolean;
+}
+
+/**
+ * The pulses a biphase frame makes, one word per half cell, which is how a record stores them.
+ *
+ * **Unmerged on purpose.** Two adjacent half cells of one kind are one interval physically, and a config
+ * stores them as two words of the half cell length; merging them is what section 153 is about, and an
+ * emitter that merged would not reproduce the file.
+ */
+export function pulsesOfBiphaseFrame(t: BiphaseTimings, bits: number, value: bigint): Pulse[] {
+  const out: Pulse[] = [...t.lead];
+  for (let i = bits - 1; i >= 0; i -= 1) {
+    const set = ((value >> BigInt(i)) & 1n) === 1n;
+    const markFirst = set === t.setIsMark;
+    const halves: boolean[] = markFirst ? [true, false] : [false, true];
+    for (const mark of halves) {
+      const first = out.length === 0 && t.firstMark !== undefined;
+      out.push({ mark, us: mark ? (first ? t.firstMark! : t.mark) : t.space });
+    }
+  }
+  return out;
+}
+
+/**
+ * The durations behind a biphase reading, or `undefined` where the train is not made of one cell length.
+ *
+ * The inverse of `pulsesOfBiphaseFrame`, beside it because a field's encoder lives next to its decoder.
+ * It takes the reading rather than finding one, since which alignment is the payload is decided outside
+ * this file by what the catalogue states, section 162.
+ */
+export function timingsOfBiphase(
+  train: readonly Pulse[], skipped: number, bits: number, setIsMark: boolean,
+): BiphaseTimings | undefined {
+  const read = halfCells(train);
+  if (read === undefined) return undefined;
+  const { base } = read;
+  // The lead in is whole intervals, so it only exists where the skipped half cells end on an interval
+  // boundary. They always do here: a stored interval is a whole number of half cells.
+  const lead: Pulse[] = [];
+  let covered = 0;
+  let at = 0;
+  while (covered < skipped) {
+    const one = train[at];
+    if (one === undefined) return undefined;
+    lead.push(one);
+    covered += Math.round(one.us / base);
+    at += 1;
+  }
+  if (covered !== skipped) return undefined;
+  // The payload has to be exactly one mark length and one space length, the opening mark aside.
+  const cells = train.slice(at, at + 2 * bits);
+  if (cells.length !== 2 * bits) return undefined;
+  const marks = cells.filter((one) => one.mark).map((one) => one.us);
+  const spaces = cells.filter((one) => !one.mark).map((one) => one.us);
+  if (marks.length === 0 || spaces.length === 0) return undefined;
+  if (new Set(spaces).size !== 1) return undefined;
+  const distinct = [...new Set(marks)];
+  // One mark length, or two where the odd one out is the very first interval of the whole train.
+  const firstMark = distinct.length === 2 && lead.length === 0 && marks[0] !== marks[1]
+    && new Set(marks.slice(1)).size === 1 ? marks[0] : undefined;
+  if (distinct.length > 1 && firstMark === undefined) return undefined;
+  return {
+    mark: firstMark === undefined ? distinct[0]! : marks[1]!,
+    space: spaces[0]!,
+    ...(firstMark === undefined ? {} : { firstMark }),
+    lead,
+    setIsMark,
+  };
+}

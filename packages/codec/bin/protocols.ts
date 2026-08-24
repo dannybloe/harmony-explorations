@@ -34,8 +34,8 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
          irHeaderPointers } from '../src/ir.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import {
-  framesOfPulses, fromFirstMark, pulsesOfFrame, timingsOfFrame,
-  type FrameTimings, type Pulse,
+  biphaseFrames, framesOfPulses, fromFirstMark, pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
+  timingsOfFrame, type BiphaseTimings, type FrameTimings, type Pulse,
 } from '../src/irframe.ts';
 
 if (LAB === undefined) {
@@ -84,7 +84,10 @@ interface Measured {
   record: number;
   bits: number;
   value: bigint;
-  timings: FrameTimings;
+  /** A pulse distance or pulse width family's five durations, absent on a biphase one. */
+  timings?: FrameTimings;
+  /** A biphase family's half cell, lead in and polarity, absent on the others. Section 162. */
+  biphase?: BiphaseTimings;
 }
 
 /**
@@ -96,8 +99,17 @@ interface Measured {
  * Bit came out as three sets over three codes, which reads as a protocol whose timings are per code.
  * Keyed without it each Sony family is one set, and the closing space is a consequence to be computed.
  */
-function key(t: FrameTimings): string {
-  return `${t.header[0]}/${t.header[1]} flat ${t.flat} zero ${t.zero} one ${t.one} ${t.carries}`;
+function key(m: Measured): string {
+  const t = m.timings;
+  if (t !== undefined) {
+    return `${t.header[0]}/${t.header[1]} flat ${t.flat} zero ${t.zero} one ${t.one} ${t.carries}`;
+  }
+  const b = m.biphase!;
+  // The lead in is part of the key: it is a fixed prelude, so two records of one family that disagree
+  // about it are two rhythms and have to show up as two sets rather than being averaged.
+  return `biphase ${b.firstMark === undefined ? '' : `${b.firstMark}/`}${b.mark}/${b.space} `
+    + `lead ${b.lead.map((one) => `${one.mark ? '+' : '-'}${one.us}`).join(' ')} `
+    + `set is ${b.setIsMark ? 'mark' : 'space'} first`;
 }
 
 /**
@@ -107,11 +119,14 @@ function key(t: FrameTimings): string {
  * **is** the closing space, so a code nobody has recorded can be emitted with no sibling to copy from.
  */
 function framePeriod(m: Measured): number | undefined {
-  if (m.timings.closing === undefined) return undefined;
-  let total = m.timings.header[0] + m.timings.header[1];
+  const t = m.timings;
+  // A biphase family has no closing space and no frame period: every cell is the same length, so there
+  // is nothing to pad out to.
+  if (t === undefined || t.closing === undefined) return undefined;
+  let total = t.header[0] + t.header[1];
   for (let i = m.bits - 1; i >= 0; i -= 1) {
-    total += (m.value >> BigInt(i)) & 1n ? m.timings.one : m.timings.zero;
-    total += i === 0 ? m.timings.closing : m.timings.flat;
+    total += (m.value >> BigInt(i)) & 1n ? t.one : t.zero;
+    total += i === 0 ? t.closing : t.flat;
   }
   return total;
 }
@@ -198,12 +213,36 @@ for (const file of files) {
     const train = fromFirstMark(pulsesOfWords(words));
     const wanted = BigInt(`0x${stated[2]!}`);
     const frame = framesOfPulses(train).find((f) => f.value === wanted);
-    if (frame === undefined) { drop('no reading of ours carries their number'); continue; }
-    const timings = timingsOfFrame(train, frame);
-    if (timings === undefined) { drop('the durations do not split'); continue; }
-    const m: Measured = { family, source: 'corpus', joinedBy: 'value', periodNs,
-      config: report.config, record, bits: frame.bits, value: frame.value, timings };
-    byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
+    if (frame !== undefined) {
+      const timings = timingsOfFrame(train, frame);
+      if (timings === undefined) { drop('the durations do not split'); continue; }
+      const m: Measured = { family, source: 'corpus', joinedBy: 'value', periodNs,
+        config: report.config, record, bits: frame.bits, value: frame.value, timings };
+      byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
+      continue;
+    }
+    // **The biphase route on real configurations**, section 162, which is where the confirmation is: the
+    // reading was worked out on a configuration their compiler made for appliances we chose, and these
+    // are four contributed configs from somebody else's household with their analyser's answer beside
+    // each record. A family measured on both routes carries `both`.
+    let bi: Measured | undefined;
+    for (const f of biphaseFrames(train)) {
+      for (let bits = f.bits; bits >= 8 && bi === undefined; bits -= 1) {
+        const mask = (1n << BigInt(bits)) - 1n;
+        const low = f.value & mask;
+        for (const setIsMark of [true, false]) {
+          if ((setIsMark ? low : low ^ mask) !== wanted) continue;
+          const biphase = timingsOfBiphase(train, f.skipped + 2 * (f.bits - bits), bits, setIsMark);
+          if (biphase === undefined) continue;
+          bi = { family, source: 'corpus', joinedBy: 'value', periodNs,
+            config: report.config, record, bits, value: wanted, biphase };
+          break;
+        }
+      }
+      if (bi !== undefined) break;
+    }
+    if (bi === undefined) { drop('no reading of ours carries their number'); continue; }
+    byEntry.set(entryOf(bi), [...(byEntry.get(entryOf(bi)) ?? []), bi]);
   }
 }
 
@@ -290,9 +329,13 @@ function compiledRows(): Measured[] {
   }
 
   const out: Measured[] = [];
-  /** How the two attribution routes compared, which is the closure rather than a diagnostic. */
-  const attribution = { agree: 0, differ: 0, namedOnly: 0, votedOnly: 0 };
-  for (const [groupAt, group] of (irGroups(c) ?? []).entries()) {
+  /** How the attribution routes compared, which is the closure rather than a diagnostic. */
+  const attribution = { agree: 0, differ: 0, namedOnly: 0, votedOnly: 0, byElimination: 0 };
+  const readings = (train: readonly Pulse[], pairs: number) =>
+    framesOfPulses(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
+
+  /** Every group's records, decoded once, because the attribution needs all of them before any join. */
+  const groups = (irGroups(c) ?? []).map((group) => {
     const decoded: { record: number; periodNs: number; train: readonly Pulse[] }[] = [];
     for (const record of group.addresses) {
       if (irClass(c, record) !== IR_CLASS_STREAM) { drop('compiled: not a stream record'); continue; }
@@ -305,12 +348,23 @@ function compiledRows(): Measured[] {
       }
       decoded.push({ record, periodNs, train: fromFirstMark(pulsesOfWords(words)) });
     }
-    const readings = (train: readonly Pulse[], pairs: number) =>
-      framesOfPulses(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
-    // The name if the config states one, and the overlap where it does not. Both are computed every
-    // time, because the two agreeing is the closure and only comparing them can show it.
+    return decoded;
+  });
+
+  // **Three routes in order, which is what section 126 does for a device's name and for the same
+  // reason.** The name the config states, then the number overlap, then elimination once one group and
+  // one appliance are left. Elimination is what reaches a group whose codes nothing here can read at
+  // all, which is exactly the case the overlap cannot speak for.
+  const ownerOf = new Map<number, number>();
+  // An appliance the config has already named for another group is out of the vote's reach. Without
+  // that, a group nothing reads is claimed by whichever appliance shares one number with it, which is a
+  // vote of one, and it happened: the group holding every `Kreatel IP 22 Bit` record went to a Denon
+  // receiver that the config names for a different group.
+  const claimedByName = new Set(named.values());
+  for (const [groupAt, decoded] of groups.entries()) {
     let vote = { hits: 0, at: -1 };
     for (const [at, a] of appliances.entries()) {
+      if (claimedByName.has(at) && named.get(groupAt) !== at) continue;
       let hits = 0;
       for (const d of decoded) {
         if ([1, 0].some((pairs) => readings(d.train, pairs).some((k) => a.byValue.has(k.key)))) {
@@ -325,6 +379,18 @@ function compiledRows(): Measured[] {
     } else if (stated >= 0) attribution.namedOnly += 1;
     else if (vote.at >= 0) attribution.votedOnly += 1;
     const at = stated >= 0 ? stated : vote.at;
+    if (at >= 0) ownerOf.set(groupAt, at);
+  }
+  const spareGroups = groups.map((_, i) => i).filter((i) => !ownerOf.has(i));
+  const taken = new Set(ownerOf.values());
+  const spareAppliances = appliances.map((_, i) => i).filter((i) => !taken.has(i));
+  if (spareGroups.length === 1 && spareAppliances.length === 1) {
+    ownerOf.set(spareGroups[0]!, spareAppliances[0]!);
+    attribution.byElimination += 1;
+  }
+
+  for (const [groupAt, decoded] of groups.entries()) {
+    const at = ownerOf.get(groupAt) ?? -1;
     if (at < 0) { drop('compiled: no appliance matches any number in the group'); continue; }
     const owner = appliances[at]!;
     for (const d of decoded) {
@@ -359,6 +425,36 @@ function compiledRows(): Measured[] {
         }
         if (landed) break;
       }
+      // **The biphase route, tried where no pulse distance reading matched.** Three families in this
+      // sample carry the bit in which half of one cell the carrier is on, and section 162 measured that
+      // the alignment, the polarity and the width are decided by which of them lands on a number the
+      // appliance states. Every one that lands then rebuilds its record byte for byte.
+      if (!landed) {
+        for (const f of biphaseFrames(d.train)) {
+          for (const bits of owner.byWidth.keys()) {
+            if (bits > f.bits) continue;
+            const mask = (1n << BigInt(bits)) - 1n;
+            const low = f.value & mask;
+            for (const setIsMark of [true, false]) {
+              const value = setIsMark ? low : low ^ mask;
+              const family = owner.byValue.get(`${bits}:${value.toString(16)}`);
+              if (family === undefined) continue;
+              // The leading bits this reading has over the stated width are lead in, so they move into
+              // the prelude: two half cells per bit.
+              const skipped = f.skipped + 2 * (f.bits - bits);
+              const biphase = timingsOfBiphase(d.train, skipped, bits, setIsMark);
+              if (biphase === undefined) { drop('compiled: the half cells are not one length'); continue; }
+              out.push({ family, source: 'compiled', joinedBy: 'value',
+                periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
+                bits, value, biphase });
+              landed = true;
+              break;
+            }
+            if (landed) break;
+          }
+          if (landed) break;
+        }
+      }
       // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
       // record nothing could read at all reported, and those need different work: one is a number
       // question and the other is the decoder's.
@@ -371,7 +467,8 @@ function compiledRows(): Measured[] {
   console.log(`attribution: the config's own device name and the number overlap agree on `
     + `${attribution.agree} group(s) and differ on ${attribution.differ}; `
     + `${attribution.namedOnly} named where no number matched, `
-    + `${attribution.votedOnly} matched where the config states no name\n`);
+    + `${attribution.votedOnly} matched where the config states no name, `
+    + `${attribution.byElimination} by elimination\n`);
   return out;
 }
 
@@ -392,23 +489,36 @@ for (const [entry, list] of byEntry) {
  * have emitted. A table drawn from a family's commonest durations aims at the first, and only a compile
  * of that very appliance reaches the second.
  */
-function reproduces(m: Measured, t: FrameTimings, tolerance = 0): boolean {
-  if (t.carries !== m.timings.carries) return false;
+function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
+  const t = shape.timings;
+  const b = shape.biphase;
+  // A pulse distance shape cannot answer for a biphase record or the other way round, and the two
+  // never mix inside one entry, so this is a guard rather than a case.
+  if ((t === undefined) !== (m.timings === undefined)) return false;
+  if (t !== undefined && t.carries !== m.timings!.carries) return false;
   const c = container(m.config);
   const first = c === undefined ? undefined : irHeaderPointers(c, m.record)[0];
   const words = first === undefined ? undefined : irBlockWords(c!, first);
   if (words === undefined) return false;
-  // **The lead in pair is only there when the protocol has one.** A headerless family's frame is bit
-  // cells and nothing else, so slicing two extra pulses off the front compares the rebuilt frame
-  // against one bit cell too many and every record of it fails. That reported Sharp as 0 of 162.
-  const headerPulses = m.timings.header[0] === 0 && m.timings.header[1] === 0 ? 0 : 2;
-  const original = fromFirstMark(pulsesOfWords(words)).slice(0, headerPulses + 2 * m.bits);
-  const period = periods.get(entryOf(m));
-  const used = t.carries === 'mark' && period !== undefined
-    ? { ...t, closing: closingFor(t, m.bits, m.value, period) }
-    : t;
   let built: Pulse[];
-  try { built = pulsesOfFrame(used, m.bits, m.value); } catch { return false; }
+  let original: readonly Pulse[];
+  const train = fromFirstMark(pulsesOfWords(words));
+  if (b !== undefined) {
+    // The lead in plus one word per half cell, which is exactly what a record stores.
+    built = pulsesOfBiphaseFrame(b, m.bits, m.value);
+    original = train.slice(0, built.length);
+  } else {
+    // **The lead in pair is only there when the protocol has one.** A headerless family's frame is bit
+    // cells and nothing else, so slicing two extra pulses off the front compares the rebuilt frame
+    // against one bit cell too many and every record of it fails. That reported Sharp as 0 of 162.
+    const headerPulses = t!.header[0] === 0 && t!.header[1] === 0 ? 0 : 2;
+    original = train.slice(0, headerPulses + 2 * m.bits);
+    const period = periods.get(entryOf(m));
+    const used = t!.carries === 'mark' && period !== undefined
+      ? { ...t!, closing: closingFor(t!, m.bits, m.value, period) }
+      : t!;
+    try { built = pulsesOfFrame(used, m.bits, m.value); } catch { return false; }
+  }
   if (built.length !== original.length) return false;
   return built.every((p, i) => {
     const want = original[i]!;
@@ -424,7 +534,9 @@ const BANDS = [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1];
 interface Entry {
   family: string;
   periodNs: number;
-  timings: FrameTimings;
+  timings?: FrameTimings;
+  /** Set instead of `timings` where the family is biphase, section 162. */
+  biphase?: BiphaseTimings;
   period?: number;
   codes: number;
   exact: number;
@@ -440,18 +552,19 @@ interface Entry {
 const entries: Entry[] = [];
 for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - a[1].length)) {
   const sets = new Map<string, Measured[]>();
-  for (const m of list) sets.set(key(m.timings), [...(sets.get(key(m.timings)) ?? []), m]);
+  for (const m of list) sets.set(key(m), [...(sets.get(key(m)) ?? []), m]);
   // Commonest rather than first, so one odd appliance cannot decide an entry.
   const best = [...sets.values()].sort((a, b) => b.length - a.length)[0]!;
-  const timings = best[0]!.timings;
-  const band = BANDS.find((b) => list.every((m) => reproduces(m, timings, b)));
+  const shape = best[0]!;
+  const band = BANDS.find((b) => list.every((m) => reproduces(m, shape, b)));
   entries.push({
     family: list[0]!.family,
     periodNs: list[0]!.periodNs,
-    timings,
+    ...(shape.timings === undefined ? {} : { timings: shape.timings }),
+    ...(shape.biphase === undefined ? {} : { biphase: shape.biphase }),
     ...(periods.get(entry) === undefined ? {} : { period: periods.get(entry)! }),
     codes: list.length,
-    exact: list.filter((m) => reproduces(m, timings)).length,
+    exact: list.filter((m) => reproduces(m, shape)).length,
     band: band ?? 1,
     configs: [...new Set(list.map((m) => m.config))],
     sets: sets.size,
@@ -530,9 +643,15 @@ export interface StatedProtocol {
   readonly family: string;
   /** The carrier as a record states it, a period in nanoseconds. 38 kHz is 26315. */
   readonly periodNs: number;
-  /** \`[0, 0]\` where the protocol has no lead in and opens on its first bit cell. */
-  readonly header: readonly [number, number];
-  readonly flat: number;
+  /**
+   * \`[0, 0]\` where the protocol has no lead in and opens on its first bit cell.
+   *
+   * **Absent, with \`flat\`, \`zero\`, \`one\` and \`carries\`, on a biphase family**, which has none of
+   * them: see \`biphase\` below. A row has one shape or the other and never both, and
+   * \`test/stated.test.ts\` asserts that.
+   */
+  readonly header?: readonly [number, number];
+  readonly flat?: number;
   /**
    * The opening burst, where the protocol makes it longer than the rest.
    *
@@ -540,11 +659,31 @@ export interface StatedProtocol {
    * without it a rebuilt code differs from what their compiler emits on its very first pulse.
    */
   readonly firstMark?: number;
-  readonly zero: number;
-  readonly one: number;
-  readonly carries: FrameCarrier;
+  readonly zero?: number;
+  readonly one?: number;
+  readonly carries?: FrameCarrier;
   /** The constant total a pulse width frame is padded out to, absent on a pulse distance one. */
   readonly framePeriod?: number;
+  /**
+   * A biphase family, where the bit is in **which half** of one cell the carrier is on.
+   *
+   * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
+   * fields above apply: what there is instead is one half cell, a fixed prelude the family always sends,
+   * and which half of the cell means a set bit. Three families here are of this kind and each reproduces
+   * every one of its records byte for byte.
+   */
+  readonly biphase?: {
+    /** One half cell of carrier. */
+    readonly mark: number;
+    /** One half cell of silence. */
+    readonly space: number;
+    /** A different opening mark where the family sends one. */
+    readonly firstMark?: number;
+    /** Everything before the first bit cell, exactly as a record stores it. */
+    readonly lead: readonly { readonly mark: boolean; readonly us: number }[];
+    /** Whether a mark in the **first** half of a cell means a set bit. RC-6 is the other way up. */
+    readonly setIsMark: boolean;
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -653,13 +792,21 @@ const DOCUMENTED: {
 if (write) {
   const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
   const rowsOut = entries.map((e) => {
-    const t = e.timings;
-    return `  { family: '${e.family}', periodNs: ${e.periodNs}, `
-      + `header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
+    const tail = ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
+    const head = `  { family: '${e.family}', periodNs: ${e.periodNs}, `;
+    const b = e.biphase;
+    if (b !== undefined) {
+      const lead = b.lead.map((one) => `{ mark: ${one.mark}, us: ${one.us} }`).join(', ');
+      return `${head}biphase: { mark: ${b.mark}, space: ${b.space}, `
+        + `${b.firstMark === undefined ? '' : `firstMark: ${b.firstMark}, `}`
+        + `lead: [${lead}], setIsMark: ${b.setIsMark} },${tail}`;
+    }
+    const t = e.timings!;
+    return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
       + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
       + `zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
-      + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
+      + tail;
   }).join('\n');
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `
