@@ -144,10 +144,16 @@ puts a catalogue appliance on the account, their service compiles a configuratio
 durations in the result are the ones their generator emits.
 
 - [x] pick one appliance per missing family out of the census, so that one compile covers as many as
-      possible. Done on 24 August 2026: a set cover over the 18 comes to **17 appliances**, and only one
-      of them carries two missing families, so that is near the floor rather than a greedy guess. The
-      makes, the models, the catalogue ids and the batching are in
-      `../lab/reads/20260824-plan/family-batches.md`, ordered so that a partial sitting buys the most
+      possible. Done on 24 August 2026, and checking it against the record that was already compiled cut
+      it: **four of the 18 families were on that record already**, one to three commands each, so they
+      were compiled and did not reach the table for want of records to attribute rather than for want of
+      data. That leaves **14 families never compiled and 14 appliances**, which is one sitting rather than
+      two. The makes, the models and the catalogue ids are in
+      `../lab/reads/20260824-plan/family-batches.md`
+- [ ] the four already compiled, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`, `Panasonic 16 Bit` and
+      `Sharp 48 Bit`, are a **desk job on evidence already held** and come first because they are free.
+      Their durations are in the configuration of 24 August 2026 and what is missing is a way to attribute
+      one to three records to a family
 - [ ] **the appliances go on by hand**, in Logitech's own client, because the scripted route was refused
       on that account. Our side starts at the compile, and the read only capture of what their catalogue
       states has to run **while the appliances are still on the record**: it is one half of the join and
