@@ -3,6 +3,14 @@
 **The goal, in one sentence.** Pick an appliance out of Logitech's catalogue, put it on a Harmony One,
 and press a button on the remote and have the appliance respond.
 
+**The button is one the remote draws on its screen, and that is a decision rather than a detail.** On a
+Harmony One a screen button's position is **stated** by the config, base slot 17's rectangles picked out
+by a mode page's own byte, section 125, so a target we author is a target the firmware will hit. A
+physical key is not: 32 of the One's 44 keys have a name, only through the account that generated the
+calibration configs, section 133, and nothing here can name the rest. So the appliance gets a device page
+with its commands drawn on it, which is also what device mode is mostly used for, and binding a physical
+key stays out of this goal.
+
 **It has two finish lines and only the first one is this checklist's.** Phases 0 to 6 end in a config we
 built ourselves, carrying a device that was not in it before, which every reader here reports correctly
 and which Logitech's own compiler agrees with. Nothing is written to any remote to get there and no rail
@@ -55,6 +63,11 @@ Named so that nobody adds them to the critical path.
   7 and 8 are the One alone.
 * **The application's interface.** Phase 0 touches FreeHarmony's main process and no screen. The rest of
   this repository owes FreeHarmony an API, not a page.
+* **An activity.** A device added in device mode is reachable without one, `docs/how-a-harmony-works.md`,
+  and an activity would add a second keypad map to author for no gain here. Adding a device **to** an
+  existing activity is the natural next goal and is not this one.
+* **Logitech's device search in the application.** It exists already, `src/main/logitech/client.ts` in
+  FreeHarmony, which is why phase 0 is a parser swap and not a new route.
 
 ## Assumptions, which are decisions if any of them is wrong
 
@@ -208,12 +221,21 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       codes the config already carries. A code is a config's own index into its font table, section 112,
       so a new string is spelled out of codes that already exist or the phase stops and says which
       character is missing
-- [ ] base slot 9: the binding set, if the device gets keypad buttons as well as a screen page
+- [ ] base slot 17: the hit rectangles for that page, since a screen button's place is stated and not
+      inferred on this remote, section 125
+- [ ] **the device list page gains a row, and nothing else navigates to a new page.** The mode that lists
+      the equipment is what device mode opens on, so a device page nobody can reach is the failure that
+      would pass every reader test in phase 5's check. That page needs the label drawn, a hit rectangle
+      and a binding that enters the new mode
 - [ ] base slot 8: the key bindings for that page
+- [ ] base slot 9: **not touched.** That is the keypad, and this goal binds no physical key
 - [ ] **check**: take a real config, add a television from the catalogue, and our own readers report one
       more device with the right name, its commands decode back to the exact numbers the catalogue states,
       every screen still renders with nothing unresolved, the byte accounting is still 100% with no
       overlaps, and the whole file round trips through the emitter
+- [ ] **check, the reachability half**: the device list page's own bindings reach the new page, and the
+      new page's bindings reach the new commands, walked by the same four hop chain that names an
+      activity, section 120. A page that renders and cannot be reached passes everything above
 
 ## Phase 6: Logitech compiles the same addition and the two agree
 
