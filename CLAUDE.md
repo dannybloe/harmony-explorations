@@ -347,7 +347,7 @@ both matter to an importer. A code states its frames in **two** slots, either of
 naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
 catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
 33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
-**Seventeen families have a rhythm measured off Logitech's own compiler**, sections 160 to 162, and that route is
+**Eighteen families have a rhythm measured off Logitech's own compiler**, sections 160 to 163, and that route is
 open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
@@ -890,16 +890,19 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Twenty entries, five of them measured on both routes, and each carries
-                                the route it came from, since a rhythm two independent routes agree on is
-                                worth more than one, section 160. Two
+                                Twenty one entries, six of them measured on both routes, and each
+                                carries the route it came from, since a rhythm two independent routes
+                                agree on is worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
                                 than allowed for: a `[0, 0]` header means a protocol with no lead in, and
                                 `firstMark` a longer opening burst, which Sharp has and which a reader
                                 demanding one flat length throughout refuses. **A row has one of two
                                 shapes**, section 162: five durations and a carrier convention, or a
                                 half cell, a lead in and a polarity, the second being a biphase family
-                                where the bit is which half of the cell carries. **A family's bit polarity
+                                where the bit is which half of the cell carries. A biphase reading has
+                                to **reach the end of the frame region**, section 163, because a Sony
+                                frame's durations are whole multiples of one length and 50 of them read
+                                as biphase by luck without that rule. **A family's bit polarity
                                 is in the table without a field for it**, section 161: one entry has a
                                 `zero` longer than its `one`, which is how `Logitech 24 Bit` says that a
                                 set bit is its shorter space, and a test looks for that shape rather
@@ -1548,7 +1551,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 162 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 163 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1816,6 +1819,12 @@ produce a config the remote accepts and mishandles.
   contributor. Logitech's own decoder refuses all of them and names 48 biphase codes in the same run, so
   the outside answer is in. It moves section 133's partition to 3502, 764 and 57 and section 152's
   rebuild to 3502 of 3502, and touches no button name.
+* **A frame's non carrying half has to be one length**, section 163, which is the rule the terminator
+  constant had been standing in for. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
+  could rise from 4000 to 8000 and `JerroldO1 16 Bit`, whose set bit is a 4505 space, is the twenty first
+  entry in the table. It cost one direction of section 134's biconditional: the 148 records that read
+  under **both** conventions now read under none, which is exactly the biphase population, so the
+  detector moved to the reader that names the cause.
 * ~~**148 biphase codes are readable and we cannot read them**~~, **read now**, section 162. A biphase
   code has one duration, the half cell, and the bit is which half of it carries, so there is nothing for
   `irFrame` to split and its two conventions both fit. `biphaseFrames` reads them and three families are
@@ -1824,16 +1833,6 @@ produce a config the remote accepts and mishandles.
   on 48 of 48 records of four **contributed** configs where their analyser had already stated the number.
   `irFrame` still refuses them, which is deliberate: that refusal is the corpus's only detector for the
   family, section 134.
-* **A protocol whose set bit is longer than the gap rule is unreadable, and the fix costs the biphase
-  detector**, section 161. `JerroldO1 16 Bit` carries a set bit as a space of 4505 microseconds against
-  `GAP_US` at 4000, so 49 records of the compiled sample read as nothing. Raising the constant is
-  measured to be worse: 45 records of three arch 8 (Harmony 880) configs carry a mid frame gap of 4480,
-  twenty five microseconds below it, and they then read as a sixteen bit frame they are not. The
-  structural separator is that a Jerrold record's marks are one length and theirs are two, which is what
-  `timingsOfFrame` already demands of the encoder, and adopting it takes the 148 records that read under
-  **both** conventions to none. That ambiguity is the corpus's only test for a biphase record, section
-  134, and a direct predicate was tried and lands on 976 rather than 148. So the trade is written down
-  and not taken.
 * **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
   problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
   user manuals say the learned signal was uploaded to their web site, which did the pattern matching

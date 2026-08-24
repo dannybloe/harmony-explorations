@@ -30,6 +30,7 @@ import type { FrameTimings, Pulse } from '../src/irframe.ts';
 import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark, irFrame, irFrames, pulsesOfFrame,
          pulsesOfBiphaseFrame, timingsOfBiphase, timingsOfFrame }
   from '../src/irframe.ts';
+import { pulsesOfWords } from '../src/irda.ts';
 import { keyCodes } from '../src/inventory.ts';
 import { statedProtocol, timingsOf } from '../src/stated.ts';
 
@@ -225,9 +226,13 @@ test('a record reads under exactly one convention, or under none', skipWithoutLa
   // All three outcomes stated, not floored. `one > 3000` and `both > 0 && none > 0` stood here, and
   // the second is satisfied by a single record of each kind: the claim is a partition of the whole
   // infrared corpus, so the partition is what gets asserted.
-  assert.deepEqual({ one, both, none }, { one: 3547, both: 148, none: 935 });
-  // Every ambiguous record is a two group record, which is what the next test is about. There is no
-  // record anywhere that is ambiguous for any other reason.
+  // **`both` is zero now and that is the change section 163 made**, deliberately. Requiring the non
+  // carrying half of a frame to be one length is what lets the gap threshold rise far enough to read a
+  // protocol whose set bit is a 4505 space, and the records that used to read under both conventions are
+  // biphase, so they now read under neither and `biphaseFrames` reads them instead. The count that used
+  // to sit in `both` is asserted in the biphase test below, so nothing about that population went
+  // unmeasured.
+  assert.deepEqual({ one, both, none }, { one: 3547, both: 0, none: 1083 });
 });
 
 test('framing a pulse train and framing a record are one decoder', skipWithoutLab(), () => {
@@ -267,18 +272,28 @@ test('framing a pulse train and framing a record are one decoder', skipWithoutLa
   // The same population as the partition above, and the same total number of readings, so this cannot
   // pass by comparing two empty lists.
   assert.equal(compared, 4630);
-  assert.equal(framed, 3547 + 2 * 148);
+  // 3547 readings and nothing ambiguous, per the partition above.
+  assert.equal(framed, 3547);
 });
 
-test('reading under both conventions means a two group record, and the reverse', skipWithoutLab(), () => {
-  // A biconditional over the whole corpus, which is stronger than either half. It says the decoder's
-  // refusal to choose is not noise: it lands on exactly the population that carries a second pointer
-  // group, in every container, and never anywhere else.
+test('a two group record is biphase, and the reverse no longer holds', skipWithoutLab(), () => {
+  // **This was a biconditional and section 163 spent one direction of it.** It used to say that reading
+  // under **both** carrier conventions lands on exactly the population carrying a second pointer group,
+  // 148 records, in every container and nowhere else. Requiring the non carrying half of a frame to be
+  // one length, which is what lets the gap threshold rise far enough to read `JerroldO1 16 Bit`, takes
+  // those records to reading under neither convention, so the ambiguity that was the detector is gone.
+  //
+  // What is left is the direction that carries the meaning, and it is checked here against the reader
+  // that names the cause rather than against an artefact: every two group record is a biphase code. The
+  // reverse fails and the count says by how much, because 109 records of a set top box are biphase with
+  // one group, and stating that is what stops this reading as a biconditional it is not.
   //
   // The counter below exists because a biconditional over an empty population is vacuously true, and
   // `if (!c) continue` used to stand here, so a partial lab reported the property held everywhere.
   let containers = 0;
   let records = 0;
+  let twoGroups = 0;
+  let allBiphase = 0;
   for (const name of CONTAINERS) {
     const c = mustLoad(name);
     containers += 1;
@@ -291,17 +306,32 @@ test('reading under both conventions means a two group record, and the reverse',
         // test failed on an arch 9 record, and the first explanation written for it, that the count
         // byte means something else there, is wrong and `docs/config-format.md` says so.
         if (irClass(c, record) !== IR_CLASS_STREAM) continue;
-        const ambiguous: boolean = irFrames(c, record).length === 2;
-        const twoGroup: boolean = irGroupCount(c, record) === 2;
-        assert.equal(ambiguous, twoGroup, `${name} 0x${record.toString(16)}`);
         records += 1;
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        const train = fromFirstMark(pulsesOfWords(words));
+        const biphase = biphaseFrames(train).length > 0;
+        const twoGroup = irGroupCount(c, record) === 2;
+        // The direction that holds, asserted per record.
+        if (twoGroup) assert.ok(biphase, `${name} 0x${record.toString(16)} declares two groups and is not biphase`);
+        if (twoGroup) twoGroups += 1;
+        if (biphase) allBiphase += 1;
+        // And no two group record reads under any carrier convention any more, which is the other half
+        // of what the flat length rule did.
+        if (twoGroup) assert.equal(irFrames(c, record).length, 0, `${name} 0x${record.toString(16)}`);
       }
     }
   }
   assert.equal(containers, CONTAINERS.length, 'a container went unread');
   // Exact, and the comment it replaces was wrong about what it counted: these are class 1 records,
-  // the ones with a duration stream at the record, which is the population the biconditional is over.
+  // the ones with a duration stream at the record, which is the population this is over.
   assert.equal(records, 4323, `${records} class 1 records were compared`);
+  // The population section 134 measured, unchanged by any of this.
+  assert.equal(twoGroups, 148);
+  // And the reverse, stated as the number rather than left implicit: 109 more records are biphase and
+  // declare one group, all of them one contributor's set top box, section 163.
+  assert.equal(allBiphase, 257);
 });
 
 test('arch 9 stores no duration stream to decode', skipUnless('h525_config'), () => {
@@ -569,14 +599,14 @@ test(
   },
 );
 
-test('a bit space above the gap threshold is unreadable, and that is a live limitation', () => {
-  // **The counterexample the threshold's own docstring predicted, section 161.** `JerroldO1 16 Bit`, the
-  // Motorola cable box, carries a set bit as a space of 4505 microseconds, which is above `GAP_US`, so
-  // the first bit cell of every one of its records reads as the end of the frame. This test states that
-  // as a refusal rather than leaving it as an absence, and it fails if somebody raises the threshold
-  // without dealing with what raising it costs: 45 records of three arch 8 (Harmony 880) configs carry a
-  // mid frame gap of 4480, twenty five microseconds below this, and at 8000 they read as a sixteen bit
-  // frame they are not.
+test('a bit space of 4505 reads now, and the 4480 that is not a bit still does not', () => {
+  // **The counterexample the threshold's own docstring predicted, and it is fixed**, sections 161 and
+  // 163. `JerroldO1 16 Bit`, the Motorola cable box, carries a set bit as a space of 4505 microseconds,
+  // which the old 4000 threshold read as the end of the frame, so every record of it read as nothing.
+  // The threshold is 8000 now and the control is the other test in this file: 45 records of three arch 8
+  // (Harmony 880) configs carry a **mid frame gap** of 4480, twenty five microseconds below this, and
+  // they are refused by `oneFlatLength` rather than by any constant, because their marks take two
+  // lengths where a Jerrold record's are 495 throughout.
   const train = (long: number): Pulse[] => {
     const out: Pulse[] = [{ mark: true, us: 9000 }, { mark: false, us: 4520 }];
     // The first eight cells of a real record, 0x5006 style: a set bit is the long space.
@@ -587,14 +617,19 @@ test('a bit space above the gap threshold is unreadable, and that is a live limi
     out.push({ mark: false, us: 19636 });
     return out;
   };
-  assert.deepEqual(framesOfPulses(train(4505), 1), [], 'a 4505 us bit space ends the frame instead');
-  // The control, which is what makes this about the threshold and not about the shape: move that space
-  // just under the constant and the same train reads as the sixteen bits it is.
-  const under = framesOfPulses(train(3900), 1);
-  assert.equal(under.length, 1);
-  assert.equal(under[0]?.bits, 16);
-  assert.equal(under[0]?.value, 0b1000111000000110n);
-  assert.equal(under[0]?.carries, 'space');
+  const jerrold = framesOfPulses(train(4505), 1);
+  assert.equal(jerrold.length, 1, 'a 4505 us space is a bit, not the end of the frame');
+  assert.equal(jerrold[0]?.bits, 16);
+  assert.equal(jerrold[0]?.value, 0b1000111000000110n);
+  assert.equal(jerrold[0]?.carries, 'space');
+  // Still bounded, and this is the assertion that says the threshold is a threshold: past 8000 a
+  // duration is a gap again, so the same train with a 9000 space reads as nothing.
+  assert.deepEqual(framesOfPulses(train(9000), 1), []);
+  // And the shape rule bites regardless of length: give the marks two lengths, which is what a biphase
+  // record has, and the frame is refused however short its spaces are.
+  const biphaseLike = train(4505).map((one, i) => one.mark && i > 3 && i % 6 === 0
+    ? { mark: true, us: 990 } : one);
+  assert.deepEqual(framesOfPulses(biphaseLike, 1), []);
 });
 
 test('the two gap thresholds are tuned, and these are the margins they are tuned to',
@@ -973,9 +1008,10 @@ test('the biphase reading lands on the number Logitech named, in a contributed c
   const train = fromFirstMark(words
     .filter((word) => (word & IR_PULSE_MAX) !== 0)
     .map((word) => ({ mark: (word & IR_PULSE_MARK) !== 0, us: word & IR_PULSE_MAX })));
-  // The pulse distance decoder reads this record under **both** conventions and so refuses it, which is
-  // what section 153 recorded and what made these 148 records unreadable.
-  assert.equal(framesOfPulses(train).length, 2, 'a biphase record fits both carrier conventions');
+  // The pulse distance decoder reads this record under **no** convention, which is section 163's change:
+  // it used to fit both, and requiring a constant non carrying half refuses it for the reason that is
+  // actually true of it, that a biphase code has two lengths in **both** halves.
+  assert.deepEqual(framesOfPulses(train), [], 'a biphase record is not a pulse distance frame');
   // RC-6 is the other way up: a set bit is the space first. The reading is 32 bits of run and the
   // catalogue states 30, so the two leading bits are lead in.
   const reading = biphaseFrames(train).find((one) => one.bits >= 30);

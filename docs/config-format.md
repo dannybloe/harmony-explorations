@@ -1734,12 +1734,24 @@ durations. Four records in the corpus are of this kind, 24 zero bits of `Logitec
 them is the family's own rhythm plus the number Logitech states, which then reproduces the record byte for
 byte and tests the family's polarity into the bargain.
 
-**A set bit longer than the terminator rule is unreadable, and no constant fixes it**, section 161.
-`irframe.ts` ends a frame at a carried duration above 4000 microseconds, and `JerroldO1 16 Bit` carries a
-set bit at 4505, so every record of it reads as nothing. 45 records of three arch 8 configs carry a mid
-frame gap of 4480, so the two cases are 25 microseconds apart and a threshold cannot separate them. The
-separator is structural, that the non carrying half of a frame is one length and a biphase code's is two,
-and adopting it is a decided trade recorded in that section rather than a change made here.
+**The non carrying half of a frame is one length, and that is a rule the reader enforces**, sections 161
+and 163. It is what a pulse distance or pulse width frame **is**, and the encoder had always demanded it
+while the decoder had not, so a duration threshold was standing in for it: a frame ended at a carried
+duration above 4000 microseconds, which refused every `JerroldO1 16 Bit` record, whose set bit is a 4505
+space. 45 records of three arch 8 configs carry a mid frame **gap** of 4480, so no constant separates the
+two cases and the shape rule does: those 45 take two lengths in both halves, which is biphase. With the
+rule in place the threshold is 8000, measured against a window between 3480, the longest duration
+consumed as a bit, and 15300, the smallest that ends a frame.
+
+The cost is recorded in section 163: the 148 records that read under **both** conventions now read under
+none. They are exactly the biphase population and the biphase reader reads them, so a two group record is
+identified by being biphase rather than by our own ambiguity, in one direction only.
+
+**A biphase reading must reach the end of the frame region**, section 163, which is what stops the reader
+answering for a code that is not biphase. A `Sony 12 Bit` frame's durations are 600, 1200 and 2400, all
+whole multiples of 600, so it passes the half cell test and its cells can yield a run of eight or more
+valid pairs by luck: 50 records did. A real biphase frame's cells run from its lead in to the gap with
+nothing left over.
 
 #### Class 5 shares the header, and behind it spells a code from a dictionary
 

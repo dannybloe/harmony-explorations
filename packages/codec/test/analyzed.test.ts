@@ -162,6 +162,7 @@ test('the decoder still says today what it said when the answers were recorded',
   // ours and cannot be quietly updated to match.
   const configs = new Map<string, ReturnType<typeof parse>>();
   let checked = 0;
+  let moved = 0;
   for (const row of answers()) {
     let c = configs.get(row.config);
     if (c === undefined) {
@@ -178,10 +179,22 @@ test('the decoder still says today what it said when the answers were recorded',
     const readings = framesOfPulses(fromFirstMark(pulsesOfWords(words!)));
     const said = readings.length === 1 ? frameKey(readings[0]!)
       : readings.length === 2 ? 'ambiguous' : 'no reading';
-    assert.equal(said, row.ours, `${row.config} ${row.record} reads differently now`);
+    // **One transition is expected and it is named**, section 163. The fixture's `ours` column is a
+    // snapshot of what this decoder said on the day Logitech was asked, and requiring a constant non
+    // carrying half took the biphase records from reading under **both** conventions to reading under
+    // none. That is a deliberate change with a measured cost, so it is allowed here by name and by
+    // count rather than by regenerating the column, which would let the next change through unnoticed.
+    if (said === 'no reading' && row.ours === 'ambiguous') {
+      moved += 1;
+    } else {
+      assert.equal(said, row.ours, `${row.config} ${row.record} reads differently now`);
+    }
     checked += 1;
   }
   assert.equal(checked, 347);
+  // Exactly the population section 153 counted, and every one of them a biphase code that
+  // `biphaseFrames` reads. Any other record moving fails above.
+  assert.equal(moved, 48, 'the biphase records that stopped being ambiguous');
   // And the records asked about are real records of real containers, which the loop above proves by
   // having found every one of them. The count is stated so a fixture shrinking is a failure.
   assert.equal(configs.size, 15);

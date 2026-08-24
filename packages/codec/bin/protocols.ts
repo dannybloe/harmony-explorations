@@ -184,6 +184,10 @@ const reports = join(LAB, 'work', 'myharmony', 'analyzed');
 const files = readdirSync(reports).filter((one) => one.endsWith('.json'));
 
 const byEntry = new Map<string, Measured[]>();
+/** Which corpus records already have a row, so a later pass does not measure one twice. */
+const measured = new Set<string>();
+/** The configs the analyser reports name, which is the population the catalogue pass walks. */
+const analysed: string[] = [];
 /**
  * Corpus records their analyser named and no blind reading of ours matches, kept for a last pass.
  *
@@ -203,6 +207,7 @@ function drop(why: string): void { dropped.set(why, (dropped.get(why) ?? 0) + 1)
 for (const file of files) {
   const report = JSON.parse(readFileSync(join(reports, file), 'utf8')) as
     { config: string; rows: Row[] };
+  analysed.push(report.config);
   for (const row of report.rows) {
     rows += 1;
     const stated = /^G:([^:]+):\(\)\(0x([0-9A-Fa-f]+)\)/.exec(row.theirs ?? '');
@@ -230,6 +235,7 @@ for (const file of files) {
       const m: Measured = { family, source: 'corpus', joinedBy: 'value', periodNs,
         config: report.config, record, bits: frame.bits, value: frame.value, timings };
       byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
+      measured.add(`${report.config}:${record}`);
       continue;
     }
     // **The biphase route on real configurations**, section 162, which is where the confirmation is: the
@@ -259,6 +265,7 @@ for (const file of files) {
       continue;
     }
     byEntry.set(entryOf(bi), [...(byEntry.get(entryOf(bi)) ?? []), bi]);
+    measured.add(`${report.config}:${record}`);
   }
 }
 
@@ -527,6 +534,7 @@ for (const row of unresolved) {
     continue;
   }
   byEntry.set(entryOf(rescued), [...(byEntry.get(entryOf(rescued)) ?? []), rescued]);
+  measured.add(`${rescued.config}:${rescued.record}`);
 }
 
 /** One frame period per entry, where every code of it agrees on one. */
@@ -602,6 +610,87 @@ interface Entry {
   source: 'corpus' | 'compiled' | 'both';
   /** How many of its rows were tied to a family by bit width rather than by value. */
   byWidth: number;
+}
+
+/**
+ * The last route: a biphase corpus record whose number their catalogue states somewhere.
+ *
+ * **Why this one needs no analyser answer.** The three biphase families were measured off the compiled
+ * sample, and 109 records of two of the bench remotes' own configs are biphase and were never asked
+ * about, because the analyser runs were sampled. Their numbers are in the catalogue anyway: the
+ * appliance is a model, and `GetGlobalLanguageCommands` answers for a model rather than for an account.
+ *
+ * So the family comes from whichever catalogue appliance states the number, the durations come from a row
+ * measured on the other route, and the test is that emitting their number under those durations rebuilds
+ * this record byte for byte. A value collision would have to coincide with that family's exact durations,
+ * which is why the pass is safe without a name to match on. Section 163.
+ */
+function biphaseFromCatalogue(configs: readonly string[]): Measured[] {
+  let catalogue: { appliances: Appliance[] };
+  try {
+    catalogue = JSON.parse(readFileSync(COMPILED_COMMANDS, 'utf8')) as { appliances: Appliance[] };
+  } catch { return []; }
+  const stated = new Map<string, string>();
+  for (const a of catalogue.appliances) {
+    for (const cmd of a.commands) {
+      const read = statedCode(cmd.keyCode);
+      if (read === undefined) continue;
+      for (const f of read.frames) stated.set(`${f.bits}:${f.value.toString(16)}`, read.family);
+    }
+  }
+  /** The biphase rows already measured, by family, which is where the durations come from. */
+  const rhythms = new Map<string, BiphaseTimings>();
+  for (const [, list] of byEntry) {
+    for (const m of list) if (m.biphase !== undefined) rhythms.set(m.family, m.biphase);
+  }
+  const out: Measured[] = [];
+  for (const name of configs) {
+    const c = container(name);
+    if (c === undefined) continue;
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irClass(c, record) !== IR_CLASS_STREAM) continue;
+        // Already measured by one of the routes above, so nothing to add.
+        if (measured.has(`${name}:${record}`)) continue;
+        const first = irHeaderPointers(c, record)[0];
+        if (first === undefined) continue;
+        const words = irBlockWords(c, first);
+        const periodNs = irCarrier(c, record)?.periodNs;
+        if (words === undefined || periodNs === undefined || periodNs === 0) continue;
+        const train = fromFirstMark(pulsesOfWords(words));
+        let found: Measured | undefined;
+        for (const f of biphaseFrames(train)) {
+          for (let bits = f.bits; bits >= 8 && found === undefined; bits -= 1) {
+            const mask = (1n << BigInt(bits)) - 1n;
+            const low = f.value & mask;
+            for (const setIsMark of [true, false]) {
+              const value = setIsMark ? low : low ^ mask;
+              const family = stated.get(`${bits}:${value.toString(16)}`);
+              const rhythm = family === undefined ? undefined : rhythms.get(family);
+              if (family === undefined || rhythm === undefined) continue;
+              const built = pulsesOfBiphaseFrame(rhythm, bits, value);
+              const same = built.length <= train.length
+                && built.every((one, i) => train[i]!.mark === one.mark && train[i]!.us === one.us);
+              if (!same) continue;
+              found = { family, source: 'corpus', joinedBy: 'stated', periodNs,
+                config: name, record, bits, value, biphase: rhythm };
+              break;
+            }
+          }
+          if (found !== undefined) break;
+        }
+        if (found !== undefined) out.push(found);
+      }
+    }
+  }
+  return out;
+}
+
+const fromCatalogue = biphaseFromCatalogue([...new Set(analysed)]);
+console.log(`the catalogue route reads ${fromCatalogue.length} biphase record(s) `
+  + `their analyser was never asked about\n`);
+for (const m of fromCatalogue) {
+  byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
 }
 
 const entries: Entry[] = [];

@@ -19,17 +19,17 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states twenty entries, and what each is worth is its provenance', () => {
+test('the table states twenty one entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 20);
+  assert.equal(PROTOCOLS.length, 21);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 12, 5]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 12, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -38,8 +38,8 @@ test('the table states twenty entries, and what each is worth is its provenance'
   // The three confirmed twice over, named rather than counted, since agreement between two independent
   // routes is the strongest thing this table has and losing one silently is the risk.
   assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
-                   ['Microsoft 30 Bit', 'Logitech 24 Bit', 'Sony 12 Bit', 'Pioneer 32 Bit',
-                    'Sony 15 Bit']);
+                   ['Microsoft 30 Bit', 'Kreatel IP 22 Bit', 'Logitech 24 Bit', 'Sony 12 Bit',
+                    'Pioneer 32 Bit', 'Sony 15 Bit']);
   // And they agree **exactly**, not within a band, which is what makes it a confirmation.
   for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
     assert.equal(one.spread, 0, `${one.family} disagrees between the two routes`);
@@ -83,7 +83,7 @@ test('the table states twenty entries, and what each is worth is its provenance'
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
   // Every other entry reproduces every code of its own rows to the microsecond.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 19);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 20);
 
   // **One family carries its bits the other way up, and the table says so by its numbers**, section
   // 161. `Logitech 24 Bit` sends a set bit as the **shorter** space, so its `zero` is longer than its

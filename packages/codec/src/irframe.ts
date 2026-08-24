@@ -90,17 +90,24 @@ function pulses(words: readonly number[]): Pulse[] {
  * are asserted in `test/irframe.test.ts` so widening either constant has to be a decision rather than
  * a habit.
  *
- * **It refuses a real protocol and raising it alone is worse than leaving it**, section 161, measured
- * rather than argued. `JerroldO1 16 Bit` carries a set bit as a space of **4505**, so every record of
- * it reads as nothing; at 8000 they read correctly, and 45 records of three arch 8 (Harmony 880)
- * configs then read as a plausible sixteen bit frame they are not, because their mid frame gap is
- * **4480**. Twenty five microseconds apart, so no constant separates them. What does separate them is
- * structural, that a Jerrold record's marks are 495 throughout where those 45 are biphase and take two
- * mark lengths, and requiring the non carrying half to be constant reads Jerrold and costs the
- * biconditional in `test/irframe.test.ts` that identifies a two group record by its ambiguity. That
- * trade is written up in section 161 and deliberately not taken here.
+ * **It was 4000 and a real protocol broke it**, section 161, and 8000 is measured rather than picked.
+ * `JerroldO1 16 Bit` carries a set bit as a space of **4505**, so every record of it read as nothing at
+ * all. Over every record that frames, in the nineteen containers and in the compiled sample, the longest
+ * duration consumed as a bit is **3480** and the smallest that **ends** a frame is **15300**, so the
+ * window between them holds nothing and 4505 sits inside it. This keeps a factor of 2.3 above the
+ * longest bit and 1.9 below the smallest gap, where 4000 had 1.15 above and sat **below** a real bit.
+ *
+ * **Raising it alone would have been worse than leaving it**, which is why it took two goes: 45 records
+ * of three arch 8 (Harmony 880) configs carry a mid frame gap of **4480**, twenty five microseconds
+ * below Jerrold's set bit, and at 8000 they read as a plausible sixteen bit frame they are not. No
+ * constant separates those two cases. `oneFlatLength` below is what does, and it has to be in place for
+ * this value to be safe.
+ *
+ * What stops the headerless convention swallowing a lead in now that 4490 is under the threshold is
+ * `TRAILING_GAP_US` on the other half: a header's mark is thousands of microseconds, so the pair is
+ * consumed and the walk stops one bit in, which is under `MIN_BITS`.
  */
-const GAP_US = 4000;
+const GAP_US = 8000;
 /** The other half of a pair being this long also ends the frame, which is how a pulse width protocol
  *  such as Sony terminates: the marks stay short and the final space is the gap. */
 const TRAILING_GAP_US = 2000;
@@ -129,8 +136,36 @@ const SPLIT_RATIO = 1.4;
  * made every 12 bit frame read as 11. Hence the `TRAILING_GAP_US` test **after** the push. The two
  * tests look redundant and are the opposite: one guards the measured half and one the other half.
  */
+/**
+ * Whether the half of the pair that carries no bit is one length, as a frame's definition requires.
+ *
+ * **This is the structural test no duration threshold can do**, section 163. `GAP_US` had to rise to
+ * read a protocol whose set bit is a 4505 space, and 45 biphase records of three arch 8 (Harmony 880)
+ * configs carry a mid frame gap of 4480, so a constant cannot tell the two apart. This can: a Jerrold
+ * record's marks are 495 throughout while its spaces take two lengths, which is what a pulse distance
+ * frame **is**, and those 45 take 840 and 1680 in both halves, which is what biphase is.
+ *
+ * `timingsOfFrame` has always demanded a constant non carrying half of the encoder side, so this is the
+ * decoder agreeing with the encoder beside it rather than a new rule.
+ *
+ * The opening one may differ, which is `firstMark` and is measured rather than tolerated: the Sharp
+ * family opens at 270 against 260 for every later cell.
+ *
+ * **What it cost is written down in section 163**: the 148 records that used to read under **both**
+ * conventions now read under none, so the biconditional that identified a two pointer group record by
+ * that ambiguity, section 134, holds in one direction only. Those records are biphase and `biphaseFrames`
+ * reads them, which is why the loss is acceptable and not free.
+ */
+function oneFlatLength(flats: readonly number[]): boolean {
+  if (flats.length === 0) return true;
+  return new Set(flats.slice(1)).size <= 1;
+}
+
 function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number): IrFrame | undefined {
   const durations: number[] = [];
+  // The other half of every pair, so the frame can be required to have a constant one. The pair that
+  // ends the frame is left out: on a pulse width protocol its other half is the trailing gap.
+  const flats: number[] = [];
   for (let i = 2 * headerPairs; i + 1 < d.length; i += 2) {
     const mark = d[i];
     const space = d[i + 1];
@@ -142,8 +177,10 @@ function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number)
     if (measured > GAP_US) break;
     durations.push(measured);
     if (other > TRAILING_GAP_US) break;
+    flats.push(other);
   }
   if (durations.length < MIN_BITS) return undefined;
+  if (!oneFlatLength(flats)) return undefined;
   const short = Math.min(...durations);
   const long = Math.max(...durations);
   if (long < short * SPLIT_RATIO) return undefined;
@@ -468,7 +505,14 @@ export function biphaseFrames(train: readonly Pulse[]): BiphaseFrame[] {
         value = (value << 1n) | (cells[at] ? 1n : 0n);
         bits += 1;
       }
-      if (bits >= MIN_BIPHASE_BITS && (best === undefined || bits > best.bits)) {
+      // **The reading has to reach the end of the frame region**, and this is what stops the reader
+      // answering for codes that are not biphase at all, section 163. A `Sony 12 Bit` frame's durations
+      // are 600, 1200 and 2400, all whole multiples of 600, so it passes the half cell test and its bit
+      // pattern can yield a run of eight or more valid cells by luck: 50 records of the two calibration
+      // configs did. A real biphase frame's cells run from its lead in to the gap with nothing left
+      // over, which all three measured families do exactly.
+      if (bits >= MIN_BIPHASE_BITS && skipped + 2 * bits === cells.length
+          && (best === undefined || bits > best.bits)) {
         best = { base, skipped, bits, value };
       }
     }

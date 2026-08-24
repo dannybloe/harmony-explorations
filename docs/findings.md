@@ -22410,3 +22410,92 @@ legible in the first place. And the biconditional that identifies a biphase reco
 under the pulse distance decoder, section 134, is now doing two jobs: it is the detector, and it is the
 thing that would break if the terminator rule were relaxed, section 161. Reading these codes does not
 change that trade, because it needs no change to `decode` at all.
+
+## 163. A frame's constant half is the rule the terminator constant was standing in for
+
+Section 161 measured a trade and did not take it. `JerroldO1 16 Bit`, the Motorola cable box, carries a
+set bit as a space of 4505 microseconds, above the 4000 that ends a frame, so every one of its records
+read as nothing. Raising the constant reads them and makes 45 records of three arch 8 (Harmony 880)
+configs read as a sixteen bit frame they are not, because their mid frame gap is 4480. Twenty five
+microseconds apart. The structural separator was identified there and refused, because adopting it cost
+the biconditional that identifies a two pointer group record by our decoder's own ambiguity, section 134.
+
+Section 162 changed what that costs, so the trade was re-measured and taken.
+
+### The rule, and why it is not a new one
+
+A pulse distance or pulse width frame has a **constant** half by definition: one half of every pair is
+the same length and the other carries the bit. `timingsOfFrame` has always demanded that of the encoder
+side. `decode` did not, so the two halves of one field disagreed about what a frame is, and the gap
+constant was standing in for the missing test.
+
+`oneFlatLength` is that test, and it separates the two cases the constant cannot: a Jerrold record's
+marks are 495 throughout while its spaces take two lengths, and those 45 records take 840 and 1680 in
+**both** halves, which is what biphase is. With it in place `GAP_US` rises to 8000, which is measured
+rather than picked: over every record that frames, the longest duration consumed as a bit is 3480 and the
+smallest that ends a frame is 15300, so 4505 sits in an empty window and the new value keeps a factor of
+2.3 above the one and 1.9 below the other.
+
+`JerroldO1 16 Bit` is the twenty first entry in the rhythm table, 47 records of the compiled sample,
+every one reproduced exactly.
+
+### What it cost, stated as the number
+
+The 148 records that read under **both** conventions now read under **none**. That is the whole cost, and
+it is exactly the population section 153 counted: every one of them is biphase, and section 162's reader
+reads them. Nothing else moved: 3547 records still read under exactly one convention, before and after.
+
+The biconditional is now one directional and its test says so. What replaced the ambiguity as the
+detector is the reader that names the cause: **every two group record is a biphase code**, 148 of 148,
+and the reverse fails because 109 more records are biphase with one group. Stating that number is what
+stops the test reading as a biconditional it is not.
+
+**One fixture had to be allowed to move**, `work/myharmony/analyzed`, which records what our decoder said
+about each record on the day Logitech was asked about it. 48 rows go from `ambiguous` to `no reading`. The
+test permits that transition **by name and by count** rather than by regenerating the column, because
+regenerating it would let the next change through unnoticed.
+
+### The biphase reader was too permissive, and 50 records said so
+
+Adding the flat length rule made the two group population easy to count, and the count came out at 307
+biphase records where section 162's measurement said 257. The extra 50 are `Sony 12 Bit` records of the
+two calibration configs. A Sony frame's durations are 600, 1200 and 2400, all whole multiples of 600, so
+it passes the half cell test, and with the right bit pattern its cells yield a run of eight or more valid
+Manchester pairs by luck.
+
+The fix is a property every real biphase frame has and an accidental run does not: **the reading has to
+reach the end of the frame region**, from its lead in to the gap with nothing left over. All three
+measured families do that exactly. With it the population is 257 in six shapes, one reading each: 148
+records of RC-6 at 36.2 kHz in the four arch 8 configs, and 109 of a set top box at 56.3 kHz.
+
+That is the second time in two sections that a reader answering **more** was the warning sign, after
+section 161's 45 plausible sixteen bit frames. A decoder that reads a record it should refuse is worse
+than one that refuses a record it should read, because the refusal is visible in a count and the wrong
+answer is not.
+
+### And the 109 are the bench remotes' own set top box
+
+They were never asked about, because the analyser runs were sampled. Their numbers are in Logitech's
+catalogue regardless: an appliance there is a **model**, and `GetGlobalLanguageCommands` answers for a
+model rather than for an account, so the numbers fetched for the compiled sample's Motorola vip 1853 are
+the numbers for the same box in a Harmony One's own config.
+
+108 of the 109 match, and all 108 rebuild their record byte for byte under the rhythm measured off the
+compiled sample: same half cell, same lead in, same polarity, same width. So `Kreatel IP 22 Bit` is
+`both` now, 164 codes.
+
+The same route added 100 more RC-6 records of the arch 8 configs that the analyser was never asked about,
+taking `Microsoft 30 Bit` to 213 codes in one duration set. **Six of the twenty one entries are confirmed
+on both routes**, and the two biggest of those six are biphase families that could not be read at all a
+section ago.
+
+The pass that does it can only ever confirm: the family comes from whichever catalogue appliance states
+the number, the durations come from a row measured on the other route, and the test is byte equality. A
+value collision would have to coincide with that family's exact durations, which is why it needs no
+device name to match on.
+
+### What is left
+
+12 records of the compiled sample read as nothing, and 3 are the `Makita 10 Bit` disagreement section 162
+recorded. 115 records their analyser named nothing for stay out by construction. That is the whole
+remainder of the infrared side of both populations.
