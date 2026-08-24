@@ -101,9 +101,15 @@ The route is measured and it is the one that produced the current entries: `Devi
 puts a catalogue appliance on the account, their service compiles a configuration containing it, and the
 durations in the result are the ones their generator emits.
 
-- [ ] pick one appliance per missing family out of the census, so that one compile covers as many as
-      possible. `Pioneer 32 Bit 2` sits on 4 appliances and `Sharp 15 Bit` on 4, so the selection is a
-      set cover over 18 families and not eighteen requests
+- [x] pick one appliance per missing family out of the census, so that one compile covers as many as
+      possible. Done on 24 August 2026: a set cover over the 18 comes to **17 appliances**, and only one
+      of them carries two missing families, so that is near the floor rather than a greedy guess. The
+      makes, the models, the catalogue ids and the batching are in
+      `../lab/reads/20260824-plan/family-batches.md`, ordered so that a partial sitting buys the most
+- [ ] **the appliances go on by hand**, in Logitech's own client, because the scripted route was refused
+      on that account. Our side starts at the compile, and the read only capture of what their catalogue
+      states has to run **while the appliances are still on the record**: it is one half of the join and
+      the script reads the list off the account rather than from a file
 - [ ] one compile per account batch, filed in the lab beside the existing one with its own read date
 - [ ] `make protocols` measures each new family and each entry reproduces every one of its own records
       byte for byte, with `source: 'compiled'`
