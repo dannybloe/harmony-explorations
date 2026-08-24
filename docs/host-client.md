@@ -448,9 +448,23 @@ Section 145, and all of it recomputed by `tests/test_host_client.py` rather than
 * **An activity is roles plus a wanted state**, and `EnterActions` and `LeaveActions` are empty on both
   captured activities. A role names its device, its selected input by name, and its position in the
   power up and power down order.
-* **A `KeyCode` has three shapes, not one**, and 124 of 419 commands do not use the shape this document
-  quoted. See section 145 for the table; the compound form is the one that parses to a plausible wrong
-  answer rather than to nothing.
+* **A `KeyCode` is a grammar, not three shapes**, section 159, measured over 2921 distinct codes from
+  106 appliances after section 145 had read three shapes off the 419 available then. It is
+  `G:<family>:(<A>)(<B>)(<C>):<n>`; slots A and B both hold content, C is empty in every code and the
+  trailing number is 3 in every code. A slot holds items joined by `_`, and an item is a value written
+  with a one digit position prefix, or one of the three words `Start`, `Repeat` and `Trailer`, which name
+  a standard frame of the protocol instead of stating it. Six item sequences occur and no seventh. The
+  family's name states one width per value, checked on 3499 values with none exceeding its width; the one
+  family that fails, `Galaxis 16 Bit Quad Toggle`, writes its values in **quaternary** digits, so reading
+  them as hexadecimal overstates them threefold. `packages/codec/src/stated.ts` is the reader and
+  refuses those 69 codes rather than guessing.
+* **Their analyser recognises a rhythm at a bit count, from its own list**, section 159, which bounds how
+  far it can be used as a judge. It accepts the Samsung lead in at 32 bits, naming it `GoVideoO1 32 Bit`,
+  and refuses the same lead in at 16, 20 and 38 bits, which is where their own catalogue states those
+  codes. So a refusal from it is not evidence against a rhythm. Its family names are also coarser than
+  the catalogue's: one rhythm answers for both of their Sharp families, and a 48 bit code is named from a
+  vendor field inside its own payload. `ProtocolList` is advertised on two services and 404s as a POST on
+  both, so the list it decodes from is not reachable.
 
 ### Confirmed and moved out
 

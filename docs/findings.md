@@ -20564,6 +20564,24 @@ against a derived table, which would make the two closures above coincidences of
 seventh device whose `KeyCode` uses a fourth shape, which is the outcome to expect rather than hope
 against.
 
+**The fourth shape arrived, and two more with it**, section 159, measured over 2921 distinct codes from
+106 appliances against the 419 from six here: there are two words this section never saw, `Start` and
+`Trailer`, and six item sequences in all. The three shapes above are three of the six and every count
+here still holds of the population it was measured on. What did not survive is "nine families answer for
+six devices": the catalogue uses **33**.
+
+**And the reading in this section was right and got ignored**, which is the part worth carrying. The
+warning above, that a reader taking the second group as one number reads 124 of 419 commands wrongly, is
+exactly the defect `packages/codec/src/stated.ts` shipped with thirteen sections later, and it was in
+this document the whole time. So the failure was not a missing measurement; it was a parser written from
+the examples in front of it rather than from the finding that had already generalised them.
+
+**One thing to read carefully rather than as a contradiction.** The claim above that the stated bit count
+is not the value width is about the **sum** of a compound code's subfields: `Philips Hurd 16 Bit
+LongToggle` carries three values totalling 48 bits under a name saying 16. Section 159's closure is per
+value, that no **single** value exceeds the width its name states, over 3499 values. Both hold, and they
+are different measurements of the same codes.
+
 ## 146. Two opcodes draw a picture, and the second one is why a bank held pictures nothing reached
 
 Screen opcode 2 names a picture in its last three operand bytes, section 50, and `bitmaps` was
@@ -21868,3 +21886,137 @@ it is not a case of the wrong rhythm but of a shape nothing here produces. Its n
 `0x00801_1x1DA05F`, a five digit first frame and a `1x` second, and neither the widths nor the prefix is
 understood.
 
+## 159. A catalogue code is a grammar with two frame slots, and their analyser is not a general decoder
+
+Section 158 read Logitech's code notation as a family, a parameter slot to skip, and a frames field
+holding one value or two joined by an underscore. **Two of those three are wrong**, and each was
+producing a command that would have gone out wrong while everything in the code reported success. The
+occasion for finding out was a wider census: 106 appliances, 5219 commands, **2921 distinct codes**,
+against the 52 the earlier one kept, because it kept four codes per family and the shapes that matter
+are rare. Two earlier captures of 184 distinct codes have an empty parameter slot in every single one,
+so nothing already in the lab could have shown this.
+
+**The notation is `G:<family>:(<A>)(<B>)(<C>):<n>`, and slots A and B both hold content.** A slot holds
+a sequence of items joined by `_`; an item is a **value**, written as a single digit prefix and
+hexadecimal digits, or one of three **words**. Slot C is empty in all 2921 codes and the trailing number
+is 3 in all 2921. Six item sequences occur and there is no seventh:
+
+| distinct codes | slot A | slot B | families like |
+|---|---|---|---|
+| 1026 | a value | `Repeat` | Toshiba 32 Bit |
+| 936 | empty | a value | Sony 12 Bit |
+| 519 | empty | two values | Sharp 15 Bit, Samsung 38 Bit |
+| 293 | `Start` | a value | JVC 16 Bit |
+| 50 | empty | three values | Philips Hurd 16 Bit LongToggle |
+| 28 | empty | `Start`, two values, `Trailer` | MitsubishiO1 Dual 8 16 Bit |
+| 7 | a value | a value | Pioneer 32 Bit 2 |
+
+**The words name a frame instead of stating it**, which is why they can be words: `Repeat` is the ditto
+frame of the protocol concerned, `Start` a lead in sent once before the payload, `Trailer` a closing
+frame. All three are published behaviour of the protocols they appear on, and `Start` on JVC is exactly
+that protocol's documented habit of sending its header once.
+
+**What the old reading cost, and both are the same quiet failure.** Reading slot B for a number found
+the word `Repeat` and refused the whole code, which is **every Toshiba code in the catalogue**, 1026 of
+2921 distinct codes and the family the most appliances in the census use. And on
+`G:Pioneer 32 Bit 2:(0xC53A9966)(0xF50A5DA2)():3` it took slot B alone and emitted the **second** frame
+as though it were the whole command. That parses, it survives every check in the codebase, and
+Logitech's own analyser answers it with the number it was built from, so nothing anywhere says half the
+command is missing. Section 158's own table lists that family under "right bits, wrong rhythm" for
+exactly this reason and the cause was in the parser rather than in the rhythm.
+
+**The worst part of this is that section 145 had it already.** That section read all 419 commands then
+available, found `Toshiba 32 Bit` putting its value in the first group with the word `Repeat` in the
+second, counted it at 77 of 419, and wrote down that a reader taking the second group as one number gets
+124 of 419 commands wrong. `stated.ts` was written thirteen sections later and does exactly that. So this
+is not a measurement that was missing; it is a parser written from the examples in the docstring in front
+of it rather than from the finding that had already generalised them, in a repository whose rule is that
+a finding lands as executable code. The wider census is what made it visible again, and it should not
+have needed one.
+
+**A family's name states one width per frame, and the closure is arithmetic.** "Samsung 16 and 20 Bit"
+gives its first frame 16 bits and its second 20; "MitsubishiO1 Dual 8 16 Bit" is the same shape with the
+conjunction left out. The check is that **no value exceeds the width it is given**, over 2852 codes and
+3499 values, and it is a real check rather than a convention because a wrong pairing puts a number in a
+frame too narrow to hold it. The width run has to be anchored at a word boundary, which is not tidiness:
+"JVCO1 16 Bit" ends its family name in a digit, so an unanchored run reads "1 16" as two widths and then
+refuses a perfectly good code.
+
+**Exactly one family fails that check and it is refused rather than widened**, `Galaxis 16 Bit Quad
+Toggle`, all 69 of its codes, whose three values need 26, 1 and 26 bits against the 16 the name states.
+The cause is legible and deliberately not implemented: **every digit of every Galaxis value is 0, 1, 2 or
+3**, in 69 of 69, so "Quad" is a quaternary digit string at two bits a digit, which makes its eight digit
+value exactly the 16 bits the name claims. Reading those digits as hexadecimal is what overstates them,
+and it would emit 69 commands three times too long that look perfectly valid. So the parser reads 2852 of
+2921 distinct codes and 32 of 33 families, and the 69 it refuses are refused for a stated reason.
+
+**The position digit is a position and nothing further.** Across every code the digits, in order, form
+exactly four runs: `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and on a code
+stating several it ascends from 0 except in the `00` case, which is the families whose values are all the
+same width. Whether it indexes the values, a field of the protocol, or the widths the name spells is
+**unread**, and it is kept as written rather than normalised.
+
+**Their two frames are one command and the second is derived, at least on Sharp.** All four Sharp 15 Bit
+codes in the narrow census have their two frames differing by exactly `0x3FF`, the low ten bits inverted,
+which is the published Sharp habit of resending the command byte, the expansion bit and the check bit
+complemented while keeping the five address bits. That is a second route to the same bit layout and it is
+why the pair can be believed to be one command rather than two.
+
+### The one seed the judge accepted
+
+Section 158 left nine of fourteen families without a rhythm, and the corpus cannot supply them: `make
+analyze` asked Logitech's analyser to name every code here and it came back with eight families, of which
+five are readable by our own frame decoder. **The catalogue uses 33.** So the plan was to seed the
+missing ones with their published nominal timings and let Logitech's own analyser rule.
+
+**One of four seeds was accepted and it is the largest missing family.** The Sharp scheme has **no lead
+in at all**: a constant 320 microsecond mark and the gap after it carrying the bit, 680 for a zero and
+1680 for a one, at 38 kHz. `pulsesOfFrame` had to learn to emit a header of nothing for it, which
+`[0, 0]` now means, and a decoded record can never carry that because a duration read off a
+configuration is a real pulse and therefore positive. Emitted that way, **17 catalogue codes came back
+from their analyser carrying the exact number they were built from**, 9 of `Sharp 15 Bit` and 8 of
+`Sharp 15 Bit 2`, so one rhythm serves both of their Sharp families, which is 338 of the 2852 distinct
+codes read and 487 of the 5219 commands.
+
+**Their analyser calls it `Proceed 14 Bit`, and that is not a disagreement.** Their analyser's family
+list is coarser than their catalogue's, measured three ways: a `Pioneer 32 Bit 2` code emitted with
+Pioneer's own durations comes back named `Pioneer 32 Bit`, both Sharp families come back `Proceed 14
+Bit`, and a 48 bit code comes back named from a vendor field inside its own payload, `Delonghi 48 Bit`
+or `PanasonicV2 48 Bit` for codes the catalogue files under Sharp. So **name agreement is sufficient
+evidence and not necessary**, which corrects the test section 158 settled on the same evening it was
+written.
+
+### Why the other three seeds settle nothing, which is the finding
+
+**Logitech's analyser is not a general decoder.** It recognises a rhythm **at a bit count**, from its own
+list, and refuses anything else. Every one of these refused, on 24 August 2026:
+
+| family | rhythm tried | carrier | answer |
+|---|---|---|---|
+| Samsung 16 and 20 Bit, 16 bits | 4500/4500, 560/560/1690 | 38 and 37 kHz | refused |
+| Samsung 16 and 20 Bit, 16 bits | 4500/4500, 590/590/1690 and 550/550/1650 | 38 kHz | refused |
+| Samsung 16 and 20 Bit, 20 bits | 4500/4500, 560/560/1690 and 550/550/1650 | 38 kHz | refused |
+| Samsung 38 Bit, 38 bits | 4500/4500, and the NEC lead in | 38 kHz | refused |
+| Panasonic 16 Bit, 16 bits | 3456/1728, 432/432/1296 | 36.7, 37 and 38 kHz | refused |
+| Panasonic 16 Bit, 16 bits | 3400/1700, 400/400/1200 | 36.7 kHz | refused |
+
+**The control is what makes those refusals mean something rather than looking like a broken request.**
+The *same* Samsung lead in, a mark and a space of equal length, sent at **32** bits, is decoded and named
+`GoVideoO1 32 Bit`. So the request shape is right, the equal length header is something their decoder
+knows, and the bit count is what it turns on. A refusal at 16, 20 or 38 bits therefore says their
+analyser has no entry at that width and says nothing whatever about whether the rhythm is the appliance's.
+
+`ProtocolList` appears in their own discovery listing on two services and **404s as a POST on both**, so
+there is no route to the table their decoder is working from.
+
+**So the seed route has a ceiling and this is where it stops.** It can confirm a family whose bit count
+their analyser happens to cover, which got Sharp, and it cannot rule on one it does not, which is the
+other three. What is left is Logitech's own compiler: put an appliance of the family on an account, have
+the service compile a configuration, and read the durations out of it. That is `exact` evidence rather
+than a decoder's opinion, it needs no guessing at all, and it writes to the account, so it is a decision
+rather than a run.
+
+**The state of writing infrared from their catalogue**, after this: the notation is read, 2852 of 2921
+codes and 32 of 33 families; the bit layout is solved; and the rhythm is known for **six** families,
+five measured off the corpus and one documented and judged. The nine of section 158 was counted against
+a catalogue of fourteen families, which the wider census puts at 33.

@@ -90,15 +90,39 @@ interface Census {
   /** Their raw notation, parsed here by `statedCode`, so the census holds no second copy of it. */
   codes?: { family: string; keyCode: string }[];
 }
-const censusPath = join(LAB ?? '.', 'work', 'myharmony', 'responses', 'ProtocolCensus.json');
-const census = JSON.parse(readFileSync(censusPath, 'utf8')) as Census;
+// **The wide census by default**, because the narrow one keeps four codes per family and stops at the
+// first model prefix that answers, so the families this check exists to settle are the ones it is
+// thinnest on. `--census narrow` asks the older file.
+const censusPath = join(LAB ?? '.', 'work', 'myharmony', 'responses',
+  flag('census', 'wide') === 'narrow' ? 'ProtocolCensus.json' : 'ProtocolCensusWide.json');
+const raw = JSON.parse(readFileSync(censusPath, 'utf8')) as Census & {
+  rows?: { family: string; keyCode: string }[];
+};
+// The wide file is one row per command and the narrow one a hand picked few, so a cap per family keeps
+// the ask proportionate either way and the number asked is printed rather than implied.
+const perFamily = Number(flag('per-family', '3'));
+// `--only` narrows to the families whose name contains it, comma separated. The whole point of a run is
+// usually one family's rhythm, and without this the budget is spent in census order on families that
+// were settled weeks ago.
+const only = flag('only', '').split(',').map((one) => one.trim()).filter((one) => one !== '');
+const kept = new Map<string, number>();
+const census: Census = {
+  devices: raw.devices ?? [],
+  codes: (raw.codes ?? raw.rows ?? []).filter((one) => {
+    if (only.length > 0 && !only.some((want) => one.family.includes(want))) return false;
+    const at = kept.get(one.family) ?? 0;
+    if (at >= perFamily) return false;
+    kept.set(one.family, at + 1);
+    return true;
+  }),
+};
 // Deduplicated, since the census walks makes and two makes can list the same code. Anything their
 // notation states in a shape `statedCode` refuses is dropped here and counted, rather than guessed at.
 const parsed = (census.codes ?? []).map((one) => statedCode(one.keyCode))
   .filter((one) => one !== undefined);
 const unreadable = (census.codes ?? []).length - parsed.length;
 const codes = [...new Map(parsed.map((one) =>
-  [`${one.family}|${one.frames.join('_')}`, one])).values()];
+  [`${one.family}|${one.frames.map((f) => f.value).join('_')}`, one])).values()];
 if (unreadable > 0) console.log(`${unreadable} catalogue codes are in a shape statedCode refuses\n`);
 if (codes.length === 0) {
   console.error(`${censusPath} carries no codes; rerun the census with --codes`);
@@ -128,10 +152,16 @@ let readBack = 0;
 let namedRight = 0;
 
 outer: for (const code of codes) {
-  // **The first frame only, and the row says so.** A two frame code needs the gap between the frames as
-  // well, and that is exactly what section 152 measured as not following from the bits. So this asks
-  // whether the first frame is right and leaves the pair for the compile route.
-  const value = code.frames[0]!;
+  // **The first frame only, and the row says so.** A code stating several frames needs the gap between
+  // them as well, and that is exactly what section 152 measured as not following from the bits. So this
+  // asks whether the first frame is right and leaves the rest for the compile route.
+  //
+  // **The first frame is now the first frame.** It used to be whatever slot B held, so on the families
+  // that put a frame in each slot this sent the second one, and on the ones that put the number in slot
+  // A and the word `Repeat` in slot B the code was refused outright.
+  const first = code.frames[0]!;
+  const value = first.value;
+  const bits = first.bits;
   // One candidate per family: two entries of one family differ only in their carrier, and their analyser
   // is told the carrier in the string anyway, so trying both asks the same question twice.
   const byFamily = new Map(PROTOCOLS.map((one) => [one.family, one]));
@@ -141,7 +171,7 @@ outer: for (const code of codes) {
   ];
   for (const entry of candidates) {
     if (asked >= limit) break outer;
-    const pulses = pulsesOfStatedCode(entry.family, code.bits, value, entry.periodNs);
+    const pulses = pulsesOfStatedCode(entry.family, bits, value, entry.periodNs);
     if (pulses === undefined) continue;
     const hertz = 1e9 / entry.periodNs;
     let sent: string;
@@ -171,11 +201,13 @@ outer: for (const code of codes) {
     const sameName = stated !== null && canonical(stated[1]!.trim()) === canonical(code.family);
     if (sameNumber) readBack += 1;
     if (sameName && sameNumber) namedRight += 1;
-    rows.push({ family: code.family, bits: code.bits, value: `0x${value.toString(16)}`,
+    rows.push({ family: code.family, bits, value: `0x${value.toString(16)}`,
       frames: code.frames.length, triedAs: entry.family,
       sameNumber, sameName, ...(theirs === undefined ? {} : { theirs }) });
+    const shape = code.frames.length > 1 ? `+${code.frames.length - 1}`
+      : code.words.length > 0 ? `+${code.words[0]!}` : '';
     console.log(`${code.family.padEnd(22)} `
-      + `${`0x${value.toString(16)}${code.frames.length > 1 ? '+1' : ''}`.padEnd(14)} `
+      + `${`0x${value.toString(16)}${shape}`.padEnd(18)} `
       + `as ${entry.family.padEnd(20)} `
       + `-> ${theirs ?? 'refused'}${sameNumber ? '  NUMBER OK' : ''}${sameName ? ' NAME OK' : ''}`);
     // Their answer is the arbiter, and the **name** is what settles it, so a candidate that only gets

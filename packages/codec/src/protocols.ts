@@ -45,13 +45,48 @@ export interface StatedProtocol {
   readonly exact: number;
   /** The tightest band, as a fraction, that covers every code of the entry. */
   readonly spread: number;
+  /**
+   * Where the durations came from, which decides what the entry is worth.
+   *
+   * `corpus` is measured off records a configuration already holds, so it reproduces what Logitech's
+   * own compiler emitted and `exact` says how often. `documented` is the published nominal timing of
+   * that protocol, taken from third party protocol documentation, for a family **no configuration here
+   * holds a single record of**: the corpus cannot supply it and no amount of reading it will.
+   *
+   * A documented entry has `codes: 0` because it was measured over none, which is the honest number
+   * and not a placeholder. What it has instead is `namedBack`.
+   */
+  readonly source: 'corpus' | 'documented';
+  /**
+   * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
+   * number they were built from.
+   *
+   * **This is the only evidence a documented entry has, and it is weaker than `exact` in a way worth
+   * stating.** `exact` says the durations are the ones their compiler emitted. This says their own
+   * decoder, hearing our train, recovers the bits: the marks and spaces land in the bands it sorts into
+   * zeros and ones. That is what an appliance's receiver does too, so it is the right kind of evidence,
+   * and it is still not an appliance and still not byte equality.
+   */
+  readonly readBack?: number;
+  /**
+   * What their analyser calls this rhythm, where that is not what their catalogue calls it.
+   *
+   * **Their analyser's family list is coarser than their catalogue's**, which is measured: emitting a
+   * `Pioneer 32 Bit 2` code with Pioneer's durations comes back named `Pioneer 32 Bit`, and their two
+   * Sharp families both come back `Proceed 14 Bit`. So a name that does not match is not a wrong
+   * rhythm, and name agreement is sufficient evidence rather than necessary.
+   */
+  readonly heardAs?: string;
 }
 
 export const PROTOCOLS: readonly StatedProtocol[] = [
-  { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02 },
-  { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0 },
-  { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 12, exact: 12, spread: 0 },
-  { family: 'SharpO1 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 12, exact: 12, spread: 0 },
-  { family: 'Sony 15 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 9, exact: 9, spread: 0 },
-  { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 3, exact: 3, spread: 0 },
+  { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
+  { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0, source: 'corpus' },
+  { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 12, exact: 12, spread: 0, source: 'corpus' },
+  { family: 'SharpO1 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 12, exact: 12, spread: 0, source: 'corpus' },
+  { family: 'Sony 15 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 9, exact: 9, spread: 0, source: 'corpus' },
+  { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 3, exact: 3, spread: 0, source: 'corpus' },
+  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. `codes: 0` is the
+  // honest count: the corpus holds no record of these families at all.
+  { family: 'Sharp 15 Bit', periodNs: 26315, header: [0, 0], flat: 320, zero: 680, one: 1680, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'documented', readBack: 17, heardAs: 'Proceed 14 Bit' },
 ];

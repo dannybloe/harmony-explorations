@@ -314,8 +314,101 @@ export interface StatedProtocol {
   readonly exact: number;
   /** The tightest band, as a fraction, that covers every code of the entry. */
   readonly spread: number;
+  /**
+   * Where the durations came from, which decides what the entry is worth.
+   *
+   * \`corpus\` is measured off records a configuration already holds, so it reproduces what Logitech's
+   * own compiler emitted and \`exact\` says how often. \`documented\` is the published nominal timing of
+   * that protocol, taken from third party protocol documentation, for a family **no configuration here
+   * holds a single record of**: the corpus cannot supply it and no amount of reading it will.
+   *
+   * A documented entry has \`codes: 0\` because it was measured over none, which is the honest number
+   * and not a placeholder. What it has instead is \`namedBack\`.
+   */
+  readonly source: 'corpus' | 'documented';
+  /**
+   * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
+   * number they were built from.
+   *
+   * **This is the only evidence a documented entry has, and it is weaker than \`exact\` in a way worth
+   * stating.** \`exact\` says the durations are the ones their compiler emitted. This says their own
+   * decoder, hearing our train, recovers the bits: the marks and spaces land in the bands it sorts into
+   * zeros and ones. That is what an appliance's receiver does too, so it is the right kind of evidence,
+   * and it is still not an appliance and still not byte equality.
+   */
+  readonly readBack?: number;
+  /**
+   * What their analyser calls this rhythm, where that is not what their catalogue calls it.
+   *
+   * **Their analyser's family list is coarser than their catalogue's**, which is measured: emitting a
+   * \`Pioneer 32 Bit 2\` code with Pioneer's durations comes back named \`Pioneer 32 Bit\`, and their two
+   * Sharp families both come back \`Proceed 14 Bit\`. So a name that does not match is not a wrong
+   * rhythm, and name agreement is sufficient evidence rather than necessary.
+   */
+  readonly heardAs?: string;
 }
 `;
+
+/**
+ * Published nominal rhythms for families the corpus holds no record of, so it can never measure them.
+ *
+ * **Why these are here and not in the measurement.** `make analyze` asked Logitech's analyser to name
+ * every code in this corpus, and the families it came back with are eight, of which the table above
+ * covers the five that our own frame decoder can read. The catalogue uses 32. So the missing families
+ * are missing by construction: no configuration here drives an appliance that uses them, and reading
+ * more of the corpus cannot change that.
+ *
+ * **Each one is third party documentation, marked as such per entry**, on the same footing as anything
+ * believed on Logitech's client's word alone. What promotes a seed from a guess to an entry worth
+ * shipping is `bin/emitcheck.ts`: it builds a real catalogue code with these durations and asks their
+ * own analyser what it just received. `namedBack` is that count and it is filled in by hand from a run,
+ * so the number sits in the diff where somebody can see it.
+ *
+ * `header: [0, 0]` means the protocol opens on its first bit, which the Sharp scheme does.
+ */
+const DOCUMENTED: {
+  family: string; periodNs: number; header: [number, number]; flat: number; zero: number;
+  one: number; carries: 'mark' | 'space'; framePeriod?: number; readBack: number; heardAs?: string;
+}[] = [
+  // **The Sharp scheme, and the one seed the judge accepted.** No lead in at all, a constant 320
+  // microsecond mark, and the gap after it carrying the bit. It is the reason `pulsesOfFrame` had to
+  // learn to emit no header. Measured on 24 August 2026: 17 catalogue codes, 9 of `Sharp 15 Bit` and 8
+  // of `Sharp 15 Bit 2`, all 17 decoded back to the exact number they were built from. One rhythm
+  // therefore serves both of their Sharp families, which is 338 of the 2852 distinct codes read.
+  { family: 'Sharp 15 Bit', periodNs: 26315, header: [0, 0], flat: 320, zero: 680, one: 1680,
+    carries: 'space', readBack: 17, heardAs: 'Proceed 14 Bit' },
+];
+
+/**
+ * Rhythms tried and **not** adopted, kept so the next run does not re-derive them.
+ *
+ * **Their analyser turned out not to be a general decoder**, which is what these three establish and it
+ * is the reason the seed approach stops here rather than covering nine families. It recognises a rhythm
+ * **at a bit count**, from its own list, and refuses anything else: the Samsung lead in, a mark and a
+ * space of equal length, is accepted at 32 bits, where it answers `GoVideoO1 32 Bit`, and refused at 16,
+ * 20 and 38, which is what their own catalogue states those codes as. So for a family whose bit count
+ * their analyser has no entry for, a refusal says nothing about the rhythm and the judge cannot rule.
+ *
+ * Measured on 24 August 2026, every combination refused unless noted:
+ *
+ * | family | rhythm tried | carrier | answer |
+ * |---|---|---|---|
+ * | Samsung 16 and 20 Bit, 16 bits | 4500/4500, 560/560/1690 | 38 and 37 kHz | refused |
+ * | Samsung 16 and 20 Bit, 16 bits | 4500/4500, 590/590/1690 and 550/550/1650 | 38 kHz | refused |
+ * | Samsung 16 and 20 Bit, 20 bits | 4500/4500, 560/560/1690 and 550/550/1650 | 38 kHz | refused |
+ * | Samsung 38 Bit, 38 bits | 4500/4500 and the NEC lead in | 38 kHz | refused |
+ * | Panasonic 16 Bit, 16 bits | 3456/1728, 432/432/1296 | 36.7, 37 and 38 kHz | refused |
+ * | Panasonic 16 Bit, 16 bits | 3400/1700, 400/400/1200 | 36.7 kHz | refused |
+ *
+ * The control that makes those refusals informative rather than a broken request: the **same** 4500/4500
+ * lead in, sent at 32 bits, is decoded and named. So the request shape is right and the bit count is
+ * what it turns on.
+ *
+ * What would settle these is not another guess. It is Logitech's own compiler: add an appliance of the
+ * family to an account, have the service compile a configuration, and read the durations out of it,
+ * which is `exact` evidence rather than `readBack`. That writes to the account, so it is a decision
+ * rather than a run.
+ */
 
 if (write) {
   const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
@@ -324,8 +417,17 @@ if (write) {
     return `  { family: '${e.family}', periodNs: ${e.periodNs}, `
       + `header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
-      + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band} },`;
+      + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: 'corpus' },`;
   }).join('\n');
-  writeFileSync(out, `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n${rowsOut}\n];\n`);
-  console.log(`\n${entries.length} entries written to src/protocols.ts`);
+  const seedsOut = DOCUMENTED.map((e) =>
+    `  { family: '${e.family}', periodNs: ${e.periodNs}, `
+    + `header: [${e.header[0]}, ${e.header[1]}], flat: ${e.flat}, zero: ${e.zero}, one: ${e.one}, `
+    + `carries: '${e.carries}',${e.framePeriod === undefined ? '' : ` framePeriod: ${e.framePeriod},`}`
+    + ` codes: 0, exact: 0, spread: 0, source: 'documented', readBack: ${e.readBack}`
+    + `${e.heardAs === undefined ? '' : `, heardAs: '${e.heardAs}'`} },`).join('\n');
+  writeFileSync(out, `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n${rowsOut}\n`
+    + `  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. \`codes: 0\` is the\n`
+    + `  // honest count: the corpus holds no record of these families at all.\n${seedsOut}\n];\n`);
+  console.log(`\n${entries.length} measured and ${DOCUMENTED.length} documented entries `
+    + 'written to src/protocols.ts');
 }

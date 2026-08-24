@@ -235,7 +235,14 @@ export function fromFirstMark(train: readonly Pulse[]): readonly Pulse[] {
  * that some configuration already holds.
  */
 export interface FrameTimings {
-  /** The header: a mark, and the space between it and the first bit. */
+  /**
+   * The header: a mark, and the space between it and the first bit.
+   *
+   * **`[0, 0]` means the protocol has none**, which is not a tidy sentinel but the only shape some
+   * families come in: the Sharp scheme opens on its first bit with no lead in at all, so a table
+   * entry for it has to be able to say so. A decoded record never carries it, because a duration
+   * read off a config is a real pulse and therefore positive.
+   */
   header: readonly [number, number];
   /** The half of every pair that carries no bit, and is one length throughout. */
   flat: number;
@@ -308,7 +315,11 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
   if (t.carries === 'mark' && t.closing === undefined) {
     throw new Error('a pulse width frame needs the space that closes its last pair');
   }
-  const out: Pulse[] = [{ mark: true, us: t.header[0] }, { mark: false, us: t.header[1] }];
+  // A zero length header is no header, and emitting it as two pulses of zero would put a pair in the
+  // train that no receiver could see and that our own decoder would then read as a bit cell.
+  const out: Pulse[] = t.header[0] === 0 && t.header[1] === 0
+    ? []
+    : [{ mark: true, us: t.header[0] }, { mark: false, us: t.header[1] }];
   for (let i = bits - 1; i >= 0; i -= 1) {
     const carried = (value >> BigInt(i)) & 1n ? t.one : t.zero;
     if (t.carries === 'mark') {

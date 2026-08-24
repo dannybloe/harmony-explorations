@@ -334,12 +334,26 @@ read off the remote and converted with today's code.
 service advertises **308 operations over 50 services**, the device database opens for **a plain Logitech
 login with no account record and no registered remote**, and the chain is `SearchGlobalDevices` then
 `GetGlobalLanguageCommands`. **What it serves is symbolic, not pulses**: a protocol name and a frame
-value, `Raw` null on all 419 commands fetched. That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
+value, `Raw` null on all 419 commands fetched, and on all 5219 the wider census of 24 August 2026
+fetched too. That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
 and as "**a work item nobody had priced**"<!--superseded-->, and section 152 refutes both: a record
 states its own timings, so a frame is rebuilt from five durations read off any code of the same
 appliance a config already holds, exactly, on 3547 of 3547 records. 52 of 58 device groups carry one set
 of timings for every code, which is what makes those five numbers transferable. The cheap route, reading
-base slot 5 out of a compiled config, still needs none of it. Two things on that list matter beyond the import.
+base slot 5 out of a compiled config, still needs none of it.
+
+**Their notation is read as a grammar now and their analyser is not a general decoder**, section 159, and
+both matter to an importer. A code states its frames in **two** slots, either of which may hold a word
+naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
+catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
+33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
+Six families have a rhythm and the route to the rest is **not** their analyser: it recognises a rhythm at
+a bit count from its own list, so it accepts the Samsung lead in at 32 bits and refuses it at 16, 20 and
+38, which is where their catalogue actually uses it. What is left is having Logitech's own compiler emit
+the family and reading the durations out of the result, which writes to the account and is therefore a
+decision rather than a run.
+
+Two things on that list matter beyond the import.
 `downloadManager.RemoteConfigurationInJson` **was called and it is less than its name promised**: the
 URL is not advertised, it comes back from a compile, and it returns a ZIP holding a bare `GSPM` container
 plus a manifest. The manifest corroborates section 41's trailer checksum, seed and algorithm, from its
@@ -855,7 +869,14 @@ packages/codec/                 TS: the one config codec, container through comp
                                 src/protocols.ts is the generated table of what rhythm each protocol
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
-                                emitted with no sibling code to copy the durations from, section 157
+                                emitted with no sibling code to copy the durations from, section 157.
+                                **A table entry says where its durations came from**, section 159: six
+                                are measured off the corpus and one is the published rhythm of a family
+                                the corpus holds no record of, judged by Logitech's own analyser reading
+                                17 codes back to the exact number. src/stated.ts reads their code
+                                notation as the grammar it is, two frame slots and three words, which
+                                recovered every Toshiba code in their catalogue and stopped the families
+                                that put a frame in each slot from sending half a command
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
                                 plus src/models.ts, which turns the skin a remote reports into a
@@ -1204,7 +1225,9 @@ make reading       the step 6 depth number, meaning against placement; READING_A
 make text          how much on screen text reads back as characters; TEXT_ARGS=--detail
 make emitcheck     build a code from a name and a number out of Logitech's catalogue and ask their own
                    analyser to read it back, which is the closed loop for writing infrared. Needs the
-                   network and their credentials, never in `make all`. EMITCHECK_ARGS=--limit 40
+                   network and their credentials, never in `make all`. EMITCHECK_ARGS=--limit 40, and
+                   `--only <family>` plus `--per-family N`, because without a filter the budget goes on
+                   families settled weeks ago in whatever order the census happened to walk them
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
@@ -1488,7 +1511,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 158 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 159 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

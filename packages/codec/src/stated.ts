@@ -20,55 +20,136 @@ import { pulsesOfFrame, type FrameTimings, type Pulse } from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
 
 /**
- * One code as Logitech's database states it: a family, and one or two frames.
+ * One code as Logitech's database states it, read as the grammar it is.
  *
- * **Two frames, and that is the part a first reading of this notation missed.** Their string is
- * `G:<family>:(<parameters>)(<frames>)(<...>):<n>`, and the frames field holds one value or two joined by
- * an underscore: `0x1BAC_0x1853` for Sharp 15 Bit, `0x0400_1xED02F` for the family they call
- * "Samsung 16 and 20 Bit". A pattern reading hexadecimal up to the underscore takes the first and drops
- * the second silently, which is a code that sends half of what it should.
+ * **Their string has three slots and two of them hold content**, which is a correction: it is
+ * `G:<family>:(<A>)(<B>)(<C>):<n>`, and the first reading here treated slot A as parameters to be
+ * skipped and read only slot B. Slot C is empty in all 2921 distinct codes measured.
  *
- * **It closes a loop with section 152**, which measured that 226 records of the corpus hold a second,
- * different code in the tail, systematic rather than authored, being a complement or a near variant or a
- * constant lead in, and said a writer has to know which shape its group is in. For these families it does
- * not have to work it out: the catalogue states the second frame outright.
+ * A slot holds a sequence of items joined by `_`, and an item is either a **value**, written with a one
+ * digit prefix and hexadecimal digits, or one of three **words**. Over those 2921 codes the sequences
+ * that occur are exactly seven:
  *
- * The `1x` prefix on a second value is theirs and its meaning is unread. It is kept as written rather
- * than normalised, because a notation nobody has decoded is not a notation to tidy.
+ * | codes | slot A | slot B | families like |
+ * |---|---|---|---|
+ * | 1026 | a value | `Repeat` | Toshiba 32 Bit |
+ * | 936 | empty | a value | Sony 12 Bit |
+ * | 512 | empty | two values | Sharp 15 Bit, Samsung 38 Bit |
+ * | 293 | `Start` | a value | JVC 16 Bit |
+ * | 119 | empty | three values | Philips Hurd 16 Bit LongToggle |
+ * | 28 | empty | `Start`, two values, `Trailer` | MitsubishiO1 Dual 8 16 Bit |
+ * | 7 | a value | a value | Pioneer 32 Bit 2 |
+ *
+ * **Two things the old reading was getting wrong, and both are the same quiet failure.** Reading slot B
+ * alone **refused** every `Toshiba 32 Bit` code, because it found the word `Repeat` where it wanted a
+ * number, and Toshiba is the family the most appliances in the census use. And on
+ * `G:Pioneer 32 Bit 2:(0xC53A9966)(0xF50A5DA2)():3` it emitted the **second** frame as the whole
+ * command, which parses cleanly, comes back from Logitech's own analyser carrying the number it was
+ * built from, and sends half of what it should.
+ *
+ * **The words name what a frame is instead of stating it**, which is why they can be words: `Repeat` is
+ * the ditto frame of the protocol concerned, `Start` a lead in sent once before the payload, `Trailer` a
+ * closing frame. All three are published behaviour of the protocols they appear on.
+ *
+ * **The prefix digit is a position and its meaning stops there.** Across every code the digits, in
+ * order, form exactly four runs: `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and
+ * on a code stating several it ascends from 0 except in the `00` case, which is the families whose
+ * values are all the same width. Whether it indexes the values, a field of the protocol, or the widths
+ * the family name spells is **unread**, and it is kept as written rather than normalised.
  */
+export type StatedWord = 'Start' | 'Repeat' | 'Trailer';
+
+export interface StatedFrame {
+  readonly value: bigint;
+  /** The width this value is stated at, from the family's own name. */
+  readonly bits: number;
+  /** Their position digit as written. What it indexes is unread. */
+  readonly index: number;
+}
+
+/** One item of a slot: a value, or a word standing in for a frame. */
+export type StatedItem =
+  | { readonly kind: 'frame'; readonly frame: StatedFrame }
+  | { readonly kind: 'word'; readonly word: StatedWord };
+
 export interface StatedCode {
   readonly family: string;
+  /** Every item both slots state, in the order they are written, which is the order they are sent. */
+  readonly items: readonly StatedItem[];
+  /** The values alone, which is what an encoder needs. `items` filtered, kept because every caller wants it. */
+  readonly frames: readonly StatedFrame[];
+  /** The words alone, in order. A code with none of them states every frame it sends. */
+  readonly words: readonly StatedWord[];
+  /** The first value's width, which is what a code stating one value means by its width. */
   readonly bits: number;
-  readonly frames: readonly bigint[];
-  /** The second frame's prefix as written, `0x` or `1x`, where there is a second frame. */
-  readonly secondPrefix?: string;
 }
+
+/** The words seen, as a closed set, so a fourth one is a refusal rather than a guess. */
+const WORDS = new Set<string>(['Start', 'Repeat', 'Trailer']);
 
 /**
  * Read one of their catalogue codes, or `undefined` where the shape is not one this has seen.
  *
- * The bit width comes out of the family's own name, which is where they put it, and a family naming two
- * widths, "Samsung 16 and 20 Bit", yields the last one. That is a guess about their spelling and it is
- * marked as such: nothing here has established which width belongs to which frame.
+ * **The widths come out of the family's own name, which is where they put them.** A name stating as
+ * many widths as the code states values pairs them in order, which is what "Samsung 16 and 20 Bit" and
+ * "MitsubishiO1 Dual 8 16 Bit" need; a name stating one width gives it to every value. The closure is
+ * that **no value in the census exceeds the width it is given**, over 2921 codes and 3440 values, and
+ * that is what makes the pairing a reading rather than a convention: a wrong pairing would put a 20 bit
+ * number in a 16 bit frame somewhere.
+ *
+ * **A value that does not fit its width is a refusal, not a wider frame.** Exactly one family in the
+ * census fails the check, `Galaxis 16 Bit Quad Toggle`, all 69 of its codes, whose three values need 26,
+ * 1 and 26 bits against the 16 the name states. The cause is legible and deliberately not implemented:
+ * every digit of every Galaxis value is 0, 1, 2 or 3, in 69 of 69 codes, so "Quad" is a quaternary
+ * digit string and each digit is two bits, which makes its eight digit value exactly the 16 bits the
+ * name claims. Reading those digits as hexadecimal is what overstates them. Refusing costs 69 codes of
+ * 2921 and reading them as hexadecimal would emit 69 commands that look right and are three times too
+ * long.
+ *
+ * It also leaves one thing open and says so: a family naming one width and stating two values, which
+ * "Samsung 38 Bit" does, could mean 38 bits per frame or 38 across the pair. Both fit, because its
+ * values need 12 and 21 bits.
  */
 export function statedCode(keyCode: string): StatedCode | undefined {
-  const parsed = /^G:([^:]+):\([^)]*\)\(([^)]*)\)/.exec(keyCode);
+  const parsed = /^G:([^:]+):\(([^)]*)\)\(([^)]*)\)\(([^)]*)\)/.exec(keyCode);
   if (parsed === null) return undefined;
   const family = parsed[1]!.trim();
-  const widths = [...family.matchAll(/(\d+)\s*Bit/gi)].map((one) => Number(one[1]));
-  const bits = widths[widths.length - 1];
-  if (bits === undefined || bits === 0) return undefined;
-  const parts = parsed[2]!.split('_');
-  const frames: bigint[] = [];
-  let secondPrefix: string | undefined;
-  for (const [at, part] of parts.entries()) {
-    const value = /^([01])x([0-9A-Fa-f]+)$/.exec(part);
-    if (value === null) return undefined;
-    frames.push(BigInt(`0x${value[2]!}`));
-    if (at === 1) secondPrefix = `${value[1]!}x`;
+  // **The widths are the run of numbers immediately before the word `Bit`**, which is one match and not
+  // one per number: "Samsung 16 and 20 Bit" writes `Bit` once for two widths, and a pattern demanding
+  // `<number> Bit` finds only the 20 and then gives it to both frames. "MitsubishiO1 Dual 8 16 Bit" is
+  // the same shape with the conjunction left out.
+  //
+  // The run has to start at a word boundary, which is not tidiness: "JVCO1 16 Bit" ends its family name
+  // in a digit, so an unanchored run reads "1 16" as two widths and then refuses the code for stating
+  // two widths and one frame.
+  const stated = /(?:^|\s)((?:\d+\s*(?:and\s+)?)+)Bit/i.exec(family);
+  const widths = [...(stated?.[1] ?? '').matchAll(/\d+/g)].map((one) => Number(one[0]));
+  if (widths.length === 0 || widths.some((one) => one === 0)) return undefined;
+  // Read in slot order and keep it, since the order is the order the frames go out in.
+  const raw: ({ value: bigint; index: number } | StatedWord)[] = [];
+  for (const slot of [parsed[2]!, parsed[3]!, parsed[4]!]) {
+    if (slot.trim() === '') continue;
+    for (const part of slot.trim().split('_')) {
+      if (WORDS.has(part)) { raw.push(part as StatedWord); continue; }
+      const value = /^(\d)x([0-9A-Fa-f]+)$/.exec(part);
+      if (value === null) return undefined;
+      raw.push({ value: BigInt(`0x${value[2]!}`), index: Number(value[1]) });
+    }
   }
-  if (frames.length === 0 || frames.length > 2) return undefined;
-  return { family, bits, frames, ...(secondPrefix === undefined ? {} : { secondPrefix }) };
+  const values = raw.filter((one): one is { value: bigint; index: number } => typeof one !== 'string');
+  if (values.length === 0) return undefined;
+  if (widths.length !== 1 && widths.length !== values.length) return undefined;
+  const width = (at: number): number => widths.length === 1 ? widths[0]! : widths[at]!;
+  let seen = 0;
+  const items: StatedItem[] = raw.map((one) => typeof one === 'string'
+    ? { kind: 'word' as const, word: one }
+    : { kind: 'frame' as const, frame: { value: one.value, bits: width(seen++), index: one.index } });
+  const frames = items.flatMap((one) => one.kind === 'frame' ? [one.frame] : []);
+  // The check that makes the width pairing a reading rather than a convention. A wrong pairing puts a
+  // number in a frame too narrow to hold it, and that is visible; a value read in the wrong base is too.
+  if (frames.some((one) => one.value >= 1n << BigInt(one.bits))) return undefined;
+  const words = items.flatMap((one) => one.kind === 'word' ? [one.word] : []);
+  return { family, items, frames, words, bits: frames[0]!.bits };
 }
 
 /**
