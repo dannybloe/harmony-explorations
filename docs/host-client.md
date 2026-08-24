@@ -295,6 +295,21 @@ the 700, and calls that branch by an internal codename; every later remote reads
 `GetDeviceModeButtonMaps` instead, whose request wants `deviceIds` as a list as well. So a reader written
 against the newer call would find nothing on a Harmony One and report that the account holds no channels.
 
+**An appliance record carries options their client asks the user about, and one of them was noticed from
+the outside.** On 24 August 2026, adding a `Thomson 14MG115` in their client, Danny was asked whether he
+uses it with a SCART cable, and the account's own appliance records carry `IsScartCableSupported` beside
+`IsMultiCode`, `IsKeyboardAssociated`, `IsInterKeyDelayOptimized` and `Characterization`. The catalogue's
+command list for that appliance carries `InputScart1` and its neighbours, so the plausible reading is that
+the answer decides which input command an activity uses. **That reading is not tested**: nothing here has
+compiled the same appliance both ways, which is the cheap experiment that would settle it, and until then
+it is one of this document's hypotheses rather than a fact.
+
+Two reasons it matters beyond curiosity. It is a per appliance **question** rather than a per appliance
+measurement, so an importer that fetches a definition from their catalogue has nowhere to put the answer
+and no way to know it was asked; and it is evidence that a catalogue appliance is not a closed object,
+which is the assumption an import would otherwise make. `docs/adding-a-device.md` phase 4 carries the
+consequence.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in

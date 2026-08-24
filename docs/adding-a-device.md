@@ -212,6 +212,13 @@ for.
       group holds them is not read. This goal does not need them, and a device added without them takes
       the firmware's defaults, so the item is to **say so in the model** rather than to leave a caller
       guessing
+- [ ] **an appliance has options, not just commands**, noticed on 24 August 2026 while adding one of
+      phase 2's appliances by hand: their client asked whether the television is used with a SCART cable,
+      and an account's appliance record carries `IsScartCableSupported` beside four more flags of that
+      kind. The catalogue lists `InputScart1` among that appliance's commands, so the answer plausibly
+      decides which input command an activity uses. Untested, `docs/host-client.md`. The item is to decide
+      whether a definition carries such an answer or refuses to hold one, since an importer that silently
+      drops it produces a device whose inputs are wrong in a way nobody can see
 - [ ] provenance survives: a definition fetched from Logitech carries `origin: 'from-logitech'` and
       `mayBeShared` false, which is decision 11 and is not negotiable
 - [ ] **check**: a definition built from a catalogue reply, round tripped through the store, produces the
