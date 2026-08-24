@@ -19,22 +19,22 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states twenty five entries, and what each is worth is its provenance', () => {
+test('the table states twenty seven entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 25);
+  assert.equal(PROTOCOLS.length, 27);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  // **Four more `compiled` and one fewer `both` since the second compiled sample, 24 August 2026.** The
-  // four are new families. The `both` that became `corpus` is `Microsoft 30 Bit`, and its rhythm did not
-  // move a microsecond: the first sample's catalogue capture had to be rebuilt after it was overwritten,
-  // and the rebuild took that appliance's commands from the wide census rather than from the account, so
-  // its numbers no longer join. A provenance weakened by a lost input, not a measurement contradicted.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [4, 16, 5]);
+  // **Three sittings on 24 August 2026 took this from 21 entries to 27**, and the middle one cost a
+  // provenance that the third one bought back: `Microsoft 30 Bit` fell from `both` to `corpus` when the
+  // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
+  // appliance names, and it is `both` again because the appliance was put back on the record and
+  // compiled a third time. Its rhythm never moved through any of it.
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 18, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -43,7 +43,7 @@ test('the table states twenty five entries, and what each is worth is its proven
   // The three confirmed twice over, named rather than counted, since agreement between two independent
   // routes is the strongest thing this table has and losing one silently is the risk.
   assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
-                   ['Kreatel IP 22 Bit', 'Logitech 24 Bit', 'Sony 12 Bit',
+                   ['Logitech 24 Bit', 'Microsoft 30 Bit', 'Kreatel IP 22 Bit', 'Sony 12 Bit',
                     'Pioneer 32 Bit', 'Sony 15 Bit']);
   // And they agree **exactly**, not within a band, which is what makes it a confirmation.
   for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
@@ -87,9 +87,9 @@ test('the table states twenty five entries, and what each is worth is its proven
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 24 since the second
-  // compiled sample added four families, each exact on every one of its own records.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 24);
+  // Every other entry reproduces every code of its own rows to the microsecond. 26 of 27, the exception
+  // being the one loose entry named above.
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 26);
 
   // **Two families carry their bits the other way up, and the table says so by its numbers**, section
   // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.

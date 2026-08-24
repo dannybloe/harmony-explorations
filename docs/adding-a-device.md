@@ -131,8 +131,8 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds 19 of the catalogue's 33 families since the first sitting, which is 4716 of 5219
-commands. It held 15 when this phase was written. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
+The table holds 21 of the catalogue's 33 families after two sittings on 24 August 2026, which is 4743 of
+5219 commands. It held 15 and 4193 when this phase was written. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
 `Samsung 16 and 20 Bit` (137), `Thomson 12 Bit Toggle` (124), `Galaxis 16 Bit Quad Toggle` (104),
 `Philips Hurd 16 Bit LongToggle` (85), `RCAV1 LF 24 Bit` (83), `Philips RC5 13 Bit Toggle` (40),
 `Samsung 38 Bit` (34), `Short 11 Bit 2` (31), `MitsubishiO1 Dual 8 16 Bit` (28), `Panasonic 16 Bit` (26),
@@ -171,13 +171,20 @@ durations in the result are the ones their generator emits.
       The first sitting was 24 August 2026: ten appliances, 945 records, and **four families measured**,
       `Sharp 15 Bit`, `Thomson 12 Bit Toggle`, `RCAV1 LF 24 Bit` and `Philips RC5 13 Bit Toggle`, each
       exact on every one of its own records, with no existing entry's durations moving
-- [ ] the remaining four appliances, worth 48 catalogue commands, and a second compile
-- [ ] **six of the ten families did not land and none of them is a data problem**: `Samsung 16 and 20
-      Bit`, `Samsung 38 Bit`, `Galaxis 16 Bit Quad Toggle`, `Philips Hurd 16 Bit LongToggle`,
-      `Short 11 Bit 2` and `MitsubishiO1 Dual 8 16 Bit`. Their records are in the sample and the reader
-      refuses them: 170 match no code of their own appliance, 90 produce no reading at all, 46 have half
-      cells of more than one length. That is phase 3 again, so phase 2's remainder and phase 3 are one
-      job rather than two
+- [x] the remaining four appliances and a second compile, done the same evening, plus the Microsoft one
+      whose account name the rebuilt capture could not recover. **Two more families**,
+      `Philips RECS80 11 Bit` on 35 records and `PanasonicV2 48 Bit` on 4, and `Microsoft 30 Bit` is
+      confirmed by two routes again
+- [x] **the phase is done as far as their compiler can take it**: every appliance that would buy a family
+      has been compiled, so nothing here is waiting on Logitech, on the account or on Danny
+- [ ] **twelve families are still unanswered and every one has records in the lab**, which is the finding
+      that moves the rest of this phase into phase 3. Ten of the twelve are one shape, a command that is
+      more than one frame against a reader that looks at one: `Samsung 16 and 20 Bit` (137 commands),
+      `Philips Hurd 16 Bit LongToggle` (85), `Samsung 38 Bit` (34), `MitsubishiO1 Dual 8 16 Bit` (28),
+      `Panasonic 16 Bit` (26), `Pioneer 32 Bit 2` (7), `MemorexV2 32 Bit Dual` (2), `Sharp 48 Bit` (1),
+      and two whose refusal nothing yet explains, `Videocrypt 11 Bit Toggle` (20) and `Saitek 11 Bit`
+      (1). `Galaxis 16 Bit Quad Toggle` (104) is its own small job, a base change. So phase 3 now carries
+      476 catalogue commands rather than the handful it looked like
 - [ ] `make protocols` measures each new family and each entry reproduces every one of its own records
       byte for byte, with `source: 'compiled'`
 - [ ] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is

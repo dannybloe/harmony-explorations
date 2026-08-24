@@ -120,12 +120,12 @@ export interface StatedProtocol {
 }
 
 export const PROTOCOLS: readonly StatedProtocol[] = [
-  { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 342, exact: 342, spread: 0, source: 'compiled' },
-  { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 234, exact: 234, spread: 0, source: 'compiled' },
-  { family: 'Sharp 15 Bit 2', periodNs: 27027, header: [0, 0], flat: 260, firstMark: 270, zero: 790, one: 1850, carries: 'space', codes: 191, exact: 191, spread: 0, source: 'compiled' },
+  { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 622, exact: 622, spread: 0, source: 'compiled' },
+  { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 345, exact: 345, spread: 0, source: 'compiled' },
+  { family: 'Sharp 15 Bit 2', periodNs: 27027, header: [0, 0], flat: 260, firstMark: 270, zero: 790, one: 1850, carries: 'space', codes: 220, exact: 220, spread: 0, source: 'compiled' },
+  { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 217, exact: 217, spread: 0, source: 'both' },
+  { family: 'Microsoft 30 Bit', periodNs: 27624, biphase: { mark: 441, space: 446, lead: [{ mark: true, us: 2632 }, { mark: false, us: 900 }, { mark: true, us: 441 }, { mark: false, us: 443 }, { mark: true, us: 441 }, { mark: false, us: 439 }, { mark: true, us: 441 }, { mark: false, us: 887 }, { mark: true, us: 441 }, { mark: false, us: 879 }, { mark: true, us: 1323 }, { mark: false, us: 889 }, { mark: true, us: 441 }], setIsMark: false }, codes: 213, exact: 213, spread: 0, source: 'both' },
   { family: 'Kreatel IP 22 Bit', periodNs: 17761, biphase: { mark: 325, space: 320, lead: [{ mark: true, us: 320 }, { mark: false, us: 320 }], setIsMark: true }, codes: 164, exact: 164, spread: 0, source: 'both' },
-  { family: 'Microsoft 30 Bit', periodNs: 27624, biphase: { mark: 441, space: 446, lead: [{ mark: true, us: 2632 }, { mark: false, us: 900 }, { mark: true, us: 441 }, { mark: false, us: 443 }, { mark: true, us: 441 }, { mark: false, us: 439 }, { mark: true, us: 441 }, { mark: false, us: 887 }, { mark: true, us: 441 }, { mark: false, us: 879 }, { mark: true, us: 1323 }, { mark: false, us: 889 }, { mark: true, us: 441 }], setIsMark: false }, codes: 148, exact: 148, spread: 0, source: 'corpus' },
-  { family: 'Logitech 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 400, zero: 1000, one: 500, carries: 'space', codes: 146, exact: 146, spread: 0, source: 'both' },
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
   { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },
   { family: 'Magnavox 13 Bit', periodNs: 26315, biphase: { mark: 880, space: 900, lead: [{ mark: true, us: 880 }], setIsMark: true }, codes: 105, exact: 105, spread: 0, source: 'compiled' },
@@ -138,6 +138,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },
   { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 37, exact: 37, spread: 0, source: 'compiled' },
+  { family: 'Philips RECS80 11 Bit', periodNs: 26315, header: [0, 0], flat: 158, zero: 4902, one: 7442, carries: 'space', codes: 35, exact: 35, spread: 0, source: 'compiled' },
   { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0, source: 'corpus' },
   { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 19, exact: 19, spread: 0, source: 'both' },
   { family: 'Sony 20 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 14, exact: 14, spread: 0, source: 'compiled' },
@@ -145,4 +146,5 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'SharpO1 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 12, exact: 12, spread: 0, source: 'corpus' },
   { family: 'Memorex 32 Bit', periodNs: 26315, header: [9000, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', codes: 8, exact: 8, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 7, exact: 7, spread: 0, source: 'compiled' },
+  { family: 'PanasonicV2 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 4, exact: 4, spread: 0, source: 'compiled' },
 ];

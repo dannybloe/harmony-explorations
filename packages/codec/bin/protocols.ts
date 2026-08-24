@@ -164,12 +164,13 @@ function closingFor(t: FrameTimings, bits: number, value: bigint, period: number
  * census either, so 13 of 15 are recoverable and `X4S2000` and `AVR-28` are not. Anything that turns out
  * to depend on those two is a row that has to be measured again rather than trusted.
  */
-const COMPILED_SAMPLES = ['compiled_protocols', 'compiled_protocols_2']
+const COMPILED_SAMPLES = ['compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3']
   .map((image) => ({ image, path: imagePath(image) ?? '' }))
   .filter((one) => one.path !== '')
   .map((one) => ({
     // The name a row records, which is what `--detail` prints and what a reader has to be able to find.
-    name: one.image === 'compiled_protocols' ? 'compiled-20260824' : 'compiled-20260824b',
+    name: one.image === 'compiled_protocols' ? 'compiled-20260824'
+      : one.image === 'compiled_protocols_2' ? 'compiled-20260824b' : 'compiled-20260824c',
     path: one.path,
     commands: join(dirname(one.path), 'catalogue-commands.json'),
   }));

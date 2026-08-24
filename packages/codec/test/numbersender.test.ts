@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('four containers declare a method for sending a number, 25 declare none, 9 are unread',
+test('five containers declare a method for sending a number, 25 declare none, 9 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -203,8 +203,8 @@ test('four containers declare a method for sending a number, 25 declare none, 9 
     // reason the first did: both were compiled from the account that carries favourite channels, so the
     // section comes along whichever appliances are on the record that day. Four containers exercise it
     // now, three of them made deliberately for it.
-    assert.equal(populated + declaredEmpty + unread, 38, 'every container the lab can parse');
-    assert.equal(populated, 4);
+    assert.equal(populated + declaredEmpty + unread, 39, 'every container the lab can parse');
+    assert.equal(populated, 5);
     assert.equal(declaredEmpty, 25);
     // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
     // states no architecture, plus the two containers found inside arch 8 firmware images, which

@@ -185,6 +185,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // between the two: the first sample's catalogue capture lived at one mutable path in the working
   // directory and the second capture overwrote it. A measurement's two inputs are filed together now.
   compiled_protocols_2: 'compiled-20260824b-protocols-gspm.bin',
+  // The third, an hour later: the four appliances the second sitting had no room for, plus the
+  // Microsoft one whose account name the rebuilt capture of the first could not recover.
+  compiled_protocols_3: 'compiled-20260824c-protocols-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
   // for the three devices of the calibration account. Not an image and not a config. It is here so
   // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number
