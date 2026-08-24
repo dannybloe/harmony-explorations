@@ -347,11 +347,20 @@ both matter to an importer. A code states its frames in **two** slots, either of
 naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
 catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
 33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
-Six families have a rhythm and the route to the rest is **not** their analyser: it recognises a rhythm at
-a bit count from its own list, so it accepts the Samsung lead in at 32 bits and refuses it at 16, 20 and
-38, which is where their catalogue actually uses it. What is left is having Logitech's own compiler emit
-the family and reading the durations out of the result, which writes to the account and is therefore a
-decision rather than a run.
+**Twelve families have a rhythm measured off Logitech's own compiler**, section 160, and that route is
+open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
+account, so their service will compile a configuration containing any family we ask for and the
+durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
+reproduces its own durations on every one of its records. Three of them agree to the microsecond with
+what the corpus already gave, by a route with nothing in common, and `Toshiba 32 Bit` turns out to be the
+NEC entry exactly, which is over a third of their catalogue.
+
+**Their analyser is retired as evidence for a rhythm**, section 160, and that is the load bearing
+correction: it accepted two rhythms their compiler does not emit, `JVC 16 Bit` under NEC's durations and
+a Sharp seed whose every duration was out by a fifth to a quarter, and it named both correctly. So a
+family judged only by their analyser is a command that will be recognised by their decoder and by no
+appliance. `source` on a table entry says which route it came from and the documented category is
+deliberately empty.
 
 Two things on that list matter beyond the import.
 `downloadManager.RemoteConfigurationInJson` **was called and it is less than its name promised**: the
@@ -1511,7 +1520,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 159 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 160 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

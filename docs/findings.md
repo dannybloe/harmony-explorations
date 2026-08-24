@@ -21873,6 +21873,15 @@ trust: Sony 12, Sony 15, Pioneer 32 and Memorex 32, each emitted with the entry 
 Bit` is confirmed through NEC's durations, which is either an alias or their decoder being tolerant, and
 that is not distinguishable from here.
 
+**It was their decoder being tolerant, and the answer came from their compiler**, section 160: `JVC 16
+Bit` is 8400/4200 with 500/500/1600 against NEC's 8990/4490 with 568/552/1662, measured over 108 records
+of a configuration Logitech compiled on request. So a JVC code emitted from the NEC entry is 590
+microseconds long in its lead in and wrong in every bit cell, and their analyser named it correctly
+regardless. The sentence above was right to say the two cases were not distinguishable **from here**;
+what it did not say is that the distinction matters enough to go and get, and one compile settled it.
+`Memorex 32 Bit` went the same way: their catalogue's Memorex is 9000/4500 with 600/500/1600, not the
+`MemorexO1 32 Bit` their analyser named.
+
 **So the honest state of writing infrared from Logitech's catalogue** is that the bit layout is solved, the
 notation is read including its second frame, and the **rhythm** is measured for five families of the
 fourteen their database uses. What the other nine need is durations, and the corpus cannot supply them
@@ -21969,13 +21978,20 @@ analyze` asked Logitech's analyser to name every code here and it came back with
 five are readable by our own frame decoder. **The catalogue uses 33.** So the plan was to seed the
 missing ones with their published nominal timings and let Logitech's own analyser rule.
 
-**One of four seeds was accepted and it is the largest missing family.** The Sharp scheme has **no lead
+**One of four seeds was accepted and the acceptance turned out to be worthless**, section 160, which is
+the correction to make first because everything below it reads as a success otherwise. The seed's shape
+was right and its numbers were wrong by a fifth to a quarter, and Logitech's analyser read it back
+perfectly anyway. What follows is what was measured and believed on 24 August 2026 before their own
+compiler was asked the same question; the entry it produced has been removed from the table rather than
+corrected, and the reason is in section 160.
+
+The Sharp scheme has **no lead
 in at all**: a constant 320 microsecond mark and the gap after it carrying the bit, 680 for a zero and
 1680 for a one, at 38 kHz. `pulsesOfFrame` had to learn to emit a header of nothing for it, which
 `[0, 0]` now means, and a decoded record can never carry that because a duration read off a
 configuration is a real pulse and therefore positive. Emitted that way, **17 catalogue codes came back
-from their analyser carrying the exact number they were built from**, 9 of `Sharp 15 Bit` and 8 of
-`Sharp 15 Bit 2`, so one rhythm serves both of their Sharp families, which is 338 of the 2852 distinct
+from their analyser carrying the exact number they were built from**<!--superseded-->, 9 of `Sharp 15 Bit` and 8 of
+`Sharp 15 Bit 2`, so one rhythm serves both of their Sharp families<!--superseded-->, which is 338 of the 2852 distinct
 codes read and 487 of the 5219 commands.
 
 **Their analyser calls it `Proceed 14 Bit`, and that is not a disagreement.** Their analyser's family
@@ -22020,3 +22036,122 @@ rather than a run.
 codes and 32 of 33 families; the bit layout is solved; and the rhythm is known for **six** families,
 five measured off the corpus and one documented and judged. The nine of section 158 was counted against
 a catalogue of fourteen families, which the wider census puts at 33.
+
+## 160. Logitech's own compiler will state a rhythm, and it contradicts their analyser twice
+
+Section 159 left the infrared side with a ceiling: their catalogue states a protocol family and a number
+and never the rhythm, the corpus holds records of eight families out of the 33 the catalogue uses, and
+their analyser cannot rule on a family whose bit width it has no entry for. The route left was their own
+compiler, and the objection to it was that it needs an appliance on an account, which is their side and
+not ours.
+
+**That objection is now cleared, and the call was in their client all along.** `DeviceManager/UpdateMyData`
+does not create a device, it only updates one: a record with a non persisted id answers `Internal Error`.
+The call is `DeviceManager/UpdateMultiple`, taking a single argument named `operation` which is an
+**OperationBag** whose `Items` hold one `AddDeviceBySearchResultOperation` per appliance, each carrying
+the catalogue search match verbatim plus the make and model as typed. Read out of
+`Web.MartiniWeb.Tasks.Device.AddDevice.dll` with `ilspycmd`, where the add button ends at
+`UpdateMultipleAsync(m_OperationBag, ...)`. Two details no amount of guessing would have reached: the bag
+and the operation are in **different** data contract namespaces, Common and DeviceManager, and their
+serialiser wants the `__type` marker as the **first** member of the object. Sent that way it reaches
+their business logic and is refused or accepted on its merits. `adddevice.py` in the lab is the
+implementation and `probe.py` holds the ledger of what was tried.
+
+**Fifteen appliances went onto a test account's Harmony One record**, chosen so that between them they
+cover families the corpus has never held, and the service compiled a configuration with the remote
+unplugged: 397932 bytes, fifteen infrared groups, 1143 records. The other half of the measurement is
+`GetGlobalLanguageCommands` for the same fifteen appliances, 999 catalogue codes, which states the family
+and the number.
+
+**Joining the two involves no decoder of anybody's at either end**, and that is what makes it stronger
+than everything before it. The durations are the ones their generator emitted. The family is the one
+their catalogue states. Two things the join has to do per record rather than per group, and both were got
+wrong first:
+
+* **The owning appliance is decided by overlap**, not by a group's drawn label: whichever appliance's
+  stated numbers the group's decoded numbers hit most. Pooling every appliance's numbers instead left 88
+  of them claimed by two appliances at once and therefore unusable.
+* **The header convention is per record.** One Denon receiver carries a 48 bit family that opens with a
+  lead in and a 15 bit one that opens on its first bit. Deciding it per group read the headerless half
+  with a header, which eats its first bit cell and yields a number no catalogue code carries.
+
+### Twelve families, and three of them confirmed twice
+
+| family | carrier | lead in | mark | zero | one | records |
+|---|---|---|---|---|---|---|
+| Toshiba 32 Bit | 38 kHz | 8990/4490 | 568 | 552 | 1662 | 189 |
+| Sharp 48 Bit 2 | 38 kHz | 3364/1682 | 408 | 431 | 1272 | 118 |
+| JVC 16 Bit | 38 kHz | 8400/4200 | 500 | 500 | 1600 | 108 |
+| Sony 12 Bit | 40 kHz | 2400/600 | 600 | 600 | 1200 | 56 |
+| PioneerO1 32 Bit Dual | 40 kHz | 8510/4256 | 532 | 532 | 1596 | 40 |
+| MemorexV2 32 Bit | 37.6 kHz | 9000/4500 | 560 | 560 | 1680 | 38 |
+| Pioneer 32 Bit Dual | 40 kHz | 8470/4230 | 548 | 500 | 1570 | 37 |
+| Sony 20 Bit | 40 kHz | 2400/600 | 600 | 600 | 1200 | 14 |
+| Memorex 32 Bit | 38 kHz | 9000/4500 | 600 | 500 | 1600 | 8 |
+| Pioneer 32 Bit | 40 kHz | 8470/4230 | 548 | 500 | 1570 | 7 |
+| PioneerO1 32 Bit | 40 kHz | 8510/4256 | 532 | 532 | 1596 | 7 |
+| Sony 15 Bit | 40 kHz | 2400/600 | 600 | 600 | 1200 | 3 |
+
+**Every family reproduces its own durations on every one of its own records**, with no exception
+anywhere, which is the closure that says the join is not attributing records to the wrong family.
+
+**Three of them are the same rhythm the corpus already gave**, to the microsecond, by a route with
+nothing in common: Sony 12 Bit, Sony 15 Bit and Pioneer 32 Bit. The table records those as `both` and it
+is the strongest thing in it, because the corpus route runs through Logitech's analyser naming our
+decoding of somebody's real configuration, and this one runs through their catalogue naming a command
+their compiler then emitted.
+
+**`Toshiba 32 Bit` is our NEC entry exactly**, 8990/4490 and 568/552/1662, which settles the largest
+family in their catalogue: 1026 of 2921 distinct codes, more than a third of it. Six rhythms are new
+outright: JVC 16 Bit, Sony 20 Bit, Memorex 32 Bit, MemorexV2 32 Bit, PioneerO1 32 Bit and its Dual.
+
+**A `Dual` family is the same rhythm as its sibling**, to the microsecond in both pairs. So the word
+counts frames rather than describing durations, which is what section 159's notation reading already
+implied by finding two values stated for one command.
+
+### The two contradictions, which are one lesson
+
+**Their analyser accepted a rhythm their compiler does not emit, twice in one day.**
+
+`JVC 16 Bit`, section 158, was recorded as confirmed because their analyser answered `JVCO1 16 Bit` to a
+code built with NEC's durations. Their compiler emits JVC as 8400/4200 with 500/500/1600. A code built
+the other way is 590 microseconds long in its lead in and wrong in every bit cell, and their analyser
+named it correctly anyway.
+
+`Sharp 15 Bit`, section 159, was seeded from published protocol documentation at 320/680/1680 on the
+strength of their analyser reading 17 catalogue codes built with it back to the **exact number**, on 17 of
+17. Their compiler emits the two Denon receivers' 15 bit family with a mark of **260** and spaces of
+**790** and **1850**, at 37 kHz. So every duration in the seed is out by a fifth to a quarter, and the
+only thing it got right was the shape, headerless and space carrying.
+
+**So `readBack` is retired as evidence and the documented category is empty rather than corrected.** A
+rhythm judged only by their analyser is a rhythm that will be named correctly and will not be what any
+appliance was sold expecting. The field stays in the type, because saying that a category is deliberately
+empty is worth more than deleting the ability to express it.
+
+**The instructive part is that the analyser's tolerance was visible before either case.** Section 159
+measured it refusing a rhythm at one bit width and accepting the same rhythm at another, and read that as
+a limit on what it can rule on. It is also a statement about what it accepts, and nothing followed the
+second reading through.
+
+### What did not join, and the largest of it is one question
+
+333 records matched no catalogue code of their own appliance, and 173 more would not yield timings. Seven
+families are in this configuration and not in the table: `Microsoft 30 Bit`, `Panasonic 16 Bit`,
+`Magnavox 13 Bit`, `Sharp 48 Bit`, `Logitech 24 Bit`, `Kreatel IP 22 Bit`, `JerroldO1 16 Bit`, plus
+`MemorexV2 32 Bit Dual`. The biphase one is expected, since `irFrame` cannot read it at all and section
+153 says why.
+
+**Sharp is the interesting failure and it is two separate problems.** Its durations will not split for a
+strict reader, because the **first** mark of every record is 270 where every later one is 260, so the half
+that has to be constant is not. And its numbers do not join: our decoder reads a Denon record as 15 bits
+`0x230C` where the catalogue states `0x1854` and `0x1BAB` for a command, and neither a bit reversal nor
+the Sharp inversion carries one to the other. The inversion itself is confirmed on the record, though:
+the two frames a record sends differ by exactly `0x3FF`, the low ten bits, which is what section 159 read
+out of the notation and what the published protocol does.
+
+**A first attempt at that comparison was invalid and it is worth recording why.** It set our reading of
+one record against a stated code picked out of the appliance's list without checking the two were the
+same command. Two numbers of one appliance are not a pair to compare, and the mistake is the same family
+as section 32's closure whose two ends came from the same bytes: what makes a comparison mean something is
+that the two sides are about the same thing, and that has to be established rather than assumed.

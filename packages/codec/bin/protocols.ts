@@ -27,7 +27,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { imagePath, LAB } from '@harmony/lab';
 import { parse, type Container } from '../src/gspm.ts';
-import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irHeaderPointers } from '../src/ir.ts';
+import { payloadOf } from '../src/ezhex.ts';
+import { statedCode } from '../src/stated.ts';
+import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
+         irHeaderPointers } from '../src/ir.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import {
   framesOfPulses, fromFirstMark, pulsesOfFrame, timingsOfFrame,
@@ -51,6 +54,23 @@ interface Row { config: string; record: string; ours: string; theirs?: string }
 /** One code, with the durations read off its own recorded rhythm. */
 interface Measured {
   family: string;
+  /**
+   * Which evidence this row came from, because the two are not equally strong.
+   *
+   * `corpus` is a record in a configuration somebody's remote was actually carrying, whose family came
+   * from Logitech's **analyser** naming our decoding of it. `compiled` is a record in a configuration
+   * their **compiler** produced on request, whose family came from their **catalogue** stating it for
+   * the same command. The second involves no third party decoder at either end, and section 159
+   * measured their analyser accepting two rhythms their compiler does not emit, so where the two
+   * disagree the compiled row is the one to believe.
+   */
+  source: 'corpus' | 'compiled';
+  /**
+   * How the record was tied to a catalogue family: by its **value**, which is nearly unique and
+   * therefore exact, or by its bit **width** where the value did not match and the owning appliance
+   * states exactly one family at that width. The second is an inference and is counted separately.
+   */
+  joinedBy?: 'value' | 'width';
   /**
    * The carrier as the record states it, a period in nanoseconds.
    *
@@ -105,9 +125,29 @@ function closingFor(t: FrameTimings, bits: number, value: bigint, period: number
   return period - before;
 }
 
+/**
+ * The name the compiled sample is filed under, which is deliberately not in `IMAGES`.
+ *
+ * It is a **known answer** sample rather than a corpus member: the appliances on it were chosen to make
+ * Logitech's compiler emit particular protocol families, so counting it in a corpus wide total would be
+ * counting an experiment we designed. Same reason the two calibration containers sit outside
+ * `CONTAINERS`.
+ */
+const COMPILED_NAME = 'compiled-20260824';
+const COMPILED = join(LAB, 'reads', '20260824-protocols', 'Result.EzHex');
+const COMPILED_COMMANDS = join(LAB, 'work', 'myharmony', 'responses-account2', 'OneResCommands.json');
+
 const containers = new Map<string, Container>();
 function container(name: string): Container | undefined {
   if (!containers.has(name)) {
+    // The compiled sample is loaded by path rather than through `imagePath`, since it is a read filed
+    // under its own date and not one of the lab's named images.
+    if (name === COMPILED_NAME) {
+      try {
+        containers.set(name, parse(payloadOf(new Uint8Array(readFileSync(COMPILED)), COMPILED)));
+      } catch { return undefined; }
+      return containers.get(name);
+    }
     const path = imagePath(name);
     if (path === undefined) return undefined;
     containers.set(name, parse(readFileSync(path)));
@@ -160,11 +200,123 @@ for (const file of files) {
     if (frame === undefined) { drop('no reading of ours carries their number'); continue; }
     const timings = timingsOfFrame(train, frame);
     if (timings === undefined) { drop('the durations do not split'); continue; }
-    const m: Measured = { family, periodNs, config: report.config, record, bits: frame.bits,
-      value: frame.value, timings };
+    const m: Measured = { family, source: 'corpus', joinedBy: 'value', periodNs,
+      config: report.config, record, bits: frame.bits, value: frame.value, timings };
     byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
   }
 }
+
+/**
+ * The second evidence source: a configuration **Logitech's own compiler** produced on request.
+ *
+ * **Why this exists, and why it is stronger than the loop above.** Their catalogue states a command as
+ * a protocol family and a number and never the rhythm, so a family no configuration here holds a record
+ * of cannot be measured off the corpus at all, and section 159 established that their analyser cannot
+ * rule on one either: it recognises a rhythm at a bit width from its own list and refuses the rest. So
+ * fifteen appliances were put on a test account on 24 August 2026, chosen to cover families the corpus
+ * has never seen, and the service was asked to compile a configuration for a Harmony One. That file
+ * holds the durations **their generator emits**, and their catalogue states the family for the same
+ * commands, so joining the two involves no decoder of anybody's at either end.
+ *
+ * The join is per group and then per record, and both halves were got wrong first:
+ *
+ * * **The owning appliance is decided by overlap**, not by the group's drawn label: whichever
+ *   appliance's stated numbers the group's decoded numbers hit most. Pooling every appliance's numbers
+ *   instead left 88 of them claimed by two appliances at once and therefore unusable.
+ * * **The header convention is per record**, not per group. One Denon receiver carries a 48 bit family
+ *   that opens with a lead in and a 15 bit one that opens on its first bit; deciding it per group read
+ *   the headerless half with a header, which eats its first bit cell and yields a number no catalogue
+ *   code carries.
+ */
+
+interface Appliance {
+  make: string;
+  model: string;
+  commands: { name: string; keyCode: string }[];
+}
+
+function compiledRows(): Measured[] {
+  let blob: Uint8Array;
+  let catalogue: { appliances: Appliance[] };
+  try {
+    blob = new Uint8Array(readFileSync(COMPILED));
+    catalogue = JSON.parse(readFileSync(COMPILED_COMMANDS, 'utf8')) as { appliances: Appliance[] };
+  } catch {
+    console.log('no compiled sample in this lab, so only the analyser reports are measured\n');
+    return [];
+  }
+  const c = parse(payloadOf(blob, COMPILED));
+  // Per appliance: value to family, and which widths it states. The widths are what lets a record whose
+  // value does not join still be attributed, where the appliance states one family at that width.
+  const appliances = catalogue.appliances.map((a) => {
+    const byValue = new Map<string, string>();
+    const byWidth = new Map<number, Set<string>>();
+    for (const cmd of a.commands) {
+      const read = statedCode(cmd.keyCode);
+      if (read === undefined) continue;
+      for (const f of read.frames) {
+        byValue.set(`${f.bits}:${f.value.toString(16)}`, read.family);
+        byWidth.set(f.bits, (byWidth.get(f.bits) ?? new Set()).add(read.family));
+      }
+    }
+    return { label: `${a.make} ${a.model}`, byValue, byWidth };
+  });
+
+  const out: Measured[] = [];
+  for (const group of irGroups(c) ?? []) {
+    const decoded: { record: number; periodNs: number; train: readonly Pulse[] }[] = [];
+    for (const record of group.addresses) {
+      if (irClass(c, record) !== IR_CLASS_STREAM) { drop('compiled: not a stream record'); continue; }
+      const first = irHeaderPointers(c, record)[0];
+      if (first === undefined) { drop('compiled: no block pointer'); continue; }
+      const words = irBlockWords(c, first);
+      const periodNs = irCarrier(c, record)?.periodNs;
+      if (words === undefined || periodNs === undefined || periodNs === 0) {
+        drop('compiled: no block or carrier'); continue;
+      }
+      decoded.push({ record, periodNs, train: fromFirstMark(pulsesOfWords(words)) });
+    }
+    const readings = (train: readonly Pulse[], pairs: number) =>
+      framesOfPulses(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
+    let best = { hits: 0, at: -1 };
+    for (const [at, a] of appliances.entries()) {
+      let hits = 0;
+      for (const d of decoded) {
+        if ([1, 0].some((pairs) => readings(d.train, pairs).some((k) => a.byValue.has(k.key)))) {
+          hits += 1;
+        }
+      }
+      if (hits > best.hits) best = { hits, at };
+    }
+    if (best.at < 0) { drop('compiled: no appliance matches any number in the group'); continue; }
+    const owner = appliances[best.at]!;
+    for (const d of decoded) {
+      let landed = false;
+      for (const pairs of [1, 0]) {
+        for (const r of readings(d.train, pairs)) {
+          const byValue = owner.byValue.get(r.key);
+          const widths = owner.byWidth.get(r.f.bits);
+          const byWidth = byValue === undefined && widths?.size === 1
+            ? [...widths][0] : undefined;
+          const family = byValue ?? byWidth;
+          if (family === undefined) continue;
+          const timings = timingsOfFrame(d.train, r.f, pairs);
+          if (timings === undefined) { drop('compiled: the durations do not split'); continue; }
+          out.push({ family, source: 'compiled', joinedBy: byValue === undefined ? 'width' : 'value',
+            periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
+            bits: r.f.bits, value: r.f.value, timings });
+          landed = true;
+          break;
+        }
+        if (landed) break;
+      }
+      if (!landed) drop('compiled: no reading matches a code of the record\'s own appliance');
+    }
+  }
+  return out;
+}
+
+for (const m of compiledRows()) byEntry.set(entryOf(m), [...(byEntry.get(entryOf(m)) ?? []), m]);
 
 /** One frame period per entry, where every code of it agrees on one. */
 const periods = new Map<string, number>();
@@ -216,6 +368,10 @@ interface Entry {
   band: number;
   configs: readonly string[];
   sets: number;
+  /** `both` is the one worth looking for: two routes with no shared code landing on one rhythm. */
+  source: 'corpus' | 'compiled' | 'both';
+  /** How many of its rows were tied to a family by bit width rather than by value. */
+  byWidth: number;
 }
 
 const entries: Entry[] = [];
@@ -236,6 +392,9 @@ for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - 
     band: band ?? 1,
     configs: [...new Set(list.map((m) => m.config))],
     sets: sets.size,
+    source: list.every((m) => m.source === 'corpus') ? 'corpus'
+      : list.every((m) => m.source === 'compiled') ? 'compiled' : 'both',
+    byWidth: list.filter((m) => m.joinedBy === 'width').length,
   });
   if (detail) {
     for (const [k, of] of [...sets.entries()].sort((a, b) => b[1].length - a[1].length)) {
@@ -289,6 +448,12 @@ const GENERATED = `/**
  * three codes; computing it from the period makes it one. Both Sony families come out at exactly 45000
  * microseconds, which is the published frame period of that protocol and was not fitted to.
  *
+ * **One rhythm can carry two names, and the table keeps both rather than choosing.** \`Sharp 48 Bit 2\`
+ * and \`SharpO1 48 Bit\` at 38 kHz hold identical durations: the first is what Logitech's **catalogue**
+ * calls it and the second what their **analyser** does, and section 159 measured that the two
+ * vocabularies are not one. Collapsing them would need a rule about which name a caller will ask with,
+ * and there is no such rule, so both are here and a lookup answers whichever it is given.
+ *
  * **\`exact\` and \`spread\` are what the entry is worth, and they are two different claims.** \`exact\` is
  * how many of its codes this rhythm reproduces to the microsecond, which is what Logitech's own compiler
  * emitted. \`spread\` is the tightest band that covers all of them, which is what an appliance's receiver
@@ -325,7 +490,7 @@ export interface StatedProtocol {
    * A documented entry has \`codes: 0\` because it was measured over none, which is the honest number
    * and not a placeholder. What it has instead is \`namedBack\`.
    */
-  readonly source: 'corpus' | 'documented';
+  readonly source: 'corpus' | 'compiled' | 'both' | 'documented';
   /**
    * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
    * number they were built from.
@@ -370,13 +535,17 @@ const DOCUMENTED: {
   family: string; periodNs: number; header: [number, number]; flat: number; zero: number;
   one: number; carries: 'mark' | 'space'; framePeriod?: number; readBack: number; heardAs?: string;
 }[] = [
-  // **The Sharp scheme, and the one seed the judge accepted.** No lead in at all, a constant 320
-  // microsecond mark, and the gap after it carrying the bit. It is the reason `pulsesOfFrame` had to
-  // learn to emit no header. Measured on 24 August 2026: 17 catalogue codes, 9 of `Sharp 15 Bit` and 8
-  // of `Sharp 15 Bit 2`, all 17 decoded back to the exact number they were built from. One rhythm
-  // therefore serves both of their Sharp families, which is 338 of the 2852 distinct codes read.
-  { family: 'Sharp 15 Bit', periodNs: 26315, header: [0, 0], flat: 320, zero: 680, one: 1680,
-    carries: 'space', readBack: 17, heardAs: 'Proceed 14 Bit' },
+  // **Empty on purpose, and it held one entry for a few hours.** `Sharp 15 Bit` was seeded from
+  // published protocol documentation at 320/680/1680, on the strength of Logitech's analyser reading 17
+  // catalogue codes built with it back to the exact number. The compiled sample refutes the numbers the
+  // same day: the two Denon receivers on it emit their 15 bit family with a mark of **260** and spaces
+  // of **790** and **1850**, at 37 kHz, so the published figures are out by a fifth to a quarter on
+  // every duration. The shape was right, headerless and space carrying, and the numbers were not.
+  //
+  // What that says about `readBack` is the reason this list is empty rather than corrected: their
+  // analyser accepted a rhythm their compiler does not emit, twice in one day, the other case being
+  // `JVC 16 Bit` under NEC's durations. So a rhythm judged only by their analyser is not evidence worth
+  // shipping, and a documented entry that cannot do better than that does not belong in the table.
 ];
 
 /**
@@ -417,7 +586,7 @@ if (write) {
     return `  { family: '${e.family}', periodNs: ${e.periodNs}, `
       + `header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
-      + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: 'corpus' },`;
+      + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
   }).join('\n');
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `
@@ -425,9 +594,13 @@ if (write) {
     + `carries: '${e.carries}',${e.framePeriod === undefined ? '' : ` framePeriod: ${e.framePeriod},`}`
     + ` codes: 0, exact: 0, spread: 0, source: 'documented', readBack: ${e.readBack}`
     + `${e.heardAs === undefined ? '' : `, heardAs: '${e.heardAs}'`} },`).join('\n');
-  writeFileSync(out, `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n${rowsOut}\n`
-    + `  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. \`codes: 0\` is the\n`
-    + `  // honest count: the corpus holds no record of these families at all.\n${seedsOut}\n];\n`);
+  // The documented block is omitted entirely when there is nothing in it, because a heading over an
+  // empty list reads as a category the table has rather than one it deliberately does not.
+  const documentedOut = DOCUMENTED.length === 0 ? '' :
+    `\n  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. \`codes: 0\` is the`
+    + `\n  // honest count: the corpus holds no record of these families at all.\n${seedsOut}`;
+  writeFileSync(out,
+    `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n${rowsOut}${documentedOut}\n];\n`);
   console.log(`\n${entries.length} measured and ${DOCUMENTED.length} documented entries `
     + 'written to src/protocols.ts');
 }

@@ -20,6 +20,12 @@
  * three codes; computing it from the period makes it one. Both Sony families come out at exactly 45000
  * microseconds, which is the published frame period of that protocol and was not fitted to.
  *
+ * **One rhythm can carry two names, and the table keeps both rather than choosing.** `Sharp 48 Bit 2`
+ * and `SharpO1 48 Bit` at 38 kHz hold identical durations: the first is what Logitech's **catalogue**
+ * calls it and the second what their **analyser** does, and section 159 measured that the two
+ * vocabularies are not one. Collapsing them would need a rule about which name a caller will ask with,
+ * and there is no such rule, so both are here and a lookup answers whichever it is given.
+ *
  * **`exact` and `spread` are what the entry is worth, and they are two different claims.** `exact` is
  * how many of its codes this rhythm reproduces to the microsecond, which is what Logitech's own compiler
  * emitted. `spread` is the tightest band that covers all of them, which is what an appliance's receiver
@@ -56,7 +62,7 @@ export interface StatedProtocol {
    * A documented entry has `codes: 0` because it was measured over none, which is the honest number
    * and not a placeholder. What it has instead is `namedBack`.
    */
-  readonly source: 'corpus' | 'documented';
+  readonly source: 'corpus' | 'compiled' | 'both' | 'documented';
   /**
    * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
    * number they were built from.
@@ -80,13 +86,19 @@ export interface StatedProtocol {
 }
 
 export const PROTOCOLS: readonly StatedProtocol[] = [
+  { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 189, exact: 189, spread: 0, source: 'compiled' },
+  { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 118, exact: 118, spread: 0, source: 'compiled' },
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
+  { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },
+  { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 59, exact: 59, spread: 0, source: 'both' },
+  { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
+  { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },
+  { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 37, exact: 37, spread: 0, source: 'compiled' },
   { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0, source: 'corpus' },
-  { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 12, exact: 12, spread: 0, source: 'corpus' },
+  { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 19, exact: 19, spread: 0, source: 'both' },
+  { family: 'Sony 20 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 14, exact: 14, spread: 0, source: 'compiled' },
+  { family: 'Sony 15 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 12, exact: 12, spread: 0, source: 'both' },
   { family: 'SharpO1 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 12, exact: 12, spread: 0, source: 'corpus' },
-  { family: 'Sony 15 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 9, exact: 9, spread: 0, source: 'corpus' },
-  { family: 'Sony 12 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 3, exact: 3, spread: 0, source: 'corpus' },
-  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. `codes: 0` is the
-  // honest count: the corpus holds no record of these families at all.
-  { family: 'Sharp 15 Bit', periodNs: 26315, header: [0, 0], flat: 320, zero: 680, one: 1680, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'documented', readBack: 17, heardAs: 'Proceed 14 Bit' },
+  { family: 'Memorex 32 Bit', periodNs: 26315, header: [9000, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', codes: 8, exact: 8, spread: 0, source: 'compiled' },
+  { family: 'PioneerO1 32 Bit', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 7, exact: 7, spread: 0, source: 'compiled' },
 ];

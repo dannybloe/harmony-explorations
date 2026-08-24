@@ -19,35 +19,70 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states seven entries, six measured and one documented, and what each is worth', () => {
+test('the table states fifteen entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 7);
-  // **The two provenances are two different claims and the test keeps them apart.** A measured entry
-  // reproduces what Logitech's compiler emitted, and `exact` counts that. A documented entry is the
-  // published nominal rhythm of a family the corpus holds no record of at all, so `codes` is zero
-  // because it was measured over none, and what it has instead is their own analyser hearing our train
-  // and recovering the bits.
-  const measured = PROTOCOLS.filter((one) => one.source === 'corpus');
-  const documented = PROTOCOLS.filter((one) => one.source === 'documented');
-  assert.equal(measured.length, 6);
-  assert.deepEqual(documented.map((one) => [one.family, one.codes, one.readBack]),
-                   [['Sharp 15 Bit', 0, 17]]);
-  assert.deepEqual(documented.map((one) => one.heardAs), ['Proceed 14 Bit'],
-                   'their analyser names it something else, which is coarser and not a disagreement');
-  // The one entry in the table with no lead in, which is what the Sharp scheme is.
-  assert.deepEqual(PROTOCOLS.filter((one) => one.header[0] === 0).map((one) => one.family),
-                   ['Sharp 15 Bit']);
-  assert.equal(measured.reduce((n, one) => n + one.codes, 0), 177);
-  assert.equal(measured.reduce((n, one) => n + one.exact, 0), 150);
-  // Five of the six reproduce every code of their entry to the microsecond. The sixth is the interesting
-  // one and it is named rather than tolerated: NEC at 38 kHz under Logitech's Memorex label, where three
-  // duration sets appear across the corpus and the commonest reproduces 81 of 108 exactly and all 108
-  // within two percent. So a code emitted from it is accepted by the equipment and is not byte identical
-  // to what their compiler emitted.
-  const loose = measured.filter((one) => one.spread > 0);
+  assert.equal(PROTOCOLS.length, 15);
+  // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
+  // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
+  // `compiled` is a record their own compiler produced on request, whose family their own catalogue
+  // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
+  // routes with no shared code landing on the same durations.
+  const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 9, 3]);
+  // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
+  // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
+  // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
+  assert.equal(count('documented'), 0);
+
+  // The three confirmed twice over, named rather than counted, since agreement between two independent
+  // routes is the strongest thing this table has and losing one silently is the risk.
+  assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
+                   ['Sony 12 Bit', 'Pioneer 32 Bit', 'Sony 15 Bit']);
+  // And they agree **exactly**, not within a band, which is what makes it a confirmation.
+  for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
+    assert.equal(one.spread, 0, `${one.family} disagrees between the two routes`);
+    assert.equal(one.exact, one.codes, one.family);
+  }
+
+  // **One rhythm under two names, kept rather than collapsed.** Their catalogue says Sharp 48 Bit 2 and
+  // their analyser says SharpO1 48 Bit, and at 38 kHz the durations are identical to the microsecond.
+  // That is the measurement behind the rule that their two vocabularies are not one.
+  const catalogue = PROTOCOLS.find((one) => one.family === 'Sharp 48 Bit 2');
+  const analyser = PROTOCOLS.find((one) => one.family === 'SharpO1 48 Bit' && one.periodNs === 26315);
+  assert.ok(catalogue !== undefined && analyser !== undefined);
+  assert.deepEqual([catalogue.header, catalogue.flat, catalogue.zero, catalogue.one],
+                   [analyser.header, analyser.flat, analyser.zero, analyser.one]);
+
+  // **A `Dual` family is the same rhythm as its sibling**, which is what the catalogue notation already
+  // implied by stating two values for one command: the word counts frames, not durations.
+  for (const [dual, single] of [['Pioneer 32 Bit Dual', 'Pioneer 32 Bit'],
+                                ['PioneerO1 32 Bit Dual', 'PioneerO1 32 Bit']]) {
+    const a = PROTOCOLS.find((one) => one.family === dual);
+    const b = PROTOCOLS.find((one) => one.family === single);
+    assert.ok(a !== undefined && b !== undefined, `${dual} and ${single}`);
+    assert.deepEqual([a.header, a.flat, a.zero, a.one, a.periodNs],
+                     [b.header, b.flat, b.zero, b.one, b.periodNs], `${dual} against ${single}`);
+  }
+
+  // **JVC is not NEC**, which section 158 recorded that it was on their analyser's word. Their compiler
+  // emits 8400/4200 with 500/500/1600 against NEC's 8990/4490 with 568/552/1662, so a JVC code built
+  // from the NEC entry is wrong in its lead in and in every bit cell.
+  const jvc = PROTOCOLS.find((one) => one.family === 'JVC 16 Bit');
+  const nec = PROTOCOLS.find((one) => one.family === 'MemorexO1 32 Bit');
+  assert.ok(jvc !== undefined && nec !== undefined);
+  assert.notDeepEqual(jvc.header, nec.header, 'their lead ins differ, which is the whole point');
+  assert.deepEqual([jvc.header, jvc.flat, jvc.zero, jvc.one], [[8400, 4200], 500, 500, 1600]);
+
+  // The loose one is named rather than tolerated: NEC at 38 kHz under Logitech's Memorex label, where
+  // three duration sets appear across the corpus and the commonest reproduces 81 of 108 exactly and all
+  // 108 within two percent. So a code emitted from it is accepted by the equipment and is not byte
+  // identical to what their compiler emitted.
+  const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
+  // Every other entry reproduces every code of its own rows to the microsecond.
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 14);
 });
 
 test("Sony's frame period is the published 45 ms, which nothing here fitted to", () => {
@@ -85,12 +120,22 @@ test('a stated code becomes a frame, and an unknown family becomes nothing', () 
   // **The refusal, which is the half that matters.** The biphase families are absent from the table on
   // purpose: our own decoder cannot produce their number, so no durations were ever derived, and a
   // guessed rhythm would be a command that does nothing presented as one that works.
-  // The documented entry goes down the same path, and its train opens on a bit cell rather than a lead
-  // in, which is the whole reason the encoder had to learn a header of nothing.
-  const sharp = pulsesOfStatedCode('Sharp 15 Bit', 15, 0x1BACn);
-  assert.equal(sharp?.length, 30, 'fifteen pairs and nothing before them');
-  assert.equal(sharp?.[0]?.us, 320, 'the first pulse is the first bit cell');
+  // **The Sharp families answer `undefined` and that is the honest answer, not a gap left by accident.**
+  // A rhythm for them was seeded from published documentation and then refuted the same day by a
+  // configuration Logitech's own compiler produced: their two Denon receivers emit a 15 bit family with
+  // a mark of 260 and spaces of 790 and 1850, against the 320, 680 and 1680 the seed carried. Those
+  // measured numbers are not here either, because the records carrying them will not yield timings to a
+  // strict reader: their first mark is 270 where every later one is 260, so the half that has to be
+  // constant is not. Until that is settled, refusing is right and a rhythm nobody has measured is not
+  // offered.
+  assert.equal(pulsesOfStatedCode('Sharp 15 Bit', 15, 0x1BACn), undefined);
+  assert.equal(pulsesOfStatedCode('Sharp 15 Bit 2', 15, 0x1BACn), undefined);
   assert.equal(pulsesOfStatedCode('Microsoft 30 Bit', 30, 0x3FF07BA1n), undefined);
+  // The families the compiled sample did settle do answer, and the largest of them is the one worth
+  // asserting: Toshiba 32 Bit is over a third of their whole catalogue.
+  const toshiba = pulsesOfStatedCode('Toshiba 32 Bit', 32, 0x20DF08F7n);
+  assert.equal(toshiba?.length, 66, 'a lead in pair and thirty two bit cells');
+  assert.equal(toshiba?.[0]?.us, 8990, 'the lead in their compiler emits');
   assert.equal(pulsesOfStatedCode('Not A Protocol', 8, 0x12n), undefined);
 });
 
