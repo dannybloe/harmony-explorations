@@ -8,18 +8,25 @@ necessity. A screen button's position is **stated** by the config, base slot 17'
 by a mode page's own byte, section 125, so a target we author is a target the firmware will hit, and a
 device page full of commands is what device mode is mostly used for anyway.
 
-**A physical key is available too, and an earlier version of this paragraph said otherwise.** It claimed
-nothing here can name the keypad, which is wrong in a way worth recording: `reference/button-maps.md`
-names 32 of the Harmony One's 44 keys, `Guide` among them at scan 18, so binding one of those is a
-lookup and not a guess. What is true is narrower. A key is named by joining a config's own bindings
-against the button map of the account that compiled it, section 133, so a key **no config on that
-account has ever bound** has no name, which is the other 12. Those are learnable by exactly the route
-that named the 32: bind them in Logitech's client, compile, and read the pair back. Four of the 44 stay
-genuinely ambiguous, two up keys and two down keys carrying one command each, and separating them needs
-distinct commands deliberately assigned.
+**A physical key is available too, and this paragraph got it wrong twice before it got it right.** It
+first claimed nothing here can name the keypad, then that 12 keys were unnamed and learnable. Both are
+wrong, and the second was arithmetic: 44 keys drawn minus 32 named is 12, and that difference is not one
+population. The measured breakdown of the Harmony One's 44 keys, `reference/button-maps.md` against
+`reference/silhouettes/one.svg`:
 
-So the keypad is a second route rather than a closed door, and this goal takes the screen because it
-needs no lookup at all.
+| | keys | |
+|---|---|---|
+| named, scan known | 32 | `Guide` is scan 18, so binding it is a lookup |
+| named, scan known, which of a pair unresolved | 4 | the two up keys and the two down keys |
+| no scan at all | 8 | `Off`, `Help`, `Activities`, `ScreenPrev`, `ScreenNext`, `SoftLeft`, `SoftRight`, `Enter` |
+
+**The eight are not a gap to close.** Logitech's own button maps name 36 buttons for this remote and
+every one of them is placed, section 145, so the eight are keys their software never offers as a target
+because the remote uses them itself. Nothing is waiting to be learned there, and binding one in their
+client is not possible.
+
+So the keypad is a real second route for 32 keys, and this goal takes the screen because it needs no
+lookup at all.
 
 **It has two finish lines and only the first one is this checklist's.** Phases 0 to 6 end in a config we
 built ourselves, carrying a device that was not in it before, which every reader here reports correctly
