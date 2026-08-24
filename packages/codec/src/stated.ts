@@ -180,6 +180,8 @@ export function timingsOf(entry: StatedProtocol): FrameTimings {
   return {
     header: [entry.header[0], entry.header[1]],
     flat: entry.flat,
+    // `exactOptionalPropertyTypes`, so the field is present or it is not there at all.
+    ...(entry.firstMark === undefined ? {} : { firstMark: entry.firstMark }),
     zero: entry.zero,
     one: entry.one,
     carries: entry.carries,

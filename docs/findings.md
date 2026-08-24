@@ -22075,11 +22075,12 @@ wrong first:
   lead in and a 15 bit one that opens on its first bit. Deciding it per group read the headerless half
   with a header, which eats its first bit cell and yields a number no catalogue code carries.
 
-### Twelve families, and three of them confirmed twice
+### Thirteen families, and three of them confirmed twice
 
 | family | carrier | lead in | mark | zero | one | records |
 |---|---|---|---|---|---|---|
 | Toshiba 32 Bit | 38 kHz | 8990/4490 | 568 | 552 | 1662 | 189 |
+| Sharp 15 Bit 2 | 37 kHz | none | 260, first 270 | 790 | 1850 | 162 |
 | Sharp 48 Bit 2 | 38 kHz | 3364/1682 | 408 | 431 | 1272 | 118 |
 | JVC 16 Bit | 38 kHz | 8400/4200 | 500 | 500 | 1600 | 108 |
 | Sony 12 Bit | 40 kHz | 2400/600 | 600 | 600 | 1200 | 56 |
@@ -22102,8 +22103,9 @@ decoding of somebody's real configuration, and this one runs through their catal
 their compiler then emitted.
 
 **`Toshiba 32 Bit` is our NEC entry exactly**, 8990/4490 and 568/552/1662, which settles the largest
-family in their catalogue: 1026 of 2921 distinct codes, more than a third of it. Six rhythms are new
-outright: JVC 16 Bit, Sony 20 Bit, Memorex 32 Bit, MemorexV2 32 Bit, PioneerO1 32 Bit and its Dual.
+family in their catalogue: 1026 of 2921 distinct codes, more than a third of it. Seven rhythms are new
+outright: Sharp 15 Bit 2, JVC 16 Bit, Sony 20 Bit, Memorex 32 Bit, MemorexV2 32 Bit, PioneerO1 32 Bit
+and its Dual.
 
 **A `Dual` family is the same rhythm as its sibling**, to the microsecond in both pairs. So the word
 counts frames rather than describing durations, which is what section 159's notation reading already
@@ -22136,22 +22138,50 @@ second reading through.
 
 ### What did not join, and the largest of it is one question
 
-333 records matched no catalogue code of their own appliance, and 173 more would not yield timings. Seven
-families are in this configuration and not in the table: `Microsoft 30 Bit`, `Panasonic 16 Bit`,
-`Magnavox 13 Bit`, `Sharp 48 Bit`, `Logitech 24 Bit`, `Kreatel IP 22 Bit`, `JerroldO1 16 Bit`, plus
-`MemorexV2 32 Bit Dual`. The biphase one is expected, since `irFrame` cannot read it at all and section
-153 says why.
+171 records matched no catalogue code of their own appliance, and 11 readings would not yield timings.
+Those two counts overlap rather than adding up, because a record whose durations refuse to split then
+fails to land at all and is counted in both, which is how the Sharp family was 162 of each until it
+joined. Seven families are in this configuration and not in the table: `Microsoft 30 Bit`,
+`Panasonic 16 Bit`, `Magnavox 13 Bit`, `Sharp 48 Bit`, `Logitech 24 Bit`, `Kreatel IP 22 Bit`,
+`JerroldO1 16 Bit`, plus `MemorexV2 32 Bit Dual`. The biphase one is expected, since `irFrame` cannot
+read it at all and section 153 says why.
 
-**Sharp is the interesting failure and it is two separate problems.** Its durations will not split for a
-strict reader, because the **first** mark of every record is 270 where every later one is 260, so the half
-that has to be constant is not. And its numbers do not join: our decoder reads a Denon record as 15 bits
-`0x230C` where the catalogue states `0x1854` and `0x1BAB` for a command, and neither a bit reversal nor
-the Sharp inversion carries one to the other. The inversion itself is confirmed on the record, though:
-the two frames a record sends differ by exactly `0x3FF`, the low ten bits, which is what section 159 read
-out of the notation and what the published protocol does.
+### Sharp joined, and one duration was the whole of what stopped it
 
-**A first attempt at that comparison was invalid and it is worth recording why.** It set our reading of
-one record against a stated code picked out of the appliance's list without checking the two were the
-same command. Two numbers of one appliance are not a pair to compare, and the mistake is the same family
-as section 32's closure whose two ends came from the same bytes: what makes a comparison mean something is
-that the two sides are about the same thing, and that has to be established rather than assumed.
+Sharp was written up here as **two** separate problems and it was one, which is worth having in the
+record because the second half was a claim about somebody else's data made without a comparison behind
+it.
+
+**The half that was real.** The **first** mark of every Sharp record is 270 microseconds where all
+fourteen later marks are 260, so the flat half of the pairs is not one length throughout and a reader
+demanding that it be refused every record. The fix is a field rather than a tolerance: `firstMark` on
+`FrameTimings`, allowed only where the differing flat is the **opening** one, which keeps a genuinely
+inconsistent run a refusal. It is a longer opening burst and **not** a lead in, and that is measured
+rather than assumed: reading it as part of the first bit cell is what makes 162 of 162 frames land on
+numbers the catalogue states, and reading it as a header eats the first cell and lands on none. With it,
+`Sharp 15 Bit 2` reproduces 162 of 162 of its own records exactly, at 37 kHz with no lead in at all.
+
+**The half that was wrong.** This section stated that Sharp's numbers "do not join under any transform
+tried", giving our reading of a Denon record as `0x230C` against the catalogue's `0x1854` and `0x1BAB`. A
+brute force over the set instead of over a pair settles it: taking the 246 fifteen bit numbers the
+appliances state as one set and the 162 frames our decoder reads out of their groups as another, the
+**identity** maps 162 of 162 of ours into theirs. There was no bit order problem. A bit reversal reaches
+25, the complement and the reversed complement reach none.
+
+**What that instrument cannot say is worth stating with it**, since it is the price of using a set. A
+Sharp command is two frames differing in the low ten bits and the catalogue states **both**, all 246 of
+246, so the stated set is closed under that inversion and the inversion therefore scores exactly what the
+identity scores. So this settles that no reordering is needed and leaves open which frame of the pair a
+given record's first block is.
+
+**Why the wrong claim was reachable is the transferable part.** The comparison was made between our
+reading of one record and a stated code picked out of the same appliance's list without establishing that
+the two were the same command. Two numbers of one appliance are not a pair. It is the same shape as
+section 32's closure whose two ends came out of the same bytes and as section 148's check whose falsifier
+sat outside its own population: a comparison means something when the two sides are established to be
+about the same thing, and a set against a set needs no such establishing, which is why it was the right
+instrument here and cost less than the pair did.
+
+**The inversion itself was confirmed on the record and stays confirmed**: the two frames a record sends
+differ by exactly `0x3FF`, the low ten bits, which is what section 159 read out of the notation and what
+the published protocol does.

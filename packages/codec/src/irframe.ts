@@ -251,6 +251,20 @@ export interface FrameTimings {
   one: number;
   carries: FrameCarrier;
   /**
+   * The mark that opens the frame, where it is not the same length as every later one.
+   *
+   * **Measured, not a tolerance.** Every Sharp record in the configuration Logitech's own compiler
+   * produced opens on a mark of 270 microseconds and then uses 260 for all fourteen remaining bit
+   * cells, and it does so again after each inter frame gap. Without somewhere to put that, the half of
+   * a pair that has to be constant is not constant and a strict reader refuses the record, which is
+   * what kept the whole Sharp family out of the table.
+   *
+   * It is **not** a lead in, and the difference is settled rather than assumed: reading the first mark
+   * as part of the first bit cell makes 162 of 162 of the frames land on numbers Logitech's catalogue
+   * states for the same appliances, and reading it as a header would shift every bit by one.
+   */
+  firstMark?: number;
+  /**
    * The space that closes the last pair, where the bit is in the mark.
    *
    * **A pulse width frame's last space is a trailing gap and not a bit cell**, and reading it as one is
@@ -282,14 +296,24 @@ export function timingsOfFrame(
   const carried = new Set(cells.filter((_, i) => i % 2 === at).map((p) => p.us));
   // Every pair but the last contributes its flat half. The last pair's other half closes the frame,
   // and on a pulse width protocol that is the trailing gap rather than another cell of the same length.
-  const flat = new Set(cells.slice(0, -1).filter((_, i) => i % 2 !== at).map((p) => p.us));
-  if (flat.size !== 1 || carried.size > 2 || carried.size === 0) return undefined;
+  const flats = cells.slice(0, -1).filter((_, i) => i % 2 !== at).map((p) => p.us);
+  const flat = new Set(flats);
+  // **The opening one is allowed to differ, and only the opening one.** Two values where the first is
+  // the odd one out is a protocol whose first burst is longer, which the Sharp family measurably is.
+  // Anything else is a record whose constant half is not constant, and that stays a refusal.
+  const opening = flat.size === 2 && flats.length > 1
+    && flats.slice(1).every((one) => one === flats[1]) && flats[0] !== flats[1]
+    ? flats[0] : undefined;
+  if ((flat.size !== 1 && opening === undefined) || carried.size > 2 || carried.size === 0) {
+    return undefined;
+  }
   const lengths = [...carried].sort((a, b) => a - b);
   const header = d.slice(0, 2 * headerPairs);
   if (header.length !== 2 * headerPairs) return undefined;
   const base = {
-    header: [header[0]!.us, header[1]!.us] as const,
-    flat: [...flat][0]!,
+    header: [header[0]?.us ?? 0, header[1]?.us ?? 0] as const,
+    flat: opening === undefined ? [...flat][0]! : flats[1]!,
+    ...(opening === undefined ? {} : { firstMark: opening }),
     zero: lengths[0]!,
     one: lengths[lengths.length - 1]!,
     carries: frame.carries,
@@ -326,7 +350,9 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
       out.push({ mark: true, us: carried });
       out.push({ mark: false, us: i === 0 ? t.closing! : t.flat });
     } else {
-      out.push({ mark: true, us: t.flat });
+      // The opening burst where the protocol has a longer one, and `flat` everywhere else.
+      const first = i === bits - 1 && t.firstMark !== undefined;
+      out.push({ mark: true, us: first ? t.firstMark! : t.flat });
       out.push({ mark: false, us: carried });
     }
   }

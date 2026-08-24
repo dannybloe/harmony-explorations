@@ -347,13 +347,18 @@ both matter to an importer. A code states its frames in **two** slots, either of
 naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
 catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
 33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
-**Twelve families have a rhythm measured off Logitech's own compiler**, section 160, and that route is
+**Thirteen families have a rhythm measured off Logitech's own compiler**, section 160, and that route is
 open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
 reproduces its own durations on every one of its records. Three of them agree to the microsecond with
 what the corpus already gave, by a route with nothing in common, and `Toshiba 32 Bit` turns out to be the
-NEC entry exactly, which is over a third of their catalogue.
+NEC entry exactly, which is over a third of their catalogue. The thirteenth is the lesson in miniature:
+Sharp was written up as two problems, a rhythm that would not split and numbers that joined under no
+transform, and it was one. Its opening mark is 270 where every later one is 260, which a strict reader
+refuses, and its numbers needed no transform at all: the second half was a pair of numbers compared
+without establishing they were the same command, and a set against a set maps 162 of 162 under the
+identity.
 
 **Their analyser is retired as evidence for a rhythm**, section 160, and that is the load bearing
 correction: it accepted two rhythms their compiler does not emit, `JVC 16 Bit` under NEC's durations and
@@ -879,10 +884,19 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                **A table entry says where its durations came from**, section 159: six
-                                are measured off the corpus and one is the published rhythm of a family
-                                the corpus holds no record of, judged by Logitech's own analyser reading
-                                17 codes back to the exact number. src/stated.ts reads their code
+                                Sixteen entries, and each carries the route it came from, since a rhythm
+                                two independent routes agree on is worth more than one, section 160. Two
+                                shapes in FrameTimings exist for one family and both are measured rather
+                                than allowed for: a `[0, 0]` header means a protocol with no lead in, and
+                                `firstMark` a longer opening burst, which Sharp has and which a reader
+                                demanding one flat length throughout refuses.
+                                **A table entry says where its durations came from**: three off the
+                                corpus, ten off a configuration Logitech's own compiler produced, and
+                                three off both, which is the column to look at first. The fourth value,
+                                a rhythm taken from published documentation and judged only by their
+                                analyser, is deliberately **empty**: the one entry that had it was out
+                                by a fifth to a quarter on every duration and their analyser read it
+                                back perfectly, section 160. src/stated.ts reads their code
                                 notation as the grammar it is, two frame slots and three words, which
                                 recovered every Toshiba code in their catalogue and stopped the families
                                 that put a frame in each slot from sending half a command

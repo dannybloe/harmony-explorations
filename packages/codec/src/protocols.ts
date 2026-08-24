@@ -39,8 +39,16 @@ export interface StatedProtocol {
   readonly family: string;
   /** The carrier as a record states it, a period in nanoseconds. 38 kHz is 26315. */
   readonly periodNs: number;
+  /** `[0, 0]` where the protocol has no lead in and opens on its first bit cell. */
   readonly header: readonly [number, number];
   readonly flat: number;
+  /**
+   * The opening burst, where the protocol makes it longer than the rest.
+   *
+   * Only the Sharp family here does, 270 against 260 on every record of it, and it matters because
+   * without it a rebuilt code differs from what their compiler emits on its very first pulse.
+   */
+  readonly firstMark?: number;
   readonly zero: number;
   readonly one: number;
   readonly carries: FrameCarrier;
@@ -87,6 +95,7 @@ export interface StatedProtocol {
 
 export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Toshiba 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 189, exact: 189, spread: 0, source: 'compiled' },
+  { family: 'Sharp 15 Bit 2', periodNs: 27027, header: [0, 0], flat: 260, firstMark: 270, zero: 790, one: 1850, carries: 'space', codes: 162, exact: 162, spread: 0, source: 'compiled' },
   { family: 'Sharp 48 Bit 2', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 118, exact: 118, spread: 0, source: 'compiled' },
   { family: 'MemorexO1 32 Bit', periodNs: 26315, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 108, exact: 81, spread: 0.02, source: 'corpus' },
   { family: 'JVC 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 500, zero: 500, one: 1600, carries: 'space', codes: 108, exact: 108, spread: 0, source: 'compiled' },

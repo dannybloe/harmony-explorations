@@ -14,22 +14,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { pulsesOfFrame } from '../src/irframe.ts';
+import { framesOfPulses, pulsesOfFrame } from '../src/irframe.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states fifteen entries, and what each is worth is its provenance', () => {
+test('the table states sixteen entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 15);
+  assert.equal(PROTOCOLS.length, 16);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 9, 3]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 10, 3]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -82,7 +82,7 @@ test('the table states fifteen entries, and what each is worth is its provenance
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
   // Every other entry reproduces every code of its own rows to the microsecond.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 14);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 15);
 });
 
 test("Sony's frame period is the published 45 ms, which nothing here fitted to", () => {
@@ -120,16 +120,36 @@ test('a stated code becomes a frame, and an unknown family becomes nothing', () 
   // **The refusal, which is the half that matters.** The biphase families are absent from the table on
   // purpose: our own decoder cannot produce their number, so no durations were ever derived, and a
   // guessed rhythm would be a command that does nothing presented as one that works.
-  // **The Sharp families answer `undefined` and that is the honest answer, not a gap left by accident.**
-  // A rhythm for them was seeded from published documentation and then refuted the same day by a
-  // configuration Logitech's own compiler produced: their two Denon receivers emit a 15 bit family with
-  // a mark of 260 and spaces of 790 and 1850, against the 320, 680 and 1680 the seed carried. Those
-  // measured numbers are not here either, because the records carrying them will not yield timings to a
-  // strict reader: their first mark is 270 where every later one is 260, so the half that has to be
-  // constant is not. Until that is settled, refusing is right and a rhythm nobody has measured is not
-  // offered.
+  // **The Sharp family is the one with no lead in and a longer opening burst**, and both are measured
+  // off a configuration Logitech's own compiler produced rather than taken from documentation: a seed
+  // at 320/680/1680 was refuted by it the same day. So the frame is thirty pulses with nothing before
+  // them, and its first mark is 270 where all fourteen others are 260.
+  const sharp = pulsesOfStatedCode('Sharp 15 Bit 2', 15, 0x230Cn);
+  assert.equal(sharp?.length, 30, 'fifteen bit cells and no lead in');
+  assert.deepEqual(sharp?.slice(0, 4).map((one) => one.us), [270, 790, 260, 1850]);
+  assert.equal(new Set(sharp?.slice(2).filter((_, i) => i % 2 === 0).map((one) => one.us)).size, 1,
+               'every mark after the first is the same length');
+  // **And the frame comes back**, which is the closure that says the opening 270 is a bit cell's own mark
+  // and not a lead in. Reading it as a lead in eats the first cell, and that is not hypothetical: it is
+  // exactly the misreading that made this family look as though its numbers joined under no transform at
+  // all, when in fact the identity carries 162 of 162 of the compiled sample's Sharp frames onto numbers
+  // Logitech's catalogue states. So the negative below is the case that was actually got wrong.
+  const back = framesOfPulses(sharp!, 0);
+  assert.equal(back.length, 1, 'only one convention fits, and it is the space carrying one');
+  assert.equal(back[0]?.carries, 'space');
+  assert.equal(back[0]?.bits, 15);
+  assert.equal(back[0]?.value, 0x230Cn);
+  // Read with a lead in, the frame is a cell short. The **width** is what says so, and the value is
+  // deliberately not the assertion here: `0x230C` has a clear top bit, so losing that cell leaves the
+  // same number in fourteen bits, which is how a wrong reading can look like a right one. A code with
+  // its top bit set is the case where the number moves too.
+  assert.equal(framesOfPulses(sharp!, 1)[0]?.bits, 14, 'a lead in eats a bit cell');
+  const set = pulsesOfStatedCode('Sharp 15 Bit 2', 15, 0x630Cn);
+  assert.equal(framesOfPulses(set!, 0)[0]?.value, 0x630Cn);
+  assert.notEqual(framesOfPulses(set!, 1)[0]?.value, 0x630Cn);
+  // `Sharp 15 Bit`, without their `2`, is a different catalogue family and no sample here holds one, so
+  // it answers nothing rather than borrowing its sibling's rhythm.
   assert.equal(pulsesOfStatedCode('Sharp 15 Bit', 15, 0x1BACn), undefined);
-  assert.equal(pulsesOfStatedCode('Sharp 15 Bit 2', 15, 0x1BACn), undefined);
   assert.equal(pulsesOfStatedCode('Microsoft 30 Bit', 30, 0x3FF07BA1n), undefined);
   // The families the compiled sample did settle do answer, and the largest of them is the one worth
   // asserting: Toshiba 32 Bit is over a third of their whole catalogue.

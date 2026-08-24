@@ -1679,6 +1679,18 @@ fetched from it is written using the timings of any code of the same appliance a
 between consecutive copies is byte identical in all 3547, and what follows the last copy is 151 distinct
 shapes across the corpus and is copied rather than computed.
 
+Two families of shape sit inside those five numbers, and both are measured off a configuration Logitech's
+own compiler produced rather than allowed for in advance, section 160:
+
+* **a header pair of `0, 0` means the protocol has no lead in**, and the frame opens on its first bit
+  cell. Emitting the zeroes literally would put a pair in the train that no receiver can see and that
+  this decoder would then read back as a bit.
+* **a first mark that differs from every later one is a longer opening burst**, `firstMark`, and not a
+  lead in. The Sharp scheme opens at 270 microseconds where all fourteen later marks are 260. Read as a
+  lead in it loses the first cell and the number it yields is one no catalogue code carries; read as part
+  of the first cell, 162 of 162 frames land on numbers Logitech's catalogue states. Only the **opening**
+  flat may differ, so a genuinely inconsistent run is still a refusal.
+
 #### Class 5 shares the header, and behind it spells a code from a dictionary
 
 Arch 9's 200 records all read class 5, and every structural property of the header above holds on

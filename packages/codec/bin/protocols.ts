@@ -339,7 +339,11 @@ function reproduces(m: Measured, t: FrameTimings, tolerance = 0): boolean {
   const first = c === undefined ? undefined : irHeaderPointers(c, m.record)[0];
   const words = first === undefined ? undefined : irBlockWords(c!, first);
   if (words === undefined) return false;
-  const original = fromFirstMark(pulsesOfWords(words)).slice(0, 2 + 2 * m.bits);
+  // **The lead in pair is only there when the protocol has one.** A headerless family's frame is bit
+  // cells and nothing else, so slicing two extra pulses off the front compares the rebuilt frame
+  // against one bit cell too many and every record of it fails. That reported Sharp as 0 of 162.
+  const headerPulses = m.timings.header[0] === 0 && m.timings.header[1] === 0 ? 0 : 2;
+  const original = fromFirstMark(pulsesOfWords(words)).slice(0, headerPulses + 2 * m.bits);
   const period = periods.get(entryOf(m));
   const used = t.carries === 'mark' && period !== undefined
     ? { ...t, closing: closingFor(t, m.bits, m.value, period) }
@@ -467,8 +471,16 @@ export interface StatedProtocol {
   readonly family: string;
   /** The carrier as a record states it, a period in nanoseconds. 38 kHz is 26315. */
   readonly periodNs: number;
+  /** \`[0, 0]\` where the protocol has no lead in and opens on its first bit cell. */
   readonly header: readonly [number, number];
   readonly flat: number;
+  /**
+   * The opening burst, where the protocol makes it longer than the rest.
+   *
+   * Only the Sharp family here does, 270 against 260 on every record of it, and it matters because
+   * without it a rebuilt code differs from what their compiler emits on its very first pulse.
+   */
+  readonly firstMark?: number;
   readonly zero: number;
   readonly one: number;
   readonly carries: FrameCarrier;
@@ -584,7 +596,9 @@ if (write) {
   const rowsOut = entries.map((e) => {
     const t = e.timings;
     return `  { family: '${e.family}', periodNs: ${e.periodNs}, `
-      + `header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, zero: ${t.zero}, one: ${t.one}, `
+      + `header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
+      + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
+      + `zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
       + ` codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
   }).join('\n');
