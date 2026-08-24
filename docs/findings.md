@@ -17774,10 +17774,12 @@ first. It does not name the protocol, decode an address or a command, or check a
 **The convention selects itself, and that closure is what makes the module usable.** Under the wrong
 convention every measured duration is the constant half of the pair, so there is nothing to split and
 the reading is refused: a pulse width protocol read as pulse distance yields a train of identical
-spaces. Across the corpus 3547 records read under exactly one convention, 148 under both and 935 under
+spaces. Across the corpus 3502 records read under exactly one convention, none under both and 1128 under
 none, corrected here on 23 August 2026 from **4029 under one and 936 under none**<!--superseded-->, which
-partitions 4965 records where the population is 4630 and predates a change to the container list. The
-only records reading under both are the ones section 134 is about. So a caller never has to know the family,
+partitions 4965 records where the population is 4630 and predates a change to the container list, and
+again on 24 August 2026 from 3547, 148 and 935: section 163 emptied the "both" column and section 164 took
+45 records out of the "one" column. The records that used to read under both are the ones section 134 is
+about, and they are biphase, which is now the property that identifies them. So a caller never has to know the family,
 and `irFrames` returns every reading so that an ambiguous record is visible rather than silently
 resolved.
 
@@ -18977,8 +18979,10 @@ us window with traffic on both sides, and a device whose long bit runs 8% high t
 comparison admits as a bit.
 
 **A summary contradicted the test proving it, in the direction of over-claiming.** `irFrames` was
-described as returning "one or none here" while `irframe.test.ts` asserts 3547 one, 148 both and 935
-none. The 148 are the whole reason the function returns a list.
+described as returning "one or none here" while `irframe.test.ts` asserted 3547 one, 148 both and 935
+none. The 148 were the whole reason the function returns a list; sections 163 and 164 have since taken the
+partition to 3502, 0 and 1128, so the list now carries at most one reading in this corpus and the return
+type keeps stating that it may carry two.
 
 **The record builder knew the address a caller needs and did not hand it over.** `irBuildRecord` wrote
 `start` into the header at `+8` and returned the bytes alone, while base slot 5's group array holds
@@ -21245,7 +21249,7 @@ It is TypeScript rather than Python because the readers are: `keyCodes`, `activi
 `infraredCodesPerList` live in `packages/codec`, and the last of those is what the walk has to go
 through, per the memoisation failure recorded above.
 
-## 152. A stored code's frame is redundant: five durations and the bits rebuild it exactly, 3547 of 3547
+## 152. A stored code's frame is redundant: five durations and the bits rebuild it exactly, 3502 of 3502
 
 **An infrared command is a lamp blinking in a precise rhythm, and a record stores that rhythm as a list
 of on and off times.** Section 133 read the bits back out of one: a code carries a number, and comparing
@@ -21257,7 +21261,7 @@ are protocol facts the bits do not carry.
 Half of that is wrong, and it is the half that matters. **A record states its own timings.** Take five
 numbers off it, the leading mark and the space after it, the length of the half of every pair that
 carries no bit, and the two lengths the carrying half takes, and the frame comes back byte for byte from
-those five plus the bits. On **3547 of 3547** records in the corpus that read as a frame at all, across
+those five plus the bits. On **3502 of 3502** records in the corpus that read as a frame at all, across
 seventeen containers and three of the four architectures. Nothing in the codec knows what a Panasonic or
 an NEC frame looks like, and it does not need to.
 
@@ -21270,7 +21274,7 @@ use exactly one set of timings for every code they carry**, six carry two, so th
 of the appliance and not of the command. That is what makes importing a named command from the catalogue
 a possibility rather than a research project.
 
-### The correction that took the count from 3347 to 3547
+### The correction that took the count from 3347 to 3547, which is 3502 today
 
 The first measurement said 3347, and the 200 that refused were the instructive part. All of them were in
 the two configurations Logitech compiled to our own specification, all pulse width, 112 of twelve bits
@@ -21291,9 +21295,9 @@ separates and follows the copies does not follow from the bits:
 
 | | |
 |---|---|
-| copies of the frame per block | 1 in 2233 records, 3 in 1305, 7 in 4, 11 in 1, 30 in 4 |
-| the gap between consecutive copies | byte identical every time, in all 3547 |
-| what follows the last copy | 151 distinct shapes |
+| copies of the frame per block | 1 in 2188 records, 3 in 1305, 7 in 4, 11 in 1, 30 in 4 |
+| the gap between consecutive copies | byte identical every time, in all 3502 |
+| what follows the last copy | 140 distinct shapes |
 
 The tail is a closing mark, a long gap, sometimes the protocol's own short repeat frame, and a silence
 built out of 32767 microsecond spaces, which is the cap on one duration. A constant total block duration
@@ -21413,6 +21417,12 @@ in section 133 from 3547 under one convention, 148 under both and 935 under none
 section 152's frame rebuild from 3547 of 3547 to 3502 of 3502; and nothing in
 `reference/button-maps.md`, because all 45 are in arch 8 (Harmony 880 and 885) containers and every
 named button came from a Harmony One or a Harmony 600.
+
+**Made on 24 August 2026, section 164, and it cost less than this predicted.** The rebuild figure was
+right and the partition was not: it is 3502 under one, **0** under both and 1128 under none, because
+section 163 landed in between and requiring a constant non carrying half already refuses every record
+that merging would have made ambiguous. So the 764 predicted here never existed. The prediction about
+`reference/button-maps.md` held exactly.
 
 ### What else the run said
 
@@ -21717,7 +21727,7 @@ open here rather than explained, and the cheap test is another compile after ano
 **The gap this closes.** Logitech's device database states a code as a protocol name and a number,
 `G:Sony 12 Bit:()(0x910)():3`, and never as a rhythm: `Raw` was null on all 419 commands ever fetched
 from it, section 132. A config holds durations. Section 152 measured that a code's durations can be read
-off any other code of the **same appliance**, exactly, on 3547 of 3547 records, and 52 of 58 device
+off any other code of the **same appliance**, exactly, on 3502 of 3502 records, and 52 of 58 device
 groups carry one set for every code. That serves a config which already drives the appliance and it
 cannot serve a document starting from nothing, because there is no sibling code to read from. So the
 question is whether the durations belong to the **family** instead of to the appliance.
@@ -22443,7 +22453,8 @@ every one reproduced exactly.
 
 The 148 records that read under **both** conventions now read under **none**. That is the whole cost, and
 it is exactly the population section 153 counted: every one of them is biphase, and section 162's reader
-reads them. Nothing else moved: 3547 records still read under exactly one convention, before and after.
+reads them. Nothing else moved: 3547 records still read under exactly one convention, before and after,
+which section 164 then took to 3502 by a change of its own.
 
 The biconditional is now one directional and its test says so. What replaced the ambiguity as the
 detector is the reader that names the cause: **every two group record is a biphase code**, 148 of 148,
@@ -22499,3 +22510,78 @@ device name to match on.
 12 records of the compiled sample read as nothing, and 3 are the `Makita 10 Bit` disagreement section 162
 recorded. 115 records their analyser named nothing for stay out by construction. That is the whole
 remainder of the infrared side of both populations.
+
+## 164. Two durations of one kind in a row are one interval, and reading them apart named 45 codes wrongly
+
+**A change decided in section 153 and deliberately left unmade there, made on 24 August 2026.** The rule
+about measuring before removing a derivation is why it waited: section 153 counted what it would cost
+against a decoder nobody had a second opinion on, and the second opinion arrived in the same section.
+
+**What the change is.** A stored duration is fifteen bits, so an interval longer than 32767 microseconds
+is spelled as several words in a row, and the corpus does it constantly. Nothing in the train marks the
+join, and nothing about a receiver can see one: an interval is a length of time the carrier is on or off.
+`framesOfPulses` and `timingsOfFrame` merge adjacent durations of one kind before reading anything, which
+`mergedIntervals` had been doing for Logitech's own notation since section 132 and for the frame reader
+never.
+
+**What it costs, measured over the corpus.** 45 records, and nothing else.
+
+| | before | after |
+|---|---|---|
+| read under exactly one convention | 3547 | 3502 |
+| read under both | 0 | 0 |
+| read under neither | 1083 | 1128 |
+
+`gained` and `changed` are both **zero**: no record starts reading, and no record that reads keeps a
+reading with a different value. That is cheaper than section 153 predicted, and the reason is section 163:
+requiring the non carrying half of a frame to be one length already refuses everything the merge would
+have made ambiguous, so the 616 records that section 153 said would become ambiguous have nowhere left to
+go. Two findings interacting, and the order they landed in decided the price.
+
+### The 45 are the finding, and the outside answer is what settled them
+
+All 45 sit in three configurations of one contributor, arch 8 (Harmony 880). All 45 are eight bits, which
+is exactly `MIN_BITS`, and **all 45 read the same value**. Forty five different commands cannot send one
+code, so the internal argument was conclusive on its own; what was missing was somebody else's decoder,
+because a decoder is the last thing to trust about its own output. Logitech's analyser produces nothing
+for a single one of the 36 that were asked about, in any of the three forms tried by hand, and it is not
+that the shape defeats them, since it named 48 biphase codes in the same run.
+
+Three device groups lose every framed record they had, which is why the count of groups carrying one set
+of timings falls from 58 to 55 and the count with a single set from 52 to 49.
+
+### The merge is not applied to the biphase reader, and that is a rule
+
+A biphase family spells its code in unit half cells, so two adjacent cells of one kind are two cells and
+merging them destroys the reading; `pulsesOfBiphaseFrame` emits them unmerged for the same reason. So the
+distinction is not a tolerance: in a pulse distance frame adjacent same kind durations are always a split
+word, and in a biphase frame they are always two cells. `mergedIntervals` moved out of `irda.ts` and into
+`irframe.ts` to sit beside both readers, since a rule about pulse trains written up as a property of
+Logitech's notation reads as though it were their format's.
+
+### It gives a biphase code a plausible pulse distance shape, and two records show it
+
+Merging two adjacent carrier halves produces one of twice the length, so a biphase train whose cells fall
+the right way comes out as a frame with a constant flat and two carried lengths, one of them double the
+other. Two `Magnavox 13 Bit` records of the compiled sample do exactly that: `flat 900, zero 880, one
+1760`, mark carrier, no lead in, where 1760 is 880 twice. Both matched a stated number only because the
+appliance has one command of that width, while their biphase reading matches the **value**.
+
+So the rhythm table's join prefers a reading that lands on a number by value over one that lands only by
+width, whichever reader produced it, and that restores the table byte for byte: 21 entries, the same
+counts, `Magnavox 13 Bit` back to one set and 105 of 105. The general form of the rule is worth keeping,
+because it is not about these two records: after this change a biphase code can produce a pulse distance
+reading, so evidence strength has to order the routes rather than the order they are tried in.
+
+### What moved in the tests
+
+The partition, the rebuild's per container counts in three arch 8 configs, the pulse width and pulse
+distance split of 200 against 3302, the copies histogram, the count of tail shapes from 151 to 140, and
+the two device group counts. Two things worth naming rather than listing. The fixture asserting that our
+decoder still says what it said when Logitech was asked now permits 36 rows to have become `no reading`,
+by name and by count, and those rows are the ones whose recorded category was already
+`one reading, none once merged`: the column predicted this transition, so allowing it is reading the
+fixture rather than editing it. And the synthetic `JerroldO1 16 Bit` train in the tests lost its last bit,
+because it was written by hand with the last bit's space running straight into the inter frame silence.
+Every framed record in the corpus carries a closing mark between the two, which is what makes the merge
+cost 45 records rather than thousands, and the train carries one now.

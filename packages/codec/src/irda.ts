@@ -15,29 +15,8 @@
  * this string, and it is **client sourced**: nothing here has seen the service accept one yet.
  */
 import { IR_PULSE_MARK, IR_PULSE_MAX } from './ir.ts';
+import { mergedIntervals } from './irframe.ts';
 import type { Pulse } from './irframe.ts';
-
-/**
- * Durations of the same kind that sit next to each other are one interval.
- *
- * **This is the rule that matters, and the corpus is why.** A stored duration is fifteen bits, so a
- * silence longer than 32767 microseconds is spelled as several words in a row, and the corpus does
- * that constantly: a closing gap is commonly two or three maximum length spaces and a remainder. The
- * client's recorder adds each new duration to the interval it is already in when the kind has not
- * changed, so it sees one long silence where the block holds four words. A caller that copied the
- * words across one for one would hand the service a code with four short gaps in place of one long
- * one.
- */
-export function mergedIntervals(train: readonly Pulse[]): Pulse[] {
-  const out: Pulse[] = [];
-  for (const one of train) {
-    if (one.us === 0) continue;
-    const last = out[out.length - 1];
-    if (last !== undefined && last.mark === one.mark) out[out.length - 1] = { mark: last.mark, us: last.us + one.us };
-    else out.push({ mark: one.mark, us: one.us });
-  }
-  return out;
-}
 
 /**
  * The code up to its first long silence, which is the part a pattern matcher needs.

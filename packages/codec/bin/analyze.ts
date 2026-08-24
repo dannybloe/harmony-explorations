@@ -34,8 +34,8 @@ import { imagePath, LAB } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
   from '../src/ir.ts';
-import { irdaString, mergedIntervals, pulsesOfWords, untilSilence } from '../src/irda.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
+import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
 
 const SECURITY = 'https://svcs.myharmony.com/CompositeSecurityServices/Security.svc/json/';
 /**
@@ -171,11 +171,16 @@ outer: for (const group of irGroups(c) ?? []) {
     const readings = framesOfPulses(train);
     // **Every category, not only the records that read cleanly**, because three of the four answers
     // this produces are about the ones that do not: whether they name a code we refuse, whether they
-    // refuse one we name, and whether they refuse the ones a merge says we should never have named.
-    const merged = framesOfPulses(mergedIntervals(train));
-    const kind = readings.length === 1
-      ? (merged.length === 0 ? 'one reading, none once merged' : 'one reading')
-      : readings.length === 2 ? 'both conventions' : 'no reading';
+    // refuse one we name, and whether they refuse what only one reader here can read.
+    //
+    // **`one reading, none once merged` is gone as a category**, section 164: the reader merges adjacent
+    // durations of one kind itself now, so no record can be in it. The 36 rows recorded under that name
+    // are still in the fixture and `test/analyzed.test.ts` asserts against them, which is why the string
+    // is not renamed there. What is worth sampling in its place is a record only the biphase reader
+    // reads, since those are the ones whose number no reading of ours carries.
+    const kind = readings.length === 2 ? 'both conventions'
+      : readings.length === 1 ? 'one reading'
+      : biphaseFrames(train).length > 0 ? 'no reading, biphase' : 'no reading';
     if ((per.get(kind) ?? 0) >= perKind) continue;
     per.set(kind, (per.get(kind) ?? 0) + 1);
     const hertz = irCarrier(c, record)?.hertz;

@@ -5,8 +5,8 @@ import { imagePath } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import { IR_CLASS_STREAM, irBlockWords, irClass, irGroupCount, irGroups, irHeaderPointers }
   from '../src/ir.ts';
-import { mergedIntervals, pulsesOfWords } from '../src/irda.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import { pulsesOfWords } from '../src/irda.ts';
+import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/irframe.ts';
 import type { Pulse } from '../src/irframe.ts';
 
 const CONTAINERS = ['one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config',

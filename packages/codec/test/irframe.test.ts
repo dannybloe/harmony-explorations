@@ -148,7 +148,7 @@ test(
         }
       }
     }
-    assert.deepEqual({ records, framed }, { records: 4147, framed: 3065 });
+    assert.deepEqual({ records, framed }, { records: 4147, framed: 3020 });
     // Both populations, so the closure cannot be satisfied by finding nothing.
     assert.deepEqual(
       [...seen].sort(),
@@ -232,7 +232,12 @@ test('a record reads under exactly one convention, or under none', skipWithoutLa
   // biphase, so they now read under neither and `biphaseFrames` reads them instead. The count that used
   // to sit in `both` is asserted in the biphase test below, so nothing about that population went
   // unmeasured.
-  assert.deepEqual({ one, both, none }, { one: 3547, both: 0, none: 1083 });
+  // **And `none` gained 45 on 24 August 2026**, section 164: merging adjacent durations of one kind,
+  // which is what an emitter physically does, takes the reading away from 45 records of three arch 8
+  // (Harmony 880) configs that all read the same eight bit value. Nothing else in the corpus moves,
+  // because requiring a constant non carrying half already refuses everything the merge would have
+  // made ambiguous.
+  assert.deepEqual({ one, both, none }, { one: 3502, both: 0, none: 1128 });
 });
 
 test('framing a pulse train and framing a record are one decoder', skipWithoutLab(), () => {
@@ -272,8 +277,8 @@ test('framing a pulse train and framing a record are one decoder', skipWithoutLa
   // The same population as the partition above, and the same total number of readings, so this cannot
   // pass by comparing two empty lists.
   assert.equal(compared, 4630);
-  // 3547 readings and nothing ambiguous, per the partition above.
-  assert.equal(framed, 3547);
+  // 3502 readings and nothing ambiguous, per the partition above.
+  assert.equal(framed, 3502);
 });
 
 test('a two group record is biphase, and the reverse no longer holds', skipWithoutLab(), () => {
@@ -614,6 +619,12 @@ test('a bit space of 4505 reads now, and the 4480 that is not a bit still does n
       out.push({ mark: true, us: 495 });
       out.push({ mark: false, us: bit ? long : 2250 });
     }
+    // **The mark that closes the frame, and it is load bearing since 24 August 2026.** The reader
+    // merges adjacent durations of one kind, section 164, so a last bit space that runs straight into
+    // the inter frame silence is one interval and the last bit is gone. Every framed record in the
+    // corpus carries this mark, which is what makes the merge cost 45 records rather than thousands:
+    // its absence here was an artefact of the train being written by hand.
+    out.push({ mark: true, us: 495 });
     out.push({ mark: false, us: 19636 });
     return out;
   };
@@ -664,10 +675,10 @@ test('the two gap thresholds are tuned, and these are the margins they are tuned
       }
     }
   }
-  // The same 3547 the closure test above counts, which says every class 5 record already reads as
+  // The same 3502 the closure test above counts, which says every class 5 record already reads as
   // none: the class gate changes the population by zero, and that is worth knowing rather than
   // assuming, since `irRepeatPeriod` needed exactly this gate and did not have it.
-  assert.equal(framed, 3547, `${framed} records read as a frame under exactly one convention`);
+  assert.equal(framed, 3502, `${framed} records read as a frame under exactly one convention`);
   // 1850 against a threshold of 2000 is 7.5% of room, not three orders of magnitude, and the gap
   // above it starts at 2230, so the constant sits inside a 380 us window with traffic on both sides.
   assert.equal(largestBit, 1850, 'the largest duration a frame consumes as a bit');
@@ -785,9 +796,11 @@ test('every frame in the corpus rebuilds from five durations read off its own re
     h525_config: { framed: 0, split: 0, rebuilt: 0 },
     h525_config_2: { framed: 0, split: 0, rebuilt: 0 },
     arch8_config_a: { framed: 71, split: 71, rebuilt: 71 },
-    arch8_config_b: { framed: 233, split: 233, rebuilt: 233 },
-    arch8_config_c: { framed: 290, split: 290, rebuilt: 290 },
-    arch8_config_d: { framed: 298, split: 298, rebuilt: 298 },
+    // 15 fewer in each of these three than before 24 August 2026, which is the whole cost of merging
+    // adjacent durations of one kind, section 164.
+    arch8_config_b: { framed: 218, split: 218, rebuilt: 218 },
+    arch8_config_c: { framed: 275, split: 275, rebuilt: 275 },
+    arch8_config_d: { framed: 283, split: 283, rebuilt: 283 },
     arch8_config_880: { framed: 298, split: 298, rebuilt: 298 },
     arch8_config_885: { framed: 460, split: 460, rebuilt: 460 },
     one_spare_before_sync: { framed: 97, split: 97, rebuilt: 97 },
@@ -829,7 +842,9 @@ test('a pulse width frame\'s last space is a trailing gap and not a bit cell', s
       }
     }
   }
-  assert.deepEqual({ mark, space }, { mark: 200, space: 3347 });
+  // The space carriers are 45 fewer since the reader merges adjacent durations, section 164, and the
+  // mark carriers do not move: all 45 are arch 8 (Harmony 880) records whose bit is in the space.
+  assert.deepEqual({ mark, space }, { mark: 200, space: 3302 });
   // The two protocol widths, and where they are. Both configurations Logitech compiled to our own
   // specification drive the same equipment, which is why the population is theirs alone: no contributed
   // configuration here holds a pulse width record that reads under one convention.
@@ -897,7 +912,7 @@ test('what a frame does not determine is everything after it', skipWithoutLab(),
   // built out of 32767 microsecond spaces.
   //
   // Two halves. The repeat count is a small discrete set and the gap between consecutive copies is byte
-  // identical every time, which is structure worth having. The tail is 151 distinct shapes over 3547
+  // identical every time, which is structure worth having. The tail is 140 distinct shapes over 3502
   // records, which is why `pulsesOfFrame` stops at the frame: a writer copies the rest from a record
   // that already has one, and an editor that changes a repeat rate edits that gap, section 127.
   const repeats = new Map<number, number>();
@@ -928,12 +943,16 @@ test('what a frame does not determine is everything after it', skipWithoutLab(),
       }
     }
   }
-  assert.equal(oneGap, 3547, 'one gap separates every copy of a frame, in every record');
+  assert.equal(oneGap, 3502, 'one gap separates every copy of a frame, in every record');
   assert.deepEqual([...repeats].sort((a, b) => a[0] - b[0]),
-    [[1, 2233], [3, 1305], [7, 4], [11, 1], [30, 4]]);
+    [[1, 2188], [3, 1305], [7, 4], [11, 1], [30, 4]]);
   // Stated exactly, and it is the number that would move if somebody found the rule. A bound under it
   // would read as "the tail is complicated" and say nothing about how complicated.
-  assert.equal(tails.size, 151);
+  //
+  // It was 151 until 24 August 2026 and lost eleven shapes with the 45 records the merge costs, section
+  // 164. Counted over the **stored** words rather than over merged intervals, deliberately: a tail is
+  // what a writer has to copy out of a record, and what it copies is words.
+  assert.equal(tails.size, 140);
 });
 
 test('the timings belong to the device rather than to the command', skipWithoutLab(), () => {
@@ -958,7 +977,9 @@ test('the timings belong to the device rather than to the command', skipWithoutL
       if (sets.size === 1) single += 1;
     }
   }
-  assert.deepEqual({ groups, single }, { groups: 58, single: 52 });
+  // Three device groups fewer than before 24 August 2026, one in each of three arch 8 (Harmony 880)
+  // configs, because merging took every framed record of those groups away at once, section 164.
+  assert.deepEqual({ groups, single }, { groups: 55, single: 49 });
 });
 
 test('a biphase code reads as half cells, and a pulse distance one does not', () => {

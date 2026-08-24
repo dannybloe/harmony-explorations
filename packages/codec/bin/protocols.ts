@@ -419,6 +419,14 @@ function compiledRows(): Measured[] {
     for (const d of decoded) {
       let landed = false;
       let read = false;
+      // **A pulse distance reading that only matches by width waits for the biphase route**, section 164.
+      // Merging adjacent durations, which the reader does now, gives a biphase code a plausible pulse
+      // distance shape whenever two carrier halves fall next to each other: two RC5 records of this
+      // sample come out as a mark carrier with a flat of 900 and bits of 880 and 1760, which is 880 twice.
+      // Both land on a stated number only because the appliance has one command of that width, while
+      // their biphase reading lands on the **value**. So the order is by strength of evidence and not by
+      // shape: a number that matches beats a width that matches, whichever reader produced it.
+      let byWidthOnly: Measured | undefined;
       for (const pairs of [1, 0]) {
         for (const r of readings(d.train, pairs)) {
           read = true;
@@ -439,10 +447,12 @@ function compiledRows(): Measured[] {
           if (measured === undefined) { drop('compiled: the durations do not split'); continue; }
           const timings = asFlipped === undefined ? measured
             : { ...measured, zero: measured.one, one: measured.zero };
-          out.push({ family, source: 'compiled',
+          const candidate: Measured = { family, source: 'compiled',
             joinedBy: asRead === undefined && asFlipped === undefined ? 'width' : 'value',
             periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
-            bits: r.f.bits, value: asFlipped === undefined ? r.f.value : flipped, timings });
+            bits: r.f.bits, value: asFlipped === undefined ? r.f.value : flipped, timings };
+          if (candidate.joinedBy === 'width') { byWidthOnly ??= candidate; continue; }
+          out.push(candidate);
           landed = true;
           break;
         }
@@ -478,6 +488,8 @@ function compiledRows(): Measured[] {
           if (landed) break;
         }
       }
+      // The deferred width match, taken where no biphase reading landed on a number.
+      if (!landed && byWidthOnly !== undefined) { out.push(byWidthOnly); landed = true; }
       // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
       // record nothing could read at all reported, and those need different work: one is a number
       // question and the other is the decoder's.

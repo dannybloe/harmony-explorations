@@ -1619,18 +1619,23 @@ splitting the measurements at the midpoint between the shortest and the longest.
 
 **Which half carries the bit is per protocol family and does not have to be supplied**: under the wrong
 choice every measurement is the constant half, so there is nothing to split and the reading is refused.
-Across the corpus 3547 records read under exactly one convention, 148 under both and 935 under none, and
-the ones reading under both are exactly the two group records above, whose code is biphase and therefore
-neither. This said **4029 records under one convention and 936 under none**<!--superseded--> with no
+Across the corpus 3502 records read under exactly one convention, **none under both** and 1128 under
+none. This said **4029 records under one convention and 936 under none**<!--superseded--> with no
 count for "both", which is a partition of 4965 records where the population is 4630: it predates a
 change to the container list and nothing recomputed it. The three numbers are asserted together in
 `packages/codec/test/irframe.test.ts`, as a partition, for that reason.
 
+Two later findings moved that partition and both are below: requiring the non carrying half to be one
+length emptied the "both" column, section 163, and merging adjacent durations of one kind took 45
+records out of the "one" column, section 164. It read **3547 under one, 148 under both and 935 under
+none**<!--superseded--> before either.
+
 Two boundary rules, both of which cost a decoder that matched nothing:
 
-* a pair whose measured half is itself a gap, above 4000 us, is the terminator and **not** a bit
+* a pair whose measured half is itself a gap, above 8000 us, is the terminator and **not** a bit
 * the pair carrying the last bit is also the one whose other half is the trailing gap, so the gap is
   tested **after** the bit is taken and not before
+* adjacent durations of one kind are one interval and are merged before any of this, section 164
 
 `packages/codec/src/irframe.ts`. It recovers bits and nothing else: it does not name the protocol,
 split an address from a command, or check a parity bit. This added that **it cannot re-encode a frame**<!--superseded-->,
@@ -1647,7 +1652,7 @@ and a scan code's **position** does not follow from it at all, section 133.
 #### And the frame is rebuilt from five durations the record itself states
 
 Section 152. The frame half of a duration run is redundant with the bits plus five numbers taken off the
-same record. Exact on **3547 of 3547** records that read as a frame, over seventeen containers and arch
+same record. Exact on **3502 of 3502** records that read as a frame, over seventeen containers and arch
 8, 12 and 14; arch 9 stores class 5 and has no duration run at the record, so its count is zero.
 
 | the number | what it is |
@@ -1664,7 +1669,8 @@ the flat half and the carried length in the order the convention states. `pulses
 `timingsOfFrame` in `packages/codec/src/irframe.ts`, beside the decoder because a field's encoder lives
 next to its decoder.
 
-The closing space is what took the count from 3347 to 3547: read as another cell of the flat half it
+The closing space is what took the count from 3347 to 3547, before the merge below took it to 3502:
+read as another cell of the flat half it
 gives that half two values, which the split refuses, and all 200 records affected are pulse width, 112
 of twelve bits and 88 of fifteen, all in the two calibration configs. It is absent for a pulse distance
 frame, where the last space is an ordinary bit, and `pulsesOfFrame` refuses a pulse width frame without
@@ -1676,7 +1682,7 @@ Logitech's own service states a protocol name and a frame value with the duratio
 fetched from it is written using the timings of any code of the same appliance a config already holds.
 
 **Nothing after the frame is derived.** A block repeats the frame 1, 3, 7, 11 or 30 times, the gap
-between consecutive copies is byte identical in all 3547, and what follows the last copy is 151 distinct
+between consecutive copies is byte identical in all 3502, and what follows the last copy is 140 distinct
 shapes across the corpus and is copied rather than computed.
 
 Two families of shape sit inside those five numbers, and both are measured off a configuration Logitech's
@@ -1746,6 +1752,21 @@ consumed as a bit, and 15300, the smallest that ends a frame.
 The cost is recorded in section 163: the 148 records that read under **both** conventions now read under
 none. They are exactly the biphase population and the biphase reader reads them, so a two group record is
 identified by being biphase rather than by our own ambiguity, in one direction only.
+
+**Adjacent durations of one kind are merged before the frame is read**, section 164. An interval is a
+length of time the carrier is on or off, and a stored duration is fifteen bits, so a longer interval is
+spelled as several words in a row and nothing in the train marks the join. Read unmerged, 45 records of
+three arch 8 configs yield an eight bit frame, all 45 the same value, which forty five different
+commands cannot be; Logitech's own analyser refuses all 36 of them it was asked about. The merge costs
+exactly those 45 across the corpus and changes no other reading, because the rule above already refuses
+everything else it would have made ambiguous.
+
+It is **not** applied to the biphase reader, and that is a rule rather than an omission: a biphase family
+spells its code in unit half cells, so two adjacent cells of one kind are two cells and merging them
+destroys the reading. `mergedIntervals` and `biphaseFrames` sit in the same file for that reason. The
+same merge does give a biphase code a plausible pulse distance shape wherever two carrier halves fall
+next to each other, two `Magnavox 13 Bit` records of the compiled sample among them, so a reading that
+lands on a stated number by **value** is preferred over one that lands only by matching a width.
 
 **A biphase reading must reach the end of the frame region**, section 163, which is what stops the reader
 answering for a code that is not biphase. A `Sony 12 Bit` frame's durations are 600, 1200 and 2400, all

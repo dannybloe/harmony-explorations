@@ -249,9 +249,16 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
  *
  * The leading gap is trimmed here rather than by the caller, since a block commonly opens with several
  * 32767 spaces and knowing that is knowing the format.
+ *
+ * **Adjacent durations of one kind are merged first**, section 164, because two words of the same kind
+ * in a row are one interval and a receiver cannot see the join. Reading them unmerged gave 45 records
+ * of three arch 8 (Harmony 880) configs an eight bit frame they do not have, all 45 reading the same
+ * value, which forty five different commands cannot be. It costs those 45 and nothing else across the
+ * corpus, since requiring a constant non carrying half already refuses everything else the merge
+ * changes.
  */
 export function framesOfPulses(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
-  const d = fromFirstMark(train);
+  const d = fromFirstMark(mergedIntervals(train));
   const out: IrFrame[] = [];
   for (const carries of ['mark', 'space'] as const) {
     const one = decode(d, carries, headerPairs);
@@ -269,6 +276,40 @@ export function framesOfPulses(train: readonly Pulse[], headerPairs = 1): IrFram
 export function fromFirstMark(train: readonly Pulse[]): readonly Pulse[] {
   const first = train.findIndex((one) => one.mark);
   return first < 0 ? [] : train.slice(first);
+}
+
+/**
+ * Durations of the same kind that sit next to each other are one interval.
+ *
+ * **This is the rule that matters, and the corpus is why.** A stored duration is fifteen bits, so a
+ * silence longer than 32767 microseconds is spelled as several words in a row, and the corpus does
+ * that constantly: a closing gap is commonly two or three maximum length spaces and a remainder. The
+ * client's recorder adds each new duration to the interval it is already in when the kind has not
+ * changed, so it sees one long silence where the block holds four words. A caller that copied the
+ * words across one for one would hand the service a code with four short gaps in place of one long
+ * one.
+ *
+ * **It lived in `irda.ts` and it belongs here**, section 164. It was written for Logitech's own
+ * notation, where it is a fact about their recorder, and that read as though the merge were a
+ * property of their format. It is a property of the emitter: an interval is a length of time the
+ * carrier is on or off, and nothing about a stored word divides one interval from the next. So the
+ * reader below merges too, and the two cannot be separate copies of the rule.
+ *
+ * **What it is not applied to is the biphase reader**, and that is measured rather than an oversight:
+ * a biphase family spells a code in unit half cells, so two adjacent cells of one kind are two cells
+ * and merging them destroys the reading. `pulsesOfBiphaseFrame` emits them unmerged for the same
+ * reason. The distinction is that a pulse distance frame's adjacent same kind durations are always a
+ * split word and a biphase frame's are always two cells.
+ */
+export function mergedIntervals(train: readonly Pulse[]): Pulse[] {
+  const out: Pulse[] = [];
+  for (const one of train) {
+    if (one.us === 0) continue;
+    const last = out[out.length - 1];
+    if (last !== undefined && last.mark === one.mark) out[out.length - 1] = { mark: last.mark, us: last.us + one.us };
+    else out.push({ mark: one.mark, us: one.us });
+  }
+  return out;
 }
 
 /**
@@ -336,7 +377,9 @@ export function timingsOfFrame(
   frame: IrFrame,
   headerPairs = 1,
 ): FrameTimings | undefined {
-  const d = fromFirstMark(train);
+  // Merged for the same reason the decoder above merges, and it has to be the **same** train or the
+  // bit count and the durations come from two different readings of one record.
+  const d = fromFirstMark(mergedIntervals(train));
   const cells = d.slice(2 * headerPairs, 2 * headerPairs + 2 * frame.bits);
   if (cells.length !== 2 * frame.bits) return undefined;
   const at = frame.carries === 'mark' ? 0 : 1;

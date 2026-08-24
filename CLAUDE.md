@@ -338,7 +338,7 @@ value, `Raw` null on all 419 commands fetched, and on all 5219 the wider census 
 fetched too. That was read as "an importer needs an **infrared encoder per protocol family**"<!--superseded-->
 and as "**a work item nobody had priced**"<!--superseded-->, and section 152 refutes both: a record
 states its own timings, so a frame is rebuilt from five durations read off any code of the same
-appliance a config already holds, exactly, on 3547 of 3547 records. 52 of 58 device groups carry one set
+appliance a config already holds, exactly, on 3502 of 3502 records. 52 of 58 device groups carry one set
 of timings for every code, which is what makes those five numbers transferable. The cheap route, reading
 base slot 5 out of a compiled config, still needs none of it.
 
@@ -902,7 +902,12 @@ packages/codec/                 TS: the one config codec, container through comp
                                 where the bit is which half of the cell carries. A biphase reading has
                                 to **reach the end of the frame region**, section 163, because a Sony
                                 frame's durations are whole multiples of one length and 50 of them read
-                                as biphase by luck without that rule. **A family's bit polarity
+                                as biphase by luck without that rule. **The reader merges adjacent
+                                durations of one kind**, section 164, since two words of one kind in a
+                                row are one interval and no receiver can see the join;
+                                `mergedIntervals` is in `src/irframe.ts` for that reason and is
+                                deliberately **not** applied to the biphase reader, where two adjacent
+                                cells of one kind are two cells. **A family's bit polarity
                                 is in the table without a field for it**, section 161: one entry has a
                                 `zero` longer than its `one`, which is how `Logitech 24 Bit` says that a
                                 set bit is its shorter space, and a test looks for that shape rather
@@ -1551,7 +1556,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 163 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 164 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1813,12 +1818,17 @@ produce a config the remote accepts and mishandles.
   shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
   the screen. **Not confirmed and deliberately not named.** A datasheet search on the address and the
   register numbers, or a photograph of the board, settles it; firmware cannot.
-* **Our frame decoder reads an unmerged pulse train and should not**, section 153, which is a decided
-  change that has not been made: adjacent durations of one kind are one interval physically, and merging
-  them takes a reading away from 45 records that read the same eight bit value in three configs of one
-  contributor. Logitech's own decoder refuses all of them and names 48 biphase codes in the same run, so
-  the outside answer is in. It moves section 133's partition to 3502, 764 and 57 and section 152's
-  rebuild to 3502 of 3502, and touches no button name.
+* ~~**Our frame decoder reads an unmerged pulse train and should not**~~, **merged now**, section 164.
+  Adjacent durations of one kind are one interval physically, so the reader merges them, and it costs 45
+  records of three arch 8 (Harmony 880) configs that all read the same eight bit value, which forty five
+  different commands cannot be. Logitech's own decoder refuses all 36 of them it was asked about. **It
+  cost less than section 153 predicted**, because section 163 landed first: the partition is 3502, **0**
+  and 1128 rather than the 3502, 764 and 57 predicted, since requiring a constant non carrying half
+  already refuses everything the merge would have made ambiguous. Two things to carry. The merge is
+  **not** applied to the biphase reader, where two adjacent cells of one kind are two cells. And after
+  it a biphase code can produce a plausible pulse distance reading, two `Magnavox 13 Bit` records among
+  them, so the rhythm table's join prefers a reading that lands on a number by **value** over one that
+  lands only by matching a width.
 * **A frame's non carrying half has to be one length**, section 163, which is the rule the terminator
   constant had been standing in for. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
   could rise from 4000 to 8000 and `JerroldO1 16 Bit`, whose set bit is a 4505 space, is the twenty first

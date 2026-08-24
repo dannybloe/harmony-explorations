@@ -259,7 +259,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    and a frame value and not pulses, so converting a catalogue device into our format means implementing
    the protocol families, of which six devices gave nine. What that missed is that **a stored record
    states its own timings**. Five durations read off any code of the same appliance rebuild a frame
-   exactly, on 3547 of 3547 records in the corpus, and 52 of 58 device groups use one set of timings for
+   exactly, on 3502 of 3502 records in the corpus, and 52 of 58 device groups use one set of timings for
    every code they carry. So a command fetched from the catalogue is written using the timings a config
    already holds, and the nine families are nine names rather than nine encoders.
 

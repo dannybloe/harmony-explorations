@@ -12,9 +12,9 @@ import { skipWithoutLab, require_ } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups, irHeaderPointers }
   from '../src/ir.ts';
-import { irdaString, mergedIntervals, pulsesOfWords, untilSilence } from '../src/irda.ts';
+import { irdaString, pulsesOfWords, untilSilence } from '../src/irda.ts';
 import type { Pulse } from '../src/irframe.ts';
-import { frameKey, framesOfPulses, fromFirstMark } from '../src/irframe.ts';
+import { frameKey, framesOfPulses, fromFirstMark, mergedIntervals } from '../src/irframe.ts';
 
 const CONTAINERS = [
   'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
@@ -148,6 +148,10 @@ test('cutting at the first silence makes every duration four digits, on every re
         // train is merged. Merging is not cosmetic for a biphase code, where the block spells two
         // adjacent cells of one length as two words and the emitter sends one interval of twice it.
         // So the comparison has to be between two merged trains or it is measuring the merge.
+        //
+        // The reader merges on its own since section 164, so passing the merged train is no longer what
+        // makes this true. It is left explicit because the sentence above is the reason the comparison
+        // is fair, and a reader of this test should not have to know what `framesOfPulses` does inside.
         const whole = framesOfPulses(merged);
         const cut = framesOfPulses(head);
         if (whole.length === 1) {

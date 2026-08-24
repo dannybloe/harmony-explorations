@@ -132,10 +132,11 @@ test('every code we refuse for being biphase, they name, and it is one family',
 });
 
 test('the readings a merge takes away are refused by their decoder too', skipWithoutLab(), () => {
-  // **The settled case, and it took an outside answer to settle it.** Our decoder reads these records
-  // as a frame; merging adjacent durations of one kind, which is what an emitter physically does,
-  // leaves them unreadable. The internal argument that the merged answer is right is that 45 different
-  // commands read as one value, and a remote cannot send the same code for 45 buttons.
+  // **The settled case, and the merge has been made since 24 August 2026**, section 164. The fixture's
+  // `ours` column is what our decoder said before it, a frame; it reads nothing there now, which is the
+  // whole point of the change and is allowed by name in the test below. The internal argument that the
+  // merged answer is right is that 45 different commands read as one value, and a remote cannot send
+  // the same code for 45 buttons.
   //
   // This is the external half: their decoder produces nothing for a single one of the 36 asked about,
   // in any of the three forms tried by hand, merged and cut, merged whole, and the raw words. And it
@@ -163,6 +164,7 @@ test('the decoder still says today what it said when the answers were recorded',
   const configs = new Map<string, ReturnType<typeof parse>>();
   let checked = 0;
   let moved = 0;
+  let merged = 0;
   for (const row of answers()) {
     let c = configs.get(row.config);
     if (c === undefined) {
@@ -186,6 +188,12 @@ test('the decoder still says today what it said when the answers were recorded',
     // count rather than by regenerating the column, which would let the next change through unnoticed.
     if (said === 'no reading' && row.ours === 'ambiguous') {
       moved += 1;
+    } else if (said === 'no reading' && row.kind === 'one reading, none once merged') {
+      // **The second named transition, and this one the column predicted**, section 164. These rows were
+      // recorded as reading one way unmerged and nothing merged, which is what the merge made true. Keyed
+      // on the recorded kind rather than on the value, so a record that stops reading for some other
+      // reason still fails above.
+      merged += 1;
     } else {
       assert.equal(said, row.ours, `${row.config} ${row.record} reads differently now`);
     }
@@ -195,6 +203,8 @@ test('the decoder still says today what it said when the answers were recorded',
   // Exactly the population section 153 counted, and every one of them a biphase code that
   // `biphaseFrames` reads. Any other record moving fails above.
   assert.equal(moved, 48, 'the biphase records that stopped being ambiguous');
+  // And exactly the population the test above counts, which is what says the merge took nothing else.
+  assert.equal(merged, 36, 'the records whose reading the merge takes away');
   // And the records asked about are real records of real containers, which the loop above proves by
   // having found every one of them. The count is stated so a fixture shrinking is a failure.
   assert.equal(configs.size, 15);
