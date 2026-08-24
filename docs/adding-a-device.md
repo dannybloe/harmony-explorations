@@ -49,7 +49,7 @@ starts at the first unticked box.
 
 | phase | what it gets us | status |
 |---|---|---|
-| 1 | the catalogue reads whole, in the application too | not started |
+| 1 | the catalogue reads whole, in the application too | **done** 24 August 2026 |
 | 2 | every family in the catalogue has a measured rhythm | not started |
 | 3 | a whole command, not just its frame | not started |
 | 4 | the data model describes a device that does not exist yet | not started |
@@ -101,20 +101,32 @@ Named so that nobody adds them to the critical path.
 
 ## Phase 1: the catalogue reads whole, in the application too
 
-FreeHarmony carries its own parser for Logitech's code notation, written before section 159 read that
-notation as a grammar. Measured against the 5219 commands in the wide census: it reads **1221**, and on
-**60 of 102 appliances it reads nothing at all**, including every Toshiba code, which is the largest
+**Done, 24 August 2026.**
+
+FreeHarmony carried its own parser for Logitech's code notation, written before section 159 read that
+notation as a grammar. Measured against the 5219 commands in the wide census: it read **1221**, and on
+**60 of 102 appliances it read nothing at all**, including every Toshiba code, which is the largest
 family in their database. The library's own reader takes 2852 of 2921 distinct codes.
 
-- [ ] `src/main/logitech/protocol.ts` in FreeHarmony calls `statedCode` from `@harmony/codec` and its
-      private `KEY_CODE` regex and `StatedCode` type are gone
-- [ ] the two stale claims in that file's docstring go: that a code cannot be carried across, and that
+- [x] `src/main/logitech/client.ts` in FreeHarmony calls `statedCode` from `@harmony/codec`, through one
+      exported conversion `catalogueCode`, and `protocol.ts`'s private `KEY_CODE` regex, `StatedCode` type
+      and `statedCode` are gone
+- [x] **the reader was not exported from `packages/codec` at all**, which is half the cause and was not in
+      this phase when it was written: `protocols.ts` and `stated.ts` were reachable only by file path, so
+      the barrel offered no way to read their notation. A library that does not export a reader is part of
+      why a second one gets written, so the export is the fix and not only the call site
+- [x] the two stale claims in that file's docstring go: that a code cannot be carried across, and that
       turning a name and a number into a rhythm needs **an encoder per protocol family**<!--superseded-->
       "which nothing here has". Both were refuted by sections 157 and 158, where a family's durations turn
       out to be the family's and a stated code is emitted from the table
-- [ ] a test in FreeHarmony reads a recorded catalogue reply and asserts the count it now parses, with
-      the old count named as what it was
-- [ ] **check**: the number of commands FreeHarmony parses out of the recorded census is 2852 of 2921
+- [x] a test in FreeHarmony reads the recorded census and asserts the count it now parses, with the old
+      count named as what it was
+- [x] **a code stating several frames stores none**, which the swap forced a decision about. 1476 of the
+      2921 distinct codes state more than one frame or name one with a word, and the stored signal has one
+      frame field, so those keep their family and their width and no value. Storing the first would be a
+      command that looks whole and sends half of itself, which is exactly what the old reader did to
+      `Pioneer 32 Bit 2`. Widening the stored shape is phase 4
+- [x] **check**: the number of commands FreeHarmony parses out of the recorded census is 2852 of 2921
       distinct codes, and the one family refused is `Galaxis 16 Bit Quad Toggle` by name
 
 ## Phase 2: every family in the catalogue has a measured rhythm

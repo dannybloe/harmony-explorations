@@ -20,6 +20,13 @@ export * from './ir.ts';
 // file path. The wrong one is gone and this is the only `irFrame` now.
 export * from './irframe.ts';
 export * from './irda.ts';
+// **The rhythm table and the reader over it, exported because the application is what consumes them.**
+// They were reachable only by file path until 24 August 2026, which is the shape of defect the comment
+// above records: FreeHarmony carried its own reader for Logitech's catalogue notation for weeks, taking
+// 1221 of 5219 commands against this one's 2852 of 2921 distinct codes, and a barrel that does not offer
+// a reader is part of why a second one gets written.
+export * from './protocols.ts';
+export * from './stated.ts';
 // After both, since it composes them. Section 139.
 export * from './summary.ts';
 export * from './actions.ts';
