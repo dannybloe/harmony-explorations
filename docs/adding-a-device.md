@@ -150,10 +150,12 @@ durations in the result are the ones their generator emits.
       data. That leaves **14 families never compiled and 14 appliances**, which is one sitting rather than
       two. The makes, the models and the catalogue ids are in
       `../lab/reads/20260824-plan/family-batches.md`
-- [ ] the four already compiled, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`, `Panasonic 16 Bit` and
-      `Sharp 48 Bit`, are a **desk job on evidence already held** and come first because they are free.
-      Their durations are in the configuration of 24 August 2026 and what is missing is a way to attribute
-      one to three records to a family
+- [x] the four already compiled, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`, `Panasonic 16 Bit` and
+      `Sharp 48 Bit`, were measured the same day, and they are **not** a desk job on the join: each is a
+      one to three command family on an appliance a sibling family dominates, and what identifies it sits
+      in a frame the reader does not reach. So they move to phase 3 and are named there. Attributing them
+      without reading the second frame would be elimination dressed as measurement.
+      `../lab/reads/20260824-plan/family-batches.md`
 - [ ] **the appliances go on by hand**, in Logitech's own client, because the scripted route was refused
       on that account. Our side starts at the compile, and the read only capture of what their catalogue
       states has to run **while the appliances are still on the record**: it is one half of the join and
@@ -178,6 +180,11 @@ August 2026 over 4195 records whose family is known, in `../lab/reads/20260824-p
 **gap** is one shape on 7 of 10 families, the **repeat count** on 8 of 10, and five families have exactly
 one tail shape across every record. What varies is the closing silence.
 
+- [ ] **four families are waiting on this phase**, which is what measuring them established:
+      `Pioneer 32 Bit 2` is told apart from `Pioneer 32 Bit Dual` only by its second frame, and
+      `MemorexV2 32 Bit Dual`, `Sharp 48 Bit` and `Panasonic 16 Bit` each fail because a record holding
+      more than one frame is not one pulse distance frame and the reader refuses it whole. So they are the
+      phase's own calibration cases, each with a stated number to land on
 - [ ] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
       rather than averaging them
