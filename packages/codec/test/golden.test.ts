@@ -73,9 +73,10 @@ const CONTAINERS = [
   // two of its five spell the number out one digit code at a time. Section 156.
   'calibration_favzero',
   // The largest sample anywhere here, section 165: fifteen appliances chosen so that every protocol
-  // family in Logitech's catalogue the corpus could not settle appears in it. Eighteen of the rhythm
-  // table's entries are measured off this one file, so a disagreement about it is a disagreement about
-  // the table.
+  // family in Logitech's catalogue the corpus could not settle appears in it. This is the first and
+  // largest of the three compiled samples the rhythm table's twenty six non corpus entries are measured
+  // off, so a disagreement about it is a disagreement about the table. The count used to be given as
+  // eighteen off this file alone, which was true when it was the only one.
   'compiled_protocols',
   // The second of the pair, ten more appliances chosen for the families the first did not reach.
   'compiled_protocols_2',

@@ -328,6 +328,113 @@ export function mergedIntervals(train: readonly Pulse[]): Pulse[] {
 }
 
 /**
+ * How much longer than a frame's own bit cells a space has to be to be a boundary between frames.
+ *
+ * **Not fitted, and what says so is that a neighbouring value reaches the same answer.** Measured over
+ * the three compiled samples, 2777 records, counting records whose every stated value is found: 4
+ * explains 1848 and 6 explains exactly the same 1848, while 3 explains 1797 and 9 explains 1694.
+ *
+ * **The cut is not identical at 4 and 6, and saying so matters**, because the first version of this
+ * paragraph claimed it was. They cut 72 of those 2777 records differently and still read the same
+ * numbers off them, which is a weaker and truer statement: the value is inside a range that does not
+ * change the outcome rather than inside a gap where nothing happens. What 9 loses is
+ * `Samsung 16 and 20 Bit`, whose separator is nine times its own clear bit exactly, and it cuts 293
+ * records differently.
+ *
+ * The median is the scale to compare against because a frame is mostly bit cells, so half of a train's
+ * spaces are one, whatever the protocol. On the fifteen user configs, where the multi frame families
+ * barely appear, 4, 6 and 9 cut every record identically: the corpus cannot settle this and the
+ * compiled samples are the evidence.
+ */
+const FRAME_BOUNDARY_FACTOR = 4;
+
+/**
+ * A train cut into the frames it holds, in the order they are sent.
+ *
+ * **Why this exists at all.** A stored command is often more than one frame: `Samsung 16 and 20 Bit`
+ * sends a 16 bit frame, a 4495 microsecond separator and then a 20 bit frame, and their catalogue states
+ * both values for one command. `decode` reads one frame from the start of a train, so before this the
+ * whole thing was read as a single frame spanning both halves, which lands on a number nothing states.
+ * Ten of the families in Logitech's catalogue were unanswered for that reason while their records sat in
+ * the lab.
+ *
+ * **`keepBoundary` is a real question and not a tidiness one, and both answers are needed.** The
+ * separator terminates the frame before it, and whether it is *part* of that frame depends on which half
+ * of the signal carries the bits:
+ *
+ * * on a **space carrying** protocol, keeping it makes it one more bit cell, and that refused every
+ *   `Samsung` code;
+ * * on a **mark carrying** protocol, the last cell is a mark, and a mark with no space after it is
+ *   unterminated, so dropping it refused every `Sony` code.
+ *
+ * Each half of that was found by breaking the other. A caller that does not know the protocol tries
+ * both, which is what `framesOfSegments` does, exactly as it already tries both bit conventions.
+ *
+ * **The train must be merged first**, section 164, and this deliberately does not merge it itself: a
+ * separator spelled as three maximum length words is one separator, and a caller that skipped the merge
+ * would see three boundaries. Passing an unmerged train is a caller error rather than something to
+ * paper over, so the merge is the caller's and stays visible at the call site.
+ *
+ * `factor` exists so that a test can vary it, which is the only thing that makes the claim about
+ * `FRAME_BOUNDARY_FACTOR` checkable: that 4 and 6 cut every record here identically and 9 does not is
+ * the evidence that the value sits inside a gap rather than being chosen, and that cannot be asserted
+ * against a constant nothing can move.
+ */
+export function frameSegments(train: readonly Pulse[], keepBoundary: boolean,
+                              factor = FRAME_BOUNDARY_FACTOR): Pulse[][] {
+  const spaces = train.filter((one) => !one.mark).map((one) => one.us).sort((a, b) => a - b);
+  if (spaces.length === 0) return train.length === 0 ? [] : [[...train]];
+  const median = spaces[Math.floor(spaces.length / 2)] as number;
+  const out: Pulse[][] = [];
+  let current: Pulse[] = [];
+  for (const one of train) {
+    // **A boundary cannot fall inside the first few cells, and that is what excludes the header.** A
+    // lead in is a mark and a long space, and on several families here that space is more than four
+    // times the median, so a rule with no floor cuts the header off as a segment of its own and then
+    // every frame reads a bit short: a Samsung code came out as `15:400` rather than `16:400` and a
+    // 48 bit Kaseikyo one disappeared from a corpus record that used to read. A frame is at least
+    // `MIN_BITS` bits, so a long space before that many cells have gone by is part of the frame.
+    if (!one.mark && one.us >= median * factor && current.length >= 2 * MIN_BITS) {
+      if (keepBoundary) current.push(one);
+      out.push(current);
+      current = [];
+      continue;
+    }
+    current.push(one);
+  }
+  if (current.length > 0) out.push(current);
+  return out;
+}
+
+/**
+ * Every frame a train can be read as, across both boundary conventions and both bit conventions.
+ *
+ * Deliberately not a replacement for `framesOfPulses`: that one answers "what is the frame at the start
+ * of this train", which is what the biphase detector of section 134 and the timing measurement need, and
+ * this one answers "which numbers does this record carry". Duplicates are removed by `frameKey`, so a
+ * single frame train answers exactly what `framesOfPulses` answers for it.
+ *
+ * **Not applied to biphase**, for the same reason the merge is not: a biphase frame's cells are all one
+ * length, so there is nothing here that distinguishes a separator from a cell, and `biphaseFrames` reads
+ * a whole train on its own terms.
+ */
+export function framesOfSegments(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
+  const seen = new Set<string>();
+  const out: IrFrame[] = [];
+  for (const keepBoundary of [true, false]) {
+    for (const segment of frameSegments(train, keepBoundary)) {
+      for (const frame of framesOfPulses(segment, headerPairs)) {
+        const key = frameKey(frame);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(frame);
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * The durations a frame is built out of, in microseconds, section 152.
  *
  * **Five numbers, and they come off the record rather than out of a protocol table.** That is the

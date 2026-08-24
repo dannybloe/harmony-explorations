@@ -19,10 +19,10 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states twenty seven entries, and what each is worth is its provenance', () => {
+test('the table states twenty nine entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 27);
+  assert.equal(PROTOCOLS.length, 29);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -34,7 +34,7 @@ test('the table states twenty seven entries, and what each is worth is its prove
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 18, 6]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 20, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -87,9 +87,9 @@ test('the table states twenty seven entries, and what each is worth is its prove
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 26 of 27, the exception
+  // Every other entry reproduces every code of its own rows to the microsecond. 28 of 29, the exception
   // being the one loose entry named above.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 26);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 28);
 
   // **Two families carry their bits the other way up, and the table says so by its numbers**, section
   // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.

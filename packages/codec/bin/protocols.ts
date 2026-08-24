@@ -34,7 +34,7 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
          irHeaderPointers } from '../src/ir.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import {
-  biphaseFrames, framesOfPulses, fromFirstMark, pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
+  biphaseFrames, framesOfPulses, framesOfSegments, fromFirstMark, pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
   timingsOfFrame, type BiphaseTimings, type FrameTimings, type Pulse,
 } from '../src/irframe.ts';
 
@@ -400,8 +400,11 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
   const out: Measured[] = [];
   /** How the attribution routes compared, which is the closure rather than a diagnostic. */
   const attribution = { agree: 0, differ: 0, namedOnly: 0, votedOnly: 0, byElimination: 0 };
+  // **`framesOfSegments` and not `framesOfPulses`**, since 24 August 2026: a record commonly holds
+  // several frames and this asks which numbers it carries, which is exactly the question the segmented
+  // reader answers. Ten families in their catalogue were unanswered while their records sat here.
   const readings = (train: readonly Pulse[], pairs: number) =>
-    framesOfPulses(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
+    framesOfSegments(train, pairs).map((f) => ({ f, key: `${f.bits}:${f.value.toString(16)}` }));
 
   /** Every group's records, decoded once, because the attribution needs all of them before any join. */
   const groups = (irGroups(c) ?? []).map((group) => {

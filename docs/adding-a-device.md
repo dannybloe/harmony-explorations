@@ -131,8 +131,10 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds 21 of the catalogue's 33 families after two sittings on 24 August 2026, which is 4743 of
-5219 commands. It held 15 and 4193 when this phase was written. The eighteen missing, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
+The table holds **23 of the catalogue's 33 families**, which is 4908 of 5219 commands. It held 15 and
+4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
+from phase 3's splitting rule rather than from another compile: the records were already in the lab and
+the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
 `Samsung 16 and 20 Bit` (137), `Thomson 12 Bit Toggle` (124), `Galaxis 16 Bit Quad Toggle` (104),
 `Philips Hurd 16 Bit LongToggle` (85), `RCAV1 LF 24 Bit` (83), `Philips RC5 13 Bit Toggle` (40),
 `Samsung 38 Bit` (34), `Short 11 Bit 2` (31), `MitsubishiO1 Dual 8 16 Bit` (28), `Panasonic 16 Bit` (26),
@@ -212,15 +214,31 @@ one tail shape across every record. What varies is the closing silence.
       it refuses every Samsung code, dropping it refuses every Sony code. Explained whole goes from 1373
       of 2777 records to 1848, and `Samsung 16 and 20 Bit`, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`
       and `Sharp 48 Bit` read for the first time
-- [ ] the rule lands in `packages/codec/src/irframe.ts` with tests, after the merge and **not** in the
-      biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there
-- [ ] `MitsubishiO1 Dual 8 16 Bit` is attributed on 40 records and read on none, since its code states
-      `Start`, two values and `Trailer` and only the first is found. The next case rather than a failure
-- [ ] **four families are waiting on this phase**, which is what measuring them established:
-      `Pioneer 32 Bit 2` is told apart from `Pioneer 32 Bit Dual` only by its second frame, and
-      `MemorexV2 32 Bit Dual`, `Sharp 48 Bit` and `Panasonic 16 Bit` each fail because a record holding
-      more than one frame is not one pulse distance frame and the reader refuses it whole. So they are the
-      phase's own calibration cases, each with a stated number to land on
+- [x] the rule lands in `packages/codec/src/irframe.ts` with tests, after the merge and **not** in the
+      biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there.
+      `frameSegments` and `framesOfSegments`, and the generator reads through the second now. Two more
+      families measured, `Samsung 16 and 20 Bit` on 46 records and `MitsubishiO1 Dual 8 16 Bit` on 40,
+      each exact, no existing rhythm moved, and the table is 29 entries covering **23 of 33 families and
+      4908 of 5219 commands**
+- [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
+      measurement: a lead in is a mark and a long space, and on several families that space is over the
+      threshold, so a rule with no floor cut the header off as its own segment and every frame then read
+      a bit short. A Samsung code came out as `15:400` and a 48 bit corpus record that used to read
+      disappeared. The floor is `MIN_BITS` cells
+- [x] `MitsubishiO1 Dual 8 16 Bit` reads whole, 40 of 40, which the prototype could not: its code states
+      `Start`, two values and `Trailer`, and the generator's per record convention loop finds both values
+      once the train is segmented
+- [ ] **three of those four families are no longer waiting on the framing, and the reason is a defect in
+      the join**, which landing the rule established: the prototype read `Pioneer 32 Bit 2` on 3 records,
+      `MemorexV2 32 Bit Dual` on 2 and `Sharp 48 Bit` on 1, and the generator still puts none of them in
+      the table. Its per appliance map from a value to a code is keyed by the value and **silently
+      overwrites**, so where two families on one appliance state the same value the code goes to whichever
+      was written last, and each of these three is a tiny family on an appliance a sibling dominates. That
+      is the next thing to fix here and it is not a reader problem. `Panasonic 16 Bit` (26) is still
+      unread and is the one of the four that may genuinely be framing
+- [ ] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
+      is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
+      by a script beside the notes as it is today
 - [ ] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
       rather than averaging them

@@ -28,12 +28,13 @@ import {
   irRecordBlocks,
 } from '../src/ir.ts';
 import type { FrameTimings, Pulse } from '../src/irframe.ts';
-import { biphaseFrames, frameKey, framesOfPulses, fromFirstMark, irFrame, irFrames, pulsesOfFrame,
-         pulsesOfBiphaseFrame, timingsOfBiphase, timingsOfFrame }
+import { biphaseFrames, frameKey, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark,
+         irFrame, irFrames, mergedIntervals, pulsesOfFrame, pulsesOfBiphaseFrame, timingsOfBiphase,
+         timingsOfFrame }
   from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import { keyCodes } from '../src/inventory.ts';
-import { statedProtocol, timingsOf } from '../src/stated.ts';
+import { pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -1183,4 +1184,121 @@ test('a flat half of 433 and 434 is one length, and Logitech names the ten codes
   const biphaseLike = [...cell(433, 426), ...Array.from({ length: 12 }, (_, i) =>
     i % 2 === 0 ? cell(433, 1267) : cell(866, 426)).flat(), { mark: false, us: 20_000 }];
   assert.deepEqual(framesOfPulses(biphaseLike, 0), [], 'a flat half of 433 and 866 is two lengths');
+});
+
+/**
+ * A Samsung shaped train, from the durations one of its records really carries.
+ *
+ * Header 4500/4480, marks of 495, a clear bit as a 500 space and a set bit as 1495, a 4495 separator
+ * between the two frames and a 57501 closing silence. The space carries the bit here, which is what
+ * makes the separator dangerous: kept, it reads as one more bit cell.
+ */
+function samsungTrain(first: bigint, firstBits: number, second: bigint, secondBits: number): Pulse[] {
+  const cells = (value: bigint, bits: number) => Array.from({ length: bits }, (_, at) => {
+    const set = (value >> BigInt(bits - 1 - at)) & 1n;
+    return [{ mark: true, us: 495 }, { mark: false, us: set === 1n ? 1495 : 500 }];
+  }).flat();
+  return [{ mark: true, us: 4500 }, { mark: false, us: 4480 }, ...cells(first, firstBits),
+          { mark: false, us: 4495 }, { mark: true, us: 4500 }, { mark: false, us: 4480 },
+          ...cells(second, secondBits), { mark: false, us: 57_501 }];
+}
+
+test('a record holding two frames reads as both, and the separator is not a bit', () => {
+  // **The case ten of Logitech's families were unanswered for.** Their catalogue states two values for
+  // one Samsung command, `16:400` and a 20 bit number, and a reader that takes one frame from the start
+  // of the train reads neither: it spans both halves and lands on a number nothing states.
+  const train = samsungTrain(0x400n, 16, 0xED02Fn, 20);
+  // What today's reader makes of it is worse than nothing: `17:3`, a number no catalogue states, from
+  // treating the separator as one more bit cell. A refusal would at least be visible.
+  assert.deepEqual(framesOfPulses(train).map(frameKey), ['17:3']);
+  const both = framesOfSegments(train).map(frameKey);
+  assert.ok(both.includes('16:400'), `read [${both}]`);
+  assert.ok(both.includes('20:ed02f'), `read [${both}]`);
+  // And the separator is gone rather than counted: keeping it would make the first frame 17 bits.
+  assert.ok(!both.includes('17:800'), `read [${both}]`);
+});
+
+test('a mark carrying train needs its separator kept, since its last cell is a mark', () => {
+  // **The other half of the rule, and it was found by breaking this.** Sony carries the bit in the mark
+  // and closes the last cell with a space, so dropping the boundary space leaves that cell unterminated
+  // and the whole frame is refused. Both conventions are tried for exactly this reason.
+  // Built through `pulsesOfStatedCode`, which is what supplies the closing space: a Sony frame pads to a
+  // constant 45 ms period, so the space that terminates its last mark is computed rather than tabled and
+  // `pulsesOfFrame` refuses to build one without it.
+  const built = pulsesOfStatedCode('Sony 12 Bit', 12, 0x2D1n);
+  assert.ok(built !== undefined);
+  const train = mergedIntervals([...built, { mark: false, us: 25_000 }]);
+  assert.deepEqual(frameSegments(train, false).map((one) => one.at(-1)?.mark), [true],
+    'without the boundary the segment ends on a mark');
+  // `pulsesOfFrame` refuses to build one, which is the same rule from the other side: a pulse width
+  // frame needs the space that closes its last pair, so a segment cut before that space is not a frame.
+  // What it reads instead is the lesson: `11:168`, one bit short and a number nothing states, because
+  // the last mark has no space to close it and the decoder stops a cell early. A silent wrong answer,
+  // which is why both conventions are tried rather than one being chosen.
+  assert.deepEqual(framesOfPulses(frameSegments(train, false)[0] as Pulse[]).map(frameKey), ['11:168']);
+  assert.ok(framesOfSegments(train).map(frameKey).includes('12:2d1'),
+    'so the convention that keeps it is what reads a Sony code');
+});
+
+test('the boundary factor is not fitted, and the corpus cannot say so', skipWithoutLab(), () => {
+  // **What the corpus can and cannot settle.** On the fifteen user configs, 4, 6 and 9 cut every single
+  // record identically, because the multi frame families are in Logitech's catalogue rather than on
+  // anybody's shelf here. So this test states that, exactly, and the evidence for the value being right
+  // is in the compiled samples and in `../lab/reads/20260824-plan/step3-notes.md` rather than here. A
+  // test that quoted the compiled numbers would be quoting a population it does not walk.
+  let records = 0;
+  let differsAtSix = 0;
+  let differsAtNine = 0;
+  for (const name of SECTION_32_CONFIGS) {
+    const c = parse(require_(name));
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irClass(c, record) !== IR_CLASS_STREAM) continue;
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        const train = mergedIntervals(fromFirstMark(pulsesOfWords(words)));
+        records += 1;
+        const cut = (factor: number) => frameSegments(train, false, factor).map((one) => one.length).join(',');
+        const four = cut(4);
+        if (cut(6) !== four) differsAtSix += 1;
+        if (cut(9) !== four) differsAtNine += 1;
+      }
+    }
+  }
+  // Every stream record with a readable first block, across the fifteen user configs. Larger than the
+  // 3502 the partition above counts, because that one counts records a frame was read from.
+  assert.equal(records, 3840, 'every stream record of every user config');
+  assert.equal(differsAtSix, 0, 'four and six cut every record of the corpus the same way');
+  assert.equal(differsAtNine, 0, 'and so does nine, which is why this population cannot choose');
+});
+
+test('splitting never loses a frame the old reader found', skipWithoutLab(), () => {
+  // The rail on the change. `framesOfSegments` is used where `framesOfPulses` was, so it has to be a
+  // superset on every record in the corpus: a value that used to be read and is not any more would be a
+  // silent regression in the one thing that names a command.
+  let records = 0;
+  let gained = 0;
+  for (const name of SECTION_32_CONFIGS) {
+    const c = parse(require_(name));
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irClass(c, record) !== IR_CLASS_STREAM) continue;
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        const train = mergedIntervals(fromFirstMark(pulsesOfWords(words)));
+        records += 1;
+        const before = framesOfPulses(train).map(frameKey);
+        const after = new Set(framesOfSegments(train).map(frameKey));
+        for (const key of before) assert.ok(after.has(key), `${name} 0x${record.toString(16)} lost ${key}`);
+        if (after.size > before.length) gained += 1;
+      }
+    }
+  }
+  assert.equal(records, 3840);
+  // What the corpus gains is small, and that is expected rather than disappointing: these are configs
+  // for equipment people own, and the multi frame families are mostly in Logitech's catalogue rather
+  // than on anybody's shelf here. The compiled samples are where the rule pays, section 165.
+  assert.equal(gained, 224, 'records where a segment carries a number the whole train did not');
 });

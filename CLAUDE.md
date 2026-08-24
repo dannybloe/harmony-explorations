@@ -898,13 +898,23 @@ packages/codec/                 TS: the one config codec, container through comp
                                 section 139. It **encodes** as well since section 152, in the same file
                                 because a field's encoder lives next to its decoder: five durations read
                                 off a record rebuild its frame byte for byte, and it stops at the frame
-                                because nothing after it follows from the bits. src/summary.ts is the
+                                because nothing after it follows from the bits. **A command is often
+                                several frames**, so `frameSegments` cuts the train first: a boundary is a
+                                space at least four times the median space, and the factor is a gap
+                                between two populations rather than a fitted number, since four and six
+                                give the same reading. Two things it needs. A boundary may not fall inside
+                                the first cells, or a lead in's own long space cuts the header off and
+                                every frame reads a bit short. And **whether the separator belongs to the
+                                frame before it depends on which half carries**, so both are tried:
+                                keeping it refuses every Samsung code and dropping it refuses every Sony
+                                one, each found by breaking the other. Not applied to the biphase reader,
+                                for the same reason the merge is not. src/summary.ts is the
                                 golden vector shape, above gspm.ts and ir.ts because it composes both.
                                 src/protocols.ts is the generated table of what rhythm each protocol
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Twenty one entries, six of them measured on both routes, and each
+                                Twenty nine entries, six of them measured on both routes, and each
                                 carries the route it came from, since a rhythm two independent routes
                                 agree on is worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
@@ -927,8 +937,8 @@ packages/codec/                 TS: the one config codec, container through comp
                                 set bit is its shorter space, and a test looks for that shape rather
                                 than for the name.
                                 **A table entry says where its durations came from**: three off the
-                                corpus, ten off a configuration Logitech's own compiler produced, and
-                                three off both, which is the column to look at first. The fourth value,
+                                corpus, twenty off a configuration Logitech's own compiler produced, and
+                                six off both, which is the column to look at first. The fourth value,
                                 a rhythm taken from published documentation and judged only by their
                                 analyser, is deliberately **empty**: the one entry that had it was out
                                 by a fifth to a quarter on every duration and their analyser read it
