@@ -204,6 +204,18 @@ August 2026 over 4195 records whose family is known, in `../lab/reads/20260824-p
 **gap** is one shape on 7 of 10 families, the **repeat count** on 8 of 10, and five families have exactly
 one tail shape across every record. What varies is the closing silence.
 
+- [x] **the splitting rule is measured**, 24 August 2026, `../lab/reads/20260824-plan/step3-notes.md`. A
+      frame boundary is a space at least **four times** the median space of the train, and 4 and 6 give
+      the identical answer while 9 loses Samsung, which is what says the separators and the bit cells are
+      two populations with a gap between them rather than a fitted threshold. Whether the separator
+      belongs to the frame before it depends on which half carries and **both have to be tried**: keeping
+      it refuses every Samsung code, dropping it refuses every Sony code. Explained whole goes from 1373
+      of 2777 records to 1848, and `Samsung 16 and 20 Bit`, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`
+      and `Sharp 48 Bit` read for the first time
+- [ ] the rule lands in `packages/codec/src/irframe.ts` with tests, after the merge and **not** in the
+      biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there
+- [ ] `MitsubishiO1 Dual 8 16 Bit` is attributed on 40 records and read on none, since its code states
+      `Start`, two values and `Trailer` and only the first is found. The next case rather than a failure
 - [ ] **four families are waiting on this phase**, which is what measuring them established:
       `Pioneer 32 Bit 2` is told apart from `Pioneer 32 Bit Dual` only by its second frame, and
       `MemorexV2 32 Bit Dual`, `Sharp 48 Bit` and `Panasonic 16 Bit` each fail because a record holding
