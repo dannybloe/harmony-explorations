@@ -474,7 +474,10 @@ harmony/
   FreeHarmony/              the application, checked out beside this one on 12 August 2026. Its path
                             dependency is `../harmony-explorations/packages/codec`, so the sibling
                             layout is load bearing rather than a convention
-  lab/                      private, never in git
+  lab/                      private, never in **this** git. It has a local repository of its
+                            own since 24 August 2026, with no remote and a pre-push hook that
+                            refuses, because a capture there was overwritten with no history
+                            to recover it from and Time Machine here covers photos only
     dumps/<person>/<remote>/  concordance dumps, with a META.md each
     firmware/packages/        original Logitech .hfw files
     firmware/derived/         binaries decoded out of them
