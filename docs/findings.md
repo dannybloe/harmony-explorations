@@ -23004,3 +23004,53 @@ is unmeasured; ten `Samsung 16 and 20 Bit` records and two `Pioneer 32 Bit Dual`
 their family shape; the single record families still cannot show their tail is the family's; the
 whole record shapes' held pointers are unread; and on the toggle families 48 Thomson records carry a
 **second pointer group**, which section 134's arch 8 pairs suggest is the toggled variant, unread.
+
+## 172. A config can change length: shift, rewrite the census, restamp two fields
+
+**25 August 2026.** `relocate(container, at, delta)` in `packages/codec/src/relocate.ts` inserts bytes
+at a blob offset, rewrites every stated address at or above it, and restamps the two fields a growth
+invalidates. It is deliberately the write side of section 143's survey and nothing more: the pointer
+census in `growth.ts` is the single source of what gets rewritten, a census refusal aborts the
+relocation, and `edit.ts` keeps refusing length changes as a separate entry point that does not call
+this.
+
+**The check is insert and compare, and it is exact in both directions.** For all 19 corpus containers
+plus the two made configs, filler is inserted at two offsets each and the result must satisfy two
+halves. The mechanical half diffs the result against a naive shift and demands the difference be
+exactly the rewritten pointer fields plus `end_addr` plus the trailer checksum, so a relocation that
+scribbles anywhere a reader never looks fails byte by byte. The semantic half reparses and demands the
+recovered base unchanged, the trailer verifying, the claim multiset identical owner for owner and
+length for length with starts shifted, and the whole inventory equal, which pulls the text reading,
+the touch map and the action list walks into the comparison. The negative runs the identical check
+with one address class's rewrite switched off and demands it fail, for each of the 21 classes a
+Harmony One config states addresses in, so a class whose omission nothing catches cannot exist
+silently. `packages/codec/test/relocate.test.ts`.
+
+Three things the check found that no reading had stated, and they are the section's content:
+
+* **The floor is past the key table, not past the marker.** The first attempted insertion point was
+  the first byte of content, and the key table's claim vanished: the firmware reads the key table at a
+  fixed offset after the marker, section 52, so it is the one structure whose position a pointer
+  states **and** arithmetic demands at once. Filler between the marker and the key table would be read
+  as key records whatever the rewritten mode table pointer says. `relocationFloor` computes the first
+  insertable byte and `relocate` refuses below it.
+* **A picture bank's top is not insertable, and its bottom is below the bias bytes.** Filler between
+  the last picture and the trailer relabelled every picture claim, because the bank's extent is
+  implied by its walk landing exactly on the trailer, section 55. And on the architectures that state
+  the bank's start, slot 17's address plus two, an insertion exactly at the first picture leaves the
+  section pointer below the cut, so the stated start lands on filler: the arch 9 safe mode container
+  is where that bit, since its first picture sits exactly at stated plus bias. The clean bottom is the
+  section start, bias bytes included.
+* **The census was missing base slot 16, and the corpus could not have told anyone.** A number sender
+  record's position is stated by its table and its three digit tables by the record, section 154, and
+  `pointers()` walked none of them, because `pointerArrayAt` rightly refuses a section whose records
+  follow its array and nothing had ever relocated a config that populates the slot. Only the two made
+  configs do, `calibration_favchannels` and `calibration_favzero`, which is why both are in the
+  relocation check's population alongside the corpus: a pointer class only made configs populate is
+  exactly the class a corpus wide check is structurally blind to. Same family as section 143's
+  expectation tables: the corpus agreeing with itself is not evidence about what it does not contain.
+
+What this does not establish: that the firmware accepts a relocated config. The check proves every
+reader here reports identically, and section 117's cloning experiment is the standing demonstration
+that parsing is not validating. That is phase 7's known answer comparison and, behind its gate, the
+hardware run.

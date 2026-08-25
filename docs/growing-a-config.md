@@ -2,15 +2,19 @@
 
 What has to be recomputed, restamped or moved when one structure in a config changes length.
 
-This is a survey, not a feature. `packages/codec/src/edit.ts` refuses to change any structure's
-length and it will go on refusing; what this document does is turn the reasons for that refusal from
-a list of consequences into a list of counts, so that whoever eventually lifts it knows the size of
-the job before starting it. `docs/findings.md` section 147 is the evidence, section 146 is a
-correction the survey produced on its way past, and `packages/codec/test/growth.test.ts` recomputes
-every number here.
+This began as a survey and the survey now has a write side. `packages/codec/src/edit.ts` refuses to
+change any structure's length and it goes on refusing; **`packages/codec/src/relocate.ts` is the
+separate entry point that can**, since 25 August 2026: it shifts everything at or above one offset,
+rewrites every stated address out of the census below, and restamps the two fields a growth
+invalidates. The corpus check behind it inserts filler into every container and demands every reader
+report exactly what it reported before, byte diff and meaning both, with a per address class
+negative. `docs/findings.md` section 147 is the survey's evidence, section 172 the relocation's,
+section 146 a correction the survey produced on its way past, and `packages/codec/test/growth.test.ts`
+and `test/relocate.test.ts` recompute every number here.
 
-**Everything here is read only.** No remote is opened, no write path is exercised, nothing on disk
-changes. Two tests build a modified copy of a container in memory, because a control has to.
+**Everything here is read only towards hardware.** No remote is opened, no write path is exercised,
+nothing on disk changes. The tests build modified copies of containers in memory, because a control
+has to, and a relocated container is bytes in memory like any other.
 
 Run it with `make growth`, or `make growth GROWTH_ARGS=--detail` for the breakdown per container.
 

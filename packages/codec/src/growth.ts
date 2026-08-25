@@ -79,7 +79,13 @@ import {
 } from './screen.ts';
 import { referencedStringAddress } from './text.ts';
 import { IMAGE_SET_HEADER, fontSets } from './font.ts';
-import { TOUCH_AREA_SELF_AT, TOUCH_MAP_SLOT, touchPages } from './tables.ts';
+import {
+  NUMBER_SENDER_DIGIT_TABLES,
+  TOUCH_AREA_SELF_AT,
+  TOUCH_MAP_SLOT,
+  numberSenders,
+  touchPages,
+} from './tables.ts';
 import {
   VALUE_MAP_COUNT_WIDTH,
   VALUE_MAP_KEY_WIDTH,
@@ -388,6 +394,26 @@ export function pointers(c: Container, refusals: string[] = []): Pointer[] {
       const at = c.blobOffsetOf(area.address);
       if (at === undefined) return;
       add(at + TOUCH_AREA_SELF_AT, area.self, 'slot-17-area', 'itself');
+    });
+  }
+
+  // Base slot 16, the number sender: a count and a pointer array followed by its own records, so
+  // `pointerArrayAt` refuses it the way it refuses slots 14 and 17, and a record then states its
+  // three digit tables, which may be shared, section 154. **Populated only by made configs**, so
+  // no corpus container could show the census missing it: it was found by relocating
+  // `calibration_favchannels`, which is why that fixture is in the relocation check.
+  const senders = numberSenders(c);
+  if (senders !== undefined) {
+    senders.records.forEach((record, k) => {
+      add(senders.start + 1 + POINTER_WIDTH * k, record.address, 'slot-16-table', `record ${k}`);
+      const off = c.blobOffsetOf(record.address);
+      if (off === undefined) return;
+      NUMBER_SENDER_DIGIT_TABLES.forEach((at, d) => {
+        const digits = record.tables[d];
+        if (digits !== undefined) {
+          add(off + at, digits.address, 'slot-16-record', `digit table ${d}`);
+        }
+      });
     });
   }
 

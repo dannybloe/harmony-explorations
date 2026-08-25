@@ -53,7 +53,7 @@ starts at the first unticked box.
 | 2 | every family in the catalogue has a measured rhythm | **done** 25 August 2026 |
 | 3 | a whole command, not just its frame | **done** 25 August 2026 |
 | 4 | the data model describes a device that does not exist yet | **done** 25 August 2026 |
-| 5 | a config can change length without breaking | not started |
+| 5 | a config can change length without breaking | **done** 25 August 2026 |
 | 6 | a device composed into a config, read back by our own readers | not started |
 | 7 | Logitech compiles the same addition and the two agree | not started |
 
@@ -423,27 +423,48 @@ Five gaps, one a field and four of them rules to write down rather than fields t
 
 ## Phase 5: a config can change length without breaking
 
+**Done, 25 August 2026.**
+
 The wall. A Harmony One config states **12045** addresses inside itself and another **5884** positions are
 implied by what precedes them, `make growth`. Adding anything moves everything above it.
 `docs/growing-a-config.md` is the survey behind `edit.ts` refusing to change a length; this phase is what
 lifts that refusal.
 
-- [ ] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above
-      the insertion. The census in `growth.ts` is the list of address classes and is already exhaustive
-- [ ] the **implied** positions, each named rather than swept up: the picture bank's walk, every mode
+- [x] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above
+      the insertion. The census in `growth.ts` is the list of address classes and is already exhaustive.
+      `packages/codec/src/relocate.ts`, 25 August 2026, section 172. **The census was not exhaustive**:
+      it missed base slot 16's records and digit tables, which only the two made configs populate, so
+      the corpus could never have shown it, and both made configs are in the check's population now
+- [x] the **implied** positions, each named rather than swept up: the picture bank's walk, every mode
       page's second copy of its tagged list, base slot 5's shared duration blocks, base slot 16's shared
-      digit tables
-- [ ] the three restamped fields: `end_addr`, the trailer checksum, and the end marker's position
-- [ ] base slot 15's group lengths and entry count are **not** touched, since the firmware replaces a
-      group whose length it does not expect with compiled in defaults, silently, section 44
-- [ ] **check, and this is the one that carries the phase**: for every container in the corpus, insert a
+      digit tables. All four are claims, so the check's claim comparison covers each; the bank's walk is
+      the one that bit, twice: its extent is implied by landing on the trailer, so a bank container's
+      top is not insertable, and its stated start sits two bias bytes below its first picture, so the
+      bank's bottom means the section start. Section 172
+- [x] the three restamped fields: `end_addr`, the trailer checksum, and the end marker's position.
+      The first two are restamped, checksum last since it runs over everything; the third moves only
+      when the slot count changes, which is per architecture and never a growth, `restamps` in
+      `growth.ts`
+- [x] base slot 15's group lengths and entry count are **not** touched, since the firmware replaces a
+      group whose length it does not expect with compiled in defaults, silently, section 44. By
+      construction and by test: a relocation rewrites address fields alone, and the mechanical half of
+      the check fails on any byte that is not a rewritten pointer or one of the two restamps
+- [x] **check, and this is the one that carries the phase**: for every container in the corpus, insert a
       run of filler at each of a set of offsets, relocate, and assert that every reader reports exactly
       what it reported before. Same devices with the same names, same activities, same drawn text, same
-      key bindings, same infrared frames, same rendered screens, and the checksum and end marker verify
-- [ ] **the negative**: switching off the rewrite of any one address class has to break that check, and
-      the test names which class it disabled
-- [ ] `edit.ts` keeps refusing a length change by default. The relocation pass is a separate entry point,
-      so a same length edit cannot accidentally take this road
+      key bindings, same infrared frames, same rendered screens, and the checksum and end marker verify.
+      `test/relocate.test.ts`, 25 August 2026: 19 corpus containers plus the two made configs, two
+      offsets each, the claim multiset and the whole inventory compared, plus a mechanical half that
+      demands the byte diff against a naive shift be exactly the rewritten fields and the two restamps.
+      What it found on the way is the floor: filler between the marker and the key table is read as key
+      records, section 52, so `relocationFloor` starts past the key table and `relocate` refuses below it
+- [x] **the negative**: switching off the rewrite of any one address class has to break that check, and
+      the test names which class it disabled. All 21 classes a Harmony One config states addresses in,
+      each omission caught by the identical check that passes whole, and the class list is asserted
+      exactly so a class falling out of the census is a diff and not a silence
+- [x] `edit.ts` keeps refusing a length change by default. The relocation pass is a separate entry point,
+      so a same length edit cannot accidentally take this road. Nothing in `edit.ts` calls or imports
+      `relocate.ts`, and its refusal tests are untouched
 
 ## Phase 6: a device composed into a config
 

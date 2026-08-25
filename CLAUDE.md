@@ -820,8 +820,9 @@ docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, entirely unmeasured, a list of what to read
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
 docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
-                                implied positions and the three restamped fields. A survey behind
-                                edit.ts's refusal to change a length, not a plan to lift it
+                                implied positions and the three restamped fields. The survey behind
+                                edit.ts's refusal to change a length, and since section 172 also the
+                                spec of relocate.ts, the separate entry point that performs it
 docs/adding-a-device.md         THE checklist for one goal: pick an appliance out of Logitech's
                                 catalogue, put it on a Harmony One, press the button and have the
                                 appliance respond. Nine phases, each ending in a check that can
@@ -887,7 +888,11 @@ packages/codec/                 TS: the one config codec, container through comp
                                 src/growth.ts the read only survey of what a length change would
                                 move, whose implied set is derived from coverage minus the address
                                 census rather than listed, so a new reader joins one side or the
-                                other on its own,
+                                other on its own, src/relocate.ts the write side of that survey,
+                                section 172: insert bytes, rewrite the census, restamp end_addr and
+                                the checksum, checked by insert and compare over the corpus with a
+                                per address class negative, while edit.ts keeps refusing a length
+                                change as a separate entry point,
                                 src/coverage.ts the M2 byte accounting, src/emit.ts the
                                 emitter that reads it back the other way and is the round trip
                                 side on purpose, and src/edit.ts the M3 groundwork: same length

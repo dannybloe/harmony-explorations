@@ -398,6 +398,16 @@ built that Logitech's compiler agrees with, with nothing written to a remote; th
 sits behind a gate in that document rather than inside the list. This document stays the plan of record
 for everything else.
 
+**The goal after that checklist is compiling a whole config from the document**, recorded here on 25
+August 2026 because the checklist's donor route made it look like the destination and it is scaffolding.
+The project's end state is what its first sentence says, generating configs again: FreeHarmony's document
+as the source and the compiled file as the output, with no donor. The checklist's route through an
+existing config was chosen for the first trip because a minimal diff has one suspect when the remote
+misbehaves and a from scratch file exercises every unknown at once. The pieces converge: the relocation
+census and the composer are compiler parts, and what full generation adds on top is three encoders that
+deliberately do not exist yet, pictures, glyphs and screen programs, each readable today and writable by
+nobody. Sequencing those is decided when the checklist's finish line is crossed, not before.
+
 These were written when this repository was going to hold the application too, so each one now says
 which side of the split it belongs to. **Here** means the API and the evidence and the bench
 instrument; **FH** means the product.
