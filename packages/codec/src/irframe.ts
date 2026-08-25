@@ -499,6 +499,19 @@ export interface FrameTimings {
    */
   firstMark?: number;
   /**
+   * The mark of a **set** cell, where the mark's length rides with its own cell's bit.
+   *
+   * **Three families carry two (mark, space) pairs instead of one flat**, section 170: every set cell
+   * is one pair and every clear cell the other, perfectly correlated, so the "constant" half is a
+   * function of the bit. `Panasonic 16 Bit` sends a clear bit as 521 with 1575 and a set bit as 525
+   * with 527, `MemorexV2 32 Bit Dual` as 594 with 1725 against 560 with 594, and `Sharp 48 Bit` as
+   * 409 with 1304 against 410 with 434. A reader demanding one flat length refused all three, which
+   * kept 29 catalogue commands out of reach. It is accepted **only on perfect correlation**: a mark
+   * that varies within one space cluster is still a wobbling flat and still a refusal. `flat` stays
+   * the clear cell's mark, and this field is the set cell's.
+   */
+  oneMark?: number;
+  /**
    * The space that closes the last pair, where the bit is in the mark.
    *
    * **A pulse width frame's last space is a trailing gap and not a bit cell**, and reading it as one is
@@ -557,7 +570,27 @@ export function timingsOfFrame(
   const opening = flat.size === 2 && flats.length > 1
     && flats.slice(1).every((one) => one === flats[1]) && flats[0] !== flats[1]
     ? flats[0] : undefined;
-  if ((flat.size !== 1 && opening === undefined) || carried.size > 2 || carried.size === 0) {
+  // **The mark may ride with the bit**, section 170: two flat lengths are admitted when every cell
+  // whose space is the long one carries one mark and every cell whose space is the short one carries
+  // the other, with no exception across the frame. That is a protocol with two (mark, space) pairs
+  // and not a wobbling flat, which stays a refusal: a mark that varies inside one space cluster
+  // fails the correlation and falls through to the refusal below.
+  let zeroMark: number | undefined;
+  let oneMark: number | undefined;
+  if (flat.size === 2 && opening === undefined && frame.carries === 'space' && carried.size === 2) {
+    const sorted = [...carried].sort((a, b) => a - b);
+    const perCluster = [new Set<number>(), new Set<number>()] as const;
+    for (let i = 0; i + 1 < cells.length; i += 2) {
+      perCluster[cells[i + 1]!.us === sorted[0] ? 0 : 1].add(cells[i]!.us);
+    }
+    if (perCluster[0].size === 1 && perCluster[1].size === 1) {
+      const clear = [...perCluster[0]][0]!;
+      const set = [...perCluster[1]][0]!;
+      if (clear !== set) { zeroMark = clear; oneMark = set; }
+    }
+  }
+  if ((flat.size !== 1 && opening === undefined && oneMark === undefined)
+    || carried.size > 2 || carried.size === 0) {
     return undefined;
   }
   const lengths = [...carried].sort((a, b) => a - b);
@@ -565,8 +598,9 @@ export function timingsOfFrame(
   if (header.length !== 2 * headerPairs) return undefined;
   const base = {
     header: [header[0]?.us ?? 0, header[1]?.us ?? 0] as const,
-    flat: opening === undefined ? [...flat][0]! : flats[1]!,
+    flat: zeroMark ?? (opening === undefined ? [...flat][0]! : flats[1]!),
     ...(opening === undefined ? {} : { firstMark: opening }),
+    ...(oneMark === undefined ? {} : { oneMark }),
     zero: lengths[0]!,
     one: lengths[lengths.length - 1]!,
     carries: frame.carries,
@@ -604,9 +638,11 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
       out.push({ mark: true, us: carried });
       out.push({ mark: false, us: i === 0 ? t.closing! : t.flat });
     } else {
-      // The opening burst where the protocol has a longer one, and `flat` everywhere else.
+      // The opening burst where the protocol has a longer one, and the cell's own mark everywhere
+      // else, which is `flat` unless the mark rides with the bit, section 170.
       const first = i === bits - 1 && t.firstMark !== undefined;
-      out.push({ mark: true, us: first ? t.firstMark! : t.flat });
+      const mark = ((value >> BigInt(i)) & 1n) && t.oneMark !== undefined ? t.oneMark : t.flat;
+      out.push({ mark: true, us: first ? t.firstMark! : mark });
       out.push({ mark: false, us: carried });
     }
   }

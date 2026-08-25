@@ -22,10 +22,10 @@ import { LAB, skipWithoutLab } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-test('the table states thirty five entries, and what each is worth is its provenance', () => {
+test('the table states thirty eight entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 35);
+  assert.equal(PROTOCOLS.length, 38);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -37,7 +37,7 @@ test('the table states thirty five entries, and what each is worth is its proven
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 26, 6]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 29, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -90,9 +90,9 @@ test('the table states thirty five entries, and what each is worth is its proven
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 34 of 35, the exception
+  // Every other entry reproduces every code of its own rows to the microsecond. 37 of 38, the exception
   // being the one loose entry named above.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 34);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 37);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
   // what the generator joining on the whole code bought. `Pioneer 32 Bit 2` and `Pioneer 32 Bit Dual`
@@ -165,11 +165,24 @@ test('the table states thirty five entries, and what each is worth is its proven
   // which is exactly the shape of claim this project distrusts: a rule no counterexample could reach.
   // 52 of 52 of its records reproduce under it. **`Short 11 Bit 2` is the third, found on 25 August
   // 2026 the same way**, when section 167's per segment gap let its records read at all: its set bit is
-  // the 5480 space and its clear bit the 8310 one, 42 of 42 exact.
+  // the 5480 space and its clear bit the 8310 one, 42 of 42 exact. **`Panasonic 16 Bit` is the fourth**,
+  // section 170: it states the complement of a JVC frame the same appliance also carries, and the two
+  // records are told apart by the lead in the catalogue's own Start word states for JVC and not for it.
   const inverted = PROTOCOLS.filter((one) => (one.zero ?? 0) > (one.one ?? 0));
   assert.deepEqual(inverted.map((one) => [one.family, one.zero, one.one]),
                    [['Logitech 24 Bit', 1000, 500], ['RCAV1 LF 24 Bit', 2010, 1010],
-                    ['Short 11 Bit 2', 8310, 5480]]);
+                    ['Short 11 Bit 2', 8310, 5480], ['Panasonic 16 Bit', 1575, 527]]);
+
+  // **Three families carry two (mark, space) pairs instead of one flat**, section 170, and the field
+  // that says so is `oneMark`, the set cell's own mark. Named as a set: a fourth appearing means a new
+  // family took this shape, and one dropping out means a reader stopped seeing the correlation.
+  const twoMark = PROTOCOLS.filter((one) => one.oneMark !== undefined);
+  assert.deepEqual(twoMark.map((one) => [one.family, one.flat, one.oneMark]),
+                   [['MemorexV2 32 Bit Dual', 560, 594], ['Panasonic 16 Bit', 521, 525],
+                    ['Sharp 48 Bit', 410, 409]]);
+  // And each is exact on its own records, which for `Sharp 48 Bit` is what the one length rail refused
+  // for a day: its two marks are one microsecond apart and still perfectly correlated with the bit.
+  for (const one of twoMark) assert.equal(one.exact, one.codes, one.family);
 });
 
 test("Sony's frame period is the published 45 ms, which nothing here fitted to", () => {
@@ -409,12 +422,12 @@ test('the table answers for the recorded census, counted rather than printed', s
   // The rhythm coverage: which families have a measured entry, and what that is in commands.
   const known = new Set(PROTOCOLS.map((one) => one.family));
   const covered = [...counts].filter(([family]) => known.has(family));
-  assert.equal(covered.length, 29, 'families with a measured rhythm');
-  assert.equal(covered.reduce((total, [, n]) => total + n, 0), 5189, 'commands emittable, of 5219');
+  assert.equal(covered.length, 32, 'families with a measured rhythm');
+  assert.equal(covered.reduce((total, [, n]) => total + n, 0), 5218, 'commands emittable, of 5219');
   assert.equal([...counts.values()].reduce((total, n) => total + n, 0), 5219);
-  // Named rather than counted, because which family is missing is the finding every time. Two of the
-  // four are refused deliberately: their flat half alternates two lengths, section 166's neighbours,
-  // and admitting them would mean writing down a duration their records do not have.
+  // Named rather than counted, because which family is missing is the finding every time. Three of
+  // the four this named on 25 August 2026 turned out to share one mechanism, the mark riding with the
+  // bit, section 170, and joined the table the same day.
   assert.deepEqual([...counts.keys()].filter((family) => !known.has(family)).sort(),
-    ['MemorexV2 32 Bit Dual', 'Panasonic 16 Bit', 'Saitek 11 Bit', 'Sharp 48 Bit']);
+    ['Saitek 11 Bit']);
 });

@@ -125,8 +125,9 @@ function key(m: Measured): string {
     // structural space or the closing are two rhythms, exactly as a biphase lead in is.
     const sectioned = t.sections === undefined ? ''
       : ` sections ${t.sections.join('+')} boundary ${t.sectionSpace} closing ${t.closing}`;
-    return `${t.header[0]}/${t.header[1]} flat ${t.flat} zero ${t.zero} one ${t.one} ${t.carries}`
-      + sectioned;
+    return `${t.header[0]}/${t.header[1]} flat ${t.flat}`
+      + `${t.oneMark === undefined ? '' : `/${t.oneMark}`}`
+      + ` zero ${t.zero} one ${t.one} ${t.carries}` + sectioned;
   }
   const b = m.biphase!;
   // The lead in is part of the key: it is a fixed prelude, so two records of one family that disagree
@@ -403,8 +404,10 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
     // family, which is why this is a list.
     const byValue = new Map<string, string[]>();
     const byWidth = new Map<number, Set<string>>();
-    /** Each code as its whole frame list, which is what decides a shared value. */
-    const codes: { family: string; keys: string[] }[] = [];
+    /** Each code as its whole frame list, which is what decides a shared value, plus its words:
+     * a code stating `Start` is a code whose record opens with a lead in, section 170, and the
+     * join demands that consistency where two stated codes fit one record. */
+    const codes: { family: string; keys: string[]; words: readonly string[] }[] = [];
     /**
      * Codes whose family names **one** width and states **several** values, section 166: the width is
      * across the pair, so no single frame read can match them and the sectioned reading below is what
@@ -415,7 +418,7 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
       const read = statedCode(cmd.keyCode);
       if (read === undefined) continue;
       const keys = read.frames.map((f) => `${f.bits}:${f.value.toString(16)}`);
-      codes.push({ family: read.family, keys });
+      codes.push({ family: read.family, keys, words: read.words });
       if (read.frames.length > 1 && read.frames.every((f) => f.bits === read.bits)) {
         sectioned.push({ family: read.family, width: read.bits,
           values: read.frames.map((f) => f.value) });
@@ -558,21 +561,41 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
           // is what the appliance states, the frame recorded is theirs and the two carried lengths are
           // exchanged, so an encoder built from the entry emits this record again exactly.
           const flipped = complement(r.f.value, r.f.bits);
-          const asRead = familyOf(owner, r.key, readKeys);
-          const asFlipped = asRead === undefined
-            ? familyOf(owner, `${r.f.bits}:${flipped.toString(16)}`, readKeys) : undefined;
+          const flippedKey = `${r.f.bits}:${flipped.toString(16)}`;
+          const measured = timingsOfFrame(d.train, r.f, pairs);
+          // **A code that states a `Start` frame is not matched by a reading that measured no lead
+          // in**, section 170, and one record needs the rule: the JVC A-X5 states `JVC 16 Bit`
+          // 0xC508 with a Start word and `Panasonic 16 Bit` 0x3AF7 with none, 0x3AF7 is 0xC508's
+          // complement, and the appliance's one Panasonic record reads 0xC508 headerless. Without
+          // the check the value join hands that record to JVC, whose 107 real records all open on
+          // an 8400/4200 lead in. The word is the catalogue's own statement of the lead in, per
+          // section 159's grammar, so the consistency is theirs and not an inference of ours.
+          const headerless = measured !== undefined
+            && measured.header[0] === 0 && measured.header[1] === 0;
+          const statesStart = (family: string, key: string) => owner.codes.some((code) =>
+            code.family === family && code.keys.includes(key) && code.words.includes('Start'));
+          let asRead = familyOf(owner, r.key, readKeys);
+          if (asRead !== undefined && headerless && statesStart(asRead, r.key)) asRead = undefined;
+          let asFlipped = asRead === undefined
+            ? familyOf(owner, flippedKey, readKeys) : undefined;
+          if (asFlipped !== undefined && headerless && statesStart(asFlipped, flippedKey)) {
+            asFlipped = undefined;
+          }
           const widths = owner.byWidth.get(r.f.bits);
           const byWidth = asRead === undefined && asFlipped === undefined && widths?.size === 1
             ? [...widths][0] : undefined;
           const family = asRead ?? asFlipped ?? byWidth;
           if (family === undefined) continue;
-          const measured = timingsOfFrame(d.train, r.f, pairs);
           // **Remembered rather than dropped here**, section 165: a record whose durations do not split
           // also reaches the fall through below, so dropping in both places counted ten records twenty
           // times and read as though twenty had failed. One record, one reason, the specific one.
           if (measured === undefined) { matched = true; continue; }
+          // Exchanging zero and one also exchanges the two marks where the mark rides with the
+          // bit, section 170: the pair is the cell, so the halves travel together.
           const timings = asFlipped === undefined ? measured
-            : { ...measured, zero: measured.one, one: measured.zero };
+            : { ...measured, zero: measured.one, one: measured.zero,
+                ...(measured.oneMark === undefined ? {}
+                  : { flat: measured.oneMark, oneMark: measured.flat }) };
           const candidate: Measured = { family, source: 'compiled',
             joinedBy: asRead === undefined && asFlipped === undefined ? 'width' : 'value',
             periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
@@ -1226,6 +1249,12 @@ export interface StatedProtocol {
    * without it a rebuilt code differs from what their compiler emits on its very first pulse.
    */
   readonly firstMark?: number;
+  /**
+   * The mark of a **set** cell, on the three families whose mark rides with its own cell's bit,
+   * section 170. \`flat\` is then the clear cell's mark. Absent everywhere the flat half really is
+   * one length.
+   */
+  readonly oneMark?: number;
   readonly zero?: number;
   readonly one?: number;
   readonly carries?: FrameCarrier;
@@ -1433,6 +1462,7 @@ if (write) {
     const t = e.timings!;
     return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
       + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
+      + `${t.oneMark === undefined ? '' : `oneMark: ${t.oneMark}, `}`
       + `zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
       + `${t.sections === undefined ? ''

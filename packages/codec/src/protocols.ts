@@ -55,6 +55,12 @@ export interface StatedProtocol {
    * without it a rebuilt code differs from what their compiler emits on its very first pulse.
    */
   readonly firstMark?: number;
+  /**
+   * The mark of a **set** cell, on the three families whose mark rides with its own cell's bit,
+   * section 170. `flat` is then the clear cell's mark. Absent everywhere the flat half really is
+   * one length.
+   */
+  readonly oneMark?: number;
   readonly zero?: number;
   readonly one?: number;
   readonly carries?: FrameCarrier;
@@ -203,4 +209,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'PioneerO1 32 Bit', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 7, exact: 7, spread: 0, source: 'compiled' },
   { family: 'PanasonicV2 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 4, exact: 4, spread: 0, source: 'compiled' },
   { family: 'Pioneer 32 Bit 2', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 3, exact: 3, spread: 0, source: 'compiled' },
+  { family: 'MemorexV2 32 Bit Dual', periodNs: 26315, header: [9000, 4500], flat: 560, oneMark: 594, zero: 594, one: 1725, carries: 'space', codes: 2, exact: 2, spread: 0, source: 'compiled' },
+  { family: 'Panasonic 16 Bit', periodNs: 26315, header: [0, 0], flat: 521, oneMark: 525, zero: 1575, one: 527, carries: 'space', codes: 1, exact: 1, spread: 0, source: 'compiled' },
+  { family: 'Sharp 48 Bit', periodNs: 26455, header: [3367, 1720], flat: 410, oneMark: 409, zero: 434, one: 1304, carries: 'space', codes: 1, exact: 1, spread: 0, source: 'compiled' },
 ];

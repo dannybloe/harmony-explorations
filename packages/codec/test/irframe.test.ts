@@ -1376,3 +1376,50 @@ test('a quaternary record sends two bits per space, and the emitter refuses what
   // And the family states three values, exactly.
   assert.throws(() => pulsesOfQuad(t, [0x2340n, 0x0n]), /states 3 values/);
 });
+
+test('a mark that rides with the bit is read as two pairs and emitted back, section 170', () => {
+  // **Three families carry two (mark, space) pairs instead of one flat**: every set cell is one pair
+  // and every clear cell the other. This is Panasonic 16 Bit's shape as its one record stores it,
+  // headerless, a clear bit as 521 with 1575 and a set bit as 525 with 527. A reader demanding one
+  // flat length refused it, and the whole family with it.
+  const cell = (bit: boolean): Pulse[] => bit
+    ? [{ mark: true, us: 525 }, { mark: false, us: 527 }]
+    : [{ mark: true, us: 521 }, { mark: false, us: 1575 }];
+  // 0xC508 as our decoder reads it, long space as the set bit: 1100 0101 0000 1000.
+  const bits = [...'1100010100001000'].map((one) => one === '1');
+  // In wire terms the long space carries the set bit, so the cell above is inverted: our decoder's
+  // one is the 1575 space. Build the train the way the record stores it.
+  const train = bits.flatMap((bit) => bit ? [{ mark: true, us: 521 }, { mark: false, us: 1575 }]
+                                          : [{ mark: true, us: 525 }, { mark: false, us: 527 }]);
+  const frame = framesOfPulses(train, 0).find((one) => one.bits === 16);
+  assert.ok(frame !== undefined);
+  assert.equal(frame.value, 0xC508n);
+  const t = timingsOfFrame(train, frame, 0);
+  assert.ok(t !== undefined, 'the correlated two mark shape reads');
+  assert.deepEqual([t.flat, t.oneMark, t.zero, t.one], [525, 521, 527, 1575]);
+  // And the encoder puts the right mark on each cell, so the round trip is byte for byte.
+  assert.deepEqual(pulsesOfFrame(t, 16, 0xC508n), train);
+
+  // **The control: an uncorrelated second mark stays a refusal.** Swap two marks between clusters so
+  // both lengths still appear but no longer follow the bit, and the reading has to go away, because
+  // accepting it would write down a flat duration the record does not have.
+  const broken = train.map((one) => ({ ...one }));
+  // train[0] is a set cell's mark (521), train[4] a clear cell's (525); exchange them.
+  broken[0]!.us = 525;
+  broken[4]!.us = 521;
+  const off = framesOfPulses(broken, 0).find((one) => one.bits === 16);
+  assert.ok(off !== undefined, 'the bits still read, since the spaces did not move');
+  assert.equal(timingsOfFrame(broken, off, 0), undefined, 'the timings refuse');
+});
+
+test('the stated route emits Panasonic 16 Bit from its catalogue number alone', () => {
+  // The family is inverted, section 170: the stated 0x3AF7 is the complement of what our decoder
+  // reads, so the entry carries zero 1575 above one 527 and the two marks exchanged with them. The
+  // whole chain from the catalogue string to pulses, with no record to copy from.
+  const pulses = pulsesOfStatedCode('Panasonic 16 Bit', 16, 0x3AF7n);
+  assert.ok(pulses !== undefined);
+  // Headerless: the train opens on its first bit cell, and 0x3AF7 opens on two clear bits, each a
+  // 521 mark with the 1575 space.
+  assert.deepEqual(pulses.slice(0, 4).map((one) => one.us), [521, 1575, 521, 1575]);
+  assert.equal(pulses.length, 32, 'sixteen cells and nothing else');
+});

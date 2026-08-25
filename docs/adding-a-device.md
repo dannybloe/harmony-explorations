@@ -133,9 +133,9 @@ family in their database. The library's own reader takes every one of the 2921 d
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **29 of the catalogue's 33 families**, which is 5189 of 5219 commands. It held 15 and
-4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
-from phase 3's splitting rule rather than from another compile: the records were already in the lab and
+The table holds **32 of the catalogue's 33 families**, which is 5218 of 5219 commands. It held 15 and
+4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and everything since
+came from reading rules rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
 `Samsung 16 and 20 Bit` (137), `Thomson 12 Bit Toggle` (124), `Galaxis 16 Bit Quad Toggle` (104),
 `Philips Hurd 16 Bit LongToggle` (85), `RCAV1 LF 24 Bit` (83), `Philips RC5 13 Bit Toggle` (40),
@@ -200,14 +200,13 @@ durations in the result are the ones their generator emits.
       it has no measured rhythm and cannot yet be emitted
 - [ ] the three families whose analyser answer disagreed with their compiler stay out of the table on
       their analyser's word alone, section 160
-- [ ] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,
+- [x] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,
       every entry exact on its own records, and the covered share is asserted in a test against the
-      recorded census rather than printed. **At 29 and 5189 the command floor is passed and the family
-      count is not**: the four left are `Panasonic 16 Bit` (26), `MemorexV2 32 Bit Dual` (2) and
-      `Sharp 48 Bit` (1), the latter two refused deliberately by the one length rail, and
-      `Saitek 11 Bit` (1). The census assertion is delivered: the test in
+      recorded census rather than printed. **Passed on 25 August 2026 at 32 and 5218**, section 170:
+      three of the four missing families were one mechanism, the mark riding with the bit, and the
+      one left is `Saitek 11 Bit` (1 command). The census assertion is delivered: the test in
       `packages/codec/test/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
-      read, 29 of 33 families and 5189 of 5219 commands covered, and names the missing four, so any
+      read, 32 of 33 families and 5218 of 5219 commands covered, and names the missing family, so any
       of those numbers moving fails a test rather than a memory
 
 ## Phase 3: a whole command, not just its frame
@@ -241,9 +240,12 @@ one tail shape across every record. What varies is the closing silence.
       42 and 32 of 32 byte for byte. `Philips Hurd 16 Bit LongToggle` followed, section 168, a fourth
       row shape: three regions under one bit rule, a set bit being the cell whose first half is silence,
       and its 46 records reproduce **whole, copies and gaps included, word for word**.
-      `Galaxis 16 Bit Quad Toggle` closed the day, section 169, a fifth row shape: quaternary on the
+      `Galaxis 16 Bit Quad Toggle` followed, section 169, a fifth row shape: quaternary on the
       wire as well as in the catalogue, four space lengths sending two bits per cell, 48 of 48 records
-      whole. The table is **35 entries, 29 of 33 families and 5189 of 5219 commands**
+      whole. And `Panasonic 16 Bit`, `MemorexV2 32 Bit Dual` and `Sharp 48 Bit` closed together,
+      section 170: their mark rides with the bit, two exact (mark, space) pairs, which the one length
+      demand had read as a wobbling flat. The table is **38 entries, 32 of 33 families and 5218 of
+      5219 commands**
 - [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
       measurement: a lead in is a mark and a long space, and on several families that space is over the
       threshold, so a rule with no floor cut the header off as its own segment and every frame then read

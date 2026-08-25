@@ -218,6 +218,8 @@ export function timingsOf(entry: StatedProtocol): FrameTimings | undefined {
     flat: entry.flat,
     // `exactOptionalPropertyTypes`, so the field is present or it is not there at all.
     ...(entry.firstMark === undefined ? {} : { firstMark: entry.firstMark }),
+    // The set cell's own mark, on the families whose mark rides with the bit, section 170.
+    ...(entry.oneMark === undefined ? {} : { oneMark: entry.oneMark }),
     zero: entry.zero,
     one: entry.one,
     carries: entry.carries,

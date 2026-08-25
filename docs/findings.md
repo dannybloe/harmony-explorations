@@ -22798,8 +22798,9 @@ off its floor. The change is visible only where it was needed. The table stands 
 33 catalogue families, 5000 of 5219 commands**. What is left: `Galaxis 16 Bit Quad Toggle` (104,
 quaternary on the wire, four space lengths), `Philips Hurd 16 Bit LongToggle` (85, biphase shaped with
 an irregular opening), `Panasonic 16 Bit` (26), and three families of one or two commands each, two of
-which the one length rail refuses deliberately, section 166's neighbours `MemorexV2 32 Bit Dual` and
-`Sharp 48 Bit`, plus `Saitek 11 Bit`.
+which the one length rail refuses deliberately<!--superseded-->, section 166's neighbours `MemorexV2 32 Bit Dual` and
+`Sharp 48 Bit`, plus `Saitek 11 Bit`. The refusal reading did not survive the day after: their two
+lengths are two exact durations riding with the bit, section 170.
 
 ## 168. The long toggle family is three regions under one bit rule, and it reproduces whole
 
@@ -22866,6 +22867,55 @@ widening a cell is not something any record shows. The reading in the generator 
 long toggle one: exactly four space lengths, one mark length, a start digit of 0, and the partition of
 the wire digits by the stated values' own digit counts has to land on a stated triple.
 
-The table stands at 35 entries, **29 of 33 catalogue families, 5189 of 5219 commands**. Left:
-`Panasonic 16 Bit` (26 commands), and the three of one or two, `MemorexV2 32 Bit Dual` and
-`Sharp 48 Bit`, both refused deliberately by the one length rail, and `Saitek 11 Bit`.
+The table stood at 35 entries, 29 of 33 catalogue families and 5189 of 5219 commands, when this was
+written, with `Panasonic 16 Bit`, `MemorexV2 32 Bit Dual` and `Sharp 48 Bit` still out and the last
+two read as refused deliberately by the one length rail<!--superseded-->. Section 170, the same day,
+showed all three are one mechanism, the mark riding with the bit, and the table stands at 38.
+
+## 170. The mark can ride with the bit, and the catalogue's Start word tells two codes apart
+
+25 August 2026. Three of the four families still missing from the rhythm table turned out to share one
+mechanism, and the fourth thing this section settles is which of two stated codes one record is.
+
+**The finding: a frame's "constant" half is not always constant, it can be a function of the bit.**
+`Panasonic 16 Bit` sends a clear bit as a 521 mark with a 1575 space and a set bit as a 525 mark with a
+527 space; `MemorexV2 32 Bit Dual` as 594 with 1725 against 560 with 594; `Sharp 48 Bit` as 409 with
+1304 against 410 with 434, one microsecond of mark apart and still perfectly separated. In every record
+of all three the mark's length is exactly determined by its own cell's space: two (mark, space) pairs,
+no third pair and no exception. `timingsOfFrame` refused all three because its flat half had two
+lengths, which is the right refusal for a wobbling flat and the wrong one here, so it now admits the
+shape **only on perfect correlation**: all cells whose space clusters long carry one mark, all whose
+space clusters short carry the other. The field is `oneMark`, the set cell's own mark, `flat` staying
+the clear cell's, and `pulsesOfFrame` emits per bit. An uncorrelated second mark, made by exchanging
+two marks between clusters, still refuses, which is the control in
+`packages/codec/test/irframe.test.ts`.
+
+**The identification problem, and the catalogue answers it itself.** The JVC A-X5 states 112 commands:
+106 `JVC 16 Bit`, one `Panasonic 16 Bit` 0x3AF7, three Sony, one Sharp 48. 0x3AF7 is the 16 bit
+complement of 0xC508, which the same appliance **also** states, as a JVC code. The compiled sample's
+group holds a record for each: the JVC one opens on an 8400/4200 lead in with a uniform 500 mark, the
+Panasonic one opens on its first bit cell with the marks riding. Both read 0xC508 under our convention,
+so a value join alone hands the Panasonic record to JVC, and no complement can break the tie because
+each record's complement reaches the other family equally. What breaks it is section 159's grammar:
+JVC's code is `(Start)(0xC508)` and Panasonic's is `()(0x3AF7)`, and `Start` is the grammar's own word
+for **a lead in sent once before the payload**. So the rule in the join is the catalogue's statement
+and not an inference of ours: **a code that states a Start frame is not matched by a reading that
+measured no lead in.** Only two families in the whole census state the word, `JVC 16 Bit` on all 457 of
+its codes and `MitsubishiO1 Dual 8 16 Bit` on all 28, and both measure with a lead in on every record.
+The converse deliberately does not hold and is not used: `Sony 12 Bit` states no word and opens on a
+2400/600 lead in, so absence of the word says nothing.
+
+With the shape and the rule together, `make protocols` moves from 35 entries to 38 with **every
+existing row byte identical**, `JVC 16 Bit` stays 108 of 108 exact, and each of the three new entries
+reproduces every one of its records to the microsecond, `Panasonic 16 Bit` as the fourth family whose
+set bit is the shorter space. The census coverage is **32 of 33 families and 5218 of 5219 commands**,
+asserted in `packages/codec/test/stated.test.ts` against the recorded census. What is left is
+`Saitek 11 Bit`, one command.
+
+The instructive part is that all three had been written up the day before as two different problems:
+Panasonic as "named and its durations do not split" and the other two as "refused deliberately by the<!--superseded-->
+one length rail, and admitting them would mean writing down a duration their records do not have"<!--superseded-->. The
+second half of that sentence was wrong because it assumed the two lengths were noise on one duration;
+they are two durations, each exact, and the record does state both. The diagnosis that unlocked it was
+printing the cell **pairs** instead of the mark population: `+521-1575 x5  +525-527 x11` says the
+correlation in one line where two histograms hide it.
