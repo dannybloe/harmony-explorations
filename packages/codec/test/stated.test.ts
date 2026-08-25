@@ -432,12 +432,13 @@ test('the table answers for the recorded census, counted rather than printed', s
     ['Saitek 11 Bit']);
 });
 
-test('twenty four entries state their whole block, and the counts are per family', () => {
-  // **Section 171: what follows the frame is measured per family**, as copies, literal words and pad
-  // spaces solved from a constant total. Named with both counts, because the families where the whole
-  // block does not rebuild are the finding: Logitech 24 Bit's eleven failures are the PS3's long
-  // repeat records, Pioneer 32 Bit's ten are corpus records of one command whose copies differ from
-  // the compiled shape, and MemorexO1 32 Bit's shortfall is its own loose duration entry.
+test('thirty one entries state their whole block, and the counts are per family', () => {
+  // **Section 171: what follows the frame is measured per family**, as copies of the code's own
+  // frames, literal words, and pad spaces solved from a constant total or a constant copy period.
+  // Named with both counts, because the families where the whole block does not rebuild are the
+  // finding: Logitech 24 Bit's eleven failures are the PS3's long repeat records, Pioneer 32 Bit's
+  // ten are corpus records of one command whose copies differ from the compiled shape, and
+  // MemorexO1 32 Bit's shortfall is its own loose duration entry.
   const tailed = PROTOCOLS.filter((one) => one.tail !== undefined)
     .map((one) => [one.family, one.tailExact, one.codes] as const);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
@@ -448,13 +449,20 @@ test('twenty four entries state their whole block, and the counts are per family
     ['Memorex 32 Bit', 8, 8],
     ['MemorexO1 32 Bit', 81, 108],
     ['MemorexV2 32 Bit', 38, 38],
+    ['MemorexV2 32 Bit Dual', 2, 2],
     ['Microsoft 30 Bit', 65, 213],
     ['PanasonicV2 48 Bit', 4, 4],
     ['Philips RC5 13 Bit Toggle', 51, 51],
     ['Philips RECS80 11 Bit', 34, 35],
     ['Pioneer 32 Bit', 9, 19],
+    ['Pioneer 32 Bit 2', 3, 3],
+    ['Pioneer 32 Bit Dual', 32, 34],
     ['PioneerO1 32 Bit', 7, 7],
+    ['PioneerO1 32 Bit Dual', 40, 40],
     ['RCAV1 LF 24 Bit', 52, 52],
+    ['Samsung 16 and 20 Bit', 36, 46],
+    ['Sharp 15 Bit', 95, 95],
+    ['Sharp 15 Bit 2', 184, 220],
     ['Sharp 48 Bit 2', 345, 345],
     ['SharpO1 48 Bit', 12, 12],
     ['SharpO1 48 Bit', 33, 33],
@@ -466,6 +474,23 @@ test('twenty four entries state their whole block, and the counts are per family
     ['Toshiba 32 Bit', 622, 622],
     ['Videocrypt 11 Bit Toggle', 32, 32],
   ]);
+
+  // **The second frame in the tail is the code's own other frame**, section 171 stage two: the dual
+  // families and the Sharp 15 pair alternate the code's two stated frames, replayable for any code
+  // because a tail item names the frame's index rather than a value. Named as a set.
+  const second = PROTOCOLS.filter((one) =>
+    one.tail?.items.some((item) => 'copy' in item && item.at === 1) ?? false)
+    .map((one) => one.family);
+  assert.deepEqual(second.sort(), ['MemorexV2 32 Bit Dual', 'Pioneer 32 Bit 2', 'Pioneer 32 Bit Dual',
+    'PioneerO1 32 Bit Dual', 'Samsung 16 and 20 Bit', 'Sharp 15 Bit', 'Sharp 15 Bit 2']);
+
+  // **The Sharp 15 families pad each copy to a constant period, not the block to a total**: their
+  // two alternating frames differ in duration, so the gaps differ within one record, which is the
+  // one case that tells the two pad rules apart. Sharp 15 Bit's period is exactly 65000.
+  const perCopy = PROTOCOLS.filter((one) => one.tail?.copyPeriod !== undefined)
+    .map((one) => [one.family, one.tail!.copyPeriod] as const);
+  assert.deepEqual(perCopy.sort((a, b) => a[0].localeCompare(b[0])),
+    [['Sharp 15 Bit', 65000], ['Sharp 15 Bit 2', 67792]]);
 
   // **Padding to a constant total block duration is real and it is per family**, which section 152's
   // corpus wide attempt could not show. Named with the totals, since a total is a measurement.
@@ -517,9 +542,14 @@ test('a whole block is emitted from the catalogue string alone, and totals what 
   assert.ok(galaxis !== undefined);
   assert.equal(galaxis.length, 38);
 
-  // **The negatives, which are the rail.** A family whose tail holds a second, value dependent frame
-  // is refused rather than having one record's second command replayed for every value, section 152.
+  // **The negatives, which are the rail.** A tail that names the code's second frame refuses a code
+  // stating only one, rather than inventing the frame, section 171 stage two.
   assert.equal(blockOfStatedCode('G:Sharp 15 Bit 2:()(0x4321)():3'), undefined);
+  // With both frames stated, the same family emits whole: six alternating copies, each padded to
+  // the family's copy period.
+  const sharp = blockOfStatedCode('G:Sharp 15 Bit:()(0x230C_1x20F3)():3');
+  assert.ok(sharp !== undefined);
+  assert.equal(sharp.reduce((n, one) => n + one.us, 0), 6 * 65000 + 1);
   // A family with one record cannot show its tail is the family's rather than the value's.
   assert.equal(blockOfStatedCode('G:Panasonic 16 Bit:()(0x3AF7)():3'), undefined);
   // And a family nothing measured stays a refusal, same as the frame emitters.

@@ -696,8 +696,13 @@ function pulsesOfSections(t: FrameTimings, bits: number, value: bigint): Pulse[]
  * block carries the same value, so padding each copy and sharing one pad value are the same statement.
  */
 export type BlockTailItem =
-  /** The payload frame again: with its lead in, or bare where later copies drop it. */
-  | { readonly copy: 'full' | 'bare' }
+  /**
+   * A frame of the code: with its lead in, or bare where later copies drop it. `at` names which of
+   * the code's stated frames, defaulting to the first; a dual family's block carries the code's
+   * second frame after its first, section 171 stage two, and the index is what makes that
+   * replayable for any code of the family.
+   */
+  | { readonly copy: 'full' | 'bare'; readonly at?: number }
   /** Literal words, signed microseconds: positive is a mark, negative a space. Value independent,
    * which the measurement establishes by demanding them identical across records of different
    * values, and which is the safety rail: section 152's second-code tails must never be replayed
@@ -710,10 +715,19 @@ export interface BlockTail {
   /** The whole block in order. The first item is always a copy. */
   readonly items: readonly BlockTailItem[];
   /**
-   * The constant total block duration the pads solve against. Present exactly when a pad exists:
-   * a tail of literals needs no total, and a pad without a total would be underdetermined.
+   * The constant total block duration the pads solve against. Present exactly when a pad exists
+   * and `copyPeriod` does not: a tail of literals needs no total, and a pad without either would
+   * be underdetermined.
    */
   readonly total?: number;
+  /**
+   * The alternative pad rule, for a family whose copies differ in duration: each pad stretches its
+   * own copy, from the copy's first word through the pad, to this period. Indistinguishable from
+   * `total` while every copy carries the same value, which is why most families need only `total`;
+   * the Sharp 15 families alternate two frames whose durations differ, and there the gaps differ
+   * within one record, section 171.
+   */
+  readonly copyPeriod?: number;
 }
 
 /**
@@ -726,14 +740,16 @@ export interface BlockTail {
  */
 export function pulsesOfBlock(
   shape: { readonly timings?: FrameTimings; readonly biphase?: BiphaseTimings },
-  bits: number, value: bigint, tail: BlockTail,
+  frames: readonly { readonly bits: number; readonly value: bigint }[], tail: BlockTail,
 ): Pulse[] {
-  const copy = (kind: 'full' | 'bare'): Pulse[] => {
+  const copy = (kind: 'full' | 'bare', at: number): Pulse[] => {
+    const frame = frames[at];
+    if (frame === undefined) throw new Error(`the code states no frame ${at}`);
     // A biphase copy is the frame with its lead, and no family drops the lead on later copies.
     if (shape.timings === undefined) {
       if (shape.biphase === undefined) throw new Error('a block needs a frame shape');
       if (kind === 'bare') throw new Error('a biphase family has no bare copy');
-      return pulsesOfBiphaseFrame(shape.biphase, bits, value);
+      return pulsesOfBiphaseFrame(shape.biphase, frame.bits, frame.value);
     }
     const t = shape.timings;
     const timings: FrameTimings = kind === 'bare' ? { ...t, header: [0, 0] } : t;
@@ -741,18 +757,18 @@ export function pulsesOfBlock(
     // copy, so the copy is the frame with its closing dropped. `pulsesOfFrame` rightly demands a
     // closing to emit a complete frame, so it is given a placeholder that is then removed.
     if (t.carries === 'mark') {
-      return pulsesOfFrame({ ...timings, closing: 1 }, bits, value).slice(0, -1);
+      return pulsesOfFrame({ ...timings, closing: 1 }, frame.bits, frame.value).slice(0, -1);
     }
-    return pulsesOfFrame(timings, bits, value);
+    return pulsesOfFrame(timings, frame.bits, frame.value);
   };
   const fixed = tail.items.reduce((n, item) => {
-    if ('copy' in item) return n + copy(item.copy).reduce((s, p) => s + p.us, 0);
+    if ('copy' in item) return n + copy(item.copy, item.at ?? 0).reduce((s, p) => s + p.us, 0);
     if ('words' in item) return n + item.words.reduce((s, w) => s + Math.abs(w), 0);
     return n + item.pad;
   }, 0);
   const pads = tail.items.filter((item) => 'pad' in item).length;
   let padValue = 0;
-  if (pads > 0) {
+  if (pads > 0 && tail.copyPeriod === undefined) {
     if (tail.total === undefined) throw new Error('a pad needs the total it is solved from');
     const room = tail.total - fixed;
     if (room <= 0 || room % pads !== 0) {
@@ -761,11 +777,26 @@ export function pulsesOfBlock(
     padValue = room / pads;
   }
   const out: Pulse[] = [];
+  // How long the current copy has been running, for the copy period rule: a pad under it stretches
+  // everything since its own copy's first word to the period.
+  let sinceCopy = 0;
   for (const item of tail.items) {
-    if ('copy' in item) out.push(...copy(item.copy));
-    else if ('words' in item) {
+    if ('copy' in item) {
+      const pulses = copy(item.copy, item.at ?? 0);
+      out.push(...pulses);
+      sinceCopy = pulses.reduce((n, one) => n + one.us, 0);
+      continue;
+    }
+    if ('words' in item) {
       out.push(...item.words.map((w) => ({ mark: w > 0, us: Math.abs(w) })));
-    } else out.push({ mark: false, us: padValue + item.pad });
+      sinceCopy += item.words.reduce((n, w) => n + Math.abs(w), 0);
+      continue;
+    }
+    const us = tail.copyPeriod === undefined ? padValue + item.pad
+      : tail.copyPeriod - sinceCopy + item.pad;
+    if (us <= 0) throw new Error(`no whole pad fits: ${us} microseconds under the copy period`);
+    out.push({ mark: false, us });
+    sinceCopy += us;
   }
   return out;
 }

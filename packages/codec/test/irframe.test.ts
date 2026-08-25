@@ -1436,7 +1436,7 @@ test('a block solves its pads from the total, and refuses what does not come out
     ],
     total: 147601,
   } as const;
-  const block = pulsesOfBlock({ timings: t }, 16, 0xC508n, tail);
+  const block = pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }], tail);
   // The one arithmetic: the total is reached exactly, and the three pads share one value.
   assert.equal(block.reduce((n, one) => n + one.us, 0), 147601);
   const pads = [block[35]!, block[69]!, block[103]!];
@@ -1445,17 +1445,20 @@ test('a block solves its pads from the total, and refuses what does not come out
   assert.equal(pads[2]!.us, pads[0]!.us + 1);
 
   // **The refusals.** A pad without the total it solves against is underdetermined.
-  assert.throws(() => pulsesOfBlock({ timings: t }, 16, 0xC508n,
+  assert.throws(() => pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }],
     { items: [{ copy: 'full' }, { pad: 0 }] }), /needs the total/);
   // A room that does not divide into whole microseconds is a block the family never stored: this
   // frame lasts 34100, so 147601 leaves 113501 over two pads, and half a microsecond is refused.
-  assert.throws(() => pulsesOfBlock({ timings: t }, 16, 0xC508n,
+  assert.throws(() => pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }],
     { items: [{ copy: 'full' }, { pad: 0 }, { pad: 0 }], total: 147601 }), /no whole pad fits/);
   // A value whose frame outgrows the total has no pad to emit, rather than a negative one.
-  assert.throws(() => pulsesOfBlock({ timings: t }, 16, 0xC508n,
+  assert.throws(() => pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }],
     { items: [{ copy: 'full' }, { pad: 0 }], total: 30000 }), /no whole pad fits/);
   // And a biphase family has no bare copy to ask for.
   assert.throws(() => pulsesOfBlock(
     { biphase: { mark: 889, space: 889, lead: [{ mark: true, us: 889 }], setIsMark: false } },
-    13, 0x1000n, { items: [{ copy: 'bare' }] }), /no bare copy/);
+    [{ bits: 13, value: 0x1000n }], { items: [{ copy: 'bare' }] }), /no bare copy/);
+  // And a tail may only name a frame the code states.
+  assert.throws(() => pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }],
+    { items: [{ copy: 'full' }, { copy: 'full', at: 1 }] }), /states no frame 1/);
 });

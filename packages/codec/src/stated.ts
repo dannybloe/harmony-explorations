@@ -323,12 +323,14 @@ export function blockOfStatedCode(code: string | StatedCode, periodNs?: number):
     const value = entry.sections.reduce((acc, width, at) => (acc << BigInt(width)) | values[at]!, 0n);
     try { return pulsesOfFrame(t, bits, value); } catch { return undefined; }
   }
-  if (entry.tail === undefined || read.frames.length !== 1) return undefined;
+  if (entry.tail === undefined) return undefined;
   const t = timingsOf(entry);
   const b = biphaseOf(entry);
   if (t === undefined && b === undefined) return undefined;
   // `exactOptionalPropertyTypes`, so a field is present or it is not there at all.
   const shape = { ...(t === undefined ? {} : { timings: t }), ...(b === undefined ? {} : { biphase: b }) };
-  try { return pulsesOfBlock(shape, read.bits, values[0]!, entry.tail); }
+  // Every stated frame goes in, because a tail item may name the code's second one, section 171
+  // stage two; a tail asking for a frame the code does not state is a refusal inside the encoder.
+  try { return pulsesOfBlock(shape, read.frames, entry.tail); }
   catch { return undefined; }
 }

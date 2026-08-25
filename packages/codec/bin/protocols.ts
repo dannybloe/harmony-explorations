@@ -86,6 +86,13 @@ interface Measured {
   periodNs: number;
   config: string;
   record: number;
+  /**
+   * Every frame the record's own catalogue code states, in order, where the join could name exactly
+   * one code. What the tail measurement needs, section 171 stage two: a dual family's block carries
+   * the code's **other** frame after the first, so a tail item can say "the code's frame at index k"
+   * and be replayable for any code of the family.
+   */
+  codeFrames?: readonly { bits: number; value: bigint }[];
   /** The long toggle shape and the record's three wire values, section 168. Set instead of `timings`. */
   longToggle?: LongToggleTimings;
   ltValues?: readonly [bigint, bigint, bigint];
@@ -409,7 +416,8 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
     /** Each code as its whole frame list, which is what decides a shared value, plus its words:
      * a code stating `Start` is a code whose record opens with a lead in, section 170, and the
      * join demands that consistency where two stated codes fit one record. */
-    const codes: { family: string; keys: string[]; words: readonly string[] }[] = [];
+    const codes: { family: string; keys: string[]; words: readonly string[];
+      frames: { bits: number; value: bigint }[] }[] = [];
     /**
      * Codes whose family names **one** width and states **several** values, section 166: the width is
      * across the pair, so no single frame read can match them and the sectioned reading below is what
@@ -420,7 +428,8 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
       const read = statedCode(cmd.keyCode);
       if (read === undefined) continue;
       const keys = read.frames.map((f) => `${f.bits}:${f.value.toString(16)}`);
-      codes.push({ family: read.family, keys, words: read.words });
+      codes.push({ family: read.family, keys, words: read.words,
+        frames: read.frames.map((f) => ({ bits: f.bits, value: f.value })) });
       if (read.frames.length > 1 && read.frames.every((f) => f.bits === read.bits)) {
         sectioned.push({ family: read.family, width: read.bits,
           values: read.frames.map((f) => f.value) });
@@ -598,10 +607,19 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
             : { ...measured, zero: measured.one, one: measured.zero,
                 ...(measured.oneMark === undefined ? {}
                   : { flat: measured.oneMark, oneMark: measured.flat }) };
+          // **The record's own code, where exactly one qualifies**: the family's code containing
+          // the joined key all of whose frames the record reads. Two codes sharing a first frame
+          // are told apart by the rest, which is `familyOf`'s own rule reused for the identity, and
+          // where several still qualify no code is claimed rather than the wrong one. Section 171
+          // stage two: a tail item can then say "the code's frame at index k".
+          const joinedKey = asFlipped === undefined ? r.key : flippedKey;
+          const owning = owner.codes.filter((code) => code.family === family
+            && code.keys.includes(joinedKey) && code.keys.every((k) => readKeys.has(k)));
           const candidate: Measured = { family, source: 'compiled',
             joinedBy: asRead === undefined && asFlipped === undefined ? 'width' : 'value',
             periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
-            bits: r.f.bits, value: asFlipped === undefined ? r.f.value : flipped, timings };
+            bits: r.f.bits, value: asFlipped === undefined ? r.f.value : flipped, timings,
+            ...(owning.length === 1 ? { codeFrames: owning[0]!.frames } : {}) };
           if (candidate.joinedBy === 'width') { byWidthOnly ??= candidate; continue; }
           out.push(candidate);
           landed = true;
@@ -1159,38 +1177,51 @@ function wholeBlock(m: Measured, merged: boolean): Pulse[] | undefined {
   return [...fromFirstMark(merged ? mergedIntervals(train) : train)];
 }
 
+/** One candidate copy: a frame of the record's code, with or without its lead in. */
+interface CopyToken { at: number; kind: 'full' | 'bare'; pulses: Pulse[]; }
+
 /**
- * The copy tokens a record's value makes under the family shape: the frame with its lead in, and
- * bare where the family has one to drop. A pulse width copy excludes its closing space, which is
- * the tail's to state, per `pulsesOfBlock`.
+ * The copy tokens a record makes under the family shape: every frame its own code states, section
+ * 171 stage two, each with its lead in and bare where the family has one to drop. A pulse width
+ * copy excludes its closing space, which is the tail's to state, per `pulsesOfBlock`. The frames
+ * default to the joined one where the join could not name exactly one code.
  */
-function copyTokensOf(shape: Measured, m: Measured): { full: Pulse[]; bare?: Pulse[] } | undefined {
-  if (shape.timings !== undefined) {
-    const t = shape.timings;
-    // A sectioned frame is the whole block already, section 166, so there is no tail to speak of.
-    if (t.sections !== undefined) return undefined;
-    const emit = (timings: FrameTimings): Pulse[] | undefined => {
-      try {
-        return timings.carries === 'mark'
-          ? pulsesOfFrame({ ...timings, closing: 1 }, m.bits, m.value).slice(0, -1)
-          : pulsesOfFrame(timings, m.bits, m.value);
-      } catch { return undefined; }
-    };
-    const full = emit(t);
-    if (full === undefined) return undefined;
-    const bare = t.header[0] !== 0 || t.header[1] !== 0 ? emit({ ...t, header: [0, 0] }) : undefined;
-    return { full, ...(bare === undefined ? {} : { bare }) };
+function copyTokensOf(shape: Measured, m: Measured): CopyToken[] {
+  const frames = m.codeFrames ?? [{ bits: m.bits, value: m.value }];
+  const out: CopyToken[] = [];
+  for (const [at, frame] of frames.entries()) {
+    if (shape.timings !== undefined) {
+      const t = shape.timings;
+      // A sectioned frame is the whole block already, section 166, so there is no tail to speak of.
+      if (t.sections !== undefined) continue;
+      const emit = (timings: FrameTimings): Pulse[] | undefined => {
+        try {
+          return timings.carries === 'mark'
+            ? pulsesOfFrame({ ...timings, closing: 1 }, frame.bits, frame.value).slice(0, -1)
+            : pulsesOfFrame(timings, frame.bits, frame.value);
+        } catch { return undefined; }
+      };
+      const full = emit(t);
+      if (full !== undefined) out.push({ at, kind: 'full', pulses: full });
+      if (t.header[0] !== 0 || t.header[1] !== 0) {
+        const bare = emit({ ...t, header: [0, 0] });
+        if (bare !== undefined) out.push({ at, kind: 'bare', pulses: bare });
+      }
+    } else if (shape.biphase !== undefined) {
+      try { out.push({ at, kind: 'full', pulses: pulsesOfBiphaseFrame(shape.biphase, frame.bits, frame.value) }); }
+      catch { /* a frame the shape cannot spell contributes no token */ }
+    }
   }
-  if (shape.biphase !== undefined) {
-    try { return { full: pulsesOfBiphaseFrame(shape.biphase, m.bits, m.value) }; } catch { return undefined; }
-  }
-  return undefined;
+  // Longest first, so a frame that happens to prefix another cannot shadow it, and full before bare
+  // at equal length so a lead in is never read as a bare copy plus two literal words.
+  return out.sort((a, b) => (b.pulses.length - a.pulses.length)
+    || (a.kind === 'full' ? -1 : 1) - (b.kind === 'full' ? -1 : 1));
 }
 
-/** One token of a block: a copy of the frame, or a literal signed word, positive mark. */
-type BlockToken = { copy: 'full' | 'bare' } | number;
+/** One token of a block: a copy of one of the code's frames, or a literal signed word, positive mark. */
+type BlockToken = { copy: 'full' | 'bare'; at: number } | number;
 
-function blockTokensOf(train: readonly Pulse[], copies: { full: Pulse[]; bare?: Pulse[] }): BlockToken[] {
+function blockTokensOf(train: readonly Pulse[], copies: readonly CopyToken[]): BlockToken[] {
   const matches = (pos: number, want: readonly Pulse[]): boolean => {
     if (want.length === 0 || pos + want.length > train.length) return false;
     for (let i = 0; i < want.length; i += 1) {
@@ -1201,10 +1232,8 @@ function blockTokensOf(train: readonly Pulse[], copies: { full: Pulse[]; bare?: 
   const out: BlockToken[] = [];
   let pos = 0;
   while (pos < train.length) {
-    if (matches(pos, copies.full)) { out.push({ copy: 'full' }); pos += copies.full.length; continue; }
-    if (copies.bare !== undefined && matches(pos, copies.bare)) {
-      out.push({ copy: 'bare' }); pos += copies.bare.length; continue;
-    }
+    const hit = copies.find((one) => matches(pos, one.pulses));
+    if (hit !== undefined) { out.push({ copy: hit.kind, at: hit.at }); pos += hit.pulses.length; continue; }
     const p = train[pos]!;
     out.push(p.mark ? p.us : -p.us);
     pos += 1;
@@ -1239,8 +1268,8 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   const rows: { m: Measured; tokens: BlockToken[]; total: number }[] = [];
   for (const m of list) {
     const copies = copyTokensOf(shape, m);
-    const train = copies === undefined ? undefined : wholeBlock(m, merged);
-    if (copies === undefined || train === undefined) continue;
+    const train = copies.length === 0 ? undefined : wholeBlock(m, merged);
+    if (train === undefined) continue;
     const tokens = blockTokensOf(train, copies);
     // A record that does not open with the family frame is a record of another duration set, and
     // its all literal token list would be a giant value dependent pattern, so it drops out here and
@@ -1250,7 +1279,7 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   }
   if (rows.length === 0) return { refusal: 'no record opens with the family frame' };
   const patternOf = (tokens: BlockToken[]) =>
-    tokens.map((t) => (typeof t === 'number' ? (t > 0 ? '+' : '-') : t.copy)).join(' ');
+    tokens.map((t) => (typeof t === 'number' ? (t > 0 ? '+' : '-') : `${t.copy}@${t.at}`)).join(' ');
   const groups = new Map<string, typeof rows>();
   for (const r of rows) {
     const k = patternOf(r.tokens);
@@ -1260,7 +1289,8 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   const debug = process.env['TAILS_DEBUG'];
   if (debug !== undefined && list[0]!.family.includes(debug)) {
     console.log(`\n[tails] ${list[0]!.family}: ${list.length} records, ${rows.length} tokenized,`
-      + ` ${groups.size} pattern(s)`);
+      + ` ${groups.size} pattern(s), ${list.filter((m) => m.codeFrames !== undefined).length}`
+      + ` with a code identity`);
     for (const [k, of] of [...groups.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 5)) {
       const values = new Set(of.map((r) => r.m.value.toString(16)));
       console.log(`  x${of.length} (${values.size} value(s), [${[...new Set(of.map((r) => r.m.config))]}]):`
@@ -1271,7 +1301,12 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   // family's shape than one shown by ten records of a single value, because the whole point of the
   // grouping is to establish that the tail does not depend on the value. Pioneer 32 Bit is the case:
   // ten corpus records of one command against nine records of six commands with the clean shape.
-  const valuesOf = (of: typeof rows) => new Set(of.map((r) => `${r.m.bits}:${r.m.value.toString(16)}`));
+  // A record's identity is its whole code where the join named one, because a dual family's records
+  // all share their joined frame and differ only in the second, section 171 stage two: counting the
+  // joined value alone would call two different commands one value.
+  const valuesOf = (of: typeof rows) => new Set(of.map((r) =>
+    r.m.codeFrames?.map((f) => `${f.bits}:${f.value.toString(16)}`).join('_')
+      ?? `${r.m.bits}:${r.m.value.toString(16)}`));
   const group = [...groups.values()]
     .sort((a, b) => (valuesOf(b).size - valuesOf(a).size) || (b.length - a.length))[0]!;
   const values = valuesOf(group);
@@ -1286,36 +1321,85 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
     if (!group.every((r) => r.tokens[at] === t0)) varying.push(at);
   }
   let total: number | undefined;
+  let copyPeriod: number | undefined;
   const extras = new Map<number, number>();
   if (varying.length > 0) {
     if (group.some((r) => varying.some((at) => (r.tokens[at] as number) > 0))) {
       return { refusal: 'a varying word is a mark, which no pad can be' };
     }
+    // First reading: the pads share one value per record, solved from a constant total.
+    let shared = true;
     for (const r of group) {
       const value = Math.min(...varying.map((at) => -(r.tokens[at] as number)));
       for (const at of varying) {
         const extra = -(r.tokens[at] as number) - value;
         const known = extras.get(at);
         if (known === undefined) extras.set(at, extra);
-        else if (known !== extra) {
-          return { refusal: 'the varying spaces do not share one pad value' };
+        else if (known !== extra) { shared = false; break; }
+      }
+      if (!shared) break;
+    }
+    if (shared) {
+      const totals = new Set(group.map((r) => r.total));
+      if (totals.size !== 1) return { refusal: 'pads without a constant total block duration' };
+      total = [...totals][0]!;
+    } else {
+      // Second reading, section 171: each pad stretches its own copy to a constant period. Only
+      // distinguishable from the first where a block's copies differ in duration, which the Sharp
+      // 15 families' alternating pair of frames does: their two gaps differ within one record.
+      extras.clear();
+      const durationAt = (r: (typeof group)[number], at: number): number | undefined => {
+        // The duration from the most recent copy's first word through the pad at `at`.
+        let sum = 0;
+        for (let back = at; back >= 0; back -= 1) {
+          const token = r.tokens[back]!;
+          if (typeof token === 'number') { sum += Math.abs(token); continue; }
+          const hit = copyTokensOf(shape, r.m).find((one) =>
+            one.at === token.at && one.kind === token.copy);
+          if (hit === undefined) return undefined;
+          return sum + hit.pulses.reduce((n, one) => n + one.us, 0);
+        }
+        return undefined;
+      };
+      let period: number | undefined;
+      for (const r of group) {
+        const periods = varying.map((at) => durationAt(r, at));
+        if (periods.some((one) => one === undefined)) {
+          return { refusal: 'a pad with no copy before it cannot take the copy period rule' };
+        }
+        const base = Math.min(...(periods as number[]));
+        if (period === undefined) period = base;
+        else if (period !== base) {
+          return { refusal: 'the varying spaces share neither one pad value nor one copy period' };
+        }
+        for (const [i, at] of varying.entries()) {
+          const extra = (periods[i] as number) - base;
+          const known = extras.get(at);
+          if (known === undefined) extras.set(at, extra);
+          else if (known !== extra) {
+            return { refusal: 'the varying spaces share neither one pad value nor one copy period' };
+          }
         }
       }
+      copyPeriod = period;
     }
-    const totals = new Set(group.map((r) => r.total));
-    if (totals.size !== 1) return { refusal: 'pads without a constant total block duration' };
-    total = [...totals][0]!;
   }
   const items: BlockTailItem[] = [];
   let run: number[] = [];
   const flush = () => { if (run.length > 0) { items.push({ words: run }); run = []; } };
   group[0]!.tokens.forEach((t, at) => {
-    if (typeof t !== 'number') { flush(); items.push({ copy: t.copy }); return; }
+    if (typeof t !== 'number') {
+      flush();
+      // `exactOptionalPropertyTypes` and row compactness both want the default index absent.
+      items.push(t.at === 0 ? { copy: t.copy } : { copy: t.copy, at: t.at });
+      return;
+    }
     if (varying.includes(at)) { flush(); items.push({ pad: extras.get(at)! }); return; }
     run.push(t);
   });
   flush();
-  const tail: BlockTail = { items, ...(total === undefined ? {} : { total }) };
+  const tail: BlockTail = { items, ...(total === undefined ? {} : { total }),
+    ...(copyPeriod === undefined ? {} : { copyPeriod }) };
   // The count that carries the claim: whole blocks rebuilt from the family shape plus each record's
   // own value, compared word for word against what the record stores, over the whole list.
   let exact = 0;
@@ -1323,7 +1407,8 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
     const train = wholeBlock(m, merged);
     if (train === undefined) continue;
     let built: Pulse[];
-    try { built = pulsesOfBlock(shape, m.bits, m.value, tail); } catch { continue; }
+    const frames = m.codeFrames ?? [{ bits: m.bits, value: m.value }];
+    try { built = pulsesOfBlock(shape, frames, tail); } catch { continue; }
     if (built.length === train.length
       && built.every((p, i) => p.mark === train[i]!.mark && p.us === train[i]!.us)) exact += 1;
   }
@@ -1392,10 +1477,11 @@ for (const [why, n] of [...dropped.entries()].sort((a, b) => b[1] - a[1])) {
 console.log('\nthe whole block, per family:');
 const tailSummary = (tail: BlockTail): string => {
   const parts = tail.items.map((item) => {
-    if ('copy' in item) return item.copy === 'full' ? 'F' : 'f';
+    if ('copy' in item) return (item.copy === 'full' ? 'F' : 'f') + (item.at === undefined ? '' : `@${item.at}`);
     if ('words' in item) return item.words.map((w) => (w > 0 ? `+${w}` : String(w))).join(' ');
     return item.pad === 0 ? 'pad' : `pad+${item.pad}`;
   }).join('  ');
+  if (tail.copyPeriod !== undefined) return `${parts}  (copy period ${tail.copyPeriod})`;
   return tail.total === undefined ? parts : `${parts}  (total ${tail.total})`;
 };
 for (const e of entries) {
@@ -1487,10 +1573,11 @@ export interface StatedProtocol {
    * family rather than guessing, because a tail can hold a second command, section 152.
    */
   readonly tail?: {
-    readonly items: readonly ({ readonly copy: 'full' | 'bare' }
+    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
       | { readonly words: readonly number[] }
       | { readonly pad: number })[];
     readonly total?: number;
+    readonly copyPeriod?: number;
   };
   /** How many of the family's records rebuild their whole first block from this entry. */
   readonly tailExact?: number;
@@ -1671,10 +1758,14 @@ if (write) {
   const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
   const rowsOut = entries.map((e) => {
     const tailOut = e.tail === undefined ? '' : ` tail: { items: [${e.tail.items.map((item) => {
-      if ('copy' in item) return `{ copy: '${item.copy}' }`;
+      if ('copy' in item) {
+        return item.at === undefined ? `{ copy: '${item.copy}' }`
+          : `{ copy: '${item.copy}', at: ${item.at} }`;
+      }
       if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
       return `{ pad: ${item.pad} }`;
-    }).join(', ')}]${e.tail.total === undefined ? '' : `, total: ${e.tail.total}`} },`
+    }).join(', ')}]${e.tail.total === undefined ? '' : `, total: ${e.tail.total}`}${
+      e.tail.copyPeriod === undefined ? '' : `, copyPeriod: ${e.tail.copyPeriod}`} },`
       + ` tailExact: ${e.tailExact},`;
     const tail = `${tailOut} codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
     const head = `  { family: '${e.family}', periodNs: ${e.periodNs}, `;

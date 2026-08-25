@@ -308,10 +308,14 @@ one tail shape across every record. What varies is the closing silence.
 - [x] **the negative**: a family with no measured tail is refused, and the test says so: `Sharp 15 Bit
       2` (second frame in the tail), `Panasonic 16 Bit` (one record) and `Saitek 11 Bit` (not in the
       table) all come back `undefined` from `blockOfStatedCode`
-- [ ] **stage two, the second frame as a tail item**: the dual families and `Samsung 16 and 20 Bit`
-      state it as the code's own other value, the Sharp 15 families derive it from the payload by a per
-      family transform, and `Kreatel IP 22 Bit` joins on one shared frame. Roughly 800 catalogue
-      commands' whole blocks, measurable with the same tokenizer and a second copy token
+- [x] **stage two, the second frame as a tail item**: delivered the same day, section 171. A tail item
+      names the index of one of the code's own stated frames, the Sharp 15 families turned out to
+      **state** their second value rather than derive it, and their alternating frames forced the
+      second pad rule, a constant copy period instead of a block total, 65000 exactly on Sharp 15 Bit.
+      31 entries carry a tail and 2437 of 2682 records rebuild their whole first block. Still named
+      and open: `Kreatel IP 22 Bit` (toggle shaped repeat, 164 records), `MitsubishiO1 Dual 8 16 Bit`
+      (its 16 bit frame's encoding never read, 40), ten Samsung and two Pioneer Dual records off their
+      family shape, and the single record families
 
 ## Phase 4: the data model carries what a new device needs
 

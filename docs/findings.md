@@ -22963,6 +22963,29 @@ families, where the command lives in the second frame the join does not carry, p
 Bit`); and single record families. `blockOfStatedCode` in `packages/codec/src/stated.ts` refuses all
 of them rather than replaying one record's tail for another value, and emits the rest: a catalogue
 string in, the whole first block out, the sectioned, long toggle and quaternary shapes through their
-own whole record emitters. What stage two needs is the second frame as a tail item, stated by the
-code's own other value on the duals and derived by a per family transform on the Sharps, and the
-measurement for it is the same tokenizer with a second copy token.
+own whole record emitters.
+
+**Stage two landed the same day, and the second frame is the code's own other frame.** The join now
+captures the record's whole code where exactly one qualifies, the family's code containing the joined
+key all of whose frames the record reads, which is `familyOf`'s rule reused for identity; the
+tokenizer builds a copy token per stated frame; and a tail item names the frame's **index**, so the
+tail is replayable for any code of the family. Seven families alternate the code's two frames and now
+rebuild whole: the Sharp 15 pair, the three duals, `Pioneer 32 Bit 2` and `Samsung 16 and 20 Bit`,
+whose 20 bit second frame goes out bare after a literal 495 and 4495 pair. The probe that settled the
+Sharps also killed the derivation hypothesis: their codes **state** both values, `(0x230C_1x20F3)`,
+233 of 233 and 82 of 82 found verbatim in the tails, and the constant XOR of 0x3FF between the two is
+the protocol's structure rather than something an emitter needs.
+
+**The Sharps then forced the second pad rule.** Their two alternating frames differ in duration, so
+the two gaps differ within one record and no shared pad value exists; each gap instead stretches its
+own copy to a constant **copy period**, 65000 exactly on `Sharp 15 Bit`. That rule was in the first
+design and was dropped as indistinguishable from the shared value, which was true then and stopped
+being true the moment a block carried two different frames: `copyPeriod` on a tail is the alternative
+to `total`, tried only where the shared value fails, and the whole block table now reads 2437 of 2682
+records rebuilt over 31 tailed entries.
+
+**What remains is named, not pending.** `Kreatel IP 22 Bit`'s repeats differ from its first frame per
+record, a toggle shaped flip to be read on its own; `MitsubishiO1 Dual 8 16 Bit` never reads its own
+16 bit frame at all, the attribution riding on the shared 8 bit one, so its second frame's encoding
+is unmeasured; ten `Samsung 16 and 20 Bit` records and two `Pioneer 32 Bit Dual` records differ from
+their family shape; and the single record families still cannot show their tail is the family's.
