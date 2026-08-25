@@ -72,14 +72,32 @@ test('a chunk length is one the nibble can state exactly, for every total', () =
   }
 });
 
-test('a 64 KiB block is 1042 packets, and the shape of the tail is stated', () => {
-  // The rehearsal's own case, so the number is here rather than being recomputed in a script: one
-  // erase block of a Harmony One's config region. 1040 full packets then 15 then 1, because 65536
-  // is 63 * 1040 + 16 and 16 is not encodable in one packet.
-  const lengths = writeChunkLengths(0x10000);
-  assert.equal(lengths.length, 1042);
-  assert.equal(lengths.filter((n) => n === MAX_PAYLOAD).length, 1040);
-  assert.deepEqual(lengths.slice(-2), [15, 1]);
+test('a 64 KiB block cannot be one transfer, and the rehearsal sends 1048 reports', () => {
+  /**
+   * **The title used to say "a 64 KiB block is 1042 packets" and call it the rehearsal's own
+   * case.** The assertion passed and the sentence was false twice over. 1042 is the chunking of a
+   * single 65536 byte transfer, which the rehearsal never makes because it splits at 32768; and no
+   * caller can make it, because the announce carries a 16 bit count and 65536 does not fit, so
+   * `writeFlashRequests` throws before a packet is built. A number that describes a transfer the
+   * protocol cannot express is worse than no number.
+   *
+   * So the case is stated as the script actually sends it, and the impossibility is asserted rather
+   * than assumed.
+   */
+  assert.throws(() => writeFlashRequests(0x040000, new Uint8Array(0x10000)),
+    /count 65536 does not fit in 16 bits/);
+
+  // Two transfers of 32768: 520 full packets, then 7 and 1, because 32768 is 63 * 520 + 8 and 8 is
+  // not encodable in one packet.
+  const half = writeChunkLengths(0x8000);
+  assert.equal(half.length, 522);
+  assert.equal(half.filter((n) => n === MAX_PAYLOAD).length, 520);
+  assert.deepEqual(half.slice(-2), [7, 1]);
+
+  // And what the whole block costs on the wire, which is the number worth having: each transfer
+  // carries its own announce and done.
+  const reports = 2 * (half.length + 2);
+  assert.equal(reports, 1048);
 });
 
 test('the builders refuse what the protocol cannot say', () => {

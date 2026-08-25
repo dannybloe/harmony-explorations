@@ -16,10 +16,11 @@
  * ## Why one block, and why the remote's own bytes
  *
  * A write that changes nothing is the only first write whose correct outcome is known in advance,
- * and one 64 KiB erase block is a twenty fifth of a Harmony One configuration, so it exercises the
- * erase, the announce, the packets, the acknowledgement and the read back compare at a twenty fifth
- * of the erase cycles. If it fails halfway it is repeatable, because the bytes it is putting back
- * are bytes the lab already holds.
+ * and one 64 KiB erase block is a twenty sixth of a Harmony One configuration, so it exercises the
+ * erase, the announce, the packets, the acknowledgement and the read back compare at a twenty sixth
+ * of the erase cycles. The block count is per configuration, 26 and 21 for the spare's two here, so
+ * the fraction is the shape of the saving rather than a constant. If it fails halfway it is
+ * repeatable, because the bytes it is putting back are bytes the lab already holds.
  *
  * ## What it verifies rather than asserts
  *
@@ -59,6 +60,34 @@ import { writeChunkLengths } from '../src/writes.ts';
 /** A single transfer's ceiling: the announce carries a 16 bit count, so 65535 is the hard limit. */
 const MAX_TRANSFER = 0x8000;
 
+/**
+ * The lab images that are the **spare** Harmony One's own configuration, and the only ones `--dump`
+ * accepts.
+ *
+ * **This closes a hole that the byte compare alone does not.** `WritePermission` asks whether the
+ * target is the spare, this script has to answer it, and nothing it can see distinguishes two
+ * Harmony Ones: they enumerate identically, and `listHarmony` deliberately drops the serial number
+ * so that a serial cannot reach `@harmony/probe`'s publishable report. So with only the
+ * **programmed** One attached, the obvious operator slip, `--dump one_config`, would compare it
+ * against its own dump, match byte for byte, and erase the unit whose configuration is this
+ * project's most used sample.
+ *
+ * The allow-list is what makes the compare identify the **unit** rather than merely agree with a
+ * file. A configuration is unit specific, so a block that matches the spare's own dump is the
+ * spare's block; refusing every other dump is what turns that into an identification. Naming a
+ * programmed unit's dump is now a refusal rather than a match.
+ *
+ * A serial check would be stronger and is deliberately not built: it would mean carrying a unit
+ * identifier through the enumeration path that the probe reads, and the reason that path has no
+ * serial is worth more than this script is. If a serial is ever needed here it gets its own route
+ * that the probe cannot see.
+ */
+const SPARE_DUMPS = new Set([
+  'one_spare_myharmony',
+  'one_spare_before_sync',
+  'one_spare_after_sync',
+]);
+
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
   return at < 0 ? undefined : process.argv[at + 1];
@@ -69,8 +98,29 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+/**
+ * A refusal raised **after** the device is open.
+ *
+ * `fail` calls `process.exit`, which skips a `finally`, so using it once the remote is open would
+ * leave the handle unclosed. Harmless while the process is exiting, and a latent bug the moment
+ * anything here stops exiting, which is the shape this repository has recorded before as an
+ * unreachable guard reading as protection. Thrown instead, so the `finally` closes the device and
+ * the handler below prints one line.
+ */
+class Refusal extends Error {}
+
+/**
+ * The first index at which two equal length buffers differ.
+ *
+ * It demands equal lengths rather than returning `Math.min` of the two, which is what it did: both
+ * callers immediately index the result to print the differing bytes, so an index one past the end of
+ * the shorter buffer was a report that could not be produced. Unreachable, since every buffer here
+ * is a whole block, and a non-null assertion at the call site was all that hid it.
+ */
 function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
-  if (a.length !== b.length) return Math.min(a.length, b.length);
+  if (a.length !== b.length) {
+    throw new Refusal(`comparing ${a.length} bytes with ${b.length}, which is a bug in this script`);
+  }
   for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return i;
   return undefined;
 }
@@ -83,6 +133,12 @@ async function main(): Promise<void> {
   if (!Number.isInteger(block) || block < 0) fail(`--block is not an address: ${blockText}`);
   const commit = process.argv.includes('--commit');
 
+  if (!SPARE_DUMPS.has(dumpName)) {
+    fail(`${dumpName} is not one of the spare Harmony One's own dumps `
+      + `(${[...SPARE_DUMPS].join(', ')}). Refusing: the byte compare below can only identify the `
+      + 'unit if the dump belongs to the unit that may be written to, and two Harmony Ones cannot '
+      + 'be told apart any other way. Nothing here may be written to any other remote.');
+  }
   const path = imagePath(dumpName);
   if (path === undefined) fail(`no lab image called ${dumpName}`);
   const dump = new Uint8Array(readFileSync(path));
@@ -137,7 +193,7 @@ async function main(): Promise<void> {
     }
     const differs = firstDifference(live, intended);
     if (differs !== undefined) {
-      fail(`the remote and ${dumpName} differ at 0x${(block + differs).toString(16)}: `
+      throw new Refusal(`the remote and ${dumpName} differ at 0x${(block + differs).toString(16)}: `
         + `0x${live[differs]!.toString(16)} on the device, 0x${intended[differs]!.toString(16)} in `
         + "the dump. Refusing: the dump is not this unit's current content for this range, so a "
         + 'write here would change the configuration rather than reproduce it. Take a fresh dump.');
@@ -170,6 +226,10 @@ async function main(): Promise<void> {
       originalDumpVerified: true,
       // The unit's own configuration, unchanged, so the version bytes are the ones already there.
       intendedVersionMatches: true,
+      // Earned by two checks together, not asserted: `--dump` is restricted to the spare's own
+      // dumps, and the block on the device matched that dump byte for byte. A configuration is
+      // unit specific, so those two together say which unit is on the cable, which enumeration
+      // cannot.
       targetIsTheSpareRemote: true,
     };
 
@@ -182,7 +242,7 @@ async function main(): Promise<void> {
     }
     const notErased = erased.findIndex((b) => b !== 0xff);
     if (notErased >= 0) {
-      fail(`the erase left 0x${erased[notErased]!.toString(16)} at `
+      throw new Refusal(`the erase left 0x${erased[notErased]!.toString(16)} at `
         + `0x${(block + notErased).toString(16)}, so it did not take. The block is now in an `
         + 'unknown state: rerun to erase and write it again before unplugging.');
     }
@@ -203,7 +263,7 @@ async function main(): Promise<void> {
     }
     const wrong = firstDifference(back, intended);
     if (wrong !== undefined) {
-      fail(`the read back differs at 0x${(block + wrong).toString(16)}: `
+      throw new Refusal(`the read back differs at 0x${(block + wrong).toString(16)}: `
         + `0x${back[wrong]!.toString(16)} on the device, 0x${intended[wrong]!.toString(16)} `
         + 'intended. The write did not land. Do not unplug: rerun, which erases and writes again.');
     }
@@ -215,8 +275,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  // A rail refusal is the expected outcome of running this without its doors, so it reports as one
-  // line rather than a stack: the message is the whole content.
+  // A rail refusal is the expected outcome of running this without its doors, and a `Refusal` is
+  // this script's own check saying no. Both report as one line rather than a stack: the message is
+  // the whole content, and for the post-write ones it tells the operator what to do next.
   if (error instanceof RailError) fail(`refused: ${error.message}`);
+  if (error instanceof Refusal) fail(error.message);
   throw error;
 });

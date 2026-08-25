@@ -152,8 +152,11 @@ write was derived the same day, section 175, on both bench architectures.
 Not established: three of the four infrared encoding classes, which no config in the corpus uses;
 which physical button each scan code is beyond the 36 and 32 the calibration account names, and
 every button's **position**, which is a wiring decision no read path reaches; and, on the write
-path, whether the firmware erases before it programs and whether a host must pace its data
-packets, which is what keeps a write refused. See
+path, whether the firmware erases before it programs, which is moot for a caller that erases first,
+and whether the USB peripheral can accept a report before the firmware has serviced the previous one,
+which is a buffer descriptor nobody here has read. The firmware's own answer on pacing is that it
+asks for none. What keeps a write from happening is the rails and the unopened door, not an open
+question. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 

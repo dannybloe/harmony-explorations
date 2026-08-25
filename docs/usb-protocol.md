@@ -415,9 +415,12 @@ the assumption rather than the protocol.
 
 Two of the rows are absences, and both are coherent rather than gaps in the reading.
 **WRITE_FLASH's executor is a single `RETURN`**, because the work is not in the state machine at
-all: after WRITE_FLASH sets state 2, the data arrives as `0x40` packets handled in the USB
-callback, and the reply comes from **state 3**, which `0xF0` moves the remote to and whose executor
-answers `0xF0 0x30`. The write data path has its own section below. And **START_IRCAP branches straight to `0x0D2E0`**, which is the shared response
+all: after WRITE_FLASH sets state 2, the data arrives as `0x40` packets handled in the USB callback,
+and the reply comes from **state 3**, which `0xF0` moves the remote to and whose executor answers
+`0xF0 0x30`, verified on the Harmony One at `0x26A9C` and on the 700 image at `0x0C95C`. The write
+data path has its own section below.
+
+And **START_IRCAP branches straight to `0x0D2E0`**, which is the shared response
 transmitter, checking a pending byte count and submitting the IN report, so it emits whatever was
 queued and nothing of its own.
 
@@ -840,23 +843,41 @@ holding registers through `TBLWT`, and a commit setting `EECON1` to `0x04` runs 
 bits of the address are all set. So internal program flash goes in 64 byte blocks and a transfer that
 ends mid block leaves its tail in the holding registers, unprogrammed, with no error.
 
-**Arch 12 latches before permitting its low region.** A write below `0x020000` is performed only if a
-write at or above `0x020000` has already happened, a sticky bit nothing in the write path clears. The
-region below holds the safe mode container at `0x002000`. This is a latch and not a bound: it is
-recorded because the validator's window, section 88, accepts every top byte below `0x40` and says
-nothing about it, and it is not protection anything should rely on.
+**Arch 12 keeps its low region behind an interlock.** A write below `0x020000` is performed only
+while bit 5 of `0x1A4` is clear, and that bit is **set at boot and re-set on every main loop pass**, by
+`0x2B824` in the routine the entry point at `0x2EA38` calls first and the main loop calls forever. A
+write at or above `0x020000` sets it too. The one instruction that clears it is `0x26612`, reached when
+ERASE_FLASH is given an address below `0x020000`. So the region below, which holds the safe mode
+container at `0x002000`, is closed in the ordinary running state and opens only just after a low erase.
+Arch 14 has nothing equivalent; neither of its write executors tests a bit at all. The validator knows
+nothing about any of this: section 88 accepts every top byte below `0x40` on arch 12, the whole part.
+**Two earlier versions of this paragraph were wrong in opposite directions**, one calling the bit a
+permit and one calling the region freely writable at session start, and section 175 keeps both because
+the pair is the lesson.
 
 **The internal offset bound is per architecture**: `0xFFC0` on arch 14 and `0xFFF8` on arch 12.
 `packages/usb` applies the arch 14 value to both, which is stricter than the Harmony One's firmware
 and therefore safe.
 
-**Four things about the medium are not established**, and two of them decide whether a write
-succeeds: whether the firmware erases before programming, and whether a host must pace its data
-packets given one staging buffer and no per packet reply. The others are arch 12's external mechanism,
-which pokes a bank register rather than writing directly, and why arch 14's external path issues an
-SPI read setup before it programs, read in the 700 image and unchecked on the Harmony 600, which is
-the one that matters since it is the remote. `writeFlash` in `packages/usb` refuses for those reasons, which is
-a change of reason rather than of behaviour: the packets can be assembled correctly today.
+**The firmware imposes no pacing requirement on the data packets**, which is the fact a writer most
+needs. The command dispatcher returns whether work is pending as its value and its caller drains the
+staging buffer in the same service call, `0x267E4` and `0x202E8` on the Harmony One, `0x0C600` and
+`0x0C614` on the 700, `0x0C566` and `0x0C578` on the Harmony 600. So a packet is programmed before the
+dispatcher can be entered again, and the done cannot overtake the last packet. Section 175, which
+first recorded the opposite as an open risk and then briefly overstated the answer.
+
+**What that does not settle is whether the USB hardware can drop a report**, and the distinction
+matters to a host that streams: the endpoint's buffer descriptor and its ownership bit decide that,
+and they are not read. The usual arrangement makes the endpoint refuse rather than overwrite, so
+streaming is expected to work; the firmware side is derived and the silicon side is an expectation.
+`writeFlash` therefore sends without a delay by default and takes one as an option.
+
+**Two things about the medium are still unread**, and neither changes what a host sends: arch 12's
+external mechanism, which pokes a bank register rather than writing directly, and **why** arch 14's
+external path issues an SPI read setup before it programs. The **whether** of that second one is
+settled on both images now, `0x18D98` on the 700 and `0x17434` on the Harmony 600. **Whether the
+firmware erases before it programs is also unread**, and it is moot for any caller that erases first,
+since erasing an erased block changes nothing.
 
 ### The state machine, in full
 
@@ -865,12 +886,16 @@ The main loop's dispatch on the state variable is **one chain of 70 cases** runn
 bodies. States 2 and `0x0B` are special cased just before it, with ordinary `SUBWF`
 comparisons, and go to `0x0D30C`.
 
-The seven command states and their executors, in the 700 2.8 image:
+The command states and their executors, in the 700 2.8 image. **State 3 was missing from this table
+for as long as it existed**, which review caught: it is not a command a host sends, so it never turned
+up in a survey of commands, and it is the state a write transfer spends its final moment in. Section
+175.
 
 | State | Command | Executor |
 |---|---|---|
 | 1 | GET_VERSION | `0x0C906` |
 | 2 | WRITE_FLASH | `0x0D30C`, via the special case before the chain |
+| 3 | a write transfer that has finished, which answers `0xF0 0x30` and is entered by the done packet rather than by a command a host names | `0x0C95C` |
 | 4 | READ_FLASH | `0x0C982` |
 | 5 | START_IRCAP | `0x0CB1E` |
 | 8 | ERASE_FLASH | `0x0CB4A` |
@@ -1345,9 +1370,10 @@ Three things this changes, none of them about bytes:
   now. That is a different statement from "the files exist", which is all that could be said before.
 * **The 600's recovery file was the wrong file**, see `docs/findings.md` section 23, and only a
   comparison against the device could have shown it.
-* **Restoring is still untested.** Nothing has ever been written to a remote and the flash write data
-  path does not exist, so every one of these backups is verified as a *copy* and unverified as a
-  *restore*. That gap is procedural rather than a gap in the data, and it is why the spare is the
+* **Restoring is still untested.** Nothing has ever been written to a remote, so every one of these
+  backups is verified as a *copy* and unverified as a *restore*. (This said the flash write data path
+  "does not exist", which section 175 read on 25 August 2026 and `packages/usb/src/writes.ts` now
+  builds. What has never happened is the sending, and that is the half this bullet is about.) That gap is procedural rather than a gap in the data, and it is why the spare is the
   only write target when writing arrives.
 
 #### How the prediction did

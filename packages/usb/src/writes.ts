@@ -42,8 +42,11 @@ import {
  * address byte below `0x40` on arch 12 (Harmony One), which is the whole 4 MiB part including the
  * running firmware at `0x020000` and the stored copy at `0x3D0000`, section 88. Both commands call
  * it, which is why one classification serves reads and writes alike. The one guard the firmware
- * keeps for itself is a latch and not a bound: a write below `0x020000` is skipped unless a write at
- * or above it has already happened in the session, section 175. Nothing here relies on that.
+ * keeps for itself is an **interlock** rather than a bound: a write below `0x020000` needs bit 5 of
+ * `0x1A4` clear, that bit is set at boot and on every main loop pass, and the only thing that clears
+ * it is an ERASE_FLASH below `0x020000`. So the low region opens just after a low erase and is shut
+ * otherwise, section 175, which records two earlier readings of this that were both wrong. Nothing
+ * here relies on it, and the refusal below is what actually keeps the region safe.
  */
 export function writeFlashRequest(address: number, count: number): Uint8Array {
   return encodeRequest(WRITE_FLASH, [...address24(address), ...count16(count)]);

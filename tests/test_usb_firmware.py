@@ -2043,6 +2043,17 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         self.assertEqual(instr.mnemonic, 'MOVLW', hex(addr))
         return instr.fields['k']
 
+    def instructions(self, image, start, end):
+        """Every instruction in a half open address range, stepping by real width."""
+        name, base = image
+        code = lab.load(name)
+        out, addr = [], start
+        while addr < end:
+            instr = isa.decode(code, addr - base, base)
+            out.append(instr)
+            addr += 4 if instr.is_two_word else 2
+        return out
+
     def test_state_two_accepts_exactly_the_data_and_done_commands(self):
         """
         The state gate sends state 2 to a chain of its own, and that chain has two cases. So a
@@ -2186,29 +2197,137 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
             with self.subTest(image[0]):
                 self.assertEqual(self.literal(image, at), 0x03, 'done moves to state 3')
 
-    def test_the_harmony_one_latches_before_it_permits_the_low_region(self):
+    def test_the_harmony_one_keeps_its_low_region_behind_an_interlock(self):
         """
-        A firmware side rail that only arch 12 has, and the reason it matters is what lies below
+        A firmware side behaviour only arch 12 has, and the reason it matters is what lies below
         `0x020000` on that part: the safe mode container at `0x002000`, whose loss is what section
-        118 calls unrecoverable on arch 9. A write there is refused unless a write at or above
-        `0x020000` has already happened in this session, which is a latch and not a bound: it is
-        sticky, and nothing in the write path clears it.
+        118 calls unrecoverable on arch 9.
 
-        So this is not protection to rely on, and `packages/usb` refuses the whole region
-        regardless. It is recorded because a reader of the validator alone would conclude the low
-        region is freely writable, the validator having accepted every top byte under `0x40`.
+        **This test has been wrong twice and both times it passed**, which is why its assertions are
+        shaped the way they are now. It first said `latches before it permits`,  <!--superseded-->
+        reading bit 5 as a permit. Renaming it to say the bit is a block fixed the polarity and left
+        a second wrong claim standing, that the low region is writable at the start of a session.  <!--superseded-->
+
+        Both versions asserted only instructions, `BTFSS` and `BSF` on one bit, and **every reading
+        of this bit predicts exactly those**, which is why passing meant nothing. Two things separate
+        the readings and both are asserted below. What `BTFSS` skips decides the polarity. And
+        **which instructions set the bit** decides what the polarity implies, which needs the whole
+        population rather than the one site the write path walks through: there are four, and the
+        fourth is on the boot path and in the main loop, so the ordinary state of a running remote is
+        bit 5 set.
+
+        So the low region is closed in normal operation and opens only just after an ERASE_FLASH
+        below the boundary clears the bit. `packages/usb` refuses the whole region regardless, under
+        every one of the three readings. Section 175.
         """
         lab.require(self.ARCH12[0])
         # The comparison is against 0x020000: the top byte's literal, with zero below it.
         self.assertEqual(self.literal(self.ARCH12, 0x268B4), 0x02)
         self.assertEqual(self.literal(self.ARCH12, 0x268AC), 0x00)
         skip = self.at(self.ARCH12, 0x268BC)
-        self.assertEqual(skip.mnemonic, 'BTFSS')
+        self.assertEqual(skip.mnemonic, 'BTFSS', 'skip if set, which is what decides the polarity')
         self.assertEqual(skip.fields['b'], 5)
         latch = self.at(self.ARCH12, 0x268C8)
         self.assertEqual(latch.mnemonic, 'BSF')
         self.assertEqual(latch.fields['b'], 5)
         self.assertEqual(latch.fields['f'], skip.fields['f'], 'one bit, tested and set')
+
+        # **The polarity itself, which is what the old title got wrong.** `BTFSS` skips its next
+        # instruction when the bit is set. That next instruction is a `BRA` over the `CLRF` which
+        # zeroes the go ahead flag, so the set case falls into the clear and abandons the write, and
+        # the clear case jumps past it and writes. Asserting the two instructions in that order is
+        # what makes the sentence above falsifiable: swap the branch for a fall through and this
+        # fails, where the four assertions above would not notice.
+        over = self.at(self.ARCH12, 0x268BE)
+        self.assertEqual(over.mnemonic, 'BRA')
+        self.assertEqual(over.fields['target'], 0x268C4, 'the skipped branch jumps past the CLRF')
+        abandon = self.at(self.ARCH12, 0x268C2)
+        self.assertEqual(abandon.mnemonic, 'CLRF', 'the set case falls into this and writes nothing')
+
+        # **The population, which is the assertion the two wrong versions of this test lacked.** Every
+        # instruction in the whole image that touches this bit, found by walking it rather than by
+        # following the write path, because following the write path is what produced a coherent and
+        # wrong story twice. Four sites: the write path's test and set, the erase path's clear, and
+        # one more that no derivation of the write path would ever reach.
+        name, base = self.ARCH12
+        code = lab.load(name)
+        touching, addr, end = [], base, base + len(code)
+        while addr < end - 4:
+            try:
+                instr = isa.decode(code, addr - base, base)
+            except Exception:
+                addr += 2
+                continue
+            if (instr.mnemonic in ('BTFSS', 'BTFSC', 'BSF', 'BCF')
+                    and instr.fields.get('f') == 0xA4 and instr.fields.get('b') == 5):
+                touching.append((addr, instr.mnemonic))
+            addr += 4 if instr.is_two_word else 2
+        self.assertEqual(touching, [(0x26612, 'BCF'), (0x268BC, 'BTFSS'),
+                                    (0x268C8, 'BSF'), (0x2B824, 'BSF')],
+                         'every site that touches the bit, in address order')
+
+        # **And why the fourth one settles it**: it sits in a routine the entry point calls as its
+        # very first instruction, and which the main loop then calls forever from a two instruction
+        # loop. So the bit is set before anything else runs and re-set on every pass, which is what
+        # makes the low region closed in the ordinary running state rather than open.
+        self.assertEqual(self.at(self.ARCH12, 0x28A60).fields['target'], 0x2B822,
+                         'the routine holding the fourth site')
+        entry = self.at(self.ARCH12, 0x2EA38)
+        self.assertEqual(entry.mnemonic, 'CALL')
+        self.assertEqual(entry.fields['target'], 0x28A0E, 'the entry point calls it first')
+        self.assertEqual(self.at(self.ARCH12, 0x2EA4C).fields['target'], 0x28A0E)
+        self.assertEqual(self.at(self.ARCH12, 0x2EA50).fields['target'], 0x2EA4C,
+                         'and the main loop calls it forever')
+
+    def test_only_a_low_erase_opens_the_harmony_one_low_region(self):
+        """
+        The other end of the interlock, and the only instruction anywhere that opens it. Of the four
+        sites the test above enumerates exactly one clears the bit, and it sits in the ERASE_FLASH
+        path behind a boundary test against the same `0x020000`. So the low region opens after an
+        erase below the boundary and after nothing else, which an installer satisfies naturally and a
+        stray write never does.
+
+        **This test was called `re_arms` for an afternoon**, which was the second wrong reading  <!--superseded-->
+        wearing a verb: re-arming implies the bit had been clear and something armed it, and the bit
+        is set at boot. The assertions did not change when the title did, because they were always
+        about the instructions; what changed is the sentence they support.
+
+        Whether a low write can then actually win the race against the main loop re-setting the bit
+        is **not** asserted, because it is not established: the erase executor, the write drain and
+        the re-set all run within one main loop pass and their order within it has not been read.
+        Section 175 says so rather than leaving the gap for a reader to fill in.
+        """
+        lab.require(self.ARCH12[0])
+        # The same boundary as the write path, reached by a three byte subtract of the literal from
+        # the address triple rather than by the write path's own comparison.
+        self.assertEqual(self.literal(self.ARCH12, 0x2660A), 0x02)
+        self.assertEqual(self.literal(self.ARCH12, 0x26602), 0x00)
+        carry = self.at(self.ARCH12, 0x2660E)
+        self.assertEqual(carry.mnemonic, 'BC', 'at or above the boundary, skip the clear')
+        self.assertEqual(carry.fields['target'], 0x26614)
+        clear = self.at(self.ARCH12, 0x26612)
+        self.assertEqual(clear.mnemonic, 'BCF')
+        self.assertEqual(clear.fields['b'], 5)
+        # And it is the same bit, not a neighbour: the write path's test names the same file register.
+        self.assertEqual(clear.fields['f'], self.at(self.ARCH12, 0x268BC).fields['f'],
+                         'the same bit the write path tests')
+
+
+    def test_arch_14_has_no_region_bit_at_all(self):
+        """
+        The scope of the two tests above, stated as a measurement rather than left implied. Neither
+        arch 14 write executor tests a bit before writing: across both, in a window covering the
+        whole executor, there is no `BTFSS` and no `BTFSC`. So the low region behaviour is arch 12's
+        alone and must not be ported, which is the standing rule for anything in this format that
+        holds on one architecture.
+        """
+        for image, start, end in ((self.ARCH14, 0x0C614, 0x0C6C0),
+                                  (self.ARCH14_BENCH, 0x0C578, 0x0C620)):
+            lab.require(image[0])
+            with self.subTest(image[0]):
+                tests = [a for a in self.instructions(image, start, end)
+                         if a.mnemonic in ('BTFSS', 'BTFSC')]
+                self.assertEqual(tests, [], 'arch 14 tests no bit before writing')
 
     def test_the_internal_offset_bound_is_per_architecture(self):
         """

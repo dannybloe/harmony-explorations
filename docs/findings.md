@@ -23206,8 +23206,10 @@ that would matter if a write ever reached arch 14, which today's rails refuse fo
 arch 14 unit. Danny caught it; nothing in the tests could have, since an image name says nothing
 about what is on the desk.
 
-**Two commands exist inside a write and neither can be sent outside one.** The main dispatch is gated
-on the command state variable, and state 2 is what `WRITE_FLASH` sets. State 2 reaches a chain of its
+**Two commands exist inside a write and neither can be sent outside one.** Section 19 said this
+already, and said why it matters, that the firmware accepts flash data only after it has agreed to a
+write; what is added here is where that chain is in each image and what its two arms do. The main
+dispatch is gated on the command state variable, and state 2 is what `WRITE_FLASH` sets. State 2 reaches a chain of its
 own, `0x26752` on the Harmony One, `0x0C4C0` on the Harmony 600 and `0x0C55C` on the 700 image, and
 that chain has exactly two cases: `0x40`, the data packet, and `0xF0`, the end of the transfer. So a remote that has not agreed
 to a write cannot be handed data at all, which is the firmware's own reason for `0x40` being absent
@@ -23247,30 +23249,79 @@ unaligned boundary loses its tail with no error.
 
 **The transfer is acknowledged once, at the end, and not per packet.** `0xF0` moves the remote to
 state 3 on all three images, and state 3's executor answers `0xF0 0x30`: the acknowledgement shape
-section 87 established, naming the command being finished. So a host sends an announce, a run of data
+section 19 established, naming the command being finished. Confirmed on the Harmony One at `0x26A9C`
+as well as on the 700 image, since a reply the write target does not send would be the one that
+mattered. So a host sends an announce, a run of data
 packets that are each answered by nothing at all, and one done packet that is answered once. The only
 thing standing between the host and a lost packet is the pending flag above, and the buffer it guards
 holds 63 bytes.
 
-**Ending the session disarms the destination**, which is a rail the firmware keeps for itself and was
-found by accident. `0xE0 0x01`, the escape section 97 reads as clearing the command gate so a remote
-can leave USB mode when its cable goes, also sets the selector to `0xFF`. Both arms of the fork refuse
+**Ending the session disarms the destination, and so does any command the firmware does not
+recognise.** `0xE0 0x01`, the escape section 97 reads as clearing the command gate so a remote can
+leave USB mode when its cable goes, sets the selector to `0xFF`. So does the dispatcher's own fall
+through: the shared exit at `0x267E4` tests whether the command was handled and, if it was not, clears
+the state **and** sets the selector, which is the more general rule and turned up while the pacing
+question was being answered. **And so does the ordinary end of a transfer**, which review added and
+which is the tidiest of the three: the `0xF0` handler itself sets the selector on its way out, at
+`0x267BE` on the Harmony One, `0x0C52C` on the Harmony 600 and `0x0C5C8` on the 700. So a completed
+write disarms itself, and a second transfer needs a second announce packet rather than inheriting the
+first one's destination. A stray byte during a transfer does not corrupt it, it ends it. Both arms of the fork refuse
 that value, so after an end of session a remote cannot write again until an address has been
 validated. Three values, and the third one is the safe one.
 
-**The Harmony One latches before it permits its low region.** Before writing, the arch 12 executor
-compares the address against `0x020000`. At or above it, a sticky bit is set. Below it, the write is
-performed only if that bit is already set, and skipped silently otherwise. So the first write of a
-session has to be at or above `0x020000`, after which everything under it is permitted too, and
-nothing in the write path ever clears the bit. What lies below there is the safe mode container at
-`0x002000`, which section 118 is the reason to care about: on arch 9 losing safe mode is what turns a
-recoverable remote into a stranded one.
+**The Harmony One will not write below `0x020000` unless a low erase has just cleared an interlock,
+and this paragraph got that wrong twice before arriving at it.** Both wrong versions are kept, because
+the pair of them is a better lesson than the answer.
 
-That is a latch and not a bound, so it is not protection to rely on, and `packages/usb` refuses the
-whole region regardless of it. It is recorded because the validator alone says the opposite: section
-88 measured its window as every top byte below `0x40`, the whole 4 MiB part, and a reader who stopped
-there would conclude the safe mode image is freely writable. It is not freely writable, and it is not
-protected either.
+**Version one read the bit as a permit.** It said a write below `0x020000` happens only once a write at
+or above it has set the bit, so the safe mode region was unreachable until something else was written
+first. That inverts the firmware, and the error is the one `CLAUDE.md` already warns about after three
+previous instances: **a bit test's polarity**. `0x268BC` is `BTFSS 0x1A4, 5`, skip if **set**, and the
+instruction it skips is the branch that jumps **over** the `CLRF` at `0x268C2`. That `CLRF` zeroes the
+go ahead flag, so it is the set case that abandons the write. Bit 5 is a **block, not a permit**.
+
+**Version two fixed the polarity and then got the consequence wrong anyway**, which is the more
+interesting failure. Having established that a high write sets the bit and a low write needs it clear,
+it concluded that the low region is writable at the **start** of a session, before anything has set
+the bit, and locked afterwards. That followed only because the write path was the only place anybody
+had looked. **Enumerating every instruction in the image that touches the bit** gives four, not three,
+and the fourth is decisive: `0x2B824 BSF 0x1A4, 5`, in a routine reached from `0x28A0E`, which is
+`CALL`ed by the **first instruction of the entry point** at `0x2EA38` and again at `0x2EA4C`, whose
+next instruction is `BRA 0x2EA4C`. That two instruction loop is the main loop. So the bit is set before
+anything else runs and re-set on every pass of the main loop, and the ordinary state of a running
+Harmony One is bit 5 **set**.
+
+So the reading that survives: writing below `0x020000` is refused in the ordinary running state, and
+the only instruction anywhere that clears the bit is `0x26612 BCF 0x1A4, 5`, reached when ERASE_FLASH
+is given an address below `0x020000`, the boundary checked by the three byte subtract at `0x26604`.
+That makes it an **interlock rather than a latch**: the low region opens only just after a low erase,
+and an installer satisfies it naturally while a stray write never does. **What is not established is
+whether a low write can actually win that race**, since the erase executor, the write drain and the
+routine that re-sets the bit all run within one main loop pass and their order within it has not been
+read. It does not need to be, because nothing here is going to write there.
+
+**Both wrong versions pointed at the same practical answer for opposite reasons**, and that is why
+neither was caught by anything but review. Version one said the low region is protected by a gate;
+version two said it is exposed and the rails are all that stand in the way; the truth is that it is
+protected by an interlock. `packages/usb` refuses the whole region under all three, which is why two
+rounds of correction changed no code. What it changed is what a future reader would believe about how
+much slack there is, and version two was the dangerous one to leave standing, because "the safe mode
+image is writable right now" invites a rail to be argued about rather than obeyed.
+
+**The transferable lesson is about the population and not about the polarity.** A claim of the form
+"this bit means X" needs every site that touches the bit, not the site the current derivation walked
+through. One `BSF` in the write path made a story that was coherent, testable and wrong, and the test
+written for it passed. Arch 14 is clean here for a reason that costs nothing to state: across both of
+its write executors there is no `BTFSS` and no `BTFSC` at all, so there is no bit whose population
+could be got wrong.
+
+What the validator says on its own remains the point worth carrying: section 88 measured the arch 12
+window as every top byte below `0x40`, which is that model's whole 4 MiB part and **is not the figure
+for the others**, the table there giving `0x20` on arch 14 and `0x80` to `0x88` on arch 9. So a reader
+who stopped at the validator would conclude the safe mode image is freely writable. It is not, and the
+interlock above is why, but that is invisible to the validator: one refuses by address class and the
+other by a bit, and neither knows about the other. So the validator's window remains the wrong place
+to read a region's safety off, which is the point that survived all three readings of the bit.
 
 **The internal offset bound is per architecture and the two disagree.** `0xFFC0` on arch 14, one full
 report below the top of the page, and `0xFFF8` on arch 12. `packages/usb` applies `0xFFC0` to both,
@@ -23290,35 +23341,81 @@ Four things, and the first two are what a rehearsal would run into rather than c
   erases anyway**, which is what makes this the weaker of the two open questions rather than a
   blocker: erasing an already erased block changes nothing, so erasing first is right under both
   answers.
-* **Whether a host has to pace its data packets.** There is no per packet reply and the staging buffer
-  holds one packet, so either the USB layer declines to accept a packet while one is pending, which is
-  flow control the hardware performs and a host never sees, or a host that streams loses bytes. The
-  predicate that would answer it, `0x0C5FA` on the Harmony 700, is reached through a computed jump and
-  has no caller a cross reference can find.
+* ~~**Whether a host has to pace its data packets.**~~ **Answered for the firmware, by reading**, and
+  the entry is kept because it was got wrong twice, in opposite directions, and the second time was
+  worse than the first.
+
+  It first said the question could not be settled from the firmware, on the strength of one cross
+  reference coming back empty. One empty cross reference is not a search: the answer was a few
+  instructions from code already read in this section. **The address that reference named, `0x0C5FA`,
+  was also simply the wrong instruction**, which is why it came back empty. It is a `SETF` on the
+  destination selector, not a predicate, and quoting it as one survived into three documents.
+
+  The mechanism, with the addresses checked: the command dispatcher's shared exit **returns whether
+  work is pending as its value**, and the caller drains it immediately. On the Harmony One the exit at
+  `0x267E4` to `0x267FC` reaches `MOVF 0x28D,W` and `RETURN`; its caller at `0x202E8` tail calls the
+  drain executor at `0x267FE` when that is nonzero. The 700 image does the same at `0x0C600`, where
+  the returned value is `0x37E` **or** `0x37D`, and the Harmony 600 at `0x0C566`, where it is `0x723`
+  or `0x722`. The drain then gates on the write flag alone, `MOVF 0x37E; BZ` at `0x0C614` on the 700
+  and `MOVF 0x723; BZ` at `0x0C578` on the 600, clears it, consumes the packet length beside it and
+  subtracts that length from the transfer's remaining count. **So the second variable in the returned
+  value is a different pending thing, not the packet length**, which the first write up of this had
+  conflated: the returned value asks "is there anything to do", and only the flag asks "is there a
+  write packet".
+
+  So a data packet is staged and then **programmed inside the same service call that received it**,
+  before the dispatcher can be entered again. Two things follow that this section had listed as risks.
+  **The done cannot overtake the last data packet**, so state 3's acknowledgement is emitted after the
+  final bytes are programmed rather than racing them. And **the firmware imposes no pacing
+  requirement**, so `writeFlash`'s delay between packets defaults to zero on a derivation rather than
+  on a hope. **The Harmony 600 is checked now** and was listed here as the gap, which mattered because
+  it is the arch 14 remote rather than the reference image.
+
+  **What this does not establish, and the earlier wording claimed, is that a host cannot lose a
+  packet.** It said the buffer is free again before the next report is looked at, and therefore that
+  streaming is safe. The first half is what was read; the second does not follow from it. Whether the
+  USB hardware can accept a second report before the firmware has serviced the first is a question
+  about the endpoint's buffer descriptor and its ownership bit, which is **not read here**. The
+  ordinary PIC18 arrangement makes the endpoint refuse rather than overwrite, which is why streaming
+  is expected to work, but that is a reasonable expectation about the silicon and not a finding about
+  this firmware. Stated separately because the two claims have different evidence and the rehearsal
+  will exercise both at once.
 * **The arch 12 external mechanism.** The Harmony One's path pokes a value derived from the address
   top byte through `TBLWT` at program `0x020025` and then rewrites the top byte with `0x13`, which
   reads as a bank register and a window rather than a direct write, and is not established.
-* **Why arch 14's external path issues a read first.** In the 700 image it calls the SPI read setup,
-  opcode `0x03` plus the address, before calling the routine that enables writing and programs the
-  buffer. Whether the Harmony 600 does the same is unchecked, and it is the one to check, being the
-  remote.
+* **Why arch 14's external path issues a read first.** Both images call the SPI read setup, opcode
+  `0x03` plus the address, before the routine that enables writing and programs the buffer: the 700 at
+  `0x18D98` and the Harmony 600 at `0x17434`, called from the same position in each external arm and
+  agreeing instruction for instruction in the four literals that identify them. So the **whether** is
+  settled and only the **why** is open, which is the better state to leave it in: the remote, rather
+  than the reference image, is the one that would be written to. A plausible reading is a read modify
+  write of the part's page, since the count the drain decrements is a byte count and not a page count,
+  and it is not established.
   A read modify write would explain it and has not been demonstrated.
 
-**So `writeFlash` stays refusing, and the reason it refuses has changed.** It used to refuse because
-the data path was unknown. It now refuses because two things about the medium are unknown, which is a
-smaller gap and a different one: the packets can be assembled correctly today. **Of those two, only
-pacing can still cost a run**, since the caller erases either way; and pacing does not need to be
-settled by reading, because a write that loses bytes fails the read back compare and the block is
-erased and rewritable. So the rehearsal measures it. `writeFlash` takes a delay between data packets
-that defaults to zero, because zero is the case worth measuring first.
+**So `writeFlash` sends, and what stops a write is the rails rather than a gap in the reading.** This
+paragraph twice said the method still refuses, which was true for the hours between the derivation and
+the instrument and is not true now: `packages/usb/src/writes.ts` builds the packets, `writeFlash` sends
+them and waits for the one acknowledgement, and `rails.ts` decides whether any of it may happen. The
+build flag is off, the door `HARMONY_FIRST_WRITE` is shut, the architecture list holds one entry and
+the target must be the spare.
+
+Of the two questions this section opened about the medium, **neither can now cost a run**. Pacing is
+answered above. The erase question is moot for any caller that erases, which the rehearsal does,
+because erasing an erased block changes nothing. `writeFlash` keeps a delay between data packets, and
+its default of zero is now a derived default rather than a guess about which case to try first.
 
 **The cheapest first write is one block of the unit's own dump.** The rehearsal in
 `docs/adding-a-device.md` asks for the spare Harmony One's own config to be written back and read
 identical, on the argument that a write that changes nothing is the only one whose correct outcome is
-known in advance. A whole config is 1.6 MB and 25 erase blocks. One erase block of it, erased and
+known in advance. A Harmony One config is about 1.6 MB and spans 26 erase blocks, and that count is
+per config rather than a property of the model: the spare's own two here span 26 and 21. One erase
+block of it, erased and
 rewritten from the verified dump with the same bytes it already holds, exercises the erase, the
 announce, the packets, the done and the read back compare, ends with the config byte identical either
-way, and is repeatable if it fails halfway. **And a correction to this paragraph, made before anything ran.** It said the block also answers the
+way, and is repeatable if it fails halfway.
+
+**And a correction to this paragraph, made before anything ran.** It said the block also answers the
 erase question by measurement, by being written once without a preceding erase, on the grounds that
 the outcome is either the bytes back or their AND and both are informative. That is wrong, and the
 arithmetic is the refutation: the bytes being written are the bytes already there, so their AND **is**

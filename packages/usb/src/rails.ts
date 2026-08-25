@@ -23,6 +23,16 @@ export class RailError extends Error {}
  *
  * These are not guesses: they are where each architecture's user config is stored, and the
  * firmware itself reads the container from there.
+ *
+ * **This floor is what keeps a mistyped address away from the safe mode image, and on arch 14 it is
+ * the only thing that does.** The Harmony One's firmware has an interlock of its own, section 175: a
+ * write below `0x020000`, where safe mode lives at `0x002000`, needs a bit that is set at boot and on
+ * every main loop pass, and only an ERASE_FLASH below `0x020000` clears it. So a stray low write there
+ * does nothing. **Do not read that as cover.** Arch 14 has no such bit in either write executor, the
+ * ordering that would let a low write slip through the Harmony One's interlock is unread, and section
+ * 175 records two confident readings of this same bit that were both wrong. Losing safe mode is what
+ * section 118 measured turning a recoverable remote into a stranded one, so the floor refuses rather
+ * than reasons.
  */
 export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
   12: 0x040000, // Harmony One

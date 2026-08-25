@@ -583,7 +583,7 @@ reply. Flash only clears bits, so programming over unerased content silently yie
 new.
 
 **So the rehearsal shrinks to one erase block**, which is what section 175 recommends and what the
-first box below now asks for. A whole config is 1.6 MB and 25 blocks; one block of it, erased and
+first box below now asks for. A Harmony One config is about 1.6 MB and 26 blocks, and the count is per config; one block of it, erased and
 rewritten from the verified dump with the bytes it already holds, exercises the erase, the announce,
 the packets, the done and the read back compare, ends byte identical either way, and is repeatable if
 it fails halfway.
@@ -604,13 +604,16 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       onto a remote, so the recovery path is a belief and not a measurement. Write the unit's **own**
       dump back first and read it back identical: a write that changes nothing is the cheapest possible
       first write, and it is the only one whose correct outcome is known in advance. **One 64 KiB erase
-      block of it, not the whole config**, section 175: same exercise end to end, a twenty fifth of the
+      block of it, not the whole config**, section 175: same exercise end to end, a twenty sixth of the
       erase cycles, and repeatable if it fails halfway
-- [ ] **whether a host must pace its data packets**, section 175: one staging buffer, no per packet
-      reply, and the predicate that would settle it is reached through a computed jump. So it gets
-      measured on the block above, by reading back what a streamed run of packets actually wrote.
-      `writeFlash` takes a delay between packets and it defaults to zero, which is the case to try
-      first because it is the one that would otherwise be assumed
+- [x] **whether a host must pace its data packets**, answered by reading, section 175: the command
+      dispatcher returns whether work is pending and its caller drains the staging buffer in the same
+      service call, on all three images, so a packet is programmed before the dispatcher can be
+      entered again and the done cannot overtake the last packet. `writeFlash` defaults to no delay
+      on that derivation and keeps the delay as an option. **What is still not derived is the
+      silicon**: whether the USB peripheral can accept a second report before the firmware has
+      serviced the first is the endpoint's buffer descriptor, unread, so the streamed run on the
+      block above is still worth watching even though the firmware asks for nothing
 - [ ] the dry run first, which needs no flag and writes nothing:
       `node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x...`. It reads the block,
       compares it with the dump and prints the packet plan, and it is what turns

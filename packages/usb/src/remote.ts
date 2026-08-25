@@ -480,10 +480,16 @@ export class HarmonyRemote {
    * compares, because a method that verified itself would be verifying with the same assumptions it
    * wrote with, and because the compare belongs to the rehearsal that owns the erase too.
    *
-   * **Pacing is not resolved**, section 175: the remote stages one packet at a time and answers none
-   * of them, so either the endpoint declines a packet while one is pending, which a host never sees,
-   * or a host that streams loses bytes. `betweenPacketsMs` exists for that and defaults to zero,
-   * which is the case worth measuring first: the read back is what says whether it held.
+   * **The firmware asks for no pacing, so the default is derived rather than hopeful**, section 175:
+   * the command dispatcher returns whether work is pending as its value and its caller drains the
+   * staging buffer in the same service call, on all three images, so a packet is programmed before the
+   * dispatcher can be entered again and the done cannot overtake the last packet.
+   *
+   * **What is not derived is the silicon**, and the distinction is why `betweenPacketsMs` stays.
+   * whether the USB peripheral can accept a second report before the firmware has serviced the first
+   * depends on the endpoint's buffer descriptor, which nobody here has read; the usual arrangement
+   * makes it refuse rather than overwrite. So zero is right on the evidence and a delay is the first
+   * thing to reach for if a write ever does drop bytes, which should not need adding under pressure.
    */
   async writeFlash(
     p: WritePermission,
