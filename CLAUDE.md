@@ -1391,6 +1391,15 @@ HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts
                        data memory: the four idle flags, two controls below the write pointer,
                        and 48 bytes against the page 0xFF image. All reads. Unrun; section 99
                        holds its three predictions. Take the batteries out afterwards.
+node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commit]
+                       the write rehearsal, M4: read one 64 KiB erase block off a remote, compare it
+                       with the lab dump, and print what a write would send. **Without `--commit` it
+                       writes nothing**, and that half is worth running on its own, because the
+                       compare is what turns `originalDumpVerified` from a caller's assertion into a
+                       measurement for the range about to be written. `--commit` needs
+                       HARMONY_ENABLE_WRITES=1 **and** HARMONY_FIRST_WRITE=1, erases the block, writes
+                       the dump's own bytes back, and reads them back to compare, so a success changes
+                       nothing on the remote. Unrun. Section 175
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

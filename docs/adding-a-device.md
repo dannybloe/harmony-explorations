@@ -586,8 +586,13 @@ new.
 first box below now asks for. A whole config is 1.6 MB and 25 blocks; one block of it, erased and
 rewritten from the verified dump with the bytes it already holds, exercises the erase, the announce,
 the packets, the done and the read back compare, ends byte identical either way, and is repeatable if
-it fails halfway. Writing it **without** erasing first, and comparing, answers the erase question by
-measurement and loses nothing the dump cannot restore.
+it fails halfway.
+
+**One thing this paragraph claimed and it was wrong**, corrected before anything ran: that writing the
+block without erasing first would answer the erase question by measurement. It cannot, because the
+bytes being written are the bytes already there, so the AND of old and new is the bytes back and both
+answers look identical. The rehearsal erases explicitly instead, which is correct under either answer,
+and the erase question waits for a write that actually changes something.
 
 ## Phase 8: the write path, on the spare Harmony One
 
@@ -601,13 +606,15 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       first write, and it is the only one whose correct outcome is known in advance. **One 64 KiB erase
       block of it, not the whole config**, section 175: same exercise end to end, a twenty fifth of the
       erase cycles, and repeatable if it fails halfway
-- [ ] **the erase question answered by measurement**, section 175: whether the firmware erases before
-      it programs is unread, and the block above answers it by being written once without a preceding
-      erase and compared. Flash only clears bits, so the two outcomes are the bytes back or their AND,
-      and both are informative
 - [ ] **whether a host must pace its data packets**, section 175: one staging buffer, no per packet
       reply, and the predicate that would settle it is reached through a computed jump. So it gets
-      measured on the block above, by reading back what a streamed run of packets actually wrote
+      measured on the block above, by reading back what a streamed run of packets actually wrote.
+      `writeFlash` takes a delay between packets and it defaults to zero, which is the case to try
+      first because it is the one that would otherwise be assumed
+- [ ] the dry run first, which needs no flag and writes nothing:
+      `node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x...`. It reads the block,
+      compares it with the dump and prints the packet plan, and it is what turns
+      `originalDumpVerified` from a caller's word into a measurement for the range being written
 - [ ] `INTENDEDVERSION` compared against the connected remote's protocol, skin, board and flash id, and
       refused on any mismatch
 - [ ] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the

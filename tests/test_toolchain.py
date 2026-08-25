@@ -405,7 +405,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 
     def test_no_test_skips_a_missing_sample_inside_a_loop(self):
         counted, scanned = self._offenders()
-        self.assertEqual(scanned, 44, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 45, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -516,7 +516,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 44, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 45, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

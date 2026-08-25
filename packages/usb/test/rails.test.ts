@@ -27,6 +27,7 @@ import {
   assertFirmwareWriteRefused,
   assertFlashWriteAllowed,
   assertDeliberateHangAllowed,
+  assertFirstWriteAllowed,
   assertRamWriteAllowed,
   assertSessionEndAllowed,
   eraseBoundsFor,
@@ -414,4 +415,77 @@ test('with the hang door open, it still refuses an even count', () => {
     '64: refused by RailError',
     '0: refused by RailError',
   ]);
+});
+
+/**
+ * The first write door, both sides of it.
+ *
+ * Two flags rather than one, and the test that matters is the middle case: writes enabled and the
+ * door shut still refuses. Otherwise the second flag would be decoration, which is what a door
+ * nobody has checked amounts to.
+ */
+function withEnv(extra: Record<string, string>, script: string): string {
+  const here = fileURLToPath(new URL('.', import.meta.url));
+  const railsPath = join(here, '..', 'src', 'index.ts').replaceAll('\\', '/');
+  return execFileSync(
+    process.execPath,
+    ['--input-type=module', '--eval', `import * as rails from '${railsPath}';\n${script}`],
+    { env: { ...process.env, ...extra }, encoding: 'utf8' },
+  ).trim();
+}
+
+const REFUSAL_REPORT = `
+  try {
+    rails.assertFirstWriteAllowed();
+    process.stdout.write('allowed');
+  } catch (error) {
+    process.stdout.write('refused: ' + error.message);
+  }
+`;
+
+test('the first write door refuses in the shipped state, naming the build flag first', () => {
+  assert.equal(WRITES_ENABLED, false, 'this file must run in the shipped state');
+  assert.throws(() => assertFirstWriteAllowed(), (error: unknown) => {
+    assert.ok(error instanceof RailError);
+    assert.match(error.message, /HARMONY_ENABLE_WRITES=1/);
+    return true;
+  });
+});
+
+test('with writes enabled the door is still shut, which is the point of having it', () => {
+  const output = withEnv({ HARMONY_ENABLE_WRITES: '1' }, REFUSAL_REPORT);
+  assert.match(output, /^refused: /);
+  assert.match(output, /HARMONY_FIRST_WRITE=1/);
+  // And it says why, because a refusal whose reason is elsewhere gets bypassed rather than read.
+  assert.match(output, /restore route it relies on has never been exercised/);
+});
+
+test('with both flags set it allows, so the door is a door and not a wall', () => {
+  const output = withEnv(
+    { HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' },
+    REFUSAL_REPORT,
+  );
+  assert.equal(output, 'allowed');
+});
+
+test('the door does not stand in for the rails, which still refuse everything else', () => {
+  // The rule this checks is that the door is not a second copy of a rail: opening it must not make
+  // an arch 14 write, an unaligned erase or a firmware address allowable. Section 175 and the
+  // docstring on FIRST_WRITE both say so, and a test is what keeps it true.
+  const output = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRST_WRITE: '1' }, `
+    const refusals = [];
+    const permission = { architecture: 14, configLength: 1024, originalDumpVerified: true,
+                         intendedVersionMatches: true, targetIsTheSpareRemote: true };
+    try { rails.assertFlashWriteAllowed(permission, 0x030000, 16); }
+    catch (error) { refusals.push('arch14'); }
+    const twelve = { ...permission, architecture: 12 };
+    try { rails.assertEraseAllowed(twelve, 0x040001); }
+    catch (error) { refusals.push('unaligned'); }
+    try { rails.assertEraseAllowed(twelve, 0x3d0000); }
+    catch (error) { refusals.push('firmware'); }
+    try { rails.assertFlashWriteAllowed({ ...twelve, targetIsTheSpareRemote: false }, 0x040000, 16); }
+    catch (error) { refusals.push('not-the-spare'); }
+    process.stdout.write(refusals.join(','));
+  `);
+  assert.equal(output, 'arch14,unaligned,firmware,not-the-spare');
 });

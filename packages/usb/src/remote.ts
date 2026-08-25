@@ -29,6 +29,7 @@ import {
   GET_VERSION,
   MISC_RAM,
   READ_FLASH,
+  WRITE_FLASH,
   WRITE_MISC,
   nextFlashSequence,
   VERSION_FIELD_COUNT_MIN,
@@ -53,6 +54,7 @@ import {
 // `writes.ts` for why the barrel is the rail here rather than a docstring.
 import {
   eraseFlashRequest,
+  writeFlashRequests,
   escapeRequest,
   writeFlashRequest,
   writeMiscRequest,
@@ -463,22 +465,59 @@ export class HarmonyRemote {
   // only ask, and they ask before touching the transport.
 
   /**
-   * **Still refuses, and the reason changed on 25 August 2026.** Section 175 read the data path on
-   * both bench architectures, so the packets could be assembled here today: an announce, a run of
-   * `0x4A` data packets that are answered by nothing, and `0xF1 0x30`, answered once with
-   * `0xF0 0x30` from state 3. What it did not settle is two things about the medium, and either one
-   * decides whether a write lands: whether the firmware erases before it programs, and whether a
-   * host must pace its packets, given one 63 byte staging buffer and no per packet reply. Flash only
-   * clears bits, so programming over unerased content silently yields the AND of old and new.
+   * Send one flash write: the announce, the data packets, and the done that is acknowledged.
    *
-   * So the refusal is now about the medium rather than the protocol, and the message says which.
+   * Section 175 derived every packet, `writes.ts` builds them, and `rails.ts` decides whether they
+   * may be sent. This method's own contribution is small and worth stating, because all three of
+   * these have already been the shape of a defect in the read path.
+   *
+   * **It waits for the acknowledgement and demands it names WRITE_FLASH.** A write that returns as
+   * soon as the last packet is out leaves `0xF0 0x30` in the pipe, and the next command reads it
+   * first and concludes its own transfer is over. `readFlashUnchecked`'s comment records that exact
+   * failure costing a run of reads that looked like a device with a size limit.
+   *
+   * **It does not verify what was written**, deliberately. The caller reads the range back and
+   * compares, because a method that verified itself would be verifying with the same assumptions it
+   * wrote with, and because the compare belongs to the rehearsal that owns the erase too.
+   *
+   * **Pacing is not resolved**, section 175: the remote stages one packet at a time and answers none
+   * of them, so either the endpoint declines a packet while one is pending, which a host never sees,
+   * or a host that streams loses bytes. `betweenPacketsMs` exists for that and defaults to zero,
+   * which is the case worth measuring first: the read back is what says whether it held.
    */
-  async writeFlash(p: WritePermission, address: number, data: Uint8Array): Promise<void> {
+  async writeFlash(
+    p: WritePermission,
+    address: number,
+    data: Uint8Array,
+    betweenPacketsMs = 0,
+  ): Promise<void> {
     assertFlashWriteAllowed(p, address, data.length);
+    const requests = writeFlashRequests(address, data);
+    for (const [index, request] of requests.entries()) {
+      await this.transport.write(request);
+      // Between data packets only. Pausing after the announce or before the done buys nothing, and
+      // the done has to be followed by the wait below rather than by a sleep.
+      if (betweenPacketsMs > 0 && index > 0 && index < requests.length - 2) {
+        await new Promise((resolve) => setTimeout(resolve, betweenPacketsMs));
+      }
+    }
+    let idle = 0;
+    while (idle < this.idlePolls) {
+      const report = await this.transport.read(this.timeoutMs);
+      if (report === undefined) {
+        idle += 1;
+        continue;
+      }
+      const reply = decodeReply(report);
+      if (reply.kind === 'ack' && reply.command === WRITE_FLASH) return;
+      throw new RemoteError(
+        `a flash write answered with a ${reply.kind} reply`
+          + (reply.kind === 'ack' ? ` naming command 0x${reply.command.toString(16)}` : ''),
+      );
+    }
     throw new RemoteError(
-      'the flash write data path is derived but not implemented: the packets are known, section ' +
-        '175, and two things about the medium are not, whether the firmware erases before it ' +
-        'programs and whether a host must pace its data packets',
+      'a flash write sent every packet and was never acknowledged, so what reached the device is '
+        + 'unknown: read the range back before doing anything else',
     );
   }
 

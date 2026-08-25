@@ -23286,8 +23286,10 @@ Four things, and the first two are what a rehearsal would run into rather than c
   far enough to say. It matters because flash only clears bits: programming over unerased
   content silently produces the AND of the two. `ERASE_FLASH` exists, Logitech's client picks a block
   table, and `packages/usb` already requires a block aligned erase of a whole 64 KiB block, so the
-  rails assume the caller erases. That assumption is now known to be unverified rather than known to
-  be right.
+  rails assume the caller erases. **That assumption being unverified costs nothing while the caller
+  erases anyway**, which is what makes this the weaker of the two open questions rather than a
+  blocker: erasing an already erased block changes nothing, so erasing first is right under both
+  answers.
 * **Whether a host has to pace its data packets.** There is no per packet reply and the staging buffer
   holds one packet, so either the USB layer declines to accept a packet while one is pending, which is
   flow control the hardware performs and a host never sees, or a host that streams loses bytes. The
@@ -23304,8 +23306,11 @@ Four things, and the first two are what a rehearsal would run into rather than c
 
 **So `writeFlash` stays refusing, and the reason it refuses has changed.** It used to refuse because
 the data path was unknown. It now refuses because two things about the medium are unknown, which is a
-smaller gap and a different one: the packets can be assembled correctly today, and sending them could
-still leave a config that is the AND of what was there and what was sent.
+smaller gap and a different one: the packets can be assembled correctly today. **Of those two, only
+pacing can still cost a run**, since the caller erases either way; and pacing does not need to be
+settled by reading, because a write that loses bytes fails the read back compare and the block is
+erased and rewritable. So the rehearsal measures it. `writeFlash` takes a delay between data packets
+that defaults to zero, because zero is the case worth measuring first.
 
 **The cheapest first write is one block of the unit's own dump.** The rehearsal in
 `docs/adding-a-device.md` asks for the spare Harmony One's own config to be written back and read
@@ -23313,7 +23318,15 @@ identical, on the argument that a write that changes nothing is the only one who
 known in advance. A whole config is 1.6 MB and 25 erase blocks. One erase block of it, erased and
 rewritten from the verified dump with the same bytes it already holds, exercises the erase, the
 announce, the packets, the done and the read back compare, ends with the config byte identical either
-way, and is repeatable if it fails halfway. It also answers the erase question by measurement rather
-than by reading: write the block without erasing first and compare, which either reproduces the bytes
-or produces their AND, and both outcomes are informative and neither loses anything the dump cannot
-restore.
+way, and is repeatable if it fails halfway. **And a correction to this paragraph, made before anything ran.** It said the block also answers the
+erase question by measurement, by being written once without a preceding erase, on the grounds that
+the outcome is either the bytes back or their AND and both are informative. That is wrong, and the
+arithmetic is the refutation: the bytes being written are the bytes already there, so their AND **is**
+the bytes back. The experiment cannot distinguish the two cases at all, and a run that "passed" would
+have said nothing.
+
+What follows is better than the experiment: **the rehearsal erases explicitly, so the question is moot
+for it.** Erasing first is correct whether or not the firmware also erases, since erasing an erased
+block changes nothing. The question only bites for a caller who wants to **skip** the erase, and
+nothing here does. Answering it properly needs a write whose new bytes set a bit the old bytes clear,
+which is a real modification and belongs after a first write has worked, not before it.

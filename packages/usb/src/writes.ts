@@ -21,10 +21,13 @@
  * deliberate act look deliberate, which is the same reasoning as the named door in `rails.ts`.
  */
 import {
+  ACK,
   ERASE_FLASH,
   ESCAPE,
+  MAX_PAYLOAD,
   ProtocolError,
   WRITE_FLASH,
+  WRITE_FLASH_DATA,
   WRITE_MISC,
   address24,
   count16,
@@ -67,4 +70,89 @@ export function escapeRequest(subCommand: number): Uint8Array {
     throw new ProtocolError(`escape sub-command ${subCommand} is not a byte`);
   }
   return encodeRequest(ESCAPE, [subCommand]);
+}
+
+/**
+ * `0x40`: one packet of data for a write already announced.
+ *
+ * Section 175. The payload is data and nothing else, no offset and no sequence byte, which is why
+ * the announced address is the only thing that says where these bytes go and why a lost packet
+ * cannot be detected from the wire: the remote advances its own pointer by whatever it received.
+ */
+export function writeFlashDataRequest(chunk: Uint8Array): Uint8Array {
+  return encodeRequest(WRITE_FLASH_DATA, [...chunk]);
+}
+
+/**
+ * `0xF0`: done with something, naming what. `0xF0 0x30` ends a flash write.
+ *
+ * The remote answers this one, and only this one, with `0xF0 0x30` of its own from state 3.
+ */
+export function doneRequest(subject: number): Uint8Array {
+  if (!Number.isInteger(subject) || subject < 0 || subject > 0xff) {
+    throw new ProtocolError(`done subject ${subject} is not a byte`);
+  }
+  return encodeRequest(ACK, [subject]);
+}
+
+/**
+ * The lengths to split `total` data bytes into, largest first.
+ *
+ * **A chunk's length has to be exactly encodable, which bounds this more than the report size
+ * does.** The length nibble encodes 0 to 7, 15, 31 and 63 and nothing else, and
+ * `nibbleForPayloadLength` refuses the rest rather than rounding, because the firmware takes the
+ * nibble as the number of bytes present. So a transfer of 71 bytes cannot be 63 and 8: it is 63, 7
+ * and 1.
+ *
+ * Greedy from the largest works and cannot strand a remainder, since every length from 1 to 7 is
+ * encodable, so whatever is left after the big steps is one packet. That is the whole argument for
+ * greedy being safe here, and it is why the test asserts every total up to a few thousand rather
+ * than a handful of cases.
+ */
+export function writeChunkLengths(total: number): number[] {
+  if (!Number.isInteger(total) || total <= 0) {
+    throw new ProtocolError(`a write of ${total} bytes is not a write`);
+  }
+  const out: number[] = [];
+  let left = total;
+  for (const step of [MAX_PAYLOAD, 31, 15]) {
+    while (left >= step) {
+      out.push(step);
+      left -= step;
+    }
+  }
+  if (left > 0) {
+    while (left > 7) {
+      out.push(7);
+      left -= 7;
+    }
+    out.push(left);
+  }
+  return out;
+}
+
+/**
+ * Every request of one flash write, in order: the announce, the data packets, the done.
+ *
+ * Pure, and separate from sending for two reasons. It is the derived protocol in executable form,
+ * so it is worth testing byte for byte with no device present, which is what
+ * `packages/usb/test/writes.test.ts` does. And a caller that wants to know what a write **would**
+ * send, which is what the rehearsal script prints before it is allowed to send anything, must be
+ * able to ask without a permission object.
+ *
+ * Building the packets is not permission to send them. `HarmonyRemote.writeFlash` decides that,
+ * through `rails.ts`.
+ */
+export function writeFlashRequests(address: number, data: Uint8Array): Uint8Array[] {
+  const out = [writeFlashRequest(address, data.length)];
+  let offset = 0;
+  for (const length of writeChunkLengths(data.length)) {
+    out.push(writeFlashDataRequest(data.subarray(offset, offset + length)));
+    offset += length;
+  }
+  if (offset !== data.length) {
+    throw new ProtocolError(`chunking covered ${offset} of ${data.length} bytes`);
+  }
+  out.push(doneRequest(WRITE_FLASH));
+  return out;
 }

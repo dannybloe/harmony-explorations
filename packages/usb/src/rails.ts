@@ -417,3 +417,37 @@ export function assertFirmwareWriteRefused(): never {
       'config files, and a bad firmware write has no recovery path',
   );
 }
+
+/**
+ * The named door for the first write this project has ever performed.
+ *
+ * `WRITES_ENABLED` is the build flag and every condition in `WritePermission` still applies; this
+ * is a second, single purpose door in front of the **rehearsal**, and it exists for the same reason
+ * `ODD_READ_EXPERIMENT` does. That reason is recorded there and is worth repeating: the odd read
+ * refusal was twice bypassed by editing `remote.ts` and editing it back, and a rail edited under
+ * time pressure with nothing in the tests to say so is worse than a door that announces itself.
+ *
+ * A first write is exactly the situation that invites such an edit. The recovery route it depends
+ * on is unproven, which is the whole reason the rehearsal writes bytes a remote already holds, so
+ * the operator has to say out loud that this is the run where that is understood.
+ *
+ * It is deliberately not per architecture and not per address: those are `assertFlashWriteAllowed`'s
+ * job, and a door that duplicated them would be a second copy of a rail, which is the state this
+ * repository's oldest rule forbids.
+ */
+export const FIRST_WRITE: boolean = process.env['HARMONY_FIRST_WRITE'] === '1';
+
+export function assertFirstWriteAllowed(): void {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!FIRST_WRITE) {
+    throw new RailError(
+      'the write rehearsal needs HARMONY_FIRST_WRITE=1 as well as HARMONY_ENABLE_WRITES=1: this ' +
+        'is the first write this project has performed, on an irreplaceable unit, and the restore ' +
+        'route it relies on has never been exercised',
+    );
+  }
+}
