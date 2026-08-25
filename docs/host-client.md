@@ -320,11 +320,18 @@ bare `400 Bad Request`, so the refusal happens before any credential is checked,
 every account fail the same way. The same hour, `LoginUser` on `svcs.myharmony.com` accepted one of
 those accounts and returned its household, twice.
 
-Two consequences worth the paragraph. Everything this project does speaks the JSON route and is
-unaffected; what the breakage removes, for as long as it lasts, is the **hand** route of adding
-appliances in their client. And an importer in FreeHarmony should speak `LoginUser` directly and never
-the browser SSO, because the SSO front end is the half already rotting. The shelf life argument this
-document and decision 11 lean on is now an observed event with a date rather than a prediction.
+**It cleared the same morning**: a later attempt signed in normally, with nothing changed on the
+machine in between. So the observation is an intermittent failure of their SSO front end and not a
+permanent one, and "already rotting" would overstate it. What stands is narrower and still worth
+having: the failure mode exists, it is theirs, it refuses before any credential is checked, and while
+it lasts every account fails identically.
+
+Two consequences worth the paragraph. Everything this project does speaks the JSON route and was
+unaffected even while the SSO refused; what such an outage removes, for as long as it lasts, is the
+**hand** route of adding appliances in their client. And an importer in FreeHarmony should speak
+`LoginUser` directly and never the browser SSO, because the SSO is the half that has now been seen
+failing. The shelf life argument this document and decision 11 lean on gained a dated observation,
+of an outage rather than of a death.
 
 ## The ledger: believed on the client's word alone
 
