@@ -847,6 +847,58 @@ export function pulsesOfLongToggle(t: LongToggleTimings, values: readonly bigint
 }
 
 /**
+ * A quaternary family's record shape, section 169: Logitech's `Galaxis 16 Bit Quad Toggle`.
+ *
+ * The `Quad` of the name is the base of the digits twice over: the catalogue writes the code's values
+ * in base 4, section 159, and the wire sends one digit per cell as one of **four** space lengths, two
+ * bits at a time. A cell is a space and then a constant mark, the record opens on its own longer mark,
+ * a constant start digit of 0 precedes the values, and the stored gap words close it. One copy per
+ * record. Every length is measured off 48 of 48 records of the compiled sample, each matching a stated
+ * triple exactly, 35 of the 36 codes the catalogue states appearing on the wire.
+ */
+export interface QuadTimings {
+  /** The record's opening mark, longer than the cell mark. */
+  readonly firstMark: number;
+  /** The constant mark closing every cell. */
+  readonly mark: number;
+  /** The four space lengths, indexed by the digit they carry: `spaces[0]` is digit 0. */
+  readonly spaces: readonly [number, number, number, number];
+  /** How many digits each stated value takes on the wire, in the order the values are stated. */
+  readonly digits: readonly number[];
+  /** The stored words of the closing silence, verbatim. */
+  readonly gap: readonly number[];
+}
+
+/**
+ * The pulses a quaternary record stores, word for word, the closing gap included.
+ *
+ * A cell is exactly one space word and one mark word and nothing here merges, so the emission is the
+ * storage. The start digit is emitted first and is not a value: it is 0 on every record measured.
+ */
+export function pulsesOfQuad(t: QuadTimings, values: readonly bigint[]): Pulse[] {
+  if (values.length !== t.digits.length) {
+    throw new Error(`a code of this family states ${t.digits.length} values`);
+  }
+  const out: Pulse[] = [{ mark: true, us: t.firstMark }];
+  const cell = (digit: number): void => {
+    out.push({ mark: false, us: t.spaces[digit]! });
+    out.push({ mark: true, us: t.mark });
+  };
+  cell(0); // the start digit
+  for (const [at, width] of t.digits.entries()) {
+    const value = values[at]!;
+    if (value >= 1n << BigInt(2 * width)) {
+      throw new Error(`value ${at} does not fit in ${width} quaternary digits`);
+    }
+    for (let i = width - 1; i >= 0; i -= 1) {
+      cell(Number((value >> BigInt(2 * i)) & 3n));
+    }
+  }
+  out.push(...t.gap.map((us) => ({ mark: false, us })));
+  return out;
+}
+
+/**
  * The pulses a biphase frame makes, one word per half cell, which is how a record stores them.
  *
  * **Unmerged on purpose.** Two adjacent half cells of one kind are one interval physically, and a config

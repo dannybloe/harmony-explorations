@@ -111,6 +111,23 @@ export interface StatedProtocol {
     readonly gap: readonly number[];
     readonly copies: number;
   };
+  /**
+   * The quaternary shape, set instead of the frame and biphase fields, section 169, one family.
+   *
+   * `Quad` in the family's name is the base of its digits twice over: the catalogue writes the
+   * values in base 4 and the wire sends one digit per cell as one of four space lengths, two bits at a
+   * time, each cell closed by the constant `mark`. A constant start digit of 0 precedes the values,
+   * `digits` says how many quaternary digits each stated value takes, and the stored `gap` words
+   * close the record. `pulsesOfQuad` in `irframe.ts` is the emitter and reproduces every record
+   * word for word, gap included.
+   */
+  readonly quad?: {
+    readonly firstMark: number;
+    readonly mark: number;
+    readonly spaces: readonly [number, number, number, number];
+    readonly digits: readonly number[];
+    readonly gap: readonly number[];
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -165,6 +182,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Thomson 12 Bit Toggle', periodNs: 29411, header: [0, 0], flat: 470, zero: 2040, one: 4570, carries: 'space', codes: 59, exact: 59, spread: 0, source: 'compiled' },
   { family: 'RCAV1 LF 24 Bit', periodNs: 26178, header: [3970, 3980], flat: 490, zero: 2010, one: 1010, carries: 'space', codes: 52, exact: 52, spread: 0, source: 'compiled' },
   { family: 'Philips RC5 13 Bit Toggle', periodNs: 27777, biphase: { mark: 889, space: 889, lead: [{ mark: true, us: 889 }], setIsMark: false }, codes: 51, exact: 51, spread: 0, source: 'compiled' },
+  { family: 'Galaxis 16 Bit Quad Toggle', periodNs: 27777, quad: { firstMark: 415, mark: 160, spaces: [275, 445, 610, 775], digits: [8, 1, 7], gap: [32767, 32767, 26716] }, codes: 48, exact: 48, spread: 0, source: 'compiled' },
   { family: 'JerroldO1 16 Bit', periodNs: 26315, header: [9000, 4520], flat: 495, zero: 2250, one: 4505, carries: 'space', codes: 47, exact: 47, spread: 0, source: 'compiled' },
   { family: 'Samsung 16 and 20 Bit', periodNs: 26315, header: [4500, 4480], flat: 495, zero: 500, one: 1495, carries: 'space', codes: 46, exact: 46, spread: 0, source: 'compiled' },
   { family: 'Philips Hurd 16 Bit LongToggle', periodNs: 27777, longToggle: { leader: [2662, 870], head: { mark: 468, space: 433, bits: 4 }, toggle: 867, data: { first: 440, second: 457, bits: 16 }, gap: [32767, 32767, 18866], copies: 3 }, codes: 46, exact: 46, spread: 0, source: 'compiled' },

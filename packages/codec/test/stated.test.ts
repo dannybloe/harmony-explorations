@@ -19,10 +19,10 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states thirty four entries, and what each is worth is its provenance', () => {
+test('the table states thirty five entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 34);
+  assert.equal(PROTOCOLS.length, 35);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -34,7 +34,7 @@ test('the table states thirty four entries, and what each is worth is its proven
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 25, 6]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 26, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -87,9 +87,9 @@ test('the table states thirty four entries, and what each is worth is its proven
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 33 of 34, the exception
+  // Every other entry reproduces every code of its own rows to the microsecond. 34 of 35, the exception
   // being the one loose entry named above.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 33);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 34);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
   // what the generator joining on the whole code bought. `Pioneer 32 Bit 2` and `Pioneer 32 Bit Dual`
@@ -139,6 +139,17 @@ test('the table states thirty four entries, and what each is worth is its proven
   // A long toggle row carries none of the frame fields, which is what makes it a shape and not a patch.
   assert.equal(longToggles[0]!.header, undefined);
   assert.equal(longToggles[0]!.biphase, undefined);
+
+  // **One family is quaternary on the wire, and its name said so twice**, section 169: the catalogue
+  // writes its values in base 4, section 159, and the wire sends one digit per cell as one of four
+  // space lengths. The digit counts partition its three values as address, toggle and payload.
+  const quads = PROTOCOLS.filter((one) => one.quad !== undefined);
+  assert.deepEqual(quads.map((one) => one.family), ['Galaxis 16 Bit Quad Toggle']);
+  const quad = quads[0]!.quad!;
+  assert.deepEqual([...quad.spaces], [275, 445, 610, 775], 'four space lengths, ascending as digits');
+  assert.deepEqual([...quad.digits], [8, 1, 7], 'eight address digits, the toggle, seven payload digits');
+  assert.deepEqual([quads[0]!.codes, quads[0]!.exact], [48, 48], 'whole records, gap words included');
+  assert.equal(quads[0]!.header, undefined, 'a shape of its own, not a patched frame');
 
   // **Two families carry their bits the other way up, and the table says so by its numbers**, section
   // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.

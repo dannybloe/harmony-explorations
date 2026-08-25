@@ -133,7 +133,7 @@ family in their database. The library's own reader takes every one of the 2921 d
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **28 of the catalogue's 33 families**, which is 5085 of 5219 commands. It held 15 and
+The table holds **29 of the catalogue's 33 families**, which is 5189 of 5219 commands. It held 15 and
 4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
 from phase 3's splitting rule rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -202,7 +202,10 @@ durations in the result are the ones their generator emits.
       their analyser's word alone, section 160
 - [ ] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,
       every entry exact on its own records, and the covered share is asserted in a test against the
-      recorded census rather than printed
+      recorded census rather than printed. **At 29 and 5189 the command floor is passed and the family
+      count is not**: the four left are `Panasonic 16 Bit` (26), `MemorexV2 32 Bit Dual` (2) and
+      `Sharp 48 Bit` (1), the latter two refused deliberately by the one length rail, and
+      `Saitek 11 Bit` (1). The census assertion is still owed
 
 ## Phase 3: a whole command, not just its frame
 
@@ -234,8 +237,10 @@ one tail shape across every record. What varies is the closing silence.
       family's real inter frame gap sits at 8460. Each segment is read at its own scale instead, 42 of
       42 and 32 of 32 byte for byte. `Philips Hurd 16 Bit LongToggle` followed, section 168, a fourth
       row shape: three regions under one bit rule, a set bit being the cell whose first half is silence,
-      and its 46 records reproduce **whole, copies and gaps included, word for word**. The table is
-      **34 entries, 28 of 33 families and 5085 of 5219 commands**
+      and its 46 records reproduce **whole, copies and gaps included, word for word**.
+      `Galaxis 16 Bit Quad Toggle` closed the day, section 169, a fifth row shape: quaternary on the
+      wire as well as in the catalogue, four space lengths sending two bits per cell, 48 of 48 records
+      whole. The table is **35 entries, 29 of 33 families and 5189 of 5219 commands**
 - [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
       measurement: a lead in is a mark and a long space, and on several families that space is over the
       threshold, so a rule with no floor cut the header off as its own segment and every frame then read

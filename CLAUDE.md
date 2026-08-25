@@ -916,21 +916,22 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Thirty four entries, six of them measured on both routes, and each
+                                Thirty five entries, six of them measured on both routes, and each
                                 carries the route it came from, since a rhythm two independent routes
                                 agree on is worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
                                 than allowed for: a `[0, 0]` header means a protocol with no lead in, and
                                 `firstMark` a longer opening burst, which Sharp has and which a reader
-                                demanding one flat length throughout refuses. **A row has one of four
-                                shapes**, sections 162, 166 and 168: five durations and a carrier
+                                demanding one flat length throughout refuses. **A row has one of five
+                                shapes**, sections 162, 166, 168 and 169: five durations and a carrier
                                 convention; a half cell, a lead in and a polarity, for a biphase family
                                 where the bit is which half of the cell carries; the five durations
                                 plus section widths, for a family sending one value in sections whose
-                                final bits ride in a structural space and in the closing silence; and
-                                the long toggle shape, three regions under the one rule that a set bit
+                                final bits ride in a structural space and in the closing silence; the long toggle shape, three regions under the one rule that a set bit
                                 is the cell whose first half is silence, reproduced whole with its
-                                copies and gaps. **The row type lives in the generator's template**, in
+                                copies and gaps; and the quaternary shape, four space lengths sending
+                                two bits per cell, the same base 4 the family's catalogue digits are
+                                written in. **The row type lives in the generator's template**, in
                                 bin/protocols.ts, because src/protocols.ts is generated and a hand
                                 edit to it survives exactly until the next --write, which section 168
                                 paid to relearn. A biphase reading has
@@ -947,7 +948,7 @@ packages/codec/                 TS: the one config codec, container through comp
                                 set bit is its shorter space, and a test looks for that shape rather
                                 than for the name.
                                 **A table entry says where its durations came from**: three off the
-                                corpus, twenty five off a configuration Logitech's own compiler produced, and
+                                corpus, twenty six off a configuration Logitech's own compiler produced, and
                                 six off both, which is the column to look at first. The fourth value,
                                 a rhythm taken from published documentation and judged only by their
                                 analyser, is deliberately **empty**: the one entry that had it was out

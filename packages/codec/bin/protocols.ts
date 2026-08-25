@@ -35,8 +35,9 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
 import { pulsesOfWords } from '../src/irda.ts';
 import {
   biphaseFrames, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark, mergedIntervals,
-  pulsesOfBiphaseFrame, pulsesOfFrame, pulsesOfLongToggle, timingsOfBiphase,
+  pulsesOfBiphaseFrame, pulsesOfFrame, pulsesOfLongToggle, pulsesOfQuad, timingsOfBiphase,
   timingsOfFrame, type BiphaseTimings, type FrameTimings, type LongToggleTimings, type Pulse,
+  type QuadTimings,
 } from '../src/irframe.ts';
 
 if (LAB === undefined) {
@@ -86,6 +87,9 @@ interface Measured {
   /** The long toggle shape and the record's three wire values, section 168. Set instead of `timings`. */
   longToggle?: LongToggleTimings;
   ltValues?: readonly [bigint, bigint, bigint];
+  /** The quaternary shape and the record's stated values, section 169. Set instead of `timings`. */
+  quad?: QuadTimings;
+  qValues?: readonly bigint[];
   bits: number;
   value: bigint;
   /** A pulse distance or pulse width family's five durations, absent on a biphase one. */
@@ -104,6 +108,11 @@ interface Measured {
  * Keyed without it each Sony family is one set, and the closing space is a consequence to be computed.
  */
 function key(m: Measured): string {
+  const q = m.quad;
+  if (q !== undefined) {
+    return `quad ${q.firstMark}/${q.mark} spaces ${q.spaces.join('/')} `
+      + `digits ${q.digits.join('+')} gap ${q.gap.join('+')}`;
+  }
   const lt = m.longToggle;
   if (lt !== undefined) {
     return `longtoggle ${lt.leader.join('/')} head ${lt.head.mark}/${lt.head.space}x${lt.head.bits} `
@@ -664,6 +673,50 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
           landed = true;
         }
       }
+      // **The quaternary reading, section 169**, the same trigger and the same closure discipline: the
+      // wire digits partitioned by the stated values' own digit counts have to equal a stated triple.
+      if (!landed && owner.sectioned.some((one) => one.values.length > 1)) {
+        const q = quadReading(d.train);
+        if (q !== undefined) {
+          const wire = q.values.map(Number);
+          const code = owner.sectioned.find((one) => {
+            // Partition the wire digits by each stated value's own quaternary digit count. The counts
+            // come from the catalogue's raw digit strings, which `statedCode` preserves as values, so
+            // they are recomputed here as the smallest count that holds the value, plus the family's
+            // fixed field widths where the value is small. The honest test is the partition summing.
+            const widths = one.values.map((v) => Math.max(1, Math.ceil(v.toString(4).length)));
+            // A fixed field can be wider than its value needs, so try to grow the head fields to
+            // absorb the slack, left to right, which is how leading zeros sit in a fixed field.
+            const slack = wire.length - widths.reduce((a, b) => a + b, 0);
+            if (slack < 0) return false;
+            widths[0]! += slack;
+            let cursor = 0;
+            for (const [i, width] of widths.entries()) {
+              const field = wire.slice(cursor, cursor + width)
+                .reduce((v, digit) => v * 4n + BigInt(digit), 0n);
+              if (field !== one.values[i]) return false;
+              cursor += width;
+            }
+            return cursor === wire.length;
+          });
+          if (code !== undefined) {
+            // The stated digit counts are the shape's, so the emitter needs no slack rule.
+            const widths: number[] = [];
+            let rest = wire.length;
+            for (const v of code.values.slice().reverse()) {
+              const need = Math.max(1, v.toString(4).length);
+              widths.unshift(need); rest -= need;
+            }
+            widths[0]! += rest;
+            out.push({ family: code.family, source: 'compiled', joinedBy: 'value',
+              periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
+              bits: 2 * wire.length,
+              value: wire.reduce((v, digit) => (v << 2n) | BigInt(digit), 0n),
+              quad: { ...q.shape, digits: widths }, qValues: code.values });
+            landed = true;
+          }
+        }
+      }
       // The deferred width match, taken where no biphase reading landed on a number.
       if (!landed && byWidthOnly !== undefined) { out.push(byWidthOnly); landed = true; }
       // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
@@ -846,13 +899,52 @@ function longToggleReading(train: readonly Pulse[])
   };
 }
 
+/**
+ * The quaternary reading, section 169, tried where an appliance states three values at one width.
+ *
+ * Structural like the long toggle one: the record must be one opening mark, cells of a space and a
+ * constant mark whose spaces take exactly four lengths, a constant start digit of 0, and digit counts
+ * that partition into the stated values. The digit order is the four space lengths ascending, which is
+ * the assignment the closure confirms on every record.
+ */
+function quadReading(train: readonly Pulse[])
+  : { shape: QuadTimings; values: bigint[] } | undefined {
+  const body = [...fromFirstMark(train.filter((one) => one.us >= 100))];
+  const opening = body[0];
+  if (opening === undefined || !opening.mark) return undefined;
+  // The cells, up to the first space that is not one of the four digit lengths.
+  const spaces: number[] = [];
+  const marks = new Set<number>();
+  let at = 1;
+  const lengths = new Set<number>();
+  while (at + 1 < body.length) {
+    const space = body[at]!, mark = body[at + 1]!;
+    if (space.mark || !mark.mark) break;
+    if (space.us >= 10000) break;
+    spaces.push(space.us); marks.add(mark.us); lengths.add(space.us);
+    at += 2;
+  }
+  if (lengths.size !== 4 || marks.size !== 1) return undefined;
+  const gap = body.slice(at);
+  if (gap.some((one) => one.mark)) return undefined;
+  const sorted = [...lengths].sort((a, b) => a - b) as [number, number, number, number];
+  const digits = spaces.map((us) => sorted.indexOf(us));
+  if (digits[0] !== 0) return undefined;
+  return {
+    shape: { firstMark: opening.us, mark: [...marks][0]!, spaces: sorted,
+      digits: [], gap: gap.map((one) => one.us) },
+    values: digits.slice(1).map((d) => BigInt(d)),
+  };
+}
+
 function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   const t = shape.timings;
   const b = shape.biphase;
   // A pulse distance shape cannot answer for a biphase record or the other way round, and the two
   // never mix inside one entry, so this is a guard rather than a case.
   if ((shape.longToggle === undefined) !== (m.longToggle === undefined)) return false;
-  if (shape.longToggle === undefined) {
+  if ((shape.quad === undefined) !== (m.quad === undefined)) return false;
+  if (shape.longToggle === undefined && shape.quad === undefined) {
     if ((t === undefined) !== (m.timings === undefined)) return false;
     if (t !== undefined && t.carries !== m.timings!.carries) return false;
   }
@@ -863,7 +955,12 @@ function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   let built: Pulse[];
   let original: readonly Pulse[];
   const train = fromFirstMark(pulsesOfWords(words));
-  if (shape.longToggle !== undefined) {
+  if (shape.quad !== undefined) {
+    // The whole record word for word, gap included, like the long toggle shape, section 169.
+    if (m.qValues === undefined) return false;
+    try { built = pulsesOfQuad(shape.quad, m.qValues); } catch { return false; }
+    original = train.slice(0, built.length);
+  } else if (shape.longToggle !== undefined) {
     // Every copy and every gap, word for word and unmerged, which is the strongest reproduction in
     // this file: word boundaries are part of the claim, section 168. What stays outside it is the
     // leading silence, like every entry here, and the record's closing terminator pair of 1 and 0.
@@ -913,6 +1010,8 @@ interface Entry {
   biphase?: BiphaseTimings;
   /** Set instead of both where the family is the long toggle shape, section 168. */
   longToggle?: LongToggleTimings;
+  /** Set instead of all where the family is quaternary on the wire, section 169. */
+  quad?: QuadTimings;
   period?: number;
   codes: number;
   exact: number;
@@ -1029,6 +1128,7 @@ for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - 
     ...(shape.timings === undefined ? {} : { timings: shape.timings }),
     ...(shape.biphase === undefined ? {} : { biphase: shape.biphase }),
     ...(shape.longToggle === undefined ? {} : { longToggle: shape.longToggle }),
+    ...(shape.quad === undefined ? {} : { quad: shape.quad }),
     ...(periods.get(entry) === undefined ? {} : { period: periods.get(entry)! }),
     codes: list.length,
     exact: list.filter((m) => reproduces(m, shape)).length,
@@ -1182,6 +1282,23 @@ export interface StatedProtocol {
     readonly gap: readonly number[];
     readonly copies: number;
   };
+  /**
+   * The quaternary shape, set instead of the frame and biphase fields, section 169, one family.
+   *
+   * \`Quad\` in the family's name is the base of its digits twice over: the catalogue writes the
+   * values in base 4 and the wire sends one digit per cell as one of four space lengths, two bits at a
+   * time, each cell closed by the constant \`mark\`. A constant start digit of 0 precedes the values,
+   * \`digits\` says how many quaternary digits each stated value takes, and the stored \`gap\` words
+   * close the record. \`pulsesOfQuad\` in \`irframe.ts\` is the emitter and reproduces every record
+   * word for word, gap included.
+   */
+  readonly quad?: {
+    readonly firstMark: number;
+    readonly mark: number;
+    readonly spaces: readonly [number, number, number, number];
+    readonly digits: readonly number[];
+    readonly gap: readonly number[];
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -1298,6 +1415,12 @@ if (write) {
       return `${head}biphase: { mark: ${b.mark}, space: ${b.space}, `
         + `${b.firstMark === undefined ? '' : `firstMark: ${b.firstMark}, `}`
         + `lead: [${lead}], setIsMark: ${b.setIsMark} },${tail}`;
+    }
+    const q = e.quad;
+    if (q !== undefined) {
+      return `${head}quad: { firstMark: ${q.firstMark}, mark: ${q.mark}, `
+        + `spaces: [${q.spaces.join(', ')}], digits: [${q.digits.join(', ')}], `
+        + `gap: [${q.gap.join(', ')}] },${tail}`;
     }
     const lt = e.longToggle;
     if (lt !== undefined) {

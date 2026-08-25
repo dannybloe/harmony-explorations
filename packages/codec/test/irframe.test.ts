@@ -30,6 +30,7 @@ import {
 import type { FrameTimings, Pulse } from '../src/irframe.ts';
 import { biphaseFrames, frameKey, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark,
          irFrame, irFrames, mergedIntervals, pulsesOfFrame, pulsesOfBiphaseFrame, pulsesOfLongToggle,
+         pulsesOfQuad,
          timingsOfBiphase,
          timingsOfFrame }
   from '../src/irframe.ts';
@@ -1355,4 +1356,23 @@ test('a long toggle record is emitted whole, word for word, and one bit rule cov
   assert.deepEqual(copy.slice(-3).map((p) => p.us), [32767, 32767, 18866]);
   // Three values, exactly: the family's codes state three and the emitter refuses any other shape.
   assert.throws(() => pulsesOfLongToggle(t, [0x7n, 0x0n]), /three values/);
+});
+
+test('a quaternary record sends two bits per space, and the emitter refuses what no digit can say', () => {
+  // Section 169, Galaxis 16 Bit Quad Toggle: four space lengths are the digits 0 to 3, a constant mark
+  // closes every cell, a start digit of 0 precedes the values, and the gap words are stored verbatim.
+  const t = { firstMark: 415, mark: 160, spaces: [275, 445, 610, 775] as const, digits: [8, 1, 7],
+    gap: [32767, 32767, 26716] };
+  const built = pulsesOfQuad(t, [0x2340n, 0x0n, 0x2601n]);
+  // One opening mark, a start cell, sixteen value cells, three gap words: all word counts exact,
+  // because a cell is one space word and one mark word and nothing merges.
+  assert.equal(built.length, 1 + 2 * (1 + 8 + 1 + 7) + 3);
+  assert.deepEqual(built.slice(0, 7).map((p) => `${p.mark ? '+' : '-'}${p.us}`),
+    // the start digit, then 0x2340's leading quaternary digits 0, 2, 0: spaces 275, 610, 275
+    ['+415', '-275', '+160', '-275', '+160', '-610', '+160']);
+  assert.deepEqual(built.slice(-3).map((p) => p.us), [32767, 32767, 26716]);
+  // A value too wide for its stated digit count is a refusal, not a wider cell.
+  assert.throws(() => pulsesOfQuad(t, [0x2340n, 0x4n, 0x2601n]), /does not fit in 1 quaternary/);
+  // And the family states three values, exactly.
+  assert.throws(() => pulsesOfQuad(t, [0x2340n, 0x0n]), /states 3 values/);
 });

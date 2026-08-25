@@ -22842,3 +22842,30 @@ false pass stays unexplained and the control is what makes it safe to proceed.
 The table stands at 34 entries, **28 of 33 catalogue families, 5085 of 5219 commands**. Left:
 `Galaxis 16 Bit Quad Toggle` (104), `Panasonic 16 Bit` (26), and the three of one or two commands,
 `MemorexV2 32 Bit Dual`, `Sharp 48 Bit`, `Saitek 11 Bit`.
+
+## 169. Galaxis is quaternary on the wire too, and its name said so twice
+
+25 August 2026. Section 159 read `Quad` in `Galaxis 16 Bit Quad Toggle` as the base of the catalogue's
+digits, which unlocked reading its codes; the wire turns out to say the same word a second way. A record
+of the Microsoft VIP2250 is one opening mark of 415, then cells of a space and a constant 160 mark where
+the space takes one of exactly **four** lengths, 275, 445, 610 and 775, and then the stored gap words
+32767, 32767 and 26716 verbatim. One copy per record. Each space is a quaternary digit, two bits, the
+lengths ascending as the digits 0 to 3.
+
+**The digits on the wire are the catalogue's own digit string.** Seventeen cells: a constant start digit
+of 0, the eight digits of the first stated value, the toggle digit, and the seven digits of the payload,
+exactly as the catalogue writes them. The closure is exact and two sided: **48 of 48 records match a
+stated triple**, 35 of the 36 codes the catalogue states appear on the wire, the 36th simply is not in
+the config, and the shape is byte identical across every record including the gap words. The toggle is 0
+throughout, the compiler's resting value, as it was for the long toggle family.
+
+**A fifth row shape, `quad`**, because two bits per cell fits neither the five duration frame, whose
+carried half takes two lengths by definition, nor anything else here. `pulsesOfQuad` emits the whole
+record word for word, gap included, and refuses a value that does not fit its stated digit count, since
+widening a cell is not something any record shows. The reading in the generator is structural like the
+long toggle one: exactly four space lengths, one mark length, a start digit of 0, and the partition of
+the wire digits by the stated values' own digit counts has to land on a stated triple.
+
+The table stands at 35 entries, **29 of 33 catalogue families, 5189 of 5219 commands**. Left:
+`Panasonic 16 Bit` (26 commands), and the three of one or two, `MemorexV2 32 Bit Dual` and
+`Sharp 48 Bit`, both refused deliberately by the one length rail, and `Saitek 11 Bit`.
