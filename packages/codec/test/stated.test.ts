@@ -292,12 +292,23 @@ test('a catalogue code is a grammar, and reading one slot of it reads half a com
   assert.deepEqual(statedCode('G:Sharp 15 Bit:()(0x1BAC_0x1853)():3')?.frames.map((f) => f.index),
                    [0, 0], 'both zero where the two frames are the same width');
 
-  // **A value too big for the width its family names is a refusal.** One family in the census fails it,
-  // all 69 of its codes, and the cause is that its digits are quaternary rather than hexadecimal, so
-  // reading them as hexadecimal would emit a command three times too long that looks perfectly valid.
-  assert.equal(statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x02031000_1x0_2x2123201)():3'), undefined);
-  // The negative that makes that check mean something: the same shape with values that do fit is read.
-  assert.notEqual(statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x0203_1x0_2x2123)():3'), undefined);
+  // **`Quad` in a family name is the base of its digits, two bits each.** This code was refused for
+  // weeks, and rightly: read as hexadecimal its first value needs 26 bits against the 16 its name
+  // states, so it would have emitted a command three times too long that looks perfectly valid. Read
+  // in base 4 the eight digits are exactly 16 bits. The value is asserted rather than the fact that
+  // something came back, since the whole error was a plausible wrong number.
+  const quad = statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x02031000_1x0_2x2123201)():3');
+  assert.deepEqual(quad?.frames, [{ value: 0x2340n, bits: 16, index: 0 },
+                                  { value: 0x0n, bits: 16, index: 1 },
+                                  { value: 0x26E1n, bits: 16, index: 2 }]);
+  // Which is not what a hexadecimal reading gives, and that is the point of the assertion above.
+  assert.notEqual(quad?.frames[0]?.value, 0x02031000n);
+  // **A digit outside 0 to 3 on a quaternary family is a refusal**, not a value read in whichever base
+  // accepts it. Nothing in the census has one, so this is the guard rather than a measurement.
+  assert.equal(statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x0207)():3'), undefined);
+  // And the width check that caught the error in the first place still bites on this family: a value
+  // needing more than its 16 bits is refused, base or no base. Eight digits is the ceiling here.
+  assert.equal(statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x123123123)():3'), undefined);
 
   // And the rest of the refusals, which is what stops a malformed code becoming a plausible one.
   assert.equal(statedCode('not their notation at all'), undefined);

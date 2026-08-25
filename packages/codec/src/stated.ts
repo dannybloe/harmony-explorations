@@ -88,6 +88,13 @@ export interface StatedCode {
 /** The words seen, as a closed set, so a fourth one is a refusal rather than a guess. */
 const WORDS = new Set<string>(['Start', 'Repeat', 'Trailer']);
 
+/** A digit string in the base its family states, which is 16 everywhere but the one quaternary family. */
+function valueOf(digits: string, base: number): bigint {
+  if (base === 16) return BigInt(`0x${digits}`);
+  const radix = BigInt(base);
+  return [...digits].reduce((total, one) => total * radix + BigInt(parseInt(one, base)), 0n);
+}
+
 /**
  * Read one of their catalogue codes, or `undefined` where the shape is not one this has seen.
  *
@@ -98,14 +105,26 @@ const WORDS = new Set<string>(['Start', 'Repeat', 'Trailer']);
  * that is what makes the pairing a reading rather than a convention: a wrong pairing would put a 20 bit
  * number in a 16 bit frame somewhere.
  *
- * **A value that does not fit its width is a refusal, not a wider frame.** Exactly one family in the
- * census fails the check, `Galaxis 16 Bit Quad Toggle`, all 69 of its codes, whose three values need 26,
- * 1 and 26 bits against the 16 the name states. The cause is legible and deliberately not implemented:
- * every digit of every Galaxis value is 0, 1, 2 or 3, in 69 of 69 codes, so "Quad" is a quaternary
- * digit string and each digit is two bits, which makes its eight digit value exactly the 16 bits the
- * name claims. Reading those digits as hexadecimal is what overstates them. Refusing costs 69 codes of
- * 2921 and reading them as hexadecimal would emit 69 commands that look right and are three times too
- * long.
+ * **A value that does not fit its width is a refusal, not a wider frame.** That check is what found the
+ * one family in the census whose digits are not hexadecimal, and it is now what confirms the fix rather
+ * than what refuses it: see the base below.
+ *
+ * **`Quad` in a family name is the base of its digits, not a count of its frames**, and reading it as
+ * hexadecimal overstated every one of its values. `Galaxis 16 Bit Quad Toggle` is the only family in the
+ * census that names it, and under base 16 its three values need 26, 1 and 26 bits against the 16 the name
+ * states, so all 69 of its codes were refused. Under base **4**, two bits a digit, all 69 fit, and their
+ * digit counts are 1, 7 and 8, an eight digit value being exactly the 16 bits the name claims. Three
+ * things hold the reading up. Every digit of every value of every Galaxis code is 0, 1, 2 or 3, 69 of 69.
+ * The width check goes from 0 of 69 fitting to 69 of 69, which is the same falsifier that caught the
+ * error. And `Quad` cannot be a frame count here, because these codes state **three** values, where the
+ * four families naming `Dual` state two.
+ *
+ * **The name is the discriminator and the digit set is only corroboration**, which is measured rather
+ * than chosen: six families have codes whose digits all happen to be 0 to 3, and Galaxis is the only one
+ * where that holds for every code, so a reader keyed on the digits would have to guess on a `Sony 12 Bit`
+ * code that uses no digit above 3. A second family naming `Quad` would have to be measured before this
+ * is assumed to be about the word in general; until then the width check is what would catch it, since a
+ * quaternary reading of hexadecimal digits refuses on the digit set alone.
  *
  * It also leaves one thing open and says so: a family naming one width and stating two values, which
  * "Samsung 38 Bit" does, could mean 38 bits per frame or 38 across the pair. Both fit, because its
@@ -126,6 +145,9 @@ export function statedCode(keyCode: string): StatedCode | undefined {
   const stated = /(?:^|\s)((?:\d+\s*(?:and\s+)?)+)Bit/i.exec(family);
   const widths = [...(stated?.[1] ?? '').matchAll(/\d+/g)].map((one) => Number(one[0]));
   if (widths.length === 0 || widths.some((one) => one === 0)) return undefined;
+  // **The base the digits are written in, out of the family's own name**, like the widths. Two bits a
+  // digit where the name says `Quad`, four everywhere else.
+  const base = /\bQuad\b/i.test(family) ? 4 : 16;
   // Read in slot order and keep it, since the order is the order the frames go out in.
   const raw: ({ value: bigint; index: number } | StatedWord)[] = [];
   for (const slot of [parsed[2]!, parsed[3]!, parsed[4]!]) {
@@ -134,7 +156,11 @@ export function statedCode(keyCode: string): StatedCode | undefined {
       if (WORDS.has(part)) { raw.push(part as StatedWord); continue; }
       const value = /^(\d)x([0-9A-Fa-f]+)$/.exec(part);
       if (value === null) return undefined;
-      raw.push({ value: BigInt(`0x${value[2]!}`), index: Number(value[1]) });
+      const digits = value[2]!;
+      // A quaternary family's digits are 0 to 3 and nothing else, so a digit outside that is a refusal
+      // rather than a value read in whichever base happens to accept it.
+      if (base === 4 && !/^[0-3]+$/.test(digits)) return undefined;
+      raw.push({ value: valueOf(digits, base), index: Number(value[1]) });
     }
   }
   const values = raw.filter((one): one is { value: bigint; index: number } => typeof one !== 'string');

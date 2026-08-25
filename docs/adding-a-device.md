@@ -106,7 +106,7 @@ Named so that nobody adds them to the critical path.
 FreeHarmony carried its own parser for Logitech's code notation, written before section 159 read that
 notation as a grammar. Measured against the 5219 commands in the wide census: it read **1221**, and on
 **60 of 102 appliances it read nothing at all**, including every Toshiba code, which is the largest
-family in their database. The library's own reader takes 2852 of 2921 distinct codes.
+family in their database. The library's own reader takes every one of the 2921 distinct codes.
 
 - [x] `src/main/logitech/client.ts` in FreeHarmony calls `statedCode` from `@harmony/codec`, through one
       exported conversion `catalogueCode`, and `protocol.ts`'s private `KEY_CODE` regex, `StatedCode` type
@@ -126,8 +126,10 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
       frame field, so those keep their family and their width and no value. Storing the first would be a
       command that looks whole and sends half of itself, which is exactly what the old reader did to
       `Pioneer 32 Bit 2`. Widening the stored shape is phase 4
-- [x] **check**: the number of commands FreeHarmony parses out of the recorded census is 2852 of 2921
-      distinct codes, and the one family refused is `Galaxis 16 Bit Quad Toggle` by name
+- [x] **check**: the number of commands FreeHarmony parses out of the recorded census is 2921 of 2921
+      distinct codes and 33 of 33 families, with no family refused. It was 2852 and 32 until the
+      quaternary base landed on 24 August 2026, and the test names the refused families as a set rather
+      than counting them, so a family falling out again says which one
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
@@ -189,9 +191,13 @@ durations in the result are the ones their generator emits.
       476 catalogue commands rather than the handful it looked like
 - [ ] `make protocols` measures each new family and each entry reproduces every one of its own records
       byte for byte, with `source: 'compiled'`
-- [ ] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is
+- [x] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is
       what makes its eight digit value the 16 bits its name states, section 159. Its refusal is replaced
-      by a reading, not widened
+      by a reading, not widened: `Quad` is read out of the family name exactly as the widths are, and the
+      width check that refused all 69 of its codes accepts all 69 under base 4, so nothing was relaxed to
+      let them in. A digit outside 0 to 3 on such a family stays a refusal. **This buys the reader and not
+      the table**: its 104 commands are now readable and no appliance of that family has been compiled, so
+      it has no measured rhythm and cannot yet be emitted
 - [ ] the three families whose analyser answer disagreed with their compiler stay out of the table on
       their analyser's word alone, section 160
 - [ ] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,

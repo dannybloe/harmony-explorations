@@ -469,10 +469,11 @@ Section 145, and all of it recomputed by `tests/test_host_client.py` rather than
   trailing number is 3 in every code. A slot holds items joined by `_`, and an item is a value written
   with a one digit position prefix, or one of the three words `Start`, `Repeat` and `Trailer`, which name
   a standard frame of the protocol instead of stating it. Six item sequences occur and no seventh. The
-  family's name states one width per value, checked on 3499 values with none exceeding its width; the one
-  family that fails, `Galaxis 16 Bit Quad Toggle`, writes its values in **quaternary** digits, so reading
-  them as hexadecimal overstates them threefold. `packages/codec/src/stated.ts` is the reader and
-  refuses those 69 codes rather than guessing.
+  family's name states one width per value, checked on 3706 values with none exceeding its width. It also
+  states the **base** those digits are written in: `Galaxis 16 Bit Quad Toggle` writes its values in
+  quaternary, two bits a digit, and reading them as hexadecimal overstated them threefold and refused all
+  69. `packages/codec/src/stated.ts` reads the base out of the name, so the notation reads whole, 2921 of
+  2921 distinct codes and 33 of 33 families.
 * **Their analyser recognises a rhythm at a bit count, from its own list**, section 159, which bounds how
   far it can be used as a judge. It accepts the Samsung lead in at 32 bits, naming it `GoVideoO1 32 Bit`,
   and refuses the same lead in at 16, 20 and 38 bits, which is where their own catalogue states those

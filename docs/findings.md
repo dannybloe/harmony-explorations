@@ -21955,19 +21955,31 @@ have needed one.
 
 **A family's name states one width per frame, and the closure is arithmetic.** "Samsung 16 and 20 Bit"
 gives its first frame 16 bits and its second 20; "MitsubishiO1 Dual 8 16 Bit" is the same shape with the
-conjunction left out. The check is that **no value exceeds the width it is given**, over 2852 codes and
-3499 values, and it is a real check rather than a convention because a wrong pairing puts a number in a
+conjunction left out. The check is that **no value exceeds the width it is given**, over 2921 codes and
+3706 values, and it is a real check rather than a convention because a wrong pairing puts a number in a
 frame too narrow to hold it. The width run has to be anchored at a word boundary, which is not tidiness:
 "JVCO1 16 Bit" ends its family name in a digit, so an unanchored run reads "1 16" as two widths and then
 refuses a perfectly good code.
 
-**Exactly one family fails that check and it is refused rather than widened**, `Galaxis 16 Bit Quad
-Toggle`, all 69 of its codes, whose three values need 26, 1 and 26 bits against the 16 the name states.
-The cause is legible and deliberately not implemented: **every digit of every Galaxis value is 0, 1, 2 or
-3**, in 69 of 69, so "Quad" is a quaternary digit string at two bits a digit, which makes its eight digit
-value exactly the 16 bits the name claims. Reading those digits as hexadecimal is what overstates them,
-and it would emit 69 commands three times too long that look perfectly valid. So the parser reads 2852 of
-2921 distinct codes and 32 of 33 families, and the 69 it refuses are refused for a stated reason.
+**Exactly one family failed that check**, `Galaxis 16 Bit Quad Toggle`, all 69 of its codes, whose three
+values need 26, 1 and 26 bits against the 16 the name states when their digits are read as hexadecimal.
+It was refused rather than widened, and the reason was stated at the time: **every digit of every Galaxis
+value is 0, 1, 2 or 3**, in 69 of 69, so "Quad" is a quaternary digit string at two bits a digit, which
+makes its eight digit value exactly the 16 bits the name claims. Widening the frame instead would have
+emitted 69 commands three times too long that look perfectly valid.
+
+**That reading landed on 24 August 2026 and the width check is now what confirms it**, which is the shape
+worth noting: the same arithmetic that refused all 69 accepts all 69 once the base is right, 0 of 69
+against 69 of 69, so nothing had to be relaxed. `Quad` is read out of the family name exactly as the
+widths are, and a digit outside 0 to 3 on such a family is a refusal rather than a value read in whichever
+base accepts it. Three things separate it from a convenient guess. Its codes state **three** values where
+the four families naming `Dual` state two, so `Quad` cannot be a frame count here. The digit set is
+corroboration and **not** the discriminator, because six families have codes whose digits all happen to
+fall in 0 to 3 and Galaxis is the only one where that holds for every code, so a reader keyed on the
+digits would have to guess on a `Sony 12 Bit` code that uses no digit above 3. And a second family naming
+`Quad` would have to be measured before the word is assumed to generalise. **So the notation now reads
+whole**: 2921 of 2921 distinct codes and 33 of 33 families, 5219 of 5219 commands in the wide census, with
+nothing refused.
 
 **The position digit is a position and nothing further.** Across every code the digits, in order, form
 exactly four runs: `0`, `00`, `01` and `012`. So it is 0 on a code stating one value, and on a code
@@ -22043,7 +22055,7 @@ than a decoder's opinion, it needs no guessing at all, and it writes to the acco
 rather than a run.
 
 **The state of writing infrared from their catalogue**, after this: the notation is read, 2852 of 2921
-codes and 32 of 33 families; the bit layout is solved; and the rhythm is known for **six** families,
+codes and 32 of 33 families at the time and all 2921 and 33 since the quaternary base landed; the bit layout is solved; and the rhythm is known for **six** families,
 five measured off the corpus and one documented and judged. The nine of section 158 was counted against
 a catalogue of fourteen families, which the wider census puts at 33.
 

@@ -345,8 +345,10 @@ base slot 5 out of a compiled config, still needs none of it.
 **Their notation is read as a grammar now and their analyser is not a general decoder**, section 159, and
 both matter to an importer. A code states its frames in **two** slots, either of which may hold a word
 naming a standard behaviour rather than a value, and reading one slot refused every Toshiba code in the
-catalogue and sent half a command on the families that fill both. 2852 of 2921 distinct codes read, 32 of
-33 families, and the 69 refused are one family whose digits are quaternary rather than hexadecimal.
+catalogue and sent half a command on the families that fill both. **The notation reads whole**, 2921 of
+2921 distinct codes and 33 of 33 families, since the one family that was refused turned out to state its
+digits in **base 4**: `Quad` in a family name is the base of its digits and not a count of its frames, and
+the same width check that refused all 69 of its codes accepts all 69 once the base is right.
 **Eighteen families have a rhythm measured off Logitech's own compiler**, sections 160 to 163, and that route is
 open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
