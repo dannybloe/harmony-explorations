@@ -35,6 +35,16 @@ import {
   statedCode,
   stateVariables,
   trailerAgrees,
+  archSlot,
+  characterMap,
+  composeDeviceScreen,
+  modePages,
+  modeRecords,
+  modeTable,
+  pageListCopies,
+  renderVariants,
+  screenStrings,
+  taggedList,
 } from '../src/index.ts';
 
 /**
@@ -156,4 +166,158 @@ test('composing refuses what cannot be sent', skipUnless('one_config'), () => {
                 ComposeError);
   assert.throws(() => composeDevice(c, { label: 'LG', commands: [...TELEVISION], power: 9 }),
                 ComposeError);
+});
+
+/**
+ * Phase 6's screen half, Harmony One (arch 12) alone by design: the device's own mode with a page
+ * drawing its label and commands, one new row on every device list menu, and the checks the
+ * checklist demands, rendering and reachability included.
+ */
+const ROWS = [
+  { label: 'Power', k: 0 },
+  { label: 'Up', k: 1 },
+  { label: 'Down', k: 2 },
+] as const;
+
+/** The device list menus of `one_config`: ten of them, one per context the list is shown in. */
+const MENUS = [57, 58, 59, 93, 100, 103, 120, 123, 149, 233] as const;
+
+test('one_config takes the television onto its screen and every check holds', skipUnless('one_config'),
+     () => {
+  const pristine = parse(load('one_config') as Uint8Array);
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const before = parse(device.bytes);
+  const wasModes = modeTable(before)!.addresses.length;
+  const wasPages = modePages(before).length;
+  const composed = composeDeviceScreen(before, 'LG',
+    ROWS.map((row) => ({ label: row.label, list: device.lists[row.k]! })));
+  const after = parse(composed.bytes);
+
+  // The mode exists, at the end so nothing renumbered, and the menus are the ten the corpus holds.
+  assert.equal(modeTable(after)!.addresses.length, wasModes + 1);
+  assert.equal(composed.mode, wasModes);
+  assert.deepEqual([...composed.menus], [...MENUS]);
+
+  // The whole file still holds together, the same battery the infrared half passes.
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+
+  // The new page: one page on hit page 10, the standard device layout, binding the three commands
+  // on the layout's first three slots, and its screen program drawing the label and the rows with
+  // nothing unresolved in any variant.
+  const record = modeRecords(after)![composed.mode]!;
+  assert.equal(record.pageCount, 1);
+  const page = record.pages[0]!;
+  assert.equal(page.lead, 10, 'the six slot device layout, reused rather than inserted');
+  const bindings = taggedList(after, page.list)!;
+  assert.deepEqual(bindings.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]),
+                   ROWS.map((row) => [48 + row.k, 0x7f, device.lists[row.k]]),
+                   'the rows run the commands, top left to middle left');
+  const rendered = renderVariants(after, page.program);
+  assert.equal(rendered.variants.length, 1, 'no switch, so one screen');
+  assert.equal(rendered.variants[0]!.page.glyphsMissing, 0);
+  assert.equal(rendered.variants[0]!.page.picturesMissing, 0);
+
+  // Every menu's grown page: the row on scan 50 runs the shared entering list, the flip moved to
+  // scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page
+  // still renders whole in every variant. Menu 233 is why the flip is asserted by scan and not by
+  // opcode: nine menus bind the bare page flip and it wraps its own in a beeping action list.
+  for (const menu of composed.menus) {
+    const grown = modeRecords(after)![menu]!.pages.at(-1)!;
+    assert.equal(grown.lead, 12, `menu ${menu} declares the three row layout`);
+    const list = taggedList(after, grown.list)!;
+    const row = list.entries.filter((one) => one.tag === (0x80 | 50));
+    assert.equal(row.length, 1, `menu ${menu} binds scan 50 once`);
+    assert.deepEqual([row[0]!.opcode, row[0]!.operand], [0x7f, composed.rowList]);
+    assert.equal(list.entries.filter((one) => one.tag === (0x80 | 51)).length, 1,
+                 `menu ${menu} kept its flip, on the bottom key`);
+    for (const variant of renderVariants(after, grown.program).variants) {
+      assert.equal(variant.page.glyphsMissing, 0, `menu ${menu} draws every glyph`);
+      assert.equal(variant.page.picturesMissing, 0, `menu ${menu} draws every picture`);
+    }
+  }
+
+  // The reachability half, the checklist's own wording: the device list page's bindings reach the
+  // new page, and the new page's bindings reach the new commands, walked off the container.
+  const lists = after.actionLists()!;
+  assert.deepEqual(lists[composed.rowList]!.map((one) => [one.opcode, one.operand]),
+                   [[0x75, 0x0fca], [0x7e, composed.mode], [0x98, 1]],
+                   'the row beeps, enters the mode and marks device mode, as every corpus row does');
+  ROWS.forEach((row) => {
+    const bound = bindings.entries[row.k]!;
+    assert.deepEqual(lists[bound.operand]!.map((one) => [one.opcode, one.operand]),
+                     [[0x7d, (device.group << 8) | row.k]],
+                     `row ${row.label} reaches the new command`);
+  });
+
+  // Section 69's rail: one pool copy per page, the new page's included, agreeing entry by entry,
+  // and the grown menu pages' copies grown with them.
+  const pages = modePages(after);
+  const copies = pageListCopies(after);
+  assert.equal(pages.length, wasPages + 1);
+  assert.equal(copies.length, pages.length, 'one copy per page, the new page included');
+  const body = (index: number): string =>
+    (lists[index] ?? []).map((one) => `${one.opcode}:${one.operand}`).join(' ');
+  for (const index of [pages.length - 1,
+                       ...composed.menus.map((menu) =>
+                         pages.findIndex((one) =>
+                           one.address === modeRecords(after)![menu]!.pages.at(-1)!.address))]) {
+    const mine = taggedList(after, pages[index]!.list)!;
+    const copy = taggedList(after, copies[index]! + after.flashBase)!;
+    assert.equal(copy.entries.length, mine.entries.length, `page ${index}'s copy has every entry`);
+    mine.entries.forEach((entry, k) => {
+      const twin = copy.entries[k]!;
+      assert.deepEqual([twin.tag, twin.flags, twin.opcode], [entry.tag, entry.flags, entry.opcode]);
+      // Section 69's one allowed difference: a copy's 0x7f may name a different base slot 10
+      // entry holding an identical action list, which is how the corpus generator emits them.
+      if (entry.opcode === 0x7f) assert.equal(body(twin.operand), body(entry.operand));
+      else assert.equal(twin.operand, entry.operand);
+    });
+  }
+
+  // The label is drawn everywhere the checklist wants it: once per menu and once as the title.
+  const map = characterMap(after)!;
+  const drawn = screenStrings(after, map).filter((one) => one.text === 'LG');
+  assert.equal(drawn.length, MENUS.length + 1, 'ten menu rows and the title');
+});
+
+test('the screen half refuses what it cannot draw or place', skipUnless('one_config', 'h600_config'),
+     () => {
+  const pristine = parse(load('one_config') as Uint8Array);
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const before = parse(device.bytes);
+  const rows = ROWS.map((row) => ({ label: row.label, list: device.lists[row.k]! }));
+
+  // A character no font carries stops the phase and says which, the checklist's own demand.
+  assert.throws(() => composeDeviceScreen(before, 'LG',
+                                          [{ label: 'zap', list: device.lists[0]! }]),
+                (error: unknown) => error instanceof ComposeError && /'z'/.test(String(error)),
+                'the refusal names the missing character');
+
+  // The other architectures are refused outright: every position here is the One's.
+  const h600 = parse(load('h600_config') as Uint8Array);
+  assert.throws(() => composeDeviceScreen(h600, 'LG', rows),
+                (error: unknown) => error instanceof ComposeError
+                  && /Harmony One/.test(String(error)));
+
+  // No rows and too many rows are refused before anything moves.
+  assert.throws(() => composeDeviceScreen(before, 'LG', []), ComposeError);
+});
+
+test('composing a device leaves the timer table in the relocation census', skipUnless('one_config'),
+     () => {
+  // The regression behind the state record's placement: a record wedged at base slot 13's section
+  // start widens the timer table's gap, `pointerArrayAt` demands its counted array fill the gap
+  // exactly, and the table drops out of the census silently, so the next insertion below the
+  // timer records leaves every timer pointer stale. The screen half's pool insertion is what
+  // found it, as two owners claiming one region 255 bytes below the records.
+  const pristine = parse(load('one_config') as Uint8Array);
+  const slot = archSlot(12, 12);
+  assert.notEqual(pristine.pointerArrayAt(slot), undefined, 'the timer table reads before');
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const after = parse(device.bytes);
+  assert.notEqual(after.pointerArrayAt(slot), undefined, 'and still reads after');
 });

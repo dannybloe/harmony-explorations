@@ -23054,3 +23054,69 @@ What this does not establish: that the firmware accepts a relocated config. The 
 reader here reports identically, and section 117's cloning experiment is the standing demonstration
 that parsing is not validating. That is phase 7's known answer comparison and, behind its gate, the
 hardware run.
+
+## 173. A device is composed onto the screen: its own mode, and one row on every device list menu
+
+**25 August 2026.** `composeDeviceScreen` in `packages/codec/src/compose.ts` finishes phase 6 of
+`docs/adding-a-device.md` short of the two optional pieces: on a Harmony One config carrying the
+television `composeDevice` put there, it builds the device's own mode and puts one row on every device
+list menu, and afterwards the byte accounting is complete with no overlaps, the trailer verifies, the
+emitter reproduces the file byte for byte, every touched page renders with nothing unresolved, and the
+four hop reachability walk of section 120 runs from a menu row to the new commands.
+`packages/codec/test/compose.test.ts` is the test.
+
+**The mode block is laid out the way every corpus mode is**, one contiguous run inserted where the mode
+region ends and the copy pool begins: the record's tagged list, the mode's own program (section 66's
+chrome, which the page calls with screen opcode 22), the page's program, the page record, and the entry,
+in that order. The record list is the empty wide form, since the keypad half is deliberately not bound.
+The page declares hit page 10, the standard six slot device layout, and **base slot 17 gains nothing**:
+section 125's closure is that a page binds a subset of what its hit page offers, so reusing the layout
+is stating the rectangles rather than inventing them. The page's own list goes into base slot 8 where
+every page list lives, and its section 69 copy extends the **last pool**, because the pool walk only
+accepts a run holding a base slot 9 set, so a new run cannot be started for it, and the copies pair with
+the pages positionally.
+
+**A string is spelled out of the config's own glyph codes, per font.** A glyph code is global to the
+config, section 124, but a font set only carries glyphs for the codes its own strings use, so the check
+is per character per font and the composer refuses naming both. That is not hypothetical: font 10, which
+titles every corpus device mode, cannot spell `LG` on `one_config`, so the title uses font 9, the row
+font of the same height, which is the one set carrying the whole drawn alphabet.
+
+**one_config has ten device list menus, not one**, modes 57, 58, 59, 93, 100, 103, 120, 123, 149 and
+233: every context the list is shown in carries its own copy, each reaching all five device modes
+through rows of one shape, beep (`0x75` operand `0x0fca`), enter the mode (`0x7e`), and write 1 into
+state variable 24 (`0x98`). The composer finds them by that shape, keeping the modes that reach as many
+distinct device modes as any mode does, which is what separates them from the per activity menus that
+list two or three. **Menu 233 is the counterexample that hardened two rules.** Its page flip is not the
+bare tagged `0x72` the other nine bind on the bottom key: it wraps the flip in a beeping action list, so
+the retag that moves the flip from the two row layout's bottom (scan 50, hit page 13) to the three row
+one's (scan 51, hit page 12) keys on the scan alone. And its page program ends in the page indicator's
+font rather than the row font with no closing switch, so the inserted label selects font 7 itself and
+the insertion point is the final instruction, switch or end.
+
+**The ordering discipline is the finding for a writer.** A relocation census only restamps addresses a
+reader can walk to, so every structure is made reachable before any address it embeds has to survive a
+shift: the new mode's table entry is appended **first**, pointing at an existing mode's entry as a
+placeholder, and swapped to the real entry in place once the block exists. Three addresses are embedded
+in bytes written after their hole opens, where no census can see them, and each is shifted by hand with
+the census's own arithmetic: the pictures and the page list pointer inside the mode block, and the row
+background inside a menu program, which is also read **after** the same menu's list grows because a
+picture address read before an insertion below it is stale by that insertion.
+
+**Composing the screen found a placement defect in `composeDevice` itself, worth recording for its
+shape.** The power variable's record was inserted at base slot 13's section start, which is the byte
+after the timer table's counted array, and `pointerArrayAt` demands that array fill the gap to the next
+section exactly, so the timer table dropped out of the relocation census **silently**: `timers()` in
+`tables.ts` kept reading it, the accounting stayed at 100%, and every test passed. The first relocation
+below the timer records, the screen half's pool insertion, then left all thirty timer pointers stale,
+which surfaced as two owners claiming one region exactly 255 bytes below the records, 255 being the sum
+of every later insertion below them. The record now goes after the last existing state record, where the
+generator scatters them, and a regression asserts the timer table still reads as a pointer array after a
+composition. The shape to remember: two readers of one structure, `pointerArrayAt` and
+`countedPointers`, one strict and one not, and the strict one feeding the census, so the disagreement
+had no test until a writer leaned on it.
+
+**What is deliberately not composed**, each a difference for phase 7 to explain against Logitech's own
+compile: the menu row's device icon, the bottom bar switch on state variable 35 and the page indicator,
+the record list's keypad bindings, the per mode housekeeping lists the corpus chrome queues with opcode
+`0x73`, and base slot 9, which the checklist itself marks optional and gated on a named scan.

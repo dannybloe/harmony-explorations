@@ -54,7 +54,7 @@ starts at the first unticked box.
 | 3 | a whole command, not just its frame | **done** 25 August 2026 |
 | 4 | the data model describes a device that does not exist yet | **done** 25 August 2026 |
 | 5 | a config can change length without breaking | **done** 25 August 2026 |
-| 6 | a device composed into a config, read back by our own readers | not started |
+| 6 | a device composed into a config, read back by our own readers | **done** 25 August 2026, the optional keypad item not taken by its own terms |
 | 7 | Logitech compiles the same addition and the two agree | not started |
 
 That is the checklist. Below it, behind a gate:
@@ -468,6 +468,9 @@ lifts that refusal.
 
 ## Phase 6: a device composed into a config
 
+**Done, 25 August 2026**, short of the optional keypad item, which its own text gates on a named scan.
+The screen half is `composeDeviceScreen`, section 173, Harmony One (arch 12) alone by design.
+
 A device is not a list of codes. Seven pieces, and each one is an insertion that phase 5 has to carry.
 
 - [x] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
@@ -485,26 +488,41 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
 - [x] base slot 10: one action list per command, so a binding has something to point at. One
       four byte list per command, a single send of `(group << 8) | record`, appended to the table so
       no existing list renumbers
-- [ ] base slot 6 and 11: a device mode page whose screen program draws the device's name, reusing glyph
+- [x] base slot 6 and 11: a device mode page whose screen program draws the device's name, reusing glyph
       codes the config already carries. A code is a config's own index into its font table, section 112,
       so a new string is spelled out of codes that already exist or the phase stops and says which
-      character is missing
-- [ ] base slot 17: the hit rectangles for that page, since a screen button's place is stated and not
-      inferred on this remote, section 125
-- [ ] **the device list page gains a row, and nothing else navigates to a new page.** The mode that lists
+      character is missing. `composeDeviceScreen`, 25 August 2026, section 173: the mode block is laid
+      out the way every corpus mode is, list, chrome, page program, page record, entry, and the refusal
+      is per character **per font**, which mattered immediately: font 10, which titles every corpus
+      device mode, cannot spell `LG` on `one_config`, so the title uses font 9
+- [x] base slot 17: the hit rectangles for that page, since a screen button's place is stated and not
+      inferred on this remote, section 125. **Stated by reuse rather than by insertion**: the page
+      declares hit page 10, the standard six slot device layout, and section 125's own closure is that a
+      page binds a subset of what its hit page offers, so base slot 17 gains no bytes
+- [x] **the device list page gains a row, and nothing else navigates to a new page.** The mode that lists
       the equipment is what device mode opens on, so a device page nobody can reach is the failure that
       would pass every reader test in phase 6's check. That page needs the label drawn, a hit rectangle
-      and a binding that enters the new mode
-- [ ] base slot 8: the key bindings for that page
+      and a binding that enters the new mode. Done, and the count was the surprise: `one_config` has
+      **ten** device list menus, one per context the list is shown in, each getting the row, the flip
+      retagged to the bottom key and the lead byte moved to the three row layout, section 173
+- [x] base slot 8: the key bindings for that page. The page's own tagged list lands in base slot 8 where
+      every page list lives, section 83, and its section 69 pool copy extends the last pool, since the
+      pool walk only accepts a run holding a base slot 9 set
 - [ ] base slot 9: the keypad, **optional and only for a named scan.** Not needed for this goal, and a
-      scan `reference/button-maps.md` does not name must not be bound on a guess
-- [ ] **check**: take a real config, add a television from the catalogue, and our own readers report one
+      scan `reference/button-maps.md` does not name must not be bound on a guess. Not taken, by its own
+      terms: the composed record list is the empty wide form
+- [x] **check**: take a real config, add a television from the catalogue, and our own readers report one
       more device with the right name, its commands decode back to the exact numbers the catalogue states,
       every screen still renders with nothing unresolved, the byte accounting is still 100% with no
-      overlaps, and the whole file round trips through the emitter
-- [ ] **check, the reachability half**: the device list page's own bindings reach the new page, and the
+      overlaps, and the whole file round trips through the emitter.
+      `packages/codec/test/compose.test.ts`, 25 August 2026, and finishing it found a placement defect in
+      the naming half: the state record had dropped the timer table out of the relocation census
+      silently, section 173, and a regression now pins the table's survival
+- [x] **check, the reachability half**: the device list page's own bindings reach the new page, and the
       new page's bindings reach the new commands, walked by the same four hop chain that names an
-      activity, section 120. A page that renders and cannot be reached passes everything above
+      activity, section 120. A page that renders and cannot be reached passes everything above. Walked
+      off the composed container: every menu's row runs the shared list that beeps, enters the new mode
+      and marks device mode, and each of the page's rows is one send to the new group
 
 ## Phase 7: Logitech compiles the same addition and the two agree
 
