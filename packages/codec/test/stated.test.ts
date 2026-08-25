@@ -555,3 +555,39 @@ test('a whole block is emitted from the catalogue string alone, and totals what 
   // And a family nothing measured stays a refusal, same as the frame emitters.
   assert.equal(blockOfStatedCode('G:Saitek 11 Bit:()(0x000)():3'), undefined);
 });
+
+test('the held block is measured per family, and it is what a held key repeats', () => {
+  // **Section 127 made emittable**: a record's second pointer repeats for as long as the key is
+  // down, and its duration is the repeat interval the user feels. Whether a command carries one at
+  // all is the command's own property, so the population is stated beside the count.
+  const held = PROTOCOLS.filter((one) => one.held !== undefined)
+    .map((one) => [one.family, one.heldExact, one.heldOf] as const);
+  assert.equal(held.length, 31, 'families with a measured held block');
+  assert.equal(held.reduce((n, one) => n + one[1]!, 0), 2151, 'held blocks rebuilt word for word');
+  assert.equal(held.reduce((n, one) => n + one[2]!, 0), 2214, 'records carrying one');
+
+  // Three shapes worth naming, because each is a different sentence about the protocol. Toshiba
+  // repeats with its ditto frame alone, no copy of the payload in it at all, 517 of 517.
+  const toshiba = PROTOCOLS.find((one) => one.family === 'Toshiba 32 Bit')!;
+  assert.deepEqual([toshiba.heldExact, toshiba.heldOf], [517, 517]);
+  assert.ok(toshiba.held!.items.every((item) => !('copy' in item)), 'the ditto holds no copy');
+  // JVC repeats one bare copy padded to 45001, the same 45 ms beat its once block's three copies
+  // keep, measured independently of it.
+  const jvc = PROTOCOLS.find((one) => one.family === 'JVC 16 Bit')!;
+  assert.equal(jvc.held!.total, 45001);
+  // And Pioneer 32 Bit 2 holds with its **second** frame, which only the frame index can say.
+  const pioneer2 = PROTOCOLS.find((one) => one.family === 'Pioneer 32 Bit 2')!;
+  assert.deepEqual(pioneer2.held!.items[0], { copy: 'full', at: 1 });
+
+  // The emitter takes the choice: the same code, its press and its repeat.
+  const once = blockOfStatedCode('G:JVC 16 Bit:(Start)(0xC508)():3');
+  const repeat = blockOfStatedCode('G:JVC 16 Bit:(Start)(0xC508)():3', undefined, 'held');
+  assert.ok(once !== undefined && repeat !== undefined);
+  assert.equal(once.reduce((n, one) => n + one.us, 0), 147601);
+  assert.equal(repeat.reduce((n, one) => n + one.us, 0), 45001);
+  // The repeat is bare: no 8400 lead in anywhere in it.
+  assert.equal(repeat.filter((one) => one.mark && one.us === 8400).length, 0);
+  // And a family whose records never showed a held block refuses, rather than repeating the press.
+  assert.equal(blockOfStatedCode('G:Galaxis 16 Bit Quad Toggle:()(0x02031000_1x0_2x2123201)():3',
+    undefined, 'held'), undefined);
+});

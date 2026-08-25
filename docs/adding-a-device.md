@@ -308,6 +308,15 @@ one tail shape across every record. What varies is the closing silence.
 - [x] **the negative**: a family with no measured tail is refused, and the test says so: `Sharp 15 Bit
       2` (second frame in the tail), `Panasonic 16 Bit` (one record) and `Saitek 11 Bit` (not in the
       table) all come back `undefined` from `blockOfStatedCode`
+- [x] **the held block and the trailing block, the phase's leftover**: everything above measures a
+      record's **first** block, the one a press sends once. A record points at up to three, section
+      127: the held block repeats for as long as the key is down and its duration is the repeat rate
+      the user feels. Measured on 25 August 2026, section 171: 31 families carry one, 2151 of 2214
+      records rebuild it word for word, and whether a command has one is the command's property, 517
+      of Toshiba's 622. `blockOfStatedCode(code, periodNs, 'held')` emits it. The trailing pointer is
+      empty on effectively everything (three Logitech records carry an empty block), and the open
+      pieces are named in the section: the toggle families' second pointer group, the whole record
+      shapes' held pointers, Kreatel and Mitsubishi
 - [x] **stage two, the second frame as a tail item**: delivered the same day, section 171. A tail item
       names the index of one of the code's own stated frames, the Sharp 15 families turned out to
       **state** their second value rather than derive it, and their alternating frames forced the

@@ -22984,8 +22984,23 @@ being true the moment a block carried two different frames: `copyPeriod` on a ta
 to `total`, tried only where the shared value fails, and the whole block table now reads 2437 of 2682
 records rebuilt over 31 tailed entries.
 
+**The held block is the same grammar, measured off the record's second pointer.** Section 127 read
+what it is, what repeats for as long as the key is down, its duration being the repeat interval the
+user feels; this makes it emittable. 31 families carry one, 2151 of 2214 records rebuilding it word
+for word, and whether a record has one at all is the **command's** property rather than the
+family's: 517 of Toshiba's 622 do and the rest do not. Three shapes say three different things about
+a protocol. Toshiba repeats with its **ditto frame alone**, no copy of the payload in it, which
+forced one relaxation: a held block need not open with a copy, and there the value diversity gate is
+what establishes its literals are the family's. JVC repeats one bare copy padded to 45001, the same
+45 ms beat its once block keeps, measured independently of it. And `Pioneer 32 Bit 2` holds with its
+**second** frame, which only the frame index can express. `blockOfStatedCode` takes the choice as a
+third argument, refuses a family whose records never showed a held block, and refuses it for the
+whole record shapes too, whose second pointers are unmeasured.
+
 **What remains is named, not pending.** `Kreatel IP 22 Bit`'s repeats differ from its first frame per
 record, a toggle shaped flip to be read on its own; `MitsubishiO1 Dual 8 16 Bit` never reads its own
 16 bit frame at all, the attribution riding on the shared 8 bit one, so its second frame's encoding
 is unmeasured; ten `Samsung 16 and 20 Bit` records and two `Pioneer 32 Bit Dual` records differ from
-their family shape; and the single record families still cannot show their tail is the family's.
+their family shape; the single record families still cannot show their tail is the family's; the
+whole record shapes' held pointers are unread; and on the toggle families 48 Thomson records carry a
+**second pointer group**, which section 134's arch 8 pairs suggest is the toggled variant, unread.

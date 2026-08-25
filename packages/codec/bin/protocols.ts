@@ -1071,6 +1071,16 @@ interface Entry {
   tailExact?: number;
   /** Why there is no tail, printed rather than serialized: the tests name the tailless set. */
   tailRefusal?: string;
+  /**
+   * The held block, the record's second pointer: what repeats for as long as the key is down, and
+   * whose duration is the repeat rate the user feels, section 127. Same grammar as `tail`, measured
+   * off the records that carry one, which is per command rather than per family.
+   */
+  held?: BlockTail;
+  /** How many records rebuild their held block, out of how many carry one at all. */
+  heldExact?: number;
+  heldOf?: number;
+  heldRefusal?: string;
 }
 
 /**
@@ -1168,11 +1178,11 @@ for (const m of fromCatalogue) {
  * shape and **unmerged for a biphase one**, section 164: two adjacent half cells of one kind are two
  * cells there, and merging them away makes no biphase frame ever match its own record.
  */
-function wholeBlock(m: Measured, merged: boolean): Pulse[] | undefined {
+function wholeBlock(m: Measured, merged: boolean, slot = 0): Pulse[] | undefined {
   const c = container(m.config);
-  const first = c === undefined ? undefined : irHeaderPointers(c, m.record)[0];
-  const words = first === undefined ? undefined : irBlockWords(c!, first);
-  if (words === undefined) return undefined;
+  const at = c === undefined ? undefined : irHeaderPointers(c, m.record)[slot];
+  const words = at === undefined ? undefined : irBlockWords(c!, at);
+  if (words === undefined || words.length === 0) return undefined;
   const train = pulsesOfWords(words);
   return [...fromFirstMark(merged ? mergedIntervals(train) : train)];
 }
@@ -1258,8 +1268,8 @@ function blockTokensOf(train: readonly Pulse[], copies: readonly CopyToken[]): B
  * record's second command replayed for every value. And a family of one value cannot show its tail
  * is the family's rather than the value's, so it refuses too.
  */
-function blockTailOf(list: readonly Measured[], shape: Measured)
-  : { tail: BlockTail; exact: number } | { refusal: string } {
+function blockTailOf(list: readonly Measured[], shape: Measured, slot = 0)
+  : { tail: BlockTail; exact: number; of: number } | { refusal: string } {
   if (shape.longToggle !== undefined || shape.quad !== undefined
     || shape.timings?.sections !== undefined) {
     return { refusal: 'the shape already reproduces the whole record' };
@@ -1268,16 +1278,21 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   const rows: { m: Measured; tokens: BlockToken[]; total: number }[] = [];
   for (const m of list) {
     const copies = copyTokensOf(shape, m);
-    const train = copies.length === 0 ? undefined : wholeBlock(m, merged);
+    const train = copies.length === 0 ? undefined : wholeBlock(m, merged, slot);
     if (train === undefined) continue;
     const tokens = blockTokensOf(train, copies);
     // A record that does not open with the family frame is a record of another duration set, and
     // its all literal token list would be a giant value dependent pattern, so it drops out here and
-    // is counted by `exact` below like every other failure.
-    if (typeof tokens[0] === 'number') continue;
+    // is counted by `exact` below like every other failure. **The first block only**: a held block
+    // may hold no copy at all, Toshiba's being its ditto frame alone, and there the value diversity
+    // gate below is what establishes the literals are the family's rather than the value's.
+    if (slot === 0 && typeof tokens[0] === 'number') continue;
     rows.push({ m, tokens, total: train.reduce((n, one) => n + one.us, 0) });
   }
-  if (rows.length === 0) return { refusal: 'no record opens with the family frame' };
+  if (rows.length === 0) {
+    return { refusal: slot === 0 ? 'no record opens with the family frame'
+      : 'no record carries this block' };
+  }
   const patternOf = (tokens: BlockToken[]) =>
     tokens.map((t) => (typeof t === 'number' ? (t > 0 ? '+' : '-') : `${t.copy}@${t.at}`)).join(' ');
   const groups = new Map<string, typeof rows>();
@@ -1403,16 +1418,18 @@ function blockTailOf(list: readonly Measured[], shape: Measured)
   // The count that carries the claim: whole blocks rebuilt from the family shape plus each record's
   // own value, compared word for word against what the record stores, over the whole list.
   let exact = 0;
+  let of = 0;
   for (const m of list) {
-    const train = wholeBlock(m, merged);
+    const train = wholeBlock(m, merged, slot);
     if (train === undefined) continue;
+    of += 1;
     let built: Pulse[];
     const frames = m.codeFrames ?? [{ bits: m.bits, value: m.value }];
     try { built = pulsesOfBlock(shape, frames, tail); } catch { continue; }
     if (built.length === train.length
       && built.every((p, i) => p.mark === train[i]!.mark && p.us === train[i]!.us)) exact += 1;
   }
-  return { tail, exact };
+  return { tail, exact, of };
 }
 
 const entries: Entry[] = [];
@@ -1424,6 +1441,7 @@ for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - 
   const shape = best[0]!;
   const band = BANDS.find((b) => list.every((m) => reproduces(m, shape, b)));
   const tailed = blockTailOf(list, shape);
+  const held = blockTailOf(list, shape, 1);
   entries.push({
     family: list[0]!.family,
     periodNs: list[0]!.periodNs,
@@ -1442,6 +1460,8 @@ for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - 
     byWidth: list.filter((m) => m.joinedBy === 'width').length,
     ...('tail' in tailed ? { tail: tailed.tail, tailExact: tailed.exact }
       : { tailRefusal: tailed.refusal }),
+    ...('tail' in held ? { held: held.tail, heldExact: held.exact, heldOf: held.of }
+      : { heldRefusal: held.refusal }),
   });
   if (detail) {
     for (const [k, of] of [...sets.entries()].sort((a, b) => b[1].length - a[1].length)) {
@@ -1493,6 +1513,21 @@ console.log('\nno block tail, and why:');
 for (const e of entries) {
   if (e.tail === undefined) {
     console.log(`  ${e.family.padEnd(30)} ${String(e.codes).padStart(5)}  ${e.tailRefusal}`);
+  }
+}
+
+// The held block, section 127: the record's second pointer, per family, over the records that
+// carry one. Whether a command has one at all is the command's own property.
+console.log('\nthe held block, per family:');
+for (const e of entries) {
+  if (e.held !== undefined) {
+    console.log(`  ${e.family.padEnd(30)} ${`${e.heldExact}/${e.heldOf}`.padStart(9)}  ${tailSummary(e.held)}`);
+  }
+}
+console.log('\nno held block, and why:');
+for (const e of entries) {
+  if (e.held === undefined) {
+    console.log(`  ${e.family.padEnd(30)} ${String(e.codes).padStart(5)}  ${e.heldRefusal}`);
   }
 }
 
@@ -1581,6 +1616,21 @@ export interface StatedProtocol {
   };
   /** How many of the family's records rebuild their whole first block from this entry. */
   readonly tailExact?: number;
+  /**
+   * The held block, the record's second pointer: what repeats for as long as the key is down, and
+   * whose duration is the repeat rate the user feels, section 127. Same shape as \`tail\`. Whether
+   * a record carries one at all is the command's own property, so \`heldOf\` states the population
+   * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
+   */
+  readonly held?: {
+    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
+      | { readonly words: readonly number[] }
+      | { readonly pad: number })[];
+    readonly total?: number;
+    readonly copyPeriod?: number;
+  };
+  readonly heldExact?: number;
+  readonly heldOf?: number;
   /**
    * A biphase family, where the bit is in **which half** of one cell the carrier is on.
    *
@@ -1756,18 +1806,20 @@ const DOCUMENTED: {
 
 if (write) {
   const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
+  const blockOut = (block: BlockTail): string => `{ items: [${block.items.map((item) => {
+    if ('copy' in item) {
+      return item.at === undefined ? `{ copy: '${item.copy}' }`
+        : `{ copy: '${item.copy}', at: ${item.at} }`;
+    }
+    if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
+    return `{ pad: ${item.pad} }`;
+  }).join(', ')}]${block.total === undefined ? '' : `, total: ${block.total}`}${
+    block.copyPeriod === undefined ? '' : `, copyPeriod: ${block.copyPeriod}`} }`;
   const rowsOut = entries.map((e) => {
-    const tailOut = e.tail === undefined ? '' : ` tail: { items: [${e.tail.items.map((item) => {
-      if ('copy' in item) {
-        return item.at === undefined ? `{ copy: '${item.copy}' }`
-          : `{ copy: '${item.copy}', at: ${item.at} }`;
-      }
-      if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
-      return `{ pad: ${item.pad} }`;
-    }).join(', ')}]${e.tail.total === undefined ? '' : `, total: ${e.tail.total}`}${
-      e.tail.copyPeriod === undefined ? '' : `, copyPeriod: ${e.tail.copyPeriod}`} },`
-      + ` tailExact: ${e.tailExact},`;
-    const tail = `${tailOut} codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
+    const tailOut = e.tail === undefined ? '' : ` tail: ${blockOut(e.tail)}, tailExact: ${e.tailExact},`;
+    const heldOut = e.held === undefined ? ''
+      : ` held: ${blockOut(e.held)}, heldExact: ${e.heldExact}, heldOf: ${e.heldOf},`;
+    const tail = `${tailOut}${heldOut} codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
     const head = `  { family: '${e.family}', periodNs: ${e.periodNs}, `;
     const b = e.biphase;
     if (b !== undefined) {

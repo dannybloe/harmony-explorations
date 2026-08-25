@@ -298,12 +298,21 @@ export function pulsesOfStatedCode(
  * Takes the catalogue's own string (or its parse), not a bare number, because the whole record shapes
  * need every stated value and a single `(bits, value)` cannot carry them.
  */
-export function blockOfStatedCode(code: string | StatedCode, periodNs?: number): Pulse[] | undefined {
+export function blockOfStatedCode(
+  code: string | StatedCode, periodNs?: number, which: 'once' | 'held' = 'once',
+): Pulse[] | undefined {
   const read = typeof code === 'string' ? statedCode(code) : code;
   if (read === undefined) return undefined;
   const entry = statedProtocol(read.family, periodNs);
   if (entry === undefined) return undefined;
   const values = read.frames.map((one) => one.value);
+  // The whole record shapes carry the once block in the shape itself; what their records' second
+  // pointers hold has not been measured, so asking for the held block refuses rather than
+  // repeating the press on a guess.
+  if (which === 'held'
+    && (entry.quad !== undefined || entry.longToggle !== undefined || entry.sections !== undefined)) {
+    return undefined;
+  }
   if (entry.quad !== undefined) {
     if (values.length !== entry.quad.digits.length) return undefined;
     try { return pulsesOfQuad(entry.quad, values); } catch { return undefined; }
@@ -323,7 +332,11 @@ export function blockOfStatedCode(code: string | StatedCode, periodNs?: number):
     const value = entry.sections.reduce((acc, width, at) => (acc << BigInt(width)) | values[at]!, 0n);
     try { return pulsesOfFrame(t, bits, value); } catch { return undefined; }
   }
-  if (entry.tail === undefined) return undefined;
+  // The held block is the record's second pointer, what repeats while the key is down, section
+  // 127; the once block is the press. A family whose records never showed the asked for one is a
+  // refusal.
+  const block = which === 'held' ? entry.held : entry.tail;
+  if (block === undefined) return undefined;
   const t = timingsOf(entry);
   const b = biphaseOf(entry);
   if (t === undefined && b === undefined) return undefined;
@@ -331,6 +344,6 @@ export function blockOfStatedCode(code: string | StatedCode, periodNs?: number):
   const shape = { ...(t === undefined ? {} : { timings: t }), ...(b === undefined ? {} : { biphase: b }) };
   // Every stated frame goes in, because a tail item may name the code's second one, section 171
   // stage two; a tail asking for a frame the code does not state is a refusal inside the encoder.
-  try { return pulsesOfBlock(shape, read.frames, entry.tail); }
+  try { return pulsesOfBlock(shape, read.frames, block); }
   catch { return undefined; }
 }
