@@ -684,6 +684,92 @@ function pulsesOfSections(t: FrameTimings, bits: number, value: bigint): Pulse[]
   return out;
 }
 
+/**
+ * What follows a frame inside a record's first block, stated so an emitter can replay it.
+ *
+ * **Measured per family, section 171, off the tail shape census of 25 August 2026.** A block is the
+ * frame in one or more copies, literal words between and after them, and pad spaces. The pads are the
+ * finding: within one record every pad takes **one** value, plus a small per position extra (the
+ * block's final space is stored one microsecond long across families), and that value is solved from a
+ * constant total block duration. That is what JVC 16 Bit, Thomson 12 Bit Toggle and Sony's three
+ * families all show, and it is why there is no separate per copy frame period here: every copy of a
+ * block carries the same value, so padding each copy and sharing one pad value are the same statement.
+ */
+export type BlockTailItem =
+  /** The payload frame again: with its lead in, or bare where later copies drop it. */
+  | { readonly copy: 'full' | 'bare' }
+  /** Literal words, signed microseconds: positive is a mark, negative a space. Value independent,
+   * which the measurement establishes by demanding them identical across records of different
+   * values, and which is the safety rail: section 152's second-code tails must never be replayed
+   * for a value they do not belong to. */
+  | { readonly words: readonly number[] }
+  /** A pad space of the record's shared pad value plus this extra. */
+  | { readonly pad: number };
+
+export interface BlockTail {
+  /** The whole block in order. The first item is always a copy. */
+  readonly items: readonly BlockTailItem[];
+  /**
+   * The constant total block duration the pads solve against. Present exactly when a pad exists:
+   * a tail of literals needs no total, and a pad without a total would be underdetermined.
+   */
+  readonly total?: number;
+}
+
+/**
+ * A whole first block: the frame in its copies, the literal tail, and the pads solved.
+ *
+ * The one arithmetic here is the pad value: `total` minus every fixed word, divided by the number of
+ * pads. A value whose frame is too long for the total, or one where the division does not come out
+ * whole, is a refusal rather than a rounding, because a rounded pad emits a block whose total the
+ * family has never stored.
+ */
+export function pulsesOfBlock(
+  shape: { readonly timings?: FrameTimings; readonly biphase?: BiphaseTimings },
+  bits: number, value: bigint, tail: BlockTail,
+): Pulse[] {
+  const copy = (kind: 'full' | 'bare'): Pulse[] => {
+    // A biphase copy is the frame with its lead, and no family drops the lead on later copies.
+    if (shape.timings === undefined) {
+      if (shape.biphase === undefined) throw new Error('a block needs a frame shape');
+      if (kind === 'bare') throw new Error('a biphase family has no bare copy');
+      return pulsesOfBiphaseFrame(shape.biphase, bits, value);
+    }
+    const t = shape.timings;
+    const timings: FrameTimings = kind === 'bare' ? { ...t, header: [0, 0] } : t;
+    // For a pulse width frame the closing space is part of the tail (a pad or a literal), not of the
+    // copy, so the copy is the frame with its closing dropped. `pulsesOfFrame` rightly demands a
+    // closing to emit a complete frame, so it is given a placeholder that is then removed.
+    if (t.carries === 'mark') {
+      return pulsesOfFrame({ ...timings, closing: 1 }, bits, value).slice(0, -1);
+    }
+    return pulsesOfFrame(timings, bits, value);
+  };
+  const fixed = tail.items.reduce((n, item) => {
+    if ('copy' in item) return n + copy(item.copy).reduce((s, p) => s + p.us, 0);
+    if ('words' in item) return n + item.words.reduce((s, w) => s + Math.abs(w), 0);
+    return n + item.pad;
+  }, 0);
+  const pads = tail.items.filter((item) => 'pad' in item).length;
+  let padValue = 0;
+  if (pads > 0) {
+    if (tail.total === undefined) throw new Error('a pad needs the total it is solved from');
+    const room = tail.total - fixed;
+    if (room <= 0 || room % pads !== 0) {
+      throw new Error(`no whole pad fits: ${room} microseconds over ${pads} pad(s)`);
+    }
+    padValue = room / pads;
+  }
+  const out: Pulse[] = [];
+  for (const item of tail.items) {
+    if ('copy' in item) out.push(...copy(item.copy));
+    else if ('words' in item) {
+      out.push(...item.words.map((w) => ({ mark: w > 0, us: Math.abs(w) })));
+    } else out.push({ mark: false, us: padValue + item.pad });
+  }
+  return out;
+}
+
 /** A frame as the key a lookup against an external catalogue of named commands uses. */
 export function frameKey(f: IrFrame): string {
   return `${f.bits}:${f.value.toString(16)}`;

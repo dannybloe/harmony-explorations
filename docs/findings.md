@@ -22919,3 +22919,50 @@ second half of that sentence was wrong because it assumed the two lengths were n
 they are two durations, each exact, and the record does state both. The diagnosis that unlocked it was
 printing the cell **pairs** instead of the mark population: `+521-1575 x5  +525-527 x11` says the
 correlation in one line where two histograms hide it.
+
+## 171. A block's tail is copies, literals and pads sharing one value, measured per family
+
+25 August 2026. Section 152 established that nothing after the frame follows from the bits and left
+the tail as 151 shapes across the corpus with no rule behind them. Per family there is a rule, and it
+is small: a record's first block is the frame in one or more copies, **literal words** between and
+after them, and **pad spaces** that within one record all take a single value, plus a constant per
+position extra, solved from a **constant total block duration**. The block's final space is stored one
+microsecond long, across families, which is the extra's usual content.
+
+**The pad finding is what dissolves the per copy frame period.** JVC 16 Bit's three gaps are equal
+within a record and vary across records; Sony's three copies each end in the same computed space; both
+are the one statement "pads share one value, total constant". Every copy of a block carries the same
+value, so padding each copy to a period and sharing one pad value are indistinguishable, and the model
+carries only the second. Sony's total is 135001, which is three copies at its published 45000
+microsecond frame period plus the final microsecond: the third route to that number.
+
+**Twenty four of the table's 38 entries now carry a `tail`**, and the counts are per entry as
+`tailExact`, whole first blocks rebuilt from the entry plus each record's own value and compared word
+for word: Toshiba 32 Bit 622 of 622 with its ditto repeat as a literal run and total 215736 constant
+across all 622; JVC 16 Bit 108 of 108; Sharp 48 Bit 2 345 of 345 with no pad at all; the biphase
+families Magnavox 105 of 105 and Philips RC5 51 of 51, whose blocks are compared **unmerged** for
+section 164's reason. Eleven entries state a constant total; the pure literal tails need none.
+The shortfalls are named in `packages/codec/test/stated.test.ts`: Logitech 24 Bit 206 of 217, the
+eleven being the PS3's long repeat records whose copy count is per record; Microsoft 30 Bit 65 of 213,
+the corpus records spelling their gaps differently from the compiled ones; MemorexO1 32 Bit 81 of 108,
+its own loose duration entry; Pioneer 32 Bit 9 of 19, below.
+
+**The choice rule needed correcting before the table was right, and Pioneer 32 Bit is the case**: its
+commonest block pattern was ten corpus records of a **single command**, beating nine records of six
+commands with the clean three copy shape. The grouping exists to establish that a tail does not depend
+on the value, so a pattern shown by more distinct values is better evidence than one shown by more
+records, and the sort is by value diversity first. Same lesson as section 124's one code one character:
+the rule the majority suggests is not the rule the purpose demands.
+
+**The refusals are the point, not a debt.** A literal is only believed value independent when records
+of **different values** state it identically, so three kinds of family refuse: those whose tail holds
+a second, value dependent frame, which is section 152's second command hazard made a rail (`Sharp 15
+Bit` and `Sharp 15 Bit 2`, whose varying spaces share no pad value); those whose records all join on
+one shared frame so no value diversity exists to test against (`Samsung 16 and 20 Bit` and the dual
+families, where the command lives in the second frame the join does not carry, plus `Kreatel IP 22
+Bit`); and single record families. `blockOfStatedCode` in `packages/codec/src/stated.ts` refuses all
+of them rather than replaying one record's tail for another value, and emits the rest: a catalogue
+string in, the whole first block out, the sectioned, long toggle and quaternary shapes through their
+own whole record emitters. What stage two needs is the second frame as a tail item, stated by the
+code's own other value on the duals and derived by a per family transform on the Sharps, and the
+measurement for it is the same tokenizer with a second copy token.

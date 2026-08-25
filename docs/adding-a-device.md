@@ -286,18 +286,32 @@ one tail shape across every record. What varies is the closing silence.
       is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
       by a script beside the notes as it is today. Delivered on 25 August 2026, the census test in
       `packages/codec/test/stated.test.ts`: it counts the census itself and names the missing family
-- [ ] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
+- [x] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
-      rather than averaging them
-- [ ] test whether a family's closing silence is padding to a **constant total block duration**. Section
-      152 tried that across the corpus and got 31 of 41 classes; it has never been tried per family, and
-      per family is where the rhythm turned out to live
-- [ ] `blockOfStatedCode`, beside `pulsesOfStatedCode`: a family name, a number and a carrier in, a whole
-      block out, refusing a family whose tail is not one shape rather than guessing one
-- [ ] **check**: for every record in the corpus and the compiled sample whose family the table names,
+      rather than averaging them. Delivered as `tail` on 25 August 2026, section 171, and the model the
+      measurement demanded is richer than this box's wording: copies (with or without the lead in),
+      literal words, and pad spaces sharing one per record value solved from a constant total. 24 of 38
+      entries carry one; the rest refuse with a named reason, mostly a second, value dependent frame in
+      the tail, which is stage two
+- [x] test whether a family's closing silence is padding to a **constant total block duration**. Section
+      152 tried that across the corpus and got 31 of 41 classes; per family it is exact: eleven entries
+      state a constant total, named with their totals in `test/stated.test.ts`, Toshiba's 215736 constant
+      across 622 records, and the families with pure literal tails need none
+- [x] `blockOfStatedCode`, beside `pulsesOfStatedCode`: a catalogue string in rather than a bare number,
+      because the whole record shapes need every stated value, a whole block out, refusing a family whose
+      tail is not one shape rather than guessing one
+- [x] **check**: for every record in the corpus and the compiled sample whose family the table names,
       building the whole block from the family entry plus that record's own number reproduces the record
-      byte for byte, and the families where it does not are named with their counts
-- [ ] **the negative**: a family with no measured tail is refused, and the test says so
+      byte for byte, and the families where it does not are named with their counts. `tailExact` per
+      entry, measured by the generator and pinned per family in `test/stated.test.ts`: 2045 of 2242
+      records of tailed entries rebuild whole, and each shortfall is named with its reason
+- [x] **the negative**: a family with no measured tail is refused, and the test says so: `Sharp 15 Bit
+      2` (second frame in the tail), `Panasonic 16 Bit` (one record) and `Saitek 11 Bit` (not in the
+      table) all come back `undefined` from `blockOfStatedCode`
+- [ ] **stage two, the second frame as a tail item**: the dual families and `Samsung 16 and 20 Bit`
+      state it as the code's own other value, the Sharp 15 families derive it from the payload by a per
+      family transform, and `Kreatel IP 22 Bit` joins on one shared frame. Roughly 800 catalogue
+      commands' whole blocks, measurable with the same tokenizer and a second copy token
 
 ## Phase 4: the data model carries what a new device needs
 

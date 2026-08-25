@@ -16,7 +16,8 @@
  * between the copies, and none of that follows from the bits, 151 distinct shapes across the corpus. So
  * this returns the frame and a caller that wants a whole block still has to decide the rest.
  */
-import { pulsesOfBiphaseFrame, pulsesOfFrame, type BiphaseTimings, type FrameTimings, type Pulse }
+import { pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfFrame, pulsesOfLongToggle, pulsesOfQuad,
+  type BiphaseTimings, type FrameTimings, type Pulse }
   from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
 
@@ -254,6 +255,18 @@ export function closingSpace(
  * them. A guessed rhythm for `Microsoft 30 Bit` would be a command that does nothing, presented as one
  * that works.
  */
+/** The entry's biphase shape as the encoder's own type, or `undefined` on a pulse timing family. */
+export function biphaseOf(entry: StatedProtocol): BiphaseTimings | undefined {
+  if (entry.biphase === undefined) return undefined;
+  return {
+    mark: entry.biphase.mark,
+    space: entry.biphase.space,
+    ...(entry.biphase.firstMark === undefined ? {} : { firstMark: entry.biphase.firstMark }),
+    lead: entry.biphase.lead.map((one) => ({ mark: one.mark, us: one.us })),
+    setIsMark: entry.biphase.setIsMark,
+  };
+}
+
 export function pulsesOfStatedCode(
   family: string, bits: number, value: bigint, periodNs?: number,
 ): Pulse[] | undefined {
@@ -261,20 +274,61 @@ export function pulsesOfStatedCode(
   if (entry === undefined) return undefined;
   // **A biphase family is emitted by its own encoder**, section 162: one half cell, a fixed prelude and
   // which half of the cell means a set bit, with none of the five durations below.
-  if (entry.biphase !== undefined) {
-    const b: BiphaseTimings = {
-      mark: entry.biphase.mark,
-      space: entry.biphase.space,
-      ...(entry.biphase.firstMark === undefined ? {} : { firstMark: entry.biphase.firstMark }),
-      lead: entry.biphase.lead.map((one) => ({ mark: one.mark, us: one.us })),
-      setIsMark: entry.biphase.setIsMark,
-    };
-    return pulsesOfBiphaseFrame(b, bits, value);
-  }
+  const b = biphaseOf(entry);
+  if (b !== undefined) return pulsesOfBiphaseFrame(b, bits, value);
   const base = timingsOf(entry);
   if (base === undefined) return undefined;
   const closing = closingSpace(entry, bits, value);
   const timings: FrameTimings = closing === undefined ? base : { ...base, closing };
   if (timings.carries === 'mark' && timings.closing === undefined) return undefined;
   return pulsesOfFrame(timings, bits, value);
+}
+
+/**
+ * The whole first block a stated code sends: the frame in its copies, the gaps, the closing.
+ *
+ * **This is what a record actually stores**, and `pulsesOfStatedCode` deliberately stops short of it,
+ * section 152: nothing after the frame follows from the bits. What fills the gap is section 171's per
+ * family measurement, three ways. A family whose shape already carries the whole record (the
+ * sectioned, long toggle and quaternary ones) is emitted by that shape. A family with a measured
+ * `tail` is the frame plus its copies, literal words and pads, `pulsesOfBlock`. And a family with
+ * neither is `undefined` rather than a guess, because a tail can hold a second command, section 152,
+ * and replaying one record's tail for another value would send it.
+ *
+ * Takes the catalogue's own string (or its parse), not a bare number, because the whole record shapes
+ * need every stated value and a single `(bits, value)` cannot carry them.
+ */
+export function blockOfStatedCode(code: string | StatedCode, periodNs?: number): Pulse[] | undefined {
+  const read = typeof code === 'string' ? statedCode(code) : code;
+  if (read === undefined) return undefined;
+  const entry = statedProtocol(read.family, periodNs);
+  if (entry === undefined) return undefined;
+  const values = read.frames.map((one) => one.value);
+  if (entry.quad !== undefined) {
+    if (values.length !== entry.quad.digits.length) return undefined;
+    try { return pulsesOfQuad(entry.quad, values); } catch { return undefined; }
+  }
+  if (entry.longToggle !== undefined) {
+    if (values.length !== 3) return undefined;
+    try { return pulsesOfLongToggle(entry.longToggle, values as [bigint, bigint, bigint]); }
+    catch { return undefined; }
+  }
+  if (entry.sections !== undefined) {
+    // One frame sent in sections, section 166: the value is the concatenation of the stated section
+    // values, most significant section first, and the emitted train is already the whole block.
+    if (values.length !== entry.sections.length) return undefined;
+    const t = timingsOf(entry);
+    if (t === undefined) return undefined;
+    const bits = entry.sections.reduce((a, one) => a + one, 0);
+    const value = entry.sections.reduce((acc, width, at) => (acc << BigInt(width)) | values[at]!, 0n);
+    try { return pulsesOfFrame(t, bits, value); } catch { return undefined; }
+  }
+  if (entry.tail === undefined || read.frames.length !== 1) return undefined;
+  const t = timingsOf(entry);
+  const b = biphaseOf(entry);
+  if (t === undefined && b === undefined) return undefined;
+  // `exactOptionalPropertyTypes`, so a field is present or it is not there at all.
+  const shape = { ...(t === undefined ? {} : { timings: t }), ...(b === undefined ? {} : { biphase: b }) };
+  try { return pulsesOfBlock(shape, read.bits, values[0]!, entry.tail); }
+  catch { return undefined; }
 }

@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import { framesOfPulses, pulsesOfFrame } from '../src/irframe.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
-import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
+import { blockOfStatedCode, closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 import { LAB, skipWithoutLab } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
@@ -430,4 +430,98 @@ test('the table answers for the recorded census, counted rather than printed', s
   // bit, section 170, and joined the table the same day.
   assert.deepEqual([...counts.keys()].filter((family) => !known.has(family)).sort(),
     ['Saitek 11 Bit']);
+});
+
+test('twenty four entries state their whole block, and the counts are per family', () => {
+  // **Section 171: what follows the frame is measured per family**, as copies, literal words and pad
+  // spaces solved from a constant total. Named with both counts, because the families where the whole
+  // block does not rebuild are the finding: Logitech 24 Bit's eleven failures are the PS3's long
+  // repeat records, Pioneer 32 Bit's ten are corpus records of one command whose copies differ from
+  // the compiled shape, and MemorexO1 32 Bit's shortfall is its own loose duration entry.
+  const tailed = PROTOCOLS.filter((one) => one.tail !== undefined)
+    .map((one) => [one.family, one.tailExact, one.codes] as const);
+  assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
+    ['JerroldO1 16 Bit', 47, 47],
+    ['JVC 16 Bit', 108, 108],
+    ['Logitech 24 Bit', 206, 217],
+    ['Magnavox 13 Bit', 105, 105],
+    ['Memorex 32 Bit', 8, 8],
+    ['MemorexO1 32 Bit', 81, 108],
+    ['MemorexV2 32 Bit', 38, 38],
+    ['Microsoft 30 Bit', 65, 213],
+    ['PanasonicV2 48 Bit', 4, 4],
+    ['Philips RC5 13 Bit Toggle', 51, 51],
+    ['Philips RECS80 11 Bit', 34, 35],
+    ['Pioneer 32 Bit', 9, 19],
+    ['PioneerO1 32 Bit', 7, 7],
+    ['RCAV1 LF 24 Bit', 52, 52],
+    ['Sharp 48 Bit 2', 345, 345],
+    ['SharpO1 48 Bit', 12, 12],
+    ['SharpO1 48 Bit', 33, 33],
+    ['Short 11 Bit 2', 42, 42],
+    ['Sony 12 Bit', 59, 59],
+    ['Sony 15 Bit', 12, 12],
+    ['Sony 20 Bit', 14, 14],
+    ['Thomson 12 Bit Toggle', 59, 59],
+    ['Toshiba 32 Bit', 622, 622],
+    ['Videocrypt 11 Bit Toggle', 32, 32],
+  ]);
+
+  // **Padding to a constant total block duration is real and it is per family**, which section 152's
+  // corpus wide attempt could not show. Named with the totals, since a total is a measurement.
+  const padded = PROTOCOLS.filter((one) => one.tail?.total !== undefined)
+    .map((one) => [one.family, one.tail!.total] as const);
+  assert.deepEqual([...padded].sort((a, b) => a[0].localeCompare(b[0])), [
+    ['JerroldO1 16 Bit', 199001],
+    ['JVC 16 Bit', 147601],
+    ['MemorexO1 32 Bit', 215736],
+    ['Philips RECS80 11 Bit', 364501],
+    ['Short 11 Bit 2', 410236],
+    ['Sony 12 Bit', 135001],
+    ['Sony 15 Bit', 135001],
+    ['Sony 20 Bit', 135001],
+    ['Thomson 12 Bit Toggle', 240001],
+    ['Toshiba 32 Bit', 215736],
+    ['Videocrypt 11 Bit Toggle', 413209],
+  ]);
+  // Sony's three families pad each copy to the published 45 ms frame period, and the block total says
+  // the same number a third way: three copies and the one microsecond every family's last space adds.
+  assert.equal(3 * 45000 + 1, 135001);
+});
+
+test('a whole block is emitted from the catalogue string alone, and totals what the family stores', () => {
+  // The frame emitters stop where the evidence used to, section 152; this is the rest of the record.
+  const sony = blockOfStatedCode('G:Sony 12 Bit:()(0x910)():3');
+  assert.ok(sony !== undefined);
+  assert.equal(sony.reduce((n, one) => n + one.us, 0), 135001);
+  // Three copies, each opening on the family's 2400 lead in.
+  assert.equal(sony.filter((one) => one.mark && one.us === 2400).length, 3);
+
+  const jvc = blockOfStatedCode('G:JVC 16 Bit:(Start)(0xC508)():3');
+  assert.ok(jvc !== undefined);
+  assert.equal(jvc.reduce((n, one) => n + one.us, 0), 147601);
+  // One lead in and two bare copies, which is what `f` in the measured tail means.
+  assert.equal(jvc.filter((one) => one.mark && one.us === 8400).length, 1);
+
+  // The ditto family: the repeat is a fixed short frame, not a copy of the payload. Two 8990 marks,
+  // one opening the frame and one opening the ditto, and the ditto's own words say it is not a copy:
+  // its space is 2230 where the frame's lead in space is 4490.
+  const toshiba = blockOfStatedCode('G:Toshiba 32 Bit:(Repeat)(0x15EA5CA3)():3');
+  assert.ok(toshiba !== undefined);
+  assert.equal(toshiba.reduce((n, one) => n + one.us, 0), 215736);
+  assert.equal(toshiba.filter((one) => one.mark && one.us === 8990).length, 2);
+  assert.equal(toshiba.filter((one) => !one.mark && one.us === 2230).length, 1);
+
+  // The whole record shapes go out whole through the same door.
+  const galaxis = blockOfStatedCode('G:Galaxis 16 Bit Quad Toggle:()(0x02031000_1x0_2x2123201)():3');
+  assert.ok(galaxis !== undefined);
+  assert.equal(galaxis.length, 38);
+
+  // **The negatives, which are the rail.** A family whose tail holds a second, value dependent frame
+  // is refused rather than having one record's second command replayed for every value, section 152.
+  assert.equal(blockOfStatedCode('G:Sharp 15 Bit 2:()(0x4321)():3'), undefined);
+  // A family with one record cannot show its tail is the family's rather than the value's.
+  assert.equal(blockOfStatedCode('G:Panasonic 16 Bit:()(0x3AF7)():3'), undefined);
+  // And a family nothing measured stays a refusal, same as the frame emitters.
+  assert.equal(blockOfStatedCode('G:Saitek 11 Bit:()(0x000)():3'), undefined);
 });
