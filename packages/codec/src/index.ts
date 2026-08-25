@@ -44,3 +44,4 @@ export * from './coverage.ts';
 export * from './edit.ts';
 export * from './growth.ts';
 export * from './relocate.ts';
+export * from './compose.ts';
