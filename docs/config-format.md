@@ -187,7 +187,7 @@ the three bytes before the marker as padding, and recorded an ambiguity: whether
 arch 9 carried a trailing NULL slot or simply more padding. Both readings were wrong in the same
 way. Once the table starts at `0x0B` the length follows from the marker position with no
 remainder, so there is nothing left for padding to be ambiguous about. The evidence is arithmetic
-on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all sixteen samples
+on the whole corpus: `0x0B + 4 * N` equals the measured marker offset in all seventeen samples
 across four architectures, where the old reading could only close by subtracting three bytes it
 could not account for. Every address the old parser reported was still correct, because the slot
 it lacked is NULL everywhere. See `docs/findings.md` section 20.
@@ -252,8 +252,10 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **19 of the 33 parseable containers have an odd body**, of which 14 verify their
-stored checksum under that rule. This said the corpus holds none<!--superseded-->, which made the
+counts words, and **22<!--fact:parseable_odd_body--> of the 41<!--fact:parseable_containers-->
+parseable containers have an odd body**, of which 17<!--fact:odd_body_verifying--> verify their
+stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
+two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
 behaviour read as untested when more than half the corpus tests it.
 
 **This is the value a writer has to get right**; the remote refuses a config whose checksum does
@@ -337,7 +339,7 @@ Known so far:
 | 9 | the **binding table**: six to seventeen sets of button bindings with an enter and a leave handler | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 11 | the **screen program table**: programs in the screen language | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | 15<!--fact:user_configs--> user configs, four architectures, below |
-| 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in all 21 containers, below |
+| 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in every found config, populated by seven made ones, below |
 | 12 | the **timer table**: wait, then queue one instruction | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 17 | the **touch screen hit map**, populated on arch 12 only | two configs, one image, below |
 | 2 | the **log area**: a region of flash the firmware appends to and never erases | 21 containers, one image, below |
@@ -500,7 +502,7 @@ of two pointers, and on arch 12 only, one byte in front of them:
 
 ```
 arch 8, 9, 14   u24 list; u24 program                 6 bytes
-arch 12         u8 unknown; u24 list; u24 program     7 bytes
+arch 12         u8 lead; u24 list; u24 program        7 bytes
 ```
 
 `list` is a tagged list in the encoding below and `program` is a screen program. The firmware
@@ -508,8 +510,12 @@ searches the page's list for a tag first and the mode record's own list second, 
 **overrides** rather than replaces. Both offsets are read off the code rather than inferred: one
 routine runs the list at `page + 0` and then the one at `entry + 1`, section 69. **Every page's
 list also has a second copy**, in the pool base slot 9's sets sit in, which nothing reads. Two tags are searched this way, `0x29` and `0x2A`, either side
-of the code that moves a wrapping page cursor; **what they name is unconfirmed.** So is the lead
-byte, which no reader in either image touches after fetching it.
+of the code that moves a wrapping page cursor; **what they name is unconfirmed.** The lead byte
+was in that sentence too until section 125 read it: it is the zero based index into base slot 17's
+hit map, stating which rectangle page a touch on this mode page consults, see the base slot 17
+section below. (This spec said "unknown" for ten days after its own base slot 17 section stated the
+answer, which an audit found rather than a test: the two passages share no number a check could
+compare.)
 
 Closures: 2906 of 2906 page pointers resolve; the page abutting an entry sits exactly six bytes
 before it on arch 8, 9 and 14 and exactly seven on arch 12, in 2396 of 2396 entries, which is where
@@ -1327,10 +1333,12 @@ Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) s
 
 ### Base slot 16: the number sender
 
-**Confirmed on two containers, both made rather than found.** Every container in the corpus
-carries a count of zero here, so for a year the layout came from three firmware images and nothing
-else. A configuration with three favourite channels on it was then compiled by Logitech's own service
-and every field below sits where the firmware reading put it, byte for byte. Section 154.
+**Confirmed on seven containers, every one made rather than found.** Every found config in the
+corpus carries a count of zero here, so for a year the layout came from three firmware images and
+nothing else. A configuration with three favourite channels on it was then compiled by Logitech's own
+service and every field below sits where the firmware reading put it, byte for byte, section 154;
+six more compiles from the same account carry the record too, sections 156, 165 and 174, and the two
+implementations are compared on it by the golden vectors.
 
 **This section does not carry every favourite channel.** A channel is sent through here only when its
 number survives being written as an integer. One with a **leading zero** takes another route entirely:
@@ -1855,6 +1863,22 @@ word carries at most 32767 us: a gap already spelled over three words can be rai
 without changing the block's length, and anything beyond that lengthens the block and relocates
 everything above it. The sharing rule applies first.
 
+**How Logitech's generator spells a block**, section 174. These are the generator's conventions
+rather than format constraints, since the firmware plays any legal spelling identically; a writer
+that wants byte identity with a compiled config follows them, and `compiledBlockWords` in
+`packages/codec/src/compose.ts` does.
+
+* **Every once block opens with a lead in silence**, 2032 of 2032 across four samples spanning both
+  generator eras: 50 ms on most commands, 500 ms or a second on the ones that get a settling time.
+  A held block never leads, 0 of 67.
+* **A duration too long for one word is spelt as maximal 32767 us words with the remainder balanced
+  across the last two, smaller half first, and no word below half the maximum**: 50000 is
+  `32767, 17233`; 40222 is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`.
+* **The trailing gap donates its final microsecond** to a closing 1 us word, `..., 30543, 1`.
+
+Respelling every merged space run of every block reproduces the three Harmony One compiles exactly,
+492, 415 and 415 blocks.
+
 63<!--fact:ir_groups--> groups and 4147<!--fact:ir_references--> record pointers checked: the lead byte is zero every time, each group is exactly
 `3 + 3 * count` bytes and groups are packed adjacently, every record pointer is inside the
 container, and none of them is an action list address.
@@ -1893,7 +1917,8 @@ Read with `gspm.ir_groups`, `gspm.ir_pulses` and `gspm.ir_frame`. The reader loc
 run rather than assuming a fixed offset, because some records carry a prefix of `0x7FFF` words
 whose length varies.
 
-*What a group is, and what the 14 byte header holds, are not established.*
+*A group is a device*: base slot 0's names tie a device label to exactly one group through base
+slot 13's transitions, sections 86 and 126. *What the 14 byte header holds is not established.*
 [findings.md](findings.md) section 32.
 
 ### Base slot 8: key press bindings
@@ -1962,7 +1987,7 @@ is where a press meets an action list; the key table is something else.
 
 ### Slot 0: the only `0xFEED` frame
 
-Exactly one frame per container, always at slot 0. Confirmed on sixteen samples across four
+Exactly one frame per container, always at slot 0. Confirmed on seventeen samples across four
 architectures, and confirmed as *exclusive* by validating every `0xFEED` byte pair in each
 container: no other one closes.
 
@@ -1998,7 +2023,7 @@ here as a fixed prologue until section 77, and they are the node named `Root` at
 whose `08` is its own length field. Every config in the corpus happens to hold it first; the arch 9
 safe mode container holds it third, so a reader must not depend on the position.
 
-The frame therefore occupies `length + 2` bytes, and in all sixteen samples the slot 1 pointer
+The frame therefore occupies `length + 2` bytes, and in all seventeen samples the slot 1 pointer
 lands on exactly that byte. That is an independent confirmation of the length rule, because the
 pointer and the length come from different places in the file.
 
@@ -2193,7 +2218,7 @@ names nothing. **So a reader must not take a model or an architecture out of a s
 container**, and the field is only load bearing for user configs, which is where the application
 needs it.
 
-Confirmed on sixteen samples spanning architectures 8, 9, 12 and 14. Every one has its
+Confirmed on seventeen samples spanning architectures 8, 9, 12 and 14. Every one has its
 architecture established independently of this record, from the EZHex header's `<PROTOCOL>`
 field on nine of them and from the firmware package the container was extracted from on the
 other three, so each sample is a calibration case rather than a self-consistency check.
@@ -2272,7 +2297,7 @@ An eleven byte framed record:
 +0x09  u16      0xEFBF         terminator
 ```
 
-Confirmed on sixteen samples across all four architectures, and the field assignment is a search
+Confirmed on seventeen samples across all four architectures, and the field assignment is a search
 result rather than a reading: of the 24 permutations of the four date bytes, times two month
 bases, times seven weekday offsets, **exactly one is consistent with every sample**. See
 `docs/findings.md` section 21.
@@ -2310,7 +2335,7 @@ timestamp is right for a round trip and wrong for a save, and that distinction i
 "carry it unchanged", `applyEdits` is the faithful path and `saveEdits` stamps. **`emit.ts` is neither
 and is deliberately the round trip side**, since its whole measurement is byte equality with its input.
 The record is encoded in exactly one place, `clockRecordFields` in `packages/codec/src/gspm.ts`, which
-is the inverse of `clockRecord` and asserted to be on all eighteen containers; the day of week is
+is the inverse of `clockRecord` and asserted to be on all nineteen containers; the day of week is
 computed there and never taken from a caller, since both parsers refuse a record where it disagrees.
 
 Two things worth having for free:

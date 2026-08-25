@@ -23,9 +23,10 @@ Logitech can make a new one.
 configuration off your remote, lets you change your devices and activities, learns codes from your old
 remotes, and writes it back. Nothing hosted, nothing that can be switched off later.
 
-It has begun and there is nothing to install. As of 14 August 2026 it holds one script, which reads a
-configuration file and prints the devices and activities it found, so the seam between the two
-repositories is proven by something that runs. Everything else about it is still ahead, and it cannot be
+It has begun and there is nothing to install yet. As of 25 August 2026 it is a desktop application
+taking shape: it opens, keeps your remotes in one place, and reads a configuration file into the
+devices and activities it holds, so the seam between the two repositories is proven by something
+that runs. Everything else about it is still ahead, and it cannot be
 written until the file a remote stores is properly understood. Working that out is what this repository is
 for: the understanding, and the code that does the reading.
 
@@ -43,8 +44,9 @@ Four remotes are on the bench, a Harmony One, a second One kept as a spare, a Ha
 | Work out what is in it | **Done** for every configuration file in the collection, to the last byte |
 | List your devices and activities, with their names | **Works.** The names are recovered from the pictures the remote draws on its own screen, because that is the only place it keeps them |
 | Take a configuration apart and rebuild it identically | **Works.** This is the test that has to pass before it is safe to change anything |
-| Change something and write it back | **Not yet.** The next big step, and deliberately switched off |
-| Learn a code from an old remote | Understood in principle, not built |
+| Change a configuration on the computer | **Works.** Small edits, bigger ones that move everything after them, and adding a whole device from Logitech's catalogue, whose infrared comes out byte for byte what Logitech's own service would have written |
+| Write it back to the remote | **Not yet.** The next big step, and deliberately switched off until the way back from a mistake is proven |
+| Learn a code from an old remote | Half built: turning a known code into pulses works and is checked against Logitech's own compiler; capturing one from a real remote is read but not built |
 
 **Nothing has ever been written to any remote here.** Reading is all that has happened, and the code
 refuses to write unless somebody deliberately turns that on.

@@ -129,6 +129,25 @@ devices on and sets their inputs. Counted by a single variable inside the config
 
 **mode**, **mode page** (our names). A screen the remote can show, and one page of it.
 
+**number sender** (our name). Base slot 16: one record per appliance that takes a channel number,
+with a table per decimal digit. Populated only by made configs, sections 154 to 156.
+
+**favourite channel** (Logitech's concept). A screen button that tunes a channel. Not a key binding:
+it lands in four sections at once, and a channel with a leading zero is spelled out digit by digit
+instead of going through the number sender. Sections 154 and 156.
+
+**protocol family** (Logitech's concept, their names). The named rhythm a code's durations follow,
+`NEC2`, `Sony 12 Bit` and so on. `packages/codec/src/protocols.ts` is the measured table of them,
+and each entry states which route measured it. Sections 157 to 169.
+
+**lead in** (our name). The silence Logitech's generator opens every once block with, 50 ms on most
+commands and longer on ones that get a settling time. A generator convention, not a format
+constraint. Section 174.
+
+**biphase** (standard). An encoding where every bit is one cell and the bit is which half of the
+cell carries. It has one duration, so the mark and space reader has nothing to split; a separate
+reader handles it. Sections 162 to 164.
+
 **action list** (our name). A little program the remote runs when you press a button: three byte
 instructions in a queue. One of two interpreters inside the remote, and fully read.
 

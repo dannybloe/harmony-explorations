@@ -388,6 +388,35 @@ def corpus_facts():
     return {k: str(v) for k, v in totals.items()}
 
 
+def parseable_facts():
+    """The population `docs/config-format.md` quotes about odd bodies, and why it is its own fact.
+
+    The odd body sentence said "19 of the 33 parseable containers" while the test said 21 of 39 and
+    then 22 of 41: it had drifted through two sample additions because it carried no marker, found on
+    25 August 2026 while auditing what phase 7 should have touched. The population is everything in
+    the lab that parses as a container, mirroring `parseable()` in `packages/codec/test/gspm.test.ts`,
+    which is wider than `lab.CONTAINERS`: the calibration pair and the phase 7 pair are in it.
+    """
+    import lab
+    from harmony import gspm
+
+    if any(lab.path(n) is None for n in lab.IMAGES):
+        return {}
+
+    parsed = []
+    for name in lab.IMAGES:
+        try:
+            parsed.append(gspm.parse(lab.load(name)))
+        except Exception:
+            pass  # not a container: the population is what parses, not what is named
+    odd = [c for c in parsed if (len(c.blob) - gspm.TRAILER_CHECKSUM_OFFSET) % 2 == 1]
+    return {
+        'parseable_containers': str(len(parsed)),
+        'parseable_odd_body': str(len(odd)),
+        'odd_body_verifying': str(sum(1 for c in odd if c.checks['trailer_checksum_recomputes'])),
+    }
+
+
 def user_config_facts():
     """The totals `docs/config-format.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
 
@@ -592,6 +621,7 @@ def main():
     facts.update(text_facts())
     facts.update(activity_facts())
     facts.update(device_facts())
+    facts.update(parseable_facts())
     facts.update(user_config_facts())
 
     if '--list' in sys.argv[1:]:

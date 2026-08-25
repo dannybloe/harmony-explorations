@@ -829,11 +829,14 @@ docs/adding-a-device.md         THE checklist for one goal: pick an appliance ou
                                 fail, written on 24 August 2026 because every part of it had been
                                 started and none finished. A session working towards that goal
                                 starts at its first unticked box and ticks one only when its check
-                                is a test in the repository. **The checklist is phases 0 to 6**,
+                                is a test in the repository. **The ungated checklist is phases 1 to 7, all ticked on 25 August 2026**,
                                 which need no remote plugged in and move no rail; the write and the
                                 button press are behind a gate, because they would be the first
                                 write this project has ever performed and the restore route is
-                                unproven
+                                unproven. Danny opened the gate on 25 August 2026, rehearsal
+                                first; before the rehearsal comes one derivation, since the
+                                `WRITE_FLASH` data packets were never read out of the firmware
+                                and `writeFlash` in `packages/usb` throws by construction
 docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes
@@ -866,9 +869,12 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
                                 units tall. **Placement is no longer schematic**, which is the
                                 claim this entry used to carry and the reason the other 33 models
                                 were parked on 11 August 2026: a traced key is where it is on the
-                                product. The button map is still not here, since a name still comes
-                                from `reference/button-maps.md` and 22 of the 600's 54 keys have no
-                                measured code. The printed words, the colour on the teletext keys
+                                product. The button map is drawn in since 21 August 2026: a key whose
+                                scan code is measured carries it as `data-scan`, 36 of the 600's 54
+                                keys from `reference/button-maps.md` and 34 of the One's 44, being
+                                its 32 mapped buttons plus the two touch arrows section 125 placed,
+                                and the rest carry none rather than a guess. The 525 stays
+                                candidates only. The printed words, the colour on the teletext keys
                                 and the regions a rocker's halves cover are ours and not the
                                 document's, and each says so where it sits
 reference/button-maps.md        which button a scan code is, per model, measured through the account
@@ -1521,8 +1527,8 @@ over the runner-up before trusting its answer.
 Output here is AI-produced and published as such, so claims are expected to be checkable.
 Established norms:
 
-* Prefer two independent samples. The container is validated against sixteen, spanning four
-  architectures, four base addresses, three format versions and three pointer table lengths.
+* Prefer two independent samples. The container is validated against seventeen, spanning four
+  architectures, five base addresses, three format versions and three pointer table lengths.
   Two samples of one model prove much less than two architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
   a stored 263, which the code's arithmetic turns into exactly 26.25 us. **And a closure is only
@@ -1596,13 +1602,14 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 165 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 174 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
-unit's lab dump byte for byte, and all three remotes are fully read and verified against their
-backups: user config, application firmware, safe mode, both internal pages, no differences. What is
+unit's lab dump byte for byte, and all four remotes are fully read and verified against their
+backups: user config, application firmware, safe mode, and the internal pages where the architecture
+serves them, no differences. What is
 verified is that each backup is faithful; **restoring from one has never been tried.**
 
 Byte accounting, `make coverage`, zero overlaps everywhere:
@@ -1635,7 +1642,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
-| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Three made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
+| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Seven made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
 | 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
 **Most of a config is pictures**, sections 49 to 55, 62, 66 and 146: one contiguous array from the end
@@ -1960,8 +1967,9 @@ produce a config the remote accepts and mishandles.
   column census of 14, 14, 13 and 13 both give, so three independent routes agree. The **One came to
   44 and nothing can check it**: arch 12 yields no column from a USB census because sixteen buttons
   share one sense line, so that number is a count of a photograph and the drawing says so rather than
-  implying confirmation. Neither carries a `data-scan` or even a candidate set, since nothing narrows
-  either.
+  implying confirmation. Both carry `data-scan` on their measured keys since the traced geometry
+  landed on 21 August 2026: the 600 its 36 mapped buttons, the One its 32 plus the two touch arrows
+  section 125 placed, which corrects the next paragraph's original ending in place.
   **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
   sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
   matched against the command catalogue and button maps of the account that generated a config names the
@@ -1972,9 +1980,11 @@ produce a config the remote accepts and mishandles.
   remote down to four: a scan's command is per activity and its button is not, only an `ActivityButtonMap`
   may name an activity's set, and the assignment is globally injective because a button is one physical
   key. The four that remain are real, two up keys and two down keys sending one command each, and no
-  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts` and the silhouettes
-  still get no `data-scan`, since the rest is **unbound**: these configs drive three devices in two
-  activities and a library answering for a scan they never bound would answer from nothing. And **the
+  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts`, since the rest is
+  **unbound**: these configs drive three devices in two activities and a library answering for a scan
+  they never bound would answer from nothing. The silhouettes were going to get no `data-scan` on the
+  same ground and got them on 21 August 2026 anyway, for the measured keys only, which serves both: a
+  drawn key answers with its code or with nothing, never from nothing. And **the
   geometry does not
   follow**: under section 48's own column formula the digits 1, 2 and 3 of a Harmony 600 sit in columns 3,
   2 and 2, and no divisor to 19 in either direction puts a digit row on one line, so a matrix position is

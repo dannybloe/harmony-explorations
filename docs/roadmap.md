@@ -3,10 +3,15 @@
 This is the authoritative sequence. [plan.md](plan.md) is the earlier proposal this grew out of
 and is kept for its arguments, not as the plan of record.
 
-Status, 2026-08-08: steps 1, 2, 4, 5 and 8 are done, and step 3 is done as far as the firmware images can
+Status, 2026-08-25: steps 1, 2, 4, 5 and 8 are done, and step 3 is done as far as the firmware images can
 take it. Both directions of every command are documented, the container codec exists in TypeScript
-and is proven equal to the Python one field for field on thirteen samples, and the command layer and
-its write rails are written and tested against a scripted remote.
+and is proven equal to the Python one field for field on 41 samples, and the command layer and
+its write rails are written and tested against a scripted remote. Since then the codec learned to
+change a config's length (section 172), to compose a catalogue device onto a real config complete
+with its screens (section 173), and its infrared blocks are byte identical to what Logitech's own
+compiler writes for the same codes (section 174). The write path's rails exist and are refusal
+tested; the `WRITE_FLASH` data packets themselves are not yet derived from the firmware, so nothing
+can be written yet even with every flag on.
 
 **The read path now works against both bench remotes**, on both architectures, from this project's
 own host code: 256 bytes of config flash come back byte identical to each unit's lab dump, live RAM
@@ -23,7 +28,8 @@ Then the internal read window turned out to be two pages rather than one, which 
 claim and, on the 600, **completed a firmware image this project has worked around for months**:
 70336 bytes, its own checksum verifying, against concordance's truncated 65536. Sections 22 and 23.
 
-Next is step 5, and decision 4 has been revised: the product lives in
+Next is milestone M4, the write path, whose gate opened on 25 August 2026. Decision 4 has been
+revised: the product lives in
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
 Read the next section before the milestones, because that revision changed what this repository is
 for and the milestone list was written when it was going to hold everything.
@@ -176,8 +182,9 @@ image is a second sample rather than a stand in. Other models are iterated on la
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for
    when we are genuinely stuck.
 8. **Version 1 of the app is read only.** Detect the remote, read the config, show the container
-   and the labelled sections, export IR codes. The write code is written but sits behind a flag
-   that is off in release builds.
+   and the labelled sections, export IR codes. The write rails, the erase scoping and the request
+   encoders are written and sit behind a flag that is off in release builds; the `WRITE_FLASH`
+   data path itself is not derived yet, so `writeFlash` refuses even with the flag on.
 9. **Logitech's own client is a fallback source, not a forbidden one.** *Taken 9 August 2026, and
    it narrows decision 2 rather than reversing it.* The firmware stays the default and the
    preferred evidence, because it says what the remote does where the client only says what one
@@ -394,9 +401,11 @@ dependency is added without looking at what it pulls in: that is what rejected `
 appliance out of Logitech's catalogue, put it on a Harmony One, and have the appliance respond. It cuts
 across M2, M3, M4 and M6 rather than sitting inside one of them, which is exactly why it kept being
 started and never finished, and it is the plan of record for that goal. Its own finish line is a config we
-built that Logitech's compiler agrees with, with nothing written to a remote; the hardware run is M4 and
-sits behind a gate in that document rather than inside the list. This document stays the plan of record
-for everything else.
+built that Logitech's compiler agrees with, with nothing written to a remote, and **that line was reached
+on 25 August 2026**, section 174: asked to add the same television, their compiler writes infrared blocks
+byte identical to ours. The hardware run is M4 and sits behind a gate in that document rather than inside
+the list; **the gate opened the same day**, with the restore rehearsal first. This document stays the plan
+of record for everything else.
 
 **The goal after that checklist is compiling a whole config from the document**, recorded here on 25
 August 2026 because the checklist's donor route made it look like the destination and it is scaffolding.
@@ -424,11 +433,11 @@ a technical claim about the product belongs on this side of the fence.
 |---|---|---|
 | 1 | See what is on your remote | M1 and M2, both done. Plus `inventory`, `render`, `activities`, `devices` and `text`, all done |
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
-| 3 | Change something, without touching the remote | M3's codec half, `edit.ts` with `FIELD_RULES`, done, same length only |
-| 4 | Put it back, changing nothing | **M4**, not started. The write rails, `ERASE_FLASH` scoping and the read back compare |
+| 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
+| 4 | Put it back, changing nothing | **M4**, started 25 August 2026: the gate is open and the rehearsal is first. The rails and `ERASE_FLASH` scoping exist; the `WRITE_FLASH` data packets are underived, so `writeFlash` still refuses by construction |
 | 5 | Change what your remote does | M4 again, plus **one reading**: which base slot 15 group holds a device's delays, see below |
-| 6 | Add and remove devices and activities | M6, and the **unscheduled** one: length changing edits, which relocate everything above the insertion |
-| 7 | Teach it a code from your old remote | **M5**, not started. Capture is read, section 98; the encoder from timings to a record is the open item |
+| 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
+| 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |
 | 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |
 
 Two things the product plan states that this document used to imply and never said: version 1 is an
@@ -643,8 +652,10 @@ than by reading the code, which is the argument for having built it.
 
 **The timer table, the parameter block and the touch map followed**, in
 `packages/codec/src/tables.ts`, and with them **every reader Python has is now in TypeScript** bar
-one: base slot 16, the number sender, whose count is zero in every config in the corpus, so a port
-would add no bytes and be exercised by nothing. The touch map is what moves the Harmony One, from
+one: base slot 16, the number sender, whose count was zero in every config that had been **found**,
+so a port would have been exercised by nothing. Section 154 then made a config that populates it,
+and the port is complete since: claimed by the accounting, rebuilt by the emitter, compared by a
+golden vector. The touch map is what moves the Harmony One, from
 7.7% to 8.0%, because it is the only remote here that carries one.
 
 So the port is done and the ceiling is where section 49 said it would be. **Coverage stops in the
@@ -760,11 +771,17 @@ obvious next step was to give the emitter the same two paths, and its premise do
 byte equality with its input is the entire measurement M2 makes. What the check did find is that the
 emitter and the edit layer had each derived base slot 3's day of week themselves, with a different
 spelling of the same epoch, so there is one encoder now beside the decoder it inverts and a test that
-walks all eighteen containers asserting they are inverses.
+walks `ALL_CONTAINERS` asserting they are inverses, nineteen when this was written and
+whatever that list holds now.
 
 **M4 Writer. Both.** The write path, its rails and the read-back-and-compare belong to the API and
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
 facing "write my config" is FreeHarmony's steps 4 and 5, which are blocked on this and say so.
+**Started 25 August 2026**: the gate in `docs/adding-a-device.md` opened, with the restore rehearsal
+first, writing the spare Harmony One's own dump back before any composed config. What stands between
+the gate and the rehearsal is one derivation: the `0x40` data packets that follow a `WRITE_FLASH`
+announcement have never been read out of the firmware, so `writeFlash` throws by construction. The
+rails, the `ERASE_FLASH` scoping and the acknowledgement checks exist and are refusal tested.
 
 **M5 Learning. Both.** IR capture over USB and the encoder from raw timings to a config record are
 API. The learning interface is FreeHarmony's step 7. The encoder is the part with nobody assigned: it replaces a choice
@@ -1350,18 +1367,27 @@ Not optional, and they belong in the code rather than in a document:
 * End to end for M1: plug in the Harmony 600, run the app, read the config, confirm the container
   summary matches `python3 tools/gspm_parse.py` on the same file.
 
-## Known unknowns, unchanged
+## Known unknowns
+
+The heading said "unchanged" until 25 August 2026, and by then five of its entries were answered in
+this document's own body, which is the drift `make facts` cannot see: a list of open questions has no
+number to recompute. Answered entries are corrected in place below rather than deleted.
 
 * Three of the four IR encoding classes at the dispatcher `0x12F08`. No config in the corpus
   carries one, section 42, so the firmware is the only evidence there will be.
 * The encoder from raw learned timings to a config IR record. This ran on Logitech's servers, so
-  nobody has it, and M5 depends on deriving it from the four decoder classes.
-* Activity semantics. The accumulator machine is read, `docs/findings.md` section 34, and so is
-  the second interpreter that draws the screen, section 40; what an entry of the binding table
-  corresponds to is the part still open.
-* The LWJL difference between architectures, and the translation from the scanner's linear index
-  to config event codes.
-* Whether the firmware implements event injection over USB.
+  nobody had it. **Mostly built since**: a code stated as a name and a number becomes pulses through
+  the rhythm table, sections 157 to 169, and the block spelling matches Logitech's own generator byte
+  for byte, section 174. What learning still needs is the tail shape, section 152, and the storage
+  class choice, section 42.
+* Activity semantics. **Closed**: the accumulator machine is read, section 34, the screen
+  interpreter is read, section 40, and a binding table entry is an activity's handler set in the four
+  hop chain that starts it, sections 120 and 121, all fifty activities named.
+* The LWJL difference between architectures. The other half of this entry, the translation from
+  the scanner's linear index to config event codes, is answered: the codes carry the index directly,
+  section 89 and the step 6 narrative above.
+* Whether the firmware implements event injection over USB. **Answered no on arch 14**, in this
+  document's own step 6 narrative; arch 12 unexamined and nothing wants it.
 * **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
   **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
   copied in descending significance, so its record is a timestamp. What remains is the other four, and
@@ -1369,10 +1395,11 @@ Not optional, and they belong in the code rather than in a document:
   it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
   classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
   declared region written, so the appender disarms itself at the first attempt, section 111.
-* **Which activity a drawn name belongs to.** The codes are read, section 112: a glyph's pixels name
-  its character, seven typefaces cover the corpus, and all but two of 170922<!--fact:text_glyphs-->
-  drawn glyphs come back. So the names an interface needs are readable. The tie from a name to an
-  activity number is not: no screen switch reads `CurrentActivityState` and base slot 14's value maps
-  point at no text, which leaves the touch map. A **writer** still has to build a font set and number
+* **Which activity a drawn name belongs to.** **Closed**, sections 120, 121, 124 and 125: all
+  50<!--fact:activities_total--> activities in the corpus carry their drawn name, through the modes an
+  activity's chain enters on three architectures and through the hit map on the Harmony One, and
+  `make activities` prints it. The sentence that used to stand here, that the tie from a name to an
+  activity number was not read, was already contradicted by the M3 section above when the list's
+  heading said "unchanged". A **writer** still has to build a font set and number
   it rather than look a character up, since the codes are assigned per config in the order characters
   first appear in the generator's string list.

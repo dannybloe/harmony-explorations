@@ -17860,9 +17860,14 @@ with and without an offset, taking the row from the quotient and then from the r
 puts each of the three digit rows on one line**. A matrix position is a wiring decision on a board.
 
 So a scan code carries a name and no place, this route is the only source for the name, and
-`reference/silhouettes/` still gets no `data-scan`: the two remotes here have twenty eight and thirty
-two of their forty four and fifty four buttons named, and filling in a drawing would mean guessing the
-rest. A test asserts the geometry cannot be recovered, so nobody has to re-derive that.
+`reference/silhouettes/` was going to get no `data-scan`: the two remotes here have twenty eight and
+thirty two of their forty four and fifty four buttons named, and filling in a drawing would mean
+guessing the rest. A test asserts the geometry cannot be recovered, so nobody has to re-derive that.
+(Corrected 25 August 2026: the maps grew to 32 and 36 buttons, and the traced geometry of 21 August
+put `data-scan` on exactly the measured keys and on nothing else, the 600's 36 plus, on the One, the
+two touch arrows section 125 placed beside its 32. So the rule that survived is "never a guess"
+rather than "never an attribute". Found by an audit rather than by a failure: no test read this
+sentence, which is what a summary is.)
 
 ### What this is, and what it is not
 

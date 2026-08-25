@@ -18,21 +18,26 @@ section. For the format as a specification, [config-format.md](config-format.md)
 
 ## Status
 
-The work targets two architectures, and there are three on the bench:
+The work targets three architectures, and there are four remotes on the bench, two of them
+Harmony Ones:
 
-* **arch 12** ("Gin"), Harmony One
+* **arch 12** ("Gin"), Harmony One, plus the spare Harmony One that is the only unit anything may
+  ever be written to
 * **arch 14**, Harmony 600 and Harmony 700
-* **arch 9**, Harmony 525, connected on 8 August 2026. Read, not targeted: its config and its
+* **arch 9**, Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
-  accounting, is read.
+  accounting, is read. It has no write target and will not get one.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
 infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because publicly shared sample
-sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Sixteen samples, four base
-addresses, three format versions, three pointer table lengths, all consistency checks passing. It
+sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen samples in the
+framing tables, five base addresses, three format versions, three pointer table lengths, all
+consistency checks passing; the wider population of everything in the lab that parses is
+41<!--fact:parseable_containers--> containers over five architectures, since arch 10's framing
+verifies too. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
 insertions, so a section labelled on one architecture transfers to the others by index.
@@ -47,8 +52,8 @@ sample. Among the recent ones is **the timer table**, which is where a backlight
 power off live: a record says how long to wait and which single instruction to run afterwards, and
 the set of records a config's action lists start is exactly the set it declares. Next to it is
 **the parameter block**, whose every group has a length the firmware demands and silently ignores
-the group if it differs: fourteen such lengths read off two images, holding in all fifteen
-containers. Then **the touch screen hit map**, which only the Harmony One
+the group if it differs: fourteen such lengths read off two images, holding in every container of
+the two architectures those images belong to, and asserted on no other. Then **the touch screen hit map**, which only the Harmony One
 carries, because it is the only remote here with a touch panel: per screen page a list of
 rectangles, each reporting a key code, and the firmware answers a touch with the first rectangle
 the point falls in. The last to fall is **the log area**, which is not a pointer to anything: three
@@ -75,7 +80,9 @@ is never computed and only the matrix **column** is observable, a quarter of the
 the rest of its application, section 111. The broader claim stood here for three days.) That quarter
 closes: the measured census is 14, 14, 13, 13 buttons per column, a column holds at most 14, and
 the unit's own config carries scan codes contiguous 1 to 54, whose two absentees fall in exactly
-the two columns that are short. Which button carries which of the 54 codes is still open. **The
+the two columns that are short. Which button carries which of the 54 codes is named for 36 of them, through the account that
+compiled the calibration configs, section 133 and `reference/button-maps.md`; the rest, and every
+contributed config, stay open. **The
 Harmony One gives nothing at all**: sixteen buttons from every region of it pull one shared sense
 line, so arch 12 wakes differently from arch 14 and USB yields no part of its mapping.
 
@@ -86,7 +93,7 @@ program selected. `tools/screen_dump.py --strings` draws them, and they come out
 labels. **Action lists** are bytecode for an accumulator machine with a forty instruction queue and
 a binary search dispatcher, and the queue is in RAM because the language mutates it: a comparison can
 carry an **else** arm, and it cancels the arm it does not take by writing a do nothing instruction
-over it, section 140. and a **second interpreter draws the screen**: its own one byte opcodes
+over it, section 140. And a **second interpreter draws the screen**: its own one byte opcodes
 for text, bitmaps, a switch on a state variable and a jump, with 22846<!--fact:screen_programs--> programs across
 19<!--fact:containers--> containers decoding with nothing left over. Its one instruction that
 names an address outside its own program draws a **bitmap**, either raw rows or the same encoding a
@@ -95,7 +102,8 @@ is loaded, and the row loop stops drawing above row 128 while still consuming th
 
 **That region is read now, and with it most of a config.** It used to be the largest single
 unknown, 62% of a Harmony 600 and 82% of a Harmony One reachable from nothing named. It is one
-contiguous array of screen pictures, rows of big endian RGB565 pixels, drawn by programs carried
+contiguous array of screen pictures, rows of big endian RGB565 pixels on three architectures and
+one bit a pixel on the Harmony 525's monochrome panel, drawn by programs carried
 inside mode records that nothing could reach until a missing operand count was found in the
 firmware. A mode turned out to have **pages**, each naming its own key map and its own screen, and
 following those took the Harmony One from 28 pictures reached to 98, which is every picture in its
@@ -126,8 +134,21 @@ calibration is a config Logitech's own service compiled for one device and one a
 watched, which reports one and one. The names in that tree are our own equipment, so what
 is published here is counts and shapes rather than anybody's inventory. Section 86.
 
-Not established: what a binding table entry corresponds to, three of the four infrared encoding
-classes, and which physical button each scan code is. See
+**A config can be changed now, length and all.** Same length edits came first, then a relocation
+pass that inserts bytes and restamps every stated address, section 172, and on top of both a
+composer: pick an appliance out of Logitech's catalogue and `composeDevice` plus
+`composeDeviceScreen` put it on a real Harmony One config, infrared, state variables, key bindings
+and its own screens, with the byte accounting, the round trip and the renderer all closing over the
+result, section 173. The check that this is not merely self consistent is section 174: Logitech's
+own compiler, asked to add the same television, writes infrared blocks **byte identical** to ours
+once two of its spelling conventions are adopted, both measured rather than guessed. Nothing has
+been written to a remote; the write gate opened on 25 August 2026 and the first work item is
+deriving the `WRITE_FLASH` data packets, which have never been read out of the firmware.
+
+Not established: three of the four infrared encoding classes, which no config in the corpus uses;
+which physical button each scan code is beyond the 36 and 32 the calibration account names, and
+every button's **position**, which is a wiring decision no read path reaches; and the
+`WRITE_FLASH` data path above. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 
@@ -293,3 +314,27 @@ activities, on a menu of five entries whose fifth is the remote's own settings p
 delays and a per-half-cycle enable mask. The config supplies a 16-bit carrier period and an
 8-bit duty value, scaled by `value * 4 / 10` into instruction cycles. Cross-checked: 38 kHz
 implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
+
+**A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
+importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
+only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
+holds 38 families, each entry saying which route measured it, most off configurations Logitech's own
+compiler was asked to produce for appliances chosen here. Their analyser turned out to be a decoder
+of their own database rather than of infrared, accepting rhythms their compiler never emits, so it
+was retired as evidence and kept as a second opinion. Biphase codes, where the bit is which half of
+a cell carries, get their own reader and three families reproduce every record byte for byte.
+
+**A favourite channel is not a key binding**, sections 154 and 156: it lands in four sections at
+once, and a channel with a leading zero is spelled out digit by digit instead of going through the
+number sender, so a writer chooses a mechanism per channel. Measured by compiling configs with
+favourites chosen for the purpose, which also gave base slot 16, the number sender, its first
+populated samples: seven made configs populate it and no found one does.
+
+**A television this project composed is byte for byte what Logitech's compiler writes**, section
+174. Their service compiled the same account twice, either side of their own generator adding the
+television `composeDevice` adds here, and their infrared records for the same catalogue codes match
+ours block for block once two of their generator's spelling conventions are adopted: every once
+block opens with a lead in silence, and an over-long duration is spelt as maximal words with the
+remainder balanced across the last two. Both conventions were measured before being adopted, and
+the five remaining differences between their addition and ours are bookkeeping, written down in the
+finding.

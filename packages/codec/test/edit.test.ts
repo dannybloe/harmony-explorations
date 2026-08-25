@@ -518,7 +518,7 @@ test('localTimestamp is the wall clock, and it round trips through the record', 
  * derived the day of week themselves until 10 August 2026, with a different spelling of the same
  * epoch, and both were right; two copies of one derivation is the shape of defect this project bans
  * for the opcode table, and nothing failed while it existed. So the guard is not "the two agree", it
- * is that there is one implementation and it inverts the reader on eighteen real records.
+ * is that there is one implementation and it inverts the reader on nineteen real records.
  */
 // The nineteen the rest of the workspace counts: `emit.test.ts`'s `REBUILT` and
 // `coverage.test.ts`'s `ACCOUNTED`. This list held eighteen until 13 August 2026, missing

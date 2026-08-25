@@ -169,5 +169,6 @@ One item.
   and 14, and what those two bytes are for is unread. A relocation reproduces the bias, not the
   address.
 * **Where screen opcode 3 draws its picture.** Section 146. It does not affect the census, since the
-  address is a picture wherever it lands, and it does affect the render check, which never looks at
-  the instruction.
+  address is a picture wherever it lands. (This said it affects the render check, "which never looks
+  at the instruction"; section 148 taught the renderer opcode 3 and added the per architecture tally
+  that would notice it going blind again, so that clause is dead.)

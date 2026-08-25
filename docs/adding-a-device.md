@@ -570,6 +570,12 @@ not allowed to consume on its way past.
 **So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the
 restore-from-dump route rehearsed first, and not because phase 7 finished.
 
+**Danny said so on 25 August 2026**, the day after phase 7 ticked. What the rehearsal is waiting on
+is one derivation: the `0x40` data packets that follow a `WRITE_FLASH` announcement have never been
+read out of the firmware, so `writeFlash` in `packages/usb` throws by construction. Deriving that
+path, clean room from the firmware with concordance as the cross check, is the first work item of
+phase 8 and moves no rail by itself.
+
 ## Phase 8: the write path, on the spare Harmony One
 
 M4, and behind the gate above. The rails are written and off, `packages/usb/src/rails.ts`.

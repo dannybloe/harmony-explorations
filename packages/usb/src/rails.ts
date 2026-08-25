@@ -32,9 +32,11 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
 /**
  * Architectures that have a write target at all.
  *
- * Three remotes are on the bench: a programmed Harmony One, a Harmony 600, and a spare
- * unprogrammed Harmony One. The spare is the only unit anything may be written to, and it is
- * arch 12. **So arch 14 has no write target**, and writing to it stays refused until a second
+ * Four remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One,
+ * and a Harmony 525, which is arch 9 and has no write target either. The spare is the only unit
+ * anything may be written to, and it is arch 12. It is no longer unprogrammed: Logitech's own
+ * software synced a config to it on 7 August 2026, section 58, and its original contents are
+ * verified in the lab. **So arch 14 has no write target**, and writing to it stays refused until a second
  * arch 14 remote exists. Reading arch 14 is unaffected, which is the point of keeping this
  * separate from the read paths.
  */
@@ -108,7 +110,7 @@ export interface WritePermission {
   readonly originalDumpVerified: boolean;
   /** The config's INTENDEDVERSION matches the remote's protocol, skin, board and flash id. */
   readonly intendedVersionMatches: boolean;
-  /** The unit is the spare, unprogrammed remote. Nothing else is ever a write target. */
+  /** The unit is the spare remote. Nothing else is ever a write target. */
   readonly targetIsTheSpareRemote: boolean;
 }
 
@@ -124,7 +126,7 @@ function assertPermissionIsUsable(p: WritePermission): void {
     );
   }
   if (!p.targetIsTheSpareRemote) {
-    throw new RailError('the spare unprogrammed remote is the only write target');
+    throw new RailError('the spare remote is the only write target');
   }
   if (!p.originalDumpVerified) {
     throw new RailError('no verified original dump of this unit: refusing to write');
@@ -269,7 +271,7 @@ export function assertRamWriteAllowed(
     throw new RailError('writing is disabled: this build is read only');
   }
   if (!p.targetIsTheSpareRemote) {
-    throw new RailError('the spare unprogrammed remote is the only write target, RAM included');
+    throw new RailError('the spare remote is the only write target, RAM included');
   }
   // An architecture check, like every other write rail here. It had none, so a caller passing
   // `targetIsTheSpareRemote` reached `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7
