@@ -310,6 +310,22 @@ and no way to know it was asked; and it is evidence that a catalogue appliance i
 which is the assumption an import would otherwise make. `docs/adding-a-device.md` phase 4 carries the
 consequence.
 
+## The browser sign in is decaying while the JSON service is not, observed 25 August 2026
+
+MyHarmony, the MartiniWeb client at `setup.myharmony.com`, refused to sign any of three accounts in,
+identically, on a rebooted machine. The captured request shows why: the client signs in through
+Logitech's central SSO, `id.logi.com` posting to `accounts.logi.com/websso/signin`, and the JSON body it
+sends carries `"channel_id": "channel_id"`, a literal placeholder where a value belongs. The answer is a
+bare `400 Bad Request`, so the refusal happens before any credential is checked, which is what makes
+every account fail the same way. The same hour, `LoginUser` on `svcs.myharmony.com` accepted one of
+those accounts and returned its household, twice.
+
+Two consequences worth the paragraph. Everything this project does speaks the JSON route and is
+unaffected; what the breakage removes, for as long as it lasts, is the **hand** route of adding
+appliances in their client. And an importer in FreeHarmony should speak `LoginUser` directly and never
+the browser SSO, because the SSO front end is the half already rotting. The shelf life argument this
+document and decision 11 lean on is now an observed event with a date rather than a prediction.
+
 ## The ledger: believed on the client's word alone
 
 Everything in this section is **unconfirmed**. It is a shopping list for firmware work, in
