@@ -367,18 +367,51 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
   // Per appliance: value to family, and which widths it states. The widths are what lets a record whose
   // value does not join still be attributed, where the appliance states one family at that width.
   const appliances = catalogue.appliances.map((a) => {
-    const byValue = new Map<string, string>();
+    // **A value maps to every family that states it, not to the last one written.** This was a
+    // `Map<string, string>` until 24 August 2026, so where two families on one appliance state the same
+    // value the code went to whichever happened to be written last. Measured across the three compiled
+    // samples it is one value on one appliance, `32:c53a9966` on a Pioneer CLD50, and it cost a whole
+    // family: `Pioneer 32 Bit 2` shares its **first** frame with `Pioneer 32 Bit Dual` and is told apart
+    // only by its second, so all three of its records were attributed to the sibling and the table had
+    // no entry to emit its codes from. A single collision is easy to dismiss and it silently loses a
+    // family, which is why this is a list.
+    const byValue = new Map<string, string[]>();
     const byWidth = new Map<number, Set<string>>();
+    /** Each code as its whole frame list, which is what decides a shared value. */
+    const codes: { family: string; keys: string[] }[] = [];
     for (const cmd of a.commands) {
       const read = statedCode(cmd.keyCode);
       if (read === undefined) continue;
+      const keys = read.frames.map((f) => `${f.bits}:${f.value.toString(16)}`);
+      codes.push({ family: read.family, keys });
       for (const f of read.frames) {
-        byValue.set(`${f.bits}:${f.value.toString(16)}`, read.family);
+        const key = `${f.bits}:${f.value.toString(16)}`;
+        const already = byValue.get(key) ?? [];
+        if (!already.includes(read.family)) byValue.set(key, [...already, read.family]);
         byWidth.set(f.bits, (byWidth.get(f.bits) ?? new Set()).add(read.family));
       }
     }
-    return { label: `${a.make} ${a.model}`, name: a.name, byValue, byWidth };
+    return { label: `${a.make} ${a.model}`, name: a.name, byValue, byWidth, codes };
   });
+  type Owner = (typeof appliances)[number];
+
+  /**
+   * Which family a value belongs to, deciding a shared value by the whole code rather than by one frame.
+   *
+   * **A record states every frame of its command**, so where a value is stated by more than one family
+   * the record's own other frames say which: the family with a code all of whose frames the record
+   * carries. Exactly one such family wins; none or several is a refusal rather than a guess, because
+   * picking one there is what the overwritten map was doing.
+   */
+  const familyOf = (owner: Owner, key: string, readKeys: ReadonlySet<string>): string | undefined => {
+    const families = owner.byValue.get(key);
+    if (families === undefined || families.length === 0) return undefined;
+    if (families.length === 1) return families[0];
+    const whole = new Set(owner.codes
+      .filter((code) => code.keys.includes(key) && code.keys.every((k) => readKeys.has(k)))
+      .map((code) => code.family));
+    return whole.size === 1 ? [...whole][0] : undefined;
+  };
 
   // **The config names its own groups**, so the attribution is a string join rather than a vote. A
   // device's name is a prefix of a state variable's, reached through the list that sends its codes,
@@ -468,6 +501,9 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
     for (const d of decoded) {
       let landed = false;
       let read = false;
+      // Every number this record carries, under both header conventions, which is what a shared value
+      // is decided against. Computed before the loops because it is a property of the record.
+      const readKeys = new Set([1, 0].flatMap((pairs) => readings(d.train, pairs).map((r) => r.key)));
       // **A pulse distance reading that only matches by width waits for the biphase route**, section 164.
       // Merging adjacent durations, which the reader does now, gives a biphase code a plausible pulse
       // distance shape whenever two carrier halves fall next to each other: two RC5 records of this
@@ -486,9 +522,9 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
           // is what the appliance states, the frame recorded is theirs and the two carried lengths are
           // exchanged, so an encoder built from the entry emits this record again exactly.
           const flipped = complement(r.f.value, r.f.bits);
-          const asRead = owner.byValue.get(r.key);
+          const asRead = familyOf(owner, r.key, readKeys);
           const asFlipped = asRead === undefined
-            ? owner.byValue.get(`${r.f.bits}:${flipped.toString(16)}`) : undefined;
+            ? familyOf(owner, `${r.f.bits}:${flipped.toString(16)}`, readKeys) : undefined;
           const widths = owner.byWidth.get(r.f.bits);
           const byWidth = asRead === undefined && asFlipped === undefined && widths?.size === 1
             ? [...widths][0] : undefined;
@@ -524,7 +560,7 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
             const low = f.value & mask;
             for (const setIsMark of [true, false]) {
               const value = setIsMark ? low : low ^ mask;
-              const family = owner.byValue.get(`${bits}:${value.toString(16)}`);
+              const family = familyOf(owner, `${bits}:${value.toString(16)}`, readKeys);
               if (family === undefined) continue;
               // The leading bits this reading has over the stated width are lead in, so they move into
               // the prelude: two half cells per bit.

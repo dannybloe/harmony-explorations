@@ -131,7 +131,7 @@ family in their database. The library's own reader takes 2852 of 2921 distinct c
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **23 of the catalogue's 33 families**, which is 4908 of 5219 commands. It held 15 and
+The table holds **24 of the catalogue's 33 families**, which is 4915 of 5219 commands. It held 15 and
 4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
 from phase 3's splitting rule rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -218,8 +218,8 @@ one tail shape across every record. What varies is the closing silence.
       biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there.
       `frameSegments` and `framesOfSegments`, and the generator reads through the second now. Two more
       families measured, `Samsung 16 and 20 Bit` on 46 records and `MitsubishiO1 Dual 8 16 Bit` on 40,
-      each exact, no existing rhythm moved, and the table is 29 entries covering **23 of 33 families and
-      4908 of 5219 commands**
+      each exact, no existing rhythm moved, and the table is 30 entries covering **24 of 33 families and
+      4915 of 5219 commands**
 - [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
       measurement: a lead in is a mark and a long space, and on several families that space is over the
       threshold, so a rule with no floor cut the header off as its own segment and every frame then read
@@ -228,14 +228,24 @@ one tail shape across every record. What varies is the closing silence.
 - [x] `MitsubishiO1 Dual 8 16 Bit` reads whole, 40 of 40, which the prototype could not: its code states
       `Start`, two values and `Trailer`, and the generator's per record convention loop finds both values
       once the train is segmented
-- [ ] **three of those four families are no longer waiting on the framing, and the reason is a defect in
-      the join**, which landing the rule established: the prototype read `Pioneer 32 Bit 2` on 3 records,
-      `MemorexV2 32 Bit Dual` on 2 and `Sharp 48 Bit` on 1, and the generator still puts none of them in
-      the table. Its per appliance map from a value to a code is keyed by the value and **silently
-      overwrites**, so where two families on one appliance state the same value the code goes to whichever
-      was written last, and each of these three is a tiny family on an appliance a sibling dominates. That
-      is the next thing to fix here and it is not a reader problem. `Panasonic 16 Bit` (26) is still
-      unread and is the one of the four that may genuinely be framing
+- [x] **one of those four was the join and it is fixed**, and the other two are a different thing
+      entirely, which measuring each one separately established rather than the one explanation that fit
+      all three. `Pioneer 32 Bit 2` shares its **first** frame with `Pioneer 32 Bit Dual`, whose codes
+      outnumber it 33 to 3 on the same appliance, and the generator's map from a value to a family kept
+      one family per value, so all three of its records went to the sibling and the family had no entry
+      to emit its 7 catalogue commands from. The join now decides a shared value by the **whole code**:
+      the family with a code all of whose frames the record carries, and a refusal where none or several
+      qualify. Exactly three records moved, the sibling went 37 to 34, and nothing else in the table
+      changed. It is one collision on one appliance across all three samples, which is why it was easy
+      to dismiss and why it cost a family
+- [x] **`MemorexV2 32 Bit Dual` and `Sharp 48 Bit` are refused by a rail rather than missed by a
+      reader**, and the correction is worth keeping: their numbers are read, uniquely and with no
+      collision, and what refuses them is that their non carrying half is not one length. The Sharp
+      record's marks alternate 409 and 410, the two MemorexV2 records' alternate 560 and 594, and a table
+      entry states **one** flat duration, so no entry measured off them could reproduce them byte for
+      byte. Reading a value and measuring a rhythm are two different things and the prototype only did
+      the first. Admitting them would mean averaging a duration the record does not have, which is the
+      opposite of this phase's own rail
 - [ ] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
       is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
       by a script beside the notes as it is today

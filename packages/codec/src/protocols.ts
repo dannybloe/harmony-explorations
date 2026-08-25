@@ -139,8 +139,8 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MitsubishiO1 Dual 8 16 Bit', periodNs: 26315, header: [8400, 4250], flat: 510, zero: 570, one: 1600, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },
-  { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 37, exact: 37, spread: 0, source: 'compiled' },
   { family: 'Philips RECS80 11 Bit', periodNs: 26315, header: [0, 0], flat: 158, zero: 4902, one: 7442, carries: 'space', codes: 35, exact: 35, spread: 0, source: 'compiled' },
+  { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 34, exact: 34, spread: 0, source: 'compiled' },
   { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0, source: 'corpus' },
   { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 19, exact: 19, spread: 0, source: 'both' },
   { family: 'Sony 20 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 14, exact: 14, spread: 0, source: 'compiled' },
@@ -149,4 +149,5 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Memorex 32 Bit', periodNs: 26315, header: [9000, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', codes: 8, exact: 8, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 7, exact: 7, spread: 0, source: 'compiled' },
   { family: 'PanasonicV2 48 Bit', periodNs: 27472, header: [3480, 1730], flat: 425, zero: 450, one: 1320, carries: 'space', codes: 4, exact: 4, spread: 0, source: 'compiled' },
+  { family: 'Pioneer 32 Bit 2', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 3, exact: 3, spread: 0, source: 'compiled' },
 ];
