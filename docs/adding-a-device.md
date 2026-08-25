@@ -50,9 +50,9 @@ starts at the first unticked box.
 | phase | what it gets us | status |
 |---|---|---|
 | 1 | the catalogue reads whole, in the application too | **done** 24 August 2026 |
-| 2 | every family in the catalogue has a measured rhythm | not started |
-| 3 | a whole command, not just its frame | not started |
-| 4 | the data model describes a device that does not exist yet | not started |
+| 2 | every family in the catalogue has a measured rhythm | **done** 25 August 2026 |
+| 3 | a whole command, not just its frame | **done** 25 August 2026 |
+| 4 | the data model describes a device that does not exist yet | **done** 25 August 2026 |
 | 5 | a config can change length without breaking | not started |
 | 6 | a device composed into a config, read back by our own readers | not started |
 | 7 | Logitech compiles the same addition and the two agree | not started |
@@ -132,6 +132,8 @@ family in their database. The library's own reader takes every one of the 2921 d
       than counting them, so a family falling out again says which one
 
 ## Phase 2: every family in the catalogue has a measured rhythm
+
+**Done, 25 August 2026.**
 
 The table holds **32 of the catalogue's 33 families**, which is 5218 of 5219 commands. The 33rd is
 `Saitek 11 Bit` and it is measured as far as it exists, which is not far: one command in the whole
@@ -220,6 +222,8 @@ durations in the result are the ones their generator emits.
       of those numbers moving fails a test rather than a memory
 
 ## Phase 3: a whole command, not just its frame
+
+**Done, 25 August 2026.**
 
 `pulsesOfFrame` stops at the frame, correctly, because nothing after it follows from the bits. A stored
 command is the frame several times over with a gap between copies and a closing silence. Measured on 24
@@ -328,37 +332,94 @@ one tail shape across every record. What varies is the closing silence.
 
 ## Phase 4: the data model carries what a new device needs
 
+**Done, 25 August 2026.**
+
 The application's model was shaped for what a config **read** so far, and this goal asks it to describe a
 device that does not exist yet. Its command already holds a family, a width, a frame, a carrier and the
 three duration blocks, `InfraredSignal` in FreeHarmony's `src/shared/library.ts`, so the catalogue route
 has somewhere to land. What is not established is everything a config needs and the model has no field
 for.
 
-- [ ] **the audit first, and it is the item that cannot be skipped**: walk every byte phase 6 has to
-      write and check it against the model, naming each gap. Not a redesign, a list
-- [ ] decide whether a definition **stores** its pulses or **derives** them from the family plus the
+- [x] **the audit first, and it is the item that cannot be skipped**: walk every byte phase 6 has to
+      write and check it against the model, naming each gap. Not a redesign, a list. Delivered below,
+      25 August 2026: nine insertions walked, one field gap and four named rules, none a redesign
+- [x] decide whether a definition **stores** its pulses or **derives** them from the family plus the
       number. Deriving keeps one source and makes a definition portable; storing survives the rhythm
       table being wrong. The measured position is that a family's durations reproduce every one of its
-      records byte for byte, so deriving is the default and the field stays optional for a learned code
-- [ ] a device's **inputs**: the config models them as state variables with values, section 86, and the
-      model has `properties` and `DeviceProperty`. Check that an input list survives the round trip
-- [ ] the **timings** a device needs before it will listen. `DeviceTiming` exists and all six of its
+      records byte for byte, so deriving is the default and the field stays optional for a learned code.
+      Decided derive, 25 August 2026: `InfraredSignal.stated` keeps the catalogue's code string whole,
+      `pulsesOf` in FreeHarmony's `src/main/frames.ts` derives from it, and a stored block outranks a
+      derived one because a measurement outranks a table. `test/pulses.test.ts` there
+- [x] a device's **inputs**: the config models them as state variables with values, section 86, and the
+      model has `properties` and `DeviceProperty`. Check that an input list survives the round trip.
+      Both directions tested, 25 August 2026: config to model with exact per sample counts in
+      `test/import.test.ts`, and model through the store whole, transitions and all, in
+      `test/library.test.ts`, which no store test had ever done with a non empty list
+- [x] the **timings** a device needs before it will listen. `DeviceTiming` exists and all six of its
       fields are marked unknown in FreeHarmony's `writeback.ts` for a stated reason: which base slot 15
       group holds them is not read. This goal does not need them, and a device added without them takes
       the firmware's defaults, so the item is to **say so in the model** rather than to leave a caller
-      guessing
-- [ ] **an appliance has options, not just commands**, noticed on 24 August 2026 while adding one of
+      guessing. Said, 25 August 2026: `DeviceTiming`'s docstring states that absent means the firmware's
+      defaults and never unknown to the model
+- [x] **an appliance has options, not just commands**, noticed on 24 August 2026 while adding one of
       phase 2's appliances by hand: their client asked whether the television is used with a SCART cable,
       and an account's appliance record carries `IsScartCableSupported` beside four more flags of that
       kind. The catalogue lists `InputScart1` among that appliance's commands, so the answer plausibly
       decides which input command an activity uses. Untested, `docs/host-client.md`. The item is to decide
       whether a definition carries such an answer or refuses to hold one, since an importer that silently
-      drops it produces a device whose inputs are wrong in a way nobody can see
-- [ ] provenance survives: a definition fetched from Logitech carries `origin: 'from-logitech'` and
-      `mayBeShared` false, which is decision 11 and is not negotiable
-- [ ] **check**: a definition built from a catalogue reply, round tripped through the store, produces the
+      drops it produces a device whose inputs are wrong in a way nobody can see. Decided carry, 25
+      August 2026: `DeviceDefinition.options` keeps the flags verbatim under Logitech's own spelling,
+      nothing may act on one until the meaning is measured, and absent means nobody asked
+- [x] provenance survives: a definition fetched from Logitech carries `origin: 'from-logitech'` and
+      `mayBeShared` false, which is decision 11 and is not negotiable. Asserted where the origin is
+      minted, `test/logitech.test.ts`, 25 August 2026
+- [x] **check**: a definition built from a catalogue reply, round tripped through the store, produces the
       same pulses on the way out as it did on the way in, and a definition with no family and no pulses
-      is refused rather than written as a device that sends nothing
+      is refused rather than written as a device that sends nothing. `test/pulses.test.ts` in
+      FreeHarmony, 25 August 2026: two derivations either side of a disk write compare equal, including
+      a Toshiba command that has no single frame value at all, and `pulsesOf` answers `undefined` for a
+      signal with no stated code and no pulses, which is the refusal a composer has to honour
+
+### The audit, 25 August 2026
+
+Every byte phase 6 writes, checked against `src/shared/library.ts`, `content.ts` and `writeback.ts` in
+FreeHarmony, and against what the emitters actually take: `irBuildRecord` wants a carrier period, a
+class byte and three block pointers per group, and `blockOfStatedCode` wants the catalogue's code
+string whole, because a tail item may name the code's second frame, section 171.
+
+| phase 6 writes | it needs from the model | the model has | gap |
+|---|---|---|---|
+| base slot 5, a group and one record per command | the carrier, the once block, the held block | `carrierHz` and the three pulse fields, or a family and its stated frames to derive them | 1 and 2 below |
+| base slot 0, the device's name node | the label, each property's name and value count | `DeviceUse.label`, `DeviceProperty.name` and `values` | none |
+| base slot 13, its state variables | values, transitions, the resting value, the maximum | `values` and `StateTransition`; the maximum is `values` minus one | 3 below |
+| base slot 10, one action list per command | a device position and a command index | `Step` | none |
+| base slots 6 and 11, the device's pages | the drawn label per command, the commands grouped into pages | `DeviceCommand.name` and `group`, `ButtonBinding.forDevice` | 5 below |
+| base slot 17, the hit rectangles | geometry per model | nothing, correctly | none, the geometry is the composer's |
+| the device list page's new row | the label | `DeviceUse.label` | none |
+| base slot 8, the page's key bindings | nothing new, derived from the pages | | none |
+| base slot 9, a keypad binding, optional | a named scan | `ButtonBinding.scan` and `key` | none |
+
+Five gaps, one a field and four of them rules to write down rather than fields to add:
+
+1. **The signal stores one frame and 1476 of 2921 catalogue codes state more than one, or a word.**
+   Phase 1 already deferred this here. The emitter needs the code whole, so the fix is not a wider
+   frame field: the signal keeps the catalogue's own code string, and the pulses derive from it. That
+   is the store or derive box, decided below.
+2. **Nothing says whether a command repeats while held.** A held block is per command in the format,
+   517 of Toshiba's 622 records carry one, and neither the catalogue reply nor the model states it.
+   `blockOfStatedCode` emits the family's held block for any code, so the choice is the composer's,
+   and the rule can be measured off the compiled samples per function group before phase 6 needs it.
+3. **A property's resting value, base slot 13's `first`, has no field and needs none.** Nothing is
+   running when a config is generated, section 130, so a composed device's variables rest at 0 and
+   the composer stamps that, the same way a save stamps the clock.
+4. **Properties have no source on a catalogue fetch.** The reply is commands; a Power or Input
+   property and its transitions are authored out of the command list, and the account level flags of
+   the options box are plausibly what selects the input commands. The model holds everything authored,
+   so this is composer work and not a field.
+5. **A device's screen pages have no authored shape, and do not need one for this goal.**
+   `ButtonBinding.inDeviceMode` is the config's own page index, which does not exist before the
+   compose, so the layout is a deterministic composer rule over the command order rather than a
+   stored field. `forDevice` plus the order the commands sit in is sufficient input.
 
 ## Phase 5: a config can change length without breaking
 
