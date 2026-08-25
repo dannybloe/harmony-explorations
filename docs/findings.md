@@ -23191,14 +23191,25 @@ callback", and nothing had followed those packets. `packages/usb`'s `writeFlash`
 throws rather than sending anything, which is why the gate could open onto a derivation instead of a
 write.
 
-It is read now, on both bench architectures, and the protocol half is complete. What is not complete
-is the part that decides whether a first write succeeds, and that distinction is the point of this
-section.
+It is read now, on both remotes on the bench and on the arch 14 reference image, and the protocol
+half is complete. What is not complete is the part that decides whether a first write succeeds, and
+that distinction is the point of this section.
+
+**A correction inside the section's own first day.** The paragraphs below were written naming the
+Harmony 700 and the Harmony One as "both bench architectures", and the commit that landed them said
+it too. There is no Harmony 700 here and never has been: the bench holds two Harmony Ones, a Harmony
+600 and a Harmony 525, and the 700 is an arch 14 **reference image**, which is exactly what
+`CLAUDE.md` has always called it. Reading the 700 first was the right call, since it is the better
+mapped arch 14 image, and calling it hardware was not, because it silently promoted a reference to a
+thing that could be written to. The Harmony 600 is read below alongside it now, and it is the image
+that would matter if a write ever reached arch 14, which today's rails refuse for want of a second
+arch 14 unit. Danny caught it; nothing in the tests could have, since an image name says nothing
+about what is on the desk.
 
 **Two commands exist inside a write and neither can be sent outside one.** The main dispatch is gated
 on the command state variable, and state 2 is what `WRITE_FLASH` sets. State 2 reaches a chain of its
-own, `0x0C55C` on the Harmony 700 and `0x26752` on the Harmony One, and that chain has exactly two
-cases: `0x40`, the data packet, and `0xF0`, the end of the transfer. So a remote that has not agreed
+own, `0x26752` on the Harmony One, `0x0C4C0` on the Harmony 600 and `0x0C55C` on the 700 image, and
+that chain has exactly two cases: `0x40`, the data packet, and `0xF0`, the end of the transfer. So a remote that has not agreed
 to a write cannot be handed data at all, which is the firmware's own reason for `0x40` being absent
 from the command table rather than an omission in the table.
 
@@ -23208,16 +23219,19 @@ in the escape handler, four instructions before the state gate. The description 
 chain handling `0x40` and `0xF0`, was right. So the reading was right and the citation was off by one
 routine, which nothing could catch, because no test read the address.
 
-**A data packet lands in a buffer that holds one packet.** `0x068F` on the Harmony 700, `0x01A5` on
-the Harmony One, stated as two literals and reloaded at the top of every packet rather than advanced
-across them. The handler copies the payload there a byte at a time, then sets a flag and stores the
-packet's length: `0x37E` and `0x37F` on the 700, `0x28D` and `0x28E` on the One. The length it stores
-is the callback's own decoded length nibble, not a share of the announced count, so the firmware
-writes what the packet says it carries.
+**A data packet lands in a buffer that holds one packet.** `0x01A5` on the Harmony One, `0x068C` on
+the Harmony 600 and `0x068F` on the 700 image, stated as two literals and reloaded at the top of every
+packet rather than advanced across them. The two arch 14 builds putting it three bytes apart is what
+says the address is a build's own choice and not a constant of the architecture. The handler copies
+the payload there a byte at a time, then sets a flag and stores the packet's length: `0x28D` and
+`0x28E` on the One, `0x723` and `0x724` on the 600, `0x37E` and `0x37F` on the 700. The length it
+stores is the callback's own decoded length nibble, not a share of the announced count, so the
+firmware writes what the packet says it carries.
 
 **The main loop drains that buffer, and it forks on the byte the validator wrote.** The executor is
-`0x0C614` and `0x267FE`. It subtracts the packet's length from the announced remaining count, and
-then reads the destination selector, `0xED5` on the 700 and `0x28B` on the One. `0x00` is external
+`0x267FE` on the One, `0x0C578` on the 600 and `0x0C614` on the 700 image. It subtracts the packet's
+length from the announced remaining count, and then reads the destination selector, `0x28B` on the
+One, `0x1CD` on the 600 and `0xED5` on the 700. `0x00` is external
 storage and `0xFE` is internal program flash. That selector is not new here: section 94 read `0x28B`
 as the byte the *read* body branches on. What is new is that the write executor branches on the same
 byte with the same two values, so **the validator classifies an address once and both directions obey
@@ -23232,7 +23246,7 @@ one leaves those bytes in the holding registers and never programmed. A writer t
 unaligned boundary loses its tail with no error.
 
 **The transfer is acknowledged once, at the end, and not per packet.** `0xF0` moves the remote to
-state 3 on both architectures, and state 3's executor answers `0xF0 0x30`: the acknowledgement shape
+state 3 on all three images, and state 3's executor answers `0xF0 0x30`: the acknowledgement shape
 section 87 established, naming the command being finished. So a host sends an announce, a run of data
 packets that are each answered by nothing at all, and one done packet that is answered once. The only
 thing standing between the host and a lost packet is the pending flag above, and the buffer it guards
@@ -23268,8 +23282,8 @@ The test asserts both literals, and its control is that asserting `0xFFC0` for a
 
 Four things, and the first two are what a rehearsal would run into rather than curiosities.
 
-* **Whether the firmware erases before it programs.** Neither architecture's external path was
-  followed far enough to say. It matters because flash only clears bits: programming over unerased
+* **Whether the firmware erases before it programs.** No architecture's external path was followed
+  far enough to say. It matters because flash only clears bits: programming over unerased
   content silently produces the AND of the two. `ERASE_FLASH` exists, Logitech's client picks a block
   table, and `packages/usb` already requires a block aligned erase of a whole 64 KiB block, so the
   rails assume the caller erases. That assumption is now known to be unverified rather than known to
@@ -23282,8 +23296,10 @@ Four things, and the first two are what a rehearsal would run into rather than c
 * **The arch 12 external mechanism.** The Harmony One's path pokes a value derived from the address
   top byte through `TBLWT` at program `0x020025` and then rewrites the top byte with `0x13`, which
   reads as a bank register and a window rather than a direct write, and is not established.
-* **Why the Harmony 700's external path issues a read first.** It calls the SPI read setup, opcode
-  `0x03` plus the address, before calling the routine that enables writing and programs the buffer.
+* **Why arch 14's external path issues a read first.** In the 700 image it calls the SPI read setup,
+  opcode `0x03` plus the address, before calling the routine that enables writing and programs the
+  buffer. Whether the Harmony 600 does the same is unchecked, and it is the one to check, being the
+  remote.
   A read modify write would explain it and has not been demonstrated.
 
 **So `writeFlash` stays refusing, and the reason it refuses has changed.** It used to refuse because

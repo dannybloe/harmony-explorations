@@ -304,7 +304,7 @@ The dispatch at `0x0BDCA` is itself gated on that state, at `0x0BDB2`:
 
 * state 0, idle: the table above
 * state 2, a flash write in progress: a second, two entry chain handling `0x40` and `0xF0`, at
-  `0x0C55C` on the 700 and `0x26752` on the One. (This said `0x0BD5C`, which is the `SUBWF` that
+  `0x0C55C` on the 700, `0x0C4C0` on the 600 and `0x26752` on the One. (This said `0x0BD5C`, which is the `SUBWF` that
   compares the command against `0xE0` in the escape handler, four instructions before the state gate.
   The description was right and the citation named the wrong routine, which nothing caught because no
   test read the address. Section 175.)
@@ -807,17 +807,22 @@ the state gate sends state 2 to a two case chain of its own that accepts `0x40` 
 nothing else. Anything else there falls through to the exit that clears the state, so a stray command
 ends the transfer rather than being obeyed.
 
-| | Harmony 700 | Harmony One |
-|---|---|---|
-| state 2's chain | `0x0C55C` | `0x26752` |
-| the `0x40` handler | `0x0C56A` | `0x26760` |
-| the `0xF0` handler | `0x0C5B4` | `0x267AA` |
-| the staging buffer | `0x068F` | `0x01A5` |
-| pending flag, packet length | `0x37E`, `0x37F` | `0x28D`, `0x28E` |
-| the drain executor | `0x0C614` | `0x267FE` |
-| destination selector | `0xED5` | `0x28B` |
-| announced count remaining | `0xED1`, `0xED2` | `0x288`, `0x289` |
-| target address | `0xECE` to `0xED0` | `0x285` to `0x287` |
+Three images, and both remotes on the bench are among them. The Harmony 600 is the arch 14 remote;
+the 700 is an arch 14 **reference image** and there is no such remote here, which the first version
+of this section got wrong by calling the pair "both bench architectures". Section 175 records the
+correction.
+
+| | Harmony One | Harmony 600 | 700 image |
+|---|---|---|---|
+| state 2's chain | `0x26752` | `0x0C4C0` | `0x0C55C` |
+| the `0x40` handler | `0x26760` | `0x0C4CE` | `0x0C56A` |
+| the `0xF0` handler | `0x267AA` | `0x0C518` | `0x0C5B4` |
+| the staging buffer | `0x01A5` | `0x068C` | `0x068F` |
+| pending flag, packet length | `0x28D`, `0x28E` | `0x723`, `0x724` | `0x37E`, `0x37F` |
+| the drain executor | `0x267FE` | `0x0C578` | `0x0C614` |
+| destination selector | `0x28B` | `0x1CD` | `0xED5` |
+| announced count remaining | `0x288`, `0x289` | `0x1C9`, `0x1CA` | `0xED1`, `0xED2` |
+| target address | `0x285` to `0x287` | not read | `0xECE` to `0xED0` |
 
 **The buffer holds one packet, not the transfer.** Its address is two literals reloaded at the top of
 every packet rather than advanced across them, and what the handler records beside it is the
@@ -849,7 +854,8 @@ and therefore safe.
 succeeds: whether the firmware erases before programming, and whether a host must pace its data
 packets given one staging buffer and no per packet reply. The others are arch 12's external mechanism,
 which pokes a bank register rather than writing directly, and why arch 14's external path issues an
-SPI read setup before it programs. `writeFlash` in `packages/usb` refuses for those reasons, which is
+SPI read setup before it programs, read in the 700 image and unchecked on the Harmony 600, which is
+the one that matters since it is the remote. `writeFlash` in `packages/usb` refuses for those reasons, which is
 a change of reason rather than of behaviour: the packets can be assembled correctly today.
 
 ### The state machine, in full

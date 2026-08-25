@@ -2012,17 +2012,27 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
     the doc recorded the announce packet, and then stopped at "the data arrives as `0x40` packets
     handled in the USB callback", with no reading of what happens to them.
 
-    Both architectures, and the shape is identical with different addresses. That agreement is
-    the evidence: two images compiled for different parts, one carrying a memory mapped parallel
-    NOR and one an SPI chip its firmware does not live on, implement one protocol.
+    Three images, and the shape is identical with different addresses. That agreement is the
+    evidence: parts that store their config completely differently, one a memory mapped parallel
+    NOR and two an SPI chip the firmware does not live on, implement one protocol.
+
+    **Both remotes on the bench are here, which the first version of this class got wrong.** It
+    paired the Harmony One with the Harmony 700 and called them the bench architectures. There is
+    no Harmony 700 on this bench and never has been: it is an arch 14 **reference image**, and the
+    arch 14 remote is the Harmony 600. Reading the 700 first was reasonable, since it is the
+    better documented image, and describing it as bench hardware was not. The 600 is asserted
+    alongside it now, and it is the one that would matter if a write ever reached arch 14, which
+    today's rails refuse outright for want of a second unit.
 
     The addresses are kept rather than re-derived because finding them again is a search. What
     each assertion holds is the *shape*: a literal that states a buffer, a chain whose case values
     are the commands accepted, a fork on the byte the validator wrote.
     """
 
-    # image -> base, and per image the addresses this class reads.
-    ARCH14, ARCH12 = ('h700_code', 0x9000), ('one34_code', 0x20000)
+    # image -> base. The One and the 600 are the bench remotes; the 700 is the arch 14 reference.
+    ARCH12 = ('one34_code', 0x20000)
+    ARCH14 = ('h700_code', 0x9000)
+    ARCH14_BENCH = ('h600_code_complete', 0x9000)
 
     def at(self, image, addr):
         name, base = image
@@ -2044,9 +2054,10 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         XORs and reading them positionally gives `0xF0` and `0xB0`, the second of which is
         READ_MISC and would put an existing command in a place it cannot be sent.
         """
-        lab.require(self.ARCH14[0], self.ARCH12[0])
+        lab.require(self.ARCH14[0], self.ARCH14_BENCH[0], self.ARCH12[0])
         for image, gate, handler, chain, expected in (
             (self.ARCH14, 0x0BDB4, 0x0C55C, 0x0C560, {0xF0: 0x0C5B4, 0x40: 0x0C56A}),
+            (self.ARCH14_BENCH, 0x0BD1E, 0x0C4C0, 0x0C4C4, {0xF0: 0x0C518, 0x40: 0x0C4CE}),
             (self.ARCH12, 0x2647C, 0x26752, 0x26756, {0xF0: 0x267AA, 0x40: 0x26760}),
         ):
             name, base = image
@@ -2068,8 +2079,11 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         63 bytes is the most a packet can carry, from the length nibble mapping asserted by
         `TestTheLengthNibbleMapping`, so the buffer is one report's payload.
         """
-        lab.require(self.ARCH14[0], self.ARCH12[0])
+        lab.require(self.ARCH14[0], self.ARCH14_BENCH[0], self.ARCH12[0])
+        # The two arch 14 builds put it three bytes apart, which is what says the address is a
+        # build's own choice rather than a constant of the architecture.
         for image, low, high, buffer_at in ((self.ARCH14, 0x0C572, 0x0C576, 0x068F),
+                                            (self.ARCH14_BENCH, 0x0C4D6, 0x0C4DA, 0x068C),
                                             (self.ARCH12, 0x26768, 0x2676C, 0x01A5)):
             with self.subTest(image[0]):
                 self.assertEqual(self.literal(image, low) | (self.literal(image, high) << 8),
@@ -2081,9 +2095,10 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         waiting, and the count of bytes in it, copied from the callback's own decoded length. So
         the firmware trusts the length nibble for how much to write, not the announced count.
         """
-        lab.require(self.ARCH14[0], self.ARCH12[0])
+        lab.require(self.ARCH14[0], self.ARCH14_BENCH[0], self.ARCH12[0])
         for image, flag_at, flag, count_at, length_var, count_var in (
             (self.ARCH14, 0x0C56E, 0x37E, 0x0C57A, 0xD01, 0x37F),
+            (self.ARCH14_BENCH, 0x0C4D2, 0x723, 0x0C4DE, 0xD01, 0x724),
             (self.ARCH12, 0x26764, 0x28D, 0x26770, 0xD20, 0x28E),
         ):
             with self.subTest(image[0]):
@@ -2105,8 +2120,10 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         `0x00` is external and `0xFE` internal program flash. A third value exists and is
         asserted below.
         """
-        lab.require(self.ARCH14[0], self.ARCH12[0])
+        lab.require(self.ARCH14[0], self.ARCH14_BENCH[0], self.ARCH12[0])
         for image, read_at, external, internal_test in ((self.ARCH14, 0x0C640, 0x0C6B0, 0x0C644),
+                                                        (self.ARCH14_BENCH, 0x0C5A4, 0x0C614,
+                                                         0x0C5A8),
                                                         (self.ARCH12, 0x2682E, 0x268A4, 0x26832)):
             with self.subTest(image[0]):
                 self.assertEqual(self.at(image, read_at).mnemonic, 'MOVF')
@@ -2163,7 +2180,9 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         lab.require(self.ARCH14[0])
         self.assertEqual(self.literal(self.ARCH14, 0x0C95E), 0xF0)
         self.assertEqual(self.literal(self.ARCH14, 0x0C96C), 0x30)
-        for image, at in ((self.ARCH14, 0x0C5C2), (self.ARCH12, 0x267B8)):
+        lab.require(self.ARCH14_BENCH[0], self.ARCH12[0])
+        for image, at in ((self.ARCH14, 0x0C5C2), (self.ARCH14_BENCH, 0x0C526),
+                          (self.ARCH12, 0x267B8)):
             with self.subTest(image[0]):
                 self.assertEqual(self.literal(image, at), 0x03, 'done moves to state 3')
 

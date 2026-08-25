@@ -18,13 +18,17 @@ section. For the format as a specification, [config-format.md](config-format.md)
 
 ## Status
 
-The work targets three architectures, and there are four remotes on the bench, two of them
-Harmony Ones:
+The work targets three architectures. **Four remotes are on the bench**, and this list is the
+hardware, not the model families: two Harmony Ones, a Harmony 600 and a Harmony 525. Other models
+appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
+the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
+constantly. There has never been a Harmony 700 here.
 
-* **arch 12** ("Gin"), Harmony One, plus the spare Harmony One that is the only unit anything may
-  ever be written to
-* **arch 14**, Harmony 600 and Harmony 700
-* **arch 9**, Harmony 525, connected on 8 August 2026 and a target since: its config and its
+* **arch 12** ("Gin"), the Harmony One, and the spare Harmony One that is the only unit anything
+  may ever be written to
+* **arch 14**, the Harmony 600. The Harmony 700 belongs to this architecture and is a **reference
+  image**: two configurations and a firmware image, no remote
+* **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
   accounting, is read. It has no write target and will not get one.
 
