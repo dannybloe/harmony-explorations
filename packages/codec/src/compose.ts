@@ -23,6 +23,12 @@
  */
 import { Container, TRAILER_CHECKSUM_OFFSET, archSlot, parse, trailerChecksum } from './gspm.ts';
 import {
+  STATE_RECORD_HEADER,
+  STATE_TABLE_SLOT,
+  STATE_VALUE_LENGTH,
+  stateTable,
+} from './sections.ts';
+import {
   IR_CLASS_STREAM,
   IR_POINTERS_PER_GROUP,
   IR_PULSE_MAX,
@@ -80,6 +86,37 @@ export function blockWordsOf(pulses: readonly Pulse[]): IrPulse[] {
     out.push({ mark: pulse.mark, microseconds: left });
   }
   return out;
+}
+
+/** The action list table's base slot, whose lists are what everything that runs points at. */
+const ACTION_TABLE_SLOT = 10;
+/** Opcode 0x7d: send an infrared code, operand `(group << 8) | record`. */
+const SEND_INFRARED = 0x7d;
+/** Opcode 0x7f: run the base slot 10 action list the operand indexes. */
+const RUN_ACTION_LIST = 0x7f;
+/** The firmware owns state variables 0 to 12, section 138, and a composer must not touch them. */
+const FIRMWARE_STATE_MAX = 12;
+
+/**
+ * Append entries to one of the counted pointer tables, which is the one growth every section
+ * shares: three bytes per entry at the table's end, then the count, then nothing else.
+ */
+function appendTableEntries(
+  c: Container, slot: number, targets: readonly number[],
+): Uint8Array {
+  const table = c.pointerArrayAt(slot);
+  if (table === undefined) throw new ComposeError(`slot ${slot} does not read as a pointer table`);
+  const at = table.start + table.length;
+  const grown = relocate(c, at, 3 * targets.length);
+  targets.forEach((target, k) => {
+    grown.bytes.set(new Writer(3).u24(target).bytes, at + 3 * k);
+  });
+  const count = table.values.length + targets.length;
+  const width = new Writer(table.width);
+  if (table.width === 1) width.u8(count);
+  else width.u16(count);
+  grown.bytes.set(width.bytes, table.start);
+  return grown.bytes;
 }
 
 /**
@@ -178,21 +215,137 @@ export function composeIrGroup(
 
   // The table entry: three bytes at the table's end, then the count. The middle parse is what lets
   // the second relocation run its census on a container whose every reader still answers.
-  const middle = parse(first.bytes);
-  const grown = middle.pointerArrayAt(slot);
-  if (grown === undefined) throw new ComposeError('the group table stopped reading after the hole');
-  const entryAt = grown.start + grown.length;
-  const second = relocate(middle, entryAt, 3);
-  second.bytes.set(new Writer(3).u24(base + arrayAt).bytes, entryAt);
-  const count = new Writer(grown.width).bytes;
-  if (grown.width === 1) count[0] = grown.values.length + 1;
-  else { count[0] = (grown.values.length + 1) & 0xff; count[1] = (grown.values.length + 1) >>> 8; }
-  second.bytes.set(count, grown.start);
+  const bytes = restamped(appendTableEntries(parse(first.bytes), slot, [base + arrayAt]));
+  return { bytes, group: table.values.length, records: commands.length };
+}
 
-  // The relocations stamped their checksums over filler, and everything written since sat inside
-  // it, so the container's one integrity field is recomputed last, over the finished bytes.
-  second.bytes.set(new Writer(2).u16(trailerChecksum(second.bytes)).bytes,
-                   second.bytes.length - TRAILER_CHECKSUM_OFFSET);
+/** The one integrity field, recomputed over the finished bytes, always last. */
+function restamped(bytes: Uint8Array): Uint8Array {
+  bytes.set(new Writer(2).u16(trailerChecksum(bytes)).bytes,
+            bytes.length - TRAILER_CHECKSUM_OFFSET);
+  return bytes;
+}
 
-  return { bytes: second.bytes, group: grown.values.length, records: commands.length };
+/** A device to compose whole: its label, its commands, and which command toggles the power. */
+export interface ComposeDevice {
+  /**
+   * The word the config knows the appliance by, ASCII with no underscore, because a state
+   * variable's name is `<label>_<property>_<values>` and the underscore is the separator that
+   * makes the label recoverable, section 126.
+   */
+  readonly label: string;
+  readonly commands: readonly ComposeCommand[];
+  /** Which command is the power toggle, driving the device's one state variable. Default 0. */
+  readonly power?: number;
+}
+
+export interface ComposedDevice {
+  bytes: Uint8Array;
+  group: number;
+  /** The base slot 10 list index per command, which is what a binding's 0x7f names. */
+  lists: readonly number[];
+  /** The device's power variable, in base slot 13's numbering. */
+  variable: number;
+}
+
+/**
+ * Compose a device whole, as far as the naming half: the infrared group, one action list per
+ * command, a power state variable whose transitions run the power command's list, and the name
+ * tree node that gives the device its label.
+ *
+ * After this the device **exists and is named**: `inventory` reports it with its label through the
+ * same route it names every corpus device, section 126. What it does not have yet is a screen
+ * page, which is the next insertion in the checklist's order.
+ */
+export function composeDevice(c: Container, device: ComposeDevice): ComposedDevice {
+  if (device.label === '' || device.label.includes('_')
+      || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
+    throw new ComposeError('a label is printable ASCII with no underscore, per the name grammar');
+  }
+  const power = device.power ?? 0;
+  if (device.commands[power] === undefined) {
+    throw new ComposeError(`command ${power} cannot toggle the power: there is no such command`);
+  }
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+
+  // The infrared half, then everything else on the reparsed result.
+  const group = composeIrGroup(c, device.commands);
+
+  // One action list per command: `u8 1; u16 (group << 8) | record; u8 0x7d`, in a hole below the
+  // action table, each named by a pointer appended to the table. The list index is what the
+  // transitions below and phase 6's screen bindings point at.
+  let current = parse(group.bytes);
+  const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
+  const actionTable = current.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const listBytes = 4;
+  const listsAt = actionTable.start;
+  const listsHole = relocate(current, listsAt, listBytes * device.commands.length);
+  device.commands.forEach((_, k) => {
+    listsHole.bytes.set(
+      new Writer(listBytes).u8(1).u16((group.group << 8) | k).u8(SEND_INFRARED).bytes,
+      listsAt + listBytes * k);
+  });
+  const listBase = current.flashBase + listsAt;
+  const firstList = actionTable.values.length;
+  current = parse(appendTableEntries(
+    parse(listsHole.bytes), actionSlot,
+    device.commands.map((_, k) => listBase + listBytes * k)));
+
+  // The power variable: a seven byte header and two transitions, each running the power command's
+  // list. `first` is 0 because nothing is running when a config is generated, section 130, and the
+  // maximum is 1 because a power switch has two states, which is also what the node's trailing
+  // count states, section 86.
+  const states = stateTable(current);
+  if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
+  if (states.count < FIRMWARE_STATE_MAX + 1) {
+    throw new ComposeError("a table without the firmware's own variables is not one to extend");
+  }
+  const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
+  const recordAt = states.start;
+  const recordHole = relocate(current, recordAt, recordLength);
+  const powerList = firstList + power;
+  const record = new Writer(recordLength)
+    .u16(0).u16(1).u16(2).u8(0)
+    .u8(0).u16(0).u16(1).u16(powerList).u8(RUN_ACTION_LIST)
+    .u8(0).u16(1).u16(0).u16(powerList).u8(RUN_ACTION_LIST);
+  recordHole.bytes.set(record.bytes, recordAt);
+  const recordAddress = current.flashBase + recordAt;
+  current = parse(recordHole.bytes);
+
+  // The state table is not a counted pointer array, so its append is spelled out: three bytes at
+  // the end of its entry pointers, then the u16 count at its start.
+  const grownStates = stateTable(current);
+  if (grownStates === undefined) throw new ComposeError('base slot 13 stopped reading');
+  const entryAt = grownStates.start + grownStates.length;
+  const entryHole = relocate(current, entryAt, 3);
+  entryHole.bytes.set(new Writer(3).u24(recordAddress).bytes, entryAt);
+  entryHole.bytes.set(new Writer(2).u16(grownStates.count + 1).bytes, grownStates.start);
+  const variable = grownStates.count;
+  current = parse(entryHole.bytes);
+
+  // The name tree node: `<label>_Power_2` at level 1, indexed by the new variable, appended to the
+  // frame and the frame's own length grown to say so. The tree is host side, base slots 0 and 1,
+  // so the order of its nodes is a reader's question and every reader here goes by the index.
+  const treeSection = current.sections[archSlot(c.architecture, 0)];
+  if (treeSection === undefined || current.frameLength === undefined) {
+    throw new ComposeError('the container has no name tree to put the label in');
+  }
+  const treeStart = current.blobOffsetOf(treeSection.address);
+  if (treeStart === undefined) throw new ComposeError('the name tree is outside the container');
+  const name = `${device.label}_Power_2`;
+  const nodeLength = 3 + 4 + name.length;
+  const nodeAt = treeStart + current.frameLength;
+  const nodeHole = relocate(current, nodeAt, nodeLength);
+  const node = new Writer(nodeLength).u8(0xa7).u16(4 + name.length).u16(1).u16(variable);
+  node.ascii(name);
+  nodeHole.bytes.set(node.bytes, nodeAt);
+  nodeHole.bytes.set(new Writer(3).u24(current.frameLength + nodeLength).bytes, treeStart + 2);
+
+  return {
+    bytes: restamped(nodeHole.bytes),
+    group: group.group,
+    lists: device.commands.map((_, k) => firstList + k),
+    variable,
+  };
 }

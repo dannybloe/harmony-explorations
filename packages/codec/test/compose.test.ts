@@ -14,10 +14,12 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import {
   ComposeError,
+  FIRMWARE_STATE_VARIABLE_MAX,
   IR_PULSE_MARK,
   IR_PULSE_MAX,
   blockOfStatedCode,
   blockWordsOf,
+  composeDevice,
   composeIrGroup,
   coverage,
   frameKey,
@@ -31,6 +33,7 @@ import {
   parse,
   roundTrip,
   statedCode,
+  stateVariables,
   trailerAgrees,
 } from '../src/index.ts';
 
@@ -52,7 +55,7 @@ for (const host of HOSTS) {
     const before = parse(load(host) as Uint8Array);
     const wasGroups = irGroups(before) ?? [];
     const wasInventory = inventory(before);
-    const composed = composeIrGroup(before, TELEVISION);
+    const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
     const after = parse(composed.bytes);
 
     // The device exists: one more group, at the end, with one record per command.
@@ -91,6 +94,32 @@ for (const host of HOSTS) {
     const grownInventory = inventory(after);
     assert.equal(grownInventory.devices.length, wasInventory.devices.length + 1);
     assert.equal(grownInventory.activities.length, wasInventory.activities.length);
+
+    // The device is **named**, through the route that names every corpus device, section 126: the
+    // label is the variable name's prefix, the variable's transitions run the power list, and that
+    // list sends to the new group. Nothing here reads the composer's own bookkeeping back to it.
+    const device = grownInventory.devices.find((one) => one.group === composed.group);
+    assert.equal(device?.name, 'LG');
+    assert.equal(device?.source, 'names', 'stated by the tree, not forced by elimination');
+    assert.equal(device?.codes, TELEVISION.length);
+    const variable = stateVariables(after).find((one) => one.index === composed.variable);
+    assert.equal(variable?.name, 'LG_Power_2');
+    assert.ok(composed.variable > FIRMWARE_STATE_VARIABLE_MAX,
+              'the new variable sits above the firmware\'s own thirteen');
+    assert.equal(variable?.record?.first, 0, 'nothing is running when a config is generated');
+    assert.equal(variable?.record?.second, 1, 'a power switch has two states');
+    assert.deepEqual(
+      variable?.record?.values.map((one) => [one.from, one.to, one.opcode, one.operand]),
+      [[0, 1, 0x7f, composed.lists[0]], [1, 0, 0x7f, composed.lists[0]]],
+      'both transitions run the power command\'s list');
+    // And each command's list is one send to the new group, readable off the container itself.
+    const lists = after.actionLists();
+    composed.lists.forEach((index, k) => {
+      const list = lists?.[index];
+      assert.deepEqual(list?.map((one) => [one.opcode, one.operand]),
+                       [[0x7d, (composed.group << 8) | k]],
+                       `command ${k}'s list is one send to the new group`);
+    });
   });
 }
 
@@ -121,4 +150,10 @@ test('composing refuses what cannot be sent', skipUnless('one_config'), () => {
     (failure: unknown) => failure instanceof ComposeError
       && failure.message.includes('held'),
   );
+  // The label is half of a name whose separator is the underscore, so an underscore inside one
+  // would split the grammar, and a power index with no command behind it is not a choice.
+  assert.throws(() => composeDevice(c, { label: 'LG_TV', commands: [...TELEVISION] }),
+                ComposeError);
+  assert.throws(() => composeDevice(c, { label: 'LG', commands: [...TELEVISION], power: 9 }),
+                ComposeError);
 });

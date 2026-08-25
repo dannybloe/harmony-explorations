@@ -470,12 +470,21 @@ lifts that refusal.
 
 A device is not a list of codes. Seven pieces, and each one is an insertion that phase 5 has to carry.
 
-- [ ] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
-      `irBuildBlock`, which exist and are tested
-- [ ] base slot 0: the device's node in the name tree, so its label exists in ASCII, section 126
-- [ ] base slot 13: its state variables with their transitions, one action list instruction each, and
-      **none of the firmware's own 0 to 12**, section 138
-- [ ] base slot 10: one action list per command, so a binding has something to point at
+- [x] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
+      `irBuildBlock`, which exist and are tested. `composeIrGroup` in `packages/codec/src/compose.ts`,
+      25 August 2026: blocks derived from the stated codes and deduplicated the way the corpus shares
+      them, the group appended because a device is its group's index, and the held block chosen per
+      command since nothing states it, phase 4's audit gap 2
+- [x] base slot 0: the device's node in the name tree, so its label exists in ASCII, section 126.
+      `composeDevice` appends `<label>_Power_2` at level 1 under the new variable's index and grows
+      the frame's own stated length; the label is refused if it carries the grammar's separator
+- [x] base slot 13: its state variables with their transitions, one action list instruction each, and
+      **none of the firmware's own 0 to 12**, section 138. One power variable, `first` 0 because
+      nothing runs when a config is generated, both transitions running the power command's list, and
+      the new index asserted above the firmware's thirteen
+- [x] base slot 10: one action list per command, so a binding has something to point at. One
+      four byte list per command, a single send of `(group << 8) | record`, appended to the table so
+      no existing list renumbers
 - [ ] base slot 6 and 11: a device mode page whose screen program draws the device's name, reusing glyph
       codes the config already carries. A code is a config's own index into its font table, section 112,
       so a new string is spelled out of codes that already exist or the phase stops and says which
