@@ -282,9 +282,10 @@ one tail shape across every record. What varies is the closing silence.
       byte. Reading a value and measuring a rhythm are two different things and the prototype only did
       the first. Admitting them would mean averaging a duration the record does not have, which is the
       opposite of this phase's own rail
-- [ ] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
+- [x] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
       is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
-      by a script beside the notes as it is today
+      by a script beside the notes as it is today. Delivered on 25 August 2026, the census test in
+      `packages/codec/test/stated.test.ts`: it counts the census itself and names the missing family
 - [ ] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
       rather than averaging them
