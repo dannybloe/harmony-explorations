@@ -205,7 +205,10 @@ durations in the result are the ones their generator emits.
       recorded census rather than printed. **At 29 and 5189 the command floor is passed and the family
       count is not**: the four left are `Panasonic 16 Bit` (26), `MemorexV2 32 Bit Dual` (2) and
       `Sharp 48 Bit` (1), the latter two refused deliberately by the one length rail, and
-      `Saitek 11 Bit` (1). The census assertion is still owed
+      `Saitek 11 Bit` (1). The census assertion is delivered: the test in
+      `packages/codec/test/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
+      read, 29 of 33 families and 5189 of 5219 commands covered, and names the missing four, so any
+      of those numbers moving fails a test rather than a memory
 
 ## Phase 3: a whole command, not just its frame
 

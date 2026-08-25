@@ -18,6 +18,9 @@ import { framesOfPulses, pulsesOfFrame } from '../src/irframe.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
+import { LAB, skipWithoutLab } from '@harmony/lab';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 test('the table states thirty five entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
@@ -374,4 +377,44 @@ test('a protocol with no lead in emits none, rather than a pair of zero length p
     { header: [3400, 1700], flat: 320, zero: 680, one: 1680, carries: 'space' }, 4, 0b1010n);
   assert.equal(withHeader.length, 10);
   assert.deepEqual(withHeader.slice(0, 2).map((one) => one.us), [3400, 1700]);
+});
+
+test('the table answers for the recorded census, counted rather than printed', skipWithoutLab(), () => {
+  // **The check the add-a-device plan owed**: the coverage numbers lived in a script beside the lab
+  // notes, where a claim can drift with nobody failing. The census is the wide capture of 24 August
+  // 2026, 106 appliances of Logitech's catalogue, and it lives in the lab because it is Logitech's
+  // data. A lab that lost the file fails loudly; only a machine with no lab at all skips.
+  const path = join(LAB!, 'work', 'myharmony', 'responses', 'ProtocolCensusWide.json');
+  const census = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  const counts = new Map<string, number>();
+  const distinct = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (node === null || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    const keyCode = record['KeyCode'] ?? record['keyCode'];
+    if (typeof keyCode === 'string' && keyCode.startsWith('G:')) {
+      const family = /^G:([^:]+):/.exec(keyCode)?.[1];
+      if (family !== undefined) { counts.set(family, (counts.get(family) ?? 0) + 1); distinct.add(keyCode); }
+    }
+    Object.values(record).forEach(walk);
+  };
+  walk(census);
+
+  // The notation reads whole, section 159 plus the quaternary base: every distinct code, no refusals.
+  assert.equal(distinct.size, 2921, 'the distinct codes in the census');
+  assert.equal([...distinct].filter((one) => statedCode(one) !== undefined).length, 2921);
+  assert.equal(counts.size, 33, 'the protocol families their catalogue uses');
+
+  // The rhythm coverage: which families have a measured entry, and what that is in commands.
+  const known = new Set(PROTOCOLS.map((one) => one.family));
+  const covered = [...counts].filter(([family]) => known.has(family));
+  assert.equal(covered.length, 29, 'families with a measured rhythm');
+  assert.equal(covered.reduce((total, [, n]) => total + n, 0), 5189, 'commands emittable, of 5219');
+  assert.equal([...counts.values()].reduce((total, n) => total + n, 0), 5219);
+  // Named rather than counted, because which family is missing is the finding every time. Two of the
+  // four are refused deliberately: their flat half alternates two lengths, section 166's neighbours,
+  // and admitting them would mean writing down a duration their records do not have.
+  assert.deepEqual([...counts.keys()].filter((family) => !known.has(family)).sort(),
+    ['MemorexV2 32 Bit Dual', 'Panasonic 16 Bit', 'Saitek 11 Bit', 'Sharp 48 Bit']);
 });
