@@ -35,8 +35,8 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
 import { pulsesOfWords } from '../src/irda.ts';
 import {
   biphaseFrames, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark, mergedIntervals,
-  pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
-  timingsOfFrame, type BiphaseTimings, type FrameTimings, type Pulse,
+  pulsesOfBiphaseFrame, pulsesOfFrame, pulsesOfLongToggle, timingsOfBiphase,
+  timingsOfFrame, type BiphaseTimings, type FrameTimings, type LongToggleTimings, type Pulse,
 } from '../src/irframe.ts';
 
 if (LAB === undefined) {
@@ -83,6 +83,9 @@ interface Measured {
   periodNs: number;
   config: string;
   record: number;
+  /** The long toggle shape and the record's three wire values, section 168. Set instead of `timings`. */
+  longToggle?: LongToggleTimings;
+  ltValues?: readonly [bigint, bigint, bigint];
   bits: number;
   value: bigint;
   /** A pulse distance or pulse width family's five durations, absent on a biphase one. */
@@ -101,6 +104,12 @@ interface Measured {
  * Keyed without it each Sony family is one set, and the closing space is a consequence to be computed.
  */
 function key(m: Measured): string {
+  const lt = m.longToggle;
+  if (lt !== undefined) {
+    return `longtoggle ${lt.leader.join('/')} head ${lt.head.mark}/${lt.head.space}x${lt.head.bits} `
+      + `toggle ${lt.toggle} data ${lt.data.first}/${lt.data.second}x${lt.data.bits} `
+      + `gap ${lt.gap.join('+')} x${lt.copies}`;
+  }
   const t = m.timings;
   if (t !== undefined) {
     // The sectioned fields are part of the key where they exist: two records disagreeing about the
@@ -636,6 +645,25 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
           }
         }
       }
+      // **The long toggle reading, section 168**, tried where the appliance states three values at one
+      // width and nothing else landed. The reading is structural, so the join is the closure: the three
+      // wire values have to equal a stated triple exactly, under the one convention that fits all 46.
+      if (!landed && owner.sectioned.some((one) => one.values.length === 3)) {
+        const lt = longToggleReading(d.train);
+        const code = lt === undefined ? undefined
+          : owner.sectioned.find((one) => one.values.length === 3
+            && one.values[0] === lt.values[0] && one.values[1] === lt.values[1]
+            && one.values[2] === lt.values[2]);
+        if (lt !== undefined && code !== undefined) {
+          const bits = lt.shape.head.bits + 1 + lt.shape.data.bits;
+          const value = (((lt.values[0] << 1n) | lt.values[1]) << BigInt(lt.shape.data.bits))
+            | lt.values[2];
+          out.push({ family: code.family, source: 'compiled', joinedBy: 'value',
+            periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
+            bits, value, longToggle: lt.shape, ltValues: lt.values });
+          landed = true;
+        }
+      }
       // The deferred width match, taken where no biphase reading landed on a number.
       if (!landed && byWidthOnly !== undefined) { out.push(byWidthOnly); landed = true; }
       // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
@@ -745,13 +773,89 @@ function sectionedTimings(train: readonly Pulse[], widths: readonly number[])
     sections: widths, sectionSpace: [...boundaries][0]!, closing };
 }
 
+/**
+ * The long toggle reading, section 168, tried where an appliance states three values at one width.
+ *
+ * Returns the shape and the three wire values, or `undefined` where the train is not of this kind.
+ * The bit convention is fixed rather than tried, because 46 of 46 records matched under exactly one:
+ * a set bit is the cell whose first half is silence, in all three regions.
+ */
+function longToggleReading(train: readonly Pulse[])
+  : { shape: LongToggleTimings; values: [bigint, bigint, bigint] } | undefined {
+  // The copies, split at the long silences; words under 100 us are the record's terminator pair and
+  // are not part of any copy.
+  const copies: Pulse[][] = [[]];
+  const gaps: number[][] = [];
+  for (const p of train) {
+    if (p.us < 100) continue;
+    if (!p.mark && p.us >= 10000) {
+      if (copies[copies.length - 1]!.length === 0) { gaps[gaps.length - 1]?.push(p.us); continue; }
+      gaps.push([p.us]); copies.push([]); continue;
+    }
+    copies[copies.length - 1]!.push(p);
+  }
+  const full = copies.filter((one) => one.length > 10);
+  if (full.length < 2) return undefined;
+  const sig = (one: Pulse[]) => one.map((p) => `${p.mark ? '+' : '-'}${p.us}`).join(' ');
+  if (!full.every((one) => sig(one) === sig(full[0]!))) return undefined;
+  if (!gaps.every((one) => one.join() === gaps[0]!.join())) return undefined;
+  const copy = full[0]!;
+  const leader: [number, number] = [copy[0]!.us, copy[1]!.us];
+  if (!copy[0]!.mark || copy[1]!.mark) return undefined;
+  // The half cell grid: the shortest word in the body is one half, and every word is one or two.
+  const body = copy.slice(2);
+  const unit = Math.min(...body.map((one) => one.us));
+  const halves: { mark: boolean; us: number; wide: boolean }[] = [];
+  for (const word of body) {
+    const n = Math.round(word.us / unit);
+    if (n !== 1 && n !== 2) return undefined;
+    halves.push({ mark: word.mark, us: word.us, wide: n === 2 });
+  }
+  // The toggle is the unique adjacent pair of double words, one cell of two double halves.
+  const wideAt = halves.flatMap((one, i) => one.wide ? [i] : []);
+  if (wideAt.length !== 2 || wideAt[1]! !== wideAt[0]! + 1) return undefined;
+  const [toggleAt] = wideAt;
+  if ((toggleAt! % 2) !== 0) return undefined;
+  const headHalves = halves.slice(0, toggleAt);
+  const dataHalves = halves.slice(toggleAt! + 2);
+  if (headHalves.length % 2 !== 0 || dataHalves.length % 2 !== 0) return undefined;
+  // One bit per cell: set when the first half is silence.
+  const bitsOf = (cells: { mark: boolean }[]): bigint => {
+    let value = 0n;
+    for (let i = 0; i < cells.length; i += 2) value = (value << 1n) | (cells[i]!.mark ? 0n : 1n);
+    return value;
+  };
+  const head = bitsOf(headHalves);
+  const toggle = halves[toggleAt!]!.mark ? 0n : 1n;
+  const data = bitsOf(dataHalves);
+  // The lengths, per region: head per kind, data per position, each one value or the reading refuses.
+  const one = (list: number[]): number | undefined =>
+    new Set(list).size === 1 ? list[0] : undefined;
+  const headMark = one(headHalves.filter((h) => h.mark).map((h) => h.us));
+  const headSpace = one(headHalves.filter((h) => !h.mark).map((h) => h.us));
+  const toggleUs = one([halves[toggleAt!]!.us, halves[toggleAt! + 1]!.us]);
+  const dataFirst = one(dataHalves.filter((_, i) => i % 2 === 0).map((h) => h.us));
+  const dataSecond = one(dataHalves.filter((_, i) => i % 2 === 1).map((h) => h.us));
+  if (headMark === undefined || headSpace === undefined || toggleUs === undefined
+      || dataFirst === undefined || dataSecond === undefined) return undefined;
+  return {
+    shape: { leader, head: { mark: headMark, space: headSpace, bits: headHalves.length / 2 },
+      toggle: toggleUs, data: { first: dataFirst, second: dataSecond, bits: dataHalves.length / 2 },
+      gap: gaps[0] ?? [], copies: full.length },
+    values: [head, toggle, data],
+  };
+}
+
 function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   const t = shape.timings;
   const b = shape.biphase;
   // A pulse distance shape cannot answer for a biphase record or the other way round, and the two
   // never mix inside one entry, so this is a guard rather than a case.
-  if ((t === undefined) !== (m.timings === undefined)) return false;
-  if (t !== undefined && t.carries !== m.timings!.carries) return false;
+  if ((shape.longToggle === undefined) !== (m.longToggle === undefined)) return false;
+  if (shape.longToggle === undefined) {
+    if ((t === undefined) !== (m.timings === undefined)) return false;
+    if (t !== undefined && t.carries !== m.timings!.carries) return false;
+  }
   const c = container(m.config);
   const first = c === undefined ? undefined : irHeaderPointers(c, m.record)[0];
   const words = first === undefined ? undefined : irBlockWords(c!, first);
@@ -759,7 +863,14 @@ function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   let built: Pulse[];
   let original: readonly Pulse[];
   const train = fromFirstMark(pulsesOfWords(words));
-  if (t?.sections !== undefined) {
+  if (shape.longToggle !== undefined) {
+    // Every copy and every gap, word for word and unmerged, which is the strongest reproduction in
+    // this file: word boundaries are part of the claim, section 168. What stays outside it is the
+    // leading silence, like every entry here, and the record's closing terminator pair of 1 and 0.
+    if (m.ltValues === undefined) return false;
+    try { built = pulsesOfLongToggle(shape.longToggle, m.ltValues); } catch { return false; }
+    original = train.slice(0, built.length);
+  } else if (t?.sections !== undefined) {
     // The whole train including the closing silence, because the final bit lives inside it. Merged,
     // section 164: the closing is longer than one stored word can say, so the record spells it as
     // several and an unmerged comparison would fail on the spelling rather than on the sound.
@@ -800,6 +911,8 @@ interface Entry {
   timings?: FrameTimings;
   /** Set instead of `timings` where the family is biphase, section 162. */
   biphase?: BiphaseTimings;
+  /** Set instead of both where the family is the long toggle shape, section 168. */
+  longToggle?: LongToggleTimings;
   period?: number;
   codes: number;
   exact: number;
@@ -915,6 +1028,7 @@ for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - 
     periodNs: list[0]!.periodNs,
     ...(shape.timings === undefined ? {} : { timings: shape.timings }),
     ...(shape.biphase === undefined ? {} : { biphase: shape.biphase }),
+    ...(shape.longToggle === undefined ? {} : { longToggle: shape.longToggle }),
     ...(periods.get(entry) === undefined ? {} : { period: periods.get(entry)! }),
     codes: list.length,
     exact: list.filter((m) => reproduces(m, shape)).length,
@@ -1037,6 +1151,37 @@ export interface StatedProtocol {
     /** Whether a mark in the **first** half of a cell means a set bit. RC-6 is the other way up. */
     readonly setIsMark: boolean;
   };
+  /**
+   * The frame is one value sent in sections of these widths, section 166.
+   *
+   * \`Samsung 38 Bit\` is the family that needed it: the catalogue states two values per code and one
+   * width, and the wire is one header, the first section's cells, a structural space carrying that
+   * section's final set bit, the second section's cells, and a closing silence carrying the last bit of
+   * all. The widths sum to the width the family's name states, which is the closure that settled what
+   * "38 Bit" means: across the pair.
+   */
+  readonly sections?: readonly number[];
+  /** The space carrying a non final section's last set bit. Present exactly when \`sections\` is. */
+  readonly sectionSpace?: number;
+  /** The closing silence, which on a sectioned family carries the final bit and is a measured constant. */
+  readonly closing?: number;
+  /**
+   * The long toggle shape, set instead of the frame and biphase fields, section 168, one family.
+   *
+   * A code states three values, and the wire is a leader, head cells per kind, one double width toggle
+   * cell stored merged, data cells per position, and the whole frame \`copies\` times with the stored
+   * \`gap\` words after each. A set bit is the cell whose first half is silence, in all three regions.
+   * \`pulsesOfLongToggle\` in \`irframe.ts\` is the emitter and reproduces every record of the
+   * family word for word, copies and gaps included.
+   */
+  readonly longToggle?: {
+    readonly leader: readonly [number, number];
+    readonly head: { readonly mark: number; readonly space: number; readonly bits: number };
+    readonly toggle: number;
+    readonly data: { readonly first: number; readonly second: number; readonly bits: number };
+    readonly gap: readonly number[];
+    readonly copies: number;
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -1153,6 +1298,14 @@ if (write) {
       return `${head}biphase: { mark: ${b.mark}, space: ${b.space}, `
         + `${b.firstMark === undefined ? '' : `firstMark: ${b.firstMark}, `}`
         + `lead: [${lead}], setIsMark: ${b.setIsMark} },${tail}`;
+    }
+    const lt = e.longToggle;
+    if (lt !== undefined) {
+      return `${head}longToggle: { leader: [${lt.leader.join(', ')}], `
+        + `head: { mark: ${lt.head.mark}, space: ${lt.head.space}, bits: ${lt.head.bits} }, `
+        + `toggle: ${lt.toggle}, `
+        + `data: { first: ${lt.data.first}, second: ${lt.data.second}, bits: ${lt.data.bits} }, `
+        + `gap: [${lt.gap.join(', ')}], copies: ${lt.copies} },${tail}`;
     }
     const t = e.timings!;
     return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `

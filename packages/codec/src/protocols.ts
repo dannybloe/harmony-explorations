@@ -80,6 +80,37 @@ export interface StatedProtocol {
     /** Whether a mark in the **first** half of a cell means a set bit. RC-6 is the other way up. */
     readonly setIsMark: boolean;
   };
+  /**
+   * The frame is one value sent in sections of these widths, section 166.
+   *
+   * `Samsung 38 Bit` is the family that needed it: the catalogue states two values per code and one
+   * width, and the wire is one header, the first section's cells, a structural space carrying that
+   * section's final set bit, the second section's cells, and a closing silence carrying the last bit of
+   * all. The widths sum to the width the family's name states, which is the closure that settled what
+   * "38 Bit" means: across the pair.
+   */
+  readonly sections?: readonly number[];
+  /** The space carrying a non final section's last set bit. Present exactly when `sections` is. */
+  readonly sectionSpace?: number;
+  /** The closing silence, which on a sectioned family carries the final bit and is a measured constant. */
+  readonly closing?: number;
+  /**
+   * The long toggle shape, set instead of the frame and biphase fields, section 168, one family.
+   *
+   * A code states three values, and the wire is a leader, head cells per kind, one double width toggle
+   * cell stored merged, data cells per position, and the whole frame `copies` times with the stored
+   * `gap` words after each. A set bit is the cell whose first half is silence, in all three regions.
+   * `pulsesOfLongToggle` in `irframe.ts` is the emitter and reproduces every record of the
+   * family word for word, copies and gaps included.
+   */
+  readonly longToggle?: {
+    readonly leader: readonly [number, number];
+    readonly head: { readonly mark: number; readonly space: number; readonly bits: number };
+    readonly toggle: number;
+    readonly data: { readonly first: number; readonly second: number; readonly bits: number };
+    readonly gap: readonly number[];
+    readonly copies: number;
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -136,6 +167,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Philips RC5 13 Bit Toggle', periodNs: 27777, biphase: { mark: 889, space: 889, lead: [{ mark: true, us: 889 }], setIsMark: false }, codes: 51, exact: 51, spread: 0, source: 'compiled' },
   { family: 'JerroldO1 16 Bit', periodNs: 26315, header: [9000, 4520], flat: 495, zero: 2250, one: 4505, carries: 'space', codes: 47, exact: 47, spread: 0, source: 'compiled' },
   { family: 'Samsung 16 and 20 Bit', periodNs: 26315, header: [4500, 4480], flat: 495, zero: 500, one: 1495, carries: 'space', codes: 46, exact: 46, spread: 0, source: 'compiled' },
+  { family: 'Philips Hurd 16 Bit LongToggle', periodNs: 27777, longToggle: { leader: [2662, 870], head: { mark: 468, space: 433, bits: 4 }, toggle: 867, data: { first: 440, second: 457, bits: 16 }, gap: [32767, 32767, 18866], copies: 3 }, codes: 46, exact: 46, spread: 0, source: 'compiled' },
   { family: 'Short 11 Bit 2', periodNs: 22727, header: [0, 0], flat: 228, zero: 8310, one: 5480, carries: 'space', codes: 42, exact: 42, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MitsubishiO1 Dual 8 16 Bit', periodNs: 26315, header: [8400, 4250], flat: 510, zero: 570, one: 1600, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },

@@ -19,10 +19,10 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states thirty three entries, and what each is worth is its provenance', () => {
+test('the table states thirty four entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 33);
+  assert.equal(PROTOCOLS.length, 34);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -34,7 +34,7 @@ test('the table states thirty three entries, and what each is worth is its prove
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 24, 6]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 25, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -87,9 +87,9 @@ test('the table states thirty three entries, and what each is worth is its prove
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 32 of 33, the exception
+  // Every other entry reproduces every code of its own rows to the microsecond. 33 of 34, the exception
   // being the one loose entry named above.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 32);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 33);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
   // what the generator joining on the whole code bought. `Pioneer 32 Bit 2` and `Pioneer 32 Bit Dual`
@@ -124,6 +124,21 @@ test('the table states thirty three entries, and what each is worth is its prove
   assert.deepEqual([s38.codes, s38.exact], [35, 35], 'every record of the compiled sample, byte for byte');
   // A sectioned entry has no frame period: its closing is a measured constant, not padding to a total.
   assert.equal(s38.framePeriod, undefined);
+
+  // **One family is the long toggle shape, and it holds three regions under one bit rule**, section
+  // 168: a set bit is the cell whose first half is silence, for the head, the toggle and the data
+  // alike. The double width toggle cell is the "LongToggle" of the family's own name.
+  const longToggles = PROTOCOLS.filter((one) => one.longToggle !== undefined);
+  assert.deepEqual(longToggles.map((one) => one.family), ['Philips Hurd 16 Bit LongToggle']);
+  const hurd = longToggles[0]!.longToggle!;
+  assert.deepEqual([...hurd.leader], [2662, 870]);
+  assert.deepEqual([hurd.head.bits, hurd.data.bits], [4, 16], 'four head cells, sixteen data cells');
+  assert.deepEqual([hurd.toggle, hurd.copies], [867, 3]);
+  assert.deepEqual([longToggles[0]!.codes, longToggles[0]!.exact], [46, 46],
+    'every record whole, copies and gaps included, which is the strongest reproduction in the table');
+  // A long toggle row carries none of the frame fields, which is what makes it a shape and not a patch.
+  assert.equal(longToggles[0]!.header, undefined);
+  assert.equal(longToggles[0]!.biphase, undefined);
 
   // **Two families carry their bits the other way up, and the table says so by its numbers**, section
   // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.

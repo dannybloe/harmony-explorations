@@ -29,7 +29,8 @@ import {
 } from '../src/ir.ts';
 import type { FrameTimings, Pulse } from '../src/irframe.ts';
 import { biphaseFrames, frameKey, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark,
-         irFrame, irFrames, mergedIntervals, pulsesOfFrame, pulsesOfBiphaseFrame, timingsOfBiphase,
+         irFrame, irFrames, mergedIntervals, pulsesOfFrame, pulsesOfBiphaseFrame, pulsesOfLongToggle,
+         timingsOfBiphase,
          timingsOfFrame }
   from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
@@ -1330,4 +1331,28 @@ test('a sectioned frame emits its structural spaces, and refuses a bit they cann
   // And the shape is demanded whole: a sectioned frame without its closing cannot say its last bit.
   const { closing: _, ...noClosing } = t;
   assert.throws(() => pulsesOfFrame(noClosing as FrameTimings, 38, value), /section space and its closing/);
+});
+
+test('a long toggle record is emitted whole, word for word, and one bit rule covers three regions', () => {
+  // Section 168, Philips Hurd 16 Bit LongToggle: a set bit is the cell whose first half is silence, for
+  // the head, the toggle and the data alike. The values are the first record of the compiled sample.
+  const t = { leader: [2662, 870] as const, head: { mark: 468, space: 433, bits: 4 }, toggle: 867,
+    data: { first: 440, second: 457, bits: 16 }, gap: [32767, 32767, 18866], copies: 3 };
+  const built = pulsesOfLongToggle(t, [0x7n, 0x0n, 0xFBFFn]);
+  // Per copy: a leader pair, eight head halves, two toggle words, thirty two data halves, three gap
+  // words; three copies. Word boundaries are part of the claim, which is why the counts are exact.
+  assert.equal(built.length, 3 * (2 + 8 + 2 + 32 + 3));
+  assert.deepEqual(built.slice(0, 12).map((p) => `${p.mark ? '+' : '-'}${p.us}`),
+    // head 0x7 is 0111: cell one mark first, cells two to four space first, at the head lengths.
+    ['+2662', '-870', '+468', '-433', '-433', '+468', '-433', '+468', '-433', '+468', '+867', '-867']);
+  // Toggle 0 is mark first, stored merged: one 867 word per double half, not four words of 433.
+  assert.deepEqual(built.slice(10, 12), [{ mark: true, us: 867 }, { mark: false, us: 867 }]);
+  // A data cell's halves are per position whichever kind each is: set bit 440 space then 457 mark.
+  assert.deepEqual(built.slice(12, 14), [{ mark: false, us: 440 }, { mark: true, us: 457 }]);
+  // The copies are identical and each ends in the stored gap words, verbatim and unmerged.
+  const copy = built.slice(0, 47);
+  assert.deepEqual(built.slice(47, 94), copy);
+  assert.deepEqual(copy.slice(-3).map((p) => p.us), [32767, 32767, 18866]);
+  // Three values, exactly: the family's codes state three and the emitter refuses any other shape.
+  assert.throws(() => pulsesOfLongToggle(t, [0x7n, 0x0n]), /three values/);
 });

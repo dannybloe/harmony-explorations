@@ -791,6 +791,62 @@ export interface BiphaseTimings {
 }
 
 /**
+ * A long toggle family's whole record shape, section 168: Logitech's `Philips Hurd 16 Bit LongToggle`.
+ *
+ * A code of this family states **three** values, and the wire is one biphase like signal in three
+ * regions plus a repeat: a leader pair; `head.bits` cells at `head.mark` and `head.space` per **kind**;
+ * one double width toggle cell whose two double halves are one stored word of `toggle` each, which is
+ * the "LongToggle" of the family's own name; `data.bits` cells whose halves are `data.first` and
+ * `data.second` per **position** whichever kind each is; and the whole frame `copies` times with the
+ * stored words of `gap` after every copy. One bit convention covers all three regions: a set bit is the
+ * cell whose **first half is silence**. Every length here is measured off 46 of 46 records of the
+ * compiled sample, three identical copies each, and every record matches a stated triple exactly.
+ */
+export interface LongToggleTimings {
+  readonly leader: readonly [number, number];
+  readonly head: { readonly mark: number; readonly space: number; readonly bits: number };
+  /** One stored word per double half, so a toggle cell is two words of this length. */
+  readonly toggle: number;
+  readonly data: { readonly first: number; readonly second: number; readonly bits: number };
+  /** The stored words of the silence after each copy, verbatim, last copy included. */
+  readonly gap: readonly number[];
+  readonly copies: number;
+}
+
+/**
+ * The pulses a long toggle record stores, all copies and gaps included, word for word.
+ *
+ * Word boundaries are part of the claim: the generator stores each half cell as its own word in the
+ * head and data regions even where two of one kind sit adjacent, and stores each toggle double half
+ * **merged** as one word, so an emitter that merged everywhere or nowhere would not reproduce the file.
+ */
+export function pulsesOfLongToggle(t: LongToggleTimings, values: readonly bigint[]): Pulse[] {
+  const [head, toggle, data] = values;
+  if (values.length !== 3 || head === undefined || toggle === undefined || data === undefined) {
+    throw new Error('a long toggle code states three values');
+  }
+  const copy: Pulse[] = [{ mark: true, us: t.leader[0] }, { mark: false, us: t.leader[1] }];
+  // One rule for all three regions: a set bit's first half is silence.
+  const cell = (set: boolean, first: number, second: number): Pulse[] => set
+    ? [{ mark: false, us: first }, { mark: true, us: second }]
+    : [{ mark: true, us: first }, { mark: false, us: second }];
+  for (let i = t.head.bits - 1; i >= 0; i -= 1) {
+    const set = ((head >> BigInt(i)) & 1n) === 1n;
+    copy.push(...cell(set, set ? t.head.space : t.head.mark, set ? t.head.mark : t.head.space));
+  }
+  copy.push(...cell((toggle & 1n) === 1n, t.toggle, t.toggle));
+  for (let i = t.data.bits - 1; i >= 0; i -= 1) {
+    copy.push(...cell(((data >> BigInt(i)) & 1n) === 1n, t.data.first, t.data.second));
+  }
+  const out: Pulse[] = [];
+  for (let n = 0; n < t.copies; n += 1) {
+    out.push(...copy);
+    out.push(...t.gap.map((us) => ({ mark: false, us })));
+  }
+  return out;
+}
+
+/**
  * The pulses a biphase frame makes, one word per half cell, which is how a record stores them.
  *
  * **Unmerged on purpose.** Two adjacent half cells of one kind are one interval physically, and a config

@@ -22800,3 +22800,45 @@ quaternary on the wire, four space lengths), `Philips Hurd 16 Bit LongToggle` (8
 an irregular opening), `Panasonic 16 Bit` (26), and three families of one or two commands each, two of
 which the one length rail refuses deliberately, section 166's neighbours `MemorexV2 32 Bit Dual` and
 `Sharp 48 Bit`, plus `Saitek 11 Bit`.
+
+## 168. The long toggle family is three regions under one bit rule, and it reproduces whole
+
+25 August 2026. `Philips Hurd 16 Bit LongToggle`, 85 catalogue commands, was the largest family with no
+measured rhythm, and its records were the 46 the drop pile filed as unreadable: a biphase shaped signal
+whose half cells wobble between 433 and 468 microseconds, which no reader here could hold to one length
+because there is no one length to hold it to.
+
+**The wobble is positional and exact, not jitter.** Every record of the Yamaha DVD-S501 in the second
+compiled sample is three identical copies of one frame, and the frame is three regions. A leader of 2662
+and 870. Four **head** cells whose mark half is always 468 and space half always 433, per kind. One
+double width **toggle** cell, the "LongToggle" of Logitech's own name, each double half stored merged as
+one 867 word. Sixteen **data** cells whose first half is always 440 and second half always 457, per
+position, whichever kind each is. After each copy, the last included, the identical stored silence of
+32767, 32767 and 18866, and the record closes on a terminator pair of 1 and 0 microseconds that belongs
+to no copy.
+
+**One bit convention covers all three regions: a set bit is the cell whose first half is silence.**
+The catalogue states three values per code, and under that single rule the head reads the first, the
+toggle the second and the data the third, on **46 of 46 records, all matching stated triples exactly,
+under exactly one of the eight convention variants tried**. The head value is 0x7 and the toggle 0 on
+every record, which is the appliance's address and the compiler's resting toggle; the data varies per
+command.
+
+**The entry is a fourth row shape and the strongest reproduction in the table.** `sections` could not
+carry it, `biphase` could not carry it, and stretching either would have been a patch. `longToggle`
+states the leader, the two per region length pairs, the toggle word, the gap words verbatim and the copy
+count, and `pulsesOfLongToggle` emits the whole record, **copies and gaps included, word for word**:
+word boundaries are part of the claim, because the generator stores head and data halves as one word
+each even where two of one kind sit adjacent, and stores a toggle double half merged. 46 of 46.
+
+**A generated file's interface lives in the generator's template, which this section paid to relearn.**
+The `sections` fields of section 166 were added to `src/protocols.ts` by hand, twice, and the next
+`--write` erased them both times: the file's own header says generated, do not edit by hand, and the
+edit was made anyway. The fields live in the `GENERATED` template inside `bin/protocols.ts` now. One
+run of `make ts` reported clean while the erased interface contradicted two test files, which a control
+could not reproduce afterwards, the same edit failing the typecheck properly when reintroduced. The
+false pass stays unexplained and the control is what makes it safe to proceed.
+
+The table stands at 34 entries, **28 of 33 catalogue families, 5085 of 5219 commands**. Left:
+`Galaxis 16 Bit Quad Toggle` (104), `Panasonic 16 Bit` (26), and the three of one or two commands,
+`MemorexV2 32 Bit Dual`, `Sharp 48 Bit`, `Saitek 11 Bit`.

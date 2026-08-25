@@ -133,7 +133,7 @@ family in their database. The library's own reader takes every one of the 2921 d
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **27 of the catalogue's 33 families**, which is 5000 of 5219 commands. It held 15 and
+The table holds **28 of the catalogue's 33 families**, which is 5085 of 5219 commands. It held 15 and
 4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
 from phase 3's splitting rule rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -232,8 +232,10 @@ one tail shape across every record. What varies is the closing silence.
       `Videocrypt 11 Bit Toggle` followed the same day, section 167: their bits are spaces of up to
       8310 microseconds, past the reader's gap ceiling, and the ceiling cannot rise because another
       family's real inter frame gap sits at 8460. Each segment is read at its own scale instead, 42 of
-      42 and 32 of 32 byte for byte, and the table is **33 entries, 27 of 33 families and 5000 of 5219
-      commands**
+      42 and 32 of 32 byte for byte. `Philips Hurd 16 Bit LongToggle` followed, section 168, a fourth
+      row shape: three regions under one bit rule, a set bit being the cell whose first half is silence,
+      and its 46 records reproduce **whole, copies and gaps included, word for word**. The table is
+      **34 entries, 28 of 33 families and 5085 of 5219 commands**
 - [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
       measurement: a lead in is a mark and a long space, and on several families that space is over the
       threshold, so a rule with no floor cut the header off as its own segment and every frame then read
