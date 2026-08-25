@@ -61,20 +61,6 @@ export interface StatedProtocol {
   /** The constant total a pulse width frame is padded out to, absent on a pulse distance one. */
   readonly framePeriod?: number;
   /**
-   * The frame is one value sent in sections of these widths, section 166.
-   *
-   * `Samsung 38 Bit` is the family that needed it: the catalogue states two values per code and one
-   * width, and the wire is one header, the first section's cells, a structural space carrying that
-   * section's final set bit, the second section's cells, and a closing silence carrying the last bit of
-   * all. The widths sum to the width the family's name states, which is the closure that settled what
-   * "38 Bit" means: across the pair.
-   */
-  readonly sections?: readonly number[];
-  /** The space carrying a non final section's last set bit. Present exactly when `sections` is. */
-  readonly sectionSpace?: number;
-  /** The closing silence, which on a sectioned family carries the final bit and is a measured constant. */
-  readonly closing?: number;
-  /**
    * A biphase family, where the bit is in **which half** of one cell the carrier is on.
    *
    * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
@@ -150,6 +136,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Philips RC5 13 Bit Toggle', periodNs: 27777, biphase: { mark: 889, space: 889, lead: [{ mark: true, us: 889 }], setIsMark: false }, codes: 51, exact: 51, spread: 0, source: 'compiled' },
   { family: 'JerroldO1 16 Bit', periodNs: 26315, header: [9000, 4520], flat: 495, zero: 2250, one: 4505, carries: 'space', codes: 47, exact: 47, spread: 0, source: 'compiled' },
   { family: 'Samsung 16 and 20 Bit', periodNs: 26315, header: [4500, 4480], flat: 495, zero: 500, one: 1495, carries: 'space', codes: 46, exact: 46, spread: 0, source: 'compiled' },
+  { family: 'Short 11 Bit 2', periodNs: 22727, header: [0, 0], flat: 228, zero: 8310, one: 5480, carries: 'space', codes: 42, exact: 42, spread: 0, source: 'compiled' },
   { family: 'PioneerO1 32 Bit Dual', periodNs: 25000, header: [8510, 4256], flat: 532, zero: 532, one: 1596, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MitsubishiO1 Dual 8 16 Bit', periodNs: 26315, header: [8400, 4250], flat: 510, zero: 570, one: 1600, carries: 'space', codes: 40, exact: 40, spread: 0, source: 'compiled' },
   { family: 'MemorexV2 32 Bit', periodNs: 26595, header: [9000, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 38, exact: 38, spread: 0, source: 'compiled' },
@@ -157,6 +144,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Philips RECS80 11 Bit', periodNs: 26315, header: [0, 0], flat: 158, zero: 4902, one: 7442, carries: 'space', codes: 35, exact: 35, spread: 0, source: 'compiled' },
   { family: 'Pioneer 32 Bit Dual', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 34, exact: 34, spread: 0, source: 'compiled' },
   { family: 'SharpO1 48 Bit', periodNs: 26315, header: [3364, 1682], flat: 408, zero: 431, one: 1272, carries: 'space', codes: 33, exact: 33, spread: 0, source: 'corpus' },
+  { family: 'Videocrypt 11 Bit Toggle', periodNs: 30303, header: [0, 0], flat: 500, firstMark: 480, zero: 5282, one: 8150, carries: 'space', codes: 32, exact: 32, spread: 0, source: 'compiled' },
   { family: 'Pioneer 32 Bit', periodNs: 25000, header: [8470, 4230], flat: 548, zero: 500, one: 1570, carries: 'space', codes: 19, exact: 19, spread: 0, source: 'both' },
   { family: 'Sony 20 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 14, exact: 14, spread: 0, source: 'compiled' },
   { family: 'Sony 15 Bit', periodNs: 25000, header: [2400, 600], flat: 600, zero: 600, one: 1200, carries: 'mark', framePeriod: 45000, codes: 12, exact: 12, spread: 0, source: 'both' },

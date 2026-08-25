@@ -22763,3 +22763,40 @@ durations at 38 kHz, 35 of 35 byte for byte including the closing, which the com
 because the final bit lives inside it. The table stands at 31 entries, 25 of 33 catalogue families,
 4949 of 5219 commands. `packages/codec/test/stated.test.ts` asserts the entry and the width sum;
 `packages/codec/test/irframe.test.ts` asserts the encoder's emission and its three refusals.
+
+## 167. A segment is read at its own scale, which no constant gap could allow
+
+25 August 2026. `Short 11 Bit 2` and `Videocrypt 11 Bit Toggle`, 42 and 32 records of the compiled
+samples, read as nothing at all: both spell their bits as spaces of 5282 to 8310 microseconds, and the
+reader ends a frame at any space over 8000, so every record was cut off inside its first frame.
+
+**The ceiling cannot rise, and the census that says so is the finding's core.** Over every duration in
+every stream record of the lab, the spaces between 8310 and the unambiguous gaps hold exactly one
+population: 8460, which is `RCAV1 LF 24 Bit`'s **inter frame silence**. So a space of 8310 is a bit in
+one family and 8460 a real frame ending gap in another, 1.8% apart, and any constant that reads the
+first breaks the second, which reproduces its 52 records exactly today. This is section 165's
+Jerrold/arch 8 situation again one octave up, and this time there is no structural rule to add, because
+both trains are well formed pulse distance frames.
+
+**What separates them is scale, and the segmenter already measures it.** `frameSegments` cuts a train
+at a space four times its median space, so within one segment a space four times the segment's own
+median cannot occur: the cut removed it. That is a license the whole train never has. So
+`framesOfSegments` now reads each segment with a gap bound of `max(8000, 4 x median space of the
+segment)`, `segmentGapUs`, and the floor keeps the constant for every ordinary segment, where the
+median is a few hundred microseconds and the constant is the stronger rule. `framesOfPulses` on an
+uncut train is unchanged, and the two families that needed the license read whole: **42 of 42 and 32
+of 32, byte for byte**, both headerless, Videocrypt with a 480 opening mark against its 500 flat.
+
+**`Short 11 Bit 2` is the third family whose bits are the other way up**, section 161's shape: its set
+bit is the **shorter** space, 5480 against a clear bit of 8310, stated by the catalogue's complement
+exactly as `Logitech 24 Bit` and `RCAV1 LF 24 Bit` state theirs. The assertion that looks for that
+shape is what found it, for the second time.
+
+**Control**: the whole suite reads identically, 1169 TypeScript tests and the golden vectors unmoved,
+because no segment in the nineteen corpus containers has a median space large enough to move the bound
+off its floor. The change is visible only where it was needed. The table stands at 33 entries, **27 of
+33 catalogue families, 5000 of 5219 commands**. What is left: `Galaxis 16 Bit Quad Toggle` (104,
+quaternary on the wire, four space lengths), `Philips Hurd 16 Bit LongToggle` (85, biphase shaped with
+an irregular opening), `Panasonic 16 Bit` (26), and three families of one or two commands each, two of
+which the one length rail refuses deliberately, section 166's neighbours `MemorexV2 32 Bit Dual` and
+`Sharp 48 Bit`, plus `Saitek 11 Bit`.

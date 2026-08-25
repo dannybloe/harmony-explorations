@@ -176,7 +176,8 @@ function oneFlatLength(flats: readonly number[]): boolean {
   return Math.max(...tail) < Math.min(...tail) * SPLIT_RATIO;
 }
 
-function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number): IrFrame | undefined {
+function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number,
+  gapUs = GAP_US): IrFrame | undefined {
   const durations: number[] = [];
   // The other half of every pair, so the frame can be required to have a constant one. The pair that
   // ends the frame is left out: on a pulse width protocol its other half is the trailing gap.
@@ -189,7 +190,7 @@ function decode(d: readonly Pulse[], carries: FrameCarrier, headerPairs: number)
     if (!mark || !space || !mark.mark || space.mark) break;
     const measured = carries === 'mark' ? mark.us : space.us;
     const other = carries === 'mark' ? space.us : mark.us;
-    if (measured > GAP_US) break;
+    if (measured > gapUs) break;
     durations.push(measured);
     if (other > TRAILING_GAP_US) break;
     flats.push(other);
@@ -272,14 +273,30 @@ export function irFrames(c: Container, record: number, headerPairs = 1): IrFrame
  * corpus, since requiring a constant non carrying half already refuses everything else the merge
  * changes.
  */
-export function framesOfPulses(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
+export function framesOfPulses(train: readonly Pulse[], headerPairs = 1, gapUs?: number): IrFrame[] {
   const d = fromFirstMark(mergedIntervals(train));
   const out: IrFrame[] = [];
   for (const carries of ['mark', 'space'] as const) {
-    const one = decode(d, carries, headerPairs);
+    const one = decode(d, carries, headerPairs, gapUs);
     if (one) out.push(one);
   }
   return out;
+}
+
+/**
+ * The gap bound a segment earns once the real gaps have been cut away, section 167.
+ *
+ * `GAP_US` cannot rise: a space of 8310 is a bit (`Short 11 Bit 2`) and a space of 8460 is a real frame
+ * ending gap (`RCAV1 LF 24 Bit`'s inter frame silence), 1.8% apart, so no constant separates them. What
+ * does is scale: within one **segment** of `frameSegments`, whose boundaries are already four times the
+ * median space, a space four times the segment's own median cannot occur, so the reader may accept the
+ * segment's own scale. The floor keeps the default for ordinary segments, where the median is small and
+ * the constant is the stronger rule.
+ */
+export function segmentGapUs(segment: readonly Pulse[], factor = FRAME_BOUNDARY_FACTOR): number {
+  const spaces = segment.filter((one) => !one.mark).map((one) => one.us).sort((a, b) => a - b);
+  const median = spaces[Math.floor(spaces.length / 2)];
+  return Math.max(GAP_US, median === undefined ? 0 : median * factor);
 }
 
 /**
@@ -417,13 +434,20 @@ export function frameSegments(train: readonly Pulse[], keepBoundary: boolean,
  * **Not applied to biphase**, for the same reason the merge is not: a biphase frame's cells are all one
  * length, so there is nothing here that distinguishes a separator from a cell, and `biphaseFrames` reads
  * a whole train on its own terms.
+ *
+ * **Each segment is read at its own scale**, section 167: the reader's gap ceiling cannot rise as a
+ * constant, because a space of 8310 is a bit in one family and 8460 a real gap in another, and what
+ * separates them is that within a segment the real gaps are already cut away. That is what lets
+ * `Short 11 Bit 2` and `Videocrypt 11 Bit Toggle`, whose bits are spaces of up to 8310, read here while
+ * `framesOfPulses` on the raw train still refuses them, and it changes nothing for a segment whose
+ * spaces are ordinary, where the floor keeps the constant.
  */
 export function framesOfSegments(train: readonly Pulse[], headerPairs = 1): IrFrame[] {
   const seen = new Set<string>();
   const out: IrFrame[] = [];
   for (const keepBoundary of [true, false]) {
     for (const segment of frameSegments(train, keepBoundary)) {
-      for (const frame of framesOfPulses(segment, headerPairs)) {
+      for (const frame of framesOfPulses(segment, headerPairs, segmentGapUs(segment))) {
         const key = frameKey(frame);
         if (seen.has(key)) continue;
         seen.add(key);

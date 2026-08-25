@@ -916,7 +916,7 @@ packages/codec/                 TS: the one config codec, container through comp
                                 family uses and src/stated.ts the lookup and encoder over it, which is
                                 what lets a code Logitech's database states as a name and a number be
                                 emitted with no sibling code to copy the durations from, section 157.
-                                Thirty one entries, six of them measured on both routes, and each
+                                Thirty three entries, six of them measured on both routes, and each
                                 carries the route it came from, since a rhythm two independent routes
                                 agree on is worth more than one, section 160. Two
                                 shapes in FrameTimings exist for one family and both are measured rather
@@ -941,7 +941,7 @@ packages/codec/                 TS: the one config codec, container through comp
                                 set bit is its shorter space, and a test looks for that shape rather
                                 than for the name.
                                 **A table entry says where its durations came from**: three off the
-                                corpus, twenty two off a configuration Logitech's own compiler produced, and
+                                corpus, twenty four off a configuration Logitech's own compiler produced, and
                                 six off both, which is the column to look at first. The fourth value,
                                 a rhythm taken from published documentation and judged only by their
                                 analyser, is deliberately **empty**: the one entry that had it was out
