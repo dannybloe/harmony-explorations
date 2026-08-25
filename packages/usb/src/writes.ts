@@ -35,8 +35,12 @@ import {
  * `WRITE_FLASH`: **the same five bytes as `READ_FLASH`**, into the same firmware variables.
  *
  * Encoding it is not permission to send it. The rails in `rails.ts` decide that, and they are
- * where the region restriction lives, because the firmware's own validator accepts any config
- * flash address and both commands call it.
+ * where the region restriction lives, because the firmware's own validator accepts **every** top
+ * address byte below `0x40` on arch 12 (Harmony One), which is the whole 4 MiB part including the
+ * running firmware at `0x020000` and the stored copy at `0x3D0000`, section 88. Both commands call
+ * it, which is why one classification serves reads and writes alike. The one guard the firmware
+ * keeps for itself is a latch and not a bound: a write below `0x020000` is skipped unless a write at
+ * or above it has already happened in the session, section 175. Nothing here relies on that.
  */
 export function writeFlashRequest(address: number, count: number): Uint8Array {
   return encodeRequest(WRITE_FLASH, [...address24(address), ...count16(count)]);

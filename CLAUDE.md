@@ -834,9 +834,12 @@ docs/adding-a-device.md         THE checklist for one goal: pick an appliance ou
                                 button press are behind a gate, because they would be the first
                                 write this project has ever performed and the restore route is
                                 unproven. Danny opened the gate on 25 August 2026, rehearsal
-                                first; before the rehearsal comes one derivation, since the
-                                `WRITE_FLASH` data packets were never read out of the firmware
-                                and `writeFlash` in `packages/usb` throws by construction
+                                first, and the derivation that stood in front of it is done the
+                                same day, section 175: the transfer is an announce, `0x4A` data
+                                packets nothing answers, and a done packet acknowledged once.
+                                `writeFlash` still throws, now on the medium rather than the
+                                protocol, whether the firmware erases before it programs and
+                                whether a host must pace its packets
 docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes

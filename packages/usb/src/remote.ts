@@ -94,6 +94,12 @@ export interface RemoteOptions {
  * `INTERNAL_OFFSET_MAX` is the firmware's own bound on the sixteen bit offset, `0x10000` minus one
  * full report. It is not a bound on where a **read** ends, which is what the count check beside it
  * is for.
+ *
+ * **Whose firmware, though**: `0xFFC0` is arch 14's (Harmony 600 and 700). Arch 12 (Harmony One)
+ * bounds the same offset at `0xFFF8`, section 175, so this constant is stricter than the Harmony
+ * One's firmware rather than equal to it. Stricter is the safe direction and one constant is worth
+ * keeping, but the provenance has to say which part it was measured on, because "the firmware's own
+ * bound" invites somebody to raise it to match a device and reach for the wrong number.
  */
 const INTERNAL_PAGE_SIZE = 0x10000;
 const INTERNAL_OFFSET_MAX = 0xffc0;
@@ -456,11 +462,23 @@ export class HarmonyRemote {
   // the rails rather than improvised later under time pressure. `rails.ts` decides; these methods
   // only ask, and they ask before touching the transport.
 
+  /**
+   * **Still refuses, and the reason changed on 25 August 2026.** Section 175 read the data path on
+   * both bench architectures, so the packets could be assembled here today: an announce, a run of
+   * `0x4A` data packets that are answered by nothing, and `0xF1 0x30`, answered once with
+   * `0xF0 0x30` from state 3. What it did not settle is two things about the medium, and either one
+   * decides whether a write lands: whether the firmware erases before it programs, and whether a
+   * host must pace its packets, given one 63 byte staging buffer and no per packet reply. Flash only
+   * clears bits, so programming over unerased content silently yields the AND of old and new.
+   *
+   * So the refusal is now about the medium rather than the protocol, and the message says which.
+   */
   async writeFlash(p: WritePermission, address: number, data: Uint8Array): Promise<void> {
     assertFlashWriteAllowed(p, address, data.length);
     throw new RemoteError(
-      'the flash write data path is not implemented: WRITE_FLASH only announces the write, and ' +
-        'the 0x40 data packets that follow it have not been derived from the firmware yet',
+      'the flash write data path is derived but not implemented: the packets are known, section ' +
+        '175, and two things about the medium are not, whether the firmware erases before it ' +
+        'programs and whether a host must pace its data packets',
     );
   }
 

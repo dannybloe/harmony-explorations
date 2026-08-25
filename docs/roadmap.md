@@ -183,8 +183,10 @@ image is a second sample rather than a stand in. Other models are iterated on la
    when we are genuinely stuck.
 8. **Version 1 of the app is read only.** Detect the remote, read the config, show the container
    and the labelled sections, export IR codes. The write rails, the erase scoping and the request
-   encoders are written and sit behind a flag that is off in release builds; the `WRITE_FLASH`
-   data path itself is not derived yet, so `writeFlash` refuses even with the flag on.
+   encoders are written and sit behind a flag that is off in release builds. The `WRITE_FLASH` data
+   path was read on 25 August 2026, section 175, so the packets are known; `writeFlash` still
+   refuses, now because two things about the medium are not settled, whether the firmware erases
+   before it programs and whether a host must pace its packets.
 9. **Logitech's own client is a fallback source, not a forbidden one.** *Taken 9 August 2026, and
    it narrows decision 2 rather than reversing it.* The firmware stays the default and the
    preferred evidence, because it says what the remote does where the client only says what one
@@ -434,7 +436,7 @@ a technical claim about the product belongs on this side of the fence.
 | 1 | See what is on your remote | M1 and M2, both done. Plus `inventory`, `render`, `activities`, `devices` and `text`, all done |
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
 | 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
-| 4 | Put it back, changing nothing | **M4**, started 25 August 2026: the gate is open and the rehearsal is first. The rails and `ERASE_FLASH` scoping exist; the `WRITE_FLASH` data packets are underived, so `writeFlash` still refuses by construction |
+| 4 | Put it back, changing nothing | **M4**, started 25 August 2026: the gate is open and the rehearsal is first. The rails and `ERASE_FLASH` scoping exist, and the data packets are derived, section 175; `writeFlash` refuses on the two medium questions that section leaves open |
 | 5 | Change what your remote does | M4 again, plus **one reading**: which base slot 15 group holds a device's delays, see below |
 | 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
 | 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |
@@ -778,10 +780,14 @@ whatever that list holds now.
 therefore here, first exercised on the spare Harmony One through the bench instrument. The user
 facing "write my config" is FreeHarmony's steps 4 and 5, which are blocked on this and say so.
 **Started 25 August 2026**: the gate in `docs/adding-a-device.md` opened, with the restore rehearsal
-first, writing the spare Harmony One's own dump back before any composed config. What stands between
-the gate and the rehearsal is one derivation: the `0x40` data packets that follow a `WRITE_FLASH`
-announcement have never been read out of the firmware, so `writeFlash` throws by construction. The
-rails, the `ERASE_FLASH` scoping and the acknowledgement checks exist and are refusal tested.
+first, writing the spare Harmony One's own dump back before any composed config. The derivation that
+stood in front of it is done the same day, section 175: the whole transfer is read on both bench
+architectures, an announce, `0x4A` data packets nothing answers, and a done packet acknowledged once
+from state 3. `writeFlash` still throws, and the reason moved from the protocol to the medium: whether
+the firmware erases before programming and whether a host must pace its packets. The cheapest first
+write follows from that section, one erase block of the unit's own dump rewritten with the bytes it
+already holds, which also answers the erase question by measurement. The rails, the `ERASE_FLASH`
+scoping and the acknowledgement checks exist and are refusal tested.
 
 **M5 Learning. Both.** IR capture over USB and the encoder from raw timings to a config record are
 API. The learning interface is FreeHarmony's step 7. The encoder is the part with nobody assigned: it replaces a choice

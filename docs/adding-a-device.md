@@ -570,11 +570,24 @@ not allowed to consume on its way past.
 **So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the
 restore-from-dump route rehearsed first, and not because phase 7 finished.
 
-**Danny said so on 25 August 2026**, the day after phase 7 ticked. What the rehearsal is waiting on
-is one derivation: the `0x40` data packets that follow a `WRITE_FLASH` announcement have never been
-read out of the firmware, so `writeFlash` in `packages/usb` throws by construction. Deriving that
-path, clean room from the firmware with concordance as the cross check, is the first work item of
-phase 8 and moves no rail by itself.
+**Danny said so on 25 August 2026**, the day after phase 7 ticked, and the derivation that stood in
+front of the rehearsal was done the same day, section 175: the whole transfer is read on both bench
+architectures, clean room from the firmware, with concordance's length map turning up as
+corroboration afterwards. An announce, a run of `0x4A` data packets that are answered by nothing, and
+`0xF1 0x30` acknowledged once with `0xF0 0x30` from state 3.
+
+**`writeFlash` still refuses, and the reason moved.** Two things about the medium are open and either
+decides whether a write lands rather than corrupts: whether the firmware erases before it programs,
+and whether a host must pace its data packets given one 63 byte staging buffer and no per packet
+reply. Flash only clears bits, so programming over unerased content silently yields the AND of old and
+new.
+
+**So the rehearsal shrinks to one erase block**, which is what section 175 recommends and what the
+first box below now asks for. A whole config is 1.6 MB and 25 blocks; one block of it, erased and
+rewritten from the verified dump with the bytes it already holds, exercises the erase, the announce,
+the packets, the done and the read back compare, ends byte identical either way, and is repeatable if
+it fails halfway. Writing it **without** erasing first, and comparing, answers the erase question by
+measurement and loses nothing the dump cannot restore.
 
 ## Phase 8: the write path, on the spare Harmony One
 
@@ -585,7 +598,16 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
 - [ ] **the restore rehearsed before the write, not after it.** Nothing here has ever put a config back
       onto a remote, so the recovery path is a belief and not a measurement. Write the unit's **own**
       dump back first and read it back identical: a write that changes nothing is the cheapest possible
-      first write, and it is the only one whose correct outcome is known in advance
+      first write, and it is the only one whose correct outcome is known in advance. **One 64 KiB erase
+      block of it, not the whole config**, section 175: same exercise end to end, a twenty fifth of the
+      erase cycles, and repeatable if it fails halfway
+- [ ] **the erase question answered by measurement**, section 175: whether the firmware erases before
+      it programs is unread, and the block above answers it by being written once without a preceding
+      erase and compared. Flash only clears bits, so the two outcomes are the bytes back or their AND,
+      and both are informative
+- [ ] **whether a host must pace its data packets**, section 175: one staging buffer, no per packet
+      reply, and the predicate that would settle it is reached through a computed jump. So it gets
+      measured on the block above, by reading back what a streamed run of packets actually wrote
 - [ ] `INTENDEDVERSION` compared against the connected remote's protocol, skin, board and flash id, and
       refused on any mismatch
 - [ ] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the

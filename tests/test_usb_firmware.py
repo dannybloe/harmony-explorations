@@ -2005,5 +2005,205 @@ class TestArch12Band0xC0(unittest.TestCase):
         self.assertEqual(self.at(code, 0x23952).fields['k'], 0x07)
 
 
+class TestTheFlashWriteDataPath(unittest.TestCase):
+    """
+    Section 175. How the bytes of a write actually reach storage, which is the half of
+    WRITE_FLASH that had never been read: section 88 derived the address validator's window and
+    the doc recorded the announce packet, and then stopped at "the data arrives as `0x40` packets
+    handled in the USB callback", with no reading of what happens to them.
+
+    Both architectures, and the shape is identical with different addresses. That agreement is
+    the evidence: two images compiled for different parts, one carrying a memory mapped parallel
+    NOR and one an SPI chip its firmware does not live on, implement one protocol.
+
+    The addresses are kept rather than re-derived because finding them again is a search. What
+    each assertion holds is the *shape*: a literal that states a buffer, a chain whose case values
+    are the commands accepted, a fork on the byte the validator wrote.
+    """
+
+    # image -> base, and per image the addresses this class reads.
+    ARCH14, ARCH12 = ('h700_code', 0x9000), ('one34_code', 0x20000)
+
+    def at(self, image, addr):
+        name, base = image
+        return isa.decode(lab.load(name), addr - base, base)
+
+    def literal(self, image, addr):
+        instr = self.at(image, addr)
+        self.assertEqual(instr.mnemonic, 'MOVLW', hex(addr))
+        return instr.fields['k']
+
+    def test_state_two_accepts_exactly_the_data_and_done_commands(self):
+        """
+        The state gate sends state 2 to a chain of its own, and that chain has two cases. So a
+        remote that has agreed to a write accepts data and the end of the transfer and nothing
+        else, which is why `0x40` is absent from the main command table: it is not a command a
+        host may send at any other time.
+
+        Decoded as a chain rather than read off the branches, because the literals are running
+        XORs and reading them positionally gives `0xF0` and `0xB0`, the second of which is
+        READ_MISC and would put an existing command in a place it cannot be sent.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        for image, gate, handler, chain, expected in (
+            (self.ARCH14, 0x0BDB4, 0x0C55C, 0x0C560, {0xF0: 0x0C5B4, 0x40: 0x0C56A}),
+            (self.ARCH12, 0x2647C, 0x26752, 0x26756, {0xF0: 0x267AA, 0x40: 0x26760}),
+        ):
+            name, base = image
+            with self.subTest(name):
+                states = {c.value: c.target
+                          for c in chains.xor_chain(lab.load(name), base, gate, limit=16)}
+                self.assertEqual(states[0x02], handler, 'state 2 reaches its own chain')
+                cases = {c.value: c.target
+                         for c in chains.xor_chain(lab.load(name), base, chain, limit=16)}
+                self.assertEqual(cases, expected)
+
+    def test_a_data_packet_lands_in_a_single_packet_staging_buffer(self):
+        """
+        The buffer's address is two literals, and it is re-loaded at the top of every packet
+        rather than advanced across packets, so it holds one packet and not the transfer. That is
+        what makes the pending flag below load bearing: the main loop has to drain the buffer
+        before the next packet can be accepted, and nothing in the firmware queues a second.
+
+        63 bytes is the most a packet can carry, from the length nibble mapping asserted by
+        `TestTheLengthNibbleMapping`, so the buffer is one report's payload.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        for image, low, high, buffer_at in ((self.ARCH14, 0x0C572, 0x0C576, 0x068F),
+                                            (self.ARCH12, 0x26768, 0x2676C, 0x01A5)):
+            with self.subTest(image[0]):
+                self.assertEqual(self.literal(image, low) | (self.literal(image, high) << 8),
+                                 buffer_at)
+
+    def test_the_packet_sets_a_pending_flag_and_records_its_own_length(self):
+        """
+        Two variables, and the pair is what the main loop reads: a flag saying a packet is
+        waiting, and the count of bytes in it, copied from the callback's own decoded length. So
+        the firmware trusts the length nibble for how much to write, not the announced count.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        for image, flag_at, flag, count_at, length_var, count_var in (
+            (self.ARCH14, 0x0C56E, 0x37E, 0x0C57A, 0xD01, 0x37F),
+            (self.ARCH12, 0x26764, 0x28D, 0x26770, 0xD20, 0x28E),
+        ):
+            with self.subTest(image[0]):
+                write = self.at(image, flag_at)
+                self.assertEqual(write.mnemonic, 'MOVWF')
+                self.assertEqual(write.fields['f'], flag & 0xFF)
+                copy = self.at(image, count_at)
+                self.assertEqual(copy.mnemonic, 'MOVFF')
+                self.assertEqual(copy.fields['src'], length_var)
+                self.assertEqual(copy.fields['dst'], count_var)
+
+    def test_the_drain_forks_on_the_byte_the_validator_wrote(self):
+        """
+        One selector for both directions, which is the connection worth keeping: section 94 read
+        `0x28B` as the byte the *read* body branches on, and the write executor branches on the
+        same byte with the same two values. So the validator classifies an address once and both
+        commands obey the classification, and neither carries a region rule of its own.
+
+        `0x00` is external and `0xFE` internal program flash. A third value exists and is
+        asserted below.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        for image, read_at, external, internal_test in ((self.ARCH14, 0x0C640, 0x0C6B0, 0x0C644),
+                                                        (self.ARCH12, 0x2682E, 0x268A4, 0x26832)):
+            with self.subTest(image[0]):
+                self.assertEqual(self.at(image, read_at).mnemonic, 'MOVF')
+                branch = self.at(image, read_at + 2)
+                self.assertEqual(branch.mnemonic, 'BZ')
+                self.assertEqual(branch.fields['target'], external, 'zero is the external arm')
+                # An XORLW rather than a MOVLW, because the selector is still in W: the fork is a
+                # two case chain of the same shape as every switch in this firmware.
+                test = self.at(image, internal_test)
+                self.assertEqual(test.mnemonic, 'XORLW')
+                self.assertEqual(test.fields['k'], 0xFE)
+
+    def test_ending_the_session_disarms_the_destination(self):
+        """
+        `0xE0 0x01` sets the selector to `0xFF`, which both arms refuse, so the escape that
+        section 97 reads as clearing the command gate also leaves the remote unable to write
+        until an address is validated again. A rail the firmware keeps for itself.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        for image, at, var in ((self.ARCH14, 0x0BD88, 0xD5), (self.ARCH12, 0x26460, 0x8B)):
+            with self.subTest(image[0]):
+                instr = self.at(image, at)
+                self.assertEqual(instr.mnemonic, 'SETF')
+                self.assertEqual(instr.fields['f'], var)
+
+    def test_an_internal_write_is_the_parts_own_self_programming_sequence(self):
+        """
+        Arch 14, and it is the textbook PIC18 algorithm rather than anything of Logitech's: a
+        byte at a time into the holding registers with `TBLWT`, and a commit through `EECON1`
+        only when the address reaches the end of a 64 byte block. Which is also a rail: a
+        transfer that stops mid block leaves those bytes in the holding registers and never
+        programmed.
+        """
+        lab.require(self.ARCH14[0])
+        self.assertEqual(self.at(self.ARCH14, 0x1B538).mnemonic, 'TBLWT*')
+        # EECON1 is 0xFA6 on this family, and 0x04 is WREN.
+        self.assertEqual(self.literal(self.ARCH14, 0x1B54A), 0x04)
+        eecon1 = self.at(self.ARCH14, 0x1B54C)
+        self.assertEqual(eecon1.mnemonic, 'MOVWF')
+        self.assertEqual(eecon1.fields['f'], 0xA6)
+        # The block test in the executor: the commit runs when the low six address bits are set.
+        self.assertEqual(self.literal(self.ARCH14, 0x0C682), 0x3F)
+        commit = self.at(self.ARCH14, 0x0C69A)
+        self.assertEqual(commit.mnemonic, 'CALL')
+        self.assertEqual(commit.fields['target'], 0x1B53C)
+
+    def test_the_transfer_is_acknowledged_once_at_the_end(self):
+        """
+        State 3, which `0xF0` moves the remote to, answers `0xF0 0x30`: the acknowledgement shape
+        `TestTheAcknowledgementShape` already established, naming the command being finished. So
+        a host gets exactly one reply for a whole transfer, and no reply per packet, which is what
+        makes the pending flag the only flow control there is.
+        """
+        lab.require(self.ARCH14[0])
+        self.assertEqual(self.literal(self.ARCH14, 0x0C95E), 0xF0)
+        self.assertEqual(self.literal(self.ARCH14, 0x0C96C), 0x30)
+        for image, at in ((self.ARCH14, 0x0C5C2), (self.ARCH12, 0x267B8)):
+            with self.subTest(image[0]):
+                self.assertEqual(self.literal(image, at), 0x03, 'done moves to state 3')
+
+    def test_the_harmony_one_latches_before_it_permits_the_low_region(self):
+        """
+        A firmware side rail that only arch 12 has, and the reason it matters is what lies below
+        `0x020000` on that part: the safe mode container at `0x002000`, whose loss is what section
+        118 calls unrecoverable on arch 9. A write there is refused unless a write at or above
+        `0x020000` has already happened in this session, which is a latch and not a bound: it is
+        sticky, and nothing in the write path clears it.
+
+        So this is not protection to rely on, and `packages/usb` refuses the whole region
+        regardless. It is recorded because a reader of the validator alone would conclude the low
+        region is freely writable, the validator having accepted every top byte under `0x40`.
+        """
+        lab.require(self.ARCH12[0])
+        # The comparison is against 0x020000: the top byte's literal, with zero below it.
+        self.assertEqual(self.literal(self.ARCH12, 0x268B4), 0x02)
+        self.assertEqual(self.literal(self.ARCH12, 0x268AC), 0x00)
+        skip = self.at(self.ARCH12, 0x268BC)
+        self.assertEqual(skip.mnemonic, 'BTFSS')
+        self.assertEqual(skip.fields['b'], 5)
+        latch = self.at(self.ARCH12, 0x268C8)
+        self.assertEqual(latch.mnemonic, 'BSF')
+        self.assertEqual(latch.fields['b'], 5)
+        self.assertEqual(latch.fields['f'], skip.fields['f'], 'one bit, tested and set')
+
+    def test_the_internal_offset_bound_is_per_architecture(self):
+        """
+        And the two disagree, which nothing had noticed because both are ceilings and
+        `packages/usb` applies the lower one to both: `0xFFC0` on arch 14, one full report below
+        the top of the page, and `0xFFF8` on arch 12. So the library's stated reason, that the
+        bound is the firmware's own, is right for one architecture and stricter than the firmware
+        for the other. Stricter is the safe direction, which is why this is a comment fix rather
+        than a defect, but a bound quoted as measured has to say which part it was measured on.
+        """
+        lab.require(self.ARCH14[0], self.ARCH12[0])
+        self.assertEqual(self.literal(self.ARCH14, 0x13E6C), 0xC0)
+        self.assertEqual(self.literal(self.ARCH12, 0x263C8), 0xF8)
+
+
 if __name__ == '__main__':
     unittest.main()

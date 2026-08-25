@@ -303,8 +303,11 @@ Same protocol implementation, different memory maps, and across two architecture
 The dispatch at `0x0BDCA` is itself gated on that state, at `0x0BDB2`:
 
 * state 0, idle: the table above
-* state 2, a flash write in progress: a second, two entry chain at `0x0BD5C` handling `0x40`
-  and `0xF0`
+* state 2, a flash write in progress: a second, two entry chain handling `0x40` and `0xF0`, at
+  `0x0C55C` on the 700 and `0x26752` on the One. (This said `0x0BD5C`, which is the `SUBWF` that
+  compares the command against `0xE0` in the escape handler, four instructions before the state gate.
+  The description was right and the citation named the wrong routine, which nothing caught because no
+  test read the address. Section 175.)
 * state 5: `0x0C5D4`
 * anything else: `0x0C5EE`
 
@@ -413,7 +416,8 @@ the assumption rather than the protocol.
 Two of the rows are absences, and both are coherent rather than gaps in the reading.
 **WRITE_FLASH's executor is a single `RETURN`**, because the work is not in the state machine at
 all: after WRITE_FLASH sets state 2, the data arrives as `0x40` packets handled in the USB
-callback. And **START_IRCAP branches straight to `0x0D2E0`**, which is the shared response
+callback, and the reply comes from **state 3**, which `0xF0` moves the remote to and whose executor
+answers `0xF0 0x30`. The write data path has its own section below. And **START_IRCAP branches straight to `0x0D2E0`**, which is the shared response
 transmitter, checking a pending byte count and submitting the IN report, so it emits whatever was
 queued and nothing of its own.
 
@@ -774,6 +778,79 @@ The `INCF` on the short path implies the counter holds one **less** than the num
 still to send, which is a common enough convention but rests on that single instruction here.
 Whether the count on the wire is already biased that way, or is decremented once on arrival,
 is not established.
+
+### WRITE_FLASH's data path
+
+Section 175, read on 25 August 2026 when phase 8's gate opened. The announce packet is above, with
+`READ_FLASH`'s, since the two are identical; this is what happens to the bytes.
+
+A transfer is three parts on the wire:
+
+| direction | packet | reply |
+|---|---|---|
+| host to remote | `0x35`, then a 24 bit address and a 16 bit count | none |
+| host to remote | `0x4A`, then 63 payload bytes, repeated | **none, per packet** |
+| host to remote | `0xF1 0x30` | `0xF0 0x30`, once, from state 3 |
+
+Those command bytes are the length nibble mapping above applied to this transfer, not new
+constants: nibbles 0 to 7 pass through unchanged, so five argument bytes make the announce `0x35`
+and the done packet's one argument makes it `0xF1`, and nibble `0x0A` is 63, so a full data packet
+is `0x4A`. A short final data packet uses whichever nibble states its length.
+
+**Corroboration, after the fact.** That decode is exactly concordance's "for writing flash" map,
+`{?, 1, 2, 3, 4, 5, 6, 7, 15, 31, 63}`, where its other map ends `14, 30, 62`. The pair had read as
+two conventions with no reason; the firmware says the first is simply what the length nibble means,
+and the second counts a read response's data after its sequence byte.
+
+**The two commands inside a transfer cannot be sent outside one.** `WRITE_FLASH` sets state 2, and
+the state gate sends state 2 to a two case chain of its own that accepts `0x40` and `0xF0` and
+nothing else. Anything else there falls through to the exit that clears the state, so a stray command
+ends the transfer rather than being obeyed.
+
+| | Harmony 700 | Harmony One |
+|---|---|---|
+| state 2's chain | `0x0C55C` | `0x26752` |
+| the `0x40` handler | `0x0C56A` | `0x26760` |
+| the `0xF0` handler | `0x0C5B4` | `0x267AA` |
+| the staging buffer | `0x068F` | `0x01A5` |
+| pending flag, packet length | `0x37E`, `0x37F` | `0x28D`, `0x28E` |
+| the drain executor | `0x0C614` | `0x267FE` |
+| destination selector | `0xED5` | `0x28B` |
+| announced count remaining | `0xED1`, `0xED2` | `0x288`, `0x289` |
+| target address | `0xECE` to `0xED0` | `0x285` to `0x287` |
+
+**The buffer holds one packet, not the transfer.** Its address is two literals reloaded at the top of
+every packet rather than advanced across them, and what the handler records beside it is the
+**packet's own decoded length**, not a share of the announced count. So the firmware writes what the
+packet says it carries.
+
+**The destination selector is the validator's output and serves both directions.** The validator sets
+it while parsing either command: `0x00` for external storage, `0xFE` for internal program flash, and
+the write executor forks on it exactly as the read body does. `0xFF` is a third value that both arms
+refuse, and `0xE0 0x01` sets it, so ending a session disarms the destination until an address is
+validated again.
+
+**An internal write is the part's own self programming sequence.** A byte reaches `TABLAT` and the
+holding registers through `TBLWT`, and a commit setting `EECON1` to `0x04` runs only when the low six
+bits of the address are all set. So internal program flash goes in 64 byte blocks and a transfer that
+ends mid block leaves its tail in the holding registers, unprogrammed, with no error.
+
+**Arch 12 latches before permitting its low region.** A write below `0x020000` is performed only if a
+write at or above `0x020000` has already happened, a sticky bit nothing in the write path clears. The
+region below holds the safe mode container at `0x002000`. This is a latch and not a bound: it is
+recorded because the validator's window, section 88, accepts every top byte below `0x40` and says
+nothing about it, and it is not protection anything should rely on.
+
+**The internal offset bound is per architecture**: `0xFFC0` on arch 14 and `0xFFF8` on arch 12.
+`packages/usb` applies the arch 14 value to both, which is stricter than the Harmony One's firmware
+and therefore safe.
+
+**Four things about the medium are not established**, and two of them decide whether a write
+succeeds: whether the firmware erases before programming, and whether a host must pace its data
+packets given one staging buffer and no per packet reply. The others are arch 12's external mechanism,
+which pokes a bank register rather than writing directly, and why arch 14's external path issues an
+SPI read setup before it programs. `writeFlash` in `packages/usb` refuses for those reasons, which is
+a change of reason rather than of behaviour: the packets can be assembled correctly today.
 
 ### The state machine, in full
 

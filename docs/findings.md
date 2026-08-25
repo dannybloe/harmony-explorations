@@ -23180,3 +23180,124 @@ follow-up work, not this phase's.
 "maximal words first and the remainder last". That is `blockWordsOf`'s legal spelling and reading
 merges it back indistinguishably, but it is not what the generator writes, and phase 6's composed
 blocks differed from a compile of the same code until the measured spelling replaced it.
+
+## 175. How the bytes of a write reach storage, and what still stands between that and a first write
+
+The gate on phase 8 opened on 25 August 2026, and the first thing behind it was not a bench session
+but a hole in this file. `WRITE_FLASH` had been read as far as its announce packet: five bytes,
+identical to `READ_FLASH`, parsed into the same variables and validated by the same routine, section
+88. What happened to the data was one sentence, that it "arrives as `0x40` packets handled in the USB
+callback", and nothing had followed those packets. `packages/usb`'s `writeFlash` says so out loud and
+throws rather than sending anything, which is why the gate could open onto a derivation instead of a
+write.
+
+It is read now, on both bench architectures, and the protocol half is complete. What is not complete
+is the part that decides whether a first write succeeds, and that distinction is the point of this
+section.
+
+**Two commands exist inside a write and neither can be sent outside one.** The main dispatch is gated
+on the command state variable, and state 2 is what `WRITE_FLASH` sets. State 2 reaches a chain of its
+own, `0x0C55C` on the Harmony 700 and `0x26752` on the Harmony One, and that chain has exactly two
+cases: `0x40`, the data packet, and `0xF0`, the end of the transfer. So a remote that has not agreed
+to a write cannot be handed data at all, which is the firmware's own reason for `0x40` being absent
+from the command table rather than an omission in the table.
+
+**The address this file gave for that chain was wrong**, and it is worth saying which kind of wrong.
+`docs/usb-protocol.md` named `0x0BD5C`, which is the `SUBWF` that compares the command against `0xE0`
+in the escape handler, four instructions before the state gate. The description beside it, a two entry
+chain handling `0x40` and `0xF0`, was right. So the reading was right and the citation was off by one
+routine, which nothing could catch, because no test read the address.
+
+**A data packet lands in a buffer that holds one packet.** `0x068F` on the Harmony 700, `0x01A5` on
+the Harmony One, stated as two literals and reloaded at the top of every packet rather than advanced
+across them. The handler copies the payload there a byte at a time, then sets a flag and stores the
+packet's length: `0x37E` and `0x37F` on the 700, `0x28D` and `0x28E` on the One. The length it stores
+is the callback's own decoded length nibble, not a share of the announced count, so the firmware
+writes what the packet says it carries.
+
+**The main loop drains that buffer, and it forks on the byte the validator wrote.** The executor is
+`0x0C614` and `0x267FE`. It subtracts the packet's length from the announced remaining count, and
+then reads the destination selector, `0xED5` on the 700 and `0x28B` on the One. `0x00` is external
+storage and `0xFE` is internal program flash. That selector is not new here: section 94 read `0x28B`
+as the byte the *read* body branches on. What is new is that the write executor branches on the same
+byte with the same two values, so **the validator classifies an address once and both directions obey
+it**, and neither command carries a region rule of its own. That is the mechanism behind a sentence
+`docs/usb-protocol.md` already carried, that the validator is called by both.
+
+**An internal write is the part's own self programming sequence**, not anything of Logitech's. A byte
+goes to `TABLAT` and into the holding registers with `TBLWT`, and only when the low six bits of the
+address are all set does the executor call a commit that sets `EECON1` to `0x04` and runs the unlock.
+So internal program flash is programmed in 64 byte blocks, and a transfer that stops in the middle of
+one leaves those bytes in the holding registers and never programmed. A writer that ends on an
+unaligned boundary loses its tail with no error.
+
+**The transfer is acknowledged once, at the end, and not per packet.** `0xF0` moves the remote to
+state 3 on both architectures, and state 3's executor answers `0xF0 0x30`: the acknowledgement shape
+section 87 established, naming the command being finished. So a host sends an announce, a run of data
+packets that are each answered by nothing at all, and one done packet that is answered once. The only
+thing standing between the host and a lost packet is the pending flag above, and the buffer it guards
+holds 63 bytes.
+
+**Ending the session disarms the destination**, which is a rail the firmware keeps for itself and was
+found by accident. `0xE0 0x01`, the escape section 97 reads as clearing the command gate so a remote
+can leave USB mode when its cable goes, also sets the selector to `0xFF`. Both arms of the fork refuse
+that value, so after an end of session a remote cannot write again until an address has been
+validated. Three values, and the third one is the safe one.
+
+**The Harmony One latches before it permits its low region.** Before writing, the arch 12 executor
+compares the address against `0x020000`. At or above it, a sticky bit is set. Below it, the write is
+performed only if that bit is already set, and skipped silently otherwise. So the first write of a
+session has to be at or above `0x020000`, after which everything under it is permitted too, and
+nothing in the write path ever clears the bit. What lies below there is the safe mode container at
+`0x002000`, which section 118 is the reason to care about: on arch 9 losing safe mode is what turns a
+recoverable remote into a stranded one.
+
+That is a latch and not a bound, so it is not protection to rely on, and `packages/usb` refuses the
+whole region regardless of it. It is recorded because the validator alone says the opposite: section
+88 measured its window as every top byte below `0x40`, the whole 4 MiB part, and a reader who stopped
+there would conclude the safe mode image is freely writable. It is not freely writable, and it is not
+protected either.
+
+**The internal offset bound is per architecture and the two disagree.** `0xFFC0` on arch 14, one full
+report below the top of the page, and `0xFFF8` on arch 12. `packages/usb` applies `0xFFC0` to both,
+which is stricter than the firmware on the Harmony One and therefore safe, and its comment called the
+number "the firmware's own bound" without saying whose firmware. Corrected there in the same commit.
+The test asserts both literals, and its control is that asserting `0xFFC0` for arch 12 fails.
+
+### What is still not read, and what it costs
+
+Four things, and the first two are what a rehearsal would run into rather than curiosities.
+
+* **Whether the firmware erases before it programs.** Neither architecture's external path was
+  followed far enough to say. It matters because flash only clears bits: programming over unerased
+  content silently produces the AND of the two. `ERASE_FLASH` exists, Logitech's client picks a block
+  table, and `packages/usb` already requires a block aligned erase of a whole 64 KiB block, so the
+  rails assume the caller erases. That assumption is now known to be unverified rather than known to
+  be right.
+* **Whether a host has to pace its data packets.** There is no per packet reply and the staging buffer
+  holds one packet, so either the USB layer declines to accept a packet while one is pending, which is
+  flow control the hardware performs and a host never sees, or a host that streams loses bytes. The
+  predicate that would answer it, `0x0C5FA` on the Harmony 700, is reached through a computed jump and
+  has no caller a cross reference can find.
+* **The arch 12 external mechanism.** The Harmony One's path pokes a value derived from the address
+  top byte through `TBLWT` at program `0x020025` and then rewrites the top byte with `0x13`, which
+  reads as a bank register and a window rather than a direct write, and is not established.
+* **Why the Harmony 700's external path issues a read first.** It calls the SPI read setup, opcode
+  `0x03` plus the address, before calling the routine that enables writing and programs the buffer.
+  A read modify write would explain it and has not been demonstrated.
+
+**So `writeFlash` stays refusing, and the reason it refuses has changed.** It used to refuse because
+the data path was unknown. It now refuses because two things about the medium are unknown, which is a
+smaller gap and a different one: the packets can be assembled correctly today, and sending them could
+still leave a config that is the AND of what was there and what was sent.
+
+**The cheapest first write is one block of the unit's own dump.** The rehearsal in
+`docs/adding-a-device.md` asks for the spare Harmony One's own config to be written back and read
+identical, on the argument that a write that changes nothing is the only one whose correct outcome is
+known in advance. A whole config is 1.6 MB and 25 erase blocks. One erase block of it, erased and
+rewritten from the verified dump with the same bytes it already holds, exercises the erase, the
+announce, the packets, the done and the read back compare, ends with the config byte identical either
+way, and is repeatable if it fails halfway. It also answers the erase question by measurement rather
+than by reading: write the block without erasing first and compare, which either reproduces the bytes
+or produces their AND, and both outcomes are informative and neither loses anything the dump cannot
+restore.

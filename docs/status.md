@@ -142,13 +142,14 @@ and its own screens, with the byte accounting, the round trip and the renderer a
 result, section 173. The check that this is not merely self consistent is section 174: Logitech's
 own compiler, asked to add the same television, writes infrared blocks **byte identical** to ours
 once two of its spelling conventions are adopted, both measured rather than guessed. Nothing has
-been written to a remote; the write gate opened on 25 August 2026 and the first work item is
-deriving the `WRITE_FLASH` data packets, which have never been read out of the firmware.
+been written to a remote; the write gate opened on 25 August 2026 and the packet protocol for a
+write was derived the same day, section 175, on both bench architectures.
 
 Not established: three of the four infrared encoding classes, which no config in the corpus uses;
 which physical button each scan code is beyond the 36 and 32 the calibration account names, and
-every button's **position**, which is a wiring decision no read path reaches; and the
-`WRITE_FLASH` data path above. See
+every button's **position**, which is a wiring decision no read path reaches; and, on the write
+path, whether the firmware erases before it programs and whether a host must pace its data
+packets, which is what keeps a write refused. See
 [docs/findings.md](docs/findings.md) for detail and
 [docs/config-format.md](docs/config-format.md) for the spec as it firms up.
 
