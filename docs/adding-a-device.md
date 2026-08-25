@@ -133,7 +133,12 @@ family in their database. The library's own reader takes every one of the 2921 d
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **32 of the catalogue's 33 families**, which is 5218 of 5219 commands. It held 15 and
+The table holds **32 of the catalogue's 33 families**, which is 5218 of 5219 commands. The 33rd is
+`Saitek 11 Bit` and it is measured as far as it exists, which is not far: one command in the whole
+census, on the Nintendo Wii, named `Unknown` with value `0x000`. The third sitting's account carries
+the Wii and the compiled config has no group for it, so their compiler emitted nothing to measure, and
+the code itself is a placeholder: a Wii has no infrared receiver, and an all zero value could not state
+a set bit's duration even if a record existed. It is left unmeasured deliberately rather than pending. It held 15 and
 4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and everything since
 came from reading rules rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -181,16 +186,20 @@ durations in the result are the ones their generator emits.
       confirmed by two routes again
 - [x] **the phase is done as far as their compiler can take it**: every appliance that would buy a family
       has been compiled, so nothing here is waiting on Logitech, on the account or on Danny
-- [ ] **twelve families are still unanswered and every one has records in the lab**, which is the finding
+- [x] **twelve families are still unanswered and every one has records in the lab**, which is the finding
       that moves the rest of this phase into phase 3. Ten of the twelve are one shape, a command that is
       more than one frame against a reader that looks at one: `Samsung 16 and 20 Bit` (137 commands),
       `Philips Hurd 16 Bit LongToggle` (85), `Samsung 38 Bit` (34), `MitsubishiO1 Dual 8 16 Bit` (28),
       `Panasonic 16 Bit` (26), `Pioneer 32 Bit 2` (7), `MemorexV2 32 Bit Dual` (2), `Sharp 48 Bit` (1),
       and two whose refusal nothing yet explains, `Videocrypt 11 Bit Toggle` (20) and `Saitek 11 Bit`
       (1). `Galaxis 16 Bit Quad Toggle` (104) is its own small job, a base change. So phase 3 now carries
-      476 catalogue commands rather than the handful it looked like
-- [ ] `make protocols` measures each new family and each entry reproduces every one of its own records
-      byte for byte, with `source: 'compiled'`
+      476 catalogue commands rather than the handful it looked like. **All twelve are read now**:
+      sections 164 to 170 took them one shape at a time, and the last three fell together on 25 August
+      2026 when the mark riding with the bit turned out to be one mechanism behind what had been
+      written up as three problems
+- [x] `make protocols` measures each new family and each entry reproduces every one of its own records
+      byte for byte, with `source: 'compiled'`. 38 entries, every one exact on its own records except
+      the one named loose entry, and `test/stated.test.ts` asserts both counts
 - [x] `Galaxis 16 Bit Quad Toggle` reads its values as **quaternary** digits, two bits a digit, which is
       what makes its eight digit value the 16 bits its name states, section 159. Its refusal is replaced
       by a reading, not widened: `Quad` is read out of the family name exactly as the widths are, and the
@@ -198,8 +207,9 @@ durations in the result are the ones their generator emits.
       let them in. A digit outside 0 to 3 on such a family stays a refusal. **This buys the reader and not
       the table**: its 104 commands are now readable and no appliance of that family has been compiled, so
       it has no measured rhythm and cannot yet be emitted
-- [ ] the three families whose analyser answer disagreed with their compiler stay out of the table on
-      their analyser's word alone, section 160
+- [x] the three families whose analyser answer disagreed with their compiler stay out of the table on
+      their analyser's word alone, section 160. The `documented` provenance is asserted empty in
+      `test/stated.test.ts`, so an entry resting on their analyser alone cannot come back quietly
 - [x] **check**: `make protocols` covers 32 of 33 catalogue families and at least 5150 of 5219 commands,
       every entry exact on its own records, and the covered share is asserted in a test against the
       recorded census rather than printed. **Passed on 25 August 2026 at 32 and 5218**, section 170:
