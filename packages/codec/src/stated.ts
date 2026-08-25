@@ -126,9 +126,11 @@ function valueOf(digits: string, base: number): bigint {
  * is assumed to be about the word in general; until then the width check is what would catch it, since a
  * quaternary reading of hexadecimal digits refuses on the digit set alone.
  *
- * It also leaves one thing open and says so: a family naming one width and stating two values, which
- * "Samsung 38 Bit" does, could mean 38 bits per frame or 38 across the pair. Both fit, because its
- * values need 12 and 21 bits.
+ * A family naming one width and stating two values means the width **across the pair**, which was open
+ * here until section 166 read it off the wire: "Samsung 38 Bit" sends one frame of 17 plus 21 bits, the
+ * sections' widths summing to exactly the 38 the name states, with each section's final set bit carried
+ * structurally. The per value widths are not in the name; they are stated by the rhythm table entry's
+ * `sections`, so this reader keeps `bits` as the name's width on every frame of such a code.
  */
 export function statedCode(keyCode: string): StatedCode | undefined {
   const parsed = /^G:([^:]+):\(([^)]*)\)\(([^)]*)\)\(([^)]*)\)/.exec(keyCode);
@@ -219,6 +221,10 @@ export function timingsOf(entry: StatedProtocol): FrameTimings | undefined {
     zero: entry.zero,
     one: entry.one,
     carries: entry.carries,
+    // The sectioned form, section 166: the value is one frame sent in sections, the boundary space and
+    // the closing each carrying a section's final set bit, so the encoder needs all three together.
+    ...(entry.sections === undefined ? {} : { sections: entry.sections,
+      sectionSpace: entry.sectionSpace!, closing: entry.closing! }),
   };
 }
 

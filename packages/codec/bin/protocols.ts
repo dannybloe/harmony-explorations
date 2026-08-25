@@ -34,7 +34,8 @@ import { IR_CLASS_STREAM, irBlockWords, irCarrier, irClass, irGroups,
          irHeaderPointers } from '../src/ir.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import {
-  biphaseFrames, framesOfPulses, framesOfSegments, fromFirstMark, pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
+  biphaseFrames, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark, mergedIntervals,
+  pulsesOfBiphaseFrame, pulsesOfFrame, timingsOfBiphase,
   timingsOfFrame, type BiphaseTimings, type FrameTimings, type Pulse,
 } from '../src/irframe.ts';
 
@@ -102,7 +103,12 @@ interface Measured {
 function key(m: Measured): string {
   const t = m.timings;
   if (t !== undefined) {
-    return `${t.header[0]}/${t.header[1]} flat ${t.flat} zero ${t.zero} one ${t.one} ${t.carries}`;
+    // The sectioned fields are part of the key where they exist: two records disagreeing about the
+    // structural space or the closing are two rhythms, exactly as a biphase lead in is.
+    const sectioned = t.sections === undefined ? ''
+      : ` sections ${t.sections.join('+')} boundary ${t.sectionSpace} closing ${t.closing}`;
+    return `${t.header[0]}/${t.header[1]} flat ${t.flat} zero ${t.zero} one ${t.one} ${t.carries}`
+      + sectioned;
   }
   const b = m.biphase!;
   // The lead in is part of the key: it is a fixed prelude, so two records of one family that disagree
@@ -121,8 +127,10 @@ function key(m: Measured): string {
 function framePeriod(m: Measured): number | undefined {
   const t = m.timings;
   // A biphase family has no closing space and no frame period: every cell is the same length, so there
-  // is nothing to pad out to.
-  if (t === undefined || t.closing === undefined) return undefined;
+  // is nothing to pad out to. A sectioned family, section 166, has a closing but it is a **measured
+  // constant** rather than padding to a total, and the arithmetic below does not know the structural
+  // boundary space, so a period computed for one would be wrong by exactly that space.
+  if (t === undefined || t.closing === undefined || t.sections !== undefined) return undefined;
   let total = t.header[0] + t.header[1];
   for (let i = m.bits - 1; i >= 0; i -= 1) {
     total += (m.value >> BigInt(i)) & 1n ? t.one : t.zero;
@@ -379,11 +387,21 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
     const byWidth = new Map<number, Set<string>>();
     /** Each code as its whole frame list, which is what decides a shared value. */
     const codes: { family: string; keys: string[] }[] = [];
+    /**
+     * Codes whose family names **one** width and states **several** values, section 166: the width is
+     * across the pair, so no single frame read can match them and the sectioned reading below is what
+     * does. Kept with their values in order, because the order is the order the sections go out in.
+     */
+    const sectioned: { family: string; width: number; values: readonly bigint[] }[] = [];
     for (const cmd of a.commands) {
       const read = statedCode(cmd.keyCode);
       if (read === undefined) continue;
       const keys = read.frames.map((f) => `${f.bits}:${f.value.toString(16)}`);
       codes.push({ family: read.family, keys });
+      if (read.frames.length > 1 && read.frames.every((f) => f.bits === read.bits)) {
+        sectioned.push({ family: read.family, width: read.bits,
+          values: read.frames.map((f) => f.value) });
+      }
       for (const f of read.frames) {
         const key = `${f.bits}:${f.value.toString(16)}`;
         const already = byValue.get(key) ?? [];
@@ -391,7 +409,7 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
         byWidth.set(f.bits, (byWidth.get(f.bits) ?? new Set()).add(read.family));
       }
     }
-    return { label: `${a.make} ${a.model}`, name: a.name, byValue, byWidth, codes };
+    return { label: `${a.make} ${a.model}`, name: a.name, byValue, byWidth, codes, sectioned };
   });
   type Owner = (typeof appliances)[number];
 
@@ -578,6 +596,46 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
           if (landed) break;
         }
       }
+      // **The sectioned reading, section 166: one width across several values.** `Samsung 38 Bit`
+      // states two values per code and one width, and the record is one frame in two sections: a
+      // header, sixteen cells, a structural 4470 space, twenty one more cells whose last is inside the
+      // closing silence. Reading the structural space as section one's final set bit and the closing as
+      // section two's makes 17 + 21 the stated 38 exactly, and lands all 35 records on their stated
+      // pairs. The segments are cut by the same rule as everywhere else; what is particular here is
+      // only how the boundary spaces are read back as bits.
+      if (!landed && owner.sectioned.length > 0) {
+        // Segmented over the merged train, section 164: the closing silence is longer than one stored
+        // word can say, so on the raw words it becomes several boundary spaces in a row and the last
+        // of them a trailing segment holding no frame at all.
+        const segments = frameSegments(fromFirstMark(mergedIntervals(d.train)), false);
+        const reads = segments.map((seg, at) => {
+          const one = framesOfPulses(seg, at === 0 ? 1 : 0)
+            .find((f) => f.carries === 'space');
+          return one === undefined ? undefined : { bits: one.bits, value: one.value };
+        });
+        if (reads.length > 1 && reads.every((one) => one !== undefined)) {
+          // **Every segment reads short by exactly its final set bit, and the arithmetic is uniform.**
+          // With the boundary dropped, a non final section loses its last bit to the dropped boundary
+          // space that was carrying it, and the final section loses its own to the closing silence the
+          // decoder rightly reads as a gap. So each section is its read with a set bit appended, and it
+          // is a set bit for the same reason the emitter demands one: no record shows the other case.
+          const values = reads.map((one) => one!.value * 2n + 1n);
+          const widths = reads.map((one) => one!.bits + 1);
+          const total = widths.reduce((a, b) => a + b, 0);
+          const code = owner.sectioned.find((one) => one.width === total
+            && one.values.length === values.length
+            && one.values.every((v, i) => v === values[i]));
+          const timings = code === undefined ? undefined
+            : sectionedTimings(d.train, widths);
+          if (code !== undefined && timings !== undefined) {
+            const value = values.reduce((v, one, i) => (v << BigInt(widths[i]!)) | one, 0n);
+            out.push({ family: code.family, source: 'compiled', joinedBy: 'value',
+              periodNs: d.periodNs, config: COMPILED_NAME, record: d.record,
+              bits: total, value, timings });
+            landed = true;
+          }
+        }
+      }
       // The deferred width match, taken where no biphase reading landed on a number.
       if (!landed && byWidthOnly !== undefined) { out.push(byWidthOnly); landed = true; }
       // **Two reasons, not one.** The old label said no reading matched a code, which was also what a
@@ -655,6 +713,38 @@ for (const [entry, list] of byEntry) {
  * have emitted. A table drawn from a family's commonest durations aims at the first, and only a compile
  * of that very appliance reaches the second.
  */
+/**
+ * The timings of a sectioned record, or `undefined` where they do not hold to the shape.
+ *
+ * `timingsOfFrame` rightly refuses these trains: their carried half holds three lengths, because the
+ * structural spaces sit among the bit cells. So the boundary spaces are set aside first, by position,
+ * which the section widths state; what is left must then satisfy exactly what every frame satisfies,
+ * one flat length and at most two carried ones. Section 166.
+ */
+function sectionedTimings(train: readonly Pulse[], widths: readonly number[])
+  : FrameTimings | undefined {
+  const merged = fromFirstMark(mergedIntervals(train));
+  const total = widths.reduce((a, b) => a + b, 0);
+  if (merged.length !== 2 * (total + 1)) return undefined;
+  const spaces = merged.filter((one) => !one.mark).map((one) => one.us);
+  const marks = merged.filter((one) => one.mark).map((one) => one.us);
+  const flat = new Set(marks.slice(1));
+  if (flat.size !== 1) return undefined;
+  // The section-final space positions, 1 based after the header's space at index 0.
+  const finals: number[] = [];
+  let at = 0;
+  for (const width of widths) { at += width; finals.push(at); }
+  const boundaries = new Set(finals.slice(0, -1).map((one) => spaces[one]!));
+  if (boundaries.size !== 1) return undefined;
+  const closing = spaces[finals[finals.length - 1]!]!;
+  const cells = spaces.filter((_, i) => i > 0 && !finals.includes(i));
+  const carried = [...new Set(cells)].sort((a, b) => a - b);
+  if (carried.length > 2 || carried.length === 0) return undefined;
+  return { header: [merged[0]!.us, merged[1]!.us], flat: [...flat][0]!,
+    zero: carried[0]!, one: carried[carried.length - 1]!, carries: 'space',
+    sections: widths, sectionSpace: [...boundaries][0]!, closing };
+}
+
 function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   const t = shape.timings;
   const b = shape.biphase;
@@ -669,7 +759,14 @@ function reproduces(m: Measured, shape: Measured, tolerance = 0): boolean {
   let built: Pulse[];
   let original: readonly Pulse[];
   const train = fromFirstMark(pulsesOfWords(words));
-  if (b !== undefined) {
+  if (t?.sections !== undefined) {
+    // The whole train including the closing silence, because the final bit lives inside it. Merged,
+    // section 164: the closing is longer than one stored word can say, so the record spells it as
+    // several and an unmerged comparison would fail on the spelling rather than on the sound.
+    if (m.timings?.sections === undefined) return false;
+    try { built = pulsesOfFrame(t, m.bits, m.value); } catch { return false; }
+    original = fromFirstMark(mergedIntervals(train));
+  } else if (b !== undefined) {
     // The lead in plus one word per half cell, which is exactly what a record stores.
     built = pulsesOfBiphaseFrame(b, m.bits, m.value);
     original = train.slice(0, built.length);
@@ -1062,6 +1159,8 @@ if (write) {
       + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
       + `zero: ${t.zero}, one: ${t.one}, `
       + `carries: '${t.carries}',${e.period === undefined ? '' : ` framePeriod: ${e.period},`}`
+      + `${t.sections === undefined ? ''
+        : ` sections: [${t.sections.join(', ')}], sectionSpace: ${t.sectionSpace}, closing: ${t.closing},`}`
       + tail;
   }).join('\n');
   const seedsOut = DOCUMENTED.map((e) =>

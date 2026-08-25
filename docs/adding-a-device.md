@@ -133,7 +133,7 @@ family in their database. The library's own reader takes every one of the 2921 d
 
 ## Phase 2: every family in the catalogue has a measured rhythm
 
-The table holds **24 of the catalogue's 33 families**, which is 4915 of 5219 commands. It held 15 and
+The table holds **25 of the catalogue's 33 families**, which is 4949 of 5219 commands. It held 15 and
 4193 when this phase was written, 21 and 4743 after two sittings on 24 August 2026, and the last two came
 from phase 3's splitting rule rather than from another compile: the records were already in the lab and
 the reader could not read them. The eighteen that were missing when the sittings started, largest first: `Sharp 15 Bit` (276 commands, 4 appliances),
@@ -224,8 +224,11 @@ one tail shape across every record. What varies is the closing silence.
       biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there.
       `frameSegments` and `framesOfSegments`, and the generator reads through the second now. Two more
       families measured, `Samsung 16 and 20 Bit` on 46 records and `MitsubishiO1 Dual 8 16 Bit` on 40,
-      each exact, no existing rhythm moved, and the table is 30 entries covering **24 of 33 families and
-      4915 of 5219 commands**
+      each exact, no existing rhythm moved, and the table is 30 entries covering 24 of 33 families and
+      4915 of 5219 commands. `Samsung 38 Bit` followed on 25 August 2026 through the same splitting rule
+      plus one new row shape, section 166, taking the table to **31 entries, 25 of 33 families and 4949
+      of 5219 commands**: its 38 bits are one frame in sections of 17 and 21, each section's final set
+      bit carried by a structural space, 35 of 35 records byte for byte
 - [x] **a boundary cannot fall inside the first few cells**, which the tests found rather than the
       measurement: a lead in is a mark and a long space, and on several families that space is over the
       threshold, so a rule with no floor cut the header off as its own segment and every frame then read

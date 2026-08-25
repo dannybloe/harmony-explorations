@@ -22716,3 +22716,50 @@ carries the same three byte identical digit tables at three distinct addresses t
 on one sample, from a compile that shares only the account with it. And it has a golden vector now, which
 matters more here than anywhere: eighteen of the rhythm table's entries are measured off this one file, so
 a disagreement between the two implementations about it is a disagreement about the table.
+
+## 166. "38 Bit" means across the pair: one frame in sections, the boundary carrying a bit
+
+25 August 2026. `Samsung 38 Bit` was one of the six families whose records sat in the compiled samples
+with no measured rhythm, and it is the one section 159 flagged explicitly: its catalogue codes state
+**two** values under a name that states **one** width, `G:Samsung 38 Bit:(0x00801_1x1DA05F)`-shaped, so
+the width could mean 38 bits per frame or 38 across the pair<!--superseded-->. Both fitted the values,
+which need 12 and 21 bits. The wire answers it.
+
+**The record's shape, constant across all 35 records of the compiled sample.** One header of 4490 and
+4473, sixteen bit cells (marks 490, spaces 504 or 1477), a space of **4470**, twenty one more bit cells
+whose last space is not there, and a closing silence of **57928**. Read naively that is a frame the five
+duration shape refuses: the carried half holds three lengths, 504, 1477 and 4470.
+
+**The reading: the 4470 space is section one's final set bit, and the closing is section two's.**
+Under it section one is 17 bits and section two 21, and 17 + 21 = 38, the width the name states. The
+closure is exact and two sided: all 35 records of the Samsung BDC8000 land on stated pairs, matching 33
+of 33 distinct pairs their catalogue states for that appliance (two commands carry a duplicate record),
+and no record and no pair is left over. The first value, `0x801`, is the appliance address and constant;
+the second varies per command.
+
+**Why the bit has to be set, and why that is a rail rather than a shrug.** A structural space stands
+where the section's last cell would be, so it can carry a set bit's identity only because every stated
+value of this family is odd in both sections, 35 of 35 records and 34 of 34 catalogue codes. A section
+ending in a zero bit has never been seen, and `pulsesOfFrame` refuses it rather than inventing a
+convention for it.
+
+**The uniform arithmetic is the part worth carrying to the next sectioned family.** Cut the merged train
+at the long spaces with the boundary dropped, and **every** segment reads short by exactly its final set
+bit: a non final section lost it to the dropped boundary, the final section to the closing gap the
+decoder rightly refuses to read past. So each section is its read with a set bit appended, `frameSegments`
+does the cutting with no new rule, and the only new code is the recomposition and a timings reader that
+sets the boundary spaces aside by position before demanding what every frame must satisfy: one flat
+length, at most two carried ones.
+
+**Two details that would otherwise resurface as defects.** The segmentation must run on the **merged**
+train, section 164: the closing is longer than one stored word can say, so on raw words it becomes
+several boundary spaces in a row and a trailing segment holding no frame, and the whole reading silently
+declines. And the entry gets **no frame period**: `framePeriod`'s arithmetic does not know the boundary
+space, and this family's closing is a measured constant rather than padding to a total, so the derived
+number would be wrong by exactly 4470 minus one bit space.
+
+The entry: `sections: [17, 21]`, `sectionSpace: 4470`, `closing: 57928`, over the ordinary five
+durations at 38 kHz, 35 of 35 byte for byte including the closing, which the comparison must include
+because the final bit lives inside it. The table stands at 31 entries, 25 of 33 catalogue families,
+4949 of 5219 commands. `packages/codec/test/stated.test.ts` asserts the entry and the width sum;
+`packages/codec/test/irframe.test.ts` asserts the encoder's emission and its three refusals.

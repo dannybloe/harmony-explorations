@@ -1302,3 +1302,32 @@ test('splitting never loses a frame the old reader found', skipWithoutLab(), () 
   // than on anybody's shelf here. The compiled samples are where the rule pays, section 165.
   assert.equal(gained, 224, 'records where a segment carries a number the whole train did not');
 });
+
+test('a sectioned frame emits its structural spaces, and refuses a bit they cannot carry', () => {
+  // **Section 166: a section's last bit is carried by structure, not by a cell.** Samsung 38 Bit's
+  // wire is one header, sixteen ordinary cells, a 4470 space that is section one's final set bit,
+  // twenty more cells, and a closing silence that is the final bit of all. The value here is the
+  // stated pair of the first record of the compiled sample, concatenated.
+  const t: FrameTimings = { header: [4490, 4473], flat: 490, zero: 504, one: 1477, carries: 'space',
+    sections: [17, 21], sectionSpace: 4470, closing: 57928 };
+  const value = (0x801n << 21n) | 0x1CD12Fn;
+  const built = pulsesOfFrame(t, 38, value);
+  assert.equal(built.length, 78, 'a header pair and one pair per bit, closing included');
+  assert.deepEqual(built.slice(0, 2), [{ mark: true, us: 4490 }, { mark: false, us: 4473 }]);
+  // The 17th cell's space is the boundary, and the 38th is the closing: both are set bits.
+  assert.deepEqual(built[2 * 17 + 1], { mark: false, us: 4470 }, 'section one ends in the boundary');
+  assert.deepEqual(built[77], { mark: false, us: 57928 }, 'section two ends in the closing');
+  // An ordinary set bit inside a section is still an ordinary cell.
+  assert.deepEqual(built[2 * 6 + 1], { mark: false, us: 1477 }, 'bit six of 0x801 at 17 bits is set');
+
+  // **The refusals, which are the rails.** A section ending in a zero bit has no cell to carry it,
+  // because the structural space is what stands where its cell would be: every stated value of the
+  // family is odd in both sections, so the other case is refused rather than invented.
+  assert.throws(() => pulsesOfFrame(t, 38, (0x800n << 21n) | 0x1CD12Fn), /section 0 ends in a zero/);
+  assert.throws(() => pulsesOfFrame(t, 38, (0x801n << 21n) | 0x1CD12En), /section 1 ends in a zero/);
+  // A bit count that is not the sections' sum is a caller error, not a truncation.
+  assert.throws(() => pulsesOfFrame(t, 37, value), /38 bits, not 37/);
+  // And the shape is demanded whole: a sectioned frame without its closing cannot say its last bit.
+  const { closing: _, ...noClosing } = t;
+  assert.throws(() => pulsesOfFrame(noClosing as FrameTimings, 38, value), /section space and its closing/);
+});

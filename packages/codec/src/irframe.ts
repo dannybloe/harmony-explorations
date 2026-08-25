@@ -482,9 +482,26 @@ export interface FrameTimings {
    * and 88 of fifteen, all of them in the two configurations Logitech compiled to our own
    * specification, all with two values in the half that is supposed to be constant. The second value
    * was always the last one. So it is one number more for that convention and not a defect, and it is
-   * absent for a pulse distance frame, where the last space is an ordinary bit.
+   * absent for a pulse distance frame, where the last space is an ordinary bit. **A sectioned frame
+   * states it too**, because its last bit lives inside the closing silence, see `sections`.
    */
   closing?: number;
+  /**
+   * The frame is one value sent in sections, this many bits each, and the last bit of every section is
+   * carried by a structural space rather than by an ordinary cell.
+   *
+   * **Measured on `Samsung 38 Bit`, section 166, and it is what "38 Bit" turns out to mean**: one
+   * header, sixteen bit cells, a 4470 space, twenty one more cells whose last is swallowed by the
+   * closing silence. 17 + 21 = 38, the catalogue states the two section values separately, and reading
+   * the 4470 space as section one's final set bit lands all 35 records of the compiled sample on their
+   * stated pairs exactly. So a non final section's last bit is emitted as `sectionSpace` and the final
+   * section's as `closing`, and both must be **set** bits: every stated value of the family is odd, in
+   * both sections, so a frame whose section ends in a zero has never been seen and is refused rather
+   * than invented.
+   */
+  sections?: readonly number[];
+  /** The space carrying a non final section's last set bit. Present exactly when `sections` is. */
+  sectionSpace?: number;
 }
 
 /**
@@ -551,6 +568,7 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
   if (t.carries === 'mark' && t.closing === undefined) {
     throw new Error('a pulse width frame needs the space that closes its last pair');
   }
+  if (t.sections !== undefined) return pulsesOfSections(t, bits, value);
   // A zero length header is no header, and emitting it as two pulses of zero would put a pair in the
   // train that no receiver could see and that our own decoder would then read as a bit cell.
   const out: Pulse[] = t.header[0] === 0 && t.header[1] === 0
@@ -567,6 +585,41 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
       out.push({ mark: true, us: first ? t.firstMark! : t.flat });
       out.push({ mark: false, us: carried });
     }
+  }
+  return out;
+}
+
+/**
+ * The sectioned form of `pulsesOfFrame`, split out because its refusals are its own.
+ *
+ * The value is the concatenation of the section values, most significant section first, and the whole
+ * train is emitted including the closing silence, because the final bit lives inside it: a comparison
+ * that stopped before the closing would never check that bit at all. Section 166.
+ */
+function pulsesOfSections(t: FrameTimings, bits: number, value: bigint): Pulse[] {
+  const sections = t.sections!;
+  const total = sections.reduce((a, b) => a + b, 0);
+  if (bits !== total) throw new Error(`a sectioned frame is ${total} bits, not ${bits}`);
+  if (t.sectionSpace === undefined || t.closing === undefined || t.carries !== 'space') {
+    throw new Error('a sectioned frame needs its section space and its closing, and carries the space');
+  }
+  const out: Pulse[] = [{ mark: true, us: t.header[0] }, { mark: false, us: t.header[1] }];
+  let consumed = 0;
+  for (const [at, width] of sections.entries()) {
+    const section = (value >> BigInt(total - consumed - width)) & ((1n << BigInt(width)) - 1n);
+    consumed += width;
+    // The last bit of a section is carried by a structural space, so it can only be emitted when it is
+    // set: every stated value of the one family measured is odd in every section, and a zero here would
+    // be a frame no record has ever shown, which is a refusal and not an extrapolation.
+    if ((section & 1n) === 0n) {
+      throw new Error(`section ${at} ends in a zero bit, which the structural space cannot carry`);
+    }
+    for (let i = width - 1; i >= 1; i -= 1) {
+      out.push({ mark: true, us: t.flat });
+      out.push({ mark: false, us: (section >> BigInt(i)) & 1n ? t.one : t.zero });
+    }
+    out.push({ mark: true, us: t.flat });
+    out.push({ mark: false, us: at === sections.length - 1 ? t.closing : t.sectionSpace! });
   }
   return out;
 }

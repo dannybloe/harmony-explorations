@@ -19,10 +19,10 @@ import { PROTOCOLS } from '../src/protocols.ts';
 import { closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 
-test('the table states thirty entries, and what each is worth is its provenance', () => {
+test('the table states thirty one entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 30);
+  assert.equal(PROTOCOLS.length, 31);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -34,7 +34,7 @@ test('the table states thirty entries, and what each is worth is its provenance'
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 21, 6]);
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 22, 6]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -87,9 +87,9 @@ test('the table states thirty entries, and what each is worth is its provenance'
   const loose = PROTOCOLS.filter((one) => one.spread > 0);
   assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
   assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 29 of 30, the exception
+  // Every other entry reproduces every code of its own rows to the microsecond. 30 of 31, the exception
   // being the one loose entry named above.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 29);
+  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 30);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
   // what the generator joining on the whole code bought. `Pioneer 32 Bit 2` and `Pioneer 32 Bit Dual`
@@ -108,6 +108,22 @@ test('the table states thirty entries, and what each is worth is its provenance'
   assert.deepEqual([second!.header, second!.flat, second!.zero, second!.one],
     [dual!.header, dual!.flat, dual!.zero, dual!.one]);
   assert.equal(second!.periodNs, dual!.periodNs);
+
+  // **One family is sectioned, and its shape settles what its own name means**, section 166.
+  // `Samsung 38 Bit` states two values per code and one width, which section 159 left as "38 per frame
+  // or 38 across the pair". The wire answers: one header, seventeen plus twenty one bit cells, the two
+  // section widths summing to exactly the 38 the name states, so it is across the pair. The last bit of
+  // each section is carried structurally, by the 4470 boundary space and by the closing silence, which
+  // is why a five duration reading refused every record of it.
+  const sectioned = PROTOCOLS.filter((one) => one.sections !== undefined);
+  assert.deepEqual(sectioned.map((one) => one.family), ['Samsung 38 Bit']);
+  const s38 = sectioned[0]!;
+  assert.deepEqual([...s38.sections!], [17, 21]);
+  assert.equal(17 + 21, 38, 'the widths sum to the width the name states');
+  assert.deepEqual([s38.sectionSpace, s38.closing], [4470, 57928]);
+  assert.deepEqual([s38.codes, s38.exact], [35, 35], 'every record of the compiled sample, byte for byte');
+  // A sectioned entry has no frame period: its closing is a measured constant, not padding to a total.
+  assert.equal(s38.framePeriod, undefined);
 
   // **Two families carry their bits the other way up, and the table says so by its numbers**, section
   // 161. Such a family sends a set bit as the **shorter** space, so its `zero` is longer than its `one`.
