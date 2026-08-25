@@ -206,6 +206,11 @@ IMAGES = {
     # having overwritten the first sample's.
     'compiled_protocols_2': 'compiled-20260824b-protocols-gspm.bin',
     'compiled_protocols_3': 'compiled-20260824c-protocols-gspm.bin',
+    # The phase 7 pair, 25 August 2026: the calibration account's Harmony One compiled without and
+    # with the LG 42LM3400, nothing else changed between the two. Read by the TypeScript side, where
+    # the composer under comparison lives. Section 174.
+    'phase7_before': 'phase7-before-gspm.bin',
+    'phase7_after': 'phase7-after-gspm.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

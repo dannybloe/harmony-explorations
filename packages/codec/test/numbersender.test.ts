@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('five containers declare a method for sending a number, 25 declare none, 9 are unread',
+test('seven containers declare a method for sending a number, 25 declare none, 9 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -201,10 +201,11 @@ test('five containers declare a method for sending a number, 25 declare none, 9 
     // independent numbers: a lab missing a sample moves this one and fails here.
     // 38 since the second compiled sample of 24 August 2026, and it lands in `populated` for the same
     // reason the first did: both were compiled from the account that carries favourite channels, so the
-    // section comes along whichever appliances are on the record that day. Four containers exercise it
-    // now, three of them made deliberately for it.
-    assert.equal(populated + declaredEmpty + unread, 39, 'every container the lab can parse');
-    assert.equal(populated, 5);
+    // section comes along whichever appliances are on the record that day. 41 and seven since the
+    // phase 7 pair, section 174, populated for the same reason again: the favourites live on the
+    // account, so every compile of it carries the section, whatever else the compile was for.
+    assert.equal(populated + declaredEmpty + unread, 41, 'every container the lab can parse');
+    assert.equal(populated, 7);
     assert.equal(declaredEmpty, 25);
     // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
     // states no architecture, plus the two containers found inside arch 8 firmware images, which

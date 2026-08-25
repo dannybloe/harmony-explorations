@@ -23120,3 +23120,58 @@ had no test until a writer leaned on it.
 compile: the menu row's device icon, the bottom bar switch on state variable 35 and the page indicator,
 the record list's keypad bindings, the per mode housekeeping lists the corpus chrome queues with opcode
 `0x73`, and base slot 9, which the checklist itself marks optional and gated on a named scan.
+
+## 174. Logitech compiled the same addition, and the composed blocks are theirs to the byte
+
+**25 August 2026, phase 7 of `docs/adding-a-device.md`.** The calibration account's Harmony One record
+was compiled twice by Logitech's own service, ten minutes apart, the only change between the two being
+`adddevice.py --device LG:42LM3400`: the same television, resolved from the same catalogue entry, whose
+command list carries exactly the three stated codes phase 6 composes. PowerToggle is `0x20DF10EF`,
+VolumeUp `0x20DF40BF`, and `0x20DF807F` is ChannelDown with PageDown sharing it. The pair is
+`phase7_before` and `phase7_after` in the lab, bare `GSPM` containers like every download of this kind,
+section 165, and `packages/codec/test/compose.test.ts` holds the comparison. Both parse whole here:
+complete byte accounting, no overlaps, verifying trailers.
+
+**The headline: after adopting two spelling conventions, our composed once and held blocks are byte
+identical to the records their generator emitted for the same codes**, all five blocks that both sides
+carry, compared raw and located in their container by decoding rather than by assumed index. A composed
+device's infrared is now not merely equivalent to theirs but indistinguishable from it.
+
+**The two conventions, both measured before adoption.** Every once block in every Logitech compile
+opens with a **lead-in silence**, 2032 of 2032 across four samples spanning both generator eras, 50 ms
+on most commands and 500 ms or a second on the ones that get a settling time; held blocks never lead,
+0 of 67 on the new device. `ComposeCommand.leadInUs` carries the exception and the 50 ms default
+carries the rule. And a block's words are spelled under the **half word rule**: a long silence is
+maximal words and a remainder, no word may fall below half the maximum, so a remainder under 16384
+gives back one maximal and the last two words share their sum, smaller half first; the trailing gap
+then donates its final microsecond to a closing one microsecond word. 50000 is `32767, 17233`; 40222
+is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`. Respelling every merged space run
+of every block reproduces the file exactly on **all three Harmony One compiles this account has
+produced**, 492 of 492, 415 of 415 and 415 of 415 blocks; on `compiled_protocols` and `one_config`
+the refusals are exactly the runs that are not one quantity: biphase half cells, which section 164
+keeps unmerged, a frame's final space beside a separately spelled gap, and a one microsecond
+**repetition sentinel** inside long multi frame blocks, which is the same closing word the trailing
+gap carries, at each repetition boundary. The rule was found by three word level diffs refusing three
+guesses, greedy, balanced, and balanced-above-a-cap, before the half word floor explained all of them.
+
+**The differences that remain, each written down as the phase demands.** Their generator **prepended**
+the device at group 0 and renumbered all three existing devices, where ours appends for exactly that
+reason: a group index is not stable across their compiles, so append-only is a property of our editor
+and not of the format. Their addition carries **79 records for the appliance's 67 catalogue commands**
+and ours carries the three the caller asked for: theirs adds the whole catalogue device, ours a chosen
+subset, which is the intended difference between a compiler fed an account and a composer fed a
+device. Their device is named `LG_42LM3400`, the account's own device name with spaces as underscores,
+where our label is the caller's and was `LG`; the name grammar of section 126 recovers both. Their
+PowerToggle **carries a held block**, which answers phase 4's audit gap 2 for their side: the
+generator emits the family's repeat block for every command, toggles included, and our composer's
+default does the same while allowing the caller to withhold it. And their addition includes the
+device's screens in this config family's own layout, where `composeDeviceScreen` is calibrated to the
+classic era family and refuses this one by name, on its fonts: the mode, page and list structures are
+identical, but the font table indices, the row action list shapes, and the menu conventions are the
+generator era's, and teaching the screen half to read those conventions off the host container is
+follow-up work, not this phase's.
+
+**One correction on the way**: this file and `compose.ts` said a long gap's corpus spelling was
+"maximal words first and the remainder last". That is `blockWordsOf`'s legal spelling and reading
+merges it back indistinguishably, but it is not what the generator writes, and phase 6's composed
+blocks differed from a compile of the same code until the measured spelling replaced it.

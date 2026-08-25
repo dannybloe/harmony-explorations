@@ -78,6 +78,9 @@ CONTAINERS = (
     'compiled_protocols',
     'compiled_protocols_2',
     'compiled_protocols_3',
+    # The phase 7 pair, section 174: the calibration account compiled without and with the
+    # television the composer adds. The after container is the one the composer is compared to.
+    'phase7_before', 'phase7_after',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

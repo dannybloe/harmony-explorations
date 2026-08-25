@@ -16,8 +16,9 @@
  * **What a block stores is not what the emitter speaks.** `blockOfStatedCode` returns merged
  * intervals, one pulse per physical interval, because two adjacent words of one kind are one
  * interval and no receiver can see the join, section 164. A duration word holds fifteen bits, so a
- * gap beyond 32767 microseconds is spelled as several words: the corpus convention is maximal words
- * first and the remainder last, and reading it back merges to the same train whatever the split.
+ * long silence is spelled as several words, and phase 7 measured the generator's spelling rather
+ * than assuming one: `compiledBlockWords` below, section 174. Reading merges back to the same
+ * train whatever the split, which is what lets the spelling be a convention and not a meaning.
  *
  * Read only towards hardware, like `relocate.ts`: the result is bytes in memory.
  */
@@ -67,6 +68,63 @@ export interface ComposeCommand {
    * keys and harmless for the rest, and `false` refuses it for a command that must not repeat.
    */
   readonly held?: boolean;
+  /**
+   * The silence in front of the once block, phase 7's first measurement: every once block in every
+   * Logitech compile leads with one, 2032 of 2032 across both generator eras, 50 ms on most
+   * commands and 500 ms or a second on the ones that deserve a settling time, power and inputs
+   * mostly. Absent means the 50 ms the majority carries; the catalogue does not state the longer
+   * ones, so a caller that knows better says so here.
+   */
+  readonly leadInUs?: number;
+}
+
+/** The lead-in the generator gives a command nothing says more about, measured in phase 7. */
+export const COMPILED_LEAD_IN_US = 50000;
+
+/**
+ * A whole block's words the way Logitech's generator spells them, phase 7 and section 174: the
+ * lead-in silence first where one is given, every long silence split under the half word rule, and
+ * the trailing gap ending in a **one microsecond** space carved out of it. All of it physically
+ * nil, since two adjacent spaces are one interval, section 164; adopted so a composed block is the
+ * block their generator would have written, and checked by respelling every block of their own
+ * compiles, both generator eras.
+ *
+ * The half word rule, which three word level diffs kept refusing until it was found: a silence is
+ * spelt as maximal words and a remainder, and **no word may fall below half the maximum**, so a
+ * remainder under 16384 gives back one maximal and the last two words share their sum, smaller
+ * half first. 50000 is `32767, 17233`; 40222 is `20111, 20111`; 500000 is fourteen maximals then
+ * `20631, 20631`.
+ */
+export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPulse[] {
+  const led = leadInUs > 0 ? [{ mark: false, us: leadInUs }, ...pulses] : [...pulses];
+  const words: IrPulse[] = [];
+  for (const pulse of led) {
+    if (pulse.mark) {
+      // A mark over the ceiling is spelt maximal first like blockWordsOf spells it; none of the
+      // corpus's marks reach the ceiling, so the arm exists for completeness rather than evidence.
+      words.push(...blockWordsOf([pulse]));
+      continue;
+    }
+    let left = pulse.us;
+    while (left > IR_PULSE_MAX) {
+      const remainder = left - IR_PULSE_MAX;
+      if (remainder < (IR_PULSE_MAX + 1) / 2) {
+        const low = Math.floor(left / 2);
+        words.push({ mark: false, microseconds: low }, { mark: false, microseconds: left - low });
+        left = 0;
+        break;
+      }
+      words.push({ mark: false, microseconds: IR_PULSE_MAX });
+      left = remainder;
+    }
+    if (left > 0) words.push({ mark: false, microseconds: left });
+  }
+  const last = words[words.length - 1];
+  if (last !== undefined && !last.mark && last.microseconds >= 2) {
+    words[words.length - 1] = { mark: false, microseconds: last.microseconds - 1 };
+    words.push({ mark: false, microseconds: 1 });
+  }
+  return words;
 }
 
 export interface ComposedGroup {
@@ -80,9 +138,11 @@ export interface ComposedGroup {
 /**
  * A merged train as the words a block stores: split anything over the fifteen bit ceiling.
  *
- * Maximal words first and the remainder last, which is the corpus's own spelling of a long gap. The
- * remainder can be zero when the duration is an exact multiple, and a zero word would terminate the
- * block, so the split keeps every word nonzero by moving one microsecond where it has to.
+ * Maximal words first and the remainder last, and a zero remainder moved off by one microsecond so
+ * no word terminates the block early. **This is a legal spelling, not the generator's**: phase 7
+ * measured theirs and it is `compiledBlockWords`, whose gaps obey the half word rule and whose
+ * trailing gap ends in a one microsecond word, section 174. This stays as the plain splitter the
+ * spelled form builds on, and reading merges either back to the same train.
  */
 export function blockWordsOf(pulses: readonly Pulse[]): IrPulse[] {
   const out: IrPulse[] = [];
@@ -168,8 +228,8 @@ export function composeIrGroup(
     }
     built.push({
       periodNs: entry.periodNs,
-      once: irBuildBlock(blockWordsOf(once)),
-      ...(held === undefined ? {} : { held: irBuildBlock(blockWordsOf(held)) }),
+      once: irBuildBlock(compiledBlockWords(once, command.leadInUs ?? COMPILED_LEAD_IN_US)),
+      ...(held === undefined ? {} : { held: irBuildBlock(compiledBlockWords(held)) }),
     });
   }
 

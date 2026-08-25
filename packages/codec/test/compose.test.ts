@@ -45,6 +45,8 @@ import {
   renderVariants,
   screenStrings,
   taggedList,
+  Container,
+  compiledBlockWords,
 } from '../src/index.ts';
 
 /**
@@ -135,8 +137,9 @@ for (const host of HOSTS) {
 
 test('a block word never exceeds the fifteen bit ceiling and merges back to the train',
      () => {
-  // Toshiba's tail holds a 96078 microsecond silence, which no single word can store: the split is
-  // maximal words first, remainder last, and merging the words back gives the identical train.
+  // Toshiba's tail holds a 96078 microsecond silence, which no single word can store: the plain
+  // splitter goes maximal words first, remainder last, and merging back gives the identical train.
+  // The generator's own spelling is compiledBlockWords, tested below against measured examples.
   const once = blockOfStatedCode('G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3')!;
   const words = blockWordsOf(once);
   assert.ok(words.every((one) => one.microseconds > 0 && one.microseconds <= 0x7fff));
@@ -320,4 +323,109 @@ test('composing a device leaves the timer table in the relocation census', skipU
   const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
   const after = parse(device.bytes);
   assert.notEqual(after.pointerArrayAt(slot), undefined, 'and still reads after');
+});
+
+/**
+ * Phase 7: Logitech compiled the same addition, `docs/adding-a-device.md`. The pair differs by
+ * exactly the television phase 6 composes, and the comparison is inventories and blocks, never
+ * bytes of the whole file, section 154.
+ */
+test('the composed television is the one Logitech compiles, block for block',
+     skipUnless('phase7_before', 'phase7_after'), () => {
+  const before = parse(load('phase7_before') as Uint8Array);
+  const after = parse(load('phase7_after') as Uint8Array);
+
+  // Their addition: one device, prepended at group 0 with every existing device renumbered, which
+  // is why our composer's append-only rule is a difference and not a defect: a group index is not
+  // stable across their compiles either way.
+  const wasDevices = inventory(before).devices;
+  const nowDevices = inventory(after).devices;
+  assert.equal(nowDevices.length, wasDevices.length + 1);
+  const lg = nowDevices.find((d) => d.name === 'LG_42LM3400');
+  assert.notEqual(lg, undefined, 'named from the account, spaces as underscores');
+  assert.equal(lg?.group, 0, 'prepended, not appended');
+  assert.deepEqual(nowDevices.filter((d) => d !== lg).map((d) => d.name), wasDevices.map((d) => d.name),
+                   'the three existing devices keep their names and their order');
+  assert.deepEqual(inventory(after).activities.length, inventory(before).activities.length,
+                   'no activity changes with the device');
+
+  // Ours, composed onto their own before container: the same three commands.
+  const device = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
+  const ours = parse(device.bytes);
+  assert.equal(inventory(ours).devices.length, wasDevices.length + 1);
+  const report = coverage(ours);
+  assert.equal(report.accounted, report.total);
+  assert.deepEqual(report.overlaps, []);
+  assert.equal(roundTrip(ours).equal, true);
+
+  // The check that carries the phase: for each of the three commands, our once and held blocks are
+  // **byte identical** to the records their generator emitted for the same catalogue codes. Their
+  // record indices are read off the after container by decoding, not assumed.
+  const ourGroup = irGroups(ours)![device.group]!;
+  const theirGroup = irGroups(after)![0]!;
+  const frameOf = (c: Container, address: number): string[] => {
+    const words = irBlockWords(c, irHeaderPointers(c, address)[0]!)!;
+    const pulses = words.map((w) => ({ mark: (w & IR_PULSE_MARK) !== 0, us: w & IR_PULSE_MAX }));
+    return framesOfSegments(fromFirstMark(mergedIntervals(pulses))).map(frameKey);
+  };
+  const rawBlock = (c: Container, pointer: number): Buffer => {
+    const off = c.blobOffsetOf(pointer) as number;
+    let end = off;
+    for (;;) {
+      const word = (c.blob[end] as number) | ((c.blob[end + 1] as number) << 8);
+      end += 2;
+      if (word === 0) break;
+    }
+    return Buffer.from(c.blob.subarray(off, end));
+  };
+  let compared = 0;
+  TELEVISION.forEach((command, k) => {
+    const stated = statedCode(command.stated)!;
+    const wanted = `${stated.frames[0]!.bits}:${stated.frames[0]!.value.toString(16)}`;
+    const theirs = theirGroup.addresses.find((address) => frameOf(after, address).includes(wanted));
+    assert.notEqual(theirs, undefined, `their group carries command ${k}`);
+    const ourPointers = irHeaderPointers(ours, ourGroup.addresses[k]!);
+    const theirPointers = irHeaderPointers(after, theirs as number);
+    assert.equal(Buffer.compare(rawBlock(ours, ourPointers[0]!), rawBlock(after, theirPointers[0]!)), 0,
+                 `command ${k}'s once block is the block their generator wrote`);
+    compared += 1;
+    // Ours withholds power's held block by the caller's choice; theirs emits one for every
+    // command, which is the measured answer to phase 4's audit gap 2.
+    assert.notEqual(theirPointers[1], 0, `their command ${k} repeats when held`);
+    if (ourPointers[1] !== 0) {
+      assert.equal(Buffer.compare(rawBlock(ours, ourPointers[1]!), rawBlock(after, theirPointers[1]!)), 0,
+                   `command ${k}'s held block is the block their generator wrote`);
+      compared += 1;
+    }
+  });
+  assert.equal(compared, 5, 'three once blocks and the two held ones the caller allowed');
+});
+
+/**
+ * The generator's block spelling, phase 7's measurement: a lead-in on every once block, the half
+ * word rule for a long silence, and the one microsecond word a trailing gap ends in. Each example
+ * is a value read off their compiles, section 174.
+ */
+test('a composed block is spelled the way the generator spells one', () => {
+  const words = (pulses: { mark: boolean; us: number }[], lead = 0): [boolean, number][] =>
+    compiledBlockWords(pulses, lead).map((w) => [w.mark, w.microseconds]);
+
+  // The 50 ms lead: greedy, because the remainder stays above half a word.
+  assert.deepEqual(words([{ mark: true, us: 500 }], 50000),
+                   [[false, 32767], [false, 17233], [true, 500]]);
+  // 40222 falls under half a word after one maximal, so the pair balances instead.
+  assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 40222 }, { mark: true, us: 500 }]),
+                   [[true, 500], [false, 20111], [false, 20111], [true, 500]]);
+  // An odd balance puts the smaller half first.
+  assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 42033 }, { mark: true, us: 500 }]),
+                   [[true, 500], [false, 21016], [false, 21017], [true, 500]]);
+  // The 500 ms lead: fourteen maximals, then the balanced pair.
+  const long = words([{ mark: true, us: 500 }], 500000);
+  assert.equal(long.length, 17);
+  assert.deepEqual(long.slice(14), [[false, 20631], [false, 20631], [true, 500]]);
+  // A trailing gap donates its last microsecond, whatever its length.
+  assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 96078 }]),
+                   [[true, 500], [false, 32767], [false, 32767], [false, 30543], [false, 1]]);
+  assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 552 }]),
+                   [[true, 500], [false, 551], [false, 1]]);
 });

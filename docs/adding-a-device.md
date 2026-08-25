@@ -55,7 +55,7 @@ starts at the first unticked box.
 | 4 | the data model describes a device that does not exist yet | **done** 25 August 2026 |
 | 5 | a config can change length without breaking | **done** 25 August 2026 |
 | 6 | a device composed into a config, read back by our own readers | **done** 25 August 2026, the optional keypad item not taken by its own terms |
-| 7 | Logitech compiles the same addition and the two agree | not started |
+| 7 | Logitech compiles the same addition and the two agree | **done** 25 August 2026, blocks byte identical |
 
 That is the checklist. Below it, behind a gate:
 
@@ -526,13 +526,29 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
 
 ## Phase 7: Logitech compiles the same addition and the two agree
 
+**Done, 25 August 2026**, section 174. The differences are written, and the blocks are not merely
+equivalent: they are byte identical.
+
 The known answer check, and the only one that can catch a config that is valid and wrong.
 
-- [ ] compile two configurations on the same account, differing by exactly the device phase 6 adds
-- [ ] compare **inventories, not bytes**: device count and names, command numbers per device, activity
-      structure, and what each key sends
-- [ ] **check**: the difference between their addition and ours is empty, or every difference in it is
-      explained in writing before the phase is ticked
+- [x] compile two configurations on the same account, differing by exactly the device phase 6 adds.
+      `phase7.py` in the lab, run by Danny on 25 August 2026: the calibration account's Harmony One,
+      compiled, given the LG 42LM3400 out of the catalogue, compiled again. `phase7_before` and
+      `phase7_after` in the lab index
+- [x] compare **inventories, not bytes**: device count and names, command numbers per device, activity
+      structure, and what each key sends. One more device on their side and ours, activities untouched
+      on both, and for the three commands the caller asked for, our once and held blocks are **byte
+      identical to their records**, after two of their spelling conventions were measured and adopted:
+      the lead-in silence every once block opens with, and the half word rule with its closing one
+      microsecond word, section 174
+- [x] **check**: the difference between their addition and ours is empty, or every difference in it is
+      explained in writing before the phase is ticked. Five differences, all in section 174: they
+      prepend the group and renumber where we append; they add all 67 catalogue commands as 79 records
+      where we add the chosen three; their name is the account's with spaces as underscores where ours
+      is the caller's; their PowerToggle carries a held block, which settles phase 4's audit gap 2 in
+      the direction our default already took; and their screens are this generator era's layout, which
+      `composeDeviceScreen` refuses by name because its fonts and row shapes are read off the classic
+      era family, follow-up work and not a defect the comparison can hide
 
 ## The gate between the two parts
 

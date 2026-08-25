@@ -188,6 +188,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The third, an hour later: the four appliances the second sitting had no room for, plus the
   // Microsoft one whose account name the rebuilt capture of the first could not recover.
   compiled_protocols_3: 'compiled-20260824c-protocols-gspm.bin',
+  // The phase 7 pair, 25 August 2026: the calibration account's Harmony One compiled without and
+  // with the LG 42LM3400, ten minutes apart, nothing else changed between the two. The known
+  // answer for `docs/adding-a-device.md` phase 7: what Logitech's generator adds for the same
+  // television `composeDevice` adds, compared in `packages/codec/test/compose.test.ts`. Not in the
+  // corpus wide lists, like every compiled-to-order sample. Section 174.
+  phase7_before: 'phase7-before-gspm.bin',
+  phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
   // for the three devices of the calibration account. Not an image and not a config. It is here so
   // that section 154's naming closure is a test rather than a paragraph: the digit tables of a number

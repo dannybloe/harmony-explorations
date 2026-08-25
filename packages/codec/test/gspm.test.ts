@@ -600,8 +600,11 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  * `CONTAINERS`, which is where every corpus wide total is computed from: the checks below are properties
  * of the parser, so a further real container can only strengthen them, and a calibration sample inside a
  * corpus total would be counting our own request as evidence.
+ *
+ * **41 since 25 August 2026**, the phase 7 pair, section 174: the same account compiled without and
+ * with the television the composer adds, both bare containers like every compiled to order sample.
  */
-const PARSEABLE = 39;
+const PARSEABLE = 41;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -663,7 +666,7 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('21 of the parseable containers have an odd body and 16 of those verify',
+test('22 of the parseable containers have an odd body and 17 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
@@ -671,10 +674,11 @@ test('21 of the parseable containers have an odd body and 16 of those verify',
     assert.equal(all.length, PARSEABLE);
     const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
     // 21 and 16 since the compiled sample was named, section 165, and the second compiled sample of 24
-    // August 2026 did **not** move them: its body is even. The title carries the counts, so a move shows.
-    assert.equal(odd.length, 21);
+    // August 2026 did **not** move them: its body is even. 22 and 17 since the phase 7 pair, whose
+    // before container is the odd one. The title carries the counts, so a move shows.
+    assert.equal(odd.length, 22);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 16);
+    assert.equal(verifying.length, 17);
     // Every one of the fourteen recomputes under the loop as written, which is what makes the
     // behaviour tested rather than assumed. Folding the trailing byte in would break the two whose
     // trailing byte is not zero, and be invisible on the other twelve: so the comment was inviting
@@ -714,9 +718,9 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    // 37 since the third compiled sample, 24 August 2026. The two that disagree are the claim and they
-    // are unchanged, both being damaged reads of one Harmony 890.
-    assert.equal(agree, 37);
+    // 37 since the third compiled sample, 24 August 2026; 39 since the phase 7 pair. The two that
+    // disagree are the claim and they are unchanged, both being damaged reads of one Harmony 890.
+    assert.equal(agree, 39);
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
@@ -760,8 +764,8 @@ test('the frame tiles to the next section on every container that has one', skip
     assert.equal(start + (c.frameExtent as number), target, name);
     if (start + c.frameLength + 2 === target) naive += 1;
   }
-  // 32 since the third compiled sample, and the two the sentinel misses are still exactly the two
-  // empty frames, which is the claim rather than the total.
-  assert.equal(framed, 32);
-  assert.equal(naive, 30, 'the two the sentinel gets wrong are the two empty frames');
+  // 32 since the third compiled sample and 34 since the phase 7 pair; the two the sentinel misses
+  // are still exactly the two empty frames, which is the claim rather than the total.
+  assert.equal(framed, 34);
+  assert.equal(naive, 32, 'the two the sentinel gets wrong are the two empty frames');
 });
