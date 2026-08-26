@@ -23682,6 +23682,17 @@ wrong answers. Section 117 justified that from reader scores; this justifies it 
 before the bytes were read, and the conclusion is not "no placement scores well" but "no placement
 can be right".
 
+**The conclusion is right and every argument for it below is wrong**, sections 181 and 182, and the
+correction is left here in place because the calibration it established is what later identified the
+slot. All three refutations rest on the Harmony 895's base slot 5 needing to hold six entries because
+its owner states six devices. Section 181 measured that the **Harmony 895 has no infrared records at
+all**, so its base slot 5 cannot hold six device groups under any mapping whatever, and the premise
+fails rather than the mapping. What survives untouched is the rule itself, that base slot 5's entry
+count is the device count, and section 182 used exactly that to identify base slot 5 on arch 10 as raw
+slot 6, four groups on a Harmony 890 whose room's Harmony 880 drives four devices. The real reason no
+three insertion placement can be right is that arch 10 carries **nineteen** base slots and four
+insertions, because base slot 0 is absent, which section 182 reads off the architecture record.
+
 **Arch 10's 23 slots need identifying on their own terms**, not as the twenty with three insertions.
 That is a larger job than relabelling and it now has an instrument: any candidate layout has to yield
 six devices, and the same known answer that refuted the insertion model will score the real one.
@@ -24044,3 +24055,110 @@ sets and the infrared records. Every one was found by the same observation, that
 refuses to decode when misread can be located by trying every offset, and this one is the cleanest
 case of it because the record does not merely refuse, it states the answer. None of it is progress
 towards the slot mapping.
+
+## 182. Arch 10 states its architecture after all, has no name tree slot, and seventeen of its base slots are identified
+
+Section 181 ended by noting that 300 known record addresses are a sharper test of a candidate slot
+mapping than the seven structural demands section 178 scored. They are, and using them plus the font
+sets and the picture bank identifies base slots by **matching known content** rather than by scoring a
+relabelling. The result corrects section 178's argument while leaving its conclusion standing.
+
+### The method, calibrated on an architecture whose mapping is known
+
+Each of the three structures now readable without a slot is *named* by a particular slot elsewhere in
+the container, so the slot can be found by asking which raw slot points at it:
+
+* base slot 5's pointer array lists the infrared **groups**, and a group is a count prefixed array of
+  record pointers. Finding the groups is finding the arrays whose every entry is one of section 181's
+  300 records; four of them exist and their entries partition the 300 exactly
+* base slot 7's array lists the **font set** addresses, all eight of them
+* base slot 17 points **two bytes** in front of the picture bank, section 62
+* base slot 3 is the clock record, framed `0xADDF` and `0xEFBF`, section 21
+
+On arch 8, whose mapping is known, these four return raw 3, raw 5, raw 7 and raw 18, which is exactly
+base 3, 5, 7 and 17 under the NULL inserted at slot 8. So the method recovers a known answer before it
+is used on an unknown one.
+
+### Arch 10 states architecture 10, at raw slot 0
+
+The container check `slot1_states_the_architecture` fails on both arch 10 containers, and the record is
+not missing. Base slot 1 is seven bytes, and across the corpus it reads **the architecture twice, then
+the skin, then a constant `0x0d`**:
+
+| container | raw slot | bytes | reads as |
+|---|---|---|---|
+| `one_config` | 1 | `0c 0c 3b 0d` | arch 12, skin 59 |
+| `h600_config` | 1 | `0e 0e 49 0d` | arch 14, skin 73 |
+| `h700_config` | 1 | `0e 0e 42 0d` | arch 14, skin 66 |
+| `h525_config` | 1 | `09 09 16 0d` | arch 9, skin 22 |
+| `arch8_config_880` | 1 | `08 08 0f 0d` | arch 8, skin 15 |
+| `arch8_config_885` | 1 | `08 08 11 0d` | arch 8, skin 17 |
+| `h890_config` | **0** | `0a 0a 13 0d` | **arch 10, skin 19** |
+| `h895_config` | **0** | `0a 0a 17 0d` | **arch 10, skin 23** |
+
+19 and 23 are the Harmony 890's and Harmony 895's own skins in `reference/capabilities.md`, put there
+from Logitech's product table, which is a route with nothing in common with this one. So this is a
+reading and not a pattern, and the six known rows are what fix the record's shape before the two
+unknown ones are read with it.
+
+**So arch 10 has no base slot 0.** On every other architecture raw slot 0 is the `0xFEED` framed name
+tree; here raw slot 0 is the architecture record, and no `0xFEED` word occurs anywhere in either
+payload. That was already measured and read as "an 890 is not known to name its devices and
+activities at all". It is now a statement about the **layout**: the slot is absent, not empty and not
+lost to a bad read.
+
+### Seven base slots anchored, seventeen determined
+
+| base slot | what identifies it | raw slot |
+|---|---|---|
+| 1 | the architecture record | 0 |
+| 3 | the `0xADDF` clock frame | 4 |
+| 5 | four infrared groups holding all 300 records | 6 |
+| 7 | all eight font set addresses | 10 |
+| 17 | two bytes before the picture bank | 20 |
+| 18, 19 | NULL, as on all four architectures | 21, 22 |
+
+Assigning base slots 1 to 19 in order to the raw slots that are not insertions, **exactly nine** of the
+8855 four element insertion sets fit all seven anchors, and the freedom in them is precisely two slots:
+which of raw 1, 2 or 3 is base slot 2, and which of raw 7, 8 or 9 is base slot 6. Every other
+assignment is forced, including base slot 4 to raw 5. So **17 of the 19 present base slots are
+determined**.
+
+**Base slot 6 is raw slot 9 on size**, which narrows nine to three: a mode table is tens of thousands
+of bytes everywhere, the three candidates measure 1, 3 and 33340 bytes on the Harmony 890 and 1, 3 and
+33095 on the Harmony 895, and the Harmony 880's is 33296. Corroboration rather than proof, so it is
+stated apart from the anchors. Base slot 4's own size is 125 bytes, section 36, and the Harmony 895's
+raw slot 5 is exactly 125.
+
+### Section 178's conclusion survives and its argument does not
+
+**The conclusion.** "Arch 10's 23 slots are not the base 20 with three insertions" is **correct**, and
+now for a reason stronger than a score: they are **nineteen** base slots with **four** insertions,
+because base slot 0 is absent. No placement of three insertions can express a base slot that is not
+there, which is asserted as a test rather than argued.
+
+**The argument.** Section 178 refuted the insertion model from the Harmony 895's owner stating six
+devices, base slot 5's entry count equalling the device count on 9 of 9 configs, and no arch 10 slot
+holding a six entry array. **Section 181 falsified the premise**: the Harmony 895 has no infrared
+records at all, so its base slot 5 cannot hold six device groups whatever the mapping is. The rule
+itself is unharmed and gains an arch 10 case: the Harmony 890's base slot 5 holds exactly **four**
+groups, and the Harmony 880 from the same contributor's same room drives four devices and shares its
+infrared database almost byte for byte, section 181.
+
+So this is the shape this project keeps meeting, a wrong rule reaching a right answer. The three
+refutations in section 178 all rested on a device count the config had no way to state, and they are
+corrected in place there rather than deleted, because the calibration they established, base slot 5's
+count being the device count, is still what identified raw slot 6 here.
+
+### The rail stays shut, and now for a precise reason
+
+`INSERTED_SLOTS` still has no arch 10 entry and adding one is still the thing not to do. The reason is
+no longer "the mapping is unknown": it is that `archSlot` expresses a mapping as insertions into the
+twenty, and arch 10 needs a base slot **removed** as well, which that shape cannot say. Two base slots
+are also still ambiguous three ways each. Ungating on a mapping that is right about seventeen slots and
+guessing at two would produce two plausible wrong readers, which is the same failure the rail was put
+up for.
+
+What would finish it is what section 178 asked for and now has an instrument: score the seventeen
+readers against the three surviving candidate mappings. The anchors have already done the work that
+scoring could not, so what is left is small and it is verification rather than search.

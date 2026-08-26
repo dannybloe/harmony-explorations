@@ -199,8 +199,11 @@ One's alphabet names none. So a Harmony 890 uses the Harmony 885 typeface and it
 not its words, since a string's address comes out of a screen program and those need the mapping.
 **And its infrared database reads**, section 181, because a record states its own address: 300 codes on
 the Harmony 890 with all 463 duration blocks decoding, exact against the slot route on 13 of 13
-containers elsewhere. The Harmony 895 has **none**, proven rather than unfound. What still does not
-read is which device a code belongs to, since the grouping is the pointer array itself. Firmware is what settles it, the way arch 9's own firmware settled its
+containers elsewhere. The Harmony 895 has **none**, proven rather than unfound. And those three structures then **identified the slots that name
+them**, section 182: seventeen of arch 10's nineteen base slots are determined, an arch 10 config does
+state its architecture after all, 10, at raw slot 0, and it has no name tree slot at all. The readers
+stay gated, because the mapping needs a base slot **removed** and `archSlot` can only express
+insertions. Firmware is what settles it, the way arch 9's own firmware settled its
 infrared classes. Sections 115, 117 and 178.
 
 **Seven reads are not seven configs, and on this architecture that had to be measured**, section 122. One

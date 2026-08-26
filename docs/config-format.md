@@ -357,6 +357,39 @@ infrared group arrays are laid out in that space. A section's own data can end l
 pointer, with another section's sub-structures filling the rest, so a large gap is not evidence of
 a large section. See section 36.
 
+### Base slot 1: the architecture record, and where arch 10 keeps it
+
+Seven bytes, and the only place a config states its own architecture. Host side, so nothing on the
+remote validates it, which is why its width varies between containers.
+
+```
++0x00  u8   the architecture
++0x01  u8   the architecture again
++0x02  u8   the skin, meaning the model
++0x03  u8   0x0d, constant on every container here
+```
+
+Confirmed on eight containers over five architectures: `0c 0c 3b 0d` on a Harmony One, `0e 0e 49 0d`
+and `0e 0e 42 0d` on a Harmony 600 and 700, `09 09 16 0d` on a Harmony 525, `08 08 0f 0d` and
+`08 08 11 0d` on a Harmony 880 and 885. The skins are the model numbers in
+[capabilities.md](../reference/capabilities.md), established there from Logitech's own product table.
+
+**On arch 10 it is at raw slot 0, not raw slot 1, because arch 10 has no base slot 0.** So an arch 10
+config **does** state its architecture, `0a 0a 13 0d` on a Harmony 890 and `0a 0a 17 0d` on a Harmony
+895, meaning architecture 10 with skins 19 and 23. The container check
+`slot1_states_the_architecture` reports false there because it reads raw slot 1, and
+`slot0_is_a_feed_frame` reports false because the name tree has no slot on that architecture at all:
+no `0xFEED` word occurs anywhere in either payload. [findings.md](findings.md) section 182.
+
+**Seventeen of arch 10's nineteen base slots follow from that.** Base slot 1 to raw 0, 3 to 4, 5 to 6,
+7 to 10, 17 to 20, and 18 and 19 to the trailing NULLs at 21 and 22, each identified by content rather
+than by relabelling: the clock frame, the infrared groups holding all 300 records, the eight font set
+addresses, and the two byte bias in front of the picture bank. Exactly nine four element insertion sets
+fit all seven, and the only freedom is which of raw 1 to 3 is base slot 2 and which of raw 7 to 9 is
+base slot 6, the latter narrowed to raw 9 by its mode table size. **The readers stay gated**: a mapping
+needing a base slot *removed* is not something `archSlot` can express, and two slots are still
+ambiguous. [findings.md](findings.md) section 182.
+
 ### Base slot 2: the log area
 
 **Confirmed on 19<!--fact:containers--> containers across four architectures**, and on the one arch

@@ -20,7 +20,7 @@ import {
   irGroups, irRecordsByClosure, irCarrier, irGroupCount, irRecordBlocks, irBlockWords,
   IR_RECORD_POINTER_BIAS,
 } from '../src/ir.ts';
-import { u8, u24 } from '../src/bytes.ts';
+import { u8, u16, u24 } from '../src/bytes.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [
@@ -624,4 +624,193 @@ test('the two Harmony 890 remotes carry the same infrared database, and the 880 
     // different remote. Identical would have meant one file, and unrelated would have meant the
     // reading was wrong.
     assert.equal(differ8, 231, 'and the Harmony 880 of the same room differs in 231 of 6300 bytes');
+  });
+
+/**
+ * Section 182: arch 10 states its architecture, and seventeen of its base slots are identified.
+ *
+ * The container check `slot1_states_the_architecture` fails on arch 10 and the reason is not that the
+ * record is missing. It is at raw slot **0**, because arch 10 has no base slot 0.
+ */
+
+/** Every container's architecture record: the architecture twice, the skin, then 0x0d. */
+const ARCHITECTURE_RECORDS: readonly [string, number, number, number][] = [
+  // container, raw slot holding it, architecture, skin
+  ['one_config', 1, 12, 59],
+  ['h600_config', 1, 14, 73],
+  ['h700_config', 1, 14, 66],
+  ['h525_config', 1, 9, 22],
+  ['arch8_config_880', 1, 8, 15],
+  ['arch8_config_885', 1, 8, 17],
+  ['h890_config', 0, 10, 19],
+  ['h895_config', 0, 10, 23],
+];
+
+test('every container states its architecture twice and its skin, arch 10 at raw slot 0',
+  skipUnless(...ARCHITECTURE_RECORDS.map(([n]) => n)), () => {
+    // Section 182. Six containers whose architecture is already known fix the record's shape, and the
+    // two arch 10 ones then read as architecture 10 with skins 19 and 23. Those are the Harmony 890's
+    // and 895's own skins in `reference/capabilities.md`, established there by a route with nothing in
+    // common with this one, which is what makes this a reading rather than a pattern.
+    for (const [name, slot, architecture, skin] of ARCHITECTURE_RECORDS) {
+      const c = parse(require_(name));
+      const address = c.sections[slot]?.address;
+      assert.ok(address !== undefined && address !== 0, `${name} raw slot ${slot}`);
+      const off = c.blobOffsetOf(address);
+      assert.ok(off !== undefined, name);
+      assert.equal(c.sectionLength(slot), 7, `${name} is the seven byte record`);
+      assert.equal(u8(c.blob, off), architecture, `${name} states its architecture`);
+      assert.equal(u8(c.blob, off + 1), architecture, `${name} states it twice`);
+      assert.equal(u8(c.blob, off + 2), skin, `${name} states its skin`);
+      assert.equal(u8(c.blob, off + 3), 0x0d, `${name} constant fourth byte`);
+      // Where the container check looks, and why it fails on arch 10 without the record being absent.
+      if (slot === 0) {
+        assert.equal(c.checks['slot1_states_the_architecture'], false,
+          `${name} fails the check because the check reads raw slot 1`);
+      }
+    }
+  });
+
+test('arch 10 has no name tree slot at all, which is why no 0xFEED frame exists anywhere',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // Base slot 0 is a 0xFEED framed tree on every other architecture and it is at raw slot 0 there.
+    // On arch 10 raw slot 0 is the architecture record, so the tree has no slot, which is a statement
+    // about the layout rather than about the read.
+    const eight = parse(require_('arch8_config_880'));
+    const off = eight.blobOffsetOf(eight.sections[0]!.address);
+    assert.ok(off !== undefined);
+    assert.equal(u16(eight.blob, off), 0xfeed, 'arch 8 keeps its name tree at raw slot 0');
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      assert.equal(c.checks['slot0_is_a_feed_frame'], false, name);
+      // And nowhere else either, which is what says the slot is absent rather than moved.
+      let frames = 0;
+      for (let at = 0; at + 2 <= c.blob.length; at += 1) if (u16(c.blob, at) === 0xfeed) frames += 1;
+      assert.equal(frames, 0, `${name} carries no 0xFEED word at all`);
+    }
+  });
+
+/** Base slot to raw slot on arch 10, where content identifies it. Section 182. */
+const ARCH10_ANCHORS: readonly [number, number][] = [
+  [1, 0], [3, 4], [5, 6], [7, 10], [17, 20], [18, 21], [19, 22],
+];
+
+test('seven arch 10 base slots are identified by content, and the same method recovers arch 8',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // The calibration first: the method has to recover a mapping that is already known. On arch 8 the
+    // NULL is inserted at raw slot 8, so base 3, 5 and 7 sit on their own numbers and base 17 moves to
+    // raw 18, and that is exactly what the same four content tests return.
+    const eight = parse(require_('arch8_config_880'));
+    const bankEight = pictureBankByClosure(eight)?.[0]?.address;
+    const eightOff = (slot: number): number => {
+      const off = eight.blobOffsetOf(eight.sections[slot]!.address);
+      assert.ok(off !== undefined);
+      return off;
+    };
+    assert.equal(u16(eight.blob, eightOff(3)), 0xaddf, 'arch 8 clock at raw 3');
+    assert.equal(eight.pointerArray(5)?.length, 4, 'arch 8 infrared table at raw 5');
+    assert.equal(eight.pointerArray(7)?.length, 8, 'arch 8 font table at raw 7');
+    assert.equal(eight.sections[18]!.address + 2, bankEight, 'arch 8 picture bank at raw 18');
+
+    // Now arch 10, on both containers, by the same four tests plus the architecture record and the
+    // two trailing NULLs.
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      const clock = c.blobOffsetOf(c.sections[4]!.address);
+      assert.ok(clock !== undefined);
+      assert.equal(u16(c.blob, clock), 0xaddf, `${name} clock at raw 4`);
+      const bank = pictureBankByClosure(c)?.[0]?.address;
+      assert.equal(c.sections[20]!.address + 2, bank, `${name} picture bank at raw 20`);
+      assert.ok(c.sections[21]?.isNull && c.sections[22]?.isNull, `${name} raw 21 and 22 are NULL`);
+      const fonts = new Set(fontSetsByClosure(c, 8).map((s) => s.address));
+      const table = c.blobOffsetOf(c.sections[10]!.address);
+      assert.ok(table !== undefined);
+      const count = u16(c.blob, table);
+      assert.equal(count, fonts.size, `${name} font table at raw 10 declares ${fonts.size}`);
+      for (let k = 0; k < count; k += 1) {
+        assert.ok(fonts.has(u24(c.blob, table + 2 + 3 * k)), `${name} font entry ${k}`);
+      }
+    }
+    // Only the Harmony 890 has an infrared table to find, since the 895 has no records at all.
+    const h890 = parse(require_('h890_config'));
+    assert.equal(h890.pointerArray(6)?.length, 4, 'the Harmony 890 infrared table at raw 6');
+  });
+
+test('one arithmetic fits all seven anchors, and it needs base slot 0 to be absent',
+  () => {
+    // No lab needed: this is about the arithmetic, and the anchors above are what measured it.
+    // Nineteen base slots, 1 to 19, occupy the nineteen raw slots that are not insertions, in order.
+    const fitting: number[][] = [];
+    for (let a = 0; a < 23; a += 1) {
+      for (let b = a + 1; b < 23; b += 1) {
+        for (let d = b + 1; d < 23; d += 1) {
+          for (let e = d + 1; e < 23; e += 1) {
+            const inserted = new Set([a, b, d, e]);
+            const order = [...Array(23).keys()].filter((raw) => !inserted.has(raw));
+            if (ARCH10_ANCHORS.every(([base, raw]) => order[base - 1] === raw)) {
+              fitting.push([a, b, d, e]);
+            }
+          }
+        }
+      }
+    }
+    // Nine, and the freedom is exactly two slots: which of raw 1 to 3 is base 2, and which of raw 7
+    // to 9 is base 6. Everything else is forced, so 17 of the 19 present base slots are pinned.
+    assert.equal(fitting.length, 9, 'insertion sets fitting every anchor');
+    const base2 = new Set<number>();
+    const base6 = new Set<number>();
+    for (const set of fitting) {
+      const inserted = new Set(set);
+      const order = [...Array(23).keys()].filter((raw) => !inserted.has(raw));
+      base2.add(order[1] as number);
+      base6.add(order[5] as number);
+      assert.equal(order[3], 5, 'base slot 4 is forced to raw 5 in every fitting set');
+    }
+    assert.deepEqual([...base2].sort((x, y) => x - y), [1, 2, 3]);
+    assert.deepEqual([...base6].sort((x, y) => x - y), [7, 8, 9]);
+
+    // **And no placement of three insertions into twenty base slots can fit**, which is why section
+    // 178's conclusion survives even though its argument does not: 23 slots here are nineteen base
+    // slots plus four insertions, not twenty plus three, and a search over insertions alone cannot
+    // express a base slot that is not there.
+    let threeFits = 0;
+    for (let a = 0; a < 23; a += 1) {
+      for (let b = a + 1; b < 23; b += 1) {
+        for (let d = b + 1; d < 23; d += 1) {
+          const inserted = new Set([a, b, d]);
+          const order = [...Array(23).keys()].filter((raw) => !inserted.has(raw));
+          if (ARCH10_ANCHORS.every(([base, raw]) => order[base] === raw)) threeFits += 1;
+        }
+      }
+    }
+    assert.equal(threeFits, 0, 'no three insertion placement fits the anchors');
+  });
+
+test('base slot 6 is raw slot 9 on size, since raw 7 and 8 are one and three bytes',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // The evidence that narrows the nine to three. A mode table is tens of thousands of bytes on every
+    // architecture, and of the three candidates for base slot 6 only raw 9 is anywhere near that.
+    // Corroboration rather than proof, which is why the anchors above are stated separately.
+    const eight = parse(require_('arch8_config_880'));
+    assert.equal(eight.sectionLength(6), 33296, 'the Harmony 880 mode table');
+    for (const [name, raw9] of [['h890_config', 33340], ['h895_config', 33095]] as const) {
+      const c = parse(require_(name));
+      assert.equal(c.sectionLength(7), 1, `${name} raw 7 is one byte`);
+      assert.equal(c.sectionLength(8), 3, `${name} raw 8 is three bytes`);
+      assert.equal(c.sectionLength(9), raw9, `${name} raw 9 is mode table sized`);
+    }
+    // And base slot 4's own size, 125 bytes, turns up exactly on the Harmony 895's raw 5, which every
+    // fitting set assigns to base slot 4.
+    assert.equal(parse(require_('h895_config')).sectionLength(5), 125);
+  });
+
+test('the Harmony 890 drives four devices, agreeing with the Harmony 880 of the same room',
+  skipUnless('h890_config', 'arch8_config_880'), () => {
+    // Section 178 held that base slot 5's entry count is the device count, on 9 of 9 configs. The
+    // Harmony 890's is 4, and the Harmony 880 from the same contributor's same room drives 4, which
+    // section 181 showed shares its infrared database almost byte for byte. So the rule holds on
+    // arch 10 where a config has an infrared database at all.
+    assert.equal(parse(require_('h890_config')).pointerArray(6)?.length, 4);
+    const [, devices] = DEVICE_COUNTS.find(([n]) => n === 'arch8_config_880') as [string, number];
+    assert.equal(devices, 4, 'the Harmony 880 of the same room');
   });

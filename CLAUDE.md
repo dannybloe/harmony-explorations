@@ -174,10 +174,17 @@ contradict is the failure mode this file warns about throughout.
 
 **Arch 10 has a known answer now and still nothing reads it**, sections 115, 117 and 178. A Harmony
 895 arrived on 26 August 2026 with its contents stated by its owner, six devices, which is the
-calibration case the slot mapping search never had. It **refutes** the insertion model rather than
-merely scoring badly against it: base slot 5's entry count is the device count on 9 of 9 configs
-elsewhere, no arch 10 slot holds a six entry array, and base slot 5 could only sit on raw slot 5 to 8
-where three of the four are too small to hold one. What does read on arch 10 is everything the header
+calibration case the slot mapping search never had. It **refutes** the insertion model, though **not for the reason section 178 gave**, sections 181
+and 182: that argument needed the Harmony 895's base slot 5 to hold six entries because its owner
+states six devices, and the 895 turns out to have **no infrared records at all**, so the premise fails.
+The real reason is that arch 10 carries **nineteen** base slots and four insertions rather than twenty
+and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
+the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
+and 23 for a Harmony 895. Seven base slots are anchored by content and **17 of the 19 are determined**,
+base 1 to raw 0, 3 to 4, 5 to 6, 7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, with only base
+2 and base 6 ambiguous three ways each. `INSERTED_SLOTS` still gets no entry, and the reason is now
+precise: `archSlot` expresses a mapping as insertions into the twenty and cannot say that a base slot
+is **removed**. What does read on arch 10 is everything the header
 or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
 key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
 and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
@@ -1228,8 +1235,11 @@ Container cookies, since the container is one format across architectures: `TPTP
 arch 8, `AHCM`/`MCHA` on arch 9, `GSPM`/`PTYY` on arch 12 and 14, and `BMBM` on arch 7 per
 concordance's table, unverified here. The marker after the pointer table is `WLWL`, `CMAH` and
 `LWJL` respectively. `format` is not an architecture identifier: arch 9 and arch 14 both carry
-`0x1400`. **The architecture is stated by the config**, in section slot 1, which is the only
-way to tell arch 12 from arch 14 without the EZHex header.
+`0x1400`. **The architecture is stated by the config**, in base slot 1, which is the only
+way to tell arch 12 from arch 14 without the EZHex header. Seven bytes, reading the architecture
+**twice**, then the skin, then a constant `0x0d`, section 182. It is raw slot 1 on arch 8, 9, 12 and
+14 and **raw slot 0 on arch 10**, where base slot 0 does not exist, which is why the container check
+reports arch 10 as not stating one.
 
 **The pointer table is one table across architectures too.** Arch 9 and 14 carry the base
 layout of 20 slots; arch 8 inserts a NULL at slot 8; arch 12 inserts that plus a real section at
@@ -1641,7 +1651,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 181 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 182 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
