@@ -181,10 +181,20 @@ class TestEzHexHeader(unittest.TestCase):
     # verified like the rest, so both times it was a coverage gap rather than a property of the files,
     # and a list written by hand is what produced the gap twice.
     #
-    # Arch 10 is excluded because every read of those remotes came back with duplicated chunks,
-    # section 122, so their split is a measurement of a damaged read rather than of the format.
-    CONFIGS = tuple(sorted(n for n, f in lab.IMAGES.items()
-                           if f.lower().endswith('.ezhex') and not n.startswith('h890_')))
+    # The four Harmony 890 reads are excluded because every read of those remotes came back with
+    # duplicated chunks, section 122, so their split measures a damaged read rather than the format.
+    #
+    # **`h895_config` is arch 10 and is deliberately in**, section 177, which is the distinction the
+    # old `not n.startswith('h890_')` could not express: it is the consensus of five reads, three of
+    # which are byte identical, and it passes both of section 122's own damage detectors, the end
+    # marker position and the trailer checksum. So it is the first arch 10 file whose split is a
+    # measurement of the format. Excluding it by architecture would have thrown away the only clean
+    # sample on the strength of its neighbours.
+    # Inlined rather than referenced: a comprehension in a class body cannot see class level names.
+    CONFIGS = tuple(sorted(
+        n for n, f in lab.IMAGES.items()
+        if f.lower().endswith('.ezhex')
+        and n not in ('h890_config', 'h890_config_2', 'h890_config_rescan', 'h890_config_2_rescan')))
 
     def test_the_population_is_every_ezhex_in_the_lab_bar_arch_10(self):
         """The derivation, asserted, because a derived list can narrow as quietly as a written one.
@@ -195,11 +205,11 @@ class TestEzHexHeader(unittest.TestCase):
         and none of them counted. So the count is the claim and the four exclusions are named.
         """
         ez = {n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex')}
-        self.assertEqual(len(ez), 16)
+        self.assertEqual(len(ez), 17)
         self.assertEqual(sorted(ez - set(self.CONFIGS)),
                          ['h890_config', 'h890_config_2', 'h890_config_2_rescan',
                           'h890_config_rescan'])
-        self.assertEqual(len(self.CONFIGS), 12)
+        self.assertEqual(len(self.CONFIGS), 13)
 
     def test_every_config_verifies_its_own_split(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its

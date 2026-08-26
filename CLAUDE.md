@@ -172,7 +172,15 @@ its fourth value, and they showed that "whatever in the lab table parses as a co
 corpus. Reach for them when a claim holds on every architecture here, because a claim that nothing can
 contradict is the failure mode this file warns about throughout.
 
-**Arch 10 exists in the corpus and nothing reads it**, sections 115 and 117: two Harmony 890
+**Arch 10 has a known answer now and still nothing reads it**, sections 115, 117 and 178. A Harmony
+895 arrived on 26 August 2026 with its contents stated by its owner, six devices, which is the
+calibration case the slot mapping search never had. It **refutes** the insertion model rather than
+merely scoring badly against it: base slot 5's entry count is the device count on 9 of 9 configs
+elsewhere, no arch 10 slot holds a six entry array, and base slot 5 could only sit on raw slot 5 to 8
+where three of the four are too small to hold one. What does read on arch 10 is everything the header
+or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor and the
+key table, which is how section 177 matched a hand probed circuit board without any mapping at all.
+The earlier state of this entry, and the two Harmony 890 samples it describes: two Harmony 890
 configs, format 1.7, 23 pointer slots, both based at flash `0x030000`. The container framing
 verifies and **the slot mapping is not a relabelling of the twenty**, which is stronger than the
 "unknown" this said for a day: all 1330 placements of three insertions were scored against
@@ -1614,7 +1622,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 174 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 178 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1647,7 +1655,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
-| 9 | the binding table: sets of button bindings with an enter and a leave handler | 39, 67, 69 |
+| 9 | the binding table: lists of button bindings, pushed onto a key lookup stack by their enter handler and removed by their leave handler, section 176 | 39, 67, 69, 176 |
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
 | 12 | the timer table | 43 |
@@ -2150,8 +2158,8 @@ the table, `reading` gives one instruction's, `readingCoverage` gives a config's
 
 | | share of 86947<!--fact:action_instructions--> instructions |
 |---|---|
-| meaning | 98.4%<!--fact:reading_meaning--> |
-| placement only | 1.6%<!--fact:reading_placement--> |
+| meaning | 98.6%<!--fact:reading_meaning--> |
+| placement only | 1.4%<!--fact:reading_placement--> |
 | no reading at all | 0<!--fact:reading_unread--> instructions, nothing left anywhere in the corpus |
 
 **The population is 58<!--fact:reading_arguments--> smaller than it was, and that is a correction**,
@@ -2160,9 +2168,9 @@ it is its argument, which the table had been resolving as an instruction of its 
 every time. Section 73 wrote that consequence down and nothing acted on it for a month. `takesFollowingSlot`
 is the predicate; `Container.actionList` still returns the slot, because the emitter reproduces it.
 
-Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.5%<!--fact:reading_arch14-->
-on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12, 98.1%<!--fact:reading_arch8--> on arch 8 and
-95.2%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
+Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.6%<!--fact:reading_arch14-->
+on arch 14, 98.8%<!--fact:reading_arch12--> on arch 12, 98.6%<!--fact:reading_arch8--> on arch 8 and
+95.9%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
 that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
 section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
 all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.

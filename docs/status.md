@@ -40,7 +40,7 @@ The container is now validated across **four** architectures, because publicly s
 sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen samples in the
 framing tables, five base addresses, three format versions, three pointer table lengths, all
 consistency checks passing; the wider population of everything in the lab that parses is
-41<!--fact:parseable_containers--> containers over five architectures, since arch 10's framing
+42<!--fact:parseable_containers--> containers over five architectures, since arch 10's framing
 verifies too. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -162,8 +162,8 @@ question. See
 
 ## What the corpus holds
 
-9<!--fact:corpus_dumps--> dumps from 5<!--fact:corpus_contributors--> contributors, carrying
-26<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus seven
+10<!--fact:corpus_dumps--> dumps from 5<!--fact:corpus_contributors--> contributors, carrying
+31<!--fact:corpus_configs--> configs across 5<!--fact:corpus_architectures--> architectures, plus seven
 firmware images and two bootloaders. `make corpus` inventories it and, importantly, reports which
 dumps nobody has described: a dump whose contributor has moved on is far harder to label later than one
 described on arrival.
@@ -175,17 +175,22 @@ described on arrival.
 | 7 | 610, 620, 628, 659, 670, 676, 680, 688 | 0 | 0 | none | anything at all: eight models and no sample |
 | 8 | 880, 885, 880 Pro, 720, 785 | 3<!--fact:corpus_arch8_dumps--> | 13<!--fact:corpus_arch8_configs--> | 880 and 885, application and bootloader | a 720 or a 785, which no sample here covers |
 | 9 | 510, 515, 520, 525, 550, 555 | 1<!--fact:corpus_arch9_dumps--> | 1<!--fact:corpus_arch9_configs--> | 525, application and safe mode | a 55x, and any config off a 51x |
-| 10 | 890, 895, 890 Pro | 1<!--fact:corpus_arch10_dumps--> | 7<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
+| 10 | 890, 895, 890 Pro | 2<!--fact:corpus_arch10_dumps--> | 12<!--fact:corpus_arch10_configs--> | **none** | **firmware**, which is the single hardest blocker here |
 | 12 | One | 2<!--fact:corpus_arch12_dumps--> | 2<!--fact:corpus_arch12_configs--> | One 3.4, plus safe mode and both internal pages | nothing: this one is covered |
 | 14 | 600, 650, 665, 700 | 2<!--fact:corpus_arch14_dumps--> | 3<!--fact:corpus_arch14_configs--> | 600, 650 and 700 | a 665 config |
 | 15 | 900, 1000, 1000i, 1100, 1100i | 0 | 0 | none | out of reach by construction: a network class device, not HID, so this library cannot address one |
 
-**Arch 10 is the interesting gap and it is not for want of configs.** The corpus holds seven reads of two
-Harmony 890s, their container framing verifies, and the twenty three pointer slots are **not** a
-relabelling of the twenty: all 1330 placements of three insertions were scored against seventeen readers
-and the best reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely. So every arch 10 reader is
-gated, and guessing a mapping would turn twenty refusals into twenty plausible wrong answers. Firmware is
-what settles it, the way arch 9's own firmware settled its infrared classes. Sections 115 and 117.
+**Arch 10 is the interesting gap and it is not for want of configs.** The corpus holds reads of two
+Harmony 890s and one Harmony 895, their container framing verifies, and the twenty three pointer slots
+are **not** a relabelling of the twenty. That was inferred from reader scores, the best of 1330
+placements reaching 34 of 47 where arch 8, 9 and 14 each score 47 uniquely, and it is **proven** since
+26 August 2026: the Harmony 895's owner states its six devices, base slot 5's entry count equals the
+device count on 9 of 9 configs across the other four architectures, and no arch 10 slot holds a six
+entry array at all. Base slot 5 could only land on raw slot 5 to 8 under any placement, three of those
+are one, one and three bytes where a six entry array needs nineteen, and the fourth declares nine. So
+every arch 10 reader stays gated, and guessing a mapping would turn twenty refusals into twenty
+plausible wrong answers. Firmware is what settles it, the way arch 9's own firmware settled its
+infrared classes. Sections 115, 117 and 178.
 
 **Seven reads are not seven configs, and on this architecture that had to be measured**, section 122. One
 remote was read twice and gave the same container twice. The other was read **five** times and gave five

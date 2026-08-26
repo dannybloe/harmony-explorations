@@ -8394,7 +8394,7 @@ Every band, on the operand's high byte, with the low byte as the argument. The b
 | band | what |
 |---|---|
 | `0xFF` | select the current binding table entry, base slot 9. Section 39 |
-| `0xFE`, `0xFD` | add to, remove from a set the interpreter keeps at `0x118`, counted at `0x117` |
+| `0xFE`, `0xFD` | push onto, remove from the **key lookup stack** at `0x118`, depth at `0x117`. Read here as "a set the interpreter keeps", <!--superseded--> which section 176 corrects: the order is the mechanism |
 | `0xFC` | nothing |
 | `0xFB`, `0xFA`, `0xF9`, `0xF8` | byte register: load, add, multiply, divide |
 | `0xF7` | execute the accumulator as an instruction, the low byte its opcode |
@@ -13613,18 +13613,20 @@ and `make reading` prints zero:
 
 | | before section 107 | after |
 |---|---|---|
-| meaning | 98.2% | 98.4%<!--fact:reading_meaning--> |
-| placement | 1.8% | 1.6%<!--fact:reading_placement--> |
+| meaning | 98.2% | 98.6%<!--fact:reading_meaning--> |
+| placement | 1.8% | 1.4%<!--fact:reading_placement--> |
 | no reading at all | 6 instructions | 0<!--fact:reading_unread--> |
 
 Per architecture the divide and multiply move arch 8 the furthest, from 97.6% to
-98.1%<!--fact:reading_arch8-->, because 76 of its 116 corpus divides are its own. Arch 12 goes to
-98.5%<!--fact:reading_arch12-->, arch 14 stays at 98.5%<!--fact:reading_arch14--> and arch 9 stays at
-95.2%<!--fact:reading_arch9--> since it uses none of these opcodes at all.
+98.6%<!--fact:reading_arch8-->, because 76 of its 116 corpus divides are its own. Arch 12 goes to
+98.8%<!--fact:reading_arch12-->, arch 14 stays at 98.6%<!--fact:reading_arch14--> and arch 9 stays at
+95.9%<!--fact:reading_arch9--> since it uses none of these opcodes at all.
 
 ### What is not established
 
-**What the remaining placement is.** 1.6% of the corpus, and most of it is arch 12's `0x3F` band
+**What the remaining placement is.** 1.4%<!--fact:reading_placement--> of the corpus, having been
+1.6% until section 176 moved the two key lookup stack instructions to a reading, and most of it is
+arch 12's `0x3F` band
 `0xC0` selectors 0 to 12 and 16, which section 106 read as far as the firmware allows: the channels
 of a device nobody has named.
 
@@ -23452,3 +23454,286 @@ for it.** Erasing first is correct whether or not the firmware also erases, sinc
 block changes nothing. The question only bites for a caller who wants to **skip** the erase, and
 nothing here does. Answering it properly needs a write whose new bytes set a bit the old bytes clear,
 which is a real modification and belongs after a first write has worked, not before it.
+
+## 176. Key lookup walks a stack, and two placement readings become meaning
+
+**Reported from outside and tested here.** trelowney sent this by email on 26 August 2026, out of
+his own reading of the Harmony 525's firmware. Under decision 7 an upstream finding is a hypothesis
+rather than a fact, so what follows separates what he read from what this corpus can check, and
+says which is which. The firmware reading is his and has not been repeated here; the counts are
+ours.
+
+**What this project already had, and the shape of the gap.** `packages/codec/src/actions.ts` carries
+all three of the relevant operations in the `0x1F` band, where the high operand byte names the
+operation and the low byte is its argument. One of them had a meaning and two had only a place:
+
+| high byte | reading | depth |
+|---|---|---|
+| `0xFF` | select the current binding table entry, base slot 9 | `meaning`, section 39 |
+| `0xFE` | add the low byte to **a set the interpreter keeps**  <!--superseded--> | `placement`, section 73 |
+| `0xFD` | remove the low byte from that set | `placement`, section 73 |
+
+Those two were part of the placement-only remainder that `readingCoverage` counts as reaching a
+known routine with no known consequence for a config, and moving them is what took that remainder
+from 1.6% to 1.4%<!--fact:reading_placement--> of the corpus. Section 73 read the routine and
+stopped, which is what a placement reading is.
+
+**His reading.** Key lookup does not consult one table. It walks a **stack** of binding lists held
+in RAM, top down, first match winning, and the low byte of `0xFE` and `0xFD` is an index into base
+slot 9's pointer array. So `0xFE` pushes a list and `0xFD` removes one, and two reserved values on
+the stack mean "search whatever list this variable names" rather than a fixed index. The same key
+press therefore means different things depending on a stack the config builds and unwinds as the
+user moves between menus.
+
+**The word this corrects is ours, and it is the one that matters.** `docs/config-format.md` said
+base slot 9 holds **sets** of button bindings, and `actions.ts` said "a set the interpreter keeps".  <!--superseded-->
+A set has no order, and "top down, first match wins" is meaningless without order: ordering is the
+entire mechanism, because it is what lets one list override another rather than merely coexist with
+it. So the old wording was not vague, it was wrong in the single respect that carries the
+behaviour.
+
+**It also explains something the spec recorded and never accounted for.** Base slot 9's entries
+each carry an **enter** and a **leave** handler, section 67, described structurally with no reading
+of what they are for. Push and pop.
+
+### What the corpus says, which is the half that is ours
+
+Counting `0x1F` instructions by high operand byte over all 15<!--fact:user_configs--> user
+configs:
+
+| architecture | `0xFE`, push | `0xFD`, remove |
+|---|---|---|
+| arch 9, Harmony 525 | 5 | 0 |
+| arch 14, Harmony 600 and 700 | 5 | 0 |
+| arch 8, Harmony 880 and 885 | 13 | 8 |
+| arch 12, Harmony One | 14 | 9 |
+
+159 pushes and 84 removes in total. Two things in that table are evidence rather than description.
+
+**The counts are constant within an architecture whatever the config holds.** All four arch 8
+configs give 13 and 8 whether they drive three devices or seven. Both Harmony One configs give 14
+and 9, at five devices and at one. So these instructions are **fixed scaffolding the generator
+always emits**, which is what menu navigation should look like and is not what device data looks
+like. The contrast inside the same band is the control: `0xFF`, the one operation that was already
+read as selecting an entry, swings from 3 to 180 across the same configs, exactly as a
+content-dependent operation should.
+
+**Arch 9 gives five pushes and no removes, and that number was predicted from a different config.**
+His own 525 sample builds its stack with five pushes in a row, which he described before seeing
+ours. Two configs, two remotes, one architecture, same count.
+
+**Arch 9 and arch 14 never remove.** Both build a stack and never unwind it, so on those two models
+the lookup order is fixed once at startup and the override behaviour only actually varies on arch 8
+and arch 12. That is a prediction worth recording because it is falsifiable by any arch 9 or arch 14
+config that emits a single `0xFD`.
+
+### What is not established
+
+**The corpus cannot tell a push from an unordered insert**, because a count is a count under either
+reading. The ordering, the top-down walk and the first-match rule all rest on his firmware reading,
+which is why they are attributed rather than asserted. What the counts establish is that the two
+instructions are structural navigation machinery rather than content, and that whatever they
+maintain has a fixed size per architecture.
+
+**The reserved values are not checked here at all.** He reports two of them, meaning "search
+whatever list this variable names". Nothing in this section tests that, and the corpus figures above
+do not depend on it.
+
+**Section 39's own reading is untouched.** `0xFF` selecting a base slot 9 entry, and the four hop
+chain of section 120 that reaches an activity through it, are unaffected: they describe which entry
+is named, and this section describes the structure the name goes into. If anything the two fit
+better than before, since "select the current entry" and "push an entry onto a lookup stack" want
+the same argument.
+
+## 177. The key table states the keypad, and it matches a hand probed board on three models
+
+**The sample.** kkong42 posted a Harmony 895 configuration as issue 34 of harmony-decompiler on 25
+August 2026, five reads of one remote, with the contents described. It is filed as `h895_config` and
+is the third arch 10 container here. Reads 2, 4 and 5 are byte identical and 1 and 3 differ, which is
+section 122's arch 10 read corruption handled the only way it can be, by reading repeatedly and
+taking the consensus.
+
+**What was claimed from outside.** Discussion 6 of the same repository reports the Harmony 885's
+keypad as **55 populated positions**, with scan codes 4, 9, 28, 30, 39, 42, 47, 49 and 64
+unpopulated, and the Harmony 880 as **53**, lacking two colour buttons at 19 and 60 that the 885
+has. Established by kkong42 buzzing out two circuit boards by hand, and already the source of section
+144's arch 8 lattice.
+
+**The key table says the same thing, exactly, on three models.** Section 17's key table, the one
+after the marker, is the firmware's own event table: it lists every scan code the remote can
+produce, which is a statement about **hardware** rather than about what one configuration happens to
+bind. Taking its distinct press codes:
+
+| container | model | press codes | against the survey |
+|---|---|---|---|
+| `arch8_config_885` | Harmony 885 | 55 | **equal as sets** |
+| `arch8_config_880` | Harmony 880 | 53 | equal, and the two absent are exactly 19 and 60 |
+| `h895_config` | Harmony 895 | 55 | **equal as sets** |
+
+Nothing outside the survey's list appears in any of them. The 880 result is the sharpest, because it
+reproduces the survey's *difference* and not just its total: the two codes it lacks are the two
+colour buttons named as 885 only, which no count could have confirmed.
+
+**So the arch 8 keypad lattice reaches arch 10.** The 895 and the 885 have the same populated
+positions, which is a new architectural fact and the reason this sample mattered beyond arch 10. It
+does **not** follow that a code is the same physical button on both: the 880 and 885 already differ
+over those two positions out of one lattice, so a code can be the same position and a different
+legend, and per key identity on the 895 needs that remote's own labels. Nothing here assigns one.
+
+**Why it reads at all on an architecture where every reader is gated.** The key table is located from
+the marker after the pointer table rather than through a pointer slot, so it needs no slot mapping.
+That is why it reads on a container where base slot 5 cannot even be found, section 178, and it is
+the reason to look for other marker relative structures before waiting on the mapping.
+
+### The near miss, which is the transferable part
+
+**The first version of this finding compared two different populations and looked like a
+confirmation.** It used `keyCodes`, which walks the mode pages, and got 49 codes for the 885, 44 for
+the 880 and **zero** for the 895, because mode pages need the slot mapping. Those numbers contained
+none of the survey's absent codes, so they read as agreement, and a whole argument was built on top:
+that the 885 config left six positions unwitnessed, that the 895 supplied exactly those six, and
+that the union closed the survey at 55. Every one of those statements is true and none of them is
+evidence, because the two sides came from different readers over different populations.
+
+The key table is the right population and it makes the argument unnecessary: each model matches on
+its own, with no union and no gap filling. **`keyCodes` answers what this configuration binds; the
+key table answers what this remote has.** A survey of a circuit board is a claim of the second kind.
+
+This is the third time this exact trap has been recorded here, after `keyCodes` versus `pageScans`
+twice in two days, and it is worth stating what makes it dangerous rather than merely wrong: the
+mistaken population produced numbers that were **consistent with** the right answer, so no check
+failed and the only thing that surfaced it was one reader returning zero on the new sample and
+forcing the question.
+
+### A fourth event type
+
+59 tags read on the 895, of which 55 are presses and **four carry event type `0x00`**: scan codes 6,
+7, 45 and 46. `docs/config-format.md` already recorded that 4431 of 4448 bindings corpus wide are
+presses without saying what the rest are, and at least four of them are this fourth value rather than
+the release or repeat section 17's three event types would predict. Not read, and recorded so that
+"every binding is a press" is not extended past the population it was measured on.
+
+## 178. Arch 10's layout is not the base layout with insertions, and a known answer proves it
+
+**Section 117 reached this conclusion and could not prove it.** It scored all placements of three
+inserted slots against seventeen readers and found the best reaching 34 of 47, where arch 8, arch 9
+and arch 14 each score 47 uniquely, with five readers satisfied by no mapping at all. That is strong
+evidence and it is still an argument from readers agreeing with each other. What it lacked was an
+answer known from outside the bytes.
+
+**`h895_config` supplies one.** Its owner states the configuration's contents in issue 34: **six
+devices**, named AV Receiver, TV, DVD, Freesat, Game Console and Lights, plus five activities and a
+built in one. No arch 10 container here has ever had a known answer, which is the whole reason this
+sample is worth more than a third Harmony 890 would have been.
+
+### The discriminator, calibrated before use
+
+Base slot 5 is the infrared database, one group per device, and it is one of the six count prefixed
+arrays. So its entry count should be the device count. Checked against `make devices` on every
+architecture that has a slot mapping:
+
+| config | architecture | base slot 5 entries | devices |
+|---|---|---|---|
+| `one_config` | 12 | 5 | 5 |
+| `one_config_unprogrammed` | 12 | 1 | 1 |
+| `h600_config` | 14 | 4 | 4 |
+| `h700_config` | 14 | 6 | 6 |
+| `h525_config` | 9 | 4 | 4 |
+| `h525_config_2` | 9 | 1 | 1 |
+| `arch8_config_885` | 8 | 7 | 7 |
+| `arch8_config_880` | 8 | 4 | 4 |
+| `arch8_config_a` | 8 | 3 | 3 |
+
+Nine of nine, four architectures, counts from 1 to 7. The discriminator is sound before it is
+pointed at anything.
+
+### The refutation, three ways
+
+**No slot has six entries.** Of the 895's 23 slots, seven hold a readable pointer array, with 10,
+1370, 195, 43, 18, 32 and 14 entries. None holds six. So the device count is unreachable under any
+relabelling whatever, not merely under a monotone one, and the enumeration below is a formality.
+
+**Base slot 5 cannot sit anywhere it would have to.** Under any placement of three insertions, base
+slot `b` maps to a raw slot between `b` and `b + 3`, so base 5 lands on raw 5, 6, 7 or 8. Raw 6, 7
+and 8 are **1, 1 and 3 bytes**, and a six entry count prefixed array needs 19. So base 5 must be raw
+5, whose count byte is **9**. This is the argument that needs no enumeration and no reader at all,
+only three section lengths.
+
+**And the full scoring agrees.** All 1771 placements of three inserted slots among 23, scored against
+seven structural demands, that the six count prefixed arrays land on arrays and that base 18 and 19
+land on NULL, plus the device count: the best reaches **6 of 9**, achieved by 814 placements, and
+**none satisfies all nine**.
+
+### Two escapes, both closed
+
+**A wider count.** If arch 10 stated its array length as a `u16` the reader would misread it. Tried:
+no slot's head gives six as a `u16` either.
+
+**A device that is not an infrared group.** The 895 is an RF model, so Lights plausibly is not driven
+by infrared and the group count could legitimately be five rather than six. No slot holds five
+entries either, so the escape does not help. The head bytes available anywhere in the container are
+0, 8, 9, 10, 11, 13, 14, 18, 32, 43, 90, 169, 195, 223 and 255.
+
+### What this changes
+
+**The rail stands and its basis is stronger.** `INSERTED_SLOTS` has no arch 10 entry and adding one
+remains the single thing not to do, since it would convert twenty refusals into twenty plausible
+wrong answers. Section 117 justified that from reader scores; this justifies it from an answer known
+before the bytes were read, and the conclusion is not "no placement scores well" but "no placement
+can be right".
+
+**Arch 10's 23 slots need identifying on their own terms**, not as the twenty with three insertions.
+That is a larger job than relabelling and it now has an instrument: any candidate layout has to yield
+six devices, and the same known answer that refuted the insertion model will score the real one.
+
+**What reads on arch 10 today, and why, is the direction to push.** The container framing verifies,
+the trailer checksum recomputes, the base anchors on the clock record at `0x030000`, and section 177's
+key table reads in full. Everything in that list is located from the header or from the marker after
+the pointer table rather than through a pointer slot. So the structures that survive a missing slot
+mapping are exactly the marker relative ones, and looking for more of those is cheaper than solving
+the mapping.
+
+**Four framing checks fail, the same four as the clean Harmony 890 read**:
+`pointer_count_known`, `slot0_is_a_feed_frame`, `slot1_states_the_architecture` and
+`slot3_is_a_timestamp`. So the 895 is a consistent third sample of one layout rather than a fourth
+shape, and it has no name tree, which is why its devices had to be named by its owner rather than by
+its bytes.
+
+**`h890_config_2` fails two more, and that is the control rather than an inconsistency**: it also
+fails `end_addr_points_at_end_marker` and `trailer_checksum_recomputes`, which are precisely the two
+independent detectors section 122 named for a damaged arch 10 read. The 895 passes both. So the
+consensus of five reads is not merely self consistent, it clears the two checks that catch the
+corruption this architecture is known for, and a first draft of this section claimed the four failing
+checks matched "both" 890 containers, which was true of one of them.
+
+**A third detector agrees, and it was found by a test refusing to pass.** `tests/test_ezfile.py`
+verifies every EZHex file's own header split, and excluded arch 10 wholesale on the grounds that
+those reads are damaged. Registering the 895 broke its population count, and the right fix was to
+let the file **in** rather than widen the exclusion by architecture: it verifies its split like every
+other config here. So three independent checks now say the consensus read is clean, the end marker,
+the trailer checksum and the EZHex split, and the exclusion is stated as four named damaged reads
+rather than as an architecture.
+
+### Registering one container moved fourteen exact counts, which is the point of them
+
+Adding `h895_config` to the two lab registries broke **14 assertions in five test files across both
+languages**: five in `packages/codec/test/gspm.test.ts`, four in its `golden.test.ts`, two in
+`numbersender.test.ts`, one in `packages/lab/test/parity.test.ts` and two in `tests/test_ezfile.py`.
+Every one of them was a statement about the size or shape of the corpus, and every one had to be
+re-measured and re-argued rather than incremented.
+
+**That is section 143's rule collecting, and the contrast is the finding.** Under the floors those
+assertions used to carry, `assert.ok(odd.length > 20)` and the rest, **none** of the fourteen would
+have failed and the sample would have joined the corpus in silence. Three of the fourteen were not
+increments at all and could not have been guessed:
+
+* the odd bodied count moved **and** so did the count of those whose checksum verifies, 22 to 23 and
+  17 to 18, because an arch 10 container was assumed to fail the second and does not
+* `breaks`, the containers whose trailing byte would change the trailer checksum, moved 2 to 3, so
+  the sample makes the invited mistake **easier** to catch rather than harder
+* `test_ezfile.py`'s exclusion had to be narrowed from an architecture to four named reads, which is
+  where the third independent detector above came from
+
+So the cost of an exact count is a diff every time a sample lands, and the return is that a sample
+cannot land without every claim about the corpus being restated by somebody. A floor buys the
+opposite trade and hides exactly the three cases above.

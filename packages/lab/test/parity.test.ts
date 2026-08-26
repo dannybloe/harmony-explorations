@@ -37,5 +37,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // Exact, and the number is the point: the floor that stood here was 18, which was the size of the
   // table when it was written. The table is 58 entries now, so the guard had been satisfied by 31% of
   // it for weeks, and a regex that lost two thirds of the lines would have passed.
-  assert.equal(Object.keys(pythonImages()).length, 61, 'every fixture tests/lab.py names');
+  //
+  // 62 since the Harmony 895 was registered, section 177. This is a **pure text** check on lab.py, so
+  // it runs with no lab at all and is what `make test-nolab` caught when the count was left behind.
+  assert.equal(Object.keys(pythonImages()).length, 62, 'every fixture tests/lab.py names');
 });

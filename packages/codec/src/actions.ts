@@ -271,8 +271,21 @@ const BANDS_3F_ARCH9: readonly Band[] = [
 
 const BANDS_1F: readonly Band[] = [
   [0xff, means('select the current binding table entry, base slot 9', 39)],
-  [0xfe, placed('add the low byte to a set the interpreter keeps', 73)],
-  [0xfd, placed('remove the low byte from that set', 73)],
+  // **A stack and not a set**, section 176, which is what moved these two from `placed` to
+  // `means`. Key lookup walks a stack of base slot 9's binding lists top down and the first match
+  // wins, so the low byte is an index into that array and the ordering is the whole mechanism: it
+  // is what lets one list override another rather than merely coexist with it. The old wording
+  // said "a set the interpreter keeps", <!--superseded--> which was not vague but wrong in the
+  // one respect that carries the behaviour. It also explains base slot 9's enter and leave
+  // handlers, section 67,
+  // which the spec recorded structurally and never accounted for.
+  //
+  // The firmware reading is trelowney's and has not been repeated here. What the corpus adds is
+  // that the counts are fixed scaffolding: 5 and 0 on arch 9 and arch 14, 13 and 8 on arch 8,
+  // 14 and 9 on arch 12, identical within an architecture whether a config drives one device or
+  // seven, where `0xFF` above swings from 3 to 180 across the same configs.
+  [0xfe, means('push a base slot 9 binding list onto the key lookup stack', 176)],
+  [0xfd, means('remove that base slot 9 binding list from the key lookup stack', 176)],
   // Not a no-op, and the dispatcher is not where to look for it: the instruction **fetch** tests
   // for this exact opcode and band before dispatching, and routes the low byte to the stack of
   // active handlers instead. So the dispatcher's arm genuinely does nothing and the instruction

@@ -1069,11 +1069,11 @@ designed yet.** It gets thought about properly when FreeHarmony starts.
 
   **The number is executable**, in `packages/codec/src/actions.ts`, and it carries a depth, because
   knowing which routine runs is not knowing what an instruction means for a config.
-  **98.4%<!--fact:reading_meaning--> of the corpus has a meaning**, 1.6%<!--fact:reading_placement-->
+  **98.6%<!--fact:reading_meaning--> of the corpus has a meaning**, 1.4%<!--fact:reading_placement-->
   has a placement only, and 0<!--fact:reading_unread--> instructions of
   86947<!--fact:action_instructions--> have neither. Per architecture:
-  98.5%<!--fact:reading_arch14--> on arch 14, 98.5%<!--fact:reading_arch12--> on arch 12,
-  98.1%<!--fact:reading_arch8--> on arch 8, 95.2%<!--fact:reading_arch9--> on arch 9. `make reading`
+  98.6%<!--fact:reading_arch14--> on arch 14, 98.8%<!--fact:reading_arch12--> on arch 12,
+  98.6%<!--fact:reading_arch8--> on arch 8, 95.9%<!--fact:reading_arch9--> on arch 9. `make reading`
   prints it, and it did not until section 103: the figures were quoted here and in two other
   documents with nothing recomputing them, and the population they were quoted against does not
   reproduce.

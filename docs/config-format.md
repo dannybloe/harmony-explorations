@@ -252,8 +252,8 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **22<!--fact:parseable_odd_body--> of the 41<!--fact:parseable_containers-->
-parseable containers have an odd body**, of which 17<!--fact:odd_body_verifying--> verify their
+counts words, and **23<!--fact:parseable_odd_body--> of the 42<!--fact:parseable_containers-->
+parseable containers have an odd body**, of which 18<!--fact:odd_body_verifying--> verify their
 stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
 behaviour read as untested when more than half the corpus tests it.
@@ -336,7 +336,7 @@ Known so far:
 | 13 | the **state variable table**, named from its firmware consumer | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 8 | **key press bindings**: records of `{ tag; operand; opcode }`, tag a press code | 18 of 21 containers: the arch 14 safe mode ones bind nothing, below |
 | 7 | a pointer array **indexed by opcode 16 of the screen language** | 21 containers, three images, below |
-| 9 | the **binding table**: six to seventeen sets of button bindings with an enter and a leave handler | 15<!--fact:user_configs--> user configs, four architectures, below |
+| 9 | the **binding table**: six to seventeen lists of button bindings, pushed onto a key lookup stack by their enter handler and removed by their leave handler | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 11 | the **screen program table**: programs in the screen language | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 14 | the **state value map**: what a state variable's value means, indexed by `0x72` | 15<!--fact:user_configs--> user configs, four architectures, below |
 | 16 | the **number sender**: how to transmit a value one decimal digit at a time | three images; empty in every found config, populated by seven made ones, below |
@@ -574,6 +574,15 @@ exactly the count minus one, in all fifteen**, over counts from 6 to 17.
 target as slot 6's shape, a `u8` and a `u24` back pointer, and not one of the 54 sets in the corpus
 gives an address below itself where all 1616 of slot 6's do. So the extent is the list's own
 declared length. [findings.md](findings.md) section 67.
+
+**A key is resolved against a stack of these lists, top down, first match winning**, and the index
+into this array is the low byte of action list opcode `0x1F` with high byte `0xFE` to push and
+`0xFD` to remove. So an entry's enter and leave handlers, recorded structurally by section 67, are
+the push and the pop. **The ordering is the mechanism**: it is what lets one list override another
+instead of merely coexisting with it, which is why this table used to say "sets" and that was wrong
+rather than merely loose. The firmware reading is trelowney's, reported 26 August 2026;
+[findings.md](findings.md) section 176 records what the corpus confirms and what it cannot, since a
+count cannot distinguish a push from an unordered insert.
 
 The sets sit in a pool of tagged lists packed end to end, which also holds one list per mode page.
 The pool is bounded at both ends without searching: it begins on the byte after a mode entry's page

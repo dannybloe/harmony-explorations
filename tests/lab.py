@@ -133,6 +133,12 @@ IMAGES = {
     # reader is checked against rather than another unlabelled file.
     'arch8_config_880': 'H880-Bedroom.EZHex',
     'h890_config': 'H890-Bedroom-1.EZHex',
+    # The Harmony 895, arch 10, contributed as issue 34 on 25 August 2026 and the **first arch 10
+    # sample whose contents its owner stated**: six devices and five activities, named in the issue.
+    # That makes it the calibration case the slot mapping search never had, and section 178 is what
+    # it settled. Read 2 of five, the consensus: reads 2, 4 and 5 are byte identical where 1 and 3
+    # differ, which is section 122's arch 10 read corruption mitigated by reading five times.
+    'h895_config': 'H895-Read-2.EZHex',
     # A second read of the same remote, ten hours later. Its container is byte identical and the file
     # is 594 bytes shorter, all of it trailing slack past the trailer, so this is what a **stable**
     # arch 10 read looks like and it is the control for the pair below. Section 122.

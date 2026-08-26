@@ -262,12 +262,22 @@ test('0x3F band 0xC0 is not an index into base slot 8 on arch 12', skipUnless('o
 // **And every meaning figure dropped by the config's own count of six byte instructions**, 12, 8, 9, 4
 // and 1, also section 139: the slot after a `0x3F` `0xD0` is that instruction's argument and was being
 // resolved as an instruction of its own, at depth `meaning` every time.
+//
+// **Every meaning figure rose again on 26 August 2026, and by exactly the right amount**, section
+// 176: the two key lookup stack instructions moved from placement to meaning, so each config's
+// meaning count grew and its placement count shrank by that config's own push plus remove total.
+// The deltas are +5, +5, +23, +5 and +21, against the per architecture counts measured separately
+// in section 176 of 5 and 0 on arch 14, 5 and 0 on arch 9, 14 and 9 on arch 12, 13 and 8 on arch 8.
+// Five and five, twenty three, five, twenty one. **That agreement is a closure rather than
+// bookkeeping**: the coverage figures come from walking every instruction through the reading table
+// and the section 176 figures come from counting one opcode by its high byte, so a mistake in
+// either would have to be mirrored in the other to keep these five rows consistent.
 const COVERAGE: [string, number, number, number][] = [
-  ['h700_config', 19360, 279, 0],
-  ['h600_config', 11990, 196, 0],
-  ['one_config', 11500, 131, 0],
-  ['h525_config', 1003, 36, 0],
-  ['arch8_config_a', 3232, 78, 0],
+  ['h700_config', 19365, 274, 0],
+  ['h600_config', 11995, 191, 0],
+  ['one_config', 11523, 108, 0],
+  ['h525_config', 1008, 31, 0],
+  ['arch8_config_a', 3253, 57, 0],
 ];
 
 for (const [name, meaning, placement, unread] of COVERAGE) {

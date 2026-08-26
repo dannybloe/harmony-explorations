@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('seven containers declare a method for sending a number, 25 declare none, 9 are unread',
+test('seven containers declare a method for sending a number, 25 declare none, 10 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -204,14 +204,17 @@ test('seven containers declare a method for sending a number, 25 declare none, 9
     // section comes along whichever appliances are on the record that day. 41 and seven since the
     // phase 7 pair, section 174, populated for the same reason again: the favourites live on the
     // account, so every compile of it carries the section, whatever else the compile was for.
-    assert.equal(populated + declaredEmpty + unread, 41, 'every container the lab can parse');
+    // 42 since the Harmony 895, section 178, which lands in `unread` because base slot 5's slot
+    // mapping is what it refutes: on arch 10 no reader is gated open, so this section cannot be found
+    // at all. That is the honest answer for it and not a gap to be filled.
+    assert.equal(populated + declaredEmpty + unread, 42, 'every container the lab can parse');
     assert.equal(populated, 7);
     assert.equal(declaredEmpty, 25);
-    // Seven arch 10 (Harmony 890) reads, whose slot mapping is deliberately ungated so the container
-    // states no architecture, plus the two containers found inside arch 8 firmware images, which
-    // report architecture 0. Counted separately because "the reader declined" and "the config says
+    // Eight arch 10 reads, seven of a Harmony 890 and one of a Harmony 895, whose slot mapping is
+    // deliberately ungated so the container states no architecture, plus the two containers found
+    // inside arch 8 firmware images, which report architecture 0. Counted separately because "the reader declined" and "the config says
     // none" are different answers, and a total would hide the first inside the second.
-    assert.equal(unread, 9);
+    assert.equal(unread, 10);
   });
 
 test('the accounting claims the record and its tables, and 113 is the closure',

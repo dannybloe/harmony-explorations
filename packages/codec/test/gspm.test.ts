@@ -603,8 +603,13 @@ test('the arch 10 clock record sits one slot later than everywhere else',
  *
  * **41 since 25 August 2026**, the phase 7 pair, section 174: the same account compiled without and
  * with the television the composer adds, both bare containers like every compiled to order sample.
+ *
+ * **42 since 26 August 2026**, the Harmony 895, section 177. It joins this population for exactly the
+ * reason the paragraph above gives: the checks below are properties of the parser, and an arch 10
+ * container whose framing verifies while every one of its content readers is gated is a real
+ * strengthening of them. It stays outside every corpus wide total, as the 890s do.
  */
-const PARSEABLE = 41;
+const PARSEABLE = 42;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -666,7 +671,7 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('22 of the parseable containers have an odd body and 17 of those verify',
+test('23 of the parseable containers have an odd body and 18 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
@@ -675,14 +680,20 @@ test('22 of the parseable containers have an odd body and 17 of those verify',
     const odd = all.filter(({ container }) => (container.blob.length - TRAILER_CHECKSUM_OFFSET) % 2 === 1);
     // 21 and 16 since the compiled sample was named, section 165, and the second compiled sample of 24
     // August 2026 did **not** move them: its body is even. 22 and 17 since the phase 7 pair, whose
-    // before container is the odd one. The title carries the counts, so a move shows.
-    assert.equal(odd.length, 22);
+    // before container is the odd one. **23 and 18 since the Harmony 895**: it is odd bodied and its
+    // checksum recomputes, so it moves **both** counts, which a first guess here got wrong by
+    // assuming an arch 10 container would fail the second. It is **not** a further independent
+    // statement that the consensus read is clean, which a draft of this comment claimed: "its
+    // checksum recomputes" is the checksum check, counted once. What it adds is that the check runs
+    // over an odd body, so the loop's own arithmetic is exercised on this container. The title
+    // carries the counts, so a move shows.
+    assert.equal(odd.length, 23);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 17);
-    // Every one of the fourteen recomputes under the loop as written, which is what makes the
-    // behaviour tested rather than assumed. Folding the trailing byte in would break the two whose
-    // trailing byte is not zero, and be invisible on the other twelve: so the comment was inviting
-    // a change that six sevenths of the corpus could not detect, which is the worse half of it.
+    assert.equal(verifying.length, 18);
+    // Every one of the eighteen recomputes under the loop as written, which is what makes the
+    // behaviour tested rather than assumed. Folding the trailing byte in would break the three whose
+    // trailing byte is not zero, and be invisible on the other fifteen: so the comment was inviting
+    // a change that five sixths of the corpus could not detect, which is the worse half of it.
     let breaks = 0;
     for (const { name, container } of verifying) {
       const blob = container.blob;
@@ -698,7 +709,10 @@ test('22 of the parseable containers have an odd body and 17 of those verify',
         assert.notEqual(recomputed ^ tail, container.trailerChecksum, name);
       }
     }
-    assert.equal(breaks, 2, 'containers whose trailing byte would change the answer');
+    // 3 since the Harmony 895, whose trailing byte is nonzero as well as its body being odd. So the
+    // sample that moved both counts in the title moves the detector too, which is the direction that
+    // matters: it makes the invited change one byte easier to catch rather than one byte harder.
+    assert.equal(breaks, 3, 'containers whose trailing byte would change the answer');
   });
 
 test('the last section ends at the end marker, not at the declared end',
@@ -718,9 +732,15 @@ test('the last section ends at the end marker, not at the declared end',
       if (last === undefined) continue;
       assert.equal(c.sectionLength(last.slot), marker - last.address, name);
     }
-    // 37 since the third compiled sample, 24 August 2026; 39 since the phase 7 pair. The two that
-    // disagree are the claim and they are unchanged, both being damaged reads of one Harmony 890.
-    assert.equal(agree, 39);
+    // 37 since the third compiled sample, 24 August 2026; 39 since the phase 7 pair; **40 since the
+    // Harmony 895**, whose declared end and whose end marker agree exactly. That is one of the three
+    // independent statements that its consensus of five reads is clean, with the trailer checksum and
+    // the EZHex split, and it is the one this
+    // architecture makes least often: every previous arch 10 container here failed it, section 122.
+    assert.equal(agree, 40);
+    // The two that disagree are the claim and they are unchanged, both being damaged reads of one
+    // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
+    // container fail while one of these silently started passing.
     assert.deepEqual(differ.sort(), ['h890_config_2', 'h890_config_2_redump_1']);
   });
 
