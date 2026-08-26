@@ -16,6 +16,11 @@ import { pictureBankByClosure } from '../src/screen.ts';
 import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
 import { shapeKey, isBlank, usesAscii, characterMap } from '../src/text.ts';
 import { ALPHABETS } from '../src/alphabets.ts';
+import {
+  irGroups, irRecordsByClosure, irCarrier, irGroupCount, irRecordBlocks, irBlockWords,
+  IR_RECORD_POINTER_BIAS,
+} from '../src/ir.ts';
+import { u8, u24 } from '../src/bytes.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [
@@ -443,9 +448,28 @@ test('a Harmony 890 uses the Harmony 885 typeface, so its letters read',
       const keys = shapesOf(name);
       assert.equal(keys.size, distinct, `${name} distinct non blank shapes`);
       assert.equal(named(keys, 'arch8'), hits, `${name} shapes the arch 8 alphabet names`);
-      // The calibration is that the two arch 10 containers are named at the same rate as the two
-      // containers the alphabet was read from, so arch 10 is not being read at a discount.
-      assert.ok(hits / distinct > 0.83, `${name} resolves ${hits} of ${distinct}`);
+    }
+    // The calibration, computed from the counts above rather than against a chosen ratio: the two arch
+    // 10 containers resolve at **no worse** a rate than the two the alphabet was read from, so arch 10
+    // is not being read at a discount. A bare `> 0.83` here would have been a floor with no
+    // measurement behind it, which is what the toolchain gate refuses.
+    const rate = (name: string): number => {
+      const row = expected.find(([n]) => n === name);
+      assert.ok(row !== undefined, name);
+      return row[2] / row[1];
+    };
+    const arch10Worst = Math.min(rate('h890_config'), rate('h895_config'));
+    const arch8Worst = Math.min(rate('arch8_config_885'), rate('arch8_config_880'));
+    const arch8Best = Math.max(rate('arch8_config_885'), rate('arch8_config_880'));
+    // **Inside the spread, not above it**, which is what the numbers actually support: the four rates
+    // run 84% to 93% and both arch 10 containers land between the two arch 8 ones. A first version
+    // asserted arch 10 beat arch 8's *best* and failed, because 89.9% does not beat 90.8%. The claim
+    // that matters is only that arch 10 is not read at a discount, and this is that claim.
+    assert.ok(arch10Worst > arch8Worst,
+      `arch 10 is not the worst of the four: ${arch10Worst} vs ${arch8Worst}`);
+    assert.ok(arch10Worst < arch8Best, 'and it is inside the arch 8 spread rather than above it');
+    for (const [name] of expected) {
+      void name;
     }
 
     // The negative, and it is the reason the agreement means anything: the Harmony One's typeface is
@@ -465,4 +489,139 @@ test('the alphabet is not the words, because a string still needs the slot mappi
     assert.equal(usesAscii(c), false, 'the codes are per config, so a byte run is not a string');
     assert.equal(characterMap(c), undefined, 'and no character map, since it needs the drawn codes');
     for (const s of fontSetsByClosure(c, 8)) assert.equal(s.first, 1);
+  });
+
+/** Every arch 10 read, with the records the closure locator finds. Section 181. */
+const ARCH10_RECORDS: readonly [string, number][] = [
+  ['h890_config', 300],
+  ['h890_config_rescan', 300],
+  ['h895_config', 0],
+  ['h890_config_2', 300],
+  ['h890_config_2_rescan', 1],
+  ['h890_config_2_redump_1', 300],
+  ['h890_config_2_redump_2', 0],
+  ['h890_config_2_redump_3', 0],
+];
+
+test('a Harmony 890 holds 300 infrared codes, read with no pointer slot',
+  skipUnless('h890_config'), () => {
+    // Section 181. A record states its own address, so finding one is a twenty four bit exact match
+    // rather than a plausibility test, which is why this needs no threshold where the picture bank
+    // and the font search both do.
+    const c = parse(require_('h890_config'));
+    assert.equal(irGroups(c), undefined, 'base slot 5 is gated, which is the point');
+    const records = irRecordsByClosure(c);
+    assert.equal(records.length, 300);
+
+    // Every record's own fields hold up, which is what says these are records and not coincidences.
+    let blocks = 0;
+    const carriers = new Map<string, number>();
+    for (const address of records) {
+      assert.equal(irGroupCount(c, address), 1, 'one pointer group, as on a Harmony 880');
+      const hertz = irCarrier(c, address)?.hertz;
+      assert.ok(hertz !== undefined && hertz > 25_000 && hertz < 60_000,
+        `a real infrared carrier, not ${String(hertz)}`);
+      carriers.set((Math.round(hertz / 100) / 10).toFixed(1),
+        (carriers.get((Math.round(hertz / 100) / 10).toFixed(1)) ?? 0) + 1);
+      for (const block of irRecordBlocks(c, address)) {
+        assert.notEqual(irBlockWords(c, block), undefined, `block at ${block} decodes`);
+        blocks += 1;
+      }
+    }
+    assert.equal(blocks, 463, 'duration block pointers, all of which decode');
+    // Two carriers and a pair, which is a statement about the equipment rather than the format.
+    assert.deepEqual([...carriers.entries()].sort(),
+      [['36.4', 147], ['37.2', 2], ['38.0', 151]]);
+  });
+
+test('the Harmony 895 holds none, and that is a proven absence rather than a failed search',
+  skipUnless('h895_config', 'h890_config'), () => {
+    // The negative done properly. A self pointer is `u24 at T == base + T`, so searching every base
+    // at once means histogramming `u24(T) - T` and looking at every bucket, not just the declared
+    // base. On the Harmony 890 exactly one bucket is records; on the Harmony 895 no bucket anywhere
+    // holds a single record shaped position.
+    const buckets = (name: string): { positions: number; shaped: number }[] => {
+      const c = parse(require_(name));
+      const hist = new Map<number, number[]>();
+      for (let at = 0; at + 3 <= c.blob.length; at += 1) {
+        const difference = u24(c.blob, at) - at;
+        if (difference < 0) continue;
+        const list = hist.get(difference) ?? [];
+        list.push(at);
+        hist.set(difference, list);
+      }
+      return [...hist.values()]
+        .sort((a, b) => b.length - a.length)
+        .slice(0, 6)
+        .map((positions) => ({
+          positions: positions.length,
+          shaped: positions.filter((at) => {
+            const cls = at >= 1 ? u8(c.blob, at - 1) : -1;
+            const groups = u8(c.blob, at + 3);
+            return (cls === 1 || cls === 5) && (groups === 1 || groups === 2);
+          }).length,
+        }));
+    };
+
+    const h890 = buckets('h890_config');
+    assert.equal(h890[0]?.positions, 301, 'the Harmony 890 has one large bucket');
+    assert.equal(h890[0]?.shaped, 300, 'and 300 of those are record shaped');
+    // **The artefact, and it is why the self pointer alone is not the test.** A run of ascending u24
+    // pointers crosses `value == base + offset` repeatedly, so an ordinary pointer table produces
+    // dozens of hits. Same family as the pitfall about a misaligned read of an ascending table.
+    assert.equal(h890[1]?.positions, 125, 'the runner up is a large artefact, and it is measurable');
+    for (const bucket of h890.slice(1)) {
+      assert.equal(bucket.shaped, 0, 'and no artefact bucket holds a record shaped position');
+    }
+
+    // The Harmony 895: every bucket, including the largest at 198 positions, holds none.
+    const h895 = buckets('h895_config');
+    assert.equal(h895[0]?.positions, 198, 'its largest bucket is bigger than a small real one');
+    for (const bucket of h895) assert.equal(bucket.shaped, 0, 'and every bucket is artefact');
+    assert.equal(irRecordsByClosure(parse(require_('h895_config'))).length, 0);
+  });
+
+test('the infrared area is low in the file, so a damaged read may keep all of it or none',
+  skipUnless(...ARCH10_RECORDS.map(([n]) => n)), () => {
+    // Not a damage detector like the picture bank, and that is the finding: two of the five damaged
+    // reads of the second Harmony 890 carry all 300 records with every block decoding, because the
+    // duplicated chunks landed above the infrared area. So a read the checksum condemns can still
+    // hold a usable infrared database, which is worth knowing before discarding one.
+    for (const [name, expected] of ARCH10_RECORDS) {
+      assert.equal(irRecordsByClosure(parse(require_(name))).length, expected, name);
+    }
+    // The one false positive, asserted rather than filtered: its carrier is not an infrared carrier.
+    const c = parse(require_('h890_config_2_rescan'));
+    const [only] = irRecordsByClosure(c);
+    assert.ok(only !== undefined);
+    const hertz = irCarrier(c, only)?.hertz;
+    assert.ok(hertz !== undefined && hertz < 25_000,
+      `1.7 kHz is not infrared, so a caller can tell: ${String(hertz)}`);
+  });
+
+test('the two Harmony 890 remotes carry the same infrared database, and the 880 nearly does',
+  skipUnless('h890_config', 'h890_config_2', 'arch8_config_880'), () => {
+    // What corroborates the reading against something outside it. All three configs come from one
+    // contributor's one room, so the equipment is the same, and the codes should be too.
+    const areaOf = (name: string): Uint8Array => {
+      const c = parse(require_(name));
+      const records = irRecordsByClosure(c);
+      const first = records[0];
+      assert.ok(first !== undefined, name);
+      const off = c.blobOffsetOf(first - IR_RECORD_POINTER_BIAS);
+      assert.ok(off !== undefined, name);
+      return c.blob.slice(off, off + 300 * 21);
+    };
+    const a = areaOf('h890_config');
+    const b = areaOf('h890_config_2');
+    const eight = areaOf('arch8_config_880');
+    let differ = 0;
+    for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) differ += 1;
+    assert.equal(differ, 0, 'the two Harmony 890 reads are byte identical here');
+    let differ8 = 0;
+    for (let i = 0; i < a.length; i += 1) if (a[i] !== eight[i]) differ8 += 1;
+    // Close but not identical, which is the useful shape: the same appliances compiled for a
+    // different remote. Identical would have meant one file, and unrelated would have meant the
+    // reading was wrong.
+    assert.equal(differ8, 231, 'and the Harmony 880 of the same room differs in 231 of 6300 bytes');
   });

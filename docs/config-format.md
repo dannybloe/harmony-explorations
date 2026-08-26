@@ -1590,6 +1590,27 @@ Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stat
 
 ### Base slot 5: the infrared database
 
+**A record is findable with no pointer slot, and it is the cleanest closure in the format.** The `u24`
+at a record's `+8` is the record's own start address, so a candidate does not merely look like a
+record, it states where it is: a twenty four bit exact match. With the class byte at `+7` and the group
+count at `+11` as the shape filter, `irRecordsByClosure` is exact against the slot route on **13 of 13**
+containers, all **3925** records, and it needs no threshold of any kind.
+
+The shape filter is not optional. A run of ascending `u24` pointers crosses `value == base + offset`
+repeatedly, so a plain pointer table yields 125 hits in one Harmony 890 config and 198 in a Harmony
+895; none of those is record shaped, where 300 of the Harmony 890's 301 are.
+
+**On arch 10 a Harmony 890 gives 300 records**, one pointer group each, 463 duration block pointers
+that all decode, and carriers of 38.0 kHz on 151 records, 36.4 kHz on 147 and 37.2 kHz on 2. A
+**Harmony 895 gives none**, and that is a proven absence: searching every base at once, no bucket in
+its blob holds one record shaped position, and its named content is 94845 bytes against the 890's
+170691, which a missing record area accounts for. Why is open.
+
+**The grouping is still gated**, so this is a flat list of records and not a list of devices: which
+appliance a record belongs to is the base slot 5 pointer array itself.
+[findings.md](findings.md) section 181.
+
+
 **Confirmed on 15<!--fact:user_configs--> user configs across four architectures.** Two levels of pointer array over records of
 mark and space durations.
 

@@ -180,14 +180,21 @@ elsewhere, no arch 10 slot holds a six entry array, and base slot 5 could only s
 where three of the four are too small to hold one. What does read on arch 10 is everything the header
 or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
 key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
-and since sections 179 and 180 the **picture bank** and the **font sets**. Those two were section
+and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
+records**. Those two were section
 178's own prediction and it paid off the same day: the bank is found from the trailer's position alone,
 so a Harmony 890 and a Harmony 895 now state their display, **128 by 160**, the same as a Harmony 885,
 with the same ten distinct picture sizes where a Harmony 600 and a Harmony One share none of them; and
 their eight font sets are found by requiring every pointer to decode into a glyph that tiles exactly,
 which names 213 of 237 glyph shapes against the arch 8 alphabet and **0** against the Harmony One's.
-**The common mechanism is the thing to reach for, not the three results**: a structure that refuses to
-decode when misread can be located by trying every offset, so it needs no pointer slot. It is also
+A Harmony 890's whole
+infrared database reads, 300 codes with every duration block decoding, and a Harmony 895 turns out to
+have **none**, which is proven rather than unfound. **The common mechanism is the thing to reach for,
+not the four results**: a structure that refuses to decode when misread can be located by trying every
+offset, so it needs no pointer slot, and a record is the cleanest case because it **states its own
+address**. The shape filter around a hit is not optional: an ascending pointer table crosses the self
+pointer line dozens of times, which is the misaligned ascending table pitfall again, and 198 such hits
+in the Harmony 895 look exactly like a result. It is also
 **not** progress towards the mapping, and having a Harmony 890's alphabet is not having its words,
 since a string's address comes out of a screen program. Section 179's own next step was **wrong** and
 measuring it cost nothing: the font table is not at the bank's lower edge, it is 1918 to 48385 bytes
@@ -1634,7 +1641,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 180 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 181 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

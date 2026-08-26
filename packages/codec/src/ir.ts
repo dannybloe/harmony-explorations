@@ -563,6 +563,50 @@ export function irGroups(c: Container): IrGroup[] | undefined {
   return out;
 }
 
+/**
+ * Every infrared record in the container, found with no pointer slot read. Section 181.
+ *
+ * Returns the addresses the other readers in this file take, meaning a record's start plus
+ * `IR_RECORD_POINTER_BIAS`, so a caller can hand one straight to `irCarrier` or `irRecordBlocks`.
+ *
+ * **A record states its own address**, section 65: the byte at `+7` is the class and the `u24` at
+ * `+8` is the record's own start. So a candidate is a position whose `u24` points back at where the
+ * record containing it begins, which is a twenty four bit exact match rather than a plausibility
+ * test. That was read a year ago and never used as a locator, and it is the strongest closure in this
+ * codec: **exact on 13 of 13** containers with an infrared table, all 3925 records, none missed and
+ * none spurious.
+ *
+ * **The self pointer alone is not enough, and the counterexample is in the corpus.** A run of
+ * ascending `u24` pointers crosses the line `value == base + offset` repeatedly, so an ordinary
+ * pointer table produces hits: 125 of them in one Harmony 890 config and 198 in a Harmony 895, which
+ * is the pitfall about a misaligned read of an ascending table wearing a different hat. What
+ * separates them is the shape around the hit, the class byte before it and the group count after, and
+ * it separates them **completely**: of the Harmony 890's 301 self pointing positions 300 are record
+ * shaped, and of every artefact run in either container **none** is.
+ *
+ * Unlike `pictureBankByClosure` and `fontSetsByClosure` this needs no plausibility ceiling and no
+ * threshold, because the record states the answer rather than merely being consistent with it.
+ *
+ * **One false positive exists and it is deliberately not filtered out.** `h890_config_2_rescan`, a
+ * damaged arch 10 read, yields a single record whose carrier works out at 1.7 kHz, which is not an
+ * infrared carrier. Bounding the carrier would remove it and would put a tuned number into a function
+ * that currently has none, to fix a case that only arises in a read whose checksum already says it is
+ * broken. A caller that cares can check `irCarrier`; the count above says how much that is worth,
+ * since on every clean container every record's carrier lands in the tens of kHz.
+ */
+export function irRecordsByClosure(c: Container): number[] {
+  const out: number[] = [];
+  for (let s = 0; s + IR_HEADER_LENGTH <= c.blob.length; s += 1) {
+    // The two cheap discriminators first, then the exact one.
+    if (!IR_HEADER_CLASSES.has(u8(c.blob, s + 7))) continue;
+    const groups = u8(c.blob, s + IR_GROUP_COUNT_AT);
+    if (groups < 1 || groups > 2) continue;
+    if (u24(c.blob, s + 8) !== c.flashBase + s) continue;
+    out.push(c.flashBase + s + IR_RECORD_POINTER_BIAS);
+  }
+  return out;
+}
+
 /** The class byte, which selects the send routine. The firmware reads this one byte first. */
 export function irClass(c: Container, address: number): number | undefined {
   const off = c.blobOffsetOf(address);

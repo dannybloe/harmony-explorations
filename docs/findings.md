@@ -23940,3 +23940,107 @@ pointer slot, the key table, the picture bank and the font sets, and each one wa
 observation: a structure that refuses to decode when misread can be located by trying every offset.
 That is worth reaching for again before anybody spends another afternoon on the mapping, and it is
 not progress towards it.
+
+## 181. A record states its own address, so the infrared database reads on arch 10 too, and a Harmony 895 has none
+
+Section 180 ended by suggesting the infrared records would go the same way as the picture bank and
+the font sets, because a code's timings are strongly self checking. They do, by a stronger route than
+that, and the result on the two arch 10 remotes is opposite: a Harmony 890's whole database reads and
+a Harmony 895 turns out not to have one.
+
+### The locator, which needs no threshold at all
+
+Section 65 read a record's header a year ago: the byte at `+7` is the class and the `u24` at `+8` is
+**the record's own start address**. Nothing had used that as a locator. It is the strongest closure in
+this codec, because a candidate is not merely consistent with being a record, it states where it is:
+finding one is a twenty four bit exact match. So `irRecordsByClosure` needs neither the plausibility
+ceiling `pictureBankByClosure` needs nor the two thresholds `fontSetsByClosure` needs.
+
+**Exact on 13 of 13 containers with an infrared table**, all **3925** records, address for address,
+none missed and none spurious.
+
+**The self pointer alone is not the test, and the counterexample is in the corpus.** A run of
+ascending `u24` pointers crosses the line `value == base + offset` repeatedly, so an ordinary pointer
+table produces hits: histogramming `u24(T) - T` over a whole blob, which searches every base at once,
+the second largest bucket in one Harmony 890 config holds **125** positions and the largest in the
+Harmony 895 holds **198**. Same family as the pitfall about a misaligned read of an ascending table
+being itself ascending, wearing a different hat, and 198 is a number that looks like a result.
+
+What separates them is the shape around the hit, the class byte before it and the group count after,
+and it separates them completely:
+
+| container | largest bucket | record shaped | every other bucket |
+|---|---|---|---|
+| `h890_config` | 301 | **300** | 0 record shaped |
+| `h895_config` | 198 | **0** | 0 record shaped |
+
+### What a Harmony 890 holds
+
+**300 records**, every one of which holds up on its own fields: one pointer group each, **463**
+duration block pointers of which every single one decodes, and a carrier in the tens of kilohertz in
+all 300. The carriers are 38.0 kHz on 151 records, 36.4 kHz on 147 and 37.2 kHz on 2, which is a
+statement about the equipment rather than about the format.
+
+**Two things corroborate it against something outside the reading.** The two Harmony 890 remotes'
+record areas are **byte identical** over the 6300 bytes of their 300 headers, which they should be,
+since both configs and the arch 8 one come from one contributor's one room. And the Harmony 880 of
+that same room differs in **231 of 6300** bytes: close but not identical, which is the useful shape.
+Identical would have meant one file counted twice and unrelated would have meant the reading was
+wrong.
+
+### The Harmony 895 has no infrared database, and that is proven
+
+Not "we could not find one". The bucket search above covers every base and every offset in the blob
+simultaneously, and **no bucket anywhere holds a single record shaped position**, where the Harmony
+890's true bucket holds 300 of 301.
+
+A second measurement agrees by a different route. The 895's named content, everything below its
+picture bank, is **94845** bytes against the Harmony 890's **170691**, and the 890's record area is
+about 71000 of those. So the size difference is what a missing infrared database would account for.
+
+**Why it is missing is open and is not guessed here.** Both models are RF, so "it drives its
+equipment over RF" does not separate them, since the Harmony 890 has 300 infrared codes. A read that
+lost the region is not excluded either, though it would have to have lost it cleanly. Recorded as an
+open question rather than resolved, because the interesting possibility, that a Harmony 895 stores its
+codes somewhere this project has not looked, would be a format claim and nothing here supports one.
+
+### The infrared area is low in the file, which is worth knowing before discarding a read
+
+Unlike the picture bank, section 179, this is **not** a damage detector, and the reason is that the
+record area sits near the bottom of the container while arch 10's duplicated chunks land wherever they
+land:
+
+| read | trailer checksum | records |
+|---|---|---|
+| `h890_config` | recomputes | 300 |
+| `h890_config_2` | fails | **300** |
+| `h890_config_2_redump_1` | fails | **300** |
+| `h890_config_2_rescan` | fails | 1 |
+| `h890_config_2_redump_2` | fails | 0 |
+| `h890_config_2_redump_3` | fails | 0 |
+
+So two of the five reads the checksum condemns carry the whole database with every block decoding.
+A read that fails validation can still hold a usable infrared database, and the second Harmony 890's
+codes are recoverable even though none of its five reads is clean.
+
+**One false positive exists and it is deliberately not filtered out.** `h890_config_2_rescan` yields a
+single record whose carrier works out at 1.7 kHz, which is not an infrared carrier. Bounding the
+carrier would remove it and would put a tuned number into a function that currently has none, to fix a
+case arising only in a read already known broken. A caller can ask `irCarrier`, and the table above is
+what says how much that is worth: on every clean container all 3925 records land in the tens of
+kilohertz.
+
+### What this does not give, correcting what was expected of it
+
+**It does not say what equipment a Harmony 890 drives.** Section 180's closing note said this step
+would, and that was wrong. A record's *grouping* is base slot 5's pointer array, one group per device,
+and that is still gated: what reads here is the flat list of records, so the answer is "300 codes at
+two carrier frequencies" and not "these six appliances". Naming the appliances would mean matching the
+frames against Logitech's catalogue, which section 133 can only do for an account that generated the
+config.
+
+Four structures now read on arch 10 with no pointer slot: the key table, the picture bank, the font
+sets and the infrared records. Every one was found by the same observation, that a structure which
+refuses to decode when misread can be located by trying every offset, and this one is the cleanest
+case of it because the record does not merely refuse, it states the answer. None of it is progress
+towards the slot mapping.

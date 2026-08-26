@@ -439,6 +439,11 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
         'per device: a name, not its length',
     ('packages/codec/test/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
     ('packages/codec/test/inventory.test.ts', 'key.codes.length', '>=', 1): 'per binding',
+    # Per record, and a physical band rather than a total: an infrared carrier is tens of kilohertz,
+    # so the pair of bounds is the claim. Section 181, where the count of records is asserted exactly
+    # beside it and the one out of band case in the corpus is asserted as a negative.
+    ('packages/codec/test/arch10.test.ts', 'hertz !== undefined && hertz', '>', 25000):
+        'per record: an infrared carrier band, with the record count exact beside it',
     ('packages/codec/test/render.test.ts', 'variants.length', '>=', 1): 'per page',
     ('packages/codec/test/render.test.ts', 'variants.length', '>', 1): 'per branching page',
     ('packages/codec/test/render.test.ts', 'choice.arms', '>', 1): 'per switch',

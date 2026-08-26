@@ -34,6 +34,8 @@ import {
   irRepeatPeriod,
   parse,
   payloadOf,
+  irRecordsByClosure,
+  IR_RECORD_POINTER_BIAS,
 } from '../src/index.ts';
 import type { Container } from '../src/index.ts';
 
@@ -418,4 +420,38 @@ test('a record with no carrier reports no frequency, not zero hertz',
     const zeroed = irCarrier(parse(edited), first);
     assert.equal(zeroed?.periodNs, 0);
     assert.equal(zeroed?.hertz, undefined, 'a zero period is no carrier rather than 0 Hz');
+  });
+
+
+/** The thirteen containers with an infrared table base slot 5 can locate. */
+const IR_KNOWN: readonly string[] = [
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+  'arch8_config_d', 'arch8_config_880', 'arch8_config_885',
+];
+
+test('the closure locator finds exactly the records base slot 5 names, all 3925 of them',
+  skipUnless(...IR_KNOWN), () => {
+    // Section 181, and the calibration for using it on arch 10 where the slot is gated. The strongest
+    // closure in this codec, because a record states its own address: finding one is a twenty four bit
+    // exact match rather than a plausibility test, so unlike the picture bank and the font search this
+    // takes no threshold at all.
+    let total = 0;
+    for (const name of IR_KNOWN) {
+      const c = parse(require_(name));
+      const known = new Set<number>();
+      for (const group of irGroups(c) ?? []) {
+        for (const address of group.addresses) {
+          const start = irRecordStart(c, address);
+          if (start !== undefined) known.add(start + IR_RECORD_POINTER_BIAS);
+        }
+      }
+      assert.ok(known.size > 0, `${name} has records`);
+      const found = irRecordsByClosure(c);
+      assert.deepEqual(found.slice().sort((a, b) => a - b), [...known].sort((a, b) => a - b),
+        `${name} finds the same record addresses`);
+      total += known.size;
+    }
+    // Exact, so a reader change or a new sample moves it in the diff rather than silently.
+    assert.equal(total, 3925, 'records across the thirteen containers');
   });

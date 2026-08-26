@@ -196,7 +196,11 @@ pictures and both state a **128 by 160** display, the same as a Harmony 885. **I
 same way**, section 180: eight of them on each, found by requiring every pointer to decode into a glyph
 that tiles exactly, and their shapes are named by the arch 8 alphabet at 213 of 237 where the Harmony
 One's alphabet names none. So a Harmony 890 uses the Harmony 885 typeface and its letters read, though
-not its words, since a string's address comes out of a screen program and those need the mapping. Firmware is what settles it, the way arch 9's own firmware settled its
+not its words, since a string's address comes out of a screen program and those need the mapping.
+**And its infrared database reads**, section 181, because a record states its own address: 300 codes on
+the Harmony 890 with all 463 duration blocks decoding, exact against the slot route on 13 of 13
+containers elsewhere. The Harmony 895 has **none**, proven rather than unfound. What still does not
+read is which device a code belongs to, since the grouping is the pointer array itself. Firmware is what settles it, the way arch 9's own firmware settled its
 infrared classes. Sections 115, 117 and 178.
 
 **Seven reads are not seven configs, and on this architecture that had to be measured**, section 122. One
