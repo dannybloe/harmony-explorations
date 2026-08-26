@@ -2266,6 +2266,26 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
                                     (0x268C8, 'BSF'), (0x2B824, 'BSF')],
                          'every site that touches the bit, in address order')
 
+        # **The same list by a method that cannot mis-step**, which is what makes the count above
+        # evidence rather than a transcription. The walk steps by instruction width, so one wrong
+        # width silently skips everything after it; this scans every even offset for the four raw
+        # encodings instead. Two methods agreeing is the point, so they are compared rather than
+        # both merely asserted: `0x8BA4` BSF, `0x9BA4` BCF, `0xABA4` BTFSS, `0xBBA4` BTFSC, each
+        # being that opcode with b=5, a=1 and f=0xA4.
+        #
+        # **Control it by dropping `0x8BA4` and not `0xBBA4`.** The image holds no BTFSC on this bit,
+        # so removing that entry changes nothing and the test still passes, which is what the first
+        # attempt at controlling this did. Dropping BSF removes two of the four real sites and the
+        # comparison fails. Worth the comment because a control that cannot fail reads exactly like
+        # one that can.
+        encodings = {0x8BA4: 'BSF', 0x9BA4: 'BCF', 0xABA4: 'BTFSS', 0xBBA4: 'BTFSC'}
+        scanned = []
+        for offset in range(0, len(code) - 1, 2):
+            word = code[offset] | (code[offset + 1] << 8)
+            if word in encodings:
+                scanned.append((base + offset, encodings[word]))
+        self.assertEqual(scanned, touching, 'the raw scan and the instruction walk agree')
+
         # **And why the fourth one settles it**: it sits in a routine the entry point calls as its
         # very first instruction, and which the main loop then calls forever from a two instruction
         # loop. So the bit is set before anything else runs and re-set on every pass, which is what

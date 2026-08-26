@@ -23291,6 +23291,31 @@ next instruction is `BRA 0x2EA4C`. That two instruction loop is the main loop. S
 anything else runs and re-set on every pass of the main loop, and the ordinary state of a running
 Harmony One is bit 5 **set**.
 
+**Three things hold that up and each is checked by something other than this section's own reading.**
+Worth saying because the reading it replaced was also coherent, and coherence is what got the first
+two versions written.
+
+The **enumeration** is confirmed by a method that cannot mis-step. Walking an image instruction by
+instruction is how the list was built, and a single wrong width silently skips whatever follows it, so
+the same four were found again by scanning every even offset for the raw encodings `0x8BA4`, `0x9BA4`,
+`0xABA4` and `0xBBA4`, which are `BSF`, `BCF`, `BTFSS` and `BTFSC` on this file register and bit. Same
+four addresses. An alignment error cannot survive that, and the count is the crux of the section.
+
+The **polarity** rests on `BTFSS` meaning skip if set, and that is pinned in `tests/test_isa.py`
+without appeal to a datasheet: the Harmony 700's firmware waits for a timer overflow with a bit test
+branching to itself, which is a correct wait under one reading and a loop that spins forever once the
+flag sets under the other. Only one is coherent. That check matters here more than anywhere else in
+this section, because the whole conclusion inverts with it, and `CLAUDE.md` records these two
+mnemonics having once been swapped in this repository.
+
+The **entry point** is derived rather than taken from a summary, which is a correction to the first
+version of this paragraph: it cited `0x2EA38` on the strength of `CLAUDE.md`'s key facts table.
+`tests/test_isa.py`'s citation table holds `0x2000A: 0xEF1C` and `0x2000C: 0xF175` against
+`one34_code`, and that pair decodes as `GOTO 0x2EA38`, in the Harmony One's own vector area, asserted
+against the real image. **And the claim survives even without it**, which is the better reason to
+believe it: the main loop `CALL` at `0x2EA4C` is read straight from the bytes, so "re-set on every
+pass" stands alone, and the entry point only adds "and before anything else runs".
+
 So the reading that survives: writing below `0x020000` is refused in the ordinary running state, and
 the only instruction anywhere that clears the bit is `0x26612 BCF 0x1A4, 5`, reached when ERASE_FLASH
 is given an address below `0x020000`, the boundary checked by the three byte subtract at `0x26604`.
