@@ -178,8 +178,12 @@ calibration case the slot mapping search never had. It **refutes** the insertion
 merely scoring badly against it: base slot 5's entry count is the device count on 9 of 9 configs
 elsewhere, no arch 10 slot holds a six entry array, and base slot 5 could only sit on raw slot 5 to 8
 where three of the four are too small to hold one. What does read on arch 10 is everything the header
-or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor and the
-key table, which is how section 177 matched a hand probed circuit board without any mapping at all.
+or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
+key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
+and since section 179 the **picture bank**, which is most of the file. That last one was section 178's
+own prediction and it paid off the same day: the bank is found from the trailer's position alone, so a
+Harmony 890 and a Harmony 895 now state their display, **128 by 160**, the same as a Harmony 885, with
+the same ten distinct picture sizes where a Harmony 600 and a Harmony One share none of them.
 The earlier state of this entry, and the two Harmony 890 samples it describes: two Harmony 890
 configs, format 1.7, 23 pointer slots, both based at flash `0x030000`. The container framing
 verifies and **the slot mapping is not a relabelling of the twenty**, which is stronger than the
@@ -1622,7 +1626,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 178 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 179 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -1665,8 +1669,8 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 16 | the number sender: one record per appliance that takes a number, with a table per digit. Seven made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
 | 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
 
-**Most of a config is pictures**, sections 49 to 55, 62, 66 and 146: one contiguous array from the end
-of the named content to the trailer, no table and no count, addressed by screen opcodes 2 **and 3**
+**Most of a config is pictures**, sections 49 to 55, 62, 66, 146 and 179: one contiguous array from the
+end of the named content to the trailer, no table and no count, addressed by screen opcodes 2 **and 3**
 inside mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch
 8, 12 and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine
 containers that have one, and **every picture in every bank is drawn by a program**, on all four

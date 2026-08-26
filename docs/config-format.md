@@ -855,6 +855,30 @@ program**, on all four architectures, with two exceptions in the whole corpus an
 safe mode container. So the bank is the set of pictures the programs draw rather than a region that
 happens to contain them. [findings.md](findings.md) sections 66 and 146.
 
+**Where the bank starts is stated three ways, and the third needs no pointer slot.** Base slot 17
+names it, two bytes in front, on arch 8, 9 and 14; arch 12 uses that slot for the touch hit map, so
+the bank is found by searching upward from the end of the named content and constraining the answer by
+the pictures screen programs address. Both routes need the section readers. The third route needs only
+the trailer's position, which the framing states, and is what reads on **arch 10 (Harmony 890 and
+895)** where every slot reader is gated:
+
+1. walk from every offset in the blob, keeping the offsets whose walk lands exactly on the trailer
+2. discard any whose pictures exceed 256 pixels in either axis, which is `PICTURE_CEILING`
+3. take the survivor with the most pictures, which is then the lowest
+
+Confirmed against the reader route on **14 of 14** containers whose bank it can locate, start address
+and picture count both, over four architectures. Step 3 alone is right on 9 of the 14 and step 1 alone
+on 4, so both filters are load bearing. The ceiling is a plateau: 224, 256, 400 and 1024 give the
+identical answer everywhere, and 180 does not, because it is below the Harmony One's 220 pixel
+backgrounds. `pictureBankByClosure`. [findings.md](findings.md) section 179.
+
+**The largest picture in a bank is the display size**, which is the second independent statement of
+`SCREEN_SIZES`: the first reads where programs draw pictures, this one reads the array, and they agree
+on all four architectures that state one. On arch 10 it gives **128 by 160 for the Harmony 890 and
+895**, with five full screen pictures each, and those two payloads use exactly the ten distinct
+picture sizes a Harmony 880 and 885 use, where a Harmony 600 and a Harmony One share none of them.
+[findings.md](findings.md) section 179.
+
 **Two opcodes draw one**, 2 and 3, each naming it in its last three operand bytes. This said "exactly
 two per container are not" drawn on arch 8 and arch 14 until section 146, and those were opcode 3's:<!--superseded-->
 4548 of 4548 opcode 3 instructions in the corpus name a picture, arch 12 emits none at all and arch 9

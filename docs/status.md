@@ -189,7 +189,10 @@ device count on 9 of 9 configs across the other four architectures, and no arch 
 entry array at all. Base slot 5 could only land on raw slot 5 to 8 under any placement, three of those
 are one, one and three bytes where a six entry array needs nineteen, and the fourth declares nine. So
 every arch 10 reader stays gated, and guessing a mapping would turn twenty refusals into twenty
-plausible wrong answers. Firmware is what settles it, the way arch 9's own firmware settled its
+plausible wrong answers. **What does read there is what the framing locates**, section 179: the picture
+bank is found from the trailer's position alone, calibrated on 14 of 14 containers whose bank is known
+by another route, so 57% of a Harmony 890's file and 72% of a Harmony 895's is accounted for as
+pictures and both state a **128 by 160** display, the same as a Harmony 885. Firmware is what settles it, the way arch 9's own firmware settled its
 infrared classes. Sections 115, 117 and 178.
 
 **Seven reads are not seven configs, and on this architecture that had to be measured**, section 122. One

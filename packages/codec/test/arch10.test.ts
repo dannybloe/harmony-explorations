@@ -12,6 +12,7 @@ import { load, require_, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { keyCodes } from '../src/inventory.ts';
 import { archSlot, EVENT_PRESS } from '../src/gspm.ts';
+import { pictureBankByClosure } from '../src/screen.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [
@@ -218,11 +219,16 @@ test('arch 9 and arch 14 build a lookup stack and never unwind it',
     }
   });
 
-test('the 895 is the third arch 10 container and framing is all that reads',
+test('the 895 is the third arch 10 container and no pointer slot reader answers on it',
   skipUnless('h895_config', 'h890_config', 'h890_config_2'), () => {
     // Section 178's last paragraph: what survives a missing slot mapping is what the header or the
     // marker locates, not what a pointer slot locates. Asserted so that a future reader claiming to
     // read arch 10 content has to move this test.
+    //
+    // **The title said "framing is all that reads" and section 179 falsified it within the day**, by
+    // finding the picture bank from the trailer alone. The body never claimed that much, which is the
+    // failure mode the house rule about titles names: a test can pass while its name is wrong. What
+    // the body checks is that no **pointer slot** reader answers, which is what the rail is about.
     const c = parse(require_('h895_config'));
     assert.equal(c.flashBase, 0x030000);
     assert.equal(c.formatRaw, 0x1700);
@@ -247,4 +253,111 @@ test('the 895 is the third arch 10 container and framing is all that reads',
       .map(([name]) => name).sort();
     assert.deepEqual(theirs.filter((n) => !failing.includes(n)),
       ['end_addr_points_at_end_marker', 'trailer_checksum_recomputes']);
+  });
+
+/**
+ * Section 179: the picture bank reads on arch 10, and it says what the display is.
+ *
+ * Section 178 ended by predicting that the structures surviving a missing slot mapping are the ones
+ * located from the header or the trailer rather than through a pointer slot, and that looking for
+ * more of those is cheaper than solving the mapping. This is the second, after the key table.
+ */
+
+/** The seven distinct arch 10 payloads, with the pictures the closure locator finds in each. */
+const ARCH10_BANKS: readonly [string, number][] = [
+  ['h890_config', 26],
+  ['h895_config', 38],
+  ['h890_config_2', 7],
+  ['h890_config_2_rescan', 18],
+  ['h890_config_2_redump_1', 10],
+  ['h890_config_2_redump_2', 7],
+  ['h890_config_2_redump_3', 4],
+];
+
+/** The arch 10 reads whose trailer checksum recomputes, which is section 122's damage detector. */
+const ARCH10_CLEAN = ['h890_config', 'h895_config'];
+
+test('the two arch 10 reads that verify carry a 128 by 160 display, like a Harmony 885',
+  skipUnless('h890_config', 'h895_config'), () => {
+    // The Harmony 890 and 895 display size, which nothing here had. Derived from the container with
+    // no pointer slot read: the largest picture in the bank is the display, calibrated on all four
+    // architectures that state one in `screen.test.ts`. Section 179.
+    for (const name of ARCH10_CLEAN) {
+      const c = parse(require_(name));
+      assert.equal(c.architecture, undefined, `${name} states no architecture, which is the point`);
+      const bank = pictureBankByClosure(c);
+      assert.ok(bank !== undefined, name);
+      assert.equal(Math.max(...bank.map((b) => b.stride)), 128, `${name} widest picture`);
+      assert.equal(Math.max(...bank.map((b) => b.rows)), 160, `${name} tallest picture`);
+      assert.equal(bank.filter((b) => b.stride === 128 && b.rows === 160).length, 5,
+        `${name} draws five full screen backgrounds, as every arch 8 container does`);
+    }
+  });
+
+test('arch 10 uses exactly the ten picture sizes an arch 8 config uses, and no other model does',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880', 'arch8_config_885',
+    'h600_config', 'one_config'), () => {
+    // The corroboration, and it is a set comparison rather than one number: the display size alone
+    // could be a coincidence between two remote families, and the whole size profile cannot. These
+    // small pictures are the generator's own chrome, so sharing them is a statement that a Harmony
+    // 890 and a Harmony 885 are drawn by the same generator for the same panel.
+    const sizesOf = (name: string): Set<string> => {
+      const bank = pictureBankByClosure(parse(require_(name)));
+      assert.ok(bank !== undefined, name);
+      return new Set(bank.map((b) => `${b.stride}x${b.rows}`));
+    };
+    const arch10 = new Set([...sizesOf('h890_config'), ...sizesOf('h895_config')]);
+    const arch8 = new Set([...sizesOf('arch8_config_880'), ...sizesOf('arch8_config_885')]);
+    assert.equal(arch10.size, 10, 'ten distinct picture sizes on arch 10');
+    assert.deepEqual([...arch10].sort(), [...arch8].sort(), 'the same ten as the 880 and the 885');
+
+    // The negative, without which the agreement above says nothing about the panel: two architectures
+    // whose screens differ share almost none of them.
+    const h600 = sizesOf('h600_config');
+    const one = sizesOf('one_config');
+    assert.equal([...h600].filter((s) => arch10.has(s)).length, 0, 'a Harmony 600 shares none');
+    assert.equal([...one].filter((s) => arch10.has(s)).length, 0, 'a Harmony One shares none');
+  });
+
+test('the bank is a graded detector of a damaged arch 10 read, where the checksum is a yes or no',
+  skipUnless(...ARCH10_BANKS.map(([n]) => n)), () => {
+    // A fourth statement about which arch 10 reads are clean, and the useful thing about it is that it
+    // is not binary. Section 122's two detectors say damaged or not; this says how much of the file
+    // survived, which is what tells a redump apart from a hopeless one.
+    const shares: { name: string; clean: boolean; share: number }[] = [];
+    for (const [name, pictures] of ARCH10_BANKS) {
+      const c = parse(require_(name));
+      const bank = pictureBankByClosure(c);
+      assert.ok(bank !== undefined, name);
+      assert.equal(bank.length, pictures, `${name} pictures`);
+      const bytes = bank.reduce((sum, b) => sum + (b.length ?? 0), 0);
+      shares.push({
+        name,
+        clean: c.checks['trailer_checksum_recomputes'] === true,
+        share: bytes / c.blob.length,
+      });
+    }
+    const clean = shares.filter((s) => s.clean);
+    const damaged = shares.filter((s) => !s.clean);
+    assert.deepEqual(clean.map((s) => s.name).sort(), [...ARCH10_CLEAN].sort());
+    assert.equal(damaged.length, 5, 'the five reads of the second Harmony 890');
+    // Separated with a gap rather than against a chosen threshold, which is the honest form: the
+    // worst clean read is 57% pictures and the best damaged one is 44%.
+    const worstClean = Math.min(...clean.map((s) => s.share));
+    const bestDamaged = Math.max(...damaged.map((s) => s.share));
+    assert.ok(worstClean > bestDamaged,
+      `clean reads are more picture than any damaged one: ${worstClean} vs ${bestDamaged}`);
+    assert.ok(worstClean > 0.5 && bestDamaged < 0.5,
+      `and half the file is inside that gap: ${worstClean} vs ${bestDamaged}`);
+  });
+
+test('the Harmony 890 rescan is byte identical, so it is one read and not two',
+  skipUnless('h890_config', 'h890_config_rescan'), () => {
+    // Stated as a test because it is the trap section 32 records: two numbers agreeing means nothing
+    // when they come from the same bytes. The bank locator returns the same answer for these two, and
+    // that is not a second read confirming the first. Registered separately, so nothing but a check
+    // like this one stops the pair being quoted as two samples.
+    const a = parse(require_('h890_config')).blob;
+    const b = parse(require_('h890_config_rescan')).blob;
+    assert.deepEqual([...a], [...b], 'the same payload under two names');
   });

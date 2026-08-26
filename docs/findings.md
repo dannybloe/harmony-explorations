@@ -23693,6 +23693,11 @@ the pointer table rather than through a pointer slot. So the structures that sur
 mapping are exactly the marker relative ones, and looking for more of those is cheaper than solving
 the mapping.
 
+**That prediction was acted on the same day and it held**, section 179: the picture bank is located
+from the trailer's position alone, which makes most of a Harmony 890's file readable and gives that
+remote and the Harmony 895 a display size. So this paragraph is the one to reread before anybody
+spends another afternoon on the slot mapping.
+
 **Four framing checks fail, the same four as the clean Harmony 890 read**:
 `pointer_count_known`, `slot0_is_a_feed_frame`, `slot1_states_the_architecture` and
 `slot3_is_a_timestamp`. So the 895 is a consistent third sample of one layout rather than a fourth
@@ -23737,3 +23742,106 @@ increments at all and could not have been guessed:
 So the cost of an exact count is a diff every time a sample lands, and the return is that a sample
 cannot land without every claim about the corpus being restated by somebody. A floor buys the
 opposite trade and hides exactly the three cases above.
+
+## 179. The picture bank is locatable with no pointer slot, and it states the Harmony 890's display
+
+Section 178 ended with a prediction rather than a result: that the structures surviving arch 10's
+refuted slot mapping are the ones located from the header or from the trailer, and that hunting for
+more of those is cheaper than solving the mapping. This is the second such structure after the key
+table, and it is the largest thing in a config.
+
+### The locator
+
+Pictures are one contiguous array running from the end of the named content to the trailer, with no
+table and no count, section 55. `pictureRun` walks it from a given offset and returns the pictures
+**only** if the walk lands exactly on the trailer, which is self verifying: a walk starting one byte
+out reads a header out of pixel data and either stops early or overshoots. The trailer's position is
+stated by the container's framing, so that walk needs no pointer slot at all.
+
+Self verification alone is not enough, and the number that says so is large: an arch 8 (Harmony 885)
+config has **2230** offsets whose walk lands on the trailer. Most are the picture boundaries of the
+true run, since a suffix of a valid walk is a valid walk, and the rest are offsets below the bank
+whose walk happens to close.
+
+Two filters separate them, and both were measured rather than assumed:
+
+| rule | right on |
+|---|---|
+| lowest surviving offset | 4 of 14 |
+| surviving offset with the most pictures | 9 of 14 |
+| both, meaning a plausibility ceiling then the most pictures | **14 of 14** |
+
+The ceiling is that no picture may exceed 256 pixels in either axis. What it removes are the
+survivors **below** the true bank, which parse named content as pixels and so produce a few enormous
+bogus pictures: two real cases are 33408 pixels wide and 55048 rows tall. After it, every remaining
+survivor is a suffix of the true run, so the one with the most pictures is the lowest, and it is the
+bank.
+
+**The ceiling is a plateau and not a fitted value**, which is the control that matters here. 224,
+256, 400 and 1024 all return the identical bank on every container in the corpus. The only value
+tried that does not is 180, and its failure is informative rather than awkward: it sits below the
+Harmony One's 220 pixel tall backgrounds, so it rejects that remote's own screens and the search
+collapses to two pictures. A ceiling has to clear the tallest real display and is otherwise free.
+`PICTURE_CEILING` in `packages/codec/src/screen.ts`.
+
+**Calibrated on 14 of 14 containers whose bank is already known by a route with nothing in common.**
+`pictureBank(c, namedContentEnd(c))` starts from what the section readers claim and constrains the
+answer by the pictures screen programs name; the closure locator reads neither. Both the start
+address and the picture count agree on every one, across arch 8, 9, 12 and 14.
+
+It is wired as the **last** fallback inside `pictureBank`, after the stated slot and after the
+constrained search, so a container that says where its bank is continues to be believed over a whole
+blob search. Byte accounting is unchanged on every sample, which is the check that the addition is
+additive.
+
+### What it reads on arch 10
+
+| container | trailer checksum | pictures | share of the file |
+|---|---|---|---|
+| `h890_config` | recomputes | 26 | 57.0% |
+| `h895_config` | recomputes | 38 | 72.3% |
+| `h890_config_2_rescan` | fails | 18 | 43.7% |
+| `h890_config_2_redump_1` | fails | 10 | 12.4% |
+| `h890_config_2` | fails | 7 | 1.9% |
+| `h890_config_2_redump_2` | fails | 7 | 1.9% |
+| `h890_config_2_redump_3` | fails | 4 | 0.3% |
+
+So "most of a config is pictures" holds on arch 10 as well, and it is the first content claim this
+project has been able to make about a Harmony 890.
+
+**The Harmony 890 and Harmony 895 display is 128 by 160 pixels.** The largest picture in a bank is the
+display, which is how `SCREEN_SIZES` was measured for the other four architectures, section 129, and
+that test derives it from where screen **programs** draw pictures. Deriving it from the picture array
+instead reaches the same number on all four, which is what licenses using the second route where the
+first cannot run. Both clean arch 10 reads give 128 by 160, and each carries exactly **five** full
+screen pictures at that size, as every arch 8 container does.
+
+**The corroboration is the whole size profile, not the one number.** The two arch 10 payloads use
+exactly **ten** distinct picture sizes and they are exactly the ten a Harmony 880 and a Harmony 885
+use: 128x160, 128x32, 128x24, 128x8, 64x32, 19x10, 18x10, 17x10, 16x10 and 15x8. The small ones are
+the generator's own chrome, so sharing the whole set says the two families are drawn by one generator
+for one panel, where a shared display size alone could be coincidence. The negative is what makes
+that worth stating: a Harmony 600 shares **none** of the ten and a Harmony One shares none either.
+Taken with section 177's keypad result, an arch 10 remote now matches an arch 8 one in both its
+buttons and its screen.
+
+### A fourth damage detector, and the first graded one
+
+The table above separates completely: the worst clean read is 57.0% pictures and the best damaged one
+is 43.7%, with half the file inside that gap. Section 122's two detectors, the end marker position and
+the trailer checksum, answer damaged or not; the EZHex split of section 178 does the same. This one
+says **how much** of the file survived, which is what distinguishes a redump worth keeping from a
+hopeless one, and it is why the second Harmony 890 has no usable read: its best is 44%.
+
+### Two things not to carry away from this
+
+**`h890_config` and `h890_config_rescan` are byte identical.** They are registered separately and the
+locator returns the same answer for both, and that is **not** two reads confirming one another. Same
+trap as section 32, where a closure held over 2137 records because both of its ends came from the same
+bytes. There are seven distinct arch 10 payloads here, not eight, and a test asserts the identity so
+that the pair cannot be quoted as two samples.
+
+**This does not open the slot mapping.** Reading the bank says where the pictures are and nothing
+about which pointer slot names what, so `INSERTED_SLOTS` still has no arch 10 entry and adding one is
+still the single thing not to do. What it does is confirm the direction section 178 pointed in, at a
+cost of one function.

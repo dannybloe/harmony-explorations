@@ -56,6 +56,13 @@ import { modePages, type ModePage } from './sections.ts';
  * screen background pictures the configs draw, 257 of them on one Harmony One, and the drawn text of
  * each architecture stops just inside it. Section 129.
  */
+/*
+ * **Arch 10 is deliberately absent, and its display is known.** A Harmony 890 and a Harmony 895 are
+ * 128 by 160, measured from their own picture banks, section 179. An entry here would be dead code
+ * and worse than nothing: this table is keyed by the architecture a container states, and an arch 10
+ * container states none, so nothing would ever look it up while the table implied the renderer had
+ * gained an architecture. The measurement lives where it can fail instead, in `arch10.test.ts`.
+ */
 export const SCREEN_SIZES: Readonly<Record<number, { width: number; height: number }>> = {
   8: { width: 128, height: 160 },
   9: { width: 96, height: 64 },

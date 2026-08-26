@@ -606,6 +606,66 @@ export function pictureBankStart(c: Container): number | undefined {
   return off === undefined ? undefined : off + PICTURE_BANK_BIAS;
 }
 
+/**
+ * The largest picture any Harmony here draws, in pixels, used as a plausibility ceiling.
+ *
+ * **A plateau rather than a fitted number, which is the control that matters.** Every display in
+ * `SCREEN_SIZES` is at most 176 by 220, and a picture is never larger than the display it is drawn
+ * on, which is how those sizes were measured in the first place, section 129. So any ceiling with
+ * room above 220 and well below a bogus walk's dimensions does the same job: 180, 224, 256, 400 and
+ * 1024 all return the identical bank on every container in the corpus. It is 256 because that is the
+ * middle of that plateau, not because anything was tuned to it. Section 179.
+ *
+ * 180 is the one value in that list that is **not** in the plateau, and deliberately kept in the
+ * test: it is below the Harmony One's 220 pixel height, so it rejects that remote's own backgrounds
+ * and the search collapses to 2 pictures. A ceiling has to clear the tallest real display.
+ */
+export const PICTURE_CEILING = 256;
+
+/**
+ * Where the picture array begins, found from the container's framing alone and no pointer slot.
+ *
+ * **This is the reader free route, and it exists for arch 10 (Harmony 890 and 895)**, where the slot
+ * mapping is refuted, section 178, so `pictureBankStart` has no slot to read and `pictureBank`'s
+ * search has no `namedContentEnd` to start from and no opcode 2 references to constrain it. What is
+ * still available is the trailer, whose position the framing states, and `pictureRun`'s own closure.
+ *
+ * Three steps:
+ *
+ * 1. walk pictures from **every** offset in the blob, keeping those whose walk lands exactly on the
+ *    trailer. That is self verifying, since a walk starting one byte out reads a header out of pixel
+ *    data, but it is not sufficient: an arch 8 (Harmony 885) config has 2230 survivors, because every
+ *    picture boundary from the true start upwards is one, and so is any lucky offset below it
+ * 2. drop any survivor holding a picture too large to be drawn on a display, `PICTURE_CEILING`. This
+ *    is what removes the ones below the true start: they parse named content as pixels and produce a
+ *    few enormous bogus pictures, 33408 wide and 55048 tall in two real cases
+ * 3. take the survivor with the **most** pictures, which is then the lowest, since every remaining
+ *    one is a suffix of the true run
+ *
+ * **Calibrated on 14 of 14 containers whose bank is known by the reader route**, exactly, across arch
+ * 8, 9, 12 and 14. Step 3 alone gets 9 of those 14 and step 1 alone gets 3, so both filters carry
+ * weight. Ties are possible and the lowest wins; one container has two, and it is the known answer.
+ *
+ * Deliberately **not** a replacement for the reader route: `pictureBank` tries the stated slot, then
+ * the constrained search, then this. A container that states where its bank is should be believed
+ * over a search, and keeping the order that way means this function's failure mode cannot silently
+ * become the answer everywhere.
+ */
+export function pictureBankByClosure(
+  c: Container,
+  ceiling = PICTURE_CEILING,
+): Bitmap[] | undefined {
+  let best: Bitmap[] | undefined;
+  for (let off = 0; off < c.blob.length; off += 1) {
+    const run = pictureRun(c, off);
+    if (run === undefined) continue;
+    if (run.some((b) => b.stride > ceiling || b.rows > ceiling)) continue;
+    // Strictly greater, so the lowest of equal length runs is kept.
+    if (best === undefined || run.length > best.length) best = run;
+  }
+  return best;
+}
+
 export function pictureBank(c: Container, from: number, search = 1024): Bitmap[] | undefined {
   const stated = pictureBankStart(c);
   if (stated !== undefined) {
@@ -624,7 +684,9 @@ export function pictureBank(c: Container, from: number, search = 1024): Bitmap[]
     if (only !== undefined) return undefined;
     only = run;
   }
-  return only;
+  // The reader free route is last, so a container that states or constrains its bank is believed
+  // over a whole blob search. It is what answers on arch 10, where the two above cannot. Section 179.
+  return only ?? pictureBankByClosure(c);
 }
 
 /** Every distinct picture any reachable screen program addresses, in address order. */

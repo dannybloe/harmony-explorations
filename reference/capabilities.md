@@ -81,8 +81,8 @@ unknown. `reference/models.md` has the architecture map and the full skin table.
 | 36 | Xbox 360 | | 9 | 11 | | monochrome | no | | yes | no | no | 3.0.0 | arch only |
 | 15 | 880 | 885 | 8 | 15 | 16 | colour | no | | yes | yes | no | 4.4.2 | skin, arch, touch; devices consistent |
 | 17 | 885 | 880 | 8 | 15 | 16 | colour | no | | yes | yes | no | 4.4.2 | skin, arch; the 880's row, same remote |
-| 19 | 890 | 895 | 10 | 15 | 16 | colour | no | 6 | yes | yes | no | 4.9.0 | arch, touch |
-| 23 | 895 | 890 | 10 | 15 | 16 | colour | no | 6 | yes | yes | no | 4.9.0 | arch; the 890's row, same remote |
+| 19 | 890 | 895 | 10 | 15 | 16 | colour | no | 6 | yes | yes | no | 4.9.0 | arch, touch; **display 128 by 160 measured**, section 179, from the picture bank, which is the same size a Harmony 885 has. The panel column is still **not** confirmed by it: the Harmony 600 carries two byte pixels on a monochrome screen, so a size says nothing about colour |
+| 23 | 895 | 890 | 10 | 15 | 16 | colour | no | 6 | yes | yes | no | 4.9.0 | arch; the 890's row, same remote; **display 128 by 160 measured** on this skin's own config too, section 179 |
 | 65 | 610 | | 7 | 5 | 23 | monochrome | no | | yes | no | no | 3.5.0 | arch only |
 | 13 | 628 | | 7 | 12 | | monochrome | no | | yes | no | no | 4.1.0 | arch only |
 | 9 | 659 | | 7 | 15 | 18 | monochrome | no | | yes | yes | yes | 4.1.0 | arch only |

@@ -55,8 +55,11 @@ import {
   modeRecords,
   screenProgramRoots,
   valueMaps,
+  pictureBankByClosure,
+  PICTURE_CEILING,
+  SCREEN_SIZES,
 } from '../src/index.ts';
-import type { Container, Glyph } from '../src/index.ts';
+import type { Bitmap, Container, Glyph } from '../src/index.ts';
 
 /** `[sample, reachable programs, decoded glyphs]`. Same walk as `tests/test_interpreter.py`. */
 const DECODED: readonly [string, number, number][] = [
@@ -733,3 +736,109 @@ function blind(c: Container, blob: Uint8Array): Container {
   blob.fill(0, at, at + SECTION_ITEM_SIZE);
   return parse(blob);
 }
+
+/**
+ * The reader free picture bank locator, section 179.
+ *
+ * Kept here rather than beside the arch 10 (Harmony 890 and 895) results it exists for, because what
+ * these tests check is the locator, and it has to be calibrated on containers whose bank is known by
+ * a route that does not involve it. The arch 10 half is in `arch10.test.ts`.
+ */
+const BANK_KNOWN: readonly string[] = [
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'h525_config_2', 'h525_safemode_ahcm',
+  'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+  'arch8_config_880', 'arch8_config_885',
+];
+
+test('the closure locator finds the bank every reader route knows, on all fourteen',
+  skipUnless(...BANK_KNOWN), () => {
+    // The calibration case the verification standard asks for: run the derivation where the answer is
+    // already established, and by a route with nothing in common. `pictureBank(c, namedContentEnd(c))`
+    // starts from what the readers claim and constrains by the pictures screen programs name;
+    // `pictureBankByClosure` reads neither, only the trailer position and the walk's own arithmetic.
+    let agreed = 0;
+    for (const name of BANK_KNOWN) {
+      const c = parse(require_(name));
+      const known = pictureBank(c, namedContentEnd(c));
+      assert.ok(known !== undefined && known.length > 0, `${name} has a known bank`);
+      const blind = pictureBankByClosure(c);
+      assert.ok(blind !== undefined, `${name} blind`);
+      assert.equal(blind[0]?.address, known[0]?.address, `${name} starts at the same address`);
+      assert.equal(blind.length, known.length, `${name} holds the same number of pictures`);
+      agreed += 1;
+    }
+    assert.equal(agreed, 14);
+  });
+
+test('both of the locator\'s filters carry weight, measured rather than assumed',
+  skipUnless(...BANK_KNOWN), () => {
+    // Neither step is there for tidiness. Without the ceiling, taking the survivor with the most
+    // pictures is right on 9 of 14; taking the lowest survivor with no ceiling at all is right on 3.
+    // Those two numbers are why the locator is two filters and not one, and they are asserted so that
+    // dropping either shows up as a wrong count here rather than as a wrong bank somewhere else.
+    let argmaxOnly = 0;
+    let lowestOnly = 0;
+    for (const name of BANK_KNOWN) {
+      const c = parse(require_(name));
+      const known = pictureBank(c, namedContentEnd(c));
+      const wanted = known?.[0]?.address;
+      const survivors: Bitmap[][] = [];
+      for (let off = 0; off < c.blob.length; off += 1) {
+        const run = pictureRun(c, off);
+        if (run !== undefined) survivors.push(run);
+      }
+      let most: Bitmap[] | undefined;
+      for (const run of survivors) if (most === undefined || run.length > most.length) most = run;
+      if (most?.[0]?.address === wanted) argmaxOnly += 1;
+      if (survivors[0]?.[0]?.address === wanted) lowestOnly += 1;
+    }
+    assert.equal(argmaxOnly, 9, 'the most pictures, with no plausibility ceiling');
+    assert.equal(lowestOnly, 4, 'the lowest survivor, with no ceiling either');
+  });
+
+test('the ceiling is a plateau, and 180 is outside it because a Harmony One is 220 tall',
+  skipUnless('one_config', 'arch8_config_885', 'h890_config'), () => {
+    // The control that says the ceiling is not fitted. Anywhere with room above the tallest real
+    // display gives the identical bank; the value below it does not, and that failure is the reason
+    // the constant is not simply "the largest picture we have seen".
+    for (const name of ['one_config', 'arch8_config_885', 'h890_config']) {
+      const c = parse(require_(name));
+      const reference = pictureBankByClosure(c, PICTURE_CEILING);
+      assert.ok(reference !== undefined, name);
+      for (const ceiling of [224, 400, 1024]) {
+        const got = pictureBankByClosure(c, ceiling);
+        assert.equal(got?.[0]?.address, reference[0]?.address, `${name} at ceiling ${ceiling}`);
+        assert.equal(got?.length, reference.length, `${name} at ceiling ${ceiling}`);
+      }
+    }
+    // 180 is below the Harmony One's own 220 pixel backgrounds, so it rejects them and the search
+    // collapses. Asserted as the negative, because a ceiling that cannot be too low is not a bound.
+    const one = parse(require_('one_config'));
+    const starved = pictureBankByClosure(one, 180);
+    assert.notEqual(starved?.length, pictureBankByClosure(one, PICTURE_CEILING)?.length);
+    assert.equal(starved?.length, 2, 'a ceiling under the display height finds almost nothing');
+  });
+
+test('the bank is the display size, by a route that reads no screen program',
+  skipUnless(...BANK_KNOWN), () => {
+    // The second independent statement of `SCREEN_SIZES`. The test above it in this file derives the
+    // display from where programs draw pictures; this derives it from the largest picture in the
+    // array, with no program read at all. They agree on every architecture that has both, which is
+    // what licenses using the second one on arch 10 where the first cannot run. Section 179.
+    const seen = new Set<number>();
+    for (const name of BANK_KNOWN) {
+      const c = parse(require_(name));
+      const architecture = c.architecture;
+      if (architecture === undefined) continue;
+      const size = SCREEN_SIZES[architecture];
+      if (size === undefined) continue;
+      const bank = pictureBankByClosure(c);
+      assert.ok(bank !== undefined, name);
+      assert.equal(Math.max(...bank.map((b) => b.stride)), size.width, `${name} widest picture`);
+      assert.equal(Math.max(...bank.map((b) => b.rows)), size.height, `${name} tallest picture`);
+      seen.add(architecture);
+    }
+    assert.deepEqual([...seen].sort((a, b) => a - b), [8, 9, 12, 14],
+      'on all four architectures that state an architecture');
+  });
