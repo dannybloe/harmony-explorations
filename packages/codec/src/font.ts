@@ -191,6 +191,103 @@ export function fontSets(c: Container): FontSet[] | undefined {
 }
 
 /**
+ * A glyph height a real font set can plausibly declare, used to prefilter the closure search.
+ *
+ * The corpus spans 8 to 26 pixels over every set of every container, so this pair has room either
+ * side and is a filter rather than a fit. It exists only to make the search below affordable: a
+ * candidate it admits still has to have every one of its pointers decode.
+ */
+export const GLYPH_HEIGHT_RANGE: readonly [number, number] = [4, 48];
+
+/** The fewest pointers a candidate's array must hold before it counts as a font set. */
+export const FONT_SET_MINIMUM = 8;
+
+/**
+ * The fewest of those pointers that must actually decode into a glyph.
+ *
+ * **Not the same threshold as the pointer count, and conflating them cost four sets.** A real set can
+ * be almost entirely null: one Harmony One set declares 73 pointers of which 66 are null and 7 are
+ * glyphs, and three more like it exist. So the search bounds the array's length and the number of
+ * live glyphs separately.
+ *
+ * **A plateau, measured.** Anything from 1 to 5 finds exactly the sets `fontSets` finds on all
+ * fourteen containers, with nothing missed and nothing spurious. 0 admits **179** false positives,
+ * because a run of zeroes is a run of null pointers and passes everything else; 6 loses one real set
+ * and 8 loses four. So what carries the weight is requiring **any** live glyph at all, and 3 is the
+ * middle of the band rather than a boundary. Section 180.
+ *
+ * The first version of this comment claimed 1 and 2 produce false positives. They do not, and it was
+ * written before the sweep was run rather than after it.
+ */
+export const FONT_SET_MINIMUM_GLYPHS = 3;
+
+/**
+ * Every font set found by searching the blob, with no pointer slot read. Section 180.
+ *
+ * **The companion to `pictureBankByClosure`, and for the same architecture.** Base slot 7 names the
+ * font table, so `fontSets` cannot answer on arch 10 (Harmony 890 and 895) where the slot mapping is
+ * refuted, section 178. Unlike the picture bank, a font set is not adjacent to anything already
+ * located: measured across thirteen containers, the top of the font table sits between 1918 and 48385
+ * bytes below the picture bank, so "the bank's lower edge" is not a locator and was checked before
+ * being relied on.
+ *
+ * What makes a set findable anyway is how much it has to get right at once. A candidate is three
+ * header bytes followed by `count` three byte addresses, and it is accepted only if **every** nonzero
+ * address decodes into a glyph whose rows tile exactly to its own declared width, at the declared
+ * height. A glyph that is misread does not come out wrong, it comes out undefined, so a run of
+ * dozens of them agreeing is not something arbitrary bytes do.
+ *
+ * `readAs` is the encoding hypothesis, and on arch 10 it is the caller's rather than the file's. The
+ * tiling check is what tests it: the search returning sets at all is the evidence that arch 10 packs
+ * a glyph the way the architecture passed in does.
+ */
+export function fontSetsByClosure(
+  c: Container,
+  readAs?: number,
+  minimum = FONT_SET_MINIMUM,
+  minimumGlyphs = FONT_SET_MINIMUM_GLYPHS,
+): FontSet[] {
+  const [lowHeight, highHeight] = GLYPH_HEIGHT_RANGE;
+  const out: FontSet[] = [];
+  let at = 0;
+  while (at + IMAGE_SET_HEADER < c.blob.length) {
+    const { height, first, count, countAt, spare } = fontSetHeader(c.blob, at);
+    // Cheap refusals first, in the order that rejects most: almost every offset dies on the height.
+    if (height < lowHeight || height > highHeight || count < minimum) { at += 1; continue; }
+    const end = at + IMAGE_SET_HEADER + 3 * count;
+    if (end > c.blob.length) { at += 1; continue; }
+
+    const glyphAddresses: (number | undefined)[] = [];
+    let decoded = 0;
+    let ok = true;
+    for (let p = at + IMAGE_SET_HEADER; p < end && ok; p += 3) {
+      const address = u24(c.blob, p);
+      if (address === 0) { glyphAddresses.push(undefined); continue; }
+      const glyph = glyphAt(c, address, undefined, readAs);
+      // The whole strength of the search: a glyph either tiles exactly or is not a glyph.
+      if (glyph === undefined || glyphHeight(glyph) !== height) { ok = false; break; }
+      glyphAddresses.push(address);
+      decoded += 1;
+    }
+    if (!ok || decoded < minimumGlyphs) { at += 1; continue; }
+
+    out.push({
+      address: c.flashBase + at,
+      height,
+      first,
+      count,
+      countAt,
+      spare,
+      glyphs: glyphAddresses,
+      length: IMAGE_SET_HEADER + 3 * count,
+    });
+    // A real set cannot overlap another, so skip past this one rather than finding its own tail.
+    at = end;
+  }
+  return out;
+}
+
+/**
  * Decode the glyph at an absolute flash address, or undefined if the stream does not fit.
  *
  * ```
@@ -203,15 +300,29 @@ export function fontSets(c: Container): FontSet[] | undefined {
  *
  * Returns undefined rather than a partial image, because a row that does not come to exactly
  * `width` pixels means the encoding was misread, and a half decoded bitmap would hide that.
+ *
+ * `readAs` overrides which architecture's glyph encoding to try, and it exists for **arch 10
+ * (Harmony 890 and 895)**, whose containers state no architecture at all so this returned undefined
+ * for them outright. It is deliberately a parameter rather than a default, because guessing the
+ * encoding of an architecture nobody has read is exactly the kind of silent wrong answer the arch 10
+ * slot rail exists to prevent. A caller passing it is asserting a hypothesis, and the row tiling
+ * check above is what tests it: a wrong encoding does not produce a worse glyph, it produces none.
+ * Section 180.
  */
-export function glyphAt(c: Container, address: number, limit?: number): Glyph | undefined {
-  if (c.architecture === undefined || !IMAGE_ARCHITECTURES.has(c.architecture)) return undefined;
+export function glyphAt(
+  c: Container,
+  address: number,
+  limit?: number,
+  readAs?: number,
+): Glyph | undefined {
+  const architecture = readAs ?? c.architecture;
+  if (architecture === undefined || !IMAGE_ARCHITECTURES.has(architecture)) return undefined;
   const off = c.blobOffsetOf(address);
   if (off === undefined || off < 0 || off >= c.blob.length) return undefined;
   const end = limit === undefined ? c.blob.length : Math.min(limit, c.blob.length);
   const width = u8(c.blob, off);
   if (width === 0) return undefined;
-  if (IMAGE_PACKED_ARCHITECTURES.has(c.architecture)) return packedGlyph(c, address, off, end, width);
+  if (IMAGE_PACKED_ARCHITECTURES.has(architecture)) return packedGlyph(c, address, off, end, width);
 
   let at = off + 1;
   const rows: (number | undefined)[][] = [];

@@ -192,7 +192,11 @@ every arch 10 reader stays gated, and guessing a mapping would turn twenty refus
 plausible wrong answers. **What does read there is what the framing locates**, section 179: the picture
 bank is found from the trailer's position alone, calibrated on 14 of 14 containers whose bank is known
 by another route, so 57% of a Harmony 890's file and 72% of a Harmony 895's is accounted for as
-pictures and both state a **128 by 160** display, the same as a Harmony 885. Firmware is what settles it, the way arch 9's own firmware settled its
+pictures and both state a **128 by 160** display, the same as a Harmony 885. **Its font sets read the
+same way**, section 180: eight of them on each, found by requiring every pointer to decode into a glyph
+that tiles exactly, and their shapes are named by the arch 8 alphabet at 213 of 237 where the Harmony
+One's alphabet names none. So a Harmony 890 uses the Harmony 885 typeface and its letters read, though
+not its words, since a string's address comes out of a screen program and those need the mapping. Firmware is what settles it, the way arch 9's own firmware settled its
 infrared classes. Sections 115, 117 and 178.
 
 **Seven reads are not seven configs, and on this architecture that had to be measured**, section 122. One

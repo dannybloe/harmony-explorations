@@ -1056,6 +1056,35 @@ are 5220<!--fact:glyphs--> glyphs and 67303<!--fact:inline_string_codes--> codes
 
 Decoding with a one byte pixel instead fails on almost all of them, which is the calibration.
 
+#### A font set is findable with no pointer slot
+
+Base slot 7 names the table, so `fontSets` cannot answer on **arch 10 (Harmony 890 and 895)** where
+the slot mapping is refuted. A set is findable anyway because of how much it has to get right at
+once: a candidate is accepted only if **every** nonzero address in its array decodes into a glyph
+whose rows tile exactly to its own declared width, at the set's declared height. `fontSetsByClosure`
+is exact against the slot route on **14 of 14** containers, address for address.
+
+Two thresholds, and they are separate because a real set can be almost entirely null, one Harmony One
+set declaring 73 pointers of which 66 are: the array must hold at least 8 pointers and at least
+`FONT_SET_MINIMUM_GLYPHS` of them must decode. That second one is a plateau, exact anywhere from 1 to
+5, where 0 admits 179 false positives and 8 loses four real sets.
+
+**The font table is not adjacent to the picture bank**, which was checked before being relied on: over
+thirteen containers its top sits 1918 to 48385 bytes below the bank. [findings.md](findings.md)
+section 180.
+
+**On arch 10 this gives eight sets** on both clean reads, 282 glyphs on the Harmony 890 and 277 on the
+Harmony 895, heights 8, 11, 13, 14 and 15, 70 slots each and a first code of 1. The heights come in
+the Harmony 880's own order, 14, 14, 15, 14, 13, 13, 8, 11. The encoding is two bytes a pixel, which
+is **measured**: the arch 9 packed form finds zero sets in either container and the unpacked form
+finds all eight. And the glyph shapes are named by the arch 8 alphabet at 213 of 237 and 212 of 229,
+against 44 and 42 for the Harmony 600's and **0** for the Harmony One's, so a Harmony 890 uses the
+Harmony 885 typeface. [findings.md](findings.md) section 180.
+
+**This does not give arch 10 its text.** A string's address comes out of a screen program, base slot
+11, and these sets declare a first code of 1 rather than 32, so the codes are per container and a run
+of printable bytes is not a string. `usesAscii` is false on both.
+
 #### Arch 9 packs the glyph itself a second way
 
 The set header above is unchanged, and so is the terminator. What differs is inside a glyph, and

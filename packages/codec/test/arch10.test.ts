@@ -13,6 +13,9 @@ import { parse } from '../src/index.ts';
 import { keyCodes } from '../src/inventory.ts';
 import { archSlot, EVENT_PRESS } from '../src/gspm.ts';
 import { pictureBankByClosure } from '../src/screen.ts';
+import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
+import { shapeKey, isBlank, usesAscii, characterMap } from '../src/text.ts';
+import { ALPHABETS } from '../src/alphabets.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [
@@ -360,4 +363,106 @@ test('the Harmony 890 rescan is byte identical, so it is one read and not two',
     const a = parse(require_('h890_config')).blob;
     const b = parse(require_('h890_config_rescan')).blob;
     assert.deepEqual([...a], [...b], 'the same payload under two names');
+  });
+
+/** The eight font sets of a Harmony 880, heights in the order the container stores them. */
+const ARCH8_SET_HEIGHTS = [14, 14, 15, 14, 13, 13, 8, 11];
+
+test('a Harmony 890 and 895 carry eight font sets, the same eight a Harmony 880 carries',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // Section 180. Found with no pointer slot: a candidate set is accepted only if every one of its
+    // pointers decodes into a glyph whose rows tile exactly to its own width, which arbitrary bytes
+    // do not do seventy times in a row.
+    const h880 = fontSets(parse(require_('arch8_config_880')));
+    assert.ok(h880 !== undefined);
+    assert.deepEqual(h880.map((s) => s.height), ARCH8_SET_HEIGHTS, 'the Harmony 880 for comparison');
+
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      assert.equal(fontSets(c), undefined, `${name} has no readable base slot 7, which is the point`);
+      const sets = fontSetsByClosure(c, 8);
+      assert.equal(sets.length, 8, `${name} font sets`);
+      // The same heights in the same order, and the same declared slot count. A shared multiset would
+      // be suggestive; a shared order is a statement about one generator laying out one product line.
+      assert.deepEqual(sets.map((s) => s.height), ARCH8_SET_HEIGHTS, `${name} set heights, in order`);
+      for (const s of sets) {
+        assert.equal(s.count, 70, `${name} slots per set`);
+        assert.equal(s.first, 1, `${name} first code, so the codes are not ASCII`);
+      }
+    }
+  });
+
+test('arch 10 stores a glyph as two bytes a pixel, and the packed form finds nothing at all',
+  skipUnless('h890_config', 'h895_config'), () => {
+    // The control that turns the encoding from an assumption into a measurement. `fontSetsByClosure`
+    // is handed a hypothesis about the encoding, and a wrong one does not yield worse glyphs, it
+    // yields none: the Harmony 525's packed two bit form finds zero sets in either container, where
+    // the unpacked form finds all eight. So this is arch 10 answering, not us choosing.
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      assert.equal(fontSetsByClosure(c, 9).length, 0, `${name} is not packed like a Harmony 525`);
+      assert.equal(fontSetsByClosure(c, 8).length, 8, `${name} is unpacked like a Harmony 885`);
+    }
+  });
+
+test('a Harmony 890 uses the Harmony 885 typeface, so its letters read',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_885', 'arch8_config_880'), () => {
+    // The strongest confirmation available, and it needs no slot: a glyph's pixels hash to a shape,
+    // and the hand read alphabets map a shape to a character. Section 180.
+    const shapesOf = (name: string): Set<string> => {
+      const c = parse(require_(name));
+      const readAs = c.architecture ?? 8;
+      const sets = c.architecture === undefined ? fontSetsByClosure(c, 8) : fontSetsByClosure(c);
+      const keys = new Set<string>();
+      for (const s of sets) {
+        for (const address of s.glyphs) {
+          if (address === undefined) continue;
+          const glyph = glyphAt(c, address, undefined, readAs);
+          // A blank glyph carries no shape, and counting one as evidence is what once made arch 8's
+          // `V`, `?` and `x` decode as spaces.
+          if (glyph === undefined || isBlank(glyph)) continue;
+          keys.add(shapeKey(glyphHeight(glyph), glyph));
+        }
+      }
+      return keys;
+    };
+    const named = (keys: Set<string>, alphabet: string): number => {
+      const alpha = ALPHABETS.find((a) => a.name === alphabet);
+      assert.ok(alpha !== undefined, alphabet);
+      return [...keys].filter((k) => alpha.shapes[k] !== undefined).length;
+    };
+
+    // Exact counts, so a change in either the search or an alphabet seed shows up here.
+    const expected: readonly [string, number, number][] = [
+      ['h890_config', 237, 213],
+      ['h895_config', 229, 212],
+      ['arch8_config_885', 260, 218],
+      ['arch8_config_880', 238, 216],
+    ];
+    for (const [name, distinct, hits] of expected) {
+      const keys = shapesOf(name);
+      assert.equal(keys.size, distinct, `${name} distinct non blank shapes`);
+      assert.equal(named(keys, 'arch8'), hits, `${name} shapes the arch 8 alphabet names`);
+      // The calibration is that the two arch 10 containers are named at the same rate as the two
+      // containers the alphabet was read from, so arch 10 is not being read at a discount.
+      assert.ok(hits / distinct > 0.83, `${name} resolves ${hits} of ${distinct}`);
+    }
+
+    // The negative, and it is the reason the agreement means anything: the Harmony One's typeface is
+    // a different one, and it names **none** of these shapes on any of the four.
+    for (const [name] of expected) {
+      assert.equal(named(shapesOf(name), 'one'), 0, `${name} is not the Harmony One typeface`);
+    }
+  });
+
+test('the alphabet is not the words, because a string still needs the slot mapping',
+  skipUnless('h890_config'), () => {
+    // The boundary, asserted so nobody reads section 180 as "arch 10 text reads". A string is a run of
+    // glyph codes whose address comes out of a screen program, and programs are base slot 11. The
+    // codes start at 1 rather than 32, so they are this container's own numbering and not ASCII, which
+    // is the other route that would have worked without programs.
+    const c = parse(require_('h890_config'));
+    assert.equal(usesAscii(c), false, 'the codes are per config, so a byte run is not a string');
+    assert.equal(characterMap(c), undefined, 'and no character map, since it needs the drawn codes');
+    for (const s of fontSetsByClosure(c, 8)) assert.equal(s.first, 1);
   });

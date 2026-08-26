@@ -23845,3 +23845,98 @@ that the pair cannot be quoted as two samples.
 about which pointer slot names what, so `INSERTED_SLOTS` still has no arch 10 entry and adding one is
 still the single thing not to do. What it does is confirm the direction section 178 pointed in, at a
 cost of one function.
+
+## 180. The font sets read on arch 10 too, and a Harmony 890 turns out to use the Harmony 885 typeface
+
+Section 179's closing suggestion was that the font table would be reachable next, because it sits at
+the picture bank's lower edge. **That premise is wrong and measuring it first is the only reason no
+time went into it.** Across thirteen containers the top of base slot 7's font table sits between
+**1918 and 48385** bytes below the bank, never adjacent. So the bank does not locate the font table
+and the route had to be something else.
+
+What works is the property that made the bank findable, applied to a different structure.
+
+### The search
+
+A font set is three header bytes, `{ u8 height; u8 first code; u8 count }`, followed by `count` three
+byte glyph addresses, section 78. A glyph states its own width and then encodes its rows, and
+`glyphAt` returns **undefined** rather than a partial image when the rows do not come to exactly that
+width, section 46. That refusal is what makes a set findable without its pointer slot: a candidate is
+accepted only if **every** nonzero address in its array decodes into a glyph of the set's declared
+height, and a run of seventy of those is not something arbitrary bytes produce.
+
+`fontSetsByClosure` in `packages/codec/src/font.ts`. **Exact on 14 of 14 containers whose sets base
+slot 7 already names**, address for address, with nothing missed and nothing spurious on any of them.
+
+**It needs two thresholds and not one, and conflating them cost four sets.** A real set can be almost
+entirely null: one Harmony One set declares 73 pointers of which 66 are null and 7 are glyphs, and
+three more like it exist across the corpus. The first version bounded the array length and the live
+glyph count with the same number, 8, and so refused all four. The two are separate now:
+
+| minimum live glyphs | sets missed | false positives |
+|---|---|---|
+| 0 | 0 | **179** |
+| 1 | 0 | 0 |
+| 3 | 0 | 0 |
+| 5 | 0 | 0 |
+| 6 | 1 | 0 |
+| 8 | 4 | 0 |
+
+So the constant is a **plateau** and the work is done by requiring any live glyph at all, since a run
+of zeroes is a run of valid null pointers and passes everything else. It is 3 because that is the
+middle of the band. **The comment first written for it claimed 1 and 2 produce false positives, which
+is false**, and it was written before the sweep rather than after it; the sweep is now a test that
+asserts both edges, because a threshold with only one failing side is one nobody has bounded.
+
+### What arch 10 has
+
+Both clean arch 10 reads carry **eight font sets**, 282 glyphs on the Harmony 890 and 277 on the
+Harmony 895, at heights 8, 11, 13, 14 and 15. Every set declares 70 slots and a first code of 1.
+
+**The set layout is the Harmony 880's, in order.** Its eight sets are heights 14, 14, 15, 14, 13, 13,
+8, 11 with 70 slots each, and the two arch 10 containers reproduce that sequence exactly, not merely
+the same multiset. A shared collection would be suggestive; a shared **order** is a statement about
+one generator laying out one product line.
+
+**Arch 10 stores a glyph as two bytes a pixel, measured rather than assumed.** The search takes the
+encoding as a parameter, because an arch 10 container states no architecture and guessing one is the
+failure the slot rail exists to prevent. Handing it the Harmony 525's packed two bit form finds
+**zero** sets in either container, and the unpacked form finds all eight. A wrong encoding does not
+produce worse glyphs, it produces none, so this is arch 10 answering rather than us choosing.
+
+### A Harmony 890's letters read
+
+A glyph's pixels hash to a shape and the hand read alphabets map a shape to a character, section 112.
+Running that over the sets found above:
+
+| container | distinct non blank shapes | named by the arch 8 alphabet | by the Harmony 600's | by the Harmony One's |
+|---|---|---|---|---|
+| `h890_config` | 237 | **213** | 44 | 0 |
+| `h895_config` | 229 | **212** | 42 | 0 |
+| `arch8_config_885` | 260 | 218 | 42 | 0 |
+| `arch8_config_880` | 238 | 216 | 42 | 0 |
+
+**The calibration is the bottom two rows.** They are the containers the arch 8 alphabet was read
+from, and they resolve at 84% and 91%; the two arch 10 containers resolve at 90% and 93%. So arch 10
+is not being read at a discount, it is read at the same rate as the architecture the seed came from.
+The Harmony One's alphabet naming **none** of the shapes in any of the four is what gives the
+agreement force: these are different typefaces and the method can tell.
+
+So a Harmony 890 uses the same typeface as a Harmony 885, and its individual letters are now
+readable. Taken with sections 177 and 179, an arch 10 remote matches an arch 8 one in its keypad, its
+display size, its picture chrome and its font.
+
+### The boundary, which matters more than the result
+
+**Having the alphabet is not having the words.** A string is a run of glyph codes whose address comes
+out of a screen program, and programs are base slot 11, so locating one still needs the mapping that
+section 178 refuted. The other route that would have worked without programs is closed too: these
+sets declare a first code of **1**, so the codes are this container's own numbering rather than ASCII,
+and a run of printable bytes is not a string. `usesAscii` is false and `characterMap` is undefined on
+both, asserted as a test so section 180 cannot be read as "arch 10 text reads".
+
+**And this does not open the slot mapping either.** Three structures now read on arch 10 with no
+pointer slot, the key table, the picture bank and the font sets, and each one was found by the same
+observation: a structure that refuses to decode when misread can be located by trying every offset.
+That is worth reaching for again before anybody spends another afternoon on the mapping, and it is
+not progress towards it.

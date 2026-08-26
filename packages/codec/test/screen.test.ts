@@ -58,6 +58,9 @@ import {
   pictureBankByClosure,
   PICTURE_CEILING,
   SCREEN_SIZES,
+  fontSetsByClosure,
+  FONT_SET_MINIMUM,
+  FONT_SET_MINIMUM_GLYPHS,
 } from '../src/index.ts';
 import type { Bitmap, Container, Glyph } from '../src/index.ts';
 
@@ -841,4 +844,55 @@ test('the bank is the display size, by a route that reads no screen program',
     }
     assert.deepEqual([...seen].sort((a, b) => a - b), [8, 9, 12, 14],
       'on all four architectures that state an architecture');
+  });
+
+test('the closure font search finds exactly the sets base slot 7 names, on all fourteen',
+  skipUnless(...BANK_KNOWN), () => {
+    // Section 180, and the same calibration discipline as the picture bank above: run the reader free
+    // derivation where a pointer slot already gives the answer, and compare set for set rather than
+    // counting. Nothing missed and nothing spurious on any of them.
+    let exact = 0;
+    for (const name of BANK_KNOWN) {
+      const c = parse(require_(name));
+      const known = fontSets(c);
+      assert.ok(known !== undefined && known.length > 0, `${name} has font sets`);
+      const found = fontSetsByClosure(c);
+      assert.deepEqual(
+        found.map((s) => s.address).sort((a, b) => a - b),
+        known.map((s) => s.address).sort((a, b) => a - b),
+        `${name} finds the same set addresses`,
+      );
+      exact += 1;
+    }
+    assert.equal(exact, 14);
+  });
+
+test('the font search needs both thresholds, and each end of the plateau was measured',
+  skipUnless(...BANK_KNOWN), () => {
+    // Neither number is a taste. A real set can be almost all null pointers, one Harmony One set
+    // declaring 73 of which 66 are, so bounding the array length and the live glyph count with one
+    // number loses four sets across the corpus. And requiring no live glyph at all is what actually
+    // breaks it, because a run of zeroes is a run of valid null pointers.
+    const score = (minimumGlyphs: number): { missed: number; extra: number } => {
+      let missed = 0;
+      let extra = 0;
+      for (const name of BANK_KNOWN) {
+        const c = parse(require_(name));
+        const known = new Set((fontSets(c) ?? []).map((s) => s.address));
+        const found = new Set(fontSetsByClosure(c, undefined, FONT_SET_MINIMUM, minimumGlyphs)
+          .map((s) => s.address));
+        missed += [...known].filter((a) => !found.has(a)).length;
+        extra += [...found].filter((a) => !known.has(a)).length;
+      }
+      return { missed, extra };
+    };
+    // The plateau: anything in it is exact.
+    for (const minimumGlyphs of [1, FONT_SET_MINIMUM_GLYPHS, 5]) {
+      assert.deepEqual(score(minimumGlyphs), { missed: 0, extra: 0 }, `at ${minimumGlyphs}`);
+    }
+    // Below it, false positives; above it, real sets go missing. Both directions asserted, because a
+    // threshold with only one failing side is a threshold nobody has bounded.
+    assert.deepEqual(score(0), { missed: 0, extra: 179 }, 'a run of zeroes is a run of null pointers');
+    assert.deepEqual(score(6), { missed: 1, extra: 0 }, 'one real set is that sparse');
+    assert.deepEqual(score(8), { missed: 4, extra: 0 }, 'and four are, which is what conflating cost');
   });
