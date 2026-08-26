@@ -24121,8 +24121,13 @@ lost to a bad read.
 Assigning base slots 1 to 19 in order to the raw slots that are not insertions, **exactly nine** of the
 8855 four element insertion sets fit all seven anchors, and the freedom in them is precisely two slots:
 which of raw 1, 2 or 3 is base slot 2, and which of raw 7, 8 or 9 is base slot 6. Every other
-assignment is forced, including base slot 4 to raw 5. So **17 of the 19 present base slots are
-determined**.
+assignment is forced, including base slot 4 to raw 5.
+
+**"So 17 of the 19 present base slots are determined" was the claim here and it is too strong**, and
+the verification that followed the same day is in the subsection below. What survives is that the
+anchors are anchors and that the arithmetic **above** base slot 10 checks out against arch 8 slot by
+slot. What does not survive is the assumption that only base slot 0 is missing: base slot 2 is not at
+any of its three candidates, and the region holding base slots 8 to 10 contradicts the alignment.
 
 **Base slot 6 is raw slot 9 on size**, which narrows nine to three: a mode table is tens of thousands
 of bytes everywhere, the three candidates measure 1, 3 and 33340 bytes on the Harmony 890 and 1, 3 and
@@ -24150,15 +24155,67 @@ refutations in section 178 all rested on a device count the config had no way to
 corrected in place there rather than deleted, because the calibration they established, base slot 5's
 count being the device count, is still what identified raw slot 6 here.
 
+### Verifying it slot by slot: the top half holds, the middle does not
+
+Section 178 asked for the seventeen readers to be scored against a candidate mapping. Checking the
+**shape** of each slot against arch 8's, which is cheaper and sharper, both confirms the mapping above
+base slot 10 and refutes two parts of it. Two things make a shape comparable: whether a slot is a count
+prefixed array of `u24` pointers, and whether every pointer resolves inside the blob.
+
+**Confirmed, and by exact agreement rather than similarity:**
+
+| base slot | arch 8 shape | arch 10 shape | verdict |
+|---|---|---|---|
+| 11, the screen program table | `u16` count 38, all resolve | `u16` count 39 and 43, all resolve | same shape |
+| 12, the timer table | `u8` count 17, section 52 bytes | `u8` count 17, section 52 bytes | **identical** |
+| 15, the parameter block | `u8` count 9 | `u8` count 14 and 18 | same shape, and its count is per architecture by section 44 |
+| 16, the number sender | `u16` count 0 | `u16` count 0 | **identical**, and zero is what every found config carries |
+
+So base slots 11 to 19 sit where the anchors put them, on both containers, which is what makes the
+picture bank and NULL anchors more than three isolated hits.
+
+**Refuted, in two places.**
+
+**Base slot 2 is at none of its three candidates.** The log area is not a pointer, it is three numbers
+with a hard closure: `limit - start == capacity * stride`, and `limit` a round flash boundary,
+section 47. All four known containers satisfy it exactly, `15360 * 8` from `0x1E0000` to `0x1FE000` on
+a Harmony 880 and `8192 * 8` from `0x070000` to `0x080000` on a Harmony 525. Raw slots 1, 2 and 3 on
+both arch 10 containers satisfy it under **no** stride at all, integer or otherwise, and two of the
+three give a `limit` below their own `start`. So arch 10 appears to have no base slot 2 either, and the
+nine fitting insertion sets are all wrong about it.
+
+**The base slot 8 to 10 region contradicts the alignment.** On arch 8 base slot 10, the action list
+table, is a `u16` counted array of 1499 pointers that all resolve, and base slot 9 is not a pointer
+array at all, section 39. On arch 10 the slot with that signature, 1549 pointers all resolving, is raw
+12, which the alignment calls base slot **9**; and the slot the alignment calls base slot 10 is two
+bytes long on the Harmony 890, meaning an empty array, which no working config can have for its action
+lists. Reassigning by shape instead needs base slot **8** to be absent as well, and there is no
+independent evidence for that, only that it makes the shapes line up. That is fitting, not reading, so
+it is recorded as an open contradiction rather than adopted.
+
+**The honest state is therefore narrower than the claim above.** Anchored by content: base 1, 3, 5, 7,
+17, 18 and 19. Confirmed by shape against arch 8: 11, 12, 15 and 16, hence 11 to 19 as a block.
+Forced by the anchors and not independently checked: 4, 13 and 14. **Contradicted or unplaced: 2, 6, 8,
+9 and 10**, with base 6 favoured at raw 9 by size alone. Base 0 is absent.
+
 ### The rail stays shut, and now for a precise reason
 
-`INSERTED_SLOTS` still has no arch 10 entry and adding one is still the thing not to do. The reason is
-no longer "the mapping is unknown": it is that `archSlot` expresses a mapping as insertions into the
-twenty, and arch 10 needs a base slot **removed** as well, which that shape cannot say. Two base slots
-are also still ambiguous three ways each. Ungating on a mapping that is right about seventeen slots and
-guessing at two would produce two plausible wrong readers, which is the same failure the rail was put
-up for.
+`INSERTED_SLOTS` still has no arch 10 entry and adding one is still the thing not to do. Two reasons
+now, and the second is the one the verification supplied. `archSlot` expresses a mapping as insertions
+into the twenty, and arch 10 needs at least one base slot **removed**, which that shape cannot say. And
+five base slots are contradicted or unplaced, including base slot 10, which is the action list table,
+so a mapping adopted today would hand a reader the wrong program.
 
-What would finish it is what section 178 asked for and now has an instrument: score the seventeen
-readers against the three surviving candidate mappings. The anchors have already done the work that
-scoring could not, so what is left is small and it is verification rather than search.
+**The verification is what makes this a stop rather than a formality**, and it is worth saying plainly:
+this section's first version claimed seventeen of nineteen slots determined, and checking the shapes
+took that to eleven confirmed, three forced and five contradicted. The claim was reached by fitting an
+arithmetic to seven anchors, which is a smaller constraint than it feels like, and the anchors were
+never wrong. What was wrong was assuming a single kind of difference, insertions, when arch 10 has
+absences as well.
+
+What would finish it is a fourth and fifth anchor in the middle of the table, found the way the first
+seven were: identify a structure without its slot, then ask which slot names it. Base slot 10 is the
+best target, since an action list is a three byte instruction stream with its own decoder and section
+140's if/else closure to verify against, and base slot 2's three numbers have a closure that no
+candidate met. Scoring readers against a guessed mapping is what this section tried and it is the
+weaker instrument.

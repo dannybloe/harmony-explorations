@@ -814,3 +814,84 @@ test('the Harmony 890 drives four devices, agreeing with the Harmony 880 of the 
     const [, devices] = DEVICE_COUNTS.find(([n]) => n === 'arch8_config_880') as [string, number];
     assert.equal(devices, 4, 'the Harmony 880 of the same room');
   });
+
+test('the arch 10 mapping is confirmed above base slot 10 and contradicted below it',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // Section 182's verification, and it is a test because the finding's first claim was too strong.
+    // Comparing each slot's *shape* against arch 8's is sharper than scoring readers: a slot either is
+    // a count prefixed array of u24 pointers that all resolve, or it is not.
+    const loose = (name: string, slot: number): { count: number; resolve: number } | undefined => {
+      const c = parse(require_(name));
+      const address = c.sections[slot]?.address;
+      if (address === undefined || address === 0) return undefined;
+      const off = c.blobOffsetOf(address);
+      if (off === undefined) return undefined;
+      const count = u16(c.blob, off);
+      if (count > 20_000 || off + 2 + 3 * count > c.blob.length) return { count, resolve: -1 };
+      let resolve = 0;
+      for (let k = 0; k < count; k += 1) {
+        if (c.blobOffsetOf(u24(c.blob, off + 2 + 3 * k)) !== undefined) resolve += 1;
+      }
+      return { count, resolve };
+    };
+
+    // Confirmed: the two exact agreements. Base slot 12's section is 52 bytes with a u8 count of 17 on
+    // arch 8 and on arch 10, and base slot 16 is an empty array on both.
+    const eight = parse(require_('arch8_config_880'));
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      assert.equal(eight.sectionLength(13), 52, 'arch 8 base slot 12');
+      assert.equal(c.sectionLength(15), name === 'h890_config' ? 52 : 55, `${name} base slot 12`);
+      assert.deepEqual(loose(name, 19), { count: 0, resolve: 0 }, `${name} base slot 16 is empty`);
+    }
+    assert.deepEqual(loose('arch8_config_880', 17), { count: 0, resolve: 0 }, 'arch 8 base slot 16');
+    // Base slot 11: same shape, count within one of arch 8's.
+    assert.deepEqual(loose('arch8_config_880', 12), { count: 38, resolve: 38 });
+    assert.deepEqual(loose('h890_config', 14), { count: 39, resolve: 39 });
+    assert.deepEqual(loose('h895_config', 14), { count: 43, resolve: 43 });
+
+    // **Contradicted.** On arch 8 the action list table, base slot 10, is a u16 array whose 1499
+    // pointers all resolve, and base slot 9 is not a pointer array at all. On arch 10 that signature
+    // sits at raw 12, which the anchors' arithmetic calls base slot 9, and the slot it calls base
+    // slot 10 is a two byte empty array on the Harmony 890. No config can have no action lists, so
+    // the alignment is wrong here and this test says so rather than a document saying it.
+    assert.deepEqual(loose('arch8_config_880', 11), { count: 1499, resolve: 1499 },
+      'arch 8 base slot 10, the action list table');
+    assert.equal(loose('arch8_config_880', 10)?.resolve, -1,
+      'and arch 8 base slot 9 is not a pointer array');
+    assert.deepEqual(loose('h890_config', 12), { count: 1549, resolve: 1549 },
+      'the action list signature is at raw 12');
+    assert.deepEqual(loose('h890_config', 13), { count: 0, resolve: 0 },
+      'and the arithmetic puts base slot 10 on an empty array, which cannot be right');
+  });
+
+test('the log area closure holds on every known container and on no arch 10 candidate',
+  skipUnless('arch8_config_880', 'arch8_config_885', 'h525_config', 'h600_config',
+    'h890_config', 'h895_config'), () => {
+    // Base slot 2 is three numbers with a hard closure, section 47: limit - start == capacity * stride,
+    // and limit a round flash boundary. That is what says base slot 2 is not at raw 1, 2 or 3.
+    const ROUND = new Set([0x080000, 0x100000, 0x200000, 0x400000, 0x1fe000]);
+    const read = (name: string, slot: number): { capacity: number; start: number; limit: number } => {
+      const c = parse(require_(name));
+      const off = c.blobOffsetOf(c.sections[slot]!.address);
+      assert.ok(off !== undefined, `${name} raw ${slot}`);
+      return { capacity: u16(c.blob, off), start: u24(c.blob, off + 2), limit: u24(c.blob, off + 5) };
+    };
+    // The known containers, exactly, which is the calibration.
+    for (const [name, stride] of [['arch8_config_880', 8], ['arch8_config_885', 8],
+      ['h525_config', 8], ['h600_config', 8]] as const) {
+      const { capacity, start, limit } = read(name, 2);
+      assert.equal(limit - start, capacity * stride, `${name} log area closes`);
+      assert.ok(ROUND.has(limit), `${name} limit is a round boundary`);
+    }
+    // And no arch 10 candidate closes under any integer stride at all, which is stronger than failing
+    // the two strides the corpus uses.
+    for (const name of ['h890_config', 'h895_config']) {
+      for (const slot of [1, 2, 3]) {
+        const { capacity, start, limit } = read(name, slot);
+        const span = limit - start;
+        assert.ok(span <= 0 || span % capacity !== 0,
+          `${name} raw ${slot} must not close: ${span} over ${capacity}`);
+      }
+    }
+  });

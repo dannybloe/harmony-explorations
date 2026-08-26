@@ -180,11 +180,23 @@ states six devices, and the 895 turns out to have **no infrared records at all**
 The real reason is that arch 10 carries **nineteen** base slots and four insertions rather than twenty
 and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
 the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
-and 23 for a Harmony 895. Seven base slots are anchored by content and **17 of the 19 are determined**,
-base 1 to raw 0, 3 to 4, 5 to 6, 7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, with only base
-2 and base 6 ambiguous three ways each. `INSERTED_SLOTS` still gets no entry, and the reason is now
-precise: `archSlot` expresses a mapping as insertions into the twenty and cannot say that a base slot
-is **removed**. What does read on arch 10 is everything the header
+and 23 for a Harmony 895. Seven base slots are anchored by content, base 1 to raw 0, 3 to 4, 5 to 6,
+7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **verifying the rest slot by slot against
+arch 8 confirmed the top half and refuted the middle**, which is why this entry does not say seventeen
+of nineteen as section 182 first did. Confirmed by shape: base 11, 12, 15 and 16, hence 11 to 19 as a
+block, base slot 12 agreeing **exactly**, 52 bytes and a count of 17. **Contradicted or unplaced: base
+2, 6, 8, 9 and 10.** Base slot 2 is at none of its three candidates, since the log area's closure
+`limit - start == capacity * stride` holds exactly on four known containers and under no stride at all
+on any candidate. And the action list table's signature, a `u16` array whose every pointer resolves,
+sits on the raw slot the arithmetic calls base slot **9**, while the slot it calls base slot 10 is an
+empty array on a Harmony 890, which no working config can have. `INSERTED_SLOTS` still gets no entry, for two reasons now:
+`archSlot` expresses a mapping as insertions into the twenty and cannot say a base slot is **removed**,
+and base slot 10 is contradicted, so a mapping adopted today would hand a reader the wrong program.
+**The lesson is about the instrument**: fitting one arithmetic to seven anchors felt conclusive and was
+not, because it assumed a single kind of difference. The next anchor should be found the way the first
+seven were, by identifying a structure without its slot and asking which slot names it, and base slot
+10 is the target since an action list has its own decoder and section 140's if/else closure to verify
+against. What does read on arch 10 is everything the header
 or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
 key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
 and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
