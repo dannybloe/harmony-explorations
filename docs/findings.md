@@ -24219,3 +24219,93 @@ best target, since an action list is a three byte instruction stream with its ow
 140's if/else closure to verify against, and base slot 2's three numbers have a closure that no
 candidate met. Scoring readers against a guessed mapping is what this section tried and it is the
 weaker instrument.
+
+## 183. Arch 10's slot mapping, determined: three base slots are absent and six raw slots are not base slots
+
+Section 182's verification refuted its own arithmetic and named the target: find one more anchor the way
+the first seven were found, by identifying a structure without its slot and then asking which slot names
+it, with base slot 10 as the best candidate. That worked, and it closed the mapping.
+
+### The anchor that settled it
+
+`Container.actionListPacking` is the check the whole action list reading rests on: consecutive entries
+of base slot 10's table sit exactly `1 + 3 * count` apart, where the addresses come from the **table**
+and the counts come from the **lists**, so agreement is two unrelated parts of the file telling one
+story. Corpus wide it holds for all but exactly **four** pairs per config, those four being the
+boundaries between the runs the lists are packed into.
+
+Scoring that closure against every candidate table in a container needs no slot mapping at all. On arch
+8, whose mapping is known, base slot 10 at raw 11 scores 1494 of 1498. On both arch 10 containers
+exactly one slot scores like that, **raw 12**, at 1544 of 1548 and 1365 of 1369, each with four breaks;
+every other array in either container scores near zero. So **base slot 10 is raw slot 12**, which is
+also the slot section 182's arithmetic had called base slot 9.
+
+### And that forced base slot 8 to be absent
+
+Base slot 9's entries are tagged lists of button bindings, section 176, and base slot 8 is not a pointer
+array at all. Arch 10's raw 11 is a `u8` counted array whose **every** entry decodes as a tagged list,
+which is base slot 9's shape:
+
+| container | slot | entries | bindings |
+|---|---|---|---|
+| `arch8_config_880` | base 9, raw 10 | 12 | 322 |
+| `arch8_config_885` | base 9, raw 10 | 17 | 500 |
+| `h890_config` | raw 11 | 12 | **323** |
+| `h895_config` | raw 11 | 13 | 317 |
+
+Twelve against twelve and 323 against 322 is agreement rather than coincidence, because section 181
+showed those two configs share their infrared database almost byte for byte: same room, same equipment.
+So base slot 9 is raw slot 11, and with base slot 7 at raw 10 and base slot 10 at raw 12 there is
+exactly one slot between them. **Base slot 8 has nowhere to go.**
+
+### The mapping
+
+| base slot | raw slot | what places it |
+|---|---|---|
+| 0 | **absent** | no `0xFEED` word anywhere in either payload |
+| 1 | 0 | the architecture record, `0a 0a` plus the skin, calibrated on six containers |
+| 2 | **absent** | the log area closure holds on four known containers and on no candidate |
+| 3 | 4 | the `0xADDF` clock frame |
+| 4 | 5 | by order; 125 bytes on the Harmony 895, which is base slot 4's own size |
+| 5 | 6 | four infrared groups holding all 300 records |
+| 6 | 9 | by order; mode table sized, about 33000 bytes |
+| 7 | 10 | all eight font set addresses |
+| 8 | **absent** | nowhere to go once base 9 takes raw 11 |
+| 9 | 11 | twelve tagged lists, 323 bindings against the Harmony 880's twelve and 322 |
+| 10 | 12 | the packing closure, four breaks, arch 8's exact signature |
+| 11 | 14 | a `u16` array all resolving, 39 against the Harmony 880's 38 |
+| 12 | 15 | a `u8` count of 17 in 52 bytes, identical to the Harmony 880's |
+| 13, 14 | 16, 17 | by order |
+| 15 | 18 | a `u8` count, 14 against the Harmony 880's 9, per architecture by section 44 |
+| 16 | 19 | an empty array, as on arch 8 |
+| 17 | 20 | two bytes before the picture bank |
+| 18, 19 | 21, 22 | NULL, as on all four architectures |
+
+Seventeen base slots present, three absent, and raw slots **1, 2, 3, 7, 8 and 13** are not base slots.
+Thirteen of the seventeen are placed by their own evidence and four follow by order between anchors,
+which the mapping being monotone forces.
+
+### Why this is believable where section 182's was not
+
+Section 182 fitted one arithmetic to seven anchors and was wrong about five slots. The difference is not
+more anchors, it is what kind. Section 182 assumed a **shape** for the difference between arch 10 and
+the base layout, insertions only, and then had one free parameter to fit. This has no shape assumption:
+each row is placed by asking what the slot's contents are, and the arithmetic is only used to fill four
+gaps between neighbours that are already placed. **The lesson to carry is that a model with a free
+parameter and seven constraints can look conclusive and be wrong**, where the same seven facts plus
+"believe nothing you have not identified" reaches a different and checkable answer.
+
+### The rail is unchanged, and adopting this is a decision
+
+`INSERTED_SLOTS` still has no arch 10 entry and `archSlot` still refuses. The mapping is **data in a
+test**, `ARCH10_MAPPING` in `packages/codec/test/arch10.test.ts`, and a test asserts that `irGroups`,
+`fontSets` and `actionLists` all still return undefined on a Harmony 890.
+
+Two reasons it is not simply switched on. `archSlot` expresses a per architecture difference as
+insertions into the twenty, and this mapping needs three base slots to be **absent**, which that shape
+cannot say: adopting it means changing the representation to a per architecture table, which touches
+every architecture's reader. And moving a rail is Danny's call, not a side effect of a finding.
+
+What ungating would buy, if it is wanted: a Harmony 890's devices, activities, screens, button bindings
+and drawn text, since sections 179 to 181 already read its pictures, fonts and infrared codes without
+any slot at all. What it risks is the four by order rows, which no content check has confirmed.

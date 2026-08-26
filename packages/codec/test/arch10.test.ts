@@ -16,6 +16,7 @@ import { pictureBankByClosure } from '../src/screen.ts';
 import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
 import { shapeKey, isBlank, usesAscii, characterMap } from '../src/text.ts';
 import { ALPHABETS } from '../src/alphabets.ts';
+import { taggedList } from '../src/sections.ts';
 import {
   irGroups, irRecordsByClosure, irCarrier, irGroupCount, irRecordBlocks, irBlockWords,
   IR_RECORD_POINTER_BIAS,
@@ -894,4 +895,124 @@ test('the log area closure holds on every known container and on no arch 10 cand
           `${name} raw ${slot} must not close: ${span} over ${capacity}`);
       }
     }
+  });
+
+/**
+ * Arch 10's base slot to raw slot mapping, section 183, with what evidences each row.
+ *
+ * **Deliberately data in a test and not in `archSlot`.** The rail is unchanged: nothing reads arch 10
+ * through this. It is here so the mapping is checkable and so adopting it later is a decision with a
+ * measurement behind it rather than a guess.
+ */
+const ARCH10_MAPPING: readonly [number, number, string][] = [
+  [1, 0, 'the architecture record, 0a 0a skin 0d, calibrated on six containers'],
+  [3, 4, 'the 0xADDF clock frame'],
+  [4, 5, 'by order; 125 bytes on the Harmony 895, base slot 4\'s own size'],
+  [5, 6, 'four infrared groups holding all 300 records'],
+  [6, 9, 'by order; mode table sized, about 33000 bytes'],
+  [7, 10, 'all eight font set addresses'],
+  [9, 11, 'twelve tagged lists, 323 bindings, against the Harmony 880\'s twelve and 322'],
+  [10, 12, 'the packing closure: four breaks, exactly arch 8\'s signature'],
+  [11, 14, 'a u16 array all resolving, 39 against the Harmony 880\'s 38'],
+  [12, 15, 'a u8 count of 17 in 52 bytes, identical to the Harmony 880\'s'],
+  [13, 16, 'by order'],
+  [14, 17, 'by order'],
+  [15, 18, 'a u8 count, 14 against the Harmony 880\'s 9, per architecture by section 44'],
+  [16, 19, 'an empty array, as on arch 8'],
+  [17, 20, 'two bytes before the picture bank'],
+  [18, 21, 'NULL'],
+  [19, 22, 'NULL'],
+];
+
+/** The base slots arch 10 does not have at all. */
+const ARCH10_ABSENT = [0, 2, 8];
+
+test('the arch 10 mapping is monotone, complete, and leaves six raw slots over',
+  () => {
+    // No lab: the arithmetic. Base slots map in order, so the mapping has to be increasing, and the
+    // absences plus the leftover raw slots have to account for all 23.
+    const rows = [...ARCH10_MAPPING];
+    for (let k = 1; k < rows.length; k += 1) {
+      assert.ok((rows[k]?.[0] ?? 0) > (rows[k - 1]?.[0] ?? 0), 'base slots ascend');
+      assert.ok((rows[k]?.[1] ?? 0) > (rows[k - 1]?.[1] ?? 0), 'and so do their raw slots');
+    }
+    assert.equal(rows.length + ARCH10_ABSENT.length, 20, 'every base slot is placed or absent');
+    const claimed = new Set(rows.map(([, raw]) => raw));
+    const over = [...Array(23).keys()].filter((raw) => !claimed.has(raw));
+    assert.deepEqual(over, [1, 2, 3, 7, 8, 13], 'the raw slots that are not base slots');
+    assert.equal(rows.length + over.length, 23, 'and 23 raw slots are accounted for');
+  });
+
+test('base slot 10 is raw slot 12, by the closure that carries the whole action list reading',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880'), () => {
+    // Section 183, and the decisive anchor. The addresses come from a candidate table and the counts
+    // from the lists themselves, so agreement is two unrelated parts of the file telling one story.
+    // Corpus wide it holds for all but exactly four pairs per config, which are the run boundaries.
+    const packing = (name: string, slot: number): [number, number] => {
+      const c = parse(require_(name));
+      const off = c.blobOffsetOf(c.sections[slot]!.address);
+      assert.ok(off !== undefined, `${name} raw ${slot}`);
+      const count = u16(c.blob, off);
+      const table: number[] = [];
+      for (let k = 0; k < count; k += 1) table.push(u24(c.blob, off + 2 + 3 * k));
+      let fit = 0;
+      for (let k = 0; k + 1 < table.length; k += 1) {
+        const at = c.blobOffsetOf(table[k] as number);
+        if (at === undefined) continue;
+        if ((table[k + 1] as number) - (table[k] as number) === 1 + 3 * u8(c.blob, at)) fit += 1;
+      }
+      return [fit, table.length - 1];
+    };
+    // Calibration on the architecture whose mapping is known.
+    assert.deepEqual(packing('arch8_config_880', 11), [1494, 1498], 'arch 8 base slot 10');
+    // And arch 10, four breaks on both, where every other slot in either container scores near zero.
+    assert.deepEqual(packing('h890_config', 12), [1544, 1548]);
+    assert.deepEqual(packing('h895_config', 12), [1365, 1369]);
+    for (const [name, slot] of [['h890_config', 14], ['h895_config', 14]] as const) {
+      const [fit, pairs] = packing(name, slot);
+      assert.ok(fit * 4 < pairs, `${name} raw ${slot} is not an action list table: ${fit}/${pairs}`);
+    }
+  });
+
+test('base slot 9 is raw slot 11, so arch 10 has no base slot 8',
+  skipUnless('h890_config', 'h895_config', 'arch8_config_880', 'arch8_config_885'), () => {
+    // Base slot 9's entries are tagged lists of button bindings, section 176, and base slot 8 is not a
+    // pointer array at all. Arch 10's raw 11 is a u8 counted array whose every entry decodes as a
+    // tagged list, which is base slot 9's shape and not base slot 8's. With base 7 at raw 10 and base
+    // 10 at raw 12 there is one slot between them, so base slot 8 has nowhere to go.
+    const lists = (name: string, slot: number): [number, number] => {
+      const c = parse(require_(name));
+      const off = c.blobOffsetOf(c.sections[slot]!.address);
+      assert.ok(off !== undefined, name);
+      const count = u8(c.blob, off);
+      let decoded = 0;
+      let bindings = 0;
+      for (let k = 0; k < count; k += 1) {
+        const list = taggedList(c, u24(c.blob, off + 1 + 3 * k));
+        if (list === undefined) continue;
+        decoded += 1;
+        bindings += list.entries.length;
+      }
+      assert.equal(decoded, count, `${name} every entry decodes`);
+      return [count, bindings];
+    };
+    assert.deepEqual(lists('arch8_config_880', 10), [12, 322], 'arch 8 base slot 9');
+    assert.deepEqual(lists('arch8_config_885', 10), [17, 500]);
+    // The Harmony 890 against the Harmony 880 of the same room, which section 181 showed shares its
+    // infrared database almost byte for byte, so twelve and twelve is agreement and not coincidence.
+    assert.deepEqual(lists('h890_config', 11), [12, 323]);
+    assert.deepEqual(lists('h895_config', 11), [13, 317]);
+    assert.ok(ARCH10_ABSENT.includes(8), 'so base slot 8 is absent');
+  });
+
+test('nothing reads arch 10 through the mapping, which is the rail',
+  skipUnless('h890_config'), () => {
+    // The mapping above is data in a test. `archSlot` is untouched, so every reader still refuses, and
+    // adopting it has to be a deliberate change: `archSlot` expresses insertions into the twenty and
+    // cannot say that base slots 0, 2 and 8 are **absent**. Section 183.
+    const c = parse(require_('h890_config'));
+    assert.equal(c.architecture, undefined, 'the container still states no architecture to the codec');
+    assert.equal(irGroups(c), undefined);
+    assert.equal(fontSets(c), undefined);
+    assert.equal(c.actionLists(), undefined);
   });

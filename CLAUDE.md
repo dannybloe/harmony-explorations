@@ -181,22 +181,25 @@ The real reason is that arch 10 carries **nineteen** base slots and four inserti
 and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
 the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
 and 23 for a Harmony 895. Seven base slots are anchored by content, base 1 to raw 0, 3 to 4, 5 to 6,
-7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **verifying the rest slot by slot against
-arch 8 confirmed the top half and refuted the middle**, which is why this entry does not say seventeen
-of nineteen as section 182 first did. Confirmed by shape: base 11, 12, 15 and 16, hence 11 to 19 as a
-block, base slot 12 agreeing **exactly**, 52 bytes and a count of 17. **Contradicted or unplaced: base
-2, 6, 8, 9 and 10.** Base slot 2 is at none of its three candidates, since the log area's closure
-`limit - start == capacity * stride` holds exactly on four known containers and under no stride at all
-on any candidate. And the action list table's signature, a `u16` array whose every pointer resolves,
-sits on the raw slot the arithmetic calls base slot **9**, while the slot it calls base slot 10 is an
-empty array on a Harmony 890, which no working config can have. `INSERTED_SLOTS` still gets no entry, for two reasons now:
-`archSlot` expresses a mapping as insertions into the twenty and cannot say a base slot is **removed**,
-and base slot 10 is contradicted, so a mapping adopted today would hand a reader the wrong program.
-**The lesson is about the instrument**: fitting one arithmetic to seven anchors felt conclusive and was
-not, because it assumed a single kind of difference. The next anchor should be found the way the first
-seven were, by identifying a structure without its slot and asking which slot names it, and base slot
-10 is the target since an action list has its own decoder and section 140's if/else closure to verify
-against. What does read on arch 10 is everything the header
+7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **the mapping is determined since section 183**:
+**three base slots are absent**, 0, 2 and 8, seventeen are present, and raw slots 1, 2, 3, 7, 8 and 13
+are not base slots at all. Thirteen of the seventeen are placed by their own contents and four follow by
+order. The anchor that closed it is base slot 10's **packing closure**, that consecutive table entries
+sit `1 + 3 * count` apart with the addresses coming from the table and the counts from the lists: on both
+arch 10 containers exactly one slot scores like arch 8's, raw 12, with the same four breaks, where every
+other array scores near zero. That forced base slot 9 onto raw 11, twelve tagged lists and 323 bindings
+against the Harmony 880's twelve and 322, and left base slot 8 nowhere to go. **Section 182's own
+arithmetic was wrong about five slots** and the lesson is the instrument: it assumed a shape for the
+difference, insertions only, and one free parameter against seven constraints looked conclusive and was
+not. `INSERTED_SLOTS` still gets no entry and `archSlot` still refuses, so
+nothing reads arch 10 through the mapping: it is **data in a test**, `ARCH10_MAPPING` in
+`packages/codec/test/arch10.test.ts`, with a test asserting the readers still return undefined.
+**Adopting it is Danny's call and not a side effect of a finding**, for two reasons. `archSlot`
+expresses a per architecture difference as insertions into the twenty and cannot say a base slot is
+**absent**, so adopting means changing the representation to a per architecture table, which touches
+every architecture's reader. And the four rows placed by order rather than by content are what a wrong
+answer would hide. What it would buy is a Harmony 890's devices, activities, screens, button bindings
+and drawn text. What does read on arch 10 is everything the header
 or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
 key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
 and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
