@@ -128,7 +128,14 @@ ROOT_NODE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 # against the EZHex header's <PROTOCOL> on nine samples and against the firmware package a
 # container was extracted from on three more.
 ARCH_RECORD_SLOT = 1
+# And raw slot 0 on arch 10 (Harmony 890 and 895), which has no base slot 0 at all, section 182. The
+# fallback demands a fully formed record, because raw slot 0 is the name tree on every architecture
+# that has one and a loose test there would read a tree length as an architecture.
+ARCH_RECORD_FALLBACK_SLOT = 0
 ARCH_RECORD_LENGTH = 7
+# The fourth byte of the record, constant across every container here, and part of what the fallback
+# above demands before it will believe raw slot 0 is a record rather than a tree.
+ARCH_RECORD_CONSTANT = 0x0D
 # The version word sits at +2 and is a u16, so a record shorter than this does not carry one.
 ARCH_VERSION_WORD_END = 4
 
@@ -173,28 +180,100 @@ INSERTED_SLOTS: Dict[int, Tuple[int, ...]] = {
 }
 
 
+BASE_SLOT_COUNT = 20
+
+# Arch 10 (Harmony 890 and 895) cannot be described as insertions, because three base slots are
+# **absent**: 0, 2 and 8. So the mapping is stated as a table, base slot to raw slot, with None where
+# the architecture does not have that slot. `docs/findings.md` section 183.
+#
+# Thirteen of the seventeen present slots are placed by their own contents and four by order between
+# placed neighbours. The decisive one is base slot 10: consecutive entries of its table sit
+# 1 + 3 * count apart, and exactly one arch 10 slot reproduces arch 8's signature of four breaks
+# where every other array scores near zero.
+#
+# The four placed by order rather than by content are 4, 6, 13 and 14, and they are the risk.
+# Where each base slot sits on arch 10 (Harmony 890 and 895), or None where the architecture does not
+# have that slot at all. Index is the base slot. Sections 183 and 184.
+#
+# Five base slots are absent, 0, 2, 8, 13 and 14, which is what INSERTED_SLOTS has no way to say and
+# why this table is stated rather than derived. Every present slot is placed by its own contents.
+#
+# Section 183 placed four rows by order between placed neighbours and two of the four were wrong,
+# section 184: base slots 4 and 6 confirmed on content, 13 and 14 refuted and therefore absent. A slot
+# with only one home under a monotone mapping is not thereby a slot that is there.
+ARCH10_SLOT_MAP: Tuple[Optional[int], ...] = (
+    None,  # 0, absent: no 0xFEED word occurs anywhere in either payload
+    0,     # 1, the architecture record, which is why arch 10 looked like it stated none
+    None,  # 2, absent: the log area closure holds on no candidate
+    4,     # 3, the 0xADDF clock frame
+    5,     # 4, the event map: 125 bytes holding 30 entries, as on arch 8, on both arch 10 configs
+    6,     # 5, four infrared groups holding all 300 records
+    9,     # 6, the mode table: every record carries a decoding screen program, 137/137 and 169/169
+    10,    # 7, all eight font set addresses
+    None,  # 8, absent: nowhere to go once base 9 takes raw 11
+    11,    # 9, twelve tagged lists, 323 bindings against the Harmony 880's twelve and 322
+    12,    # 10, the packing closure, four breaks, arch 8's exact signature
+    14,    # 11, a u16 array all resolving, 39 against the Harmony 880's 38
+    15,    # 12, a u8 count of 17 in 52 bytes, identical to the Harmony 880's
+    # 13, absent: section 130's closure is that the first seven records carry the build timestamp's
+    # own fields, and no run of pointers in either payload has targets holding those seven values, at
+    # any field offset 0 to 8 and either width, where the arch 8 control hits exactly once. Raw 16 is
+    # a fixed table of about 1024 bytes in which no three byte value resolves to an address.
+    None,
+    # 14, absent: base slot 14's section count is one byte on every architecture and raw 17's is two,
+    # and no slot in either container has the record shape, a leading 2 and targets that decode as
+    # screen programs. Raw 17's targets are 11 of 41 on the Harmony 890 and 2 of 32 on the 895.
+    None,
+    18,    # 15, a u8 count, 14 against the Harmony 880's 9, per architecture
+    19,    # 16, an empty array, as on arch 8
+    20,    # 17, two bytes before the picture bank
+    21,    # 18, NULL
+    22,    # 19, NULL
+)
+
+
+def _slot_map(architecture: int) -> Tuple[Optional[int], ...]:
+    """Base slot to raw slot, derived for the insertion architectures and stated for arch 10.
+
+    The four insertion architectures are computed from INSERTED_SLOTS rather than written out, so
+    their alignment is stated once here as it is on the TypeScript side.
+    """
+    if architecture == 10:
+        return ARCH10_SLOT_MAP
+    if architecture not in INSERTED_SLOTS:
+        raise GspmError('slot alignment not established for architecture %s' % architecture)
+    inserted = sorted(INSERTED_SLOTS[architecture])
+    out = []
+    for base in range(BASE_SLOT_COUNT):
+        slot = base
+        for at in inserted:
+            if at <= slot:
+                slot += 1
+        out.append(slot)
+    return tuple(out)
+
+
 def base_slot(architecture: int, slot: int) -> Optional[int]:
     """Map a slot on `architecture` to the same section's slot in the 20 slot base layout.
 
-    Returns None for a slot that architecture inserted and the base layout does not have, and
-    raises for an architecture whose insertions have not been established.
+    Returns None for a raw slot the base layout does not have, whether the architecture inserted it
+    or, on arch 10, it is one of the eight that correspond to no base slot. Raises for an architecture
+    whose alignment has not been established.
     """
-    if architecture not in INSERTED_SLOTS:
-        raise GspmError('slot alignment not established for architecture %s' % architecture)
-    inserted = INSERTED_SLOTS[architecture]
-    if slot in inserted:
-        return None
-    return slot - sum(1 for i in inserted if i < slot)
+    mapping = _slot_map(architecture)
+    return mapping.index(slot) if slot in mapping else None
 
 
 def arch_slot(architecture: int, base: int) -> int:
-    """Inverse of `base_slot`: where the base layout's slot sits on `architecture`."""
-    if architecture not in INSERTED_SLOTS:
-        raise GspmError('slot alignment not established for architecture %s' % architecture)
-    slot = base
-    for i in sorted(INSERTED_SLOTS[architecture]):
-        if i <= slot:
-            slot += 1
+    """Inverse of `base_slot`: where the base layout's slot sits on `architecture`.
+
+    Raises when the architecture does not have that base slot, which arch 10 is the first case of.
+    Returning a number would hand a reader the neighbouring section.
+    """
+    mapping = _slot_map(architecture)
+    slot = mapping[base] if base < len(mapping) else None
+    if slot is None:
+        raise GspmError('architecture %s has no base slot %s' % (architecture, base))
     return slot
 
 
@@ -350,11 +429,12 @@ MODE_TAG_LEAVE = 7
 # A narrow tagged list entry: the tag then a three byte action list instruction.
 TAGGED_ENTRY_LENGTH = 4
 # Architectures where a mode record carries a screen program immediately after its tagged list.
-# Every record does on all four: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
+# Every record does on all five: 374 of 374 on the Harmony 700, 237 of 237 on the 600, 103 of 103
 # on arch 8, 268 of 268 on the Harmony One and 114 of 114 on the 525. Twice this set looked short
 # and twice the cause was one missing operand count rather than a real difference: arch 12 in
-# section 54 and arch 9 in section 64.
-MODE_PROGRAM_ARCHITECTURES = frozenset({8, 9, 12, 14})
+# section 54 and arch 9 in section 64. Arch 10 (Harmony 890 and 895) joined on the same measurement
+# and not by analogy, section 184: 137 of 137 records and 169 of 169 carry a program that decodes.
+MODE_PROGRAM_ARCHITECTURES = frozenset({8, 9, 10, 12, 14})
 MODE_TAG_ENTER = 6
 # A page record is `{ u24 list; u24 program }` everywhere except arch 12, which puts one byte in
 # front of it. Read from the consumer, because the layout cannot tell the two apart: the arch 14
@@ -498,7 +578,10 @@ IMAGE_SET_HEADER = 3
 IMAGE_END = 0x00
 IMAGE_SKIP = 0x80
 IMAGE_PIXEL_BYTES = 2
-IMAGE_ARCHITECTURES = frozenset({8, 9, 12, 14})
+# Arch 10 (Harmony 890 and 895) is here on measurement rather than by analogy, section 180: handed the
+# arch 9 packed form its containers yield zero font sets and handed the unpacked form all eight, and
+# the arch 8 alphabet then names 213 of a Harmony 890's 237 glyph shapes where the One's names none.
+IMAGE_ARCHITECTURES = frozenset({8, 9, 10, 12, 14})
 # The first code a set covers when its header does not state one. Zero terminates an inline string,
 # so nothing can name a glyph by the code zero. `docs/findings.md` sections 40, 46 and 78.
 GLYPH_FIRST_CODE_DEFAULT = 1
@@ -2918,24 +3001,52 @@ def parse(data: bytes) -> Container:
         if 0 <= off < len(blob):
             container.frame_length = frame_length(blob, off)
 
-    if len(container.sections) > ARCH_RECORD_SLOT:
-        arch_addr = container.sections[ARCH_RECORD_SLOT].address
+    # Raw slot 1 on arch 8, 9, 12 and 14, and raw slot 0 on arch 10, tried in that order.
+    for slot in (ARCH_RECORD_SLOT, ARCH_RECORD_FALLBACK_SLOT):
+        if container.architecture is not None:
+            break
+        if len(container.sections) <= slot:
+            continue
+        arch_addr = container.sections[slot].address
         o = arch_addr - flash_base if arch_addr else -1
         # The record is seven bytes in every generated config and **three** in the arch 9 safe
         # mode container, so its extent is the distance to the next pointer like every other
         # section's, section 36. Reading a fixed seven takes the version word out of slot 2 there
         # and reports it as this section's, which is the quiet kind of wrong. Section 79.
-        room = container.section_length(ARCH_RECORD_SLOT) or 0
-        if 0 <= o and o + min(ARCH_RECORD_LENGTH, room) <= len(blob):
-            # The architecture is stored twice. Reading it only when the two copies agree
-            # keeps a coincidence from being reported as a fact.
-            if room >= 2 and blob[o] == blob[o + 1]:
-                container.architecture = blob[o]
-            if room >= ARCH_VERSION_WORD_END:
-                container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
+        room = container.section_length(slot) or 0
+        if not (0 <= o and o + min(ARCH_RECORD_LENGTH, room) <= len(blob)):
+            continue
+        # The architecture is stored twice. Reading it only when the two copies agree
+        # keeps a coincidence from being reported as a fact.
+        doubled = room >= 2 and blob[o] == blob[o + 1]
+        if slot == ARCH_RECORD_FALLBACK_SLOT:
+            # A full record is exactly seven bytes with the constant at +3, and the name tree's own
+            # first two bytes are 0xFEED, which can never be a doubled byte. So this cannot fire on
+            # arch 8, 9, 12 or 14, and a test asserts that rather than leaving it to the argument.
+            if not doubled or room != ARCH_RECORD_LENGTH:
+                continue
+            if blob[o + 3] != ARCH_RECORD_CONSTANT:
+                continue
+            container.architecture = blob[o]
+            container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
+            continue
+        if doubled:
+            container.architecture = blob[o]
+        if room >= ARCH_VERSION_WORD_END:
+            container.version_word = struct.unpack_from('<H', blob, o + 2)[0]
 
-    if len(container.sections) > CLOCK_RECORD_SLOT:
-        clock_addr = container.sections[CLOCK_RECORD_SLOT].address
+    # **Through the slot map, not by raw index.** Base slots 1 and 3 both sit below arch 8's and
+    # arch 12's first insertion, so indexing them directly was right for every architecture
+    # established when this was written, and arch 10 breaks it: its clock record is raw slot 4.
+    # The architecture is read just above, so it is available here. Section 184.
+    clock_slot = CLOCK_RECORD_SLOT
+    if container.architecture is not None:
+        try:
+            clock_slot = arch_slot(container.architecture, CLOCK_RECORD_SLOT)
+        except GspmError:
+            clock_slot = CLOCK_RECORD_SLOT
+    if len(container.sections) > clock_slot:
+        clock_addr = container.sections[clock_slot].address
         o = clock_addr - flash_base if clock_addr else -1
         if 0 <= o and o + CLOCK_RECORD_LENGTH <= len(blob):
             container.built_at = clock_record(blob, o)

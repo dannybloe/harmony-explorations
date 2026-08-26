@@ -21,7 +21,13 @@ export const IMAGE_END = 0x00;
 export const IMAGE_SKIP = 0x80;
 /** A pixel is two bytes. A one byte pixel fails almost every closure in section 46. */
 export const IMAGE_PIXEL_BYTES = 2;
-export const IMAGE_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
+/**
+ * The architectures whose glyph encoding is read. **Arch 10 joined on measurement, not by analogy**,
+ * section 180: handed the arch 9 packed form its containers yield zero font sets and handed the
+ * unpacked form they yield all eight, and 213 of a Harmony 890's 237 glyph shapes are then named by
+ * the arch 8 alphabet where the Harmony One's alphabet names none.
+ */
+export const IMAGE_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 10, 12, 14]);
 /**
  * The first code a set covers when the header does not state one. Zero terminates an inline
  * string, so nothing can name the first glyph by the code zero. Sections 40 and 46.
@@ -149,9 +155,23 @@ export function glyphHeight(glyph: Glyph): number {
  * +0x03  u24  glyph[count]     NULL for a code this config never draws
  * ```
  *
- * The section itself is a plain pointer array, and opcode 16 of the screen language indexes it.
- * `fontSetHeader` carries the argument for the two byte reading.
+ * Opcode 16 of the screen language indexes it. `fontSetHeader` carries the argument for the two byte
+ * reading of an entry's own header.
+ *
+ * **The section's array is read as a header and not as the whole section**, which is a correction
+ * section 184 forced. This used to call `pointerArray`, which accepts a counted array only when it
+ * accounts for the section exactly, and that is true on arch 8, 9, 12 and 14 and false on arch 10
+ * (Harmony 890 and 895), where the glyph bodies sit **inside** base slot 7's own section: 8 pointers
+ * in 25 bytes of a 2325 byte section. Section 36's hazard, the third structure here to have it after
+ * base slot 5's arrays inside base slot 4 and base slots 9, 14 and 16 above their records.
+ *
+ * So the count's width is stated rather than searched, and it is calibrated rather than assumed: a
+ * `u16` on all six containers measured, four of them architectures where `pointerArray`'s strict test
+ * already agreed, and on all six the resulting addresses are exactly the set `fontSetsByClosure`
+ * finds by scanning the payload with no slot at all. Two routes, no shared code.
  */
+export const FONT_TABLE_COUNT_WIDTH = 2;
+
 export function fontSets(c: Container): FontSet[] | undefined {
   if (c.architecture === undefined) return undefined;
   let slot: number;
@@ -161,8 +181,15 @@ export function fontSets(c: Container): FontSet[] | undefined {
     if (error instanceof GspmError) return undefined;
     throw error;
   }
-  const entries = slot < c.sections.length ? c.pointerArray(slot) : undefined;
-  if (entries === undefined) return undefined;
+  const section = slot < c.sections.length ? c.sections[slot] : undefined;
+  if (section === undefined || section.isNull) return undefined;
+  const table = c.blobOffsetOf(section.address);
+  if (table === undefined || table + FONT_TABLE_COUNT_WIDTH > c.blob.length) return undefined;
+  const count = u16(c.blob, table);
+  const arrayEnd = table + FONT_TABLE_COUNT_WIDTH + 3 * count;
+  if (count === 0 || arrayEnd > c.blob.length) return undefined;
+  const entries: number[] = [];
+  for (let p = table + FONT_TABLE_COUNT_WIDTH; p < arrayEnd; p += 3) entries.push(u24(c.blob, p));
 
   const out: FontSet[] = [];
   for (const entry of entries) {

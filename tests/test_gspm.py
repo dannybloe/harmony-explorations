@@ -2180,20 +2180,32 @@ class TestSlotAlignmentAcrossArchitectures(unittest.TestCase):
         with self.assertRaises(gspm.GspmError):
             gspm.base_slot(7, 0)
 
-    def test_arch_10_has_no_alignment_and_therefore_no_readers(self):
+    def test_arch_10_is_aligned_and_the_refusal_moved_to_the_absent_slot(self):
         """
-        Section 117: arch 10 is **not** a relabelling of the base layout, so it must stay out of
-        `INSERTED_SLOTS` and every reader must refuse rather than read the neighbouring section.
+        **This test's verdict was reversed by section 184 and the subject is the same gate.**
 
-        This is the gate the two Harmony 890 configs sit behind. Adding an entry here without
-        deriving the mapping would turn twenty refusals into twenty plausible wrong answers, which
-        is the failure mode the arch 9 register map already cost this project once.
+        It used to demand that `arch_slot(10, ...)` refuses every base slot, on section 117's and
+        section 178's reasoning: a guessed mapping turns twenty refusals into twenty plausible wrong
+        answers. Section 183 derived the mapping from content instead of guessing it, so the
+        architecture answers now and the refusal is per base slot.
+
+        Arch 10 stays out of `INSERTED_SLOTS` for good, and that is not a leftover: insertions cannot
+        say a base slot is **absent**, and five of arch 10's twenty are. That is the whole reason
+        `ARCH10_SLOT_MAP` is stated rather than derived.
         """
         self.assertNotIn(10, gspm.INSERTED_SLOTS)
-        for base in (0, 3, 5, 10, 17):
+        for base in (3, 5, 10, 17):
             with self.subTest(base=base):
+                self.assertIsInstance(gspm.arch_slot(10, base), int)
+        # The five arch 10 does not have. 13 and 14 joined the list in section 184, having been
+        # placed by order in section 183 and then refuted on content.
+        for base in (0, 2, 8, 13, 14):
+            with self.subTest(absent=base):
                 with self.assertRaises(gspm.GspmError):
                     gspm.arch_slot(10, base)
+        # And an architecture nobody has aligned still refuses wholesale, which is the older rail.
+        with self.assertRaises(gspm.GspmError):
+            gspm.arch_slot(7, 5)
 
 
 class TestTheFlashBaseIsAnchoredOnContent(unittest.TestCase):
@@ -2409,31 +2421,45 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
     def test_the_reporter_names_no_base_slot_where_there_is_no_architecture(self):
         """It printed `base slot False`, from a boolean `and` then tested with `is None`.
 
-        Arch 10 (Harmony 890) is the container that exposes it, because it is the only one here
-        whose architecture the format does not state, so `c.architecture` is None and the `and`
-        answers with the operand rather than with a slot. Every other container took the other
-        arm and the line was right, which is why fifteen samples agreed with a broken expression.
+        The bug was that an architecture of None made the `and` answer with its operand rather than
+        with a slot. **The sample that exposed it is no longer a sample of it**, section 184: a
+        Harmony 890 states arch 10 now, so it takes the arm that works. The bug is unchanged and so
+        is this test's subject, so the sample moved to the damaged read that still states nothing,
+        which is a better one anyway: an unparsed architecture is a thing that will keep happening,
+        where a whole architecture nobody had aligned was a passing phase.
         """
-        lab.require('h890_config', 'one_config')
-        text = '\n'.join(gspm.report(gspm.parse(lab.load('h890_config'))))
+        lab.require('h890_config_2_rescan', 'one_config', 'h890_config')
+        unstated = gspm.parse(lab.load('h890_config_2_rescan'))
+        self.assertIsNone(unstated.architecture, 'a damaged read states no architecture')
+        text = '\n'.join(gspm.report(unstated))
         nulls = [line for line in text.splitlines() if 'NULL' in line]
         self.assertEqual(len(nulls), 2)
         for line in nulls:
             self.assertNotIn('base slot', line)
-        # The control: a container that does state its architecture still names its base slots.
-        text = '\n'.join(gspm.report(gspm.parse(lab.load('one_config'))))
-        named = [line for line in text.splitlines() if 'NULL' in line and 'base slot' in line]
-        self.assertEqual(len(named), 2)
         self.assertNotIn('False', text)
+        # The control, twice over: a container that does state its architecture names its base
+        # slots, and the arch 10 container that used to be the sample above is now one of those.
+        for name in ('one_config', 'h890_config'):
+            with self.subTest(sample=name):
+                text = '\n'.join(gspm.report(gspm.parse(lab.load(name))))
+                named = [line for line in text.splitlines()
+                         if 'NULL' in line and 'base slot' in line]
+                self.assertEqual(len(named), 2)
+                self.assertNotIn('False', text)
 
     def test_the_clock_record_sits_one_slot_later_than_everywhere_else(self):
         """
-        The one thing the mapping does say. On arch 8, 9, 12 and 14 the clock is base slot 3 at raw
-        slot 3; on arch 10 the single validating record is the target of raw slot 4. So arch 10
-        inserts a slot below 3, and `slot3_is_a_timestamp` fails for that reason rather than for
-        want of a record.
+        On arch 8, 9, 12 and 14 the clock is base slot 3 at raw slot 3; on arch 10 the single
+        validating record is the target of raw slot 4. This was the first arch 10 anchor.
+
+        **Its second half used to assert that `built_at` is None**, because the reader went through
+        an alignment arch 10 did not have. Section 184 gave it one, so these two containers state
+        their dates and the assertion is the date. What comes with that is a confirmation nothing was
+        looking for: three of one contributor's configurations, two remotes and two architectures,
+        were built inside fifteen minutes of one afternoon. The arch 8 date was already believed and
+        the two arch 10 ones come out of a slot the arch 8 map does not use.
         """
-        lab.require('h890_config', 'h890_config_2')
+        lab.require('h890_config', 'h890_config_2', 'arch8_config_880')
         for name in ('h890_config', 'h890_config_2'):
             with self.subTest(sample=name):
                 c = gspm.parse(lab.load(name))
@@ -2441,8 +2467,14 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
                 landing = [i for i, s in enumerate(c.sections)
                            if not s.is_null and s.address - c.flash_base == off]
                 self.assertEqual(landing, [4])
-                self.assertFalse(c.checks['slot3_is_a_timestamp'])
-                self.assertIsNone(c.built_at)
+                self.assertTrue(c.checks['slot3_is_a_timestamp'])
+        stamps = {name: gspm.parse(lab.load(name)).built_at.isoformat()
+                  for name in ('arch8_config_880', 'h890_config_2', 'h890_config')}
+        self.assertEqual(stamps, {
+            'arch8_config_880': '2025-05-14T21:25:34',
+            'h890_config_2': '2025-05-14T21:37:44',
+            'h890_config': '2025-05-14T21:40:26',
+        })
 
     def test_neither_config_carries_a_name_tree(self):
         """

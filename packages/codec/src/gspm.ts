@@ -155,6 +155,15 @@ export const EMPTY_FRAME_LENGTH = 5;
 
 /** Section slot 1 is a seven byte record that states the architecture twice over. */
 export const ARCH_RECORD_SLOT = 1;
+/**
+ * Where arch 10 (Harmony 890 and 895) keeps it instead, because it has no base slot 0.
+ *
+ * Section 182. Every other architecture puts the `0xFEED` name tree at raw slot 0, so this is tried
+ * second and only accepted on a fully formed record.
+ */
+export const ARCH_RECORD_FALLBACK_SLOT = 0;
+/** Byte `+3` of the record, constant across all eight containers that carry one. Section 182. */
+export const ARCH_RECORD_CONSTANT = 0x0d;
 export const ARCH_RECORD_LENGTH = 7;
 /** The version word is a `u16` at `+2`, so a shorter record does not carry one. Section 79. */
 export const ARCH_VERSION_WORD_END = 4;
@@ -227,31 +236,114 @@ export const INSERTED_SLOTS: Readonly<Record<number, readonly number[]>> = {
   12: [8, 18],
 };
 
-function insertions(architecture: number): readonly number[] {
-  const inserted = INSERTED_SLOTS[architecture];
-  if (inserted === undefined) {
+/** How many slots the base layout has. Base 18 and 19 are NULL in every container. */
+export const BASE_SLOT_COUNT = 20;
+
+/**
+ * Where each base slot sits on arch 10 (Harmony 890 and 895), or `undefined` where the architecture
+ * does not have that slot at all. Index is the base slot. Section 183.
+ *
+ * **Stated rather than derived, because arch 10 cannot be described as insertions.** Five base slots
+ * are **absent**, 0, 2, 8, 13 and 14, which is what `INSERTED_SLOTS` has no way to say, and that is
+ * why this table exists at all rather than an arch 10 row being added there.
+ *
+ * Every present slot is placed by its own contents. What places each one is in the row comments and
+ * asserted row by row in `packages/codec/test/arch10.test.ts`, the decisive one being base slot 10:
+ * consecutive entries of its table sit `1 + 3 * count` apart, and exactly one arch 10 slot reproduces
+ * arch 8's signature of four breaks where every other array scores near zero.
+ *
+ * **Section 183 placed four of these rows by order and two of the four were wrong**, section 184, and
+ * that correction is the reason this docstring no longer has a paragraph excusing them. Base slots 4
+ * and 6 confirmed: the event map is 125 bytes holding 30 entries on both arch 10 containers, exactly
+ * as on arch 8, and every mode record on both carries a screen program that decodes, 137 of 137 and
+ * 169 of 169. Base slots 13 and 14 are **refuted** and are absent here as a result. The lesson is
+ * section 183's own, one turn later: a slot between two placed neighbours has only one home given a
+ * monotone mapping, and "only one home" is not evidence that the section is there at all.
+ */
+export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
+  undefined, // 0, absent: no 0xFEED word occurs anywhere in either payload
+  0, // 1, the architecture record, which is why arch 10 looked like it stated none
+  undefined, // 2, absent: the log area closure holds on no candidate
+  4, // 3, the 0xADDF clock frame
+  5, // 4, the event map: 125 bytes holding 30 entries, the same on arch 8 and on both arch 10 configs
+  6, // 5, four infrared groups holding all 300 records
+  9, // 6, the mode table: every record carries a screen program that decodes, 137/137 and 169/169
+  10, // 7, all eight font set addresses
+  undefined, // 8, absent: nowhere to go once base 9 takes raw 11
+  11, // 9, twelve tagged lists and 323 bindings against the Harmony 880's twelve and 322
+  12, // 10, the packing closure, four breaks, arch 8's exact signature
+  14, // 11, a u16 array all resolving, 39 against the Harmony 880's 38
+  15, // 12, a u8 count of 17 in 52 bytes, identical to the Harmony 880's
+  // 13, absent: section 130's closure is that the first seven records hold the build timestamp's own
+  // fields, and searching both payloads for a run of pointers whose targets carry those seven values
+  // finds nothing, at every field offset 0 to 8 and at both one and two bytes wide, where the arch 8
+  // control hits exactly once. Raw slot 16, which section 183 put this on, is a fixed table of about
+  // 1024 bytes in which no three byte value resolves to an address at all.
+  undefined,
+  // 14, absent: base slot 14's section count is one byte on every architecture and raw slot 17's is
+  // two, and no slot in either container satisfies the record shape, whose signature is a leading
+  // byte of 2 and targets that decode as screen programs. Raw 17's own targets are neither: 11 of 41
+  // decode as a program on the Harmony 890 and 2 of 32 on the Harmony 895.
+  undefined,
+  18, // 15, a u8 count, 14 against the Harmony 880's 9, per architecture by section 44
+  19, // 16, an empty array, as on arch 8
+  20, // 17, two bytes before the picture bank
+  21, // 18, NULL
+  22, // 19, NULL
+];
+
+/**
+ * Base slot to raw slot for every architecture whose alignment is established.
+ *
+ * **The four insertion architectures are derived from `INSERTED_SLOTS` rather than written out**, so
+ * there is still one statement of their alignment and not two. Only arch 10 is stated, because
+ * insertions cannot express an absent slot. Same rule as the opcode table: a derivation lives once.
+ */
+export const SLOT_MAPS: Readonly<Record<number, readonly (number | undefined)[]>> = {
+  ...Object.fromEntries(Object.entries(INSERTED_SLOTS).map(([architecture, inserted]) => {
+    const sorted = [...inserted].sort((a, b) => a - b);
+    return [architecture, Array.from({ length: BASE_SLOT_COUNT }, (_unused, base) => {
+      let slot = base;
+      for (const at of sorted) if (at <= slot) slot += 1;
+      return slot;
+    })];
+  })),
+  10: ARCH10_SLOT_MAP,
+};
+
+function slotMap(architecture: number): readonly (number | undefined)[] {
+  const map = SLOT_MAPS[architecture];
+  if (map === undefined) {
     throw new GspmError(`slot alignment not established for architecture ${architecture}`);
   }
-  return inserted;
+  return map;
 }
 
 /**
  * Map a slot on `architecture` to the same section's slot in the 20 slot base layout.
  *
- * Returns undefined for a slot that architecture inserted and the base layout does not have, and
- * throws for an architecture whose insertions have not been established.
+ * Returns undefined for a raw slot the base layout does not have, whether because the architecture
+ * inserted it or because it is one of arch 10's eight that correspond to no base slot. Throws for an
+ * architecture whose alignment has not been established.
  */
 export function baseSlot(architecture: number, slot: number): number | undefined {
-  const inserted = insertions(architecture);
-  if (inserted.includes(slot)) return undefined;
-  return slot - inserted.filter((i) => i < slot).length;
+  const map = slotMap(architecture);
+  const base = map.indexOf(slot);
+  return base === -1 ? undefined : base;
 }
 
-/** Inverse of `baseSlot`: where the base layout's slot sits on `architecture`. */
+/**
+ * Inverse of `baseSlot`: where the base layout's slot sits on `architecture`.
+ *
+ * **Throws when the architecture does not have that base slot**, which arch 10 is the first case of.
+ * Returning a number would hand a reader the neighbouring section, which is exactly the failure the
+ * arch 10 rail was put up to prevent, so the absence has to be loud. Callers that can carry on
+ * without a section already catch `GspmError` and return undefined.
+ */
 export function archSlot(architecture: number, base: number): number {
-  let slot = base;
-  for (const i of [...insertions(architecture)].sort((a, b) => a - b)) {
-    if (i <= slot) slot += 1;
+  const slot = slotMap(architecture)[base];
+  if (slot === undefined) {
+    throw new GspmError(`architecture ${architecture} has no base slot ${base}`);
   }
   return slot;
 }
@@ -370,6 +462,8 @@ export class Container {
   /** The container itself, cookie through end marker. */
   readonly blob: Uint8Array;
   readonly sections: readonly Section[];
+  /** Which raw slot the architecture record was found in, 1 normally and 0 on arch 10. */
+  architectureSlot?: number;
   /** Stated by section slot 1, see `ARCH_RECORD_SLOT`. */
   architecture: number | undefined = undefined;
   /** The u16 beside it, meaning not established. */
@@ -943,22 +1037,49 @@ export function parse(data: Uint8Array): Container {
     if (off >= 0 && off < blob.length) container.frameLength = frameLength(blob, off);
   }
 
-  const archSection = sections[ARCH_RECORD_SLOT];
-  if (archSection !== undefined) {
+  // Raw slot 1 on arch 8, 9, 12 and 14, and raw slot 0 on arch 10, which has no base slot 0 at all.
+  // Tried in that order, and the fallback is admitted only on a **fully formed** record: section 182.
+  for (const slot of [ARCH_RECORD_SLOT, ARCH_RECORD_FALLBACK_SLOT]) {
+    if (container.architecture !== undefined) break;
+    const archSection = sections[slot];
+    if (archSection === undefined) continue;
     const o = archSection.address !== 0 ? archSection.address - flashBase : -1;
     // The record is seven bytes in every generated config and three in the arch 9 safe mode
     // container, so its extent is the distance to the next pointer, like every other section's.
     // Reading a fixed seven takes the version word out of slot 2 there. Sections 36 and 79.
-    const room = container.sectionLength(ARCH_RECORD_SLOT) ?? 0;
-    if (o >= 0 && o + archRecordExtent(room) <= blob.length) {
-      // The architecture is stored twice. Reading it only when the two copies agree keeps a
-      // coincidence from being reported as a fact.
-      if (room >= 2 && u8(blob, o) === u8(blob, o + 1)) container.architecture = u8(blob, o);
-      if (room >= ARCH_VERSION_WORD_END) container.versionWord = u16(blob, o + 2);
+    const room = container.sectionLength(slot) ?? 0;
+    if (o < 0 || o + archRecordExtent(room) > blob.length) continue;
+    // The architecture is stored twice. Reading it only when the two copies agree keeps a
+    // coincidence from being reported as a fact.
+    const doubled = room >= 2 && u8(blob, o) === u8(blob, o + 1);
+    if (slot === ARCH_RECORD_FALLBACK_SLOT) {
+      // **The fallback demands more than the primary does**, because raw slot 0 is the name tree on
+      // every architecture that has one and a loose test there would read a tree length as an
+      // architecture. A full record is exactly seven bytes with the constant at `+3`, and the tree's
+      // own first two bytes are `0xFEED`, which can never be a doubled byte. So this cannot fire on
+      // arch 8, 9, 12 or 14, and a test asserts that rather than leaving it to the argument.
+      if (!doubled || room !== ARCH_RECORD_LENGTH) continue;
+      if (u8(blob, o + 3) !== ARCH_RECORD_CONSTANT) continue;
+      container.architecture = u8(blob, o);
+      container.versionWord = u16(blob, o + 2);
+      container.architectureSlot = slot;
+      continue;
     }
+    if (doubled) {
+      container.architecture = u8(blob, o);
+      container.architectureSlot = slot;
+    }
+    if (room >= ARCH_VERSION_WORD_END) container.versionWord = u16(blob, o + 2);
   }
 
-  const clockSection = sections[CLOCK_RECORD_SLOT];
+  // **Through the mapping, not by raw index.** A comment two blocks down used to justify indexing
+  // base slots 1 and 3 directly, on the grounds that both sit below arch 8's and arch 12's first
+  // insertion at slot 8. That was true of every architecture then established and arch 10 breaks it:
+  // its clock record is raw slot 4. The architecture is read just above, so it is available here.
+  const clockSlot = container.architecture === undefined
+    ? CLOCK_RECORD_SLOT
+    : (SLOT_MAPS[container.architecture]?.[CLOCK_RECORD_SLOT] ?? CLOCK_RECORD_SLOT);
+  const clockSection = sections[clockSlot];
   if (clockSection !== undefined) {
     const o = clockSection.address !== 0 ? clockSection.address - flashBase : -1;
     if (o >= 0 && o + CLOCK_RECORD_LENGTH <= blob.length) {
@@ -1011,8 +1132,10 @@ export function parse(data: Uint8Array): Container {
     slot0_is_a_feed_frame: container.frameLength !== undefined,
     slot1_states_the_architecture: container.architecture !== undefined,
     // Passing this means the stored day of week agrees with the date, so it is a closure and not
-    // just a shape match. Slots 1 and 3 sit below the first insertion at 8, so a base slot number
-    // indexes them directly on all four architectures.
+    // just a shape match. **Both records are located through the slot mapping now**: this comment
+    // used to say slots 1 and 3 sit below the first insertion at 8 so a base slot number indexes
+    // them directly, which was true of the four architectures established at the time and is false
+    // on arch 10, where they are raw slots 0 and 4. Section 183.
     slot3_is_a_timestamp: container.builtAt !== undefined,
     // The one check a writer cannot skip: the remote refuses a config whose trailer checksum does
     // not recompute, so this is the boot validator's own test run here.

@@ -93,18 +93,38 @@ two Harmony 890 configs, format 1.7 and **23 pointer slots**, both based at flas
 framing verifies and one of the two recomputes its trailer checksum, so the container layout above
 holds.
 
-The **slot mapping does not, and it is not a relabelling of the twenty**, section 117. All 1330 ways
-of placing three insertions were scored by asking seventeen readers to parse; the best reaches 34 of
-47 with an eight way tie, where arch 8, 9 and 14 each score 47 uniquely. Five readers are satisfied
-by no mapping at all, so the name tree, the log area, the mode records, the font sets and the value
-maps differ in form on arch 10 and not merely in position. `INSERTED_SLOTS` therefore has no entry
-for 10, `arch_slot` refuses, and every section reader is gated off. **Do not add an entry to ungate
-them**: a guessed mapping turns twenty refusals into twenty plausible wrong answers.
+**The slot mapping is stated, not derived from insertions**, sections 183 and 184. It was unknown for a
+year, and the reason it could not be guessed is the reason it now needs its own table: arch 10 is not a
+relabelling of the twenty. All 1330 ways of placing three insertions were scored by asking seventeen
+readers to parse and the best reached 34 of 47 with an eight way tie, where arch 8, 9 and 14 each score
+47 uniquely, section 117.
 
-Two things the samples do say. The single validating clock record is raw slot 4's target in both, so
-arch 10 inserts a slot below base slot 3. And **no `0xFEED` frame validates anywhere in either
-payload**, so an arch 10 config is not known to state the names of its devices and activities at
-all, which every other architecture does in base slot 0.
+| base slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| raw slot | absent | 0 | absent | 4 | 5 | 6 | 9 | 10 | absent | 11 | 12 | 14 | 15 | absent | absent | 18 | 19 | 20 | 21 | 22 |
+
+Fifteen present, **five absent** (0, 2, 8, 13 and 14) and **eight raw slots that are no base slot** (1,
+2, 3, 7, 8, 13, 16 and 17). An absent base slot is what `INSERTED_SLOTS` cannot express, so arch 10 has
+no entry there and never will: `SLOT_MAPS` carries a table per architecture, with the four insertion
+architectures derived from `INSERTED_SLOTS` so their alignment is stated once. `arch_slot` **throws** for
+an absent base slot rather than returning a number, because a number would hand a reader the
+neighbouring section.
+
+Thirteen rows were placed by their own contents, the decisive one being base slot 10's packing closure,
+and four by order between placed neighbours. **Two of those four were then wrong**, section 184: base
+slots 4 and 6 confirmed, base slots 13 and 14 refuted and absent. Base slot 13's refutation is the
+strongest single measurement here, since section 130 gives it a closure across sections: its first seven
+records hold the build timestamp's own fields, and no run of pointers in either payload has targets
+carrying those seven values, at any field offset and either width, where an arch 8 container hits
+exactly once.
+
+Two consequences for readers. **No `0xFEED` frame validates anywhere in either payload**, so an arch 10
+config does not state the names of its devices and activities the way base slot 0 does everywhere else,
+and with base slot 13 absent too a Harmony 890's device names and activity count are unread. And **base
+slot 7 is read as a header rather than as the whole section** on every architecture, because arch 10
+keeps its glyph bodies inside base slot 7's own section: a `u16` count then that many three byte
+pointers, calibrated on six containers and agreeing with the pointer free closure search on all of
+them.
 
 ### Recovering the base address
 

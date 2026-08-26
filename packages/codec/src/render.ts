@@ -57,14 +57,17 @@ import { modePages, type ModePage } from './sections.ts';
  * each architecture stops just inside it. Section 129.
  */
 /*
- * **Arch 10 is deliberately absent, and its display is known.** A Harmony 890 and a Harmony 895 are
- * 128 by 160, measured from their own picture banks, section 179. An entry here would be dead code
- * and worse than nothing: this table is keyed by the architecture a container states, and an arch 10
- * container states none, so nothing would ever look it up while the table implied the renderer had
- * gained an architecture. The measurement lives where it can fail instead, in `arch10.test.ts`.
+ * **Arch 10 has an entry since section 183 and this comment used to explain why it did not.** The
+ * reason was that an arch 10 container states no architecture, so nothing would look the row up. That
+ * turned out to be wrong about the container rather than about the table: section 182 found the
+ * architecture record at raw slot 0, where every other architecture keeps its name tree, so an arch 10
+ * config does state its architecture and the row is live.
  */
 export const SCREEN_SIZES: Readonly<Record<number, { width: number; height: number }>> = {
   8: { width: 128, height: 160 },
+  // Arch 10, measured from its own picture bank rather than from where programs draw, section 179,
+  // and corroborated by the whole size profile matching a Harmony 885's ten distinct sizes.
+  10: { width: 128, height: 160 },
   9: { width: 96, height: 64 },
   12: { width: 176, height: 220 },
   14: { width: 128, height: 128 },

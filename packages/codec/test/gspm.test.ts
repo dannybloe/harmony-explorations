@@ -560,20 +560,37 @@ test('a container with no clock record falls back rather than guessing',
     assert.equal(parse(damaged).flashBase, c.flashBase);
   });
 
-test('arch 10 has no slot alignment, so every reader refuses', () => {
-  // The gate the two Harmony 890 configs sit behind. An entry here without a derived mapping turns
-  // twenty refusals into twenty plausible wrong answers.
-  for (const base of [0, 3, 5, 10, 17]) {
-    assert.throws(() => archSlot(10, base), /alignment/);
-    assert.throws(() => baseSlot(10, base), /alignment/);
+test('arch 10 is aligned now, and the refusal moved from the architecture to the absent slot', () => {
+  // **This test's claim was reversed by section 184 and it is kept because the subject did not go
+  // away**, per the house rule: the gate exists, and what changed is where it stands. It used to
+  // refuse every base slot on arch 10, on section 178's reasoning that a guessed mapping turns twenty
+  // refusals into twenty plausible wrong answers. The mapping is derived from content now, so the
+  // architecture answers and the refusal is per base slot: five of the twenty are simply not there.
+  //
+  // No lab, so a fresh clone is protected by this. `arch10.test.ts` carries the whole table.
+  for (const base of [3, 5, 10, 17]) {
+    assert.equal(typeof archSlot(10, base), 'number', `base slot ${base} answers`);
   }
+  for (const base of [0, 2, 8, 13, 14]) {
+    assert.throws(() => archSlot(10, base), /has no base slot/, `base slot ${base} is absent`);
+  }
+  // `baseSlot` asks the other question, so it answers with undefined rather than throwing for a raw
+  // slot that is not a base slot, and there are eight of those on arch 10.
+  assert.equal(baseSlot(10, 0), 1, 'raw slot 0 is the architecture record');
+  for (const raw of [1, 2, 3, 7, 8, 13, 16, 17]) {
+    assert.equal(baseSlot(10, raw), undefined, `raw slot ${raw} is not a base slot`);
+  }
+  // And an architecture nobody has aligned still refuses wholesale, which is the older rail intact.
+  assert.throws(() => archSlot(7, 5), /alignment/);
+  assert.throws(() => baseSlot(7, 5), /alignment/);
 });
 
-test('the arch 10 clock record sits one slot later than everywhere else',
-  skipUnless('h890_config', 'h890_config_2'), () => {
-    // The one thing the mapping does say: the single validating record is raw slot 4's target,
-    // where every other architecture has it at raw slot 3. So `slot3_is_a_timestamp` fails for
-    // want of an alignment and not for want of a record.
+test('the arch 10 clock record sits one slot later, and reading it is what dated a Harmony 890',
+  skipUnless('h890_config', 'h890_config_2', 'arch8_config_880'), () => {
+    // This was the first arch 10 anchor: the single validating record is raw slot 4's target, where
+    // every other architecture has it at raw slot 3. Its second half used to assert that `builtAt` is
+    // undefined, because the reader went through an alignment arch 10 did not have. Section 184 gave
+    // it one, so the same two containers now state their dates and the assertion is the date.
     for (const name of ['h890_config', 'h890_config_2']) {
       const c = parse(load(name) as Uint8Array);
       const off = findClockRecords(c.blob)[0] as number;
@@ -582,9 +599,17 @@ test('the arch 10 clock record sits one slot later than everywhere else',
         .filter(({ s }) => !s.isNull && s.address - c.flashBase === off)
         .map(({ i }) => i);
       assert.deepEqual(landing, [4], name);
-      assert.equal(c.checks['slot3_is_a_timestamp'], false, name);
-      assert.equal(c.builtAt, undefined, name);
+      assert.equal(c.checks['slot3_is_a_timestamp'], true, `${name} passes the check now`);
     }
+    // **And this is the unprompted confirmation that the mapping is right**, which nothing was
+    // looking for. Three of this contributor's configurations, two remotes and two architectures,
+    // land inside fifteen minutes of one afternoon: one person at one sitting, compiling what they
+    // had. The arch 8 date was already read and believed; the two arch 10 ones come out of a slot the
+    // arch 8 map does not use, so nothing could have been adjusted to make them agree.
+    assert.equal(parse(load('arch8_config_880') as Uint8Array).builtAt, '2025-05-14T21:25:34');
+    // The second Harmony 890 is a damaged read, section 122, and its record survives anyway.
+    assert.equal(parse(load('h890_config_2') as Uint8Array).builtAt, '2025-05-14T21:37:44');
+    assert.equal(parse(load('h890_config') as Uint8Array).builtAt, '2025-05-14T21:40:26');
   });
 
 /**

@@ -187,10 +187,13 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // what a reader looked for could not see what it never looked at.
   const senders = present.map((v) => v['number_senders'] as unknown[] | null);
   assert.equal(senders.every((one) => one !== undefined), true, 'a vector is missing number_senders');
-  // 10 since the Harmony 895: its base slot 16 is unreadable like every other arch 10 reader,
-  // which is the expected answer rather than a gap, section 178.
-  assert.equal(senders.filter((one) => one === null).length, 10, 'the containers with no readable slot');
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 25);
+  // **7 since arch 10 was switched on**, section 184, down from 10. The three that moved are exactly
+  // the three arch 10 reads whose trailer checksum recomputes: base slot 16 is aligned now, so those
+  // containers answer the question and the answer is an empty array. The five still null are damaged
+  // reads of one Harmony 890, section 122, plus the two containers found inside arch 8 firmware
+  // images, which report architecture 0 and have no alignment at all.
+  assert.equal(senders.filter((one) => one === null).length, 7, 'the containers with no readable slot');
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 28);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base

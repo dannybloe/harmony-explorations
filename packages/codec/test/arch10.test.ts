@@ -11,10 +11,10 @@ import { load, require_, skipUnless } from '@harmony/lab';
 
 import { parse } from '../src/index.ts';
 import { keyCodes } from '../src/inventory.ts';
-import { archSlot, EVENT_PRESS } from '../src/gspm.ts';
+import { archSlot, baseSlot, BASE_SLOT_COUNT, EVENT_PRESS } from '../src/gspm.ts';
 import { pictureBankByClosure } from '../src/screen.ts';
 import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
-import { shapeKey, isBlank, usesAscii, characterMap } from '../src/text.ts';
+import { shapeKey, isBlank, usesAscii, characterMap, screenStrings } from '../src/text.ts';
 import { ALPHABETS } from '../src/alphabets.ts';
 import { taggedList } from '../src/sections.ts';
 import {
@@ -154,11 +154,25 @@ test('no arch 10 slot mapping can be a relabelling of the twenty', skipUnless('h
   assert.deepEqual(fives, [], 'nor a five entry one');
 });
 
-test('the arch 10 readers stay gated', () => {
-  // The rail, asserted rather than trusted. `INSERTED_SLOTS` has no arch 10 entry, and section 178
-  // is why adding one would be worse than the refusal: it would turn twenty refusals into twenty
-  // plausible wrong answers. No lab needed, so a fresh clone is protected by it too.
-  assert.throws(() => archSlot(10, 5), /slot alignment not established/);
+test('the five base slots arch 10 does not have refuse, and the fifteen it has answer', () => {
+  // **What the rail became when the mapping was switched on**, section 184. This test used to assert
+  // that `archSlot(10, 5)` throws, on the reasoning of section 178: a guessed mapping turns twenty
+  // refusals into twenty plausible wrong answers. The mapping is no longer guessed, so the refusal
+  // moved rather than went. It is now per base slot, and the five that refuse are the five arch 10
+  // does not have, which is the case `INSERTED_SLOTS` could not express and the reason for the
+  // per architecture table. No lab needed, so a fresh clone is protected by it too.
+  for (const base of ARCH10_ABSENT) {
+    assert.throws(() => archSlot(10, base), /has no base slot/, `base slot ${base} is absent`);
+  }
+  for (const [base, raw] of ARCH10_MAPPING) {
+    assert.equal(archSlot(10, base), raw, `base slot ${base}`);
+    assert.equal(baseSlot(10, raw), base, `raw slot ${raw} back again`);
+  }
+  assert.equal(ARCH10_MAPPING.length + ARCH10_ABSENT.length, BASE_SLOT_COUNT,
+    'every base slot is either placed or absent');
+  // And an architecture nobody has aligned still refuses wholesale, which is the older rail and the
+  // one that protects the next contributed model.
+  assert.throws(() => archSlot(7, 5), /slot alignment not established/);
 });
 
 test('the key lookup stack instructions are fixed scaffolding, not content',
@@ -228,30 +242,40 @@ test('arch 9 and arch 14 build a lookup stack and never unwind it',
     }
   });
 
-test('the 895 is the third arch 10 container and no pointer slot reader answers on it',
+test('the 895 is the third arch 10 container, and two of its framing checks pass once it is aligned',
   skipUnless('h895_config', 'h890_config', 'h890_config_2'), () => {
     // Section 178's last paragraph: what survives a missing slot mapping is what the header or the
     // marker locates, not what a pointer slot locates. Asserted so that a future reader claiming to
     // read arch 10 content has to move this test.
     //
-    // **The title said "framing is all that reads" and section 179 falsified it within the day**, by
-    // finding the picture bank from the trailer alone. The body never claimed that much, which is the
-    // failure mode the house rule about titles names: a test can pass while its name is wrong. What
-    // the body checks is that no **pointer slot** reader answers, which is what the rail is about.
+    // **This title has been wrong twice and each time the body was right.** It said "framing is all
+    // that reads" and section 179 falsified it within the day by finding the picture bank from the
+    // trailer alone; it then said "no pointer slot reader answers", which section 184 falsified by
+    // switching the mapping on. That is the failure mode the house rule about titles names: a test
+    // can pass while its name overclaims, so the name is what gets corrected.
+    //
+    // What the body checks now is which framing checks an aligned arch 10 container passes. Two that
+    // every arch 10 read used to fail now pass, and they are worth naming: the architecture record
+    // and the build timestamp, which are exactly the two structures sections 182 and 183 placed.
     const c = parse(require_('h895_config'));
     assert.equal(c.flashBase, 0x030000);
     assert.equal(c.formatRaw, 0x1700);
     assert.equal(c.sections.length, 23);
     const failing = Object.entries(c.checks)
       .filter(([, pass]) => pass === false).map(([name]) => name).sort();
-    assert.deepEqual(failing, ['pointer_count_known', 'slot0_is_a_feed_frame',
-      'slot1_states_the_architecture', 'slot3_is_a_timestamp'],
-      'the same four as both Harmony 890 containers, and no others');
-    // The clean 890 read fails the same four, which is what makes the 895 a third sample of one
+    assert.deepEqual(failing, ['pointer_count_known', 'slot0_is_a_feed_frame'],
+      'the same two as both Harmony 890 containers, and no others');
+    // The two that used to be here, asserted as passing rather than dropped, since their moving is
+    // the whole payoff of the mapping. `pointer_count_known` and the name tree frame stay failing
+    // because arch 10 has 23 slots and no base slot 0 at all, neither of which alignment changes.
+    for (const check of ['slot1_states_the_architecture', 'slot3_is_a_timestamp']) {
+      assert.equal(c.checks[check], true, `${check} passes now that arch 10 is aligned`);
+    }
+    // The clean 890 read fails the same two, which is what makes the 895 a third sample of one
     // layout rather than a fourth shape.
     const clean = parse(require_('h890_config'));
     assert.deepEqual(Object.entries(clean.checks).filter(([, p]) => p === false)
-      .map(([name]) => name).sort(), failing, 'h890_config fails the same four');
+      .map(([name]) => name).sort(), failing, 'h890_config fails the same two');
 
     // **And the damaged read fails two more, which is the control rather than an inconsistency.**
     // They are exactly section 122's two independent detectors of arch 10 read corruption, so the
@@ -293,7 +317,11 @@ test('the two arch 10 reads that verify carry a 128 by 160 display, like a Harmo
     // architectures that state one in `screen.test.ts`. Section 179.
     for (const name of ARCH10_CLEAN) {
       const c = parse(require_(name));
-      assert.equal(c.architecture, undefined, `${name} states no architecture, which is the point`);
+      // **The route is still the closure and not the slot**, which is the point of the test and is
+      // why it survives the mapping being switched on: `pictureBankByClosure` scans for a run that
+      // tiles to the trailer and never asks which slot anything is in. What changed is only that the
+      // container now also says what it is, so this reads as corroboration rather than as the origin.
+      assert.equal(c.architecture, 10, `${name} states arch 10, Harmony 890 and 895`);
       const bank = pictureBankByClosure(c);
       assert.ok(bank !== undefined, name);
       assert.equal(Math.max(...bank.map((b) => b.stride)), 128, `${name} widest picture`);
@@ -385,9 +413,17 @@ test('a Harmony 890 and 895 carry eight font sets, the same eight a Harmony 880 
 
     for (const name of ['h890_config', 'h895_config']) {
       const c = parse(require_(name));
-      assert.equal(fontSets(c), undefined, `${name} has no readable base slot 7, which is the point`);
       const sets = fontSetsByClosure(c, 8);
       assert.equal(sets.length, 8, `${name} font sets`);
+      // **Base slot 7 answers now and this line used to assert it does not**, section 184. The two
+      // routes agree address for address, which is what made switching the mapping on safe here: the
+      // slot's own table and a scan of the payload that never reads a slot name the same eight sets.
+      // Reading the slot took one correction of its own, since arch 10 keeps the glyph bodies inside
+      // base slot 7's section and `pointerArray` demands an array account for its whole section.
+      const bySlot = fontSets(c);
+      assert.ok(bySlot !== undefined, `${name}: base slot 7 reads`);
+      assert.deepEqual(bySlot.map((s) => s.address).sort((x, y) => x - y),
+        sets.map((s) => s.address).sort((x, y) => x - y), `${name}: both routes, same eight sets`);
       // The same heights in the same order, and the same declared slot count. A shared multiset would
       // be suggestive; a shared order is a statement about one generator laying out one product line.
       assert.deepEqual(sets.map((s) => s.height), ARCH8_SET_HEIGHTS, `${name} set heights, in order`);
@@ -480,16 +516,63 @@ test('a Harmony 890 uses the Harmony 885 typeface, so its letters read',
     }
   });
 
-test('the alphabet is not the words, because a string still needs the slot mapping',
-  skipUnless('h890_config'), () => {
-    // The boundary, asserted so nobody reads section 180 as "arch 10 text reads". A string is a run of
-    // glyph codes whose address comes out of a screen program, and programs are base slot 11. The
-    // codes start at 1 rather than 32, so they are this container's own numbering and not ASCII, which
-    // is the other route that would have worked without programs.
+test('the alphabet became the words, and they name the same equipment as the Harmony 880 next to it',
+  skipUnless('h890_config', 'arch8_config_880'), () => {
+    // **Section 180 said this could not be done and section 184 did it**, so this test is the same
+    // subject with the opposite verdict. It used to assert `characterMap` returns undefined, on the
+    // sound reasoning that a string is a run of glyph codes whose address comes out of a screen
+    // program and programs are base slot 11: no mapping, no programs, no strings. The mapping is the
+    // thing that changed, and nothing about the reasoning was wrong.
+    //
+    // What holds the reading up is not the count, it is **whose words they are**. This Harmony 890
+    // and `arch8_config_880` are the same household, section 181 having shown they share their
+    // infrared database almost byte for byte, and the labels drawn on the two screens agree: the same
+    // four activity names and the same four appliances, decoded through a per config glyph numbering
+    // that has no reason to line up between two different containers.
     const c = parse(require_('h890_config'));
+    // Still true and still the reason the pixels have to be matched: a code is this container's own
+    // index into its own font table, not a character.
     assert.equal(usesAscii(c), false, 'the codes are per config, so a byte run is not a string');
-    assert.equal(characterMap(c), undefined, 'and no character map, since it needs the drawn codes');
     for (const s of fontSetsByClosure(c, 8)) assert.equal(s.first, 1);
+
+    const map = characterMap(c);
+    assert.ok(map !== undefined, 'the character map reads now');
+    assert.equal(map.alphabet, 'arch8', 'through the Harmony 885 typeface, section 180');
+    assert.deepEqual(map.drawn, { resolved: 66, total: 66 }, 'every drawn glyph resolves');
+
+    const wordsOf = (name: string): Set<string> => {
+      const container = parse(require_(name));
+      const out = new Set<string>();
+      for (const s of screenStrings(container)) {
+        const text = s.text.trim();
+        if (text.length > 1) out.add(text);
+      }
+      return out;
+    };
+    const ninety = wordsOf('h890_config');
+    const eighty = wordsOf('arch8_config_880');
+    // The four activities, which the drawn screen names on both even though arch 10 cannot walk the
+    // activity chain at all: that needs base slot 13, which section 184 found arch 10 does not have.
+    for (const activity of ['Google TV', 'YouView', 'Dune', 'TV']) {
+      assert.ok(ninety.has(activity), `the Harmony 890 draws ${activity}`);
+      assert.ok(eighty.has(activity), `and so does the Harmony 880 beside it`);
+    }
+    // And the appliances. Two routes, since the 880 reads these through its own name tree as well.
+    for (const device of ['Pana 32AS600', 'Pana 32AS500', 'Dune RealBox', 'DTR-T2200']) {
+      assert.ok(ninety.has(device), `the Harmony 890 draws ${device}`);
+    }
+    // The control the agreement needs: the two containers are not the same file. Without it, "they
+    // share these eight words" would be satisfied by two copies of one config. Exact counts rather
+    // than a floor, per the house rule, and the asymmetry is worth having in the record: the Harmony
+    // 880 draws 99 strings the 890 does not and nearly all of them are button labels for device mode,
+    // where the 890 draws 17 the 880 does not and they are all wording differences in the firmware's
+    // own messages. Why one config's screen carries a device mode vocabulary and the other's does not
+    // is **not** explained here.
+    assert.equal(ninety.size, 216, 'the Harmony 890 draws 216 strings of more than one character');
+    assert.equal(eighty.size, 298, 'and the Harmony 880 beside it 298');
+    assert.equal([...ninety].filter((w) => !eighty.has(w)).length, 17, 'only on the Harmony 890');
+    assert.equal([...eighty].filter((w) => !ninety.has(w)).length, 99, 'only on the Harmony 880');
+    assert.equal([...ninety].filter((w) => eighty.has(w)).length, 199, 'and 199 in common');
   });
 
 /** Every arch 10 read, with the records the closure locator finds. Section 181. */
@@ -504,15 +587,26 @@ const ARCH10_RECORDS: readonly [string, number][] = [
   ['h890_config_2_redump_3', 0],
 ];
 
-test('a Harmony 890 holds 300 infrared codes, read with no pointer slot',
+test('a Harmony 890 holds 300 infrared codes, and the two routes to them name the same 300',
   skipUnless('h890_config'), () => {
-    // Section 181. A record states its own address, so finding one is a twenty four bit exact match
-    // rather than a plausibility test, which is why this needs no threshold where the picture bank
-    // and the font search both do.
+    // Section 181 read these with no pointer slot: a record states its own address, so finding one is
+    // a twenty four bit exact match rather than a plausibility test, which is why this needs no
+    // threshold where the picture bank and the font search both do.
+    //
+    // **Section 184 turned that into a closure**, which is why the line asserting base slot 5 refuses
+    // is now the line asserting it agrees. The slot's own arrays and a scan that never looks at a slot
+    // name the same 300 records, as sets. Nothing is shared between the two derivations: one walks
+    // four counted pointer arrays from a section address, the other histograms `u24(T) - T` over the
+    // whole payload. This is the strongest single check on the mapping in the file.
     const c = parse(require_('h890_config'));
-    assert.equal(irGroups(c), undefined, 'base slot 5 is gated, which is the point');
     const records = irRecordsByClosure(c);
     assert.equal(records.length, 300);
+    const groups = irGroups(c);
+    assert.ok(groups !== undefined, 'base slot 5 reads now');
+    const named = groups.flatMap((g) => g.addresses);
+    assert.equal(named.length, 300, 'base slot 5 names 300 records in four groups');
+    assert.deepEqual([...named].sort((a, b) => a - b), [...records].sort((a, b) => a - b),
+      'and they are the same 300 addresses, by two routes with no shared code');
 
     // Every record's own fields hold up, which is what says these are records and not coincidences.
     let blocks = 0;
@@ -664,11 +758,12 @@ test('every container states its architecture twice and its skin, arch 10 at raw
       assert.equal(u8(c.blob, off + 1), architecture, `${name} states it twice`);
       assert.equal(u8(c.blob, off + 2), skin, `${name} states its skin`);
       assert.equal(u8(c.blob, off + 3), 0x0d, `${name} constant fourth byte`);
-      // Where the container check looks, and why it fails on arch 10 without the record being absent.
-      if (slot === 0) {
-        assert.equal(c.checks['slot1_states_the_architecture'], false,
-          `${name} fails the check because the check reads raw slot 1`);
-      }
+      // **The container check passes on all eight now**, which it did not when section 182 was
+      // written: it read raw slot 1 unconditionally, so an arch 10 container failed it while holding
+      // a perfectly good record one slot lower. It goes through the slot map since section 184, so
+      // this arm asserts agreement where it used to assert the mismatch.
+      assert.equal(c.checks['slot1_states_the_architecture'], true,
+        `${name} passes the check, which reads raw slot ${slot}`);
     }
   });
 
@@ -898,25 +993,29 @@ test('the log area closure holds on every known container and on no arch 10 cand
   });
 
 /**
- * Arch 10's base slot to raw slot mapping, section 183, with what evidences each row.
+ * Arch 10's base slot to raw slot mapping, sections 183 and 184, with what evidences each row.
  *
- * **Deliberately data in a test and not in `archSlot`.** The rail is unchanged: nothing reads arch 10
- * through this. It is here so the mapping is checkable and so adopting it later is a decision with a
- * measurement behind it rather than a guess.
+ * **Adopted since section 184**, so this is now the independent statement of what `ARCH10_SLOT_MAP`
+ * holds rather than a proposal beside it. Two copies of one table would be the state this repository's
+ * oldest rule forbids, which is why the test at the top of this file asserts them equal in both
+ * directions instead of either one being derived from the other.
+ *
+ * **Every row is placed by content.** Section 183 had four placed by order between placed neighbours,
+ * base slots 4, 6, 13 and 14, and named them as the risk. Two of the four were then wrong: 4 and 6
+ * confirmed on their contents, 13 and 14 refuted and moved to the absent list. So the rows here carry
+ * no "by order" any more, and that is the correction rather than a tidy-up.
  */
 const ARCH10_MAPPING: readonly [number, number, string][] = [
   [1, 0, 'the architecture record, 0a 0a skin 0d, calibrated on six containers'],
   [3, 4, 'the 0xADDF clock frame'],
-  [4, 5, 'by order; 125 bytes on the Harmony 895, base slot 4\'s own size'],
+  [4, 5, 'the event map: 125 bytes holding 30 entries, as on arch 8, on both containers'],
   [5, 6, 'four infrared groups holding all 300 records'],
-  [6, 9, 'by order; mode table sized, about 33000 bytes'],
+  [6, 9, 'the mode table: every record carries a screen program that decodes, 137/137 and 169/169'],
   [7, 10, 'all eight font set addresses'],
   [9, 11, 'twelve tagged lists, 323 bindings, against the Harmony 880\'s twelve and 322'],
   [10, 12, 'the packing closure: four breaks, exactly arch 8\'s signature'],
   [11, 14, 'a u16 array all resolving, 39 against the Harmony 880\'s 38'],
   [12, 15, 'a u8 count of 17 in 52 bytes, identical to the Harmony 880\'s'],
-  [13, 16, 'by order'],
-  [14, 17, 'by order'],
   [15, 18, 'a u8 count, 14 against the Harmony 880\'s 9, per architecture by section 44'],
   [16, 19, 'an empty array, as on arch 8'],
   [17, 20, 'two bytes before the picture bank'],
@@ -924,10 +1023,17 @@ const ARCH10_MAPPING: readonly [number, number, string][] = [
   [19, 22, 'NULL'],
 ];
 
-/** The base slots arch 10 does not have at all. */
-const ARCH10_ABSENT = [0, 2, 8];
+/**
+ * The base slots arch 10 does not have at all.
+ *
+ * 13 and 14 joined on 26 August 2026, section 184, having been placed by order in section 183. Base
+ * slot 13's own closure is the one that refuses: its first seven records hold the build timestamp's
+ * fields, and no run of pointers in either payload has targets carrying those seven values, at any
+ * field offset and either width, where an arch 8 container hits exactly once.
+ */
+const ARCH10_ABSENT = [0, 2, 8, 13, 14];
 
-test('the arch 10 mapping is monotone, complete, and leaves six raw slots over',
+test('the arch 10 mapping is monotone, complete, and leaves eight raw slots over',
   () => {
     // No lab: the arithmetic. Base slots map in order, so the mapping has to be increasing, and the
     // absences plus the leftover raw slots have to account for all 23.
@@ -939,7 +1045,7 @@ test('the arch 10 mapping is monotone, complete, and leaves six raw slots over',
     assert.equal(rows.length + ARCH10_ABSENT.length, 20, 'every base slot is placed or absent');
     const claimed = new Set(rows.map(([, raw]) => raw));
     const over = [...Array(23).keys()].filter((raw) => !claimed.has(raw));
-    assert.deepEqual(over, [1, 2, 3, 7, 8, 13], 'the raw slots that are not base slots');
+    assert.deepEqual(over, [1, 2, 3, 7, 8, 13, 16, 17], 'the raw slots that are not base slots');
     assert.equal(rows.length + over.length, 23, 'and 23 raw slots are accounted for');
   });
 
@@ -1005,14 +1111,29 @@ test('base slot 9 is raw slot 11, so arch 10 has no base slot 8',
     assert.ok(ARCH10_ABSENT.includes(8), 'so base slot 8 is absent');
   });
 
-test('nothing reads arch 10 through the mapping, which is the rail',
+test('the mapping is adopted, so the arch 10 readers answer, and each answer has a second route',
   skipUnless('h890_config'), () => {
-    // The mapping above is data in a test. `archSlot` is untouched, so every reader still refuses, and
-    // adopting it has to be a deliberate change: `archSlot` expresses insertions into the twenty and
-    // cannot say that base slots 0, 2 and 8 are **absent**. Section 183.
+    // **This is section 183's rail with its sign reversed**, section 184. That section left the
+    // mapping as data in a test and `archSlot` refusing, on two grounds: `archSlot` could only
+    // express insertions, and moving a rail is Danny's call. Both were settled, the first by the per
+    // architecture table this file's `ARCH10_MAPPING` is now the assertion for and the second by his
+    // word on 26 August 2026.
+    //
+    // So the test that used to say "nothing answers" says what answers, and every line pairs the
+    // reader with the pointer free route that had already read the same thing. That pairing is the
+    // reason switching on was safe: three of these four structures were read twice by then.
     const c = parse(require_('h890_config'));
-    assert.equal(c.architecture, undefined, 'the container still states no architecture to the codec');
-    assert.equal(irGroups(c), undefined);
-    assert.equal(fontSets(c), undefined);
-    assert.equal(c.actionLists(), undefined);
+    assert.equal(c.architecture, 10, 'the container states arch 10, Harmony 890 and 895');
+
+    const groups = irGroups(c);
+    assert.equal(groups?.length, 4, 'base slot 5 names four device groups');
+    assert.equal(groups?.reduce((n, g) => n + g.addresses.length, 0), 300,
+      'holding the same 300 records the self pointer search found with no slot at all');
+
+    const fonts = fontSets(c);
+    assert.equal(fonts?.length, 8, 'base slot 7 names eight font sets, as the closure search found');
+
+    const lists = c.actionLists();
+    assert.equal(lists?.length, 1549, 'base slot 10 has its action lists');
+    assert.equal(c.builtAt, '2025-05-14T21:40:26', 'and base slot 3 its build timestamp');
   });

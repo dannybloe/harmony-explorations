@@ -35,7 +35,7 @@ export const MODE_TAG_ENTER = 6;
  * relies on it in every container of that architecture, is the shape a reader has no way to doubt. The
  * counts here are asserted in `test/sections.test.ts` so the next corpus change moves them in a diff.
  */
-export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
+export const MODE_PROGRAM_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 10, 12, 14]);
 export const HANDLER_TAG_ENTER = 1;
 export const HANDLER_TAG_LEAVE = 2;
 /**

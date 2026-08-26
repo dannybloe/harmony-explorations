@@ -187,9 +187,17 @@ placements reaching 34 of 47 where arch 8, 9 and 14 each score 47 uniquely, and 
 26 August 2026: the Harmony 895's owner states its six devices, base slot 5's entry count equals the
 device count on 9 of 9 configs across the other four architectures, and no arch 10 slot holds a six
 entry array at all. Base slot 5 could only land on raw slot 5 to 8 under any placement, three of those
-are one, one and three bytes where a six entry array needs nineteen, and the fourth declares nine. So
-every arch 10 reader stays gated, and guessing a mapping would turn twenty refusals into twenty
-plausible wrong answers. **What does read there is what the framing locates**, section 179: the picture
+are one, one and three bytes where a six entry array needs nineteen, and the fourth declares nine.
+
+**The mapping was then derived from content rather than fitted, and it is switched on**, sections 183 and
+184: fifteen base slots present, five absent and eight raw slots that are no base slot, with base slot
+10's packing closure as the anchor that settled it. So a Harmony 890's screens, button bindings, action
+lists, build timestamp and **drawn text** all read, the text at 4255 of 4255 glyphs, naming the same four
+activities and four appliances as the arch 8 Harmony 880 from the same household. What it does not give
+is the device names or the activity count, and that is structural: both routes need base slot 0's name
+tree, which arch 10 has no slot for, or base slot 13's transitions, which section 184 refuted. The byte
+accounting sits at 97.9% and 96.2% and the remainder is one family of 111 byte runs, 18 and 21 of them.
+**What read there before any of that is what the framing locates**, section 179: the picture
 bank is found from the trailer's position alone, calibrated on 14 of 14 containers whose bank is known
 by another route, so 57% of a Harmony 890's file and 72% of a Harmony 895's is accounted for as
 pictures and both state a **128 by 160** display, the same as a Harmony 885. **Its font sets read the
@@ -201,11 +209,11 @@ not its words, since a string's address comes out of a screen program and those 
 the Harmony 890 with all 463 duration blocks decoding, exact against the slot route on 13 of 13
 containers elsewhere. The Harmony 895 has **none**, proven rather than unfound. And those three structures then **identified the slots that name
 them**, section 182: an arch 10 config does state its architecture after all, 10, at raw slot 0, and it
-has no name tree slot at all. **The mapping is determined**, section 183: three base slots are
-absent, 0, 2 and 8, seventeen are present, and six raw slots are not base slots. Thirteen are placed by
-their own contents, the decisive one being the action list table's packing closure, which exactly one
-arch 10 slot satisfies with arch 8's own signature. The readers are still gated deliberately: the mapping
-lives as data in a test, because `archSlot` cannot express an **absent** base slot and switching it on is
+has no name tree slot at all. **The mapping is determined**, section 183, and corrected and switched
+on in section 184: fifteen base slots are present, five are absent, 0, 2, 8, 13 and 14, and eight raw
+slots are no base slot. The decisive anchor is the action list table's packing closure, which exactly one
+arch 10 slot satisfies with arch 8's own signature. The readers were gated deliberately at first: the
+mapping lived as data in a test, because `archSlot` could not express an **absent** base slot and it is
 a decision rather than a consequence. Firmware is what settles it, the way arch 9's own firmware settled its
 infrared classes. Sections 115, 117 and 178.
 

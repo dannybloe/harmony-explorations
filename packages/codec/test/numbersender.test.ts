@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('seven containers declare a method for sending a number, 25 declare none, 10 are unread',
+test('seven containers declare a method for sending a number, 28 declare none, 7 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -204,17 +204,23 @@ test('seven containers declare a method for sending a number, 25 declare none, 1
     // section comes along whichever appliances are on the record that day. 41 and seven since the
     // phase 7 pair, section 174, populated for the same reason again: the favourites live on the
     // account, so every compile of it carries the section, whatever else the compile was for.
-    // 42 since the Harmony 895, section 178, which lands in `unread` because base slot 5's slot
-    // mapping is what it refutes: on arch 10 no reader is gated open, so this section cannot be found
-    // at all. That is the honest answer for it and not a gap to be filled.
+    // 42 since the Harmony 895, section 178. **Three of the arch 10 reads moved from `unread` to
+    // `declaredEmpty` on 26 August 2026**, section 184, which is the switch-on paying out in the
+    // dullest possible way: base slot 16 is aligned now, so those containers answer the question
+    // instead of refusing it, and the answer is that they declare no way of sending a number. A
+    // Harmony 890 has no favourite channels, which is what a config from 2025 for a remote whose
+    // service compiled it would be expected to say.
     assert.equal(populated + declaredEmpty + unread, 42, 'every container the lab can parse');
     assert.equal(populated, 7);
-    assert.equal(declaredEmpty, 25);
-    // Eight arch 10 reads, seven of a Harmony 890 and one of a Harmony 895, whose slot mapping is
-    // deliberately ungated so the container states no architecture, plus the two containers found
-    // inside arch 8 firmware images, which report architecture 0. Counted separately because "the reader declined" and "the config says
+    assert.equal(declaredEmpty, 28);
+    // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
+    // firmware images, which report architecture 0. **The line between the three that answer and the
+    // five that do not is exactly the trailer checksum**, which is worth stating because nothing made
+    // it so: the three whose checksum recomputes read this section and the five damaged reads of one
+    // Harmony 890 do not, section 122. Three of those five cannot even state their architecture.
+    // Counted separately from `declaredEmpty` because "the reader declined" and "the config says
     // none" are different answers, and a total would hide the first inside the second.
-    assert.equal(unread, 10);
+    assert.equal(unread, 7);
   });
 
 test('the accounting claims the record and its tables, and 113 is the closure',

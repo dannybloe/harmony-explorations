@@ -24220,7 +24220,7 @@ best target, since an action list is a three byte instruction stream with its ow
 candidate met. Scoring readers against a guessed mapping is what this section tried and it is the
 weaker instrument.
 
-## 183. Arch 10's slot mapping, determined: three base slots are absent and six raw slots are not base slots
+## 183. Arch 10's slot mapping, determined: three base slots are absent and six raw slots are not base slots<!--superseded-->
 
 Section 182's verification refuted its own arithmetic and named the target: find one more anchor the way
 the first seven were found, by identifying a structure without its slot and then asking which slot names
@@ -24266,24 +24266,29 @@ exactly one slot between them. **Base slot 8 has nowhere to go.**
 | 1 | 0 | the architecture record, `0a 0a` plus the skin, calibrated on six containers |
 | 2 | **absent** | the log area closure holds on four known containers and on no candidate |
 | 3 | 4 | the `0xADDF` clock frame |
-| 4 | 5 | by order; 125 bytes on the Harmony 895, which is base slot 4's own size |
+| 4 | 5 | by order, **confirmed on content in section 184**: 125 bytes holding 30 entries, as on arch 8 |
 | 5 | 6 | four infrared groups holding all 300 records |
-| 6 | 9 | by order; mode table sized, about 33000 bytes |
+| 6 | 9 | by order, **confirmed on content in section 184**: every mode record carries a decoding screen program |
 | 7 | 10 | all eight font set addresses |
 | 8 | **absent** | nowhere to go once base 9 takes raw 11 |
 | 9 | 11 | twelve tagged lists, 323 bindings against the Harmony 880's twelve and 322 |
 | 10 | 12 | the packing closure, four breaks, arch 8's exact signature |
 | 11 | 14 | a `u16` array all resolving, 39 against the Harmony 880's 38 |
 | 12 | 15 | a `u8` count of 17 in 52 bytes, identical to the Harmony 880's |
-| 13, 14 | 16, 17 | by order |
+| 13, 14 | ~~16, 17~~ | by order, and **both refuted in section 184**: absent |
 | 15 | 18 | a `u8` count, 14 against the Harmony 880's 9, per architecture by section 44 |
 | 16 | 19 | an empty array, as on arch 8 |
 | 17 | 20 | two bytes before the picture bank |
 | 18, 19 | 21, 22 | NULL, as on all four architectures |
 
-Seventeen base slots present, three absent, and raw slots **1, 2, 3, 7, 8 and 13** are not base slots.
-Thirteen of the seventeen are placed by their own evidence and four follow by order between anchors,
+Seventeen base slots present, three absent, and raw slots **1, 2, 3, 7, 8 and 13** are not base slots.<!--superseded-->
+Thirteen of the seventeen are placed by their own evidence and four follow by order between anchors,<!--superseded-->
 which the mapping being monotone forces.
+
+**Two of those four were wrong and section 184 is the correction.** Base slots 4 and 6 confirmed on
+their contents; base slots 13 and 14 refuted and absent, so the standing figures are **fifteen** base
+slots present, **five** absent, and **eight** raw slots that are not base slots. The four by order rows
+were named here as the risk and the risk was real in half of them.
 
 ### Why this is believable where section 182's was not
 
@@ -24295,17 +24300,182 @@ gaps between neighbours that are already placed. **The lesson to carry is that a
 parameter and seven constraints can look conclusive and be wrong**, where the same seven facts plus
 "believe nothing you have not identified" reaches a different and checkable answer.
 
-### The rail is unchanged, and adopting this is a decision
+### The rail was unchanged here, and section 184 moved it
 
-`INSERTED_SLOTS` still has no arch 10 entry and `archSlot` still refuses. The mapping is **data in a
-test**, `ARCH10_MAPPING` in `packages/codec/test/arch10.test.ts`, and a test asserts that `irGroups`,
-`fontSets` and `actionLists` all still return undefined on a Harmony 890.
+At the time of writing, `INSERTED_SLOTS` had no arch 10 entry and `archSlot` refused. The mapping was
+**data in a test**, `ARCH10_MAPPING` in `packages/codec/test/arch10.test.ts`, and a test asserted that
+`irGroups`, `fontSets` and `actionLists` all still returned undefined on a Harmony 890.
 
-Two reasons it is not simply switched on. `archSlot` expresses a per architecture difference as
-insertions into the twenty, and this mapping needs three base slots to be **absent**, which that shape
-cannot say: adopting it means changing the representation to a per architecture table, which touches
-every architecture's reader. And moving a rail is Danny's call, not a side effect of a finding.
+Two reasons it was not simply switched on. `archSlot` expressed a per architecture difference as
+insertions into the twenty, and this mapping needs base slots to be **absent**, which that shape cannot
+say: adopting it means changing the representation to a per architecture table, which touches every
+architecture's reader. And moving a rail is Danny's call, not a side effect of a finding.
 
-What ungating would buy, if it is wanted: a Harmony 890's devices, activities, screens, button bindings
+What ungating would buy, if it is wanted: a Harmony 890's devices, activities, screens, button bindings<!--superseded-->
 and drawn text, since sections 179 to 181 already read its pictures, fonts and infrared codes without
 any slot at all. What it risks is the four by order rows, which no content check has confirmed.
+
+**Both happened on 26 August 2026 and both halves of that paragraph came true.** Danny asked for the
+representation change and the switch-on; it bought the screens, the bindings and the drawn text, and it
+did not buy the devices or the activities. And the four by order rows were the risk exactly as named:
+two of them were wrong. Section 184.
+
+## 184. Arch 10 is switched on, which needed a new representation and refuted two of section 183's rows
+
+Danny's call on 26 August 2026, answering section 183's own two objections: change the representation so
+a base slot can be **absent**, and adopt the mapping. Both were done, and doing it produced a
+correction to the mapping being adopted, which is the part worth reading first.
+
+### The representation: insertions out, a table per architecture in
+
+`archSlot` and `baseSlot` translated between a container's raw slot numbers and the twenty slot base
+layout by way of `INSERTED_SLOTS`, one list per architecture of the positions where that architecture
+inserts a slot the base layout does not have: `8: [8]`, `12: [8, 18]`, and empty for arch 9 and arch 14.
+Every difference between the five architectures then established was an insertion, so the shape fitted.
+
+Arch 10 does not fit it, and not marginally: five of the twenty base slots are simply not there. An
+insertion list has no way to say that. So `SLOT_MAPS` is now a table per architecture, base slot to raw
+slot, with `undefined` for an absent one. **The four insertion architectures are still derived from
+`INSERTED_SLOTS` rather than written out**, so there is one statement of their alignment and not two,
+which is the same rule the opcode table is named after. Only arch 10 is stated.
+
+`archSlot` now **throws** for an absent base slot rather than returning a number. That is deliberate and
+it is the rail, relocated rather than removed: returning a number would hand a reader the neighbouring
+section, which is exactly what section 178's gate was put up to prevent. Callers that can carry on
+without a section already catch `GspmError`, so the change is contained. Mirrored in
+`src/harmony/gspm.py`.
+
+### Two of section 183's four by order rows were wrong
+
+Section 183 placed thirteen rows on their contents and four by order between placed neighbours, base
+slots 4, 6, 13 and 14, and named those four as the risk. Checking them was the first thing the
+switch-on made possible, since a reader can now be pointed at the slot and asked what it finds.
+
+**Base slot 4 confirmed.** The event map reads as 125 bytes holding 30 entries on both arch 10
+containers, which is byte for byte the same size and count as on arch 8. Nothing about the reader is
+lenient: it takes a `u16` count at `+3` and demands `5 + 4 * count` fit.
+
+**Base slot 6 confirmed.** Every mode record carries a screen program that decodes, 137 of 137 on the
+Harmony 890 and 169 of 169 on the Harmony 895, which is the same closure that holds on all four other
+architectures, 2515 of 2515. `MODE_PROGRAM_ARCHITECTURES` gained arch 10 on that measurement.
+
+**Base slot 13 refuted, and this is the decisive one**, because section 130 gives base slot 13 the
+strongest closure in the container: its first seven records hold the build timestamp's own fields as
+their `first`, in all 21 containers. So the test is seven numbers from one section against seven from
+another, and no wrong slot can pass it by arithmetic. Searching both arch 10 payloads for **any** run of
+three byte pointers whose targets carry those seven values finds nothing, tried at every field offset 0
+to 8 within the record and at both one and two bytes wide, where the same search on an arch 8 container
+hits exactly once, at the pointer array base slot 13 actually names. Raw slot 16, where section 183 put
+it, is a fixed table of about 1024 bytes in which no three byte value resolves to an address at all.
+
+Two readings survive and nothing here separates them: arch 10 has no base slot 13, or arch 10 does not
+stamp its clock into state variables. Either way the slot is not placed, and `undefined` is the honest
+entry.
+
+**Base slot 14 refuted on shape.** Base slot 14's section count is one byte on every architecture;
+raw slot 17 carries a `u16` count of 41 pointers on the Harmony 890 and 32 on the Harmony 895, all
+resolving, which is base slot 11's and 12's shape rather than base slot 14's. And no slot in either
+container satisfies the record shape, whose signature is a leading byte of 2 and targets that decode as
+screen programs: raw slot 17's own targets manage 11 of 41 and 2 of 32.
+
+So the standing figures are fifteen base slots present, five absent, and **eight** raw slots that are
+not base slots, 1, 2, 3, 7, 8, 13, 16 and 17.
+
+The lesson is section 183's own, one turn later. That section wrote that a slot between two placed
+neighbours has only one home given a monotone mapping, and treated that as placement. It is not: **only
+one home is not evidence that the section is there at all.** The same sentence that justified four rows
+also permitted the two absences that turned out to be the truth, and nothing in the argument could
+prefer one over the other. What distinguishes 4 and 6 from 13 and 14 is that somebody read the bytes.
+
+### What the switch-on bought, and each of the four had a second route already
+
+The mapping was adopted rather than merely believed because three of the four structures behind it had
+been read twice by then, once through the slot and once through a locator that never looks at a slot.
+Those pairings are now the assertions rather than the argument.
+
+| what | through the slot | through no slot |
+|---|---|---|
+| the infrared database | base slot 5's four groups, 300 records | the self pointer scan, section 181, the same 300 addresses |
+| the font table | base slot 7's eight sets | the closure search, section 180, the same eight addresses |
+| the pictures | nothing addresses the bank | the trailer walk, section 179 |
+| the build timestamp | base slot 3 at raw slot 4 | the `0xADDF` frame search, section 182 |
+
+And the things that had no second route and now read: 172 and 194 mode pages, 1549 and 1370 action
+lists with the packing closure holding on 1544 of 1548 and 1365 of 1369, which is arch 8's exact
+signature of four breaks per config, and the drawn screen.
+
+### The drawn text reads, and it names the Harmony 880's own equipment
+
+**4255 of 4255 glyphs on the Harmony 890 and 5808 of 5812 on the Harmony 895.** Section 180 had said
+this could not be done and gave the correct reason: a string is a run of glyph codes whose address comes
+out of a screen program, and programs are base slot 11, so no mapping means no strings. The mapping is
+what changed.
+
+What holds the reading up is not the count, it is whose words they are. The Harmony 890 and the arch 8
+`arch8_config_880` are one household, section 181 having shown they share their infrared database almost
+byte for byte, and the labels drawn on the two screens agree: the same four activity names and the same
+four appliances, decoded through a per config glyph numbering that has no reason to line up between two
+different containers. 199 of the 890's 216 distinct strings appear on the 880 as well.
+
+The asymmetry in the other direction is unexplained and recorded as such: the Harmony 880 draws 99
+strings the 890 does not, and nearly all of them are the button labels of device mode. Why one
+household's two remotes differ in that is not read here.
+
+### The unprompted confirmation, which nothing was looking for
+
+With the clock routed through the mapping, three of this contributor's configurations, two remotes and
+two architectures, turn out to have been built inside fifteen minutes of one afternoon: the Harmony 880
+at 21:25:34, one Harmony 890 read at 21:37:44 and the other at 21:40:26, all on 14 May 2025. One person
+at one sitting, compiling what they had. The arch 8 date was already read and believed, and the two arch
+10 ones come out of a slot the arch 8 map does not use, so nothing could have been adjusted to make them
+agree. This is the closest thing to a known answer arch 10 has.
+
+### One reader needed correcting to work at all
+
+`fontSets` called `pointerArray`, which accepts a counted array only when `width + 3 * count` accounts
+for the section **exactly**. That is true on arch 8, 9, 12 and 14 and false on arch 10, which keeps the
+glyph bodies inside base slot 7's own section: eight pointers in 25 bytes of a 2325 byte section. So
+base slot 7 is read as a header now, the third structure here to hit section 36's hazard after base
+slot 5's arrays sitting inside base slot 4 and base slots 9, 14 and 16 sitting above their records.
+
+The count's width is stated rather than searched, and calibrated: a `u16` on all six containers
+measured, four of them architectures where `pointerArray`'s strict test already agreed, and on all six
+the resulting addresses are exactly the set `fontSetsByClosure` finds by scanning the payload.
+
+### What arch 10 still does not give, and why that is structural
+
+A Harmony 890's **device names** and **activity count** stay unread, and not for want of a slot. Both
+routes need what arch 10 does not have: section 86 reads them from base slot 0's name tree, which arch
+10 has no slot for at all, and section 126's fallback reads a device's label from base slot 13's
+transitions, which is the slot this section just refuted. `inventory` reports four devices on the
+Harmony 890, correctly, since a device is an infrared group, and it names none of them and finds zero
+activities.
+
+The activity **names** are on the screen, as above, so what is missing is the chain from a key to an
+activity rather than the words. That is the shape of the remaining work and it is not a slot problem.
+
+### The byte accounting, and where the rest of it is
+
+Arch 10 is deliberately outside `CONTAINERS`, the nineteen the corpus wide totals are computed from, so
+these figures are per container and move nothing. **97.92% on the Harmony 890 and 96.15% on the Harmony
+895**, against 100.00% on every container in the population.
+
+The prediction was that the remainder is the eight raw slots no reader knows, and that is **wrong**:
+those account for 1450 bytes of the 890's 8258. The bulk is one family, **18 runs of 111 bytes on the
+Harmony 890 and 21 on the Harmony 895**, which is the shape sections 66 and 75 were both found by, a
+family with the same length and a count that follows the config. The Harmony 895 also has a single 7187
+byte run of its own. That family is the next thing to read on arch 10.
+
+### The tests
+
+Nine tests asserted that arch 10 refuses and every one of them was rewritten rather than deleted, per
+the standing rule, with the correction named in the body: the two rails in `gspm.test.ts` and
+`arch10.test.ts`, the framing checks of the Harmony 895, the display, the font sets, the infrared
+records, the architecture record's own check, the character map, and the number sender partition, where
+three arch 10 containers moved from "unread" to "declares none". **The line between the three arch 10
+reads that now answer and the five that do not is exactly the trailer checksum**, which nothing arranged:
+the clean reads read their sections and the five damaged reads of one Harmony 890 do not, section 122.
+
+Three of the rewrites are better tests than what they replaced, because a refusal became an agreement:
+base slot 5 against the self pointer scan on all 300 records, base slot 7 against the closure search on
+all eight sets, and the clock against the arch 8 container fifteen minutes away.

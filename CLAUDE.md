@@ -181,25 +181,49 @@ The real reason is that arch 10 carries **nineteen** base slots and four inserti
 and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
 the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
 and 23 for a Harmony 895. Seven base slots are anchored by content, base 1 to raw 0, 3 to 4, 5 to 6,
-7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **the mapping is determined since section 183**:
-**three base slots are absent**, 0, 2 and 8, seventeen are present, and raw slots 1, 2, 3, 7, 8 and 13
-are not base slots at all. Thirteen of the seventeen are placed by their own contents and four follow by
-order. The anchor that closed it is base slot 10's **packing closure**, that consecutive table entries
+7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **the mapping is determined since section 183**
+and corrected in section 184: fifteen base slots are present, five are absent and eight raw slots are
+not base slots at all, per the paragraph below. The anchor that closed it is base slot 10's **packing closure**, that consecutive table entries
 sit `1 + 3 * count` apart with the addresses coming from the table and the counts from the lists: on both
 arch 10 containers exactly one slot scores like arch 8's, raw 12, with the same four breaks, where every
 other array scores near zero. That forced base slot 9 onto raw 11, twelve tagged lists and 323 bindings
 against the Harmony 880's twelve and 322, and left base slot 8 nowhere to go. **Section 182's own
 arithmetic was wrong about five slots** and the lesson is the instrument: it assumed a shape for the
 difference, insertions only, and one free parameter against seven constraints looked conclusive and was
-not. `INSERTED_SLOTS` still gets no entry and `archSlot` still refuses, so
-nothing reads arch 10 through the mapping: it is **data in a test**, `ARCH10_MAPPING` in
-`packages/codec/test/arch10.test.ts`, with a test asserting the readers still return undefined.
-**Adopting it is Danny's call and not a side effect of a finding**, for two reasons. `archSlot`
-expresses a per architecture difference as insertions into the twenty and cannot say a base slot is
-**absent**, so adopting means changing the representation to a per architecture table, which touches
-every architecture's reader. And the four rows placed by order rather than by content are what a wrong
-answer would hide. What it would buy is a Harmony 890's devices, activities, screens, button bindings
-and drawn text. What does read on arch 10 is everything the header
+not. **The mapping is adopted since section 184**, on Danny's call of 26 August 2026, and the two objections
+it waited on were both settled: `SLOT_MAPS` is a table per architecture now, so a base slot can be
+**absent**, with the four insertion architectures still derived from `INSERTED_SLOTS` so their alignment
+is stated once. `archSlot` **throws** for an absent base slot rather than returning a number, which is
+the section 178 rail relocated rather than removed, since a number would hand a reader the neighbouring
+section. `INSERTED_SLOTS` still gets no arch 10 entry and never will.
+
+**Switching it on corrected the mapping it adopted, and the four rows placed by order were the risk in
+exactly the way section 183 named**: base slots 4 and 6 confirmed on content, base slots **13 and 14
+refuted and absent**. So the standing figures are **fifteen** base slots present, **five** absent, 0, 2,
+8, 13 and 14, and **eight** raw slots that are not base slots. Base slot 13's refutation is the strong
+one, because section 130 gives it the best closure in the container: its first seven records hold the
+build timestamp's own fields, and no run of pointers in either payload has targets carrying those seven
+values, at any field offset and either width, where an arch 8 container hits exactly once. **The lesson
+is section 183's own sentence turned around**: a slot with only one home under a monotone mapping is not
+thereby a slot that is there, and the argument that placed four rows equally permitted the two absences.
+What separated 4 and 6 from 13 and 14 was reading the bytes.
+
+**What it bought**: the screens, the button bindings, the mode pages, the action lists with arch 8's
+exact packing signature of four breaks, and the **drawn text**, 4255 of 4255 glyphs on the Harmony 890
+and 5808 of 5812 on the Harmony 895, which name the same four activities and four appliances as the
+arch 8 Harmony 880 from the same household. **What it did not buy is the device names and the activity
+count**, and that is structural rather than pending: both routes need base slot 0's name tree, which
+arch 10 has no slot for, or base slot 13's transitions, which is the slot just refuted. The byte
+accounting sits at **97.9%** and **96.2%** where the corpus is at 100%, and the remainder is **not** the
+eight unread slots, which are 1450 bytes of 8258: it is one family of **111 byte runs**, 18 and 21 of
+them, which is the shape sections 66 and 75 were both found by and the next thing to read here.
+
+**The unprompted confirmation is the best evidence the mapping is right**, and nothing was looking for
+it: with the clock routed through the map, three of one contributor's configurations, two remotes and
+two architectures, were built inside fifteen minutes of one afternoon, the Harmony 880 at 21:25:34 and
+the two Harmony 890 reads at 21:37:44 and 21:40:26. The arch 8 date was already believed and the arch 10
+ones come out of a slot the arch 8 map does not use. What does read on arch 10 without any mapping at
+all is everything the header
 or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
 key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
 and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
@@ -217,8 +241,9 @@ offset, so it needs no pointer slot, and a record is the cleanest case because i
 address**. The shape filter around a hit is not optional: an ascending pointer table crosses the self
 pointer line dozens of times, which is the misaligned ascending table pitfall again, and 198 such hits
 in the Harmony 895 look exactly like a result. It is also
-**not** progress towards the mapping, and having a Harmony 890's alphabet is not having its words,
-since a string's address comes out of a screen program. Section 179's own next step was **wrong** and
+**not** progress towards the mapping, and the alphabet was not the words either, since a string's address
+comes out of a screen program: that stood until the mapping was switched on and it is dead now, per the
+paragraph above. Section 179's own next step was **wrong** and
 measuring it cost nothing: the font table is not at the bank's lower edge, it is 1918 to 48385 bytes
 below it.
 The earlier state of this entry, and the two Harmony 890 samples it describes: two Harmony 890
@@ -1666,7 +1691,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 182 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 184 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
