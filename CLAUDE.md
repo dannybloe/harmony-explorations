@@ -1036,6 +1036,13 @@ reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
+.agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
+                                second agent runs the same rituals rather than a copy of them. All
+                                seven are there and the two language server directories deliberately
+                                are not, since those are Claude Code's own plugin mechanism and point
+                                into node_modules
+.codex/hooks.json               the publication check, wired into Codex's pre-tool hook. The git hook
+                                cannot see a tool call, so this is the same guard at the other end
 samples/                        empty by policy
 ```
 

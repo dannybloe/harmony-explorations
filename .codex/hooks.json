@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/bin/check-publishable.py\" --hook",
+            "timeout": 60,
+            "statusMessage": "Checking the staged tree is publishable"
+          }
+        ]
+      }
+    ]
+  }
+}
