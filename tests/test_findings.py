@@ -2073,5 +2073,280 @@ class TestTheHarmonyOneWritesItsOwnExternalFlash(unittest.TestCase):
         self.assertNotIn(0xAA, [value for _at, _where, value in committed],
                          'no 0xAA reaches memory, so no unlock can start in the bootloader')
 
+
+class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
+    """Section 192. A host does not hand the remote a flash address, it hands it a request that one
+    routine classifies into a target, a page and a refusal.
+
+    The finding is the interlock, and it is a **byte** rather than a bit. One routine per image reads
+    the top byte of the requested address and either selects internal program flash, selects the
+    external medium, or returns without selecting anything at all. Both the write handler and the
+    erase handler then dispatch on that byte, and its resting value refuses, so an address the
+    classifier rejects produces silence rather than a write somewhere else.
+
+    Two of this session's own mistakes are pinned here as controls, because both were false negatives
+    produced by searching bytes instead of reading instructions, and both looked like findings:
+
+    * a grep for the resolved register name missed `MOVWF 0xee,B`, the access bank spelling of the
+      same variable, and produced the claim that the internal flash arm was dead code. Same family as
+      the `EECON1` confusion section 189 already records, one layer along: there the access bank form
+      was read as a bank 0 variable, here a bank 1 variable's access bank form was not read at all.
+    * a byte pattern search for the internal page arm reported it absent from the application. The
+      pattern contained the variable's address, and the application keeps its copy one bank up, so the
+      pattern was a pattern about one image. **A byte pattern that contains a register address cannot
+      be used to compare two images.**
+
+    The classifier is one routine across two architectures and four images. What is per architecture
+    is the external ceiling, and that is asserted per image rather than shared.
+    """
+
+    #: `BCF 0x00,0; CLRF 0x01; CLRF 0x02; MOVLW 0xFE; XORWF 0x00,W`, the top byte's bit 0 cleared
+    #: and compared with 0xFE, which is what makes 0xFE and 0xFF one case.
+    ANCHOR = bytes.fromhex('0090016a026afe0e0018')
+    ANCHOR_AT = 4               # the anchor sits this far past the routine's first instruction
+
+    #: The external ceiling is a refusal on the top byte, so it states the size of the medium the
+    #: architecture addresses: 4 MB on the Harmony One's parallel NOR, 2 MB on the serial part.
+    CEILINGS = {
+        'one_internal_fe': 0x40,
+        'one34_code': 0x40,
+        'h600_code_complete': 0x20,
+        'h700_code': 0x20,
+    }
+    BASES = {
+        'one_internal_fe': 0x0000,
+        'one34_code': 0x020000,
+        'h600_code_complete': 0x9000,
+        'h700_code': 0x9000,
+    }
+    ARCH12 = ('one_internal_fe', 'one34_code')
+    ARCH14 = ('h600_code_complete', 'h700_code')
+
+    #: Safe mode's own copies of the three variables the classifier and both handlers share.
+    STATE, ADDRESS, SELECTOR = 0x1E7, 0x1E8, 0x1EE
+    #: Written to the register at external 0x020025, and the fixed window the access then uses.
+    BANK_REGISTER, BANK_BIAS, WINDOW_TOP = 0x020025, 0x03, 0x13
+    #: Section 47's log area writer refuses outside this range, from the action list language and with
+    #: nothing in common with the USB path. Its ceiling is this classifier's, which is the closure.
+    LOG_AREA_CEILING = 0x400000
+    #: Section 175's interlock blocks a write below this, read from the write executor.
+    SECTION_175_THRESHOLD = 0x020000
+
+    def classifier(self, code, base):
+        """Locate the one classifier in an image and read what it decides.
+
+        Returns (entry, ceiling, refusals). The ceiling is found semantically rather than by
+        position: the routine makes two zero extended comparisons on the top byte, and the one whose
+        terminating branch refuses on **carry** is the upper bound, where the other refuses on its
+        absence and is a compiler emitted `>= 0` that no byte can fail.
+        """
+        hit = code.find(self.ANCHOR)
+        self.assertNotEqual(hit, -1, 'no classifier in this image')
+        self.assertEqual(code.find(self.ANCHOR, hit + 1), -1, 'exactly one classifier per image')
+        entry = hit - self.ANCHOR_AT
+
+        ceiling, pending, candidate, refusals = None, None, None, []
+        off = entry
+        while off < entry + 0x90:
+            ins = isa.decode(code, off, base)
+            if ins is None:
+                break
+            if ins.mnemonic == 'MOVLW':
+                pending = ins.fields['k']
+            elif ins.mnemonic == 'SUBWF' and ins.fields.get('f') == 0x00:
+                candidate = pending
+            elif ins.mnemonic == 'BC' and pending == 0x00 and candidate is not None:
+                # carry means "not below", so refusing on carry bounds from above
+                ceiling = candidate if ceiling is None else ceiling
+            elif ins.mnemonic == 'RETLW':
+                refusals.append((base + off, ins.fields['k']))
+            off += 2 * ins.words
+        return base + entry, ceiling, refusals
+
+    def test_every_image_carries_exactly_one_classifier_and_its_ceiling_is_per_architecture(self):
+        """The shared half and the split half in one assertion, because the interesting thing is that
+        the routine is one routine and the number in it is not."""
+        lab.require(*self.CEILINGS)
+        found = {}
+        for name, ceiling in self.CEILINGS.items():
+            entry, read, _refusals = self.classifier(lab.load(name), self.BASES[name])
+            found[name] = read
+            self.assertIsNotNone(read, '%s: no upper bound found' % name)
+            self.assertGreater(entry, 0, name)
+        self.assertEqual(found, self.CEILINGS)
+        # And the split is by architecture rather than by image, which is the claim worth pinning:
+        # two images agree on each side and the two sides disagree.
+        self.assertEqual({found[n] for n in self.ARCH12}, {0x40})
+        self.assertEqual({found[n] for n in self.ARCH14}, {0x20})
+        self.assertNotEqual(found['one34_code'], found['h700_code'])
+
+    def test_the_harmony_ones_ceiling_is_the_log_area_writers_ceiling(self):
+        """The independent closure. Section 47 read a bound out of the action list language, where a
+        config asks the remote to reserve flash above itself and an out of range request zeroes the
+        count instead of writing. This is the USB command path, a different consumer with no shared
+        code, and it refuses at the same address."""
+        lab.require('one34_code')
+        _entry, ceiling, _refusals = self.classifier(lab.load('one34_code'), 0x020000)
+        self.assertEqual(ceiling << 16, self.LOG_AREA_CEILING)
+
+    def test_the_classifier_answers_three_ways_and_the_third_selects_nothing(self):
+        """Safe mode's copy, read in full: two arms that select a target and return 1, one that
+        returns 0 having selected nothing. The count is what matters, since an arm that fell through
+        to a neighbour is how a refusal becomes a write."""
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        _entry, _ceiling, refusals = self.classifier(code, 0x0000)
+        self.assertEqual([value for _at, value in refusals], [0x01, 0x01, 0x00],
+                         'accept, accept, refuse')
+        # The refusing return is reached from three separate branches, so it is the common exit and
+        # not one case's tail.
+        refuse_at = refusals[-1][0]
+        arrivals = 0
+        for off in range(0x07CAC, 0x07D16, 2):
+            ins = isa.decode(code, off, 0x0000)
+            if ins is not None and ins.fields.get('target') == refuse_at:
+                arrivals += 1
+        self.assertEqual(arrivals, 4, 'four branches refuse')
+
+    def test_the_selector_rests_at_refuse_and_only_the_classifier_moves_it(self):
+        """
+        The polarity, which is the half this project has twice got wrong on an interlock. The byte is
+        set to 0xFF at session reset and after every erase, and the only value that reaches it besides
+        0xFF is written inside the classifier. So the failure direction is a no-op.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        sets, clears, internal = [], [], []
+        for off in range(0x07000, 0x09000, 2):
+            ins = isa.decode(code, off, 0x0000)
+            if ins is None:
+                continue
+            f, a, m = ins.fields.get('f'), ins.fields.get('a'), ins.mnemonic
+            # Bank 1 is selected throughout these handlers, so the selector appears both as a
+            # resolved address and as an access bank byte. Counting only one spelling is the mistake
+            # this class's docstring records.
+            banked = (f == self.SELECTOR) or (f == (self.SELECTOR & 0xFF) and a == 1)
+            if not banked:
+                continue
+            if m == 'SETF':
+                sets.append(off)
+            elif m == 'CLRF':
+                clears.append(off)
+            elif m == 'MOVWF':
+                internal.append(off)
+        self.assertEqual(sets, [0x07CA8, 0x07D92, 0x07F12, 0x08082, 0x0809A, 0x08352, 0x0861C],
+                         'seven sites reset it to refuse, one of them in the spelling a grep for '
+                         'the resolved name cannot see')
+        self.assertEqual(clears, [0x07D12], 'the external arm is the only clear')
+        self.assertEqual(internal, [0x07D08], 'the internal arm is the only other write')
+        # And the value that arm writes, read out of the instruction before it.
+        self.assertEqual(isa.decode(code, 0x07D06, 0x0000).fields['k'], 0xFE)
+
+    def test_the_write_and_the_erase_handler_share_one_preamble(self):
+        """
+        Both reach the same NOR programmer through the same address preparation, so a rail derived
+        from one holds for the other. Asserted as byte equality of the two runs rather than by
+        reading each, because the claim is that they are the same code.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        erase, write, length = 0x07ED2, 0x0814E, 0x2E
+        self.assertEqual(code[erase:erase + length], code[write:write + length],
+                         'the erase and write preambles are identical bytes')
+        self.assertNotEqual(code[erase + length], code[write + length],
+                            'and 0x%02X is the whole run, not a prefix of it' % length)
+        # What that preamble does, read at the offsets rather than described: the requested top byte
+        # biased into the register at 0x020025, then replaced by the fixed window before use.
+        literal = lambda at: isa.decode(code, erase + at, 0x0000).fields['k']
+        self.assertEqual(literal(0x0C), self.BANK_BIAS, 'the bias subtracted from the top byte')
+        self.assertEqual((literal(0x16) << 16) | literal(0x1C), self.BANK_REGISTER)
+        self.assertEqual(literal(0x28), self.WINDOW_TOP, 'and the top byte it is replaced with')
+        # The three bytes it operates on are the request's address, copied in immediately above.
+        self.assertEqual([isa.decode(code, erase + at, 0x0000).fields['src'] for at in (0, 4, 8)],
+                         [self.ADDRESS, self.ADDRESS + 1, self.ADDRESS + 2])
+
+    def test_three_commands_share_the_classifier_in_both_harmony_one_images(self):
+        """
+        Which commands it serves, and the count is the closure. Safe mode calls it from its write,
+        read and erase handlers and from nowhere else, and the application calls its own copy exactly
+        three times too. So the read path this project has driven for a year and the write path it has
+        never used are bounded by the same routine, which is why the protocol's "internal page 0xFE"
+        and "internal page 0xFF" are this routine's `top & 1` and not a naming convention of ours.
+        """
+        lab.require('one_internal_fe', 'one34_code')
+        for name, base, entry, expected in (
+            ('one_internal_fe', 0x0000, 0x07CAC, [0x07E2C, 0x07E76, 0x07EA8]),
+            ('one34_code', 0x020000, 0x02637A, [0x026504, 0x02654E, 0x0265A4]),
+        ):
+            code = lab.load(name)
+            callers = []
+            for off in range(0, len(code) - 3, 2):
+                ins = isa.decode(code, off, base)
+                if ins is None:
+                    continue
+                if ins.mnemonic in ('CALL', 'RCALL') and ins.fields.get('target') == entry:
+                    callers.append(base + off)
+            self.assertEqual(callers, expected, name)
+        # And the located entry agrees with the address the callers name, which is what makes the
+        # anchor arithmetic checkable rather than assumed. It was four bytes out at first.
+        found, _c, _r = self.classifier(lab.load('one_internal_fe'), 0x0000)
+        self.assertEqual(found, 0x07CAC)
+        # Which command each caller belongs to, against handler bounds taken from the command table
+        # in docs/usb-protocol.md. That table is derived from the XORLW dispatch chain and so shares
+        # no reasoning with this routine, which is what makes the attribution a check rather than a
+        # restatement: three callers, three commands, and the fourth command in between untouched.
+        for handlers, callers, expected in (
+            ({'WRITE_FLASH': (0x07DEA, 0x07E34), 'READ_FLASH': (0x07E34, 0x07E7E),
+              'ERASE_FLASH': (0x07E7E, 0x07F16)},
+             [0x07E2C, 0x07E76, 0x07EA8], ['WRITE_FLASH', 'READ_FLASH', 'ERASE_FLASH']),
+            ({'WRITE_FLASH': (0x0264C2, 0x02650C), 'READ_FLASH': (0x02650C, 0x026556),
+              'START_IRCAP': (0x026556, 0x02657A), 'ERASE_FLASH': (0x02657A, 0x026626)},
+             [0x026504, 0x02654E, 0x0265A4], ['WRITE_FLASH', 'READ_FLASH', 'ERASE_FLASH']),
+        ):
+            named = []
+            for caller in callers:
+                inside = [name for name, (lo, hi) in handlers.items() if lo <= caller < hi]
+                self.assertEqual(len(inside), 1, 'one handler owns 0x%05X' % caller)
+                named.append(inside[0])
+            self.assertEqual(named, expected)
+
+    def test_the_internal_arm_lands_exactly_where_section_175s_interlock_guards(self):
+        """
+        The two interlocks compose rather than compete, and the boundary is the closure.
+
+        Section 175 read a bit at `0x1A4` bit 5 that blocks a write below `0x020000` unless a low erase
+        has just cleared it, from the write executor and knowing nothing about how a request reaches
+        that region. This classifier is the parser, and its internal arm produces `page << 16 | low`
+        with `page` in {0, 1}, so its whole range is `[0x000000, 0x020000)`. Same boundary, two routes,
+        neither derived from the other.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        # The mask is read out of the image rather than assumed: 0x01 applied to the top byte.
+        self.assertEqual(isa.decode(code, 0x07D0A, 0x0000).fields['k'], 0x01)
+        self.assertEqual(isa.decode(code, 0x07D0C, 0x0000).mnemonic, 'ANDWF')
+        pages = {0xFE & 0x01, 0xFF & 0x01}
+        self.assertEqual(pages, {0, 1})
+        reachable = [(page << 16, (page << 16) | 0xFFFF) for page in sorted(pages)]
+        self.assertEqual(reachable[0][0], 0x000000)
+        self.assertEqual(reachable[-1][1] + 1, self.SECTION_175_THRESHOLD)
+
+    def test_the_bank_register_is_the_harmony_ones_alone(self):
+        """
+        Paging is a property of the medium, so the register that does it should be absent where the
+        medium is serial. It is: both Harmony One images write it and neither arch 14 image builds
+        that pointer at all. This is what gives the 64 KiB erase block a reason, since forcing the
+        top byte leaves exactly sixteen bits of offset.
+        """
+        lab.require(*self.CEILINGS)
+        setup = bytes.fromhex('020ef86ef76a250ef66e')   # TBLPTR = 0x020025
+        counts = {name: lab.load(name).count(setup) for name in self.CEILINGS}
+        self.assertEqual(counts['one_internal_fe'], 20)
+        self.assertEqual(counts['one34_code'], 46)
+        self.assertEqual(counts['h600_code_complete'], 0, 'serial flash needs no page register')
+        self.assertEqual(counts['h700_code'], 0)
+        self.assertEqual(0x1000000 >> 8 >> 8, 0x100, 'sixteen bits of offset under a forced top byte')
+
+
 if __name__ == '__main__':
     unittest.main()

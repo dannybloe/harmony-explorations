@@ -879,6 +879,45 @@ settled on both images now, `0x18D98` on the 700 and `0x17434` on the Harmony 60
 firmware erases before it programs is also unread**, and it is moot for any caller that erases first,
 since erasing an erased block changes nothing.
 
+### The address a host sends is classified before it is used
+
+**Structured form of `docs/findings.md` section 192.** A request's 24 bit flash address is not used as
+an address. One routine reads its top byte and picks a target, and the write, read and erase handlers
+are its only three callers in every image where it has been located.
+
+| the request's top byte | target | bound on the rest | selector value |
+|---|---|---|---|
+| `0xFE` or `0xFF` | internal program flash, page `top & 1` | low sixteen bits at most `0xFFF8` | `0xFE` |
+| below the architecture's ceiling | the external medium | the ceiling | `0x00` |
+| anything else | none | | left as it was |
+
+The first row is one row because the routine clears bit 0 before comparing with `0xFE`, then masks with
+`0x01`. That is the same mapping the read path's own measurement gives, two pages rather than one
+selector and a dud, and it is now stated by the firmware as well.
+
+| image | classifier entry | ceiling | so addresses below |
+|---|---|---|---|
+| Harmony One safe mode | `0x07CAC` | `0x40` | `0x400000` |
+| Harmony One application | `0x02637A` | `0x40` | `0x400000` |
+| Harmony 600 application | `0x0134F4` | `0x20` | `0x200000` |
+| Harmony 700 application | `0x013DFE` | `0x20` | `0x200000` |
+
+**The interlock is a byte and its resting value refuses.** `0x1EE` on the Harmony One in safe mode and
+`0x28B` in its application: `0x00` selects the external medium, `0xFE` internal program flash, and any
+other value dispatches nowhere. Seven sites in safe mode set it to `0xFF`, at session reset and after
+every erase, and only the classifier writes anything else. The erase handler does not read the
+classifier's return value at all, it reads the selector, so a rejected address is a no operation.
+
+**On arch 12 the top byte is a page number, not an address.** Before every access the firmware writes
+`top - 3` to a register at external `0x020025`, a bus write in the same way the memory mapped keypad at
+`0x020020` is, and then replaces the requested top byte with `0x13`. Sixteen bits of offset remain, so
+the window is 64 KiB and that is where the erase block size comes from. The register is built 20 times
+in safe mode, 46 times in the application, and never in either arch 14 image.
+
+**Safe mode carries six of these seven commands**, same bytes and same state numbers, absent only
+`0x70` START_IRCAP, and both flash commands reach the parallel NOR programmer. So restoring a Harmony
+One needs no protocol this project has not already read.
+
 ### The state machine, in full
 
 The main loop's dispatch on the state variable is **one chain of 70 cases** running from
@@ -1174,6 +1213,12 @@ six offsets, 62 bytes each:
 **Every pair differs, and neither selector returns nothing.** They are two separate 64 KiB pages,
 and the earlier reading came from a single read at offset zero through one selector, with the other
 attributed a null result it never gave.
+
+**Confirmed from the firmware since section 192**, by a route with nothing in common with this
+measurement: the routine that classifies a requested address clears bit 0 of the top byte, compares it
+with `0xFE`, and masks the byte with `0x01` to pick the page. So `0xFE` is page 0 and `0xFF` is page 1
+because that is the arithmetic, and the naming this document chose from six probes is the firmware's
+own.
 
 It is `0xFE` that maps one to one from program address zero, and what is there says so:
 

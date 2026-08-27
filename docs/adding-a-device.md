@@ -576,10 +576,11 @@ external NOR, so it is **not** shown to put a config back. **Entering recovery i
 seconds and a plain power cycle leaving it, so reaching a point where a host can talk to a Harmony One
 that will not boot normally is no longer a belief; this box is about the **restore**, which is a
 different claim. **What is behind it since section 191 is the remote's half**: safe mode carries its own
-external flash programmer, so a Harmony One is capable of having a config written back. What is missing
-is our half, since safe mode's host side transfer protocol is unread, so this box waits on a reading
-rather than on a fact about the hardware. And it is a milestone with its own place in the plan, M4, which a checklist item is
-not allowed to consume on its way past.
+external flash programmer, so a Harmony One is capable of having a config written back. **Our half is
+there too since section 192**: safe mode speaks the same six commands with the same command bytes and the
+same state numbers, so this box waits on a **rehearsal** and no longer on a reading. And it is a
+milestone with its own place in the plan, M4, which a checklist item is not allowed to consume on its
+way past.
 
 **So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the
 restore-from-dump route rehearsed first, and not because phase 7 finished.

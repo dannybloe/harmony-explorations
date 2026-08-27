@@ -25307,12 +25307,13 @@ external parallel NOR, which is where a config lives, and safe mode is reachable
 on, section 190. So the hardware and the firmware can put a config back, and section 189's limit was a
 statement about the wrong level.
 
-**It does not settle that we can drive it.** Nothing here has read safe mode's host side protocol: what
-a host sends to hand it an image, how the transfer is framed, what acknowledges it. That is a separate
-reading and it is the remaining unknown in the recovery route. So the honest position is that a Harmony
-One is recoverable in principle by its own firmware, and that this project cannot yet perform the
-recovery, which is a better position than section 189's and still not the one that ticks
-`docs/adding-a-device.md`'s restore box.
+**It does not settle that we can drive it, and section 192 does, the same day.** This said that nothing
+here had read safe mode's host side protocol and that the framing and the acknowledgement<!--superseded-->
+were a separate reading. They were, and it turned out to be a short one, because there is **no second
+protocol**: safe mode's dispatcher carries six of the application's seven commands with the same command
+bytes and the same state numbers, and both flash commands reach the programmer this section identified.
+So the remaining unknown in the recovery route was smaller than it looked, and what stands between this
+project and a rehearsed restore is now a rehearsal rather than a reading.
 
 **And the third generalisation of the day is the lesson.** Section 189 read the bootloader and wrote
 its limit for recovery; section 118 read arch 9 and wrote its field 6 rule for every architecture;
@@ -25325,3 +25326,168 @@ matching the AMD command bytes as literals, and it reported `0x01E014` as an era
 routine loads `0x80` for `MEMCON` and `0xF0` for `TRISH`. A byte is a command because of where it is
 stored, not because of its value, so the table counts only literals that reach `TABLAT` and are
 committed by a `TBLWT`. Same family as reading a field split off the data when a header states it.
+
+## 192. A host does not send a flash address, it sends a request that one routine classifies
+
+**The write protect interlock is found, and it is a byte rather than a bit.** One routine per image
+reads the top byte of a requested flash address and either selects internal program flash, selects the
+external medium, or returns having selected nothing. Both the write handler and the erase handler then
+dispatch on the byte it sets, and its resting value is the one that refuses, so an address the routine
+rejects produces silence rather than a write somewhere else. It is the same routine in four images
+across two architectures, and what differs is one literal.
+
+That matters beyond the reading, because this project has twice got this interlock wrong and both wrong
+versions are in `reference/superseded.md`. Both attempts were looking for a bit.
+
+**And safe mode is a complete flash programmer, which is the answer to what recovery would entail.**
+Its command dispatcher at `0x07DBE` carries six of the application's seven commands, with the same
+command bytes and the same state numbers, absent only `0x70` START_IRCAP:
+
+| command | byte | handler | state |
+|---|---|---|---|
+| `GET_VERSION` | `0x10` | `0x07DDC` | 1 |
+| `WRITE_FLASH` | `0x30` | `0x07DEA` | 2 |
+| `READ_FLASH` | `0x50` | `0x07E34` | 4 |
+| `ERASE_FLASH` | `0xD0` | `0x07E7E` | 8 |
+| `WRITE_MISC` | `0xA0` | `0x07F16` | 9 |
+| `READ_MISC` | `0xB0` | `0x07FE2` | 10 |
+
+Both flash commands reach the parallel NOR programmer section 191 read, through safe mode's own copy of
+it rather than through the application's library:
+
+* erase: handler `0x07E7E`, preamble at `0x07ED2`, `0x07F00 CALL 0x0B6AC`, `CALL 0x09F54`, `0x09D6A`
+* write: preamble at `0x0814E`, `0x0818A CALL 0x0A8D0`, `CALL 0x0B686`, `CALL 0x09F70`, `0x09DD8`
+
+The write primitive takes three arguments: a destination, which `0x0B686` copies from `0x108` to `0x10A`
+into the programmer's `0x060` to `0x062` and thence into `TBLPTRL`, `TBLPTRH` and `TBLPTRU`; a source
+pointer in data memory, constant `0x0111`; and a byte count from `0x1F1`. So a restore needs no new
+protocol at all. It needs the same `WRITE_FLASH` this project has been refusing to send for a year, and
+safe mode is reachable by the cold boot key test measured on 27 August 2026.
+
+### The classifier
+
+Entry `0x07CAC` in safe mode and `0x02637A` in the Harmony One application, with **exactly three
+callers in each**: `0x07E2C`, `0x07E76` and `0x07EA8` in safe mode, `0x026504`, `0x02654E` and
+`0x0265A4` in the application. Which command each belongs to is a **check and not a restatement**,
+because the handler bounds come from the command table in `docs/usb-protocol.md`, which is derived from
+the `XORLW` dispatch chain and shares no reasoning with this routine: each list is the write, the read
+and the erase handler, with infrared capture sitting between two of the application's three and
+untouched. Three ways out:
+
+| the request's top byte | target | bound | selector |
+|---|---|---|---|
+| `0xFE` or `0xFF` | internal program flash, page `top & 1` | low sixteen bits at most `0xFFF8` | `0xFE` |
+| below the ceiling | the external medium | the ceiling itself | `0x00` |
+| anything else | none, `RETLW 0` | | untouched |
+
+The first case is one case because the routine clears bit 0 of the top byte before comparing with
+`0xFE`, and then masks the byte with `0x01` to turn `0xFE` into page 0 and `0xFF` into page 1. Internal
+flash on this part is two 64 KiB pages, so that is the whole of it. **This is the closure worth having**:
+the protocol names those windows "internal page `0xFE`" and "internal page `0xFF`" throughout this
+repository, and section 190's safe mode screen identified two of its rows through them. That naming
+turns out to be this routine's own arithmetic, read from the write path, agreeing with a read path
+driven for a year.
+
+**The ceiling is per architecture and it states the size of the medium:**
+
+| image | classifier | ceiling | address below |
+|---|---|---|---|
+| Harmony One safe mode | `0x07CAC` | `0x40` | `0x400000` |
+| Harmony One application | `0x02637A` | `0x40` | `0x400000` |
+| Harmony 600 application | `0x0134F4` | `0x20` | `0x200000` |
+| Harmony 700 application | `0x013DFE` | `0x20` | `0x200000` |
+
+The arch 14 pair bounds its internal arm too, by a different arithmetic that is not read here.
+
+**The independent closure is that the Harmony One's `0x400000` is section 47's.** The log area writer
+refuses an address outside `[0x040000, 0x400000)`, and that was read out of the action list language,
+where a config asks the remote to reserve flash above itself. This is the USB command path. Two
+consumers with no shared code refuse at the same address, which is the shape this project prefers to a
+second sample.
+
+### It composes with section 175's interlock, and the boundary is the closure
+
+Section 175 read a bit, `0x1A4` bit 5 in the Harmony One application, which blocks a write below
+`0x020000` unless a low erase has just cleared it. That was read from the **write executor**, knowing
+nothing about how a request comes to be aimed below `0x020000` at all, and this project got its polarity
+wrong twice on the way.
+
+This routine is the **parser**, and its internal arm produces `page << 16 | low` with `page` from
+`top & 1`, so the whole range it can reach is `[0x000000, 0x020000)`. **Same boundary, two routes,
+neither derived from the other.** So the two are one mechanism in two halves: the classifier decides that
+a request means internal program flash and which of the two pages, and the bit decides whether the write
+is allowed to happen. Neither is redundant, and a reader who found only one would have half the guard.
+
+That is also why the earlier attempts were looking for a bit and found one: there **is** a bit, it is
+just not what decides the target.
+
+### The selector, and its polarity
+
+`0x1EE` in safe mode, `0x28B` in the application. Three values: `0x00` external, `0xFE` internal,
+anything else no operation. In safe mode seven sites set it to `0xFF`, at session reset and after every
+erase, and exactly two sites write anything else, both inside the classifier. So the resting state
+refuses and a refusal is silent: the erase handler ignores the classifier's return value entirely and
+reads the selector, which still holds `0xFF` from the previous reset, so nothing dispatches.
+
+### Arch 12 pages its NOR, and that is where the 64 KiB block comes from
+
+The erase and write preambles are **byte identical for 0x2E bytes** and diverge at the byte after, which
+is how they are asserted. What they do is not use the requested top byte as an address at all:
+
+* `bank = top - 3`, written to a register at external `0x020025` by a `TBLWT`, which is a bus write on
+  this part in the same way the memory mapped keypad at `0x020020` is
+* the requested top byte is then **replaced by `0x13`**, so every access goes through one fixed window
+
+Sixteen bits of offset remain under a forced top byte, so the window is exactly 64 KiB. **That gives the
+erase block size a reason.** It was adopted from Logitech's own client on the ground that it only
+refuses more, and it is a consequence of the addressing rather than a chip parameter.
+
+The register is the Harmony One's alone: the pointer is built 20 times in safe mode and 46 times in the
+application, and **not once** in either arch 14 image, which fits, since a serial part needs no page
+register. 42 of the application's 46 carry the bias arithmetic, and 20 of 20 in safe mode do.
+
+**The bias has nothing in front of it, and that is read rather than measured.** The classifier's lower
+bound on the top byte is a compiler emitted comparison against zero, which no byte can fail, so a request
+with a top byte below `0x03` reaches the bias and underflows it: `0x00`, `0x01` and `0x02` produce page
+`0xFD`, `0xFE` and `0xFF`. What those pages are on this board is a hardware question the firmware cannot
+answer, and nothing here is going to ask it, since this project does not write. It is recorded because a
+reader who takes the ceiling as the whole bound would have the top of the range and not the bottom.
+
+**The window's own address is not flash either**, which is worth stating because the map invites the
+opposite reading: `0x02002x` is a small register file the bus decoder aliases into the region the
+application executes from, with the memory mapped keypad at `0x020020` and `0x020021`, the byte the
+bootloader reads and rejects at `0x020024`, and this page register at `0x020025`. So a `TBLRD` and a
+`READ_FLASH` at those numbers do not ask the same question of the same silicon.
+
+### What this does not settle
+
+Whether a host must pace its packets. Section 175 read the firmware side and the USB peripheral side is
+still unread, and nothing here touches it. Section 191 already answered whether programming erases
+first, on both bench architectures, by separate gates.
+
+### Two corrections and a method note
+
+**Section 189's erase floor is the bootloader's and not recovery's**, which section 191 already relocated
+once and this makes concrete: safe mode's floor is not a floor at all, it is this classifier, and it
+reaches internal program flash where the bootloader lives.
+
+**The `0x400000` region bound moves off the client sourced ledger.** `docs/host-client.md` carried it as
+believed on Logitech's word alone. It is read from four images now. The stricter `0x3D0000` erase ceiling
+stays client sourced and stays the rail, because it refuses more and for a stated reason.
+
+**Both of this session's own errors were false negatives from searching bytes instead of reading
+instructions**, and both looked like findings for a few minutes:
+
+* a grep for the resolved register name missed `MOVWF 0xee,B`, the access bank spelling of `0x1EE` under
+  `MOVLB 0x1`, and produced the claim that the internal flash arm was dead code. Same family as section
+  189's `EECON1` confusion, one layer along: there an access bank form was read as a bank 0 variable,
+  here a bank 1 variable's access bank form was not read at all. A seventh setter was missed the same way
+  and the test asserts all seven.
+* a byte pattern search reported the internal arm absent from the application. The pattern contained the
+  variable's address and the application keeps its copy one bank up. **A byte pattern containing a
+  register address cannot be used to compare two images**, which is also why the `0x40` ceiling appeared
+  to be present in the arch 14 images: that pattern matched unrelated code, and reading the two routines
+  showed the real ceiling there is `0x20`.
+
+`tests/test_findings.py`, `TestTheFlashAddressIsClassifiedBeforeItIsUsed`, seven tests, nine controls run
+and reversed.

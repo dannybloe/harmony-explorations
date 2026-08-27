@@ -540,6 +540,13 @@ The client picks a flash block table from the chip's JEDEC manufacturer and devi
 reads over USB. For every chip it lists against arch 12 the layout is `16K, 8K, 8K, 32K` and then
 uniform 64 KiB to 4 MiB, so **an erase anywhere in the arch 12 config region takes 64 KiB with
 it**, and the fine boot blocks are all below `0x010000` and outside anything the rails permit.
+
+**The 64 KiB figure has a firmware reason since section 192, so it is no longer held on the client's
+word.** Before every flash access the arch 12 firmware writes the request's top byte, biased by three,
+to a register at external `0x020025`, and then replaces that top byte with a fixed `0x13`. Sixteen bits
+of offset are left, so the window is 64 KiB by construction and the block size follows from the
+addressing rather than from a chip table. The client's table remains the source for the **fine** boot
+blocks and for the alignment rule, neither of which the firmware states.
 Two consequences the rails now enforce:
 
 * an erase address must be a **block boundary**. The client walks its table from zero and starts

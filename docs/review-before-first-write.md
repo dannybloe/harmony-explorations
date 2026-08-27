@@ -426,10 +426,24 @@ which was not reached and whose key is still unknown. The two are told apart by 
 since safe mode presents Logitech's own and the bootloader presents Microchip's. **Safe mode is shown to be capable of restoring a
 config**, section 191, since it carries its own external flash programmer with erase and program
 commands, which corrects section 189's limit: that limit was the bootloader's. What is **not** shown is
-that we can drive it, because safe mode's host side transfer protocol is unread. So **the restore box in
+that we can drive it, because safe mode's host side transfer protocol is unread.<!--superseded--> So **the restore box in
 `docs/adding-a-device.md` is still unticked**, and the reason has changed from "the remote may not be
 able to" to "we have not read how to ask it", which is a better place to be and is work rather than a
 question about the hardware.
+
+**That last sentence was true for a few hours and section 192 closes it.** Safe mode's host side
+protocol is not a second protocol: its dispatcher carries six of the application's seven commands with
+the same command bytes and the same state numbers, absent only infrared capture, and both flash commands
+reach the parallel NOR programmer. So driving it needs nothing this project has not already read, and
+what is left before the restore box can be ticked is a rehearsal rather than a derivation.
+
+**Section 192 also answers job 1's question 4 a second time, and the two answers compose rather than
+compete**, which is worth recording because the reviewer's agreement with section 175 on the interlock
+was the exercise's strongest result. Section 175's bit decides whether a write below `0x020000` may
+proceed; section 192's routine decides whether a request means that region at all, and its internal arm
+reaches exactly `[0x000000, 0x020000)`. Same boundary from the write executor and from the address
+parser, neither derived from the other. So the question was well chosen and it had two halves, and a
+reviewer given only the executor could not have found the other.
 
 **The instructive part is how it was found.** Two sections of `docs/findings.md` contradicted each
 other on the load bearing point, 87 saying the bootloader scans the keypad and 118 saying it reads no

@@ -734,11 +734,27 @@ document:
   config, and this file said that of recovery as a whole for a few hours. The **safe mode image** one
   level up carries its own external flash programmer, 601 bytes byte identical to the resident library
   at `0x01E018` the application calls, with the AMD command set and separate erase and program gates.
-  So a Harmony One **can** write the flash a config lives in. What is **not** established is that we
-  can drive it: safe mode's host side transfer protocol is unread, so the remote is recoverable by its
-  own firmware and this project cannot yet perform the recovery. The reassurance for a first write also
+  So a Harmony One **can** write the flash a config lives in. **And we can drive it, since section
+  192**: safe mode is not a second protocol, its dispatcher carries six of the application's seven
+  commands with the same command bytes and the same state numbers, absent only infrared capture, and
+  both flash commands reach that programmer. So the restore route needs no protocol work and what is
+  left is a rehearsal. The reassurance for a first write also
   sits elsewhere and is structural: a damaged config cannot reach the bootloader or the image, so the
   remote still boots and our own read path still works.
+* **A flash address is classified before it is used, and that is the write protect interlock**, section
+  192. One routine, three callers in every image where it is located, being the write, read and erase
+  handlers: a top byte of `0xFE` or `0xFF` means internal program flash page `top & 1`, a top byte below
+  the architecture's ceiling means the external medium, and anything else selects nothing. The ceiling
+  is `0x40` on arch 12 (Harmony One) and `0x20` on arch 14, measured on both the Harmony 600 and the
+  Harmony 700 images, so it states
+  the size of the medium, and the arch 12 figure is section 47's log area bound reached by a second
+  consumer with no shared code. **The interlock is a byte and it rests at refuse**, so a rejected
+  address is a no operation rather than a write elsewhere, and it **composes** with section 175's bit
+  rather than replacing it: that bit decides whether a write below `0x020000` proceeds and this routine
+  decides whether a request means that region, whose whole reach is exactly `[0x000000, 0x020000)`.
+  **On arch 12 the top byte is a page number and not an address**: it is written biased by three to a
+  register at external `0x020025` and then replaced by `0x13`, which leaves sixteen bits of offset and
+  is where the 64 KiB erase block comes from.
 * **The external flash programmer is at internal `0x01E000` and we have held it since section 22**,
   section 191, which is where section 186's blind reviewer said the instruction "is not in anything this
   project holds". True of the review packet, which deliberately excluded the internal pages, and false
@@ -768,8 +784,9 @@ document:
   cannot be scoped by the caller, only refused. **How much it destroys is known now**: 64 KiB on
   arch 12, so the rail requires a block aligned address and a whole block inside the region, and
   the ceiling is `0x3D0000` rather than `0x400000` because the **stored application firmware**
-  sits inside the nominally writable region. Client sourced and adopted because it only refuses
-  more, `docs/host-client.md`.
+  sits inside the nominally writable region. Client sourced when adopted because it only refuses
+  more, and **the 64 KiB has a firmware reason since section 192**, since forcing the access window's
+  top byte leaves exactly sixteen bits of offset. `docs/host-client.md`.
 
 **Reads of internal program memory restart a remote, so read only is not the same as harmless.**
 `READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the

@@ -23,6 +23,21 @@ Memory mapped, and the application executes in place from it.
 | `0x3D0000` to `0x3DEA92` | 60050 | the **application firmware as stored**, version 3.4, a second copy | read off **both** remotes, byte identical to the copy at `0x020000` and to the archived 3.4 package |
 | `0x3F0000` to `0x400000` | 64 KiB | `00 FF` repeating, the last two bytes both `0x00`. Who writes it is unidentified; **what it does is not**, see below | read off **both** remotes, identical |
 
+**A protocol address's top byte is a page number and this table is the pages laid flat**, section 192.
+The firmware never uses the top byte as an address: it writes it, biased by three, to a register at
+external `0x020025`, and then replaces it with a fixed `0x13`, so every flash access happens through one
+64 KiB window. The addresses above are still the right way to read the map, because the bias and the
+window cancel, but two things follow that a flat map hides. The **erase block is 64 KiB because the
+window is**, sixteen bits of offset under a forced top byte, rather than because of a chip parameter.
+And a request whose top byte is below `0x03` underflows the bias with no test in front of it, which is
+read and not measured, since nothing here writes.
+
+**`0x02002x` is a small register file and not flash**, whatever this table's first rows suggest, because
+the bus decoder aliases it: `0x020020` and `0x020021` are the memory mapped keypad, `0x020024` is the
+identity byte the bootloader reads and rejects when it is `0x00` or `0xFF`, section 189, and `0x020025`
+is the page register above. So a `TBLRD` and a `READ_FLASH` at those numbers are not asking the same
+question of the same silicon.
+
 Everything else is erased, including all of `0x010000` to `0x020000` and `0x3DEA92` to `0x3F0000`.
 The `0x010000` claim had been asserted of a region no read had reached until 10 August 2026, when
 `0x01F580` and `0x01F5C0` came back erased over USB, `findings.md` section 111.
