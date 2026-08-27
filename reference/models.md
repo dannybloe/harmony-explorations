@@ -204,7 +204,7 @@ which operations each class implements rather than in any table.
 |---|---|---|---|
 | flash addressed | arch 2 through 14, so everything on the list above except the 900, 1000 and 1100 | `READ_FLASH` at an address | firmware, RAM, misc registers, the whole memory map |
 | network | arch 15: 900, 1000, 1000i, 1100, 1100i | a network class interface, not HID | not investigated here |
-| file based | 200, 300, Link, Hub, Touch, Ultimate, and presumably 350 and 950 | reading a **named file**, `/cfg/usercfg` | nothing: flash, RAM, misc and firmware are all refused |
+| file based | 200, 300, 350, Link, Hub, Touch, Ultimate, and presumably 950 | reading a **named file**, `/cfg/usercfg` | nothing: flash, RAM, misc and firmware are all refused |
 
 The third row is the one that surprises. Those remotes are HID, 64 byte reports, and they
 enumerate in the same Logitech product range, so the transport in `packages/usb` reaches them.
@@ -227,16 +227,24 @@ file based, so the guess from chronology is replaced by a measured id plus upstr
 that id. That classification keeps the ordinary standing of an upstream claim, and it is adopted
 because it can only **refuse** more.
 
-**What is open is whether that id is shared.** Concordance's comment against `0xC124` says Harmony 300,
-so either the two models present one id or the comment names only the first model to use it. A Harmony
-300 arrives on the bench the same day, which decides it by enumeration alone: the same id means shared,
-a different one means the comment was partial. Either way **no code here maps a product id to a model**,
-because a skin does that and a skin needs the device opened.
+**The id is shared, and the same afternoon settled it**, section 195. A Harmony 300 arrived, enumerated
+on `0x046D:0xC124` as well, and reported a different `bcdDevice`: `0x1078` where the 350's skin is 104.
+So concordance's comment against that id names one of at least two models, exactly as its comment
+against `0xC122` does for a Harmony 600 and a Harmony 700.
+
+**And the skin is reachable without opening the device**, which corrects the sentence this paragraph
+used to end with. `bcdDevice` is part of the descriptor every enumeration returns, `FoundRemote.release`
+in `packages/usb`, so `skinId` names the model from a listing. What it cannot do on this family is name
+a skin of 100 or more, since the low byte does not hold one, so a Harmony 350 is the one remote on this
+bench whose model its own descriptor does not yet give up. Section 195 has the hypothesis and the
+one minute measurement that would close it.
 
 **A Harmony Touch enumerates as `0x046D:0xC12B`**, as concordance's table says, and reports no firmware
 version in its USB strings at all, where every flash family remote on this bench reports one in its
-product string. Not a finding, an observation, and the sort of thing that turns into one if a second
-device of that generation does the same.
+product string. **The second file based device did not do the same**, which is what that observation was
+waiting for: a Harmony 300 calls itself `Harmony Remote 0-1.4.0`, and so did the 350. So the silence is
+not the family's, and if it is anything it is architecture 17's. Still an observation, now a narrower
+one, and one device wide.
 
 ## Not recorded here
 

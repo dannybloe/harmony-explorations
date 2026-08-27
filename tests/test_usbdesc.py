@@ -171,19 +171,25 @@ class TestTheTransport(unittest.TestCase):
 
 class TestBcdDeviceCarriesTheSkin(unittest.TestCase):
     """
-    The device release number's low byte is the skin, and its encoding is per generation.
+    The device release number states the skin, and its encoding is per generation.
 
     Four architectures, each with an independent oracle: every config states its own skin in
     the `<SKIN>` element of its EZHex header, and the firmware image of the same model carries
     a `bcdDevice`. The pairs are 880 (15, 0x080F), 885 (17, 0x0811), 525 (22, 0x0916), One
     (54, 0x1054), 700 (66, 0x1066), 600 (71, 0x1071) and 650 (72, 0x1072).
 
-    Arch 8 and arch 9 carry the skin as plain binary with the protocol in the high byte; arch
-    12 and arch 14 carry it as BCD under a constant 0x10. **The 885 is what settles that**,
-    because 0x0F reads as 15 under either rule and 0x11 does not.
+    Arch 8 and arch 9 carry the skin as plain binary with the protocol in the high byte; on the
+    later generation the low byte is BCD under a high byte of 0x10. **The 885 is what separates
+    those two rules**, because 0x0F reads as 15 under either and 0x11 does not.
+
+    Two words measured off the bus on 27 August 2026 put that high byte on architectures 16 and
+    17 as well, section 195, so it is certainly not the protocol number. What it **is** stays
+    unestablished, and the leading hypothesis, that the whole word is BCD of 1000 plus the skin,
+    is deliberately not implemented, because a Harmony 350 at skin 104 is the only thing that
+    would tell it apart from this reading and its descriptor has not been read.
 
     This is the only thing that separates a 600 from a 700 before any config is read, since
-    both are product id 0xC122. findings.md section 113.
+    both are product id 0xC122. findings.md sections 113 and 195.
     """
 
     def test_the_bcd_generation(self):
@@ -237,12 +243,44 @@ class TestBcdDeviceCarriesTheSkin(unittest.TestCase):
         self.assertEqual(usbdesc.skin_id(0x1066), 66)
         self.assertEqual(0x66, 102, 'the reading that would be wrong the other way')
 
+    def test_the_two_words_measured_off_the_bus(self):
+        """
+        A Harmony 300 and a Harmony Touch, enumerated on 27 August 2026, section 195.
+
+        Neither has firmware or a config in the lab, so the closure is a different one from the
+        pairs above: Logitech's own product table names skin 78 a Harmony 300 and skin 99 a
+        Harmony Touch, and those were the two remotes on the bench. What they buy is the high
+        byte: the Touch is **architecture 17**, measured off the remote, and carries 0x10, where
+        the arch 8 and arch 9 words carry 8 and 9 there. So the byte is not the protocol number
+        and not the architecture. The other remote's architecture was not measured.
+        """
+        self.assertEqual(usbdesc.skin_id(0x1078), 78, 'Harmony 300')
+        self.assertEqual(usbdesc.skin_id(0x1099), 99, 'Harmony Touch')
+
     def test_an_unknown_generation_is_none_rather_than_a_guess(self):
         # 0x0A is the obvious prediction for the 890, and no arch 10 firmware exists here to
         # check it, so it must not be implemented. This test is what would fail if it were.
         self.assertIsNone(usbdesc.skin_id(0x0A13))
         self.assertIsNone(usbdesc.skin_id(0x0000), 'the Microchip stock descriptor')
         self.assertIsNone(usbdesc.skin_id(0x1154))
+
+    def test_a_skin_of_a_hundred_or_more_is_refused_rather_than_guessed_at(self):
+        """
+        The one thing the two bench words did not settle, section 195.
+
+        A Harmony 350's skin is 104, read off the remote itself through concordance, and 104
+        cannot fit in the low byte. So this generation's rule is incomplete, and the hypothesis
+        is that the high byte is a carry: the whole word as BCD of 1000 plus the skin, making
+        the 350's descriptor 0x1104. Every word measured so far reads the same under that rule
+        and under this one, so nothing here can separate them, and the standing is section 113's
+        own for 0x0A on the 890: a prediction in the code is indistinguishable from a
+        measurement once it is committed.
+
+        This test is what fails if somebody implements it. One enumeration of a Harmony 350
+        replaces it with a measurement.
+        """
+        self.assertIsNone(usbdesc.skin_id(0x1104), 'the predicted Harmony 350 word')
+        self.assertIsNone(usbdesc.skin_id(0x1102), 'and a Harmony Ultimate One at skin 102')
 
     def test_product_ids(self):
         self.assertEqual(summary('one34_code')['product'], 0xC121)

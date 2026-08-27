@@ -224,7 +224,7 @@ def skin_id(bcd_device: int) -> Optional[int]:
 
     A skin is Logitech's own index into its model list, so the number names the remote: 15 is
     a Harmony 880, 17 an 885, 19 an 890, 22 a 525, 54 a Harmony One, 66 a 700, 71 a 600, 72 a
-    650. Each config states its own in the `<SKIN>` element of its EZHex header, which is the
+    650, 78 a 300, 99 a Touch and 104 a 350. Each config states its own in the `<SKIN>` element of its EZHex header, which is the
     independent oracle every case below is checked against.
 
     This is worth more than it looks. The 600 and the 700 share product id 0xC122, so the USB
@@ -237,9 +237,12 @@ def skin_id(bcd_device: int) -> Optional[int]:
     * `0x08` and `0x09`: the high byte is the protocol number, and the skin is the low byte in
       plain binary. 0x080F is a Harmony 880 and 0x0811 an 885, both protocol 8; 0x0916 is a
       525, protocol 9.
-    * `0x10`: the skin is the low byte in **BCD**. 0x1054 is a Harmony One and 0x1071 a 600,
-      protocol 12 and 14, so on this generation the high byte is a constant rather than the
-      protocol, and what it means is not established.
+    * `0x10`: the skin is the low byte in **BCD**. 0x1054 is a Harmony One, 0x1071 a 600, 0x1078
+      a 300 and 0x1099 a Touch, and the Touch is architecture 17, so on this generation the high
+      byte is neither the protocol nor the architecture and what it means is **not established**. Section 195 has the leading hypothesis,
+      that it is the carry of a word holding BCD of `1000 + skin`, and it is deliberately not
+      implemented: a skin of 100 or more is refused rather than guessed at, because all nine words
+      measured so far read identically under both readings.
 
     Anything else returns None, because a guess produces a readable wrong model rather than an
     error. Reading an 885's 0x0811 as BCD gives 11, which is a Harmony 655; reading a 700's
@@ -255,6 +258,8 @@ def skin_id(bcd_device: int) -> Optional[int]:
         return (low >> 4) * 10 + (low & 0x0F)
     if high in (0x08, 0x09):
         return low
+    # Anything else, including a skin of 100 or more whose carry would leave 0x10, is refused
+    # rather than read. Section 195 states the hypothesis and why it is not implemented.
     return None
 
 

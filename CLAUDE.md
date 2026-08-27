@@ -871,7 +871,9 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 12 | Harmony One, or the spare Harmony One |
 | 14 | Harmony 600, or the Harmony 700 for the reference image |
 | 8 | Harmony 880 or 885, contributed configs only |
-| 10 | Harmony 890, contributed configs only |
+| 10 | Harmony 890 or 895, contributed configs only |
+| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, file based and never opened |
+| 17 | Harmony Touch, on the bench since 27 August 2026, file based and never opened |
 
 **The failure mode is the trailing mention.** It gets done in headings and first mentions and dropped
 mid-sentence in enumerations, as in "measured on arch 12 and on arch 9 and arch 14 not". That is the
@@ -1816,7 +1818,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 185 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 195 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

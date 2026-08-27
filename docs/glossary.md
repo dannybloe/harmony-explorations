@@ -202,10 +202,11 @@ hardware.
 place the **skin** is carried. The name contains the trap: see BCD below.
 
 **BCD** (standard). Binary coded decimal, an old way of storing numbers where each decimal digit
-gets four bits, so seventeen is stored as `0x17` rather than as the value 17. Architectures 12 and
-14 honour that convention in `bcdDevice` and architectures 8 and 9 do not, so **the same byte has
-to be read two different ways depending on the remote**, and reading it wrongly names a different
-real model instead of failing.
+gets four bits, so seventeen is stored as `0x17` rather than as the value 17. Architectures 12, 14,
+16 and 17 honour that convention in `bcdDevice` and architectures 8 and 9 do not, so **the same byte
+has to be read two different ways depending on the remote**, and reading it wrongly names a
+different real model instead of failing. A skin of 100 or more does not fit in the byte at all and
+is refused, section 195.
 
 **`GET_VERSION`, `READ_FLASH`, `READ_MISC`, `WRITE_FLASH`, `ERASE_FLASH`** (Logitech's commands,
 names from concordance). The commands a host sends. Only the reading ones are used here.

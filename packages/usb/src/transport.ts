@@ -212,6 +212,13 @@ export function skinId(bcdDevice: number): number | undefined {
   const low = bcdDevice & 0xff;
   if (high === 0x10) return (low >> 4) * 10 + (low & 0x0f);
   if (high === 0x08 || high === 0x09) return low;
+
+  // A skin of 100 or more lands here and gets refused, which is deliberate, section 195. The
+  // hypothesis is that 0x10 is not a constant but the carry of a whole word holding BCD of
+  // `1000 + skin`, so a Harmony 350 at skin 104 would report 0x1104. Every one of the nine words
+  // measured so far reads the same under both, so nothing here can tell them apart, and a
+  // prediction in the code is indistinguishable from a measurement once it is committed. What
+  // settles it is one enumeration of a Harmony 350.
   return undefined;
 }
 

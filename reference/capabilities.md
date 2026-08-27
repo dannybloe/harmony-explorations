@@ -125,6 +125,13 @@ It is not in the table above, because it comes from a different source and it do
 records declare `LongPressAction`**, none of them denied, covering 17 distinct product names. Fifteen
 carry a skin number, and **every one of the fifteen is outside `MODELS_BY_SKIN`**:
 
+**Three of those skins have been on hardware since 27 August 2026**, and none of them is in the table
+above: 99 a Harmony Touch, 104 a Harmony 350 and 78 a Harmony 300, section 195. They stay out of it, and
+out of `packages/usb/src/models.ts`, because a row here states what a model's hardware can do and nothing
+here has read a file based remote's config: they have no firmware to read, so the doctrine that the
+firmware settles a capability has no entry point on them. What is known is the skin and the product id,
+plus the architecture on the two that were asked for it, which `reference/models.md` carries.
+
 | skin | the record's name | what Logitech sold it as |
 |---|---|---|
 | 98 | Harmony Smart Control | Harmony Smart Control |

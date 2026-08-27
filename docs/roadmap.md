@@ -894,7 +894,10 @@ protocol code:
   and `tools/usbdesc.py` read it out of any image.
 * `bcdDevice` carries the skin in BCD, which is the only thing that separates a 600 from a
   700 before a config is read, since both are product id `0xC122`. Load bearing for the
-  write rail that requires `INTENDEDVERSION` to match the connected remote.
+  write rail that requires `INTENDEDVERSION` to match the connected remote. **A second
+  product id turns out to be shared the same way**, `0xC124` by a Harmony 300 and a Harmony
+  350, section 195, and there the field runs out: a skin of 100 or more does not fit in the
+  byte, so a Harmony 350 is refused rather than named.
 * The endpoint setup: `UCFG`, `UEP1`, `UEP2`, no ping-pong buffering, and the two report
   buffers at `0x0428` and `0x0468`.
 * The command entry point, the dispatch table for seven commands in all three images, the

@@ -141,12 +141,23 @@ turns the measurement into a regression test.
 The low byte of the device release number is the remote's skin number, and **how it is encoded
 depends on the high byte**, which is what tells the two firmware generations apart. Seven pairs,
 each an image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an
-independent oracle produced by the other half of Logitech's toolchain:
+independent oracle produced by the other half of Logitech's toolchain, plus two words read off
+remotes on the bench whose oracle is Logitech's own product table instead:
 
-| high byte | reading | pairs |
+| high byte | reading | words |
 |---|---|---|
 | `0x08`, `0x09` | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
-| `0x10` | the low byte is the skin in **BCD**, and the high byte is a constant whose meaning is not identified | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72 |
+| `0x10` | the low byte is the skin in **BCD**, and the high byte is not identified | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72, `0x1078` skin 78, `0x1099` skin 99 |
+
+**What the two bench words settle about that high byte is what it is not**, section 195. A Harmony
+Touch carries `0x10` and is architecture 17, measured, so the byte is not the protocol number and not
+the architecture either, and at least three architectures share one value of it. The architecture of
+the remote carrying `0x1078` was not measured. **A skin of 100 or
+more is refused rather than read**, because the low byte cannot hold one: a Harmony 350's skin is 104,
+read off the remote itself. The reading that would accept it, the whole word as BCD of `1000 + skin`,
+fits every word above and is **not implemented**, because no measured word separates it from the one
+here and a prediction in the code is indistinguishable from a measurement once committed. One
+enumeration of a Harmony 350 settles it.
 
 **This document said "read as BCD" without qualification until 10 August 2026**, and so did three<!--superseded-->
 copies of the code. It is right for arch 12 and arch 14 and wrong for arch 8 and arch 9, and the

@@ -428,6 +428,9 @@ test('the skin id is the low byte of bcdDevice, and its encoding is per firmware
   // The two cases that used to be here, 0x1015 and 0x1022, were invented rather than measured, and
   // they were wrong: an 880 is 0x080F and a 525 is 0x0916, neither of them 0x10 anything. Inventing
   // a fixture is how a wrong rule gets a passing test.
+  //
+  // Nine words now, and the high byte 0x10 reaches architecture 17 as well, section 195, which is
+  // what rules out its being the protocol number the arch 8 and arch 9 words carry there.
   assert.equal(skinId(0x080f), 15, 'Harmony 880, protocol 8');
   assert.equal(skinId(0x0811), 17, 'Harmony 885, protocol 8');
   assert.equal(skinId(0x0916), 22, 'Harmony 525, protocol 9');
@@ -435,6 +438,12 @@ test('the skin id is the low byte of bcdDevice, and its encoding is per firmware
   assert.equal(skinId(0x1066), 66, 'Harmony 700, protocol 14');
   assert.equal(skinId(0x1071), 71, 'Harmony 600, measured on the bench remote');
   assert.equal(skinId(0x1072), 72, 'Harmony 650, protocol 14');
+  // Two more read off the bus on 27 August 2026, which is the first time this table grew from a
+  // remote rather than from an image. Neither has firmware or a config here, so the closure is a
+  // different one: Logitech's own product table names skin 78 a Harmony 300 and skin 99 a Harmony
+  // Touch, and those are the two units that were plugged in.
+  assert.equal(skinId(0x1078), 78, 'Harmony 300');
+  assert.equal(skinId(0x1099), 99, 'Harmony Touch');
 });
 
 test('an unreadable bcdDevice is undefined rather than a plausible wrong model', () => {
@@ -444,6 +453,19 @@ test('an unreadable bcdDevice is undefined rather than a plausible wrong model',
   assert.equal(skinId(0x0a13), undefined, '0x0A is the arch 10 prediction, with nothing to check');
   assert.equal(skinId(0x0000), undefined, 'the Microchip stock descriptor in the 525 image');
   assert.equal(skinId(0x1154), undefined);
+});
+
+test('a skin of 100 or more is refused, and the reading that would accept it is a prediction', () => {
+  // Section 195. A Harmony 350's skin is 104, read off the remote itself, and 104 does not fit in
+  // the low byte at all, so this generation's rule cannot be the whole story. The hypothesis is
+  // that the word holds BCD of 1000 plus the skin, making 0x10 a carry rather than a constant, and
+  // it is deliberately not implemented: all nine measured words read identically under both, so
+  // nothing here can tell them apart, and the same standing applies as to 0x0A for the 890.
+  //
+  // This test is what would fail if somebody implemented it, and what to delete when a Harmony 350
+  // has been enumerated. One `ioreg` with that remote plugged in settles it.
+  assert.equal(skinId(0x1104), undefined, 'the predicted Harmony 350 word, unmeasured');
+  assert.equal(skinId(0x1102), undefined, 'and the Harmony Ultimate One at skin 102');
 });
 
 test('RemoteError is what a caller can catch', () => {
