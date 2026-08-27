@@ -22,6 +22,7 @@ import {
   FIELD_RULES,
   FRAME_OWNERS,
   containerExtent,
+  modePages,
   TRAILER_CHECKSUM_OFFSET,
   applyEdits,
   archSlot,
@@ -685,3 +686,76 @@ test('a timer whose stored duration has a high byte is refused rather than carri
     edited[c.blobOffset + off + 3] = 0x01;
     assert.throws(() => setTimerDuration(parse(edited), 0, 30), /high byte/);
   });
+
+/**
+ * The population for the erase block claim: every user config in the lab that has mode pages and a
+ * flash base, stated here rather than derived, per the convention that a corpus loop names its own.
+ */
+const PAGED_CONFIGS = [
+  'one_config',
+  'one_spare_after_sync',
+  'one_spare_before_sync',
+  'h600_config',
+  'h700_config',
+] as const;
+
+/**
+ * The erase block of the two architectures these configs live on, 64 KiB. Stated here because
+ * `packages/codec` deliberately does not depend on `packages/usb`, where `ERASE_BLOCK_SIZE` is the
+ * authority. If the two ever disagree, this literal is the one that is wrong.
+ */
+const ERASE_BLOCK = 0x10000;
+
+test('a same length edit is not a small write: one page binding costs two erase blocks',
+  skipUnless(...PAGED_CONFIGS), () => {
+  /*
+   * The reason this matters is the medium rather than the format. Flash only clears bits, so
+   * changing one byte means erasing the whole block it sits in, and everything else in that block
+   * has to be read first and written back. `edit.ts` refuses a length change and permits a same
+   * length one, which is the right rule for the container and says nothing about the cost.
+   *
+   * Section 69 is what makes the number two rather than one: a page's tagged list has a second copy
+   * that nothing reads and an editor must still change, and the copy is nowhere near it. So the
+   * cheapest possible logical edit, one entry of one page, lands in two blocks and opens two windows
+   * in which a block is erased and not yet written.
+   *
+   * Asserted per config and exactly, because the interesting failure is a config where the two land
+   * in one block: that would mean the pool's placement is not what section 69 measured.
+   */
+  const expected: Record<string, number> = {
+    one_config: 25,
+    one_spare_after_sync: 17,
+    one_spare_before_sync: 13,
+    h600_config: 51,
+    h700_config: 81,
+  };
+  let total = 0;
+  for (const name of PAGED_CONFIGS) {
+    const container = parse(require_(name));
+    const pages = modePages(container);
+    let editable = 0;
+    for (let page = 0; page < pages.length; page++) {
+      const list = taggedList(container, pages[page].list);
+      const first = list?.entries?.[0];
+      if (first === undefined) continue;
+      let edits;
+      try {
+        edits = setPageListEntry(container, page, 0,
+          { tag: first.tag, operand: first.operand, opcode: first.opcode });
+      } catch {
+        continue;
+      }
+      editable += 1;
+      const blocks = new Set(
+        edits.map((edit) => Math.floor((container.flashBase + edit.start) / ERASE_BLOCK)),
+      );
+      // **The claim, per page.** Not "at least two": exactly two says the list and its copy are in
+      // different blocks and that no third structure is dragged in.
+      assert.equal(blocks.size, 2,
+        `${name} page ${page} touches ${blocks.size} erase block(s), not two`);
+    }
+    assert.equal(editable, expected[name], `${name} editable page count`);
+    total += editable;
+  }
+  assert.equal(total, 187, 'every editable page in the corpus, and all of them cost two blocks');
+});

@@ -710,6 +710,15 @@ here; the editing experience does not. What follows under this heading is theref
 already do, and it is quite a lot: the product question of how narrow a same length edit feels to
 somebody typing into a text field is step 3's.
 
+**"Minimal diff" is right about the container and wrong about the medium**, section 187, and the
+distinction has to survive into whatever writes. A same length edit moves no address and restamps no
+census, which is what minimal means here. Reaching the remote is a different unit: flash clears bits
+only, so one changed byte means erasing its whole 64 KiB block and writing back everything else in it,
+and it is **two** blocks rather than one because section 69's shadow copy of a page's list sits 72 to
+214 KiB away. Measured at 187 of 187 editable pages. So the editor's write step is read the affected
+blocks, apply the edits, erase, write back whole, verify by reading, and a minimal diff is what decides
+**which blocks**, not how much gets written.
+
 **What the interface will list is read now**, section 86, and it is the piece M3 could not have
 started without: **a device is an infrared group**, and one state variable, `CurrentActivityState`,
 states the **number of activities**. Base slot 0's name for a variable says what it is for and how

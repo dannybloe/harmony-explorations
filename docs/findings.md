@@ -24706,3 +24706,47 @@ derivation are two copies until one of them moves, and the copy that moved was t
 protect the comparison. It was not maintained, nothing tested it, and it drifted from its source inside
 one afternoon. The worksheet is corrected in place and says so. What it does not get is a promotion:
 it remains a dated artefact, and section 175 remains the derivation.
+
+## 187. A same length edit is not a small write, and the cheapest one costs two erase blocks
+
+Prompted by the blind review's handover, which asked that an implementation read and preserve
+everything in an affected erase unit that lies outside the intended change. Nothing here said that,
+and the reason it matters is bigger than the omission.
+
+**The rule is about the medium and not the format.** `edit.ts` refuses a length change and permits a
+same length one, section 172, and that is the right rule for the container: a same length edit moves
+no address and restamps no census. It says nothing about what reaching the remote costs. Flash only
+clears bits, so changing one byte from `0x00` to `0xFF` requires erasing the block it sits in, and on
+arch 12 and arch 14 that block is 64 KiB. Everything else in the block has to be read first and
+written back, so the unit of a write is the block and the unit of an edit is the byte, and the two are
+sixteen thousand times apart.
+
+**The cheapest logical edit in this format touches two blocks, measured at 187 of 187.** Section 69 is
+what makes it two rather than one: every mode page's tagged list has a second copy that nothing reads
+and an editor must still change, and the copy is not next to it. Across five configs on two
+architectures, every page whose first list entry can be rewritten produces edits landing in exactly
+two 64 KiB blocks, never one and never three: 25 pages on `one_config`, 17 and 13 on the two spare
+Harmony One reads, 51 on `h600_config` and 81 on `h700_config`. The copies sit 72 to 214 KiB from
+their originals, which is why no page escapes it.
+
+So changing one button on one screen means erasing and rewriting 128 KiB, preserving about 131000
+bytes that the user did not ask to change, and opening **two** windows in which a block is erased and
+not yet written. A partial failure in either leaves 64 KiB of a working config as erased flash. That is
+the same hazard `rehearse-block.ts` names for its single block, twice over, and it arrives with the
+smallest edit the product will ever offer rather than with an unusual one.
+
+**The rehearsal does not have this problem and that is why it did not surface.** It writes a whole
+block back from a verified dump, so there is nothing outside the intended change to preserve and the
+correct outcome is known in advance. Every property that makes it a safe first write is a property an
+editor does not have.
+
+The test asserts two rather than at least two, because a page whose list and copy landed in one block
+would mean the pool's placement is not what section 69 measured, and that is worth failing on. It
+states the 64 KiB literal itself, with a comment saying `packages/usb`'s `ERASE_BLOCK_SIZE` is the
+authority, because `packages/codec` deliberately does not depend on `packages/usb`.
+
+**What follows for the application is a design constraint rather than a task.** An editor's write step
+is read the affected blocks, apply the edits, erase, write back whole, verify by reading. Not "write
+the bytes that changed", which is the shape the API's own vocabulary suggests, since `Edit` is a start
+and a run of bytes. Deciding that after the interface exists would be expensive, which is the reason
+this is recorded before anything writes.

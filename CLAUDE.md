@@ -1920,6 +1920,20 @@ produce a config the remote accepts and mishandles.
   the expanded instruction count and not by their item count, which permits this one. The pause itself is
   opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the format can
   express and their 20 second limit sits just under it.
+* **A same length edit is not a small write, and the cheapest one costs two erase blocks**, section
+  187. `edit.ts` permits a same length edit and refuses a length change, which is the right rule for
+  the **container** and says nothing about the **medium**: flash only clears bits, so changing one
+  byte means erasing its whole 64 KiB block and writing back everything else in it. And it is two
+  blocks rather than one because of section 69, since every mode page's tagged list has a second copy
+  an editor must also change and the copy sits 72 to 214 KiB away. Measured at **187 of 187** editable
+  pages across five configs on two architectures, exactly two blocks every time. So one button on one
+  screen means erasing and rewriting 128 KiB, preserving about 131000 bytes nobody asked to change,
+  and opening **two** windows where a block is erased and not yet written. The rehearsal does not have
+  this problem because it writes a whole block back from a verified dump, so the properties that make
+  it a safe first write are exactly the ones an editor lacks. **The consequence is a design
+  constraint**: an editor's write step is read the affected blocks, apply the edits, erase, write back
+  whole, verify by reading, and not "write the bytes that changed", which is what `Edit` being a start
+  and a run of bytes suggests.
 * **A small logical change reshuffles the whole image.** Three arch 8 configs generated ten minutes
   apart differ in 73 to 84% of their bytes, and two compiles of an **unchanged** arch 12 (Harmony One)
   account differ in 67%, section 154. So an editor makes minimal diffs against an existing
