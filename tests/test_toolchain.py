@@ -1071,7 +1071,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         must = self._paths_between(text, '**Must not be read.**', '\n## ')
         self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
                          % sorted(may))
-        self.assertEqual(len(must), 16, 'the withhold list should resolve to 16 paths, got %s'
+        # 17 since 27 August 2026: `AGENTS.md` exists now, and its row in the document predates it.
+        self.assertEqual(len(must), 17, 'the withhold list should resolve to 17 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1118,7 +1119,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         withhold list is worth another look, so the churn is the point rather than the cost.
         """
         stating = sorted(p for p in self._swept_files() if self._markers_in(p, self.MARKERS))
-        self.assertEqual(len(stating), 20,
+        # 21 since 27 August 2026, when `AGENTS.md` arrived carrying CLAUDE.md's write path text.
+        self.assertEqual(len(stating), 21,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 
