@@ -1040,7 +1040,7 @@ bin/setup-ghidra.sh             build or refresh the Ghidra project
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
-                                seven are there and the two language server directories deliberately
+                                eight are there and the two language server directories deliberately
                                 are not, since those are Claude Code's own plugin mechanism and point
                                 into node_modules
 .codex/hooks.json               the publication check, wired into Codex's pre-tool hook. The git hook
@@ -1459,7 +1459,7 @@ about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
-Five project skills carry the rituals that are easy to half-perform:
+Seven project skills carry the rituals that are easy to half-perform:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
@@ -1476,6 +1476,10 @@ Five project skills carry the rituals that are easy to half-perform:
   with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
+* **`myharmony-service`**, how to talk to Logitech's live service: the instrument in the lab, the two
+  accounts and what each holds, the named doors in front of every write, and the traps already met,
+  starting with the read that is secretly a compile. Written on 27 August 2026 after a session had to
+  be reminded of all of it.
 
 ```
 make test          run the suite; image-backed tests need a lab directory
