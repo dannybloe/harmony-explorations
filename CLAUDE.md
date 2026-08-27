@@ -927,6 +927,23 @@ docs/adding-a-device.md         THE checklist for one goal: pick an appliance ou
 docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes
+docs/review-before-first-write.md
+                                the brief for an independent review of the write path, written on 27
+                                August 2026 before the first write. Four jobs, one of them **blind**:
+                                a re-derivation of the write transfer from the firmware by a reviewer
+                                that has not seen ours, because two derivations of one thing
+                                disagreeing is this project's sharpest instrument and a rubber stamp
+                                before a first write reads as evidence. **It carries a withhold list
+                                and that list is the operative part**: hand a reviewer
+                                `docs/findings.md`, `docs/usb-protocol.md` or
+                                `reference/superseded.md` and job 1 is over, since the last of those
+                                pairs each answer we got wrong on the interlock with the corrected
+                                one. `TheWriteReviewWithholdListIsComplete` in
+                                `tests/test_toolchain.py` parses both lists out of the document and
+                                sweeps the tree against them, so a new document quoting the transfer
+                                fails a test rather than quietly widening what a reviewer may see.
+                                Two of the four questions are **open here** and stated as open, which
+                                is the honest bar: leaving them open is a match, not a failure
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below

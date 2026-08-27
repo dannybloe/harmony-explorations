@@ -14,6 +14,7 @@ file no project claims does not announce itself, which is exactly the shape a te
 """
 import ast
 import glob
+import io
 import json
 import os
 import re
@@ -987,6 +988,139 @@ class TheDocumentChecksReadOnlyTrackedFiles(unittest.TestCase):
             self.assertIn(os.path.join(self.root, name), found, name)
         sources = set(facts.sources())
         self.assertIn(os.path.join(self.root, 'tools', 'facts.py'), sources)
+
+
+class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
+    """`docs/review-before-first-write.md` makes three claims about which files may be handed to an
+    independent reviewer, and all three are the kind this project refuses to leave as prose.
+
+    The review exists because nothing has ever been written to a remote and the derivation a first
+    write rests on has been read by one party. Its worth depends entirely on the reviewer not having
+    seen our answer, so the two lists in that document are load bearing: a file that states the
+    answer and is missing from the withhold list turns an independent derivation into a quotation,
+    silently and after the fact.
+
+    The lists are parsed out of the document rather than copied here. A second copy of a list is the
+    state this project's oldest rule forbids, and it would drift the first time somebody edited one.
+
+    The asymmetry between the two halves is deliberate. The may read set is small and must be clean
+    of even an ambiguous marker. The withhold set is swept with unambiguous markers only, because a
+    bare byte like the data packet's opcode occurs all over a codec corpus for unrelated reasons and
+    a sweep on it would demand withholding half the tree.
+    """
+
+    DOC = os.path.join(ROOT, 'docs', 'review-before-first-write.md')
+
+    # Unambiguous only: each of these names the write path and nothing else.
+    MARKERS = (
+        'WRITE_FLASH_DATA',
+        '0xF1 0x30',
+        '0xF0 0x30',
+        'writeFlash',
+        'assertFlashWriteAllowed',
+        'assertFirstWriteAllowed',
+        'rehearse-block',
+    )
+
+    # The may read set is held to a stricter bar, since it is what actually gets handed over.
+    STRICT_MARKERS = MARKERS + ('0x4A', 'ERASE_FLASH', 'WRITE_FLASH')
+
+    SWEPT_SUFFIXES = ('.md', '.ts', '.py', '.txt')
+    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var'}
+
+    def _document(self):
+        with io.open(self.DOC, encoding='utf-8') as handle:
+            return handle.read()
+
+    def _paths_between(self, text, start, end):
+        """Every backticked token in a region of the document that resolves to a real path."""
+        begin = text.index(start) + len(start)
+        stop = text.index(end, begin)
+        found = set()
+        for token in re.findall(r'`([^`]+)`', text[begin:stop]):
+            token = token.strip().rstrip(',')
+            if token.startswith('..') or '/' not in token and not token.endswith('.md'):
+                # The concordance checkout sits outside the repository, and a bare filename like a
+                # vendor header is not a path here. Both are named in the document deliberately.
+                if not os.path.exists(os.path.join(ROOT, token)):
+                    continue
+            for match in glob.glob(os.path.join(ROOT, token)):
+                found.add(os.path.relpath(match, ROOT))
+        return found
+
+    def _swept_files(self):
+        for base, dirs, names in os.walk(ROOT):
+            dirs[:] = [d for d in dirs if d not in self.SKIP_DIRS and not d.startswith('.')]
+            for name in names:
+                if name.endswith(self.SWEPT_SUFFIXES):
+                    yield os.path.relpath(os.path.join(base, name), ROOT)
+
+    @staticmethod
+    def _markers_in(path, markers):
+        try:
+            with io.open(os.path.join(ROOT, path), encoding='utf-8', errors='replace') as handle:
+                body = handle.read()
+        except OSError:
+            return []
+        return [m for m in markers if m in body]
+
+    def test_the_document_states_both_lists(self):
+        """The parse is asserted before anything is derived from it, or an empty list passes."""
+        text = self._document()
+        may = self._paths_between(text, '**May be read and used.**', '**Must not be read.**')
+        must = self._paths_between(text, '**Must not be read.**', '\n## ')
+        self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
+                         % sorted(may))
+        self.assertEqual(len(must), 16, 'the withhold list should resolve to 16 paths, got %s'
+                         % sorted(must))
+
+    def test_every_may_read_path_is_clean_of_the_write_path(self):
+        """The half that is handed over. One marker here voids the independence of the whole job."""
+        may = self._paths_between(self._document(), '**May be read and used.**',
+                                  '**Must not be read.**')
+        offenders = {}
+        for path in sorted(may):
+            targets = [path]
+            if os.path.isdir(os.path.join(ROOT, path)):
+                targets = [p for p in self._swept_files() if p.startswith(path + os.sep)]
+            for target in targets:
+                hits = self._markers_in(target, self.STRICT_MARKERS)
+                if hits:
+                    offenders[target] = hits
+        self.assertEqual(offenders, {},
+                         'a file offered to the reviewer states the write path: %s' % offenders)
+
+    def test_every_file_stating_the_write_path_is_withheld(self):
+        """The half that is held back, and the direction that actually fails.
+
+        A new document quoting the transfer is the expected way for this to break, and then the fix
+        is to add it to the withhold list, not to loosen this test.
+        """
+        must = self._paths_between(self._document(), '**Must not be read.**', '\n## ')
+        uncovered = {}
+        for path in self._swept_files():
+            hits = self._markers_in(path, self.MARKERS)
+            if not hits:
+                continue
+            covered = any(path == entry or path.startswith(entry.rstrip('/') + os.sep)
+                          for entry in must)
+            if not covered:
+                uncovered[path] = hits
+        self.assertEqual(uncovered, {},
+                         'these state the write path and no withhold entry covers them: %s'
+                         % uncovered)
+
+    def test_the_sweep_can_fail(self):
+        """The control. A sweep matching nothing would pass the test above vacuously.
+
+        Exact rather than a floor, on this project's own measured ground that a floor is a fossil.
+        It moves whenever a file starts or stops stating the write path, and that is the moment the
+        withhold list is worth another look, so the churn is the point rather than the cost.
+        """
+        stating = sorted(p for p in self._swept_files() if self._markers_in(p, self.MARKERS))
+        self.assertEqual(len(stating), 20,
+                         'the number of files stating the write path moved, so re-read the withhold '
+                         'list before restamping this: %s' % stating)
 
 
 if __name__ == '__main__':
