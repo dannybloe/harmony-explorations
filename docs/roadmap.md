@@ -34,8 +34,13 @@ flash programmer reached from a key held at power on, it refuses to erase itself
 every boot path that does not hand off lands in its USB loop, including the one taken when the image it
 would run is gone. It writes internal flash and not the external NOR a config sits in, so it does not
 put a config back; what makes a write survivable is that a write confined to the config region cannot
-reach it. One step of that route is still unproven by measurement and it is a single read only power
-cycle on the spare: which physical key keeps the bootloader resident, which firmware cannot answer.
+reach it. **That power cycle happened on 27 August 2026**, section 190, and the friendlier of the two recovery
+levels is confirmed on hardware: Off held across a battery insertion put the spare Harmony One into safe
+mode in about five seconds, a plain power cycle left it, and one `GET_VERSION` had the remote report its
+own state, which also refuted a claim of ours about a neighbouring field. What is still open is the
+level below it, the bootloader's own USB loop, whose key is unknown and which firmware cannot name. What
+is still open in a way that matters more: **neither level is shown to put a config back**, so the
+restore box in `docs/adding-a-device.md` stays unticked and that is the unproven step in front of M4.
 Decision 4 has been revised: the product lives in
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
 Read the next section before the milestones, because that revision changed what this repository is
