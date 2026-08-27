@@ -1506,6 +1506,13 @@ node packages/usb/bin/read-window.ts --address 0x... [--count 16] [--compare 0x.
                        read one window of external flash and print it, and optionally read a
                        second and say whether they are identical. For a question about a
                        specific address, which read-config.ts cannot answer. Opens the device.
+node packages/usb/bin/read-identity.ts [--product 0xc121]
+                       print a connected remote's version block: firmware, hardware, flash id,
+                       architecture, **software type**, skin and platform, then the raw block with
+                       the unidentified bytes labelled as such. One `GET_VERSION` and nothing else.
+                       The field worth the trip is the software type, 0 running normally and 4 in
+                       safe mode, since section 87 derived its safe mode column from the images
+                       rather than from a remote. Opens the device.
 node packages/usb/bin/read-ram.ts --address 0x... [--count 64] [--summary]
                        the same for data memory. Reach for this before believing a watcher's
                        silence: watch-keys reports changes, so it cannot tell a variable that
