@@ -62,6 +62,14 @@ The bootloader and three support images. **Not the application**, which is in ex
 `.hfw` package covers any of this, so nothing off the internet can be compared against it, and the
 argument that the reads are good is that all three images verify their own header checksums.
 
+**The remote states this inventory itself, and it agrees**, section 190. A Harmony One in safe mode
+lists five images on its screen with a checksum and a version each, and four of the five checksums are
+in the table below and in the application image in the lab: `0xD8CD` the application, `0xDB1C` the
+image at `0xFE` `+0x1000`, `0xCB09` at `0xFF` `+0x0000` and `0xD9E9` at `0xFF` `+0xE000`. The fifth row
+shows **no checksum**, and that is what identifies it as the **bootloader**, the one image here with no
+header to carry one. So the four checksums derived from dumps read over USB are confirmed by the remote
+computing them itself, which is the outside check this page had never had.
+
 | Page and offset | Length | Contents | Source |
 |---|---|---|---|
 | `0xFE` `+0x0000` | 4096 | the **bootloader**, no header of its own, reset vector at zero. Scans the keypad and compares two codes, `0x0E` and `0x1E`, section 87. It is also a **USB flash programmer**, twelve commands, whose erase refuses any address below `0x001000` and so cannot erase itself, section 189 | read off two remotes, identical |

@@ -571,7 +571,11 @@ changes and one it does not. A remote whose internal image is destroyed still at
 is the deepest fallback in the part; and the Harmony 525 comparison in the paragraph above is not merely
 a different architecture, it is a different mechanism, because on arch 12 recovery is not an install.
 What it does not change is this box, because that programmer writes internal flash and a config lives in
-external NOR, so it is **not** shown to put a config back. And it is a milestone with its own place in the plan, M4, which a checklist item is
+external NOR, so it is **not** shown to put a config back. **Entering recovery is measured since section
+190**, Off held across a battery insertion putting the spare Harmony One into safe mode in about five
+seconds and a plain power cycle leaving it, so reaching a point where a host can talk to a Harmony One
+that will not boot normally is no longer a belief; this box is about the **restore**, which is a
+different claim and still has nothing behind it. And it is a milestone with its own place in the plan, M4, which a checklist item is
 not allowed to consume on its way past.
 
 **So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the

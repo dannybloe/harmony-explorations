@@ -415,6 +415,41 @@ test('the whole block reads back as the three bench remotes reported it', () => 
       softwareType: 0, softwareTypeName: 'application', skin: 22, platform: 0x09 },
   );
 
+  // Safe mode, measured on two architectures, and the contrast is the finding. Section 190.
+  //
+  // A Harmony One in safe mode differs from the same unit running normally in **one** of its twelve
+  // fields, field 4's low nibble. A Harmony 525 differs in **three**, adding the firmware version and
+  // the platform. That is not two remotes disagreeing: arch 9 copies its safe mode image over the
+  // application, so a different firmware generation is answering and says so twice over, where arch 12
+  // hands control to an image resident beside the application and of the same generation. Section 189
+  // read that structural difference out of the firmware and this is what it predicts.
+  const oneSafe = Uint8Array.from([0x34, 0x05, 0xc8, 0x1f, 0xc4, 0x36, 0x0c, 0x34, 0x34, 0x16, 0x34, 0x34]);
+  const h525Safe = Uint8Array.from([0x20, 0x25, 0x12, 0xff, 0x94, 0x16, 0x00]);
+
+  assert.deepEqual(
+    { ...readVersion(oneSafe), fields: oneSafe.length },
+    { fields: 12, firmware: '3.4', hardware: '0.5', flash: '1F:C8', architecture: 12,
+      softwareType: 4, softwareTypeName: 'safe mode', skin: 54, platform: 0x0c },
+  );
+  assert.deepEqual(
+    { ...readVersion(h525Safe), fields: h525Safe.length },
+    { fields: 7, firmware: '2.0', hardware: '2.5', flash: 'FF:12', architecture: 9,
+      softwareType: 4, softwareTypeName: 'safe mode', skin: 22, platform: 0x00 },
+  );
+
+  // The counts, exactly, because "one field" and "three fields" is the whole claim and a bound would
+  // hide either of them moving.
+  const differing = (a: Uint8Array, b: Uint8Array): number[] =>
+    [...a].flatMap((byte, index) => (byte === b[index] ? [] : [index]));
+  assert.deepEqual(differing(one, oneSafe), [4], 'a Harmony One changes only its software type');
+  assert.deepEqual(differing(h525, h525Safe), [0, 4, 6], 'a Harmony 525 also changes version and platform');
+
+  // And the refusal this replaces: zero here does not mean safe mode, which is what the docstring on
+  // `platform` said until section 190. Both remotes are in safe mode and they disagree about it.
+  assert.equal(readVersion(oneSafe).platform, readVersion(one).platform);
+  assert.notEqual(readVersion(h525Safe).platform, readVersion(h525).platform);
+  assert.equal(readVersion(oneSafe).softwareType, readVersion(h525Safe).softwareType);
+
   // The platform is not the architecture, section 116, and these three are what says so: two
   // architectures share `0x0c` and the third differs. A reading that returned the architecture twice
   // would pass every other assertion in this test.

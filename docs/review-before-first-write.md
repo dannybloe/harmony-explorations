@@ -403,12 +403,20 @@ structural and simpler: a write confined to the config region cannot reach the b
 above it, so a damaged config leaves a remote that still boots and still answers our own read and write
 path. The programmer is the layer below that, for the failure the rails already make unreachable.
 
-**What is left of job 4, and it is small and specific.** Which physical key carries the code that keeps
-the bootloader resident. Firmware cannot answer it, per section 48, because sixteen buttons of a
-Harmony One share one sense line, and the published procedure naming that key is a third party repair
-sheet. The confirmation is read only hardware on the spare, costs one power cycle, and needs no host
-software: hold the key, insert the battery, and read the screen. **That box is still unticked** and it
-is the one step of the recovery sequence that remains unproven by measurement here.
+**What was left of job 4 was one power cycle, and it was done on 27 August 2026**, section 190. Off,
+held across a battery insertion, put the spare Harmony One into **safe mode** in about five seconds, so
+the third party repair sheet is correct about the key and is no longer a hypothesis. A plain power cycle
+left it again, which arch 9 does not do. The remote's own screen listed five images with checksums that
+match four of ours plus the application's, and one `GET_VERSION` confirmed software type 4 on a live
+Harmony One for the first time while refuting a claim of ours about a neighbouring field.
+
+**What is left is narrower and stated exactly.** A Harmony One's recovery has **two** levels: safe
+mode, now confirmed on hardware, and the bootloader's own USB loop one below it, section 189's `0x0E`,
+which was not reached and whose key is still unknown. The two are told apart by their USB identity,
+since safe mode presents Logitech's own and the bootloader presents Microchip's. Neither level is shown
+to restore a config, per section 189's limit, so **the restore box in `docs/adding-a-device.md` is still
+unticked** and that is the step that remains unproven. What changed is that getting a Harmony One into a
+state where a host can talk to it is no longer a belief.
 
 **The instructive part is how it was found.** Two sections of `docs/findings.md` contradicted each
 other on the load bearing point, 87 saying the bootloader scans the keypad and 118 saying it reads no

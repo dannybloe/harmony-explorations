@@ -15506,17 +15506,30 @@ And the refutation has a shape: **the arch 8 bootloaders also report field 6 as 
 which that section explained away as "the one role that has no use for a platform constant". Two
 recovery role images out of two now report zero, one of them measured on hardware. So the honest
 reading is narrower than section 116's: field 6 names a platform **in an application image**, and a
-recovery image reports zero. Section 116's arch 12 and arch 14 safe mode figures were read out of the
+recovery image reports zero.<!--superseded--> Section 116's arch 12 and arch 14 safe mode figures were read out of the
 images' own constants rather than off a remote, and they disagree with this measurement, which is
 either an architecture difference or a difference between what an image contains and what it answers.
-**Not resolved here**, and it needs an arch 12 or arch 14 remote put into safe mode to settle, which
-the procedure above now makes possible.
+
+**Resolved since section 190, and it is the architecture.** This subsection asked for an arch 12 or
+arch 14 remote in safe mode and got one on 27 August 2026: a live Harmony One in safe mode reports
+field 6 as `0x0C`, exactly what it reports running normally. So "a recovery image reports zero"<!--superseded-->
+was **too broad** and this section overgeneralised from one architecture, the same way section 116 had
+in the other direction. The narrow statement is that a recovery image answers zero on arch 9 and arch 8
+and answers the platform on arch 12, with arch 14 still unmeasured on hardware. The mechanism is
+section 189's: arch 9 **copies** its safe mode image over the application, so a different firmware
+generation answers, where arch 12 hands control to an image resident beside the application and of the
+same generation.
 
 ### Safe mode is latched, and that is new
 
 The procedure enters it. **A clean power cycle does not leave it**: battery out, a minute's wait,
 battery back in with no key held, and the 525 came up in safe mode again. So it is not a live key
-test whose effect ends with the boot that read it; something non-volatile is holding it.
+test whose effect ends with the boot that read it; something non-volatile is holding it.<!--superseded-->
+
+**That is arch 9's and not safe mode's**, section 190. The same power cycle brings a Harmony One up
+normally, and the mechanism rules the arch 9 candidate out structurally rather than by measurement:
+the paragraph below names internal EEPROM as the obvious holder, and neither the PIC18F87J50 nor the
+PIC18F67J50 has data EEPROM at all.
 
 Where is not established. The 525's bootloader carries EEPROM read and write primitives at `0x00130`
 and `0x00150`, block routines taking their base address from `0x422`, so internal EEPROM is the
@@ -25047,3 +25060,138 @@ programmer is the backstop one layer below that.
 per section 48: a scan code does not yield a key on arch 12 because sixteen buttons share one sense line.
 The published procedure in section 118 remains a third party claim about which key, and the cheap
 confirmation remains read only hardware on the spare Harmony One.
+
+## 190. A Harmony One in safe mode, measured, and it settles section 118's open question
+
+Section 118 ended its field 6 subsection with a request: "it needs an arch 12 or arch 14 remote put
+into safe mode to settle, which the procedure above now makes possible." That was done on 27 August
+2026 on the spare Harmony One, read only, and it settles the question against section 118's own
+narrowing. Four results and a fifth thing that closes the safe mode screen.
+
+Danny ran the published procedure, held **Off** while inserting the battery, and the remote announced
+safe mode within about five seconds. So **the third party repair sheet is correct about the key on a
+Harmony One**, which section 118 could only mark as a hypothesis of upstream standing. Nothing was
+written and no rail moved: one `GET_VERSION` through `packages/usb/bin/read-identity.ts`, which is on
+the read only allow list.
+
+### Exactly one byte of twelve differs, which is stronger than the claim it confirms
+
+| | running normally | in safe mode |
+|---|---|---|
+| the whole block | `34 05 c8 1f c0 36 0c 34 34 16 34 34` | `34 05 c8 1f c4 36 0c 34 34 16 34 34` |
+
+Field 4's low nibble, `0` to `4`. Nothing else moves, including the flash id and the skin, which are
+hardware and would have been the interesting failure. **So software type 4 is confirmed on a live
+Harmony One for the first time**: section 87 derived its safe mode column from the images rather than
+from a remote, and the derivation was right.
+
+Section 87 asserted that exactly one of **five** accessors differs between a remote's two images. The
+measurement covers **twelve** fields and still finds one, so the claim holds on a wider population
+than it was made about. That is the good direction for a claim to be wrong in and it is worth saying
+which direction it was.
+
+**And the arch 9 comparison is the sharp version of the whole section**, because section 118 has that
+remote's two blocks too, `30 25 12 ff 90 16 09` running and `20 25 12 ff 94 16 00` in safe mode:
+
+| | fields that differ in safe mode | which |
+|---|---|---|
+| Harmony 525, arch 9 | **3** | 0 the firmware version, 4 the software type, 6 the platform |
+| Harmony One, arch 12 | **1** | 4 the software type |
+
+One field is common and the two extra ones are arch 9's. That is exactly what section 189's structural
+difference predicts and it is why this is an explanation rather than two numbers: **a different image
+answering says so twice**, in its own version and its own platform constant, and an image of the same
+generation resident beside the application has nothing to say but the state. So the arch 9 remote is
+not being inconsistent with the arch 12 one, it is reporting a different fact about itself.
+
+### Field 6 is `0x0C` in safe mode on a Harmony One, and the difference is per architecture
+
+This is the correction. Section 118 measured a live Harmony 525 in safe mode reporting `0x00` where
+the same unit reports `0x09` running normally, noted that the arch 8 bootloaders report zero too, and
+concluded that "field 6 names a platform **in an application image**, and a recovery image reports
+zero".<!--superseded--> A live Harmony One in safe mode reports **`0x0C`**, exactly what it reports running normally.
+
+So section 118's generalisation was **too broad**, and section 116's arch 12 figure, which section 118
+marked superseded on the strength of the arch 9 measurement, was right. Two things follow and the
+second is the useful one.
+
+The narrow statement is that field 6 answers zero from a recovery image on **arch 9 and arch 8** and
+answers the platform on **arch 12**. Arch 14 is still unmeasured on hardware, so the general form of
+section 116's phrasing stays dead in `reference/superseded.md` rather than being restored: what has
+been measured is one architecture of the two it claimed.
+
+**And the mechanism is section 189's**, which is what makes this an explanation rather than a second
+number. On arch 9 entering safe mode **copies** the safe mode image over the application, so a
+different program is answering, and that program is a different firmware generation with its own
+constant. On arch 12 nothing is copied: the bootloader hands control to an image resident beside the
+application, version 3.4 like the application, so the same generation answers and reports itself the
+same way. The two findings predict each other, and neither was derived from the other.
+
+### Safe mode is not latched on arch 12, where section 118 found it latched on arch 9
+
+Section 118 measured a Harmony 525 coming up in safe mode again after a battery out, a minute's wait
+and a battery back in with no key held, and concluded something non-volatile holds it. On the Harmony
+One the same power cycle brought it up **normally**. So the latch is arch 9's and not safe mode's.
+
+**The mechanism is structural rather than observed**, which is why this was predicted before the
+measurement rather than after it: section 118 names arch 9's internal EEPROM as the obvious candidate
+for the latch, and neither the PIC18F87J50 nor the PIC18F67J50 **has** data EEPROM at all. Section
+189 read that off gputils' own headers, where `EECON1` has no `EEPGD` and no `CFGS` bit on either
+part. So the arch 9 mechanism cannot exist on the bench architectures, and a held key on a Harmony One
+can only affect the boot that read it.
+
+That also means the recovery route on a Harmony One is safer than arch 9's in a second way, on top of
+copying nothing: it cannot be entered by accident and left stuck.
+
+### The safe mode screen lists five images, and they are version fields 7 to 11
+
+The screen carries five rows, each a checksum and a version, which nothing here had recorded. The
+same `GET_VERSION` reply carries five version bytes in fields 7 to 11 whose readings section 116
+already established, and matching the two on the **checksum** rather than on the version forces every
+row, since four of the five versions are `0x34`:
+
+| row | checksum | version | field | the image |
+|---|---|---|---|---|
+| A | `0xD8CD` | `0x34` | 11 | the running application, external `0x020000` |
+| B | `0xDB1C` | `0x34` | 10 | internal `0xFE` `+0x1000`, the safe mode image itself |
+| C | `0x0000` | `0x34` | 7 | the **bootloader** |
+| D | `0xCB09` | `0x16` | 9 | internal `0xFF` `+0x0000` |
+| E | `0xD9E9` | `0x34` | 8 | internal `0xFF` `+0xE000` |
+
+Four of the five checksums are in `docs/memory-map-one.md` already, derived from dumps read over USB,
+and the fifth is the application image's own header checksum in the lab. **The remote computes them
+itself and puts them on its screen**, so this is two routes with nothing in common agreeing on four
+numbers and a fifth.
+
+**Row C's blank checksum is the identification, not a gap.** The bootloader is the one piece of
+software on the remote with **no header of its own**, which `docs/memory-map-one.md` has said since
+section 22, so it has no checksum to display and no other image could show zero. Its version byte
+still reads, from program `0x000017`, which is field 7's own accessor, and that is why the row carries
+a version and not a checksum.
+
+### Two smaller things a bench session should know
+
+**Safe mode presents Logitech's own USB identity**, `046D:C121` with the manufacturer and product
+strings both `Harmony Remote 4-3.4.0`. That block sits at offset `0x0BB66`, inside the safe mode
+image's own extent of `0x1000` to `0xC12C`, so it belongs to the recovery code rather than being
+borrowed from the application. **Enumeration therefore cannot detect safe mode on arch 12**, and a
+host has to ask: the state that `listMicrochipBootloaders` finds is section 189's deeper one, the
+bootloader's own USB loop, which is a different thing and was not reached here.
+
+**`GET_VERSION` was not flaky**, unlike arch 9, where section 118 records `probe.ts` giving up after
+three polls of 2000 ms. One exchange answered. Recorded because the difference is between two
+architectures' safe modes rather than between two attempts, and section 118's retry loop earned itself
+on the other one.
+
+### What it does to the recovery route
+
+Section 189 left one step of the route unproven by measurement, which physical key holds the remote in
+recovery, and said firmware could not answer it because sixteen buttons of a Harmony One share one
+sense line. That step is now done for **safe mode**: Off, held across a battery insertion, reaches it
+in about five seconds and a plain power cycle leaves it.
+
+What that does **not** cover is the bootloader's own USB loop, section 189's `0x0E`. Safe mode is the
+level above it, and the two are told apart by the USB identity above. So the remaining unknown is
+narrower than it was and it is stated exactly: a Harmony One's recovery has two levels, the friendlier
+one is confirmed on hardware, and which key reaches the deeper one is still open. Nothing about a
+config restore is settled by any of this, per section 189's own limit.

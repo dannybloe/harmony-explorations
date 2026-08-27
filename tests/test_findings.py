@@ -1799,5 +1799,80 @@ class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
                 self.assertEqual(literals[:2], [(address >> 16) & 0xFF, address & 0xFF])
                 self.assertIn(access, [i.mnemonic for i in window])
 
+class TestTheSafeModeScreenListsTheRemotesImages(unittest.TestCase):
+    """Section 190. The five rows a Harmony One shows in safe mode are its five images.
+
+    Read off the remote's own screen on 27 August 2026 and matched against the images this project
+    derived from dumps taken over USB. **The match is on the checksum, not the version**, and that is
+    what makes it an identification: four of the five versions are 0x34, so version alone would place
+    nothing, where every checksum is distinct.
+
+    The screen is a photograph rather than a file, so the five rows are a literal here. That is stated
+    rather than hidden: what the test can check is that our own images reproduce those checksums and
+    that the version bytes in the same remote's `GET_VERSION` reply agree, and both of those are
+    computed from bytes in the lab.
+    """
+
+    # row -> (checksum, version, the version block field that carries it)
+    SCREEN = {
+        'A': (0xD8CD, 0x34, 11),   # the running application, external 0x020000
+        'B': (0xDB1C, 0x34, 10),   # internal 0xFE +0x1000, the safe mode image
+        'C': (0x0000, 0x34, 7),    # the bootloader, which has no header and so no checksum
+        'D': (0xCB09, 0x16, 9),    # internal 0xFF +0x0000
+        'E': (0xD9E9, 0x34, 8),    # internal 0xFF +0xE000
+    }
+    # The reply the same remote gave in safe mode, section 190.
+    SAFE_MODE_BLOCK = (0x34, 0x05, 0xC8, 0x1F, 0xC4, 0x36, 0x0C, 0x34, 0x34, 0x16, 0x34, 0x34)
+
+    def test_the_screens_versions_are_the_version_blocks_fields_seven_to_eleven(self):
+        """
+        Pure arithmetic over two recorded readings, so it needs no lab: every row's version equals the
+        byte in the field section 116 named for that image. The 0x16 is what carries this, since it is
+        the only value that appears once and it lands on field 9, the image at 0xFF +0x0000, which is
+        the one section 116 reads as version 1.6.
+        """
+        for row, (_checksum, version, field) in self.SCREEN.items():
+            with self.subTest(row=row):
+                self.assertEqual(self.SAFE_MODE_BLOCK[field], version)
+        self.assertEqual(sorted(f for _c, _v, f in self.SCREEN.values()), [7, 8, 9, 10, 11],
+                         'the five rows use the five version fields, each once')
+
+    def test_the_application_images_checksum_is_the_row_the_screen_calls_a(self):
+        """
+        The one row whose checksum is not already in `docs/memory-map-one.md`, and the only one this
+        test can compute from a file: the external application's own header.
+        """
+        lab.require('one34_code')
+        header = firmware.parse_header(lab.load('one34_code'))
+        self.assertEqual(header.checksum, self.SCREEN['A'][0])
+        self.assertEqual(header.version, '3.4')
+
+    def test_the_bootloader_is_the_row_with_no_checksum_because_it_has_no_header(self):
+        """
+        Row C is identified by the **absence**, which is why it could be placed at all: it is the one
+        image on the remote with no header, so it is the only one that can show zero. Asserted as a
+        refusal to parse rather than as a zero, since that is the property doing the work.
+        """
+        lab.require('one_internal_fe')
+        page = lab.load('one_internal_fe')
+        self.assertEqual(self.SCREEN['C'][0], 0x0000, 'the screen shows no checksum for it')
+
+        # The bootloader occupies the first 4 KiB and carries no header magic anywhere in it, where
+        # each of the other images carries one at its own start.
+        self.assertNotIn(firmware.MAGIC, page[:0x1000],
+                         'the bootloader has no header, which is why it has no checksum')
+        self.assertIn(firmware.MAGIC, page[0x1000:0x1000 + 0x20],
+                      'and the image above it does, which is the control')
+
+    def test_the_five_checksums_are_distinct_so_the_match_is_forced(self):
+        """
+        The reason this is an identification and not an assignment. Four versions are 0x34, so a
+        version based match would leave three rows interchangeable; every checksum differs.
+        """
+        checksums = [c for c, _v, _f in self.SCREEN.values()]
+        self.assertEqual(len(set(checksums)), 5, 'distinct, so each row has one home')
+        versions = [v for _c, v, _f in self.SCREEN.values()]
+        self.assertEqual(sorted(versions).count(0x34), 4, 'and the versions could not have done it')
+
 if __name__ == '__main__':
     unittest.main()

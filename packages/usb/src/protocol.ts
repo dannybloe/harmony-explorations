@@ -530,8 +530,19 @@ export interface VersionReading {
    * Field 6, which names a **platform** and not an architecture, section 116.
    *
    * `0x0C` on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), which are one platform under
-   * it, `0x09` on arch 9 (Harmony 525), `0x08` on arch 8 (Harmony 880 and 885), and `0x00` for a
-   * bootloader or a remote in safe mode.
+   * it, `0x09` on arch 9 (Harmony 525) and `0x08` on arch 8 (Harmony 880 and 885).
+   *
+   * **What a remote in a recovery role answers is per architecture**, and this said `0x00` for any
+   * bootloader or remote in safe mode until section 190. It is zero from an arch 9 safe mode image
+   * and from the arch 8 bootloaders, and a live Harmony One in safe mode answers `0x0C`, the same as
+   * running normally. Arch 14 is unmeasured on hardware. So a caller must not read zero here as
+   * meaning safe mode, nor a platform value as meaning a normal boot: field 4's low nibble is the
+   * software type and is the field that actually says which, and on a Harmony One it is the **only**
+   * one of the twelve that moves between the two states.
+   *
+   * The mechanism, section 189: arch 9 copies its safe mode image over the application so a
+   * different firmware generation is answering, where arch 12 hands control to an image resident
+   * beside the application and of the same generation.
    */
   readonly platform: number;
 }

@@ -1034,12 +1034,20 @@ bytes exactly as predicted.
 | 3 | `0x15` | `0x1f` | flash manufacturer id, so the pairs are `15:1C` and `1F:C8` |
 | 4 | `0xe0` | `0xc0` | **the architecture** in the high nibble: 14 and 12. Low nibble the **software type** |
 | 5 | `0x47` | `0x36` | skin, 71 and 54, which `bcdDevice` says independently |
-| 6 | `0x0c` | `0x0c` | **the same on both**, so a constant. `0x0C` is 12, which is also the number of fields |
+| 6 | `0x0c` | `0x0c` | a **platform**, not a constant and not the architecture, section 116. What a remote in a recovery role answers is **per architecture**, section 190 |
 | 7 | `0x02` | `0x34` | **the version byte at program `0x000017`**, in the boot area |
 | 8 | `0x00` | `0x34` | **the version of the image at `0xFF` `+0xE000`**, from `0x01E007` |
 | 9 | `0x00` | `0x16` | **the version of the image at `0xFF` `+0x0000`**, by pairing, accessor unexplained |
 | 10 | `0x02` | `0x34` | **the safe mode firmware's version**, from `0x001007` |
 | 11 | `0x02` | `0x34` | **the running application image's own header version**, from `0x009007` |
+
+**The same Harmony One in safe mode gives `34 05 c8 1f c4 36 0c 34 34 16 34 34`**, section 190,
+measured on 27 August 2026. **One byte of twelve differs**, field 4's low nibble going from 0 to 4, and
+the flash id and the skin are unchanged as hardware fields should be. Compare the Harmony 525, section
+118, whose safe mode block differs in **three** fields, adding the firmware version and the platform,
+because arch 9 copies a different image over its application where arch 12 runs one resident beside it.
+So a caller must read field 4's low nibble to learn the state, and **must not** read field 6 as saying
+it: zero there means safe mode on arch 9 and arch 8 and means nothing of the sort on arch 12.
 
 **The reading is executable, in `readVersion`.** Added on 21 August 2026 in
 `packages/usb/src/protocol.ts`, because FreeHarmony needs a firmware version and a flash id for a

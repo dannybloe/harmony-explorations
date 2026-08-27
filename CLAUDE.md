@@ -1993,8 +1993,16 @@ produce a config the remote accepts and mishandles.
   what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
   **Field 6 has a reading now and it is unconfirmed rather than absent**, section 116: it names a
   **platform**, not an architecture, and arch 12 and arch 14 are one platform under it. `0x0C` on both
-  of those across six images, `0x09` on arch 9, `0x08` on arch 8. **For an application image only**,
-  section 118: a live 525 in safe mode reports `0x00`, as the arch 8 bootloaders do. Everything else already grouped those two: same MCU family, same
+  of those across six images, `0x09` on arch 9, `0x08` on arch 8. **What a recovery role image
+  answers is per architecture**, sections 118 and 190: a live Harmony 525 in safe mode reports `0x00`,
+  as the arch 8 bootloaders do, and a live **Harmony One in safe mode reports `0x0C`**, the same as
+  running normally. So section 118's "for an application image only" was one architecture written as a
+  rule, which is what it had just criticised section 116 for in the other direction, and section 116's
+  arch 12 figure turns out to have been right. Arch 14 is unmeasured on hardware. The mechanism is
+  section 189's, that arch 9 copies its safe mode image over the application and arch 12 copies
+  nothing, so the two findings predict each other. **Field 4's low nibble is what actually says which
+  state a remote is in**, 0 running and 4 in safe mode, and on a Harmony One it is the only one of the
+  twelve fields that moves between them. Everything else already grouped those two: same MCU family, same
   `GSPM` cookie, and Logitech's own platform table calls arch 12 the Gin family. What moved it was the
   population going from four images to eleven; four could not tell "equals the architecture, except
   once" from "equals the platform, always". The `bcdDevice` high byte has the same shape and different
