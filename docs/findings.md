@@ -10396,8 +10396,12 @@ Asked which combination puts a remote into safe mode, which the prediction above
 ever wants to test it. The client does not know: it writes safe mode firmware and never tells a
 user how to get there. The bootloader does, and it is only 4 KiB.
 
-The first 4 KiB of internal program memory scans the keypad before anything else and compares the
-code it gets against **two literals**, then falls back on a check of the image at `0x1000`:
+The first 4 KiB of internal program memory scans the keypad and compares the code it gets against
+**two literals**, then falls back on a check of the image at `0x1000`. This read "scans the keypad
+before anything else"<!--superseded--> until section 189 read the two steps in front of it: the
+external memory bus is configured first, and then one byte at external `0x020024` is checked for being
+neither `0x00` nor `0xFF`, and the keypad scan is **skipped** when that check fails. The table below is
+unaffected, and section 189 also refutes section 118's claim that this code reads no port at all:
 
 | | Harmony One, arch 12 | Harmony 600, arch 14 |
 |---|---|---|
@@ -24828,14 +24832,15 @@ open itself, so guarding it would be guarding somebody who has already gone arou
 Danny asked whether the firmware could settle what a recovery from a failed first write would entail.
 It can, and answering it refuted section 118 on the load bearing point. The recovery route exists, it
 is resident in internal flash on both bench architectures, it is entered from a key held at power on,
-and it does not depend on the application, the config, the external memory or a host having anything
-to say. What it cannot be shown to do is restore a config, and that limit is the useful half.
+and it does not depend on the application, the config or a host having anything to say. **It does
+depend on external flash in one narrow way**, per the gate below, and that dependency makes the
+guarantee stronger rather than weaker. What it cannot be shown to do is restore a config, and that limit is the useful half.
 
 ### Section 118 was wrong, and two tests agreed with each other instead of with the image
 
 Section 118 states, of the Harmony One's internal page: "**The internal bootloader does not test a
 key.** Every port access in `0x000000` to `0x001000` is a write ... **Zero reads.**"<!--superseded--> Section 87 states
-the opposite of the same 4 KiB of the same file, that it "scans the keypad before anything else". Both
+the opposite of the same 4 KiB of the same file, that it "scans the keypad before anything else",<!--superseded--> which is section 87's own wording and is corrected there too. Both
 carried a passing test, which is why this sat here unnoticed: `docs/findings.md` is the document that
 has never drifted because every section in it carries a regression test, and here two sections carried
 tests that could not see each other's claim.
@@ -24860,8 +24865,24 @@ and no literal config base reaches `TBLPTRU` in the application image.
 
 ### The boot decision, read through
 
-On the Harmony One, `0x00078` calls `0x008D8`, stores the byte it returns at `0xF2A`, and compares it
-against two literals:
+**Two things happen before the keypad is touched**, which is why "scans the keypad before anything
+else"<!--superseded--> is the wrong phrasing and section 87's too. `0x00062` to `0x0006C` sets up the external memory
+bus, and `0x0006E` calls `0x000D8`, which points the table pointer at external `0x020024`, reads one
+byte, and reports failure if that byte is `0x00` **or** `0xFF`. Those are the two values blank or
+zeroed flash returns, so the routine is asking whether external flash is programmed at all. Its caller
+keeps the answer at `0xD06` and **skips the keypad scan entirely when it failed**, branching straight
+to the validator.
+
+So the key test is conditional on external flash being programmed. **That is not a hole in the
+recovery route, it is the opposite**, and both arms are worth stating. With external flash intact,
+which is every case after a config write since `0x020024` is in the application region and no rail
+here permits writing there, the key test runs and a held key keeps the bootloader resident. With
+external flash blank or zeroed, the key test is skipped and the path falls through the validator to
+either the internal image or status 9, and status 9 lands in the USB loop. So a host can reach the
+remote either way, and in the damaged case it does not need a key at all.
+
+On the Harmony One, `0x00078` then calls `0x008D8`, stores the byte it returns at `0xF2A`, and compares
+it against two literals:
 
 | the byte at `0xF2A` | what happens |
 |---|---|
@@ -24902,23 +24923,63 @@ The service loop's `0x00436` waits for a report on endpoint 1 and switches on it
 `XORLW` chain at `0x0047C`, decoded through `chains.py` because the literals in such a chain are not its
 case values. Twelve cases, `0x00` to `0x0A` contiguous plus `0xFF`, no duplicate:
 
-| command | routine | what it does |
+| command | routine | what it does, mechanically |
 |---|---|---|
-| `0x00` | `0x00338` | set the working address to `0x000200` |
-| `0x01`, `0x06` | `0x00342` with `0xA5` clear | read program memory through `TBLRD` |
-| `0x09` | `0x00342` with `0xA5` set | read data memory through `FSR` |
-| `0x02` | `0x00372` with `0xA6` clear | write program memory and commit |
-| `0x08` | `0x00372` with `0xA6` set | load the holding latches and do not commit |
-| `0x0A` | `0x003AA` | write 64 bytes of `0xFF` and commit |
-| `0x03` | `0x003CA` | erase |
-| `0x04` | `0x003F8` | fill data memory with `0xBB` |
-| `0x05` | `0x0040E` | count and reply, touching nothing |
-| `0x07` | none | reply only |
-| `0xFF` | `0x00524` | disable USB, delay, `GOTO 0x0100A` |
+| `0x00` | `0x00338` | reply four bytes, the third and fourth being `0x00` and `0x02` |
+| `0x01`, `0x06` | `0x00342`, flag `0xA5` clear | read program memory through `TBLRD` into the reply |
+| `0x09` | `0x00342`, flag `0xA5` set | read data memory through `FSR` into the reply |
+| `0x02` | `0x00372`, flag `0xA6` clear | copy the request into the holding latches and commit |
+| `0x08` | `0x00372`, flag `0xA6` set | the same, without the commit |
+| `0x0A` | `0x003AA` | write 64 bytes of `0xFF` through `TBLWT` and commit |
+| `0x03` | `0x003CA` | erase, refusing any address below `0x001000` |
+| `0x04` | `0x003F8` | disarm `EECON1` and fill the reply with `0xBB` |
+| `0x05` | `0x0040E` | count the request's bytes and reply with the length |
+| `0x07` | none at all | reply one byte |
+| `0xFF` | `0x00524` | disable USB, delay, then `GOTO 0x0100A` |
 
-The working address is bytes 2 to 4 of the received report, at `0x422` to `0x424`. The commit is the
-textbook PIC18 unlock, `0x55` and `0xAA` into `EECON2` then `BSF EECON1,1`, at `0x0032C`, with a second
-copy at `0x00EE4` outside the command paths.
+That last column says "mechanically" on purpose, and the row that forced it is `0x00`.
+
+**One buffer carries both directions, and reading that backwards cost a table row.** Endpoint 1 OUT's
+buffer descriptor points at `0x0420` and so does endpoint 1 IN's, `0x40E` and `0x40F` holding `0x20` and
+`0x04`, with the reply length copied into `0x40D` from `0x060`. So bytes 2 to 4 of that buffer are the
+**request's** 24 bit address on the commands that take one and the **reply's** payload on the commands
+that produce one. This table first read command `0x00`'s two stores into `0x422` and `0x423` as "set the
+working address to `0x000200`"<!--superseded--> when they are a reply being filled in, four bytes long,
+which makes it a version or identity query rather than a setter. The direction was stated by the buffer
+descriptors and was inferred from the arithmetic instead, which is the same family as inferring a
+structure's form from its contents when a header states it.
+
+The commit is the textbook PIC18 unlock, `0x55` and `0xAA` into `EECON2` then `BSF EECON1,1`, at
+`0x0032C`, with a second copy at `0x00EE4` outside the command paths.
+
+### The bootloader is not Logitech's, on the evidence of its own descriptors
+
+Both bootloaders carry USB descriptors of their own, inside the 4 KiB, at `0x0F6E` on the Harmony One and
+`0x0EA6` on the Harmony 600, and the two are identical where it counts: **`04D8:000B`**, `bcdDevice`
+`0x0000`, device class zero, an 8 byte control endpoint, one configuration of 32 bytes at 100 mA, and
+**every string index zero**, so no manufacturer, product or serial string at all. `0x04D8` is
+**Microchip's** vendor id, not Logitech's `0x046D`. The image above `0x1000` carries a separate block at
+`0x0BB66` which is `046D:C121` with the string `Harmony Remote 4-3.4.0`.
+
+Two consequences, one immediate and one a hypothesis.
+
+**The immediate one is that the recovery state has a machine readable signature**, which is what a bench
+confirmation needs: a Harmony One in its bootloader enumerates as `04D8:000B` with no product string,
+where a normally booted one is `046D:C121` and names itself. That is decidable by `listHarmony`, which
+enumerates and opens nothing, so it needs no command sent and no rail moved. It is also a better
+observable than the screen, since the bootloader writes 13 ports in total and nothing here shows it
+driving the display.
+
+**The hypothesis is that this is a stock Microchip HID bootloader** rather than something Logitech wrote.
+It would mean the command numbering is documented outside this project, which is an external cross-check
+on the table above of exactly the kind this repository prizes and rarely gets. It also accounts for the
+table's shape better than anything read here does: four of the twelve commands do nothing useful, and
+neither bench part has data EEPROM or a separate configuration access path, so a stock bootloader's
+commands for those would have nothing to do. That is a better account of `0x04` filling a reply with a
+constant, `0x05` counting without touching anything, `0x07` having no routine at all, and `0x01` sharing
+a routine with `0x06` than "four commands are stubs" is. **It takes the ordinary route**, decision 7:
+nothing here has compared the numbering against Microchip's documentation, and until that happens the
+table is read from the image and the names are not.
 
 **The Harmony 600's bootloader carries the same twelve commands**, switch at `0x001A8`, the same case
 set with the same two commands sharing one routine, and its erase routine at `0x000F6` is the same
@@ -24963,7 +25024,7 @@ committing only means something if a commit programs more than the last word wri
 
 The favourable half. Recovery on a Harmony One is entered before the application runs, from a key held
 at power on, needs no host software and no config, and lands in a USB service loop that also catches the
-case where the image it would otherwise run is gone. Contrast arch 9, section 118, where entering safe
+case where the image it would otherwise run is gone, and the case where external flash is blank. Contrast arch 9, section 118, where entering safe
 mode **copies** an image over the application and is therefore a one way door: on arch 12 the bootloader
 `GOTO`s a second image resident beside it and copies nothing, so entering recovery destroys nothing. The
 Harmony 525's hazard does not transfer to the Harmony One, and this is the mechanism rather than an

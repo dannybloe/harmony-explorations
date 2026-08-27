@@ -384,8 +384,9 @@ mistake worth keeping, and because it changes what a reviewer would still be for
 
 **What the firmware settled.** The Harmony One has a recovery mode resident in the first 4 KiB of
 internal program memory, entered by a key held at power on, before the application runs. It scans the
-keypad before anything else, and one key code keeps it resident in a USB service loop that never
-returns. In that state it is a **flash programmer**: twelve commands including read, write, erase and
+keypad once it has configured the external bus and satisfied itself that external flash is programmed,
+and one key code keeps it resident in a USB service loop that never returns. When that flash check
+fails the scan is skipped and the path still reaches the same loop, so neither arm strands a host. In that state it is a **flash programmer**: twelve commands including read, write, erase and
 a run the image command, identical on the Harmony 600 down to the instruction sequence of the erase.
 It **protects itself**, refusing to erase any address below its own end, and unlike arch 9 it copies
 nothing when entered, so the Harmony 525's one way door does not transfer.

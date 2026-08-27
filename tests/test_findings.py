@@ -1586,6 +1586,90 @@ class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
                     found.append(off)
                 self.assertEqual(tuple(found), unlock)
 
+    # image -> the address of the bootloader's own device descriptor, inside the 4 KiB
+    DESCRIPTORS = {'one_internal_fe': 0x0F6E, 'h600_internal_fe': 0x0EA6}
+    MICROCHIP, LOGITECH = 0x04D8, 0x046D
+    BOOT_PRODUCT = 0x000B
+
+    def test_the_bootloader_enumerates_as_microchip_with_no_strings(self):
+        """
+        The bench observable for the recovery state, and the reason the screen is the wrong one: a
+        Harmony One in its bootloader is 04D8:000B with no product string, where a booted one is
+        046D:C121 and names itself. Decidable by enumeration alone, so no command and no rail.
+
+        Every string index is asserted zero because that is what makes the two impossible to confuse:
+        a device with no product string cannot be mistaken for one that says Harmony Remote.
+        """
+        lab.require(*self.DESCRIPTORS)
+        u16 = lambda b, o: b[o] | (b[o + 1] << 8)
+        for name, at in self.DESCRIPTORS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                self.assertLess(at, self.BOOTLOADER_END, 'the descriptor is the bootloader\'s own')
+                dev = code[at:at + 18]
+                self.assertEqual((dev[0], dev[1]), (0x12, 0x01), 'a device descriptor')
+                self.assertEqual(u16(dev, 8), self.MICROCHIP)
+                self.assertEqual(u16(dev, 10), self.BOOT_PRODUCT)
+                self.assertEqual(u16(dev, 12), 0x0000, 'bcdDevice, so it claims no skin')
+                self.assertEqual(list(dev[14:17]), [0, 0, 0], 'manufacturer, product, serial')
+                self.assertEqual(dev[17], 1, 'one configuration')
+
+                # And the image above the bootloader is the other identity, which is the contrast
+                # that makes the observable work. Its block is found rather than assumed.
+                above = next(i for i in range(self.BOOTLOADER_END, len(code) - 18)
+                             if code[i] == 0x12 and code[i + 1] == 0x01
+                             and u16(code, i + 8) == self.LOGITECH)
+                self.assertEqual(u16(code, above + 8), self.LOGITECH)
+                self.assertNotEqual(u16(code, above + 10), self.BOOT_PRODUCT)
+
+    def test_both_endpoint_one_directions_share_one_buffer(self):
+        """
+        Which is why a reply write and a request address look alike, and why command 0x00 was read
+        backwards for an hour. The buffer descriptors state it: 0x40A/0x40B for OUT and 0x40E/0x40F
+        for IN, both 0x0420, with the reply length going into 0x40D.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        # MOVLW <byte> / MOVWF <bd field> pairs in the endpoint setup block.
+        setup = {}
+        for off in range(0x0300, 0x0330, 2):
+            a, b = isa.decode(code, off, 0), isa.decode(code, off + 2, 0)
+            if a is None or b is None:
+                continue
+            if a.mnemonic == 'MOVLW' and b.mnemonic == 'MOVWF' and b.fields.get('a') == 1:
+                setup[b.fields['f']] = a.fields['k']
+        self.assertEqual((setup.get(0x0A), setup.get(0x0B)), (0x20, 0x04), 'endpoint 1 OUT buffer')
+        self.assertEqual((setup.get(0x0E), setup.get(0x0F)), (0x20, 0x04), 'endpoint 1 IN buffer')
+
+    def test_command_zero_fills_a_reply_rather_than_setting_an_address(self):
+        """
+        The corrected row. Its routine writes two bytes into the shared buffer at +2 and +3 and the
+        caller sets the reply length to four, so it answers rather than configures. Asserted on both
+        images, since the correction would be worth little if it were one image's accident.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, body in (('one_internal_fe', 0x004AE), ('h600_internal_fe', 0x001DA)):
+            with self.subTest(name):
+                code = lab.load(name)
+                call = isa.decode(code, body, 0)
+                self.assertIn(call.mnemonic, ('RCALL', 'CALL'))
+                routine = call.fields['target']
+
+                # Bank selects are skipped, since the routine opens with one on both images.
+                body_ins = [isa.decode(code, routine + 2 * i, 0) for i in range(6)]
+                stores = [i for i in body_ins if i.mnemonic != 'MOVLB']
+                # CLRF into +2, then MOVLW 0x02 / MOVWF into +3.
+                self.assertEqual(stores[0].mnemonic, 'CLRF')
+                self.assertEqual(stores[0].fields['f'], 0x22)
+                self.assertEqual(stores[1].fields['k'], 0x02)
+                self.assertEqual(stores[2].fields['f'], 0x23)
+                self.assertEqual(stores[3].mnemonic, 'RETURN', 'and it does nothing else')
+
+                # The reply length the caller sets, which is what makes it an answer.
+                after = [isa.decode(code, body + 2 * i, 0) for i in range(1, 4)]
+                lengths = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW']
+                self.assertEqual(lengths, [0x04])
+
     def test_the_two_bootloaders_arm_eecon1_identically_and_never_set_wprog(self):
         """
         The value sequence is a third witness for one source, after the case set and the erase
@@ -1658,6 +1742,47 @@ class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
         self.assertEqual(back.mnemonic, 'BRA')
         self.assertEqual(back.fields['target'], 0x002F2)
         self.assertLess(back.fields['target'], 0x002FE, 'the branch goes backwards, so it loops')
+
+    def test_the_keypad_scan_is_gated_on_external_flash_being_programmed(self):
+        """
+        The two steps in front of the scan, which is why "scans the keypad before anything else"<!--superseded-->
+        was the wrong phrasing in sections 87 and 189 both. One byte at external 0x020024 is rejected if
+        it is 0x00 or 0xFF, the two values blank and zeroed flash return, and the caller skips the
+        scan when the check fails.
+
+        Both rejected values are asserted, because a check for one of them would be a check that
+        something is there and a check for both is a check that it is programmed.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+
+        # The caller: read, keep the answer, and branch past the scan when it is zero.
+        call = isa.decode(code, 0x0006E, 0)
+        self.assertIn(call.mnemonic, ('RCALL', 'CALL'))
+        gate = call.fields['target']
+        skip = isa.decode(code, 0x00076, 0)
+        self.assertEqual(skip.mnemonic, 'BZ')
+        scan = isa.decode(code, 0x00078, 0)
+        self.assertIn(scan.mnemonic, ('RCALL', 'CALL'))
+        self.assertGreater(skip.fields['target'], 0x00078,
+                           'the branch goes past the scan, so a failed check skips it')
+
+        # The gate itself: the table pointer at external 0x020024, then two rejections.
+        # Walked by instruction length, because MOVFF is two words and a fixed stride of two
+        # decodes its second half as an instruction of its own.
+        window, at = [], gate
+        while len(window) < 14:
+            ins = isa.decode(code, at, 0)
+            if ins is None:
+                break
+            window.append(ins)
+            at += 2 * ins.words
+        literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+        self.assertEqual(literals[:2], [0x02, 0x24], 'the high and low bytes of 0x020024')
+        self.assertIn('TBLRD*', [i.mnemonic for i in window])
+        self.assertEqual([i.mnemonic for i in window if i.mnemonic == 'BZ'].count('BZ'), 2,
+                         'zero and 0xFF are both rejected')
+        self.assertIn(0xFF, literals, 'blank flash reads 0xFF and is refused')
 
     def test_the_keypad_scan_reaches_the_matrix_over_the_external_memory_bus(self):
         """
