@@ -1227,10 +1227,13 @@ alone, and both turned out to be inside the range that gates opening one.
 family keeps its config in a named file rather than at a flash address, so nothing here reaches it: no
 address, no firmware, no RAM. Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
-applied to the opposite case, since here the devices really are Harmonys. **The Z-Wave range `0xC112`
-to `0xC115` is deliberately still claimable**, and a test says so: concordance routes it elsewhere and
-names the Harmony 890, and arch 10 is an architecture this project reads, so a different transport must
-not be confused with a different storage model.
+applied to the opposite case, since here the devices really are Harmonys. **`0xC112` to `0xC115` is
+deliberately still claimable**, and a test says so. Concordance routes it to a separate class under a
+macro it calls `ZWAVE`, commented `890, Monstor, etc.`, and **all of that is upstream's label that
+nothing here can check**, since no device on this bench has presented an id in that range. The rule is
+not "refuse anything unfamiliar": exclude where we provably have no protocol, as with the file based
+family, and not where we might have one and cannot verify the reason to refuse, since excluding this
+would make a Harmony 890 unopenable and arch 10 is an architecture this project reads.
 
 **A remote in recovery is not a Harmony by vendor id, and enumeration reported it as nothing at all
 until section 189.** Both bench bootloaders present `04D8:000B`, Microchip's vendor with no strings,

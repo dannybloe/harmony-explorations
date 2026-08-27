@@ -136,11 +136,19 @@ export function isFileBasedRemote(vendorId: number, productId: number): boolean 
  * check claimed a Harmony Touch as a flash protocol remote. Found on 27 August 2026 with a Touch
  * and a Harmony 350 on the bench, before either had been opened.
  *
- * **The Z-Wave range `0xC112` to `0xC115` is deliberately not excluded.** Concordance routes it to a
- * different HID class and names the Harmony 890 and the Monster models, and arch 10 is an
- * architecture this project reads: excluding it would refuse a remote whose configs are already in
- * the corpus. A different transport is not the same thing as a different storage model, and
- * collapsing the two would have been the mistake this exclusion exists to prevent.
+ * **`0xC112` to `0xC115` is deliberately not excluded, and the reason is not symmetry.** Concordance
+ * routes that range to a separate class, `CRemoteZ_HID`, under a macro it calls `ZWAVE`, with a
+ * comment reading `890, Monstor, etc.`. All of that is upstream's label: **no device on this bench has
+ * ever presented an id in that range**, so nothing here can check whether those remotes speak what
+ * concordance thinks they speak, or which models are really in it.
+ *
+ * The tempting argument for excluding it too is that refusing more is always safe. It is not free.
+ * Excluding the file based family costs nothing, because there is no transport here to drive one with
+ * and an opened Touch could be sent nothing useful. Excluding this range would make a **Harmony 890**
+ * unopenable, and arch 10 is an architecture this project reads: its configs are in the corpus and
+ * section 184's slot mapping is built on them. So the rule is not "refuse anything unfamiliar", it is
+ * **exclude where we provably have no protocol, and not where we might have one and cannot verify the
+ * reason to refuse.**
  */
 export function isHarmony(vendorId: number, productId: number): boolean {
   return (

@@ -25525,14 +25525,22 @@ reports them so a bench operator is not told the bus is empty. `isFileBasedRemot
 
 ### The control is the more important half
 
-**The Z-Wave range `0xC112` to `0xC115` is deliberately not excluded**, and the test asserts that it
-stays claimable. Concordance routes that range to a different HID class and its comment names the
-Harmony 890 and the Monster models, which makes excluding it the obvious next tidy-up and would be
-wrong: arch 10 is an architecture this project reads, its configs are in the corpus, and section 184's
-slot mapping is built on them. **A different transport is not a different storage model**, and
-collapsing the two is exactly the mistake the file based exclusion exists to prevent. That control was
-written because the first version of this change nearly made it, and reading concordance's own routing
-is what stopped it.
+**`0xC112` to `0xC115` is deliberately not excluded**, and the test asserts it stays claimable.
+Concordance routes that range to a separate class, `CRemoteZ_HID`, under a macro it calls `ZWAVE`, with
+a comment reading `890, Monstor, etc.`. Every part of that is **upstream's label and unverifiable here**:
+no device on this bench has ever presented an id in that range, so nothing establishes what those
+remotes speak or which models are actually in it. Quoting the macro's name as though it described the
+hardware is a mistake this section made in its first version, and Danny caught it the same day.
+
+**The rule is not symmetry, and getting that right is the point of the control.** The tempting argument
+for excluding the range too is that refusing more is always safe. Refusing more is safe with respect to
+damaging a remote and it is **not free**. Excluding the file based family costs nothing, because there
+is no transport here to drive one and an opened Harmony Touch could be sent nothing useful. Excluding
+this range would make a **Harmony 890** unopenable, and arch 10 is an architecture this project reads:
+its configs are in the corpus and section 184's slot mapping rests on them. So the operative rule is
+**exclude where we provably have no protocol, and not where we might have one and cannot verify the
+reason to refuse.** The first version of this section gave "a different transport is not a different
+storage model",<!--superseded--> which is true and is not the reason.
 
 The set itself is concordance's `is_mh_pid`, five ids, so it has the ordinary standing of an upstream
 claim. It is adopted anyway on the ground that it can only **refuse** more, which is the same ground

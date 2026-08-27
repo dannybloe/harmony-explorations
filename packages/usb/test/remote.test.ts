@@ -404,10 +404,12 @@ test('the file based family is inside the Harmony range and openHarmony still re
   }
 
   // **The control that stops the exclusion being widened.** Concordance routes 0xC112 to 0xC115 to a
-  // different HID class, naming the Harmony 890 and the Monster models, and it is tempting to exclude
-  // those too. It would be wrong: arch 10 is an architecture this project reads, its configs are in
-  // the corpus, and a different transport is not a different storage model. Collapsing the two is
-  // exactly the mistake the file based exclusion exists to prevent, so the range stays claimable.
+  // separate class under a macro it calls ZWAVE, commented `890, Monstor, etc.`, and it is tempting to
+  // exclude those too on the ground that refusing more is safe. It is not free: it would make a Harmony
+  // 890 unopenable, and arch 10 is an architecture this project reads, with its configs in the corpus
+  // and section 184's slot mapping built on them. Nothing here has ever seen an id in that range, so
+  // the label is unverifiable as well. Exclude where we provably have no protocol, not where we might
+  // have one and cannot check the reason to refuse.
   for (let product = 0xc112; product <= 0xc115; product += 1) {
     assert.ok(isHarmony(0x046d, product), `0x${product.toString(16)} stays a Harmony: arch 10 reads`);
     assert.ok(!isFileBasedRemote(0x046d, product), 'and it is not file based');
