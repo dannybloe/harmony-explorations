@@ -1479,7 +1479,8 @@ class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
     }
 
     COMMANDS = frozenset(list(range(0x00, 0x0B)) + [0xFF])
-    ERASE_FLOOR = 0x001000      # the bootloader's own end
+    BOOTLOADER_END = 0x1000
+    ERASE_FLOOR = 0x001000      # the bootloader's own end, and the same number
     # An SFR reached through the access bank is encoded as the low byte of its address, so these
     # are what an `f` field holds. EECON1 is 0xFA6, EECON2 0xFA7 and UCFG 0xF5F in full.
     EECON1, EECON2, UCFG = 0xA6, 0xA7, 0x5F
@@ -1584,6 +1585,48 @@ class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
                         continue
                     found.append(off)
                 self.assertEqual(tuple(found), unlock)
+
+    def test_the_two_bootloaders_arm_eecon1_identically_and_never_set_wprog(self):
+        """
+        The value sequence is a third witness for one source, after the case set and the erase
+        routine. It also pins the bit reading, because this section claimed `0xC4` reached the
+        configuration words and that was the generic PIC18 layout rather than this part's: gputils
+        gives the 87J50 and 67J50 `WR`, `WREN`, `WRERR`, `FREE` and `WPROG` at bits 1 to 5 with bits
+        6 and 7 **unimplemented**, where the Harmony 525's PIC18F4550 has `CFGS` and `EEPGD` there.
+
+        `WPROG` is asserted absent because it is the bit that would switch programming to one word at
+        a time, and its absence is what makes command 0x08 mean anything.
+        """
+        lab.require(*self.BOOTLOADERS)
+        WPROG = 1 << 5
+        sequences = []
+        for name in self.BOOTLOADERS:
+            code = lab.load(name)
+            armed = []
+            for off in range(0, self.BOOTLOADER_END - 2, 2):
+                ins = isa.decode(code, off, 0)
+                if ins is None or ins.fields.get('a') != 0:
+                    continue
+                if ins.fields.get('f') != self.EECON1:
+                    continue
+                if ins.mnemonic == 'CLRF':
+                    armed.append(0x00)
+                    continue
+                if ins.mnemonic != 'MOVWF':
+                    continue
+                # The literal is loaded immediately before the store on every site here.
+                before = isa.decode(code, off - 2, 0)
+                self.assertEqual(before.mnemonic, 'MOVLW', 'unexpected arming shape at %05x' % off)
+                armed.append(before.fields['k'])
+            sequences.append((name, armed))
+
+            with self.subTest(name):
+                self.assertEqual(armed, [0x04, 0x04, 0x14, 0x00, 0xC4, 0x14, 0x04])
+                self.assertEqual([v for v in armed if v & WPROG], [],
+                                 'WPROG would make this one word at a time')
+
+        self.assertEqual(sequences[0][1], sequences[1][1],
+                         '%s and %s arm differently' % (sequences[0][0], sequences[1][0]))
 
     def test_every_path_that_does_not_hand_off_reaches_a_usb_loop_that_never_returns(self):
         """

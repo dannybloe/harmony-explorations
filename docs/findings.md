@@ -24935,9 +24935,29 @@ erase the bootloader** and there is no upper bound at all, which is the shape of
 somebody protecting the recovery path rather than the payload. It is also the reason the recovery route
 can be trusted to survive its own use.
 
-`EECON1` values across the handlers are consistent with that reading and are not asserted beyond it:
-`0x04` is write enable, `0x14` adds the row erase bit, and an unreferenced routine at `0x0041C` writes
-`0xC4`, which reaches the configuration words and is called from none of the twelve.
+### The register's bits are per part too, which this section got wrong within the hour
+
+Each bootloader writes `EECON1` seven times, and the values are the same in the same order on both:
+`0x04`, `0x04`, `0x14`, a `CLRF`, `0xC4`, `0x14`, `0x04`. On the PIC18F87J50 and PIC18F67J50, per
+gputils' own headers, `EECON1` is `WR` at bit 1, `WREN` at 2, `WRERR` at 3, `FREE` at 4 and `WPROG` at
+5, with **bits 6 and 7 unimplemented**. So `0x04` is write enable, `0x14` adds the row erase bit, and
+`0x00` disarms.
+
+**`0xC4` was written up here as reaching the configuration words and that is wrong.** It sets bits 6
+and 7, which do not exist on either bench part, so the value is `WREN` and nothing more. The reading
+came from the generic PIC18 layout, where bit 6 is `CFGS` and bit 7 is `EEPGD`, and it would have been
+right on the **Harmony 525's** PIC18F4550, whose header has exactly those two bits and no `WPROG`. So
+this is the pitfall this project has recorded twice at the register level, one layer down at the bit
+level: **choosing the wrong part's bit names is as silent as choosing the wrong part's register map**,
+and it produced a claim about configuration memory out of a routine that writes ordinary program flash.
+What actually distinguishes the unreferenced routine at `0x0041C` from command `0x02` is **not
+established**, and the honest statement is that it arms a write, commits through the same unlock, and
+no command reaches it.
+
+**`WPROG` never appears**, in either bootloader, which is worth stating because it is the bit that would
+switch programming to one word at a time. Its absence means writes go through the holding latches a
+block at a time, and that is coherent with command `0x08` existing at all: loading latches without
+committing only means something if a commit programs more than the last word written.
 
 ### What it means for a first write, and the limit that matters more
 

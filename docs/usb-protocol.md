@@ -1598,8 +1598,12 @@ routine on each, and the erase routines are the same instruction sequence with o
 differing, so this is one programmer compiled from one source.
 
 **The commit is the PIC18 unlock**, `0x55` and `0xAA` into `EECON2` then `BSF EECON1,1`. `EECON1` takes
-`0x04` to write and `0x14` to erase a row. An unreferenced routine writes `0xC4`, which reaches the
-configuration words, and no command calls it.
+`0x04` to write and `0x14` to erase a row, and each bootloader writes it seven times with the same
+values in the same order. On the PIC18F87J50 and PIC18F67J50 bits 6 and 7 of that register are
+**unimplemented**, so the `0xC4` an unreferenced routine writes is `WREN` and not, as this said for an
+hour, a reach into the configuration words: that reading is the generic PIC18 layout and belongs to the
+Harmony 525's PIC18F4550. `WPROG` is never set in either image, so programming goes through the holding
+latches a block at a time.
 
 **Unconfirmed, and load bearing: whether any of this reaches external flash.** Every write and erase
 path goes through `EECON1` and `EECON2`, which is the internal self programming interface, and the
