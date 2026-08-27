@@ -59,7 +59,7 @@ import {
   writeFlashRequest,
   writeMiscRequest,
 } from './writes.ts';
-import type { Transport } from './transport.ts';
+import type { GuardedTransport, Transport } from './transport.ts';
 
 /**
  * Whether a count is one the internal fetch loop can terminate on.
@@ -142,8 +142,21 @@ export class HarmonyRemote {
   }
 
   /** Send one request and wait for the first report that comes back. */
+  /**
+   * Send one report, authorising it first if the transport is guarded.
+   *
+   * Every report this class sends goes through here, which is what makes the guard's rule true:
+   * a mutating report reaching a real remote came through a method that asked `rails.ts` first.
+   * A fake transport has no `authoriseReport` and is left alone, so tests keep their raw access.
+   */
+  private async send(report: Uint8Array): Promise<void> {
+    const guarded = this.transport as Partial<GuardedTransport>;
+    if (typeof guarded.authoriseReport === 'function') guarded.authoriseReport(report);
+    await this.transport.write(report);
+  }
+
   private async exchange(request: Uint8Array): Promise<Reply> {
-    await this.transport.write(request);
+    await this.send(request);
     for (let poll = 0; poll < this.idlePolls; poll += 1) {
       const report = await this.transport.read(this.timeoutMs);
       if (report !== undefined) {
@@ -327,7 +340,7 @@ export class HarmonyRemote {
    * path and not the other.
    */
   private async readFlashUnchecked(address: number, count: number): Promise<Uint8Array> {
-    await this.transport.write(readFlashRequest(address, count));
+    await this.send(readFlashRequest(address, count));
 
     const out = new Uint8Array(count);
     let filled = 0;
@@ -500,7 +513,7 @@ export class HarmonyRemote {
     assertFlashWriteAllowed(p, address, data.length);
     const requests = writeFlashRequests(address, data);
     for (const [index, request] of requests.entries()) {
-      await this.transport.write(request);
+      await this.send(request);
       // Between data packets only. Pausing after the announce or before the done buys nothing, and
       // the done has to be followed by the wait below rather than by a sleep.
       if (betweenPacketsMs > 0 && index > 0 && index < requests.length - 2) {
@@ -605,7 +618,7 @@ export class HarmonyRemote {
     p: Pick<WritePermission, 'architecture' | 'targetIsTheSpareRemote'>,
   ): Promise<void> {
     assertSessionEndAllowed(p, ESCAPE_END_SESSION);
-    await this.transport.write(escapeRequest(ESCAPE_END_SESSION));
+    await this.send(escapeRequest(ESCAPE_END_SESSION));
   }
 }
 

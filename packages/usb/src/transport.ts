@@ -7,6 +7,8 @@
  * them reach a device.
  */
 
+import { READ_ONLY_COMMANDS } from './protocol.ts';
+
 export class TransportError extends Error {}
 
 export interface Transport {
@@ -15,6 +17,72 @@ export interface Transport {
   /** The next report, or undefined if none arrived within `timeoutMs`. */
   read(timeoutMs: number): Promise<Uint8Array | undefined>;
   close(): Promise<void>;
+}
+
+/**
+ * A transport that refuses a mutating report it was not handed by a rail checked path.
+ *
+ * **Why this exists and why it is here rather than in `rails.ts`.** The rails guard the methods on
+ * `HarmonyRemote`, and on 27 August 2026 an independent review of the write path found that they
+ * guard nothing else: this package's barrel star exports `protocol.ts` and `transport.ts`, so a
+ * caller can build `encodeRequest(ERASE_FLASH, address24(a))` and hand it to the transport directly.
+ * Verified here, with `WRITES_ENABLED` false, for an address outside the config region and for an
+ * unaligned one. The test written to catch exactly this could not see it, because it looks for
+ * exported names ending in `Request` that also mention write, erase or escape, and the generic
+ * encoder is called `encodeRequest`.
+ *
+ * The fix is not to hide the encoder. A test constructing a raw erase and sending it to a **fake**
+ * transport is useful and should keep working; what must not happen is that report reaching a
+ * remote. So the check sits at the only place that knows a report is about to reach real hardware,
+ * which is the transport `openHarmony` returns. A fake transport is deliberately unguarded.
+ *
+ * An authorisation is for one exact report and is consumed by the write that matches it, so a stray
+ * second report cannot ride on the first one's permission, and a report whose bytes were changed
+ * after authorisation is refused.
+ */
+export interface GuardedTransport extends Transport {
+  /**
+   * Permit exactly this report, once. Called by `HarmonyRemote` after the rail for that operation
+   * has passed, so reaching here at all means a rail said yes.
+   */
+  authoriseReport(report: Uint8Array): void;
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+export function guardMutations(inner: Transport): GuardedTransport {
+  let authorised: Uint8Array | undefined;
+  return {
+    authoriseReport(report: Uint8Array): void {
+      // A copy, so a caller mutating its buffer afterwards cannot change what was authorised.
+      authorised = Uint8Array.from(report);
+    },
+    async write(report: Uint8Array): Promise<void> {
+      const command = (report[0] ?? 0) & 0xf0;
+      const pending = authorised;
+      authorised = undefined;
+      if (!READ_ONLY_COMMANDS.has(command)) {
+        if (pending === undefined || !sameBytes(pending, report)) {
+          throw new TransportError(
+            `refusing to send command 0x${command.toString(16)} to a remote: it only reads on the ` +
+              'allow list, and this report was not authorised by a write rail. Mutating commands go ' +
+              'through HarmonyRemote, which asks rails.ts first.',
+          );
+        }
+      }
+      await inner.write(report);
+    },
+    read(timeoutMs: number): Promise<Uint8Array | undefined> {
+      return inner.read(timeoutMs);
+    },
+    close(): Promise<void> {
+      return inner.close();
+    },
+  };
 }
 
 /** Logitech. The product range covers the Harmony models; `tools/usbprobe.py` uses the same. */
@@ -187,5 +255,6 @@ export async function openHarmony(select: RemoteSelector = {}): Promise<Transpor
   const found = candidates[0] as FoundRemote;
   if (found.path === undefined) throw new TransportError('the remote reported no device path');
   const hid = await import('node-hid');
-  return transportOver(new hid.HID(found.path));
+  // Guarded, because this is the one function in the package that returns a path to real hardware.
+  return guardMutations(transportOver(new hid.HID(found.path)));
 }

@@ -32,6 +32,24 @@ export const ERASE_FLASH = 0xd0;
 /** `0xE0` is an escape: the payload byte selects the kind of reset. `0xE1` is it with length 1. */
 export const ESCAPE = 0xe0;
 
+/**
+ * The commands that only read, as an **allow list**.
+ *
+ * Stated this way round on purpose. A list of mutating commands has to be complete to be safe, and
+ * the one thing this repository has learned twice is that a missing table entry gets treated as
+ * permission: `WRITABLE_CEILING`'s hole read as "no ceiling" until section 139, and `0x0F`'s band
+ * table answered for an architecture it had never been measured on. An allow list fails the other
+ * way, so a command nobody has classified is refused rather than sent.
+ *
+ * `START_IRCAP` and `STOP_IRCAP` are deliberately absent: `0x70` changes a remote's state rather
+ * than reporting it, which is why it already sits behind the write flag.
+ */
+export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
+  GET_VERSION,
+  READ_FLASH,
+  READ_MISC,
+]);
+
 export const COMMAND_NAMES: Readonly<Record<number, string>> = {
   [GET_VERSION]: 'GET_VERSION',
   [WRITE_FLASH]: 'WRITE_FLASH',

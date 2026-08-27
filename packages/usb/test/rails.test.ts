@@ -15,11 +15,16 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { readFile } from 'node:fs/promises';
+
 import {
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
+  ERASE_FLASH,
+  READ_FLASH,
   RailError,
+  TransportError,
   SFR_PAGE_START,
   WRITABLE_CEILING,
   WRITES_ENABLED,
@@ -30,9 +35,14 @@ import {
   assertFirstWriteAllowed,
   assertRamWriteAllowed,
   assertSessionEndAllowed,
+  address24,
+  encodeRequest,
   eraseBoundsFor,
+  guardMutations,
+  readFlashRequest,
   writableRange,
 } from '../src/index.ts';
+import type { Transport } from '../src/index.ts';
 
 /** Everything a caller could possibly have in order, on the architecture that has a target. */
 const IDEAL = {
@@ -66,6 +76,16 @@ test('the package offers no way to build a request that changes a remote', async
     (name) => name.endsWith('Request') && /write|erase|escape/i.test(name),
   );
   assert.deepEqual(offered, [], 'the barrel offers a request builder for a command that writes');
+
+  // **What this test cannot see, found by an independent review on 27 August 2026.** Its rule is a
+  // name shape, so it catches a builder called `eraseFlashRequest` and not the **generic** encoder
+  // called `encodeRequest`, which ends in `Request` and mentions none of write, erase or escape. That
+  // encoder plus `ERASE_FLASH` and `address24` are all still exported, and together they rebuild the
+  // same report the four hidden builders would have. So this is the same hole twice, and the first fix
+  // addressed the instance rather than the class. The class level fix is the guarded transport, tested
+  // below; this assertion stays because hiding the specific builders is still worth keeping.
+  assert.equal(typeof barrel['encodeRequest'], 'function',
+    'the generic encoder is still exported, which is why the guard below has to exist');
 
   // The control: the encoders do exist, and importing them by path still works, so this is a boundary
   // rather than a deletion. `remote.ts` reaches them that way and the rails still gate every send.
@@ -488,4 +508,64 @@ test('the door does not stand in for the rails, which still refuse everything el
     process.stdout.write(refusals.join(','));
   `);
   assert.equal(output, 'arch14,unaligned,firmware,not-the-spare');
+});
+
+test('a mutating report cannot reach a remote without a rail behind it', async () => {
+  /*
+   * The class level fix for the bypass named in the test above.
+   *
+   * The rails guard `HarmonyRemote`'s methods. They cannot guard a caller who builds a report itself
+   * and hands it to a transport, and the barrel exports everything needed to do that. Hiding the
+   * encoder is the wrong answer, because a test that builds a raw erase and sends it to a **fake**
+   * transport is useful and should keep working. What must not happen is such a report reaching real
+   * hardware, so the check lives on the transport `openHarmony` returns.
+   */
+  const sent: Uint8Array[] = [];
+  const inner: Transport = {
+    async write(report) { sent.push(Uint8Array.from(report)); },
+    async read() { return undefined; },
+    async close() {},
+  };
+  const guarded = guardMutations(inner);
+
+  // **The exact bypass, refused.** An erase outside the config region, with writing disabled.
+  await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x000000))),
+    TransportError, 'a raw erase reached the transport');
+
+  // Not too strict: a read needs no authorisation, or every read path would break.
+  await guarded.write(readFlashRequest(0x040000, 32));
+
+  // An authorised report goes through, and the authorisation is single use, so a stray second
+  // report cannot ride on the first one's permission.
+  const erase = encodeRequest(ERASE_FLASH, address24(0x040000));
+  guarded.authoriseReport(erase);
+  await guarded.write(erase);
+  await assert.rejects(() => guarded.write(erase), TransportError, 'authorisation was reusable');
+
+  // And it is for those exact bytes, so an address swapped in after the rail ran is refused.
+  guarded.authoriseReport(encodeRequest(ERASE_FLASH, address24(0x040000)));
+  await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x3f0000))),
+    TransportError, 'the authorised bytes were not checked');
+
+  // **The allow list direction.** An unclassified command is refused rather than sent, which is the
+  // lesson from `WRITABLE_CEILING`'s missing entry reading as "no ceiling".
+  await assert.rejects(() => guarded.write(encodeRequest(0x20)), TransportError,
+    'an unclassified command was sent');
+
+  // Exactly two reports got through: the read and the authorised erase.
+  assert.equal(sent.length, 2);
+  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH]);
+});
+
+test('the only function returning a path to real hardware returns a guarded transport', async () => {
+  /*
+   * Asserted against the source, because the alternative needs a remote plugged in. `openHarmony` is
+   * the one function in this package that hands back a transport connected to a device, so it is the
+   * one that has to wrap. A deep import of `transportOver` is not covered and does not need to be:
+   * it takes a HID handle the caller had to open itself.
+   */
+  const source = await readFile(new URL('../src/transport.ts', import.meta.url), 'utf8');
+  const body = source.slice(source.indexOf('export async function openHarmony'));
+  assert.match(body, /return guardMutations\(transportOver\(/,
+    'openHarmony must return a guarded transport');
 });

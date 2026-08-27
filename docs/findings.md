@@ -24750,3 +24750,69 @@ is read the affected blocks, apply the edits, erase, write back whole, verify by
 the bytes that changed", which is the shape the API's own vocabulary suggests, since `Edit` is a start
 and a run of bytes. Deciding that after the interface exists would be expensive, which is the reason
 this is recorded before anything writes.
+
+## 188. The write rails guarded the methods and not the wire, and it is the same hole twice
+
+Found by the independent review of 27 August 2026, jobs 2 to 4, and verified here before anything was
+changed. **It is the reason the first write did not happen that day**, and the review reached the same
+stop by a second route in job 4, below.
+
+**The hole.** `rails.ts` opens by saying a rail is enforced for every caller because it lives in the
+library rather than in an interface. It was enforced for every caller of `HarmonyRemote`. The barrel
+star exports `protocol.ts` and `transport.ts`, so a caller has the generic encoder, the command
+numbers, the address encoder and a transport whose `write` is public. With `WRITES_ENABLED` **false**,
+`encodeRequest(ERASE_FLASH, address24(a))` builds a valid 64 byte erase report, and it was built here
+for `0x000000`, outside the Harmony One's config region, and for `0x040001`, which is not block
+aligned. An erase takes an address and no count, so either would have taken 64 KiB with it.
+
+**It is the same hole as 13 August 2026 and the first fix addressed the instance.** That round moved
+`writeFlashRequest`, `eraseFlashRequest`, `writeMiscRequest` and `escapeRequest` into `writes.ts`,
+which the barrel does not re-export, and wrote a test asserting the barrel offers no such builder. The
+**generic** encoder stayed in `protocol.ts`, and the four hidden builders are one line of it each. So
+hiding the named doors left the corridor open.
+
+**The test written to catch exactly this could not see it**, which is the part worth carrying. Its rule
+is a name shape: an export ending in `Request` that also matches `write|erase|escape`. `encodeRequest`
+ends in `Request` and matches none of the three. So 71 tests passed while the bypass passed too, and
+the test's own comment explains that it asserts the barrel rather than a list of names because a list
+is what drifted before. A predicate over names is a list with extra steps.
+
+**The fix is on the transport and not on the encoder.** Hiding the encoder is the wrong answer: a test
+that builds a raw erase and sends it to a **fake** transport is useful and should keep working, and
+thirteen files in this package import the barrel. What must not happen is such a report reaching a
+remote, so the check sits at the only function that returns a path to real hardware, which is
+`openHarmony`. Three parts, and each is chosen against a mistake this repository has already made.
+
+The classification is an **allow list of commands that only read**, `GET_VERSION`, `READ_FLASH` and
+`READ_MISC`, so a command nobody has classified is refused rather than sent. A list of mutating
+commands would have to be complete to be safe, and the two times a missing table entry has been read
+as permission here are `WRITABLE_CEILING`'s hole, section 139, and `0x0F`'s band table answering for
+an architecture it had never been measured on, section 139 again. `START_IRCAP` is deliberately absent
+from the allow list, since `0x70` changes a remote's state.
+
+The authorisation is **per report, byte exact and single use**. `HarmonyRemote` authorises a report
+immediately after the rail for that operation has passed, so arriving at the transport at all means a
+rail said yes. Single use, so a stray second report cannot ride on the first one's permission; byte
+exact, so an address swapped in after the rail ran is refused. All four of `HarmonyRemote`'s send sites
+now go through one private `send`, which is what makes the rule true rather than probable.
+
+A **fake transport is deliberately unguarded**, and `HarmonyRemote` probes for the capability rather
+than requiring it, so nothing in the test suite loses its raw access.
+
+Six behaviours are asserted: the exact bypass refused, a read passing with no authorisation, an
+authorised erase going through, a replay refused, a byte swap refused, and an unclassified command
+refused, with exactly two reports reaching the inner transport. The control is that making the guard
+permissive fails the test.
+
+**What this does not fix, and the review said so.** The three world facts in a `WritePermission` are
+still caller assertions the library cannot check: that the dump is verified, that the version matches
+and that the target is the spare. `rehearse-block.ts` hardcodes two of them, having read only the
+architecture out of the version reply where the plan asks for six fields including the one that
+separates application from safe mode, and its dump allow list proves content rather than identity, so
+another Harmony One whose selected block happened to match would pass as the spare. A hash comparison
+of the present lab files finds no shared block, which is a control for today and not a proof. Those are
+open and they are the next thing in front of a first write.
+
+**And the deep import is uncovered on purpose.** `transportOver` takes a HID handle the caller had to
+open itself, so guarding it would be guarding somebody who has already gone around the front door.
+`openHarmony` is the boundary this claim is about, and the test asserts that it wraps.
