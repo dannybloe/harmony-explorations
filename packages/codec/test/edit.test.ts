@@ -734,8 +734,11 @@ test('a same length edit is not a small write: one page binding costs two erase 
     const container = parse(require_(name));
     const pages = modePages(container);
     let editable = 0;
-    for (let page = 0; page < pages.length; page++) {
-      const list = taggedList(container, pages[page].list);
+    // `entries()` rather than an index and `pages[page]!`: the element comes out typed, and a
+    // `=== undefined` guard under a correct loop bound would be an unreachable guard reading as
+    // protection, which this repository has removed 34 of.
+    for (const [page, modePage] of pages.entries()) {
+      const list = taggedList(container, modePage.list);
       const first = list?.entries?.[0];
       if (first === undefined) continue;
       let edits;
