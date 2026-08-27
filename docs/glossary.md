@@ -205,8 +205,9 @@ place the **skin** is carried. The name contains the trap: see BCD below.
 gets four bits, so seventeen is stored as `0x17` rather than as the value 17. Architectures 12, 14,
 16 and 17 honour that convention in `bcdDevice` and architectures 8 and 9 do not, so **the same byte
 has to be read two different ways depending on the remote**, and reading it wrongly names a
-different real model instead of failing. A skin of 100 or more does not fit in the byte at all and
-is refused, section 195.
+different real model instead of failing. A skin of 100 or more does not fit in one byte, and on the
+later remotes the **whole two byte field** is the number, `1000 + skin`, so a Harmony 350's `0x1104`
+is skin 104, section 195.
 
 **`GET_VERSION`, `READ_FLASH`, `READ_MISC`, `WRITE_FLASH`, `ERASE_FLASH`** (Logitech's commands,
 names from concordance). The commands a host sends. Only the reading ones are used here.

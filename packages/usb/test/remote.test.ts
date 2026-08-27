@@ -420,7 +420,7 @@ test('the file based family is inside the Harmony range and openHarmony still re
   assert.ok(!isHarmony(0x046d, 0xc0ff), 'below the range');
 });
 
-test('the skin id is the low byte of bcdDevice, and its encoding is per firmware generation', () => {
+test('the skin comes out of bcdDevice, and its encoding is per firmware generation', () => {
   // Seven pairs, each an image's bcdDevice against the `<SKIN>` a config of that model states.
   // The Python side asserts the same table from the files themselves, in `tests/test_usbdesc.py`;
   // this one pins the arithmetic so the two implementations cannot drift.
@@ -429,8 +429,9 @@ test('the skin id is the low byte of bcdDevice, and its encoding is per firmware
   // they were wrong: an 880 is 0x080F and a 525 is 0x0916, neither of them 0x10 anything. Inventing
   // a fixture is how a wrong rule gets a passing test.
   //
-  // Nine words now, and the high byte 0x10 reaches architecture 17 as well, section 195, which is
-  // what rules out its being the protocol number the arch 8 and arch 9 words carry there.
+  // Ten words now, section 195, and the title changed with the tenth: on this generation the whole
+  // word is BCD of 1000 plus the skin, so the low byte alone is only the reading for a skin under
+  // 100. The high byte is the carry, which is why it looked like a constant on nine of the ten.
   assert.equal(skinId(0x080f), 15, 'Harmony 880, protocol 8');
   assert.equal(skinId(0x0811), 17, 'Harmony 885, protocol 8');
   assert.equal(skinId(0x0916), 22, 'Harmony 525, protocol 9');
@@ -444,6 +445,9 @@ test('the skin id is the low byte of bcdDevice, and its encoding is per firmware
   // Touch, and those are the two units that were plugged in.
   assert.equal(skinId(0x1078), 78, 'Harmony 300');
   assert.equal(skinId(0x1099), 99, 'Harmony Touch');
+
+  // The tenth, and the only one of them that is not the same under both readings.
+  assert.equal(skinId(0x1104), 104, 'Harmony 350, whose own /sys/sysinfo states skin 104');
 });
 
 test('an unreadable bcdDevice is undefined rather than a plausible wrong model', () => {
@@ -452,20 +456,20 @@ test('an unreadable bcdDevice is undefined rather than a plausible wrong model',
   // without failing, which is why an unknown high byte returns nothing at all.
   assert.equal(skinId(0x0a13), undefined, '0x0A is the arch 10 prediction, with nothing to check');
   assert.equal(skinId(0x0000), undefined, 'the Microchip stock descriptor in the 525 image');
-  assert.equal(skinId(0x1154), undefined);
+  assert.equal(skinId(0x10af), undefined, 'a nibble above 9 is not a decimal digit, so not BCD');
 });
 
-test('a skin of 100 or more is refused, and the reading that would accept it is a prediction', () => {
-  // Section 195. A Harmony 350's skin is 104, read off the remote itself, and 104 does not fit in
-  // the low byte at all, so this generation's rule cannot be the whole story. The hypothesis is
-  // that the word holds BCD of 1000 plus the skin, making 0x10 a carry rather than a constant, and
-  // it is deliberately not implemented: all nine measured words read identically under both, so
-  // nothing here can tell them apart, and the same standing applies as to 0x0A for the 890.
+test('a skin of 100 or more carries into the high byte, which is what settled its meaning', () => {
+  // Section 195, and this test asserted the opposite for one commit. It required these words to be
+  // refused, because the whole word reading had been proposed with a descriptor value computed from
+  // it rather than read off a remote, and no other word could separate the two readings.
   //
-  // This test is what would fail if somebody implemented it, and what to delete when a Harmony 350
-  // has been enumerated. One `ioreg` with that remote plugged in settles it.
-  assert.equal(skinId(0x1104), undefined, 'the predicted Harmony 350 word, unmeasured');
-  assert.equal(skinId(0x1102), undefined, 'and the Harmony Ultimate One at skin 102');
+  // Then the remote was plugged in: a Harmony 350 enumerates 0x1104, and its own /sys/sysinfo says
+  // skin 104. So the refusal is gone and the measurement is here, which is the only order these two
+  // may arrive in.
+  assert.equal(skinId(0x1104), 104, 'Harmony 350, measured');
+  assert.equal(skinId(0x1102), 102, 'a Harmony Ultimate One would be this, unmeasured but implied');
+  assert.equal(skinId(0x1999), 999, 'and Logitech\'s highest skin, a Harmony Link, still fits');
 });
 
 test('RemoteError is what a caller can catch', () => {

@@ -25671,108 +25671,104 @@ numbers across five documents. Whether to admit it is a decision, not a side eff
 
 `tests/test_gspm.py`, `TheHeaderWordStatesThePointerCount`, four tests, six controls run and reversed.
 
-## 195. Two remotes extended the skin table, and the reading they suggested is a prediction we nearly shipped as a fact
+## 195. The skin carries into the high byte, and the road to knowing it went through a wrong claim
 
 Three remotes came onto the bench on 27 August 2026, a Harmony Touch, a Harmony 350 and a Harmony
-300, and all three are the file based family section 193 fenced off from `openHarmony`. What they
-were expected to buy was a wider skin table. What they actually bought is two measured words, one
-model identification on a shared product id, and a correction to this section's own first draft,
-which stated a descriptor value that had been computed from the rule it was offered as evidence for.
+300, all three of the file based family section 193 fenced off from `openHarmony`. What they bought is
+the reading of a field that has been half read since section 113, one model identification on a shared
+product id, and a sequence worth recording for its own sake: the answer was stated as a fact before it
+was evidence, withdrawn for exactly that reason, and then measured.
 
-### The two words
+### The reading
 
-Read by enumeration only, `ioreg -p IOUSB -l`, with nothing opened:
+**The whole of `bcdDevice` is BCD of `1000 + skin`** on every remote later than architecture 9. What
+section 113 called "a constant whose meaning is not identified" is the carry.
 
-| product id | `bcdDevice` | skin | model | where the skin comes from |
-|---|---|---|---|---|
-| `0xC12B` | `0x1099` | 99 | Harmony Touch | the remote's own `/sys/sysinfo`, read by concordance |
-| `0xC124` | `0x1078` | 78 | Harmony 300 | `bcdDevice` under section 113's rule |
-| `0xC124` | not read | 104 | Harmony 350 | the remote's own `/sys/sysinfo`, read by concordance |
-
-The skin names the model through Logitech's own product table, `ProductsManager/GetAllProducts` in
-`docs/host-client.md`: 78 is a Harmony 300 region 1, 99 a Harmony Touch, 104 a Harmony 350. That
-table is 120 records and its own field, so it is an independent oracle for the number rather than a
-restatement of it.
-
-**Two models share product id `0xC124`.** The 350 was on that id and then came off it, the 300 went
-on, and the word changed from a skin of 104 to a skin of 78. concordance's table labels the id
-"Harmony 300" outright, which is the same shape as its labelling of `0xC122`, where a Harmony 600 and
-a Harmony 700 share an id and only `bcdDevice` separates them, section 113. So the rule that a
-product id does not identify a model now has two instances rather than one, and on this family the
-identification cannot fall back to reading a config, because there is no firmware here to compare
-against and the Touch's config is zero bytes.
-
-### What the high byte is not, and how much of that is new
-
-Section 113 read the high byte as "a constant whose meaning is not identified" on the strength of
-four models, all of them architecture 12 or 14. The Touch carries `0x1099` and is **architecture 17**,
-read off the remote itself, so the byte's span is wider than that: it is not the protocol number,
-which is what it carries on arch 8 and arch 9, and at least three architectures share one value of it.
-
-The 350 is **architecture 16**, also read off the remote, and it says nothing about the high byte at
-all, because its word was not read. What it contributes is the skin of 104, which is the whole reason
-this section exists. The architecture of the remote carrying `0x1078` is **not measured** either:
-nothing was asked of it beyond enumeration, and its identification as a Harmony 300 comes from its
-skin against Logitech's product table.
-
-One coincidence is worth naming so that nobody follows it. `0x10` is 16, and there are now
-architecture 16 remotes on this bench, so "the high byte is the architecture" is a reading the file
-based family invites. It is already excluded and was before these remotes arrived, by the Harmony One:
-architecture 12, high byte `0x10`. The Touch excludes it a second time from the other side, since it
-is architecture 17 and carries the same byte.
-
-### The correction, which is the part to read
-
-This section's first draft said the whole word is BCD of `1000 + skin`, so `0x10` is a carry rather
-than a constant, and gave the Harmony 350's descriptor as `0x1104` in support. **That word was never
-measured.** The 350's skin came off the remote, 104, and the descriptor was computed by applying the
-proposed rule to it. Both readers were changed on that basis, in two languages, along with a
-docstring and two test tables, and the change was reported as a finding.
-
-**And no measurement here could have caught it**, which is the reason it went as far as it did. Nine
-words are now known, and not one of them separates the two readings:
-
-| word | low byte as BCD | whole word minus 1000 | separates? |
+| word | skin | model | how the skin was established |
 |---|---|---|---|
-| `0x1054` | 54 | 54 | no |
-| `0x1066` | 66 | 66 | no |
-| `0x1071` | 71 | 71 | no |
-| `0x1072` | 72 | 72 | no |
-| `0x1078` | 78 | 78 | no |
-| `0x1099` | 99 | 99 | no |
+| `0x1054` | 54 | Harmony One | its own config's `<SKIN>`, section 113 |
+| `0x1066` | 66 | Harmony 700 | the same |
+| `0x1071` | 71 | Harmony 600 | the same |
+| `0x1072` | 72 | Harmony 650 | the same |
+| `0x1078` | 78 | Harmony 300 | Logitech's product table, through this field |
+| `0x1099` | 99 | Harmony Touch | the remote's own `/sys/sysinfo` |
+| `0x1104` | **104** | **Harmony 350** | the remote's own `/sys/sysinfo` |
 
-The arch 8 and arch 9 words do not bear on it at all, since both readings hand those to the same
-branch. So the proposed rule agreed with every byte on the bench, which is not evidence for it: an
-unfalsifiable claim is what this repository's verification standard exists to refuse, and the shape
-here is the one the standard already names, a closure whose two ends come from the same bytes.
+Architectures 8 and 9 are unaffected and keep their own form, the protocol number in the high byte
+and the skin as a plain byte in the low one. The two are separated by **value and not by high byte**:
+`0x0916` is valid BCD for 916 and means skin 22, so the whole word reading applies at 1000 and above
+and the plain byte reading below it, which is why the code tests the value rather than the byte.
 
-**So the readers are back to the reading the measurements support**, and a skin of 100 or more is
-refused rather than read. The standing is section 113's own, written there about a different byte and
-directly applicable to this one: `0x0A` for the Harmony 890 is the obvious next entry and is
-deliberately not implemented, because a prediction in the code is indistinguishable from a
-measurement once it is committed.
+**Only the Harmony 350's word separates the two readings.** Every other word on this generation has a
+skin below 100, so its low byte holds the whole number and both readings return it. `0x1104` is the
+one that does not: reading the low byte alone gives 4, or a refusal if the high byte is required to be
+`0x10`, and the remote itself says 104.
 
-### The hypothesis, recorded as one
+### How it was got wrong first, which is the part to read
 
-It is still the best reading available and it is worth keeping in front of whoever reads this next.
-`bcdDevice` is a BCD field by the USB specification's own definition, so a whole word reading is the
-natural one rather than a contrivance; under it `0x10` stops being an unexplained constant; and it
-fits all nine measured words. Logitech's product table has 17 skins at or above 100 and its highest
-is 999, a Harmony Link, so `1000 + skin` needs four digits and a 16 bit BCD word holds them.
+The first version of this section stated the whole word reading and gave the Harmony 350's descriptor
+as `0x1104` in support. **That word had not been read.** The skin came off the remote through
+concordance, which reads `/sys/sysinfo` and has nothing to do with USB descriptors, and the descriptor
+value was then computed by applying the proposed rule to it. So the evidence offered for the rule was
+the rule's own output. Both readers were changed on that basis, in two languages, with a docstring and
+two test tables, and it was reported as a finding.
 
-It predicts a Harmony 350 at `0x1104`, a Harmony Ultimate One at `0x1102` and a Harmony Elite at
-`0x1111`. **One enumeration of a Harmony 350 settles it**, and that remote is on the bench, so this
-is a prediction with a cost of about a minute rather than an open question. Nothing else here can:
-the file based family has no firmware in the lab, Logitech's client carries no skin to descriptor
-table, and the product table states no USB fields.
+**No measurement available at that moment could have caught it.** Nine words were known and not one of
+them separates the two readings, because all nine name a skin below 100. The rule agreed with every
+byte on the bench and nothing on the bench could refuse it, which is the unfalsifiable shape this
+repository's verification standard exists to catch, and the same family as the carrier closure whose
+two ends came from the same bytes.
 
-One rail falls out of it either way. The arch 8 and arch 9 branch must stay a whitelist of those two
-high bytes and must not be widened to "the high byte is a protocol number", because `0x1104` read
-that way is protocol 17 skin 4, and a skin of 4 is not in Logitech's table at all. A wrong reading
-that yields a plausible model is the failure this file keeps recording; a wrong reading that yields a
-model nobody sells is the same failure with the evidence still visible.
+So it was withdrawn: both readers went back to the low byte, a skin of 100 or more was **refused**
+rather than read, and the hypothesis was written down as a hypothesis with a test in each language
+asserting the refusal. The standing was section 113's own sentence about `0x0A` for the Harmony 890,
+that a prediction in the code is indistinguishable from a measurement once it is committed.
 
-`tests/test_usbdesc.py` and `packages/usb/test/remote.test.ts` carry the two measured words with the
-product table as their oracle, and each carries a test asserting the refusal, whose docstring says
-what to replace it with once a Harmony 350 has been enumerated. Controls run and reversed in both
-languages: implementing the prediction fails two tests per side.
+**Then the remote was plugged in and it took a minute.** `bcdDevice` `0x1104`, by enumeration with
+nothing opened, on the same product id that had been reporting `0x1078` an hour earlier; and skin 104
+and architecture 16 from the remote's own `/sys/sysinfo`. The two refusal tests are the two
+measurements now, and each says in its docstring that it asserted the opposite for one commit.
+
+The lesson is not "measure first", which everybody already agrees with. It is that **the withdrawal
+cost nothing and the wrong claim would have cost the next reader everything**: the rule was right, it
+was committed for the right reason only after a remote said so, and the interval between the two was
+one cable. A claim believed because it fits every sample, in a population that cannot contradict it,
+is worth exactly what it would be worth if it were false.
+
+### The shared product id
+
+**Product id `0xC124` carries two models.** A Harmony 350 was on it and reported skin 104, a Harmony
+300 replaced it and reported 78, and the 350 went back on and reported 104 again. So concordance's
+comment naming that id "Harmony 300" names one of at least two, exactly as its comment on `0xC122`
+does for a Harmony 600 and a Harmony 700, and `bcdDevice` is again what separates them. That was
+section 113's argument for reading this field at all, and it now has a second instance on a family
+where the fallback of reading a config does not exist, since there is no firmware here to compare
+against and a factory reset Touch's config is zero bytes.
+
+### What the high byte is not
+
+The Harmony Touch is **architecture 17**, read off the remote, and carries `0x10`; the Harmony 350 is
+**architecture 16** and carries `0x11`. So the byte is not the protocol number that architectures 8
+and 9 put there, and not the architecture either, which the Harmony One already excluded by carrying
+`0x10` at architecture 12. It is arithmetic, and that is the whole of it.
+
+The architecture of the remote reporting `0x1078` was not measured: nothing was asked of it beyond
+enumeration, and its identification as a Harmony 300 comes from its skin against Logitech's product
+table.
+
+### Bounds, and one prediction that costs nothing
+
+Logitech's product table holds 120 records and 17 skins at or above 100, its highest being 999, a
+Harmony Link. `1000 + 999` is 1999, which a sixteen bit BCD word holds with three quarters of its
+range to spare, so the form covers every skin the vendor ever allocated. `skinId(0x1999)` returning
+999 is asserted for that reason, and `0x1102` returning 102 is asserted as the Harmony Ultimate One it
+implies, both marked as implied rather than measured.
+
+The arch 8 and arch 9 branch stays a whitelist of those two high bytes and must not be widened to "the
+high byte is a protocol number". Read that way `0x1104` is protocol 17 skin 4, and skin 4 is not in
+Logitech's table at all, so widening it would produce a model nobody sells from a remote sitting on
+the bench.
+
+`tests/test_usbdesc.py` and `packages/usb/test/remote.test.ts`, ten words each, with the malformed BCD
+case as the surviving negative. Controls run and reversed in both languages: putting the low byte
+reading back fails two tests in Python and three in TypeScript.

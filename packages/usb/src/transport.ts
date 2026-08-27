@@ -210,15 +210,20 @@ export function isMicrochipBootloader(vendorId: number, productId: number): bool
 export function skinId(bcdDevice: number): number | undefined {
   const high = bcdDevice >> 8;
   const low = bcdDevice & 0xff;
-  if (high === 0x10) return (low >> 4) * 10 + (low & 0x0f);
+  // **The whole word is BCD of `1000 + skin`**, section 195, so what section 113 read as a constant
+  // 0x10 is the carry. Measured on a Harmony 350: it enumerates `0x1104`, which is 1104, and the
+  // remote's own `/sys/sysinfo` says skin 104. That is the one word of the ten known here that
+  // separates this reading from the low byte one, which refuses it outright.
+  const digits = [12, 8, 4, 0].map((shift) => (bcdDevice >> shift) & 0x0f);
+  if (digits.every((d) => d <= 9)) {
+    const value = digits.reduce((acc, d) => acc * 10 + d, 0);
+    // Bounded below by 1000 rather than by a high byte, because that is what the form says: below it
+    // the word is the arch 8 and arch 9 shape, whose 0x0916 is valid BCD for 916 and means skin 22.
+    if (value >= 1000) return value - 1000;
+  }
   if (high === 0x08 || high === 0x09) return low;
 
-  // A skin of 100 or more lands here and gets refused, which is deliberate, section 195. The
-  // hypothesis is that 0x10 is not a constant but the carry of a whole word holding BCD of
-  // `1000 + skin`, so a Harmony 350 at skin 104 would report 0x1104. Every one of the nine words
-  // measured so far reads the same under both, so nothing here can tell them apart, and a
-  // prediction in the code is indistinguishable from a measurement once it is committed. What
-  // settles it is one enumeration of a Harmony 350.
+  // Anything else, including a nibble that is not a decimal digit, names no remote.
   return undefined;
 }
 

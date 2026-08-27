@@ -234,10 +234,10 @@ against `0xC122` does for a Harmony 600 and a Harmony 700.
 
 **And the skin is reachable without opening the device**, which corrects the sentence this paragraph
 used to end with. `bcdDevice` is part of the descriptor every enumeration returns, `FoundRemote.release`
-in `packages/usb`, so `skinId` names the model from a listing. What it cannot do on this family is name
-a skin of 100 or more, since the low byte does not hold one, so a Harmony 350 is the one remote on this
-bench whose model its own descriptor does not yet give up. Section 195 has the hypothesis and the
-one minute measurement that would close it.
+in `packages/usb`, so `skinId` names the model from a listing, including a Harmony 350 at skin 104:
+its word is `0x1104` and the whole field is `1000 + skin`, section 195. So every remote on this bench
+is named by an enumeration, and on the file based family that is the only route, since none of them has
+firmware to read.
 
 **A Harmony Touch enumerates as `0x046D:0xC12B`**, as concordance's table says, and reports no firmware
 version in its USB strings at all, where every flash family remote on this bench reports one in its

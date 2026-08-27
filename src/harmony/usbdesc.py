@@ -237,12 +237,11 @@ def skin_id(bcd_device: int) -> Optional[int]:
     * `0x08` and `0x09`: the high byte is the protocol number, and the skin is the low byte in
       plain binary. 0x080F is a Harmony 880 and 0x0811 an 885, both protocol 8; 0x0916 is a
       525, protocol 9.
-    * `0x10`: the skin is the low byte in **BCD**. 0x1054 is a Harmony One, 0x1071 a 600, 0x1078
-      a 300 and 0x1099 a Touch, and the Touch is architecture 17, so on this generation the high
-      byte is neither the protocol nor the architecture and what it means is **not established**. Section 195 has the leading hypothesis,
-      that it is the carry of a word holding BCD of `1000 + skin`, and it is deliberately not
-      implemented: a skin of 100 or more is refused rather than guessed at, because all nine words
-      measured so far read identically under both readings.
+    * `0x10` and above: **the whole word is BCD of `1000 + skin`**, section 195, so that byte is a
+      carry rather than the constant section 113 called it. 0x1054 is a Harmony One, 0x1078 a 300,
+      0x1099 a Touch and **0x1104 a Harmony 350**, skins 54, 78, 99 and 104. The 350's word is the
+      one that separates this from reading the low byte alone, which refuses it outright, and its
+      skin is stated by the remote itself rather than derived from this field.
 
     Anything else returns None, because a guess produces a readable wrong model rather than an
     error. Reading an 885's 0x0811 as BCD gives 11, which is a Harmony 655; reading a 700's
@@ -254,12 +253,16 @@ def skin_id(bcd_device: int) -> Optional[int]:
     113.
     """
     high, low = bcd_device >> 8, bcd_device & 0xFF
-    if high == 0x10:
-        return (low >> 4) * 10 + (low & 0x0F)
+    # The whole word as BCD, section 195: `1000 + skin`, so the high byte is a carry. The bound is
+    # 1000 rather than a high byte of 0x10, because 0x0916 is valid BCD for 916 and is a Harmony 525
+    # whose skin is 22, so only values at or above 1000 are in this form.
+    digits = [(bcd_device >> shift) & 0x0F for shift in (12, 8, 4, 0)]
+    if all(digit <= 9 for digit in digits):
+        value = int(''.join(str(digit) for digit in digits))
+        if value >= 1000:
+            return value - 1000
     if high in (0x08, 0x09):
         return low
-    # Anything else, including a skin of 100 or more whose carry would leave 0x10, is refused
-    # rather than read. Section 195 states the hypothesis and why it is not implemented.
     return None
 
 

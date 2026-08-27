@@ -138,26 +138,26 @@ turns the measurement into a regression test.
 
 ### `bcdDevice` carries the skin, in one of two encodings
 
-The low byte of the device release number is the remote's skin number, and **how it is encoded
-depends on the high byte**, which is what tells the two firmware generations apart. Seven pairs,
-each an image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an
-independent oracle produced by the other half of Logitech's toolchain, plus two words read off
-remotes on the bench whose oracle is Logitech's own product table instead:
+The device release number states the remote's skin, and **which of two forms it is in depends on the
+word's value**, which is also what tells the two firmware generations apart. Seven pairs, each an
+image's `bcdDevice` against a `<SKIN>` a config of that model states, which is an independent oracle
+produced by the other half of Logitech's toolchain, plus three words read off remotes on the bench,
+two whose oracle is the remote's own `/sys/sysinfo` and one Logitech's product table:
 
-| high byte | reading | words |
+| the word's value | reading | words |
 |---|---|---|
-| `0x08`, `0x09` | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
-| `0x10` | the low byte is the skin in **BCD**, and the high byte is not identified | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72, `0x1078` skin 78, `0x1099` skin 99 |
+| below 1000 | the low byte is the skin in **plain binary**, and the high byte is the protocol | `0x080F` skin 15, `0x0811` skin 17, `0x0916` skin 22 |
+| 1000 and above | the **whole word** is BCD of `1000 + skin`, so the high byte is the carry | `0x1054` skin 54, `0x1066` skin 66, `0x1071` skin 71, `0x1072` skin 72, `0x1078` skin 78, `0x1099` skin 99, `0x1104` skin 104 |
 
-**What the two bench words settle about that high byte is what it is not**, section 195. A Harmony
-Touch carries `0x10` and is architecture 17, measured, so the byte is not the protocol number and not
-the architecture either, and at least three architectures share one value of it. The architecture of
-the remote carrying `0x1078` was not measured. **A skin of 100 or
-more is refused rather than read**, because the low byte cannot hold one: a Harmony 350's skin is 104,
-read off the remote itself. The reading that would accept it, the whole word as BCD of `1000 + skin`,
-fits every word above and is **not implemented**, because no measured word separates it from the one
-here and a prediction in the code is indistinguishable from a measurement once committed. One
-enumeration of a Harmony 350 settles it.
+**The two forms are separated by value, not by high byte**, section 195, because `0x0916` is valid BCD
+for 916 and means skin 22: at 1000 and above the word is the whole number, below it the low byte is
+the skin and the high byte the protocol. **Only a Harmony 350's `0x1104` separates the whole word
+reading from reading the low byte alone**, since every other word on this generation names a skin
+below 100 and both readings return it. That remote states skin 104 through its own `/sys/sysinfo`,
+which is not a USB field, so the two ends of the closure share nothing.
+
+`0x0A` for the 890 is still the obvious entry for the older form and still deliberately not
+implemented, because no arch 10 firmware exists here to check it against.
 
 **This document said "read as BCD" without qualification until 10 August 2026**, and so did three<!--superseded-->
 copies of the code. It is right for arch 12 and arch 14 and wrong for arch 8 and arch 9, and the
