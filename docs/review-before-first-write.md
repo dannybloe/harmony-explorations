@@ -234,7 +234,7 @@ Our own answers are pre-registered, and their checksum is here for the same reas
 
 | file | sha256 |
 |---|---|
-| `../lab/reviews/20260827-write-transfer/OUR-ANSWER.md` | `4bedaf65695654eea0d9a16e489eac79aa8e92d7196b6082f9c2280a51be28c5` |
+| `../lab/reviews/20260827-write-transfer/OUR-ANSWER.md` | `03ed435b33388a5c7c32d0c6c88644233a84bc40f2c91ac1f34035f06ca6704b`, after the correction of 27 August 2026. Pre-registration hash before it: `4bedaf65695654ee` |
 
 **It was written while job 1 was running and before any part of the reviewer's answer had been seen**,
 in the reviewer's own row shape and with the reviewer's own four confidence words applied to us. The
@@ -351,3 +351,27 @@ the spare unbootable, and which step of that sequence is unproven.
   the two readings agree they are still two readings and not a measurement on hardware.
 - It gives the reviewer no project brief, deliberately, until job 1 is done. **That is also a gap**:
   with no brief it has no rails either, so nothing hardware shaped goes near it in the meantime.
+
+## What happened, recorded on 27 August 2026
+
+The reading was returned the same day. Its file list names only permitted paths and it reports having
+read nothing withheld; corroborating that against filesystem access times **failed as a check** rather
+than passing, because this filesystem does not track them usefully, so the self report and the empty
+workspace are the evidence.
+
+It agreed with section 175 on everything section 175 was confident about, including both halves of the
+interlock that two earlier readings here got wrong. It **closed half of the erase question**, tracing
+that the Harmony 600's program path sends the page program opcode and never the block erase opcode, and
+it **advanced the pacing question** by reading the endpoint buffer descriptor and its ownership
+handshake, leaving only the silicon's response to an unowned buffer as a stated assumption. It also
+found a hazard nobody here knew: a data packet declaring zero payload bytes runs the staging copy loop
+256 times over the command state block. All three are verified here and written up as section 186.
+
+**The two errors it exposed were in our own pre-registered worksheet, not in the repository**, and the
+lesson is the one this project has learned before from a different direction: the worksheet was a third
+copy of a derivation, nothing tested it, and it drifted from its source inside one afternoon. Both rows
+are corrected in place there and the hash above moved accordingly.
+
+So the exercise did what it was for. It did not overturn the derivation, and it was not a rubber stamp:
+it closed one open question, moved another, added a hazard, and caught a summary that had gone wrong.
+Jobs 2 to 4 have not been run.

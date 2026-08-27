@@ -9,6 +9,7 @@ of one case with the next. Transcribing them gives a wrong table that looks righ
 Addresses are recorded per image. Finding them again from scratch is a search; keeping them
 is what makes this a regression test.
 """
+import os
 import unittest
 
 import lab
@@ -2348,6 +2349,83 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
                 tests = [a for a in self.instructions(image, start, end)
                          if a.mnemonic in ('BTFSS', 'BTFSC')]
                 self.assertEqual(tests, [], 'arch 14 tests no bit before writing')
+
+    def test_the_harmony_600_does_not_erase_before_it_programs(self):
+        """
+        Section 175 left this open on every architecture. The blind reading of 27 August 2026 closed
+        the arch 14 half and this verifies it rather than adopting it, per decision 7.
+
+        The claim is a negative, so the assertions are shaped to make it falsifiable: the program
+        path must send the page program opcode, must **not** send the block erase opcode anywhere in
+        its extent, and the eraser must be a routine the program path does not reach. A test that
+        only asserted `0x02` is present would pass on a path that erased first as well.
+
+        Section 186. Arch 12 is deliberately not asserted here: the Harmony One's store ends in a
+        resident call gate below its image base, so the deciding instruction is in nothing this
+        project holds, and a test claiming otherwise would be claiming to read absent bytes.
+        """
+        lab.require(self.ARCH14_BENCH[0])
+        # Page program, handed to the SPI byte sender.
+        self.assertEqual(self.literal(self.ARCH14_BENCH, 0x17506), 0x02)
+        # Block erase, in the separate eraser, with a status poll after it.
+        self.assertEqual(self.literal(self.ARCH14_BENCH, 0x17462), 0xD8)
+        self.assertEqual(self.literal(self.ARCH14_BENCH, 0x17470), 0x05,
+                         'read status register, which is the erase completion poll')
+
+        # **The negative, and it is the assertion carrying the claim.** No block erase opcode is
+        # loaded anywhere in the program path, so programming cannot erase on the way.
+        loaded = [i.fields['k'] for i in self.instructions(self.ARCH14_BENCH, 0x17500, 0x17580)
+                  if i.mnemonic == 'MOVLW']
+        self.assertNotIn(0xD8, loaded, 'the program path never sends a block erase')
+        self.assertIn(0x02, loaded, 'and it does send a page program, so the range is the right one')
+
+    def test_a_zero_length_data_packet_would_scribble_over_the_command_state(self):
+        """
+        A hazard of section 94's exact family, found by the blind reading of 27 August 2026 and
+        verified here. Section 186.
+
+        The staging copy loop is entered **without testing its count**. It copies a byte, advances
+        the pointer, clears the watchdog, and only then decrements and tests. So a declared length of
+        zero decrements to `0xFF` and the loop runs 256 times from the staging buffer at `0x01A5`,
+        covering the command state variable at `0x284`, the destination selector at `0x28B` and the
+        pending flag and length at `0x28D` and `0x28E`.
+
+        `CLRWDT` inside the body is why the watchdog does not end it, which is the same mechanism as
+        the odd count runaway. What this asserts is the **shape that makes it possible**: the
+        decrement and the test sit after the store, not before it.
+        """
+        lab.require(self.ARCH12[0])
+        # The loop's own tail: decrement, then test, then branch back to the body's first instruction.
+        self.assertEqual(self.at(self.ARCH12, 0x26798).mnemonic, 'DECF')
+        self.assertEqual(self.at(self.ARCH12, 0x2679E).mnemonic, 'SUBLW')
+        back = self.at(self.ARCH12, 0x267A0)
+        self.assertEqual(back.mnemonic, 'BNC', 'loops while the count is above zero')
+        self.assertEqual(back.fields['target'], 0x26774,
+                         'and it branches to the body, so the body runs before any test')
+
+        # The watchdog clear inside the body, which is why an unbounded run is not stopped.
+        self.assertEqual(self.at(self.ARCH12, 0x26794).mnemonic, 'CLRWDT')
+
+        # **The control: nothing between the entry and the store tests the count.** If a pre-test
+        # were added upstream this fails, which is the direction that would make the hazard go away.
+        before = [i.mnemonic for i in self.instructions(self.ARCH12, 0x26774, 0x26790)]
+        self.assertNotIn('BZ', before, 'no zero test before the first byte is stored')
+        self.assertNotIn('BNZ', before)
+
+    def test_our_own_chunker_can_never_declare_a_zero_length_packet(self):
+        """The other half of the hazard above: that this repository cannot trigger it.
+
+        `writeChunkLengths` refuses a total at or below zero and pushes a remainder only when one is
+        left, so no chunk is ever zero. That was true before the hazard was known, by construction
+        rather than by a rule, and this is the rule. Asserted against the TypeScript source because
+        the chunker lives there and there is deliberately no second copy of it here.
+        """
+        here = os.path.dirname(os.path.abspath(__file__))
+        source = os.path.join(here, '..', 'packages', 'usb', 'src', 'writes.ts')
+        with open(source, encoding='utf-8') as handle:
+            body = handle.read()
+        self.assertIn('total <= 0', body, 'a non positive total is refused outright')
+        self.assertIn('if (left > 0)', body, 'a remainder is only pushed when there is one')
 
     def test_the_internal_offset_bound_is_per_architecture(self):
         """

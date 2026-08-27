@@ -23360,8 +23360,14 @@ The test asserts both literals, and its control is that asserting `0xFFC0` for a
 
 Four things, and the first two are what a rehearsal would run into rather than curiosities.
 
-* **Whether the firmware erases before it programs.** No architecture's external path was followed
-  far enough to say. It matters because flash only clears bits: programming over unerased
+* ~~**Whether the firmware erases before it programs.**~~ **Answered on arch 14 and still open on
+  arch 12**, section 186, by the blind reading of 27 August 2026 and verified here. The Harmony 600's
+  program path sends serial flash opcode `0x02` and never `0xD8`, and the eraser is a separate routine
+  reached only from the erase command, so that architecture does **not** erase before it programs. The
+  Harmony One's store ends in a resident call gate below its image base, so it cannot be read from
+  anything held here, which is a reason rather than a gap. This entry said "no architecture's external<!--superseded-->
+  path was followed far enough to say", which was true when written and is now true of one of the two.
+  It matters because flash only clears bits: programming over unerased
   content silently produces the AND of the two. `ERASE_FLASH` exists, Logitech's client picks a block
   table, and `packages/usb` already requires a block aligned erase of a whole 64 KiB block, so the
   rails assume the caller erases. **That assumption being unverified costs nothing while the caller
@@ -24633,3 +24639,70 @@ walk where git cannot answer, since the phrase half has to run for anyone and th
 lesser problem than no check at all. `TheDocumentChecksReadOnlyTrackedFiles` in
 `tests/test_toolchain.py` asserts both directions, because a check that stops reading untracked files
 could just as easily stop reading everything, and a third test asserts the real documents are still in.
+
+## 186. A blind second reading of the write path, and the two things it settled
+
+The brief in `docs/review-before-first-write.md` was handed to Codex on 27 August 2026, working in a
+prepared directory holding the Harmony One and Harmony 600 application images, the four permitted
+tools and the research library, and **nothing that states an answer**. Its own list of files read
+names only permitted paths and it reports reading nothing withheld. Corroborating that against
+filesystem access times failed as a check rather than passing: `isa.py` was certainly read that day
+and reports an access time a fortnight earlier, so this filesystem does not track them usefully, and
+the dates on the withheld documents say nothing in either direction. The self report and the empty
+workspace are the evidence, and that is stated rather than dressed up.
+
+It agreed with section 175 on everything section 175 was confident about: the command that opens a
+transfer, the five bytes after it, the data packets that nothing answers, the done packet acknowledged
+once from state 3, the destination selector's three values, the per 64 byte commit on the internal
+route, and both halves of the interlock that two earlier readings here got wrong, its polarity and its
+resting state. Two things it added are below. What it did **not** move is the Harmony One's own
+external store, and for a reason worth recording: that path ends in a resident call gate below the
+image's base, so the instruction that puts a byte into the parallel NOR is not in anything this
+project holds. It said so and marked the row unread.
+
+**The Harmony 600 does not erase before it programs, and that closes half of section 175's first open
+question.** Verified here rather than adopted, per decision 7. The program path at `0x17500` loads
+serial flash opcode `0x02`, page program, and hands it to the SPI byte sender at `0x1A0B6`; across
+sixty instructions from its entry it loads `0x02`, `0x00`, `0x02` and `0x01` and **never `0xD8`**. The
+eraser is a separate routine at `0x1745C` which loads `0xD8`, block erase, sends it, then loads `0x05`,
+read status register, and polls. Nothing on the program path calls it: its two references are a `CALL`
+from `0x13C9E` and a `GOTO` from `0x17EBA`, both on the erase command's own path. So on this
+architecture the rails' assumption that the **caller** erases is measured rather than assumed, and the
+practical consequence is unchanged, since erasing an already erased block changes nothing. The Harmony
+One half stays open and now has a reason instead of a gap.
+
+**A data packet declaring zero payload bytes scribbles 256 bytes over the command state block**, which
+is a new hazard of section 94's exact family and was not known here. The staging copy loop on the
+Harmony One is entered at `0x26774` **without testing its count**: it copies a byte through `FSR0`,
+increments the pointer, executes `CLRWDT` at `0x26794`, and only then decrements the count at
+`0x26798` and tests it with `MOVF`, `SUBLW 0x00` and `BNC 0x26774`, which loops while the count is
+above zero. With zero on entry the decrement wraps to `0xFF` and the loop runs 256 times. The
+destination is the staging buffer at `0x01A5`, so the run covers `0x01A5` to `0x02A4`, which contains
+the command state variable at `0x284`, the destination selector at `0x28B`, and the pending flag and
+packet length at `0x28D` and `0x28E`. `CLRWDT` inside the loop is why the watchdog does not end it,
+exactly as in the odd count runaway.
+
+`writeChunkLengths` in `packages/usb/src/writes.ts` cannot emit a zero length chunk: it refuses a
+total at or below zero outright, and its tail pushes a remainder only inside `if (left > 0)`. So this
+repository was already safe, **by construction rather than by a stated rule**, which is the gap the
+test closes. The reason it must stay safe is now written down.
+
+**And the instructive part is a correction to this project's own worksheet, not to its findings.** Our
+answers were pre-registered before the reviewer's arrived, in the reviewer's row shape, so that a claim
+could not be softened after seeing the other side. That worksheet listed the sites touching bit 5 of
+`0x1A4` as `0x268BC`, `0x268C2`, `0x2B824` and `0x26612`. `0x268C2` is `CLRF 0xD23`, the go ahead flag,
+and touches the bit not at all; the site it displaced is `0x268C8 BSF 0x1A4, 5`, which every write at or
+above `0x020000` executes. The count of four was right only because a non site had been substituted for
+a real one.
+
+Nothing in the repository carried that error. Section 175 names `0x268C2` correctly as the `CLRF` and
+never as a site; `docs/usb-protocol.md` states that a write at or above `0x020000` sets the bit; and
+`tests/test_usb_firmware.py` already asserts the four as `0x26612`, `0x268BC`, `0x268C8` and `0x2B824`
+by two methods. So the reviewer agreed with the repository and disagreed with the summary of it, and
+the summary was three hours old.
+
+**That is this project's oldest rule arriving from an unexpected direction.** Two copies of a
+derivation are two copies until one of them moves, and the copy that moved was the one written to
+protect the comparison. It was not maintained, nothing tested it, and it drifted from its source inside
+one afternoon. The worksheet is corrected in place and says so. What it does not get is a promotion:
+it remains a dated artefact, and section 175 remains the derivation.
