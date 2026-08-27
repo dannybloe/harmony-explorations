@@ -90,11 +90,64 @@ export const LOGITECH_VENDOR = 0x046d;
 export const HARMONY_PRODUCT_FIRST = 0xc110;
 export const HARMONY_PRODUCT_LAST = 0xc14f;
 
+/**
+ * The product ids of the **file based** family, which this library does not speak to.
+ *
+ * These remotes hold their configuration in a named file rather than at a flash address, so
+ * `READ_FLASH`, `READ_MISC` and the whole command layer this package implements do not apply to
+ * them: there is no address to read, no firmware to read and no RAM to poll.
+ * `reference/models.md` carries the argument.
+ *
+ * **The set is concordance's**, its `is_mh_pid`, so it has the ordinary standing of an upstream
+ * claim: a hypothesis, not a fact. It is adopted anyway because it can only **refuse** more, which
+ * is the same ground on which the erase ceiling was adopted from Logitech's own client. If one of
+ * these turns out to answer the flash protocol after all, that is a finding and this set shrinks.
+ *
+ * Measured on the bench on 27 August 2026: a Harmony 350 enumerates as `0xC124`, the id concordance
+ * labels a Harmony 300, and a Harmony Touch as `0xC12B`. So the comments name a model each and at
+ * least one id covers two, which is why nothing here maps an id to a model.
+ */
+export const FILE_BASED_PRODUCTS: readonly number[] = [
+  0xc124, // Harmony 300, and measured here on a Harmony 350
+  0xc125, // Harmony 200
+  0xc126, // Harmony Link
+  0xc129, // Harmony Hub
+  0xc12b, // Harmony Touch, and the Harmony Ultimate
+];
+
+/**
+ * Whether a device belongs to the file based family, from enumeration alone.
+ *
+ * **Deliberately a second predicate rather than a hole in `isHarmony`'s range**, for the reason
+ * `isMicrochipBootloader` gives above: the point is to tell "a remote this library cannot drive"
+ * from "nothing plugged in", and a caller that only wants to know whether a Harmony is attached
+ * should get a truthful yes. `isHarmony` excludes these because it gates `openHarmony`, and opening
+ * one would let this package send a device commands its family does not implement.
+ */
+export function isFileBasedRemote(vendorId: number, productId: number): boolean {
+  return vendorId === LOGITECH_VENDOR && FILE_BASED_PRODUCTS.includes(productId);
+}
+
+/**
+ * Whether a device is a Harmony this library's command protocol applies to.
+ *
+ * The range is Logitech's Harmony allocation and the exclusion is the file based family, which sits
+ * **inside** it: `0xC124` and `0xC12B` are both between `0xC110` and `0xC14F`, so a plain range
+ * check claimed a Harmony Touch as a flash protocol remote. Found on 27 August 2026 with a Touch
+ * and a Harmony 350 on the bench, before either had been opened.
+ *
+ * **The Z-Wave range `0xC112` to `0xC115` is deliberately not excluded.** Concordance routes it to a
+ * different HID class and names the Harmony 890 and the Monster models, and arch 10 is an
+ * architecture this project reads: excluding it would refuse a remote whose configs are already in
+ * the corpus. A different transport is not the same thing as a different storage model, and
+ * collapsing the two would have been the mistake this exclusion exists to prevent.
+ */
 export function isHarmony(vendorId: number, productId: number): boolean {
   return (
     vendorId === LOGITECH_VENDOR &&
     productId >= HARMONY_PRODUCT_FIRST &&
-    productId <= HARMONY_PRODUCT_LAST
+    productId <= HARMONY_PRODUCT_LAST &&
+    !isFileBasedRemote(vendorId, productId)
   );
 }
 
@@ -239,6 +292,11 @@ export async function listHarmony(): Promise<FoundRemote[]> {
  * Read the caveat on `isMicrochipBootloader`: a hit is not proof that the device is a Harmony.
  * Nothing here opens anything, and this library cannot talk to a device in this state.
  */
+/** The file based family, reported so it is not mistaken for an empty bus. Opens nothing. */
+export async function listFileBasedRemotes(): Promise<FoundRemote[]> {
+  return listMatching(isFileBasedRemote);
+}
+
 export async function listMicrochipBootloaders(): Promise<FoundRemote[]> {
   return listMatching(isMicrochipBootloader);
 }

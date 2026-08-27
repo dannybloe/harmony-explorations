@@ -1219,7 +1219,18 @@ effect of a commit.**
 
 **Enumerating is not opening.** `listHarmony` and `packages/usb/bin/list-remotes.ts` ask the
 operating system what is attached; `openHarmony` claims an irreplaceable device. Anything that only
-needs to know whether a remote is plugged in uses the first.
+needs to know whether a remote is plugged in uses the first. **That separation is what caught section
+193** before any harm was done: a Harmony Touch and a Harmony 350 were identified from enumeration
+alone, and both turned out to be inside the range that gates opening one.
+
+**A Harmony in the range is not a Harmony this library speaks to**, section 193. The **file based**
+family keeps its config in a named file rather than at a flash address, so nothing here reaches it: no
+address, no firmware, no RAM. Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
+excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
+applied to the opposite case, since here the devices really are Harmonys. **The Z-Wave range `0xC112`
+to `0xC115` is deliberately still claimable**, and a test says so: concordance routes it elsewhere and
+names the Harmony 890, and arch 10 is an architecture this project reads, so a different transport must
+not be confused with a different storage model.
 
 **A remote in recovery is not a Harmony by vendor id, and enumeration reported it as nothing at all
 until section 189.** Both bench bootloaders present `04D8:000B`, Microchip's vendor with no strings,
@@ -1506,10 +1517,14 @@ make render        draw a config's screens as PNG files, into the lab and never 
 make activities    which activity each key starts and which drawn label is its name, per model
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
-make remotes       list attached remotes, enumeration only, opens nothing. A device in a Microchip
+make remotes       list attached remotes, enumeration only, opens nothing. Three buckets, and the
+                   two extra ones exist because each was once invisible. A device in a Microchip
                    bootloader is reported separately, which is what a Harmony in recovery looks
                    like, since filtering on Logitech's vendor id alone made that state
-                   indistinguishable from an empty bus
+                   indistinguishable from an empty bus. And the **file based** family is reported
+                   separately the other way round: those are Harmonys, they are inside the product
+                   range, and this library cannot drive them, so openHarmony refuses them while this
+                   still says they are there, section 193
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

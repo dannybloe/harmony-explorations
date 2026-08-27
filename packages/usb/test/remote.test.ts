@@ -20,8 +20,10 @@ import {
   SOFTWARE_TYPE_SAFE_MODE,
   architectureFromVersion,
   decodeReply,
+  FILE_BASED_PRODUCTS,
   HARMONY_PRODUCT_FIRST,
   HARMONY_PRODUCT_LAST,
+  isFileBasedRemote,
   isHarmony,
   isMicrochipBootloader,
   MICROCHIP_BOOTLOADER_PRODUCT,
@@ -370,6 +372,50 @@ test('a bootloader is Microchip, and asking that question never widens what can 
       `no Harmony product id may read as a bootloader, and 0x${product.toString(16)} does`,
     );
   }
+});
+
+test('the file based family is inside the Harmony range and openHarmony still refuses it', () => {
+  // Found on 27 August 2026 with a Harmony Touch and a Harmony 350 on the bench, before either had
+  // been opened. `isHarmony` was a plain range and both of them sit inside it, so this library would
+  // have claimed a Touch and started sending it a command layer its family does not implement.
+  //
+  // The range membership is asserted first, because that is the whole point: an exclusion that only
+  // said "not a Harmony" would look redundant next to the range and get deleted by a tidy-up.
+  for (const product of FILE_BASED_PRODUCTS) {
+    assert.ok(
+      product >= HARMONY_PRODUCT_FIRST && product <= HARMONY_PRODUCT_LAST,
+      `0x${product.toString(16)} is inside the Harmony range, which is why the exclusion is needed`,
+    );
+    assert.ok(isFileBasedRemote(0x046d, product), `0x${product.toString(16)} is file based`);
+    assert.ok(!isHarmony(0x046d, product), `openHarmony must refuse 0x${product.toString(16)}`);
+  }
+
+  // The two measured on the bench, named so the count cannot quietly shrink past them.
+  assert.ok(isFileBasedRemote(0x046d, 0xc12b), 'the Harmony Touch');
+  assert.ok(isFileBasedRemote(0x046d, 0xc124), 'the Harmony 350, on the id concordance calls a 300');
+  assert.equal(FILE_BASED_PRODUCTS.length, 5);
+
+  // The two predicates partition the range rather than overlapping in it.
+  for (let product = HARMONY_PRODUCT_FIRST; product <= HARMONY_PRODUCT_LAST; product += 1) {
+    assert.ok(
+      isHarmony(0x046d, product) !== isFileBasedRemote(0x046d, product),
+      `0x${product.toString(16)} must be exactly one of the two`,
+    );
+  }
+
+  // **The control that stops the exclusion being widened.** Concordance routes 0xC112 to 0xC115 to a
+  // different HID class, naming the Harmony 890 and the Monster models, and it is tempting to exclude
+  // those too. It would be wrong: arch 10 is an architecture this project reads, its configs are in
+  // the corpus, and a different transport is not a different storage model. Collapsing the two is
+  // exactly the mistake the file based exclusion exists to prevent, so the range stays claimable.
+  for (let product = 0xc112; product <= 0xc115; product += 1) {
+    assert.ok(isHarmony(0x046d, product), `0x${product.toString(16)} stays a Harmony: arch 10 reads`);
+    assert.ok(!isFileBasedRemote(0x046d, product), 'and it is not file based');
+  }
+
+  // A Logitech mouse is still not a Harmony, and neither predicate answers for another vendor.
+  assert.ok(!isFileBasedRemote(0x1234, 0xc124), 'the vendor is part of the question');
+  assert.ok(!isHarmony(0x046d, 0xc0ff), 'below the range');
 });
 
 test('the skin id is the low byte of bcdDevice, and its encoding is per firmware generation', () => {

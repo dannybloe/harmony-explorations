@@ -218,10 +218,25 @@ RAM can be polled**, so the live polling that stands in for the emulator does no
 one thing they do offer is a user config, and the end marker concordance expects from them is
 `PTYY`, which says the `GSPM` container survived into that generation.
 
-**The Harmony 350 is not classified.** Concordance names it in its model table and nowhere else: it
-is absent from the architecture table and from the list of file based product ids. It arrived after
-the Touch, so the file based family is the likely home, but that is a guess from chronology and
-this file will not record it as anything more.
+**The Harmony 350 was not classified, and one enumeration settled which family it is in.** It used to
+be absent from the architecture table and from the list of file based product ids, with the file based
+family a guess from chronology and nothing more. Measured on the bench on 27 August 2026, with the
+remote attached and **never opened**: a Harmony 350 enumerates as `0x046D:0xC124` and calls itself
+`Harmony Remote 0-1.4.0`. `0xC124` is one of the five ids concordance's own `is_mh_pid` classifies as
+file based, so the guess from chronology is replaced by a measured id plus upstream's classification of
+that id. That classification keeps the ordinary standing of an upstream claim, and it is adopted
+because it can only **refuse** more.
+
+**What is open is whether that id is shared.** Concordance's comment against `0xC124` says Harmony 300,
+so either the two models present one id or the comment names only the first model to use it. A Harmony
+300 arrives on the bench the same day, which decides it by enumeration alone: the same id means shared,
+a different one means the comment was partial. Either way **no code here maps a product id to a model**,
+because a skin does that and a skin needs the device opened.
+
+**A Harmony Touch enumerates as `0x046D:0xC12B`**, as concordance's table says, and reports no firmware
+version in its USB strings at all, where every flash family remote on this bench reports one in its
+product string. Not a finding, an observation, and the sort of thing that turns into one if a second
+device of that generation does the same.
 
 ## Not recorded here
 

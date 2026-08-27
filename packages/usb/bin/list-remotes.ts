@@ -10,7 +10,13 @@
  * This must never grow a code path that sends a command. That belongs in the library, behind the
  * rails, where a caller meets the refusals.
  */
-import { type FoundRemote, listHarmony, listMicrochipBootloaders, skinId } from '../src/index.ts';
+import {
+  type FoundRemote,
+  listFileBasedRemotes,
+  listHarmony,
+  listMicrochipBootloaders,
+  skinId,
+} from '../src/index.ts';
 
 function describe(remote: FoundRemote): void {
   console.log(
@@ -25,8 +31,17 @@ const found = await listHarmony();
 // Asked separately, because a remote held in its bootloader is not a Harmony by vendor id and used
 // to report as nothing at all. `docs/findings.md` section 189.
 const inRecovery = await listMicrochipBootloaders();
+// And separately again, for the opposite reason: these *are* Harmonys and sit inside the product
+// range, so they used to be reported as remotes this library could open. `reference/models.md`.
+const fileBased = await listFileBasedRemotes();
 
 for (const remote of found) describe(remote);
+
+for (const remote of fileBased) {
+  describe(remote);
+  console.log('  the file based family: its config is a named file, not a flash address');
+  console.log('  so this library has nothing to say to it, and openHarmony refuses it');
+}
 
 for (const remote of inRecovery) {
   describe(remote);
@@ -35,7 +50,7 @@ for (const remote of inRecovery) {
   console.log('  a power cycle without the key held boots normally: nothing latches this state');
 }
 
-if (found.length === 0 && inRecovery.length === 0) {
+if (found.length === 0 && inRecovery.length === 0 && fileBased.length === 0) {
   console.log('no Harmony remote attached, and nothing in a bootloader either');
   console.log('(a Logitech mouse is not one: the Harmony product range is 0xC110 to 0xC14F)');
 }

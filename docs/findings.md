@@ -25491,3 +25491,63 @@ instructions**, and both looked like findings for a few minutes:
 
 `tests/test_findings.py`, `TestTheFlashAddressIsClassifiedBeforeItIsUsed`, seven tests, nine controls run
 and reversed.
+
+## 193. Two remotes on the bench were inside the range that gates opening one
+
+**A predicate that looked like a range check was one, and that was the defect.** `isHarmony` accepted
+any Logitech product id from `0xC110` to `0xC14F`, which is Logitech's Harmony allocation and is
+therefore the right range. The file based family sits **inside** it. So with a Harmony Touch and a
+Harmony 350 attached on 27 August 2026, this library would have opened either one and begun sending it
+a command layer its family does not implement, and nothing in the tests said otherwise.
+
+Found before either device was opened, by enumerating them and reading what the ids mean rather than by
+running anything against them. Enumeration asks the operating system and opens nothing, which is the
+reason `listHarmony` and `openHarmony` are separate questions in the first place.
+
+| attached | enumerates as | product string |
+|---|---|---|
+| Harmony Touch | `0x046D:0xC12B` | `Logitech Harmony Remote` |
+| Harmony 350 | `0x046D:0xC124` | `Harmony Remote 0-1.4.0` |
+
+**The family matters because none of this project's methods reach it.** These remotes hold their
+configuration in a named file rather than at a flash address, so there is no address to read, no
+firmware to read and no RAM to poll, which removes the entry point for the rule that the firmware is
+the authoritative spec. `reference/models.md` carries that argument and it is not new. What is new is
+that two of them were on the bus and the library treated them as flash protocol remotes.
+
+**The fix is section 189's, applied to the opposite case.** There, a remote in recovery was **not**
+matched by `isHarmony` and reported as nothing at all, and the answer was a second predicate rather
+than a wider one, because widening the predicate that gates `openHarmony` would let this library open a
+device that speaks a different protocol. Here the same reasoning runs the other way: the devices **are**
+Harmonys, they **are** in the range, and `isHarmony` has to stop claiming them while something still
+reports them so a bench operator is not told the bus is empty. `isFileBasedRemote` and
+`listFileBasedRemotes` are that, and `make remotes` prints them in their own bucket with the reason.
+
+### The control is the more important half
+
+**The Z-Wave range `0xC112` to `0xC115` is deliberately not excluded**, and the test asserts that it
+stays claimable. Concordance routes that range to a different HID class and its comment names the
+Harmony 890 and the Monster models, which makes excluding it the obvious next tidy-up and would be
+wrong: arch 10 is an architecture this project reads, its configs are in the corpus, and section 184's
+slot mapping is built on them. **A different transport is not a different storage model**, and
+collapsing the two is exactly the mistake the file based exclusion exists to prevent. That control was
+written because the first version of this change nearly made it, and reading concordance's own routing
+is what stopped it.
+
+The set itself is concordance's `is_mh_pid`, five ids, so it has the ordinary standing of an upstream
+claim. It is adopted anyway on the ground that it can only **refuse** more, which is the same ground
+the erase ceiling was adopted from Logitech's client on. If one of the five turns out to answer the
+flash protocol, that is a finding and the set shrinks.
+
+### What the Harmony 350 settled, and what it did not
+
+`reference/models.md` recorded the Harmony 350 as unclassified, absent from the architecture table and
+from the file based id list, with the file based family a guess from chronology. It presents `0xC124`,
+which is in that list, so the guess is replaced by a measured id plus upstream's classification of it.
+
+**What is open is whether the id is shared.** Concordance's comment against `0xC124` reads Harmony 300,
+so either two models present one id or the comment names only the first to use it. A Harmony 300 arrives
+the same day and decides it by enumeration alone. This is why **nothing here maps a product id to a
+model**: the skin does that, and reading a skin means opening the device.
+
+`packages/usb/test/remote.test.ts`, one test, four controls run and reversed.
