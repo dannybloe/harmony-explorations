@@ -562,9 +562,16 @@ finish line and is not written out of the goal.
 
 **Why it is nonetheless a separate decision.** Three reasons, and each is enough on its own. It is the
 first write this project would ever perform, on a device that cannot be replaced. The recovery route is
-**unproven**: the spare Harmony One's original contents are in the lab byte for byte and verified against
-the unit, and restoring from a dump has never been tried, here or anywhere in this project except by hand
-on the Harmony 525. And it is a milestone with its own place in the plan, M4, which a checklist item is
+**unproven by measurement**: the spare Harmony One's original contents are in the lab byte for byte and
+verified against the unit, and restoring from a dump has never been tried, here or anywhere in this
+project except by hand on the Harmony 525. It is no longer **unread**, since section 189: the Harmony
+One's bootloader is a resident USB flash programmer entered from a key held at power on, it protects
+itself from its own erase, and it copies nothing, so entering it destroys nothing. Two things that
+changes and one it does not. A remote whose internal image is destroyed still attaches and answers, which
+is the deepest fallback in the part; and the Harmony 525 comparison in the paragraph above is not merely
+a different architecture, it is a different mechanism, because on arch 12 recovery is not an install.
+What it does not change is this box, because that programmer writes internal flash and a config lives in
+external NOR, so it is **not** shown to put a config back. And it is a milestone with its own place in the plan, M4, which a checklist item is
 not allowed to consume on its way past.
 
 **So the gate is one sentence.** Phase 8 starts when Danny says so, with phase 7 ticked and the

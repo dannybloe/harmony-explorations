@@ -16,7 +16,7 @@ This is where the remote actually runs.
 
 | Page and offset | Length | Contents | Source |
 |---|---|---|---|
-| `0xFE` `+0x0000` | 3880 used of 4096 | the **bootloader**, no header of its own, reset vector at zero. Scans the keypad and compares two codes, `0x14` and `0x2C`, section 87 | read off the remote |
+| `0xFE` `+0x0000` | 3880 used of 4096 | the **bootloader**, no header of its own, reset vector at zero. Scans the keypad and compares two codes, `0x14` and `0x2C`, section 87. It carries the same **USB flash programmer** as the Harmony One's, twelve commands with the same erase bound of `0x001000`, section 189 | read off the remote |
 | `0xFE` `+0x1000` | 24320 | the **safe mode image**, version 0.2 | own checksum verifies |
 | `0xFE` `+0x9000` | 70336 | the **application firmware**, version 0.2, entry point `0x01A26E`, continuing into the next page and ending at `0xFF` `+0xA2C0` | own checksum verifies over all of it |
 | `0xFF` `+0xEC00` | 121 | unidentified | |

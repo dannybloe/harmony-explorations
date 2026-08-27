@@ -712,10 +712,31 @@ document:
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.
-  The source is a third party repair business rather than Logitech, so it is a hypothesis of the same
-  standing as an upstream finding, and **the cheap confirmation is read only hardware on the spare
-  One** rather than more firmware reading. Firmware side, narrowed not closed: the arch 12 internal
-  bootloader has **zero** port reads so it does not test the key, the safe mode image does read the
+  The source is a third party repair business rather than Logitech, so **which key** it names is a
+  hypothesis of the same standing as an upstream finding, and **the cheap confirmation is read only
+  hardware on the spare One**. The mechanism itself is **read and closed**, section 189, and this
+  entry had it backwards for a fortnight: the arch 12 internal bootloader **does** test a key, and
+  saying it had "zero port reads so it does not test the key"<!--superseded--> came from a test whose
+  guard discarded the one instruction that reads, a `MOVFF`, because a `MOVFF` has no addressing mode
+  field. Section 87 had the right answer in `docs/findings.md` the whole time, so two sections of the
+  one document that has never drifted contradicted each other, each with a passing test.
+* **The Harmony One's bootloader is a USB flash programmer, and that is the recovery route**, section
+  189. It scans the keypad before anything else, over the external memory bus rather than through a
+  port; a byte of `0x0E` keeps it resident in a USB service loop that never returns, `0x1E` forces the
+  image above `0x1000` to run without validating it, and **every path that does not hand off converges
+  on that loop**, including the one taken when the image is gone. Twelve commands, `0x00` to `0x0A`
+  plus `0xFF`, identical on the Harmony 600 down to the instruction sequence of the erase, so it is one
+  programmer from one source rather than one reading. **It protects itself**: erase refuses any address
+  below `0x001000`, which is the bootloader's own end, and has no upper bound. **Unlike arch 9 it
+  copies nothing**, so entering recovery on a Harmony One destroys nothing and the Harmony 525's one
+  way door does not transfer. **The limit is the half to carry**: every write path goes through
+  `EECON1` and `EECON2`, the PIC18's internal self programming interface, and the config sits in
+  external NOR, so this programmer is **not shown to restore a config** and must not be recorded as if
+  it were. What it is shown to reinstall is the internal image, which is the failure the rails already
+  make unreachable. The reassurance for a first write is therefore structural and sits elsewhere: a
+  damaged config cannot reach the bootloader or the image, so the remote still boots and our own read
+  and write path still works.
+* The other two arch 12 measurements from section 118 stand: the safe mode image does read the
   matrix, and the config base reaches `TBLPTRU` from a variable with no literal anywhere.
 * **A config cannot choose where the remote writes**, section 118, which is the measured answer to the
   caveat that a config might make the runtime write to arbitrary flash including firmware. The path is

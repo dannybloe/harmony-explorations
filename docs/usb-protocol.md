@@ -1560,6 +1560,57 @@ message shapes, is in `packages/usb/test/hardware.test.ts`.
   it would say 15 where the firmware copies 12, and the acknowledgement shows the nibble is not a
   length for every response.
 
+## 5. The bootloader speaks a second protocol, and it is a flash programmer
+
+`findings.md` section 189. Everything above is the **application's** protocol. The bootloader in the
+first 4 KiB of internal program memory has its own, and the two share nothing: no length nibble, no
+high nibble command, no state machine. A host that can drive one cannot drive the other.
+
+**How a remote gets there.** At every power on the bootloader scans the keypad before anything else and
+compares the resulting byte against two literals. `0x0E` keeps it resident; `0x1E` runs the image above
+`0x1000` without validating it; anything else validates that image's `48 47` header magic and runs it if
+present. Every path that does not hand off converges on a USB service loop that never returns, so a
+remote whose image above `0x1000` is destroyed still attaches and answers. The scan reaches the keypad
+over the **external memory bus**, a `TBLWT` to `0x020020` and a `TBLRD` from `0x020021`, plus one
+`PORTB` read.
+
+**The command is the whole first byte of a report on endpoint 1.** Not a nibble. Bytes 2 to 4 are a 24
+bit working address, at buffer offsets `0x422` to `0x424`. Twelve commands, `0x00` to `0x0A` contiguous
+plus `0xFF`, decoded from an `XORLW` chain and therefore through `chains.py` rather than by hand:
+
+| command | what it does | confirmed |
+|---|---|---|
+| `0x00` | set the working address to `0x000200` | both |
+| `0x01`, `0x06` | read program memory through `TBLRD`. Two commands, one routine | both |
+| `0x09` | read data memory through `FSR` | both |
+| `0x02` | write program memory and commit | both |
+| `0x08` | load the holding latches without committing | both |
+| `0x0A` | write 64 bytes of `0xFF` and commit | both |
+| `0x03` | erase, **refusing any address below `0x001000`** | both |
+| `0x04` | fill data memory with `0xBB` | both |
+| `0x05` | count and reply, touching nothing | both |
+| `0x07` | reply only, no routine at all | both |
+| `0xFF` | disable USB, delay, then run the image above `0x1000` | both |
+
+"confirmed both" means the Harmony One's `one_internal_fe` and the Harmony 600's `h600_internal_fe`,
+whose switches sit at `0x0047C` and `0x001A8`. The case sets are equal, the same two commands share one
+routine on each, and the erase routines are the same instruction sequence with only the branch targets
+differing, so this is one programmer compiled from one source.
+
+**The commit is the PIC18 unlock**, `0x55` and `0xAA` into `EECON2` then `BSF EECON1,1`. `EECON1` takes
+`0x04` to write and `0x14` to erase a row. An unreferenced routine writes `0xC4`, which reaches the
+configuration words, and no command calls it.
+
+**Unconfirmed, and load bearing: whether any of this reaches external flash.** Every write and erase
+path goes through `EECON1` and `EECON2`, which is the internal self programming interface, and the
+config lives in external parallel NOR. Nothing here issues a NOR command sequence. So the programmer is
+**not** shown to restore a config and must not be documented as if it were; what it is shown to
+reinstall is the internal image. The read commands are a separate matter and are unbounded, and the
+keypad scan proves a `TBLRD` above internal flash does reach the external bus.
+
+**Nothing here has been sent to a remote.** This is a firmware reading only, and `packages/usb`
+implements none of it.
+
 ## Corroboration used, after the fact
 
 * `USB_PACKET_LENGTH 64` in libconcord's hidapi backend agrees with the 64 byte reports.

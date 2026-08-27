@@ -15407,10 +15407,15 @@ contradict anything read here.
 
 What the firmware says, measured on the One's own internal page and application image:
 
-* **The internal bootloader does not test a key.** Every port access in `0x000000` to `0x001000` is a
-  write: `PORTA` through `PORTG` cleared or loaded once in the init block at `0x000B58`, plus five
-  `PORTC` bit 5 toggles. **Zero reads.** So the reset path that section 116's arch 8 analogue made
-  interesting is not where the choice is made on arch 12.
+* **The internal bootloader does test a key, and this bullet said the opposite for a fortnight.** It
+  read "**The internal bootloader does not test a key.** Every port access in `0x000000` to `0x001000`<!--superseded-->
+  is a write ... **Zero reads.**", and section 189 refutes it: there is one read,
+  `MOVFF PORTB,gprF3B` at `0x0095A`, inside the routine the boot decision calls, and the scan reaches
+  the keypad over the external memory bus rather than through a port at all. The test behind this
+  bullet missed it because `MOVFF` was not in its list of reading mnemonics and, worse, because a
+  `MOVFF` has no addressing mode field, so a guard selecting direct accesses discarded it before the
+  port check ran. Section 87 had the right answer in this same document the whole time. So the reset
+  path that section 116's arch 8 analogue made interesting **is** where the choice is made on arch 12.
 * **The safe mode image does read the keypad**, fifteen port reads from `0x004D8C` on, `PORTB`,
   `PORTA` bit 4, `PORTF` and `PORTG`, which is the same set section 13 names for the One's matrix.
   That is what a mode has to do to respond to buttons once it is running, so it is consistent with
@@ -15422,8 +15427,9 @@ What the firmware says, measured on the One's own internal page and application 
   is plausibly how a held key survives into a fresh boot rather than how a container is chosen, and
   nothing read here connects it to either.
 
-So the mechanism is narrowed rather than closed: not the internal bootloader, and reachable from a
-key held across power-on. **The cheap next step is hardware, not firmware**, and it is read only: the
+So the mechanism is closed rather than narrowed, and by section 189 rather than here: it **is** the
+internal bootloader, and it is reachable from a key held across power-on. This paragraph read "the
+mechanism is narrowed rather than closed: not the internal bootloader"<!--superseded--> until then. **The cheap next step is hardware, not firmware**, and it is read only: the
 spare Harmony One is on the bench, the procedure needs no host software to reach step 5, and either
 the screen says "Safe Mode" or it does not. That would turn a repair shop's instruction sheet into a
 measurement on a unit whose contents are backed up byte for byte.
@@ -24816,3 +24822,147 @@ open and they are the next thing in front of a first write.
 **And the deep import is uncovered on purpose.** `transportOver` takes a HID handle the caller had to
 open itself, so guarding it would be guarding somebody who has already gone around the front door.
 `openHarmony` is the boundary this claim is about, and the test asserts that it wraps.
+
+## 189. The bootloader is a USB flash programmer, and it does test a key
+
+Danny asked whether the firmware could settle what a recovery from a failed first write would entail.
+It can, and answering it refuted section 118 on the load bearing point. The recovery route exists, it
+is resident in internal flash on both bench architectures, it is entered from a key held at power on,
+and it does not depend on the application, the config, the external memory or a host having anything
+to say. What it cannot be shown to do is restore a config, and that limit is the useful half.
+
+### Section 118 was wrong, and two tests agreed with each other instead of with the image
+
+Section 118 states, of the Harmony One's internal page: "**The internal bootloader does not test a
+key.** Every port access in `0x000000` to `0x001000` is a write ... **Zero reads.**"<!--superseded--> Section 87 states
+the opposite of the same 4 KiB of the same file, that it "scans the keypad before anything else". Both
+carried a passing test, which is why this sat here unnoticed: `docs/findings.md` is the document that
+has never drifted because every section in it carries a regression test, and here two sections carried
+tests that could not see each other's claim.
+
+Section 87's test asserts that two literals are compared and that one branch reaches `0x0100A`. That is
+true and it does not reach the word "keypad". Section 118's test scans for port reads and missed the one
+that exists, twice over:
+
+* its `READS` tuple is `('BTFSS', 'BTFSC', 'MOVF')`, and the instruction that reads the keypad is a
+  `MOVFF`
+* it guards with `if ins.fields.get('a') != 0: continue`, and a `MOVFF` has no `a` field at all, so
+  `None != 0` is true and the instruction is discarded before the port check runs
+
+The second is the transferable one. A guard written to select one addressing mode silently discards
+every instruction that has no addressing mode, and the project's own `pic18_trace.py` does not have
+this defect: its docstring says it sees banked accesses and `MOVFF`. The test hand rolled a scanner
+instead of using it. There is exactly **one** port read in the Harmony One's bootloader,
+`MOVFF PORTB,gprF3B` at `0x0095A`, and it sits inside the routine the boot decision calls.
+
+Section 118's other two measurements stand. The safe mode image above `0x1000` does read the matrix,
+and no literal config base reaches `TBLPTRU` in the application image.
+
+### The boot decision, read through
+
+On the Harmony One, `0x00078` calls `0x008D8`, stores the byte it returns at `0xF2A`, and compares it
+against two literals:
+
+| the byte at `0xF2A` | what happens |
+|---|---|
+| `0x0E` | status 6, then fall through to the USB service loop and stay there |
+| `0x1E` | `GOTO 0x0100A` immediately, without validating the image |
+| anything else | call the validator at `0x001FE`; if it passes, `GOTO 0x0100A`; if not, status 9 |
+
+The validator is section 87's `48 47` header magic check at `0x001008`, so the default path runs the
+image above `0x1000` when that image is present. `0x1E` therefore is not a synonym for the default: it
+is a **force the image to run even though its header does not validate**, which is an affordance for a
+partially damaged image and nothing else.
+
+**Every path that does not hand off converges on `0x000C4`**, from status 6, from status 9 and from two
+further branches, and `0x000C4` clears `TBLPTR` and calls `0x00282` and `0x002E8`. `0x002E8` writes
+`0x14` to `UCFG` and enters a three call loop at `0x002F2` that branches back to itself and never
+returns. So the remote configures USB and services it forever. **A Harmony One whose image above
+`0x1000` is destroyed still reaches that loop**, by the status 9 route, which is the deepest recovery
+guarantee in the part.
+
+### The keypad scan, and why a port scan found little
+
+`0x008D8` is a binary search over row groups. It drives eleven active low masks, `0x0F`, `0x3F`, `0x7F`,
+`0xBF`, `0xDF`, `0xEF`, `0xF3`, `0xF7`, `0xFB`, `0xFD` and `0xFE`, through the helper at `0x0097E`, and
+composes a number 1 to 8 into `0xD02`. The helper does not touch a port: it stores the mask, calls
+`0x007C8`, which sets `TBLPTR` to `0x020020` and does a `TBLWT*`, then calls `0x007DE`, which sets
+`TBLPTR` to `0x020021` and does a `TBLRD*`. So the row drive and the column sense are reached over the
+**external memory bus** rather than through the MCU's own ports, which is why counting `PORTx` accesses
+understated the scan so badly. The one `PORTB` read at `0x0095A` is additional and follows a `CLRF` of
+`0xF3C` and a `BCF INTCON,0`.
+
+**What sits at `0x020020` and `0x020021` during the bootloader is not established here** and must not be
+guessed: those addresses are also where the application image lives once the external bus is configured
+for the parallel NOR, and reconciling the two is a separate reading.
+
+### Twelve commands, on both architectures, from one source
+
+The service loop's `0x00436` waits for a report on endpoint 1 and switches on its first byte with an
+`XORLW` chain at `0x0047C`, decoded through `chains.py` because the literals in such a chain are not its
+case values. Twelve cases, `0x00` to `0x0A` contiguous plus `0xFF`, no duplicate:
+
+| command | routine | what it does |
+|---|---|---|
+| `0x00` | `0x00338` | set the working address to `0x000200` |
+| `0x01`, `0x06` | `0x00342` with `0xA5` clear | read program memory through `TBLRD` |
+| `0x09` | `0x00342` with `0xA5` set | read data memory through `FSR` |
+| `0x02` | `0x00372` with `0xA6` clear | write program memory and commit |
+| `0x08` | `0x00372` with `0xA6` set | load the holding latches and do not commit |
+| `0x0A` | `0x003AA` | write 64 bytes of `0xFF` and commit |
+| `0x03` | `0x003CA` | erase |
+| `0x04` | `0x003F8` | fill data memory with `0xBB` |
+| `0x05` | `0x0040E` | count and reply, touching nothing |
+| `0x07` | none | reply only |
+| `0xFF` | `0x00524` | disable USB, delay, `GOTO 0x0100A` |
+
+The working address is bytes 2 to 4 of the received report, at `0x422` to `0x424`. The commit is the
+textbook PIC18 unlock, `0x55` and `0xAA` into `EECON2` then `BSF EECON1,1`, at `0x0032C`, with a second
+copy at `0x00EE4` outside the command paths.
+
+**The Harmony 600's bootloader carries the same twelve commands**, switch at `0x001A8`, the same case
+set with the same two commands sharing one routine, and its erase routine at `0x000F6` is the same
+instruction sequence as the Harmony One's at `0x003CA` with only the branch targets differing: the same
+three byte compare against `0x001000`, the same `BNC` past everything, the same `MOVLW 0x14` into
+`EECON1`. Two architectures agreeing instruction for instruction is one programmer compiled from one
+source rather than two readings of one image.
+
+### The programmer protects itself, and that bound is the finding's best closure
+
+Command `0x03` compares its 24 bit address against `0x001000` and returns without touching `EECON1` when
+the address is below it. `0x001000` is the end of the bootloader. So the erase command **refuses to
+erase the bootloader** and there is no upper bound at all, which is the shape of a rail written by
+somebody protecting the recovery path rather than the payload. It is also the reason the recovery route
+can be trusted to survive its own use.
+
+`EECON1` values across the handlers are consistent with that reading and are not asserted beyond it:
+`0x04` is write enable, `0x14` adds the row erase bit, and an unreferenced routine at `0x0041C` writes
+`0xC4`, which reaches the configuration words and is called from none of the twelve.
+
+### What it means for a first write, and the limit that matters more
+
+The favourable half. Recovery on a Harmony One is entered before the application runs, from a key held
+at power on, needs no host software and no config, and lands in a USB service loop that also catches the
+case where the image it would otherwise run is gone. Contrast arch 9, section 118, where entering safe
+mode **copies** an image over the application and is therefore a one way door: on arch 12 the bootloader
+`GOTO`s a second image resident beside it and copies nothing, so entering recovery destroys nothing. The
+Harmony 525's hazard does not transfer to the Harmony One, and this is the mechanism rather than an
+analogy.
+
+The limit. Every write and erase path here goes through `EECON1` and `EECON2`, which is the PIC18's
+**internal** self programming interface. The config a first write would target sits in external parallel
+NOR at `0x040000`. Nothing read here issues a NOR command sequence, and an `EECON1` commit with
+`TBLPTR` outside internal flash is not a NOR write. **So this programmer is not shown to restore a
+config, and must not be recorded as if it were.** What it is shown to do is reinstall the internal
+image, which is the failure the write rails already make unreachable.
+
+Which leaves the actual reassurance in a different place than the question expected. A damaged config
+does not prevent booting, because the bootloader and the image above `0x1000` are in different memory
+from the config and a write into the config region cannot reach them. So the recovery from a bad config
+write is that the remote still comes up and our own read and write path still works, and the bootloader's
+programmer is the backstop one layer below that.
+
+**Which physical key carries `0x0E` is still unanswered and still cannot be answered from firmware**,
+per section 48: a scan code does not yield a key on arch 12 because sixteen buttons share one sense line.
+The published procedure in section 118 remains a third party claim about which key, and the cheap
+confirmation remains read only hardware on the spare Harmony One.

@@ -375,3 +375,43 @@ are corrected in place there and the hash above moved accordingly.
 So the exercise did what it was for. It did not overturn the derivation, and it was not a rubber stamp:
 it closed one open question, moved another, added a hazard, and caught a summary that had gone wrong.
 Jobs 2 to 4 have not been run.
+
+## Job 4 answered itself from the firmware, on 27 August 2026
+
+Job 4 was framed as "not a code question", and that framing was wrong: most of it is a firmware
+question and reading the firmware settled it, section 189. Recorded here because the framing is the
+mistake worth keeping, and because it changes what a reviewer would still be for.
+
+**What the firmware settled.** The Harmony One has a recovery mode resident in the first 4 KiB of
+internal program memory, entered by a key held at power on, before the application runs. It scans the
+keypad before anything else, and one key code keeps it resident in a USB service loop that never
+returns. In that state it is a **flash programmer**: twelve commands including read, write, erase and
+a run the image command, identical on the Harmony 600 down to the instruction sequence of the erase.
+It **protects itself**, refusing to erase any address below its own end, and unlike arch 9 it copies
+nothing when entered, so the Harmony 525's one way door does not transfer.
+
+**Which retires the analogy this job was built on.** The brief argued that the Harmony 525 EEPROM byte
+success "does not transfer" to a Harmony One config restore, and that is still true, but for a reason
+the brief did not have: the two are not comparable because on arch 12 the recovery path is not an
+install at all. Nothing is copied over anything.
+
+**And it relocated the reassurance rather than supplying it.** Every write path in that programmer goes
+through the PIC18's internal self programming interface, and a config lives in external NOR, so the
+programmer is **not shown to restore a config**. What actually makes a first write survivable is
+structural and simpler: a write confined to the config region cannot reach the bootloader or the image
+above it, so a damaged config leaves a remote that still boots and still answers our own read and write
+path. The programmer is the layer below that, for the failure the rails already make unreachable.
+
+**What is left of job 4, and it is small and specific.** Which physical key carries the code that keeps
+the bootloader resident. Firmware cannot answer it, per section 48, because sixteen buttons of a
+Harmony One share one sense line, and the published procedure naming that key is a third party repair
+sheet. The confirmation is read only hardware on the spare, costs one power cycle, and needs no host
+software: hold the key, insert the battery, and read the screen. **That box is still unticked** and it
+is the one step of the recovery sequence that remains unproven by measurement here.
+
+**The instructive part is how it was found.** Two sections of `docs/findings.md` contradicted each
+other on the load bearing point, 87 saying the bootloader scans the keypad and 118 saying it reads no
+port at all, and both carried a passing test. This is the document that has never drifted because every
+section in it carries a regression test, and the mechanism that failed was not the absence of a test
+but two tests whose bodies could not see each other's claim. Nobody noticed until a question forced the
+two together.

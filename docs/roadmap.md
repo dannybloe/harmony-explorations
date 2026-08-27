@@ -28,8 +28,15 @@ Then the internal read window turned out to be two pages rather than one, which 
 claim and, on the 600, **completed a firmware image this project has worked around for months**:
 70336 bytes, its own checksum verifying, against concordance's truncated 65536. Sections 22 and 23.
 
-Next is milestone M4, the write path, whose gate opened on 25 August 2026. Decision 4 has been
-revised: the product lives in
+Next is milestone M4, the write path, whose gate opened on 25 August 2026. **The recovery route in
+front of it is read since 27 August 2026**, section 189: the Harmony One's bootloader is a resident USB
+flash programmer reached from a key held at power on, it refuses to erase itself, it copies nothing, and
+every boot path that does not hand off lands in its USB loop, including the one taken when the image it
+would run is gone. It writes internal flash and not the external NOR a config sits in, so it does not
+put a config back; what makes a write survivable is that a write confined to the config region cannot
+reach it. One step of that route is still unproven by measurement and it is a single read only power
+cycle on the spare: which physical key keeps the bootloader resident, which firmware cannot answer.
+Decision 4 has been revised: the product lives in
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
 Read the next section before the milestones, because that revision changed what this repository is
 for and the milestone list was written when it was going to hold everything.

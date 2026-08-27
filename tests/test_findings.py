@@ -963,17 +963,28 @@ class TestAConfigCannotChooseWhereItWrites(unittest.TestCase):
                 self.assertEqual(used & {0x65, 0x66}, set())
 
 
-class TestTheArch12BootloaderDoesNotTestAKey(unittest.TestCase):
-    """Section 118. The safe mode trigger is a cold boot key hold, and it is not in the bootloader.
+class TestTheArch12BootloaderDoesTestAKey(unittest.TestCase):
+    """Section 189, correcting section 118. The bootloader reads the keypad, and this class asserted
+    the opposite until 27 August 2026.
 
-    A negative result, asserted because it is the half that is measured. The procedure itself comes
-    from a third party repair sheet and is deliberately **not** asserted here: a published
-    instruction is not a property of this image, and confirming it needs the remote.
+    The refuted claim was "the internal bootloader does not test a key ... zero reads",<!--superseded--> and the test
+    below is rewritten to state what is true rather than removed, per the house rule. Its old body is
+    kept as `old_scanner_shape` and asserted to find nothing, because the defect is the finding: a
+    guard written as `fields.get('a') != 0` discards every instruction that has **no** addressing
+    mode, and a `MOVFF` has none. `pic18_trace.py` does not have this defect and its docstring says
+    so; this test hand rolled a scanner instead of using it.
+
+    The procedure itself still comes from a third party repair sheet and is deliberately **not**
+    asserted here: a published instruction is not a property of this image, and which physical key
+    carries the code cannot be read from firmware at all, per section 48.
     """
 
     PORTS = frozenset({0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86})
+    PORT_ADDRESSES = frozenset(0xF00 | low for low in PORTS)
     READS = ('BTFSS', 'BTFSC', 'MOVF')
     BOOTLOADER_END = 0x1000
+    THE_ONE_READ = 0x0095A
+    PORTB = 0xF81
 
     def port_access(self, code, low, high, reads_only):
         out = []
@@ -988,14 +999,41 @@ class TestTheArch12BootloaderDoesNotTestAKey(unittest.TestCase):
             out.append((off, ins.mnemonic))
         return out
 
-    def test_the_bootloader_reads_no_port_at_all(self):
+    def port_reads_including_movff(self, code, low, high):
+        """Every read of a port, counting the addressing modes the old scan threw away."""
+        out = []
+        for off in range(low, min(high, len(code) - 1), 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None:
+                continue
+            if ins.mnemonic == 'MOVFF':
+                if ins.fields.get('src') in self.PORT_ADDRESSES:
+                    out.append((off, ins.mnemonic))
+                continue
+            if ins.mnemonic not in self.READS:
+                continue
+            if ins.fields.get('a') != 0 or ins.fields.get('f') not in self.PORTS:
+                continue
+            out.append((off, ins.mnemonic))
+        return out
+
+    def test_the_bootloader_reads_exactly_one_port_and_the_old_scan_could_not_see_it(self):
         """
-        So the key cannot be tested there. Both halves asserted: no reads, and writes present, since
-        "no reads" from a scan that finds nothing at all would prove only that the scan is broken.
+        One read, `MOVFF PORTB,gprF3B`, inside the routine the boot decision calls. Three assertions,
+        and the middle one is the point: the old scanner's shape reports zero over the same bytes, so
+        the disagreement is between two readers of one image rather than between two images.
         """
         lab.require('one_internal_fe')
         code = lab.load('one_internal_fe')
-        self.assertEqual(self.port_access(code, 0, self.BOOTLOADER_END, True), [])
+
+        reads = self.port_reads_including_movff(code, 0, self.BOOTLOADER_END)
+        self.assertEqual(reads, [(self.THE_ONE_READ, 'MOVFF')])
+        self.assertEqual(isa.decode(code, self.THE_ONE_READ, 0).fields['src'], self.PORTB)
+
+        # The refuted reading, kept executable so the defect cannot come back silently.
+        self.assertEqual(self.port_access(code, 0, self.BOOTLOADER_END, True), [],
+                         'the old scan found nothing, which is why section 118 was wrong')
+
         writes = self.port_access(code, 0, self.BOOTLOADER_END, False)
         self.assertEqual(len(writes), 13, 'port writes in the bootloader, which is the positive half')
 
@@ -1424,6 +1462,174 @@ class TestTheStagedFirmwareSurvivedSafeMode(unittest.TestCase):
         populated = sum(1 for b in staged if b != 0xFF)
         self.assertGreater(populated / len(staged), 0.95)
 
+
+class TestTheBootloaderIsAUsbFlashProgrammer(unittest.TestCase):
+    """Section 189. The recovery route is resident in internal flash on both bench architectures.
+
+    Two images, so the per architecture comparison is the evidence rather than a second reading of
+    one file. The claims that matter to a first write are the erase bound, which is what stops the
+    programmer destroying itself, and the convergence of every non handoff path on a USB loop, which
+    is what makes a remote with a destroyed image still answer a host.
+    """
+
+    # image -> (address of the command switch, address of the erase routine, unlock sites)
+    BOOTLOADERS = {
+        'one_internal_fe': (0x0047C, 0x003CA, (0x0032C, 0x00EE4)),
+        'h600_internal_fe': (0x001A8, 0x000F6, (0x00058, 0x00A78, 0x00B34)),
+    }
+
+    COMMANDS = frozenset(list(range(0x00, 0x0B)) + [0xFF])
+    ERASE_FLOOR = 0x001000      # the bootloader's own end
+    # An SFR reached through the access bank is encoded as the low byte of its address, so these
+    # are what an `f` field holds. EECON1 is 0xFA6, EECON2 0xFA7 and UCFG 0xF5F in full.
+    EECON1, EECON2, UCFG = 0xA6, 0xA7, 0x5F
+    WREN_AND_FREE = 0x14        # write enable plus the row erase bit
+
+    def test_both_bootloaders_carry_the_same_twelve_command_set(self):
+        """
+        Decoded through chains.py, because an XORLW chain's literals are not its case values. The
+        exact set is asserted rather than its size, and the shared routine is asserted as a count of
+        one pair so that a second coincidence would fail rather than pass.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (switch, _erase, _unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                cases = chains.xor_chain(code, 0, switch, limit=40)
+                values = [c.value for c in cases]
+                self.assertEqual(len(values), 12)
+                self.assertEqual(set(values), self.COMMANDS)
+                self.assertEqual(len(set(values)), 12, 'a switch cannot repeat a case')
+
+                # Exactly one pair of commands shares a routine, and it is 0x01 with 0x06.
+                by_target = {}
+                for case in cases:
+                    by_target.setdefault(case.target, []).append(case.value)
+                shared = sorted(v for vs in by_target.values() if len(vs) > 1 for v in vs)
+                self.assertEqual(shared, [0x01, 0x06])
+
+    def test_the_erase_command_refuses_to_erase_the_bootloader(self):
+        """
+        The finding's best closure, because it is a rail somebody wrote deliberately: a three byte
+        compare against 0x001000 and a branch past everything, so the erase cannot reach the 4 KiB
+        it is running from. There is no upper bound, which is the other half of that shape.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (_switch, erase, _unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                window = [isa.decode(code, erase + 2 * i, 0) for i in range(8)]
+
+                # The bound arrives as three literals, low byte first, against 0x422 to 0x424.
+                literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals, [self.ERASE_FLOOR & 0xFF,
+                                            (self.ERASE_FLOOR >> 8) & 0xFF,
+                                            (self.ERASE_FLOOR >> 16) & 0xFF])
+                self.assertEqual([i.fields['f'] for i in window
+                                  if i.mnemonic in ('SUBWF', 'SUBWFB')], [0x22, 0x23, 0x24])
+
+                # Below the bound it branches out without ever arming EECON1.
+                out = window[7]
+                self.assertEqual(out.mnemonic, 'BNC')
+                armed = [erase + 2 * i for i, ins in enumerate(window)
+                         if ins.mnemonic == 'MOVWF' and ins.fields.get('f') == self.EECON1]
+                self.assertEqual(armed, [], 'nothing is armed before the bound is tested')
+                self.assertLess(out.fields['target'], erase + 2 * len(window) + 0x40)
+
+                # And past it, the erase bit goes in.
+                arm = [isa.decode(code, erase + 16 + 2 * i, 0) for i in range(2)]
+                self.assertEqual([a.mnemonic for a in arm], ['MOVLW', 'MOVWF'])
+                self.assertEqual(arm[0].fields['k'], self.WREN_AND_FREE)
+                self.assertEqual(arm[1].fields['f'], self.EECON1)
+
+    def test_the_two_erase_routines_are_one_routine_compiled_twice(self):
+        """
+        What makes this a finding rather than two readings: the same 23 instructions in the same
+        order on two architectures, differing only in where their branches land. A shared case set
+        could be coincidence; a shared instruction sequence is one source.
+        """
+        lab.require(*self.BOOTLOADERS)
+        shapes = []
+        for name, (_switch, erase, _unlock) in self.BOOTLOADERS.items():
+            code = lab.load(name)
+            shape = []
+            for i in range(23):
+                ins = isa.decode(code, erase + 2 * i, 0)
+                fields = {k: v for k, v in ins.fields.items() if k != 'target'}
+                shape.append((ins.mnemonic, tuple(sorted(fields.items()))))
+            shapes.append((name, shape))
+        self.assertEqual(shapes[0][1], shapes[1][1],
+                         '%s and %s disagree' % (shapes[0][0], shapes[1][0]))
+        self.assertEqual(shapes[0][1][-1][0], 'RETURN', 'the window ends on the routine')
+
+    def test_the_commit_is_the_pic18_unlock_and_the_sites_are_counted(self):
+        """
+        0x55 then 0xAA into EECON2. Counted exactly, so a fifth site appearing anywhere in either
+        bootloader is a change somebody has to look at rather than a passing bound.
+        """
+        lab.require(*self.BOOTLOADERS)
+        for name, (_switch, _erase, unlock) in self.BOOTLOADERS.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                found = []
+                for off in range(0, 0x1000 - 8, 2):
+                    w = [isa.decode(code, off + 2 * i, 0) for i in range(4)]
+                    if any(x is None for x in w):
+                        continue
+                    if [x.mnemonic for x in w] != ['MOVLW', 'MOVWF', 'MOVLW', 'MOVWF']:
+                        continue
+                    if w[0].fields.get('k') != 0x55 or w[2].fields.get('k') != 0xAA:
+                        continue
+                    if w[1].fields.get('f') != self.EECON2 or w[3].fields.get('f') != self.EECON2:
+                        continue
+                    found.append(off)
+                self.assertEqual(tuple(found), unlock)
+
+    def test_every_path_that_does_not_hand_off_reaches_a_usb_loop_that_never_returns(self):
+        """
+        Why a Harmony One with a destroyed image still attaches. Measured on the arch 12 image, whose
+        addresses the section names: four branches converge on 0x000C4, which calls 0x002E8, which
+        configures USB and branches backwards inside itself. 0x00094 is deliberately not among them,
+        being the branch to the validator rather than to the loop.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        converge, loop = 0x000C4, 0x002E8
+
+        arrivals = []
+        for off in range(0, 0x200, 2):
+            ins = isa.decode(code, off, 0)
+            if ins is None or 'target' not in ins.fields:
+                continue
+            if ins.fields['target'] == converge:
+                arrivals.append(off)
+        self.assertEqual(arrivals, [0x00092, 0x000AC, 0x000BC, 0x000C2])
+
+        calls = [isa.decode(code, converge + 2 * i, 0) for i in range(6)]
+        self.assertIn(loop, [c.fields.get('target') for c in calls])
+
+        # UCFG is written, then a body that branches back above itself and never returns.
+        head = [isa.decode(code, loop + 2 * i, 0) for i in range(4)]
+        self.assertEqual(head[2].fields.get('f'), self.UCFG, 'UCFG')
+        back = isa.decode(code, 0x002FE, 0)
+        self.assertEqual(back.mnemonic, 'BRA')
+        self.assertEqual(back.fields['target'], 0x002F2)
+        self.assertLess(back.fields['target'], 0x002FE, 'the branch goes backwards, so it loops')
+
+    def test_the_keypad_scan_reaches_the_matrix_over_the_external_memory_bus(self):
+        """
+        Which is why counting PORTx accesses understated it. Two helpers, one writing the row mask to
+        0x020020 and one reading the answer from 0x020021, both through the table pointer.
+        """
+        lab.require('one_internal_fe')
+        code = lab.load('one_internal_fe')
+        for start, address, access in ((0x007C8, 0x020020, 'TBLWT*'),
+                                       (0x007DE, 0x020021, 'TBLRD*')):
+            with self.subTest(hex(start)):
+                window = [isa.decode(code, start + 2 * i, 0) for i in range(9)]
+                literals = [i.fields['k'] for i in window if i.mnemonic == 'MOVLW']
+                self.assertEqual(literals[:2], [(address >> 16) & 0xFF, address & 0xFF])
+                self.assertIn(access, [i.mnemonic for i in window])
 
 if __name__ == '__main__':
     unittest.main()
