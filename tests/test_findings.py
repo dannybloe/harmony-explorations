@@ -1874,5 +1874,204 @@ class TestTheSafeModeScreenListsTheRemotesImages(unittest.TestCase):
         versions = [v for _c, v, _f in self.SCREEN.values()]
         self.assertEqual(sorted(versions).count(0x34), 4, 'and the versions could not have done it')
 
+class TestTheHarmonyOneWritesItsOwnExternalFlash(unittest.TestCase):
+    """Section 191. The parallel NOR programmer is resident in internal flash, and which level of the
+    remote can reach it is the whole finding.
+
+    The bootloader cannot, safe mode carries its own copy, and the application calls a library through
+    a jump table. Section 189 read the bootloader and wrote its limit for recovery, which is the third
+    time in a day a measurement on one level was written as a rule about the class, so every assertion
+    here names the level it is about.
+
+    **A command byte is a command because of where it is stored**, not because of its value. The first
+    version of the gate table was built by matching the AMD command literals and reported the sleep
+    routine as an erase, because it loads `0x80` for `MEMCON` and `0xF0` for `TRISH`. So
+    `committed_writes` requires the literal to reach `TABLAT` and be committed by a `TBLWT`.
+    """
+
+    LIBRARY_BASE = 0x10000      # internal page 0xFF covers program 0x010000 to 0x01FFFF
+    GATES = (0x01E00C, 0x01E00E, 0x01E010, 0x01E012, 0x01E014)
+    UNLOCK = ((0x022AAA, 0xAA), (0x022555, 0x55))
+    ERASE_GATE, PROGRAM_GATE, SLEEP_GATE = 0x01E00E, 0x01E012, 0x01E014
+    SECTOR_ERASE, PROGRAM, TABLAT = 0x30, 0xA0, 0xF5
+    # The duplicated block: the library's code, and where safe mode keeps its own copy.
+    LIBRARY_CODE, SAFE_MODE_COPY, COPY_BYTES = 0x01E018, 0x009CCA, 601
+
+    TBLPTRL, TBLPTRH, TBLPTRU = 0xF6, 0xF7, 0xF8
+
+    def committed_writes(self, code, base, lo, hi):
+        """Every byte that reaches memory, as (site, destination or None, value).
+
+        The destination is tracked as well as the value, because a byte is a command by virtue of
+        where it lands. `None` means the table pointer was not built from three literals in this
+        window, which is the ordinary case for a programmer writing a caller's address.
+        """
+        out, at, pending, staged, ptr = [], lo, None, None, {}
+        while at < min(hi, len(code) + base - 3):
+            ins = isa.decode(code, at - base, base)
+            if ins is None:
+                break
+            if ins.mnemonic == 'MOVLW':
+                pending = ins.fields['k']
+            elif ins.mnemonic == 'MOVWF' and ins.fields.get('a') == 0:
+                f = ins.fields.get('f')
+                if f == self.TABLAT:
+                    staged = pending
+                elif f == self.TBLPTRL:
+                    ptr['L'] = pending
+                elif f == self.TBLPTRH:
+                    ptr['H'] = pending
+                elif f == self.TBLPTRU:
+                    ptr['U'] = pending
+            elif ins.mnemonic.startswith('TBLWT') and staged is not None:
+                where = (((ptr['U'] << 16) | (ptr['H'] << 8) | ptr['L'])
+                         if len(ptr) == 3 else None)
+                out.append((at, where, staged))
+                staged = None
+            at += 2 * ins.words
+        return out
+
+    def test_the_gates_are_five_single_branches_into_the_library(self):
+        """What section 22 called "a run of BRA" and nobody followed. Section 186 identified the gate
+        correctly and then said the code behind it was in nothing this project holds; it is here."""
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        targets = []
+        for gate in self.GATES:
+            ins = isa.decode(code, gate - self.LIBRARY_BASE, self.LIBRARY_BASE)
+            self.assertEqual(ins.mnemonic, 'BRA', 'gate 0x%06X' % gate)
+            targets.append(ins.fields['target'])
+        self.assertEqual(len(set(targets)), 5, 'five gates, five distinct routines')
+        for target in targets:
+            self.assertTrue(0x01E000 < target < 0x01E27A, 'stays inside the library: 0x%06X' % target)
+
+    def test_the_application_is_what_calls_them_and_it_calls_all_five(self):
+        """
+        The gate's purpose, and the count matters: seven call sites over five gates, so no gate is
+        vestigial. Asserted exactly, since a gate falling out of use would be a change to look at.
+        """
+        lab.require('one34_code')
+        code = lab.load('one34_code')
+        base = 0x020000
+        sites = {gate: 0 for gate in self.GATES}
+        for off in range(0, len(code) - 3, 2):
+            ins = isa.decode(code, off, base)
+            if ins is None or ins.mnemonic not in ('CALL', 'GOTO'):
+                continue
+            target = ins.fields.get('target')
+            if target in sites:
+                sites[target] += 1
+        self.assertEqual(sites, {0x01E00C: 2, 0x01E00E: 1, 0x01E010: 1, 0x01E012: 1, 0x01E014: 2})
+
+    def test_the_unlock_is_the_amd_command_set_driven_as_bus_writes(self):
+        """
+        Two writes at addresses whose low twelve bits are 0xAAA and 0x555, which is the standard byte
+        mode unlock. The addresses are asserted in full **and** masked, because it is the low bits that
+        the device decodes and the upper ones that say which chip is being addressed.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        writes = self.committed_writes(code, self.LIBRARY_BASE, self.LIBRARY_CODE, 0x01E0B8)
+        # The first version of this asserted a list against itself and could not fail. The address
+        # is the point, so it is read out of the image and compared to the constant.
+        self.assertEqual([(where, value) for _at, where, value in writes[:2]], list(self.UNLOCK))
+        for address, _value in self.UNLOCK:
+            self.assertIn(address & 0xFFF, (0xAAA, 0x555), 'the byte mode unlock offsets')
+            self.assertGreaterEqual(address, 0x020000, 'and above internal flash, so a bus write')
+        # No EECON1 is involved at all, which is what makes it a bus write rather than self
+        # programming, and is the difference from the bootloader's twelve command programmer.
+        armed = [at for at in range(self.LIBRARY_CODE, 0x01E27A, 2)
+                 if (lambda i: i is not None and i.fields.get('f') == 0xA6
+                     and i.fields.get('a') == 0 and i.mnemonic in ('MOVWF', 'CLRF', 'BSF'))(
+                     isa.decode(code, at - self.LIBRARY_BASE, self.LIBRARY_BASE))]
+        self.assertEqual(armed, [], 'the NOR path never touches EECON1')
+
+    def test_erase_and_program_are_separate_gates_so_programming_does_not_erase(self):
+        """
+        Section 186 closed this for arch 14 by reading the SPI opcodes and left the Harmony One open.
+        The answer agrees: the program gate emits no erase command, so the caller erases on both bench
+        architectures, which is what the rails assume.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        gate_target = {}
+        for gate in self.GATES:
+            gate_target[gate] = isa.decode(code, gate - self.LIBRARY_BASE,
+                                           self.LIBRARY_BASE).fields['target']
+        bounds = sorted(gate_target.values())
+
+        def emitted(gate):
+            start = gate_target[gate]
+            later = [b for b in bounds if b > start]
+            end = min(later) if later else 0x01E27A
+            return [v for _at, _where, v in self.committed_writes(code, self.LIBRARY_BASE, start, end)]
+
+        self.assertIn(self.SECTOR_ERASE, emitted(self.ERASE_GATE))
+        self.assertIn(self.PROGRAM, emitted(self.PROGRAM_GATE))
+        self.assertNotIn(self.SECTOR_ERASE, emitted(self.PROGRAM_GATE),
+                         'programming does not erase first')
+        self.assertNotIn(self.PROGRAM, emitted(self.ERASE_GATE))
+        # And the sleep gate writes nothing to the chip, which is the false positive the literal
+        # matching version of this test reported as an erase.
+        self.assertEqual(emitted(self.SLEEP_GATE), [], 'the sleep routine touches no flash')
+
+    def test_the_sleep_gate_disables_the_external_bus_which_is_why_it_is_resident(self):
+        """
+        The reason the library exists at all: the instruction after the one that disables the bus
+        cannot be fetched from the bus. `MEMCON` is saved, bit 7 set, `SLEEP`, then restored.
+        """
+        lab.require('one_page_ff')
+        code = lab.load('one_page_ff')
+        MEMCON = 0xCB
+        at, seen = isa.decode(code, self.SLEEP_GATE - self.LIBRARY_BASE,
+                              self.LIBRARY_BASE).fields['target'], []
+        for _ in range(24):
+            ins = isa.decode(code, at - self.LIBRARY_BASE, self.LIBRARY_BASE)
+            if ins is None:
+                break
+            seen.append((ins.mnemonic, ins.fields.get('f'), ins.fields.get('k')))
+            at += 2 * ins.words
+        mnemonics = [m for m, _f, _k in seen]
+        self.assertIn('SLEEP', mnemonics)
+        self.assertIn(MEMCON, [f for _m, f, _k in seen], 'MEMCON is written')
+        self.assertIn(0x80, [k for _m, _f, k in seen], 'and bit 7, which disables the bus')
+
+    def test_safe_mode_carries_its_own_copy_and_the_bootloader_carries_none(self):
+        """
+        The level distinction, which is what section 189 got wrong. 601 bytes byte identical, and the
+        bootloader's whole complement of 0xAA literals accounted for as EECON2 unlocks rather than
+        merely not found, because "no unlock here" is a claim a weak search would also make.
+        """
+        lab.require('one_page_ff', 'one_internal_fe')
+        library = lab.load('one_page_ff')
+        page_fe = lab.load('one_internal_fe')
+
+        a = self.LIBRARY_CODE - self.LIBRARY_BASE
+        b = self.SAFE_MODE_COPY
+        self.assertEqual(library[a:a + self.COPY_BYTES], page_fe[b:b + self.COPY_BYTES])
+        self.assertNotEqual(library[a:a + self.COPY_BYTES + 1],
+                            page_fe[b:b + self.COPY_BYTES + 1],
+                            'and 601 is the whole run, so the count is exact')
+
+        # The bootloader: every 0xAA literal in it, and both are EECON2 unlocks.
+        EECON2 = 0xA7
+        unlocks = []
+        for at in range(0, 0x1000 - 2, 2):
+            ins = isa.decode(page_fe, at, 0)
+            if ins is None or ins.mnemonic != 'MOVLW' or ins.fields['k'] != 0xAA:
+                continue
+            after = isa.decode(page_fe, at + 2, 0)
+            self.assertEqual(after.fields.get('f'), EECON2,
+                             '0xAA at 0x%03X does not go to EECON2' % at)
+            unlocks.append(at)
+        self.assertEqual(unlocks, [0x330, 0xEE8], 'the two EECON2 unlocks and nothing else')
+        # This first asserted that the bootloader commits nothing at all, and the body could not
+        # reach that title: it commits three bytes, which is its own internal programmer loading
+        # holding latches. What matters is that none of them can begin an AMD unlock.
+        committed = self.committed_writes(page_fe, 0, 0, 0x1000)
+        self.assertEqual([value for _at, _where, value in committed], [0x04, 0xAC, 0x55])
+        self.assertNotIn(0xAA, [value for _at, _where, value in committed],
+                         'no 0xAA reaches memory, so no unlock can start in the bootloader')
+
 if __name__ == '__main__':
     unittest.main()

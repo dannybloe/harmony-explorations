@@ -24680,8 +24680,15 @@ once from state 3, the destination selector's three values, the per 64 byte comm
 route, and both halves of the interlock that two earlier readings here got wrong, its polarity and its
 resting state. Two things it added are below. What it did **not** move is the Harmony One's own
 external store, and for a reason worth recording: that path ends in a resident call gate below the
-image's base, so the instruction that puts a byte into the parallel NOR is not in anything this
-project holds. It said so and marked the row unread.
+image's base. It said so and marked the row unread.
+
+**It added "the instruction that puts a byte into the parallel NOR is not in anything this project
+holds"**<!--superseded--> **and that was out of scope**, section 191. It is true of what the reviewer
+held, since the packet carried the two application images and deliberately not the internal pages, and
+false of the repository, which has had `0xFF` `+0xE000` in the lab since section 22. The gate leads to a
+634 byte callable library whose jump table this project's own memory map described and nobody followed.
+**A blind reviewer's statement is scoped to the packet**, and copying one out of that scope is a way for
+a withhold list to produce a wrong claim rather than a missing one.
 
 **The Harmony 600 does not erase before it programs, and that closes half of section 175's first open
 question.** Verified here rather than adopted, per decision 7. The program path at `0x17500` loads
@@ -24693,6 +24700,11 @@ from `0x13C9E` and a `GOTO` from `0x17EBA`, both on the erase command's own path
 architecture the rails' assumption that the **caller** erases is measured rather than assumed, and the
 practical consequence is unchanged, since erasing an already erased block changes nothing. The Harmony
 One half stays open and now has a reason instead of a gap.
+
+**The Harmony One half is closed since section 191, and it agrees.** Its external NOR programmer is the
+resident library at `0x01E000`, and erase and program are **separate** gates: `0x01E00E` emits the
+sector erase confirm and `0x01E012` emits the program command and no erase. So neither bench
+architecture erases before it programs, and the caller erasing is measured on both.
 
 **A data packet declaring zero payload bytes scribbles 256 bytes over the command state block**, which
 is a new hazard of section 94's exact family and was not known here. The staging copy loop on the
@@ -25043,12 +25055,19 @@ mode **copies** an image over the application and is therefore a one way door: o
 Harmony 525's hazard does not transfer to the Harmony One, and this is the mechanism rather than an
 analogy.
 
-The limit. Every write and erase path here goes through `EECON1` and `EECON2`, which is the PIC18's
-**internal** self programming interface. The config a first write would target sits in external parallel
-NOR at `0x040000`. Nothing read here issues a NOR command sequence, and an `EECON1` commit with
-`TBLPTR` outside internal flash is not a NOR write. **So this programmer is not shown to restore a
-config, and must not be recorded as if it were.** What it is shown to do is reinstall the internal
-image, which is the failure the write rails already make unreachable.
+The limit, **and it is a limit of the bootloader rather than of recovery**, which is how this paragraph
+should have read. Every write and erase path **in the bootloader** goes through `EECON1` and `EECON2`,
+the PIC18's **internal** self programming interface, and the config a first write would target sits in
+external parallel NOR at `0x040000`. Nothing in the bootloader issues a NOR command sequence, its only
+two `0xAA` literals being the second halves of the two `EECON2` unlocks above, and an `EECON1` commit
+with `TBLPTR` outside internal flash is not a NOR write. So the bootloader is not shown to restore a
+config and what it is shown to do is reinstall the internal image.
+
+**This said "this programmer is not shown to restore a config"**<!--superseded--> **as a claim about
+recovery, and section 191 refutes it at the level above.** The safe mode image carries its own copy of a
+full external NOR programmer, 601 bytes byte identical to the resident library the application calls,
+with separate erase and program entry points and the AMD command set. So a Harmony One **can** write the
+flash a config lives in, and the level that cannot is this one.
 
 Which leaves the actual reassurance in a different place than the question expected. A damaged config
 does not prevent booting, because the bootloader and the image above `0x1000` are in different memory
@@ -25195,3 +25214,114 @@ level above it, and the two are told apart by the USB identity above. So the rem
 narrower than it was and it is stated exactly: a Harmony One's recovery has two levels, the friendlier
 one is confirmed on hardware, and which key reaches the deeper one is still open. Nothing about a
 config restore is settled by any of this, per section 189's own limit.
+
+## 191. The Harmony One can write its own external flash, and safe mode carries the code
+
+Section 189 concluded that the recovery route "is **not shown to restore a config**, and must not be
+recorded as if it were", on the ground that every write path in the bootloader goes through the PIC18's
+internal self programming interface while a config lives in external parallel NOR. That is correct
+**about the bootloader** and it was written as a statement about recovery. It is wrong at the safe mode
+level, and this section is the measurement.
+
+**The answer is yes at one level and no at the other**, which is the shape section 189 should have had:
+
+| level | can it write the external NOR | how |
+|---|---|---|
+| the bootloader, 4 KiB | **no** | `EECON1` and `EECON2` only. Its **only two** `0xAA` literals are the second halves of the two `EECON2` unlocks section 189 found, at `0x032C` and `0x00EE4`, so the accounting is complete rather than a failure to find one |
+| the safe mode image | **yes** | its own copy of the routine block, at `0x009CCA` |
+| the application | **yes** | it calls the resident library at `0x01E00C` to `0x01E012` |
+
+### Section 186 said the instruction was in nothing this project holds, and it is
+
+Section 186 recorded that the Harmony One's external store "ends in a resident call gate below the
+image's base, so the instruction that puts a byte into the parallel NOR is not in anything this project
+holds"<!--superseded-->. The first half is exactly right. The second half is false, and the reason is
+instructive rather than careless: that sentence is a **blind reviewer's** statement, and the review
+packet contained the two application images and deliberately not the internal pages. So it was true of
+what the reviewer held, and it got copied out of its scope into a claim about the repository, which has
+had `0xFF` `+0xE000` in the lab since section 22.
+
+The gate is real and there are five of them. The application calls `0x01E00C` twice, `0x01E00E`,
+`0x01E010` and `0x01E012` once each, and `0x01E014` twice, and every one is a single `BRA` into the
+634 byte image the memory map describes as "opening with a run of `BRA`, so a jump table into a callable
+library". That description was written in section 22 and nobody had followed it.
+
+### The routine is the AMD command set, driven as bus writes
+
+`0x01E018` sets the table pointer to `0x022AAA`, puts `0xAA` in `TABLAT` and does a `TBLWT`, then the
+same with `0x55` to `0x022555`. Masked to twelve bits those are `0xAAA` and `0x555`, which is the
+standard byte mode unlock of the AMD command set, and the upper address bits are don't care on a device
+this size. What follows the unlock is a command byte at the same kind of address:
+
+| byte | what it is |
+|---|---|
+| `0xF0` | reset to read mode |
+| `0x90` | autoselect, which is how the chip id is read |
+| `0xA0` | program |
+| `0x30` | sector erase confirm |
+
+No `EECON1` anywhere in it, and none is needed: a `TBLWT` above internal flash is a bus cycle, which
+section 189 had already established from the other end when the bootloader's keypad scan turned out to
+drive its row masks through `TBLWT` to `0x020020`.
+
+### Erase and program are separate entry points, which closes section 186's other half
+
+Counting only bytes that actually reach the chip, meaning a literal that is stored into `TABLAT` and
+then committed by a `TBLWT`:
+
+| gate | routine | what it writes to the chip |
+|---|---|---|
+| `0x01E00C` | `0x01E0E0` | nothing |
+| `0x01E00E` | `0x01E0B8` | **sector erase confirm** |
+| `0x01E010` | `0x01E100` | nothing |
+| `0x01E012` | `0x01E126` | **program**, and the chip id read |
+| `0x01E014` | `0x01E23A` | nothing |
+
+**So the program entry emits no erase command, and the Harmony One does not erase before it programs.**
+Section 186 closed that question for arch 14 by reading the SPI opcodes and left "the Harmony One half
+stays open and now has a reason instead of a gap". The reason is retired and the answer matches arch 14:
+the caller erases, on both bench architectures, which is what the rails already assume.
+
+**`0x01E014` is not a flash routine at all**, and it is the reason the library exists. It saves
+`MEMCON`, sets bit 7 to disable the external bus, drives the bus pins as outputs, executes `SLEEP`, and
+restores `MEMCON` on the way out. Code fetched from external NOR cannot do that, because the instruction
+after the one that disables the bus would have to come from the bus. So the library is the set of
+routines that must not be executing from external memory while they run, and a flash programmer
+qualifies for the same reason: a NOR device cannot be read while it is being programmed.
+
+### Safe mode carries a byte identical copy, 601 bytes of it
+
+From `0x01E018` in the library and `0x009CCA` in the safe mode image, **601 bytes are byte for byte
+identical**, which is everything after the library's header and jump table. So Logitech ships this block
+twice: once as a callable image the application reaches through the gate, and once inside safe mode.
+
+That is the right design and it says what safe mode is for. Safe mode repairs a remote whose external
+flash may be wrong, so it cannot call a library **by address** if it wants to be robust, and it cannot
+depend on anything it does not contain. It calls the gate exactly once, at `0x0B134`, and that one call
+is `0x01E014`, the sleep routine, which has nothing to do with flash.
+
+### What this does and does not settle for a first write
+
+**It settles that the remote is capable.** A Harmony One in safe mode can erase and program its own
+external parallel NOR, which is where a config lives, and safe mode is reachable by a key held at power
+on, section 190. So the hardware and the firmware can put a config back, and section 189's limit was a
+statement about the wrong level.
+
+**It does not settle that we can drive it.** Nothing here has read safe mode's host side protocol: what
+a host sends to hand it an image, how the transfer is framed, what acknowledges it. That is a separate
+reading and it is the remaining unknown in the recovery route. So the honest position is that a Harmony
+One is recoverable in principle by its own firmware, and that this project cannot yet perform the
+recovery, which is a better position than section 189's and still not the one that ticks
+`docs/adding-a-device.md`'s restore box.
+
+**And the third generalisation of the day is the lesson.** Section 189 read the bootloader and wrote
+its limit for recovery; section 118 read arch 9 and wrote its field 6 rule for every architecture;
+section 190 corrected that and this section corrects section 189 the same way. The shape is always the
+same: a measurement on one level or one architecture, written as a rule about the class. **Name the
+level in the claim**, which is what the table at the top of this section does.
+
+**A smaller trap, caught rather than published.** The first version of the gate table above was built by
+matching the AMD command bytes as literals, and it reported `0x01E014` as an erase because the sleep
+routine loads `0x80` for `MEMCON` and `0xF0` for `TRISH`. A byte is a command because of where it is
+stored, not because of its value, so the table counts only literals that reach `TABLAT` and are
+committed by a `TBLWT`. Same family as reading a field split off the data when a header states it.

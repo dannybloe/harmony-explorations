@@ -39,8 +39,10 @@ levels is confirmed on hardware: Off held across a battery insertion put the spa
 mode in about five seconds, a plain power cycle left it, and one `GET_VERSION` had the remote report its
 own state, which also refuted a claim of ours about a neighbouring field. What is still open is the
 level below it, the bootloader's own USB loop, whose key is unknown and which firmware cannot name. What
-is still open in a way that matters more: **neither level is shown to put a config back**, so the
-restore box in `docs/adding-a-device.md` stays unticked and that is the unproven step in front of M4.
+is still open in a way that matters more, and section 191 changed its shape: **safe mode can put a config
+back** and carries its own external flash programmer to do it, so the remote is capable; what is unread
+is how a host asks it to. The restore box in `docs/adding-a-device.md` stays unticked and the reason is
+now a reading we have not done rather than a doubt about the hardware.
 Decision 4 has been revised: the product lives in
 [FreeHarmony](https://github.com/dannybloe/FreeHarmony) while the spec and the libraries stay here.
 Read the next section before the milestones, because that revision changed what this repository is

@@ -410,13 +410,26 @@ left it again, which arch 9 does not do. The remote's own screen listed five ima
 match four of ours plus the application's, and one `GET_VERSION` confirmed software type 4 on a live
 Harmony One for the first time while refuting a claim of ours about a neighbouring field.
 
+**And job 1's own answer carried a scope error nobody caught for a day**, section 191. The reviewer
+wrote that the instruction which puts a byte into the Harmony One's parallel NOR "is not in anything
+this project holds",<!--superseded--> which was **true of the packet** and false of the repository: the withhold list
+gave it the two application images and deliberately not the internal pages, where that code has sat
+since section 22. It was adopted here in the reviewer's words rather than in its scope. **That is a
+failure mode of the instrument rather than of the reviewer**, and it is worth more than the finding: a
+blind reviewer's negative statements are about what they were given, so adopting one requires
+re-checking it against everything the list withheld. The positive statements do not have this problem,
+which is why the interlock and the packet framing transferred cleanly.
+
 **What is left is narrower and stated exactly.** A Harmony One's recovery has **two** levels: safe
 mode, now confirmed on hardware, and the bootloader's own USB loop one below it, section 189's `0x0E`,
 which was not reached and whose key is still unknown. The two are told apart by their USB identity,
-since safe mode presents Logitech's own and the bootloader presents Microchip's. Neither level is shown
-to restore a config, per section 189's limit, so **the restore box in `docs/adding-a-device.md` is still
-unticked** and that is the step that remains unproven. What changed is that getting a Harmony One into a
-state where a host can talk to it is no longer a belief.
+since safe mode presents Logitech's own and the bootloader presents Microchip's. **Safe mode is shown to be capable of restoring a
+config**, section 191, since it carries its own external flash programmer with erase and program
+commands, which corrects section 189's limit: that limit was the bootloader's. What is **not** shown is
+that we can drive it, because safe mode's host side transfer protocol is unread. So **the restore box in
+`docs/adding-a-device.md` is still unticked**, and the reason has changed from "the remote may not be
+able to" to "we have not read how to ask it", which is a better place to be and is work rather than a
+question about the hardware.
 
 **The instructive part is how it was found.** Two sections of `docs/findings.md` contradicted each
 other on the load bearing point, 87 saying the bootloader scans the keypad and 118 saying it reads no

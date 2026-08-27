@@ -729,13 +729,23 @@ document:
   programmer from one source rather than one reading. **It protects itself**: erase refuses any address
   below `0x001000`, which is the bootloader's own end, and has no upper bound. **Unlike arch 9 it
   copies nothing**, so entering recovery on a Harmony One destroys nothing and the Harmony 525's one
-  way door does not transfer. **The limit is the half to carry**: every write path goes through
-  `EECON1` and `EECON2`, the PIC18's internal self programming interface, and the config sits in
-  external NOR, so this programmer is **not shown to restore a config** and must not be recorded as if
-  it were. What it is shown to reinstall is the internal image, which is the failure the rails already
-  make unreachable. The reassurance for a first write is therefore structural and sits elsewhere: a
-  damaged config cannot reach the bootloader or the image, so the remote still boots and our own read
-  and write path still works.
+  way door does not transfer. **The limit is per level and section 191 moved it**: the
+  **bootloader** writes only internal flash, through `EECON1` and `EECON2`, so it cannot restore a
+  config, and this file said that of recovery as a whole for a few hours. The **safe mode image** one
+  level up carries its own external flash programmer, 601 bytes byte identical to the resident library
+  at `0x01E018` the application calls, with the AMD command set and separate erase and program gates.
+  So a Harmony One **can** write the flash a config lives in. What is **not** established is that we
+  can drive it: safe mode's host side transfer protocol is unread, so the remote is recoverable by its
+  own firmware and this project cannot yet perform the recovery. The reassurance for a first write also
+  sits elsewhere and is structural: a damaged config cannot reach the bootloader or the image, so the
+  remote still boots and our own read path still works.
+* **The external flash programmer is at internal `0x01E000` and we have held it since section 22**,
+  section 191, which is where section 186's blind reviewer said the instruction "is not in anything this
+  project holds". True of the review packet, which deliberately excluded the internal pages, and false
+  of the repository, so **a blind reviewer's statement is scoped to the packet** and copying one out of
+  that scope is how a withhold list produces a wrong claim rather than a missing one. It also closes
+  section 186's other half: erase and program are separate gates, so **neither bench architecture erases
+  before it programs** and the caller erasing is measured on both.
 * The other two arch 12 measurements from section 118 stand: the safe mode image does read the
   matrix, and the config base reaches `TBLPTRU` from a variable with no literal anywhere.
 * **A config cannot choose where the remote writes**, section 118, which is the measured answer to the
