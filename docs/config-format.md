@@ -24,8 +24,9 @@ u16 checksum + end marker
 ## Outer container
 
 Validated against **seventeen samples across four architectures**, five base addresses
-(`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`), three format versions and three
-pointer table lengths (20, 21, 22). Every consistency check passes on all seventeen. A fifth
+(`0x002000`, `0x018000`, `0x020000`, `0x030000`, `0x040000`) and three pointer table lengths
+(20, 21, 22), which is the same property the word at `0x08` states rather than a second one,
+section 194. Every consistency check passes on all seventeen. A fifth
 architecture and a fourth of each arrived on 10 August 2026 and is **not** in that set: arch 10,
 format 1.7, 23 slots, whose framing verifies while four of the checks fail on the slot mapping.
 See the cookie table below and section 115. See
@@ -57,7 +58,7 @@ against these 17, which is the second thing section 143 found.
 ```
 0x00  char[4]  cookie          per architecture, see the table below
 0x04  u32      end_addr        absolute flash address of the trailing end marker
-0x08  u32      format          nibble BCD version: 0x1400 = 1.4, 0x1500, 0x1600
+0x08  u32      pointer_count   byte at 0x09 IS N below; upper half zero. Section 194
 0x0B  item[N]  section_table   { u8 spare; u24 address }[N], see below
       char[4]  marker          per architecture; starts the key table on arch 8, 12 and 14
       u8       count
@@ -66,6 +67,15 @@ against these 17, which is the second thing section 143 found.
 end-6 u16      checksum        seeded word XOR, below
 end-4 char[4]  end marker      per architecture
 ```
+
+**The word at `0x08` is the pointer count, not a version**, section 194. The byte at `0x09` is `N`
+below, exactly, on all 25 containers here across six architectures: `0x14` is 20 on arch 9 and 14,
+`0x15` is 21 on arch 8, `0x16` is 22 on arch 12, `0x17` is 23 on arch 10 and `0x0F` is 15 on arch 16.
+The reading as a nibble BCD version, `0x1400` as "1.4", survives only as a label: it is plausible for
+`0x14` to `0x17` and prints `0x0F` as "0.15", which would make a Harmony 350 older than a Harmony 880.
+`N` is independently derived from where the marker sits, so the two agreeing is a check on the file
+and `format_states_the_pointer_count` is it. This is also why `format` never identified an
+architecture: arch 9 and arch 14 both carry `0x14` because both have 20 slots.
 
 All little endian. Pointers are **absolute flash addresses, not offsets**, so a blob is
 position dependent and cannot simply be relocated.
@@ -278,8 +288,8 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **23<!--fact:parseable_odd_body--> of the 42<!--fact:parseable_containers-->
-parseable containers have an odd body**, of which 18<!--fact:odd_body_verifying--> verify their
+counts words, and **24<!--fact:parseable_odd_body--> of the 43<!--fact:parseable_containers-->
+parseable containers have an odd body**, of which 19<!--fact:odd_body_verifying--> verify their
 stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
 behaviour read as untested when more than half the corpus tests it.

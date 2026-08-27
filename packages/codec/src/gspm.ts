@@ -90,8 +90,22 @@ export const POINTER_SIZE = 3;
 /** Where item 0's pointer lands. */
 export const HEADER_PTR_OFFSET = SECTION_TABLE_OFFSET + 1;
 export const MARKER_SEARCH_LIMIT = 0x200;
-/** Arch 9 and 14 carry 20, arch 8 carries 21, arch 12 carries 22. */
-export const KNOWN_POINTER_COUNTS: readonly number[] = [20, 21, 22];
+/**
+ * The pointer count a header states, which is what its second word actually is.
+ *
+ * Section 194. The high byte's value is the number of pointer slots, exact on all 30 containers
+ * here across six architectures: `0x14` is 20 on arch 9 and 14, `0x15` is 21 on arch 8, `0x16` is
+ * 22 on arch 12, `0x17` is 23 on arch 10 and `0x0F` is 15 on arch 16, the Harmony 350.
+ *
+ * This replaces an allow-list of counts, which had two problems. It stopped at 22, so every arch 10
+ * container reported as unrecognised while its own header had been stating 23 all along. And it
+ * bundled two different questions: whether the file is internally consistent, and whether this
+ * project has a slot layout for that length. Those are separate, and only the first is a property
+ * of the file, so only the first belongs in a container check.
+ */
+export function statedPointerCount(formatRaw: number): number {
+  return (formatRaw >>> 8) & 0xff;
+}
 
 /**
  * The shortest blob `parse` will look at, which is the header through the key count of the longest
@@ -101,8 +115,8 @@ export const KNOWN_POINTER_COUNTS: readonly number[] = [20, 21, 22];
  * through its key count and **three bytes short of an arch 10 (Harmony 890) one**, whose 23 slots
  * need 107. So the guard was smaller than a header in the corpus while its message claimed to have
  * proved there is room for one. Derived from the three constants that decide it instead, and 23 is
- * deliberately taken from the samples rather than from `KNOWN_POINTER_COUNTS`, which stops at 22
- * because the arch 10 slot mapping is not established.
+ * deliberately taken from the samples, and it is the longest table seen rather than the longest a
+ * header could state, since a header states one byte and this bounds a read.
  */
 export const LONGEST_POINTER_TABLE = 23;
 export const MINIMUM_HEADER_LENGTH =
@@ -507,7 +521,6 @@ export class Container {
     return this.family.keyTableAtMarker;
   }
 
-  /** Nibble BCD: 0x1600 is 1.6, 0x1400 is 1.4. */
   /**
    * How many bytes slot 0's frame occupies, terminator included.
    *
@@ -524,6 +537,19 @@ export class Container {
     return stated + FRAME_END_LENGTH;
   }
 
+  /** The pointer count the header states. Section 194, and independent of `pointerCount`. */
+  get statedPointerCount(): number {
+    return statedPointerCount(this.formatRaw);
+  }
+
+  /**
+   * The **legacy label**, kept because every document and sample table here uses it.
+   *
+   * It splits one byte into nibbles and prints them as major.minor, which reads as a plausible
+   * version for `0x14` to `0x17` and as nonsense otherwise: an arch 16 (Harmony 350) container comes
+   * out `0.15`, a lower version than a remote five years older. Section 194 read the byte instead and
+   * it is the pointer count. Prefer `statedPointerCount`.
+   */
   get formatVersion(): string {
     return `${this.formatRaw >>> 12}.${(this.formatRaw >>> 8) & 0xf}`;
   }
@@ -1112,7 +1138,9 @@ export function parse(data: Uint8Array): Container {
     last_section_is_null: sections[sections.length - 1]?.isNull === true,
     section_spare_bytes_are_zero: sections.every((s) => s.spare === 0),
     marker_as_expected_for_family: container.marker === family.headerMarker,
-    pointer_count_known: KNOWN_POINTER_COUNTS.includes(pointerCount),
+    // Two independent fields: the count comes from where the marker sits, the stated count from the
+    // header word. Nothing derives one from the other, which is what makes this a check.
+    format_states_the_pointer_count: statedPointerCount(formatRaw) === pointerCount,
     sections_within_blob: sections.every(
       (s) => s.isNull || (s.address - flashBase >= 0 && s.address - flashBase < blob.length),
     ),

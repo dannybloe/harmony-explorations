@@ -87,6 +87,9 @@ const CONTAINERS = [
   // The phase 7 pair, section 174: the calibration account compiled without and with the
   // television the composer adds. The after container is the one the composer is compared to.
   'phase7_before', 'phase7_after',
+  // The Harmony 350, arch 16. Here so both codecs are compared on an architecture neither was
+  // written for, and deliberately not in any corpus wide population, section 194.
+  'h350_config',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -134,7 +137,7 @@ const UNIVERSAL_CHECKS = [
   'format_high_half_is_zero',
   'last_section_is_null',
   'marker_as_expected_for_family',
-  'pointer_count_known',
+  'format_states_the_pointer_count',
   'section_spare_bytes_are_zero',
   'section_table_ends_at_the_marker',
   'sections_ascend',
@@ -174,11 +177,13 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   }
   // 42 since 26 August 2026: the Harmony 895, the first arch 10 container with a known answer,
   // section 178. 41 before it, when the phase 7 pair landed, section 174.
-  assert.equal(present.length, 42, 'every vector, which is what `make golden` compares');
+  assert.equal(present.length, 43, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
-  assert.equal(complete, 38, 'the vectors whose container has a key table at all');
+  // 39 since the Harmony 350, section 194: an arch 16 container's key table reads with the existing
+  // reader, the same way the Harmony 895's did, which is a property of the reader and not of a mapping.
+  assert.equal(complete, 39, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
   // and null on 9, so a summary that stopped emitting it would break nothing anybody would notice:
@@ -192,7 +197,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // containers answer the question and the answer is an empty array. The five still null are damaged
   // reads of one Harmony 890, section 122, plus the two containers found inside arch 8 firmware
   // images, which report architecture 0 and have no alignment at all.
-  assert.equal(senders.filter((one) => one === null).length, 7, 'the containers with no readable slot');
+  // 8 since the Harmony 350, section 194: arch 16 has no slot mapping, so base slot 16 is not
+  // readable on it, which is the same gate arch 10 sat behind before section 184.
+  assert.equal(senders.filter((one) => one === null).length, 8, 'the containers with no readable slot');
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 28);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
@@ -212,7 +219,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 42, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 43, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

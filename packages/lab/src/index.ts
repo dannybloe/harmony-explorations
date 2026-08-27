@@ -199,6 +199,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // answer for `docs/adding-a-device.md` phase 7: what Logitech's generator adds for the same
   // television `composeDevice` adds, compared in `packages/codec/test/compose.test.ts`. Not in the
   // corpus wide lists, like every compiled-to-order sample. Section 174.
+  // The Harmony 350, arch 16, read with concordance since this library's transport does not reach
+  // the file based family, section 193. Named here so the golden comparison can load it; it is
+  // deliberately outside every corpus wide population, section 194.
+  h350_config: 'harmony-350-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,

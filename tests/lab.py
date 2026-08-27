@@ -217,6 +217,18 @@ IMAGES = {
     # the composer under comparison lives. Section 174.
     'phase7_before': 'phase7-before-gspm.bin',
     'phase7_after': 'phase7-after-gspm.bin',
+    # A Harmony 350, read off the remote on 27 August 2026 with concordance, since this project's own
+    # transport does not reach the file based family at all: its config is a named file rather than a
+    # flash address, `reference/models.md`. **Architecture 16, and the first container here from it.**
+    # It parses with every framing check passing, which is what section 194 came out of.
+    #
+    # **Deliberately outside CONTAINERS, ALL_CONTAINERS and USER_CONFIGS**, on the precedent the
+    # calibration pair set: those populations are what every corpus wide total is computed from, and
+    # admitting a sixth architecture would move sixteen marked numbers across five documents. Whether
+    # to admit it is a decision, not a side effect of filing a dump. It is also somebody else's
+    # configuration, built 20 July 2026 by the previous owner, so it stays in the lab like any
+    # contributed dump.
+    'h350_config': 'harmony-350-config.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

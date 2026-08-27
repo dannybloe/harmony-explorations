@@ -14924,7 +14924,7 @@ Of the eleven the container reader applies, `H890-Bedroom-1` fails four:
 
 | check | why |
 |---|---|
-| `pointer_count_known` | 23 is a length the reader has no layout for |
+| `pointer_count_known`<!--superseded--> | 23 is a length the reader has no layout for. **Retired by section 194**: the check was an allow-list stopping at 22, and this container's own header states 23, so it was always self consistent about its length. `format_states_the_pointer_count` passes here, and the layout question this row was really about belongs to `SLOT_MAPS` |
 | `slot0_is_a_feed_frame` | the `0xFEED` frame is not where a 20 slot table puts it |
 | `slot1_states_the_architecture` | reads as a long run of bytes, not a seven byte record |
 | `slot3_is_a_timestamp` | likewise |
@@ -23739,8 +23739,10 @@ remote and the Harmony 895 a display size. So this paragraph is the one to rerea
 spends another afternoon on the slot mapping.
 
 **Four framing checks fail, the same four as the clean Harmony 890 read**:
-`pointer_count_known`, `slot0_is_a_feed_frame`, `slot1_states_the_architecture` and
-`slot3_is_a_timestamp`. So the 895 is a consistent third sample of one layout rather than a fourth
+`pointer_count_known`,<!--superseded--> `slot0_is_a_feed_frame`, `slot1_states_the_architecture` and
+`slot3_is_a_timestamp`. **Three since section 194 and one since section 184**: the count check was an
+allow-list rather than a property of the file, and arch 10 passes its replacement, so what stood
+between this container and a full framing pass was smaller than four checks made it look. So the 895 is a consistent third sample of one layout rather than a fourth
 shape, and it has no name tree, which is why its devices had to be named by its owner rather than by
 its bytes.
 
@@ -25559,3 +25561,112 @@ the same day and decides it by enumeration alone. This is why **nothing here map
 model**: the skin does that, and reading a skin means opening the device.
 
 `packages/usb/test/remote.test.ts`, one test, four controls run and reversed.
+
+## 194. The format version is the pointer count, and a Harmony 350 is what said so
+
+**The header's second word is not a version.** Its high byte is the number of pointer slots in the
+table below it, exactly, on all 25 containers the lab holds across six architectures. What this
+project has called "format 1.4" for a year is the byte `0x14`, which is 20, and those containers have
+20 slots.
+
+| the byte | as a number | slots | architecture |
+|---|---|---|---|
+| `0x14` | 20 | 20 | 9 and 14 |
+| `0x15` | 21 | 21 | 8 |
+| `0x16` | 22 | 22 | 12 |
+| `0x17` | 23 | 23 | 10 |
+| `0x0F` | 15 | 15 | 16 |
+
+**The closure is that the two numbers come from different fields.** The count is derived from where
+the marker sits, `0x0B + 4 * N`, which is section 20's own arithmetic; the stated count is the header
+word. Nothing computes one from the other, so their agreeing is a measurement and not arithmetic.
+That distinction is exactly what this repository's verification standard asks for, and section 32 is
+recorded as having failed it by reading both ends from the same bytes.
+
+**It also explains a note that has sat unexplained since section 20**: that `format` is not an
+architecture identifier, because arch 9 and arch 14 both carry `0x1400`. They do, and it was never
+about architecture: they both have 20 slots.
+
+### It also shrinks a coverage claim, in four documents
+
+The container's validated span was written as "four architectures, five base addresses, three format
+versions and three pointer table lengths"<!--superseded--> in `CLAUDE.md`, `docs/status.md`,
+`docs/roadmap.md` and `docs/config-format.md`. The last two entries are **one property counted twice**.
+A span is a claim about independent dimensions, so a redundant entry inflates it, and the container is
+therefore validated across one dimension fewer than this project has been saying since section 143
+tightened those very numbers. Corrected in all four.
+
+### Why a year of containers did not show it
+
+Because the four old values split into nibbles as `1.4`, `1.5`, `1.6` and `1.7`, which look like
+version numbers, increment in the plausible direction, and even correlate with age. Arch 8 is the
+sharpest case: it carries `0x15`, which reads as "1.5", and it has 21 slots because it inserts a NULL
+at slot 8. Both readings predict the same thing on every container in the corpus.
+
+**An arch 16 container is the first one where they disagree**, and it disagrees loudly. Its byte is
+`0x0F`, which the label prints as "0.15": a Harmony 350 would then carry a **lower** version than a
+Harmony 880 five years older, which no version numbering does. As a count it is simply 15, and the
+container has 15 slots. So the discriminator is chronological rather than numeric, which is why no
+amount of corpus agreement would have produced it. The counterexample had to come from outside.
+
+### Where it came from
+
+A Harmony 350 arrived on the bench on 27 August 2026. This project's own transport cannot read it at
+all, since the file based family keeps its config in a named file rather than at a flash address,
+section 193, so the config was read with concordance instead: `0x046D:0xC124`, skin 104, architecture
+16, 512 KiB of flash with 119 KiB in use.
+
+**The container then parsed with every framing check passing**, all fifteen, on an architecture
+nothing here had ever seen: `GSPM` cookie, `LWJL` marker, `PTYY` trailer, base anchored on the clock
+record at `0x020000`, the trailer checksum recomputing, the key table complete, slot 1 stating
+architecture 16 and slot 3 a timestamp. Slot 1's architecture agrees with what the remote itself
+reported over USB, which is two routes with nothing in common.
+
+The only check that failed was `pointer_count_known`,<!--superseded--> and that is what exposed the finding.
+
+### The check the old one was standing in for
+
+`pointer_count_known`<!--superseded--> tested membership of a hand written tuple, `(20, 21, 22)`. It had two problems
+and the second is the instructive one.
+
+It **stopped at 22**, so every arch 10 container reported as unrecognised while its own header had
+been stating 23 all along. Sections 178 to 184 read that architecture's slot mapping out of packing
+closures and drawn text without anyone noticing that the file states its table length in its second
+word.
+
+And it **bundled two questions**: whether a container is internally consistent, and whether this
+project has a slot layout for that length. Only the first is a property of the file. A test asserted
+that arch 10 must **fail** the check, with a comment saying the count is measured and the layout is
+not, which is a support question wearing an integrity check's name. The layout question already has
+its own answer in `SLOT_MAPS` and in `archSlot` throwing for an absent base slot, section 184.
+
+`format_states_the_pointer_count` is the replacement and it is a genuine check: it can fail on a
+container whose header disagrees with its own marker, which is what a corrupted or hand edited file
+looks like, and no allow-list needs extending when a new architecture turns up. Arch 10 passes it.
+
+### Three copies, and one of them had a test proving the wrong thing
+
+The nibble arithmetic existed in `src/harmony/gspm.py`, in `packages/codec/src/gspm.ts` and a third
+time in `packages/probe/src/report.ts`, whose comment said it used "the same rule". A test asserted
+the probe's copy agrees with the codec's. **That is not the same as having one copy**: it catches the
+two diverging and cannot notice that there are two, which is this repository's oldest rule and the
+state it says precedes two wrong copies. The probe imports `statedPointerCount` now and derives the
+label from it.
+
+`format_version` survives as a **legacy label**, because every document and sample table here uses
+it and the golden vectors carry it, with a docstring saying what the byte is. `stated_pointer_count`
+is the reading.
+
+### What it does not settle
+
+Whether the Harmony 350's container can be read beyond its framing. It parses, and its 15 slots are
+**not** the base 20 with insertions: they are five fewer, so no slot mapping is implied and none is
+offered. Nothing here maps an arch 16 slot to a base slot, and the same rail applies as for arch 10,
+that a guessed mapping turns refusals into plausible wrong answers.
+
+`h350_config` is registered as a lab fixture and is deliberately **outside** `CONTAINERS`,
+`ALL_CONTAINERS` and `USER_CONFIGS`, on the precedent the calibration pair set: those populations are
+what every corpus wide total is computed from, and admitting a sixth architecture moves sixteen marked
+numbers across five documents. Whether to admit it is a decision, not a side effect of filing a dump.
+
+`tests/test_gspm.py`, `TheHeaderWordStatesThePointerCount`, four tests, six controls run and reversed.

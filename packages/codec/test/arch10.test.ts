@@ -265,11 +265,18 @@ test('the 895 is the third arch 10 container, and two of its framing checks pass
     assert.equal(c.sections.length, 23);
     const failing = Object.entries(c.checks)
       .filter(([, pass]) => pass === false).map(([name]) => name).sort();
-    assert.deepEqual(failing, ['pointer_count_known', 'slot0_is_a_feed_frame'],
-      'the same two as both Harmony 890 containers, and no others');
+    assert.deepEqual(failing, ['slot0_is_a_feed_frame'],
+      'the same one as both Harmony 890 containers, and no others');
+    // **One fewer than this asserted before section 194.** The count check used to fail here, and it
+    // was an allow-list stopping at 22 rather than a property of the file: the header states 23 and
+    // the marker implies 23, so an arch 10 container has always been self consistent about its own
+    // length. What stays failing is the name tree frame, because arch 10 has no base slot 0 at all,
+    // which no alignment changes. The layout question the old check was standing in for is answered
+    // by SLOT_MAPS and by archSlot throwing for an absent base slot.
+    assert.equal(c.statedPointerCount, 23);
+    assert.equal(c.checks['format_states_the_pointer_count'], true);
     // The two that used to be here, asserted as passing rather than dropped, since their moving is
-    // the whole payoff of the mapping. `pointer_count_known` and the name tree frame stay failing
-    // because arch 10 has 23 slots and no base slot 0 at all, neither of which alignment changes.
+    // the whole payoff of the mapping.
     for (const check of ['slot1_states_the_architecture', 'slot3_is_a_timestamp']) {
       assert.equal(c.checks[check], true, `${check} passes now that arch 10 is aligned`);
     }

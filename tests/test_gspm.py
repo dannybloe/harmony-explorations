@@ -147,8 +147,12 @@ class TestContainerAcrossSamples(unittest.TestCase):
         # base address count is 5 and its floor said 4, so this one was quietly under by one.
         self.assertEqual(len({c.family.magic for c in seen}), 3, 'container cookies')
         self.assertEqual(len({c.flash_base for c in seen}), 5, 'base addresses')
-        self.assertEqual(len({c.format_version for c in seen}), 3, 'format versions')
+        # One property, asserted once and then asserted to BE one property, section 194. Counting
+        # these as two spans is what inflated the coverage claim in four documents.
         self.assertEqual(len({c.pointer_count for c in seen}), 3, 'table lengths')
+        self.assertEqual({c.stated_pointer_count for c in seen},
+                         {c.pointer_count for c in seen},
+                         'the header word states the count, so these are not two dimensions')
         self.assertEqual(len({c.architecture for c in seen}), 4, 'architectures')
 
     def test_the_document_quotes_the_spread_this_table_actually_has(self):
@@ -163,20 +167,26 @@ class TestContainerAcrossSamples(unittest.TestCase):
             'samples': len(seen),
             'architectures': len({c.architecture for c in seen}),
             'bases': len({c.flash_base for c in seen}),
-            'versions': len({c.format_version for c in seen}),
             'lengths': len({c.pointer_count for c in seen}),
         }
-        self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5,
-                                  'versions': 3, 'lengths': 3})
+        # 'versions' is gone from this dict rather than kept at 3, section 194: it counted the same
+        # property as 'lengths', and a span made of a redundant pair is not the span it claims.
+        self.assertEqual(counts, {'samples': 17, 'architectures': 4, 'bases': 5, 'lengths': 3})
 
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             'docs', 'config-format.md')
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         self.assertIn('**seventeen samples across four architectures**, five base addresses', text)
-        self.assertIn('three format versions and three\npointer table lengths (20, 21, 22)', text)
-        # No assertion that the old wording is gone: the correction note below the paragraph
-        # quotes it on purpose, and the two positive checks above already fail if it comes back.
+        # **Rewritten for section 194**, which is the point of asserting the words: the paragraph
+        # used to claim "three format versions and three pointer table lengths" <!--superseded--> as
+        # two dimensions of the span, and the format word **is** the pointer count, so it was one
+        # counted twice. The
+        # test failed on the corrected wording, which is exactly what a document quote guard is for.
+        self.assertIn('three pointer table lengths\n(20, 21, 22)', text)
+        self.assertIn('the same property the word at `0x08` states', text)
+        # No assertion that the old wording is gone here: `make facts` owns that, since the phrase is
+        # in reference/superseded.md, and the correction notes quote it on purpose.
 
         # Every base address the document names is one the corpus actually has, and vice versa.
         # Scoped to the sentence that names them, not the whole file, which quotes addresses for
@@ -2414,9 +2424,15 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
                 self.assertEqual(c.pointer_count, 23)
                 self.assertEqual(c.family.magic, b'TPTP')
                 self.assertEqual(c.marker, b'WLWL')
-                # 23 is deliberately not in KNOWN_POINTER_COUNTS: the count is measured and the
-                # layout is not, so the check reports that rather than blessing it.
-                self.assertFalse(c.checks['pointer_count_known'])
+                # **This assertion is refuted and rewritten, section 194.** It used to demand that
+                # the check fail, on the reasoning that 23 is a count with no layout behind it. The
+                # check was conflating two questions: whether the file is self consistent, and
+                # whether this project can map its slots. Only the first is a property of the file,
+                # and arch 10 satisfies it, because the header states 23 and the marker implies 23.
+                # The layout question is answered by SLOT_MAPS and by archSlot refusing an absent
+                # base slot, which is where it belongs.
+                self.assertEqual(c.stated_pointer_count, 23)
+                self.assertTrue(c.checks['format_states_the_pointer_count'])
 
     def test_the_reporter_names_no_base_slot_where_there_is_no_architecture(self):
         """It printed `base slot False`, from a boolean `and` then tested with `is None`.
@@ -3053,6 +3069,118 @@ class TheNumberSenderReadsTheChannelSample(unittest.TestCase):
         after = gspm.parse(lab.load('calibration_favchannels'))
         self.assertEqual(after.section_length(
             gspm.arch_slot(after.architecture, gspm.NUMBER_SENDER_SLOT)), 4)
+
+
+class TheHeaderWordStatesThePointerCount(unittest.TestCase):
+    """Section 194. What this project called the format version is the number of pointer slots.
+
+    The word's high byte **is** the count: 0x14 is 20, 0x15 is 21, 0x16 is 22, 0x17 is 23, 0x0F is
+    15. It read as a version for a year because 0x14 to 0x17 split into nibbles as 1.4 to 1.7, which
+    look like plausible version numbers and increment in the right direction. An arch 16 (Harmony
+    350) container broke that: its byte splits as "0.15", a **lower** version than a remote five
+    years older, and it has exactly 15 slots.
+
+    **The closure is that the two numbers come from different fields.** The count is derived from
+    where the `LWJL` marker sits, `0x0B + 4 * N`, and the stated count from the header word. Nothing
+    computes one from the other, so their agreeing is a measurement rather than arithmetic. That is
+    the shape this repository's verification standard asks for, and the carrier closure is recorded
+    as having failed it once by reading both ends from the same bytes.
+    """
+
+    #: Every container the lab holds, per architecture, including the ones outside the corpus
+    #: populations. Named here rather than derived so the span is visible: six architectures.
+    EXPECTED = {
+        0x14: 20,
+        0x15: 21,
+        0x16: 22,
+        0x17: 23,
+        0x0F: 15,
+    }
+
+    def containers(self):
+        """Every parseable container, by name, across every architecture the lab holds.
+
+        `ALL_CONTAINERS` plus the arch 10 samples and the arch 16 one, because those two sit outside
+        the corpus populations deliberately and this claim is about the field rather than about a
+        corpus total. Stated as one list so the span cannot shrink without the diff showing it.
+        """
+        return (tuple(lab.ALL_CONTAINERS)
+                + ('h890_config', 'h890_config_2', 'h895_config')
+                + ('h350_config',))
+
+    def test_the_stated_count_equals_the_measured_count_on_every_container(self):
+        names = self.containers()
+        lab.require(*names)
+        seen = {}
+        for name in names:
+            with self.subTest(name):
+                c = gspm.parse(lab.load(name))
+                self.assertEqual(
+                    c.stated_pointer_count, c.pointer_count,
+                    '%s states %d slots and the marker implies %d'
+                    % (name, c.stated_pointer_count, c.pointer_count))
+                self.assertTrue(c.checks['format_states_the_pointer_count'])
+                seen.setdefault(c.stated_pointer_count, set()).add(c.architecture)
+        # The exact population, so a sample dropping out is a failure rather than a smaller total.
+        self.assertEqual(len(names), 25)
+        # Five distinct values, and the architectures behind each. Arch 9 and arch 14 share 20,
+        # which is why the word was never an architecture identifier.
+        self.assertEqual(sorted(seen), [15, 20, 21, 22, 23])
+        self.assertEqual(seen[20], {9, 14})
+        self.assertEqual(seen[21], {8})
+        self.assertEqual(seen[22], {12})
+        self.assertEqual(seen[23], {10})
+        self.assertEqual(seen[15], {16})
+        # Six architectures, which is every one the lab has a container for.
+        self.assertEqual(len({a for arches in seen.values() for a in arches}), 6)
+
+    def test_the_byte_is_the_count_and_not_a_version(self):
+        """The table, asserted against the byte rather than against the label.
+
+        Written as the raw byte to the count, because the point is that the value **is** the number:
+        0x0F is 15 and not 15 by coincidence of some encoding.
+        """
+        for raw, count in self.EXPECTED.items():
+            self.assertEqual(raw, count, '0x%02X is %d, read as an ordinary byte' % (raw, count))
+
+    def test_the_legacy_label_is_nonsense_on_the_new_architecture(self):
+        """Why nobody noticed, kept as an executable statement rather than a remark.
+
+        The nibble label is monotonic and plausible across the four old values and breaks on the
+        fifth. If it were a version, a Harmony 350 would predate a Harmony 880.
+        """
+        lab.require('h350_config', 'arch8_config_880')
+        old = gspm.parse(lab.load('arch8_config_880'))
+        new = gspm.parse(lab.load('h350_config'))
+        self.assertEqual(old.format_version, '1.5')
+        self.assertEqual(new.format_version, '0.15')
+        # The label orders them backwards; the count does not order them at all, which is correct,
+        # because a pointer count is not a date.
+        self.assertLess(new.format_version, old.format_version, 'the label inverts the chronology')
+        self.assertEqual((new.stated_pointer_count, old.stated_pointer_count), (15, 21))
+
+    def test_a_wrong_header_word_is_caught(self):
+        """The negative, because a check that cannot fail is not a check.
+
+        The old allow-list could only notice a count it had never seen. This notices a header that
+        disagrees with its own file, which is the failure a corrupted or hand edited container has.
+        """
+        lab.require('h600_config')
+        raw = bytearray(lab.load('h600_config'))
+        good = gspm.parse(bytes(raw))
+        self.assertTrue(good.checks['format_states_the_pointer_count'])
+        # Indexed off the blob the parser found rather than off the file, because this sample carries
+        # a wrapper: assuming offset zero is how the first version of this test broke. The header word
+        # is a u32 at blob offset 8 and the count is its second byte, which is what makes
+        # `format_high_half_is_zero` a separate check: the upper half is padding and stays zero.
+        at = good.blob_offset + 9
+        self.assertEqual(raw[at], 0x14)
+        blob = raw
+        blob[at] = 0x15
+        bad = gspm.parse(bytes(blob))
+        self.assertEqual(bad.stated_pointer_count, 21)
+        self.assertEqual(bad.pointer_count, 20, 'the marker has not moved')
+        self.assertFalse(bad.checks['format_states_the_pointer_count'])
 
 
 if __name__ == '__main__':

@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('seven containers declare a method for sending a number, 28 declare none, 7 are unread',
+test('seven containers declare a method for sending a number, 28 declare none, 8 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -210,7 +210,11 @@ test('seven containers declare a method for sending a number, 28 declare none, 7
     // instead of refusing it, and the answer is that they declare no way of sending a number. A
     // Harmony 890 has no favourite channels, which is what a config from 2025 for a remote whose
     // service compiled it would be expected to say.
-    assert.equal(populated + declaredEmpty + unread, 42, 'every container the lab can parse');
+    // 43 since the Harmony 350, section 194, and it lands in `unread` for the honest reason: arch 16
+    // has no slot mapping at all, so `numberSenders` refuses rather than answering. That is the same
+    // rail arch 10 sat behind until section 184, and a container that parses is not a container whose
+    // slots are placed.
+    assert.equal(populated + declaredEmpty + unread, 43, 'every container the lab can parse');
     assert.equal(populated, 7);
     assert.equal(declaredEmpty, 28);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
@@ -220,7 +224,9 @@ test('seven containers declare a method for sending a number, 28 declare none, 7
     // Harmony 890 do not, section 122. Three of those five cannot even state their architecture.
     // Counted separately from `declaredEmpty` because "the reader declined" and "the config says
     // none" are different answers, and a total would hide the first inside the second.
-    assert.equal(unread, 7);
+    // Eight since the Harmony 350, section 194: five arch 10 reads, the two containers found inside
+    // arch 8 firmware images, and now an arch 16 container whose slots are not mapped.
+    assert.equal(unread, 8);
   });
 
 test('the accounting claims the record and its tables, and 113 is the closure',

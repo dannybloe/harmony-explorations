@@ -866,8 +866,9 @@ are stale and need correcting, because later policy decisions read them.
   rather than one hardcoded magic, and derives the marker after the pointer table from the data.
   `src/harmony/ezfile.py` gained `parse_ezhex`, which splits a config on its declared
   `BINARYDATASIZE` and verifies the `0x69`-seeded XOR `CHECKSUM` and the `INTENDEDVERSION` block.
-* Result: thirteen samples, four architectures, five base addresses, three format versions, three
-  pointer table lengths, all consistency checks passing. The container claim in
+* Result: thirteen samples, four architectures, five base addresses, three pointer table lengths,
+  all consistency checks passing. Recorded at the time as "three format versions, three pointer
+  table lengths", which section 194 showed to be one property twice. The container claim in
   `docs/config-format.md` is no longer a claim about two models.
 * A Harmony 700 config arrived afterwards, which gave arch 14 a second sample and, more to the
   point, a config from the same model as the arch 14 firmware image. Two findings came out of

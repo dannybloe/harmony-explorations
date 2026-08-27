@@ -35,9 +35,9 @@
  */
 import {
   FAMILIES,
-  KNOWN_POINTER_COUNTS,
   POINTER_SIZE,
   SECTION_ITEM_SIZE,
+  statedPointerCount,
   SECTION_TABLE_OFFSET,
   bytes as byteUtil,
   findMarker,
@@ -102,7 +102,10 @@ export interface ContainerReport {
   readonly markerOffset: number;
   readonly marker: string;
   readonly pointerCount: number;
-  readonly pointerCountKnown: boolean;
+  /** What the header states its pointer count is, section 194. */
+  readonly statedPointerCount: number;
+  /** Whether that agrees with the count the marker's position implies. */
+  readonly formatStatesThePointerCount: boolean;
   /** Null when the file's magic has no end marker after it, so the container has no extent. */
   readonly trailerChecksum: number | null;
   readonly trailerChecksumRecomputes: boolean | null;
@@ -137,7 +140,15 @@ export interface StructuralReport {
   readonly error: string | null;
 }
 
-/** Nibble BCD, the same rule `Container.formatVersion` uses: 0x1400 is 1.4. */
+/**
+ * The legacy label, and this was a **third** copy of the arithmetic behind it.
+ *
+ * `Container.formatVersion` and its Python twin were the other two, all three splitting one byte
+ * into nibbles, with a test asserting this one agrees with the codec's. A test that two copies agree
+ * is not the same as one copy: it catches them diverging and not the fact that there are two. Since
+ * section 194 the byte's meaning is `statedPointerCount`, which is imported rather than rewritten,
+ * and the label is derived from that single reading.
+ */
 function formatVersionOf(format: number): string {
   return `${format >>> 12}.${(format >>> 8) & 0xf}`;
 }
@@ -233,7 +244,8 @@ export function containerReport(data: Uint8Array): ContainerReport {
     markerOffset,
     marker: byteUtil.ascii(blob, markerOffset, 4),
     pointerCount,
-    pointerCountKnown: KNOWN_POINTER_COUNTS.includes(pointerCount),
+    statedPointerCount: statedPointerCount(format),
+    formatStatesThePointerCount: statedPointerCount(format) === pointerCount,
     trailerChecksum: extentKnown ? stored : null,
     trailerChecksumRecomputes: extentKnown ? trailerChecksum(blob) === stored : null,
     extentKnown,

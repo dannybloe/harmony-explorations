@@ -81,6 +81,13 @@ CONTAINERS = (
     # The phase 7 pair, section 174: the calibration account compiled without and with the
     # television the composer adds. The after container is the one the composer is compared to.
     'phase7_before', 'phase7_after',
+    # The Harmony 350, arch 16, read with concordance on 27 August 2026 since this project's own
+    # transport does not reach the file based family, section 193. It belongs here and **not** in
+    # `lab.CONTAINERS`: this list is every sample that parses, which is what makes the two codecs
+    # comparable on a new architecture, where that one is what every corpus wide total is computed
+    # from. Section 194 came out of comparing it, so excluding it would have left the corpus
+    # agreeing with itself about a field only a sixth architecture could contradict.
+    'h350_config',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

@@ -633,8 +633,14 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
  * reason the paragraph above gives: the checks below are properties of the parser, and an arch 10
  * container whose framing verifies while every one of its content readers is gated is a real
  * strengthening of them. It stays outside every corpus wide total, as the 890s do.
+ *
+ * **43 since 27 August 2026**, the Harmony 350, section 194, and it is the strongest member this
+ * population has gained: architecture 16, a generation nothing here was written for, read off the
+ * remote with concordance because this project's own transport does not reach it at all. Every one
+ * of the framing checks passes on it, which is what these tests are about, and it is the container
+ * that showed the format word to be the pointer count. It stays outside every corpus wide total.
  */
-const PARSEABLE = 42;
+const PARSEABLE = 43;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -696,7 +702,7 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('23 of the parseable containers have an odd body and 18 of those verify',
+test('24 of the parseable containers have an odd body and 19 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
@@ -712,9 +718,13 @@ test('23 of the parseable containers have an odd body and 18 of those verify',
     // checksum recomputes" is the checksum check, counted once. What it adds is that the check runs
     // over an odd body, so the loop's own arithmetic is exercised on this container. The title
     // carries the counts, so a move shows.
-    assert.equal(odd.length, 23);
+    // 24 and 19 since the Harmony 350, section 194: odd bodied and its checksum recomputes, so it
+    // moves both, the same way the Harmony 895 did. Predicted from `tools/facts.py` recomputing the
+    // marked numbers in the documents before this test was touched, which is the two halves of
+    // `make facts` agreeing with each other for once rather than one correcting the other.
+    assert.equal(odd.length, 24);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 18);
+    assert.equal(verifying.length, 19);
     // Every one of the eighteen recomputes under the loop as written, which is what makes the
     // behaviour tested rather than assumed. Folding the trailing byte in would break the three whose
     // trailing byte is not zero, and be invisible on the other fifteen: so the comment was inviting
@@ -762,7 +772,8 @@ test('the last section ends at the end marker, not at the declared end',
     // independent statements that its consensus of five reads is clean, with the trailer checksum and
     // the EZHex split, and it is the one this
     // architecture makes least often: every previous arch 10 container here failed it, section 122.
-    assert.equal(agree, 40);
+    // 41 since the Harmony 350, section 194.
+    assert.equal(agree, 41);
     // The two that disagree are the claim and they are unchanged, both being damaged reads of one
     // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
     // container fail while one of these silently started passing.
@@ -811,6 +822,10 @@ test('the frame tiles to the next section on every container that has one', skip
   }
   // 32 since the third compiled sample and 34 since the phase 7 pair; the two the sentinel misses
   // are still exactly the two empty frames, which is the claim rather than the total.
-  assert.equal(framed, 34);
-  assert.equal(naive, 32, 'the two the sentinel gets wrong are the two empty frames');
+  // 35 since the Harmony 350, section 194: its slot 0 frame tiles to the next section too.
+  assert.equal(framed, 35);
+  // 33 since the Harmony 350: its frame is non empty, so the naive arithmetic gets it right too and
+  // the gap between the two counts stays at exactly two, which is the claim rather than either total.
+  assert.equal(naive, 33, 'the two the sentinel gets wrong are the two empty frames');
+  assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });

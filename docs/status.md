@@ -38,10 +38,11 @@ infrared path from config pointer to LED including the SPI storage layer.
 
 The container is now validated across **four** architectures, because publicly shared sample
 sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen samples in the
-framing tables, five base addresses, three format versions, three pointer table lengths, all
-consistency checks passing; the wider population of everything in the lab that parses is
-42<!--fact:parseable_containers--> containers over five architectures, since arch 10's framing
-verifies too. It
+framing tables, five base addresses and three pointer table lengths, which is the same property the
+format word states rather than a second one, section 194, so it is counted once. All
+consistency checks pass; the wider population of everything in the lab that parses is
+43<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
+verifies too and a Harmony 350 arrived on 27 August 2026 bringing arch 16 with it, section 194. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
 insertions, so a section labelled on one architecture transfers to the others by index.

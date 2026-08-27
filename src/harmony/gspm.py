@@ -74,8 +74,12 @@ SECTION_ITEM_SIZE = 4
 POINTER_SIZE = 3
 HEADER_PTR_OFFSET = SECTION_TABLE_OFFSET + 1   # where item 0's pointer lands
 MARKER_SEARCH_LIMIT = 0x200
-# Arch 9 and 14 carry 20, arch 8 carries 21, arch 12 carries 22.
-KNOWN_POINTER_COUNTS = (20, 21, 22)
+# The header's second word is **the pointer count**, not a version, section 194. Its high byte is
+# the number of slots: 0x14 is 20 on arch 9 and 14, 0x15 is 21 on arch 8, 0x16 is 22 on arch 12,
+# 0x17 is 23 on arch 10 and 0x0F is 15 on arch 16 (Harmony 350). So there is no list of counts to
+# maintain: the file states its own, and `format_states_the_pointer_count` checks it against the
+# count the marker's position implies. The allow-list this replaced stopped at 22, so it reported
+# every arch 10 container as unrecognised while the file had been stating 23 all along.
 
 # The trailer checksum's seed, written as two literals by the boot validator on all three images.
 # The checksum is a sixteen bit XOR of the container's little endian words from its first byte up
@@ -1134,8 +1138,24 @@ class Container:
         return self.family.key_table_at_marker
 
     @property
+    def stated_pointer_count(self) -> int:
+        """The pointer count the header states, which is what this word actually is.
+
+        Section 194. The high byte's value is the number of pointer slots, exact on all 25
+        containers here across six architectures: 0x14 is 20, 0x15 is 21, 0x16 is 22, 0x17 is 23
+        and 0x0F is 15. Independent of `pointer_count`, which comes from where the marker sits.
+        """
+        return self.format_raw >> 8
+
+    @property
     def format_version(self) -> str:
-        """Nibble BCD: 0x1600 is 1.6, 0x1400 is 1.4."""
+        """The **legacy label**, kept because every document and sample table here uses it.
+
+        It splits one byte into nibbles and prints them as major.minor, which reads as a plausible
+        version for 0x14 to 0x17 and as nonsense for anything else: an arch 16 (Harmony 350)
+        container comes out "0.15", a lower version than a remote five years older. Section 194
+        read the byte instead and it is the pointer count. Prefer `stated_pointer_count`.
+        """
         return '%d.%d' % (self.format_raw >> 12, (self.format_raw >> 8) & 0xF)
 
     def blob_offset_of(self, address: int) -> Optional[int]:
@@ -3094,7 +3114,9 @@ def parse(data: bytes) -> Container:
         'last_section_is_null': container.sections[-1].is_null,
         'section_spare_bytes_are_zero': all(s.spare == 0 for s in container.sections),
         'marker_as_expected_for_family': container.marker == family.header_marker,
-        'pointer_count_known': pointer_count in KNOWN_POINTER_COUNTS,
+        # Two independent fields: the count comes from where the marker sits and the stated count
+        # from the header word. Nothing derives one from the other, which is what makes it a check.
+        'format_states_the_pointer_count': container.stated_pointer_count == pointer_count,
         'sections_within_blob': all(
             s.is_null or 0 <= s.address - flash_base < len(blob)
             for s in container.sections),
@@ -3272,7 +3294,8 @@ def report(c: Container):
         c.version_word if c.version_word is not None else '?')
     yield 'flash base       0x%06X   (anchored on the clock record)' % c.flash_base
     yield 'end_addr         0x%06X' % c.end_addr
-    yield 'format version   %s   (raw 0x%04X)' % (c.format_version, c.format_raw)
+    yield 'stated slots     %d   (header word 0x%04X, labelled %s)' % (
+        c.stated_pointer_count, c.format_raw, c.format_version)
     yield 'slot 0 frame     %s' % (
         'FEED, %d bytes, BEEF at +%d' % (c.frame_length, c.frame_length)
         if c.frame_length else ('empty FEED frame' if c.frame_length == 0 else 'absent'))

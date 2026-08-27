@@ -1738,8 +1738,12 @@ Output here is AI-produced and published as such, so claims are expected to be c
 Established norms:
 
 * Prefer two independent samples. The container is validated against seventeen, spanning four
-  architectures, five base addresses, three format versions and three pointer table lengths.
-  Two samples of one model prove much less than two architectures.
+  architectures, five base addresses and three pointer table lengths. **That list used to end
+  "three format versions and three pointer table lengths"**,<!--superseded--> which is one property counted twice,
+  since section 194 read the format word and it **is** the pointer count. A span is a claim about
+  independent dimensions, so a redundant entry inflates it: the container's coverage is one
+  dimension narrower than this file said. Two samples of one model prove much less than two
+  architectures.
 * Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
   a stored 263, which the code's arithmetic turns into exactly 26.25 us. **And a closure is only
   independent if its test reads both ends**, which this one did not until 13 August 2026: it was four
