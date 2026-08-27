@@ -192,11 +192,15 @@ are one, one and three bytes where a six entry array needs nineteen, and the fou
 **The mapping was then derived from content rather than fitted, and it is switched on**, sections 183 and
 184: fifteen base slots present, five absent and eight raw slots that are no base slot, with base slot
 10's packing closure as the anchor that settled it. So a Harmony 890's screens, button bindings, action
-lists, build timestamp and **drawn text** all read, the text at 4255 of 4255 glyphs, naming the same four
+lists, build timestamp and **drawn text** all read, the text at 5634 of 5634 glyphs, naming the same four
 activities and four appliances as the arch 8 Harmony 880 from the same household. What it does not give
 is the device names or the activity count, and that is structural: both routes need base slot 0's name
 tree, which arch 10 has no slot for, or base slot 13's transitions, which section 184 refuted. The byte
-accounting sits at 97.9% and 96.2% and the remainder is one family of 111 byte runs, 18 and 21 of them.
+accounting sits at **99.3% and 97.2%** with zero overlaps, after section 185 read the biggest remaining
+family as mode page screen programs: one table entry was missing, the operand width of the single screen
+opcode that differs per architecture, and 49 and 34 programs were abandoned unread with a fifth of the
+drawn text. That width was measured per program rather than off the coverage percentage, which prefers
+a wrong answer that overruns and claims 308344 bytes twice while reporting a clean 100.00%.
 **What read there before any of that is what the framing locates**, section 179: the picture
 bank is found from the trailer's position alone, calibrated on 14 of 14 containers whose bank is known
 by another route, so 57% of a Harmony 890's file and 72% of a Harmony 895's is accounted for as

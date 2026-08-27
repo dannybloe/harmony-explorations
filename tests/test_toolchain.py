@@ -907,5 +907,87 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         self.assertEqual(len(lab.USER_CONFIGS), 15, 'fifteen user configs')
 
 
+class TheDocumentChecksReadOnlyTrackedFiles(unittest.TestCase):
+    """`make facts` is a commit gate, so an untracked file must not be able to hold a commit up.
+
+    Section 185's aside, and it was found by checking a number before quoting it: this tool's own
+    count moved by 26 on an unchanged commit, and 26 is exactly how many `fact:` markers `CLAUDE.md`
+    carries. An untracked `AGENTS.md` had appeared in the root, a copy of `CLAUDE.md` written for a
+    different agent, and every marker in it was being counted twice.
+
+    The count being unreproducible is the cosmetic half. The half with teeth is that the phrase check
+    refuses a commit that restates a superseded claim, so the first time somebody sweeps `CLAUDE.md`
+    and not the untracked copy beside it, `make facts` blocks the commit over a file that is not in
+    the repository. Both directions are asserted below, because a check that stops reading untracked
+    files could just as easily stop reading everything.
+    """
+
+    def setUp(self):
+        self.root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.insert(0, os.path.join(self.root, 'tools'))
+
+    def _facts(self):
+        import importlib
+        import facts
+        importlib.reload(facts)
+        return facts
+
+    def test_an_untracked_document_is_not_read_and_a_tracked_one_is(self):
+        import subprocess
+        facts = self._facts()
+        probe = os.path.join(self.root, 'zz-toolchain-probe.md')
+        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
+        tracked = None
+        try:
+            with open(probe, 'w', encoding='utf-8') as fh:
+                fh.write('a probe\n')
+            self.assertNotIn(probe, set(facts.documents()),
+                             'an untracked markdown file is not a published document')
+            # And tracked, the same file is read. `git add` is what makes it part of the repository,
+            # which is the distinction the check is drawing.
+            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
+                           capture_output=True)
+            tracked = probe
+            self.assertIn(probe, set(facts.documents()),
+                          'a tracked markdown file is a published document')
+        finally:
+            if tracked is not None:
+                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
+                               check=False, capture_output=True)
+            if os.path.exists(probe):
+                os.remove(probe)
+
+    def test_the_source_walk_draws_the_same_line(self):
+        """The phrase check reads `.ts` and `.py` too, and it is the half that gates a commit."""
+        import subprocess
+        facts = self._facts()
+        probe = os.path.join(self.root, 'zz_toolchain_probe.py')
+        self.assertFalse(os.path.exists(probe), 'the probe path must be free')
+        tracked = None
+        try:
+            with open(probe, 'w', encoding='utf-8') as fh:
+                fh.write('# a probe\n')
+            self.assertNotIn(probe, set(facts.sources()))
+            subprocess.run(['git', 'add', '-f', probe], cwd=self.root, check=True,
+                           capture_output=True)
+            tracked = probe
+            self.assertIn(probe, set(facts.sources()))
+        finally:
+            if tracked is not None:
+                subprocess.run(['git', 'rm', '-q', '--cached', tracked], cwd=self.root,
+                               check=False, capture_output=True)
+            if os.path.exists(probe):
+                os.remove(probe)
+
+    def test_the_real_documents_are_still_read(self):
+        """The control on the control: narrowing the walk must not empty it."""
+        facts = self._facts()
+        found = set(facts.documents())
+        for name in ('CLAUDE.md', 'README.md', os.path.join('docs', 'findings.md')):
+            self.assertIn(os.path.join(self.root, name), found, name)
+        sources = set(facts.sources())
+        self.assertIn(os.path.join(self.root, 'tools', 'facts.py'), sources)
+
+
 if __name__ == '__main__':
     unittest.main()

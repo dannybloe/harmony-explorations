@@ -118,7 +118,13 @@ records hold the build timestamp's own fields, and no run of pointers in either 
 carrying those seven values, at any field offset and either width, where an arch 8 container hits
 exactly once.
 
-Two consequences for readers. **No `0xFEED` frame validates anywhere in either payload**, so an arch 10
+Three consequences for readers, and the third is the one that bit twice. **A per architecture table must
+not answer for arch 10 just because its shape happens to fit**, section 185: screen opcode 22's operand
+width had no arch 10 entry and 49 mode page programs on a Harmony 890 went unread as a result, three
+being the answer; base slot 15's group bodies had one and it is wrong there, all fourteen reading as two
+entries where arch 8's nine vary between one and fourteen, so they are refused and the shape is open; and
+`lightBandExtras`, an arch 12 firmware reading gated only on its group existing, fired on a Harmony 890
+because arch 10 declares fourteen groups where nine was the most anywhere else. **No `0xFEED` frame validates anywhere in either payload**, so an arch 10
 config does not state the names of its devices and activities the way base slot 0 does everywhere else,
 and with base slot 13 absent too a Harmony 890's device names and activity count are unread. And **base
 slot 7 is read as a header rather than as the whole section** on every architecture, because arch 10

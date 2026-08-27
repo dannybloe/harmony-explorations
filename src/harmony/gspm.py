@@ -509,10 +509,19 @@ SCREEN_JUMP = 20
 # config, and that the opcode 3 after it draws at `y = 8 * operand` with a width of 96 and a height
 # of 8. That is the 525's screen, eight rows of eight pixels. `docs/findings.md` section 85.
 SCREEN_CALL = 22
-SCREEN_OPERANDS_BY_ARCHITECTURE = {9: {SCREEN_CALL: 1}, 12: {SCREEN_CALL: 3}}
+# Arch 10 (Harmony 890 and 895) takes three, like arch 12, section 185. Measured per program and not
+# off the coverage percentage, which prefers the wrong answer: every unclaimed run a mode page's own
+# program field points at decodes and lands exactly on the run's end under three, 49 of 49 and 34 of 34.
+SCREEN_OPERANDS_BY_ARCHITECTURE = {
+    9: {SCREEN_CALL: 1}, 10: {SCREEN_CALL: 3}, 12: {SCREEN_CALL: 3},
+}
 # Whether opcode 22's trailing `u24` is a program to walk into. On arch 12 it is; on arch 9 it is a
 # picture, which is a different kind of thing and must not be handed to the program decoder.
 SCREEN_CALL_TARGET_ARCHITECTURES = frozenset({12})
+# Architectures whose base slot 15 group bodies are `u8 entries; u16 value[entries]`. Arch 10 is
+# deliberately absent, section 185: its fourteen bodies all read as two entries where arch 8's nine
+# vary, and two of them collide, so the shape is unmeasured there rather than shared.
+PARAMETER_BODY_ARCHITECTURES = frozenset({8, 9, 12, 14})
 
 # Opcode 2 draws a bitmap that lives at an address rather than inline, which makes it the only
 # screen instruction that names a place outside the program. `docs/findings.md` section 50.
@@ -2639,7 +2648,16 @@ class Container:
 
         The section's own count is demanded by the firmware, 9 on arch 14 and 11 on arch 12, and so
         is each group's length: see `PARAMETER_GROUP_COUNTS`. `docs/findings.md` section 44.
+
+        **The body shape is per architecture and arch 10 is off the list**, section 185. Section 44
+        says so and this reader ignored it, because the four architectures it was written against
+        share the shape. On arch 10 (Harmony 890 and 895) all fourteen bodies read as exactly two
+        entries and five bytes on both containers, where arch 8's nine vary between one and fourteen,
+        and two of the fourteen then claim the same bytes. A count identical on every group of every
+        container is a constant being read as a count, and the overlap is the proof.
         """
+        if self.architecture not in PARAMETER_BODY_ARCHITECTURES:
+            return None
         slot = arch_slot(self.architecture, PARAMETER_SLOT)
         if slot >= len(self.sections) or self.sections[slot].is_null:
             return None

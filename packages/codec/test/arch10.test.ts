@@ -12,16 +12,18 @@ import { load, require_, skipUnless } from '@harmony/lab';
 import { parse } from '../src/index.ts';
 import { keyCodes } from '../src/inventory.ts';
 import { archSlot, baseSlot, BASE_SLOT_COUNT, EVENT_PRESS } from '../src/gspm.ts';
-import { pictureBankByClosure } from '../src/screen.ts';
+import { pictureBankByClosure, screenProgram, SCREEN_FIXED_OPERANDS } from '../src/screen.ts';
 import { fontSets, fontSetsByClosure, glyphAt, glyphHeight } from '../src/font.ts';
 import { shapeKey, isBlank, usesAscii, characterMap, screenStrings } from '../src/text.ts';
 import { ALPHABETS } from '../src/alphabets.ts';
-import { taggedList } from '../src/sections.ts';
+import { taggedList, modeRecords } from '../src/sections.ts';
 import {
   irGroups, irRecordsByClosure, irCarrier, irGroupCount, irRecordBlocks, irBlockWords,
   IR_RECORD_POINTER_BIAS,
 } from '../src/ir.ts';
 import { u8, u16, u24 } from '../src/bytes.ts';
+import { claims, coverage } from '../src/coverage.ts';
+import { lightBandExtras, parameterGroups } from '../src/tables.ts';
 
 /** Every user config, with the device count `make devices` reports for it. Section 178. */
 const DEVICE_COUNTS: readonly [string, number][] = [
@@ -538,7 +540,7 @@ test('the alphabet became the words, and they name the same equipment as the Har
     const map = characterMap(c);
     assert.ok(map !== undefined, 'the character map reads now');
     assert.equal(map.alphabet, 'arch8', 'through the Harmony 885 typeface, section 180');
-    assert.deepEqual(map.drawn, { resolved: 66, total: 66 }, 'every drawn glyph resolves');
+    assert.deepEqual(map.drawn, { resolved: 70, total: 70 }, 'every drawn glyph resolves');
 
     const wordsOf = (name: string): Set<string> => {
       const container = parse(require_(name));
@@ -563,16 +565,25 @@ test('the alphabet became the words, and they name the same equipment as the Har
     }
     // The control the agreement needs: the two containers are not the same file. Without it, "they
     // share these eight words" would be satisfied by two copies of one config. Exact counts rather
-    // than a floor, per the house rule, and the asymmetry is worth having in the record: the Harmony
-    // 880 draws 99 strings the 890 does not and nearly all of them are button labels for device mode,
-    // where the 890 draws 17 the 880 does not and they are all wording differences in the firmware's
-    // own messages. Why one config's screen carries a device mode vocabulary and the other's does not
-    // is **not** explained here.
-    assert.equal(ninety.size, 216, 'the Harmony 890 draws 216 strings of more than one character');
+    // than a floor, per the house rule.
+    //
+    // **These four numbers were 216, 298, 17, 99 and 199 for a day, and the asymmetry they showed was
+    // our reader**, section 185. Section 184 recorded it as an unexplained difference between two
+    // remotes in one household, the Harmony 880 drawing 99 strings the 890 did not and nearly all of
+    // them device mode button labels. They were the Harmony 890's too: 49 of its mode page programs
+    // begin with screen opcode 22, whose operand width arch 10 had no entry for, so those programs
+    // were abandoned unread and their text with them. The lesson is that an **absence** measured
+    // through a reader is a claim about the reader until something says otherwise, and a difference
+    // between two configs is exactly the shape that invites reading it as a fact about the product.
+    //
+    // What is left really is a difference: the Harmony 880 draws a twelve hour clock, "12:00" through
+    // "11:00" plus "AM" and "PM", where the Harmony 890 draws minutes "00" to "59". And six of the
+    // rest are the same message worded differently, "Place the remote" against "Place remote".
+    assert.equal(ninety.size, 318, 'the Harmony 890 draws 318 strings of more than one character');
     assert.equal(eighty.size, 298, 'and the Harmony 880 beside it 298');
-    assert.equal([...ninety].filter((w) => !eighty.has(w)).length, 17, 'only on the Harmony 890');
-    assert.equal([...eighty].filter((w) => !ninety.has(w)).length, 99, 'only on the Harmony 880');
-    assert.equal([...ninety].filter((w) => eighty.has(w)).length, 199, 'and 199 in common');
+    assert.equal([...ninety].filter((w) => !eighty.has(w)).length, 41, 'only on the Harmony 890');
+    assert.equal([...eighty].filter((w) => !ninety.has(w)).length, 21, 'only on the Harmony 880');
+    assert.equal([...ninety].filter((w) => eighty.has(w)).length, 277, 'and 277 in common');
   });
 
 /** Every arch 10 read, with the records the closure locator finds. Section 181. */
@@ -1136,4 +1147,151 @@ test('the mapping is adopted, so the arch 10 readers answer, and each answer has
     const lists = c.actionLists();
     assert.equal(lists?.length, 1549, 'base slot 10 has its action lists');
     assert.equal(c.builtAt, '2025-05-14T21:40:26', 'and base slot 3 its build timestamp');
+  });
+
+/**
+ * Section 185: the 111 byte gap family is mode page screen programs, and one table entry was in the way.
+ *
+ * Kept together in this file because the subject is arch 10, but the transferable part is the
+ * **instrument**: the width was first measured off the byte accounting percentage, which prefers a wrong
+ * answer, and the tests below assert both the answer and why the cheaper measurement cannot find it.
+ */
+test('every arch 10 mode page program decodes and ends exactly where its unclaimed run ended',
+  skipUnless('h890_config', 'h895_config'), () => {
+    // The closure. A run's extent comes from the byte accounting and the decode from the opcode table,
+    // so the two ends share nothing: a wrong operand width cannot land on the right end 83 times.
+    //
+    // The runs are recomputed here rather than hard coded, because what makes this a measurement is
+    // that the accounting no longer reports them at all. So the assertion is the other way round: the
+    // programs a mode page names are all claimed now, and the family is gone.
+    const EXPECTED: readonly [string, number][] = [['h890_config', 49], ['h895_config', 34]];
+    for (const [name, pages] of EXPECTED) {
+      const c = parse(require_(name));
+      const owner = new Uint8Array(c.blob.length);
+      for (const k of claims(c)) owner.fill(1, k.start, k.start + k.length);
+
+      const programs: number[] = [];
+      for (const record of modeRecords(c) ?? []) for (const p of record.pages) programs.push(p.program);
+      assert.ok(programs.length > pages, `${name}: mode pages state programs`);
+
+      // Every one decodes, and the 111 byte runs section 184 could not account for are claimed.
+      let decoded = 0;
+      for (const address of new Set(programs)) {
+        if (screenProgram(c, address) !== undefined) decoded += 1;
+      }
+      assert.equal(decoded, new Set(programs).size, `${name}: every page program decodes`);
+
+      const runs = new Map<number, number>();
+      let at = 0;
+      while (at < c.blob.length) {
+        if (owner[at] === 1) { at += 1; continue; }
+        let end = at;
+        while (end < c.blob.length && owner[end] === 0) end += 1;
+        runs.set(end - at, (runs.get(end - at) ?? 0) + 1);
+        at = end;
+      }
+      assert.equal(runs.get(111), undefined, `${name}: no 111 byte run is left unclaimed`);
+    }
+  });
+
+test('the operand width is three, and the gap families are what says so',
+  skipUnless('h890_config', 'h895_config'), () => {
+    // **The lesson of section 185, asserted rather than described.** Reading the width off the byte
+    // accounting picks 2 for the Harmony 895, because it yields a clean 100.00% with no gaps at all,
+    // and 2 is wrong: a program read with a short opcode runs past its own end and claims what follows.
+    // Coverage counts claimed bytes, so an overrunning reader closes gaps. Under 2 the Harmony 895
+    // reports 308344 bytes of overlap, nine tenths of the file claimed twice.
+    //
+    // This walks the stream itself rather than calling `screenProgram`, so the control survives the
+    // table being right, and it scores against **section 184's own gap families**, which were measured
+    // when none of these programs could be decoded at all. Those counts are the other instrument: 18
+    // runs of 111 bytes on the Harmony 890 and 21 on the Harmony 895, with 63, 87 and 135 behind them.
+    const walk = (blob: Uint8Array, at: number, w22: number): number | undefined => {
+      let off = at;
+      for (;;) {
+        if (off < 0 || off >= blob.length) return undefined;
+        const opcode = u8(blob, off);
+        off += 1;
+        if (opcode === 0) return off;
+        if (opcode === 5) {
+          // Two position bytes then a run of glyph codes ending in a zero, so its length is data.
+          off += 2;
+          while (off < blob.length && u8(blob, off) !== 0) off += 1;
+          off += 1;
+          continue;
+        }
+        if (opcode === 22) { off += w22; continue; }
+        const fixed = SCREEN_FIXED_OPERANDS[opcode];
+        if (fixed === undefined) return undefined;
+        off += fixed;
+        // 18, 19 and 20 transfer control, so a linear walk stops rather than reading past them.
+        if (opcode === 18 || opcode === 19 || opcode === 20) return off;
+      }
+    };
+
+    // name, page programs opening with opcode 22, and the lengths section 184's accounting had for
+    // this family in that container.
+    const EXPECTED: readonly [string, number, Record<number, number>][] = [
+      ['h890_config', 49, { 111: 18, 63: 5, 87: 3, 135: 3 }],
+      ['h895_config', 34, { 111: 21, 63: 3, 87: 2 }],
+    ];
+    for (const [name, opening, families] of EXPECTED) {
+      const c = parse(require_(name));
+      const pages = new Set<number>();
+      for (const record of modeRecords(c) ?? []) for (const p of record.pages) pages.add(p.program);
+      const starts = [...pages].filter((address) => {
+        const off = c.blobOffsetOf(address);
+        return off !== undefined && u8(c.blob, off) === 22;
+      });
+      assert.equal(starts.length, opening, `${name}: page programs opening with opcode 22`);
+
+      const scored = (w: number): { terminates: number; lengths: Map<number, number> } => {
+        const lengths = new Map<number, number>();
+        let terminates = 0;
+        for (const address of starts) {
+          const off = c.blobOffsetOf(address) as number;
+          const end = walk(c.blob, off, w);
+          if (end === undefined) continue;
+          terminates += 1;
+          lengths.set(end - off, (lengths.get(end - off) ?? 0) + 1);
+        }
+        return { terminates, lengths };
+      };
+
+      // Three reads every one of them to a terminator, where the other widths mostly walk off the end.
+      const three = scored(3);
+      assert.equal(three.terminates, opening, `${name}: width 3 terminates on all of them`);
+      // Exact counts for the wrong widths too, because "fewer" is the shape a floor would hide and the
+      // magnitude is the evidence: width 2 gets 30 of the Harmony 895's 34 and every one at length 14.
+      assert.deepEqual([scored(1).terminates, scored(2).terminates],
+        name === 'h890_config' ? [0, 1] : [0, 30], `${name}: widths 1 and 2`);
+
+      // And the closure: the lengths width 3 produces reproduce the gap families, count for count.
+      for (const [length, count] of Object.entries(families)) {
+        assert.equal(three.lengths.get(Number(length)), count,
+          `${name}: ${count} programs of ${length} bytes, as the accounting measured`);
+      }
+    }
+  });
+
+test('an arch 12 firmware reading no longer answers for a Harmony 890',
+  skipUnless('h890_config', 'h895_config', 'one_config'), () => {
+    // Section 185. `lightBandExtras` was gated on base slot 15's group 9 existing, on the recorded
+    // reasoning that nine groups is the most any other architecture carries. Arch 10 declares fourteen,
+    // so it fired and attributed twelve bytes of a Harmony 890 to a display light band whose two read
+    // offsets are Harmony One addresses. The overlap detector is what found it.
+    for (const name of ['h890_config', 'h895_config']) {
+      const c = parse(require_(name));
+      assert.equal(lightBandExtras(c), undefined, `${name}: not measured on this architecture`);
+      // And the bodies of base slot 15 are refused too, per section 44's own rule. The array is not:
+      // the section is 14 groups against a Harmony 880's 9, which is what places raw slot 18.
+      assert.equal(parameterGroups(c), undefined, `${name}: the group body shape is unmeasured`);
+      const slot = archSlot(10, 15);
+      assert.equal(c.pointerArray(slot)?.length, 14, `${name}: the array itself still reads`);
+      // Zero overlaps is the check that caught both, so it is the check that holds them fixed.
+      assert.equal(coverage(c).overlaps.length, 0, `${name}: nothing is claimed twice`);
+    }
+    // The control: on the architecture it was measured on, it still answers.
+    const one = parse(require_('one_config'));
+    assert.ok(lightBandExtras(one) !== undefined, 'arch 12, Harmony One, is where section 103 read it');
   });

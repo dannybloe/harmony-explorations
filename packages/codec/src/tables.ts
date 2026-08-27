@@ -199,8 +199,25 @@ export interface ParameterGroup {
  *
  * The firmware demands the section's count and every group's length, and silently substitutes
  * compiled in defaults for a group whose length differs, so neither is cosmetic.
+ *
+ * **The body shape is per architecture and arch 10 is off the list, section 185.** Section 44 says as
+ * much and this reader ignored it, because the four architectures it was written against share the
+ * shape. On arch 10 (Harmony 890 and 895) they do not: all **fourteen** bodies read as exactly two
+ * entries and five bytes on both containers, where arch 8's nine vary between one and fourteen
+ * entries, and two of the fourteen then claim the same bytes. A count that is the same on every group
+ * of every container is a **constant** being read as a count, and the overlap is the proof rather than
+ * the suspicion.
+ *
+ * So the arch 10 bodies are refused and the shape is open. What is not open is that raw slot 18 is
+ * base slot 15: its array reads, 14 groups against a Harmony 880's 9, and the alternative was tested
+ * and refused. Its leading constant 2 is the same byte base slot 14's records open with, which is what
+ * made that worth testing, and its targets decode as screen programs 13 of 73 times.
  */
+export const PARAMETER_BODY_ARCHITECTURES: ReadonlySet<number> = new Set([8, 9, 12, 14]);
+
 export function parameterGroups(c: Container): ParameterGroup[] | undefined {
+  if (c.architecture === undefined) return undefined;
+  if (!PARAMETER_BODY_ARCHITECTURES.has(c.architecture)) return undefined;
   const slot = slotOf(c, PARAMETER_SLOT);
   if (slot === undefined || slot >= c.sections.length) return undefined;
   const section = c.sections[slot];
@@ -252,13 +269,26 @@ export interface LightBandExtras {
  * position when nothing had read them and section 103 read them; the offsets here are the firmware's
  * own, so what used to be inferred from what was left over is now stated and can be wrong.
  *
- * Returns undefined where the group is absent, which is every architecture but arch 12 (Harmony One):
- * arch 8 (Harmony 880) and arch 14 (Harmony 600 and 700) carry nine groups and arch 9 (Harmony 525)
- * five, so there is no group 9 to continue. It does **not** check the twelve bytes are unclaimed,
- * deliberately: a collision with another group is what the accounting's overlap detector is for, and
- * a reader that consults what is already taken is the shape this replaces.
+ * **Gated on the architecture since section 185, and it used to be gated on the group existing.** The
+ * old wording was that group 9 is absent on every architecture but arch 12 (Harmony One),<!--superseded--> arch 8
+ * (Harmony 880) and arch 14 (Harmony 600 and 700) carrying nine groups and arch 9 (Harmony 525) five,
+ * so the absence did the gating on its own. That was true of every architecture readable when it was
+ * written and arch 10 (Harmony 890 and 895) breaks it: base slot 15 there declares **fourteen** groups,
+ * so group 9 exists and this fired on a remote whose firmware nobody has read.
+ *
+ * That is the section 139 mistake in a new place, a per architecture table answering for an
+ * architecture it was never measured on, and both offsets below are Harmony One addresses. It did not
+ * pass unnoticed for one commit: the twelve bytes collided with a real group and the accounting's
+ * overlap detector reported it, which is what the paragraph below says the detector is for.
+ *
+ * It does **not** check the twelve bytes are unclaimed, deliberately: a collision with another group is
+ * what that detector is for, and a reader that consults what is already taken is the shape this
+ * replaces.
  */
+export const LIGHT_BAND_ARCHITECTURES: ReadonlySet<number> = new Set([12]);
+
 export function lightBandExtras(c: Container): LightBandExtras | undefined {
+  if (c.architecture === undefined || !LIGHT_BAND_ARCHITECTURES.has(c.architecture)) return undefined;
   const groups = parameterGroups(c);
   const group = groups?.[LIGHT_BAND_GROUP];
   if (group === undefined) return undefined;

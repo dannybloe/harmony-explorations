@@ -100,13 +100,39 @@ SKIP_DIRECTORIES = ('.git', 'node_modules', 'dist', '__pycache__')
 SOURCE_SUFFIXES = ('.ts', '.py')
 
 
+def _untracked():
+    """Paths git reports as untracked, or an empty set where git cannot say.
+
+    **Untracked files were being checked as published documents until 27 August 2026**, and the way
+    that surfaced is worth keeping: this tool's own count moved by 26 on an unchanged commit, and 26
+    is exactly how many `fact:` markers `CLAUDE.md` carries. An untracked `AGENTS.md` had appeared in
+    the root, a copy of `CLAUDE.md` for a different agent, so every marker in it was counted twice.
+
+    Two things were wrong with that and only one is cosmetic. The count is what a commit message
+    quotes, so a duplicate makes it unreproducible. And the phrase check is a **gate**: the first time
+    somebody sweeps `CLAUDE.md` for a superseded claim without sweeping the untracked copy beside it,
+    `make facts` refuses the commit over a file that is not in the repository at all.
+
+    Falls back to the whole walk when git is absent or this is not a checkout, because the phrase
+    half has to run for anyone, and there a duplicate is the lesser problem than no check.
+    """
+    try:
+        out = subprocess.run(['git', 'ls-files', '--others', '--exclude-standard'],
+                             cwd=ROOT, capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return set()
+    return {os.path.join(ROOT, line) for line in out.stdout.splitlines() if line}
+
+
 def documents():
-    """Every published markdown file, which is everything not under .git or node_modules."""
+    """Every published markdown file: tracked, and not under .git or node_modules."""
+    skip = _untracked()
     for base, dirs, files in os.walk(ROOT):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
         for name in sorted(files):
-            if name.endswith('.md'):
-                yield os.path.join(base, name)
+            path = os.path.join(base, name)
+            if name.endswith('.md') and path not in skip:
+                yield path
 
 
 def sources():
@@ -118,11 +144,13 @@ def sources():
     on. Twenty hits the day it was switched on, two of them in comments written that morning by the
     commit that superseded them.
     """
+    skip = _untracked()
     for base, dirs, files in os.walk(ROOT):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
         for name in sorted(files):
-            if name.endswith(SOURCE_SUFFIXES):
-                yield os.path.join(base, name)
+            path = os.path.join(base, name)
+            if name.endswith(SOURCE_SUFFIXES) and path not in skip:
+                yield path
 
 
 def coverage_facts():

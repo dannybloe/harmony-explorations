@@ -24406,10 +24406,14 @@ signature of four breaks per config, and the drawn screen.
 
 ### The drawn text reads, and it names the Harmony 880's own equipment
 
-**4255 of 4255 glyphs on the Harmony 890 and 5808 of 5812 on the Harmony 895.** Section 180 had said
+**4255 of 4255 glyphs on the Harmony 890 and 5808 of 5812 on the Harmony 895.**<!--superseded--> Section 180 had said
 this could not be done and gave the correct reason: a string is a run of glyph codes whose address comes
 out of a screen program, and programs are base slot 11, so no mapping means no strings. The mapping is
 what changed.
+
+**Those two figures are 5634 and 6486 since section 185**, which read the 111 byte gap family this
+section ends by naming: 49 mode page programs on the Harmony 890 and 34 on the Harmony 895 were being
+abandoned unread, so a fifth of the drawn text was missing here.
 
 What holds the reading up is not the count, it is whose words they are. The Harmony 890 and the arch 8
 `arch8_config_880` are one household, section 181 having shown they share their infrared database almost
@@ -24417,9 +24421,19 @@ byte for byte, and the labels drawn on the two screens agree: the same four acti
 four appliances, decoded through a per config glyph numbering that has no reason to line up between two
 different containers. 199 of the 890's 216 distinct strings appear on the 880 as well.
 
-The asymmetry in the other direction is unexplained and recorded as such: the Harmony 880 draws 99
+The asymmetry in the other direction is unexplained and recorded as such: the Harmony 880 draws 99<!--superseded-->
 strings the 890 does not, and nearly all of them are the button labels of device mode. Why one
 household's two remotes differ in that is not read here.
+
+**That paragraph was wrong within a day and section 185 is the correction.** Those 99 strings are the
+Harmony 890's too. It was reported as a difference between two remotes because 49 of the 890's mode page
+programs open with screen opcode 22, whose operand width arch 10 had no entry for, so the reader gave up
+on them and their text never appeared. With the width read the counts reverse: the Harmony 890 draws 318
+distinct strings against the Harmony 880's 298, 277 shared. **The lesson is that an absence measured
+through a reader is a claim about the reader**, and a difference between two configurations is the shape
+most likely to be mistaken for a fact about the product. What survives as a real difference is small and
+dull: the Harmony 880 draws a twelve hour clock where the 890 draws minutes, and six messages are worded
+differently.
 
 ### The unprompted confirmation, which nothing was looking for
 
@@ -24466,6 +24480,9 @@ Harmony 890 and 21 on the Harmony 895**, which is the shape sections 66 and 75 w
 family with the same length and a count that follows the config. The Harmony 895 also has a single 7187
 byte run of its own. That family is the next thing to read on arch 10.
 
+**Read the next day, section 185**: they are mode page screen programs, and the figures here are
+**99.27%** and **97.17%** with zero overlaps.
+
 ### The tests
 
 Nine tests asserted that arch 10 refuses and every one of them was rewritten rather than deleted, per
@@ -24479,3 +24496,140 @@ the clean reads read their sections and the five damaged reads of one Harmony 89
 Three of the rewrites are better tests than what they replaced, because a refusal became an agreement:
 base slot 5 against the self pointer scan on all 300 records, base slot 7 against the closure search on
 all eight sets, and the clock against the arch 8 container fifteen minutes away.
+
+## 185. The 111 byte family is screen programs, and the coverage percentage preferred the wrong answer
+
+Section 184 ended by naming the biggest unclaimed family on arch 10 as the next thing to read: 18 runs of
+exactly 111 bytes on the Harmony 890 and 21 on the Harmony 895, the same length on both with a count that
+follows the config, which is the shape sections 66 and 75 were both found by.
+
+They are **mode page screen programs**, and one byte of table was in the way.
+
+### What they are
+
+Every run opens with `0x16`, screen opcode 22, and the six bytes immediately before each run are claimed
+by `slot-6-page`, which is a mode page record: `{ u24 list; u24 program }`. So the layout is a page
+record followed by the program it names, and 49 of the Harmony 890's unclaimed runs are the target of a
+page's own `program` field, 34 of the Harmony 895's.
+
+Opcode 22 is **the one screen opcode whose operand count differs per architecture**, section 64, which is
+why it lives in `SCREEN_OPERANDS_BY_ARCHITECTURE` rather than in the fixed table: one operand on arch 9
+(Harmony 525), three on arch 12 (Harmony One). Arch 10 had no entry, so the reader met the opcode, could
+not say how wide it was, and abandoned the program. The bytes then went unclaimed, and every string those
+programs draw went unread.
+
+It takes **three**, like arch 12.
+
+### The instrument mattered more than the answer
+
+The first attempt measured the width by adding each candidate to the table and reading off the byte
+accounting percentage. That preferred the wrong answer, and not marginally:
+
+| width | Harmony 890 | Harmony 895 |
+|---|---|---|
+| none (before) | 97.92% | 96.15% |
+| 1 | 97.92% | 96.15% |
+| 2 | 97.92% | **100.00%** |
+| 3 | **99.28%** | 97.20% |
+
+Width 2 takes the Harmony 895 to a clean hundred per cent with no gaps at all, which is the headline
+number this project has spent M2 moving. It is wrong. The control says so: under width 2 the Harmony 895
+reports **308344 bytes of overlap**, nine tenths of the file claimed twice, because a program read with a
+short opcode runs on past its own end and claims whatever follows. Coverage counts claimed bytes, so a
+reader that overruns closes gaps.
+
+The right instrument is per program and it is unambiguous. Walk the stream from each page program's own
+address under a candidate width, and score two things: whether it reaches a terminator at all, and what
+lengths it produces.
+
+| width | terminates, Harmony 890 of 49 | terminates, Harmony 895 of 34 |
+|---|---|---|
+| 1 | 0 | 0 |
+| 2 | 1 | 30 |
+| 3 | **49** | **34** |
+
+**And the lengths are the closure**, because they are a number from the other instrument: section 184
+measured this family off the byte accounting before any of these programs could be decoded, 18 runs of 111
+bytes on the Harmony 890 and 21 on the Harmony 895, with families of 63, 87 and 135 behind them. Under
+width 3 the programs reproduce every one of those counts exactly, 111 by 18 and 63 by 5 and 87 by 3 and
+135 by 3 on the Harmony 890, 111 by 21 and 63 by 3 and 87 by 2 on the Harmony 895. The run extents come
+from the accounting and the decode from the opcode table, so the two ends share nothing. **The lesson is that a percentage
+is a sum and a sum cannot be falsified by one of its terms being wrong in the generous direction.** Same
+family as section 148's hollow claim, where a count of what a reader looked for could not see what it
+never looked at, and as section 84's `slot-15-spare`, where a catch-all owner absorbed whatever a group
+stopped claiming and the report still said 100.00%.
+
+### What it bought
+
+A fifth of the Harmony 890's drawn text. `make text` on it goes from 4255 glyphs to **5634**, all read, and
+the Harmony 895 from 5812 to 6490 with 6486 read. Byte accounting reaches **99.27%** and **97.17%** with
+**zero overlaps** on both.
+
+**And it refutes section 184's own closing paragraph about the text**, which is the correction worth
+carrying. That section reported that the Harmony 880 draws 99 strings the Harmony 890 does not, nearly all
+of them device mode button labels, and recorded it as an unexplained difference between two remotes in one
+household. They were the Harmony 890's all along, sitting in the 49 programs the reader gave up on. With
+the width read the counts reverse: 318 distinct strings on the Harmony 890 against 298 on the Harmony 880,
+277 shared. So **an absence measured through a reader is a claim about the reader**, and a difference
+between two configurations is the shape most likely to be mistaken for a fact about the product. What
+survives as a real difference is small: the Harmony 880 draws a twelve hour clock, `12:00` to `11:00` plus
+`AM` and `PM`, where the Harmony 890 draws minutes `00` to `59`, and six messages are worded differently.
+
+### Two readers were answering for an architecture nobody measured them on
+
+Both were found by the overlap detector rather than by looking, which is what it is for.
+
+**`lightBandExtras` was arch 12's firmware answering for a Harmony 890.** Section 103 read what the
+`0x3F` band `0xC0` state machine takes from base slot 15 group 9 past its declared entries, at two
+Harmony One addresses, `0x249A0` and `0x2492E`. The reader was gated on the group **existing**, on the
+recorded reasoning that group 9 is absent everywhere else: arch 8 and arch 14 carry nine groups and arch 9
+five. Arch 10 declares **fourteen**, so group 9 exists and twelve bytes of a Harmony 890 were being
+attributed to a display light band nobody has read a line of firmware about. It is gated on the
+architecture now, and this is the section 139 mistake in a new place, a per architecture table answering
+where it was never measured.
+
+**Base slot 15's group bodies are per architecture too**, which section 44 says and the reader ignored,
+because the four architectures it was written against share the shape. On arch 10 all **fourteen** bodies
+read as exactly two entries and five bytes, on both containers, where arch 8's nine vary between one and
+fourteen. A count identical on every group of every container is a constant being read as a count, and
+two of the fourteen then claimed the same bytes. The bodies are refused on arch 10 and the shape is open.
+
+What is **not** open is that raw slot 18 is base slot 15. Its leading constant 2 is the same byte base
+slot 14's records open with, which made the alternative worth testing, and it fails: its targets decode as
+screen programs 13 of 73 times where a value map's all do. So base slot 14 stays absent, per section 184.
+
+### What is left on arch 10
+
+Per container, since arch 10 is outside `CONTAINERS`. The Harmony 890's remaining 2884 bytes are seven
+runs with no family: 1024 at raw slot 16, then 798, 502, 274, 152, 133 and 26. The Harmony 895's 9691 are
+nine, dominated by a single **7187 byte** run of its own, then 1027 at raw slot 16 and the same 502, 274
+and 152 the Harmony 890 has.
+
+Those three shared lengths are the interesting ones, because a run that is the same size on two
+containers of different vintage is a fixed structure: 502, 274 and 152 sit at raw slots 3, 2 and 1, which
+section 183 established are not base slots at all. So the next question on arch 10 is what those eight
+slots hold, and the honest guess to test rather than assert is that some of them are the radio, both
+models being RF remotes and no other architecture here having one.
+
+### An aside with teeth: the document checks were reading untracked files
+
+Found by checking a number before quoting it, which is the only reason it was found at all.
+`make facts` reported 205 marked values during section 184's work and 231 on that same commit a day
+later, with nothing in between but a `git commit`. 231 minus 205 is 26, which is exactly how many
+`fact:` markers `CLAUDE.md` carries.
+
+An untracked `AGENTS.md` had appeared in the root, a copy of `CLAUDE.md` written for a different agent
+with `.claude/` rewritten to `.Codex/`, and `documents()` walks the filesystem, so every marker in it
+was counted twice.
+
+The unreproducible count is the cosmetic half. **The half with teeth is that the phrase check is a
+commit gate.** It refuses any commit that restates a claim `reference/superseded.md` records as dead, so
+the first time somebody sweeps `CLAUDE.md` and does not sweep the untracked copy beside it, `make facts`
+blocks the commit over a file that is not in the repository. Nothing had gone wrong yet, because the
+copy was made after the last sweep; it would have gone wrong on the next one.
+
+Both walks now skip what `git ls-files --others --exclude-standard` reports, falling back to the whole
+walk where git cannot answer, since the phrase half has to run for anyone and there a duplicate is the
+lesser problem than no check at all. `TheDocumentChecksReadOnlyTrackedFiles` in
+`tests/test_toolchain.py` asserts both directions, because a check that stops reading untracked files
+could just as easily stop reading everything, and a third test asserts the real documents are still in.

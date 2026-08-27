@@ -90,6 +90,13 @@ export const SCREEN_JUMP = 20;
 export const SCREEN_CALL = 22;
 export const SCREEN_OPERANDS_BY_ARCHITECTURE: Readonly<Record<number, Record<number, number>>> = {
   9: { 22: 1 },
+  // Arch 10 (Harmony 890 and 895) takes three, like arch 12, section 185. **Measured per program and
+  // not off the coverage percentage**, which prefers the wrong answer: every unclaimed run that a mode
+  // page's `program` field points at decodes and lands exactly on the run's own end under three, 49 of
+  // 49 on the Harmony 890 and 34 of 34 on the Harmony 895, where one and two manage 0 and 1 between
+  // them. The run's extent comes from the byte accounting and the decode from this table, so the two
+  // ends of that closure share nothing.
+  10: { 22: 3 },
   12: { 22: 3 },
 };
 /**

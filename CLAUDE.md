@@ -209,14 +209,24 @@ thereby a slot that is there, and the argument that placed four rows equally per
 What separated 4 and 6 from 13 and 14 was reading the bytes.
 
 **What it bought**: the screens, the button bindings, the mode pages, the action lists with arch 8's
-exact packing signature of four breaks, and the **drawn text**, 4255 of 4255 glyphs on the Harmony 890
-and 5808 of 5812 on the Harmony 895, which name the same four activities and four appliances as the
+exact packing signature of four breaks, and the **drawn text**, 5634 of 5634 glyphs on the Harmony 890
+and 6486 of 6490 on the Harmony 895, which name the same four activities and four appliances as the
 arch 8 Harmony 880 from the same household. **What it did not buy is the device names and the activity
 count**, and that is structural rather than pending: both routes need base slot 0's name tree, which
-arch 10 has no slot for, or base slot 13's transitions, which is the slot just refuted. The byte
-accounting sits at **97.9%** and **96.2%** where the corpus is at 100%, and the remainder is **not** the
-eight unread slots, which are 1450 bytes of 8258: it is one family of **111 byte runs**, 18 and 21 of
-them, which is the shape sections 66 and 75 were both found by and the next thing to read here.
+arch 10 has no slot for, or base slot 13's transitions, which is the slot just refuted.
+
+**The byte accounting sits at 99.3% and 97.2% with zero overlaps**, where the corpus is at 100%. Section
+185 read the biggest remaining family, 18 runs of 111 bytes and 21, and they were **mode page screen
+programs** blocked by one table entry: screen opcode 22 is the one opcode whose operand width is per
+architecture and arch 10 had none, so 49 and 34 programs were abandoned unread along with a fifth of the
+drawn text. **The instrument is the thing to carry from it, not the width**: measured off the coverage
+percentage, width 2 gives the Harmony 895 a clean 100.00% and is wrong, because a program read short
+overruns and claims what follows, 308344 bytes of overlap. Measured per program, asking whether a decode
+lands exactly on the run's own end, width 3 gets 49 of 49 and 34 of 34 and the others get 0 and 1. A
+percentage is a sum, and a sum cannot be falsified by one term being wrong in the generous direction.
+What is left is runs with no family, the largest a single 7187 bytes on the Harmony 895, plus the eight
+raw slots that are no base slot, of which three are the same size on both containers and therefore
+fixed structures.
 
 **The unprompted confirmation is the best evidence the mapping is right**, and nothing was looking for
 it: with the clock routed through the map, three of one contributor's configurations, two remotes and
@@ -1691,7 +1701,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 184 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 185 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
