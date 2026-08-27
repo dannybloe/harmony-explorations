@@ -20,7 +20,12 @@ import {
   SOFTWARE_TYPE_SAFE_MODE,
   architectureFromVersion,
   decodeReply,
+  HARMONY_PRODUCT_FIRST,
+  HARMONY_PRODUCT_LAST,
   isHarmony,
+  isMicrochipBootloader,
+  MICROCHIP_BOOTLOADER_PRODUCT,
+  MICROCHIP_VENDOR,
   nibbleForPayloadLength,
   skinId,
   softwareTypeFromVersion,
@@ -345,6 +350,26 @@ test('device matching is the Logitech vendor and the Harmony product range', () 
   assert.ok(!isHarmony(0x046d, 0xc150), 'just past the range');
   assert.ok(!isHarmony(0x046d, 0xc10f), 'just before it');
   assert.ok(!isHarmony(0x045e, 0xc111), 'another vendor');
+});
+
+test('a bootloader is Microchip, and asking that question never widens what can be opened', () => {
+  // Section 189. Both bench bootloaders present 04D8:000B, so a remote held in recovery is not a
+  // Harmony by vendor id and used to enumerate as nothing at all.
+  assert.ok(isMicrochipBootloader(0x04d8, 0x000b));
+  assert.ok(!isMicrochipBootloader(0x04d8, 0x000c), 'a neighbouring product');
+  assert.ok(!isMicrochipBootloader(0x046d, 0x000b), 'Logitech is not Microchip');
+
+  // The assertion that carries the safety, in both directions. A bootloader must not satisfy the
+  // predicate that gates openHarmony, because it speaks a different protocol entirely, and a
+  // Harmony must not satisfy the bootloader one. The two questions stay disjoint.
+  assert.ok(!isHarmony(MICROCHIP_VENDOR, MICROCHIP_BOOTLOADER_PRODUCT), 'openHarmony cannot claim it');
+  assert.ok(!isMicrochipBootloader(0x046d, 0xc121), 'a booted Harmony One is not a bootloader');
+  for (let product = HARMONY_PRODUCT_FIRST; product <= HARMONY_PRODUCT_LAST; product += 1) {
+    assert.ok(
+      !isMicrochipBootloader(0x046d, product),
+      `no Harmony product id may read as a bootloader, and 0x${product.toString(16)} does`,
+    );
+  }
 });
 
 test('the skin id is the low byte of bcdDevice, and its encoding is per firmware generation', () => {

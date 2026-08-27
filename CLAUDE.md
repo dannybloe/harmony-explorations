@@ -1185,7 +1185,18 @@ effect of a commit.**
 
 **Enumerating is not opening.** `listHarmony` and `packages/usb/bin/list-remotes.ts` ask the
 operating system what is attached; `openHarmony` claims an irreplaceable device. Anything that only
-needs to know whether a remote is plugged in uses the first. `packages/usb/test/hardware.test.ts` is
+needs to know whether a remote is plugged in uses the first.
+
+**A remote in recovery is not a Harmony by vendor id, and enumeration reported it as nothing at all
+until section 189.** Both bench bootloaders present `04D8:000B`, Microchip's vendor with no strings,
+where a booted Harmony One is `046D:C121` naming itself, so the recovery state has a signature and
+`listMicrochipBootloaders` is the question. It is **deliberately a second predicate rather than a
+wider `isHarmony`**: that one gates `openHarmony`, and a bootloader speaks a different protocol
+entirely, so widening it would let this library open a device and send it commands it cannot answer.
+A test asserts the two are disjoint across the whole Harmony product range. The name says Microchip
+and not Harmony because the identity is a stock one, so a hit means a device in that state and not a
+model. What it is for is telling "the remote went into recovery" from "nothing is plugged in", which
+is the difference between a bench measurement and a shrug. `packages/usb/test/hardware.test.ts` is
 the only test that touches USB, and it skips rather than passes when nothing is attached. Its
 enumeration tests only look; the rest open the device and send read commands, and those are gated on
 `HARMONY_HARDWARE_TESTS=1` so a routine `make ts` never claims a remote on its way past. Each test
@@ -1461,7 +1472,10 @@ make render        draw a config's screens as PNG files, into the lab and never 
 make activities    which activity each key starts and which drawn label is its name, per model
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
-make remotes       list attached remotes, enumeration only, opens nothing
+make remotes       list attached remotes, enumeration only, opens nothing. A device in a Microchip
+                   bootloader is reported separately, which is what a Harmony in recovery looks
+                   like, since filtering on Logitech's vendor id alone made that state
+                   indistinguishable from an empty bus
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

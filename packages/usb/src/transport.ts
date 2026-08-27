@@ -98,6 +98,36 @@ export function isHarmony(vendorId: number, productId: number): boolean {
   );
 }
 
+/** Microchip, and the product id both bench bootloaders present. `docs/findings.md` section 189. */
+export const MICROCHIP_VENDOR = 0x04d8;
+export const MICROCHIP_BOOTLOADER_PRODUCT = 0x000b;
+
+/**
+ * Whether a device is in a Microchip bootloader, which is what a Harmony in recovery looks like.
+ *
+ * A Harmony One or Harmony 600 held in its bootloader by a key at power on enumerates as
+ * `04D8:000B` with no manufacturer, product or serial string at all, where a booted one is
+ * `046D:C121` and calls itself `Harmony Remote 4-3.4.0`. Both bootloaders carry those descriptors
+ * inside their own 4 KiB, so the identity comes from the recovery code rather than from the
+ * application. That is the only signal a host gets, since the bootloader writes thirteen ports in
+ * total and nothing in it drives the display.
+ *
+ * **The name says Microchip and not Harmony deliberately.** This identity is a stock one and is not
+ * specific to these remotes, so a match means "a device presenting a Microchip bootloader" and not
+ * "a Harmony". Anything else on the bus in the same state would match too. The honest use is to
+ * distinguish a remote that has gone into recovery from a bus with nothing on it, which is what a
+ * bench confirmation needs, rather than to identify a model.
+ *
+ * **Deliberately not part of `isHarmony`.** That predicate gates `openHarmony`, and a bootloader
+ * speaks an entirely different protocol from the application: a different command layer, no length
+ * nibble, no state machine, section 189. Widening `isHarmony` would let this library open a device
+ * and start sending it commands it cannot answer. So this is a separate question with a separate
+ * answer, and no code that opens a device consults it.
+ */
+export function isMicrochipBootloader(vendorId: number, productId: number): boolean {
+  return vendorId === MICROCHIP_VENDOR && productId === MICROCHIP_BOOTLOADER_PRODUCT;
+}
+
 /**
  * The skin id out of a device descriptor's `bcdDevice`, or undefined if it cannot be read.
  *
@@ -195,10 +225,31 @@ export interface FoundRemote {
  * matters for a test run and for an Electron main process that may never touch USB.
  */
 export async function listHarmony(): Promise<FoundRemote[]> {
+  return listMatching(isHarmony);
+}
+
+/**
+ * Every attached device presenting a Microchip bootloader, without opening any of them.
+ *
+ * The counterpart of `listHarmony` for the recovery state, and it exists so that a bench session
+ * can tell "the remote went into recovery" from "nothing is plugged in". Before this, enumeration
+ * filtered on Logitech's vendor id alone, so a remote in its bootloader reported as no remote at
+ * all and the two outcomes of the experiment were indistinguishable.
+ *
+ * Read the caveat on `isMicrochipBootloader`: a hit is not proof that the device is a Harmony.
+ * Nothing here opens anything, and this library cannot talk to a device in this state.
+ */
+export async function listMicrochipBootloaders(): Promise<FoundRemote[]> {
+  return listMatching(isMicrochipBootloader);
+}
+
+async function listMatching(
+  matches: (vendorId: number, productId: number) => boolean,
+): Promise<FoundRemote[]> {
   const hid = await import('node-hid');
   return hid
     .devices()
-    .filter((d) => isHarmony(d.vendorId, d.productId))
+    .filter((d) => matches(d.vendorId, d.productId))
     .map((d) => ({
       vendorId: d.vendorId,
       productId: d.productId,
