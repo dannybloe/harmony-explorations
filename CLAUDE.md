@@ -1167,6 +1167,14 @@ packages/codec/                 TS: the one config codec, container through comp
                                 that put a frame in each slot from sending half a command
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
 packages/usb/                   TS: the command protocol and the write rails, read path measured,
+                                plus src/filepipe.ts, the **second** protocol, for the file based
+                                family that `openHarmony` refuses: open a path, get a handle, read
+                                through it. Read paths only, and enforced on the transport rather
+                                than on a method, per section 188. Its file name table and the
+                                identity file's field names come out of the Harmony 300 and 350
+                                firmware rather than out of Logitech's client, which is what makes
+                                them firmware derived, and a test asserts every one of them is a
+                                string in that image,
                                 plus src/models.ts, which turns the skin a remote reports into a
                                 model and its hardware capabilities, and readVersion, which reads
                                 the six identified fields of a version block and keeps the rest.
@@ -1282,6 +1290,16 @@ the honest wording to keep**: nothing here has sent one of these packets, no imp
 the family's own transfer, commit and device control commands are writes and belong behind
 `WRITES_ENABLED`. Client sourced under decision 2, and its skin 96 contradiction is deliberately
 unresolved.
+
+**And it has been tried on hardware now, which is where it stops being a paragraph.** A Harmony Touch
+answers an open of `/sys/sysinfo` and **refuses** it, `ff 01 ff 01 01 0b`, identically for two paths
+and both sequence numbers, so the packet is understood and something in it is wrong. Three things to
+carry rather than re-derive: a packet the remote dislikes leaves it **silent for the rest of the
+session**, so a run of attempts through one handle measures the first and then nothing; a bare ping is
+not the missing step, measured; and the remote is unharmed and enumerates normally afterwards.
+`openFileBasedRemote` is the door, deliberately separate from `openHarmony` rather than a widening of
+it, and the cheap way to finish this is the **Harmony 350's firmware**, since its own open handler can
+be read instead of guessed at. Section 198.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
@@ -1635,6 +1653,14 @@ node packages/usb/bin/read-ram.ts --address 0x... [--count 64] [--summary]
                        never moves from an address the remote does not serve, and on arch 9 it
                        is the second. --summary counts nonzero bytes, which is the question a
                        positive control asks. Opens the device.
+node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw]
+                       read the identity of a remote in the **file based** family: open
+                       `/sys/sysinfo` for reading, read it, close it. A different door from
+                       `openHarmony`, which still refuses this family, with its own allow list of
+                       four commands and no write path at all. **The open is currently refused by a
+                       Harmony Touch** and section 198 records the reply byte for byte, so this is
+                       an instrument for that question rather than a working reader. Opens the
+                       device.
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.

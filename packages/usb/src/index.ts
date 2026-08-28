@@ -13,3 +13,5 @@ export * from './rails.ts';
 export * from './transport.ts';
 export * from './remote.ts';
 export * from './models.ts';
+// The second protocol, for the family openHarmony refuses. Read paths only, section 198.
+export * from './filepipe.ts';

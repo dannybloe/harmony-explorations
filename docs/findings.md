@@ -26209,6 +26209,46 @@ disagree, or skin 96 is a variant that was never shipped, and **nothing here dec
 conclusion about the Harmony 600 or 700 may be drawn from it: the two bench remotes of that
 architecture both speak the HID protocol, measured, thousands of times.
 
+### First contact with the family, and it answered
+
+Measured on 28 August 2026 on the Harmony Touch on the bench, `0x046D:0xC12B`. This is the first time
+anything in this project has sent a packet to a remote of this family, and everything sent was a read:
+the transport `openFileBasedRemote` returns carries an allow list of open for reading, read, close and
+a bare ping, and refuses the rest, so no write path exists to be enabled.
+
+**An open of `/sys/sysinfo` is answered and refused**, and the reply is the same six bytes every time:
+
+    ff 01 ff 01 01 0b
+
+Which reads as the service echoed, the command echoed, **the error marker in the sequence byte**, one
+parameter, and then `01 0b`. So the specification is close enough that the remote parses the packet
+and replies in the reply shape section 198 predicts, and the refusal is a refusal rather than a
+failure to be understood. Four things do not change it: the path, since `/sys/guid` gives the identical
+reply; the sequence number, 0 and 1 alike; the stated parameter count, 2 and 3 alike; and the case of
+the mode letter. What `01 0b` means is **unread**.
+
+**A packet the remote does not like leaves it silent for the rest of the session.** A path with no
+leading slash drew no reply at all rather than an error, and every command after it in the same
+session also drew nothing. So each attempt needs a fresh handle, and a run of attempts through one
+handle measures the first one and then nothing, which is a trap worth naming because the second and
+third attempts look like clean negative results.
+
+**A bare ping is not the missing step.** Their own client's identify operation opens with a ping, so
+the ping was the obvious candidate for what an open is missing, and it was added to the allow list for
+that reason, in its parameterless form only, with the one parameter form refused because their own
+comment says it restarts the USB link. Measured: a bare ping draws no reply, and the open after it
+draws none either, which is the silence above rather than a second result. So the ping is either not
+this shape or not what is missing.
+
+**The remote is unharmed and enumerates normally afterwards**, checked after every round. Nothing was
+written, and the state is a session that stops answering rather than anything persistent.
+
+What is left is a small, bounded question: which byte of an open is wrong, or which command has to come
+before it. The candidates not yet tried are a length prefixed string, a report id ahead of the service
+byte, and a real value in the sequence field rather than zero. The cheap instrument for it is the
+**Harmony 350**, because its firmware is the one image this project holds for the family, so its own
+open handler can be read rather than guessed at.
+
 ### The correction to section 197
 
 That section said the lab's own notes carried "the Harmony One's whole infrared learn session as four
