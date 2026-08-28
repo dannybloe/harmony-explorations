@@ -329,6 +329,41 @@ image is a second sample rather than a stand in. Other models are iterated on la
    line of the format is written: provenance has to be a field in the definition from the first
    version, because retrofitting it means auditing a database whose origins nobody kept.
 
+12. **The lab is an archaeology site, and its knowledge is not knowledge until it is in this
+   repository.** *Taken 28 August 2026, by Danny, after the fourth time a session discovered that
+   something it was working out had already been established in the lab and written down there.*
+
+   **The failure is structural, not carelessness.** Every rule this project has for keeping facts
+   straight operates on the repository: `make facts` recomputes marked numbers and refuses dead
+   phrasings, `reference/superseded.md` kills old wording, a finding needs a regression test, and
+   the four places rule makes a fact land in all of them or none. The lab is **deliberately outside
+   all of it**, because it holds unlicensed firmware, contributors' configs and Logitech's own
+   client code, and that is the right decision for what may be published. The consequence is that a
+   fact recorded only in a lab `META.md` is invisible to every check here, and no amount of care
+   inside the repository can see it.
+
+   Section 197 is the case that forced this. Logitech's own per model protocol specification was
+   mirrored on 9 August 2026 and **read**: the lab notes beside it carry the architecture map, the
+   vendor's codenames and the Harmony One's entire infrared learn session, which is section 91's
+   open question. None of it crossed into a finding, a structured fact, a test or a line of code
+   for nineteen days. The same notes file also stated, thirty lines above that description, that
+   those files had not been fetched at all. One file, two paragraphs, contradicting each other,
+   with nothing able to notice.
+
+   **So the site gets excavated once, as a grid, and every find gets registered.** Not searched for
+   what is wanted this week, which is exactly how a folder nobody had a reason to open stays shut:
+   walked exhaustively, square by square, with each find recorded whether or not it is useful now.
+   An artefact whose value is not yet apparent is the one most worth cataloguing, because the
+   session that needs it will not know to go looking.
+
+   **The register is the deliverable and it lives here, not there.** Names, provenance, what an
+   artefact is, what has been extracted from it and what has not: our own text about what exists,
+   so it is publishable, where the artefacts themselves never are. A find with no register row is
+   the state this decision exists to forbid.
+
+   **Afterwards it is per arrival.** Anything new in the lab gets its row in the session that puts
+   it there, the same way a confirmed fact gets its four places.
+
 ## Facts established during planning
 
 * Arch 12 and arch 14 both use the plain non-z-wave HID class in libconcord, 64-byte reports in
@@ -1349,6 +1384,47 @@ Also unsolved: **no report from an unfamiliar architecture exists yet**, because
 else's remote, which is the thing this step is trying to arrange. What is verified is that the probe
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
+
+### Step 9: excavate the lab. Not started, and it is the highest value unstarted work here
+
+**Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
+28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
+unknown margin. That margin is the problem: nobody can say how large it is, which is why the answer
+is an exhaustive walk rather than a search.
+
+The grid, with the two squares that matter marked. File counts are what to plan against, not bytes:
+
+| square | size | files | what is known about it |
+|---|---|---|---|
+| `software/classic/` | 700M | 4809 | the 7.x generation's own software. One file has been read, `PROTOCOL-CONSTANTS.md`, which `docs/host-client.md` is built on. **The other 4808 are unexamined** |
+| `work/myharmony/` | 234M | 3458 | the service client and its captured replies, plus what looks like a decompiled web application source tree that nothing here has ever opened |
+| `software/harmony-remote-software-8.0/` | 7.8M | 1018 | unexamined |
+| `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
+| `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | unexamined |
+| `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
+| `reference/logitech-icons/` | 17M | 877 | unexamined |
+| `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
+| `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed |
+
+**The deliverable is a register in this repository**, one row per artefact: what it is, where it came
+from, what has been extracted into a finding or a test, and what has not. `reference/checksums.md`
+is the model for the tone and `tools/corpus.py` for the idea, since it already reports which dumps
+have no description recorded. The register covers the whole site, not the binaries.
+
+**Definition of done, so this cannot be declared finished by feeling.** Every path in the lab appears
+in the register with a status; a test walks the lab and fails on an unregistered artefact, skipping
+cleanly where there is no lab, exactly as every other lab backed test does. That test is what makes
+the mechanism survive the session that builds it, and it is the half that would have caught section
+197 nineteen days earlier.
+
+**Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
+value is in being able to say so with a row rather than a shrug. And some of it will answer a
+question currently listed as open, which is the outcome the decision was taken for; each such answer
+takes the ordinary route, a hypothesis under decision 7 and then the four places.
+
+**One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
+already governs: a fact from it is marked as client sourced, the firmware stays the authority where
+it can settle something, and nothing from the site is committed but our own description of it.
 
 ## Hardware safety rails
 

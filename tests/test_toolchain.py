@@ -1020,6 +1020,49 @@ class CodexAndClaudeCodeShareOneWorkingBrief(unittest.TestCase):
                              'CLAUDE.md is larger than Codex is configured to read')
 
 
+class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
+    """Step 9 of the roadmap states the lab as a grid of squares, and a grid that misses a square
+    is worse than no grid: it reads as coverage.
+
+    Decision 12 exists because a fact recorded only in the lab is invisible to every check in this
+    repository, `make facts` included, since the lab is deliberately outside it. That cannot be
+    fixed from in here in general. What **can** be checked from in here is narrower and still worth
+    having: that the roadmap's own map of the site names every top level area the lab actually has,
+    so a directory nobody has a reason to open cannot appear without the plan of record gaining a
+    row for it.
+
+    Skips without a lab, like every other lab backed test. The register itself is step 9's
+    deliverable and this is not it; this is the check that keeps the map from rotting until then.
+    """
+
+    GRID_HEADING = '### Step 9: excavate the lab'
+
+    def _grid_paths(self):
+        with io.open(os.path.join(ROOT, 'docs', 'roadmap.md'), encoding='utf-8') as fh:
+            text = fh.read()
+        start = text.find(self.GRID_HEADING)
+        self.assertNotEqual(start, -1, 'step 9 is no longer in the roadmap')
+        end = text.find('\n## ', start)
+        section = text[start:end if end > 0 else len(text)]
+        # Every backticked path in the section, which is how the table names a square.
+        return {p.rstrip('/') for p in re.findall(r'`([A-Za-z0-9_.\-]+/[^`]*|[A-Za-z0-9_.\-]+/)`', section)}
+
+    def test_every_top_level_area_of_the_lab_is_named(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        if not os.path.isdir(lab):
+            self.skipTest('no lab directory to compare the grid against')
+        named = self._grid_paths()
+        present = sorted(d for d in os.listdir(lab)
+                         if os.path.isdir(os.path.join(lab, d)) and not d.startswith('.'))
+        self.assertTrue(present, 'the lab has no directories, which makes this test vacuous')
+        for area in present:
+            with self.subTest(area=area):
+                covered = any(p == area or p.startswith(area + '/') for p in named)
+                self.assertTrue(covered,
+                                '%s/ is in the lab and named nowhere in step 9. Add a row saying '
+                                'what it is, per decision 12.' % area)
+
+
 class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
     """`docs/review-before-first-write.md` makes three claims about which files may be handed to an
     independent reviewer, and all three are the kind this project refuses to leave as prose.

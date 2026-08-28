@@ -615,6 +615,28 @@ inline, where the call in the condition is what raises.
 
 That directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
+**Treat the lab as an archaeology site, not as a drawer**, decision 12 in `docs/roadmap.md`, taken on
+28 August 2026 after the fourth time a session worked out something the lab already had written down.
+**Before deriving anything, ask whether the site already answers it.** The site is 12506 files and
+2.3 GB, of which `software/classic/` is 4809 files with exactly one of them read, and `work/myharmony/`
+another 3458.
+
+The mechanism is the thing to understand, because it is not carelessness. Every rule here for keeping
+facts straight, `make facts`, `reference/superseded.md`, the four places, a regression test per claim,
+operates on **this repository**. The lab is deliberately outside all of it, since it holds unlicensed
+firmware, contributors' configs and Logitech's own client code. So **a fact recorded only in a lab
+`META.md` is invisible to every check this project has**, and no amount of care in here can see it.
+Section 197 is the case: Logitech's own per model protocol specification was mirrored **and read** on
+9 August 2026, its notes carry the architecture map, the vendor's codenames and the Harmony One's whole
+infrared learn session, and none of it reached a finding, a test or a line of code for nineteen days.
+That same notes file said thirty lines earlier that the files had never been fetched.
+
+Two consequences for a session working here. A find in the lab is **not** landed until it has taken the
+ordinary route into this repository, and saying so in a lab note is the state the decision forbids. And
+an artefact whose value is not yet apparent is the one most worth cataloguing, because whoever needs it
+later will not know to go looking. Step 9 in `docs/roadmap.md` is the excavation and the register it
+produces.
+
 `tools/corpus.py` inventories the dumps and, importantly, reports which ones have no
 description recorded. A dump whose contributor has moved on is far harder to label later than one
 described on arrival, and section 124 is what that is worth: the one config with a written description
