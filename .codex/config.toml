@@ -1,0 +1,5 @@
+# CLAUDE.md is the one project brief for both Claude Code and Codex. With no
+# AGENTS.md present, Codex reads this fallback name. The brief is larger than
+# Codex's default project document limit, so keep enough room for it to grow.
+project_doc_fallback_filenames = ["CLAUDE.md"]
+project_doc_max_bytes = 262144
