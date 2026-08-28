@@ -26272,11 +26272,38 @@ That last point is the one to keep. **A protocol whose reply is read at fixed of
 variable length fields ahead of them**, so the templates' own constants were evidence about the
 framing the whole time, and the way to have seen it sooner was to ask why an offset was a constant.
 
-**Unconfirmed on hardware, and the reason is stated rather than hidden**: the Harmony Touch is in the
-silent state described above from the earlier attempts, so the corrected request has been sent to it
-and drew nothing, which measures the silence and not the framing. It needs the cable pulled and
-replaced before this can be tried, and until that happens the framing rests on the offset closure
-alone.
+**Tried on hardware after a replug, and it is refuted for the request**: length prefixing the request
+drew **no reply at all**, where the NUL terminated form draws a reply that refuses. Silence is weaker
+evidence than a refusal and it points one way only, so a request's strings are NUL terminated and the
+encoder was put back. The offset closure still stands for the **reply**, which is what it was always
+about.
+
+**So the two directions are framed differently**, and the mistake worth recording is the
+generalisation rather than the reading: a closure derived from a reply was applied to a request
+because a protocol framing both ways alike is the tidier answer. `packages/usb/src/filepipe.ts`
+carries both halves with their own evidence beside each.
+
+### The refusal happens before the path is looked up
+
+Four opens in one session on the replugged Harmony Touch, all reads: a file that exists, a second
+file that exists, a **directory**, and `/definitely/not/here`. All four answer
+`ff 01 ff 01 01 0b`, byte for byte.
+
+**So `0x0b` is not "no such file" and the path is not consulted at all.** That is a real narrowing and
+it moves the problem out of the parameters: the remote rejects the request on something it reads
+before the path, which leaves the header and the session. The candidates, in the order worth trying:
+
+* **A session has to be started.** Their own identify operation sends a ping, then a **filesystem
+  reset**, then a second ping, and only then the open. The reset is `0xFF` with `0x66` and it is a
+  write by this project's own rule, so it sits behind the write flag and has not been sent. If a
+  session is what is missing, this is the wall, and it is a decision rather than a measurement.
+* **The sequence number**, which is 0 in every template and was tried as 0 and 1.
+* **`parameter.number`**, which is read here as a count of parameters and could be a count of bytes
+  or a descriptor.
+
+What is ruled out: the path, the mode letter's case, and the two sequence numbers tried. What is
+measured and worth knowing separately is that **four well formed opens in one session all answer**, so
+the silence described above is caused by a malformed packet and not by the number of attempts.
 
 ### The correction to section 197
 
@@ -26295,4 +26322,83 @@ architecture 14, and the file protocol, and section 197 landed the first two. **
 correction and it is worth more than the claim was**: the check that would have caught this is reading
 the repository before saying what is not in it, and the reason it was not run is that the sentence felt
 like the point of the section. A process failure is not evidence for itself.
+
+
+## 199. A file based remote states its own filesystem, and that is where its config lives
+
+The Harmony 300 and 350 firmware is the only image this project holds for a remote in the file based
+family, and it carries the filesystem as data: a pool of names, and a table of records giving each
+name a medium, an offset and a size. So the family's storage layout is **firmware derived**, which is
+the standing this project's decision 2 asks for and which nothing about that family had before.
+
+Found by asking what produced the byte `0x0b` in the reply a Harmony Touch sent when it refused an
+open, section 198. That byte is not an error code and the search was wrong about what it was looking
+for: `0x0b` is a **record size**, loaded at `0x12D20` into a multiply against an index and added to a
+base of `0x0092A6`, which is a table of 11 byte records. Two wrong premises, one useful answer.
+
+### The record
+
+    u8  file id
+    u16 name pointer, into the pool at 0x00910A
+    u8  flags
+    u8  medium, an ASCII letter
+    u24 offset, little endian
+    u24 size, little endian
+
+**The layout is confirmed by the table's own contents rather than by the code that reads it**, which
+is the check worth having: `/fw/safemode` states internal `0x001000` for `0x008000` bytes, and
+`/fw/normalmode` states internal `0x009000`, which is **the load base this project already derived for
+this image independently**, section 196, and where the safe mode region ends exactly. Two rows, two
+numbers, both already known from elsewhere.
+
+The **id is the row index and one id has two rows**, which is why the ids read 0, 1, 2, 2, 4 and there
+is no 3: `/fw/normalmode` appears twice, once internal and once external, at the same size. That is the
+same resident and copied arrangement arch 9 (Harmony 525) has, section 118, reached here by reading a
+table instead of by stranding a remote.
+
+### The four media
+
+| letter | meaning | files |
+|---|---|---|
+| `I` | internal program flash | 12 |
+| `E` | the external medium | 3 |
+| `D` | dynamic: nothing is stored | 7 |
+| `S` | a stream | 1 |
+
+`D` covers the four directories and also `/sys/sysinfo`, `/cfg/state` and `/sys/state`, which is the
+mechanism behind section 198's other surprise: the identity file is **generated text**, so it has no
+offset and no size because there is nothing to have them. `S` is `/ir/ir_cap` alone, and a learn
+capture being a stream rather than a file is exactly what section 98 measured on the other family from
+the opposite end, where the samples are pushed as they arrive.
+
+### The row this project wanted
+
+**`/cfg/usercfg` is the external medium at `0x020000`, `0x040000` bytes.** So a Harmony 350 keeps its
+configuration in 256 KiB of external flash starting at 128 KiB, and the reason no address appears in
+the protocol is that the firmware holds the address and the host names the file. Section 193 said this
+family has "no address"; the address exists and the **host** does not have it, which is a sharper
+statement than the one it replaces.
+
+The rest of the map falls out with it, and all of it is internal unless stated:
+
+| region | what |
+|---|---|
+| `0x000000` to `0x001000` | the bootloader, 4 KiB |
+| `0x001000` to `0x009000` | safe mode, 32 KiB |
+| `0x009000` to `0x01EC00` | the application, 89088 bytes |
+| `0x01F400` to `0x01F800` | seven 64 byte records: guid, pid, sku, battery and four flag files |
+| `0x01FFF8` | `config_bits`, 8 bytes |
+| external `0x000000` | the application again, same size |
+| external `0x020000` | `/cfg/usercfg`, 256 KiB |
+
+The internal total is 128 KiB, which is a part size rather than a coincidence and is the first
+statement anywhere here of how much internal flash this family's processor has.
+
+### What it does not answer
+
+**Why a Harmony Touch refuses our open**, which is what the search set out to find. This table is arch
+16 and the Touch is a later generation, so the layout does not transfer and neither does any framing
+read off this image. What did turn up on the way is corroboration of the read protocol rather than the
+open: `0xFE` appears at `0x12A42` as the value a loop compares against, which is the terminator
+section 198 records from the templates, so the read's end condition has a firmware source now.
 

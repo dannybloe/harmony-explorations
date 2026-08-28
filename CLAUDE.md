@@ -1174,7 +1174,11 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 identity file's field names come out of the Harmony 300 and 350
                                 firmware rather than out of Logitech's client, which is what makes
                                 them firmware derived, and a test asserts every one of them is a
-                                string in that image,
+                                string in that image. Its file **table** is section 199: 11 byte
+                                records giving each name a medium, an offset and a size, and
+                                `/cfg/usercfg` is external flash `0x020000` for 256 KiB, so a
+                                Harmony 350's config has an address after all and it is the host
+                                that does not have it,
                                 plus src/models.ts, which turns the skin a remote reports into a
                                 model and its hardware capabilities, and readVersion, which reads
                                 the six identified fields of a version block and keeps the rest.
@@ -1298,8 +1302,22 @@ carry rather than re-derive: a packet the remote dislikes leaves it **silent for
 session**, so a run of attempts through one handle measures the first and then nothing; a bare ping is
 not the missing step, measured; and the remote is unharmed and enumerates normally afterwards.
 `openFileBasedRemote` is the door, deliberately separate from `openHarmony` rather than a widening of
-it, and the cheap way to finish this is the **Harmony 350's firmware**, since its own open handler can
-be read instead of guessed at. Section 198.
+it. Section 198.
+
+**The refusal is path independent, which is the narrowing to carry.** Four opens in one session, a
+file that exists, a second one, a directory and a path that cannot exist, all answer the same six
+bytes. So the remote refuses before it looks the path up, and what is left is the header or a session
+that has to be started first. Their own identify operation sends a ping, a **filesystem reset** and a
+second ping before its open, and that reset is a write by this project's rule, so **if a session is
+what is missing then the wall is a decision rather than a measurement.** Also measured: four well
+formed opens in one session all answer, so the silence is caused by a malformed packet and not by the
+number of attempts.
+
+**A request's strings are NUL terminated and a reply's parameters are length prefixed**, which is two
+readings with separate evidence and was briefly one. Length prefixing the request drew no reply where
+the NUL form draws a refusal; the reply half rests on the templates reading a handle at position 5 and
+a size at position 7, and a constant offset cannot sit behind a variable length field. The mistake was
+generalising a closure about a reply onto a request because one framing is tidier.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
@@ -1906,7 +1924,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 198 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 199 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

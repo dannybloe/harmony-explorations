@@ -99,33 +99,40 @@ export type FileParam =
 /**
  * Build one request report.
  *
- * **Every parameter is length prefixed**, one byte of length then that many bytes, and this was
- * derived from a refusal rather than from the templates. The first reading here was NUL termination,
- * on the grounds that the firmware compares an incoming name against a pool of NUL terminated
- * strings; a Harmony Touch refused every open, and its refusal is what settles it. The reply is
- * `ff 01 ff 01 01 0b`: service, command, the error marker, **one parameter**, then `01 0b`, which is
- * a length of one and a value of `0x0b`.
+ * **A request's strings are NUL terminated, and a reply's parameters are length prefixed.** Those
+ * are two separate readings with different evidence, and merging them cost a round of hardware.
  *
- * The closure is that the same rule turns the templates' magic offsets into arithmetic. They read an
- * open's handle at position 5 and its size at position 7, and never say why. With a parameter count
- * at 3, a length byte at 4, a one byte handle at 5, a length byte at 6 and four size bytes at 7,
- * both offsets fall out and so does the size's stated width. No other framing this project tried
- * produces those two numbers.
+ * The reply half rests on an offset closure and is the stronger of the two. Logitech's templates read
+ * an open's reply at position 5 for the handle and position 7 for a four byte size, and never say
+ * why. With a parameter count at 3, a length byte at 4, a one byte handle at 5, a length byte at 6
+ * and four size bytes at 7, both constants and the width fall out; and a refusal reads
+ * `ff 01 ff 01 01 0b`, which is one parameter of length one carrying `0x0b`. Nothing else explains a
+ * count of 1 followed by two bytes.
+ *
+ * The request half is **measured and it is not the same**. Length prefixing the request was tried on
+ * a Harmony Touch and drew **no reply at all**, where the NUL terminated form draws a reply that
+ * refuses. Silence is weaker evidence than a refusal, and it says plainly that the length prefixed
+ * request was the less acceptable of the two, so this encoder writes NUL terminated strings. Why the
+ * NUL terminated open is still refused is section 198's open question.
+ *
+ * **A reply being framed differently from a request is not the tidy answer** and it is what the
+ * evidence supports. The generalisation to both directions is the mistake that was made here, so it
+ * is recorded rather than quietly reverted.
  *
  * Numbers are big endian, which is **not** inferred: an open's reply states its size big endian and
  * the templates say so with `int:BE`, and this protocol is the same way round in both directions in
  * every field whose order is stated.
  */
 /**
- * The bytes of one parameter, without its length prefix.
+ * The bytes of one request parameter.
  *
- * A string carries no terminator: the length says where it ends, so a NUL would be a byte of the
- * value. That is the half of the framing correction that is easy to get wrong twice.
+ * A string carries its NUL, because that is the form a remote of this family answers at all. See the
+ * note on `encodeFileRequest` for why this differs from how a **reply** frames its parameters.
  */
 function parameterBody(param: FileParam): Uint8Array {
   switch (param.kind) {
     case 'string':
-      return new Uint8Array(Buffer.from(param.value, 'ascii'));
+      return new Uint8Array([...Buffer.from(param.value, 'ascii'), 0]);
     case 'byte':
       return new Uint8Array([param.value & 0xff]);
     case 'word':
@@ -159,9 +166,8 @@ export function encodeFileRequest(
     at += 1;
   };
   for (const param of params) {
-    const body = parameterBody(param);
-    put(body.length);
-    for (const byte of body) put(byte);
+    // No length prefix on a request: measured, see the note above.
+    for (const byte of parameterBody(param)) put(byte);
   }
   return report;
 }
@@ -473,12 +479,12 @@ export function guardFileProtocol(inner: Transport): Transport {
  * form, and anything this cannot parse is treated as not a read, which is the safe direction.
  */
 export function opensForReading(report: Uint8Array): boolean {
-  const pathLength = report[4];
-  if (pathLength === undefined || pathLength === 0) return false;
-  const modeAt = 5 + pathLength;
-  // The mode is a parameter like any other: its own length byte, then its bytes. One byte long and
-  // exactly `R`, and anything else, including a length this cannot reach, counts as not a read.
-  return report[modeAt] === 1 && report[modeAt + 1] === 0x52 /* R */;
+  let at = 4;
+  while (at < report.length && report[at] !== 0) at += 1;
+  at += 1; // past the path's own terminator
+  // Exactly `R` and then its terminator. Anything else, including a report this walk runs off the
+  // end of, counts as not a read, which is the safe direction for a guard.
+  return report[at] === 0x52 /* R */ && report[at + 1] === 0;
 }
 
 /**

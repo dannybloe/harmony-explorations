@@ -15,7 +15,9 @@ Two closures carry it, and each could fail independently of the other:
 * the image's header carries an entry point, and the instruction sitting at the derived base is a
   `GOTO` to exactly that address. Two fields, one answer.
 """
+import collections
 import io
+import re
 import unittest
 import zipfile
 
@@ -138,6 +140,106 @@ class TestItIsAnOrdinaryPic18Image(unittest.TestCase):
         lab.require('h350_package')
         self.assertEqual(loadaddr.entry_point(_payload(), DERIVED_BASE), DERIVED_ENTRY)
 
+
+
+
+class TheFirmwareStatesItsOwnFilesystem(unittest.TestCase):
+    """Section 199. The name pool and the file table, which is where a config lives on this family.
+
+    Every number here is read out of the image. Two of them are checked against answers this project
+    already had by other routes, which is what makes the record layout believed rather than fitted:
+    `/fw/normalmode` states the load base section 196 derived, and `/fw/safemode` ends exactly where
+    it begins.
+    """
+
+    #: The pool of NUL terminated names, and the table of 11 byte records indexing it.
+    POOL = 0x00910A
+    TABLE = 0x0092A6
+    RECORD_BYTES = 11
+    ROWS = 23
+
+    def _image(self):
+        return lab.load('h350_code')
+
+    def _names(self, image):
+        names = {}
+        for match in re.finditer(rb'/[!-~]{2,}\x00', image[self.POOL - DERIVED_BASE : 0x9210 - DERIVED_BASE]):
+            names[match.start() + self.POOL] = match.group(0)[:-1].decode()
+        return names
+
+    def _rows(self, image):
+        names = self._names(image)
+        rows = []
+        for index in range(self.ROWS):
+            at = self.TABLE - DERIVED_BASE + index * self.RECORD_BYTES
+            record = image[at : at + self.RECORD_BYTES]
+            pointer = record[1] | (record[2] << 8)
+            rows.append(
+                {
+                    'index': index,
+                    'id': record[0],
+                    'name': names.get(pointer),
+                    'flags': record[3],
+                    'medium': chr(record[4]),
+                    'offset': record[5] | (record[6] << 8) | (record[7] << 16),
+                    'size': record[8] | (record[9] << 8) | (record[10] << 16),
+                }
+            )
+        return rows
+
+    def test_every_row_resolves_to_a_name_in_the_pool(self):
+        """The layout's own falsifier: a wrong stride or a wrong field offset misses the pool."""
+        image = self._image()
+        rows = self._rows(image)
+        self.assertEqual(len(rows), self.ROWS)
+        self.assertTrue(all(row['name'] is not None for row in rows),
+                        'a row whose pointer misses the name pool means the layout is wrong')
+        self.assertEqual(len({row['name'] for row in rows}), self.ROWS - 1,
+                         'exactly one name appears twice, which is /fw/normalmode')
+
+    def test_the_two_rows_this_project_already_knew_the_answer_to(self):
+        """The calibration. Both numbers were derived before this table was found."""
+        rows = {(row['name'], row['medium']): row for row in self._rows(self._image())}
+        normalmode = rows[('/fw/normalmode', 'I')]
+        self.assertEqual(normalmode['offset'], DERIVED_BASE,
+                         'the application region begins at the load base section 196 derived')
+        safemode = rows[('/fw/safemode', 'I')]
+        self.assertEqual(safemode['offset'] + safemode['size'], DERIVED_BASE,
+                         'and safe mode ends exactly where the application begins')
+
+    def test_the_configuration_is_external_flash_at_0x020000(self):
+        """Section 199's point. Section 193 said this family has no address; the firmware has one."""
+        rows = {(row['name'], row['medium']): row for row in self._rows(self._image())}
+        usercfg = rows[('/cfg/usercfg', 'E')]
+        self.assertEqual(usercfg['offset'], 0x020000)
+        self.assertEqual(usercfg['size'], 0x040000)
+
+    def test_the_media_are_four_letters_and_their_populations_are_exact(self):
+        """`D` is what makes the identity file generated text rather than a stored file."""
+        rows = self._rows(self._image())
+        counts = collections.Counter(row['medium'] for row in rows)
+        self.assertEqual(dict(counts), {'I': 12, 'E': 3, 'D': 7, 'S': 1})
+        dynamic = {row['name'] for row in rows if row['medium'] == 'D'}
+        self.assertIn('/sys/sysinfo', dynamic, 'the identity file stores nothing')
+        streamed = {row['name'] for row in rows if row['medium'] == 'S'}
+        self.assertEqual(streamed, {'/ir/ir_cap'}, 'a learn capture is a stream, not a file')
+
+    def test_a_dynamic_row_states_no_offset_and_no_size(self):
+        """Which is the closure on what `D` means, rather than a label read off one example."""
+        for row in self._rows(self._image()):
+            if row['medium'] == 'D':
+                with self.subTest(name=row['name']):
+                    self.assertEqual((row['offset'], row['size']), (0, 0))
+
+    def test_the_id_is_the_row_index_except_for_the_one_duplicate(self):
+        """So there is no file id 3: /fw/normalmode has two rows and the second reuses id 2."""
+        rows = self._rows(self._image())
+        ids = [row['id'] for row in rows]
+        self.assertEqual(ids[:6], [0, 1, 2, 2, 4, 5])
+        self.assertNotIn(3, ids)
+        for row in rows:
+            if row['index'] != 3:
+                self.assertEqual(row['id'], row['index'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -355,6 +355,37 @@ Verify it yourself:
 python3 -c "import sys; sys.path.insert(0, 'src'); from harmony import ezfile, gspm; p = ezfile.decode_payload(open(sys.argv[1], 'rb').read()).payload; print(hex(gspm.xor_words(p[4:4 + 0x11EF8], 0x4321)))" <Region_2.EZUpgrade>
 ```
 
+### The hub generation packages, catalogued and not dug into
+
+A **catalogue entry**, per `docs/lab-excavation.md`: the hub family is that plan's stated exclusion,
+so this records what the packages are and stops rather than pretending the question is open work. No
+test, because nothing here is a claim this project depends on.
+
+Both hub packages are a Linux system rather than a microcontroller image, and their shape is the same:
+a ZIP holding a `Description.xml` and an `ota-update.EzHex`, where the EzHex is **itself a ZIP** of
+five members.
+
+| member | what it is |
+|---|---|
+| `sdigest`, `digest` | SHA-1 per member, so a package states its own component digests |
+| `update` | the updater: a statically linked, stripped 32 bit big endian MIPS ELF |
+| `uImage.bin` | a U-Boot image, lzma compressed, whose own header names it `Pimento Kernel Image` |
+| `harmony-image.squashfs` | the root filesystem, squashfs 4.0, lzma compressed |
+
+Two things worth knowing came out of it and neither needed the filesystem opened. The kernel's header
+**names its own product**, and Pimento is Logitech's codename for skin 97 in the templates section 197
+read, so a header written by their build system agrees with a comment in their client. And the
+`update` binary is **byte identical** between the February 2019 preview build and the August 2025
+production one, same SHA-1, so six years of change sits entirely in the kernel and the root filesystem.
+
+**What `xmppupdate` installs is not settled**, and the honest state of it is: the root filesystem uses
+the legacy lzma variant that mainline `unsquashfs` refuses, reporting file system corruption on a
+superblock it has just called valid, and no other unpacker is installed here. The remaining evidence
+is circumstantial and stays labelled as such. The recovery tool passes `SpecialSUSStream=preview`, and
+the preview stream is frozen at a February 2019 build across the whole family while production has
+moved to August 2025. That is the shape a "keep the old behaviour" firmware would have and it is not a
+demonstration that this one is.
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than
