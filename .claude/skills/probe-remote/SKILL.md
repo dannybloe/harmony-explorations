@@ -1,6 +1,6 @@
 ---
 name: probe-remote
-description: Measure a connected Harmony remote read only, to check an image-derived claim against hardware. Use when a remote is plugged in, when asked to read a remote's descriptors or identity, when a firmware image claim needs confirming on the bench, or before believing anything about USB enumeration on this machine.
+description: Measure a connected Harmony remote read only, to check an image-derived claim against hardware. Use when a remote is plugged in, when asked to read a remote's descriptors or identity, when a firmware image claim needs confirming on the bench, before believing anything about USB enumeration on this machine, or **before sending any experimental packet to a remote in order to learn a format rather than to check one**, which is a gate this skill holds and which cost six rounds of hardware on 28 August 2026.
 ---
 
 # Measuring a connected remote
@@ -14,6 +14,40 @@ measured alive on 7 August 2026 and we can sign in and read a remote through it.
 `members.harmonyremote.com` service is the one that is discontinued. Nothing about the rails
 changes, because a remote is still irreplaceable, the service can go at any time, and it has not
 been shown to compile a config any more. See `docs/findings.md` section 56.
+
+## Stop before you experiment: is the answer written down somewhere already
+
+**The gate this skill exists to hold, and it is not the rails.** Read this before sending a packet whose
+purpose is to *learn* something rather than to *check* something.
+
+If you are about to send bytes to a remote in order to work out a format, a framing, a command number
+or a field layout, **stop and ask whether a source states it.** In order:
+
+1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
+   rather than inference: the per skin templates under
+   `software/desktop-webapp/mirror/*/opt/desktop-app-scripts/libs/ds/templates/SKIN<n>/`, and the
+   encoders in `en.desktop-app-main.js`. `docs/host-client.md` is the ledger and decision 2 the standing.
+2. **The firmware**, which is the authority when the two disagree, and `docs/memory-map-*.md` for where
+   to look per architecture.
+3. **`docs/findings.md`**, by grep rather than by memory, and `reference/` for the catalogues.
+
+Then write down which of the three you checked, in the finding or in the commit. **The absence of that
+line is the signal**, because nothing can test that somebody failed to look somewhere.
+
+**Why this is a gate and not advice.** On 28 August 2026 a session spent six rounds of hardware guessing
+the parameter framing of the file protocol, got a refusal every time, and had to be told by Danny to
+look at the client. The answer was one function, `molsonparamwriter.getBytes`, and it had been in the
+lab since 9 August. Both guesses tried against the remote were wrong and neither was close. Section 200.
+
+**The failure mode is momentum, not ignorance.** The rule already existed, as decision 12, and it reads
+as something you do at the **start** of a topic. The moment that matters is in the middle: the protocol
+is half working, a request comes back refused, and the remote is the thing in your hands. That is when
+this section applies, and it is exactly when nobody thinks to read a skill. So the trigger is the
+**act**, not the subject: sending an experimental packet is the trigger, whatever you were doing before.
+
+**A remote is the most expensive instrument here and the least informative per attempt.** A refusal tells
+you one bit. A source tells you the rule. And an experiment can cost the session, or worse: section 200's
+near miss is the same day's other lesson, where a filename turned out to be a verb.
 
 ## The rails
 

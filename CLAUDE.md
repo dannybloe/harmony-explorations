@@ -1567,7 +1567,12 @@ Seven project skills carry the rituals that are easy to half-perform:
 * **`finding`**, the verification gate plus the three places a confirmed fact must land, and the
   convention for correcting an earlier claim in place.
 * **`probe-remote`**, how to measure a connected remote read only: the rails, which enumeration
-  commands actually work on this machine, and where a hardware number has to land.
+  commands actually work on this machine, and where a hardware number has to land. **It also holds the
+  gate in front of an experiment**: before sending a packet to learn a format rather than to check one,
+  check Logitech's own client and the firmware, and write down which. Added 28 August 2026 after six
+  rounds of hardware guessed a framing that sat in one function of the mirrored client, section 200.
+  The failure mode is momentum rather than ignorance, so the trigger is the **act** of experimenting
+  and not the subject being worked on.
 * **`code-navigation`**, ask the language index rather than grepping for a symbol, with the two
   pitfalls that make it worse than grep when they are not known: the IDE does not index Python and
   answers anyway, from the directory, and the reply's `resolvedSymbol` is what says so.
