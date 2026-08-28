@@ -9,19 +9,33 @@ It is also unlicensed proprietary code, so how it may be used needs stating rath
 assuming. This document is the rule and the ledger: what the rule is, why it is what it is, and
 every fact currently believed on the client's word alone.
 
-## Why the rule changed
+## Why the rule changed, twice
 
-This project derives the USB protocol clean room from the firmware, deliberately, and that
-decision stands as the **default**. It is not being abandoned. Firmware evidence is better
-evidence: it says what the remote does, where the client only says what one host believed.
-Section 20's off by one lived in two independent parsers for months because both had copied the
-same wrong convention from each other.
+**Read the client first. Every time, before deriving anything.** Danny's decision of 28 August 2026,
+and it reverses the order this document carried for three weeks. The client is the cheapest source
+there is: it states outright what the firmware only implies and what hardware only hints at, and every
+hour this project has lost in the last month was lost by working something out that was written down
+in it. Section 197 is nineteen days of a protocol map sitting unread. Section 200 is six rounds of
+guessing a packet framing that was one function in their code. Section 202 is a wrong reading
+published in four documents while the source that refutes it sat in the lab.
 
-What changed on 9 August 2026 is the handling of the case where the firmware **cannot** settle
-something. The old rule said the client is never a source of record, full stop. Applied
-honestly that rule discards facts nobody can recover any other way, and the cost of discarding
-them is not abstract: it is remotes that stay unrepairable and get thrown away. That was
-weighed against the value of an unqualified clean room claim, and the remotes won.
+So the question "where do I look" has one answer now and it is not a judgement call. Look there,
+then derive.
+
+**The old ordering was `Firmware first, always`**<!--superseded-->, with the client admitted only
+where the firmware genuinely could not settle something. Two things were wrong with it. It made the
+cheap source the last resort, so the expensive work happened first by default and the check that would
+have prevented it came after. And it confused two different questions: **where a fact comes from** and
+**what confirms it**. Reading their code first does not make it authoritative, and that half is
+unchanged below.
+
+What was decided on 9 August 2026, and still holds: the client may be a source of record at all. The
+old rule said never, full stop, which discards facts nobody can recover any other way, and the cost of
+discarding them is not abstract: it is remotes that stay unrepairable and get thrown away.
+
+**Firmware is still the better evidence and still wins a disagreement.** It says what the remote does,
+where the client says what one host believed. Section 20's off by one lived in two independent parsers
+for months because both had copied the same wrong convention from each other.
 
 **The interoperability case is the substantive one, not the licence.** The right to decompile a
 program in order to make an independent program work with it is written into European law, in
@@ -38,12 +52,18 @@ actually about, which is libconcord and harmony-decompiler.
 
 ## The rule
 
-1. **Firmware first, always.** The client says where to look. If the firmware can answer, the
-   firmware answers and the write-up cites the firmware address.
-2. **A client-sourced fact is marked as one**, here and wherever it is used, in those words. It
-   does not enter `docs/config-format.md` as confirmed and it does not get a regression test
-   that asserts it as true. A test may assert that our corpus is consistent with it, which is a
-   different claim.
+1. **The client first, always.** Before deriving anything about how a remote is driven, what a
+   packet looks like, which call to make or what a field means, look in their code. It is the
+   cheapest place an answer can be, and the reason for the order is measured rather than argued:
+   sections 197, 200 and 202. `work/myharmony/src/` is MyHarmony decompiled to C# and is the first
+   stop; the compiled assemblies beside it are not a substitute, per section 202.
+2. **Then confirm, and the firmware is the authority.** Reading the client first says nothing about
+   what is believed: where the firmware or the hardware can answer, that is the citation, and where
+   neither can, the fact is marked client sourced here and wherever it is used, in those words. A
+   client sourced fact may be acted on and may be built on; what it may not do is enter
+   `docs/config-format.md` as confirmed, or carry a regression test asserting it as true. A test may
+   assert our corpus is consistent with it, which is a different claim, and a fact moves out of this
+   ledger the day something measures it.
 3. **Expression does not travel.** No identifier, no comment, no code, no structure. An address
    is a fact about the hardware; the name Logitech gave it is their writing. Everything below is
    restated in this project's own words for that reason, and the verbatim extraction stays in

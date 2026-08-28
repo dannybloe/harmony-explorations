@@ -39,7 +39,7 @@ the honest move is to write it up as unconfirmed, using that word.
   answer is already known, and report the score for wrong answers too. The base address
   derivation scores 98.9 percent for the right base against 11 to 30 percent for wrong ones.
 * **What would falsify it?** If nothing would, it is not a finding, it is a description.
-* **Which sources were checked before the work started?** Name them, in the finding. Logitech's own
+* **Which sources were checked before the work started, and was Logitech's own client one of them? Reading it first is decision 2, and `../lab/work/myharmony/src/` is MyHarmony as C# source** Name them, in the finding. Logitech's own
   client, the firmware, `docs/findings.md`. This is not bureaucracy: on 28 August 2026 a session
   derived a packet framing by six rounds of hardware guessing while the answer sat in one function of
   the mirrored client, section 200, and the same day section 197 found a reading three weeks old that

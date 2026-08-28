@@ -20,8 +20,10 @@ been shown to compile a config any more. See `docs/findings.md` section 56.
 **The gate this skill exists to hold, and it is not the rails.** Read this before sending a packet whose
 purpose is to *learn* something rather than to *check* something.
 
-If you are about to send bytes to a remote in order to work out a format, a framing, a command number
-or a field layout, **stop and ask whether a source states it.** In order:
+If you are about to send bytes to a remote, or to derive anything at all, in order to work out a
+format, a framing, a command number, a field layout or which call to make, **stop and read Logitech's
+own client.** That is decision 2 and it is an ordering, not a suggestion: their code is the cheapest
+source there is and it states outright what the firmware only implies. In order:
 
 1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
    rather than inference. **MyHarmony is the reference client**, `work/myharmony/xap/`, and for how a

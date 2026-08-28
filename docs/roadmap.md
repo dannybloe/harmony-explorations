@@ -212,11 +212,18 @@ image is a second sample rather than a stand in. Other models are iterated on la
    them, behind the flag and behind a second named door for the first write. What is still unsettled
    is one thing about the medium rather than two: whether the firmware erases before it programs,
    which is moot for a caller that erases first. Pacing was answered by reading the same day.
-9. **Logitech's own client is a fallback source, not a forbidden one.** *Taken 9 August 2026, and
-   it narrows decision 2 rather than reversing it.* The firmware stays the default and the
-   preferred evidence, because it says what the remote does where the client only says what one
-   host believed. Where the firmware genuinely cannot settle something, the client may be the
-   source, and every such fact is marked as client-sourced wherever it appears. What travels is
+9. **Logitech's own client is read first, not as a fallback.** *Taken 9 August 2026 as a fallback,
+   and reordered by Danny on 28 August 2026.* Before deriving anything about how a remote is driven,
+   what a packet looks like or which call to make, **look in their code**: it is the cheapest source
+   there is and it states outright what the firmware only implies. The old wording made it a fallback
+   admitted only "where the firmware genuinely cannot settle something"<!--superseded-->, which put
+   the expensive work first by default; the measured cost of that ordering is sections 197, 200 and
+   202. The client to read is **MyHarmony**, decompiled to C# in the lab, and not Harmony Desktop's
+   web application.
+   **The firmware is still the preferred evidence and still wins a disagreement**, because it says
+   what the remote does where the client only says what one host believed, and where neither firmware
+   nor hardware can answer the fact is marked as client-sourced wherever it appears. Where a lead
+   comes from and what confirms it are two questions, and the old rule collapsed them. What travels is
    the mechanism: addresses, command numbers, field widths, the order of operations. What does not
    travel is expression: names, comments, code, structure. Everything here is implemented our own
    way from a description of the behaviour, never by transcribing theirs. The reason the balance

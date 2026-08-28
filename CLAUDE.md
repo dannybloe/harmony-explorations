@@ -97,23 +97,34 @@ designing around its absence.
 1. **Licence stays MIT.** libconcord and harmony-decompiler are GPLv3, so their code is not
    copied or ported here. Running concordance as a program has no licensing consequence, and
    protocol facts are not copyrightable expression.
-2. **The USB protocol is derived clean-room from the firmware**, with
-   `concordance/specs/protocol.txt` as corroboration and concordance kept as a cross-check
-   oracle. Both are also technically necessary: concordance has two known defects on these
-   architectures. **That is the default and not the whole rule since 9 August 2026**: where the
-   firmware genuinely cannot settle something, Logitech's own host software may be the source,
-   marked as such per fact. **MyHarmony is the reference client and Harmony Desktop's web
-   application is not**, on Danny's instruction of 28 August 2026: everything the newer one does
-   MyHarmony does too and better, so a reading off Harmony Desktop describes the hub generation
-   rather than the remotes here. It cost an afternoon the day the rule was written, since the
-   Harmony Touch's compile was driven from its call site. **And MyHarmony is decompiled to C# in the
-   lab**, `work/myharmony/src/`, 1999 files, which is what to read rather than the assemblies beside
-   it: section 202 published a wrong reading in four documents because a method name found by
-   searching a DLL looked like a call site. Its mirror keeps two uses nothing else covers, the file
-   family's per skin protocol templates and the parameter encoder, both confirmed against hardware. The weighing,
-   the legal basis and the ledger of everything currently
-   believed on the client's word alone are in `docs/host-client.md`. Its arch 8 constants
-   contradict four real configs, so it is a generator of hypotheses and not an authority.
+2. **Read Logitech's own client first, then derive.** Danny's decision of 28 August 2026, and it is
+   an ordering rather than a licence change: before working out how a remote is driven, what a packet
+   looks like, which call to make or what a field means, **look in their code**. It is the cheapest
+   source there is and it states outright what the firmware only implies. The reason is measured, not
+   argued: nineteen days of an unread protocol map, section 197; six rounds of hardware guessing a
+   framing that was one function of theirs, section 200; and a wrong reading published in four
+   documents while the source refuting it sat in the lab, section 202. This entry used to put the
+   firmware first and admit the client only where the firmware could not settle something, which made
+   the cheap check the last resort.
+   **The client to read is MyHarmony**, `../lab/work/myharmony/src/`, which is 1999 files of C#,
+   the whole application decompiled. Read that rather than the compiled assemblies beside it, since
+   section 202's wrong reading came from finding a method name in a DLL and taking adjacency for a
+   call site. **Harmony Desktop's web application is not the reference**, on Danny's instruction the
+   same day: everything the newer one does MyHarmony does too and better, so a reading off it
+   describes the hub generation rather than the remotes here. Its mirror keeps two uses nothing else
+   covers, the file family's per skin protocol templates and the parameter encoder, both confirmed
+   against hardware.
+   **Reading it first does not make it right, and that half is unchanged.** The USB protocol is still
+   derived from the **firmware**, with `concordance/specs/protocol.txt` as corroboration and
+   concordance kept as a cross-check oracle, which is also technically necessary since concordance has
+   two known defects on these architectures. Where the firmware or the hardware can answer, that is
+   the citation; where neither can, the fact is marked client sourced per fact and may still be acted
+   on. Its arch 8 constants contradict four real configs, so it is a generator of hypotheses and not
+   an authority. The weighing, the legal basis and the ledger of everything currently believed on the
+   client's word alone are in `docs/host-client.md`.
+   **What does not change is what may be copied.** Their code stays in the private lab, nothing of it
+   is quoted or republished here, and no identifier, comment or structure of theirs travels into this
+   repository. That is a copyright rule and it is untouched by the ordering above.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
