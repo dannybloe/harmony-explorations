@@ -85,7 +85,7 @@ mattered: five documents came **off** an earlier draft of it and nine paths went
 | `reference/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
 | `docs/host-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
 | `CLAUDE.md`, `docs/status.md`, `docs/roadmap.md`, `docs/adding-a-device.md` | all restate the sequence |
-| `AGENTS.md` | it exists since 27 August 2026, `CLAUDE.md` rewritten as Codex's project brief, created deliberately and **after** the blind re-derivation had already run, so the window job 1 needed was used before this door opened. The row predates the file: it was reserved when the brief was removed, so that writing one later could not silently widen what a reviewer may see |
+| `AGENTS.md` | deliberately absent since 28 August 2026. Codex reads `CLAUDE.md` through `.codex/config.toml`, so both agents use one brief. The row stays reserved so recreating a separate brief cannot silently widen what a reviewer may see |
 | `docs/glossary.md`, `docs/growing-a-config.md` | one line each |
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
 | `packages/usb/` | all of it, the protocol, the rails, the write builder, the scripts and the tests |

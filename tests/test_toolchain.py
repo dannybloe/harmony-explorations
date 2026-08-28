@@ -212,7 +212,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         files = self._test_files()
         # The population, so a glob that stops matching fails here rather than passing quietly.
         # Exact, since a test file is added deliberately and rarely, unlike a test function.
-        self.assertEqual(len(files), 27, 'the Python test files')
+        self.assertEqual(len(files), 28, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -229,7 +229,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
                              % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
         # And the check has teeth only if most files actually carry a block. Exact: 23 of the 25 do,
         # and the two that do not are named in the comment above rather than left to a tolerance.
-        self.assertEqual(with_block, 25,
+        self.assertEqual(with_block, 26,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -627,7 +627,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 27, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 28, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -990,6 +990,36 @@ class TheDocumentChecksReadOnlyTrackedFiles(unittest.TestCase):
         self.assertIn(os.path.join(self.root, 'tools', 'facts.py'), sources)
 
 
+class CodexAndClaudeCodeShareOneWorkingBrief(unittest.TestCase):
+    """Codex falls back to CLAUDE.md instead of carrying a second full brief.
+
+    Codex checks AGENTS.md before its configured fallback names. Its absence is therefore part of
+    the setup rather than tidiness: recreating it would shadow CLAUDE.md and let the two agents
+    receive different instructions again. The size setting matters too, because the working brief
+    is larger than Codex's default project document limit.
+    """
+
+    def test_codex_uses_claude_md_and_no_agents_md_can_shadow_it(self):
+        self.assertFalse(os.path.lexists(os.path.join(ROOT, 'AGENTS.md')),
+                         'AGENTS.md shadows the shared CLAUDE.md brief')
+        config = read_repo_file('.codex/config.toml')
+        settings = [line.strip() for line in config.splitlines()
+                    if line.strip() and not line.lstrip().startswith('#')]
+        self.assertEqual(settings, [
+            'project_doc_fallback_filenames = ["CLAUDE.md"]',
+            'project_doc_max_bytes = 262144',
+        ])
+
+    def test_codex_can_read_the_whole_shared_brief(self):
+        config = read_repo_file('.codex/config.toml')
+        match = re.search(r'^project_doc_max_bytes\s*=\s*(\d+)\s*$', config, re.MULTILINE)
+        self.assertIsNotNone(match, 'Codex project document size is not configured')
+        limit = int(match.group(1))
+        size = os.path.getsize(os.path.join(ROOT, 'CLAUDE.md'))
+        self.assertLessEqual(size, limit,
+                             'CLAUDE.md is larger than Codex is configured to read')
+
+
 class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
     """`docs/review-before-first-write.md` makes three claims about which files may be handed to an
     independent reviewer, and all three are the kind this project refuses to leave as prose.
@@ -1071,7 +1101,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         must = self._paths_between(text, '**Must not be read.**', '\n## ')
         self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
                          % sorted(may))
-        # 17 since 27 August 2026: `AGENTS.md` exists now, and its row in the document predates it.
+        # The AGENTS.md row remains reserved, but the file is deliberately absent. Its place in the
+        # resolved population is taken by the Codex config named in that row, so the count stays 17.
         self.assertEqual(len(must), 17, 'the withhold list should resolve to 17 paths, got %s'
                          % sorted(must))
 
@@ -1119,8 +1150,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         withhold list is worth another look, so the churn is the point rather than the cost.
         """
         stating = sorted(p for p in self._swept_files() if self._markers_in(p, self.MARKERS))
-        # 21 since 27 August 2026, when `AGENTS.md` arrived carrying CLAUDE.md's write path text.
-        self.assertEqual(len(stating), 21,
+        # Back to 20 since 28 August 2026, when the duplicate AGENTS.md was removed and Codex was
+        # pointed at CLAUDE.md instead.
+        self.assertEqual(len(stating), 20,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

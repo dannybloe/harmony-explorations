@@ -25920,3 +25920,155 @@ its config is reachable at all is untouched by this and stays section 193's ques
 
 `tests/test_harmony_350_firmware.py`, ten tests, starting from the ZIP as downloaded rather than from
 any file this project produced out of it, with a flipped byte as the checksum's negative control.
+
+## 197. Logitech's own protocol specification is in the lab, and it has been for three weeks
+
+Danny asked how a Harmony Touch could be talked to. The answer is that Logitech states it, in
+twenty three per skin directories of XML inside the mirrored desktop client, and those files have
+been sitting in `../lab/software/desktop-webapp/mirror/` since section 132 fetched them on 9 August
+2026.
+
+**The first draft of this section said nothing had opened them, and that was wrong.** The lab's own
+`META.md` beside those files already carries the architecture and codename table below, the
+observation that Molson is architecture 14, and the Harmony One's whole infrared learn session as
+four commands, which is section 91's open question answered. So the reading happened on 9 August and
+**none of it ever crossed into this repository**: no finding, no structured fact, no test, no line of
+code, and the ledger in `docs/host-client.md` still lists as open at least one thing those files
+state. That is the failure worth recording, and it is not the usual one. The four places rule exists
+because a fact that lands in only some of them drifts; here a fact landed in a **private notebook**
+and in none of them, which no check in this repository can see, because `make facts` reads the
+repository and the lab is deliberately outside it.
+
+The same `META.md` also says, thirty lines earlier, that these templates "answer 403 on this host"
+and were not fetched. One file, two paragraphs, contradicting each other for three weeks. So the rule
+this project applies to its own documents applies to lab notes too, and nothing enforces it there.
+
+What today added to what was already written down: the comparison against `packages/usb` as an
+executable test rather than a paragraph, the Harmony Touch's file protocol read out of `SKIN99`, the
+protocol split the client uses to choose between the two families, and a disagreement with the
+hardware about the Touch's architecture.
+
+### What the files are
+
+The desktop client's native half is a **generic packet pipe**. `SdeFramework`, whose namespace spells
+out `superstupiddummyengine`, carries `UsbCommand` with `addSendingPacket`, `addReceivingPacket` and
+`convertRequestToBytes`, and `COsxHidIoPipe` under it. None of it knows what a command means. One
+level up, `desktopapplibs/ds/molson/molsoncommandwriter` builds commands **out of XML attributes**:
+an id, a timeout, a packet width, a multiplier, a wait for reboot flag. So the protocol is data, and
+the data is at
+
+    desktop-app-scripts/libs/ds/templates/SKIN<modelid>/<operation>.xml
+
+with the operation list per model coming from one `DesktopServiceConfig.xml`. Twenty three skins are
+mirrored, carrying 1 to 23 files each: `identifyremote`, `userconfiguration`, `getdeviceinfo`,
+`syncremote`, `learnir`, `firmwareupgrade`, `factoryreset`, `getonremotechanges` and more.
+
+A file states command bytes, field widths, byte order, response tags, addresses and the checks to
+apply to each reply. It is a specification, not a hint.
+
+### The calibration case, and it is exact
+
+Three of the twenty three skins are architectures this project reads, so the vendor's specification
+can be held against a derivation made clean-room from firmware. `SKIN54/identifyremote.xml` is a
+Harmony One and states, in its own words:
+
+* `architectureid="12"`, which is section 20's reading of the architecture record.
+* `reset_usb` is `0xE0` then `0x01`. Section 97 measured exactly that and said it clears the command
+  gate without being a reset.
+* `read_guid` is `0x50`, then `<bytes id="address" length="3" encode="big.endian">`, then
+  `<bytes id="size" length="2" encode="big.endian">`. `packages/usb`'s `READ_FLASH` is `0x50` with a
+  24 bit address and a 16 bit count, both most significant byte first, derived from the firmware's
+  own request parser.
+* the reply is checked for `F0` at position 0 and `50` at position 1 of the last packet, which is
+  section 94's response tag, including the detail that the command byte follows the `0xF0`.
+* the remote's identity block is `address.guid` `0xFFF400`, `size.guid` `0x40`. That is 64 bytes on
+  the `0xFF` internal page, which is where `reference/checksums.md` puts the identity block from
+  having compared two Harmony Ones and found 32 of their 39 differing bytes inside it.
+
+Five statements, five agreements, and the two derivations share no bytes and no method. `SKIN68` is a
+Harmony 510 at `architectureid="9"`, the Harmony 525's architecture. This is the strongest
+confirmation of `docs/usb-protocol.md` available without hardware, and it arrived by reading a file
+rather than by measuring anything.
+
+**It is still client sourced under decision 2.** Nothing is adopted from these files here. Every
+claim above is a comparison against something already derived, which is the one use of a client
+source that costs nothing.
+
+### The architecture map, with Logitech's codenames
+
+Each description element carries a codename in its `comment`. Read off the files:
+
+| architecture | skins, with the vendor's codename |
+|---|---|
+| 9 | 68 Harmony 510 |
+| 12 | 54 Harmony One |
+| 14 | 66 and 96, **Molson** |
+| 16 | 78 Pepsi, 103 Cardu, 104 Templeton |
+| 17 | 82 Olive, 97 Pimento, 105 NewCastle, 106 Creemore, 108 NewCastleWhite, 113 Pavarotti, 115 Crackerjack, 400 Creemore |
+| 18 | 86 Ravenswood, 99 Juniper, 100 JuniperRF, 102 Harmony Ultimate One, 105 NewCastle, 108 NewCastleWhite, 111 Hops, 112 HopsLite, 116 Orville |
+
+Two things fall out. **Arch 16 is confirmed for the Harmony 300 and the Harmony 350**, skins 78 and
+104, which section 195 had from the remotes themselves. And the naming convention this project knew
+one instance of, arch 12 as "Gin", is the vendor's throughout: beers, spirits and a tenor.
+
+Some skins appear at both 17 and 18, which fits 17 being the hub of a set and 18 its remote, and is
+not established.
+
+### The protocol split is the vendor's, and it is our target set exactly
+
+`desktopapplibs/ds/commandbuilderfactory` chooses between two builders, and the enum is
+`{Hid: 0, Molson: 1}`. What picks one:
+
+    protocol = supportedLegacyArchitectures.contains(architectureId) ? Hid : Molson
+    supportedLegacyArchitectures = [9, 14, 12]
+
+So **Logitech groups architectures 9, 14 and 12 as one protocol and calls them legacy**, and those
+are precisely the three this project reads and the three `packages/usb` implements. Everything newer
+takes the other path. That is a piece of independent confirmation that the line this project drew
+around its own scope is the line the vendor drew.
+
+### How a Harmony Touch is talked to
+
+`SKIN99` is a Harmony Touch, `architectureid="18"`, codename **Juniper**, 22 templates. Its protocol
+is a **file protocol**, which is section 193's reading stated outright rather than inferred.
+`getdeviceinfo.xml`:
+
+* a packet is `service.id`, `command.id`, `sequence.number`, `parameter.number`, then parameters.
+* `service.id` `0xFF`, `command.id` `0x01` is **open**: two string parameters, a path and a mode.
+  The path is `/rf/deviceinfo` and the mode is `R`.
+* the reply carries a **file handle** at position 5 and a big endian **file size** at position 7, and
+  is checked by echoing the service and command bytes with position 2 required not to be `0xFF`.
+* `command.id` `0x04` is **read**, taking the handle.
+
+No address appears anywhere in it. So the family is reached by opening a named file, and the
+question section 193 left open is answered: there is a protocol, we simply had not read it. Nothing
+here has been sent to a remote, and `openHarmony` still refuses this family by product id.
+
+### An architecture disagreement, recorded and not resolved
+
+Concordance, reading the remote on the bench, reports the Harmony Touch as **architecture 17,
+protocol 9**. All 22 of Logitech's Touch templates declare **architecture 18**. Section 195 wrote 17
+into this document from the device, so the two sources conflict, and the project's rule is to measure
+the disagreement rather than pick a winner.
+
+What is known about it. The two sources **agree** on the Harmony One, 12 and 12, and on the Harmony
+350, 16 and 16, so this is one isolated discrepancy rather than an offset. And **nothing in the client
+can notice it**: the template's `architectureid` is parsed into the ROM validator and the validity
+test compares only the model id, the flash id and the flash manufacturer id, so the attribute is
+never checked against the device. Its one other consumer is the legacy test above, where 17 and 18
+give the same answer, `Molson`. So the field is unfalsifiable inside the client, which is exactly the
+condition under which a value drifts and nobody finds out.
+
+**So the honest statement is that the Harmony Touch reports 17 and Logitech's own specification says
+18, for reasons unknown.** `reference/models.md` and the architecture table in `CLAUDE.md` say both.
+The bench reading keeps precedence, per decision 2, because it came off the hardware.
+
+### What is worth doing next, and what is not
+
+The templates are a route to reading a Touch's configuration without their service. What stands
+between is not protocol knowledge any more, it is a decision: this project has never sent a byte to
+a remote it has no firmware for, and the file protocol includes writes.
+
+`tests/test_client_templates.py`, thirteen tests, with the four controls run and reversed: calling
+the Touch architecture 17, moving the skin count, changing the legacy list and changing the read
+command each fail exactly one test.

@@ -14,6 +14,7 @@ alongside the repository is used when one exists:
 Files are located by name anywhere beneath that directory, so the corpus can be arranged
 however suits it. See reference/checksums.md for what the names refer to.
 """
+import glob
 import json
 import os
 import sys
@@ -349,6 +350,75 @@ ASCII_FONTS = 'h525_safemode_ahcm'
 #: different accounts and say different things, so the first hit is the wrong answer three times in
 #: four and the walk order is the file system's business rather than ours. One directory, named.
 SERVICE_RESPONSES = ('work', 'myharmony', 'responses')
+
+#: Logitech's own per skin protocol templates, inside the mirrored desktop client. Section 197.
+#:
+#: **Addressed by path for the same measured reason as the replies above**, and more sharply:
+#: `identifyremote.xml` exists in fourteen of the twenty three skin directories and says something
+#: different in each, so a bare filename walk returns whichever the file system offers first. The
+#: build identifier in the middle of the path moves when Logitech publishes, so it is discovered
+#: rather than named.
+CLIENT_TEMPLATES = ('software', 'desktop-webapp', 'mirror')
+_TEMPLATE_TAIL = ('opt', 'desktop-app-scripts', 'libs', 'ds', 'templates')
+
+
+def template_path(skin, name):
+    """Absolute path to one protocol template, or None when the lab has not got it.
+
+    `skin` is the number Logitech's directory name carries, so 54 for a Harmony One and 99 for a
+    Harmony Touch. The build directory between the mirror root and `opt` is globbed, because it is
+    a publication identifier and pinning it would break on the next mirror.
+    """
+    if not LAB:
+        return None
+    root = os.path.join(LAB, *CLIENT_TEMPLATES)
+    if not os.path.isdir(root):
+        return None
+    for build in sorted(os.listdir(root)):
+        for version in sorted(glob.glob(os.path.join(root, build, '*', '*'))):
+            p = os.path.join(version, *_TEMPLATE_TAIL, 'SKIN%d' % skin, name)
+            if os.path.isfile(p):
+                return p
+    return None
+
+
+def template(skin, name):
+    """One protocol template as text, or raise SkipTest when the lab has not got it."""
+    p = template_path(skin, name)
+    if not p:
+        raise unittest.SkipTest(
+            'no SKIN%d/%s in the mirrored client (searched: %s)'
+            % (skin, name, LAB or 'nothing, HARMONY_LAB unset'))
+    with open(p, encoding='utf-8-sig') as fh:
+        return fh.read()
+
+
+def template_skins():
+    """Every skin directory the mirrored client carries, as integers, or an empty tuple."""
+    p = template_path(54, 'identifyremote.xml')
+    if not p:
+        return ()
+    base = os.path.dirname(os.path.dirname(p))
+    return tuple(sorted(int(d[4:]) for d in os.listdir(base)
+                        if d.startswith('SKIN') and d[4:].isdigit()))
+
+
+def template_names(skin):
+    """Every template file name for one skin, or an empty tuple when the lab has not got it."""
+    p = template_path(54, 'identifyremote.xml')
+    if not p:
+        return ()
+    base = os.path.join(os.path.dirname(os.path.dirname(p)), 'SKIN%d' % skin)
+    if not os.path.isdir(base):
+        return ()
+    return tuple(sorted(f for f in os.listdir(base) if f.endswith('.xml')))
+
+
+def require_templates(*pairs):
+    """Skip up front unless every (skin, name) pair is present, mirroring `require`."""
+    missing = ['SKIN%d/%s' % pair for pair in pairs if not template_path(*pair)]
+    if missing:
+        raise unittest.SkipTest('the mirrored client is missing %s' % ', '.join(missing))
 
 
 def path(name):
