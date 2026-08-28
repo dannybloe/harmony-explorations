@@ -250,6 +250,15 @@ IMAGES = {
     # be recomputable rather than transcribed. Logitech's expression, so it stays in the lab: what
     # travels is the list of operation names, which is functional fact. `software/desktop-webapp`.
     'desktop_webapp_main': 'en.desktop-app-main.js',
+    # MyHarmony decompiled to C#, three files of the sync flow. **The reference client**, decision 2:
+    # their code and the firmware are both read before anything is derived, and this is the client
+    # half. Named here because sections 202 and 203 are claims about what this code does, and a claim
+    # about a source that nobody can recompute is a transcription. Logitech's expression, so it stays
+    # in the lab and nothing of it is quoted: what travels is which operation is called and on what
+    # condition, which is functional fact. `work/myharmony/src`.
+    'myharmony_sync_model': 'RemoteSyncUserControlModel.cs',
+    'myharmony_update_manager': 'RemoteUpdateManager.cs',
+    'myharmony_ds_controller': 'DSController.cs',
 }
 
 _cache = {}

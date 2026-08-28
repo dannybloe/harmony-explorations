@@ -496,5 +496,85 @@ class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
         self.assertEqual(self.after['SkinId'], 54)
 
 
+class SyncingAHarmonyTouchNeverCompilesAConfiguration(unittest.TestCase):
+    """Section 202: MyHarmony's sync branches on the product's capabilities, and only one arm compiles.
+
+    Why this is a test and not just a paragraph. The claim is about somebody else's code, which is the
+    weakest kind of evidence this project accepts, so the least it can do is be recomputable: a reader
+    who doubts it can re-run this against the same source rather than trust a summary. It also guards
+    the specific mistake that produced the wrong version, which was reading a method **name** found in
+    a compiled assembly as though it were a call site.
+
+    Nothing of Logitech's text is reproduced. What is asserted is which operation is called and on what
+    condition, which is functional fact rather than expression.
+    """
+
+    def setUp(self):
+        lab.require('myharmony_sync_model', 'myharmony_update_manager')
+        self.sync = lab.load('myharmony_sync_model').decode('utf-8', 'replace')
+        self.update = lab.load('myharmony_update_manager').decode('utf-8', 'replace')
+
+    def test_the_sync_route_is_chosen_by_the_products_capabilities(self):
+        """The branch itself: two capabilities divert to provisioning before the compile arm is reached."""
+        entry = self.sync[self.sync.index('public void SyncRemote()'):]
+        entry = entry[:entry.index('private void')]
+        # Capability numbers are the client's own enumeration: 16 provisioning, 18 certificate
+        # activation, 12 locale. The first two reach the provisioning call and the third the compile.
+        self.assertIn('UpdateProvisionSupportedRemote', entry)
+        self.assertIn('UpdateRemote', entry)
+        self.assertLess(entry.index('UpdateProvisionSupportedRemote'), entry.index('UpdateRemote(GlobalState'),
+                        'the provisioning arms come first, so a Touch never reaches the compile arm')
+        for capability in (16, 18, 12):
+            with self.subTest(capability=capability):
+                self.assertIn('SupportedCapability)%d' % capability, entry)
+
+    def test_the_compile_the_sync_sends_is_the_one_this_project_already_sends(self):
+        """The correction: `StartCompileWithLocale` is the simulator's call, not the sync's.
+
+        Asserted from both ends, because the wrong reading was true of one end alone: the sync path
+        sends the settings variant, and the plain variant appears only in the simulator's method.
+        """
+        self.assertIn('StartCompileWithLocaleAndSettingsAsync', self.update)
+        self.assertNotIn('StartCompileWithLocaleAsync', self.update)
+        simulator = self.sync[self.sync.index('public void CompileEZSim()'):]
+        simulator = simulator[:simulator.index('protected void')]
+        self.assertIn('StartCompileWithLocaleAsync', simulator)
+
+    def test_the_provisioning_arm_declares_the_configuration_not_required(self):
+        """What makes the negative structural rather than a gap: that route asks for no configuration."""
+        arm = self.update[self.update.index('public void UpdateProvisionSupportedRemote'):]
+        arm = arm[:arm.index('public void UpdateRemote')]
+        self.assertIn('ConfigNotRequired = true', arm)
+        self.assertNotIn('StartCompile', arm)
+
+
+class AHarmonyTouchFetchesItsOwnConfiguration(unittest.TestCase):
+    """Section 203: the remote issues the requests and the client performs them.
+
+    The three things that make it a proxy rather than a download, each asserted separately so a partial
+    refutation says which part moved.
+    """
+
+    def setUp(self):
+        lab.require('myharmony_ds_controller')
+        self.source = lab.load('myharmony_ds_controller').decode('utf-8', 'replace')
+
+    def test_the_client_reads_a_request_list_off_the_remote(self):
+        self.assertIn('DSRequest', self.source)
+        self.assertIn('m_RequestQueue.Enqueue(request)', self.source)
+        # A request carries a verb, which is what makes it an HTTP request rather than a command.
+        self.assertIn('request.Verb', self.source)
+        self.assertIn('request.URI', self.source)
+
+    def test_the_session_is_the_remotes_and_carries_an_identifier(self):
+        self.assertIn('m_SessionID', self.source)
+        self.assertIn('?read&sessionId=', self.source)
+
+    def test_two_request_forms_are_terminal_rather_than_fetches(self):
+        for terminal in ('Finished', 'Abort'):
+            with self.subTest(terminal=terminal):
+                self.assertIn('request.URI.Contains("%s")' % terminal, self.source)
+
+
 if __name__ == '__main__':
     unittest.main()

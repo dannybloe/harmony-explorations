@@ -226,6 +226,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // tables are asserted equal: a fixture on one side only is the drift this parity test exists for,
   // and it caught exactly that on the day this entry was added.
   desktop_webapp_main: 'en.desktop-app-main.js',
+  // MyHarmony decompiled to C#, three files of the sync flow. The reference client, decision 2: their
+  // code and the firmware are both read before anything is derived. Sections 202 and 203 are claims
+  // about what this code does, and `tests/test_host_client.py` recomputes them, so they are named here
+  // only to keep the two fixture tables identical, which is what the parity test is for.
+  myharmony_sync_model: 'RemoteSyncUserControlModel.cs',
+  myharmony_update_manager: 'RemoteUpdateManager.cs',
+  myharmony_ds_controller: 'DSController.cs',
 };
 
 const cache = new Map<string, string[]>();
