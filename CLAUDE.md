@@ -621,6 +621,18 @@ That directory has its own `CLAUDE.md`. Analysis happens there, only shareable o
 2.3 GB, of which `software/classic/` is 4809 files with exactly one of them read, and `work/myharmony/`
 another 3458.
 
+**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 58
+artefacts, each with a status and its tags, with a test that fails when the lab gains one the register
+does not name. So "did we already know this" is a grep now rather than a memory exercise, and that is
+the point: an expensive check gets skipped under momentum, so making it cheap is the only structural
+fix. What is left of step 9 is the digging, in tag order.
+
+**Its first square paid for it.** `software/classic/SERVER-DEPENDENCY.md`, 278 lines from 7 August
+2026, never crossed: the client is an **executor and not a builder**, so reading, writing, learning and
+firmware update are local and still work, while the device database, the interface and the
+**configuration compiler** were server side and are gone. That is the biggest want list item and, if it
+holds, it closes it as a recovery target.
+
 The mechanism is the thing to understand, because it is not carelessness. Every rule here for keeping
 facts straight, `make facts`, `reference/superseded.md`, the four places, a regression test per claim,
 operates on **this repository**. The lab is deliberately outside all of it, since it holds unlicensed
@@ -1070,6 +1082,13 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
+reference/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
+                                has been, and which of the excavation's seventeen want list tags it
+                                might answer. **A catalogue and not a set of claims**, so it carries
+                                no tests of its own, per the rule in docs/lab-excavation.md. Two
+                                things about its frame are tested, that every path it names exists
+                                and that every artefact in the lab has a row, which is the check the
+                                directory level one could not make
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project

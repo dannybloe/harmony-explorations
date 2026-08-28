@@ -1438,6 +1438,20 @@ cleanly where there is no lab, exactly as every other lab backed test does. That
 the mechanism survive the session that builds it, and it is the half that would have caught section
 197 nineteen days earlier.
 
+**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 58
+artefacts across the eleven squares, each with a status and the want list tags it might answer, and
+`TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
+directory and watching exactly one test name it. What is left of step 9 is the digging: the rows at
+status `unseen`, in tag order rather than in folder order.
+
+**The survey paid for itself on its first square**, which is the argument for having done it before
+digging anywhere. `software/classic/SERVER-DEPENDENCY.md` is 278 lines written on 7 August 2026 and
+never crossed, and it says the client is an **executor and not a builder**: reading, writing, learning
+and firmware update are all local and work today, and the device database, the interface and the
+**configuration compiler** were server side and are gone. If that holds it closes the biggest want
+list item as a recovery target and makes writing our own the only route, which is what this document
+already assumes with no evidence behind it. It takes the ordinary route from here, as a claim.
+
 **Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
 value is in being able to say so with a row rather than a shrug. And some of it will answer a
 question currently listed as open, which is the outcome the decision was taken for; **that** kind of

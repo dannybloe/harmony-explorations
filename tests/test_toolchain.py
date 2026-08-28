@@ -1031,8 +1031,14 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
     so a directory nobody has a reason to open cannot appear without the plan of record gaining a
     row for it.
 
-    Skips without a lab, like every other lab backed test. The register itself is step 9's
-    deliverable and this is not it; this is the check that keeps the map from rotting until then.
+    Skips without a lab, like every other lab backed test.
+
+    **Superseded in scope on 28 August 2026 and kept deliberately.** `reference/lab-register.md`
+    exists now and `TheLabRegisterCoversTheSiteAtArtefactLevel` is the check that actually covers the
+    site, at artefact granularity. This one is narrower and still has its own claim: the roadmap's
+    grid is a **summary**, and a summary is exactly what step 4 of the four places rule says drifts,
+    so the plan of record's own map of the site is held against the site here. It is also the cheaper
+    of the two and fails with a clearer message when a whole square appears.
     """
 
     GRID_HEADING = '### Step 9: excavate the lab'
@@ -1061,6 +1067,109 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
                 self.assertTrue(covered,
                                 '%s/ is in the lab and named nowhere in step 9. Add a row saying '
                                 'what it is, per decision 12.' % area)
+
+
+class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
+    """`reference/lab-register.md` is step 9's deliverable, and this is the check the plan promises.
+
+    Two claims, and the second is the one the directory level guard above cannot make.
+
+    Every lab path the register **names** must exist, so a row cannot survive the artefact moving or
+    being renamed. And every **second level** directory of the lab must be covered by some row,
+    which is the artefact granularity `docs/lab-excavation.md` argues for: the grid check above is
+    per square and passed while section 197's own square was already named in it, so passing it
+    proved nothing about coverage.
+
+    A catalogue carries no tests, per Danny's rule of 28 August 2026 and the excavation plan's
+    opening section. This is not a test of the catalogue's **contents**; it is a test that the
+    catalogue's own frame still matches the site. Nothing here asserts a description is right.
+    """
+
+    REGISTER = ('reference', 'lab-register.md')
+    #: Directories whose children are not artefacts in their own right: build products, a virtual
+    #: environment, a cache. Each is named by a row already, and expanding it would add hundreds of
+    #: rows that say nothing. Stated so the exclusion is visible rather than silent.
+    NOT_EXPANDED = (
+        'software/classic', 'work/venv', 'work/myharmony', 'reference/logitech-icons',
+        'ghidra', 'golden', 'firmware', 'dumps', 'reads', 'Docs', 'bin', 'reviews',
+        'software/MyHarmony', 'software/LogitechHarmonyRemoteSoftware.app',
+        'software/harmony-remote-software-8.0', 'software/Harmony Desktop.app',
+        'software/desktop-webapp', 'reference/forum-images', 'reference/images',
+    )
+
+    def _register(self):
+        with io.open(os.path.join(ROOT, *self.REGISTER), encoding='utf-8') as fh:
+            return fh.read()
+
+    def _named_paths(self, text):
+        """Every backticked path that looks like a lab path, which is how a row names its artefact."""
+        found = set()
+        # Deliberately no character class escapes: a lab path is anything backticked that contains a
+        # slash and starts with a letter, and spelling that with `\w` has already been mangled once
+        # by the script that generated this file.
+        for match in re.finditer('`([^`]+/[^`]*)`', text):
+            path = match.group(1)
+            if not path[:1].isalpha() or path.startswith(('docs/', 'packages/')):
+                continue  # a repository path, cited for context
+            found.add(path)
+        return found
+
+    def _lab(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        return lab if os.path.isdir(lab) else None
+
+    def test_every_path_the_register_names_exists(self):
+        lab = self._lab()
+        if lab is None:
+            self.skipTest('no lab directory to check the register against')
+        named = self._named_paths(self._register())
+        # Exact, per this file's own rule. It moves in the diff every time a row is added, which is
+        # the point: the register growing is the excavation making progress, and a floor here would
+        # hide a row being deleted just as readily as it hides a total going the wrong way.
+        self.assertEqual(len(named), 58, 'lab paths the register names, as at 28 August 2026')
+        for path in sorted(named):
+            with self.subTest(path=path):
+                if '*' in path:
+                    self.assertTrue(glob.glob(os.path.join(lab, path)),
+                                    '%s matches nothing in the lab' % path)
+                else:
+                    self.assertTrue(os.path.exists(os.path.join(lab, path)),
+                                    '%s is in the register and not in the lab' % path)
+
+    def test_every_artefact_in_the_lab_has_a_row(self):
+        lab = self._lab()
+        if lab is None:
+            self.skipTest('no lab directory to check the register against')
+        named = self._named_paths(self._register())
+        covered = {p.rstrip('/') for p in named}
+
+        def is_covered(rel):
+            if rel in covered:
+                return True
+            # A row naming a directory covers what is inside it, and a row naming something inside
+            # a square covers the square. Both directions are needed: the register names
+            # `dumps/danny/` and never `dumps/` on its own.
+            return any(rel.startswith(c + '/') or c.startswith(rel + '/') for c in covered)
+
+        unregistered = []
+        for square in sorted(os.listdir(lab)):
+            if square.startswith('.') or not os.path.isdir(os.path.join(lab, square)):
+                continue
+            if not is_covered(square):
+                unregistered.append(square)
+                continue
+            if square in self.NOT_EXPANDED:
+                continue
+            for child in sorted(os.listdir(os.path.join(lab, square))):
+                rel = square + '/' + child
+                if child.startswith('.') or not os.path.isdir(os.path.join(lab, rel)):
+                    continue
+                if rel in self.NOT_EXPANDED or is_covered(rel):
+                    continue
+                unregistered.append(rel)
+        self.assertEqual(unregistered, [],
+                         'in the lab and in no register row. Add a row saying what it is and how '
+                         'deep anybody has been, per decision 12 and docs/lab-excavation.md.')
 
 
 class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
