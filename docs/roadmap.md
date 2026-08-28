@@ -1459,7 +1459,14 @@ never crossed, and it says the client is an **executor and not a builder**: read
 and firmware update are all local and work today, and the device database, the interface and the
 **configuration compiler** were server side and are gone.
 
-**Dug and crossed the same day, section 204**, and the claim held with a stronger argument than its
+**Two squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
+takes the `ir-learn` tag as far as this client goes: the host measures a capture, merges it and uploads
+it, and the only test it applies is that the signal lasts between 10 milliseconds and 1 second.
+Everything else, including whether to keep the capture and how to store it, came back from the server.
+So what a local learn has to build is narrower than section 42 implied and it is a judgement rather
+than a decoder.
+
+Section 204's own square, and the claim held with a stronger argument than its
 own: no container cookie appears anywhere in the client's 642 files, so it never parses a
 configuration, let alone composes one. **So the `compiler` tag closes as a recovery target**, and
 writing our own is the only route, which this document had been assuming with nothing behind it. What

@@ -26715,3 +26715,59 @@ independent way a configuration could reach a remote, and because it was going t
 **The register said this note was uncrossed and it was right**, which is the first return on building
 it. Nineteen days of the same failure are recorded in section 197; this one was found by looking at a
 column rather than by remembering.
+
+## 205. What a local learn has to replace is a judgement, and the only local test was a stopwatch
+
+The excavation's second square, the `ir-learn` tag, dug on 28 August 2026 out of the classic client's
+learning path. Section 42 concluded that three of the four infrared storage classes go unused because
+the choice was made by a server that is gone. This is the mechanism, and it narrows what has to be
+built.
+
+### What the host actually did
+
+The remote reports a capture as three numbers and then a stream of durations, and the client turns
+that into one object. From the first envelope it gets the on time, the envelope time and a **count of
+carrier cycles inside it**, so the period is the envelope divided by that count and the frequency is
+its reciprocal. **The carrier is measured, not assumed and not taken from a table**, which is the same
+quantity section 92 reads from the other end, where a record stores `floor(1e9 / f)` nanoseconds.
+A duty cycle is computed from the on time and then never used, which is either dead code or a
+decompiler's residue and is worth nothing either way.
+
+Durations arrive tagged carrier or not, and **adjacent durations of the same kind are added together
+rather than appended**. That is section 164's merge rule, in the vendor's own capture path, reached
+here by arguing from what a receiver can physically see and there by writing the code that fills the
+buffer. Two derivations with nothing in common agreeing on a rule is the strongest shape of evidence
+this project recognises, and this one arrived by accident.
+
+The result serialises two ways: an XML document of a frequency and alternating pulses and spaces, and
+a compact string of `F` for the frequency then `P` and `S` per interval, each a hexadecimal count of
+microseconds. That string is what went to the website.
+
+### The judgement was the server's, and the client's own test is one line
+
+**The host applies exactly one acceptance test to a capture and it is a duration window**: shorter
+than 10000 microseconds and the user is told the signal was too short, longer than 1000000 and it was
+too long, and between those two it is uploaded. There is no protocol recognition, no bit decoding, no
+storage class and no comparison against a database anywhere in the path.
+
+Everything else came back from the server: the reply to an upload carries a **try again** flag and a
+list of user messages, and the client obeys both. So "hold the remote closer and press again" was a
+judgement made in a data centre, and the four hints the client can display are labels for answers it
+did not compute.
+
+### What that means for the application
+
+Section 42 said a local learn has to choose a storage class locally. This says more precisely what is
+missing and what is not. **Capture is solved and always was local**: section 98 reads the reports off
+the remote, and this gives the host side arithmetic that turns them into a frequency and a merged
+duration list, including the merge rule this project had already derived.
+
+What has to be built is the part that was never on this side of the wire: deciding whether a capture is
+**good**, and deciding **how to store it**. The first is a quality judgement with one honest starting
+point, since a 10 millisecond to 1 second window is all the client ever checked, and a modern answer
+would compare two captures of the same button instead. The second is section 42's open question and is
+now the only genuinely missing piece rather than one of several.
+
+The negative worth recording: **nothing in the classic client can turn a captured signal into a
+configuration record.** That is consistent with section 204, and it is the same boundary seen from a
+different direction, since a record needs a container and the client has never parsed one.

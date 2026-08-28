@@ -660,5 +660,69 @@ class TheClassicClientIsAnExecutorAndNotABuilder(unittest.TestCase):
                     '%s is named for a device and is not transport' % name)
 
 
+class TheClassicClientMeasuresACaptureAndJudgesNothing(unittest.TestCase):
+    """Section 205: the only local acceptance test is a duration window; the server decided the rest.
+
+    The two claims that carry weight are the negative one, that no classification happens on the host,
+    and the merge, which agrees with section 164 by a route with nothing in common. Both are asserted
+    against the source rather than summarised, because a negative claim about somebody else's code is
+    the easiest kind to get wrong by not looking hard enough.
+    """
+
+    RECORDER = ('clientcommon', 'com', 'logitech', 'harmony', 'common', 'device', 'services',
+                'learnir', 'CarrierRecorder.java')
+    OPERATION = ('clientcommon', 'com', 'logitech', 'harmony', 'common', 'operation',
+                 'LearningOperation.java')
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+        if not os.path.isdir(root):
+            self.skipTest('no decompiled classic client in the lab')
+        self.recorder = self.read(os.path.join(root, *self.RECORDER))
+        self.operation = self.read(os.path.join(root, *self.OPERATION))
+
+    def read(self, path):
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_the_carrier_is_measured_from_the_remotes_own_cycle_count(self):
+        """Not a table lookup and not an assumption, which is what makes it comparable to section 92."""
+        self.assertIn('i_numClocksInInitialEnvelope', self.recorder)
+        self.assertIn('i_initialEnvelopeTimeInMicroseconds / i_numClocksInInitialEnvelope',
+                      self.recorder)
+        self.assertIn('1000000.0 / periodInMicroseconds', self.recorder)
+
+    def test_adjacent_durations_of_one_kind_are_added_rather_than_appended(self):
+        """Section 164's merge, in the vendor's own capture path and reached by a different argument."""
+        self.assertIn('addTimeInMicroseconds', self.recorder)
+        merge = self.recorder[self.recorder.index('public void onCarrierIrDuration'):]
+        merge = merge[:merge.index('public void onCarrierIrFinished')]
+        self.assertIn('isCarrier() == i_isCarrier', merge)
+        self.assertIn('addTimeInMicroseconds(i_timeInMicroseconds)', merge)
+
+    def test_the_only_acceptance_test_is_a_duration_window(self):
+        """Ten milliseconds to one second, and nothing else stands between a capture and the upload."""
+        self.assertIn('MIN_CARRIER_LENGTH = 10000', self.operation)
+        self.assertIn('MAX_CARRIER_LENGTH = 1000000', self.operation)
+        self.assertIn('infraredLength < 10000', self.operation)
+        self.assertIn('infraredLength > 1000000', self.operation)
+
+    def test_the_verdict_comes_back_from_the_server(self):
+        """`TRYAGAIN` plus user messages, which is a judgement the host asks for rather than makes."""
+        self.assertIn('TRYAGAIN', self.operation)
+        self.assertIn('uploadDataToWebsite', self.operation)
+
+    def test_nothing_on_the_host_classifies_a_capture(self):
+        """The negative that section 42 predicted, checked over the whole client and not just this file."""
+        sources = classic_sources()
+        self.assertIsNotNone(sources)
+        for word in ('protocol family', 'RC5', 'RC6', 'NEC ', 'codeset', 'CodeSet'):
+            with self.subTest(word=word):
+                naming = [p for p in sources if word in self.read(p)]
+                self.assertEqual(naming, [], 'files naming %r' % word)
+
+
 if __name__ == '__main__':
     unittest.main()
