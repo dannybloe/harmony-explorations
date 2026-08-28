@@ -499,8 +499,8 @@ the first.
 |---|---|---|
 | `0xFE0000` | `0x1000` | the bootstrap, which matches what section 59 found there |
 | `0xFE1000` | `0xF000` | the safe mode image |
-| `0xFF0000` | `0x4000` | a programmable logic device image |
-| `0xFFE000` | `0x1000` | a support library |
+| `0xFF0000` | `0x4000` | a programmable logic device image, and 5939 bytes of it are populated |
+| `0xFFE000` | `0x1000` | a support library, and it is the external flash programmer, section 206 |
 | `0x3D0000` | `0x20000` | the stored application firmware |
 
 Two of these settle open questions if they hold. `docs/findings.md` calls the image at `0xFF`
@@ -508,6 +508,15 @@ plus `0xE000` "a library or support image, distinct from the bootstrap at zero",
 exactly what the client calls it. And a programmable logic device on arch 12 is new information
 about the hardware, not just the memory map: nothing in this project had suggested the One
 carries one.
+
+**Both held, and settling them needed no remote**, section 206. The two rows sat here unconfirmed for
+nineteen days while the bytes were already in the lab: internal program page `0xFF` had been read off
+every bench remote and verified against its backup. The support library window holds **601 used bytes**
+on both Harmony Ones, which is section 191's external flash programmer to the byte, reached there by
+disassembling the routine rather than by counting a region. The logic device window holds **5939 used
+bytes** of 16384, so something is stored where the client names one; what it is stays unread. The
+closure behind both is the page: all 6627 used bytes of it fall inside a region named above, and the
+map covers a third of the page, so the rest is erased flash.
 
 The last row is the awkward one. `0x3D0000` sits inside the `[0x040000, 0x400000)` region the
 same class declares as user configuration, so the usable config region must stop below it. A
@@ -951,7 +960,11 @@ is demonstrably live on a 600. `docs/findings.md` section 90.
 
 * Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area
   pointer on arch 14 would have to point. Section 47 found the writer is arch 12 only, so this
-  says the region exists on arch 14 even though nothing writes it.
+  said the region exists on arch 14 even though nothing writes it. **It is off this list since
+  section 206**: every arch 14 safe mode container in the corpus declares exactly `0x0E0000` to
+  `0x100000` in base slot 2. The arch 14 user configurations declare `0x1E0000` to `0x200000`
+  instead, the same 128 KiB at the top of the 2 MiB part rather than of one half the size, and
+  which a remote wants is open.
 * **The pointer table starts at `0x08` on arch 7**, not `0x0B`. The client's three per
   architecture offsets are all `table_start + 1 + 4 * slot`, exactly, for slots 0, 2 and 3, which
   gives 11 on arch 8, 9, 12 and 14 and 8 on arch 7. There is no arch 7 sample here, so this is a
@@ -1259,3 +1272,13 @@ rule and the template disagree or the skin never shipped, and **no conclusion ab
 The verbatim extraction, with Logitech's identifiers, is `software/classic/PROTOCOL-CONSTANTS.md`
 in the private lab. That directory is not published and does not become published by this
 document existing.
+
+**Read that file before opening a class in the client's HID layer.** On 28 August 2026 a session
+extracted all seven per architecture tables again, from the same source, and got the same numbers;
+section 206 is the write up and the register now carries the same pointer. The whole of the HID
+layer's constants are already here, so a fresh reading of them is a fresh reading of this page.
+
+**And this page is checked now rather than transcribed.** `tests/test_host_client.py` recomputes the
+seven tables from the client's source each run and asserts eleven of their claims against the values
+this project derived independently, so a re-mirror that moved a number fails rather than quietly
+ageing. That was the one thing the ledger never had.

@@ -1459,7 +1459,17 @@ never crossed, and it says the client is an **executor and not a builder**: read
 and firmware update are all local and work today, and the device database, the interface and the
 **configuration compiler** were server side and are gone.
 
-**Two squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
+**Three squares dug on 28 August 2026, and the third is a warning.** Section 206 went into the same
+client's HID layer, extracted its seven per architecture constant tables, and found that all of them
+had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
+on its own row, and was not read. So the excavation's own instrument works and the discipline of using
+it does not yet, which is the fourth time this project has re-derived something the lab already held.
+The register's rows now point at the extraction from both directions, and what the afternoon did buy
+is worth having: the ledger of client sourced numbers had **no executable check at all** and has one
+now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab
+and the arch 14 logging region corroborated by every arch 14 safe mode container in the corpus.
+
+**Two more squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
 takes the `ir-learn` tag as far as this client goes: the host measures a capture, merges it and uploads
 it, and the only test it applies is that the signal lasts between 10 milliseconds and 1 second.
 Everything else, including whether to keep the capture and how to store it, came back from the server.

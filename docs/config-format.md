@@ -462,6 +462,12 @@ above the config's `end_addr`, and `limit` is always a round flash boundary: `0x
 | 525 | 9 | 8192 | `0x070000` | `0x080000` |
 | all four 880s | 8 | 15360 | `0x1E0000` | `0x1FE000` |
 
+**Logitech's own client declares the arch 14 region and it is the safe mode row exactly**, section
+206: its per architecture constants give a user logging base of `0x0E0000` and a size of `0x20000`,
+which is `0x0E0000` to `0x100000`. So that row is corroborated by a route with nothing in common with
+the corpus. It says nothing about the user configuration row one megabyte above it, and which of the
+two a remote wants is open; a writer reproducing this section copies what the input declared.
+
 The arch 12 firmware scans the region at boot, at `0x2DB4C`, for the last byte that is not `0xFF`,
 and appends after it, so the write position is recovered from the erased pattern rather than
 stored. The append routine at `0x2DC0A` writes one byte per call, refuses an address outside

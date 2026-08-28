@@ -26,6 +26,7 @@ import re
 import unittest
 
 import lab
+from harmony import gspm
 
 #: Every service the client binds a URL for, with how many operations it declares on each. Both halves
 #: are asserted: a service with no operations is a real entry, since the client builds those calls by
@@ -722,6 +723,382 @@ class TheClassicClientMeasuresACaptureAndJudgesNothing(unittest.TestCase):
             with self.subTest(word=word):
                 naming = [p for p in sources if word in self.read(p)]
                 self.assertEqual(naming, [], 'files naming %r' % word)
+
+
+#: The per architecture constant classes in the classic client's HID layer, section 206. One file per
+#: architecture, each a list of `private static final int`. They are `private` and nothing outside them
+#: names them, because the compiler inlined every use, so what survives decompilation is a declaration
+#: list: a table of names against values and no code. That is why it reads as documentation.
+PROTOCOL_CLASSES = ('software', 'classic', 'src', 'hidcommands', 'com', 'logitech', 'harmony',
+                    'hid', 'core')
+#: Which remote each of the seven is about. The four this project reads are the four it can check.
+PROTOCOL_ARCHITECTURES = (2, 3, 7, 8, 9, 12, 14)
+
+
+def protocol_constants(architecture):
+    """Every `static final int` of one Protocol class, as a name to value mapping.
+
+    Recomputed from the source each run rather than transcribed, for the reason the module docstring
+    gives: a table typed out once is a table nobody can check against the thing it came from.
+    """
+    if not lab.LAB:
+        return None
+    path = os.path.join(lab.LAB, *PROTOCOL_CLASSES)
+    path = os.path.join(path, 'Protocol%d.java' % architecture)
+    if not os.path.isfile(path):
+        return None
+    with io.open(path, encoding='utf-8', errors='replace') as fh:
+        text = fh.read()
+    found = {}
+    for name, value in re.findall(
+            r'static final int ([A-Z_0-9]+)\s*=\s*(0[xX][0-9a-fA-F]+|-?\d+)', text):
+        found[name] = int(value, 0)
+    return found
+
+
+class TheClassicClientCarriesAPerArchitectureConstantTable(unittest.TestCase):
+    """The seven per architecture tables, recomputed and checked against our own derivations.
+
+    **These tables are not a new find.** They were extracted on 9 August 2026 and `docs/host-client.md`
+    is built on them; section 206 is the day a later session dug them up again from the same source
+    and had to be told so by its own register. What that session did leave behind is this class, which
+    is the thing the ledger never had: an executable check. Every number below is one this project
+    derived on its own, from the firmware or from the corpus, and the client is the second route.
+
+    Client sourced under decision 2, so the firmware and the corpus stay the authority. Nothing of
+    Logitech's code is reproduced: what travels is numbers this repository already publishes.
+    """
+
+    def setUp(self):
+        self.tables = {}
+        for architecture in PROTOCOL_ARCHITECTURES:
+            table = protocol_constants(architecture)
+            if table is None:
+                self.skipTest('no decompiled classic client in the lab')
+            self.tables[architecture] = table
+
+    def test_all_seven_tables_are_present_and_carry_constants(self):
+        """The control. Without it every assertion below passes on an empty mapping."""
+        self.assertEqual(sorted(self.tables), sorted(PROTOCOL_ARCHITECTURES))
+        sizes = {a: len(t) for a, t in self.tables.items()}
+        self.assertEqual(sizes, {2: 26, 3: 14, 7: 13, 8: 29, 9: 26, 12: 43, 14: 54})
+
+    def test_the_pointer_table_starts_where_section_20_corrected_it_to(self):
+        """`0x0B`, not `0x0C`, on every architecture whose table states it.
+
+        Section 20's correction, which both parsers here had wrong: an item is a spare byte and a
+        three byte address, so the table begins one byte earlier than a `u32` reading suggests.
+        """
+        for architecture in (8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['ADDRESS_MAGIC_SECTION_START'], gspm.SECTION_TABLE_OFFSET)
+                self.assertEqual(table['ITEM_SIZE'], gspm.SECTION_ITEM_SIZE)
+                self.assertEqual(table['POINTER_SIZE'], 3)
+
+    def test_the_section_count_is_the_pointer_count_this_project_reads(self):
+        """22 on the Harmony One and 20 on the other three, which is what the containers carry."""
+        counts = {a: self.tables[a]['NUM_SECTIONS'] for a in (7, 8, 9, 12, 14)}
+        self.assertEqual(counts, {7: 20, 8: 20, 9: 20, 12: 22, 14: 20})
+
+    def test_the_trailer_offset_closes_on_the_table_it_follows(self):
+        """`section start + 4 * count`, exactly, wherever both ends are stated.
+
+        The same arithmetic that made section 20's reading believable, arriving from the other side:
+        it is the vendor's own two numbers agreeing with the vendor's own third.
+        """
+        for architecture in (8, 9, 12):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(
+                    table['ADDRESS_MAGIC_TRAILER'],
+                    table['ADDRESS_MAGIC_SECTION_START'] + table['ITEM_SIZE'] * table['NUM_SECTIONS'])
+
+    def test_the_first_four_sections_carry_the_vendors_own_names(self):
+        """Base slots 0 to 3, named identically on all five architectures that have a section table.
+
+        `SECTION_FLASH_STORAGE` is base slot 2, which section 47 read as the log area from the
+        firmware and named for itself; `SECTION_CLOCK` is base slot 3.
+        """
+        for architecture in (7, 8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['SECTION_DATA'], 0)
+                self.assertEqual(table['SECTION_COMPILE_INFORMATION'], 1)
+                self.assertEqual(table['SECTION_FLASH_STORAGE'], 2)
+                self.assertEqual(table['SECTION_CLOCK'], 3)
+
+    def test_the_clock_records_frame_is_the_one_section_21_derived(self):
+        """`0xADDF` and `0xEFBF`, which this project found by searching for a repeated pair."""
+        header = int.from_bytes(gspm.CLOCK_COOKIE, 'little')
+        trail = int.from_bytes(gspm.CLOCK_END, 'little')
+        for architecture in (8, 12):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_HEADER'], header)
+                self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_TRAIL'], trail)
+
+    def test_the_oldest_generation_frames_its_clock_one_less(self):
+        """`0xADDE` and `0xEFBE` on the second architecture, which is a generation this project holds
+        nothing else on. The pair moved by one at some point and the corpus cannot see it, because no
+        container here is older than arch 8."""
+        table = self.tables[2]
+        self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_HEADER'], 0xADDE)
+        self.assertEqual(table['CONFIGURATION_BASE_DATE_MAGIC_TRAIL'], 0xEFBE)
+
+    def test_the_magic_header_word_is_the_cookies_first_two_bytes_except_on_one_architecture(self):
+        """And the exception is asserted rather than explained away.
+
+        Arch 8 is `TP` of `TPTP`, arch 9 is `AH` of `AHCM`, arch 7 is `BM`, which corroborates
+        concordance's `BMBM` for a generation nobody here has a sample of. Arch 12 and arch 14 both
+        carry `GSPM` and their words are `PM` and `QM`, so the rule does not hold there and what the
+        client is matching on those two is unread.
+        """
+        pairs = {a: self.tables[a]['MAGIC_HEADER'].to_bytes(2, 'little')
+                 for a in (7, 8, 9, 12, 14)}
+        self.assertEqual(pairs[8], b'TP')
+        self.assertEqual(pairs[9], b'AH')
+        self.assertEqual(pairs[7], b'BM')
+        self.assertEqual(pairs[12], b'PM')
+        self.assertEqual(pairs[14], b'QM')
+
+    def test_three_named_offsets_are_the_item_layout_stated_a_fourth_time(self):
+        """`CONFIGURATION_DATA`, `..._EVENT` and `..._BASEDATE` are base slots 0, 2 and 3's address
+        fields, each one byte past its item's start.
+
+        That `+ 1` is the spare byte, so these three constants restate section 20's
+        `{ u8 spare; u24 address }` without ever saying so, and they restate it on the one
+        architecture whose table does not begin at `0x0B`: arch 7's begins at 8, which is what its
+        trailer implies, and all three offsets follow.
+        """
+        for architecture in (7, 8, 9, 12, 14):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                start = table.get('ADDRESS_MAGIC_SECTION_START')
+                if start is None:
+                    # Arch 7 states no section start. Recover it from the trailer, which is the only
+                    # other end of the same table, and the three offsets then have to agree with it.
+                    start = table['ADDRESS_MAGIC_TRAILER'] - table['ITEM_SIZE'] * table['NUM_SECTIONS']
+                    self.assertEqual(start, 8)
+                item = table['ITEM_SIZE']
+                self.assertEqual(table['CONFIGURATION_DATA_OFFSET'], start + item * 0 + 1)
+                self.assertEqual(table['CONFIGURATION_EVENT_OFFSET'], start + item * 2 + 1)
+                self.assertEqual(table['CONFIGURATION_BASEDATE_OFFSET'], start + item * 3 + 1)
+
+    def test_the_two_oldest_generations_have_no_section_table_at_all(self):
+        """Arch 2 and arch 3 name no sections and no item size, and their three offsets are not four
+        apart, so the pointer table is something the format grew rather than something it had."""
+        for architecture in (2, 3):
+            with self.subTest(architecture=architecture):
+                table = self.tables[architecture]
+                self.assertNotIn('NUM_SECTIONS', table)
+                self.assertNotIn('ITEM_SIZE', table)
+                self.assertNotIn('SECTION_CLOCK', table)
+
+    def test_the_configuration_bases_are_the_ones_in_the_key_facts_table(self):
+        """`0x040000` on the Harmony One and `0x030000` on the Harmony 600 and 700."""
+        self.assertEqual(self.tables[12]['CONFIGURATION_BASE'], 0x040000)
+        self.assertEqual(self.tables[14]['CONFIGURATION_BASE'], 0x030000)
+
+    def test_the_stored_application_is_where_the_write_rail_puts_its_ceiling(self):
+        """`0x3D0000` for `0x20000`, inside the nominally writable configuration region.
+
+        That overlap is the reason `packages/usb` refuses an erase above `0x3D0000` rather than up to
+        the end of the part, and it was adopted from Logitech's host software with no firmware behind
+        it. This is a second, independent statement of the same two numbers.
+        """
+        table = self.tables[12]
+        self.assertEqual(table['CODE_NORMAL_APP_ADDRESS'], 0x3D0000)
+        self.assertEqual(table['CODE_NORMAL_APP_SIZE'], 0x20000)
+        self.assertEqual(table['CODE_USER_CONFIGURATION_ADDRESS'], 0x040000)
+        self.assertEqual(table['CODE_USER_CONFIGURATION_SIZE'], 0x400000 - 0x040000)
+
+    def test_the_harmony_525s_two_firmware_images_are_where_the_bench_found_them(self):
+        """`0x800000` and `0x810000`, read off the remote on 8 and 11 August 2026, section 118.
+
+        The safe mode image and the application, both identified from their own headers at the time
+        and then confirmed by a stranded remote reporting the safe mode one's version accessors.
+        """
+        table = self.tables[9]
+        self.assertEqual(table['CODE_SAFEMODE_ADDRESS'], 0x800000)
+        self.assertEqual(table['CODE_APP_FIRMWARE_ADDRESS'], 0x810000)
+        self.assertEqual(table['CODE_BOOT_ONLY_ADDRESS'], 0x000000)
+        self.assertEqual(table['CODE_BOOT_ONLY_SIZE'], 0x1000)
+
+    def test_the_harmony_525s_eeprom_window_is_the_one_section_118_measured(self):
+        """Top byte `0x20`, which that section read as 256 bytes of EEPROM inside the address space
+        the protocol calls flash. The client calls the same number a virtual EEPROM address."""
+        self.assertEqual(self.tables[9]['VIRTUAL_PIC_EEPROM_ADDRESS'], 0x200000)
+
+
+class TheThreeRegionsTheLedgerCouldNotExplain(unittest.TestCase):
+    """Section 206: two of the client's unexplained arch 12 regions, and its arch 14 logging region.
+
+    All three sat in `docs/host-client.md` as client sourced and unconfirmed for nineteen days while
+    the bytes that settle them were already in the lab. None of this needed a remote, a disassembler
+    or a service call, which is the whole point of recording it.
+    """
+
+    #: Internal program page `0xFF` covers `0x010000` to `0x020000`, so an address in that page is at
+    #: `address - PAGE_FF_BASE` of the image.
+    PAGE_FF_BASE = 0x010000
+    #: What the client calls a support library, and what section 191 read as the external flash
+    #: programmer the application calls at `0x01E018`.
+    PIC_LIBRARY = (0x01E000, 0x1000)
+    #: What the client calls a programmable logic device image, which is a claim about the hardware
+    #: rather than about the memory map: nothing else here suggests a Harmony One carries one.
+    CPLD_IMAGE = (0x010000, 0x4000)
+    #: Section 191's figure, from the other end: the resident programmer is 601 bytes.
+    PROGRAMMER_BYTES = 601
+
+    def setUp(self):
+        names = ('one_page_ff', 'one_spare_page_ff', 'h600_page_ff')
+        # Guard up front rather than per image, so a half present lab skips the whole claim instead
+        # of asserting a count over whichever units happen to be there.
+        lab.require(*names)
+        self.pages = {name: lab.load(name) for name in names}
+
+    #: Every region the client names in this page, address and size. `PIC_CONFIG` is the part's own
+    #: configuration words, which are a PIC18 fact rather than a Logitech one and sit at the top of
+    #: program memory on this family.
+    NAMED_REGIONS = ((0x010000, 0x4000), (0x01E000, 0x1000), (0x01F400, 0x400),
+                     (0x01F800, 0x400), (0x01FFF8, 8))
+
+    def named(self, address, shift=0):
+        """Whether an address falls inside a region the client names."""
+        return any(start + shift <= address < start + shift + size
+                   for start, size in self.NAMED_REGIONS)
+
+    def used(self, image, address, size):
+        """How many bytes of a region are not erased flash."""
+        start = address - self.PAGE_FF_BASE
+        return sum(1 for b in image[start:start + size] if b != 0xFF)
+
+    def test_the_support_library_holds_exactly_section_191s_programmer(self):
+        """601 bytes, on both Harmony Ones, which is the figure that section read off the code.
+
+        Two routes with nothing in common: section 191 measured the routine by disassembling it and
+        matching it against the copy inside the safe mode image, and this counts the bytes of the
+        region the client names. So `a support library` is not a lead any more, it is the external
+        flash programmer, and the row in the ledger can say so.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                self.assertEqual(self.used(self.pages[name], *self.PIC_LIBRARY),
+                                 self.PROGRAMMER_BYTES)
+
+    def test_the_programmable_logic_image_is_populated_rather_than_reserved(self):
+        """5939 bytes of 16384 on both Harmony Ones, so the region is used and not merely declared.
+
+        That does not read the image and does not confirm what the device is. It moves the claim from
+        `the client says there is a CPLD` to `there is an image where the client says one is`, which
+        is the difference between a name and a region nobody has looked in.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                self.assertEqual(self.used(self.pages[name], *self.CPLD_IMAGE), 5939)
+
+    def test_every_used_byte_of_a_harmony_ones_second_internal_page_is_named(self):
+        """6627 bytes on each of the two units, and every one inside a region the client names.
+
+        This is the closure, and it is stronger than either count above, because a wrong map does not
+        merely give a wrong number here, it leaves bytes outside every region. The page is the logic
+        device image, then forty kilobytes of erased flash, then the programmer, then the per unit
+        settings section 150 read, then the part's own configuration words at the very top.
+
+        The Harmony 600 is deliberately not in this test. Its application firmware lives in internal
+        flash and occupies the same page, so there is nothing for a map of empty space to close on.
+        That is the per architecture difference rather than a gap in the evidence: on a Harmony One
+        the configuration and the application are both in external flash, which is what leaves this
+        page free enough to be accounted for.
+        """
+        for name in ('one_page_ff', 'one_spare_page_ff'):
+            with self.subTest(unit=name):
+                image = self.pages[name]
+                used = [self.PAGE_FF_BASE + i for i, b in enumerate(image) if b != 0xFF]
+                self.assertEqual(len(used), 6627)
+                outside = [a for a in used if not self.named(a)]
+                self.assertEqual(outside, [])
+
+    def test_the_map_covers_a_third_of_the_page_and_holds_all_of_its_content(self):
+        """The control, and it is about width rather than position.
+
+        A map that named the whole page would close on anything, so the question is how much of the
+        page it leaves out: 22536 bytes of 65536, a little over a third, and the other 43000 hold not
+        one byte that is not erased flash. Shifting the map instead is the weaker control and was
+        tried first: the logic device region alone is 16 KiB, so a shift of `0x100` still covers all
+        but 551 of the used bytes, which would read as a near miss rather than a refutation.
+        """
+        covered = sum(size for _, size in self.NAMED_REGIONS)
+        self.assertEqual(covered, 22536)
+        image = self.pages['one_page_ff']
+        unnamed_and_used = [i for i, b in enumerate(image)
+                            if b != 0xFF and not self.named(self.PAGE_FF_BASE + i)]
+        self.assertEqual(unnamed_and_used, [])
+        self.assertEqual(len(image) - covered, 65534 - 22536)
+
+class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
+    """Section 206: a client sourced number the corpus turns out to state, exactly.
+
+    `docs/host-client.md` listed `USERLOGGING_BASE` as a smaller lead: arch 14 declares a 128 KiB
+    logging region at `0x0E0000`, and since section 47 found the log area's writer is arch 12 only,
+    all that could be said was that the region exists on paper. Every arch 14 safe mode container in
+    the corpus declares exactly that range in base slot 2, so it comes off the unconfirmed ledger.
+
+    The user configs of the same architecture declare a range one megabyte higher, which is the top
+    128 KiB of a part twice the size, and the two are recorded side by side rather than reconciled.
+    """
+
+    #: `USERLOGGING_BASE` and `USERLOGGING_SIZE` from the arch 14 table.
+    CLIENT_REGION = (0x0E0000, 0x20000)
+    #: The three arch 14 containers Logitech shipped inside firmware, which are the ones that agree.
+    SAFE_MODE = ('h600_safemode_gspm', 'h700_gspm', 'h650_safemode_gspm')
+    #: The three arch 14 configurations compiled for a remote, which declare the higher range.
+    USER_CONFIGS = ('h600_config', 'h700_config', 'h700_config_2')
+
+    def setUp(self):
+        table = protocol_constants(14)
+        if table is None:
+            self.skipTest('no decompiled classic client in the lab')
+        self.table = table
+        lab.require(*(self.SAFE_MODE + self.USER_CONFIGS))
+
+    def declared(self, name):
+        """Base slot 2's start and limit, as the container states them."""
+        container = gspm.parse(lab.load(name))
+        raw = gspm.arch_slot(container.architecture, gspm.LOG_SLOT)
+        section = container.sections[raw]
+        blob = container.blob
+        at = section.address - container.flash_base
+        # Eight bytes on arch 14: a u16 capacity, then two three byte addresses.
+        start = int.from_bytes(blob[at + 2:at + 5], 'little')
+        limit = int.from_bytes(blob[at + 5:at + 8], 'little')
+        return start, limit
+
+    def test_the_client_states_the_region_the_shipped_containers_declare(self):
+        """`0x0E0000` to `0x100000`, on all three, against the client's base and size."""
+        base, size = self.CLIENT_REGION
+        self.assertEqual(self.table['USERLOGGING_BASE'], base)
+        self.assertEqual(self.table['USERLOGGING_SIZE'], size)
+        for name in self.SAFE_MODE:
+            with self.subTest(container=name):
+                self.assertEqual(self.declared(name), (base, base + size))
+
+    def test_a_compiled_configuration_puts_it_a_megabyte_higher(self):
+        """`0x1E0000` to `0x200000`, which is the same 128 KiB at the top of a 2 MiB part.
+
+        Section 192 read arch 14's external medium as ending at `0x200000`, so a compiled config
+        reserves the top of the part it is actually on and the shipped containers reserve the top of
+        one half that size. Which of the two a given remote wants is not established here, and it
+        matters to a writer, because base slot 2 is a field a save would have to reproduce.
+        """
+        base, size = self.CLIENT_REGION
+        for name in self.USER_CONFIGS:
+            with self.subTest(container=name):
+                start, limit = self.declared(name)
+                self.assertEqual((start, limit), (0x1E0000, 0x200000))
+                self.assertEqual(limit - start, size)
+                self.assertEqual(start - base, 0x100000)
 
 
 if __name__ == '__main__':

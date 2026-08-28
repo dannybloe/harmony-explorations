@@ -652,6 +652,16 @@ does not name. So "did we already know this" is a grep now rather than a memory 
 the point: an expensive check gets skipped under momentum, so making it cheap is the only structural
 fix. What is left of step 9 is the digging, in tag order.
 
+**Grepping it is not the same as reading it, and section 206 is the fifth occurrence.** That afternoon
+re-extracted all seven of the classic client's per architecture constant tables and got numbers
+`docs/host-client.md` had carried since 9 August, from a lab file the register names on its own row
+with the words "`docs/host-client.md` is built on it". **So the instrument works and using it is the
+part that fails**, every time under momentum, and the trigger to attach it to is the act of opening an
+artefact rather than the start of a topic. Grep the register for the directory **before** the first
+file in it is read. What the afternoon did buy is real and is the shape to aim for when this happens
+again: the ledger of client sourced numbers had no executable check at all and has one now, and three
+of its rows moved on bytes that were already here.
+
 **Its first square paid for it.** `software/classic/SERVER-DEPENDENCY.md`, 278 lines from 7 August
 2026, never crossed: the client is an **executor and not a builder**, so reading, writing, learning and
 firmware update are local and still work, while the device database, the interface and the
@@ -2010,7 +2020,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 200 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 206 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

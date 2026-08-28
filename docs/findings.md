@@ -26771,3 +26771,98 @@ now the only genuinely missing piece rather than one of several.
 The negative worth recording: **nothing in the classic client can turn a captured signal into a
 configuration record.** That is consistent with section 204, and it is the same boundary seen from a
 different direction, since a record needs a container and the client has never parsed one.
+
+## 206. The excavation dug a square that was already mined, and three ledger rows fell out anyway
+
+*28 August 2026. The finding is the process failure and the three results are what it cost to notice.*
+
+The excavation reached `software/classic/src/hidcommands/`, found seven per architecture constant
+classes, and spent an afternoon extracting them: the container framing, the section counts, the flash
+maps of five architectures, two generations older than anything this project holds. Every one of those
+numbers was already in `docs/host-client.md`, extracted on **9 August 2026**, and the lab's own
+`software/classic/PROTOCOL-CONSTANTS.md` is the verbatim source that document says it is built on.
+
+`reference/lab-register.md` names that extraction, on its own row, with the words "`docs/host-client.md`
+is built on it". The register is the instrument decision 12 created so that "do we already know this"
+is a grep rather than a memory exercise, and it worked; it was simply not consulted. So the failure is
+not a gap in the site's catalogue, it is a session digging before checking, which is the exact behaviour
+the decision was taken against. Decision 12 was itself taken after the fourth occurrence, so
+this is the fifth.
+
+**The cheap guard is per square rather than per session.** The register's row for `software/classic/src/`
+said the four notes' class references "all point in here" and marked it `surveyed`, which reads as
+unopened. It now names the extraction as the thing to read before opening a class, because the next
+session will arrive with the same momentum.
+
+### What the afternoon did leave behind, and the first is worth more than the other two
+
+**The ledger had no executable check at all.** `docs/host-client.md` is a page of transcribed constants,
+and under the four places rule a transcription with no test is a copy of a fact that can rot in silence:
+a re-mirror, a typing slip or a wrong architecture would be invisible. `tests/test_host_client.py` now
+recomputes all seven tables from the client's own source and asserts them against this repository's own
+derived values. Eleven claims, and every one of them something derived here first:
+
+| what the client states | what it is checked against |
+|---|---|
+| section start 11, item size 4, pointer size 3 | `gspm.SECTION_TABLE_OFFSET` and `gspm.SECTION_ITEM_SIZE`, section 20 |
+| 20, 20, 22, 20 sections | the pointer counts the containers carry |
+| trailer at 91 and 99 | `section start + 4 * count`, the vendor's own two numbers against its third |
+| the three named offsets | `section start + 4 * slot + 1`, the spare byte, on five architectures |
+| `0xADDF` and `0xEFBF` | `gspm.CLOCK_COOKIE` and `gspm.CLOCK_END`, section 21 |
+| the safe mode image at `0x800000`, the application at `0x810000` | read off the bench Harmony 525 twice, section 118 |
+| the EEPROM at `0x200000` | the arch 9 window table, section 118 |
+| the stored application at `0x3D0000` for `0x20000` | the write rail's ceiling |
+
+The item layout one is the pleasing one. Three constants named for what they point at, `data`, `event`
+and `basedate`, are base slots 0, 2 and 3's **address** fields, each one byte past its item's start. That
+`+ 1` is the spare byte, so those three restate section 20's `{ u8 spare; u24 address }` without saying
+so, and they restate it on the one architecture whose table does not begin at `0x0B`: arch 7's begins at
+8, which its trailer implies, and all three offsets follow.
+
+### Two of the arch 12 regions the ledger could not explain, settled with bytes already in the lab
+
+`docs/host-client.md` listed a support library at `0xFFE000` and a programmable logic device image at
+`0xFF0000` as **new, and unexplained here**. Both are internal program page `0xFF`, which every bench
+remote had read and verified against its backup months ago, so neither needed a remote, a disassembler
+or a service call.
+
+The support library window holds **601 used bytes** on both Harmony Ones. That is section 191's external
+flash programmer to the byte, measured there by disassembling the routine and matching it against the
+copy inside the safe mode image. Two routes with nothing in common, so the row is not a lead any more.
+
+The logic device window holds **5939 used bytes** of 16384, so there is an image where the client says
+one is. That does not read it and does not confirm what the part is; it moves the claim from "the client
+names a CPLD" to "something is stored where the client names one".
+
+**The closure is the page rather than either count.** Every one of the 6627 used bytes of that page, on
+both Harmony Ones, falls inside a region the client names, and the map covers 22536 bytes of 65536, so
+the other 43000 hold nothing but erased flash. A wrong map does not give a wrong number here, it leaves
+bytes uncovered.
+
+Two things the control had to be corrected into. Shifting the map was tried first and is too blunt,
+because one region is 16 KiB and a shift of `0x100` still covers all but 551 bytes, which reads as a near
+miss rather than a refutation. And the Harmony 600 is not the control it looked like: its application
+firmware lives in internal flash and occupies the same page, so there is nothing there for a map of empty
+space to close on. Its library window is not empty either, 100 bytes at `0x01EC00` that are a short table
+of ascending indices against byte pairs and are **not** the programmer and are unread.
+
+### And one client sourced number the corpus states exactly
+
+Arch 14 declares a user logging region at `0x0E0000` of 128 KiB. Section 47 found the log area's writer
+is arch 12 only, so all the ledger could say was that the region exists on paper.
+
+Every arch 14 **safe mode** container in the corpus declares exactly that range in base slot 2,
+`0x0E0000` to `0x100000`, on all three. So it comes off the unconfirmed ledger, corroborated by a route
+with nothing in common with a decompiler.
+
+The arch 14 **user configurations** declare `0x1E0000` to `0x200000` instead: the same 128 KiB, one
+megabyte higher, which is the top of the 2 MiB part section 192 read as arch 14's whole external medium.
+So the shipped containers reserve the top of a part half that size. Which of the two a given remote wants
+is not established, and it matters to a writer, because base slot 2 is a field a save has to reproduce.
+
+### What is not in this section
+
+The per unit settings blocks at `0x01F400` are **section 150** and were read on 22 August 2026, from the
+same tables. Re-measuring them was part of the same afternoon and produced the same answer, which is how
+the duplication was finally noticed: the second census of a block matched a table this repository had
+already published, down to the one populated byte of the power settings record.
