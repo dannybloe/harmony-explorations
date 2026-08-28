@@ -635,7 +635,15 @@ Two consequences for a session working here. A find in the lab is **not** landed
 ordinary route into this repository, and saying so in a lab note is the state the decision forbids. And
 an artefact whose value is not yet apparent is the one most worth cataloguing, because whoever needs it
 later will not know to go looking. Step 9 in `docs/roadmap.md` is the excavation and the register it
-produces.
+produces, and `docs/lab-excavation.md` is the method.
+
+**A catalogue is not a claim, and only a claim needs a test.** Taken by Danny on 28 August 2026,
+against the reading recorded here that everything out of the lab takes the four places. A claim says
+how a remote behaves and can be wrong, so it keeps the full route. A catalogue says what exists and
+where, it can only be incomplete, and **requiring a test for a row is what keeps the site
+unexcavated**, since writing down "their client calls these 308 operations, this one probably feeds
+the device wizard" would then cost more than leaving the knowledge in the lab. A marked guess is a
+useful row and an unmarked one is not.
 
 `tools/corpus.py` inventories the dumps and, importantly, reports which ones have no
 description recorded. A dump whose contributor has moved on is far harder to label later than one
@@ -997,6 +1005,11 @@ docs/adding-a-device.md         THE checklist for one goal: pick an appliance ou
                                 `writeFlash` still throws, now on the medium rather than the
                                 protocol, whether the firmware erases before it programs and
                                 whether a host must pace its packets
+docs/lab-excavation.md          the method for step 9: the seventeen things worth finding in the lab as
+                                greppable tags, the register's schema, and the loop per square. Its
+                                load bearing rule is that **a catalogue is not a claim and only a
+                                claim needs a test**, taken by Danny on 28 August 2026, because
+                                demanding a test per row is what keeps the site unexcavated
 docs/how-a-harmony-works.md     the operating concept: activities, device mode, the Devices key, what
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes

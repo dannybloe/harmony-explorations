@@ -1406,10 +1406,31 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 | `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
 | `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed |
 
-**The deliverable is a register in this repository**, one row per artefact: what it is, where it came
-from, what has been extracted into a finding or a test, and what has not. `reference/checksums.md`
-is the model for the tone and `tools/corpus.py` for the idea, since it already reports which dumps
-have no description recorded. The register covers the whole site, not the binaries.
+**`docs/lab-excavation.md` is the method**, written on 28 August 2026 with Danny: the seventeen
+things we are looking for as greppable tags, the register's schema, the five statuses, and the loop
+per square. Three decisions in it are worth knowing without opening it.
+
+**The unit is the artefact**, one mirrored client or one firmware package or one contributor's dump,
+and both alternatives were rejected by measurement: per file is 12506 rows and unfinishable, and per
+top level directory is the nine row grid above, which is useless, since section 197's own square was
+already named in it.
+
+**A catalogue is not a claim, and only a claim needs a test.** This is a relaxation of this project's
+own instincts, taken by Danny on 28 August 2026, and the reason is that the alternative is what keeps
+the site unexcavated: if writing down "their client calls these 308 operations, this one probably
+feeds the device wizard" costs a finding and a regression test, nobody writes it and the knowledge
+stays in the lab. A catalogue can only be incomplete, not wrong, and a marked guess is a useful row.
+What is unchanged is that a claim this project **depends on** still takes the four places.
+
+**Six of the seventeen targets are FreeHarmony's**, and the reason is stronger than product
+inspiration: their interface is a labelled view of the config format, so an inventory of their
+settings is a semantic key for bytes already read and not yet named.
+
+**The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
+artefact: what it is, where it came from, what is inside, and a status. It does not exist yet.
+`reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
+already reports which dumps have no description recorded. The register covers the whole site, not
+the binaries, and the catalogue pages beside it hold the substance.
 
 **Definition of done, so this cannot be declared finished by feeling.** Every path in the lab appears
 in the register with a status; a test walks the lab and fails on an unregistered artefact, skipping
@@ -1419,8 +1440,9 @@ the mechanism survive the session that builds it, and it is the half that would 
 
 **Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
 value is in being able to say so with a row rather than a shrug. And some of it will answer a
-question currently listed as open, which is the outcome the decision was taken for; each such answer
-takes the ordinary route, a hypothesis under decision 7 and then the four places.
+question currently listed as open, which is the outcome the decision was taken for; **that** kind of
+answer takes the ordinary route, a hypothesis under decision 7 and then the four places, where a
+catalogue row does not.
 
 **One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
 already governs: a fact from it is marked as client sourced, the firmware stays the authority where
