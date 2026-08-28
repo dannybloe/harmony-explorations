@@ -26249,6 +26249,35 @@ byte, and a real value in the sequence field rather than zero. The cheap instrum
 **Harmony 350**, because its firmware is the one image this project holds for the family, so its own
 open handler can be read rather than guessed at.
 
+### The refusal names the framing, and the templates' magic offsets fall out of it
+
+**A parameter is length prefixed**, one byte of length then that many bytes, and a string carries no
+terminator because the length already says where it ends. The first reading here was NUL termination,
+taken because the firmware compares an incoming name against a pool of NUL terminated strings, and it
+is wrong.
+
+**The refusal is what says so.** `ff 01 ff 01 01 0b` is service, command, the error marker, **one
+parameter**, and then `01 0b`, which under this rule is a length of one and a value of `0x0b`. Nothing
+else explains a stated parameter count of 1 followed by two bytes.
+
+**And the closure is stronger than the refusal**, because it uses numbers written years before any of
+this. Logitech's templates read an open's reply at two offsets and never say why: the handle at
+position 5 and the size at position 7, the size four bytes wide. Under length prefixed parameters
+those are arithmetic. Count at 3, a length byte at 4, a one byte handle at 5, a length byte at 6, four
+size bytes at 7. Both offsets and the width come out, and no other framing this project tried produces
+them: NUL termination puts the handle at 4 and the size wherever the path's length leaves it, which is
+per path and therefore cannot be a constant in a template at all.
+
+That last point is the one to keep. **A protocol whose reply is read at fixed offsets cannot have
+variable length fields ahead of them**, so the templates' own constants were evidence about the
+framing the whole time, and the way to have seen it sooner was to ask why an offset was a constant.
+
+**Unconfirmed on hardware, and the reason is stated rather than hidden**: the Harmony Touch is in the
+silent state described above from the earlier attempts, so the corrected request has been sent to it
+and drew nothing, which measures the silence and not the framing. It needs the cable pulled and
+replaced before this can be tried, and until that happens the framing rests on the offset closure
+alone.
+
 ### The correction to section 197
 
 That section said the lab's own notes carried "the Harmony One's whole infrared learn session as four

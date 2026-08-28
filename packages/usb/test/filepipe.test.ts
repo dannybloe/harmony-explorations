@@ -71,7 +71,7 @@ function reply(command: number, fill: Record<number, number> = {}): Uint8Array {
 }
 
 describe('the request the file protocol sends', () => {
-  it('opens a path with a NUL terminated string and a mode', () => {
+  it('length prefixes every parameter, which is what a refusal taught us', () => {
     const report = encodeFileRequest(FILE_OPEN, [
       { kind: 'string', value: '/sys/sysinfo' },
       { kind: 'string', value: 'R' },
@@ -81,15 +81,31 @@ describe('the request the file protocol sends', () => {
     assert.equal(report[1], FILE_OPEN);
     assert.equal(report[2], 0, 'the sequence number');
     assert.equal(report[3], 2, 'two parameters');
-    assert.equal(Buffer.from(report.slice(4, 16)).toString('ascii'), '/sys/sysinfo');
-    assert.equal(report[16], 0, 'the path is terminated');
-    assert.equal(report[17], 0x52, 'the mode R');
-    assert.equal(report[18], 0, 'and it is terminated too');
+    assert.equal(report[4], 12, 'the path length, and no terminator');
+    assert.equal(Buffer.from(report.slice(5, 17)).toString('ascii'), '/sys/sysinfo');
+    assert.equal(report[17], 1, 'the mode is one byte long');
+    assert.equal(report[18], 0x52, 'and it is R');
+  });
+
+  it('puts a reply handle at position 5 and a size at 7, which is the closure', () => {
+    // The templates read those two offsets and never say why. Under this framing they are
+    // arithmetic: count at 3, a length at 4, a one byte handle at 5, a length at 6, four size
+    // bytes at 7. That agreement is the reason to believe the framing at all, so it is a test.
+    const asReply = encodeFileRequest(FILE_OPEN, [
+      { kind: 'byte', value: 0x0b },
+      { kind: 'dword', value: 0x000000ff },
+    ]);
+    assert.equal(asReply[4], 1, 'the handle parameter is one byte');
+    assert.equal(asReply[5], 0x0b, 'so the handle lands where the templates read it');
+    assert.equal(asReply[6], 4, 'the size parameter is four bytes');
+    assert.equal(asReply[7], 0x00, 'and the size lands where the templates read it');
+    assert.equal(asReply[10], 0xff);
   });
 
   it('writes a size big endian, which is the one byte order this protocol states', () => {
     const report = encodeFileRequest(FILE_READ, [{ kind: 'dword', value: 0x01020304 }]);
-    assert.deepEqual(Array.from(report.slice(4, 8)), [0x01, 0x02, 0x03, 0x04]);
+    assert.equal(report[4], 4, 'the length prefix');
+    assert.deepEqual(Array.from(report.slice(5, 9)), [0x01, 0x02, 0x03, 0x04]);
   });
 
   it('refuses parameters that do not fit rather than truncating them', () => {

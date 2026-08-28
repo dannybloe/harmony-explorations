@@ -99,16 +99,47 @@ export type FileParam =
 /**
  * Build one request report.
  *
- * **A string's framing is inferred and marked as such.** The templates say `type="string"` and no
- * more. NUL termination is the reading taken here, because the firmware compares an incoming name
- * against a pool of NUL terminated strings and carries no length field beside any of them. If it
- * turns out to be length prefixed, an open simply fails with the error marker set, which costs a
- * read and no state.
+ * **Every parameter is length prefixed**, one byte of length then that many bytes, and this was
+ * derived from a refusal rather than from the templates. The first reading here was NUL termination,
+ * on the grounds that the firmware compares an incoming name against a pool of NUL terminated
+ * strings; a Harmony Touch refused every open, and its refusal is what settles it. The reply is
+ * `ff 01 ff 01 01 0b`: service, command, the error marker, **one parameter**, then `01 0b`, which is
+ * a length of one and a value of `0x0b`.
+ *
+ * The closure is that the same rule turns the templates' magic offsets into arithmetic. They read an
+ * open's handle at position 5 and its size at position 7, and never say why. With a parameter count
+ * at 3, a length byte at 4, a one byte handle at 5, a length byte at 6 and four size bytes at 7,
+ * both offsets fall out and so does the size's stated width. No other framing this project tried
+ * produces those two numbers.
  *
  * Numbers are big endian, which is **not** inferred: an open's reply states its size big endian and
  * the templates say so with `int:BE`, and this protocol is the same way round in both directions in
  * every field whose order is stated.
  */
+/**
+ * The bytes of one parameter, without its length prefix.
+ *
+ * A string carries no terminator: the length says where it ends, so a NUL would be a byte of the
+ * value. That is the half of the framing correction that is easy to get wrong twice.
+ */
+function parameterBody(param: FileParam): Uint8Array {
+  switch (param.kind) {
+    case 'string':
+      return new Uint8Array(Buffer.from(param.value, 'ascii'));
+    case 'byte':
+      return new Uint8Array([param.value & 0xff]);
+    case 'word':
+      return new Uint8Array([(param.value >>> 8) & 0xff, param.value & 0xff]);
+    case 'dword':
+      return new Uint8Array([
+        (param.value >>> 24) & 0xff,
+        (param.value >>> 16) & 0xff,
+        (param.value >>> 8) & 0xff,
+        param.value & 0xff,
+      ]);
+  }
+}
+
 export function encodeFileRequest(
   command: number,
   params: readonly FileParam[],
@@ -128,25 +159,9 @@ export function encodeFileRequest(
     at += 1;
   };
   for (const param of params) {
-    switch (param.kind) {
-      case 'string':
-        for (const code of Buffer.from(param.value, 'ascii')) put(code);
-        put(0);
-        break;
-      case 'byte':
-        put(param.value & 0xff);
-        break;
-      case 'word':
-        put((param.value >>> 8) & 0xff);
-        put(param.value & 0xff);
-        break;
-      case 'dword':
-        put((param.value >>> 24) & 0xff);
-        put((param.value >>> 16) & 0xff);
-        put((param.value >>> 8) & 0xff);
-        put(param.value & 0xff);
-        break;
-    }
+    const body = parameterBody(param);
+    put(body.length);
+    for (const byte of body) put(byte);
   }
   return report;
 }
@@ -458,10 +473,12 @@ export function guardFileProtocol(inner: Transport): Transport {
  * form, and anything this cannot parse is treated as not a read, which is the safe direction.
  */
 export function opensForReading(report: Uint8Array): boolean {
-  let at = 4;
-  while (at < report.length && report[at] !== 0) at += 1;
-  at += 1; // past the path's terminator
-  return report[at] === 0x52 /* R */ && report[at + 1] === 0;
+  const pathLength = report[4];
+  if (pathLength === undefined || pathLength === 0) return false;
+  const modeAt = 5 + pathLength;
+  // The mode is a parameter like any other: its own length byte, then its bytes. One byte long and
+  // exactly `R`, and anything else, including a length this cannot reach, counts as not a read.
+  return report[modeAt] === 1 && report[modeAt + 1] === 0x52 /* R */;
 }
 
 /**
