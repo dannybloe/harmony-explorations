@@ -13,6 +13,29 @@ and the classic `members.harmonyremote.com` service for the 7.x software is disc
 live ones can be withdrawn without notice, which is one of the two reasons the hardware rails never
 relax because of it.
 
+## MyHarmony is the reference client, not Harmony Desktop
+
+**Read MyHarmony when the question is which call to make, in which order, with which arguments.** Its
+code is `../lab/work/myharmony/xap/`, the Silverlight assemblies, plus `../lab/software/MyHarmony/`.
+Danny's instruction of 28 August 2026: everything Harmony Desktop's web application can do MyHarmony
+can do too, and better, so a reading off the newer client describes the hub generation rather than the
+remotes on this bench.
+
+**This is not a preference, it was measured the same day.** The compile that fetches a configuration
+was driven from Harmony Desktop's call site, which sends `StartCompileWithLocaleAndSettings` with a
+`localeId`. MyHarmony's own sync module sends `StartCompileWithLocale` with a `locale`, and the
+service advertises only a bare `StartCompile`. The Harmony Touch's compile failed, and the reading
+behind the failing call was legible, complete and about the wrong generation.
+
+**And a sync is not one call.** MyHarmony's sync module works through: has the configuration changed,
+save the remote settings, does this remote need a sync, compile, poll for the file, then register the
+compile and the sync as successful. A script that sends only the compile is not doing what the button
+does, which is the thing to check before concluding a call is broken.
+
+Where Harmony Desktop's mirror is still the only source is the **per skin protocol templates** for the
+file based family and the **parameter encoder** in `en.desktop-app-main.js`, both confirmed against
+hardware. Reach for it for those and for the `susKey`, and for nothing else.
+
 ## The instrument lives in the lab, not in this repository
 
 `../lab/work/myharmony/probe.py` is the client. It handles a credential and talks to a live third
@@ -54,8 +77,12 @@ read it back). Both refuse without credentials and are **never in `make all`**.
   list is `responses/Discovery_GetJsonOperations.json`.
 * Some requests need a WCF contract marker, `__type: 'SomeRequest:#Namespace'`, or the formatter
   binds only the base class and reports a missing field that is plainly in the payload. Read the
-  shape off the desktop app's own call site in `../lab/software/desktop-webapp/` rather than
-  guessing (that is how `migrate.py` got its payload).
+  shape off a client's own call site rather than guessing, which is how `migrate.py` got its payload.
+  **Read MyHarmony's**, per the section at the top: its generated proxy in
+  `xap/*/Web.Data.HarmonyPlatform.dll` names every operation and its argument properties, findable by
+  searching the assembly for the operation name and reading the identifiers around it.
+  `../lab/software/desktop-webapp/` is where `migrate.py`'s payload came from and it is the fallback
+  now, not the first stop.
 * Account scoped REST style reads exist too: `UserAccountDirector` accepts
   `Account/<accountId>/DeviceList` and friends as the path.
 * Traps: `GetAccountProducts` answers XML (an error page), `SimpleRestGetHouseholdProducts` answers

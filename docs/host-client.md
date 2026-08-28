@@ -101,7 +101,28 @@ no amount of firmware reading would have said so.
 Worth checking a manual before assuming a behaviour is undocumented. `reference/models.md` lists the
 forty retired models, and the manuals are indexed under Logitech's support assets.
 
-## Harmony Desktop is a fourth source, and the richest one
+## Harmony Desktop is a fourth source, and MyHarmony is the reference client
+
+**Read MyHarmony first, and do not use Harmony Desktop's web application as the source for how the
+product works or how a remote is driven.** Danny's instruction of 28 August 2026, and his reason is
+about the products rather than the code: everything Harmony Desktop can do MyHarmony can do too, and
+better, so a reading taken off the newer client describes the generation it was written for and not
+the ones on this bench. This section said Harmony Desktop was "and the richest one"<!--superseded-->
+for nearly three weeks.
+
+**It cost a whole afternoon the day the rule was written.** The compile that fetches a configuration
+was driven from Harmony Desktop's own call site, which builds it one way, and MyHarmony builds it
+another: a different operation of the three the service offers, and a differently spelled argument.
+The Harmony Touch's compile failed and the reading that produced the failing call was legible,
+complete and about the hub generation.
+
+So the rule is per question. **Which call to make, in which order, with which arguments: MyHarmony,
+always**, and it is `../lab/work/myharmony/xap/` plus `../lab/software/MyHarmony/`. Where the two
+clients disagree about anything, MyHarmony wins and the disagreement is worth writing down. What
+Harmony Desktop's mirror is still good for is the two things nothing else here holds: the **per skin
+protocol templates** for the file based family and the **parameter encoder** section 200 needed, both
+of which were confirmed against hardware rather than believed on the client's word. Facts already
+taken from it stay, and a fact that contradicts MyHarmony goes.
 
 Added 9 August 2026, and it is a **different application** from the MyHarmony client the section
 near the end of this document reports as empty. That one is the Silverlight era. This one is

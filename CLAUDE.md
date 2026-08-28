@@ -102,7 +102,14 @@ designing around its absence.
    oracle. Both are also technically necessary: concordance has two known defects on these
    architectures. **That is the default and not the whole rule since 9 August 2026**: where the
    firmware genuinely cannot settle something, Logitech's own host software may be the source,
-   marked as such per fact. The weighing, the legal basis and the ledger of everything currently
+   marked as such per fact. **MyHarmony is the reference client and Harmony Desktop's web
+   application is not**, on Danny's instruction of 28 August 2026: everything the newer one does
+   MyHarmony does too and better, so a reading off Harmony Desktop describes the hub generation
+   rather than the remotes here. It cost an afternoon the day the rule was written, since the
+   Harmony Touch's compile was driven from its call site and MyHarmony makes a different call with a
+   differently spelled argument. Its mirror keeps two uses nothing else covers, the file family's per
+   skin protocol templates and the parameter encoder, both confirmed against hardware. The weighing,
+   the legal basis and the ledger of everything currently
    believed on the client's word alone are in `docs/host-client.md`. Its arch 8 constants
    contradict four real configs, so it is a generator of hypotheses and not an authority.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in

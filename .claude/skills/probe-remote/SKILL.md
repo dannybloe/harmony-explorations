@@ -24,9 +24,13 @@ If you are about to send bytes to a remote in order to work out a format, a fram
 or a field layout, **stop and ask whether a source states it.** In order:
 
 1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
-   rather than inference: the per skin templates under
-   `software/desktop-webapp/mirror/*/opt/desktop-app-scripts/libs/ds/templates/SKIN<n>/`, and the
-   encoders in `en.desktop-app-main.js`. `docs/host-client.md` is the ledger and decision 2 the standing.
+   rather than inference. **MyHarmony is the reference client**, `work/myharmony/xap/`, and for how a
+   remote is driven or which service call to make it is the only one to read, per Danny's instruction of
+   28 August 2026 and the rule in `docs/host-client.md`. Harmony Desktop's mirror is the source for
+   exactly two things and they are the ones nothing else holds: the file family's per skin templates
+   under `software/desktop-webapp/mirror/*/opt/desktop-app-scripts/libs/ds/templates/SKIN<n>/`, and the
+   parameter encoders in `en.desktop-app-main.js`. `docs/host-client.md` is the ledger and decision 2
+   the standing.
 2. **The firmware**, which is the authority when the two disagree, and `docs/memory-map-*.md` for where
    to look per architecture.
 3. **`docs/findings.md`**, by grep rather than by memory, and `reference/` for the catalogues.
