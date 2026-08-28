@@ -324,9 +324,14 @@ export async function closeFile(transport: Transport, handle: number): Promise<v
  *
  * The request asks for a number of packets and the remote answers with data packets until it sends
  * one whose first byte is the terminator. A data packet states its own sequence number and size,
- * so the payload is bounded by the packet rather than by the report, which is what lets a final
- * partial packet be read without knowing the file size first. `size` is still used as a stop, since
- * a protocol that never terminates has to be bounded by something the caller stated.
+ * so the payload is bounded by the packet rather than by the report.
+ *
+ * **A data packet's own length is padded and the file's stated size is the only authority for where
+ * it ends**, section 201, and this used to return the padding as content: measured on a Harmony
+ * Touch, an 83 byte file came back as 124 bytes and a 234 byte one as 248, the surplus being NUL to
+ * the packet boundary. So a caller saw a file that was not text, and section 198's reading that
+ * `a final partial packet can be read without knowing the file size first`<!--superseded--> was
+ * wrong, because the last packet does not declare itself short. The result is cut to `size` here.
  */
 export async function readOpenFile(
   transport: Transport,
@@ -365,13 +370,15 @@ export async function readOpenFile(
     }
     if (sawTerminator) break;
   }
-  const out = new Uint8Array(total);
+  const assembled = new Uint8Array(total);
   let at = 0;
   for (const chunk of chunks) {
-    out.set(chunk, at);
+    assembled.set(chunk, at);
     at += chunk.length;
   }
-  return out;
+  // Cut to the size the open reply stated. A short read is left as it is rather than padded, so a
+  // caller that gets fewer bytes than it asked for can still see that it did.
+  return total > size ? assembled.slice(0, size) : assembled;
 }
 
 /**

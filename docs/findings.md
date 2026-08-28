@@ -26433,8 +26433,10 @@ at 4 and 5, then a dword parameter `04 <size>` at 6 and 7 to 10. Both positions 
 
 ### What the remote says about itself
 
-Fifteen fields of plain text, name and value per line. The values are not reproduced here where they
-identify the unit, per this repository's rules, and the serial number is one of them.
+**Fourteen** fields of plain text, name and value per line. The values are not reproduced here where
+they identify the unit, per this repository's rules, and the serial number is one of them. This said
+fifteen fields<!--superseded--> until section 201, and the fifteenth was our own reader's padding
+parsed as a field, so the correction is to the count and not to any field.
 
 * **`arch 0x11`, which is 17.** So section 197's disagreement is settled on the hardware's side: the
   remote reports 17 and Logitech's own specification for the same skin says 18. Both readings were
@@ -26450,12 +26452,13 @@ identify the unit, per this repository's rules, and the serial number is one of 
   `link_type hid`, **`link_packet_length 64`**, which is the report size this project has used since
   section 3 and had never seen the remote state, `ram_size`, `status normal` and `feature Infrared`.
 
-Four of the fifteen are absent from the Harmony 350 firmware's own list, section 199, and `guid` is
+Four of the fourteen are absent from the Harmony 350 firmware's own list, section 199, and `guid` is
 absent here, so **the field set is per model** and a reader must not require any particular field.
 
 ### The namespace is per model too, and the config is not in it
 
-Nineteen paths probed. Seven open besides the identity file: `/rf/deviceinfo` at 83 bytes, and
+Nineteen paths probed. Seven open besides the identity file: `/rf/deviceinfo` at 83 bytes, whose
+contents section 201 reads, and
 `/fw/otaupdate`, `/ir/ir_cap`, `/sys/hlapi`, `/sys/time`, `/sys/factoryreset`, `/sys/reboot` all at
 zero bytes, plus `/tde/enable` at one. **`/cfg/usercfg` does not exist on a Harmony Touch**, nor does
 any of five other spellings tried, so the Harmony 350's config path from section 199 does not transfer
@@ -26485,3 +26488,85 @@ rather than edit a source file.
 be defeated by what an operand *names*, so an allow list of operands is not belt and braces where the
 operand space includes verbs.
 
+
+## 201. A file states its end in one place only, and one of these files is a query
+
+Two things came out of reading the one other file on a Harmony Touch that has any content in it,
+`/rf/deviceinfo`, on 28 August 2026. One is a defect in our own reader and it invalidates a count in
+section 200. The other is what the file says.
+
+### The stated size is the only place a file ends, and the reader was ignoring it
+
+`/rf/deviceinfo` states 83 bytes at open and our reader returned **124**. `/sys/sysinfo` states 234
+and returned **248**. In both cases the surplus is NUL, and in both cases the text ends exactly at the
+stated size with nothing but padding after it: 41 bytes of it on one file and 14 on the other.
+
+**The mechanism is that the last data packet does not declare itself short.** A data packet carries a
+sequence number, its own length and then the payload, and section 198 read that as meaning
+`a final partial packet can be read without knowing the file size first`<!--superseded-->. It cannot. The last packet declares a
+full payload and pads it, so the length in the packet is the size of the transfer unit and not the
+number of bytes that belong to the file. The size in the open reply is the only statement of where the
+file ends, and `readOpenFile` was using it as a loop bound while returning everything it had received.
+
+**What it cost is section 200's field count.** That section reported fifteen fields<!--superseded--> of
+plain text, and the number is **fourteen**. The fifteenth was the padding: `parseSysInfo` splits on newlines, the
+padding is one line, `trim()` strips whitespace and NUL is not whitespace, so a line consisting of NUL
+becomes a field whose name is unprintable and whose value is empty. Corrected in place in section 200.
+A padded file also fails any test of whether its bytes are printable, so both of these files were being
+reported as not text while both are text throughout.
+
+**What it would have cost is larger than a field count**, which is why it is worth a section rather
+than a commit message. Section 199 gives `/cfg/usercfg` on a Harmony 350 as external flash `0x020000`
+for `0x040000` bytes. A container read through this path would have arrived with padding on the end,
+and a container is validated by a checksum over a declared length and by an end marker at a declared
+position, so the failure would have looked like a bad read of a bad file rather than like a reader
+appending bytes that were never in it. Section 122 is the same hazard from the other end, where an
+arch 10 read inserted bytes and the file still parsed.
+
+The fix cuts the result to the stated size. A **short** read is deliberately returned short rather than
+padded out, because fewer bytes than the open stated is a measurement about the transfer and filling it
+in would hide it. `packages/usb/test/filepipe.test.ts` carries both directions with a fake transport,
+so the claim holds with no remote attached, and with the cut removed one test fails.
+
+### `/rf/deviceinfo` is not storage, it is a query with an answer
+
+83 bytes, and they are not a file's contents in any ordinary sense. The content is the word `Response`,
+a comma, and then a JSON object naming four things: `EquadID`, `RFID`, `Devices`, which is an array,
+and `DeviceCount`. The values are not reproduced here, since two of them identify the unit.
+
+On the Harmony Touch on the bench the array is **empty** and the count is **zero**, so the remote holds
+an identity for Logitech's own 2.4 GHz radio link and has nothing paired to it, while its own
+`feature` field in the identity file says `Infrared` and nothing else. The identity is a fact about the
+model and the empty pairing list is a fact about this unit today.
+
+**The prefix is the part that generalises.** A stored file does not begin by announcing that it is a
+response. This path is a request answered when it is opened, formatted as JSON, and presented through
+the same open, read and close as the identity file, which is lines of a name and a value. So this
+filesystem is a facade over a request and response layer, and two consequences follow. A reader must
+not assume a shape: two files on one remote are two formats, and there is no reason to think either is
+general. And it is the third instance of section 200's rule, which said that a path on this protocol
+can be an action: here the action is harmless, but the file being synthesised on demand is exactly what
+makes the read and write distinction insufficient. `INERT_PATHS` remains the rail.
+
+**One of the two values may not identify anything, and that is left open.** The radio identity the
+Touch reports also appears, digit for digit, as the prefix of a `ButtonMapIdentifier` in a captured
+reply from Logitech's service for a **Harmony One** account, `tests/test_host_client.py` having quoted
+it since long before this read. Two remotes, two generations, and a second hand unit that has never
+been on that account, so either the number is a constant of Logitech's own rather than an identity, or
+the match is a coincidence between a five digit field and a key prefix. None of the other four accounts
+captured in the lab holds a key of that shape, so nothing here separates the two readings. Until
+something does, both values in this file are treated as identifying and stay out of the repository,
+which is the safe direction and costs nothing.
+
+**And the space is finished rather than sampled.** `INERT_PATHS` permits twelve paths and a Harmony
+Touch answers **two** of them, this file and the identity file. The other ten are refused at open, each
+in its own session so that one refusal cannot silence the next, which section 198 measured that it
+does. So there is nothing further to read on this remote without the named door, and section 200's
+seven other open paths carry no content: they state zero bytes, except `/tde/enable` at one.
+
+Measured on one remote, since it is the only member of this family on the bench that will open a path
+at all, and the two Harmony 300 and 350 units have never been opened. So the packet padding is
+confirmed on two files of different sizes with different amounts of padding, and the JSON shape is one
+file on one unit and is marked as such. What would falsify either: content continuing past the stated
+size, or a NUL inside a file's real content, or a `/rf/deviceinfo` on another model that answers
+without the prefix.

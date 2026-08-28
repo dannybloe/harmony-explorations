@@ -1324,11 +1324,23 @@ not the missing step, measured; and the remote is unharmed and enumerates normal
 it. Section 198.
 
 **And it reads now, section 200.** A Harmony Touch's `/sys/sysinfo` opened, read and closed, 234 bytes
-of plain text in fifteen fields. **`arch 0x11` is 17**, so section 197's disagreement is settled on the
+of plain text in fourteen fields. **`arch 0x11` is 17**, so section 197's disagreement is settled on the
 hardware's side and is real rather than a mistake in either source; its firmware version matches the
 package the update service served for that skin, by two routes with nothing in common; and
 `link_packet_length 64` is the report size this project has used since section 3 and had never seen a
 remote state.
+
+**A file states its end in one place and it is the open reply, section 201.** The last data packet
+declares a full payload and pads it with NUL, so a packet's own length is the transfer unit and not the
+number of bytes belonging to the file, and `readOpenFile` was returning the padding as content: 124
+bytes for an 83 byte file and 248 for a 234 byte one. That is what section 200's field count was, since
+a run of NUL parses as a field, and it would have been worse on a config, because a container arriving
+with bytes on the end fails its checksum in the way a bad read does rather than in the way a bad
+reader does. A **short** read is still returned short, deliberately. The other file with content on a
+Harmony Touch, `/rf/deviceinfo`, turns out to be **a query rather than storage**: its 83 bytes are the
+word `Response`, a comma and a JSON object naming a radio identity and a list of paired devices, which
+is empty on the bench unit. So two files on one remote are two formats, and a filesystem that
+synthesises an answer on open is the deeper reason `INERT_PATHS` exists rather than a mode check.
 
 **What made it work was reading Logitech's own encoder instead of guessing, and Danny asked for that.**
 `molsonparamwriter.getBytes` in the mirrored client: a **string** parameter is `0x80`, the characters
@@ -1708,10 +1720,18 @@ node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw]
                        read the identity of a remote in the **file based** family: open
                        `/sys/sysinfo` for reading, read it, close it. A different door from
                        `openHarmony`, which still refuses this family, with its own allow list of
-                       four commands and no write path at all. **The open is currently refused by a
-                       Harmony Touch** and section 198 records the reply byte for byte, so this is
-                       an instrument for that question rather than a working reader. Opens the
-                       device.
+                       four commands and no write path at all. **It reads on a Harmony Touch**,
+                       fourteen fields including the architecture the remote itself states, sections
+                       200 and 201. That paragraph said the open was refused for as long as the
+                       framing was guessed. Opens the device.
+node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <path>]
+                       the general form of the above: read any path on `INERT_PATHS` and print it as
+                       bytes and, where it is printable, as text. Deliberately does not parse, since
+                       one file on a Harmony Touch is lines of a name and a value and another is JSON
+                       behind a `Response,` prefix, so a reader that assumed either would mangle the
+                       other. A path off that list needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because on
+                       this protocol a path can be an action. **What it prints may identify a unit**,
+                       so the output stays on a terminal. Opens the device.
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.

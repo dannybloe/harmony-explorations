@@ -309,6 +309,64 @@ describe('reading a file', () => {
     );
   });
 
+  it('cuts a padded final packet to the size the open reply stated', async () => {
+    // Section 201, measured on a Harmony Touch: the last data packet does not declare itself short.
+    // It declares a full payload and pads with NUL, so the file's own stated size is the only place
+    // its end is stated. Here the file is five bytes and the packet claims twelve.
+    const payload = new Uint8Array(12);
+    payload.set([0x61, 0x72, 0x63, 0x68, 0x0a], 0);
+    const packet = new Uint8Array(FILE_REPORT_BYTES);
+    packet[0] = 0; // sequence
+    packet[1] = payload.length;
+    packet.set(payload, 2);
+    const terminator = new Uint8Array(FILE_REPORT_BYTES);
+    terminator[0] = READ_TERMINATOR;
+    const transport = fakeTransport([
+      reply(FILE_PING),
+      reply(FILE_OPEN, { 5: 3, 7: 0, 8: 0, 9: 0, 10: 5 }),
+      reply(FILE_READ),
+      packet,
+      terminator,
+      reply(FILE_CLOSE),
+    ]);
+    const bytes = await readFile(transport, '/sys/sysinfo');
+    assert.equal(bytes.length, 5);
+    assert.equal(Buffer.from(bytes).toString('ascii'), 'arch\n');
+  });
+
+  it('a short read is returned short rather than padded, so a caller can see it', async () => {
+    // The other direction, and it must not be filled in: fewer bytes than the open stated is a
+    // measurement about the transfer, and padding it to the stated size would hide that.
+    const packet = new Uint8Array(FILE_REPORT_BYTES);
+    packet[0] = 0;
+    packet[1] = 2;
+    packet.set([0x6f, 0x6b], 2);
+    const terminator = new Uint8Array(FILE_REPORT_BYTES);
+    terminator[0] = READ_TERMINATOR;
+    const transport = fakeTransport([
+      reply(FILE_PING),
+      reply(FILE_OPEN, { 5: 3, 7: 0, 8: 0, 9: 0, 10: 40 }),
+      reply(FILE_READ),
+      packet,
+      terminator,
+      reply(FILE_CLOSE),
+    ]);
+    const bytes = await readFile(transport, '/sys/sysinfo');
+    assert.equal(bytes.length, 2);
+  });
+
+  it('the padding parsed as a field, which is what the count in section 200 was', () => {
+    // The consequence the truncation prevents, pinned without hardware. `trim()` strips whitespace
+    // and NUL is not whitespace, so a run of padding becomes a line, and a line with no space
+    // becomes a field with an empty value. That is the whole difference between the
+    // `fifteen fields` <!--superseded--> section 200 first reported and the fourteen a Harmony Touch
+    // actually states.
+    const stated = 'arch 0x11\nskin 0x63\n';
+    const padded = stated + '\u0000\u0000\u0000\u0000';
+    assert.equal(parseSysInfo(stated).size, 2);
+    assert.equal(parseSysInfo(padded).size, 3);
+  });
+
   it('refuses a write mode under every framing, not only the believed one', () => {
     // Two framings are refuted and still read, because a guard must refuse a write under any
     // reading a remote might take. So a report that says W under any of the three is not a read.

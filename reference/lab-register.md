@@ -82,7 +82,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `dumps/danny/` | our own remotes, eight described sets | 35 | `catalogued` | | the corpus's arch 12 and arch 14 half |
 | `dumps/kkong42/` | four contributed remotes, arch 8 and arch 10 | 47 | `catalogued` | `models` | sections 113 to 117, 177 to 185 |
 | `dumps/guyman70718/`, `dumps/dmrzzz/`, `dumps/trelowney/` | three contributors | 12 | `catalogued` | | sections 14, 15, 76 |
-| `reads/` | our own read sessions, with notes | 59 | `read` | `ir-db` `write-path` | includes the sequence hazard note and the interkey delay predictions, **neither of which is a finding**, by decision |
+| `reads/` | our own read sessions, with notes | 60 | `read` | `ir-db` `write-path` | includes the sequence hazard note and the interkey delay predictions, **neither of which is a finding**, by decision, and the Harmony Touch radio file read of 28 August 2026, whose claim **is** one, section 201, with only the identifying values kept here |
 | `golden/` | the cross language golden vectors | 43 | `catalogued` | | `make golden` |
 
 ## Reference material

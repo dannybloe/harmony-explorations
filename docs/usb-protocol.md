@@ -1745,6 +1745,19 @@ An **open** reply carries the handle as one byte at offset 5 and the file size a
 offset 1 and payload from offset 2, and the transfer ends on a packet whose first byte is `0xFE`. A
 **write**'s data packets are two zero bytes then a report's worth of payload.
 
+**The size in the open reply is the only statement of where a file ends**, measured on hardware in
+section 201 and not a property of the templates. A data packet's own size field is the size of the
+transfer unit: the final packet declares a full payload and pads it with NUL rather than declaring
+itself short, so a reader that trusts the packets returns more bytes than the file has. Two files on a
+Harmony Touch, one stating 83 bytes and returning 124 and one stating 234 and returning 248, both with
+the real content ending exactly at the stated size. So a read is cut to that size, and a read that
+falls **short** of it is left short, because that is a fact about the transfer.
+
+**A path may be answered rather than stored.** `/rf/deviceinfo` returns the word `Response`, a comma
+and a JSON object, where `/sys/sysinfo` returns lines of a name and a value. Both arrive through the
+same open, read and close, so the shape is per path and a reader must not generalise from one file to
+another.
+
 ### The paths
 
 Read out of the templates, with the count of files naming each.
