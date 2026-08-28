@@ -29,18 +29,22 @@ import {
   FILE_REPORT_BYTES,
   FILE_SERVICE,
   FILE_WRITE,
+  INERT_PATHS,
   OFFSET_HANDLE,
   OFFSET_SIZE,
   READ_TERMINATOR,
   REPLY_ERROR,
+  STRING_PREFIX,
   SYSINFO_FIELDS,
   decodeFileReply,
   encodeFileRequest,
   expectFileReply,
   guardFileProtocol,
+  modeLetters,
   opensForReading,
   parseSysInfo,
   readFile,
+  requestedPath,
 } from '../src/filepipe.ts';
 import { TransportError, type Transport } from '../src/transport.ts';
 
@@ -73,9 +77,7 @@ function reply(command: number, fill: Record<number, number> = {}): Uint8Array {
 }
 
 describe('the request the file protocol sends', () => {
-  it('NUL terminates a request string, which is the form a remote answers at all', () => {
-    // Measured rather than chosen: length prefixing the request drew no reply from a Harmony Touch
-    // where this form draws a reply that refuses. Section 198.
+  it('prefixes a string with 0x80 and terminates it, per their own encoder', () => {
     const report = encodeFileRequest(FILE_OPEN, [
       { kind: 'string', value: '/sys/sysinfo' },
       { kind: 'string', value: 'R' },
@@ -85,30 +87,48 @@ describe('the request the file protocol sends', () => {
     assert.equal(report[1], FILE_OPEN);
     assert.equal(report[2], 0, 'the sequence number');
     assert.equal(report[3], 2, 'two parameters');
-    assert.equal(Buffer.from(report.slice(4, 16)).toString('ascii'), '/sys/sysinfo');
-    assert.equal(report[16], 0, 'the path is terminated');
-    assert.equal(report[17], 0x52, 'the mode R');
-    assert.equal(report[18], 0, 'and it is terminated too');
+    assert.equal(report[4], STRING_PREFIX, 'a string states no length, only bit 7');
+    assert.equal(Buffer.from(report.slice(5, 17)).toString('ascii'), '/sys/sysinfo');
+    assert.equal(report[17], 0, 'and then its terminator');
+    assert.equal(report[18], STRING_PREFIX, 'the mode is a string too');
+    assert.equal(report[19], 0x52, 'R');
+    assert.equal(report[20], 0);
   });
 
-  it('reads a reply handle at 5 and a size at 7, which the offsets themselves argue for', () => {
-    // A reply frames its parameters with a length byte, which is a separate reading from the
-    // request's and has separate evidence: the templates read those two positions as constants,
-    // and a constant offset cannot sit behind a variable length field. So count at 3, length at 4,
-    // handle at 5, length at 6, four size bytes at 7.
+  it('states a width for every other type', () => {
+    const report = encodeFileRequest(FILE_READ, [
+      { kind: 'byte', value: 0x0b },
+      { kind: 'dword', value: 0x01020304 },
+    ]);
+    assert.equal(report[4], 1, 'a byte parameter says one');
+    assert.equal(report[5], 0x0b);
+    assert.equal(report[6], 4, 'a dword parameter says four');
+    assert.deepEqual(Array.from(report.slice(7, 11)), [0x01, 0x02, 0x03, 0x04]);
+  });
+
+  it('puts a reply handle at 5 and a size at 7, which is why the templates can be constant', () => {
+    // The closure, and the reason to believe the framing beyond having read one function: an open's
+    // reply is a byte parameter then a dword parameter, so the handle and the size land exactly
+    // where Logitech's templates read them, and the size's stated width comes out too.
     assert.equal(OFFSET_HANDLE, 5);
     assert.equal(OFFSET_SIZE, 7);
+    const asReply = encodeFileRequest(FILE_OPEN, [
+      { kind: 'byte', value: 0x0b },
+      { kind: 'dword', value: 0x000000ff },
+    ]);
+    assert.equal(asReply[OFFSET_HANDLE], 0x0b);
+    assert.equal(asReply[OFFSET_SIZE + 3], 0xff);
+
+    // And a real refusal from a Harmony Touch decodes as one byte parameter carrying 0x0b.
     const refusal = Uint8Array.from([FILE_SERVICE, FILE_OPEN, REPLY_ERROR, 0x01, 0x01, 0x0b]);
-    const decoded = decodeFileReply(refusal);
-    assert.equal(decoded.sequence, REPLY_ERROR);
-    assert.equal(refusal[3], 1, 'one parameter');
-    assert.equal(refusal[4], 1, 'of length one');
-    assert.equal(refusal[5], 0x0b, 'carrying the value a Harmony Touch actually sent');
+    assert.equal(decodeFileReply(refusal).sequence, REPLY_ERROR);
+    assert.equal(refusal[4], 1);
+    assert.equal(refusal[5], 0x0b);
   });
 
   it('writes a size big endian, which is the one byte order this protocol states', () => {
     const report = encodeFileRequest(FILE_READ, [{ kind: 'dword', value: 0x01020304 }]);
-    assert.deepEqual(Array.from(report.slice(4, 8)), [0x01, 0x02, 0x03, 0x04]);
+    assert.deepEqual(Array.from(report.slice(5, 9)), [0x01, 0x02, 0x03, 0x04]);
   });
 
   it('refuses parameters that do not fit rather than truncating them', () => {
@@ -193,6 +213,53 @@ describe('the guard is the rail, and it refuses every command that writes', () =
     assert.equal(inner.sent.length, 3);
   });
 
+  it('refuses a path that is not evidently inert, because a path can be an action', async () => {
+    // The near miss this rail exists for: /sys/factoryreset and /sys/reboot both open for reading
+    // on a Harmony Touch. Section 200.
+    const inner = fakeTransport([]);
+    const guarded = guardFileProtocol(inner);
+    for (const path of ['/sys/factoryreset', '/sys/reboot', '/fw/otaupdate', '/tde/enable']) {
+      await assert.rejects(
+        () =>
+          guarded.write(
+            encodeFileRequest(FILE_OPEN, [
+              { kind: 'string', value: path },
+              { kind: 'string', value: 'R' },
+            ]),
+          ),
+        TransportError,
+        `${path} must not be openable without the named door`,
+      );
+    }
+    assert.equal(inner.sent.length, 0);
+  });
+
+  it('allows the paths that return contents and do nothing else', async () => {
+    const inner = fakeTransport([]);
+    const guarded = guardFileProtocol(inner);
+    for (const path of INERT_PATHS) {
+      await guarded.write(
+        encodeFileRequest(FILE_OPEN, [
+          { kind: 'string', value: path },
+          { kind: 'string', value: 'R' },
+        ]),
+      );
+    }
+    assert.equal(inner.sent.length, INERT_PATHS.length);
+    // Neither control is on the list, which is the claim rather than the count.
+    assert.ok(!INERT_PATHS.includes('/sys/factoryreset'));
+    assert.ok(!INERT_PATHS.includes('/sys/reboot'));
+  });
+
+  it('reads the path off the request rather than trusting a caller', () => {
+    const report = encodeFileRequest(FILE_OPEN, [
+      { kind: 'string', value: '/sys/sysinfo' },
+      { kind: 'string', value: 'R' },
+    ]);
+    assert.equal(requestedPath(report), '/sys/sysinfo');
+    assert.equal(requestedPath(new Uint8Array(FILE_REPORT_BYTES)), undefined);
+  });
+
   it('states its allow list as exactly four commands, one of them conditional', () => {
     assert.deepEqual(
       [...FILE_READ_ONLY_COMMANDS].sort((a, b) => a - b),
@@ -240,6 +307,18 @@ describe('reading a file', () => {
       transport.sent.map((r) => r[1]),
       [FILE_PING, FILE_OPEN, FILE_READ, FILE_CLOSE],
     );
+  });
+
+  it('refuses a write mode under every framing, not only the believed one', () => {
+    // Two framings are refuted and still read, because a guard must refuse a write under any
+    // reading a remote might take. So a report that says W under any of the three is not a read.
+    const write = encodeFileRequest(FILE_OPEN, [
+      { kind: 'string', value: '/cfg/usercfg' },
+      { kind: 'string', value: 'W' },
+      { kind: 'dword', value: 1 },
+    ]);
+    assert.equal(opensForReading(write), false);
+    assert.ok(modeLetters(write).includes('W'));
   });
 
   it('reads the mode off an open request the way the guard does', () => {

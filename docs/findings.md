@@ -26402,3 +26402,86 @@ read off this image. What did turn up on the way is corroboration of the read pr
 open: `0xFE` appears at `0x12A42` as the value a loop compares against, which is the terminator
 section 198 records from the templates, so the read's end condition has a firmware source now.
 
+
+## 200. A Harmony Touch answers, and one of its files is an action
+
+The first read this project has ever taken from the file based family. `/sys/sysinfo` opened, read and
+closed on the Harmony Touch on the bench, 28 August 2026, 234 bytes. Section 198 has the protocol and
+section 199 the firmware side; this is the measurement.
+
+**What made it work was reading Logitech's own encoder rather than guessing**, and Danny asked the
+question that got there: their client builds these packets in JavaScript, so the framing is readable.
+`molsonparamwriter.getBytes` in the mirrored web application:
+
+| parameter type | on the wire |
+|---|---|
+| string | `0x80`, the characters, then a NUL |
+| byte, word, triple, dword | the length in bytes, then the bytes |
+| byte array, sized string | the length with bit 7 set, then the bytes |
+
+So a string states no length at all: `0x80` is a length field with bit 7 set and nothing in it, and the
+terminator does the work. Two readings were tried on hardware first and both are refuted, a bare NUL
+terminated string, which draws a refusal, and a plain length prefix, which draws no reply. **Neither
+guess was close and the file cost nothing to read**, which is the lesson rather than the framing: the
+encoder was in the lab the whole time, and section 197 exists because this project keeps not looking
+there.
+
+**The closure is the templates' own constants**, which is why the framing is believed beyond having
+read one function. They read an open's reply at position 5 for the handle and position 7 for a four
+byte size and never say why. Under this rule the reply is a count at 3, a byte parameter `01 <handle>`
+at 4 and 5, then a dword parameter `04 <size>` at 6 and 7 to 10. Both positions and the width come out.
+
+### What the remote says about itself
+
+Fifteen fields of plain text, name and value per line. The values are not reproduced here where they
+identify the unit, per this repository's rules, and the serial number is one of them.
+
+* **`arch 0x11`, which is 17.** So section 197's disagreement is settled on the hardware's side: the
+  remote reports 17 and Logitech's own specification for the same skin says 18. Both readings were
+  right about what they read, and **the disagreement is real rather than a mistake in either**. Which
+  number a writer would have to use is not established, and nothing here writes.
+* **`skin 0x63`, which is 99**, the Harmony Touch, agreeing with the product table and with the
+  templates.
+* **`fw_ver 4.15.330`**, which is exactly the version of the production package section 196 downloaded
+  for skin 99 from the update service. Two routes with nothing in common, and the second was fetched
+  before anything had been read off the remote.
+* `fw_type 0x00`, the same "running normally" value the other family's software type carries.
+* `usb_vendor_id` and `usb_product_id` agreeing with enumeration, `hw_ver`, `link_hw usb`,
+  `link_type hid`, **`link_packet_length 64`**, which is the report size this project has used since
+  section 3 and had never seen the remote state, `ram_size`, `status normal` and `feature Infrared`.
+
+Four of the fifteen are absent from the Harmony 350 firmware's own list, section 199, and `guid` is
+absent here, so **the field set is per model** and a reader must not require any particular field.
+
+### The namespace is per model too, and the config is not in it
+
+Nineteen paths probed. Seven open besides the identity file: `/rf/deviceinfo` at 83 bytes, and
+`/fw/otaupdate`, `/ir/ir_cap`, `/sys/hlapi`, `/sys/time`, `/sys/factoryreset`, `/sys/reboot` all at
+zero bytes, plus `/tde/enable` at one. **`/cfg/usercfg` does not exist on a Harmony Touch**, nor does
+any of five other spellings tried, so the Harmony 350's config path from section 199 does not transfer
+and a Touch's configuration is not reachable as a file under any name known here. That is consistent
+with the one thing section 198 found switched off: the **read** of a user configuration is commented
+out in Logitech's own template.
+
+### The near miss, and the rail it produced
+
+**`/sys/factoryreset` and `/sys/reboot` open for reading.** They were opened, here, while listing which
+paths exist, and nothing happened. That was luck.
+
+**On this protocol a path can be an action**, so the read and write distinction that every rail in this
+project rests on does not survive contact with a filesystem whose files are controls. A mode of `R` says
+what will be done with a handle; it says nothing about what opening the path does. A factory reset on a
+remote whose configuration cannot be read back is exactly the loss this project's rails exist to prevent,
+and the mode check would have permitted it.
+
+So `INERT_PATHS` in `packages/usb/src/filepipe.ts` is an allow list of paths that carry a size, return
+their contents, and have nothing in their name or in the arch 16 file table to suggest an effect.
+Everything else, including every `/fw` path, both streams and all three controls, needs
+`HARMONY_FILE_PATH_EXPERIMENT=1`. A named door, for the reason `HARMONY_ODD_READ_EXPERIMENT` is one:
+this rail was found by nearly tripping it, and the next person should have to announce themselves
+rather than edit a source file.
+
+**The general form is worth carrying beyond this family.** A rail derived from what a command *is* can
+be defeated by what an operand *names*, so an allow list of operands is not belt and braces where the
+operand space includes verbs.
+

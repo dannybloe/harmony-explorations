@@ -1304,20 +1304,29 @@ not the missing step, measured; and the remote is unharmed and enumerates normal
 `openFileBasedRemote` is the door, deliberately separate from `openHarmony` rather than a widening of
 it. Section 198.
 
-**The refusal is path independent, which is the narrowing to carry.** Four opens in one session, a
-file that exists, a second one, a directory and a path that cannot exist, all answer the same six
-bytes. So the remote refuses before it looks the path up, and what is left is the header or a session
-that has to be started first. Their own identify operation sends a ping, a **filesystem reset** and a
-second ping before its open, and that reset is a write by this project's rule, so **if a session is
-what is missing then the wall is a decision rather than a measurement.** Also measured: four well
-formed opens in one session all answer, so the silence is caused by a malformed packet and not by the
-number of attempts.
+**And it reads now, section 200.** A Harmony Touch's `/sys/sysinfo` opened, read and closed, 234 bytes
+of plain text in fifteen fields. **`arch 0x11` is 17**, so section 197's disagreement is settled on the
+hardware's side and is real rather than a mistake in either source; its firmware version matches the
+package the update service served for that skin, by two routes with nothing in common; and
+`link_packet_length 64` is the report size this project has used since section 3 and had never seen a
+remote state.
 
-**A request's strings are NUL terminated and a reply's parameters are length prefixed**, which is two
-readings with separate evidence and was briefly one. Length prefixing the request drew no reply where
-the NUL form draws a refusal; the reply half rests on the templates reading a handle at position 5 and
-a size at position 7, and a constant offset cannot sit behind a variable length field. The mistake was
-generalising a closure about a reply onto a request because one framing is tidier.
+**What made it work was reading Logitech's own encoder instead of guessing, and Danny asked for that.**
+`molsonparamwriter.getBytes` in the mirrored client: a **string** parameter is `0x80`, the characters
+and a NUL, where every other type states its own width. Two guesses were tried on hardware first and
+both are refuted, a bare NUL terminated string and a plain length prefix. The encoder had been in the
+lab the whole time, which is decision 12 in one paragraph.
+
+**A path on this protocol can be an action, and that is a rail.** `/sys/factoryreset` and `/sys/reboot`
+both **open for reading** on a Harmony Touch, and both were opened here while probing which paths
+exist, with nothing happening by luck rather than by design. So a mode of `R` says what a handle will be
+used for and nothing about what opening the path does. `INERT_PATHS` is the allow list and
+`HARMONY_FILE_PATH_EXPERIMENT=1` the named door. **The general form applies beyond this family**: a rail
+derived from what a command is can be defeated by what an operand names.
+
+**A Harmony Touch's configuration is not reachable as a file**, six spellings tried including the
+Harmony 350's own `/cfg/usercfg`, which is consistent with the read of a user configuration being
+commented out in Logitech's own template.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
@@ -1924,7 +1933,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 199 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 200 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

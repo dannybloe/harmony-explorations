@@ -99,46 +99,49 @@ export type FileParam =
 /**
  * Build one request report.
  *
- * **A request's strings are NUL terminated, and a reply's parameters are length prefixed.** Those
- * are two separate readings with different evidence, and merging them cost a round of hardware.
+ * **Every parameter carries a prefix and the prefix depends on the type**, which is read out of
+ * Logitech's own encoder rather than inferred: `molsonparamwriter.getBytes` in the mirrored client.
  *
- * The reply half rests on an offset closure and is the stronger of the two. Logitech's templates read
- * an open's reply at position 5 for the handle and position 7 for a four byte size, and never say
- * why. With a parameter count at 3, a length byte at 4, a one byte handle at 5, a length byte at 6
- * and four size bytes at 7, both constants and the width fall out; and a refusal reads
- * `ff 01 ff 01 01 0b`, which is one parameter of length one carrying `0x0b`. Nothing else explains a
- * count of 1 followed by two bytes.
+ * | type | on the wire |
+ * |---|---|
+ * | string | `0x80`, the characters, then a NUL |
+ * | byte, word, triple, dword | the length in bytes, then the bytes |
+ * | byte array, sized string | the length with bit 7 set, then the bytes |
  *
- * The request half is **measured and it is not the same**. Length prefixing the request was tried on
- * a Harmony Touch and drew **no reply at all**, where the NUL terminated form draws a reply that
- * refuses. Silence is weaker evidence than a refusal, and it says plainly that the length prefixed
- * request was the less acceptable of the two, so this encoder writes NUL terminated strings. Why the
- * NUL terminated open is still refused is section 198's open question.
+ * So `0x80` is a length field with its high bit set and no length, which is what marks the
+ * terminated form. Two guesses were tried on hardware before this was read and both are refuted: a
+ * bare NUL terminated string draws a refusal, and a plain length prefix draws no reply at all.
  *
- * **A reply being framed differently from a request is not the tidy answer** and it is what the
- * evidence supports. The generalisation to both directions is the mistake that was made here, so it
- * is recorded rather than quietly reverted.
+ * **The closure is the templates' own constants.** They read an open's reply at position 5 for the
+ * handle and position 7 for a four byte size and never say why. Under this rule the reply is a count
+ * at 3, then a byte parameter `01 <handle>` at 4 and 5, then a dword parameter `04 <size>` at 6 and
+ * 7 to 10. Both constants and the width fall out, and a refusal reads `ff 01 ff 01 01 0b`, which is
+ * one byte parameter carrying `0x0b`.
  *
  * Numbers are big endian, which is **not** inferred: an open's reply states its size big endian and
  * the templates say so with `int:BE`, and this protocol is the same way round in both directions in
  * every field whose order is stated.
  */
+/** The prefix byte a string parameter carries: a length field with bit 7 set and no length. */
+export const STRING_PREFIX = 0x80;
+
 /**
- * The bytes of one request parameter.
+ * One request parameter, prefix and all, exactly as `molsonparamwriter.getBytes` builds it.
  *
- * A string carries its NUL, because that is the form a remote of this family answers at all. See the
- * note on `encodeFileRequest` for why this differs from how a **reply** frames its parameters.
+ * A string is the odd one and it is the one the templates use most: prefix, characters, terminator.
+ * Everything else states its own width.
  */
-function parameterBody(param: FileParam): Uint8Array {
+function encodeParameter(param: FileParam): Uint8Array {
   switch (param.kind) {
     case 'string':
-      return new Uint8Array([...Buffer.from(param.value, 'ascii'), 0]);
+      return new Uint8Array([STRING_PREFIX, ...Buffer.from(param.value, 'ascii'), 0]);
     case 'byte':
-      return new Uint8Array([param.value & 0xff]);
+      return new Uint8Array([1, param.value & 0xff]);
     case 'word':
-      return new Uint8Array([(param.value >>> 8) & 0xff, param.value & 0xff]);
+      return new Uint8Array([2, (param.value >>> 8) & 0xff, param.value & 0xff]);
     case 'dword':
       return new Uint8Array([
+        4,
         (param.value >>> 24) & 0xff,
         (param.value >>> 16) & 0xff,
         (param.value >>> 8) & 0xff,
@@ -166,8 +169,7 @@ export function encodeFileRequest(
     at += 1;
   };
   for (const param of params) {
-    // No length prefix on a request: measured, see the note above.
-    for (const byte of parameterBody(param)) put(byte);
+    for (const byte of encodeParameter(param)) put(byte);
   }
   return report;
 }
@@ -423,6 +425,51 @@ export async function readSysInfo(transport: Transport): Promise<Map<string, str
 }
 
 /**
+ * The paths this library will open, and **the reason this list exists is a near miss.**
+ *
+ * A Harmony Touch offers `/sys/factoryreset` and `/sys/reboot`, and both **open for reading**. They
+ * were opened here, on 28 August 2026, while probing which paths exist, and nothing happened. That
+ * was luck rather than design: on this protocol **a path can be an action**, so the read and write
+ * distinction this project relies on everywhere else does not survive contact with a filesystem whose
+ * files are controls. Opening one for reading is a plausible way to trigger it.
+ *
+ * So the mode check is not sufficient and this list is the rail. It holds only paths that are
+ * **evidently inert**: they carry a size, they return their contents, and nothing about their name or
+ * their entry in the Harmony 300 and 350 file table suggests an effect. Everything else, including
+ * every `/fw` path, the streams and the controls, needs `HARMONY_FILE_PATH_EXPERIMENT=1`, which is a
+ * named door in the manner of `HARMONY_ODD_READ_EXPERIMENT` rather than a source edit.
+ */
+export const INERT_PATHS: readonly string[] = [
+  '/sys/sysinfo',
+  '/rf/deviceinfo',
+  '/sys/guid',
+  '/sys/pid',
+  '/sys/sku',
+  '/sys/battery',
+  '/sys/flags0',
+  '/sys/flags1',
+  '/sys/flags2',
+  '/sys/flags3',
+  '/cfg/usercfg',
+  '/cfg/log',
+];
+
+/** Whether the named door for opening a path outside `INERT_PATHS` is open. */
+export const PATH_EXPERIMENT_ALLOWED = process.env['HARMONY_FILE_PATH_EXPERIMENT'] === '1';
+
+/** The path an open request names, decoded off the bytes rather than taken from a caller. */
+export function requestedPath(report: Uint8Array): string | undefined {
+  if (report[4] !== STRING_PREFIX) return undefined;
+  let at = 5;
+  const bytes: number[] = [];
+  while (at < report.length && report[at] !== 0) {
+    bytes.push(report[at] as number);
+    at += 1;
+  }
+  return at < report.length ? Buffer.from(bytes).toString('ascii') : undefined;
+}
+
+/**
  * A transport for a remote of this family, refusing everything that is not one of the three reads.
  *
  * Separate from `guardMutations` on purpose. That one keys on the high nibble of byte 0, which is
@@ -453,6 +500,19 @@ export function guardFileProtocol(inner: Transport): Transport {
           'refusing an open whose mode is not R: opening for writing creates or truncates a file',
         );
       }
+      if (command === FILE_OPEN) {
+        const path = requestedPath(report);
+        if (path === undefined) {
+          throw new TransportError('refusing an open whose path cannot be read off the request');
+        }
+        if (!INERT_PATHS.includes(path) && !PATH_EXPERIMENT_ALLOWED) {
+          throw new TransportError(
+            `refusing to open ${path}: on this protocol a path can be an action, and this one is ` +
+              'not on the inert list. /sys/factoryreset and /sys/reboot both open for reading. Set ' +
+              'HARMONY_FILE_PATH_EXPERIMENT=1 to probe a path deliberately.',
+          );
+        }
+      }
       if (command === FILE_PING && (report[OFFSET_PARAMETER_COUNT] ?? 0) !== 0) {
         // Their own template's comment on the one parameter form: it simulates a USB reset. A bare
         // ping asks the remote whether it is there and does nothing else.
@@ -478,13 +538,42 @@ export function guardFileProtocol(inner: Transport): Transport {
  * checks what follows is exactly `R` and a NUL. A mode of `W` with a size after it is the write
  * form, and anything this cannot parse is treated as not a read, which is the safe direction.
  */
-export function opensForReading(report: Uint8Array): boolean {
-  let at = 4;
+export function modeLetters(report: Uint8Array): string[] {
+  const letters: string[] = [];
+  const letterAt = (at: number): void => {
+    const byte = report[at];
+    if (byte !== undefined && byte >= 0x41 && byte <= 0x7a) letters.push(String.fromCharCode(byte));
+  };
+
+  // The framing: a string is `0x80`, characters, NUL. So walk the path's terminator and the mode's
+  // own prefix, and the letter is the byte after it.
+  let at = 5;
   while (at < report.length && report[at] !== 0) at += 1;
-  at += 1; // past the path's own terminator
-  // Exactly `R` and then its terminator. Anything else, including a report this walk runs off the
-  // end of, counts as not a read, which is the safe direction for a guard.
-  return report[at] === 0x52 /* R */ && report[at + 1] === 0;
+  letterAt(at + 2);
+
+  // And the two refuted framings are still read, because a guard must refuse a write under any
+  // reading a remote might take, not only under the one believed today.
+  at = 4;
+  while (at < report.length && report[at] !== 0) at += 1;
+  letterAt(at + 1);
+  const stated = report[4];
+  if (stated !== undefined && stated > 0 && 5 + stated + 1 < report.length) {
+    letterAt(5 + stated + 1);
+  }
+  return letters;
+}
+
+/**
+ * Whether an open request asks for reading, under **every** framing it could be read as.
+ *
+ * The framing of a request is not fully settled, section 198, and a guard must not depend on the
+ * unsettled part. So this reads the mode under each candidate framing and demands that at least one
+ * says `R` and that **none** says anything else. A report that could be a write under any reading is
+ * refused, which is the safe direction and is why this is not simply "find an R somewhere".
+ */
+export function opensForReading(report: Uint8Array): boolean {
+  const letters = modeLetters(report);
+  return letters.length > 0 && letters.every((letter) => letter === 'R');
 }
 
 /**
