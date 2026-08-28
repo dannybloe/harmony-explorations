@@ -26673,3 +26673,45 @@ elsewhere.
 
 None of that is built and none of it is proposed here. It is written down because the alternative is
 concluding, wrongly, that the generation is closed.
+
+## 204. Logitech's classic client cannot build a configuration, and never looks inside one
+
+The first square of the lab excavation, step 9, dug on 28 August 2026. The register named exactly one
+artefact as read and **not crossed** on the highest value tag, a note of 7 August 2026 in the classic
+client's directory, and this is that note's central claim taken through the ordinary route.
+
+**The claim.** The client is an executor and not a builder. Everything that talks to a remote is local
+and works today: find it, read its regions, write regions from a file, learn infrared, update
+firmware, and all of it without a user interface, since one entry point takes a file plus a connected
+remote and performs the operation. What lived on the server and is gone is everything that
+**composes** a configuration: the interface, the device database and the compiler.
+
+**The note argued it from absent classes**, that nothing in the code models a device or an activity.
+That is confirmed here and it is the weaker half, because an absence of names is an absence of
+evidence about names. The 642 decompiled files hold **no** class named for an activity, a code set or
+a compiler, and every one of the thirty named for a device is transport or an exception: USB device
+managers, communication channels over HID, TCP and USB LAN, and a properties holder.
+
+**The stronger argument is one nobody had made, and it is a positive test rather than a negative
+one.** Not one container cookie appears anywhere in the client. `GSPM`, `PTYY`, `TPTP`, `AHCM` and the
+marker `WLWL` are absent from all 642 files, and those are the four bytes at offset zero of every
+configuration this project has ever read, across five architectures. So the client does not merely
+fail to **build** a container: it never **parses** one either. It moves regions of hex between a file
+and a remote and has no idea what is inside them, which is exactly what an executor looks like from
+the inside and is not something a builder could be missing.
+
+**What it settles.** The configuration compiler is not a recovery target. It cannot be extracted,
+ported or coaxed out of the surviving software, because it was never in it. `docs/roadmap.md` already
+proceeded on that assumption and now has evidence for it; the excavation's `compiler` tag closes as a
+recovery question and stays open only as a thing to build.
+
+**What it opens** is the note's own second half, which is a route rather than a claim: the client will
+write any `.EZHex` handed to it, and it selects its operation purely by file extension, six of them.
+So anything that produces such a file can drive Logitech's own write path without a line of their code
+changing. That is not a plan and nothing here proposes using it, since this project has never written
+to a remote and has its own write path under review. It is recorded because it is a second,
+independent way a configuration could reach a remote, and because it was going to be forgotten again.
+
+**The register said this note was uncrossed and it was right**, which is the first return on building
+it. Nineteen days of the same failure are recorded in section 197; this one was found by looking at a
+column rather than by remembering.

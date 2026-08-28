@@ -1394,7 +1394,7 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Not started, and it is the highest value unstarted work here
+### Step 9: excavate the lab. Survey done, digging started, first square closed
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
 28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
@@ -1457,9 +1457,14 @@ status `unseen`, in tag order rather than in folder order.
 digging anywhere. `software/classic/SERVER-DEPENDENCY.md` is 278 lines written on 7 August 2026 and
 never crossed, and it says the client is an **executor and not a builder**: reading, writing, learning
 and firmware update are all local and work today, and the device database, the interface and the
-**configuration compiler** were server side and are gone. If that holds it closes the biggest want
-list item as a recovery target and makes writing our own the only route, which is what this document
-already assumes with no evidence behind it. It takes the ordinary route from here, as a claim.
+**configuration compiler** were server side and are gone.
+
+**Dug and crossed the same day, section 204**, and the claim held with a stronger argument than its
+own: no container cookie appears anywhere in the client's 642 files, so it never parses a
+configuration, let alone composes one. **So the `compiler` tag closes as a recovery target**, and
+writing our own is the only route, which this document had been assuming with nothing behind it. What
+the square still holds is the note's second half, a route it calls editing instead of building, and
+the 642 files themselves, which have now been searched but not read.
 
 **Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
 value is in being able to say so with a row rather than a shrug. And some of it will answer a

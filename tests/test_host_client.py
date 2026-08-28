@@ -20,6 +20,7 @@ keys the client carries in plain text are deliberately neither extracted nor ass
 `svcs.myharmony.com` authenticating and section 58 watched it compile a config; no call below has been
 made by this project.
 """
+import io
 import os
 import re
 import unittest
@@ -574,6 +575,89 @@ class AHarmonyTouchFetchesItsOwnConfiguration(unittest.TestCase):
         for terminal in ('Finished', 'Abort'):
             with self.subTest(terminal=terminal):
                 self.assertIn('request.URI.Contains("%s")' % terminal, self.source)
+
+
+CLASSIC_SOURCE = ('software', 'classic', 'src')
+#: Cookies at offset zero of a configuration container, one per architecture, plus the marker that
+#: follows the pointer table. Section 20 for the framing and the key facts table in `CLAUDE.md`.
+CONTAINER_COOKIES = ('GSPM', 'PTYY', 'TPTP', 'AHCM', 'WLWL')
+
+
+def classic_sources():
+    """Every decompiled Java file of the classic client, or None when the lab has not got them."""
+    if not lab.LAB:
+        return None
+    root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+    if not os.path.isdir(root):
+        return None
+    found = []
+    for base, _dirs, files in os.walk(root):
+        for name in files:
+            if name.endswith('.java'):
+                found.append(os.path.join(base, name))
+    return found
+
+
+class TheClassicClientIsAnExecutorAndNotABuilder(unittest.TestCase):
+    """Section 204: it cannot build a configuration and never looks inside one.
+
+    The note this came from argued it from **absent classes**, which is the weaker half: an absence of
+    names is evidence about names. The test that carries the claim is the positive one below, that not
+    one container cookie appears anywhere in the client, because a program that never recognises the
+    four bytes at the front of a configuration is not a program that composes them.
+
+    Nothing of Logitech's code is reproduced. What is asserted is the absence of a capability, which is
+    functional fact.
+    """
+
+    def setUp(self):
+        self.sources = classic_sources()
+        if self.sources is None:
+            self.skipTest('no decompiled classic client in the lab')
+        # Exact, per this repository's own rule. The population moves only when somebody adds or
+        # removes a file, and then it moves in the diff.
+        self.assertEqual(len(self.sources), 642, 'decompiled Java files of the classic client')
+
+    def read(self, path):
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_no_container_cookie_appears_anywhere_in_the_client(self):
+        """The load bearing one. It does not parse a configuration, so it cannot have built one."""
+        for cookie in CONTAINER_COOKIES:
+            with self.subTest(cookie=cookie):
+                naming = [p for p in self.sources if cookie in self.read(p)]
+                self.assertEqual(naming, [], 'files naming the %s cookie' % cookie)
+
+    def test_the_control_is_that_this_search_can_find_something(self):
+        """Without it the test above passes on a search that matches nothing, whatever the client holds.
+
+        `EZHex` is the file the client **does** handle, so it must be found, and finding it is what says
+        the walk reached real source rather than an empty list.
+        """
+        naming = [p for p in self.sources if 'EZHex' in self.read(p)]
+        self.assertEqual(len(naming), 20, 'files naming the configuration file extension')
+
+    def test_it_models_no_activity_and_no_code_set(self):
+        """The note's own argument, kept because it says something the cookie test does not."""
+        names = sorted(os.path.basename(p)[:-len('.java')] for p in self.sources)
+        for concept in ('Activity', 'Codeset', 'CodeSet', 'Compiler'):
+            with self.subTest(concept=concept):
+                self.assertEqual([n for n in names if concept in n], [])
+
+    def test_every_class_named_for_a_device_is_transport_or_an_exception(self):
+        """Thirty of them, and not one is an appliance: this is where the note could have gone wrong."""
+        named = sorted(os.path.basename(p)[:-len('.java')] for p in self.sources
+                       if 'Device' in os.path.basename(p))
+        self.assertEqual(len(named), 30)
+        for name in named:
+            with self.subTest(name=name):
+                self.assertTrue(
+                    'Usb' in name or 'USB' in name or 'Exception' in name
+                    or 'Controller' in name or name in ('DeviceProperties', 'DevicesStatusRunnable',
+                                                        'TcpDeviceCommunicationChannel',
+                                                        'HIDUsbDeviceCommunicationChannel'),
+                    '%s is named for a device and is not transport' % name)
 
 
 if __name__ == '__main__':

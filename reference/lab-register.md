@@ -34,9 +34,9 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `software/classic/` | the 7.x generation, decompiled | 4809 | `read` in four notes, `unseen` otherwise | `compiler` `ir-learn` `service-api` `fh-data-model` `fh-screens` | see the four notes below; the rest is unopened |
 | `software/classic/PROTOCOL-CONSTANTS.md` | our extraction of the command constants | 1 | `catalogued` | `service-api` | `docs/host-client.md` is built on it |
 | `software/classic/LEARN-IR.md` | our note on the learn session | 1 | `catalogued` | `ir-learn` | crossed into sections 91 and 98 and the ledger |
-| `software/classic/SERVER-DEPENDENCY.md` | our note, 278 lines, 7 August 2026 | 1 | `read`, **not crossed** | `compiler` `fh-data-model` `fh-screens` `restore` | **the client is an executor and not a builder**: read, write, learn and firmware update are all local and work today; the device database, the interface and the configuration compiler were server side and are gone. Also a route it calls "editing instead of building", and a heading reading "recorded design decision", which is the state decision 12 forbids |
+| `software/classic/SERVER-DEPENDENCY.md` | our note, 278 lines, 7 August 2026 | 1 | `mined` 28 August 2026 | `compiler` `fh-data-model` `fh-screens` `restore` | **crossed as section 204**, which is the excavation's first return. Its central claim held and gained a stronger argument on the way: no container cookie appears anywhere in the client, so it never parses a configuration, let alone builds one. The `compiler` tag closes as a **recovery** target. What is still only in the note is its second half, the route it calls "editing instead of building", and its "recorded design decision" heading, which is the state decision 12 forbids |
 | `software/classic/README.md` | our note on the square itself | 1 | `read` | | |
-| `software/classic/src/` | decompiled Java source | 642 | `unseen` | `compiler` `fh-data-model` `fh-settings` `fh-wizard` `restore` | the class and line references the four notes cite all point in here, so it is the evidence behind them and has never been read directly |
+| `software/classic/src/` | decompiled Java source | 642 | `surveyed`, one claim checked against it | `compiler` `fh-data-model` `fh-settings` `fh-wizard` `restore` | the class and line references the four notes cite all point in here. Section 204 checked one of those notes against it, by class inventory and by searching every file for every container cookie, which is what closed the `compiler` tag. The 642 files still have not been **read**, only searched |
 | `software/classic/tools/` | the vendor's own jars and tooling | 616 | `unseen` | `compiler` `packages` | 365 MB, the largest single thing on the site |
 | `software/classic/dist/` and `software/classic/orig/` | the shipped application and the untouched original | 289 | `unseen` | `packages` | 299 MB between them |
 | `software/classic/reports/` | run logs from the application | 30 | `unseen` | `fh-failures` `service-api` | one is cited in `SERVER-DEPENDENCY.md` as showing the native layer load |
@@ -102,12 +102,13 @@ The largest square and the least read. 6758 files, 1.1 GB.
 
 Recorded here rather than in a finding, because it is about the site and not about a remote.
 
-**One artefact is `read` and not crossed, and it is on the highest value tag.**
+**One artefact was `read` and not crossed, it was on the highest value tag, and it is crossed now.**
 `software/classic/SERVER-DEPENDENCY.md`, 278 lines, written 7 August 2026: the client is an executor
 and not a builder, and the configuration compiler was server side and is gone. If that holds it closes
 the `compiler` tag as a **recovery** target and makes writing our own the only route, which is what
 `docs/roadmap.md` already assumes on no evidence. It takes the ordinary route from here, since it is a
-claim.
+claim. **Done on 28 August 2026, section 204**, and the claim held: the register paid for itself
+here, because the column said uncrossed and nobody had to remember.
 
 **The unopened squares cluster on FreeHarmony's tags rather than on the format's.**
 `software/classic/src` at 642 files, `software/classic/res` at 287, `work/myharmony/xap` at 314 and
