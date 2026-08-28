@@ -26866,3 +26866,76 @@ The per unit settings blocks at `0x01F400` are **section 150** and were read on 
 same tables. Re-measuring them was part of the same afternoon and produced the same answer, which is how
 the duplication was finally noticed: the second census of a block matched a table this repository had
 already published, down to the one populated byte of the power settings record.
+
+## 207. The classic client has three transports, and two of them are not ours
+
+*28 August 2026. Section 206's square, dug one directory further, and this half was not already known.*
+
+`packages/usb` gates every opened device on `isHarmony`, which claims Logitech's whole product range
+`0xC110` to `0xC14F` minus the file based family. Its docstring argued at length that `0xC112` to
+`0xC115` must stay inside, because excluding them "would make a **Harmony 890** unopenable, and arch
+10 is an architecture this project reads". **The premise was wrong, and a Harmony 890 was never
+openable here.**
+
+### What the client actually does with a product id
+
+`res/client/device.properties` in the mirrored classic client is a shipped data file mapping each
+platform codename to the skins it covers, and `DeviceProperties` is the accessor for it. What consumes
+those lists is a chain of three unit factories, tried in order, each testing the skins it recognises
+and building a **channel** for them:
+
+| factory | platforms | what it puts on the USB channel |
+|---|---|---|
+| the HID one | Espresso, Mocha, Gin, and the Molson skins listed inside Mocha | command reports, the protocol this project implements |
+| the Cappuccino one | Cappuccino, Whisky, Sugar | a datagram processor wrapping the channel, then named services on top |
+| the Cognac one | Cognac | a third channel again, out of a package the client calls `usblan` |
+
+The second and third do not send command reports at all. They register **services**: system,
+diagnostic, update, learn infrared, time, a remote API and a Z-Wave module, each a proxy addressing a
+node over the tunnel. That is a different protocol on the same wire, not a variant of this one.
+
+The platform to product id map was already in `reference/models.md`, so the two halves join: the HID
+factory's platforms are `0xC110`, `0xC111`, `0xC121` and `0xC122`, which are architectures 8, 9, 12
+and 14, exactly the four this project reads over USB. The tunnelled ones are `0xC112`, `0xC113` and
+`0xC114`, and `0xC11F` on the third transport.
+
+### Concordance says the same thing by a different route
+
+It routes `0xC112` to `0xC115` to a separate class, `CRemoteZ_HID`, and the first command in that
+class's own header is named for **initiating a TCP channel**. It refuses `0xC11F` outright, returning
+an error before any protocol runs.
+
+So the label this project recorded as "upstream's, and nothing here can check it" is checked now, by
+Logitech's own client, and the two agree on the boundary and on its reason. The macro concordance
+calls `ZWAVE` is named after a service the tunnel carries rather than after the transport, which is
+why the name looked arbitrary.
+
+### Why the corpus is not a counterexample
+
+The obvious objection is that arch 10 configs **are** in the corpus, so something read a Harmony 890.
+Something did, and it was concordance, which implements the tunnel. Section 122's own subject is those
+reads and their duplicated 54 byte chunks. Nothing in `packages/usb` has ever spoken to one, and no
+device in that range has ever been on this bench.
+
+### What changed in the code
+
+`isTunnelledRemote` and `TUNNELLED_PRODUCTS` in `packages/usb/src/transport.ts`, and `isHarmony`
+excludes them. It is a **second predicate rather than a hole**, the same shape section 193 chose for
+the file based family and for the same reason: these really are Harmonys on a bus, so reporting them
+as nothing would say the bus is empty while a Harmony 890 sits on it. `listTunnelledRemotes` reports
+them and `make remotes` prints what they are, in four buckets now.
+
+`0xC11F` is in the set even though it is a third transport and not the second, because the point of
+the predicate is which devices `openHarmony` must refuse, and leaving it out would partition the range
+into two named sets and a gap. A test walks every id in the range and asserts exactly one of the three
+predicates claims it.
+
+### The rule did not change, only what it now permits
+
+The old docstring's closing sentence was **exclude where we provably have no protocol, and not where
+we might have one and cannot verify the reason to refuse**. That is still the rule and it is what
+produced both answers: at the time nothing could check concordance's label, and now two sources can.
+The instructive part is that the wrong answer came from a correct rule applied to an unchecked premise,
+and the premise was one sentence long and never examined: **that arch 10 being an architecture this
+project reads means it is an architecture this project can open.** Reading a config and speaking to a
+remote are different capabilities, and every arch 10 config here arrived as a file.

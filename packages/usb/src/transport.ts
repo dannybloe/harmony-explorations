@@ -129,6 +129,40 @@ export function isFileBasedRemote(vendorId: number, productId: number): boolean 
 }
 
 /**
+ * The Harmonys that carry a datagram protocol tunnelled over USB instead of the command protocol.
+ *
+ * Logitech's classic client hands each product id to one of three unit factories, and the factory
+ * decides the transport. Two of the three are not this one: the Harmony 890 family and the two
+ * platforms beside it get a channel that wraps the USB device channel in a datagram processor and
+ * then registers services on it, system, diagnostic, update, learn and a Z-Wave module; the Harmony
+ * 1000 family gets a third channel again, from a package the client calls `usblan`. Only the first
+ * factory sends the command reports `packages/usb` speaks, and its skins are exactly the Espresso,
+ * Mocha and Gin platforms, being architectures 8, 9, 12 and 14.
+ *
+ * **Concordance agrees, independently.** It routes `0xC112` to `0xC115` to `CRemoteZ_HID`, whose
+ * command set begins with one named for initiating a TCP channel, and it refuses `0xC11F` outright
+ * with an error before any protocol runs.
+ *
+ * **`0xC11F` is inside the Harmony range and is listed here rather than left out**, so the range is
+ * partitioned by three predicates and not by two with a gap. `docs/findings.md` section 207.
+ *
+ * Like `isFileBasedRemote` this is a second predicate rather than a hole nothing reports: a caller
+ * asking whether a Harmony is attached should get a truthful yes, and only `openHarmony` refuses.
+ */
+export const TUNNELLED_PRODUCTS: readonly number[] = [
+  0xc112, // Cappuccino, the Harmony 890 family
+  0xc113, // Sugar
+  0xc114, // Whisky
+  0xc115, // inside concordance's range and named by neither source
+  0xc11f, // Cognac, the Harmony 1000 family, on a third transport again
+];
+
+/** Whether a device belongs to the tunnelled family, from enumeration alone. */
+export function isTunnelledRemote(vendorId: number, productId: number): boolean {
+  return vendorId === LOGITECH_VENDOR && TUNNELLED_PRODUCTS.includes(productId);
+}
+
+/**
  * Whether a device is a Harmony this library's command protocol applies to.
  *
  * The range is Logitech's Harmony allocation and the exclusion is the file based family, which sits
@@ -136,26 +170,30 @@ export function isFileBasedRemote(vendorId: number, productId: number): boolean 
  * check claimed a Harmony Touch as a flash protocol remote. Found on 27 August 2026 with a Touch
  * and a Harmony 350 on the bench, before either had been opened.
  *
- * **`0xC112` to `0xC115` is deliberately not excluded, and the reason is not symmetry.** Concordance
- * routes that range to a separate class, `CRemoteZ_HID`, under a macro it calls `ZWAVE`, with a
- * comment reading `890, Monstor, etc.`. All of that is upstream's label: **no device on this bench has
- * ever presented an id in that range**, so nothing here can check whether those remotes speak what
- * concordance thinks they speak, or which models are really in it.
+ * **The tunnelled family is excluded too since section 207**, and this docstring argued the opposite
+ * for a fortnight. It said `0xC112` to `0xC115` must stay claimable because excluding it "would make a
+ * Harmony 890 unopenable, and arch 10 is an architecture this project reads", and that a concordance
+ * macro called `ZWAVE` was upstream's unverifiable label. The premise was wrong: **a Harmony 890 was
+ * never openable by this library**, because it does not speak the command protocol at all. Its configs
+ * reached the corpus through concordance, which implements the tunnel this package does not.
  *
- * The tempting argument for excluding it too is that refusing more is always safe. It is not free.
- * Excluding the file based family costs nothing, because there is no transport here to drive one with
- * and an opened Touch could be sent nothing useful. Excluding this range would make a **Harmony 890**
- * unopenable, and arch 10 is an architecture this project reads: its configs are in the corpus and
- * section 184's slot mapping is built on them. So the rule is not "refuse anything unfamiliar", it is
- * **exclude where we provably have no protocol, and not where we might have one and cannot verify the
- * reason to refuse.**
+ * Two sources with nothing in common say so. Logitech's own classic client hands those product ids to
+ * a different unit factory, which wraps the USB channel in a datagram transport and registers named
+ * services on it rather than sending command reports; and concordance routes the same range to
+ * `CRemoteZ_HID`, whose first command is literally "initiate a TCP channel". `0xC11F` is one further
+ * step out, a third transport again, and concordance refuses it outright.
+ *
+ * So the rule in the previous wording is unchanged and it now points the other way: **exclude where we
+ * provably have no protocol, and not where we might have one and cannot verify the reason to refuse.**
+ * We provably have none here.
  */
 export function isHarmony(vendorId: number, productId: number): boolean {
   return (
     vendorId === LOGITECH_VENDOR &&
     productId >= HARMONY_PRODUCT_FIRST &&
     productId <= HARMONY_PRODUCT_LAST &&
-    !isFileBasedRemote(vendorId, productId)
+    !isFileBasedRemote(vendorId, productId) &&
+    !isTunnelledRemote(vendorId, productId)
   );
 }
 
@@ -315,6 +353,17 @@ export async function listHarmony(): Promise<FoundRemote[]> {
 /** The file based family, reported so it is not mistaken for an empty bus. Opens nothing. */
 export async function listFileBasedRemotes(): Promise<FoundRemote[]> {
   return listMatching(isFileBasedRemote);
+}
+
+/**
+ * The tunnelled family, reported for the same reason. Opens nothing.
+ *
+ * These really are Harmonys and they really are inside the product range, so reporting them as
+ * nothing at all would say the bus is empty while a Harmony 890 sits on it. What this library cannot
+ * do is drive one. See `isTunnelledRemote`.
+ */
+export async function listTunnelledRemotes(): Promise<FoundRemote[]> {
+  return listMatching(isTunnelledRemote);
 }
 
 export async function listMicrochipBootloaders(): Promise<FoundRemote[]> {

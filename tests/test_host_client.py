@@ -1101,5 +1101,113 @@ class TheArch14LoggingRegionIsWhatItsSafeModeConfigsDeclare(unittest.TestCase):
                 self.assertEqual(start - base, 0x100000)
 
 
+class TheClientPicksATransportFromTheProductId(unittest.TestCase):
+    """Section 207: three unit factories, and only one of them speaks the command protocol.
+
+    This is the claim `packages/usb`'s `isTunnelledRemote` rests on, so it is checked against the
+    client's own source rather than remembered. What travels is which platform names appear in which
+    factory, which is functional fact of the kind the interoperability rule covers.
+    """
+
+    RESOURCES = ('software', 'classic', 'res', 'client', 'device.properties')
+    HID_FACTORY = ('hidcommands', 'com', 'logitech', 'harmony', 'hid', 'unit',
+                   'HidUnitFactoryImp.java')
+    CAPPUCCINO_FACTORY = ('cappuccino', 'com', 'logitech', 'harmony', 'cappuccino', 'unit',
+                          'CappuccinoUnitFactory.java')
+    COGNAC_FACTORY = ('cognac', 'com', 'logitech', 'harmony', 'cognac', 'unit',
+                      'CognacUnitFactory.java')
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        self.properties = os.path.join(lab.LAB, *self.RESOURCES)
+        root = os.path.join(lab.LAB, *CLASSIC_SOURCE)
+        if not os.path.isfile(self.properties) or not os.path.isdir(root):
+            self.skipTest('no decompiled classic client in the lab')
+        self.root = root
+
+    def read(self, *parts):
+        with io.open(os.path.join(self.root, *parts), encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def skins(self, platform):
+        """The skins one platform's keys name, recomputed from the shipped properties file."""
+        with io.open(self.properties, encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        pattern = r'Device\.%s\.Skin\d+\s*=\s*(\d+)' % re.escape(platform)
+        return sorted(int(value) for value in re.findall(pattern, text))
+
+    def test_the_platforms_the_hid_factory_accepts_are_the_ones_we_read(self):
+        """Espresso, Mocha and Gin, and nothing else reaches a command report.
+
+        Those are architectures 8, 9 and 12, plus arch 14, whose skins the file lists inside the
+        Mocha group with the Molson name in a comment. So the HID family is exactly the four
+        architectures `packages/usb` opens.
+        """
+        source = self.read(*self.HID_FACTORY)
+        for platform in ('Espresso', 'Mocha', 'Gin'):
+            with self.subTest(platform=platform):
+                self.assertIn('get%sSkins()' % platform, source)
+        for platform in ('Cappuccino', 'Whisky', 'Sugar', 'Cognac'):
+            with self.subTest(platform=platform, absent=True):
+                self.assertNotIn('get%sSkins()' % platform, source)
+
+    def test_the_other_two_factories_take_the_platforms_the_first_refuses(self):
+        """And they put a datagram channel on the wire instead of command reports.
+
+        The names asserted are class names in the client, which is what makes this a check on the
+        transport rather than on a comment: a factory that constructed a plain channel would not
+        mention them.
+        """
+        cappuccino = self.read(*self.CAPPUCCINO_FACTORY)
+        for platform in ('Cappuccino', 'Whisky', 'Sugar'):
+            with self.subTest(platform=platform):
+                self.assertIn('get%sSkins()' % platform, cappuccino)
+        self.assertIn('UdpTcpUsbDeviceCommunicationChannel', cappuccino)
+        self.assertNotIn('HidChannel', cappuccino)
+
+        cognac = self.read(*self.COGNAC_FACTORY)
+        self.assertIn('getCognacSkins()', cognac)
+        self.assertIn('TcpDeviceCommunicationChannel', cognac)
+        self.assertIn('usblan', cognac)
+
+    def test_the_two_platforms_this_project_can_check_carry_the_skins_it_measured(self):
+        """The calibration, and the only part of the map with a second source.
+
+        Skin 15 is a Harmony 880 and 17 an 885, both arch 8, and the file puts both in Espresso; 22
+        is the bench Harmony 525, arch 9, and it is in Mocha; 19 is a Harmony 890 and 23 an 895, both
+        arch 10, and both are in Cappuccino. Each of those five was measured here from a config or a
+        remote before this file was read.
+        """
+        self.assertIn(15, self.skins('Espresso'))
+        self.assertIn(17, self.skins('Espresso'))
+        self.assertIn(22, self.skins('Mocha'))
+        self.assertIn(19, self.skins('Cappuccino'))
+        self.assertIn(23, self.skins('Cappuccino'))
+
+    def test_gin_is_one_skin_and_the_harmony_one_is_it(self):
+        """54 alone, which section 131 concluded from the allocation gaps and this states outright."""
+        self.assertEqual(self.skins('Gin'), [54])
+
+    def test_one_skin_is_in_two_platforms_and_that_is_recorded_rather_than_resolved(self):
+        """46 is listed under both Espresso and Mocha, which no reading here explains.
+
+        It matters because the factory chain tries Cognac, then Cappuccino, then HID, and both
+        groups that hold 46 are inside the HID one, so the client cannot notice. Recorded so that a
+        later reading of the skin table does not treat the platform map as a function.
+        """
+        self.assertIn(46, self.skins('Espresso'))
+        self.assertIn(46, self.skins('Mocha'))
+        overlaps = set(self.skins('Espresso')) & set(self.skins('Mocha'))
+        self.assertEqual(overlaps, {46}, 'the only skin two platforms share')
+
+    def test_two_cognac_skins_are_marked_as_having_no_zwave(self):
+        """A subset key, which is what makes the Z-Wave module a platform feature rather than a
+        transport one, and corroborates concordance's name for the range from the other side."""
+        self.assertEqual(self.skins('Cognac.NoZwave'), [52, 56])
+        for skin in (52, 56):
+            self.assertIn(skin, self.skins('Cognac'))
+
+
 if __name__ == '__main__':
     unittest.main()

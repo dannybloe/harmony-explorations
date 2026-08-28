@@ -24,6 +24,8 @@ import {
   HARMONY_PRODUCT_FIRST,
   HARMONY_PRODUCT_LAST,
   isFileBasedRemote,
+  isTunnelledRemote,
+  TUNNELLED_PRODUCTS,
   isHarmony,
   isMicrochipBootloader,
   MICROCHIP_BOOTLOADER_PRODUCT,
@@ -374,7 +376,7 @@ test('a bootloader is Microchip, and asking that question never widens what can 
   }
 });
 
-test('the file based family is inside the Harmony range and openHarmony still refuses it', () => {
+test('two families sit inside the Harmony range and openHarmony refuses both', () => {
   // Found on 27 August 2026 with a Harmony Touch and a Harmony 350 on the bench, before either had
   // been opened. `isHarmony` was a plain range and both of them sit inside it, so this library would
   // have claimed a Touch and started sending it a command layer its family does not implement.
@@ -395,25 +397,38 @@ test('the file based family is inside the Harmony range and openHarmony still re
   assert.ok(isFileBasedRemote(0x046d, 0xc124), 'the Harmony 350, on the id concordance calls a 300');
   assert.equal(FILE_BASED_PRODUCTS.length, 5);
 
-  // The two predicates partition the range rather than overlapping in it.
+  // The three predicates partition the range: every id in it is claimed by exactly one.
   for (let product = HARMONY_PRODUCT_FIRST; product <= HARMONY_PRODUCT_LAST; product += 1) {
-    assert.ok(
-      isHarmony(0x046d, product) !== isFileBasedRemote(0x046d, product),
-      `0x${product.toString(16)} must be exactly one of the two`,
+    const claims = [isHarmony, isFileBasedRemote, isTunnelledRemote].filter((p) =>
+      p(0x046d, product),
     );
+    assert.equal(claims.length, 1, `0x${product.toString(16)} must be exactly one of the three`);
   }
 
-  // **The control that stops the exclusion being widened.** Concordance routes 0xC112 to 0xC115 to a
-  // separate class under a macro it calls ZWAVE, commented `890, Monstor, etc.`, and it is tempting to
-  // exclude those too on the ground that refusing more is safe. It is not free: it would make a Harmony
-  // 890 unopenable, and arch 10 is an architecture this project reads, with its configs in the corpus
-  // and section 184's slot mapping built on them. Nothing here has ever seen an id in that range, so
-  // the label is unverifiable as well. Exclude where we provably have no protocol, not where we might
-  // have one and cannot check the reason to refuse.
+  // **This block asserted the opposite until section 207, and the claim in its title was the wrong
+  // one.** It said 0xC112 to 0xC115 stays a Harmony because excluding it would make a Harmony 890
+  // unopenable, arch 10 being an architecture this project reads. A Harmony 890 was never openable
+  // here: it does not speak this command protocol, its configs came through concordance, which
+  // implements the tunnel, and Logitech's own client hands the same ids to a different driver
+  // entirely. So the exclusion is not "refusing anything unfamiliar", it is the same rule the old
+  // comment stated, applied now that we can check it.
   for (let product = 0xc112; product <= 0xc115; product += 1) {
-    assert.ok(isHarmony(0x046d, product), `0x${product.toString(16)} stays a Harmony: arch 10 reads`);
-    assert.ok(!isFileBasedRemote(0x046d, product), 'and it is not file based');
+    assert.ok(!isHarmony(0x046d, product), `0x${product.toString(16)} is tunnelled, not this protocol`);
+    assert.ok(isTunnelledRemote(0x046d, product), 'and it is reported rather than made invisible');
+    assert.ok(!isFileBasedRemote(0x046d, product), 'and it is not the file based family either');
   }
+
+  // The Harmony 1000 family is one further out and is in the same set: a third transport again, and
+  // concordance refuses it outright rather than routing it anywhere.
+  assert.ok(isTunnelledRemote(0x046d, 0xc11f), 'Cognac');
+  assert.ok(!isHarmony(0x046d, 0xc11f));
+
+  // The bench remotes are unaffected, which is the control that the exclusion did not go too far.
+  assert.ok(isHarmony(0x046d, 0xc121), 'the Harmony One');
+  assert.ok(isHarmony(0x046d, 0xc122), 'the Harmony 600 and 700');
+  assert.ok(isHarmony(0x046d, 0xc111), 'Mocha, the Harmony 525');
+  assert.ok(isHarmony(0x046d, 0xc110), 'Espresso, the Harmony 880 and 885');
+  assert.equal(TUNNELLED_PRODUCTS.length, 5);
 
   // A Logitech mouse is still not a Harmony, and neither predicate answers for another vendor.
   assert.ok(!isFileBasedRemote(0x1234, 0xc124), 'the vendor is part of the question');

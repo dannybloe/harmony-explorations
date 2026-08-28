@@ -75,17 +75,24 @@ The client identifies a connected remote in two steps that this project had only
 the USB product id names a **platform**, in Logitech's internal codenames, several models to a
 platform. Then a **skin number** selects the model within it.
 
-| vendor | product | platform |
-|---|---|---|
-| `0x046D` | `0xC110` | Espresso |
-| `0x046D` | `0xC111` | Mocha |
-| `0x046D` | `0xC112` | Cappuccino |
-| `0x046D` | `0xC113` | Sugar |
-| `0x046D` | `0xC114` | Whisky |
-| `0x046D` | `0xC11F` | Cognac, Hennessy and Vodka together |
-| `0x046D` | `0xC121` | **Gin**, confirmed: the Harmony One on this bench |
-| `0x046D` | `0xC122` | **Molson**, confirmed: the Harmony 600 on this bench |
-| `0x0400` | `0xC359` | the older 6xx and 7xx remotes |
+| vendor | product | platform | transport |
+|---|---|---|---|
+| `0x046D` | `0xC110` | Espresso | the command protocol |
+| `0x046D` | `0xC111` | Mocha | the command protocol |
+| `0x046D` | `0xC112` | Cappuccino | tunnelled |
+| `0x046D` | `0xC113` | Sugar | tunnelled |
+| `0x046D` | `0xC114` | Whisky | tunnelled |
+| `0x046D` | `0xC11F` | Cognac, Hennessy and Vodka together | tunnelled, and a third channel again |
+| `0x046D` | `0xC121` | **Gin**, confirmed: the Harmony One on this bench | the command protocol |
+| `0x046D` | `0xC122` | **Molson**, confirmed: the Harmony 600 on this bench | the command protocol |
+| `0x0400` | `0xC359` | the older 6xx and 7xx remotes | unknown |
+
+**The transport column is section 207 and it decides what `openHarmony` will claim.** Logitech's
+classic client hands a product id to one of three unit factories, and only the first sends the command
+reports this project speaks; the other two wrap the USB channel in a datagram protocol and register
+services on it. Concordance agrees, by a route with nothing in common. So a Harmony 890 is a Harmony
+this library reports and refuses to open, which is what `isTunnelledRemote` says, and its configs
+reached the corpus as files rather than through any read path here.
 
 The last row is worth noticing: those remotes do not enumerate under Logitech's vendor id at all.
 Anything that finds remotes by scanning for `0x046D` will never see one.

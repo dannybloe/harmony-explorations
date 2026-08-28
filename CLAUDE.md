@@ -1327,7 +1327,9 @@ needs to know whether a remote is plugged in uses the first. **That separation i
 193** before any harm was done: a Harmony Touch and a Harmony 350 were identified from enumeration
 alone, and both turned out to be inside the range that gates opening one.
 
-**A Harmony in the range is not a Harmony this library speaks to**, section 193. The **file based**
+**A Harmony in the range is not a Harmony this library speaks to**, sections 193 and 207, and there
+are **two** such families rather than one. The **tunnelled** family is the second and is the further
+below; the **file based**
 family keeps its config in a named file rather than at a flash address, so **no read path here reaches
 one**: no address over USB, no RAM, no config. This used to end "no address, no firmware, no RAM"<!--superseded-->
 and the firmware third is now false, section 196: Logitech's own update service serves the Harmony 300
@@ -1404,13 +1406,24 @@ configuration reaches that generation, and what does is unread.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
-applied to the opposite case, since here the devices really are Harmonys. **`0xC112` to `0xC115` is
-deliberately still claimable**, and a test says so. Concordance routes it to a separate class under a
-macro it calls `ZWAVE`, commented `890, Monstor, etc.`, and **all of that is upstream's label that
-nothing here can check**, since no device on this bench has presented an id in that range. The rule is
-not "refuse anything unfamiliar": exclude where we provably have no protocol, as with the file based
-family, and not where we might have one and cannot verify the reason to refuse, since excluding this
-would make a Harmony 890 unopenable and arch 10 is an architecture this project reads.
+applied to the opposite case, since here the devices really are Harmonys.
+
+**There is a third such family and it was claimable until section 207**, `isTunnelledRemote`: the
+Harmony 890 platform and the two beside it, plus the Harmony 1000 family one step out. This file said
+`0xC112` to `0xC115` was "deliberately still claimable"<!--superseded--> on the ground that excluding
+it "would make a Harmony 890 unopenable and arch 10 is an architecture this project reads", and that
+concordance's `ZWAVE` label was upstream's word that nothing here could check. **Both halves were
+wrong.** Logitech's own classic client hands those product ids to a different unit factory, which
+wraps the USB channel in a datagram protocol and registers named services on it rather than sending
+command reports; concordance's class for the same range opens with a command named for initiating a
+TCP channel. So a Harmony 890 was never openable here, its configs arrived as files through
+concordance, and reading a config is not the same capability as speaking to a remote.
+
+The rule is unchanged and it is what produced both answers: exclude where we provably have no
+protocol, as with the file based family, and not where we might have one and cannot verify the reason
+to refuse. What changed is that two independent sources can now verify it. **The instructive part is
+that a correct rule was applied to an unexamined premise**, one sentence long, and no amount of care
+about the rule would have caught it.
 
 **A remote in recovery is not a Harmony by vendor id, and enumeration reported it as nothing at all
 until section 189.** Both bench bootloaders present `04D8:000B`, Microchip's vendor with no strings,
@@ -1708,14 +1721,17 @@ make render        draw a config's screens as PNG files, into the lab and never 
 make activities    which activity each key starts and which drawn label is its name, per model
 make devices       which devices a config drives, what each is called and which route named it
 make alphabets     regenerate the glyph shape table from the hand read seeds; ALPHABETS_ARGS=--write
-make remotes       list attached remotes, enumeration only, opens nothing. Three buckets, and the
-                   two extra ones exist because each was once invisible. A device in a Microchip
-                   bootloader is reported separately, which is what a Harmony in recovery looks
-                   like, since filtering on Logitech's vendor id alone made that state
-                   indistinguishable from an empty bus. And the **file based** family is reported
+make remotes       list attached remotes, enumeration only, opens nothing. Four buckets, and the
+                   three extra ones exist because each was once invisible or once wrongly claimed. A
+                   device in a Microchip bootloader is reported separately, which is what a Harmony
+                   in recovery looks like, since filtering on Logitech's vendor id alone made that
+                   state indistinguishable from an empty bus. The **file based** family is reported
                    separately the other way round: those are Harmonys, they are inside the product
                    range, and this library cannot drive them, so openHarmony refuses them while this
-                   still says they are there, section 193
+                   still says they are there, section 193. And the **tunnelled** family is the same
+                   shape found the same way, section 207: the Harmony 890 platform and the two beside
+                   it carry a datagram protocol over USB rather than this command set, so they are
+                   reported and refused, where they used to be claimed as openable
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

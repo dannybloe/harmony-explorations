@@ -15,6 +15,7 @@ import {
   listFileBasedRemotes,
   listHarmony,
   listMicrochipBootloaders,
+  listTunnelledRemotes,
   skinId,
 } from '../src/index.ts';
 
@@ -34,6 +35,10 @@ const inRecovery = await listMicrochipBootloaders();
 // And separately again, for the opposite reason: these *are* Harmonys and sit inside the product
 // range, so they used to be reported as remotes this library could open. `reference/models.md`.
 const fileBased = await listFileBasedRemotes();
+// And once more, for a family that was reported as openable until section 207: these speak a
+// datagram protocol tunnelled over USB rather than the command protocol, so listing them is honest
+// and opening them never was.
+const tunnelled = await listTunnelledRemotes();
 
 for (const remote of found) describe(remote);
 
@@ -43,6 +48,13 @@ for (const remote of fileBased) {
   console.log('  so this library has nothing to say to it, and openHarmony refuses it');
 }
 
+for (const remote of tunnelled) {
+  describe(remote);
+  console.log('  the tunnelled family: a datagram protocol carried over USB, not this command set');
+  console.log('  Logitech\'s own client gives it a different driver, and so does concordance');
+  console.log('  so openHarmony refuses it, and reading one needs a transport nobody has built');
+}
+
 for (const remote of inRecovery) {
   describe(remote);
   console.log('  a Microchip bootloader, which is what a Harmony in recovery looks like');
@@ -50,7 +62,7 @@ for (const remote of inRecovery) {
   console.log('  a power cycle without the key held boots normally: nothing latches this state');
 }
 
-if (found.length === 0 && inRecovery.length === 0 && fileBased.length === 0) {
+if (found.length === 0 && inRecovery.length === 0 && fileBased.length === 0 && tunnelled.length === 0) {
   console.log('no Harmony remote attached, and nothing in a bootloader either');
   console.log('(a Logitech mouse is not one: the Harmony product range is 0xC110 to 0xC14F)');
 }

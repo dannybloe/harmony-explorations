@@ -157,7 +157,10 @@ below 100 and both readings return it. That remote states skin 104 through its o
 which is not a USB field, so the two ends of the closure share nothing.
 
 `0x0A` for the 890 is still the obvious entry for the older form and still deliberately not
-implemented, because no arch 10 firmware exists here to check it against.
+implemented, because no arch 10 firmware exists here to check it against. **And since section 207
+there is a second reason that is not going away**: the Harmony 890 platform does not speak this
+protocol at all, so nothing here will ever read that word off a remote. Its skin comes out of a
+config's own header.
 
 **This document said "read as BCD" without qualification until 10 August 2026**, and so did three<!--superseded-->
 copies of the code. It is right for arch 12 and arch 14 and wrong for arch 8 and arch 9, and the
@@ -165,9 +168,6 @@ failure is silent: `0x0811` read as BCD is 11, which is a Harmony 655. The 880 c
 exposed it, because `0x0F` is 15 under either rule. `docs/findings.md` section 113, which also
 records why the two generations differ: base slot 1 carries the skin as a plain byte everywhere, so
 what is BCD is the USB field, following the specification's own convention for `bcdDevice`.
-
-`0x0A` for the 890 is the obvious next entry and is deliberately not implemented, because no arch 10
-firmware exists here to check it against.
 
 This is more useful than it sounds. **The 600 and the 700 share product id `0xC122`**, so the
 product id does not identify an arch 14 model, and the skin does, before a single config byte
