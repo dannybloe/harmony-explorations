@@ -21,11 +21,22 @@ Danny's instruction of 28 August 2026: everything Harmony Desktop's web applicat
 can do too, and better, so a reading off the newer client describes the hub generation rather than the
 remotes on this bench.
 
-**This is not a preference, it was measured the same day.** The compile that fetches a configuration
-was driven from Harmony Desktop's call site, which sends `StartCompileWithLocaleAndSettings` with a
-`localeId`. MyHarmony's own sync module sends `StartCompileWithLocale` with a `locale`, and the
-service advertises only a bare `StartCompile`. The Harmony Touch's compile failed, and the reading
-behind the failing call was legible, complete and about the wrong generation.
+**And it is decompiled to C# in the lab**, `work/myharmony/src/`, 1999 files across seven assemblies.
+Read that, not the compiled DLLs beside it: section 202 was a wrong reading published in four
+documents because a method name found by searching an assembly looked like a call site, and the source
+was there the whole time.
+
+**What its sync actually does**, section 202, since this is the flow every configuration question runs
+into. `SyncRemote` branches on the **product's declared capabilities**: a product with
+`LocaleEnabled`, which is a Harmony One or a Harmony 600, takes the compile route and sends
+`StartCompileWithLocaleAndSettings`, the same call this project already makes. A product with
+`SupportsCertificateActivation` or `SupportsProvisioning`, which is a Harmony Touch, takes a
+provisioning route that sets **config not required** and never compiles at all. So a compile that ends
+in `status='Error'` for a Touch is the service being asked for an artefact this product has no route
+to, rather than a payload this end got wrong. Read the capability list before assuming a remote's
+configuration can be fetched: `GetProductCapabilities` on the `UserAccountDirector` base, and the
+request is **wrapped**, `{'request': {'accountId': N}}`, because the operation takes one contract
+parameter.
 
 **And a sync is not one call.** MyHarmony's sync module works through: has the configuration changed,
 save the remote settings, does this remote need a sync, compile, poll for the file, then register the

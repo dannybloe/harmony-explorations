@@ -1126,7 +1126,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # Exact, per this file's own rule. It moves in the diff every time a row is added, which is
         # the point: the register growing is the excavation making progress, and a floor here would
         # hide a row being deleted just as readily as it hides a total going the wrong way.
-        self.assertEqual(len(named), 58, 'lab paths the register names, as at 28 August 2026')
+        self.assertEqual(len(named), 59, 'lab paths the register names, as at 28 August 2026')
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:

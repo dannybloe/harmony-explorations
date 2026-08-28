@@ -26570,3 +26570,65 @@ confirmed on two files of different sizes with different amounts of padding, and
 file on one unit and is marked as such. What would falsify either: content continuing past the stated
 size, or a NUL inside a file's real content, or a `/rf/deviceinfo` on another model that answers
 without the prefix.
+
+## 202. MyHarmony does not compile a configuration for a Harmony Touch at all
+
+Why every attempt to fetch a Harmony Touch's configuration from Logitech's service ends in
+`status='Error'` six seconds in, read out of MyHarmony's own source on 28 August 2026. It is not the
+call, it is not the account and it is not section 145's policy field. **The client never makes that
+call for this product.**
+
+### The branch, in the client's own words
+
+`SyncRemote` in `RemoteSyncUserControlModel` chooses a route from the **product's capability list**,
+and only one of the four routes compiles anything:
+
+| the product declares | route | what it does |
+|---|---|---|
+| mode 3, or `SupportsProvisioning` | `UpdateProvisionSupportedRemote` | sets **config not required** and provisions |
+| `SupportsCertificateActivation` | `UpdateProvisionSupportedRemote` | the same |
+| `LocaleEnabled` | `UpdateRemote(<language>)` | compile, download, write the file |
+| none of those | `UpdateRemote("Not Implemented")` | the same, with a placeholder language |
+
+The service states each product's list, and the three remotes on the calibration account divide
+exactly along it. A **Harmony One** and a **Harmony 600** declare `LocaleEnabled` and not
+`SupportsCertificateActivation`. A **Harmony Touch** declares `SupportsCertificateActivation` and not
+`LocaleEnabled`. So the two older remotes take the compile route, which is why nine compiled
+configurations exist here, and the Touch takes the provisioning route, which reaches
+`StartDSProvisioningOperation` and from there sends the **remote itself** a request for its
+provisioning information over the other protocol. `StartCompileWithLocaleAndSettings` is never
+reached on that path.
+
+**So a Harmony Touch's configuration is not produced as a downloadable file by this service**, and the
+error is the compiler being asked for something this product has no route to. What the account holds
+for it is devices and activities; what gets onto the remote is arranged between the client and the
+remote, not handed over as a compiled artefact.
+
+### Two corrections, and the second is the instructive one
+
+**`StartCompileWithLocale` is the simulator, not the sync.** Its only call site is `CompileEZSim`,
+which builds the on screen simulation of a remote, and the sync path uses
+`StartCompileWithLocaleAndSettings`, which is exactly what this project's own script has been sending
+all along. The reading that MyHarmony's sync uses a different operation is dead, and it lasted about
+an hour.
+
+**It came from searching a compiled assembly for a name.** The method exists in the assembly, the
+sync module does reference it, and the two facts together looked like a call site. What separates a
+name from a call is the surrounding code, which a string search cannot see, so a name found by
+adjacency is a hypothesis at best. The decompiled source was in the lab the whole time, 1999 files
+across seven assemblies, and it was not reached for because the register described that directory as
+this project's own service client rather than as the vendor's decompiled one. **A catalogue's
+description is load bearing**: the row was accurate about the parent directory and wrong about the
+square, and the cost was a wrong reading published in four documents.
+
+### What is ruled out, so nobody re-derives it
+
+* **The product policy field.** Skin 99 is `IsEnabled` true in the global product table, unlike the
+  Harmony 525 of section 145. The **per account** product record reports `IsEnabled` false for the
+  Touch, the Harmony One and the Harmony 600 alike, so that field is not the compile gate in either
+  direction and the two records must not be conflated.
+* **The settings payload.** Fetched the way the client fetches it, through `GetRemoteSettings` on the
+  `json2` base, and its fields are identical to what the existing script already sends.
+* **An empty account.** The Touch's record holds two appliances and one activity.
+* **The sync required flag.** It reads false for the Touch and also for the Harmony 600, which has
+  compiled successfully here.

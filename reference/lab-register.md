@@ -54,7 +54,8 @@ The largest square and the least read. 6758 files, 1.1 GB.
 
 | path | what it is | files | status | tags | holds |
 |---|---|---|---|---|---|
-| `work/myharmony/src/` | our client for their live services | 2643 | `catalogued` | `service-api` | the `myharmony-service` skill is its documentation |
+| `work/myharmony/src/` | **MyHarmony decompiled to C#**, seven assemblies, 1999 source files | 2643 | `read` in one flow | `service-api` `fh-data-model` `fh-screens` `fh-wizard` | **the reference client as source, and the first place to look for what MyHarmony does.** Section 202 read its sync flow out of `Web.Library.Models` and `Web.MartiniWeb.Tasks.Remote.RemoteSync`. This row said "our client for their live services"<!--superseded--> until 28 August 2026, which is `work/myharmony/probe.py` one directory up, and the misdescription is why a session searched the compiled assemblies instead and published a wrong reading |
+| `work/myharmony/probe.py` and its scripts | **our** client for their live services | 12 | `catalogued` | `service-api` | the `myharmony-service` skill is its documentation |
 | `work/myharmony/responses*/` | captured replies, five accounts and states | 431 | `catalogued` | `service-api` `models` `fh-data-model` | sections 56, 58, 125, 131 to 136, 145. **The household JSON is the vendor's own entity model** and is the calibration for every device and activity reader |
 | `work/myharmony/compiled*/` | nine configurations their service compiled for us | 19 | `catalogued` | `intermediate` `ir-db` | the corpus's only known answer samples, sections 121 and 125 |
 | `work/myharmony/analyzed/` | their analyser's verdicts on our codes | 15 | `catalogued` | `ir-db` | sections 159 to 163 |

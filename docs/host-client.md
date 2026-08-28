@@ -110,11 +110,13 @@ better, so a reading taken off the newer client describes the generation it was 
 the ones on this bench. This section said Harmony Desktop was "and the richest one"<!--superseded-->
 for nearly three weeks.
 
-**It cost a whole afternoon the day the rule was written.** The compile that fetches a configuration
-was driven from Harmony Desktop's own call site, which builds it one way, and MyHarmony builds it
-another: a different operation of the three the service offers, and a differently spelled argument.
-The Harmony Touch's compile failed and the reading that produced the failing call was legible,
-complete and about the hub generation.
+**It cost a whole afternoon the day the rule was written**, and the first account of why was wrong.
+This said MyHarmony builds the compile "a different operation of the three the service
+offers"<!--superseded-->, which came from finding the name in a compiled assembly rather than from
+reading a call site. Section 202 read the source: MyHarmony's sync sends the **same** operation this
+project already sends, and the different one is the on screen simulator. What MyHarmony actually does
+differently is not send it at all for a Harmony Touch, because its sync branches on the product's
+declared capabilities and that product takes a provisioning route with no compile in it.
 
 So the rule is per question. **Which call to make, in which order, with which arguments: MyHarmony,
 always**, and it is `../lab/work/myharmony/xap/` plus `../lab/software/MyHarmony/`. Where the two

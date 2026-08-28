@@ -106,9 +106,11 @@ designing around its absence.
    application is not**, on Danny's instruction of 28 August 2026: everything the newer one does
    MyHarmony does too and better, so a reading off Harmony Desktop describes the hub generation
    rather than the remotes here. It cost an afternoon the day the rule was written, since the
-   Harmony Touch's compile was driven from its call site and MyHarmony makes a different call with a
-   differently spelled argument. Its mirror keeps two uses nothing else covers, the file family's per
-   skin protocol templates and the parameter encoder, both confirmed against hardware. The weighing,
+   Harmony Touch's compile was driven from its call site. **And MyHarmony is decompiled to C# in the
+   lab**, `work/myharmony/src/`, 1999 files, which is what to read rather than the assemblies beside
+   it: section 202 published a wrong reading in four documents because a method name found by
+   searching a DLL looked like a call site. Its mirror keeps two uses nothing else covers, the file
+   family's per skin protocol templates and the parameter encoder, both confirmed against hardware. The weighing,
    the legal basis and the ledger of everything currently
    believed on the client's word alone are in `docs/host-client.md`. Its arch 8 constants
    contradict four real configs, so it is a generator of hypotheses and not an authority.
@@ -1365,6 +1367,14 @@ derived from what a command is can be defeated by what an operand names.
 **A Harmony Touch's configuration is not reachable as a file**, six spellings tried including the
 Harmony 350's own `/cfg/usercfg`, which is consistent with the read of a user configuration being
 commented out in Logitech's own template.
+
+**Nor is it reachable as a compile, and that is settled rather than unfound**, section 202. Logitech's
+service will not produce one: MyHarmony's sync branches on the product's declared capabilities, a
+Harmony One and a Harmony 600 take the compile route that yields a file, and a Harmony Touch takes a
+**provisioning** route that sets config not required and never calls the compiler. Every compile
+requested for one ends in a bare `status='Error'` six seconds in, which is the service being asked for
+an artefact this product has no route to. So neither of the two ways this project has ever obtained a
+configuration reaches that generation, and what does is unread.
 
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
