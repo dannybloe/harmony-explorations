@@ -1698,6 +1698,93 @@ keypad scan proves a `TBLRD` above internal flash does reach the external bus.
 **Nothing here has been sent to a remote.** This is a firmware reading only, and `packages/usb`
 implements none of it.
 
+## 6. A second protocol for the file based family, from Logitech's own specification
+
+**Client sourced and unconfirmed on hardware**, decision 2, so this section states what Logitech's
+host sends and never what a remote does. It is here rather than only in `docs/host-client.md` because
+it is a protocol description of the same kind as the rest of this document, and section 198 is the
+argument for it.
+
+The **file based family** does not address flash. It opens a path, gets a handle, and reads or writes
+through it. Nineteen of the twenty three skins the mirrored client specifies are in this family and
+four are in the one the rest of this document describes; no skin is in both, and the four are skins
+50, 54, 66 and 68, which is architectures 12, 14 and 9 plus one skin that declares none.
+
+### The packet
+
+Every request in all nineteen directories begins with the same four bytes.
+
+| offset | field | value |
+|---|---|---|
+| 0 | service id | `0xFF`, in 1629 of 1629 packets |
+| 1 | command id | see below |
+| 2 | sequence number | `0x00` in every template; the reply echoes it |
+| 3 | parameter count | how many parameters follow |
+| 4.. | parameters | a string, a byte, a `u16` or a `u32`, tagged per parameter |
+
+A reply repeats the service and command ids at offsets 0 and 1 and the sequence number at offset 2,
+and **`0xFF` at offset 2 is the error marker**: every command in every file checks that byte is not
+`0xFF`.
+
+### The commands
+
+| id | name | parameters |
+|---|---|---|
+| `0x00` | ping | none, or one byte `0x00`, which the client's comment says simulates a USB reset |
+| `0x01` | open | path string, mode string `R` or `W`, and for `W` a `u32` size |
+| `0x03` | write | handle, `u16` packet count, then that many data packets, then a done packet `0x7E` |
+| `0x04` | read | handle, packet count |
+| `0x05` | flush, meaning commit | handle, a flag the comment calls "do not validate the region" |
+| `0x06` | device control on an open file | handle, subcommand |
+| `0x07` | close | handle |
+| `0x08` | request and response with no file, which the comments call an HBus command | packet count |
+| `0xFF` | device control with no file | `0x66` resets the file system, `0x00` reboots |
+
+An **open** reply carries the handle as one byte at offset 5 and the file size as a **big endian
+`u32`** at offset 7. A **read** reply's data packets carry a sequence number at offset 0, a size at
+offset 1 and payload from offset 2, and the transfer ends on a packet whose first byte is `0xFE`. A
+**write**'s data packets are two zero bytes then a report's worth of payload.
+
+### The paths
+
+Read out of the templates, with the count of files naming each.
+
+| path | operation |
+|---|---|
+| `/sys/sysinfo` | the identity block: architecture, skin, firmware version, hardware version, firmware type, GUID, serial number |
+| `/rf/deviceinfo` | the paired radio devices |
+| `/ir/ir_cap` | an infrared learn session, read as a file |
+| `/sys/hlapi` | the hub API, driven by command `0x08` |
+| `/sys/factoryreset`, `/sys/reboot`, `/sys/time` | what their names say |
+| `/tde/enable` | the debug mode toggle |
+| `/cfg/log`, `/cfg/properties` | the log and the properties file |
+| `/sys/wifi/connect`, `/sys/wifi/networks` | wireless, plus `/rf/hot/1/...` variants for a paired hub |
+| `/fw/normalmode`, `/fw/otaupdate` | a firmware image, named by the package manifest rather than the template |
+
+A **user configuration's path is not in the template**: it is `%%file.path%%`, supplied by the
+package manifest, whose `PATH` attribute is what the open command sends and whose `OPERATIONTYPE`
+names the template file to use.
+
+### The write is gated on a checksum the remote computes
+
+Reset the file system, open `W` with the size, write in chunks, then command `0x06` subcommand `0x01`
+with five parameters, a type string, a `u16` seed, a `u32` offset, a `u32` length and an expected
+value string. The remote answers one character at offset 7 and the commit only runs when it is `m`.
+
+Those five are the same five fields, under the same names, that a firmware package's manifest states,
+section 196. The type is `XOR` with seed `0x4321` on the Harmony 300 and 350 package, which is
+section 41's container checksum, and `MD5` on the Harmony Touch generation. So the descriptor is one
+shape across both and **the algorithm is a field rather than a constant.**
+
+### What this means for `packages/usb`
+
+`openHarmony` refuses the five file based product ids, section 193, and the reason recorded there was
+that there is no protocol here to reach them with. That reason no longer holds. What has not changed:
+nothing below has been sent to any remote, no implementation exists, and the family's own write
+commands (`0x03`, `0x05` and both device controls) are writes in this project's sense and belong
+behind `WRITES_ENABLED` if they are ever built. The identity read is `0x01` then `0x04` then `0x07`
+and changes nothing.
+
 ## Corroboration used, after the fact
 
 * `USB_PACKET_LENGTH 64` in libconcord's hidapi backend agrees with the 64 byte reports.

@@ -1255,6 +1255,21 @@ and the firmware third is now false, section 196: Logitech's own update service 
 and Harmony 350 firmware to an anonymous request, it is an ordinary PIC18 image at `0x9000`, and it
 reads with no new code. So the claim is about the **protocol** and has to say so; the storage being
 addressed by filename and the processor being a PIC18 were never in tension.
+
+**And the protocol third is answered too now, section 198, so the refusal stands on a different
+footing.** Logitech specifies that family's protocol whole, per skin, in the mirrored client:
+service `0xFF`, nine commands, open a path and get a handle, and a big endian size in the reply. The
+split is exact and disjoint, nineteen skins in the file family against four in the one this project
+reads, and those four are architectures 12 (Harmony One), 14 (Harmony 600 and 700) and 9 (Harmony
+510, being the Harmony 525's architecture) plus one skin declaring none. **Reading a Harmony Touch's
+identity is three commands and none of them writes**, open `/sys/sysinfo` for reading, read, close,
+and it returns the same seven identity fields the version block carries. So `openHarmony`'s refusal is
+now a choice about what has been built rather than a statement that nothing could be, and **that is
+the honest wording to keep**: nothing here has sent one of these packets, no implementation exists, and
+the family's own transfer, commit and device control commands are writes and belong behind
+`WRITES_ENABLED`. Client sourced under decision 2, and its skin 96 contradiction is deliberately
+unresolved.
+
 Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
 applied to the opposite case, since here the devices really are Harmonys. **`0xC112` to `0xC115` is
@@ -1852,7 +1867,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 197 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 198 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

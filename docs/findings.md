@@ -25931,10 +25931,13 @@ been sitting in `../lab/software/desktop-webapp/mirror/` since section 132 fetch
 **The first draft of this section said nothing had opened them, and that was wrong.** The lab's own
 `META.md` beside those files already carries the architecture and codename table below, the
 observation that Molson is architecture 14, and the Harmony One's whole infrared learn session as
-four commands, which is section 91's open question answered. So the reading happened on 9 August and
-**none of it ever crossed into this repository**: no finding, no structured fact, no test, no line of
-code, and the ledger in `docs/host-client.md` still lists as open at least one thing those files
-state. That is the failure worth recording, and it is not the usual one. The four places rule exists
+four commands. So the reading happened on 9 August and this section first said that
+**none of it ever crossed into this repository**<!--superseded-->: no finding, no structured fact, no
+test, no line of code. **That is corrected in section 198 and it was half wrong**: the learn session
+crossed the same day, into `docs/host-client.md`, with the byte values and the entry point table and
+the rail. What had not crossed was the architecture and codename table, which this section landed,
+and the file protocol, which section 198 does. The failure is real and smaller than stated, and it is
+not the usual one. The four places rule exists
 because a fact that lands in only some of them drifts; here a fact landed in a **private notebook**
 and in none of them, which no check in this repository can see, because `make facts` reads the
 repository and the lab is deliberately outside it.
@@ -26072,3 +26075,155 @@ a remote it has no firmware for, and the file protocol includes writes.
 `tests/test_client_templates.py`, thirteen tests, with the four controls run and reversed: calling
 the Touch architecture 17, moving the skin count, changing the legacy list and changing the read
 command each fail exactly one test.
+
+## 198. The file based family speaks one file protocol, Logitech specifies it whole, and a Harmony Touch can be read without writing anything
+
+Section 193 refused to open a Harmony Touch on the ground that "the file based family keeps its config
+in a named file rather than at a flash address, so nothing here reaches it: no address, no firmware,
+no RAM".<!--superseded--> The first half is right and the second half is now wrong, and the cost was no
+measurement at all: the protocol is specified, in the same mirrored client section 197 opened, and
+the identity read is three commands none of which writes anything.
+
+**Client sourced throughout**, decision 2, so nothing below is adopted as a fact about a remote. It
+is a specification of what Logitech's own host sends, which is a different thing from what a remote
+does with it, and section 197's arch 18 disagreement is this file's standing reminder of the gap.
+
+### The split is exact and the two families do not overlap
+
+Counted over all 23 skin directories rather than sampled. A file names a service id and a command id,
+or it names `protocol="hid"`, and **no file names both**:
+
+| family | skins | which |
+|---|---|---|
+| the HID command protocol | 4 | 50, 54, 66, 68 |
+| the file protocol | 19 | 78, 82, 86, 96, 97, 99, 100, 102, 103, 104, 105, 106, 108, 111, 112, 113, 115, 116, 400 |
+
+Three of the four are this project's own architectures, 12 (Harmony One), 14 (Harmony 600 and 700)
+and 9 (Harmony 510, which is the Harmony 525's architecture), and skin 50 declares no architecture
+anywhere in its files. So the client's `supportedLegacyArchitectures` list of 9, 12 and 14, section
+197, is not a grouping that happens to include our scope: **it is the whole of the other family**, and
+the templates say so by construction rather than by a rule in the JavaScript.
+
+### One service, nine commands, and every packet has the same first four bytes
+
+Every packet in all 19 directories carries service id `0xFF`, 1629 of 1629. The command id is the
+second byte, then a sequence number, then a count of the parameters that follow. Nine values appear:
+
+| command | what it does | parameters |
+|---|---|---|
+| `0x00` | ping | none, or one byte `0x00`, which the template's own comment says simulates a USB reset |
+| `0x01` | open | a path string, a mode string `R` or `W`, and for a write a `u32` size |
+| `0x03` | write | the handle and a packet count, then the data packets, then a done packet |
+| `0x04` | read | the handle and a packet count |
+| `0x05` | flush, meaning commit | the handle and a flag the comment calls "do not validate the region" |
+| `0x06` | device control on an open file | the handle and a subcommand |
+| `0x07` | close | the handle |
+| `0x08` | a request and response with no file at all, which the comments call an HBus command | a packet count |
+| `0xFF` | device control with no file | `0x66` resets the file system, `0x00` reboots |
+
+**An open's reply is where the shape is unmistakable.** The handle is one byte at position 5 and the
+file's size is a **big endian** `u32` at position 7, which is the same endianness the HID family's
+addresses use and the opposite of everything inside a config container. Byte 2 echoes the request's
+sequence number and **must not be `0xFF`**, so that value is the error marker; every command in every
+file checks it.
+
+### The identity file reads the same seven fields our version block carries
+
+`/sys/sysinfo`, opened `R`, read, closed. Three commands, no state change, and the client's own
+handler is told which fields to expect: architecture, skin, firmware version, hardware version,
+firmware type, a GUID and a serial number.
+
+That is the calibration this section rests on. `packages/usb`'s `readVersion` identifies six fields of
+the HID family's version block, and five of them appear in that list under the vendor's own names,
+with the serial number the sixth thing `concordance -i` reports. So the two families answer the same
+question with the same fields by two entirely different mechanisms, which is why an identity read is
+the right first contact rather than a guess.
+
+**It is a read in this project's sense of the word.** Nothing in the sequence changes a byte on the
+remote: no `0x03`, no `0x05`, no `0xFF`. That matters because `openHarmony` currently refuses the five
+file based product ids outright, and the reason recorded in section 193 was that there is no protocol
+here to speak. There is.
+
+### Reading a config back is specified and switched off
+
+`SKIN99/userconfiguration.xml` states the whole write of a user configuration, and then carries the
+read of the same file **commented out**, under a header that calls it "for testing only". So
+Logitech's own client can put a configuration on a Harmony Touch and cannot take one off, by choice
+rather than by capability, and the three commands it would take are in the file: open `R`, read with a
+packet count, close.
+
+The read's data packets are described by the same handler parameters as the identity read: a sequence
+number at offset 0, a size at offset 1, the payload from offset 2, and a terminator packet whose first
+byte is `0xFE`. A read is issued for 175 packets at a time on the Touch and 6 for the identity file,
+so the count is per operation rather than per model.
+
+### The write is gated on a checksum the remote computes itself
+
+Worth recording because it is the first write protocol in this project that carries its own
+verification, and because of what it says about section 41.
+
+1. `0xFF` with `0x66` resets the file system.
+2. `0x01` opens the path `W` with the file's size stated up front.
+3. `0x03` writes, in chunks of 175 packets, each chunk being a command packet, then data packets of
+   two zero bytes plus a report's worth of payload, then a done packet whose single byte is `0x7E`.
+4. `0x06` with subcommand `0x01` hands the remote **five checksum parameters** and asks it to check
+   the file it has just received.
+5. `0x05` commits, and its `condition` attribute is `##checksum.result##==m`, so the commit runs only
+   if the remote answered with a single character `m` at position 7.
+6. `0x07` closes, and `0xFF` with `0x00` reboots.
+
+**The five parameters are the same five a firmware package's manifest states**, section 196: a type, a
+seed, an offset, a length and an expected value, under those exact names in both. The Harmony 350's
+manifest gives `TYPE="XOR" SEED="0x4321" OFFSET="0x0004" LENGTH="0x11EF8" EXPECTEDVALUE="0x8F7B"`, and
+section 196 recomputed that as section 41's XOR of little endian 16 bit words. So the manifest and the
+template are two halves of one specification: the manifest names the algorithm and the template hands
+it to the remote.
+
+**Two more attributes close it.** The manifest's `PATH="/fw/normalmode"` is exactly the `%%file.path%%`
+the template's open command sends, and its `OPERATIONTYPE="firmwareupgrade"` names the template file
+itself, `firmwareupgrade.xml`. Nothing in either half had to be guessed to make them fit.
+
+**The algorithm is described, not fixed, and that is the part not to overclaim.** `TYPE` is `XOR` with
+seed `0x4321` on the Harmony 300 and 350 package, and `MD5` with seed 0 on the Harmony Touch and
+Harmony Ultimate Hub packages. So section 41's checksum reaches the file protocol's own generation of
+package and no further, and what is one shape across every generation here is the **descriptor** rather
+than the sum.
+
+A free confirmation came with it. Section 196 measured that the packages come one per family by
+comparing our own digests; the manifests state their own `EXPECTEDVALUE`, and the Harmony Touch's and
+the skin 112 package's are the same MD5 over the same length. Two routes with nothing in common.
+
+### Skin 96 contradicts the split and is not resolved here
+
+`SKIN96` declares model id 66 and architecture 14, which is the Harmony 700, and its `learnir.xml`
+is a **file protocol** file: `/ir/ir_cap`, open, read, device control, close, byte for byte the
+operation `SKIN99` gives the Harmony Touch. Its sibling `SKIN66` declares the same model id and
+architecture and speaks the HID protocol, and its description calls it "Molson Remote (HID)" where
+skin 96's says only "Molson".
+
+Two things make it worth recording rather than dismissing. **Skin 96 is not in Logitech's own live
+product table**, which lists 97 skins including 54, 66, 68 and 99 and has no 96 at all. And the
+client's own rule picks the protocol from the architecture, so a template declaring architecture 14
+would never be driven by the file protocol's encoder under it. So either the rule and the template
+disagree, or skin 96 is a variant that was never shipped, and **nothing here decides which.** No
+conclusion about the Harmony 600 or 700 may be drawn from it: the two bench remotes of that
+architecture both speak the HID protocol, measured, thousands of times.
+
+### The correction to section 197
+
+That section said the lab's own notes carried "the Harmony One's whole infrared learn session as four
+commands, which is section 91's open question answered", and then that **none of it ever crossed into
+this repository**.<!--superseded--> The first half is right and the second is wrong. The learn session
+crossed on 9 August 2026 and it is thorough: `docs/host-client.md` carries all four commands with
+their byte values, the entry point table whole, the restart command identified as `WRITE_MISC`
+selector `0x0A`, the firmware's confirmation of the list's order from section 97, the observation that
+the whole selector is a no operation on arch 12 (Harmony One) so the client's own first command is
+ignored by the remote it is sent to, and the rail that an implementation belongs behind
+`WRITES_ENABLED`. Sections 91 and 98 cross reference it.
+
+What genuinely had not crossed was the architecture and codename table, the observation that Molson is
+architecture 14, and the file protocol, and section 197 landed the first two. **The lesson survives the
+correction and it is worth more than the claim was**: the check that would have caught this is reading
+the repository before saying what is not in it, and the reason it was not run is that the sentence felt
+like the point of the section. A process failure is not evidence for itself.
+

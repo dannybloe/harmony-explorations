@@ -23,7 +23,11 @@ hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525
 2026 a Harmony Touch, a Harmony 350 and a Harmony 300. The last three are the file based family and
 are **not targets**: nothing here speaks their protocol, and `openHarmony` refuses them by product id
 rather than by accident, section 193. What they have bought so far is the reading of the descriptor
-field that names a model, section 195, and the route to their firmware, section 196. Other models
+field that names a model, section 195, the route to their firmware, section 196, and their whole
+protocol as Logitech specifies it, section 198, which is a specification and not an implementation.
+The one thing in that specification worth knowing here is that **reading a Harmony Touch's identity is
+three commands and none of them writes**, so the refusal is now about what has been built rather than
+about what is reachable. Other models
 appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
 constantly. There has never been a Harmony 700 here.

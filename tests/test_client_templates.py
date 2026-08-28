@@ -169,6 +169,149 @@ class TheTouchSpeaksAFileProtocol(unittest.TestCase):
         self.assertNotIn('address.guid', self.text)
 
 
+class TheFileProtocolIsSpecifiedWhole(unittest.TestCase):
+    """Section 198. The nineteen skins this project does not read, and their one protocol.
+
+    Every claim here is a count over the whole template set rather than a sample, because the
+    interesting property is that the two families do **not** overlap and a sample cannot say that.
+    """
+
+    #: Section 198's split. Both sides exact, so a mirror that gains a skin moves this in the diff.
+    HID_SKINS = (50, 54, 66, 68)
+    FILE_SKINS = (78, 82, 86, 96, 97, 99, 100, 102, 103, 104, 105, 106,
+                  108, 111, 112, 113, 115, 116, 400)
+
+    #: The nine command ids of service 0xFF, section 198's table.
+    COMMANDS = (0x00, 0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0xFF)
+
+    def _families(self):
+        """Which skins name a service id, and which name the HID protocol."""
+        file_based, hid = set(), set()
+        for skin in lab.template_skins():
+            for name in lab.template_names(skin):
+                body = lab.template(skin, name)
+                if 'service.id' in body:
+                    file_based.add(skin)
+                if 'protocol="hid"' in body:
+                    hid.add(skin)
+        return file_based, hid
+
+    def setUp(self):
+        if not lab.template_skins():
+            self.skipTest('no mirrored client in the lab')
+
+    def test_the_two_families_are_disjoint_and_exact(self):
+        """No skin speaks both, which is what makes the client's architecture rule a partition."""
+        file_based, hid = self._families()
+        self.assertEqual(sorted(hid), list(self.HID_SKINS))
+        self.assertEqual(sorted(file_based), list(self.FILE_SKINS))
+        self.assertEqual(file_based & hid, set(),
+                         'a skin naming both protocols would refute section 198')
+
+    def test_every_packet_names_one_service(self):
+        """1629 of 1629 in section 198. Asserted as "no other value" so a new one fails here."""
+        services = set()
+        commands = set()
+        for skin in self.FILE_SKINS:
+            for name in lab.template_names(skin):
+                body = lab.template(skin, name)
+                services.update(re.findall(r'<byte type="service\.id">(0x[0-9A-Fa-f]+)</byte>', body))
+                commands.update(re.findall(r'<byte type="command\.id">(0x[0-9A-Fa-f]+)</byte>', body))
+        self.assertEqual({int(s, 16) for s in services}, {0xFF})
+        self.assertEqual(sorted(int(c, 16) for c in commands), list(self.COMMANDS))
+
+    def test_an_open_returns_a_handle_and_a_big_endian_size(self):
+        """The endianness is the point: big endian here, little endian inside a config container."""
+        lab.require_templates((99, 'identifyremote.xml'))
+        body = lab.template(99, 'identifyremote.xml')
+        self.assertRegex(body, r'setvalues key="int::file\.handle" index="0" position="5"')
+        self.assertRegex(body, r'setvalues key="int:BE::file\.size" index="0" position="7" length="4"')
+
+    def test_the_identity_read_writes_nothing(self):
+        """Section 198's reason an identity read is permitted by this project's own rails.
+
+        Open, read, close, and none of the three write commands anywhere in the file. Stated as a
+        set difference rather than as three assertions so a fourth command added to the file fails.
+        """
+        lab.require_templates((99, 'identifyremote.xml'))
+        body = lab.template(99, 'identifyremote.xml')
+        self.assertIn('/sys/sysinfo', body)
+        used = {int(c, 16) for c in
+                re.findall(r'<byte type="command\.id">(0x[0-9A-Fa-f]+)</byte>', body)}
+        # 0x00 is the ping and 0xFF here is the file system reset, which the identify operation
+        # does issue. What must not appear is a transfer or a commit.
+        self.assertEqual(used & {0x03, 0x05}, set(),
+                         'the identity operation must contain no write and no commit')
+        self.assertLessEqual({0x01, 0x04, 0x07}, used)
+
+    def test_reading_a_user_configuration_is_specified_and_commented_out(self):
+        """Logitech's client writes a config to this family and does not read one back."""
+        lab.require_templates((99, 'userconfiguration.xml'))
+        body = lab.template(99, 'userconfiguration.xml')
+        commented = re.findall(r'<!--(.*?)-->', body, re.S)
+        joined = '\n'.join(commented)
+        self.assertIn('The following READ is for testing only', joined)
+        self.assertIn('command.id">0x04', joined,
+                      'the read command should be inside a comment, not live')
+        # And the write half is live, which is the contrast that makes the claim mean something.
+        live = re.sub(r'<!--.*?-->', '', body, flags=re.S)
+        self.assertIn('command.id">0x03', live)
+
+    def test_the_commit_waits_for_the_remote_to_agree_about_the_checksum(self):
+        lab.require_templates((99, 'userconfiguration.xml'))
+        body = lab.template(99, 'userconfiguration.xml')
+        self.assertIn('condition="##checksum.result##==m"', body)
+
+    def test_the_checksum_descriptor_is_the_firmware_manifest_s_five_fields(self):
+        """The section 196 closure, made executable.
+
+        The template asks for five named parameters; the Harmony 350's package manifest states five
+        attributes with the same names; and `gspm.TRAILER_CHECKSUM_SEED` is where the seed the
+        manifest gives already lives, derived from containers with nothing to do with either.
+        """
+        from harmony import gspm
+        lab.require_templates((99, 'userconfiguration.xml'))
+        body = lab.template(99, 'userconfiguration.xml')
+        wanted = ('type', 'seed', 'offset', 'length', 'expectedvalue')
+        for field in wanted:
+            self.assertIn('%%file.checksum.' + field + '%%', body)
+
+        manifest = lab.load('h350_package')
+        import io, zipfile
+        with zipfile.ZipFile(io.BytesIO(manifest)) as zf:
+            description = zf.read('Description.xml').decode('utf-8-sig')
+        attrs = dict(re.findall(r'(\w+)="([^"]*)"',
+                                re.search(r'<CHECKSUM([^/]*)/>', description).group(1)))
+        self.assertEqual(sorted(k.lower() for k in attrs), sorted(wanted))
+        self.assertEqual(attrs['TYPE'], 'XOR')
+        self.assertEqual(int(attrs['SEED'], 16), gspm.TRAILER_CHECKSUM_SEED)
+
+        # And the path the manifest states is what the template's open command sends.
+        path = re.search(r'PATH="([^"]*)"', description).group(1)
+        self.assertEqual(path, '/fw/normalmode')
+        self.assertIn('%%file.path%%', lab.template(104, 'firmwareupgrade.xml'))
+
+    def test_skin_96_contradicts_the_split_and_is_recorded_as_unresolved(self):
+        """Section 198's open question. The test exists so the contradiction cannot be forgotten.
+
+        If a future mirror resolves it, this test fails and the section gets rewritten, which is the
+        outcome wanted. What it must not do is quietly agree with whichever answer we prefer.
+        """
+        lab.require_templates((96, 'learnir.xml'), (66, 'learnir.xml'), (99, 'learnir.xml'))
+        ninetysix = lab.template(96, 'learnir.xml')
+        sixtysix = lab.template(66, 'learnir.xml')
+        self.assertEqual(int(_description(ninetysix)['architectureid']), 14)
+        self.assertEqual(int(_description(ninetysix)['modelid']), 66)
+        self.assertEqual(int(_description(sixtysix)['modelid']), 66)
+        # Same model and architecture, different protocol.
+        self.assertIn('service.id', ninetysix)
+        self.assertIn('protocol="hid"', sixtysix)
+        self.assertNotIn('service.id', sixtysix)
+        # And it is the Harmony Touch's operation, path for path.
+        self.assertIn('/ir/ir_cap', ninetysix)
+        self.assertIn('/ir/ir_cap', lab.template(99, 'learnir.xml'))
+
+
 class TheClientSplitsThreeArchitecturesFromTheRest(unittest.TestCase):
     def test_the_legacy_list_is_exactly_the_three_this_project_reads(self):
         """Logitech's own grouping, and it is our target set: arch 9, 12 and 14."""

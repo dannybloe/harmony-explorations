@@ -1171,6 +1171,41 @@ containers.
 That is the first time the vendor's own infrastructure, rather than a repair site or a contributor,
 has supplied firmware to this project, and it is the fourth published package of the kind.
 
+## The file based family's protocol, stated whole and never driven
+
+Added 28 August 2026, section 198. The mirrored desktop client specifies the protocol of the
+**nineteen** skins this project does not read, per skin, in the same XML directories section 197
+found. The full description is in `docs/usb-protocol.md` section 6, which is the right home because
+it is a protocol description; this entry is the ledger line saying it is believed on the client's
+word alone.
+
+**Unconfirmed, entirely.** Nothing in this project has sent one of these packets, and no remote of
+that family has ever answered anything here beyond its USB descriptors. The standing caveat applies
+with full force: the client states what it sends, never what the remote does with it, and section 197
+already has this family disagreeing with the hardware about its own architecture number.
+
+Three things in it that change what is possible rather than only what is known.
+
+* **The identity read is three commands and none of them writes.** Open `/sys/sysinfo` for reading,
+  read, close. It returns the same seven identity fields the HID family's version block carries, five
+  of them under the vendor's own names matching `readVersion`'s. So the safest possible first contact
+  with a Harmony Touch is specified and permitted by this project's own rails.
+* **Reading a user configuration back is specified and commented out**, under a header calling it
+  "for testing only". So Logitech's client writes a configuration to that family and does not read
+  one, by choice rather than by capability, and the three commands are in the file.
+* **The write is gated on a checksum the remote computes and reports**, and its five parameters are
+  the five a firmware package's manifest states, section 196. Where that manifest says `XOR` with seed
+  `0x4321` it is section 41's own container checksum, arrived at by a route with no shared bytes; on
+  the Harmony Touch generation the type is `MD5`. So the checksum is a described algorithm rather than
+  a fixed one.
+
+**One thing in it is unresolved and must not be tidied away.** Skin 96 declares model id 66 and
+architecture 14, which is the Harmony 700, and specifies a file protocol operation identical to the
+Harmony Touch's. Skin 96 is absent from Logitech's own live product table of 97 skins, and the
+client's own rule would pick the HID protocol for that architecture. Nothing here decides whether the
+rule and the template disagree or the skin never shipped, and **no conclusion about the Harmony 600 or
+700 follows from it**: both bench remotes of that architecture speak the HID protocol, measured.
+
 ## Where the extraction lives
 
 The verbatim extraction, with Logitech's identifiers, is `software/classic/PROTOCOL-CONSTANTS.md`
