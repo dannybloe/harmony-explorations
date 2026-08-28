@@ -145,6 +145,48 @@ was not consulted to produce any of them.
 | 41 | Mocha Grande | | |
 | 44 | Corona, AMR | | |
 
+### Which platform each skin sits on
+
+*Source: the same client, one directory over, and it is a **second** file rather than the one above:
+`res/client/device.properties` lists the skins per platform where `remote.properties` names the model
+per skin. Joining them gives a column neither has. Section 207.*
+
+**35 of the 46 named skins get a platform this way.** The join is not total, and nine of the eleven
+gaps have a reason the file states itself:
+
+| unplaced skin | why |
+|---|---|
+| 3, 7, 9, 10, 11, 12, 13, 14, 16 | the old 6xx and 7xx models, which the client matches by **product id** rather than by skin, per the `0x0400` row above. The properties file says so itself: their platform key holds a product and vendor id and no skin list at all |
+| 50, 58 | Khalua and Baileys, named by the client and placed on nothing. No reason found |
+
+Going the other way, **17 skins are placed on a platform and never named**: 26 to 35, 37, 38, 42, 43,
+46, 47 and 51. So the client can route a remote it has no display name for, and the numbering above is
+narrower than the numbering the client actually handles, which is a second reason not to read it as
+complete.
+
+| platform | skins | models it names |
+|---|---|---|
+| Espresso | 15, 17, 39, 44, 45 | 880, 885, 880 Pro, Corona AMR and EMEA |
+| Mocha | 18, 22, 36, 41, 48, 65, 67, 68, and 66, 71, 72 | 520, 525, Xbox 360, Mocha Grande and its EMEA variant, 610, 515, 510, and the three Molson models |
+| Cappuccino | 19, 23, 40 | 890, 895, 890 Pro |
+| Whisky | 20, 24 | 891, 896 |
+| Sugar | 21, 25 | 892, 897 |
+| Cognac | 49, 52, 53, 55, 56, 57, 60, 61, 62, 63, 64 | the Harmony 1000 family, Vodka and Hennessy |
+| Gin | 54 | the Harmony One, and nothing else |
+
+**This is a transport map and not an architecture map**, which the Mocha row makes unmissable: 66, 71
+and 72 are the Harmony 700, 600 and 650, architecture 14, and they sit in the group whose other members
+are architecture 9. What the group decides is which driver speaks to the remote, section 207, and those
+two architectures share one. Reading a platform here as an architecture would put a Harmony 600 on the
+Harmony 525's.
+
+Two smaller things the join states. **Skin 46 is in two groups**, Espresso and Mocha, alone among all
+52 placed skins, and nothing here explains it; the client cannot notice because both groups route to
+the same driver. And **`Cognac.NoZwave` names 52 and 56**, the Australian Harmony 1000 and 1000 Pro,
+which are also in the plain Cognac list. So the Z-Wave module is a per market option on one platform
+rather than a property of the transport, which is the opposite of what concordance's name for the
+product range suggests.
+
 **This table is incomplete, and the two numbers it lacks are the two that cost the most time.**
 Section 81 found that two containers carry a skin the remote does not report, 59 on a Harmony One and
 73 on a Harmony 600, and both are absent here. Two rules were derived from that absence and both are

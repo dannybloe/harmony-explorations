@@ -1201,6 +1201,56 @@ class TheClientPicksATransportFromTheProductId(unittest.TestCase):
         overlaps = set(self.skins('Espresso')) & set(self.skins('Mocha'))
         self.assertEqual(overlaps, {46}, 'the only skin two platforms share')
 
+    def test_the_join_with_the_model_names_has_the_shape_the_reference_states(self):
+        """35 of 46 named skins placed, 11 not, and 17 placed that no name covers.
+
+        `reference/models.md` publishes the join, so the counts are asserted here rather than left to
+        a reader to recount. The nine unplaced 6xx and 7xx models are unplaceable for a stated reason
+        and the check for that is the next assertion: their platform key holds a product id and no
+        skin list, which is why they fall out of a skin keyed join at all.
+        """
+        placed = {}
+        with io.open(self.properties, encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        for platform, skin in re.findall(r'Device\.([A-Za-z.]+)\.Skin\d+\s*=\s*(\d+)', text):
+            placed.setdefault(int(skin), set()).add(platform)
+
+        named = set()
+        remote = os.path.join(lab.LAB, 'software', 'classic', 'res', 'client', 'skins', 'logitech',
+                              'intl', 'remote', 'remote.properties')
+        if not os.path.isfile(remote):
+            self.skipTest('no skin bundle in the lab')
+        with io.open(remote, encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                match = re.match(r'Remote\.Skin\d+\s*=\s*(\d+)', line)
+                if match:
+                    named.add(int(match.group(1)))
+
+        self.assertEqual(len(named), 46, 'skins the client has a model name for')
+        self.assertEqual(len(placed), 52, 'skins the client places on a platform')
+        self.assertEqual(len(named & set(placed)), 35, 'skins with both')
+        self.assertEqual(sorted(named - set(placed)), [3, 7, 9, 10, 11, 12, 13, 14, 16, 50, 58])
+        self.assertEqual(sorted(set(placed) - named),
+                         [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 42, 43, 46, 47, 51])
+
+        # The old 6xx and 7xx family is keyed by product id and carries no skin list, which is the
+        # reason nine of the eleven fall out. Asserting the absence alone would not show that.
+        self.assertIn('Device.Intrigue.ProductId1', text)
+        self.assertNotIn('Device.Intrigue.Skin', text)
+
+    def test_the_platform_groups_are_transports_and_not_architectures(self):
+        """The Harmony 700, 600 and 650 sit in the group whose other members are Harmony 525s.
+
+        This is the assertion that stops the table in `reference/models.md` being read as an
+        architecture map. Skins 66, 71 and 72 are architecture 14 and skin 22 is architecture 9, and
+        all four are in Mocha, because what the group decides is which driver speaks to the remote.
+        """
+        mocha = set(self.skins('Mocha'))
+        for skin in (66, 71, 72):
+            with self.subTest(skin=skin):
+                self.assertIn(skin, mocha, 'an arch 14 remote in the arch 9 platform group')
+        self.assertIn(22, mocha, 'and the Harmony 525 is in it too, which is the point')
+
     def test_two_cognac_skins_are_marked_as_having_no_zwave(self):
         """A subset key, which is what makes the Z-Wave module a platform feature rather than a
         transport one, and corroborates concordance's name for the range from the other side."""

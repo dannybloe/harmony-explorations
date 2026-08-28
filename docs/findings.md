@@ -26930,6 +26930,31 @@ the predicate is which devices `openHarmony` must refuse, and leaving it out wou
 into two named sets and a gap. A test walks every id in the range and asserts exactly one of the three
 predicates claims it.
 
+### The two files together give a platform per skin, which neither has alone
+
+`device.properties` lists the skins per platform and `remote.properties`, one directory over, names
+the model per skin. That second file is where `reference/models.md`'s 46 entry skin table came from,
+which nothing in the register had recorded either.
+
+Joined, **35 of the 46 named skins get a platform**. Nine of the eleven gaps have a reason and the
+file states it itself: those nine are the old 6xx and 7xx models,
+which the client matches by **product id** rather than by skin, and their key holds a product and
+vendor id with no skin list at all. Khalua and Baileys are the two with no reason found. Going the
+other way, **17 skins are placed on a platform and never named**, so the client routes remotes it has
+no display name for and the published numbering is narrower than the one it handles.
+
+**The join is a transport map and not an architecture map**, and the Mocha group makes that
+unmissable: skins 66, 71 and 72 are the Harmony 700, 600 and 650, architecture 14, sitting with skin
+22, the Harmony 525, architecture 9. Reading a platform here as an architecture would put a Harmony
+600 on the Harmony 525's. The table is in `reference/models.md` with that warning attached.
+
+Two smaller things fell out. **Skin 46 is in two groups**, Espresso and Mocha, alone among all 52
+placed skins, and nothing explains it; the client cannot notice, because both route to the same
+driver. And **`Cognac.NoZwave` names 52 and 56**, the Australian Harmony 1000 and 1000 Pro, which are
+also in the plain Cognac list. So the Z-Wave module is a per market option on one platform rather than
+a property of the transport, which is the opposite of what concordance's name for the product range
+suggests.
+
 ### The rule did not change, only what it now permits
 
 The old docstring's closing sentence was **exclude where we provably have no protocol, and not where
