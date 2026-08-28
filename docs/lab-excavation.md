@@ -171,11 +171,29 @@ the outcome the decision was taken for.
 
 The survey is the one part of this that splits cleanly: squares are independent, the output is rows,
 and a wrong guess costs nothing because step 3 corrects it. So a square is a reasonable unit of work
-to hand out.
+to hand out, and the grid in step 9 is already a set of disjoint paths.
 
-Reading and paging do not split as well, because a page's value is in relating things that sit in
-different squares, and that is exactly what a per square worker cannot see. The three clients agreeing
-about a screen is the example: no worker holding one client can notice it.
+**The unit of work is a square and the unit of conflict is a file, and those are not the same thing.**
+This is the part a plan gets wrong by omission: the register is one file, so six workers appending
+rows to it collide, and that collision costs more than the parallelism saves. Two rules, and they are
+worth stating before anything is spawned rather than discovering them through a merge:
+
+* **A surveyor never writes.** It reads its square and **returns** its rows; one thread writes the
+  register. So there is exactly one writer however many readers there are. It has a second benefit
+  that was not the reason for it: a worker that cannot write also cannot touch the lab's own git, and
+  the lab has an hourly snapshot that would otherwise commit whatever a worker left behind.
+* **One page per square**, named after the square, when the deep pass starts. That gives the writing
+  half the same property the reading half has.
+
+Reading and paging still do not split as well as surveying, because a page's value is often in
+relating things that sit in different squares, and that is exactly what a per square worker cannot
+see. The three clients agreeing about a screen is the example: no worker holding one client can notice
+it. So the relating passes stay single threaded, by choice rather than by oversight.
+
+**And landing a claim is serial, whatever else is running.** Every claim touches `docs/findings.md`,
+`reference/superseded.md` and usually `CLAUDE.md`, so those files are serialisation points by nature.
+Parallel workers survey and catalogue; anything that becomes a fact this project depends on comes back
+to one thread and takes the four places there.
 
 ### The rail that does not move
 
