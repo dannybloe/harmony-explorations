@@ -22,8 +22,10 @@ purpose is to *learn* something rather than to *check* something.
 
 If you are about to send bytes to a remote, or to derive anything at all, in order to work out a
 format, a framing, a command number, a field layout or which call to make, **stop and read Logitech's
-own client.** That is decision 2 and it is an ordering, not a suggestion: their code is the cheapest
-source there is and it states outright what the firmware only implies. In order:
+own client and the firmware.** That is decision 2, and both halves are meant: the firmware is as
+important as the client and often more, and the client's advantage is that it is cheap and legible, so
+it is the fastest way to find out whether an answer exists at all. The list below is the order to open
+them in, not a ranking of what to believe:
 
 1. **Logitech's own client**, mirrored in the lab. It **builds** the packets, so the framing is code
    rather than inference. **MyHarmony is the reference client**, `work/myharmony/xap/`, and for how a

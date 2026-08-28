@@ -97,9 +97,14 @@ designing around its absence.
 1. **Licence stays MIT.** libconcord and harmony-decompiler are GPLv3, so their code is not
    copied or ported here. Running concordance as a program has no licensing consequence, and
    protocol facts are not copyrightable expression.
-2. **Read Logitech's own client first, then derive.** Danny's decision of 28 August 2026, and it is
-   an ordering rather than a licence change: before working out how a remote is driven, what a packet
-   looks like, which call to make or what a field means, **look in their code**. It is the cheapest
+2. **Read Logitech's own client and the firmware, both, before deriving anything.** Danny's decision
+   of 28 August 2026, and it is an ordering rather than a licence change: before working out how a
+   remote is driven, what a packet looks like, which call to make or what a field means, **look in
+   their code and in the image**. Neither is the junior partner, and Danny said so explicitly the day
+   the rule was written: the firmware is as important as the client and often more. What the client
+   is, is **cheap and legible**, so it is the fastest place to find out whether an answer exists at
+   all, and it says outright what the firmware only implies. That is a reason to open it early, not a
+   reason to skip the image. It is the cheapest
    source there is and it states outright what the firmware only implies. The reason is measured, not
    argued: nineteen days of an unread protocol map, section 197; six rounds of hardware guessing a
    framing that was one function of theirs, section 200; and a wrong reading published in four
@@ -114,8 +119,8 @@ designing around its absence.
    describes the hub generation rather than the remotes here. Its mirror keeps two uses nothing else
    covers, the file family's per skin protocol templates and the parameter encoder, both confirmed
    against hardware.
-   **Reading it first does not make it right, and that half is unchanged.** The USB protocol is still
-   derived from the **firmware**, with `concordance/specs/protocol.txt` as corroboration and
+   **Reading the client does not make it right, and that half is unchanged.** The USB protocol is
+   still derived from the **firmware**, with `concordance/specs/protocol.txt` as corroboration and
    concordance kept as a cross-check oracle, which is also technically necessary since concordance has
    two known defects on these architectures. Where the firmware or the hardware can answer, that is
    the citation; where neither can, the fact is marked client sourced per fact and may still be acted

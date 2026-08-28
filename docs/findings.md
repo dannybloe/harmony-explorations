@@ -26632,3 +26632,44 @@ square, and the cost was a wrong reading published in four documents.
 * **An empty account.** The Touch's record holds two appliances and one activity.
 * **The sync required flag.** It reads false for the Touch and also for the Harmony 600, which has
   compiled successfully here.
+
+## 203. A Harmony Touch fetches its own configuration, and the client is only a pipe
+
+The mechanism behind section 202, read out of MyHarmony's source on 28 August 2026, and it explains
+why no compiled artefact exists for this generation rather than merely recording that none does.
+
+**The remote is the client and MyHarmony is its network transport.** Once the provisioning route is
+chosen, the controller opens a session with an identifier of its own and then loops:
+
+1. it asks the remote for work, over the remote's own protocol, with a request naming a proxy read and
+   the session identifier
+2. the remote answers with a **list of HTTP requests**, each carrying a verb, an absolute URI, a
+   resource name and an entity tag
+3. the client puts them on a queue, performs them against the network, and writes the answers back to
+   the remote as responses
+4. two request forms are terminal rather than fetches, one meaning finished and one meaning abort, and
+   both are acknowledged back to the remote
+
+So the configuration is not compiled for a host and handed over. **The remote asks for what it wants,
+by absolute URI**, including image assets from a content network that is not Logitech's own service at
+all, and the desktop application exists to carry those requests because the remote has no network of
+its own. The session ends with a separate instruction telling the remote to sync.
+
+**Two consequences for this project.**
+
+The first is that section 202's negative is structural. There is no file to obtain, so no amount of
+asking the service differently will produce one, and the two routes this project has ever used, a
+compile taken as a file and a read off flash, both describe a world where the host holds the
+configuration. For this generation the host never does.
+
+The second is that a route exists and it is one this project can already partly speak. The whole
+conversation rides on the **file based protocol's HBus command**, section 198's `0x08`, the one whose
+description is a request and response with no file. Standing between here and reading a Touch's
+configuration are: sending that command at all, which has never been done; the request and response
+encoding, which is JSON inside it; and the session handshake. **Recording what the remote asks for
+would give the configuration in the vendor's own terms**, since the remote names every URI it wants,
+which is a different and possibly better artefact than the compiled container this project reads
+elsewhere.
+
+None of that is built and none of it is proposed here. It is written down because the alternative is
+concluding, wrongly, that the generation is closed.

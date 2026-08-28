@@ -212,10 +212,12 @@ image is a second sample rather than a stand in. Other models are iterated on la
    them, behind the flag and behind a second named door for the first write. What is still unsettled
    is one thing about the medium rather than two: whether the firmware erases before it programs,
    which is moot for a caller that erases first. Pacing was answered by reading the same day.
-9. **Logitech's own client is read first, not as a fallback.** *Taken 9 August 2026 as a fallback,
-   and reordered by Danny on 28 August 2026.* Before deriving anything about how a remote is driven,
-   what a packet looks like or which call to make, **look in their code**: it is the cheapest source
-   there is and it states outright what the firmware only implies. The old wording made it a fallback
+9. **Logitech's own client is read alongside the firmware, not as a fallback.** *Taken 9 August 2026
+   as a fallback, and reordered by Danny on 28 August 2026.* Before deriving anything about how a
+   remote is driven, what a packet looks like or which call to make, **look in their code and in the
+   image**. Neither is junior: the firmware is as important as the client and often more, and what
+   the client offers is that it is cheap and legible, so it is the fastest way to find out whether an
+   answer exists at all. The old wording made it a fallback
    admitted only "where the firmware genuinely cannot settle something"<!--superseded-->, which put
    the expensive work first by default; the measured cost of that ordering is sections 197, 200 and
    202. The client to read is **MyHarmony**, decompiled to C# in the lab, and not Harmony Desktop's

@@ -11,8 +11,11 @@ every fact currently believed on the client's word alone.
 
 ## Why the rule changed, twice
 
-**Read the client first. Every time, before deriving anything.** Danny's decision of 28 August 2026,
-and it reverses the order this document carried for three weeks. The client is the cheapest source
+**Read the client and the firmware, both, before deriving anything.** Danny's decision of 28 August
+2026, and it reverses the order this document carried for three weeks without demoting the image:
+**the firmware is as important as the client and often more**, which he said in those terms the same
+day. The client's advantage is that it is cheap and legible, so it is the fastest way to find out
+whether an answer exists at all. The client is the cheapest source
 there is: it states outright what the firmware only implies and what hardware only hints at, and every
 hour this project has lost in the last month was lost by working something out that was written down
 in it. Section 197 is nineteen days of a protocol map sitting unread. Section 200 is six rounds of
@@ -52,8 +55,10 @@ actually about, which is libconcord and harmony-decompiler.
 
 ## The rule
 
-1. **The client first, always.** Before deriving anything about how a remote is driven, what a
-   packet looks like, which call to make or what a field means, look in their code. It is the
+1. **Both sources, before deriving.** Before working out how a remote is driven, what a packet looks
+   like, which call to make or what a field means, look in their code **and** in the firmware.
+   Open the client early because it is the cheapest place an answer can be, and never treat that as
+   a substitute for the image. It is the
    cheapest place an answer can be, and the reason for the order is measured rather than argued:
    sections 197, 200 and 202. `work/myharmony/src/` is MyHarmony decompiled to C# and is the first
    stop; the compiled assemblies beside it are not a substitute, per section 202.
