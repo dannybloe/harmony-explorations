@@ -872,7 +872,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 14 | Harmony 600, or the Harmony 700 for the reference image |
 | 8 | Harmony 880 or 885, contributed configs only |
 | 10 | Harmony 890 or 895, contributed configs only |
-| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, file based and never opened |
+| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened over USB. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196 |
 | 17 | Harmony Touch, on the bench since 27 August 2026, file based and never opened |
 
 **The failure mode is the trailing mention.** It gets done in headings and first mentions and dropped
@@ -1226,8 +1226,13 @@ needs to know whether a remote is plugged in uses the first. **That separation i
 alone, and both turned out to be inside the range that gates opening one.
 
 **A Harmony in the range is not a Harmony this library speaks to**, section 193. The **file based**
-family keeps its config in a named file rather than at a flash address, so nothing here reaches it: no
-address, no firmware, no RAM. Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
+family keeps its config in a named file rather than at a flash address, so **no read path here reaches
+one**: no address over USB, no RAM, no config. This used to end "no address, no firmware, no RAM"<!--superseded-->
+and the firmware third is now false, section 196: Logitech's own update service serves the Harmony 300
+and Harmony 350 firmware to an anonymous request, it is an ordinary PIC18 image at `0x9000`, and it
+reads with no new code. So the claim is about the **protocol** and has to say so; the storage being
+addressed by filename and the processor being a PIC18 were never in tension.
+Its five product ids sit **inside** `0xC110` to `0xC14F`, so `isHarmony`
 excludes them explicitly and `isFileBasedRemote` reports them, which is section 189's second predicate
 applied to the opposite case, since here the devices really are Harmonys. **`0xC112` to `0xC115` is
 deliberately still claimable**, and a test says so. Concordance routes it to a separate class under a
@@ -1476,7 +1481,9 @@ Seven project skills carry the rituals that are easy to half-perform:
   with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
-* **`myharmony-service`**, how to talk to Logitech's live service: the instrument in the lab, the two
+* **`myharmony-service`**, how to talk to Logitech's live services, both of them: the configuration
+  service and the **software update service** that serves firmware, plus the hidden recovery screen in
+  each client that is how the second one was found. The instrument in the lab, the two
   accounts and what each holds, the named doors in front of every write, and the traps already met,
   starting with the read that is secretly a compile. Written on 27 August 2026 after a session had to
   be reminded of all of it.
@@ -1822,7 +1829,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 195 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 196 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

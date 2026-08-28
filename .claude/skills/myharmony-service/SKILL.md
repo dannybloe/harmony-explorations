@@ -1,14 +1,17 @@
 ---
 name: myharmony-service
-description: How to talk to Logitech's live MyHarmony service, read only by default, with the account map, the API mechanics, the rails and the traps. Use before any session that logs in, fetches the device catalogue, compiles a config, registers or removes anything on an account, or reasons about what an account holds.
+description: How to talk to Logitech's two live services, read only by default: the configuration service and the software update service that serves firmware. Carries the account map, the API mechanics, the hidden recovery screens in both clients, the rails and the traps. Use before any session that logs in, fetches the device catalogue or a firmware image, compiles a config, registers or removes anything on an account, or reasons about what an account holds.
 ---
 
-# Logitech's live service: the instrument, the accounts, the rails
+# Logitech's live services: the instrument, the accounts, the rails
 
-Everything below has been relearned at least once by a session that did not know it. The service is
-**alive** (`svcs.myharmony.com`, measured since 7 August 2026, section 56); what is discontinued is
-the classic `members.harmonyremote.com` service for the 7.x software. It can be withdrawn without
-notice, which is one of the two reasons the hardware rails never relax because of it.
+Everything below has been relearned at least once by a session that did not know it. **Three
+services, and keeping them apart matters**: the configuration service `svcs.myharmony.com` is alive
+(measured since 7 August 2026, section 56); the **software update service** `sus.dhg.myharmony.com`
+is alive and serves firmware (section 196, and it needs a header before it will admit to existing);
+and the classic `members.harmonyremote.com` service for the 7.x software is discontinued. Any of the
+live ones can be withdrawn without notice, which is one of the two reasons the hardware rails never
+relax because of it.
 
 ## The instrument lives in the lab, not in this repository
 
@@ -58,27 +61,54 @@ read it back). Both refuse without credentials and are **never in `make all`**.
 * Traps: `GetAccountProducts` answers XML (an error page), `SimpleRestGetHouseholdProducts` answers
   an empty body. `GetMyHousehold` is the read that actually lists an account's remotes.
 
-## The two accounts
+## The two accounts, and this section was written backwards once
 
-**Account 1 is Danny's real account.** Real remotes, real history. Read only, always; nothing was
-ever authorised against it beyond reads.
+**Read the two address keys in `credentials.env` before assuming which selector is which.** This
+file said "account 1 is Danny's real account, read only, always" for a fortnight and it was wrong in
+both directions. Corrected 28 August 2026 against the credentials file and against the `Email` field
+of each account's own captured `GetMyHousehold`, which is the check to repeat rather than to trust
+this table on.
 
-**Account 2 is the throwaway created for calibration**, and it is where every authorised write has
-happened. What it holds (verified live on 27 August 2026): **one real remote**, the spare Harmony
-One, synced 23 August, carrying the ten appliances the rhythm and favourites campaigns used; and
-**sixteen registration records that were never synced**, left by our own experiments (the Harmony
-525 probing of 13 August, sections 135 and 136, and the made-config campaigns of 23 and 24 August:
-favourite channels, the number sender, the sequence, the protocol rhythms, which registered records
-for models such as a Harmony 600, 650, 700 and a Harmony 200 EMEA and migrated devices onto them).
-The client shows those sixteen as "Remote set up in progress". They are disposable; everything they
-produced is archived in the lab. **The One+ record and the devices on it are evidence and are
-protected by name in `cleanup.py`'s `PROTECTED` list.**
+| selector | replies land in | what it is |
+|---|---|---|
+| 1, the default | `responses/` | a **test account**, whose address says so in its local part. Danny pointed the Harmony Touch work at it by name on 27 August 2026, and it is the account `compile.py` has been authorised against |
+| 2 | `responses-account2/` | the account under Danny's own name, and the one that accumulated the calibration records |
 
-Do not trust the client's view of an account: it hides models it does not support (it cannot show a
-Harmony 525 at all, section 135), so the service can hold records the screen never shows. Do not
-trust a remote record's skin fields against what the client displays either; the record carries
-`OriginalProductIdentifier` and `LastProductIdentifier` as well, and the mismatch between those
-fields and the client's rendering is measured and **unresolved**.
+So **neither account is read only** and the old rail pointed at the wrong one. The standing rule is
+per operation and not per account: reads freely on both, writes only through an existing named door,
+and a new kind of write is Danny's decision each time.
+
+**What selector 2 holds** (verified live on 27 August 2026): 17 remote records, of which **one is
+real**, the spare Harmony One, synced 23 August, carrying the ten appliances the rhythm and
+favourites campaigns used; and **sixteen registration records that were never synced**, left by our
+own experiments (the Harmony 525 probing of 13 August, sections 135 and 136, and the made-config
+campaigns of 23 and 24 August: favourite channels, the number sender, the sequence, the protocol
+rhythms, which registered records for models such as a Harmony 600, 650, 700 and a Harmony 200 EMEA
+and migrated devices onto them). The client shows those sixteen as "Remote set up in progress". They
+are disposable; everything they produced is archived in the lab. **The One+ record and the devices on
+it are evidence and are protected by name in `cleanup.py`'s `PROTECTED` list.**
+
+**The account is full at 17**, which is why "which remote can I remove" is a question that gets
+asked. The answer comes from the list above and not from a skin field: see the trap below.
+
+### The trap: a record's skin field does not name the model
+
+**`GlobalRemoteSkinId` reads 22 on every record that was created with the Harmony 525's real
+serial**, which is sixteen of the seventeen in selector 2. Read literally, that account looks like
+sixteen Harmony 525s. It is not: the client displays a Harmony One+, a 700, a 650, a 700, a 600 and a
+600 among them, and the model it shows comes from the record's own `ProductIdentifier`,
+`LastProductIdentifier` and `OriginalProductIdentifier`. The 525 is not a MyHarmony model at all, so
+"there is a 525 in this account" is never the right answer.
+
+That mismatch is measured and **unresolved**, so when the question is which remote to remove, answer
+from what the records hold, a remote plus devices plus activities, and from what the client shows,
+never from a skin field.
+
+Do not trust the client's view either, in the other direction: it hides models it does not support
+(it cannot show a Harmony 525 at all, section 135), so the service can hold records the screen never
+shows. `GetMyHousehold` is the read that lists them; **look before answering**, because this is the
+question this skill exists for and it was got wrong four times in a row on 27 August 2026 by
+reasoning instead of querying.
 
 ## What the service gives us, operation by operation
 
@@ -116,12 +146,91 @@ fields and the client's rendering is measured and **unresolved**.
   where `reference/button-maps.md` came from, via the account that generated the calibration
   configs.
 
+## There is a second service, and it serves firmware
+
+Everything above is the **configuration** service, `svcs.myharmony.com`. There is a separate
+**software update service**, `sus.dhg.myharmony.com`, and it hands out firmware images to an
+anonymous request. Section 196, 28 August 2026.
+
+### How it was found, because that is the part that is easy to lose
+
+Both MyHarmony clients carry a hidden recovery screen, and they are not the same screen.
+
+| | Silverlight MyHarmony, Windows | Harmony Desktop's web application |
+|---|---|---|
+| reached by | **Alt-F9** after signing in | shift plus double click on the title bar, `app.desktopFlow.RRTmenu()` |
+| what it really is | a live page, `https://setup.myharmony.com/remoterecoverytool/DefaultRRT.html`, named by a string inside `MyHarmony.exe` | an `RRTMenu` view inside the mirrored bundle |
+| offers | factory and latest firmware for ten products, plus `recoverproducttolatest`, `unpair` and `xmppupdate` | factory reset, update firmware, recover product, unpair |
+
+The older page's buttons each load `recover.aspx?<mode>`, and those pages are byte identical except
+for the `Mode=` handed to a Silverlight utility along with
+`SUSAddress=https://sus.dhg.myharmony.com, SUSChannel=production, SpecialSUSStream=preview`. The ten
+products are the **Linux generation only**: Touch, Ultimate, Ultimate One, Ultimate Home, Elite, 950,
+Pro, Home Control, Smart Control, Smart Keyboard. No model of any architecture this project reads is
+on that page, and its factory reset installs a whole firmware image rather than sending a command.
+
+### The endpoints, and the header without which they all look dead
+
+The path templates are in `responses/Discovery_GetJsonOperations.json`, already captured:
+
+    https://sus.dhg.myharmony.com/SoftwareUpdatesPlatform/SoftwareUpdates/
+        product/{productId}/unit/{unitId}/image/latest?channel=<ch>&criticalOnly=false
+        product/{productId}/unit/{unitId}/features
+        product/{productId}/unit/{unitId}/info        404 for unit 0
+        product/{productId}/unit/{unitId}/streams     404 for unit 0
+
+`{productId}` is the **skin** and `unit/0` is accepted, so no serial and no registered remote is
+needed. `image/latest` returns a `GetLatestImageUpdateResult` carrying `Id`, `Size` and a CloudFront
+`URI`; fetching that URI needs no header at all.
+
+**The request needs `Logitech-SUS-Key`.** Its forty character value is hardcoded as `susKey` in
+`../lab/software/desktop-webapp/en.desktop-app-main.js`. Read it from there at the time of use, do not
+copy it into a document, and never into this repository.
+
+**This is the trap that cost a day.** Without the header every path answers 404 or 403, which was
+recorded as the service being gone. A service that 404s an unauthenticated request is
+indistinguishable from a service that no longer exists, so before concluding a Logitech endpoint is
+dead, find a client that calls it and copy its headers.
+
+**Two channels exist and no more**: `production` and `preview`. Nine invented names, `xmpp` and
+`xmppupdate` among them, all return the production build **with no error**, so a wrong channel name
+gives a wrong answer rather than a failure. Any claim about a channel needs two names that disagree.
+
+There is a second, keyless route for factory images only:
+`https://rcbu-prod-ssl-amr.myharmony.com/Firmware/<skin>/firmware_factory.hfw2`, which serves skin 99
+and skin 106 and answers 403 for every other skin.
+
+### What is already downloaded, so nobody fetches it twice
+
+Eleven images sit in `../lab/firmware/packages/sus/` with a `META.md` and a `MANIFEST.json` of sizes,
+digests and source URLs; the digests are also published in `reference/checksums.md`. **One image
+serves a whole family**: skins 99 and 112 are byte identical, as are 97 and 106.
+
+The one that matters to this project is **skin 104, the Harmony 300 and Harmony 350 firmware**: an
+ordinary PIC18 image in the same package format as the three `.hfw` files, executing at `0x9000`,
+which the existing readers take with no new code, and whose own manifest states the checksum seed and
+algorithm section 41 derived from config containers. `tests/test_harmony_350_firmware.py` pins it.
+
+Eight skins have no image on either channel: 78 and 104 by this route, 98, 101, 107, 109, 113, 114.
+The Linux images are ARM with a squashfs root and reading them needs squashfs-tools, not installed.
+
+**`xmppupdate` is unidentified.** It is the only mode with no product name, and the hub's preview
+build is 4.15.250 against production's 4.15.600, which fits the public episode where XMPP was removed
+and then restored as a developer option. Not established: no feature flag on either channel names
+XMPP, and `SpecialSUSStream=preview` appears in every mode. Both hub images are in the lab, so
+comparing them is what would settle it.
+
 ## Rails that do not bend
 
 * Nothing here ever syncs a config to a remote. The compile is taken as a **file**; the sync step
   is the desktop application's and is not implemented.
-* Account 1: reads only. Account 2: reads freely, writes only through an existing named door, and a
-  new kind of write is Danny's decision each time.
+* **Per operation, not per account**: reads freely on both, writes only through an existing named
+  door, and a new kind of write is Danny's decision each time. This rail used to read "account 1:
+  reads only", which named the wrong account and has been withdrawn: see the accounts section.
+* The update service is **read only by nature** and stays that way. Fetching an image is a download;
+  installing one on a remote is not this project's business and no remote here has ever been written
+  to. Its key is Logitech's, read from the mirrored client at the time of use, never copied into a
+  document and never into this repository.
 * The evidence directories are append only in spirit: a rerun that would overwrite a captured reply
   used as evidence in `docs/findings.md` gets a new name.
 * Credentials never leave the lab, never appear in output, and nothing from the service that embeds

@@ -38,8 +38,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // table when it was written. The table is 58 entries now, so the guard had been satisfied by 31% of
   // it for weeks, and a regex that lost two thirds of the lines would have passed.
   //
-  // 62 since the Harmony 895 was registered, section 177, and 63 since the Harmony 350, section 194.
+  // 62 since the Harmony 895 was registered, section 177, 63 since the Harmony 350's config, section
+  // 194, and 65 since its firmware and the package it came in, section 196.
   // This is a **pure text** check on lab.py, so it runs with no lab at all and is what
-  // `make test-nolab` caught, twice now, when the count was left behind by a registration.
-  assert.equal(Object.keys(pythonImages()).length, 63, 'every fixture tests/lab.py names');
+  // `make test-nolab` caught, three times now, when the count was left behind by a registration.
+  assert.equal(Object.keys(pythonImages()).length, 65, 'every fixture tests/lab.py names');
 });

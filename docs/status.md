@@ -18,8 +18,12 @@ section. For the format as a specification, [config-format.md](config-format.md)
 
 ## Status
 
-The work targets three architectures. **Four remotes are on the bench**, and this list is the
-hardware, not the model families: two Harmony Ones, a Harmony 600 and a Harmony 525. Other models
+The work targets three architectures. **Seven remotes are on the bench**, and this list is the
+hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, and since 27 August
+2026 a Harmony Touch, a Harmony 350 and a Harmony 300. The last three are the file based family and
+are **not targets**: nothing here speaks their protocol, and `openHarmony` refuses them by product id
+rather than by accident, section 193. What they have bought so far is the reading of the descriptor
+field that names a model, section 195, and the route to their firmware, section 196. Other models
 appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
 constantly. There has never been a Harmony 700 here.
@@ -31,6 +35,14 @@ constantly. There has never been a Harmony 700 here.
 * **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
   accounting, is read. It has no write target and will not get one.
+
+**Firmware is held for four architectures**, 8, 9, 12 and 14, **plus one image whose architecture is
+not established**: Logitech's own software update service serves the Harmony 300 and Harmony 350
+image to an anonymous request, section 196. It is the first firmware here to come from the vendor
+rather than from hardware, a contributor or a repair site, and it is an ordinary PIC18 image at the
+same load address as arch 14's, but a load address is not an architecture number and nothing has
+measured that generation's. It is a source, not a target: no config of it has been read and no
+protocol here reaches one.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete

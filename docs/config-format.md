@@ -294,6 +294,14 @@ stored checksum under that rule. (This said 19 of 33 with 14 verifying, which ha
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
 behaviour read as untested when more than half the corpus tests it.
 
+**Logitech states this rule in writing, in a file type that shares no bytes with a config**, section
+196. The Harmony 300 and 350 firmware package's `Description.xml` carries
+`SEED="0x4321" ... TYPE="XOR"` with an offset, a length and an expected value, and recomputing this
+same arithmetic over that range reproduces the stated value. This entry was derived from the boot
+validator alone; the vendor's own manifest now agrees with it, by a route with nothing in common.
+`gspm.xor_words` is the one implementation, with `trailer_checksum` and the firmware package test as
+its two consumers over two different ranges.
+
 **This is the value a writer has to get right**; the remote refuses a config whose checksum does
 not recompute. It is also a weak check: a word XOR catches any single changed byte but is blind to
 two transposed words and to any even number of identical changes, so a passing checksum means the

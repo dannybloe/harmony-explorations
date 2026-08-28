@@ -25772,3 +25772,151 @@ the bench.
 `tests/test_usbdesc.py` and `packages/usb/test/remote.test.ts`, ten words each, with the malformed BCD
 case as the surviving negative. Controls run and reversed in both languages: putting the low byte
 reading back fails two tests in Python and three in TypeScript.
+
+## 196. The Harmony 300 and 350 firmware is published, and Logitech's own manifest states section 41's checksum
+
+Section 193 fenced the file based family off from `openHarmony` on the ground that nothing here can
+reach them: no address, no firmware, no RAM.<!--superseded--> That was a statement about the **USB
+protocol** and it
+is still true of it. It read as a statement about the project, and that half is now false: the
+firmware of the Harmony 300 and the Harmony 350 is served by Logitech's own infrastructure, it is an
+ordinary PIC18 image, and every reader in `src/harmony/` accepts it without a line of new code.
+
+### The route, which is a hidden screen in the client
+
+Danny found an advanced screen in the Windows MyHarmony client, reached with Alt-F9 after signing in,
+offering a factory reset and a firmware update per model. It is not part of the client: `strings` on
+`MyHarmony.exe` yields `https://setup.myharmony.com/remoterecoverytool/DefaultRRT.html`, a live page
+that still answers 200 and 10883 bytes, the same length on two fetches. Each of its buttons calls
+`recover.aspx?<mode>`, and those
+pages are byte identical except for one parameter handed to a Silverlight utility:
+
+    SUSAddress=https://sus.dhg.myharmony.com, SUSChannel=production, Mode=<mode>,
+    TargetFW=, SpecialSUSStream=preview, discoveryServiceUrl=https://svcs.myharmony.com
+
+Twenty four modes: `factory` and `latest` for ten products, plus `recoverproducttolatest`, `unpair`
+and `xmppupdate`. The ten are Touch, Ultimate, Ultimate One, Ultimate Home, Elite, 950, Pro, Home
+Control, Smart Control and Smart Keyboard, so the page covers the **Linux generation only** and no
+model of any architecture this project reads. The Harmony 300 and 350 are not on it.
+
+**The newer client has the same tool and not the same options.** Harmony Desktop's web application,
+mirrored in the lab since section 132, carries an `RRTMenu` view reached by shift plus double click on
+the title bar, offering factory reset, update firmware, recover product and unpair. It has no XMPP
+entry. It does carry an in app XMPP toggle under hub settings, labelled a developer option, with a
+warning about creating an unsecured local access point, so the capability exists in both and only the
+older tool offers a firmware for it.
+
+### The update service answers, and the reason it looked closed was one header
+
+`sus.dhg.myharmony.com` was probed on 27 August 2026 and returned 404 and 403 to every path tried,
+which was recorded as the firmware being unreachable. That was wrong and the cause is worth stating,
+because it is a general trap: **the paths were right and the request was incomplete.** The service
+requires a header, `Logitech-SUS-Key`, whose forty character value is hardcoded in Harmony Desktop's
+web application. With it the same paths answer 200. No login, no cookie, no account.
+
+The path templates are not guesses either. They are in the discovery catalogue this project captured
+in section 132 and never read this part of:
+
+    .../SoftwareUpdates/product/{productId}/unit/{unitId}/image/latest?channel=<ch>&criticalOnly=false
+    .../SoftwareUpdates/product/{productId}/unit/{unitId}/features
+
+`{productId}` is the skin and `unit/0` is accepted, so no serial and no registered remote is needed.
+`info` and `streams` answer 404 for that unit; the other two answer for every product that has an
+image.
+
+**Two channels exist and no more, which was measured rather than assumed.** `production` and
+`preview` return different builds; nine invented channel names, including `xmpp` and `xmppupdate`,
+all silently return the production build. So a wrong channel name is not an error here, which is
+exactly the shape that manufactures a false negative, and the control is that two names have to
+disagree before either means anything.
+
+### What it serves
+
+Eleven images, listed with their digests in `reference/checksums.md`. Every file's length equals the
+length the service stated for it before the download.
+
+**One image serves a whole family**, and that is measured rather than inferred from the sizes: skin
+99 and skin 112 are byte identical, as are skin 97 and skin 106. Only the download filename differs
+per skin. The remote family sits at production 4.15.330 against preview 4.15.250, the hubs at 4.15.600
+against 4.15.250.
+
+Eight skins have no image on either channel: 78 and 104 by this route, 98, 101, 107, 109, 113 and 114.
+Separately, two factory images are published on the content network with no key at all, at
+`Firmware/<skin>/firmware_factory.hfw2`, for skin 99 and skin 106; every other skin answers 403 there.
+
+### The Harmony 300 and 350 image, and what makes it a finding rather than a download
+
+`product/104` serves 46773 bytes, which is two orders of magnitude smaller than the Linux images and
+was the reason to look. It is a ZIP holding a `Description.xml` and a `Region_2.EZUpgrade`, which is
+exactly the shape of the three `.hfw` packages this project has had from the start, and its
+`<INTENDED>` names skins **78, 79 and 104**. Skins 78 and 79 are both a Harmony 300 and they are a
+**regional pair**, which is measured rather than assumed: the product table gives 78 region 1 and 79
+region 2, the same shape as the Harmony 600's 71 and 73 that section 131 identified. 104 is the
+Harmony 350, region 3, with no pair. So one image covers both models and both regions of one of
+them.
+
+`tools/ezextract.py` decodes the region wrapper to 73472 bytes with no change to the tool. Then, in
+order, five things that could each have failed:
+
+* `firmware.verify_checksum` passes and `firmware.parse_header` finds the `HG` magic at offset 8.
+* the header's version is BCD `0x14`, and the package's own manifest says `VERSION="1.4"`.
+* the header's **family byte is 1**, which is the value the Harmony 600, 650 and 700 images carry and
+  not the Harmony One's 0. Asserted against those images rather than against a constant.
+* `loadaddr.find_base` answers `0x9000`, where 1581 of 1582 targets land on a function boundary,
+  99.9%, against 32.5% for the runner up at `0xC000`, which reaches only 1460 of them. Quoting the
+  two raw hit counts side by side would have compared different denominators. That is the decisive
+  margin this project asks for, and `0x9000` is the arch 14 execution base.
+* the instruction at `0x9000` is `GOTO 0x1AED4` and the header's own entry point field is `0x1AED4`.
+  Two fields, one answer, which is what makes the derived base more than a score.
+
+**What none of that says is which architecture a Harmony 350 is.** The family byte has only ever had
+two values here and it is not the architecture number a config states; section 194 read a Harmony
+350's format word and section 195 its skin, and neither is an architecture either. The manifest's
+`PATH="/fw/normalmode"` is a **named file**, which is section 193's reading exactly, so the storage
+being addressed by filename and the processor being a PIC18 are both true and were never in tension.
+
+### Logitech states section 41's checksum, from a route with nothing in common
+
+The closure worth having. The package's `Description.xml` carries
+
+    <CHECKSUM SEED="0x4321" OFFSET="0x0004" LENGTH="0x11EF8" EXPECTEDVALUE="0x8F7B" TYPE="XOR"/>
+
+and recomputing a XOR of little endian 16 bit words over exactly that range reproduces `0x8F7B`. The
+seed, the word width and the algorithm are section 41's, derived here from **config container
+trailers** with no firmware involved and no manifest in sight. So the vendor states a rule this
+project inferred, in a file type that shares no bytes with the one it was inferred from. Solving for
+the seed rather than asserting it gives `0x4321`, which is what makes it a measurement.
+
+The value is also stored in the image's own first two bytes, little endian, immediately below the
+range it covers.
+
+`gspm.xor_words` is that arithmetic, and it was **extracted from `trailer_checksum` in this commit**
+rather than copied into the test. It now has two consumers over two different ranges, which is the
+only arrangement this project's oldest rule allows: a private copy in the test would have been a
+second derivation of the one thing, and the pair would have been free to drift.
+
+### The XMPP mode, and what stays inference
+
+`xmppupdate` is the only mode with no product name attached, and the hub's preview stream is pinned
+at 4.15.250 against production's 4.15.600. The episode where a hub firmware removed the local XMPP
+control interface and a later one restored it as a developer option is a matter of public record, and
+those version numbers fit it. **It is not established here.** The service's feature list names 33
+features for the hub on both channels and none of them mentions XMPP, and `SpecialSUSStream=preview`
+appears in every recovery mode's parameters rather than only in that one, so the parameter does not
+single it out. Both hub images are in the lab, so the way to settle it is to compare them, and that
+needs squashfs tools which are not installed.
+
+The mode is aimed at the hub family in any case, so it is not a route to anything for a remote on this
+bench: a Harmony Touch has no network interface for a local control API to listen on.
+
+### What it costs and what it opens
+
+Nothing about any rail. This is a download from a vendor's public endpoint and no remote was touched.
+
+What it opens is arch 9's position as the only architecture here whose firmware came from hardware. A
+Harmony 350 sits on the bench, unopenable by `openHarmony` by construction, and its firmware is now
+readable at the same load address as the architecture this project prefers for reading code. Whether
+its config is reachable at all is untouched by this and stays section 193's question.
+
+`tests/test_harmony_350_firmware.py`, ten tests, starting from the ZIP as downloaded rather than from
+any file this project produced out of it, with a flipped byte as the checksum's negative control.

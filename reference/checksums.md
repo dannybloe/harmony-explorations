@@ -15,14 +15,22 @@ The `.hfw` firmware packages are ZIP archives, retrieved from
   `9fa62f79f6755e2b0e742e6152c143055f9bb115be952f5d52b3322c1998b819` (**arch 14**, corrected
   6 August 2026; this file said arch 15 while the package had not been opened)
 
-Those three are the only Harmony firmware images anybody has published, and all three are the
-MyHarmony generation: arch 12 once and arch 14 twice. **No firmware exists in public for arch 2,
-3, 7, 8, 9, 10 or 15.** For those the only route is `READ_FLASH` off a physical remote, which is
-the argument for owning one. See `reference/models.md` for which models are which architecture.
+Those three were for a year the only Harmony firmware images anybody had published, all three of
+the MyHarmony generation, arch 12 once and arch 14 twice. **That is no longer the shape of it and
+the wording here overstated the scarcity twice.** Arch 8 has had firmware since 10 August 2026,
+contributed rather than published, sections 113 and 116. And since 28 August 2026 Logitech's own
+software update service serves eleven images to an anonymous request, including the **fourth**
+package of this kind, which covers the Harmony 300 and the Harmony 350: see "Firmware from
+Logitech's software update service" below and section 196.
 
-That page is the only surviving source anyone has found. It is worth archiving, and doing so
-is the most time-sensitive item in the project: these files are irreplaceable and there is no
-authoritative source left. **Strip `Data.xml` of the `UserId`, `CookieKeyValue`, `ServerID`
+What has no firmware anywhere is arch 2, 3, 7, 10 and 15. Arch 9 has it off our own remote rather
+than from anybody's publication. For an architecture with neither, the only route is `READ_FLASH`
+off a physical remote, which is the argument for owning one. See `reference/models.md` for which
+models are which architecture.
+
+That repair site is still the only surviving third party source anyone has found, and archiving it
+stays worth doing: the vendor's own service can be withdrawn without notice, and the two sources do
+not overlap. The repair site has the classic remotes and the service has everything except them. **Strip `Data.xml` of the `UserId`, `CookieKeyValue`, `ServerID`
 and `ASPSESSIONID` fields before mirroring anywhere**, since those are a stranger's account
 and session details.
 
@@ -285,6 +293,68 @@ The build identifier is in the asset paths, so those move; the bootstrap two lev
 entry point. The six locale manifests list the same files plus locale variants of the two large
 script bundles, which are the same code with different strings.
 
+## Firmware from Logitech's software update service, 28 August 2026
+
+**These are reproducible for anybody**, unlike the images read off specific remotes, because they
+come from the vendor's own endpoint rather than from hardware. Section 196 has the route and why it
+looked closed for a day; the short version is that `sus.dhg.myharmony.com` requires the header
+`Logitech-SUS-Key`, whose value is hardcoded in Harmony Desktop's web application, and refuses
+everything without it. No login and no registered remote is involved, and `unit/0` is accepted in
+place of a serial.
+
+    .../SoftwareUpdates/product/<skin>/unit/0/image/latest?channel=<production|preview>&criticalOnly=false
+
+Only those two channel names are real: nine invented ones all return the production build silently,
+so a wrong channel is a wrong answer rather than an error.
+
+| File | Bytes | SHA-256 | What |
+|---|---|---|---|
+| `skin99-touch-production-4.15.330.hfw2` | 13041774 | `9bc09874...ef1ed652` | Touch, Ultimate, Ultimate One, Ultimate Home, Elite, 950 |
+| `skin112-950-production-4.15.330.hfw2` | 13041774 | `9bc09874...ef1ed652` | the same image served under skin 112 |
+| `skin99-touch-preview-4.15.250.hfw2` | 13044888 | `52107c93...39624b32` | the same family, preview stream |
+| `skin97-ultimatehub-production-4.15.600.hfw2` | 4771065 | `9eda076d...a0f8029d` | Ultimate Hub and Hub / Home Hub |
+| `skin106-hub-production-4.15.600.hfw2` | 4771065 | `9eda076d...a0f8029d` | the same image served under skin 106 |
+| `skin97-ultimatehub-preview-4.15.250.hfw2` | 4670138 | `891ca5a5...c7c832f9` | hub, preview stream, the XMPP candidate |
+| `skin110-hubextender-production-1.2.9.pkg` | 2087100 | `5ea4776f...6c5ecb19` | Home Hub Extender |
+| `skin115-pro2400hub-production-10.0.230.hfw2` | 4773033 | `01dedf3e...e52ef888` | Pro 2400 Hub |
+| `skin116-pro2400-production-10.0.215.hfw2` | 13042989 | `3116ab02...afd34e66` | Pro 2400 |
+| `skin104-harmony350-production-1.4.0.0` | 46773 | `4be38271...2e14371b` | **Harmony 300 and Harmony 350**, skins 78, 79 and 104 |
+| `skin106-hub-firmware_factory.hfw2` | 4662377 | `0893c4cf...304e181e` | hub factory image, from the content network with no key |
+
+Every length above is the length the service stated before the download. **One image serves a whole
+family and that is measured, not inferred from the sizes**: skins 99 and 112 are byte identical, as
+are skins 97 and 106, and only the download filename differs per skin. Eight skins have no image on
+either channel: 78 and 104 by this route, 98, 101, 107, 109, 113 and 114. The last row comes from a
+second, keyless route, `Firmware/<skin>/firmware_factory.hfw2` on the content network, which serves
+skin 99 and skin 106 and answers 403 for every other skin. The Harmony Touch factory image from that
+route was fetched a day earlier and is recorded in the lab's own notes.
+
+The nine `.hfw2` and `.pkg` files are the Linux generation, ARM with a squashfs root, and nothing
+here reads them yet. The one that matters is the small one.
+
+### The Harmony 300 and 350 package
+
+`skin104-harmony350-production-1.4.0.0` is a ZIP holding a `Description.xml` and a
+`Region_2.EZUpgrade`, the same shape as the three `.hfw` packages above, and its `<INTENDED>` names
+skins 78, 79 and 104: both regional Harmony 300 skins and the Harmony 350. It is the **fourth**
+package of this kind and the first that did not come from a third party site.
+
+| File | SHA-256 | How to produce it |
+|---|---|---|
+| `350-1.4-Region_2-code-base0x9000.bin` | `7762d37273b8a22fcb58e733ddb064d77ec91c358a65d5e6062d325f0649c300` | `tools/ezextract.py` on `Region_2.EZUpgrade` from that ZIP, 73472 bytes |
+
+Its `Description.xml` states `SEED="0x4321" OFFSET="0x0004" LENGTH="0x11EF8"
+EXPECTEDVALUE="0x8F7B" TYPE="XOR"`, and that recomputes over the decoded payload. The seed, the word
+width and the algorithm are section 41's, derived here from config container trailers, so **the
+vendor states a rule this project inferred** by a route with no shared bytes. `gspm.xor_words` is the
+one implementation both use.
+
+Verify it yourself:
+
+```sh
+python3 -c "import sys; sys.path.insert(0, 'src'); from harmony import ezfile, gspm; p = ezfile.decode_payload(open(sys.argv[1], 'rb').read()).payload; print(hex(gspm.xor_words(p[4:4 + 0x11EF8], 0x4321)))" <Region_2.EZUpgrade>
+```
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than
@@ -300,6 +370,7 @@ obviously failing.
 | 525 internal | `0x0000` | reset `GOTO 0x0EF6` | bootloader below `0x1000`, application above it |
 | 880 / 885 application | `0x010000` | not in the image | the `HG` magic is at offset **4** here, not 8; 979 boundary hits against 602 |
 | 880 / 885 bootloader | `0x000000` | reset `GOTO 0x0637C` on the 880 | 342 boundary hits against 46; both interrupt vectors go to `0x010400` and `0x010800`, inside the application |
+| 300 / 350 1.4 `Region_2` | `0x9000` | `GOTO 0x1AED4` at `0x900A` | 1581 of 1582 targets land on a boundary, 99.9%, against 475 of 1460 for the runner up, 32.5%. The header's own entry point field says `0x1AED4`, so the base has a closure and not only a score. Section 196 |
 
 Ghidra language: `PIC-18:LE:24:PIC-18`. Only a generic variant exists, so SFRs come out
 unnamed; `tools/pic18_disasm.py` resolves them instead.

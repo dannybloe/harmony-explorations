@@ -93,6 +93,26 @@ TRAILER_CHECKSUM_OFFSET = 6      # from the end of the container, ahead of the f
 FLASH_BASE_ALIGNMENT = 0x1000
 
 
+def xor_words(body: bytes, seed: int) -> int:
+    """XOR of `body` read as little endian 16 bit words, over `seed`.
+
+    Section 41's arithmetic, extracted because it has a **second consumer** since section 196:
+    the Harmony 300 and Harmony 350 firmware package states this seed, this algorithm and an
+    expected value in its own `Description.xml`, over a range of its choosing rather than the
+    container's trailing six bytes. Two callers of one function, so the two cannot drift; a
+    private copy in the test that checks the package would have been the state this project's
+    oldest rule forbids.
+
+    An odd trailing byte is not folded in, because the firmware divides the byte count by two
+    and counts words.
+    """
+    accumulator = seed
+    view = memoryview(body)
+    for offset in range(0, len(view) - 1, 2):
+        accumulator ^= view[offset] | (view[offset + 1] << 8)
+    return accumulator
+
+
 def trailer_checksum(blob: bytes) -> int:
     """Recompute a container's trailer checksum from its bytes.
 
@@ -105,11 +125,8 @@ def trailer_checksum(blob: bytes) -> int:
     checksum under exactly this loop. So the behaviour is tested, by more than half the corpus, and
     it is the comment that was untested. Section 139 entry 21.
     """
-    accumulator = TRAILER_CHECKSUM_SEED
-    body = memoryview(blob)[:len(blob) - TRAILER_CHECKSUM_OFFSET]
-    for offset in range(0, len(body) - 1, 2):
-        accumulator ^= body[offset] | (body[offset + 1] << 8)
-    return accumulator
+    return xor_words(memoryview(blob)[:len(blob) - TRAILER_CHECKSUM_OFFSET],
+                     TRAILER_CHECKSUM_SEED)
 
 # Section slot 0 is a single 0xFEED framed block, the structure discussion #1 documents for
 # the Harmony 525. Stored little endian, so the cookie reads `ed fe` in a hex dump.

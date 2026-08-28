@@ -90,6 +90,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // configs where arch 12 has one of each.
   h650_code: '650-0.4-Region_2-code-base0x9000.bin',
   h650_safemode_gspm: '650-0.4-Region_3-gspm-base0x20000.bin',
+  // The Harmony 300 and Harmony 350 firmware, fetched from Logitech's own software update service
+  // on 28 August 2026, section 196. **The fourth published Harmony firmware and the first that did
+  // not come from a third party repair site**: the service serves it under skin 104 and its own
+  // manifest names skins 78, 79 and 104, so one image covers both models. A plain PIC18 image
+  // executing at 0x9000 like every arch 14 one, which is why its file name follows theirs.
+  h350_code: '350-1.4-Region_2-code-base0x9000.bin',
+  // The same firmware as the vendor serves it, ZIP and all, so a test can start from the artefact
+  // rather than from a file this project produced out of it.
+  h350_package: 'skin104-harmony350-production-1.4.0.0',
   one_hfw: 'harmony_one_firmware_3_4.hfw',
   h700_hfw: 'harmony_700_firmware_2_8.hfw',
   h650_hfw: 'harmony_650_firmware_0_4.hfw',
