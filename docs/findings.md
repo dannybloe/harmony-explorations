@@ -26964,3 +26964,203 @@ The instructive part is that the wrong answer came from a correct rule applied t
 and the premise was one sentence long and never examined: **that arch 10 being an architecture this
 project reads means it is an architecture this project can open.** Reading a config and speaking to a
 remote are different capabilities, and every arch 10 config here arrived as a file.
+
+## 208. The teaching pictures name an architecture per skin, and they fill the gap section 207 left
+
+*28 August 2026. `software/classic/res/client/skins/logitech/intl/images/images.properties`, four
+language variants of it, and one line of `client/ui/learningpanel/LearningPanel.java`.*
+
+Section 207 joined two of the classic client's resource files into a platform per skin and reported
+eleven skins the join could not place, nine of them with a reason the file states and two with none.
+A third file places eight of the eleven, and it is not a table of architectures at all. It is the
+list of **pictures**.
+
+### The key is the architecture and the skin, and the remote states both
+
+When the client is about to have somebody teach it an infrared code it shows a drawing of where to
+point the old remote, and the drawing is per model because the receiver is in a different place on
+each. The panel builds the resource name and falls back to a default:
+
+    "ImgTeach_" + unit.getArchitectureId() + "_" + unit.getSkinId()
+
+Both halves come off the device. `Unit.getSkinId()` is `SystemInfo.getSkin()`, and the architecture
+is `SystemInfo.getProductType()` where the unit has not already parsed one out of its version word.
+So a key is a statement about a **remote that answered**, not a client side classification, and the
+bundle carries exactly the pairs Logitech had a drawing for:
+
+| architecture | skins with their own teaching picture |
+|---|---|
+| 2 | 2 |
+| 3 | 3, 7 |
+| 7 | 9, 10, 11, 12, 13, 14 |
+| 8 | 15 |
+
+Ten pairs, identical in all four language variants of the bundle, which is the only control the file
+itself offers. Everything else falls back to `ImgTeach_Default`, so this is a **partial** map by
+construction: absence of a skin says the drawing is generic, not that the skin does not exist.
+
+### The closure is concordance, through the model names
+
+Nine of the ten skins have a model name in `remote.properties`, section 207's other file, and
+concordance's `SupportedModels.md` says which architecture each model is. Composing the two gives an
+architecture per model out of Logitech's resources, to be compared with an architecture per model
+from a source that has never seen them:
+
+| architecture the picture states | skin | model the client names | concordance's architecture |
+|---|---|---|---|
+| 3 | 3 | 768 | 3 |
+| 3 | 7 | 748 | 3 |
+| 7 | 9 | 659 | 7 |
+| 7 | 10 | 688 | 7 |
+| 7 | 11 | 655 | 7 |
+| 7 | 12 | 676 | 7 |
+| 7 | 13 | 628 | 7 |
+| 7 | 14 | 680 | 7 |
+| 8 | 15 | 880 | 8 |
+
+**Nine of nine.** The control is that each of those nine models appears in exactly one row of
+concordance's table, so a mismatched key would show rather than being absorbed: the two architectures
+with more than one candidate, 3 and 7, are the two the picture bundle names most often, and arch 3's
+two skins are arch 3's two models exactly, neither missing nor spare.
+
+The tenth pair, arch 2 and skin 2, has no model name, and concordance's arch 2 holds one model, the
+Harmony 745. That is an elimination rather than a reading and is marked as such wherever it is
+written down.
+
+### What it fills
+
+Section 207 could not place skins 3, 7, 9, 10, 11, 12, 13, 14, 16, 50 and 58 on a platform. Eight of
+those eleven are placed here directly, and the remaining three dissolve the same way: skin 16 is the
+Harmony 675, skin 50 the Harmony 670 and skin 58 the Harmony 620, and all three are in concordance's
+architecture 7. So **every one of the eleven names a model on architecture 3 or architecture 7**, and
+both of those families are the ones the client matches by product id rather than by skin, which is
+the reason section 207 gave for nine of them and could not give for two.
+
+That is a correction to section 207's own table, which recorded Khalua and Baileys as "named by the
+client and placed on nothing. No reason found".<!--superseded--> The reason is the same reason as the other nine. The
+observation that took two days to arrive is that the missing evidence was not a missing statement
+about platforms; it was that nobody had asked what architecture those models are.
+
+### And it does not overlap the map we already had
+
+Section 197 read an architecture per skin out of the newer client's protocol templates, and the two
+maps are **disjoint**: that one names skins 54, 66, 68, 78, 82, 86, 96, 97 and up, and this one names
+2, 3, 7, 9 to 15. So the vendor's own architecture numbering is now stated by Logitech for the old
+generation and the new one, from two clients twelve years apart, with no skin appearing in both and
+therefore no opportunity for either to corroborate the other. What corroborates this half is
+concordance, above.
+
+Still client sourced under decision 2, and nothing is adopted from it: the architecture column in
+`reference/models.md` was already concordance's and stays concordance's. What the file changes is
+that the skin numbering and the architecture numbering are now tied together by their author.
+
+## 209. The sixth occurrence, and the first time the check became a command
+
+*28 and 29 August 2026, and this section is about the session that wrote it.*
+
+Section 206 recorded the fifth time a session derived something the lab already had written down, and
+its stated fix was a trigger: grep `reference/lab-register.md` for a directory **before** the first
+file in it is read. That afternoon this session did exactly that, for the square it was digging, and
+then produced the whole of Logitech's classic HID command set a second time anyway.
+
+### What happened, because the shape is the point
+
+The dig was `software/classic/res/`, the string bundles, and the register was checked for that path
+first. Its row says two files are mined and the rest is unopened, which is correct and which is what
+made section 208 possible.
+
+Then the dig **wandered**. A grep in `res/` turned up a resource key nobody had explained, the key
+was built in a class in `src/`, that class named a service, the service named a command, and the
+commands live in `src/hidcommands/com/logitech/harmony/hid/commands/`. A dozen files were read there.
+Every one of them is already extracted, whole, in `software/classic/PROTOCOL-CONSTANTS.md`, dated 9
+August 2026: the command byte of every outgoing packet class, the misc selector each one sets, the
+reset codes and which of them nothing sends, the flash command's address and size fields and its
+optional memory type byte, and the erase block walk. The length nibble mapping is in `LEARN-IR.md`
+beside it.
+
+The register's row for `src/` **said**, in those words, that the HID layer is fully mined, and it
+names the file to read first, and it says that section 206 lost an afternoon by not reading it.
+Running the check on the path that was actually opened prints that sentence.
+
+**So the trigger was right and its scope was wrong.** Section 206 attached the check to the act of
+opening an artefact, and read as a rule about starting a dig it is satisfiable by one check at the
+beginning. A dig does not stay where it starts. It follows a name into a directory, and crossing that
+boundary does not feel like opening a new artefact; it feels like continuing to pull one thread. The
+rule needs to be per **path**, and a session has to re-run it every time the path changes, including
+when nothing about the subject has changed.
+
+### The fix is an instrument, not another paragraph
+
+Five occurrences produced five paragraphs, and section 206's own diagnosis was that "an expensive
+check gets skipped under momentum, so making it cheap is the only structural fix". It then did not
+make it cheaper. It added the sixth paragraph.
+
+`tools/lab_register.py` is the check as a command, and `make lab-check PATH_ARG=<path>` runs it. Give
+it any lab path, absolute or lab relative, and it prints every register row that bears on it: an
+ancestor row, an exact row, or any row **underneath** it, which is the direction that matters here,
+since what would have stopped this dig was a row about one file inside the directory being opened.
+Its cost is a line, against a grep of a 44 row table and reading the hits.
+
+That is worth stating as the general form, because it is the third time on this project that a rule
+which kept being broken turned out to be mechanisable: a corpus total asserted as a floor, a
+population list nobody compared, and now this. In each case the paragraph had been correct for weeks
+and the behaviour did not change until something could run.
+
+### What the dig did buy, and it is one thing rather than the four it felt like
+
+**Checking before writing is what cut four candidates to one**, which is the instrument working at the
+only point where it still could. The command table, the misc selector numbers, the reset codes, the
+flash command's fields and its optional memory type byte and the length nibble mapping are all in
+`PROTOCOL-CONSTANTS.md` and `LEARN-IR.md`. The vendor's **names** for the selectors, including that 6
+is memory and 7 is registers, and the version reply's field map, are in `docs/host-client.md` already,
+under headings that say so. Each of those was written up in draft here and then deleted on a grep.
+
+One thing is genuinely absent, and it is in `hid/services/` rather than `hid/commands/`, which is the
+half of the layer the register's status did not distinguish.
+
+**The clock is read and written over USB by name, and the client disagrees with the corpus about two
+of its fields.** `hid/services/time/TimeHidService.java` reads state variables 0 to 6 in order as
+second, minute, hour, day of month, day of week, month and year, which is base slot 13's first seven
+records exactly as section 130 reads them and as section 111 measured them in a running Harmony One's
+data memory. Three details do not agree, and all three are recorded rather than resolved:
+
+* the client reads the day of month as the stored value **plus one** and writes it **minus one**,
+  where section 111 measured `0x10B` as 6 on 6 August 2026 and section 130 has the stored value equal
+  to base slot 3's own day field in all 21 containers. So the client's convention is off by one
+  against both of ours.
+* the client skips the day of week on every architecture except 8 and 12, taking the month from index
+  4 and the year from index 5 instead. Base slot 13 puts the month at index 5 on architecture 9
+  (Harmony 525) and architecture 14 (Harmony 600 and 700) as well, measured: `h525_config_2` stores 3,
+  9, 13 at indices 4, 5 and 6 for a build stamped 1 October 2013, where 3 is the weekday under the
+  record's own epoch, 9 is the zero based month and 13 is the year since 2000.
+* the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from Sunday, where
+  section 111 fixed the record's epoch on a **Saturday** by pairing each byte with a config field.
+
+None of the three touches a rail, because this project does not write to a remote and does not set a
+clock. What they are is a reminder that a client is a hypothesis: two of the three would produce a
+remote showing the wrong date, and one of them only on architectures the client still supports.
+
+There is one thing in the client that would hide the second and third: after writing the fields it
+sends a **clock recalculate**, misc selector 8, but only on the two architectures it believes have a
+day of week. Section 100's reading of that selector is that architecture 12 (Harmony One) accepts it
+and does nothing, so on the one bench architecture where the client sends it, it cannot be the
+repair.
+
+One name is worth carrying out of the same square and no more. The client calls the field it uses as
+the architecture the **product type**, `SystemInfo.getProductType()`, and that is what section 208's
+teaching picture keys are built from, so the two sections rest on the same accessor. Its fifteen byte
+serialisation is the client's own cache format and not the wire reply, so it is not a second reading
+of `GET_VERSION` and the field map already in `docs/host-client.md` stands unchanged.
+
+### The two rows that were wrong
+
+`reference/lab-register.md` said of `software/classic/src/` that the HID layer "is fully mined". It
+is not: `hid/commands/` is, and `hid/services/` had never been opened, which is where both of the
+paragraphs above come from. The row now names the two halves separately. Its `res/` row said one file
+mined in the status column and two in the description, which is the smaller kind of wrong and was
+fixed in the same pass.
+
+A catalogue can only be incomplete, per the rule in `docs/lab-excavation.md`, and that is exactly
+what a status of `mined` on a directory risks: it is a claim about a whole subtree made from having
+mined part of it. The register's own schema says `mined` means "everything the want list asks of it
+has been extracted", so the honest granularity is the directory somebody actually read.

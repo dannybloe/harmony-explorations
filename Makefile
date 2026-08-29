@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
 
 BENCH_PORT ?= 8731
 
@@ -160,6 +160,13 @@ facts-write:
 
 corpus:
 	@$(PYTHON) tools/corpus.py
+
+# What the lab register already says about a path. Run it on the directory you are about to open,
+# before the first file in it is read: section 209 is the sixth time a session derived something the
+# lab had already written down, and it is the first time the check is one command rather than a grep
+# through a 58 row table. `make lab-check PATH=software/classic/src/hidcommands`
+lab-check:
+	@$(PYTHON) tools/lab_register.py $(PATH_ARG)
 
 ghidra:
 	@JAVA_HOME=$(JAVA_21) GHIDRA_HOME=$(GHIDRA) ./bin/setup-ghidra.sh

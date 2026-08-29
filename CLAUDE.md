@@ -646,19 +646,30 @@ That directory has its own `CLAUDE.md`. Analysis happens there, only shareable o
 2.3 GB, of which `software/classic/` is 4809 files with exactly one of them read, and `work/myharmony/`
 another 3458.
 
-**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 58
+**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 44
 artefacts, each with a status and its tags, with a test that fails when the lab gains one the register
-does not name. So "did we already know this" is a grep now rather than a memory exercise, and that is
-the point: an expensive check gets skipped under momentum, so making it cheap is the only structural
-fix. What is left of step 9 is the digging, in tag order.
+does not name. It said 58 for a day, which was a count nothing recomputed, and the row count is
+asserted exactly now. So "did we already know this" is a **command** rather than a memory exercise:
+`make lab-check PATH_ARG=<path>`, which prints every register row bearing on a path, ancestors and
+descendants both. That is the point: an expensive check gets skipped under momentum, so making it
+cheap is the only structural fix, and section 209 is what finally made it cheap instead of writing a
+sixth paragraph about remembering. What is left of step 9 is the digging, in tag order.
 
 **Grepping it is not the same as reading it, and section 206 is the fifth occurrence.** That afternoon
 re-extracted all seven of the classic client's per architecture constant tables and got numbers
 `docs/host-client.md` had carried since 9 August, from a lab file the register names on its own row
 with the words "`docs/host-client.md` is built on it". **So the instrument works and using it is the
-part that fails**, every time under momentum, and the trigger to attach it to is the act of opening an
-artefact rather than the start of a topic. Grep the register for the directory **before** the first
-file in it is read. What the afternoon did buy is real and is the shape to aim for when this happens
+part that fails**, every time under momentum.
+
+**Section 209 is the sixth occurrence and it corrects the trigger this paragraph used to give**, which
+was the act of opening an artefact and which reads as one check at the start of a dig. That check was
+performed, correctly, on the square the dig started in, and the dig then **wandered**: a resource key
+led to a class, the class to a service, the service to a directory whose own register row says it is
+mined, and crossing that boundary does not feel like opening a new artefact. So **the trigger is the
+path and not the dig**, re-run every time the path changes even when the subject has not, and it is
+one command now, `make lab-check PATH_ARG=<path>`.
+
+What the fifth occurrence bought is real and is the shape to aim for when this happens
 again: the ledger of client sourced numbers had no executable check at all and has one now, and three
 of its rows moved on bytes that were already here.
 
@@ -1689,6 +1700,10 @@ make pyright       the Python type checks, at the level pyrightconfig.json argue
 make prose         check documents for em-dashes and en-dashes
 make facts         check the documents against the code; facts-write fixes the numbers
 make corpus        inventory the dumps, and flag the undescribed ones
+make lab-check     what the lab register already says about a path, PATH_ARG=<lab path>. Run it on
+                   the directory about to be opened, not on the topic: six digs have re-derived
+                   something the lab held, and the sixth had checked the square it started in and
+                   then followed a name into one it had not, section 209
 make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities
@@ -1753,6 +1768,7 @@ tools/pic18_disasm.py  <file> <base> <addr> <count> [--part 4550]
 tools/pic18_trace.py   <file> <base> <addr> [<addr> ...]
 tools/pic18_xref.py    <file> <base> <code_addr> [<code_addr> ...]
 tools/corpus.py        [lab_directory] [--json]
+tools/lab_register.py  <lab path>   which register rows bear on a path, ancestors and descendants
 tools/golden.py        [--write]   golden vectors for the Python/TypeScript comparison
 tools/facts.py         [--write] [--list]   the document checks behind `make facts`
 tools/usbdesc.py       <file> <base> [--raw] [--json]
@@ -2036,7 +2052,7 @@ Established norms:
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 206 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 209 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`

@@ -1126,7 +1126,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # Exact, per this file's own rule. It moves in the diff every time a row is added, which is
         # the point: the register growing is the excavation making progress, and a floor here would
         # hide a row being deleted just as readily as it hides a total going the wrong way.
-        self.assertEqual(len(named), 61, 'lab paths the register names, as at 28 August 2026')
+        self.assertEqual(len(named), 64, 'lab paths the register names, as at 29 August 2026')
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1170,6 +1170,91 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         self.assertEqual(unregistered, [],
                          'in the lab and in no register row. Add a row saying what it is and how '
                          'deep anybody has been, per decision 12 and docs/lab-excavation.md.')
+
+
+class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
+    """`tools/lab_register.py` is section 209's instrument, and this is what makes it one.
+
+    The rule it serves has been broken six times, and five of the six fixes were a paragraph telling
+    the next session to remember. What changed is that the check is a command, so what has to be
+    tested is the property that makes the command worth running: given the path somebody is about to
+    open, it prints the rows that bear on it, in **both** directions. An ancestor row is what says
+    the square has been surveyed; a **descendant** row is what says one file inside the directory is
+    already mined, and the descendant direction is the one that would have stopped section 209.
+
+    This is not a test of the register's contents, which is a catalogue and carries none. It is a
+    test of the query, on the register that ships.
+    """
+
+    def module(self):
+        path = os.path.join(ROOT, 'tools', 'lab_register.py')
+        namespace = {'__file__': path, '__name__': 'lab_register_under_test'}
+        with io.open(path, encoding='utf-8') as handle:
+            exec(compile(handle.read(), path, 'exec'), namespace)  # noqa: S102
+        return namespace
+
+    def rows(self):
+        module = self.module()
+        with io.open(os.path.join(ROOT, 'reference', 'lab-register.md'), encoding='utf-8') as fh:
+            return module, module['rows'](fh.read())
+
+    def test_the_register_parses_into_the_rows_the_document_states(self):
+        """44 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
+
+        The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
+        needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
+        58 for a day, which was a count nothing recomputed, and this is what recomputes it.
+        """
+        module, rows = self.rows()
+        self.assertEqual(len(rows), 44)
+        self.assertEqual(len(dict(rows)), 44, 'a duplicated path would make a query ambiguous')
+        self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
+
+    def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
+        module, rows = self.rows()
+        query = module['normalise'](
+            'software/classic/src/hidcommands/com/logitech/harmony/hid/commands')
+        hits = [path for path, _ in module['covering'](query, rows)]
+        self.assertIn('software/classic', hits, 'the square, which is the ancestor direction')
+        self.assertIn('software/classic/src', hits, 'and the row that says this layer is mined')
+
+        square = module['normalise']('software/classic')
+        under = [path for path, _ in module['covering'](square, rows)]
+        self.assertIn('software/classic/PROTOCOL-CONSTANTS.md', under,
+                      'the descendant direction, which is what section 209 needed')
+        self.assertGreater(len(under), len(hits))
+
+    def test_it_would_have_stopped_section_209(self):
+        """The regression, stated as the thing that went wrong rather than as an example.
+
+        The dig opened the commands directory and no check fired. The row that covers it says the
+        HID layer is mined and names the extraction to read; asserting that the query surfaces that
+        wording is what turns "run the tool" into a claim that can fail.
+        """
+        module, rows = self.rows()
+        query = module['normalise'](
+            '../lab/software/classic/src/hidcommands/com/logitech/harmony/hid/commands')
+        text = ' '.join(' '.join(cells) for _, cells in module['covering'](query, rows))
+        self.assertIn('PROTOCOL-CONSTANTS.md', text)
+        self.assertIn('mined', text)
+
+    def test_a_path_the_register_does_not_cover_is_reported_and_not_answered(self):
+        """A silent empty answer would read as "nothing known", which is the opposite of the truth
+        when the register is simply missing a row."""
+        module, rows = self.rows()
+        query = module['normalise']('no/such/square')
+        self.assertEqual(module['covering'](query, rows), [])
+
+    def test_the_query_accepts_the_three_spellings_a_session_actually_has(self):
+        """Absolute, through `../lab`, and already lab relative all normalise to one path, because a
+        check nobody can paste into is a check nobody runs."""
+        module = self.module()
+        expected = 'software/classic/res'
+        for spelling in ('software/classic/res',
+                         '../lab/software/classic/res',
+                         '/Users/someone/projects/harmony/lab/software/classic/res/'):
+            with self.subTest(spelling=spelling):
+                self.assertEqual(module['normalise'](spelling), expected)
 
 
 class TheWriteReviewWithholdListIsComplete(unittest.TestCase):

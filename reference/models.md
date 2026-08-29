@@ -145,6 +145,30 @@ was not consulted to produce any of them.
 | 41 | Mocha Grande | | |
 | 44 | Corona, AMR | | |
 
+### Which architecture each old skin sits on
+
+*Source: a third file in the same client, `res/client/skins/logitech/intl/images/images.properties`,
+and it is a list of pictures. The client shows a drawing of where to point the old remote when
+somebody teaches it a code, and names the drawing `ImgTeach_<architecture>_<skin>` from what the
+connected remote reported. Section 208.*
+
+| architecture | skins | the models they name |
+|---|---|---|
+| 2 | 2 | none, and concordance's architecture 2 holds one model, the Harmony 745. **An elimination, not a reading** |
+| 3 | 3, 7 | 768 and 748, which is architecture 3's whole model list |
+| 7 | 9, 10, 11, 12, 13, 14 | 659, 688, 655, 676, 628, 680 |
+| 8 | 15 | 880 |
+
+**Nine of the nine skins with a model name land on the architecture the key states**, checked against
+concordance, which has never seen these files. The control is that no model appears in two of
+concordance's architecture rows, so a mismatched key would show rather than be absorbed.
+
+**It is partial by construction and must not be read as complete.** A skin with no entry falls back to
+a generic drawing, so absence says the picture is generic and nothing about the skin. And it is
+**disjoint** from section 197's map, which reads an architecture per skin off the newer client's
+protocol templates and starts at skin 54: the two clients between them state the old generation and
+the new one, and neither corroborates the other.
+
 ### Which platform each skin sits on
 
 *Source: the same client, one directory over, and it is a **second** file rather than the one above:
@@ -157,7 +181,11 @@ gaps have a reason the file states itself:
 | unplaced skin | why |
 |---|---|
 | 3, 7, 9, 10, 11, 12, 13, 14, 16 | the old 6xx and 7xx models, which the client matches by **product id** rather than by skin, per the `0x0400` row above. The properties file says so itself: their platform key holds a product and vendor id and no skin list at all |
-| 50, 58 | Khalua and Baileys, named by the client and placed on nothing. No reason found |
+| 50, 58 | Khalua and Baileys, the Harmony 670 and the Harmony 620, which are the **same** family: both are on architecture 7, section 208. This row read "named by the client and placed on nothing. No reason found" for a day<!--superseded--> |
+
+**All eleven are one reason, since section 208.** Every unplaced skin names a model on architecture 3
+or architecture 7, and both of those families are matched by product id. What was missing was not a
+statement about platforms; nobody had asked what architecture those models are.
 
 Going the other way, **17 skins are placed on a platform and never named**: 26 to 35, 37, 38, 42, 43,
 46, 47 and 51. So the client can route a remote it has no display name for, and the numbering above is

@@ -20,6 +20,7 @@ keys the client carries in plain text are deliberately neither extracted nor ass
 `svcs.myharmony.com` authenticating and section 58 watched it compile a config; no call below has been
 made by this project.
 """
+import datetime
 import io
 import os
 import re
@@ -1257,6 +1258,288 @@ class TheClientPicksATransportFromTheProductId(unittest.TestCase):
         self.assertEqual(self.skins('Cognac.NoZwave'), [52, 56])
         for skin in (52, 56):
             self.assertIn(skin, self.skins('Cognac'))
+
+
+class TheTeachingPicturesNameAnArchitecturePerSkin(unittest.TestCase):
+    """Section 208: `ImgTeach_<architecture>_<skin>`, and it agrees with concordance nine times.
+
+    The bundle is a list of pictures rather than a table of architectures, so the value of it is
+    entirely in the closure: composed with the client's own skin to model names it gives an
+    architecture per model, and concordance's model table gives the same column from a source that
+    has never seen these files. This test recomputes both halves and joins them.
+
+    Names and numbers travel, per the interoperability rule the rest of this file works under.
+    Nothing is adopted: `reference/models.md`'s architecture column is concordance's either way.
+    """
+
+    IMAGES = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'images')
+    REMOTE = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'remote',
+              'remote.properties')
+
+    #: Concordance's `SupportedModels.md` table, as `reference/models.md` records it. Only the four
+    #: architectures the picture bundle names are needed, and the point of holding all of each row is
+    #: the control below: a model that appeared twice would make a mismatch invisible.
+    CONCORDANCE = {
+        2: ('745',),
+        3: ('748', '768'),
+        7: ('610', '620', '628', '655', '659', '660', '670', '675', '676', '680', '688'),
+        8: ('720', '785', '880', '882', '885'),
+    }
+
+    #: What the bundle states, which is what a regression here would move.
+    EXPECTED = {2: [2], 3: [3, 7], 7: [9, 10, 11, 12, 13, 14], 8: [15]}
+
+    #: The two skins the client names only by codename, resolved by Logitech's live catalogue,
+    #: section 131. A separate constant because it is a third source and the join is weaker for it.
+    LIVE_CATALOGUE = {50: 'Harmony 670', 58: 'Harmony 620'}
+
+    def setUp(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        self.images = os.path.join(lab.LAB, *self.IMAGES)
+        self.remote = os.path.join(lab.LAB, *self.REMOTE)
+        if not os.path.isdir(self.images) or not os.path.isfile(self.remote):
+            self.skipTest('no decompiled classic client in the lab')
+
+    def keys(self, name):
+        """The architecture and skin pairs one language variant of the bundle names."""
+        with io.open(os.path.join(self.images, name), encoding='utf-8', errors='replace') as fh:
+            text = fh.read()
+        return sorted({(int(a), int(b))
+                       for a, b in re.findall(r'ImgTeach_(\d+)_(\d+)\s*=', text)})
+
+    def models(self):
+        """Skin to the model the client names it, out of the comment above each entry."""
+        found = {}
+        last = None
+        with io.open(self.remote, encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                line = line.strip()
+                comment = re.match(r'#\s*(\S.*)$', line)
+                if comment:
+                    last = comment.group(1).strip()
+                    continue
+                entry = re.match(r'Remote\.Skin\d+\s*=\s*(\d+)$', line)
+                if entry:
+                    found[int(entry.group(1))] = last
+        return found
+
+    def test_the_bundle_states_ten_pairs_and_every_language_agrees(self):
+        """Ten, not "at least": a drawing added or dropped is exactly what would move this."""
+        expected = sorted((arch, skin)
+                          for arch, skins in self.EXPECTED.items() for skin in skins)
+        variants = sorted(name for name in os.listdir(self.images)
+                          if name.startswith('images') and name.endswith('.properties'))
+        self.assertEqual(len(variants), 4, 'language variants of the image bundle')
+        for name in variants:
+            with self.subTest(bundle=name):
+                self.assertEqual(self.keys(name), expected)
+
+    def test_every_model_the_join_names_sits_on_the_architecture_the_key_states(self):
+        """Nine of nine, against concordance, which has never seen this file.
+
+        The tenth pair is architecture 2 and skin 2, which the client gives no model name, so it is
+        asserted as unnamed rather than quietly dropped: an elimination against concordance's single
+        arch 2 model is what `reference/models.md` records and it is not a reading.
+        """
+        names = self.models()
+        self.assertEqual(len(names), 46, 'skins the client has a model name for')
+
+        checked = 0
+        for arch, skin in self.keys('images.properties'):
+            with self.subTest(architecture=arch, skin=skin):
+                name = names.get(skin)
+                if name is None:
+                    self.assertEqual((arch, skin), (2, 2), 'the only pair with no model name')
+                    continue
+                models = [m for m in self.CONCORDANCE[arch] if m in name]
+                self.assertEqual(len(models), 1,
+                                 '%s is not one of architecture %d\'s models' % (name, arch))
+                checked += 1
+        self.assertEqual(checked, 9)
+
+    def test_a_mismatched_key_would_show_because_no_model_sits_on_two_architectures(self):
+        """The control, and without it nine agreements prove nothing.
+
+        Every model concordance names appears in exactly one of its architecture rows, so pairing a
+        skin with the wrong architecture cannot be absorbed. Architectures 3 and 7 are the two with
+        room to be wrong and they are the two the bundle names most, and arch 3's two skins are arch
+        3's two models exactly.
+        """
+        seen = {}
+        for arch, models in self.CONCORDANCE.items():
+            for model in models:
+                self.assertNotIn(model, seen, 'a model on two architectures hides a mismatch')
+                seen[model] = arch
+        self.assertEqual(len(seen), 19)
+
+        names = self.models()
+        arch3 = {names[skin] for skin in self.EXPECTED[3]}
+        self.assertEqual(sorted(arch3), ['Harmony 748', 'Harmony 768'])
+        self.assertEqual(len(arch3), len(self.CONCORDANCE[3]),
+                         'arch 3 is named exactly, neither missing nor spare')
+
+    def test_all_eleven_skins_section_207_could_not_place_are_architecture_3_or_7(self):
+        """The gap fill, and the correction to section 207's "no reason found".
+
+        Eight are placed by the picture bundle outright. Skins 16, 50 and 58 are not, and their
+        models are in concordance's architecture 7 all the same, so the reason the join could not
+        place any of the eleven is one reason and not nine plus two.
+        """
+        unplaced = [3, 7, 9, 10, 11, 12, 13, 14, 16, 50, 58]
+        stated = {skin: arch for arch, skins in self.EXPECTED.items() for skin in skins}
+        names = self.models()
+
+        placed_here = [skin for skin in unplaced if skin in stated]
+        self.assertEqual(placed_here, [3, 7, 9, 10, 11, 12, 13, 14])
+
+        for skin in unplaced:
+            with self.subTest(skin=skin):
+                name = self.LIVE_CATALOGUE.get(skin, names[skin])
+                arch = stated.get(skin)
+                if arch is None:
+                    arch = 7
+                    self.assertIn(skin, (16, 50, 58), 'the three the bundle does not draw')
+                self.assertTrue(any(m in name for m in self.CONCORDANCE[arch]),
+                                '%s is not on architecture %d' % (name, arch))
+                self.assertIn(arch, (3, 7), 'the two product id matched families')
+
+    def test_the_two_codename_only_skins_need_a_third_source_and_it_is_the_live_catalogue(self):
+        """Skins 50 and 58 are named `Khalua` and `Baileys` here, which is a codename and not a model.
+
+        Separated from the test above because the chain for those two is a hop longer and rests on a
+        different source: the client gives the codename, section 131's read of the live catalogue
+        gives the model, and concordance gives the architecture. Asserting the codename here is what
+        makes that hop visible rather than hidden inside a lookup table.
+        """
+        names = self.models()
+        self.assertEqual(names[50], 'Khalua')
+        self.assertEqual(names[58], 'Baileys')
+        self.assertEqual(names[16], 'Harmony 675', 'the third one needs no extra hop')
+
+
+class TheTwoArchitectureMapsFromTheTwoClientsDoNotOverlap(unittest.TestCase):
+    """Section 208: the old client names skins 2 to 15 and the new one names 54 and up.
+
+    Written because the obvious reading of "both clients state an architecture per skin" is that
+    they corroborate each other, and they cannot: no skin appears in both. What corroborates the old
+    one is concordance, in the class above.
+    """
+
+    IMAGES = ('software', 'classic', 'res', 'client', 'skins', 'logitech', 'intl', 'images',
+              'images.properties')
+
+    #: Section 197's map, read off the newer client's per skin protocol templates.
+    TEMPLATE_SKINS = frozenset({54, 66, 68, 78, 82, 86, 96, 97, 99, 100, 102, 103, 104, 105, 106,
+                                108, 111, 112, 113, 115, 116, 400})
+
+    def test_no_skin_is_named_by_both_clients(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        path = os.path.join(lab.LAB, *self.IMAGES)
+        if not os.path.isfile(path):
+            self.skipTest('no decompiled classic client in the lab')
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            classic = {int(skin) for _, skin in re.findall(r'ImgTeach_(\d+)_(\d+)\s*=', fh.read())}
+        self.assertEqual(sorted(classic), [2, 3, 7, 9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual(classic & self.TEMPLATE_SKINS, set())
+        self.assertLess(max(classic), min(self.TEMPLATE_SKINS),
+                        'and they do not interleave either, which is what makes them two eras')
+
+
+
+class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
+    """Section 209: `TimeHidService` writes state variables 0 to 6, and disagrees with us twice.
+
+    The agreement is worth a test because it is a **third** route to base slot 13's first seven
+    fields, after section 130's corpus reading and section 111's live measurement on a Harmony One.
+    The disagreements are worth one because the honest record of a client source is the places it
+    contradicts a measurement, not only the places it confirms one.
+
+    The second disagreement is checked against the corpus rather than asserted from the client: the
+    client would take the month from index 4 on architectures 9 and 14, and the configs put it at
+    index 5 there exactly as on architecture 12.
+    """
+
+    SERVICE = ('software', 'classic', 'src', 'hidcommands', 'com', 'logitech', 'harmony', 'hid',
+               'services', 'time', 'TimeHidService.java')
+
+    def source(self):
+        if not lab.LAB:
+            self.skipTest('no lab directory')
+        path = os.path.join(lab.LAB, *self.SERVICE)
+        if not os.path.isfile(path):
+            self.skipTest('no decompiled classic client in the lab')
+        with io.open(path, encoding='utf-8', errors='replace') as fh:
+            return fh.read()
+
+    def test_the_client_walks_the_seven_fields_in_base_slot_13_order(self):
+        """Second, minute, hour, day, weekday, month, year, and the weekday read is conditional."""
+        text = self.source()
+        for field in ('NumSeconds', 'NumMinutes', 'NumHours', 'NumDays', 'DayOfWeek', 'NumMonths',
+                      'NumYears'):
+            with self.subTest(field=field):
+                self.assertIn(field, text)
+        self.assertIn('hasDayOfWeekStateVariable', text)
+
+    def test_the_day_of_week_is_taken_on_two_architectures_only(self):
+        """8 and 12, stated by the client, which is what makes the month index disagreement real."""
+        match = re.search(r'hasDayOfWeekStateVariable\(int \w+\)\s*\{\s*return ([^;]+);',
+                          self.source())
+        self.assertIsNotNone(match, 'the predicate moved')
+        architectures = sorted(int(n) for n in re.findall(r'==\s*(\d+)', match.group(1)))
+        self.assertEqual(architectures, [8, 12])
+
+    def test_the_month_is_at_index_five_on_every_architecture_in_the_corpus(self):
+        """The refutation, measured, because the client would read index 4 on arch 9 and arch 14.
+
+        Base slot 13's records hold the value a variable takes when the config is generated, section
+        130, so record 5's is the build timestamp's zero based month and record 6's is its year since
+        2000. Asserted per container over every user config rather than on the two that prompted it.
+        """
+        lab.require(*lab.USER_CONFIGS)
+        checked = 0
+        for name in lab.USER_CONFIGS:
+            with self.subTest(config=name):
+                container = gspm.parse(lab.load(name))
+                table = container.state_table()
+                self.assertIsNotNone(table)
+                stamp = container.built_at
+                self.assertIsNotNone(stamp, 'no build timestamp to compare against')
+
+                def first(index):
+                    off = container.blob_offset_of(table.entries[index])
+                    self.assertIsNotNone(off)
+                    return int.from_bytes(container.blob[off:off + 2], 'little')
+
+                self.assertEqual(first(3), stamp.day, 'the day, not the day minus one')
+                self.assertEqual(first(5), stamp.month - 1, 'the month sits at index 5')
+                self.assertEqual(first(6), stamp.year - 2000, 'and the year at index 6')
+                checked += 1
+        self.assertEqual(checked, 15)
+
+    def test_the_stored_weekday_counts_from_a_saturday_and_not_from_a_sunday(self):
+        """The third disagreement, and it is the record's own epoch that settles it.
+
+        Base slot 3's weekday byte is days since 1 January 2000 modulo 7, section 21, and that date
+        was a Saturday. The client writes Java's `DAY_OF_WEEK` minus one, which counts from Sunday,
+        so the two conventions differ by one whichever container is used.
+        """
+        lab.require(*lab.USER_CONFIGS)
+        epoch = datetime.date(2000, 1, 1)
+        self.assertEqual(epoch.weekday(), 5, 'a Saturday, under Python numbering')
+        for name in lab.USER_CONFIGS:
+            with self.subTest(config=name):
+                container = gspm.parse(lab.load(name))
+                table = container.state_table()
+                off = container.blob_offset_of(table.entries[4])
+                stored = int.from_bytes(container.blob[off:off + 2], 'little')
+                stamp = container.built_at.date()
+                self.assertEqual(stored, (stamp - epoch).days % 7)
+                sunday_based = (stamp.weekday() + 1) % 7
+                self.assertNotEqual(stored, sunday_based,
+                                    'the two conventions coincide here, so this container proves '
+                                    'nothing and the claim needs another')
 
 
 if __name__ == '__main__':

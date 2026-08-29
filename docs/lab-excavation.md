@@ -154,7 +154,11 @@ the first pass is breadth first and shallow: every artefact gets a row, a status
 Then dig in **value order rather than folder order**, which is what the tags are for: the squares
 carrying `compiler`, `fh-data-model` and `fh-settings` come before the squares carrying nothing.
 
-Per square, the loop is the same four steps:
+Per square, the loop is the same four steps, and **step 0 is a command**:
+
+0. **Ask the register what it already says**, `make lab-check PATH_ARG=<path>`, on the path about to
+   be opened. It prints every row bearing on it, ancestors and descendants both, and a row at `mined`
+   means the honest next move is to read somebody's extraction rather than the artefact.
 
 1. **List it.** What is in there, by kind and count, without opening much.
 2. **Row it.** One register row per artefact, tags guessed, status `surveyed`.
@@ -162,6 +166,13 @@ Per square, the loop is the same four steps:
    line.
 4. **Page it.** Where a square carries something worth having, write the catalogue page and move its
    rows to `catalogued`.
+
+**Step 0 is per path, not per dig, and that distinction is the whole of section 209.** A dig
+wanders: a string in one square names a class in another, and following that name is what a dig is
+for. Crossing the boundary does not feel like opening a new artefact, so nothing fires. Six digs on
+this project have re-derived something the lab already held, and the sixth had run the check
+correctly on the square it started in. Run it again whenever the path changes, even when the subject
+has not.
 
 **Two things to expect, and neither is a reason to stop.** Most of it is worth nothing, and the value
 is being able to say so with a row instead of a shrug. And some of it answers something open, which is

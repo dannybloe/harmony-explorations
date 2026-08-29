@@ -1469,6 +1469,17 @@ is worth having: the ledger of client sourced numbers had **no executable check 
 now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab
 and the arch 14 logging region corroborated by every arch 14 safe mode container in the corpus.
 
+**Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
+is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
+by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and
+agrees with concordance on nine of nine models. Section 209 is the warning, and its subject is the dig
+that produced it. The register was checked for the square the dig started in, correctly, and the dig
+then followed a resource key into `hid/commands/`, whose own row says it is mined. Everything read
+there was already in the lab. **So the trigger is the path and not the dig**, and the fix is finally an
+instrument rather than a paragraph: `make lab-check PATH_ARG=<path>` prints every register row bearing
+on a path. What the dig did buy is one thing, the clock service, which reads and writes base slot 13's
+first seven records over USB by name and disagrees with our measurement of two of the fields.
+
 **Two more squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
 takes the `ir-learn` tag as far as this client goes: the host measures a capture, merges it and uploads
 it, and the only test it applies is that the signal lasts between 10 milliseconds and 1 second.

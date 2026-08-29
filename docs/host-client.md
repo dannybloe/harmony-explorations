@@ -956,6 +956,39 @@ on arch 12 and arch 14, measured on both.
 the client's naming made 6 the obvious thing to try. All nine selectors return zero on a window that
 is demonstrably live on a 600. `docs/findings.md` section 90.
 
+### The clock is read and written over USB by name, and it disagrees with us twice
+
+*`hid/services/time/TimeHidService.java`, read 28 August 2026, section 209. Unlike everything above it
+this comes out of `hid/services/` rather than `hid/commands/`, which is the half of the layer the lab
+extraction never opened.*
+
+The client sets a remote's clock by writing **state variables 0 to 6**, in order, as second, minute,
+hour, day of month, day of week, month and year, and reads them back the same way. That is base slot
+13's first seven records exactly as section 130 reads them and as section 111 measured them live in a
+Harmony One's data memory, which is a third route to a field assignment that already had two.
+
+Three details do not agree, and none of them touches a rail here, since this project does not write to
+a remote and does not set a clock:
+
+* the client reads the day of month as the stored value **plus one** and writes it **minus one**.
+  Section 111 measured that byte as 6 on 6 August 2026, and section 130 has it equal to base slot 3's
+  own day field in all 21 containers, so both of our routes say the field holds the day itself.
+* the client takes the day of week only on architectures 8 and 12, and on every other one it reads the
+  month from index 4 and the year from index 5. Architecture 9 (Harmony 525) and architecture 14
+  (Harmony 600 and 700) put the month at index 5 like the others, measured: one Harmony 525 config
+  stores 3, 9 and 13 at indices 4, 5 and 6 for a build stamped 1 October 2013, where 3 is the weekday
+  under the record's own epoch, 9 is the zero based month and 13 is the year since 2000.
+* the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from **Sunday**, where
+  section 111 fixed the record's epoch on a **Saturday** by pairing each byte against a config field.
+
+The client does send a **clock recalculate**, misc selector 8, after writing, which is the one thing
+that could repair the second and third. It sends it only on the two architectures it believes carry a
+day of week, and `docs/usb-protocol.md` reads selector 8 as doing nothing at all on architecture 12,
+so on the one bench architecture where it is sent it is not the repair.
+
+**What this is evidence for is the field assignment, and what it is evidence against is trusting a
+client.** Two of the three would put the wrong date on a remote's screen.
+
 ### Smaller leads
 
 * Arch 14 declares a user logging region at `0x0E0000` of 128 KiB, which is where a log area
