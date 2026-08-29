@@ -55,8 +55,8 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | path | what it is | files | status | tags | holds |
 |---|---|---|---|---|---|
 | `work/myharmony/src/` | **MyHarmony decompiled to C#**, seven assemblies, 1999 source files | 2643 | `read` in one flow | `service-api` `fh-data-model` `fh-screens` `fh-wizard` | **the reference client as source, and the first place to look for what MyHarmony does.** Section 202 read its sync flow out of `Web.Library.Models` and `Web.MartiniWeb.Tasks.Remote.RemoteSync`. This row said "our client for their live services"<!--superseded--> until 28 August 2026, which is `work/myharmony/probe.py` one directory up, and the misdescription is why a session searched the compiled assemblies instead and published a wrong reading |
-| `work/myharmony/probe.py` and its scripts | **our** client for their live services | 12 | `catalogued` | `service-api` | the `myharmony-service` skill is its documentation |
-| `work/myharmony/responses*/` | captured replies, five accounts and states | 431 | `catalogued` | `service-api` `models` `fh-data-model` | sections 56, 58, 125, 131 to 136, 145. **The household JSON is the vendor's own entity model** and is the calibration for every device and activity reader |
+| `work/myharmony/probe.py` and its scripts | **our** client for their live services | 12 | `catalogued` | `service-api` `provenance` | **`credentials.env` sits beside it**, so nothing in this directory is quotable and no output from it is either. the `myharmony-service` skill is its documentation |
+| `work/myharmony/responses*/` | captured replies, five accounts and states | 431 | `catalogued` | `service-api` `models` `fh-data-model` `provenance` | **replies from five accounts, so they carry account ids and remote serials**. sections 56, 58, 125, 131 to 136, 145. **The household JSON is the vendor's own entity model** and is the calibration for every device and activity reader |
 | `work/myharmony/compiled*/` | nine configurations their service compiled for us | 19 | `catalogued` | `intermediate` `ir-db` | the corpus's only known answer samples, sections 121 and 125 |
 | `work/myharmony/analyzed/` | their analyser's verdicts on our codes | 15 | `catalogued` | `ir-db` | sections 159 to 163 |
 | `work/myharmony/xap/` | the Silverlight packages | 314 | `surveyed` | `fh-screens` `fh-wizard` `service-api` | 170 MB, and the client whose recovery screen section 196 came from. **The reference client's own code**, so this is the first place to look for which service call MyHarmony makes and with what: the generated proxy is `*/Web.Data.HarmonyPlatform.dll` and the sync flow is `*/Web.MartiniWeb.Tasks.Remote.RemoteSync.dll`. Both were read on 28 August 2026 by searching the assemblies for names, with no decompiler installed |
@@ -72,7 +72,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 
 | path | what it is | files | status | tags | holds |
 |---|---|---|---|---|---|
-| `firmware/packages/` | vendor packages: three `.hfw`, eleven from the update service, and the arch 8 contributions | 27 | `catalogued` | `packages` `restore` | sections 113, 116 and 196, with the digests in this directory's neighbour |
+| `firmware/packages/` | vendor packages: three `.hfw`, eleven from the update service, and the arch 8 contributions | 27 | `catalogued` | `packages` `restore` `provenance` | **the three `.hfw` carry a `Data.xml` with a stranger's Logitech account id, account GUIDs, a server id and a session cookie**, which is why this repository publishes checksums and never files. sections 113, 116 and 196, with the digests in this directory's neighbour |
 | `firmware/packages/sus/META.md` | ours, on the update service haul | 1 | `catalogued` | `packages` | section 196 |
 | `firmware/derived/` | images decoded out of those packages | 16 | `catalogued` | `packages` `restore` `write-path` | every firmware claim in `docs/findings.md` rests on these |
 
@@ -80,10 +80,10 @@ The largest square and the least read. 6758 files, 1.1 GB.
 
 | path | what it is | files | status | tags | holds |
 |---|---|---|---|---|---|
-| `dumps/danny/` | our own remotes, eight described sets | 35 | `catalogued` | | the corpus's arch 12 and arch 14 half |
+| `dumps/danny/` | our own remotes, eight described sets | 35 | `catalogued` | `provenance` | the corpus's arch 12 and arch 14 half. **Three sets carry `concordance -i` output**, whose serial GUIDs are personal data even though they are ours. The contributed dumps were checked on 29 August 2026 and hold none: configs only, no info output and no `Data.xml` |
 | `dumps/kkong42/` | four contributed remotes, arch 8 and arch 10 | 47 | `catalogued` | `models` | sections 113 to 117, 177 to 185 |
 | `dumps/guyman70718/`, `dumps/dmrzzz/`, `dumps/trelowney/` | three contributors | 12 | `catalogued` | | sections 14, 15, 76 |
-| `reads/` | our own read sessions, with notes | 60 | `read` | `ir-db` `write-path` | includes the sequence hazard note and the interkey delay predictions, **neither of which is a finding**, by decision, and the Harmony Touch radio file read of 28 August 2026, whose claim **is** one, section 201, with only the identifying values kept here |
+| `reads/` | our own read sessions, with notes | 60 | `read` | `ir-db` `write-path` `provenance` | **one read is a Harmony Touch's radio identity**, section 201, so this square is not quotable either. includes the sequence hazard note and the interkey delay predictions, **neither of which is a finding**, by decision, and the Harmony Touch radio file read of 28 August 2026, whose claim **is** one, section 201, with only the identifying values kept here |
 | `golden/` | the cross language golden vectors | 43 | `catalogued` | | `make golden` |
 
 ## Reference material

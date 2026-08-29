@@ -1245,6 +1245,46 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         query = module['normalise']('no/such/square')
         self.assertEqual(module['covering'](query, rows), [])
 
+    def test_the_progress_view_counts_every_want_list_tag_including_the_empty_ones(self):
+        """`make lab-progress` is what `docs/lab-excavation.md` points at instead of carrying counts.
+
+        The claim worth pinning is not a number, which moves every time a row does. It is that the
+        report covers the **whole** want list: a tag no artefact carries has to appear with a zero
+        rather than be absent, because an absent tag reads as a tag nobody wants and that is exactly
+        the state `provenance` was in when this was written.
+        """
+        module, rows = self.rows()
+        counted = module['progress'](rows)
+        self.assertEqual([tag for tag, _, _ in counted], list(module['WANT_LIST']))
+
+        excavation = read_repo_file('docs/lab-excavation.md')
+        for tag, _, _ in counted:
+            with self.subTest(tag=tag):
+                self.assertIn('`%s`' % tag, excavation,
+                              'the tool knows a tag the plan does not describe')
+
+        for tag, landed, total in counted:
+            with self.subTest(tag=tag):
+                self.assertLessEqual(landed, total)
+
+    def test_a_row_claiming_two_depths_is_counted_at_the_shallower_one(self):
+        """The register writes "`read` in four notes, `unseen` otherwise", and a progress report that
+        took the first word would flatter itself by exactly the rows that are half open."""
+        module, _ = self.rows()
+        self.assertEqual(module['depth'](['x', '1', '`read` in four notes, `unseen` otherwise']),
+                         'unseen')
+        self.assertEqual(module['depth'](['x', '1', '`catalogued`']), 'catalogued')
+        self.assertEqual(module['depth'](['x', '1', 'nothing recognisable']), 'unseen',
+                         'an unparseable status must not count as progress')
+
+    def test_the_plan_points_at_the_command_rather_than_carrying_the_counts(self):
+        """The rule the 58 against 44 broke: a number in prose has nothing recomputing it."""
+        excavation = read_repo_file('docs/lab-excavation.md')
+        self.assertIn('make lab-progress', excavation)
+        makefile = read_repo_file('Makefile')
+        self.assertIn('lab-progress:', makefile)
+        self.assertIn('lab-check:', makefile)
+
     def test_the_query_accepts_the_three_spellings_a_session_actually_has(self):
         """Absolute, through `../lab`, and already lab relative all normalise to one path, because a
         check nobody can paste into is a check nobody runs."""

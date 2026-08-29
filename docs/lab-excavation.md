@@ -30,6 +30,33 @@ So a catalogue entry needs three things and no more: what the artefact is, where
 marked confidence. **"Most likely the device wizard" is a useful and honest row.** An unmarked guess
 is not.
 
+## Where the digging stands
+
+**Written on 29 August 2026 because this document had no answer to "where are we".** It carried the
+method and the want list and no progress at all, so the only way to answer was to write a script over
+the register, which means nobody could answer it by reading. It also has no step numbers of its own:
+"step 9" is `docs/roadmap.md`'s numbering for the whole excavation, and the only numbering here is the
+per square loop below.
+
+**The numbers are a command rather than a paragraph**, `make lab-progress`, which recomputes them from
+`reference/lab-register.md`. That is deliberate and it is not caution: `CLAUDE.md` carried "58
+artefacts" for a day where the register holds 44, because a count in prose has nothing recomputing it.
+The command prints the depth of every artefact, a tick per want list tag when all of its artefacts have
+landed here, and the list of what is still shut.
+
+What the tick means is narrow: **every artefact carrying that tag has been written up in this
+repository**. It does not mean the question is answered. A tag can tick because its one artefact turned
+out to hold nothing, which is a result and is why an untagged row is legitimate.
+
+Two states the tick cannot express, and both need reading rather than counting:
+
+* **a tag no artefact carries at all**, which the report calls out separately. That is not progress, it
+  is a hole in the survey: `provenance` was in exactly that state on 29 August, with the archived
+  firmware packages carrying a stranger's account identifiers and no row saying so.
+* **a target the site cannot answer**, as against one nobody has dug for. `compiler` is the case: the
+  biggest prize on the list, and `SERVER-DEPENDENCY.md` says the configuration compiler was server side
+  and is gone, so its remaining rows are unlikely to move it. A count cannot tell those two apart.
+
 ## What we are looking for
 
 Seventeen targets, each a tag an artefact row can carry. A row with no tag is an artefact somebody

@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
 
 BENCH_PORT ?= 8731
 
@@ -167,6 +167,12 @@ corpus:
 # through a 58 row table. `make lab-check PATH=software/classic/src/hidcommands`
 lab-check:
 	@$(PYTHON) tools/lab_register.py $(PATH_ARG)
+
+# Where the excavation stands, per want list tag, recomputed from the register. The plan document
+# names this rather than carrying the counts, because a number in prose with nothing recomputing it
+# is what put 58 in CLAUDE.md where the register holds 44.
+lab-progress:
+	@$(PYTHON) tools/lab_register.py --progress
 
 ghidra:
 	@JAVA_HOME=$(JAVA_21) GHIDRA_HOME=$(GHIDRA) ./bin/setup-ghidra.sh
