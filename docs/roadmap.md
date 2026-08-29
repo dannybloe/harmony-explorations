@@ -1558,7 +1558,7 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Survey done, seven squares dug
+### Step 9: excavate the lab. Survey done, ten squares dug, one artefact still unopened
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
 28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
