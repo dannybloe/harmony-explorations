@@ -27647,3 +27647,123 @@ comes back, gated on a flag in their service manager. Catalogued rather than pur
 Nothing in `hid/services/`. Its last unopened directory is now read, and what remains in the client
 overall is `tools/` at 365 MB and `dist/` at 299 MB, both build products, plus the string bundles and
 HTML layouts in `res/` that section 207 judged unlikely to answer anything.
+
+## 214. The client's own read out is ours, its region table predicts the packets it sent, and the ninth re-derivation was a claim of ours wearing Logitech's package name
+
+The last two unopened squares of the classic client were `tools/` at 365 MB and `dist/` at 299 MB.
+Section 213 guessed both were build products and the lab register said both were Logitech's. Digging
+them took under ten minutes and the register was wrong about both, in the same direction the
+`reports/` row was already corrected in: **these are ours, not the vendor's.**
+
+### What the two squares actually hold
+
+`tools/` is **not vendor material at all**. It is two Java decompilers, CFR 0.152 and Vineflower
+1.11.1, at about 2 MB each, and an Azul Zulu JDK 8u502 for macOS at 361 MB. Not one of its 616 files
+has Logitech or Harmony in its name, and its 90 Java files, 82 manual pages and 30 property files are
+the JDK's own samples and demos. So the largest single thing on the site is this project's own
+toolchain, and it answers **neither** of the two want list tags the register assigned it. The
+`compiler` tag was the higher value of the two and this square was the last artefact carrying it that
+nobody had opened.
+
+`dist/` holds one application bundle, and the register's guess about the other copy is settled by it.
+There are two bundles with the same name and the same 202 MB, `software/LogitechHarmonyRemoteSoftware.app`
+and `software/classic/dist/LogitechHarmonyRemoteSoftware.app`, and the register said the first was
+"probably the same code as `software/classic/orig/`" with the guess marked unchecked. Every jar in the<!--superseded-->
+two differs. The entries in the standalone bundle's main jar are dated 28 March 2022 and the ones in
+`dist/` are dated 7 August 2026, which is the day this project decompiled the client. So the standalone
+bundle is **the pristine vendor build** and `dist/` is **our repack of it**, and that is the pair to
+keep: an original and a rebuild, which is what makes the rebuild checkable at all.
+
+**The repack is class complete.** Its main jar has 405 entries against the vendor's 443, and all 41
+that are missing are directory entries, which our repacker does not write; no class was lost. It also
+**adds three**, and they are the finding.
+
+### The instrument nobody had recorded
+
+`com/logitech/harmony/client/local/` exists in the repack and nowhere in the vendor bundle. Its two
+source files sit in `src/client/` inside Logitech's package name, which is why every survey of that
+tree has read them as the vendor's. They are ours, in this project's own voice, and together they are
+a working read out of a connected remote:
+
+* `LocalStore` keeps what is read under the client's own preferences folder, one directory per remote,
+  named `arch<n>-skin<n>-<digest>` where the digest is six bytes of SHA-1 over the unit's GUID.
+  **That naming is a deliberate privacy choice and its reasoning is worth keeping**: a path gets pasted
+  into logs and screenshots far more casually than a file gets opened, so the directory name is
+  non-identifying and the GUID lives inside `remote.json`. Raw region bytes and a JSON reading of them
+  sit side by side, on the argument that the bytes outlive any interpretation. Writes go through a
+  temporary file and a rename, because a remote can be unplugged halfway.
+* `RemoteReader` runs the read on its own thread, since a full read is tens of seconds and the call
+  arrives on the interface thread. It reads no configuration XML and contacts no server.
+
+Section 210 recorded this square as "a repack receipt saying 827 of the client's 829 classes rebuilt".
+That undersold it by the part that matters: the repack is not a reproduction, it is **an instrument**,
+and `run.log`, the 69344 packet capture that is now the `classic_read_capture` fixture, is its output
+rather than the stock client's. The command encoder under test in
+`packages/usb/test/classic-capture.test.ts` is still entirely Logitech's, since the two added classes
+only choose which extents to read and where to put the bytes, so that file's claim to be checking our
+encoder against an implementation that is not ours is unaffected. What changes is that the **read plan**
+in that capture is ours.
+
+### The closure: a table in their source predicts the packets in the capture
+
+`UpdateHidService.getRegionAddress` and `getRegionSize` are one switch each, and between them they name
+two regions and one architecture:
+
+| architecture | region | address | size | ends at |
+|---|---|---|---|---|
+| 12 | 3, the embedded configuration | 8192 | 122880 | `0x020000` |
+| 12 | 4, the user configuration | 262144 | `0x3C0000` | `0x400000` |
+
+Section 210 measured the capture's flash extents as `0x002000` to `0x020000` in 40 reads and `0x040000`
+to `0x400000` in 1269, and recorded them as a measurement with no account of why they were those two.
+Section 212 read the region index space out of the client and did not check it against any packet.
+**The table predicts both extents exactly, address and size, on all four numbers.** The two ends were
+produced three weeks apart by routes with nothing in common, a source table and a wire log, and neither
+was derived from the other. `packages/usb/test/classic-capture.test.ts` asserts the capture against the
+transcribed table and `tests/test_host_client.py` asserts the table against the source, so each can fail
+without the other.
+
+**One architecture and no other**, which section 213 already noted in passing as one of four reasons to
+think this build only ever drove a Harmony One. It has its numbers and a test now. The consequence is
+sharper than the observation: the vendor's own classic client can read a region on a Harmony One and on
+nothing else, and the refusal is not a device answer. Both lookups start at minus one and throw while
+the call is being built, so **asking for a region an architecture has no entry for costs an exception
+and no packet.** That is what makes probing the whole region id space free, and our own reader relies on
+it, trying every id from 0 to 15 on top of whatever the client reports.
+
+A region is also **not a second protocol**: `readRegion` sizes a buffer from the table and hands the
+matching address to the ordinary flash read. Nothing on the wire says region.
+
+### The ninth re-derivation, and it is a different animal from the first eight
+
+Section 213 ended by predicting that a ninth occurrence, if it came, would say something the eighth
+could not. It came the same day and it does.
+
+`RemoteReader`'s own documentation, written on 7 August 2026, says the remote can name its own regions<!--superseded-->
+through `getRegionIds`. **It cannot.** Section 212 established twenty two days later that the list is
+computed host side from the version block, that it is gated on the reply carrying a bootloader version,
+and that section 210's capture shows no such packet is ever sent. Section 212 spent an afternoon on
+that and wrote, correctly, that it is easy to read the method's name as a query. The lab held a session
+of ours that had made exactly that mistake, and its own compensating comment two hundred lines later
+half retracts it, noting that the reported list and the readable list are not the same and that going
+by the reported list alone reads nothing. So the instrument's **behaviour** is right, its **stated
+mechanism** is wrong, and nothing could see the difference.
+
+The first eight occurrences were all one shape: a dig re-derived something a lab note already recorded,
+and the fix was to make the register cheap to consult. **This one defeats that fix by construction.**
+The register describes artefacts, not whose claims are inside them, and every status it could have
+carried here was accurate: `software/classic/src` says surveyed, 642 files searched and not read. No
+row about a directory of Logitech's decompiled source can warn that two files in it are ours and that
+one of them states something false.
+
+So the mechanism to write down is not "check the register harder". It is that **this project's own
+claims are scattered across the lab in places catalogued as somebody else's**, where
+`reference/superseded.md`, `make facts` and the four places cannot reach them. A claim of ours in a lab
+docstring is strictly worse than the same claim in a lab note, because a note announces itself as ours
+and a package name announces the opposite.
+
+### What is left in this square
+
+Nothing. The classic client is fully dug: `hid/services/` was finished by section 213, and `tools/` and
+`dist/` are ours. What remains anywhere in it is the string bundles and HTML layouts in `res/` that
+section 207 judged unlikely to answer anything, and that judgement stands.

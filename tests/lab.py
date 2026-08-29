@@ -281,6 +281,10 @@ IMAGES = {
     'classic_system_service': 'SystemHidService.java',
     'classic_state_service': 'StateVariableHidService.java',
     'classic_diagnostic_service': 'DiagnosticHidService.java',
+    # The update service, section 214. Section 210 mined its write transfer without registering
+    # it; this fixture is for the other half, the region address and size table, which is the
+    # source end of the closure in packages/usb/test/classic-capture.test.ts.
+    'classic_update_service': 'UpdateHidService.java',
 }
 
 _cache = {}

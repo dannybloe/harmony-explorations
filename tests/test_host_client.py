@@ -1775,5 +1775,89 @@ class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
         self.assertIn('newValues.getIndexForName(variable.getName())', state)
 
 
+
+class TheClientsRegionTableNamesOneArchitectureAndTwoRegions(unittest.TestCase):
+    """Section 214: where the client's region reads are allowed to go, and where they are not.
+
+    This is the source end of a closure whose other end is a packet capture. The table asserted here
+    is read out of `UpdateHidService`; `packages/usb/test/classic-capture.test.ts` asserts that the
+    extents Logitech's client actually read on a Harmony One are exactly what these four numbers
+    predict. The two were produced three weeks apart by routes with nothing in common, so neither is
+    derived from the other, and each can fail without the other.
+
+    Client sourced under decision 2. What is claimed is what their client will attempt, which is not
+    the same as what the firmware permits: the firmware may well serve a region read this client
+    never asks for.
+    """
+
+    FIXTURE = 'classic_update_service'
+
+    #: Architecture, region, address, size, exactly as the two switches state them.
+    TABLE = ((12, 3, 8192, 122880), (12, 4, 262144, 0x3C0000))
+
+    def setUp(self):
+        lab.require(self.FIXTURE)
+        self.source = lab.load(self.FIXTURE).decode('utf-8', 'replace')
+
+    def _lookup(self, name):
+        """The body of one of the two lookups, from its signature to the throw that ends it."""
+        start = self.source.index('private int %s(' % name)
+        end = self.source.index('Unable to get', start)
+        return self.source[start:end]
+
+    def test_the_two_lookups_name_exactly_one_architecture(self):
+        """The reason a Harmony 600 gets no region read out of this client at all.
+
+        Both switches open on the architecture and both carry a single case. So the vendor's own
+        classic client can read a region on architecture 12 and on nothing else, and the refusal is
+        not a device answer: it is thrown while building the call, before a packet exists.
+        """
+        for name in ('getRegionAddress', 'getRegionSize'):
+            body = self._lookup(name)
+            architectures = re.findall(r'switch \(architectureId\) \{\s*(.*?)\{', body, re.S)
+            self.assertEqual(len(architectures), 1, name)
+            # Assert the count as well as the value, so a second architecture appearing here fails
+            # rather than being silently absorbed by an `in` check.
+            cases = re.findall(r'case (\d+):', body)
+            self.assertEqual(cases[0], '12', name)
+            self.assertEqual(len(cases), 3, '%s: the architecture and its two regions' % name)
+
+    def test_the_four_numbers_are_the_ones_the_capture_closes_on(self):
+        """Transcribing these is the point: the closure is worthless if either side is recomputed."""
+        for architecture, region, address, size in self.TABLE:
+            self.assertEqual(architecture, 12)
+            self.assertRegex(
+                self._lookup('getRegionAddress'),
+                r'case %d: \{\s*address = %d;' % (region, address),
+            )
+            self.assertRegex(
+                self._lookup('getRegionSize'),
+                r'case %d: \{\s*size = (%d|0x%X);' % (region, size, size),
+            )
+
+    def test_an_unlisted_pair_throws_before_anything_is_sent(self):
+        """What makes probing every region id free, which is what our own read out relies on.
+
+        Both lookups start at -1 and throw when nothing assigned to them, and the throw is a plain
+        exception rather than a device call. So asking for a region an architecture has no entry for
+        costs one exception and no packet.
+        """
+        for name in ('getRegionAddress', 'getRegionSize'):
+            self.assertIn('= -1;', self._lookup(name))
+        self.assertEqual(self.source.count('throw new ServiceException("Unable to get'), 2)
+
+    def test_the_region_read_is_an_ordinary_flash_read(self):
+        """Region reading is not a second protocol, which is why our own reader reproduces it.
+
+        `readRegion` sizes a buffer from the table and hands the matching address to the flash
+        service. So a region is a name for an extent, and nothing on the wire says `region`.
+        """
+        self.assertRegex(
+            self.source,
+            r'(?s)public byte\[\] readRegion\([^)]*\) throws ServiceException \{.*?'
+            r'byte\[\] data = new byte\[this\.getRegionSize\(architectureId, regionId\)\];.*?'
+            r'readFlash\(progress, this\.getRegionAddress\(architectureId, regionId\), data\);',
+        )
+
 if __name__ == '__main__':
     unittest.main()

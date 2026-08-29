@@ -135,6 +135,52 @@ test('the client reads three extents and never the firmware', lab.skipUnless(FIX
   assert.equal(runs[2]!.from, 0x040000);
 });
 
+/**
+ * The client's own region table, for architecture 12, as its source states it.
+ *
+ * `UpdateHidService.getRegionAddress` and `getRegionSize` are one switch each, and between them
+ * they name **two** regions and **one** architecture: region 3 at 8192 for 122880 bytes and region
+ * 4 at 262144 for `0x3C0000`, both under `case 12`. Every other pair throws before a packet is
+ * built, which is why a Harmony 600 gets no region read out of this client at all. Section 214.
+ *
+ * These four numbers are transcribed from the decompiled source, so they are the **source** end of
+ * the closure below and nothing here recomputes them from the capture.
+ */
+const REGION_TABLE: readonly { region: number; address: number; size: number }[] = [
+  { region: 3, address: 8192, size: 122880 },
+  { region: 4, address: 262144, size: 0x3c0000 },
+];
+
+test('the extents the client read are exactly what its own region table predicts',
+  lab.skipUnless(FIXTURE), () => {
+    // The strongest thing in this file, and the reason it is worth a test of its own. The left hand
+    // side is a table in Logitech's source, read on 29 August 2026; the right hand side is where
+    // their client's packets actually went, captured on 7 August 2026. Two routes with nothing in
+    // common, and neither was derived from the other: section 210 measured the extents without
+    // knowing why they were those extents, and section 212 read the table without checking it
+    // against packets. They agree on all four numbers.
+    const flashRuns: { from: number; to: number }[] = [];
+    for (const hex of requests()) {
+      const b = Uint8Array.from(Buffer.from(hex, 'hex'));
+      if ((b[0]! & 0xf0) !== READ_FLASH) continue;
+      const address = (b[1]! << 16) | (b[2]! << 8) | b[3]!;
+      const count = (b[4]! << 8) | b[5]!;
+      // Internal memory, top byte 0xFF, is the identity block and is not a region.
+      if (b[1]! === 0xff) continue;
+      const last = flashRuns[flashRuns.length - 1];
+      if (last !== undefined && last.to === address) last.to = address + count;
+      else flashRuns.push({ from: address, to: address + count });
+    }
+
+    const predicted = REGION_TABLE.map((r) => ({ from: r.address, to: r.address + r.size }));
+    assert.deepEqual(flashRuns, predicted);
+
+    // And the closure stated the other way round, so a future edit that made both sides move
+    // together would still have to move these two literals by hand.
+    assert.equal(predicted[0]!.to, 0x020000);
+    assert.equal(predicted[1]!.to, 0x400000);
+  });
+
 test('the client transfers 3100 bytes at a time, which is fifty full chunks',
   lab.skipUnless(FIXTURE), () => {
     const counts = new Map<number, number>();

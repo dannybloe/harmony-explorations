@@ -1044,6 +1044,35 @@ carrying a bootloader version and returns nothing at all when it does not, and n
 document is where that belongs precisely because it is easy to read the method's name as a query: it
 is not one, and section 210's capture shows the remote is never asked.
 
+**That warning was already earned, in the lab, before it was written.** A read out this project built
+on 7 August 2026 documents `getRegionIds` as the remote naming its own regions, which is the same
+misreading, and it sat in a file inside Logitech's package name where nothing here could see it.
+Section 214.
+
+### Where a region read is allowed to go, and what it closes on
+
+Section 214. The addresses in the table above are not only measurements off a capture. The client
+carries them, in `UpdateHidService`, as one switch for the address and one for the size, and between
+them they name **two regions and one architecture**:
+
+| architecture | region | address | size | ends at |
+|---|---|---|---|---|
+| 12 | 3, the embedded configuration | 8192 | 122880 | `0x020000` |
+| 12 | 4, the user configuration | 262144 | `0x3C0000` | `0x400000` |
+
+**This predicts the extents the client actually read**, exactly, on all four numbers: section 210's
+capture went from `0x002000` to `0x020000` and from `0x040000` to `0x400000` and nowhere else in
+flash. The table was read on 29 August 2026 and the capture made on 7 August, by routes with nothing in
+common, and neither was derived from the other, so this is the independent closure the rest of this
+document mostly cannot offer. Both ends carry a test.
+
+Two consequences. **The vendor's own classic client reads a region on a Harmony One and on no other
+architecture**, and the refusal is thrown while the call is being built rather than answered by a
+device, so asking for a region an architecture has no entry for costs an exception and no packet.
+Section 213 noted the single architecture arm in passing; this is the same fact with its numbers. And a
+region is **not a second protocol**: `readRegion` sizes a buffer from the table and hands the matching
+address to the ordinary flash read, so nothing on the wire says region.
+
 ### Every single byte write it makes is read back, and there is no unverified variant
 
 Section 211, out of the three single byte memory services: RAM, on chip EEPROM and internal program

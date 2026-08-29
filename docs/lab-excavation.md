@@ -58,7 +58,14 @@ Two states the tick cannot express, and both need reading rather than counting:
   firmware packages carrying a stranger's account identifiers and no row saying so.
 * **a target the site cannot answer**, as against one nobody has dug for. `compiler` is the case: the
   biggest prize on the list, and `SERVER-DEPENDENCY.md` says the configuration compiler was server side
-  and is gone, so its remaining rows are unlikely to move it. A count cannot tell those two apart.
+  and is gone, so its remaining rows are unlikely to move it. A count cannot tell those two apart. Its
+  last unopened artefact was dug on 29 August and held **two Java decompilers and a JDK**, section 214,
+  so the tag lost a row rather than gaining an answer, which is the shape to expect from the rest of
+  them.
+
+**One artefact on the whole site is still `unseen`**, the vendor's icon set, and the excavation is
+therefore into its second phase: what is left is reading squares that have been surveyed rather than
+finding squares nobody has opened.
 
 ## What we are looking for
 
@@ -258,3 +265,33 @@ nothing from the site is ever committed except our own description of it.
 And per decision 12: **a find is not landed until it has taken the ordinary route into this
 repository.** Saying so in a lab note is the state the decision forbids, and it is the state that
 produced section 197.
+
+### Whose claim is it, and why the register cannot answer that
+
+Section 214, and it is the one failure mode this method had no answer for. The register describes
+**artefacts**: what a thing is, how deep anybody has been, and which tags it might answer. It cannot
+describe **whose claims are inside one**, and on this site that distinction is not academic, because
+this project's own work is scattered through directories that are correctly catalogued as somebody
+else's.
+
+The case that made it: a read out this project built in August lives in `software/classic/dist/` as
+two source files under a `local` package inside Logitech's own namespace, in a tree whose register row
+accurately says "the vendor's decompiled source, surveyed, searched and not read". Its documentation
+states that a remote names its own regions. It does not, and establishing that took an afternoon
+twenty two days later. Every register status involved was correct and none of them could have helped.
+
+So when a lab file states something about a remote, **check who wrote it before believing it and
+before re-deriving it**. The tell is not the directory and not the package name, both of which lied
+here; it is the voice and the date. Ours is dated 2026 and reads like this repository's documents.
+
+Two practical consequences for a dig:
+
+* **A find in a lab file that turns out to be ours is not a find, it is an unlanded claim**, and it
+  takes the ordinary route into this repository like any other, per decision 12. That is what the rule
+  above already says; what section 214 adds is that such a claim can be **wrong**, and that nothing
+  here can see it. A claim of ours in a lab docstring is worse than the same claim in a lab note,
+  because a note announces itself as ours and a package name announces the opposite.
+* **When a square turns out to hold our own material, say so in its register row in the same pass.**
+  Three rows have now been corrected in that direction, `reports/`, `tools/` and `dist/`, and in each
+  case the row's description of the artefact as Logitech's is what made the square look expensive and
+  kept it unopened.

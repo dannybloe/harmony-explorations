@@ -515,8 +515,8 @@ mined, and crossing that boundary does not feel like opening a new artefact. So 
 path and not the dig**, re-run every time the path changes even when the subject has not, and it is
 one command now, `make lab-check PATH_ARG=<path>`.
 
-**It is eight occurrences now, and the seventh and eighth happened in the session that wrote the
-sixth's fix**, section 213. One published a finding whose stated lead had been sitting in a lab note
+**It is nine occurrences now, and the seventh, eighth and ninth all happened in the session that
+wrote the sixth's fix**, sections 213 and 214. One published a finding whose stated lead had been sitting in a lab note
 for twenty days, and the other followed a method into `core/flash/`, a directory whose own register
 row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both times the check was run on the paths the
 dig set out to open and not on the path a name led to, which is precisely the distinction the
@@ -533,6 +533,21 @@ having been shown its row. Advisory output was not tried, deliberately, because 
 is exactly what the eight occurrences prove gets ignored. It **fails open** on anything it cannot
 parse, since losing the reminder costs an afternoon and blocking a session on a broken hook costs more.
 `make lab-check` is unchanged and is still the way to ask on purpose.
+
+**The ninth arrived the same day and the hook could not have caught it either**, section 214, which is
+why it is worth a paragraph where an eighth would not have been. It was not a dig that skipped a
+register row: it was a **claim of ours**, in a docstring, in a file sitting inside Logitech's own
+package name in a directory the register correctly describes as the vendor's decompiled source. The
+instrument built there on 7 August states that a remote names its own regions; section 212 spent an
+afternoon on 29 August establishing that it does not and that no packet is sent. No status a register
+can carry would have warned about that, because a register describes artefacts and not whose claims
+are inside them.
+
+**So the standing rule gains a second half**: this project's own claims are scattered across the lab in
+places catalogued as somebody else's, where `reference/superseded.md`, `make facts` and the four places
+cannot reach them. A claim of ours in a lab docstring is worse than the same claim in a lab note, since
+a note announces itself as ours and a package name announces the opposite. When a lab file states
+something about a remote, check who wrote it before believing it **and** before re-deriving it.
 
 What the fifth occurrence bought is real and is the shape to aim for when this happens
 again: the ledger of client sourced numbers had no executable check at all and has one now, and three
