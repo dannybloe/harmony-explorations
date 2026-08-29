@@ -559,9 +559,29 @@ suggest:
 | `0x01` | `0x0CBC8` | calls `0x17DCA`, then `0x17E28`, returns a 16-bit value in `PROD` |
 | `0x06` | `0x0CBE6` | passes the parameter's high byte to `0x1AB8A`, returns one byte |
 | `0x07` | `0x0CBF4` | **reads RAM.** See below |
-| `0x0C` | `0x0CC02` | not read yet |
+| `0x0C` | `0x0CC02` | **the hardware feature read**, two details and no more. See below |
 
 Anything else falls through the chain.
+
+**Selector `0x0C` is a hardware feature read, and it was "not read yet" here until 29 August 2026.**
+Logitech's classic client named it: it passes a detail number, calls detail 0 a hardware flag and
+masks it to bit 0, and calls detail 1 the battery level. The firmware agrees, on all three images,
+`docs/findings.md` section 212:
+
+| detail | what the firmware does | width |
+|---|---|---|
+| 0 | clears the reply's high byte and returns one byte of data memory, `0x9FF` on the 700, `0x3FF` on the 600 and `0x32D` on the One | 8 bits |
+| 1 | calls a routine and returns `PRODH:PRODL`, `0x0FBE6` on the 700, `0x11184` on the 600 and `0x2372A` on the One | 16 bits |
+| 2 and above | **nothing** | stale |
+
+**The third row is the one to build a rail on.** The body writes its two reply bytes only inside an
+arm, so a detail nobody implemented does not fail and does not answer: it returns whatever the
+previous command left in those two locations, which on the wire is indistinguishable from a real
+value. `packages/usb/src/protocol.ts` names the two details as constants for that reason.
+
+The client exposes the battery reading on arch 12 alone. **Both arch 14 images implement it
+identically**, so the restriction is a product decision of theirs and not a capability, and this
+project has asked no remote for either value yet.
 
 **Selector `0x07` is an arbitrary data memory read:**
 

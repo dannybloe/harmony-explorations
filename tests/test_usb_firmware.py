@@ -2006,6 +2006,110 @@ class TestArch12Band0xC0(unittest.TestCase):
         self.assertEqual(self.at(code, 0x23952).fields['k'], 0x07)
 
 
+class TestReadMiscSelectorTwelve(unittest.TestCase):
+    """
+    Section 212. `READ_MISC` selector `0x0C`, which `docs/usb-protocol.md` carried as "not read
+    yet" from the day the selector chain was decoded.
+
+    Logitech's classic client is what said where to look: it calls this selector a hardware feature
+    read and passes a detail number, 0 for a flag it masks down to one bit and 1 for the battery
+    level. The firmware is the authority under decision 2, and it agrees: two arms, chosen by the
+    parameter's low byte, and nothing else serviced.
+
+    Three images, and the shape is identical at three different addresses, which is the evidence.
+    The client offers the battery reading on arch 12 alone; **both arch 14 images implement it
+    anyway**, so that restriction is a product decision of theirs and not a capability.
+
+    Every offset below is from the body's first instruction, and they are the same on all three
+    because the compiler emitted the same source.
+    """
+
+    # image -> (base, the selector chain's first XORLW, the selector 0x0C body,
+    #           the bank and file of the parameter byte, the data address arm 0 returns,
+    #           the routine arm 1 calls)
+    IMAGES = {
+        'h700_code': (0x9000, 0x0CBB6, 0x0CC02, (0xE, 0xCE), 0x09FF, 0x0FBE6),
+        'h600_code_complete': (0x9000, 0x0CAF8, 0x0CB44, (0x1, 0xC6), 0x03FF, 0x11184),
+        'one34_code': (0x20000, 0x26D0E, 0x26D5A, (0x2, 0x85), 0x032D, 0x2372A),
+    }
+
+    PRODL, PRODH = 0xFF3, 0xFF4
+
+    def setUp(self):
+        lab.require(*self.IMAGES)
+
+    def at(self, name, base, addr):
+        return isa.decode(lab.load(name), addr - base, base)
+
+    def test_the_selector_chain_services_exactly_four_selectors(self):
+        """0x01, 0x06, 0x07 and 0x0C, and the last is the one this class is about."""
+        # `setUp` already requires these, and the static guard in `tests/test_toolchain.py` cannot
+        # see that: it looks for a `lab.require` in the body of any test that calls `lab.load` inside
+        # a loop. The other tests here reach the image through `self.at` and so slip past it, which
+        # is the blind spot that guard's own docstring names. Stating the population here again is
+        # cheap and it is what the rule asks for.
+        lab.require(*self.IMAGES)
+        for name, (base, chain, _, _, _, _) in self.IMAGES.items():
+            with self.subTest(image=name):
+                cases = chains.xor_chain(lab.load(name), base, chain)
+                self.assertEqual(sorted(case.value for case in cases),
+                                 [0x01, 0x06, 0x07, 0x0C],
+                                 'the selectors this image services')
+
+    def test_selector_twelve_branches_on_the_parameter_low_byte(self):
+        for name, (base, _, body, (bank, file_), _, _) in self.IMAGES.items():
+            with self.subTest(image=name):
+                select = self.at(name, base, body)
+                self.assertEqual(select.mnemonic, 'MOVLB')
+                self.assertEqual(select.fields['k'], bank, 'the bank the parameter is in')
+                test = self.at(name, base, body + 2)
+                self.assertEqual(test.mnemonic, 'MOVF')
+                self.assertEqual(test.fields['f'], file_, 'the parameter byte it tests')
+                self.assertEqual(test.fields['a'], 1, 'banked, so the MOVLB above decides')
+                self.assertEqual(self.at(name, base, body + 4).mnemonic, 'BNZ')
+
+    def test_detail_zero_returns_one_data_byte_zero_extended(self):
+        """The reply's high byte is cleared and its low byte is one fixed data address."""
+        for name, (base, _, body, _, source, _) in self.IMAGES.items():
+            with self.subTest(image=name):
+                self.assertEqual(self.at(name, base, body + 8).mnemonic, 'CLRF',
+                                 'the reply high byte is zeroed, so the value is eight bits')
+                move = self.at(name, base, body + 10)
+                self.assertEqual(move.mnemonic, 'MOVFF')
+                self.assertEqual(move.fields['src'], source,
+                                 'the data address the flag byte comes from')
+
+    def test_detail_one_calls_a_routine_and_returns_a_sixteen_bit_result(self):
+        for name, (base, _, body, _, _, routine) in self.IMAGES.items():
+            with self.subTest(image=name):
+                call = self.at(name, base, body + 22)
+                self.assertEqual(call.mnemonic, 'CALL')
+                self.assertEqual(call.fields['target'], routine, 'the routine that computes it')
+                # Both halves of PROD are moved out, so this answer is sixteen bits wide where
+                # detail 0's is eight. A caller that reads one byte of it loses half.
+                low = self.at(name, base, body + 26)
+                high = self.at(name, base, body + 30)
+                self.assertEqual((low.mnemonic, high.mnemonic), ('MOVFF', 'MOVFF'))
+                self.assertEqual(low.fields['src'], self.PRODL)
+                self.assertEqual(high.fields['src'], self.PRODH)
+
+    def test_no_third_detail_is_serviced_and_the_reply_is_left_stale(self):
+        """Detail 2 and up reach the reply with neither byte written.
+
+        This is the part worth stating as a rail. The body writes its two reply bytes only inside
+        an arm, so a detail nobody implemented does not fail: it returns whatever the previous
+        command left in those two locations, which on the wire is indistinguishable from an answer.
+        """
+        for name, (base, _, body, _, _, _) in self.IMAGES.items():
+            with self.subTest(image=name):
+                self.assertEqual(self.at(name, base, body + 18).mnemonic, 'DECF',
+                                 'the test for detail 1')
+                skip = self.at(name, base, body + 20)
+                self.assertEqual(skip.mnemonic, 'BNZ')
+                # Its target is past both arms, where the two bytes are appended to the reply.
+                self.assertGreater(skip.fields['target'], body + 30)
+
+
 class TestTheFlashWriteDataPath(unittest.TestCase):
     """
     Section 175. How the bytes of a write actually reach storage, which is the half of

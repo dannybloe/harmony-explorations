@@ -1176,10 +1176,12 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # Exact, per this file's own rule. It moves in the diff every time a row is added, which is
         # the point: the register growing is the excavation making progress, and a floor here would
         # hide a row being deleted just as readily as it hides a total going the wrong way.
-        # 75 since section 211 replaced the blanket "`hid/services/` is not mined" with one
-        # status per subdirectory: eleven more paths named, and naming them is what stops the
-        # next dig walking into `architecture/`, which is extracted whole.
-        self.assertEqual(len(named), 75, 'lab paths the register names, as at 29 August 2026')
+        # Still 64 after sections 211 and 212 gave the client's HID services one status per
+        # subdirectory instead of a blanket "not mined". Those subdirectories are deliberately
+        # named **without** a trailing slash, because this check reads any backticked name
+        # containing one as a path relative to the lab root: `system/` is not such a path, and
+        # spelling ten of them that way cost ten failures before the spelling was the fix.
+        self.assertEqual(len(named), 64, 'lab paths the register names, as at 29 August 2026')
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:

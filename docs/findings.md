@@ -27357,6 +27357,96 @@ Nothing available here decides which, and it is not worth a guess.
 Four services in the same directory are named in no note and in no document: the learn infrared
 service, the state variable service, the remote API service, and the system service. **The system
 service is the one to dig next**, 448 lines, and it holds two things this project has open: a call
-that asks the **remote** for its region ids, which is a different question from the local region
+that asks the **remote** for its region ids, which is a different question from the local region<!--superseded-->
 table section 210 found, and get and set methods for the unit's identity block, the second of which is
 a write to the 48 bytes section 210 watched the client read.
+
+*Corrected the same day, in section 212: **it does not ask the remote**. The region id list is
+computed from the version block that is already in hand, gated on that block carrying a bootloader
+version, and no packet is sent for it. The sentence above is left as written because guessing what a
+method does from its name is exactly the habit this project keeps warning itself about, and it took
+one afternoon to make the mistake and one file to catch it.*
+
+## 212. The one selector nobody had read is a battery gauge, and the client's region numbers place two version fields
+
+*29 August 2026. `.../hid/services/system/`, 448 lines, named in no lab note and in no document
+here. The square section 211 pointed at.*
+
+Two results, one correction, and the correction is the instructive part.
+
+### `READ_MISC` selector `0x0C` is read now
+
+`docs/usb-protocol.md` has carried "not read yet" against this selector since the day the chain was
+decoded. It is one of only four the firmware services, so a quarter of that command was blank.
+
+The client is what said where to look. It calls the selector a hardware feature read, passes a detail
+number, masks detail 0 down to one bit and calls it a hardware flag, and calls detail 1 the battery
+level. **The firmware is the authority and it agrees**, on all three images:
+
+| detail | what happens | width |
+|---|---|---|
+| 0 | the reply's high byte is cleared and its low byte comes from one fixed data address, `0x9FF` on the 700, `0x3FF` on the 600, `0x32D` on the One | 8 bits |
+| 1 | a routine is called and `PRODH:PRODL` becomes the reply, `0x0FBE6`, `0x11184` and `0x2372A` respectively | 16 bits |
+| 2 and above | neither reply byte is written | stale |
+
+The third row is the one worth building on. The body writes its two reply bytes **only inside an
+arm**, so an unimplemented detail does not fail and does not answer: it returns whatever the previous
+command left in those two locations, which on the wire is indistinguishable from a real value. That is
+why `packages/usb/src/protocol.ts` now names the two details as constants rather than taking a free
+parameter.
+
+**The client offers the battery reading on arch 12 alone, and both arch 14 images implement it.** So
+that restriction is a product decision of theirs rather than a capability of the hardware. Nothing
+here has asked a remote for either value yet; the reading is from the images.
+
+This is decision 2 working exactly as it was written. The client was cheap and legible and said what
+to look for in one line; the firmware said what actually happens, including the stale third arm, which
+the client cannot tell you because it never sends a detail above 1.
+
+### The client's region numbers place two version block fields
+
+The system service names a region per index, and this project already had every one of those places
+under a different description. Laid side by side:
+
+| index | the client's name | what this project calls it |
+|---|---|---|
+| 0 | boot loader | version block field 7, program `0x000017` |
+| 1 | safe mode | field 10, `0x001007` |
+| 2 | normal mode | field 11, `0x009007` |
+| 3 | embedded configuration | flash `0x002000`, section 210 |
+| 4 | user configuration | flash `0x040000`, section 210 |
+| 5 | CPLD image | field 9, the image at `0xFF` `+0x0000` |
+| 7 | Z-Wave module | nothing on either architecture read here |
+| 11 | PIC library | field 8, the image at `0xFF` `+0xE000` |
+
+**The two rows that matter are 5 and 11.** `tests/test_usb_firmware.py` carries a comment saying field
+9 "rests on this pairing being exhaustive", which is this project marking its own weakest placement.
+The client reaches the same answer by a route with nothing in common: it does not read an image
+header, it asks the version block for the version of a region it names, and the region it names for
+field 9 is the one at `0xFF0000`. `docs/host-client.md` called that region and the one at `0xFFE000`
+"new, and unexplained here"; both are explained now, by this and by section 206's byte counts.
+
+**Two region numbers are two different things in one client**, which is worth stating because the
+overlap invites a wrong reading. Indices 3 and 4 are storage extents it reads with a flash command.
+Every other index is a firmware image with a version and no read address, which is why section 210
+watched fourteen of sixteen regions fail before a packet was built.
+
+### The correction, and it is one paragraph old
+
+Section 211 ended by naming this square and saying it holds "a call that asks the **remote** for its
+region ids". **It does not ask the remote.** The list is computed from the version block already in
+hand, it is gated on that block carrying a bootloader version, it returns an empty list when it does
+not, and no packet is sent. The wrong sentence is left in section 211 with the correction beside it.
+
+The habit that produced it is the one this repository keeps warning itself about: a method's name was
+read as a description of what it does. It cost an afternoon to write and one file to catch, and the
+cheap check was available the whole time, since section 210's capture accounts for every packet the
+client sent and none of them is a region query.
+
+### What is still unopened in that directory
+
+Four services: the learn infrared service, the state variable service, the remote API service and the
+diagnostic service, plus `core/architecture/`. The system service also holds a **write** path this
+project has never described, an erase of the unit's identity block, which on arch 12 reads 1024 bytes
+at `0xFFF400`, blanks the first 64 and writes the block back. That is worth its own reading before any
+write work, and it is not read here.

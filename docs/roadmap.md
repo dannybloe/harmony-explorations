@@ -1660,6 +1660,15 @@ was corrected on the way, from a blanket "not mined" to one status per subdirect
 sent a dig at a subdirectory that is extracted whole. `system/` is the next square and section 211
 says what is in it.
 
+**And the third square that day, section 212, the client's system service.** It closes an open row
+in this project's own USB spec: one of the four things `READ_MISC` services had never been read, and it
+is a hardware feature read whose detail 1 is the battery gauge. The client named it in a line and the
+firmware confirmed it on all three images, including the part the client cannot tell you, that a detail
+above 1 returns stale bytes rather than an error. Its region numbering then places version block fields
+8 and 9, one of which our own test comment flags as its weakest placement, by a route with nothing in
+common with ours. The correction in it is the lesson: section 211 had said one of its calls asks the
+remote for a region list, from the method's name, and it does not ask the remote at all.
+
 **Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
 is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
 by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and

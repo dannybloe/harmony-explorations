@@ -917,13 +917,38 @@ Seven named regions for the Harmony One, and the ones this project already knows
 | normal mode | `0x3D0000` | the stored application firmware, already adopted as the write ceiling |
 | embedded config | `0x002000` | the safe mode container, known |
 | user config | `0x040000` | known |
-| CPLD image | `0xFF0000` | **new**, and unexplained here |
-| PIC library | `0xFFE000` | **new**, and unexplained here |
+| CPLD image | `0xFF0000` | holds 5939 used bytes, section 206, and **its version is field 9 of the version block**, section 212 |
+| PIC library | `0xFFE000` | holds the external flash programmer, 601 bytes, section 206, and **its version is field 8**, section 212 |
 
 The unit's own identity block is named separately, 64 bytes at `0xFFF400`, read with an ordinary
 `READ_FLASH`. That is the region this repository's policy keeps out of any published dump.
 
-The last two are candidates for the unexplained arch 12 regions in the ledger above.
+The last two were called unexplained here until 29 August 2026. Both are placed now, and by two routes: section 206 found bytes at each address on both Harmony Ones, and section 212 found the client naming each one's **version byte**, which lands on version block fields 8 and 9. Field 9's placement rested on a pairing that `tests/test_usb_firmware.py` flags as its weak leg, so this is the independent confirmation that comment asks for.
+
+### The region index space, and what each index names
+
+Section 212. The client uses one set of region numbers for two different things, and keeping them
+apart matters because the numbers overlap nothing.
+
+| index | what it names | where this project already had it |
+|---|---|---|
+| 0 | boot loader | version block field 7, program `0x000017` |
+| 1 | safe mode | field 10, `0x001007` |
+| 2 | normal mode, the application | field 11, `0x009007` |
+| 3 | the embedded configuration | flash `0x002000`, 122880 bytes, section 210 |
+| 4 | the user configuration | flash `0x040000`, `0x3C0000` bytes, section 210 |
+| 5 | the CPLD image | field 9, `0xFF0000` |
+| 7 | the Z-Wave module | no field on either architecture this project reads |
+| 11 | the PIC library | field 8, `0xFFE000` |
+
+**Indices 3 and 4 are storage it reads; the rest are images with a version.** Its list of region ids
+returns `0, 1, 2, 5, 11`, plus `7` when the remote reports a Z-Wave version, and it never includes 3
+or 4. So a region id in one call is not a region id in the other.
+
+**That list is computed from the version block, not asked of the remote.** It is gated on the reply
+carrying a bootloader version and returns nothing at all when it does not, and no packet is sent. This
+document is where that belongs precisely because it is easy to read the method's name as a query: it
+is not one, and section 210's capture shows the remote is never asked.
 
 ### Every single byte write it makes is read back, and there is no unverified variant
 

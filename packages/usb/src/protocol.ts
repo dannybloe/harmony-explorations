@@ -193,7 +193,35 @@ export function readMiscRequest(selector: number, parameter: number): Uint8Array
  * `MISC_QUEUE_EVENT`, is accepted and does nothing. So there is no event injection.
  */
 export const MISC_RAM = 0x07;
-export const READ_MISC_SELECTORS: readonly number[] = [0x01, 0x06, 0x07, 0x0c];
+
+/**
+ * `READ_MISC` selector `0x0C`, the hardware feature read, and the two details it services.
+ *
+ * Named by Logitech's classic client and then confirmed against all three firmware images, section
+ * 212: the parameter's low byte picks an arm, `0` returns one byte of data memory zero extended and
+ * `1` returns a sixteen bit value a routine computes. The client calls the first a hardware flag and
+ * masks it to bit 0, and the second the battery level.
+ *
+ * **A detail above 1 is not an error and must not be sent.** The body writes its two reply bytes
+ * only inside an arm, so an unimplemented detail returns whatever the previous command left there,
+ * which on the wire looks exactly like an answer. That is why these are constants rather than a
+ * free parameter.
+ *
+ * The client offers the battery reading on arch 12 (Harmony One) alone. Both arch 14 images
+ * implement it identically, so that is a product decision of theirs rather than a capability, and
+ * nothing here has asked a remote for either value yet.
+ */
+export const MISC_HARDWARE_FEATURE = 0x0c;
+/** One byte, of which the client reads bit 0. */
+export const HARDWARE_FEATURE_FLAG = 0;
+/** Sixteen bits, so a caller that keeps one byte loses half the value. */
+export const HARDWARE_FEATURE_BATTERY = 1;
+export const HARDWARE_FEATURE_DETAILS: readonly number[] = [
+  HARDWARE_FEATURE_FLAG,
+  HARDWARE_FEATURE_BATTERY,
+];
+
+export const READ_MISC_SELECTORS: readonly number[] = [0x01, 0x06, 0x07, MISC_HARDWARE_FEATURE];
 export const WRITE_MISC_SELECTORS: readonly number[] = [
   0x01, 0x02, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
 ];
