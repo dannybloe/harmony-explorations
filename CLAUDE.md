@@ -485,8 +485,12 @@ That directory has its own `CLAUDE.md`. Analysis happens there, only shareable o
 **Treat the lab as an archaeology site, not as a drawer**, decision 12 in `docs/roadmap.md`, taken on
 28 August 2026 after the fourth time a session worked out something the lab already had written down.
 **Before deriving anything, ask whether the site already answers it.** The site is 12506 files and
-2.3 GB, of which `software/classic/` is 4809 files with exactly one of them read, and `work/myharmony/`
-another 3458.
+2.3 GB, of which `software/classic/` is 4809 files and `work/myharmony/` another 3465. **Neither is
+untouched and this said `software/classic/` had exactly one file read**, until 29 August 2026: sections
+204 to 209 worked it, two of its notes are mined, a third is catalogued, and `src/` and `res/` are
+surveyed with the HID command layer mined and three resource files with it. `make lab-progress` is the
+answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
+exists to replace.
 
 **The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 44
 artefacts, each with a status and its tags, with a test that fails when the lab gains one the register
