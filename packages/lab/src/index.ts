@@ -240,6 +240,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // it is the one place our command encoder can be checked against an independent one rather than
   // against itself. `software/classic/reports/run.log`, section 210.
   classic_read_capture: 'run.log',
+  // The classic client's three single byte memory services, decompiled. Section 211 is a claim about
+  // what this code does, so the claim has to be recomputable from the source rather than transcribed.
+  // Logitech's expression, so it stays in the lab and nothing of it is quoted: what travels is which
+  // bound is asserted and what happens after a write, which is functional fact. Python reads them;
+  // they are named here only to keep the two fixture tables identical.
+  classic_ram_service: 'RamHidService.java',
+  classic_eeprom_service: 'EepromHidService.java',
+  classic_program_service: 'ProgramHidService.java',
 };
 
 const cache = new Map<string, string[]>();

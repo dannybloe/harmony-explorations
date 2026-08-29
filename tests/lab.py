@@ -264,6 +264,14 @@ IMAGES = {
     # a local stand-in for its discontinued server. Read by the TypeScript side, where the command
     # encoder lives; named here so the two tables agree. `software/classic/reports/run.log`.
     'classic_read_capture': 'run.log',
+    # The classic client's three single byte memory services, decompiled: RAM, on chip EEPROM and
+    # internal program memory. Section 211 is a claim about what this code does, and a claim about a
+    # source nobody can recompute is a transcription. Logitech's expression, so it stays in the lab
+    # and nothing of it is quoted: what travels is which bound each asserts and what it does after a
+    # write, which is functional fact. `software/classic/src/hidcommands/.../services/core/memory`.
+    'classic_ram_service': 'RamHidService.java',
+    'classic_eeprom_service': 'EepromHidService.java',
+    'classic_program_service': 'ProgramHidService.java',
 }
 
 _cache = {}

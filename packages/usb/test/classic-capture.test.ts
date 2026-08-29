@@ -82,11 +82,13 @@ test('reading a remote takes three commands and no others', lab.skipUnless(FIXTU
   }
   // The whole point of asserting the counts rather than the set: a fourth command appearing once in
   // 1312 would still leave the set of three looking right if the set were all that was checked.
-  assert.deepEqual([...byCommand.entries()].sort((a, b) => a[0] - b[0]), [
+  const expected: [number, number][] = [
     [GET_VERSION, 1],
     [READ_FLASH, 1310],
     [ESCAPE, 1],
-  ].sort((a, b) => a[0] - b[0]));
+  ];
+  const byFirst = (a: [number, number], b: [number, number]): number => a[0] - b[0];
+  assert.deepEqual([...byCommand.entries()].sort(byFirst), expected.sort(byFirst));
 });
 
 test('the client opens the session with the escape this project has never sent',

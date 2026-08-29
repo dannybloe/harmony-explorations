@@ -1542,5 +1542,69 @@ class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
                                     'nothing and the claim needs another')
 
 
+class EverySingleByteWriteIsReadBack(unittest.TestCase):
+    """Section 211: the client has no unverified single byte write, and its own bounds.
+
+    These are claims about Logitech's code, so they are recomputed from the source rather than
+    transcribed, per rule 2 in `docs/host-client.md`. What is asserted is what the client does, not
+    that the client is right about the hardware.
+    """
+
+    SERVICES = ('classic_ram_service', 'classic_eeprom_service', 'classic_program_service')
+
+    def setUp(self):
+        lab.require(*self.SERVICES)
+        self.source = {
+            name: lab.load(name).decode('utf-8', 'replace') for name in self.SERVICES
+        }
+
+    def test_no_service_offers_a_write_that_is_not_verified(self):
+        """Every write method reads the address back and compares before returning."""
+        for name, text in self.source.items():
+            with self.subTest(service=name):
+                writes = re.findall(r'public void (\w*[Ww]rite\w*)\(', text)
+                self.assertTrue(writes, 'the file parsed and has write methods')
+                # The naming is the claim: there is no `ramWrite` beside `verifyRamWrite`, so a
+                # caller cannot skip the read back by choosing a different method.
+                for method in writes:
+                    self.assertTrue(
+                        method.startswith('verify'),
+                        f'{method} is a write with no verify in its name',
+                    )
+                # And the body actually compares, rather than merely being named for it.
+                self.assertIn('!= this.', text, 'a write body compares what it read back')
+
+    def test_each_service_bounds_its_address_and_the_bound_is_only_an_assert(self):
+        """The bounds are Java asserts, which are off unless the JVM is started with -ea.
+
+        This is why the numbers are a lead and not a measurement of what the firmware enforces: the
+        shipped client does not check them at runtime. `packages/usb/src/rails.ts` bounds a RAM write
+        at the special function register page, 0xF40, which is far looser than the 256 here.
+        """
+        expected = {
+            'classic_ram_service': 256,
+            'classic_eeprom_service': 256,
+            'classic_program_service': 8192,
+        }
+        for name, bound in expected.items():
+            with self.subTest(service=name):
+                text = self.source[name]
+                self.assertIn(f'assert i_Address < {bound};', text)
+                # The control: the bound is reached only through `assert`, never through an `if`
+                # that throws, so nothing enforces it in a shipped build.
+                self.assertNotIn(f'if (i_Address >= {bound})', text)
+
+    def test_the_written_value_widths_disagree_and_that_is_the_clients_own_inconsistency(self):
+        """RAM takes a byte; EEPROM and program memory assert a fourteen bit value.
+
+        Recorded rather than explained. A byte wide on chip EEPROM has no use for 16383, so either
+        the assert is copied from the program memory service or the command's field is wider than
+        the storage. Nothing here can tell which, and it is not worth a guess.
+        """
+        self.assertIn('assert i_Value <= 255;', self.source['classic_ram_service'])
+        for name in ('classic_eeprom_service', 'classic_program_service'):
+            self.assertIn('assert i_Value <= 16383;', self.source[name])
+
+
 if __name__ == '__main__':
     unittest.main()

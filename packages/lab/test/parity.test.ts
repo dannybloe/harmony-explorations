@@ -41,8 +41,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 62 since the Harmony 895 was registered, section 177, 63 since the Harmony 350's config, section
   // 194, 65 since its firmware and the package it came in, section 196, and 68 since three files of
   // MyHarmony's own source, sections 202 and 203. 69 since the classic client's own wire log,
-  // section 210, which is the first fixture here that is a capture rather than a file off a device.
+  // section 210, which is the first fixture here that is a capture rather than a file off a device,
+  // and 72 since the classic client's three single byte memory services, section 211.
   // This is a **pure text** check on lab.py, so it runs with no lab at all and is what
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
-  assert.equal(Object.keys(pythonImages()).length, 69, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 72, 'every fixture tests/lab.py names');
 });

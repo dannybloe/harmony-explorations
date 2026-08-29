@@ -27296,3 +27296,67 @@ tag should move rather than close.
 distinct paths under `EasyZapper`, plus our own instrumentation posting the client bridge's replies
 back. It corroborates `SERVER-DEPENDENCY.md` on which calls the client makes at startup and adds no
 protocol.
+
+## 211. The client verifies every byte it writes, and its own bounds are sixteen times tighter than our rail
+
+*29 August 2026. `software/classic/src/hidcommands/.../services/core/memory/`, three files of about
+220 lines, named in no lab note and in no document here.*
+
+Section 210's square led into the services directory beside it, and the register's row for that
+directory needed correcting on the way: it says the whole of `hid/services/` is unmined, and the
+`architecture/` subdirectory is in fact extracted whole into `PROTOCOL-CONSTANTS.md`, iterators
+included. So the row was too coarse in the direction that costs an afternoon, which is the same shape
+as section 209 and is now fixed per subdirectory.
+
+What is genuinely untouched there is the three single byte memory services and four others. This is
+the three.
+
+### There is no unverified write
+
+RAM, on chip EEPROM and internal program memory each expose one read and one write. Every write is
+named for verifying, and the body writes the byte, reads the same address back, compares, and throws
+on a mismatch. **No second method writes without the read back**, so a caller cannot opt out of it.
+
+This project already requires exactly that of a flash write, and arrived at it independently, from
+the reasoning that a remote is irreplaceable. Finding the vendor doing it at one byte granularity,
+where the extra round trip costs proportionally the most, is the strongest form of agreement
+available: it is the case where skipping the check would have been most tempting.
+
+### The bounds, and why they are not limits
+
+| what | the client asserts | the rail here |
+|---|---|---|
+| RAM | address below 256, value a byte | address below `0xF40` |
+| on chip EEPROM | address below 256, value below 16384 | none |
+| internal program memory | address below 8192, value below 16384 | none |
+
+**Every one of these is a Java assertion**, and Java assertions do not execute unless the virtual
+machine is started with them enabled, which the client's own launcher does not do. So none of them is
+a guard in the shipped software. They are the author's statement of where the command was meant to be
+pointed, and that is still worth having: it is an intent, from the only people who knew the design.
+
+The RAM row touches a rail. `packages/usb/src/rails.ts` bounds a RAM write below `0xF40` because bank
+15 on this part holds `EECON1`, `EECON2`, `TABLAT` and `TBLPTR`, which are the self programming path.
+That reasoning is untouched and still correct. What is new is that Logitech never intended an address
+above 255, which is sixteen times tighter than our bound.
+
+**The rail is not tightened here.** A rail is a decision, not a consequence of a reading, and this one
+would need its own argument: 256 is a client's assertion about a client's use, not a statement about
+what the firmware accepts, and nothing has read the firmware's own handler for that bound. Recorded so
+the argument can be made rather than re-derived.
+
+### One inconsistency, recorded and not explained
+
+RAM asserts a value of at most 255. EEPROM and program memory both assert at most 16383. A byte wide
+on chip EEPROM has no use for a fourteen bit value, so either that assertion was copied from the
+program memory service next to it or the command's field is wider than the storage it reaches.
+Nothing available here decides which, and it is not worth a guess.
+
+### What is still unopened next door
+
+Four services in the same directory are named in no note and in no document: the learn infrared
+service, the state variable service, the remote API service, and the system service. **The system
+service is the one to dig next**, 448 lines, and it holds two things this project has open: a call
+that asks the **remote** for its region ids, which is a different question from the local region
+table section 210 found, and get and set methods for the unit's identity block, the second of which is
+a write to the 48 bytes section 210 watched the client read.

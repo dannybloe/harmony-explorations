@@ -1650,6 +1650,16 @@ three commands our allow list holds, and **the client's first command of every s
 `0xE0 0x01` that `end-session-experiment.ts` has never dared send**. The `fh-failures` tag loses its
 only candidate, since the failures in these logs are our own.
 
+**And the square next door, section 211**, which the first one led into: the three single byte
+memory services, in no note and in no document. Every write the client makes there is read back and
+compared, with no unverified variant anywhere, which is the rail this project imposes on itself
+arrived at independently and applied where it costs the most. Its own address bounds are sixteen times
+tighter than ours for RAM, and they are Java assertions that do not run in a shipped build, so they
+are an intent rather than a limit and the rail is left alone. The register's row for that directory
+was corrected on the way, from a blanket "not mined" to one status per subdirectory, since the blanket
+sent a dig at a subdirectory that is extracted whole. `system/` is the next square and section 211
+says what is in it.
+
 **Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
 is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
 by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and

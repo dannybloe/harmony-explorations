@@ -925,6 +925,42 @@ The unit's own identity block is named separately, 64 bytes at `0xFFF400`, read 
 
 The last two are candidates for the unexplained arch 12 regions in the ledger above.
 
+### Every single byte write it makes is read back, and there is no unverified variant
+
+Section 211, out of the three single byte memory services: RAM, on chip EEPROM and internal program
+memory. Each offers one read and one write, the write is named for verifying, and its body writes,
+reads the same address back and compares. A mismatch throws. There is no second method that writes
+without the read back, so a caller cannot choose to skip it.
+
+That is the same rail this project already imposes on flash, "every write is followed by a read of
+the same range and a byte comparison", arrived at independently. It is worth recording because it is
+the vendor doing it at the finest granularity there is, one byte, where the cost of the extra round
+trip is highest.
+
+### Its own address bounds, and why they are a lead rather than a limit
+
+| what | the client's bound | this project's rail |
+|---|---|---|
+| RAM | address below 256, value a byte | address below `0xF40`, the special function register page |
+| on chip EEPROM | address below 256, value below 16384 | none, nothing here writes EEPROM |
+| internal program memory | address below 8192, value below 16384 | none, nothing here writes program memory |
+
+**All three are Java assertions, which do not run unless the virtual machine is started with them
+enabled**, and nothing in the client's own launcher does. So these are the author's statement of
+intent and not a guard in the shipped software, which is exactly why they are a lead: they say where
+Logitech expected these commands to be used, and they say nothing about what the firmware accepts.
+
+The RAM row is the one that touches a rail here. `packages/usb/src/rails.ts` bounds a RAM write below
+`0xF40` because bank 15 holds the self programming registers, and the reasoning behind that is
+unchanged and still right. What is new is that the vendor never intends an address above 255 at all,
+which is sixteen times tighter. **Tightening our rail to match is not done here**, because a rail is
+a decision rather than a consequence, and the argument for it should be made on its own.
+
+The value widths disagree with each other and the disagreement is recorded rather than explained: RAM
+asserts a byte, while EEPROM and program memory both assert fourteen bits. A byte wide on chip EEPROM
+has no use for 16383, so either that assertion is copied from the program memory service or the
+command's field is wider than the storage it addresses. Nothing available here decides which.
+
 ### Flash block geometry, which changes an erase rail
 
 The client states the block table for arch 12 as counts and sizes: **eight blocks of 8192 bytes,
