@@ -1669,6 +1669,22 @@ above 1 returns stale bytes rather than an error. Its region numbering then plac
 common with ours. The correction in it is the lesson: section 211 had said one of its calls asks the
 remote for a region list, from the method's name, and it does not ask the remote at all.
 
+**The last of the client's HID services, section 213, and it is two things at once.** The dig
+finished the directory and its best return is a lead about this bench rather than about their software:
+their liveness ping, sent after every single operation, is **macOS only**, and macOS is where this
+project's two unexplained intermittent faults live, a Harmony One dropping the first command of a
+session and a Harmony One stranding after idle. That is cheap to try and it has a control. The section
+also confirms section 175's write transfer from an implementation with nothing in common, records the
+identity block erase as a write path nothing here had described, and finds the arch 9 two address space
+split stated as the vendor's own arithmetic.
+
+**And it is the seventh and eighth times a dig re-derived the lab, in the same session that fixed the
+instrument for it.** Section 212's provenance is corrected in place: the client's name for the selector
+it read was already in a lab note, unfollowed for twenty days. This dig then followed a method into
+`core/flash`, whose register row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both are section
+209's failure exactly, whose stated fix, that the trigger is the path and not the dig, was written four
+sections earlier by this same project and did not fire.
+
 **Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
 is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
 by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and

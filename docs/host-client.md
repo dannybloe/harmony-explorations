@@ -925,6 +925,100 @@ The unit's own identity block is named separately, 64 bytes at `0xFFF400`, read 
 
 The last two were called unexplained here until 29 August 2026. Both are placed now, and by two routes: section 206 found bytes at each address on both Harmony Ones, and section 212 found the client naming each one's **version byte**, which lands on version block fields 8 and 9. Field 9's placement rested on a pairing that `tests/test_usb_firmware.py` flags as its weak leg, so this is the independent confirmation that comment asks for.
 
+### Its liveness ping is a macOS workaround, and that is the row to act on
+
+Section 213, and it is the only thing found in this client so far that bears on a fault this project
+has actually seen on hardware.
+
+Every access to a running remote in this client is followed by `selectivePingUnit`, whose entire body
+is a platform test: **on macOS it pings the unit, and on every other operating system it does
+nothing.** The ping is not a network ping despite its inherited name. It sends one harmless read, the
+version block, or on one architecture the first byte of EEPROM, and treats a reply that does not parse
+as a failure. Two consecutive failures log that the thread could not be recovered.
+
+It is called after every RAM read, every RAM write, every state variable read and write, every erased
+flash block, and every written flash chunk.
+
+**Why it matters here.** This project develops and measures on macOS, and it carries two intermittent
+faults it cannot explain: a Harmony One that drops the first command of a session, which
+`packages/corpus/src/read.ts` works around by sending the first command twice, and a Harmony One that
+strands after sitting idle on USB and needs its batteries pulled. Logitech shipped a workaround for
+something platform specific on the same platform, in the same place a command completes. That does not
+identify the cause and it is not evidence that the causes are the same. It does say the vendor met a
+macOS specific stall and chose to insert an extra read after every operation, which is a cheap thing
+to try.
+
+Client sourced and unconfirmed, like everything else here. What would settle it is a bench measurement
+rather than more reading.
+
+### The write transfer, from an implementation that is not ours
+
+Section 213, and it agrees with section 175 in shape while being an entirely separate reading:
+
+1. an announce naming the address and the length,
+2. every data packet built into an array, with a done packet appended as its **last element**,
+3. the whole array handed to the sender in **one call**,
+4. one reply read after the batch.
+
+**Nothing is paced and nothing is read between packets**, and there is no sleep anywhere in the send
+path. `docs/review-before-first-write.md` keeps the pacing question open because the firmware side was
+read and the USB peripheral's own buffer ownership was not; this is the client's answer to the same
+question and it is "no pacing at all". It is not proof about the endpoint.
+
+Two more rules of theirs worth having:
+
+* a chunk is sized at fifty whole packets, which is the same fifty the read path uses, section 210
+* a failed chunk is **retried once**, and if the retry fails the whole write aborts and the unit is
+  pinged. Not per byte, and not indefinitely.
+
+**Erasing before programming is the caller's decision, not the write's.** Their write takes a flag,
+and when it is set the whole range is erased first, block by block. So this client cannot answer
+"does programming erase first"; it answers "when the caller says so". The one caller that writes a
+region passes true, and invalidates the region beforehand.
+
+**Their write does not verify itself either**, which is this project's own arrangement arrived at
+separately: no comparison happens anywhere in their chunk loop, and the read back with three retries
+lives one layer up, in the caller that owns the erase. And there is no on device checksum to lean on
+instead, since the method for it exists and throws.
+
+### Erasing the identity block is a write path nothing here had described
+
+Section 213. It is the one operation in this client that would destroy something irreplaceable, so it
+is written down rather than left in a note.
+
+| architecture | what it does |
+|---|---|
+| 12 | reads a **kilobyte** at the identity block, blanks the first 64 bytes, writes the kilobyte back |
+| 14 | writes 64 blank bytes, with no read at all |
+| 7 and 8 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes of it and writes it back |
+
+Three things follow. The block is **64** bytes when it is being erased and **48** when it is being
+read, which is the same boundary `docs/memory-map-one.md` describes as 64 bytes with its fourth field
+erased. The arch 7 and 8 arm is the only place in this whole client where anything is unlocked before
+a write, so if a write protect interlock exists on those architectures, that constant pair is where it
+is named; this repository has no arch 7 or 8 write target and does not need it, and it is recorded
+because `docs/review-before-first-write.md` calls the interlock the highest value target it has.
+
+Writing a serial back is the mirror of this and its arch 9 arm passes erase-all **false**, alone among
+the flash writes here. That is consistent rather than odd: arch 9 keeps its identity in on chip EEPROM,
+which takes a write without an erase.
+
+### State variables are addressed by name, and are word wide above architecture 7
+
+Section 213. Their reader walks the per architecture data table, keeps the entries of one type, and
+reads each by index; their writer **re-reads the whole set, refuses unless the names still match, and
+then looks up each name's current index** before writing. It never writes a variable it considers a
+system one.
+
+That is their version of the rail this project states as base slot 13's first records belonging to the
+firmware, and it is stricter in one way worth copying: an index is not assumed stable between a read
+and a write.
+
+Word wide on architectures 8, 9 and 12, byte wide below 8. **Architecture 14 falls between the two**,
+into a byte path whose own assertion is that the architecture is under 8, so a Harmony 600 or 700 would
+violate it. Read together with this build's region table, which has an architecture 12 arm and no
+other, the reading is that **this build drove arch 12 and was never exercised on arch 14**.
+
 ### The region index space, and what each index names
 
 Section 212. The client uses one set of region numbers for two different things, and keeping them

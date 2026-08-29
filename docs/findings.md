@@ -27399,7 +27399,15 @@ Two results, one correction, and the correction is the instructive part.
 `docs/usb-protocol.md` has carried "not read yet" against this selector since the day the chain was
 decoded. It is one of only four the firmware services, so a quarter of that command was blank.
 
-The client is what said where to look. It calls the selector a hardware feature read, passes a detail
+*Corrected on 29 August 2026, in section 213: **the client's name for this selector was already in the
+lab**, in `LEARN-IR.md`, dated 9 August, which lists all four arch 14 selectors with a name each and
+calls selector 12 a hardware feature query. That note's own heading calls the naming "a lead and not a
+correction", and nobody had followed the lead for twenty days. So what this section adds is real, the
+detail numbers, the firmware reading and the stale third arm, and the sentence below about where the
+lead came from is wrong. It came from a lab note this dig did not check, for the reason section 213
+sets out.*
+
+The client is what said where to look.<!--superseded--> It calls the selector a hardware feature read, passes a detail
 number, masks detail 0 down to one bit and calls it a hardware flag, and calls detail 1 the battery
 level. **The firmware is the authority and it agrees**, on all three images:
 
@@ -27470,3 +27478,155 @@ diagnostic service, plus `core/architecture/`. The system service also holds a *
 project has never described, an erase of the unit's identity block, which on arch 12 reads 1024 bytes
 at `0xFFF400`, blanks the first 64 and writes the block back. That is worth its own reading before any
 write work, and it is not read here.
+
+## 213. The rest of the client's HID services, a macOS workaround worth trying, and the seventh and eighth times a dig re-derived the lab
+
+*29 August 2026. The remaining unopened services in
+`software/classic/src/hidcommands/.../hid/services/`, about 1350 lines across seven files.*
+
+The uncomfortable half first, because it is the more useful of the two.
+
+### Two of the three sections written today partly re-derived the lab
+
+**Section 212's provenance was wrong and is corrected in place.** It presents the client naming
+`READ_MISC` selector `0x0C` a hardware feature read as the lead that started the dig. That name has
+been in the lab since 9 August, in `LEARN-IR.md`, which lists all four arch 14 selectors with a name
+each. The note's own heading calls it "a lead and not a correction" and nobody followed it for twenty
+days.
+
+**And this dig re-derived a good deal of `PROTOCOL-CONSTANTS.md`.** Following the identity block erase
+into the flash service produced the fifty packet write chunking, the erase block walk and its
+behaviour on an unaligned address, the reset command's four sub-codes and the invalidate-then-write
+order. Every one of those is in that note, extracted whole on 9 August, and the note is the one the
+register tells you to read first.
+
+**The mechanism was identical both times and it is section 209's, exactly.** The register was checked,
+correctly, for the five subdirectories this dig set out to open. Then a method in one of them named a
+class in a different directory, `core/flash/`, whose register row says it is mined, and the check was
+not re-run because the **subject** had not changed. Section 209 wrote down the fix for this in these
+words: the trigger is the path and not the dig. It was written by this same project four sections ago
+and it did not fire.
+
+So the count is eight, and the honest reading is that a rule stated once and an instrument built once
+are not enough. What would have caught both is one command, `make lab-check PATH_ARG=<path>`, run at
+the moment a file in a new directory is opened rather than at the moment a dig begins.
+
+**What the two occurrences cost is not nothing, and not much.** Section 212's finding stands: the note
+had the name and not the detail numbers, not the firmware reading, and not the stale third arm. This
+section's genuinely new material is below and is the larger part of it. The cost is an afternoon of
+re-derivation and a wrong sentence published in a section that is otherwise sound.
+
+### The liveness ping is a macOS workaround, and it is the row to act on
+
+Everything else here is about their software. This one is about a fault on this bench.
+
+Every access to a running remote in this client is followed by one method whose entire body is a
+platform test: **on macOS it pings the unit, and on every other operating system it does nothing.**
+The ping is not a network ping, whatever its inherited name says. It sends one harmless read, the
+version block, and treats a reply that does not parse as a failure; two failures in a row log that the
+thread could not be recovered. It runs after every RAM read, every RAM write, every state variable
+access, every erased flash block and every written chunk.
+
+This project runs on macOS and carries two intermittent faults it cannot explain. A Harmony One drops
+the first command of a session often enough that `packages/corpus/src/read.ts` sends the first command
+twice on silence, and says in its own comment that the cause is unknown. And a Harmony One occasionally
+strands after sitting idle on USB, which a battery pull clears and which nothing here explains.
+
+**This is not a diagnosis.** It does not identify a cause, it does not say the vendor's stall and ours
+are the same stall, and the ping could be guarding something that no longer happens on a modern kernel.
+What it is, is the vendor meeting a platform specific problem at exactly the point where a command
+completes, and choosing to spend an extra read on every operation to get past it. That is cheap to try
+and it has a control: send a version read after each command in a long read and see whether the first
+command drop rate moves.
+
+### The write transfer, confirmed by an implementation with nothing in common
+
+Section 175 derived the shape from the firmware. Their client does it this way:
+
+1. an announce naming the address and the length,
+2. every data packet built into an array, with the done packet appended as the array's last element,
+3. the whole array handed to the sender in **one call**,
+4. one reply read after the batch.
+
+That is the same three part shape. **Nothing is paced**, nothing is read between packets, and there is
+no sleep anywhere in their send path. `docs/review-before-first-write.md` keeps the pacing question
+open on the grounds that the firmware side was read and the USB peripheral's own buffer ownership was
+not. This is the client's answer to that question and it is "no pacing at all"; it says nothing about
+the endpoint, which is still the unread half.
+
+Two of their rules are worth having. Their chunk is fifty whole packets, the same fifty the read path
+uses, section 210, so both directions are sized in packets rather than in round numbers. And a failed
+chunk is **retried once**; if the retry fails the whole write aborts and the unit is pinged. Not per
+byte and not indefinitely.
+
+**Erasing before programming is their caller's decision.** Their write takes a flag and erases the
+whole range first when it is set. So this client cannot answer the question the review asks; it answers
+"when the caller says so". The one caller that writes a region passes true and invalidates the region
+first.
+
+**Their write does not verify itself**, which is this project's own arrangement reached separately: no
+comparison anywhere in their chunk loop, and the read back with three retries one layer up in the
+caller that owns the erase. There is no on device checksum to lean on instead: the method for it exists
+and throws.
+
+### Erasing the identity block, which nothing here had described
+
+The one operation in this client that would destroy something irreplaceable.
+
+| architecture | what it does |
+|---|---|
+| 12 | reads a **kilobyte** at the identity block, blanks the first 64 bytes, writes the kilobyte back |
+| 14 | writes 64 blank bytes, with no read at all |
+| 7 and 8 | writes a **bootloader unlock** value first, then reads 64 KiB, blanks 48 bytes and writes it back |
+
+The block is **64** bytes when erased and **48** when read, which is the boundary
+`docs/memory-map-one.md` already describes as 64 bytes with the fourth field erased, so the two
+lengths are consistent rather than contradictory.
+
+The arch 7 and 8 arm is the **only place in this entire client where anything is unlocked before a
+write**. `docs/review-before-first-write.md` calls the write protect interlock the highest value target
+it has, on the grounds that this project has got it wrong twice. This is not that interlock, since it
+is a different architecture and this repository has no arch 7 or 8 write target, and it is where to
+look if one is ever wanted.
+
+Writing a serial back is the mirror of the erase, and its arch 9 arm passes erase-all **false**, alone
+among the flash writes here. Consistent rather than odd: arch 9 keeps its identity in on chip EEPROM,
+which takes a write without an erase.
+
+### The arch 9 address split is their mechanism, under their own names
+
+Section 76 found by measurement that on arch 9 a flash read answers at `0x820000` while the container's
+own pointers are `0x02xxxx`, and `packages/corpus/src/read.ts` carries a `containerBase` for exactly
+that. Their memory reader states the same thing as arithmetic: a **virtual** address is a physical one
+plus a per chip constant, and the reverse subtracts it unless the address is already below it. So the
+two spaces this project discovered are the two spaces they modelled, and their words for them are
+physical for the container's and virtual for the protocol's.
+
+### State variables are addressed by name, and this build never drove arch 14
+
+Their reader walks the per architecture data table and reads each variable of one type by index. Their
+**writer re-reads the whole set, refuses unless the names still match, and looks up each name's current
+index** before writing, and it never writes a variable it considers a system one. That is their version
+of the rail this project states as base slot 13's first records belonging to the firmware, and it is
+stricter in one way worth copying: an index is not assumed stable between a read and a write.
+
+The width is word on architectures 8, 9 and 12 and byte below 8. **Architecture 14 falls between the
+two**, into a byte path whose own assertion is that the architecture is under 8. Together with this
+build's region table, which has an architecture 12 arm and no other, section 210's log line about the
+600 and 700 series, and the fact that the whole capture is a Harmony One, the reading is that **this
+build drove arch 12 and was never exercised on arch 14.**
+
+### Two smaller things
+
+The datagram half of their diagnostic interface is **stubbed out** on the HID transport: both echoes
+return nothing and both channel methods do nothing. That is section 207's three transports seen from
+the other side, one interface with the parts a transport cannot do left empty.
+
+And there is an **API mode**: a service that passes raw packets straight through and forwards whatever
+comes back, gated on a flag in their service manager. Catalogued rather than pursued.
+
+### What is left in this square
+
+Nothing in `hid/services/`. Its last unopened directory is now read, and what remains in the client
+overall is `tools/` at 365 MB and `dist/` at 299 MB, both build products, plus the string bundles and
+HTML layouts in `res/` that section 207 judged unlikely to answer anything.

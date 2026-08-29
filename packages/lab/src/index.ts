@@ -248,6 +248,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   classic_ram_service: 'RamHidService.java',
   classic_eeprom_service: 'EepromHidService.java',
   classic_program_service: 'ProgramHidService.java',
+  // Five more of the same client's HID services, section 213: the shared base that all of them send
+  // through, the flash service that carries the write transfer, the system service with the identity
+  // block erase, the state variable service, and the diagnostic service the liveness ping goes to.
+  // Same rule as above: their code stays in the lab, and what travels is functional fact.
+  classic_hid_base: 'AbstractHidService.java',
+  classic_flash_service: 'FlashHIDService.java',
+  classic_system_service: 'SystemHidService.java',
+  classic_state_service: 'StateVariableHidService.java',
+  classic_diagnostic_service: 'DiagnosticHidService.java',
 };
 
 const cache = new Map<string, string[]>();

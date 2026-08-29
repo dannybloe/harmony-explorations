@@ -272,6 +272,15 @@ IMAGES = {
     'classic_ram_service': 'RamHidService.java',
     'classic_eeprom_service': 'EepromHidService.java',
     'classic_program_service': 'ProgramHidService.java',
+    # Five more of the same client's HID services, section 213: the shared base every one of them
+    # sends through, the flash service holding the write transfer, the system service with the
+    # identity block erase, the state variable service and the diagnostic service the liveness ping
+    # goes to. Their code stays in the lab; what travels is functional fact.
+    'classic_hid_base': 'AbstractHidService.java',
+    'classic_flash_service': 'FlashHIDService.java',
+    'classic_system_service': 'SystemHidService.java',
+    'classic_state_service': 'StateVariableHidService.java',
+    'classic_diagnostic_service': 'DiagnosticHidService.java',
 }
 
 _cache = {}

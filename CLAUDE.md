@@ -515,6 +515,15 @@ mined, and crossing that boundary does not feel like opening a new artefact. So 
 path and not the dig**, re-run every time the path changes even when the subject has not, and it is
 one command now, `make lab-check PATH_ARG=<path>`.
 
+**It is eight occurrences now, and the seventh and eighth happened in the session that wrote the
+sixth's fix**, section 213. One published a finding whose stated lead had been sitting in a lab note
+for twenty days, and the other followed a method into `core/flash/`, a directory whose own register
+row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both times the check was run on the paths the
+dig set out to open and not on the path a name led to, which is precisely the distinction the
+paragraph above states. So the rule is now written down three times and has failed twice since. **Do
+not add a fourth paragraph about it**: what is missing is not a statement, it is a check that runs
+without being remembered.
+
 What the fifth occurrence bought is real and is the shape to aim for when this happens
 again: the ledger of client sourced numbers had no executable check at all and has one now, and three
 of its rows moved on bytes that were already here.
@@ -1311,9 +1320,10 @@ make prose         check documents for em-dashes and en-dashes
 make facts         check the documents against the code; facts-write fixes the numbers
 make corpus        inventory the dumps, and flag the undescribed ones
 make lab-check     what the lab register already says about a path, PATH_ARG=<lab path>. Run it on
-                   the directory about to be opened, not on the topic: six digs have re-derived
-                   something the lab held, and the sixth had checked the square it started in and
-                   then followed a name into one it had not, section 209
+                   the directory about to be opened, not on the topic: **eight** digs have
+                   re-derived something the lab held, and the last two happened in the session that
+                   fixed the sixth, each having checked the paths it meant to open and then followed
+                   a name into one it had not, sections 209 and 213
 make ghidra        build or refresh the Ghidra project
 make ts            typecheck and test the TypeScript packages
 make audit         check the npm dependency tree for known vulnerabilities

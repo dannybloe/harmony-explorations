@@ -1606,5 +1606,174 @@ class EverySingleByteWriteIsReadBack(unittest.TestCase):
             self.assertIn('assert i_Value <= 16383;', self.source[name])
 
 
+class TheClientsWriteTransferAndItsMacWorkaround(unittest.TestCase):
+    """Section 213: the rest of the same client's HID services.
+
+    Claims about Logitech's code, recomputed from the source rather than transcribed, per rule 2 in
+    `docs/host-client.md`. What is asserted is what their client does. Whether the firmware requires
+    any of it is a separate question and mostly still open.
+    """
+
+    SERVICES = ('classic_hid_base', 'classic_flash_service', 'classic_system_service',
+                'classic_state_service', 'classic_diagnostic_service')
+
+    def setUp(self):
+        lab.require(*self.SERVICES)
+        self.source = {name: lab.load(name).decode('utf-8', 'replace') for name in self.SERVICES}
+
+    def test_the_liveness_ping_runs_on_macos_only(self):
+        """The most load bearing row in section 213, because this project runs on macOS.
+
+        Every RAM access, every state variable access and every erased flash block is followed by
+        `selectivePingUnit`, and that method's whole body is a platform test. So the vendor shipped a
+        workaround for something that happens on one operating system, and it is the operating system
+        this project's own two unexplained intermittent faults were seen on.
+        """
+        base = self.source['classic_hid_base']
+        # The body is the platform test and the call, and nothing else: no retry, no delay.
+        self.assertRegex(
+            base,
+            r'public void selectivePingUnit\(\) \{\s*if \(OSUtil\.isMacOsx\(\)\) \{\s*'
+            r'this\.pingUnit\(\);',
+        )
+        # And it is called from the three services that talk to a running remote.
+        for name in ('classic_flash_service', 'classic_state_service'):
+            with self.subTest(service=name):
+                self.assertIn('selectivePingUnit()', self.source[name])
+
+    def test_the_ping_is_an_ordinary_read_whose_reply_is_checked(self):
+        """Not a network ping, despite the name it inherited from the datagram transport."""
+        diag = self.source['classic_diagnostic_service']
+        self.assertIn('public boolean pingUDP(int trips)', diag)
+        # One of two harmless reads, chosen by a flag: EEPROM byte zero, or the version block.
+        self.assertIn('new ReadEepromCommand(0)', diag)
+        self.assertIn('new GetVersionCommand()', diag)
+        # A reply that does not parse means the ping failed, which is what makes it a liveness test.
+        self.assertIn('returnValue.isValid()', diag)
+
+    def test_the_datagram_half_of_the_diagnostic_interface_is_stubbed_out(self):
+        """Corroborates section 207 from the other side: one interface, three transports.
+
+        `echoUDP` and `echoTCP` return nothing and the two channel methods do nothing, so the HID
+        implementation of this interface simply declines the datagram half. That is the same split
+        section 207 read out of the unit factories.
+        """
+        diag = self.source['classic_diagnostic_service']
+        for stub in ('public byte[] echoUDP', 'public byte[] echoTCP',
+                     'public void initiateDiagnosticTcpChannel', 'public void pingTCP'):
+            with self.subTest(method=stub):
+                self.assertIn(stub, diag)
+        self.assertEqual(diag.count('return new byte[0];'), 2, 'the two echoes return nothing')
+        # And there is no on device checksum: the method exists and throws, so a writer that wants to
+        # know whether a write landed has to read it back.
+        self.assertRegex(diag, r'public int calculateChecksum\([^)]*\)[^{]*\{\s*throw new ServiceException')
+
+    def test_a_flash_write_is_announce_then_a_batch_then_one_done(self):
+        """The same shape section 175 derived from the firmware, from an independent implementation.
+
+        Every data packet is built into an array first, a done packet is appended as the array's last
+        element, and the **whole array** goes to the sender in one call. So the client does not pace
+        its packets and does not read anything between them; it reads one reply after the batch.
+        """
+        flash = self.source['classic_flash_service']
+        self.assertIn('new WriteFlashCommand(i_Address, i_DataLength)', flash)
+        self.assertIn('command.getLastCommand()', flash)
+        self.assertIn('bytes[numPackets] = last.getRawBytes();', flash)
+        self.assertIn('this.sendHIDData(bytes);', flash)
+        # The batch send takes the array whole, with no sleep anywhere in the base class.
+        base = self.source['classic_hid_base']
+        self.assertIn('public void sendHIDData(byte[][] data)', base)
+        self.assertIn('this.m_HIDSender.sendHIDPackets(data);', base)
+        for paced in ('Thread.sleep', 'TimeUnit.', 'await'):
+            self.assertNotIn(paced, base, 'nothing in the send path delays a packet')
+
+    def test_a_chunk_is_retried_once_and_then_the_write_aborts(self):
+        """Not per byte and not indefinitely: one retry, then abort, then ping the unit."""
+        flash = self.source['classic_flash_service']
+        # Two nested calls to the same writer, the second inside the first's failure arm.
+        self.assertEqual(flash.count('if (!this.overwriteFlash(childProgress, currentAddress, '
+                                     'i_Data, dataOffset, thisChunkSize)) {'), 2)
+        self.assertIn('HIDServiceExceptionAbortingWrite', flash)
+        self.assertIn('this.pingUnit();', flash)
+
+    def test_erasing_before_a_write_is_the_callers_choice(self):
+        """`writeFlash` takes a flag; the erase is not implied by the write.
+
+        Which is why the question "does programming erase first" cannot be answered from this client:
+        it answers "when the caller says so". `docs/review-before-first-write.md` keeps it open.
+        """
+        flash = self.source['classic_flash_service']
+        self.assertIn('boolean i_EraseAll', flash)
+        self.assertRegex(flash, r'if \(i_EraseAll\) \{\s*this\.eraseFlash\(i_Address, i_Data\.length\);')
+        # And the write itself never reads back: no comparison anywhere in the chunk loop.
+        self.assertNotIn('compareByteArray', flash)
+
+    def test_the_identity_block_erase_differs_by_architecture(self):
+        """A write path nothing in this repository had described, and it destroys a unit's serial.
+
+        Arch 12 reads a kilobyte at the identity block, blanks the first 64 bytes and writes the
+        kilobyte back. Arch 14 writes 64 blank bytes with no read at all. The arch 7 and 8 arm writes
+        a bootloader unlock first, which is the only place in this client anything is unlocked before
+        a write.
+        """
+        system = self.source['classic_system_service']
+        self.assertIn('public boolean eraseLicense', system)
+        # The arch 12 read modify write.
+        self.assertIn('byte[] guid_memory_block = new byte[1024];', system)
+        self.assertIn('flashService.readFlash(childProgress, 0xFFF400, guid_memory_block);', system)
+        # 64 blanked, which is the block length `docs/memory-map-one.md` gives, not the 48 the
+        # ordinary identity read asks for.
+        self.assertIn('for (int i = 0; i < 64; ++i) {', system)
+        # And the unlock, which exists for arch 7 and 8 only.
+        self.assertIn('Protocol8.BOOTLOADER_UNLOCK_DATA', system)
+        self.assertIn('Protocol8.BOOTLOADER_UNLOCK_ADDRESS', system)
+
+    def test_the_identity_block_is_forty_eight_bytes_on_every_architecture_it_reads(self):
+        """Its address is per architecture and its length is not."""
+        system = self.source['classic_system_service']
+        # Seven and not four: `getGUID` has an arm each for architectures 3/7/8, 12, 14 and 9, and
+        # `setGUID` repeats three of them. Arch 9's write arm is the odd one and does not declare a
+        # buffer, because it writes rather than reads. Asserting 4 was a guess and the source said 7.
+        self.assertEqual(system.count('byte[] guid = new byte[48];'), 7,
+                         'four read arms plus three of the write arms')
+        for address in ('0xFFF400', '0x200010'):
+            with self.subTest(address=address):
+                self.assertIn(address, system)
+        # Arch 2 has no flash to read it from and takes three sixteen byte EEPROM reads instead.
+        self.assertEqual(system.count('eepromMultiRead(childProgress'), 3)
+        # And writing the serial on arch 9 passes erase-all **false**, where every other write in
+        # this client that targets flash passes true. Consistent with the address: `0x200010` is the
+        # on chip EEPROM window, and EEPROM takes a write without an erase first.
+        self.assertIn('flashService.writeFlash(childProgress, address, data.getBytes(true), false);',
+                      system)
+
+    def test_state_variables_are_word_wide_on_three_architectures_and_byte_wide_below(self):
+        """And architecture 14 falls between the two, which is evidence about this build.
+
+        `shouldUseWordStateCommands` names 8, 9 and 12. Everything else takes the byte path, whose own
+        assertion is that the architecture is below 8, so a Harmony 600 or 700 would violate it. That
+        fits the rest of this build, whose region table has an arch 12 arm and no other.
+        """
+        state = self.source['classic_state_service']
+        self.assertRegex(
+            state,
+            r'return this\.m_ArchitectureId == 8 \|\| this\.m_ArchitectureId == 9 '
+            r'\|\| this\.m_ArchitectureId == 12;',
+        )
+        self.assertIn('assert (this.m_ArchitectureId < 8);', state)
+
+    def test_writing_state_variables_back_matches_them_by_name(self):
+        """An index is not stable across a read and a write, and the client does not assume it is.
+
+        It re-reads the whole set, refuses unless the names still match, then looks each name's new
+        index up before writing. And it never writes one it considers a system variable, which is the
+        client's own version of the rail that base slot 13's first records are the firmware's.
+        """
+        state = self.source['classic_state_service']
+        self.assertIn('newValues.matchesNamesOnly(oldStateVariables)', state)
+        self.assertIn('if (variable.isSystem()) continue;', state)
+        self.assertIn('newValues.getIndexForName(variable.getName())', state)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1519,7 +1519,12 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # the sweep now enters dot directories, which admitted the recovery skill, and `MARKERS`
         # gained the interlock's vocabulary, which admitted three files that state question 4
         # without stating the transfer. Every one of the 24 is covered by the withhold list.
-        self.assertEqual(len(stating), 24,
+        #
+        # 25 since section 213, which added `tests/test_host_client.py`: it recomputes Logitech's own
+        # write transfer from their client, so it states the shape a blind reviewer is meant to derive
+        # unaided. `tests/` is already withheld whole, so this is the sweep working rather than a leak,
+        # and the list was re-read against all 25 before this number moved.
+        self.assertEqual(len(stating), 25,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 
