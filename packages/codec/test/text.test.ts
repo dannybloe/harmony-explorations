@@ -480,20 +480,79 @@ test('a glyph run with no terminator is refused, not truncated', skipUnless('one
   assert.notEqual(glyphRunAt(c, (real as { referencedFrom: number }).referencedFrom), undefined);
 });
 
+/**
+ * Hash every glyph in a container exactly once, which is the unit of work `resolveContext` does.
+ *
+ * This mirrors `resolveContext`'s inner loop deliberately rather than calling it, because the
+ * point is to have a yardstick the test owns: if `resolveContext` starts costing seven times more,
+ * this does not, and the comparison below is what notices.
+ */
+function hashEveryGlyphOnce(c: ReturnType<typeof parse>): void {
+  for (const set of fontSets(c) ?? []) {
+    for (const { glyph } of decodedSet(c, set)) {
+      if (glyph === undefined || isBlank(glyph)) continue;
+      shapeKey(set.height, glyph);
+    }
+  }
+}
+
+/**
+ * The fastest of several runs, which is the estimator a loaded machine cannot inflate.
+ *
+ * Fifteen and not five, measured: at five the healthy ratio below spread from 1.08 to **2.80**
+ * against a ceiling of 3, because the minimum of a short series is still noisy. At fifteen it
+ * settles between 1.06 and 2.00.
+ */
+function fastestMs(run: () => void, times = 15): number {
+  let best = Infinity;
+  for (let i = 0; i < times; i += 1) {
+    const started = process.hrtime.bigint();
+    run();
+    best = Math.min(best, Number(process.hrtime.bigint() - started) / 1e6);
+  }
+  return best;
+}
+
 test('resolving a container costs the pixel hash once, not once per alphabet', skipUnless('one_config'), () => {
-  // A coarse wall clock ceiling of the kind `bench.test.ts` uses. **Its bound is set from a control
-  // rather than guessed**: with `shapeKey` put back inside the alphabet loop this test measures
-  // 15.3 ms here and 4.7 ms as it stands, so 12 ms bites the regression and leaves 2.5 times the
-  // headroom for a slow machine. The first bound was 30 ms, from a standalone measurement of 33 ms
-  // against 7.6 ms, and it did **not** bite in the suite, where the JIT is warm by the time this
-  // runs. A ceiling whose control was never run is a ceiling that passes whatever happens.
+  // **This measured against a fixed number of milliseconds until 29 August 2026, and it flaked.**
+  // The bound was 12 ms, set from a control: with `shapeKey` put back inside the alphabet loop it
+  // measured 15.3 ms against 4.7 ms as it stands. The control was right and the shape was wrong.
+  // The healthy case, the broken case and ordinary machine noise all sit in the same narrow band,
+  // so on a loaded machine this measured 12 to 27 ms and failed while nothing was wrong. Raising
+  // the ceiling is not available: 15.3 is the bug, so any bound above it stops catching the bug.
   //
-  // **The review that prompted this named the wrong two inputs**: hoisting `drawnCodes` and
-  // `usesAscii` moved `characterMap` from 31.2 ms to 33.4 ms. Section 139.
+  // What the mistake really costs is not milliseconds, it is **a factor**, because the hash was
+  // being redone once per alphabet and there are seven of them. So the test measures that factor
+  // instead. One pass of hashing every glyph is the unit `resolveContext` spends; correct code
+  // spends about one of them and the regression spends several. Both numbers are taken on the same
+  // machine moments apart, so its speed and its load cancel out, and the fastest of fifteen runs is
+  // used on each side because load can only ever make a run slower.
+  //
+  // **The review that prompted the original hoist named the wrong two inputs**: hoisting
+  // `drawnCodes` and `usesAscii` moved `characterMap` from 31.2 ms to 33.4 ms. Section 139.
   const c = parse(require_('one_config'));
+  // Warm both paths first, so neither measurement pays for the other's compilation.
+  hashEveryGlyphOnce(c);
   characterMap(c);
-  const started = process.hrtime.bigint();
-  characterMap(c);
-  const ms = Number(process.hrtime.bigint() - started) / 1e6;
-  assert.ok(ms < 12, `characterMap took ${ms.toFixed(1)} ms`);
+
+  const unit = fastestMs(() => hashEveryGlyphOnce(c));
+  const whole = fastestMs(() => characterMap(c));
+
+  // **Four, and the number is measured rather than argued.** The first version of this line said
+  // "three of the seven" and reasoned it: one unit for the context, and the per alphabet work is
+  // cheap. Then the healthy case was actually run and reached 2.80, which is the same mistake the
+  // old millisecond ceiling made, one line lower down. Measured on 29 August 2026, fifteen runs a
+  // side: **healthy 1.06 to 2.00, and with `resolveContext` back inside the alphabet loop 6.43 to
+  // 13.37.** So the two populations are a factor of three apart and 4 sits between them, at twice
+  // the worst healthy reading and well under the best broken one.
+  //
+  // The healthy figure is not 1 because the seven alphabet comparisons are not free; they are
+  // simply not where the cost was.
+  const ceiling = unit * 4;
+  assert.ok(
+    whole < ceiling,
+    `characterMap cost ${whole.toFixed(1)} ms against ${unit.toFixed(1)} ms for one hashing pass, ` +
+      `a factor of ${(whole / unit).toFixed(1)} where ${ALPHABETS.length} alphabets would mean the ` +
+      'per alphabet hashing is back',
+  );
 });

@@ -19509,9 +19509,29 @@ every test, and made the function slower.
 **And the ceiling that guards it had to have its own control run.** The first bound was 30 ms, four
 times the standalone 7.6 ms, and with `shapeKey` put back inside the alphabet loop the test **passed**:
 inside the suite the JIT is warm by the time it runs, and the same code measures 15.3 ms against
-4.7 ms rather than 33 against 7.6. The bound is 12 ms, set from that control. A wall clock ceiling whose
-regression case was never run is a ceiling that passes whatever happens, which is the same defect as a
-test that cannot fail.
+4.7 ms rather than 33 against 7.6. The bound became 12 ms, set from that control.<!--superseded--> A wall clock
+ceiling whose regression case was never run is a ceiling that passes whatever happens, which is the
+same defect as a test that cannot fail.
+
+**That ceiling was still the wrong shape, and it flaked on 29 August 2026.** The control was right and
+the measurement was against the wrong thing. 4.7 ms healthy, 15.3 ms broken and ordinary machine noise
+all sit in one narrow band, so on a loaded machine the healthy code measured 12 to 27 ms and the test
+failed while nothing was wrong. **Raising the bound was not available**, because 15.3 is the bug: any
+number above it stops catching the bug, which is the 30 ms defect again.
+
+What the mistake costs is not milliseconds, it is a **factor**, since the hash was redone once per
+alphabet and there are seven. So the test measures that factor now. It times one pass of hashing every
+glyph itself, which is the unit `resolveContext` spends, and requires the whole resolve to cost under
+four of them. Both readings are taken on the same machine moments apart, so its speed and its load
+cancel, and each is the fastest of fifteen runs because load can only make a run slower.
+
+**The bound is measured and the first attempt at it was not.** It was set to three by the same kind of
+reasoning that produced the original: one unit for the context, and the per alphabet work is cheap.
+Running the healthy case then produced 2.80. Measured properly, fifteen runs a side: **healthy 1.06 to
+2.00, broken 6.43 to 13.37**, two populations a factor of three apart, so the bound is four. The
+healthy figure is not 1 because the seven alphabet comparisons are not free; they are simply not where
+the cost was. The reps matter too: at five a side the healthy spread reached 2.80, at fifteen it
+settles under 2.
 
 **A font set stated its glyph height and nothing enforced it.** `FontSet.height` carried the comment
 "shared by every glyph in the set, and checked against every decoded glyph"; the only comparison in the
