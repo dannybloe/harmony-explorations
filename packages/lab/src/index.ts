@@ -261,7 +261,32 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // it; what this fixture is for is the other half, the region address and size table, which
   // is the source end of the closure in `packages/usb/test/classic-capture.test.ts`.
   classic_update_service: 'UpdateHidService.java',
+  // Two flash regions off the spare Harmony One, read by **Logitech's own client** rather than by
+  // anything here, section 215. The user config region is the first independent check this project
+  // has ever had on `packages/corpus/src/read.ts`: its leading bytes and our own dump of the same
+  // unit agree exactly. The embedded one has no counterpart in the lab at all.
+  vendor_region_user_config: 'vendor-region4-user-config.bin',
+  vendor_region_embedded_config: 'vendor-region3-embedded-config.bin',
 };
+
+/**
+ * Fixtures that parse as a container but must not join a corpus wide population, because the
+ * container they parse to is **already in it under another name**. Section 215. Mirrors
+ * `PARSEABLE_EXCLUDED` in `tests/lab.py`, and `parity.test.ts` compares the two.
+ *
+ * `vendor_region_user_config` is the whole user config region of the spare Harmony One as Logitech's
+ * own client read it, and `parse` trims to the declared end, so it yields exactly the same 1232237
+ * byte container as `one_spare_before_sync`. That identity is the **point** of keeping the file, and
+ * it is exactly why counting it would be wrong: it moved two corpus totals by one each, and both
+ * moves were one config counted twice.
+ *
+ * **The embedded config beside it is excluded too, and this said the opposite for an hour.** Its
+ * counterpart is `one_safemode`, cut out of a firmware image, which a first search missed by looking
+ * only under the dumps directory at small files. The bodies are identical, all 8902 bytes, and the
+ * golden vectors differ only in where the container sits in its file.
+ */
+export const PARSEABLE_EXCLUDED: readonly string[] =
+  ['vendor_region_user_config', 'vendor_region_embedded_config'];
 
 const cache = new Map<string, string[]>();
 

@@ -16,7 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { IMAGES, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
 import {
   NUMBER_SENDER_DIGITS,
@@ -185,6 +185,11 @@ test('seven containers declare a method for sending a number, 28 declare none, 8
     let declaredEmpty = 0;
     let unread = 0;
     for (const name of Object.keys(IMAGES)) {
+      // Same population as `parseable_containers`, so it honours the same exclusion: a fixture whose
+      // container is already counted under another name would move all three columns below by one and
+      // say nothing. Section 215. The golden vector list deliberately answers this differently,
+      // because a comparison is not distorted by a duplicate and a total is.
+      if (PARSEABLE_EXCLUDED.includes(name)) continue;
       const data = load(name);
       if (data === undefined) continue;
       let table;

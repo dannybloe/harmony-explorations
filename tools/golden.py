@@ -110,6 +110,25 @@ CONTAINERS = (
     'h890_config_2_redump_1',
     'h890_config_2_redump_2',
     'h890_config_2_redump_3',
+    # The two regions Logitech's own client read off the spare Harmony One, section 215. **Both are
+    # here, including the duplicate**, and that is deliberately the opposite of what
+    # `PARSEABLE_EXCLUDED` does with the same pair, because the two populations are asked different
+    # questions. A corpus wide total is distorted by counting one config twice; a golden vector is a
+    # comparison between two implementations, where a duplicate costs one file and a special case in
+    # `test_the_vector_list_covers_every_container_in_the_corpus` costs more. That trade was already
+    # made here for `one_spare_before_sync`, whose vector duplicates `one_config_unprogrammed`'s, and
+    # this follows it rather than reopening it.
+    #
+    # The user config's vector is therefore expected to match `one_spare_before_sync`'s exactly, which
+    # is itself worth having: it is the two implementations agreeing that a container read out of a
+    # 3932160 byte region is the same container as one read as a trimmed file.
+    'vendor_region_user_config',
+    # And the embedded config, which turned out to be a duplicate too, of `one_safemode`: same 8902
+    # byte body, same 22 sections, differing only in where the container sits in its file. Its vector
+    # is worth keeping for exactly that reason, since the two arrived by routes with nothing in
+    # common, one cut out of a firmware image and one read off a different unit by Logitech's own
+    # client. Section 215, where the claim that it had no counterpart is corrected.
+    'vendor_region_embedded_config',
 )
 
 

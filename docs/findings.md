@@ -27767,3 +27767,118 @@ and a package name announces the opposite.
 Nothing. The classic client is fully dug: `hid/services/` was finished by section 213, and `tools/` and
 `dist/` are ours. What remains anywhere in it is the string bundles and HTML layouts in `res/` that
 section 207 judged unlikely to answer anything, and that judgement stands.
+
+## 215. Our config reader against Logitech's, byte for byte, and the space past a config is not blank
+
+Section 214 established that `software/classic/dist/` is our repack of Logitech's classic client with a
+read out of ours bolted on, and that the wire log this project already uses as a fixture is that
+instrument's output. It writes the bytes it reads to disk. **Those files were still on the machine**,
+in the client's own application support folder, three weeks after the run, and nobody had looked.
+
+Two regions off the spare Harmony One, both entirely through Logitech's code, their flash service,
+their packet encoder, their chunking, with only the choice of extents ours:
+
+| region | bytes | what it is |
+|---|---|---|
+| 3 | 122880 | the embedded, safe mode configuration, flash `0x002000` |
+| 4 | 3932160 | the whole user configuration region, flash `0x040000` |
+
+Both sizes are exactly what section 214's region table states and both begin `GSPM`.
+
+### The first independent check this project's config reader has ever had
+
+**Region 4's first 1232237 bytes are byte for byte identical to our own dump of the same unit.** Zero
+differences. Our reader produced `one-spare-before-sync-config.bin` through `packages/corpus/src/read.ts`:
+a different chunk size, a different length calculation, a different language, no shared code with the
+vendor's client at any level.
+
+That matters because every other test of that reader compares it against itself or against a file it
+produced. A reader that stopped one byte early everywhere, or that dropped a byte per chunk boundary,
+would agree with its own fixtures perfectly. This is the one comparison that could have caught it, and
+it is the shape this project values most: two implementations, no shared derivation, one answer.
+
+**The control is a real config rather than a mutation.** Pointing the same comparison at the same unit's
+config *after* a sync fails immediately on the length, 1326564 against 1232237, so the test discriminates
+between two configs of one remote and not merely between a container and noise.
+
+**And our trim lands on a structure, not on a byte count.** The four bytes before offset 1232237 are
+`PTYY`, the architecture's end marker, and the region continues with erased bytes from there. So the
+length the container declares, the end marker's position and the vendor's own read all agree.
+
+### The space past a config is not erased, and that has two consequences
+
+Of the 2699923 bytes past the end marker, **2291889 are erased and 408034 are not**. They are the
+remnant of a longer configuration that was written to this remote earlier and never wiped, which is
+what you would expect from flash that is erased in 64 KiB blocks only where a write needs the room.
+
+The first consequence is for reading and publishing. **A raw region dump carries older configurations
+with it**, so it leaks more than the config it was taken for. This repository already refuses config
+dumps on copyright grounds, section decided 7 August 2026, and this is an independent reason pointing
+the same way: the refusal covers a region dump even more strongly than a trimmed container, and
+`packages/probe` is the right shape precisely because it reports structure and no contents.
+
+The second is for anybody trying to find where a config ends. **Erased bytes do not mark it.** They
+begin at the end marker here, on this unit, by luck rather than by rule: the previous config on this
+remote happened to be longer, so had the read been a byte count away from the marker there would have
+been real data on the other side of it. Any reader that located the end by scanning for `0xFF` would
+work on some remotes and silently over read on others, and would look correct on this one.
+
+### The embedded config, and a claim of mine that was wrong within the hour
+
+**This section first said region 3 had "no counterpart anywhere in the lab"**<!--superseded--> and that
+nothing here had ever read a Harmony One's embedded configuration. Both are false, and the correction
+is worth more than the claim was.
+
+Its counterpart is `one_safemode`, which this project cut out of the programmed Harmony One's firmware
+image months ago. **The two bodies are byte for byte identical, all 8902 bytes**, all 22 sections, and
+their golden vectors differ in exactly one thing: where the container sits in the file it arrived in,
+offset 0 here against 8192 there, with every section offset shifted by that and nothing else.
+
+The error was in the search rather than in the reasoning. It looked only under the dumps directory and
+only at files below 200 KB, and a container cut out of a firmware image is in neither category. That is
+the same shape as several corrections already in this document: a population defined by where somebody
+expected the answer to be rather than by what the question was.
+
+**What it buys instead is a second closure, and a better one than a new sample.** The two copies reached
+the lab by routes with nothing in common: one was cut by us out of a firmware image of the **programmed**
+Harmony One, the other was read by **Logitech's client** off the **spare** unit, a different physical
+remote. Their agreeing says two things at once, that the cut was made in exactly the right place, and
+that the embedded configuration is identical across two Harmony Ones. Neither was established before.
+
+It also means **both** regions are duplicates for counting purposes, so `parseable_containers` returns
+to 43 and the odd body figure to 19, and `PARSEABLE_EXCLUDED` names both. The golden vectors keep both,
+per the precedent above.
+
+Its body is 8902 bytes inside a 122880 byte region, so almost all of that region is slack. What the
+embedded config is for and whether the safe mode firmware reads it are still not addressed here.
+
+### One of the two must not be counted, and working out which is the point
+
+Filing them moved two corpus wide totals, `parseable_containers` from 43 to 45 and `odd_body_verifying`
+from 19 to 20, and **both moves were wrong for the same reason**. `gspm.parse` trims to the container's
+declared end, so region 4 parses to a body of exactly 1232237 bytes: byte for byte the container
+already in that population as `one_spare_before_sync`. Its identity with our own dump is the whole
+point of keeping the file and is exactly why counting it is double counting.
+
+Region 3 is the opposite case and is admitted: a container nothing else here holds, which is why
+`parseable_containers` settles at 44 and the odd body figure returns to 19 untouched.
+
+So the exclusion is **per fixture with a stated reason**, `PARSEABLE_EXCLUDED` in `tests/lab.py` and
+its mirror in `packages/lab`, rather than a blanket rule about region images. The two lists are compared
+by a test, on the precedent of section 141: a second pair of population lists that nobody compares is
+how the last one drifted, and this pair decides published numbers.
+
+**Three populations were asked about the same two files and two of them answer differently on purpose.**
+The rule that settles it is what the population is *for*:
+
+| population | the two duplicates | why |
+|---|---|---|
+| `parseable_containers`, and the number sender census that mirrors it | **out** | a total is distorted by counting one config twice |
+| the golden vectors | **in** | a comparison between two implementations is not distorted by a duplicate, and a special case in the test that demands a vector per container costs more than a duplicate file |
+
+That is not a fudge and the second row was already this project's recorded position: `one_spare_before_sync`'s
+vector has duplicated `one_config_unprogrammed`'s for weeks, with the trade written out beside it. What
+is new is that both halves are now enforced rather than remembered, and that adding these two files
+exposed **four** counts and one comment that had to move or be excluded, including a comment in
+`golden.test.ts` that said 25 and 9 where the assertions two lines below said 28 and 8. Prose beside a
+number is the thing nothing recomputes, which is the whole reason `make facts` exists.

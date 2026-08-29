@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IMAGES, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { IMAGES, PARSEABLE_EXCLUDED, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_TABLE_SLOT,
   ARCH_RECORD_SLOT,
@@ -645,6 +645,9 @@ const PARSEABLE = 43;
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
   for (const name of Object.keys(IMAGES)) {
+    // A fixture whose container is already in this population under another name is skipped, or
+    // every total over it counts one config twice. Section 215.
+    if (PARSEABLE_EXCLUDED.includes(name)) continue;
     const data = load(name);
     if (data === undefined) continue;
     try {

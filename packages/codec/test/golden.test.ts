@@ -114,6 +114,15 @@ const CONTAINERS = [
   'h890_config_2_redump_1',
   'h890_config_2_redump_2',
   'h890_config_2_redump_3',
+  // The two regions Logitech's own client read off the spare Harmony One, section 215. Both are
+  // duplicates of containers already in this list, deliberately: the user config's vector must equal
+  // `one_spare_before_sync`'s and the embedded one's must equal `one_safemode`'s apart from where the
+  // container sits in its file. That is the whole value, since the two copies of each arrived by
+  // routes with nothing in common. They are excluded from the corpus wide totals for the same reason
+  // they are included here, `PARSEABLE_EXCLUDED` in `packages/lab`, which is not a contradiction: a
+  // total is distorted by a duplicate and a comparison is not.
+  'vendor_region_user_config',
+  'vendor_region_embedded_config',
 ];
 
 for (const name of CONTAINERS) {
@@ -176,17 +185,23 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
     if (checks.includes('key_table_is_complete')) complete += 1;
   }
   // 42 since 26 August 2026: the Harmony 895, the first arch 10 container with a known answer,
-  // section 178. 41 before it, when the phase 7 pair landed, section 174.
-  assert.equal(present.length, 43, 'every vector, which is what `make golden` compares');
+  // section 178. 41 before it, when the phase 7 pair landed, section 174. 45 since the two regions
+  // Logitech's own client read off the spare Harmony One, section 215, which are deliberately
+  // duplicates of vectors already here.
+  assert.equal(present.length, 45, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
   // 39 since the Harmony 350, section 194: an arch 16 container's key table reads with the existing
   // reader, the same way the Harmony 895's did, which is a property of the reader and not of a mapping.
-  assert.equal(complete, 39, 'the vectors whose container has a key table at all');
+  // 41 since section 215's pair, both of which have one: the user config duplicates
+  // `one_spare_before_sync` and the embedded one duplicates `one_safemode`.
+  assert.equal(complete, 41, 'the vectors whose container has a key table at all');
 
-  // **The number sender field, and why it needs its own guard.** It is an empty array on 25 vectors
-  // and null on 9, so a summary that stopped emitting it would break nothing anybody would notice:
+  // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
+  // and null on 8, and this comment said 25 and 9 while the assertions below said 28 and 8, which is
+  // prose drifting away from the numbers beside it. A summary that stopped emitting the field would
+  // break nothing anybody would notice:
   // every comparison would still pass, and the two vectors where the two implementations are actually
   // compared on a record would go quiet. Same shape as section 148's hollow claim, where a count of
   // what a reader looked for could not see what it never looked at.
@@ -200,7 +215,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 8 since the Harmony 350, section 194: arch 16 has no slot mapping, so base slot 16 is not
   // readable on it, which is the same gate arch 10 sat behind before section 184.
   assert.equal(senders.filter((one) => one === null).length, 8, 'the containers with no readable slot');
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 28);
+  // 30 since section 215's pair, both of which declare none, like the two vectors they duplicate.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 30);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -219,7 +235,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 43, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 45, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

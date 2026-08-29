@@ -406,6 +406,28 @@ Section 210, and `packages/usb/test/classic-capture.test.ts` reads it as the fix
 | `localserver.log` | `62e2b75d9d09e5f580e83f72ee6d1e422706e3daf90657133185e0bd8b073880` | the stand-in's own view, ending in the client's report of a completed read |
 | `repack.txt` | `f59b5753a8f76a700f25a546c3ab3e2b4768907e49a2efc2abf3e3944ca04496` | the rebuild receipt: 827 of 829 classes compiled from recovered source |
 
+### And what that run wrote to disk, recovered 29 August 2026
+
+The same run's **output**, which sat in the client's own application support folder for three weeks
+before anybody looked. Two flash regions off the spare Harmony One, read entirely through Logitech's
+code: their flash service, their packet encoder, their chunking. Configs, so they stay in the lab, and
+the identity file the client wrote beside them was deliberately not copied. Section 215, and
+`packages/corpus/test/vendor-readout.test.ts` reads both as fixtures.
+
+| File | SHA-256 | What |
+|---|---|---|
+| `vendor-region3-embedded-config.bin` | `ffa431a44d0e88d0386f2e3d985b27a8893447847fb3e82b4efe3c78c07edac8` | 122880 bytes, region 3, the embedded safe mode config from flash `0x002000`. Its 8902 byte body is **identical to `one_safemode`**, which was cut out of the other Harmony One's firmware image, so it is a second route to a container already here rather than a new one |
+| `vendor-region4-user-config.bin` | `81037c4afea30687e782cef438268eb181f7b258993776fc99718f78ab9abd9c` | 3932160 bytes, region 4, the whole user config region from flash `0x040000` |
+
+**Both of them agree with something we already had, and that is the point.** The embedded one confirms
+a cut we made out of a firmware image, on a different physical unit, by a different implementation.
+
+**And the user config agrees with our own reader.** Our own reader produced
+`one-spare-before-sync-config.bin` from the same unit, SHA-256
+`535e83b7256113d634df73db668cebd1c66f7cab1958e71fb83922e1e89ff75d`, 1232237 bytes, and those are the
+first 1232237 bytes of the region above with no difference anywhere. The two digests differ only
+because one file is the whole region and the other stops at the container's end.
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than

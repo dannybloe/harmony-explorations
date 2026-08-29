@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { IMAGES } from '../src/index.ts';
+import { IMAGES, PARSEABLE_EXCLUDED } from '../src/index.ts';
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
 
@@ -44,8 +44,21 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // section 210, which is the first fixture here that is a capture rather than a file off a device,
   // 72 since the classic client's three single byte memory services, section 211, and 77 since
   // five more of the same client's HID services, section 213. 78 since the update service,
-  // section 214, whose region table is the source end of a closure against the wire log above.
+  // section 214, whose region table is the source end of a closure against the wire log above. 80
+  // since two regions Logitech's own client read off a Harmony One, section 215.
   // This is a **pure text** check on lab.py, so it runs with no lab at all and is what
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
-  assert.equal(Object.keys(pythonImages()).length, 78, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 80, 'every fixture tests/lab.py names');
+});
+
+test('the two sides exclude the same fixtures from the parseable population', () => {
+  // A second pair of lists that nobody compares is the defect section 141 was written for, and this
+  // one decides two corpus wide totals, so it gets the same equality check as IMAGES rather than a
+  // comment asking people to keep them in step. Section 215.
+  const source = readFileSync(join(REPO_ROOT, 'tests', 'lab.py'), 'utf8');
+  const block = /^PARSEABLE_EXCLUDED = \((.*?)\)$/ms.exec(source);
+  assert.ok(block, 'tests/lab.py has no PARSEABLE_EXCLUDED tuple in the expected shape');
+  const names = [...block[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
+  assert.deepEqual([...PARSEABLE_EXCLUDED].sort(), names.sort());
+  assert.equal(names.length, 2, 'both duplicates, per section 215');
 });

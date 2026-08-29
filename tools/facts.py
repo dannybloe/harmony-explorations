@@ -433,6 +433,10 @@ def parseable_facts():
 
     parsed = []
     for name in lab.IMAGES:
+        # A fixture whose container is already counted under another name is skipped, or the totals
+        # below count one config twice. Section 215; the list carries the reason per entry.
+        if name in lab.PARSEABLE_EXCLUDED:
+            continue
         try:
             parsed.append(gspm.parse(lab.load(name)))
         except Exception:

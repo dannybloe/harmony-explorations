@@ -411,7 +411,10 @@ net, not a policy:
   from Logitech's own, which is the same reason firmware is excluded and which this MIT repository
   cannot pass to FreeHarmony. The info output is a separate matter: it carries the remote's unique
   serial GUIDs and that is personal data. A synthetic corpus after M2 is what would change the
-  answer.
+  answer. **A whole flash region is worse than a config and section 215 measured how much**: past the
+  end of the current configuration on the spare Harmony One sit 408034 bytes of a previous one, never
+  wiped, because flash is only erased where a write needs the room. So a region dump carries
+  configurations nobody meant to hand over, and the refusal covers it more strongly rather than less.
 * **No Ghidra projects.** They embed an imported copy of the firmware.
 
 `.githooks/pre-commit` is the second line: it checks **staged content**, so a rename, a

@@ -285,6 +285,11 @@ IMAGES = {
     # it; this fixture is for the other half, the region address and size table, which is the
     # source end of the closure in packages/usb/test/classic-capture.test.ts.
     'classic_update_service': 'UpdateHidService.java',
+    # Two flash regions off the spare Harmony One, read by Logitech's own client rather than by
+    # anything here, section 215. The user config region is the first independent check this
+    # project has ever had on packages/corpus/src/read.ts; the embedded one has no counterpart.
+    'vendor_region_user_config': 'vendor-region4-user-config.bin',
+    'vendor_region_embedded_config': 'vendor-region3-embedded-config.bin',
 }
 
 _cache = {}
@@ -318,6 +323,28 @@ def _find(filename):
 # genuinely different files, since Logitech's own software wrote a config between them, which is what
 # made that pair the evidence for section 58. The TypeScript side had been counting all nineteen the
 # whole time, so this is one definition replacing two rather than a widening.
+# Fixtures that parse as a container but must not join a corpus wide population, because the
+# container they parse to is **already in it under another name**. Section 215.
+#
+# `vendor_region_user_config` is the whole user config region of the spare Harmony One as Logitech's
+# own client read it, and `gspm.parse` trims to the declared end, so it parses to a body of exactly
+# 1232237 bytes: byte for byte the same container as `one_spare_before_sync`. That identity is the
+# **point** of keeping the file, and it is precisely why counting it would be wrong. Admitting it
+# moved `parseable_containers` and `odd_body_verifying` by one each, and both moves were one config
+# counted twice.
+#
+# **The embedded config beside it is excluded too, and this note said the opposite for an hour.** It
+# was admitted on the strength of a search that found no counterpart, and the search was wrong: it
+# looked only under `dumps/` and only at files below 200 KB, while the counterpart is `one_safemode`,
+# cut out of a firmware image and living elsewhere. Their bodies are identical, all 8902 bytes, and
+# the golden vectors differ only in where the container sits in its file, 0 against 8192.
+#
+# That makes it a duplicate for counting purposes and **better evidence than the new container it was
+# mistaken for**: one copy came out of the programmed Harmony One's firmware image and the other off
+# the spare unit through Logitech's client, so the two agreeing confirms both that our cut was made in
+# the right place and that the embedded config is the same on two units.
+PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config')
+
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
     'one_config_unprogrammed', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
